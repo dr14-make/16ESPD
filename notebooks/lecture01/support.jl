@@ -24,7 +24,7 @@ module Lecture01Support
 using Pkg
 
 export setup, CAR,
-    sweep, Sweep,
+    sweep, Sweep, rerun,
     plot_speed, plot_sweep, plot_torque, bracket_error!,
     save_figure, deck_figures,
     steady_state_error, overshoot, rise_time, fopdt_fit,
@@ -43,8 +43,8 @@ Primitive quantities only. Everything derived from them — drag coefficient, ro
 tractive force limit, terminal speed, cruise torque — is arithmetic the notebooks perform in
 front of the reader.
 
-`theta_e` is expected to move into the 0.2-0.3 s range (HANDOVER Risk 1), so read it from
-here rather than writing 0.04 into a cell.
+`theta_e` is the value the Dyad models ship (HANDOVER Risk 1), so read it from here rather
+than writing it into a cell.
 
 | Field | Meaning | Unit |
 |---|---|---|
@@ -68,7 +68,7 @@ const CAR = (
     i = 4.0,
     T_max = 150.0,
     tau_e = 0.3,
-    theta_e = 0.04,
+    theta_e = 0.3,
     g = 9.80665,
 )
 
@@ -339,20 +339,48 @@ executed end to end before each lecture.
 function sweep(model, param, vals; tspan = nothing, alg = nothing, kwargs...)
     prob = as_problem(model, tspan)
     sys = system_of(prob)
-    sym = param isa Union{AbstractString, Symbol} ? resolve_in(sys, param) : param
-
-    any(isequal(sym), ModelingToolkit.parameters(sys)) || throw(ArgumentError("""
-        `$param` is not a tunable parameter of this model, so `remake` cannot vary it.
-
-        Structural parameters (`with_I`, `with_D`, `theta_e`) and variables are not sweepable:
-        a structural parameter changes the equations, so each value needs its own model.
-        """))
+    sym = tunable(sys, param)
 
     sols = map(vals) do v
         solve_problem(remake(prob; p = [sym => v]), alg; kwargs...)
     end
 
     return Sweep(sys, sym, last(split(string(sym), "₊")), collect(vals), sols)
+end
+
+"""
+    rerun(model, overrides::Pair...; tspan = nothing, alg = nothing, kwargs...) -> solution
+
+Re-solve `model` with `overrides` applied, reusing its compiled right-hand side exactly as
+[`sweep`](@ref) does.
+
+`model` is anything `sweep` accepts and each override pairs a dotted path or a symbolic with
+its new value. This is the route to a parameter the scenario does not expose as one of its
+own — `LimPID`'s derivative-filter initial state `xd0`, which `CruiseLoop` leaves at the
+library default. The result is itself a valid `sweep` input, so a sweep can vary its own
+parameter on top of these.
+"""
+function rerun(model, overrides::Pair...; tspan = nothing, alg = nothing, kwargs...)
+    prob = as_problem(model, tspan)
+    sys = system_of(prob)
+    p = [tunable(sys, first(o)) => last(o) for o in overrides]
+    return solve_problem(remake(prob; p), alg; kwargs...)
+end
+
+"""
+    tunable(sys, param) -> symbolic
+
+Resolve `param` against `sys` and check that `remake` can vary it.
+"""
+function tunable(sys, param)
+    sym = param isa Union{AbstractString, Symbol} ? resolve_in(sys, param) : param
+    any(isequal(sym), ModelingToolkit.parameters(sys)) || throw(ArgumentError("""
+        `$param` is not a tunable parameter of this model, so `remake` cannot vary it.
+
+        Structural parameters (`with_I`, `with_D`, `theta_e`) and variables are not sweepable:
+        a structural parameter changes the equations, so each value needs its own model.
+        """))
+    return sym
 end
 
 function as_problem(model, tspan)
