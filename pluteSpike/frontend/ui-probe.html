@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>rainbow/ui render probe</title>
+<style>
+ body{font:14px system-ui;margin:24px;max-width:900px}
+ h2{font-size:.8em;text-transform:uppercase;letter-spacing:.1em;color:#4a5a6b;margin:24px 0 8px}
+ .box{border:1px solid #d7dde6;border-radius:6px;padding:12px;min-height:40px}
+ .ctl{display:grid;grid-template-columns:5.5em 1fr 3em auto;gap:10px;align-items:center;margin-bottom:10px}
+ .ctl input{width:100%;accent-color:#1f5fa8}
+ .ctl output{font-variant-numeric:tabular-nums;text-align:right}
+ .lat{font-family:ui-monospace,monospace;font-size:11px;color:#4a5a6b;min-width:11em}
+ #log{font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:6px}
+</style></head>
+<body>
+<h1>rainbow/ui render probe</h1>
+<div id="log">booting…</div>
+<h2>1 — script execution (<code>script_probe</code>)</h2>
+<div class="box" id="probe"></div>
+<h2>2 — interactive Plotly (<code>plotly_demo</code>)</h2>
+<div class="ctl">
+  <label for="freq">frequency</label>
+  <input id="freq" type="range" min="0.2" max="5" step="0.1" value="1">
+  <output id="freqval">1.0</output>
+  <span id="lat" class="lat"></span>
+</div>
+<div class="box" id="plotly"></div>
+<h2>3 — Julia-defined @bind widget (<code>v_ref_kmh</code>)</h2>
+<div class="box" id="bond"></div>
+<script type="module" src="ui-probe.js"></script>
+</body></html>

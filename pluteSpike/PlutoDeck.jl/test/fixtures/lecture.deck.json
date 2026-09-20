@@ -1,0 +1,16 @@
+{
+  "notebook": "three-cards.jl",
+  "slides": [
+    {
+      "cards": [
+        { "card": "target-speed", "x": 0, "y": 0, "w": 4, "h": 2 },
+        { "card": "speed-plot", "x": 4, "y": 0, "w": 8, "h": 6 }
+      ]
+    },
+    {
+      "cards": [
+        { "card": "metrics", "x": 0, "y": 0, "w": 12, "h": 3, "snapshot": null }
+      ]
+    }
+  ]
+}
