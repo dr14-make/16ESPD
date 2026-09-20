@@ -2,13 +2,21 @@
 <meta charset="utf-8">
 <title>PlutoDeck</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- An empty data URL is what stops the browser asking for a favicon and logging the 404. -->
+<link rel="icon" href="data:,">
 <link rel="stylesheet" href="deck.css">
 
 <header>
   <h1 id="deck-title">PlutoDeck</h1>
   <p id="deck-notebook"></p>
-  <p><a id="editor-link" href="#">open the notebook in Pluto</a></p>
+  <p>
+    <span id="kernel-status">starting</span> ·
+    <a id="editor-link" href="#">open the notebook in Pluto</a>
+  </p>
 </header>
+
+<!-- Rendered so its scripts run, never shown: see the preamble comment in deck.js. -->
+<div id="preamble" hidden></div>
 
 <main id="slides"></main>
 

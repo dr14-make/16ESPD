@@ -103,6 +103,7 @@ request(handler, target) = handler(HTTP.Request("GET", target))
 
         @test response.status == 200
         @test body["notebook"] == THREE_CARDS
+        @test body["preamble"] == []
         @test length(body["slides"]) == 2
         @test body["slides"][1]["cards"][1] ==
             Dict("card" => "target-speed", "x" => 0, "y" => 0, "w" => 4, "h" => 2, "snapshot" => nothing)

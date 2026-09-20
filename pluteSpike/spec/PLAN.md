@@ -22,21 +22,28 @@ call open.
 | [005](issues/005-http-server-and-the-frontend-directory-toggle.md) | HTTP server and the frontend_directory toggle | `enhancement` | `high` | `m` | yes | 001, 003, 004 | **done** |
 | [006](issues/006-present-entry-point.md) | present entry point | `enhancement` | `high` | `s` | yes | 003, 004, 005 | **done** |
 | [007](issues/007-typescript-build-pipeline.md) | TypeScript build pipeline | `enhancement` | `high` | `m` | yes | 001 | todo |
-| [008](issues/008-kernel-client-connect-bonds-settle.md) | Kernel client: connect, bonds, settle | `enhancement` | `high` | `m` | yes | 007 | todo |
-| [009](issues/009-card-renderer-via-rainbow-ui.md) | Card renderer via rainbow ui | `enhancement` | `high` | `m` | yes | 007 | **spiked** |
-| [010](issues/010-card-state-machine-placeholder-to-live.md) | Card state machine: placeholder to live | `enhancement` | `high` | `s` | yes | 008, 009 | todo |
+| [008](issues/008-kernel-client-connect-bonds-settle.md) | Kernel client: connect, bonds, settle | `enhancement` | `high` | `m` | yes | 007 | **done** |
+| [009](issues/009-card-renderer-via-rainbow-ui.md) | Card renderer via rainbow ui | `enhancement` | `high` | `m` | yes | 007 | **done** |
+| [010](issues/010-card-state-machine-placeholder-to-live.md) | Card state machine: placeholder to live | `enhancement` | `high` | `s` | yes | 008, 009 | **done** |
 | [011](issues/011-slide-and-gridstack-layout-rendering.md) | Slide and gridstack layout rendering | `enhancement` | `high` | `m` | yes | 003, 010 | todo |
 | [012](issues/012-deck-chrome-navigation-and-kernel-status.md) | Deck chrome: navigation and kernel status | `enhancement` | `medium` | `s` | yes | 011 | todo |
-| [013](issues/013-end-to-end-browser-test-harness.md) | End-to-end browser test harness | `enhancement` | `medium` | `m` | yes | 006, 012 | todo |
+| [013](issues/013-end-to-end-browser-test-harness.md) | End-to-end browser test harness | `enhancement` | `medium` | `m` | yes | 006, 012 | **partial** |
 | [014](issues/014-example-deck-lecture-1-cruise-control.md) | Example deck: lecture 1 cruise control | `enhancement` | `medium` | `s` | no | 006, 012 | todo |
 | [015](issues/015-release-process-build-force-add-bundle-tag.md) | Release process: build, force-add bundle, tag | `enhancement` `tech-debt` | `medium` | `s` | yes | 001, 007 | todo |
 
-009 was run first as a de-risking spike, out of dependency order, because it is the only
-issue whose failure would invalidate the design. It is **proven**: scripts execute, Julia-defined
-widgets render, and an interactive Plotly card redraws from a slider in 38-84 ms. The package
-code is still unwritten — `spiked` means the approach is settled, not that the issue is done. `../HANDOFF.md`
-carries the detail. Two findings from it are new and are not in `DESIGN.md`: decks need a
-hidden preamble card, and offline Plotly costs 3.82 MB of notebook state.
+009 was run first as a de-risking spike, out of dependency order, because it is the only issue
+whose failure would invalidate the design. Two findings from that spike were new and are not in
+`DESIGN.md`: decks need a hidden preamble card, and offline Plotly costs 3.82 MB of notebook
+state. `../HANDOFF.md` carries the detail; the preamble is now part of the deck schema.
+
+008, 009 and 010 landed together, against the plain ES modules `frontend_directory()` already
+serves. 007 stays deferred, so `frontend/vendor/` holds the Rainbow bundles rather than a build
+producing them.
+
+013 is **partial**: the harness drives headless Chrome over the DevTools protocol and runs as
+part of `] test PlutoDeck`, covering the deck page, a bond round trip and console errors. It
+drives `start_session` and `serve` rather than `present`, and it has no coverage of the deck
+chrome that 012 adds.
 
 ## Order
 

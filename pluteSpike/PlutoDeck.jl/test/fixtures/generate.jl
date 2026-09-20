@@ -12,13 +12,7 @@ Pkg.activate(joinpath(@__DIR__, "..", ".."))
 using UUIDs: UUID
 import Pluto
 
-const CELL_IDS = UUID.([
-    "a1000000-0000-4000-8000-000000000001",
-    "a1000000-0000-4000-8000-000000000002",
-    "a1000000-0000-4000-8000-000000000003",
-    "a1000000-0000-4000-8000-000000000004",
-    "a1000000-0000-4000-8000-000000000005",
-])
+const CELL_IDS = UUID[UUID("a1000000-0000-4000-8000-" * lpad(i, 12, '0')) for i in 1:8]
 
 carded(index, card, code) = Pluto.Cell(;
     cell_id=CELL_IDS[index],
@@ -50,7 +44,29 @@ runnable_cells() = [
     carded(4, "readout", "md\"\"\"**freq** \$(cycles), **samples** \$(length(samples))\"\"\""),
 ]
 
+# What the browser harness drives. Between them these cells cover every path a card can take:
+# a side-effecting preamble, a Julia-defined widget writing back, two cells downstream of it, a
+# `published_to_js` payload reached through the <pluto-cell> ancestor, a text/plain body that
+# must not be parsed as markup, and one card that no bond can reach.
+browser_cells() = [
+    carded(1, "plotly", """
+    plotly_offline = begin
+        using PlutoPlotly
+        enable_plutoplotly_offline()
+    end"""),
+    carded(2, "frequency", "@bind freq html\"<input type=range min=1 max=5 step=1 value=1>\""),
+    uncarded(3, "cycles = ismissing(freq) ? 1 : Int(freq)"),
+    carded(4, "wave", """
+    let t = range(0, 1; length=201)
+        plot(scatter(; x=collect(t), y=sin.(2\u03c0 .* cycles .* t)))
+    end"""),
+    carded(5, "readout", "md\"\"\"**cycles** \$(cycles)\"\"\""),
+    carded(6, "constant", "md\"\"\"the car weighs **1400 kg**\"\"\""),
+    carded(7, "plain", "Text(\"<b>not bold</b> & <script>never runs</script>\")"),
+]
+
 write_fixture("three-cards.jl", three_carded_cells())
 write_fixture("runnable.jl", runnable_cells())
+write_fixture("browser.jl", browser_cells())
 write_fixture("duplicate-cards.jl",
     push!(three_carded_cells(), carded(5, "metrics", "md\"a second cell claiming the same card\"")))
