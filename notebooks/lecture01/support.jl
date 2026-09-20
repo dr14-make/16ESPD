@@ -26,6 +26,7 @@ using Pkg
 export setup, CAR,
     sweep, Sweep,
     plot_speed, plot_sweep, plot_torque, bracket_error!,
+    save_figure, deck_figures,
     steady_state_error, overshoot, rise_time, fopdt_fit,
     signal, resolve, solution_of
 
@@ -462,6 +463,68 @@ end
 
 pretty(x::Real) = isinteger(x) ? string(Int(round(x))) : string(round(x; sigdigits = 3))
 pretty(x) = string(x)
+
+# ---------------------------------------------------------------------------------------
+# Figure export
+# ---------------------------------------------------------------------------------------
+
+"""
+    DECK_DIR
+
+The reveal.js deck that consumes these figures. Its `index.html` is the authoritative list of
+figure names: each slot is an `<img src="assets/figures/...">` that renders as a hatched
+placeholder until the file exists.
+"""
+const DECK_DIR = normpath(@__DIR__, "..", "..", "docs", "slides", "lecture-01")
+
+const _DECK_FIGURES = Ref{Union{Nothing, Set{String}}}(nothing)
+
+"""
+    deck_figures() -> Set{String}
+
+Every figure file the deck references, read out of its markup. Empty when the deck is absent,
+which disables the name check in [`save_figure`](@ref) rather than failing on its absence.
+"""
+function deck_figures()
+    cached = _DECK_FIGURES[]
+    isnothing(cached) || return cached
+    index = joinpath(DECK_DIR, "index.html")
+    names = isfile(index) ?
+        Set{String}(m.captures[1] for m in eachmatch(r"assets/figures/([\w\-.]+)", read(index, String))) :
+        Set{String}()
+    _DECK_FIGURES[] = names
+    return names
+end
+
+"""
+    save_figure(plt, name) -> String
+
+Write `plt` into the deck's figure directory and return the path.
+
+`name` is the deck's own slug — `save_figure(plt, "03-gain-family")` — and `.svg` is appended
+when no extension is given. SVG stays sharp on a projector and in the deck's `?print-pdf`
+handout.
+
+The name is checked against the slots the deck actually references, because a typo is
+otherwise silent in both directions: the notebook writes a file nothing loads, and the slide
+goes on rendering a placeholder. Near misses are listed in the error.
+"""
+function save_figure(plt, name::AbstractString)
+    file = any(endswith(name, e) for e in (".svg", ".png")) ? String(name) : name * ".svg"
+    expected = deck_figures()
+    if !isempty(expected) && file ∉ expected
+        stem = String(first(split(file, '.')))
+        parts = [p for p in split(stem, '-') if length(p) > 3]
+        near = sort!([f for f in expected if any(occursin(p, f) for p in parts)])
+        hint = isempty(near) ? "" : "\nDid you mean: " * join(first(near, 5), ", ")
+        throw(ArgumentError("`$file` is not a figure slot in the deck; nothing would load it.$hint"))
+    end
+    dir = joinpath(DECK_DIR, "assets", "figures")
+    mkpath(dir)
+    path = joinpath(dir, file)
+    Plots.savefig(plt, path)
+    return path
+end
 
 # ---------------------------------------------------------------------------------------
 # Readouts
