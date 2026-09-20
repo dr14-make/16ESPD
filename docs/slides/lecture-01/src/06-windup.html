@@ -7,13 +7,14 @@
     <p class="nb-no">Notebook 06</p>
     <h2>Integral windup</h2>
     <p class="thesis">The integrator does not know the engine has run out.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/06-windup.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/06-windup.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> everything so far has been true of a linear model. This section
       is about the first place where the real world stops being linear, and it is the failure
       that has actually destroyed hardware.</p>
       <p><strong>Timing:</strong> 14 minutes, and it is worth borrowing from section 09 if you
       need to. This is the most practically useful thing in the lecture.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -31,9 +32,6 @@
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Vehicle/IdealEngine.dyad</code>
-        <span class="show">show — the <b><code>limiter</code></b>: <code>y_max = T_max</code>,
-          and <code>y_min = 0</code>. That second one matters too — this engine cannot brake,
-          so downhill it has no answer at all.</span>
       </div>
       <div class="callout danger small">
         <span class="label">The hill we are about to drive up</span>
@@ -52,6 +50,16 @@
       <p><strong>Ask the room:</strong> what does the controller see when the engine is pinned
       at its limit? <em>(Exactly what it saw before: a speed that is too low. It has no sensor
       for "the actuator has given up". Hold that thought for two slides.)</em></p>
+          <p><strong>In the model:</strong> The <b><code>limiter</code></b>: <code>y_max = T_max</code>, and <code>y_min = 0</code>. That second one matters too — this engine cannot brake, so downhill it has no answer at all.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Actuator</strong> — the thing that supplies the force or energy. Our engine.</li>
+        <li><strong>Process</strong> — the thing being pushed. Our car.</li>
+        <li><strong>Saturation</strong> — an actuator at its limit, unable to follow the command it was given.</li>
+        <li><strong>2024 N</strong> — the tractive force a 10 % climb at 130 km/h demands. <strong>1935 N</strong> — what the engine can deliver. Five per cent short.</li>
+        <li><strong>118 km/h</strong> — where the car settles on that climb once it has lost the argument.</li>
+        <li><strong>y_min = 0</strong> — the limiter's lower bound. This engine cannot produce negative torque, so it cannot brake.</li>
+      </ul>
     </aside>
   </section>
 
@@ -82,9 +90,6 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Vehicle/GradeProfile.dyad</code>
-          <span class="show">show — <code>gradient</code>, <code>start_time</code> and
-            <b><code>duration</code></b>. The road flattens again because the duration is
-            finite, and the flattening is where the damage shows.</span>
         </div>
       </div>
       <figure class="fig">
@@ -111,6 +116,16 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
       <p><strong>Say (the drone story, if it helps):</strong> it is the same as holding a drone
       down on the ground while it is trying to fly to 50 metres. The propellers max out at
       1000 rpm, the integrator winds the command to 2000, and the moment you let go…</p>
+          <p><strong>In the model:</strong> <code>gradient</code>, <code>start_time</code> and <b><code>duration</code></b>. The road flattens again because the duration is finite, and the flattening is where the damage shows.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>grade = 0.10</strong> — tan α, a 10 % climb, about 5.7°.</li>
+        <li><strong>t_climb = (30, 90) s</strong> — when the hill starts and ends.</li>
+        <li><strong>v_set = 130 km/h</strong> — the cruise setpoint.</li>
+        <li><strong>Commanded torque</strong> — what the controller asks for; it keeps climbing. <strong>Delivered torque</strong> — what the engine gives; it is flat on the limit.</li>
+        <li><strong>The integrator state</strong> — plotted separately, because it is the thing actually going wrong and it is invisible in the speed trace.</li>
+        <li><strong>antiwindup = :none</strong> — no protection, deliberately, so the failure is visible.</li>
+      </ul>
     </aside>
   </section>
 
@@ -144,6 +159,12 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
       it takes to <em>unwind</em>, during which the controller is effectively disconnected.</p>
       <p><strong>Ask the room</strong> before running the next cell: how far past 130 km/h do
       you think we go? <em>(Take two guesses, write them on the board, then run it.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Windup</strong> — an integrator accumulating past the point where the actuator can act on it.</li>
+        <li><strong>Unwinding</strong> — coming back down. The harm is here, not in the winding: until the command falls back inside the limit, nothing the car does reaches the engine.</li>
+        <li><strong>Effectively disconnected</strong> — the phrase to use. During unwinding, the loop is open whether you designed it that way or not.</li>
+      </ul>
     </aside>
   </section>
 
@@ -189,6 +210,12 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <p><strong>Ask the room:</strong> what would you change to stop it? <em>(Collect answers
       before showing the fix. "Limit the output" is the usual first one — and it is not enough
       on its own, which is a useful thing for them to discover in a moment.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>overshoot(sol, 130; y0 = 130)</strong> — peak excursion past the setpoint as a percentage of the step. <code>y0</code> is the pre-step speed, given explicitly here because the run starts at the setpoint.</li>
+        <li><strong>The dotted verticals</strong> — where the climb starts and ends.</li>
+        <li><strong>The peak</strong> — read it off and compare with the guesses on the board.</li>
+      </ul>
     </aside>
   </section>
 
@@ -258,6 +285,14 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <p><strong>Also note:</strong> this is conditional integration, the method taught in the
       video the students were pointed at. It is not the only method — back-calculation feeds the
       saturation error back into the integrator instead — and we compare both next.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Condition one</strong> — the controller output before the saturation block differs from the output after it. That is what "saturating" means, operationally.</li>
+        <li><strong>Condition two</strong> — sign(e) = sign(u): the integrator is still pushing in the direction that is already maxed out.</li>
+        <li><strong>AND</strong> — both, and only both. Either one false and the integrator is released.</li>
+        <li><strong>The switch</strong> — sets the integrator's <em>input</em> to zero. It freezes; it does not reset and it does not decay.</li>
+        <li><strong>Conditional integration</strong> — the other name for clamping.</li>
+      </ul>
     </aside>
   </section>
 
@@ -289,9 +324,6 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CruiseLoop.dyad</code>
-          <span class="show">show — <b><code>Ni</code></b>, the back-calculation parameter, and
-            <b><code>y_max</code> defaulting to <code>T_max</code></b> — the controller's own
-            ceiling, which the next slide argues should sit lower.</span>
         </div>
       </div>
     </div>
@@ -306,6 +338,14 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <em>(It unwinds while still saturated, rather than merely refusing to wind further. In a
       long saturation both end up in about the same place, which is what the next slide
       shows.)</em></p>
+          <p><strong>In the model:</strong> <b><code>Ni</code></b>, the back-calculation parameter, and <b><code>y_max</code> defaulting to <code>T_max</code></b> — the controller's own ceiling, which the next slide argues should sit lower.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>İ</strong> — the rate of change of the integrator state.</li>
+        <li><strong>u_sat − u</strong> — how much of the command did not get through. Zero whenever we are inside the limit, which is why the term vanishes in normal operation.</li>
+        <li><strong>T<sub>t</sub></strong> — the <em>tracking time constant</em>, seconds. How fast the integrator is dragged back when saturated. Small is aggressive.</li>
+        <li><strong>N<sub>i</sub></strong> — how <code>LimPID</code> exposes it: T<sub>t</sub> = N<sub>i</sub>·T<sub>i</sub>. Default 0.9.</li>
+      </ul>
     </aside>
   </section>
 
@@ -364,6 +404,12 @@ end
       Clamping is cheaper and easier to explain to the next engineer; back-calculation is
       smoother, with a tuning parameter of its own. The real answer is: whichever one your
       framework already implements correctly.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>:none</strong> — no protection. <strong>:clamping</strong> — conditional integration. <strong>:backcalculation</strong> — <code>LimPID</code>'s built-in, via N<sub>i</sub>.</li>
+        <li><strong>Peak overshoot</strong> — the single number that separates them.</li>
+        <li><strong>What none of them fixes</strong> — the car still falls to 118 km/h on the climb. Anti-windup does not add performance; it stops you being punished for asking.</li>
+      </ul>
     </aside>
   </section>
 
@@ -395,6 +441,12 @@ end
       <p><strong>Ask the room:</strong> where else in a vehicle would you apply that reasoning?
       <em>(Brake pressure, steering rate, battery current — anywhere the datasheet number is an
       optimistic one.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>y_max</strong> — the controller's output clamp, which <em>you</em> choose.</li>
+        <li><strong>T_max</strong> — the engine's nameplate ceiling, which the datasheet claims.</li>
+        <li><strong>The rule</strong> — set y_max below T_max by however much you distrust your model of the actuator. Hot, aged, at altitude, on poor fuel: all lower the real ceiling.</li>
+      </ul>
     </aside>
   </section>
 

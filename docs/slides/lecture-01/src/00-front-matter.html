@@ -20,64 +20,40 @@
       never a change of subject — so whatever you understand about the car at minute ten is
       still true at minute ninety.</p>
       <p><strong>Timing:</strong> 90 minutes. The spine is sections 01, 03, 04, 05, 06, 08 —
-      about 60 minutes. Everything else is bonus; drop from the back, not the middle.</p>
+      about 60 minutes. Everything else is bonus; drop from the back, not the middle. Each
+      section's first slide tells you, in these notes, whether it is safe to cut.</p>
+      <p><strong>Driving the deck.</strong> <strong>→</strong> next notebook,
+      <strong>↓</strong> next slide within one. <strong>O</strong> overview of everything,
+      <strong>G</strong> jump to a slide number, <strong>F</strong> fullscreen,
+      <strong>?</strong> every key. <strong>S</strong> is this window; <strong>C</strong> puts
+      these same notes along the bottom of the projected deck if the popup was blocked.</p>
+      <p><strong>Two screens.</strong> Deck on the projector, Jupyter on the laptop. Every demo
+      slide names the notebook file and the cell heading and carries the code, with a copy
+      button, so you never hunt through a notebook with your back to the room. A grey strip
+      means there is a Dyad model worth having open for that beat.</p>
+      <p><strong>Handout:</strong> add <code>?print-pdf</code> to the URL and print to PDF —
+      one slide per page, these notes excluded.</p>
+      <p><strong>If a solve stalls in front of the room:</strong> every notebook is committed
+      with its outputs. Scroll to the plot that is already there and keep talking. Do not debug
+      live.</p>
     </aside>
   </section>
 
-  <section>
-    <h2>How this deck is driven</h2>
-    <div class="cols cols-wide-left">
-      <div>
-        <ul class="small">
-          <li><kbd>S</kbd> — speaker view: notes, timer, next slide. <kbd>C</kbd> — the same
-            notes as a panel here, if the popup is blocked.</li>
-          <li><kbd>→</kbd> moves to the next notebook; <kbd>↓</kbd> moves through one.</li>
-          <li><kbd>O</kbd> — overview of the whole lecture. <kbd>G</kbd> — jump to a slide
-            number. <kbd>F</kbd> — fullscreen. <kbd>?</kbd> — all keys.</li>
-          <li>Every demo card has a <strong>copy</strong> button: the code goes to the
-            clipboard, paste it into the notebook cell.</li>
-          <li><code>?print-pdf</code> appended to the URL renders the handout; print to PDF
-            from there.</li>
-        </ul>
-      </div>
-      <div>
-        <div class="callout">
-          <span class="label">Deep links</span>
-          <code>#/3</code> opens notebook 03's section, <code>#/3/2</code> its third slide.
-          Section number = notebook number, all the way through.
-        </div>
-        <div class="callout warn">
-          <span class="label">The dagger</span>
-          A number marked <span class="prov">†</span> is analytic and indicative. Read the
-          executed value off the notebook instead of quoting the slide.
-        </div>
-      </div>
-    </div>
-    <aside class="notes">
-      <p>This slide is for you, not for them — skip past it while the room settles.</p>
-      <p><strong>Two screens.</strong> Deck on the projector, Jupyter on the laptop. Every
-      demo slide names the notebook file, the cell heading, and carries the code itself, so you
-      never have to hunt through a notebook with your back to the room.</p>
-      <p><strong>If a solve stalls in front of the room:</strong> every notebook is committed
-      with its outputs already executed. Scroll to the plot that is already there and keep
-      talking. Do not debug live.</p>
-    </aside>
-  </section>
 
   <section>
     <h2>The ten notebooks</h2>
     <table>
-      <tr><th>#</th><th>Title</th><th>Punchline</th><th></th></tr>
-      <tr><td><a href="#/1">01</a></td><td>The car</td><td>transient vs steady state; read K, τ and θ off a step</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/2">02</a></td><td>Open vs closed loop</td><td>feedforward is right until the hill</td><td><span class="tier tier-2">Tier 2</span></td></tr>
-      <tr><td><a href="#/3">03</a></td><td>P</td><td>error shrinks with k but never reaches zero</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/4">04</a></td><td>PI</td><td>the integrator finds notebook 02's answer by itself</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/5">05</a></td><td>PID</td><td>three terms, three jobs: present, past, future</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/6">06</a></td><td>Windup</td><td>the hill the engine cannot climb</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/7">07</a></td><td>Derivative and noise</td><td>small noise, steep slope, ruined command</td><td><span class="tier tier-3">Tier 3</span></td></tr>
-      <tr><td><a href="#/8">08</a></td><td>Tuning</td><td>a gain set from one step test, without a model</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/9">09</a></td><td>Discretization</td><td>the strobe light slows down</td><td><span class="tier tier-2">Tier 2</span></td></tr>
-      <tr><td><a href="#/10">10</a></td><td>Wheel and slip</td><td>cruise control meets black ice</td><td><span class="tier tier-3">Tier 3</span></td></tr>
+      <tr><th>#</th><th>Title</th><th>The point of it</th></tr>
+      <tr><td><a href="#/1">01</a></td><td>The car</td><td>transient vs steady state; read K, τ and θ off a step</td></tr>
+      <tr><td><a href="#/2">02</a></td><td>Open vs closed loop</td><td>feedforward is right until the hill</td></tr>
+      <tr><td><a href="#/3">03</a></td><td>P</td><td>error shrinks with k but never reaches zero</td></tr>
+      <tr><td><a href="#/4">04</a></td><td>PI</td><td>the integrator finds notebook 02's answer by itself</td></tr>
+      <tr><td><a href="#/5">05</a></td><td>PID</td><td>three terms, three jobs: present, past, future</td></tr>
+      <tr><td><a href="#/6">06</a></td><td>Windup</td><td>the hill the engine cannot climb</td></tr>
+      <tr><td><a href="#/7">07</a></td><td>Derivative and noise</td><td>small noise, steep slope, ruined command</td></tr>
+      <tr><td><a href="#/8">08</a></td><td>Tuning</td><td>a gain set from one step test, without a model</td></tr>
+      <tr><td><a href="#/9">09</a></td><td>Discretization</td><td>the strobe light slows down</td></tr>
+      <tr><td><a href="#/10">10</a></td><td>Wheel and slip</td><td>cruise control meets black ice</td></tr>
     </table>
     <aside class="notes">
       <p><strong>Say:</strong> here is the whole lecture on one slide. Ten short steps. Each
@@ -155,6 +131,15 @@
       feedback loop does not just make the picture fuzzy — it moves the car.</p>
       <p><strong>Ask the room:</strong> which of these five do you have direct control over?
       <em>(Only u. Everything else is either chosen by somebody else or done to you.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>r</strong> — the <em>reference</em>, also called the setpoint or the command. What we want. Units of whatever we are controlling; here km/h.</li>
+        <li><strong>e</strong> — the <em>error</em>, r minus the measurement. Same units as r. Zero means we are where we asked to be.</li>
+        <li><strong>u</strong> — the <em>control input</em>, also called the actuating signal or plant input. What the controller chooses. Here, newton-metres of commanded engine torque.</li>
+        <li><strong>d</strong> — the <em>disturbances</em>. Inputs we do not choose and cannot command: the hill, the wind, the luggage.</li>
+        <li><strong>x</strong> — the <em>state</em>. What the system is actually doing, and what it remembers. Here, road speed, and how full the inlet manifold is.</li>
+        <li><strong>y</strong> — the <em>measurement</em>, also called the controlled variable or plant output. What the sensor reports, which is the state plus noise.</li>
+      </ul>
     </aside>
   </section>
 
@@ -216,6 +201,14 @@
       <p><strong>Ask the room:</strong> where does a self-driving car's route planner sit on
       this picture? <em>(Top right. And it has to produce a reference the car can physically
       follow — which needs the model again.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Plant</strong> — the thing being controlled. Used interchangeably with "system" and "process". Ours is a car.</li>
+        <li><strong>Feedforward</strong> — computing u from r alone, with no measurement. Also called open-loop control.</li>
+        <li><strong>Feedback</strong> — computing u from the error. Also called closed-loop control.</li>
+        <li><strong>State estimation</strong> — recovering the state from noisy, incomplete measurements. Kalman filters live here.</li>
+        <li><strong>Planning</strong> — deciding what r should be in the first place. For us: the driver pressed a button.</li>
+      </ul>
     </aside>
   </section>
 
@@ -270,6 +263,13 @@
       control has? <em>(Brakes. Ours can only add torque, never remove it — which is why our
       car going downhill has no answer at all. Worth thirty seconds; it is an honest
       limitation.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>u</strong> — commanded engine torque, N·m. The single thing the controller gets to choose all lecture.</li>
+        <li><strong>d</strong> — road gradient (as tan α), a headwind (as extra drag area), payload (as extra mass).</li>
+        <li><strong>x</strong> — the true road speed, m/s internally.</li>
+        <li><strong>y</strong> — the measured speed in km/h, after the one conversion block on the sensor output.</li>
+      </ul>
     </aside>
   </section>
 
@@ -349,6 +349,17 @@
       O<sub>z</sub>, O<sub>s</sub> from the energy slides — same terms, drawn on a car instead of
       listed. O<sub>aux</sub>, the electrical loads, we are leaving out; say so, because leaving
       a term out should always be a decision you announce.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>F = T·i / r</strong> — tractive force at the road, N. Engine torque <em>T</em> (N·m) times gear ratio <em>i</em> (dimensionless), divided by wheel radius <em>r</em> (m).</li>
+        <li><strong>O_V</strong> — aerodynamic drag, N. Equals ½·ρ·C<sub>d</sub>A·v². Grows with the <em>square</em> of speed.</li>
+        <li><strong>O_f</strong> — rolling resistance, N. Equals f_r·m·g·cos α. Near enough constant, about 165 N for this car.</li>
+        <li><strong>O_s</strong> — the slope term, N. Equals m·g·sin α — the part of the car's weight pointing down the road.</li>
+        <li><strong>O_z</strong> — acceleration resistance, N. Equals m·dv/dt: whatever is left over goes into accelerating the mass.</li>
+        <li><strong>O_aux</strong> — auxiliary electrical loads. Named on the course slides, not modelled here.</li>
+        <li><strong>α</strong> — the road angle. We write gradients as tan α, so a 10 % climb is tan α = 0.10, about 5.7°.</li>
+        <li><strong>m·g</strong> — weight, N. 1400 kg times 9.81, about 13.7 kN.</li>
+      </ul>
     </aside>
   </section>
 
@@ -405,6 +416,13 @@
       <p><strong>Practical:</strong> when a slide carries a grey "open in Dyad" strip, that is
       the model to have on the second screen for that beat. You do not need it open all the
       time — only where the diagram says something the plot cannot.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Component</strong> — a Dyad block with ports, parameters and equations. <code>IdealEngine</code> is one.</li>
+        <li><strong>Harness</strong> — a component whose job is to make another one runnable, by connecting sources to its inputs and setting initial conditions.</li>
+        <li><strong>Analysis</strong> — a named, runnable experiment: a model plus a stop time plus the parameters you may vary. <code>CruiseLoopTransient</code> is one.</li>
+        <li><strong>Structural parameter</strong> — one that changes the <em>equations</em>, so each value is a separately compiled model. <code>with_I</code> is one; an ordinary parameter like <code>k</code> is not.</li>
+      </ul>
     </aside>
   </section>
 
@@ -422,9 +440,9 @@
           <tr><td>gear ratio <em>i</em></td><td class="num">4.0</td><td>—</td></tr>
           <tr><td>torque limit <em>T</em><sub>max</sub></td><td class="num">150</td><td>N·m</td></tr>
           <tr><td>manifold lag <em>τ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
-          <tr><td>transport delay <em>θ<sub>e</sub></em></td><td class="num">0.04</td><td>s</td></tr>
-          <caption>Quoted from <code>docs/HANDOVER.md</code>. In code, read them from
-            <code>CAR</code> — never retype a number into a cell.</caption>
+          <tr><td>transport delay <em>θ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
+          <caption>Nine numbers. Everything else in this lecture is arithmetic on
+            them.</caption>
         </table>
       </div>
       <div>
@@ -444,10 +462,9 @@
         </div>
       </div>
     </div>
-    <!-- theta_e is expected to change from 0.04 s to roughly 0.2-0.3 s (HANDOVER Risk 1):
-         at 0.04 s the Ziegler-Nichols demo in notebook 08 relay-limit-cycles against the
-         torque limit instead of oscillating cleanly. If that change lands, this table and
-         every gain quoted with a dagger in sections 03 and 08 move with it. -->
+    <!-- theta_e settled at 0.3 s (HANDOVER Risk 1, resolved): at 0.04 s the Ziegler-Nichols
+         demo in notebook 08 relay-limit-cycled against the torque limit instead of oscillating
+         cleanly. The shipped models and CAR both carry 0.3 s; this table follows them. -->
     <aside class="notes">
       <p><strong>Say:</strong> this is the entire car. Nine numbers. Everything else in the
       lecture — the terminal speed, the cruise torque, the hill that beats it, the gains —
@@ -459,9 +476,23 @@
       <p><strong>They get wrong:</strong> students read 150 N·m and think "that is a weak
       engine". It is engine torque before a gear ratio of 4 and a 0.31 m wheel — nearly 2 kN at
       the road. Do the multiplication out loud once.</p>
-      <p><strong>Housekeeping:</strong> if you changed <code>theta_e</code> from 0.04 s when
-      the models were built, correct this row out loud and say why — it is the whole powertrain
-      torque path, not just injection.</p>
+      <p><strong>On the transport delay:</strong> 0.3 s is the whole powertrain torque-response
+      path — ECU, fuelling, combustion, driveline compliance — not injection alone. If someone
+      objects that injection is faster than that, they are right, and the model lumps more than
+      injection into this one number.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>m</strong> = 1400 kg — vehicle mass.</li>
+        <li><strong>C<sub>d</sub>A</strong> = 0.63 m² — drag area: the drag coefficient times the frontal area, kept as one number because only the product matters.</li>
+        <li><strong>ρ</strong> = 1.2 kg/m³ — air density at sea level.</li>
+        <li><strong>f_r</strong> = 0.012 — rolling resistance coefficient, dimensionless. Tyre losses as a fraction of the normal load.</li>
+        <li><strong>r</strong> = 0.31 m — wheel rolling radius.</li>
+        <li><strong>i</strong> = 4.0 — total gear ratio, dimensionless. Engine turns four times per wheel turn.</li>
+        <li><strong>T<sub>max</sub></strong> = 150 N·m — the engine's torque ceiling.</li>
+        <li><strong>τ<sub>e</sub></strong> = 0.3 s — the manifold-filling lag: a first-order lag, how long the engine takes to build the torque it was asked for.</li>
+        <li><strong>θ<sub>e</sub></strong> = 0.3 s — the powertrain transport delay: a pure dead time, how long before anything at all happens.</li>
+        <li><strong>1935 N</strong> — maximum tractive force, T<sub>max</sub>·i/r. <strong>246 km/h</strong> — terminal speed. <strong>31 and 40 N·m</strong> — torque to hold 90 and 110 km/h.</li>
+      </ul>
     </aside>
   </section>
 
@@ -493,6 +524,12 @@
       a silent factor of 3.6. Put the conversion in the model where you can see it, once.</p>
       <p><strong>Ask the room:</strong> if I tell you my gain is 220, what is missing?
       <em>(Units. Wait for it — someone will say it.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k</strong> — the controller gain, N·m per km/h. "This many newton-metres for every km/h I am off."</li>
+        <li><strong>km/h</strong> — the unit of the setpoint, the measurement and therefore the error.</li>
+        <li><strong>SI inside</strong> — the plant computes in m/s, N, kg. One block, <code>ToKmPerHour</code>, converts, and it sits on the sensor output.</li>
+      </ul>
     </aside>
   </section>
 

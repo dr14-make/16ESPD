@@ -7,7 +7,7 @@
     <p class="nb-no">Notebook 10</p>
     <h2>Wheel and slip</h2>
     <p class="thesis">The tire is an actuator too, and it saturates — which makes cruise control dangerous on ice.</p>
-    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/10-wheel-and-slip.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/10-wheel-and-slip.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> everything so far assumed the tire does whatever the driveline
       asks. We are going to remove that assumption, and it costs us more than anything else we
@@ -15,6 +15,7 @@
       <p><strong>Timing:</strong> 12 minutes if you have them. This is the section students
       remember, and it is the one that motivates lecture 2 — so if you can only show one beat,
       show the ice patch.</p>
+          <p><strong>Cut order:</strong> first to go. Everything here is upside; the lecture stands without it.</p>
     </aside>
   </section>
 
@@ -57,6 +58,13 @@ plot_speed(sol_l1; setpoint = 110)
       that is worth showing on its own. Not every added detail matters. Knowing which ones do is
       the modeling skill.</p>
       <p><strong>Read out</strong> the rise time and overshoot and compare with section 05.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>L1</strong> — the model ladder's second rung: wheel inertia plus an ideal rolling contact. <strong>L0</strong> was everything up to section 09; <strong>L2</strong> adds slip.</li>
+        <li><strong>Wheel inertia J<sub>w</sub></strong> — rotational inertia the engine must also accelerate, kg·m².</li>
+        <li><strong>rise_time</strong> — 10 % to 90 % of the commanded step, seconds. <strong>overshoot</strong> — peak past the setpoint, per cent.</li>
+        <li><strong>Ideal rolling</strong> — wheel speed times radius <em>is</em> road speed, by definition. No sliding, ever.</li>
+      </ul>
     </aside>
   </section>
 
@@ -124,6 +132,14 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       <em>(No. It watches the engine's saturation, and the engine is not saturating. This is a
       limit the controller has no way of seeing. That is the uncomfortable point of this whole
       section.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>mu_scale = 0.2</strong> — the road friction multiplier. 1.0 is dry tarmac; 0.2 is ice.</li>
+        <li><strong>wheel.v_wheel_kmh</strong> — the wheel's circumferential speed, ω·r, expressed in km/h so it can share an axis with the car.</li>
+        <li><strong>v_kmh</strong> — the car's actual road speed.</li>
+        <li><strong>Tsit5()</strong> — an explicit Runge-Kutta solver. The friction curve has a discontinuous second derivative, which explicit methods handle better than BDF.</li>
+        <li><strong>The limit that is not in the engine</strong> — the engine is nowhere near its ceiling. The ceiling is in the contact patch.</li>
+      </ul>
     </aside>
   </section>
 
@@ -170,6 +186,15 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
       side of that peak? <em>(Less force, so less resistance to the engine's torque, so it
       accelerates, so more slip, so even less force. Let them build the loop themselves — it is
       the next slide and they can derive it.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>κ (kappa)</strong> — the <em>slip ratio</em>, dimensionless: (ω·r − v) / max(|v|, ε). Zero means pure rolling; positive means the wheel is turning faster than the car is moving.</li>
+        <li><strong>ω</strong> — wheel angular velocity, rad/s. <strong>r</strong> — wheel radius. <strong>v</strong> — vehicle speed, m/s.</li>
+        <li><strong>ε (v_eps)</strong> — a small floor on the denominator so slip is defined at standstill.</li>
+        <li><strong>μ (mu)</strong> — the friction coefficient: the fraction of the normal load available as tractive force.</li>
+        <li><strong>F<sub>z</sub></strong> — the normal load on the wheel, N. <strong>F<sub>x</sub> = μ·F<sub>z</sub></strong> — the longitudinal force it can make.</li>
+        <li><strong>sAdhesion, sSlide</strong> — where the curve peaks and where it has fully transitioned to sliding. <strong>μ_A, μ_S</strong> — the adhesion and sliding coefficients.</li>
+      </ul>
     </aside>
   </section>
 
@@ -201,6 +226,12 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
       <p><strong>Ask the room:</strong> what would you have to control to stay on the left of
       the peak? <em>(Slip itself — which needs a sensor for it and a loop around it. Hold that;
       it is the last slide.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Positive feedback</strong> — an effect that reinforces its own cause. Here it is inside the plant, and nobody wired it.</li>
+        <li><strong>Open-loop unstable</strong> — the plant runs away on its own, with no controller involved.</li>
+        <li><strong>The well-behaved gate</strong> — section 08's first question. Past the friction peak, the answer is no, and no PID tuning fixes it.</li>
+      </ul>
     </aside>
   </section>
 
@@ -254,6 +285,14 @@ plot_ice_patch(sol)</code></pre>
       faster the better the controller is tuned.</p>
       <p><strong>Say:</strong> and in a real car the driver feels this as the back stepping out
       on a motorway at 90 km/h, caused by a system they switched on for comfort.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>mu_low = 0.15</strong> — friction during the ice patch.</li>
+        <li><strong>t_ice = (40, 42) s</strong> — two seconds of it.</li>
+        <li><strong>v_set = 90 km/h</strong> — the cruise speed.</li>
+        <li><strong>Four traces</strong> — vehicle speed, wheel speed, slip ratio, commanded torque, on a shared time axis with the patch shaded.</li>
+        <li><strong>traction_limit = true</strong> — the friction-aware torque ceiling, in the following run.</li>
+      </ul>
     </aside>
   </section>
 
@@ -322,6 +361,12 @@ sol_tc = solve(ODEProblem(mtkcompile(
       <p><strong>Say:</strong> that is a good note to end on generally — almost every advanced
       control architecture you will meet exists because somebody found a plant that defeated
       the simple one. Not because it was elegant.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Cascade control</strong> — one loop inside another: a fast inner loop regulating slip, a slower outer loop regulating speed. Lecture 2's subject.</li>
+        <li><strong>Inner loop</strong> — fast, local, rejects disturbances before the outer loop notices. <strong>Outer loop</strong> — slow, comfortable, sets the inner loop's setpoint.</li>
+        <li><strong>Why real cruise control disengages</strong> — two loops fighting over one actuator, and the speed loop has the worse information.</li>
+      </ul>
     </aside>
   </section>
 

@@ -7,13 +7,14 @@
     <p class="nb-no">Notebook 09</p>
     <h2>Discretization</h2>
     <p class="thesis">The same controller gets worse purely because it looks less often.</p>
-    <p class="meta"><span class="tier tier-2">Tier 2</span> &nbsp; <code>notebooks/lecture01/09-discretization.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/09-discretization.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> everything we have designed today is continuous. Nothing you
       will ever ship is. This section is the bridge, and it uses the gains we just derived in
       section 08 — same controller, nothing re-tuned.</p>
       <p><strong>Timing:</strong> 8 minutes. If you are short, the sample-time sweep alone
       carries the point.</p>
+          <p><strong>Cut order:</strong> second to go. Drop this before touching the P → PI → PID → windup run.</p>
     </aside>
   </section>
 
@@ -43,6 +44,13 @@
       <p><strong>Say:</strong> digital control brings other effects too — quantization, and the
       transport delay of the computation itself. We are only going to look at sample time,
       because it is the one that will bite you first.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Sample time T<sub>s</sub></strong> — the interval between one update and the next, seconds.</li>
+        <li><strong>Sample rate</strong> — its reciprocal, in Hz.</li>
+        <li><strong>Zero-order hold</strong> — holding the last commanded value constant until the next tick. The staircase.</li>
+        <li><strong>Quantization</strong> — the other digital effect, from finite word length. Real, and not our subject today.</li>
+      </ul>
     </aside>
   </section>
 
@@ -122,6 +130,12 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
       <em>(Steer towards the reasoning rather than a number: fast compared with what? The
       plant's time constant is about a minute; the loop's own bandwidth is seconds. That second
       number is the one that matters.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T<sub>s</sub> = 0.01, 0.1, 0.4, 1.0 s</strong> — the sweep.</li>
+        <li><strong>k_zn, Ti_zn, Td_zn</strong> — the Ziegler-Nichols gains from section 08, untouched. Nothing is re-tuned.</li>
+        <li><strong>Ringing</strong> — oscillation that decays, but slowly. <strong>Diverging</strong> — it does not decay at all.</li>
+      </ul>
     </aside>
   </section>
 
@@ -154,6 +168,12 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
       staircase hurts.</p>
       <p><strong>Ask the room:</strong> why would half a sample of delay be enough to destroy a
       loop that was fine? <em>(Because phase margin is a finite budget. Next slide.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Surrogate</strong> — a stand-in that reproduces the mechanism without being the real thing. Ours is a half-sample transport delay.</li>
+        <li><strong>Clocked partition</strong> — a genuinely sampled section of a model, with its own clock. Dyad ships no sampled blocks, so we do not have one.</li>
+        <li><strong>What is faithful</strong> — the phase loss, and therefore every trend in the previous plot. <strong>What is missing</strong> — the staircase.</li>
+      </ul>
     </aside>
   </section>
 
@@ -190,6 +210,14 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
       divergence. That ordering is a diagnostic — if a loop that used to be fine starts
       overshooting after a software change, ask what happened to the loop rate before you touch
       a gain.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Δφ ≈ −ωT<sub>s</sub>/2</strong> — the phase a zero-order hold costs, in radians, at frequency ω.</li>
+        <li><strong>ω</strong> — angular frequency, rad/s. <strong>ω<sub>c</sub></strong> — the crossover frequency: where the loop gain passes through 1, and the frequency at which phase margin is measured.</li>
+        <li><strong>Phase margin</strong> — how much extra phase lag the loop can absorb before it oscillates. A budget, measured in degrees.</li>
+        <li><strong>The rule of thumb</strong> — spend at most 0.2 rad (≈12°) on sampling: T<sub>s</sub> &lt; 0.4/ω<sub>c</sub>, i.e. 20–30× the <em>closed-loop bandwidth</em>, not the plant's time constant.</li>
+        <li><strong>Bandwidth</strong> — roughly, the fastest thing the closed loop can follow.</li>
+      </ul>
     </aside>
   </section>
 
@@ -236,6 +264,11 @@ sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
       <p><strong>Ask the room:</strong> is there a third option? <em>(Yes — a better discrete
       design rather than a continuous design converted. That is a course of its own, and it is
       why the conversion method matters.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Ku_slow, Pu_slow</strong> — the ultimate gain and period measured <em>at the slow sample rate</em>, which are not the continuous ones.</li>
+        <li><strong>Re-tuning buys stability, not performance</strong> — the slow loop stays a slow loop. The gap to the continuous design is what the cheap processor cost.</li>
+      </ul>
     </aside>
   </section>
 

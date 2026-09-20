@@ -12,13 +12,14 @@
     <p class="nb-no">Notebook 01</p>
     <h2>The car</h2>
     <p class="thesis">Before you can control something, you have to know what it does on its own.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/01-the-car.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/01-the-car.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> no controller in this notebook. Not one. We are going to spend
       the first ten minutes on the car alone, because every mistake people make with PID starts
       with not knowing the plant.</p>
       <p><strong>Timing:</strong> 10 minutes. Two simulations, both short to describe and slow
       to run — start the first solve while you are still talking about the force balance.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -46,9 +47,6 @@
     <div class="model solo">
       <span class="label">Open in Dyad</span>
       <code>dyad/Vehicle/CarPlant.dyad</code>
-      <span class="show">show — <b>two inputs on the left</b> (<code>tau_cmd</code>,
-        <code>grade</code>) and <b>one measurement out</b> (<code>v_kmh</code>). The four boxes
-        between them are the next forty minutes.</span>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> four boxes and you can describe any plant in this building. The
@@ -59,6 +57,14 @@
       <p><strong>Ask the room:</strong> is the gradient an input or a disturbance?
       <em>(Both, formally — it enters the same way. The difference is that we choose u and the
       hill chooses itself. That distinction is the whole lecture.)</em></p>
+          <p><strong>In the model:</strong> <b>two inputs on the left</b> (<code>tau_cmd</code>, <code>grade</code>) and <b>one measurement out</b> (<code>v_kmh</code>). The four boxes between them are the next forty minutes.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Input</strong> — anything that acts on the system. Split into what we choose (u) and what we do not (d).</li>
+        <li><strong>Output</strong> — what we can measure. Not the same as the state: a state we cannot observe is not an output.</li>
+        <li><strong>State</strong> — the smallest set of numbers that, with the future inputs, determines the future. Loosely: what the system remembers.</li>
+        <li><strong>Disturbance</strong> — an input we cannot command. The split between input and disturbance is a modelling choice, not a property of the car.</li>
+      </ul>
     </aside>
   </section>
 
@@ -81,9 +87,6 @@
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Vehicle/VehicleBody.dyad</code>
-        <span class="show">show — <b>four things pulling on one flange</b>: the mass, the
-          quadratic drag, the rolling resistance, the grade force. The equation above, as a
-          diagram.</span>
       </div>
     </div>
     <aside class="notes">
@@ -97,6 +100,17 @@
       because dropping terms is a decision, not an accident.</p>
       <p><strong>Tie back:</strong> slide 16 of the existing engine deck names these O<sub>V</sub>,
       O<sub>f</sub>, O<sub>z</sub>, O<sub>s</sub>. Same equation, their notation.</p>
+          <p><strong>In the model:</strong> <b>four things pulling on one flange</b>: the mass, the quadratic drag, the rolling resistance, the grade force. The equation above, as a diagram.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>m dv/dt</strong> — mass times acceleration, N. The left-hand side is Newton's second law along the direction of travel.</li>
+        <li><strong>T·i/r</strong> — tractive force, N. <em>T</em> engine torque (N·m), <em>i</em> gear ratio 4.0, <em>r</em> wheel radius 0.31 m.</li>
+        <li><strong>½ρC<sub>d</sub>Av²</strong> — drag, N. <em>ρ</em> air density, <em>C<sub>d</sub>A</em> drag area, <em>v</em> speed in m/s.</li>
+        <li><strong>f_r·m·g·cos α</strong> — rolling resistance, N. The cosine is 0.995 even on a 10 % slope, so it barely moves.</li>
+        <li><strong>m·g·sin α</strong> — the slope term, N.</li>
+        <li><strong>α</strong> — road angle. Gradients are given as tan α: 10 % means 0.10.</li>
+        <li><strong>O_V, O_f, O_z, O_s</strong> — the course slides' names for drag, rolling, acceleration and slope resistance. Same four terms, their notation.</li>
+      </ul>
     </aside>
   </section>
 
@@ -135,40 +149,120 @@ v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
       <p><strong>Ask the room, before you show the next slide:</strong> 246 km/h from a 150 N·m
       engine. Does anyone believe that? <em>(Let the discomfort sit for a second — the next
       slide is the answer, and it lands much harder if they noticed first.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>c_drag</strong> = ½ρC<sub>d</sub>A = 0.378 N per (m/s)² — the whole drag law compressed to one coefficient.</li>
+        <li><strong>F_roll</strong> = f_r·m·g = 165 N — rolling resistance on the flat.</li>
+        <li><strong>F_max</strong> = T<sub>max</sub>·i/r = 1935 N — every newton the engine can put on the road.</li>
+        <li><strong>v_terminal</strong> = √((F_max − F_roll)/c_drag) = 68.4 m/s = 246 km/h — where drag eats everything that is left.</li>
+        <li><strong>dv/dt = 0</strong> — the steady-state condition. Setting the derivative to zero is what turns a differential equation into arithmetic.</li>
+      </ul>
     </aside>
   </section>
 
   <section>
     <h2>246 km/h is wrong, and it is wrong on purpose</h2>
-    <div class="callout warn">
-      <span class="label">The model's honest limitation</span>
-      Our engine delivers its peak torque at every speed. A real one does not: peak torque
-      lives in a band of a few thousand rpm and falls away on both sides.
-    </div>
-    <ul class="small">
-      <li>Everything below 130 km/h — every demo in this lecture — is unaffected, because we
-        never ask for more than about 40 N·m of the 150 available.</li>
-      <li>The top end is fiction. Say so now rather than let a student find it later and
-        distrust the parts that are true.</li>
-      <li>Fixing it means an engine torque map — <strong>which is where lecture 2 starts.</strong></li>
-    </ul>
-    <div class="model solo">
-      <span class="label">Open in Dyad</span>
-      <code>dyad/Vehicle/IdealEngine.dyad</code>
-      <span class="show">show — the <b><code>limiter</code></b> block. Its ceiling is a
-        <em>constant</em>, <code>T_max</code>. Nothing in this model knows the engine's speed,
-        and that is exactly the assumption this slide is confessing.</span>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="callout warn small">
+          <span class="label">The model's honest limitation</span>
+          Our engine delivers peak torque at every speed. A real one does not: peak torque
+          lives in a band of a few thousand rpm and falls away on both sides.
+        </div>
+        <ul class="small">
+          <li>Every demo in this lecture runs between 90 and 130 km/h, and never asks for more
+            than about 51 N·m of the 150 available. Unaffected.</li>
+          <li>The top end is fiction. Say so now rather than let a student find it later and
+            distrust the parts that are true.</li>
+          <li>Fixing it means a torque map — <strong>which is where lecture 2 starts.</strong></li>
+        </ul>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Vehicle/IdealEngine.dyad</code>
+        </div>
+      </div>
+      <div>
+      <svg class="diagram" viewBox="0 0 600 330" role="img"
+           aria-label="Engine torque against crankshaft speed. A flat line at 150 newton-metres across the whole range is our model; a curve that rises, plateaus and falls away is the shape of a real engine. The band where this lecture operates is shaded, and the crankshaft speed implied by 246 km/h is marked well past the real curve's peak.">
+        <defs>
+          <marker id="tm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        </defs>
+
+        <rect x="235.4" y="30" width="69.9" height="250" fill="#eaf1fa"/>
+        <text class="lbl" x="214" y="300">90–130 km/h</text>
+        <text class="lbl" x="206" y="316">where this lecture lives</text>
+
+        <path class="wire" d="M78 30 V280 H548"/>
+        <text class="lbl" x="30" y="63">150</text>
+        <text class="lbl" x="44" y="284">0</text>
+        <text class="lbl" x="6" y="22">torque [N·m]</text>
+        <text class="lbl" x="78" y="318">crank speed [rpm]</text>
+
+        <path class="ghost" d="M78 59.4 H548"/>
+        <path class="arrow-acc" d="M78 59.4 H548" stroke-width="4"/>
+        <text class="f-lbl-acc" x="86" y="50">our model — 150 N·m, at every speed</text>
+
+        <polyline points="124.0,213.8 129.1,212.5 134.2,208.7 139.3,202.5 144.4,194.1 149.5,183.7 154.6,171.8 159.7,158.8 164.8,145.1 170.0,131.1 175.1,117.4 180.2,104.3 185.3,92.4 190.4,82.1 195.5,73.7 200.6,67.5 205.7,63.6 210.8,62.4 215.9,61.9 221.0,61.4 226.2,61.0 231.3,60.6 236.4,60.3 241.5,60.0 246.6,59.7 251.7,59.6 256.8,59.4 261.9,59.4 267.0,59.4 272.1,59.6 277.2,59.7 282.3,60.0 287.5,60.3 292.6,60.6 297.7,61.0 302.8,61.4 307.9,61.9 313.0,62.4 318.1,62.5 323.2,62.8 328.3,63.3 333.4,64.0 338.5,64.9 343.7,66.1 348.8,67.4 353.9,68.9 359.0,70.6 364.1,72.4 369.2,74.4 374.3,76.6 379.4,78.9 384.5,81.3 389.6,83.8 394.7,86.4 399.8,89.1 405.0,91.9 410.1,94.8 415.2,97.7 420.3,100.6 425.4,103.5 430.5,106.5 435.6,109.4 440.7,112.3 445.8,115.1 450.9,117.9 456.0,120.6 461.2,123.3 466.3,125.8 471.4,128.2 476.5,130.5 481.6,132.6 486.7,134.6 491.8,136.5 496.9,138.2 502.0,139.7 507.1,141.0 512.2,142.1 517.3,143.0 522.5,143.8 527.6,144.3 532.7,144.6 537.8,144.7 542.9,144.7 548.0,144.7" fill="none" stroke="#a81f16" stroke-width="3"/>
+        <text class="f-lbl-dngr" x="300" y="112">a real engine</text>
+
+        <path class="ghost" d="M508.8 59.4 V141.4"/>
+        <circle cx="508.8" cy="59.4" r="5" fill="#1f5fa8"/>
+        <circle cx="508.8" cy="141.4" r="5" fill="#a81f16"/>
+        <path class="arrow" d="M508.8 250 V152" marker-end="url(#tm-ar)"/>
+        <text class="lbl-strong" x="452" y="300">246 km/h</text>
+        <text class="lbl" x="456" y="316">= 8400 rpm</text>
+        <text class="f-lbl-dngr" x="514" y="176">≈ 95</text>
+      </svg>
+        <p class="small muted">The red curve is the <em>shape</em> of a petrol engine, drawn to
+          make the comparison — not a measurement, and not this car. The blue line is exact: it
+          is what <code>IdealEngine</code> actually computes.</p>
+      </div>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> a model is a set of assumptions with a speed limit on it, and
       the engineering skill is knowing where that limit is. Ours is honest from 0 to about
       130 km/h and a lie above it.</p>
+      <p><strong>Point at the plot, in this order:</strong></p>
+      <ul>
+        <li>The <strong>blue line</strong>. Flat, at 150, all the way across. That is not a
+          simplification of our model — it <em>is</em> our model. <code>IdealEngine</code>
+          contains a limiter whose ceiling is a constant, and nothing in it knows how fast the
+          crankshaft is turning.</li>
+        <li>The <strong>red curve</strong>. Same peak, but it only reaches it in a band, and it
+          falls away either side. Nothing here is measured — say that out loud — it is the
+          shape every petrol engine has, and the shape is the whole argument.</li>
+        <li>The <strong>shaded band</strong>. Everything we do today happens in there, roughly
+          3100 to 4400 rpm, and in there the two curves agree. Our model is fine <em>because of
+          where we are using it</em>, not because it is right.</li>
+        <li>The <strong>mark at 8400 rpm</strong>. That is where 246 km/h puts the crankshaft.
+          Our model still says 150 N·m. A real engine is down around 95 and falling — so the
+          car never gets there, and the terminal speed we computed is fiction.</li>
+      </ul>
+      <p><strong>Read out:</strong> 90 km/h is 3080 rpm, 130 km/h is 4450, and 246 km/h would be
+      8430. Those come from the same three numbers as the force balance — wheel radius, gear
+      ratio, road speed — so a student can check them.</p>
       <p><strong>They get wrong:</strong> students treat a simulation result as a measurement.
       This is the one slide in the lecture that exists purely to inoculate against that. Do not
       skip it even when short on time — it costs 40 seconds.</p>
       <p><strong>Ask the room:</strong> what would you have to add to the model to get a
       believable top speed? <em>(Torque as a function of engine speed. That is lecture 2 —
       and you have just written its first slide for me.)</em></p>
+          <p><strong>In the model:</strong> The <b><code>limiter</code></b> block. Its ceiling is a <em>constant</em>, <code>T_max</code>. Nothing in this model knows the engine's speed, and that is exactly the assumption this slide is confessing.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Ideal engine</strong> — one that delivers its peak torque at every speed. Ours does; a real one does not.</li>
+        <li><strong>Torque map</strong> — torque as a function of crankshaft speed, T<sub>max</sub>(ω) instead of a constant. The fix, and lecture 2's subject.</li>
+        <li><strong>Model validity</strong> — the range over which you are willing to believe it. Ours: honest to about 130 km/h, fiction above.</li>
+      </ul>
+      <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Crank speed</strong> — engine shaft speed in rpm, revolutions per minute. Road speed ÷ wheel radius gives wheel rad/s; times the gear ratio gives the crank.</li>
+        <li><strong>150 N·m</strong> — <code>T_max</code>, the constant ceiling in <code>IdealEngine</code>'s limiter. The blue line.</li>
+        <li><strong>≈ 95 N·m</strong> — what the red shape gives at 8400 rpm. Indicative of a real engine, not of ours.</li>
+        <li><strong>3080 / 4450 / 8430 rpm</strong> — the crank speeds for 90, 130 and 246 km/h in this gearing.</li>
+        <li><strong>51 N·m</strong> — the most any demo in this lecture asks of the engine, on the 130 km/h climb in section 06.</li>
+      </ul>
     </aside>
   </section>
 
@@ -198,9 +292,6 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/WideOpenThrottle.dyad</code>
-          <span class="show">show — <b>why a harness exists</b>: two constant sources feeding
-            the plant's two inputs, and the initial conditions. Leave those inputs dangling and
-            the model will not solve.</span>
         </div>
         <div class="callout warn small">
           <span class="label">Watch the time axis</span>
@@ -229,6 +320,14 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
       feedback in this lecture.</p>
       <p><strong>Check:</strong> if the curve runs away instead of flattening, the sign on the
       drag force is wrong.</p>
+          <p><strong>In the model:</strong> <b>why a harness exists</b>: two constant sources feeding the plant's two inputs, and the initial conditions. Leave those inputs dangling and the model will not solve.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>300 s</strong> — the run length. About twice the 143 s the car needs to reach 99 % of terminal speed.</li>
+        <li><strong>67 s</strong> — the car's own time constant near 100 km/h: m ÷ (dF/dv), mass divided by how hard drag pushes back per unit of speed.</li>
+        <li><strong>Time constant</strong> — the time to cover 63 % of the remaining distance to the final value. Three of them gets you to 95 %.</li>
+        <li><strong>The dashed line</strong> — the 246 km/h we computed by hand. Two routes, one number.</li>
+      </ul>
     </aside>
   </section>
 
@@ -259,9 +358,6 @@ plot_torque(step_test;
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CarStepTest.dyad</code>
-          <span class="show">show — <b><code>tau_lo</code> and <code>tau_hi</code> are
-            parameters</b>, so the step test runs the equation the students just wrote down.
-            Then <code>IdealEngine.dyad</code>: <b>delay → lag → limiter</b>, in that order.</span>
         </div>
         <ol class="small">
           <li>Wait until the process is at rest.</li>
@@ -292,6 +388,16 @@ plot_torque(step_test;
       <p><strong>Ask the room:</strong> why step from 31 to 41 N·m rather than 0 to 150?
       <em>(Because we want the response around the operating point we actually drive at. A huge
       step wanders across the nonlinearity in v².)</em></p>
+          <p><strong>In the model:</strong> <b><code>tau_lo</code> and <code>tau_hi</code> are parameters</b>, so the step test runs the equation the students just wrote down. Then <code>IdealEngine.dyad</code>: <b>delay → lag → limiter</b>, in that order.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T_90 = 31.1 N·m, T_110 = 40.1 N·m</strong> — the cruise torques for 90 and 110 km/h, derived from the force balance and handed to the model as parameters.</li>
+        <li><strong>t_step = 50 s</strong> — when the command steps.</li>
+        <li><strong>Commanded torque</strong> — <code>cmd.y</code>, what the controller asks for.</li>
+        <li><strong>Delivered torque</strong> — <code>plant.engine.limiter.y</code>, what comes out of the engine after the delay, the lag and the limit.</li>
+        <li><strong>Dead time</strong> — the flat gap at the start where the command has changed and nothing has happened. A pure delay.</li>
+        <li><strong>Lag</strong> — the curve after it. A first-order response, not a delay: it starts immediately and approaches gradually.</li>
+      </ul>
     </aside>
   </section>
 
@@ -330,6 +436,13 @@ plot_torque(step_test;
       <p><strong>Flag forward:</strong> every requirement you will ever be given is phrased in
       these terms — rise time and overshoot live in the transient, steady-state error lives in
       the other half.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Transient response</strong> — the temporary part, which decays. Rise time, overshoot and settling time are measured here.</li>
+        <li><strong>Steady-state response</strong> — what is left once the transient has died. Steady-state error is measured here.</li>
+        <li><strong>Dynamic response</strong> — the sum of the two. The whole journey from one settled state to the next.</li>
+        <li><strong>Settling time</strong> — when the response stays within a band, usually 2 % or 5 %, of its final value. The band is our choice, not the system's.</li>
+      </ul>
     </aside>
   </section>
 
@@ -355,27 +468,21 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
             <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
           </div>
         </div>
-        <div class="readout">
-          <div class="r"><span class="v">2.21</span><span class="k">K, km/h per N·m</span></div>
-          <div class="r"><span class="v">63.0</span><span class="k">τ, seconds</span></div>
-          <div class="r"><span class="v">1.63</span><span class="k">θ, seconds</span></div>
-        </div>
-
-      </div>
-      <div>
-        <figure class="fig">
-          <img src="assets/figures/01-step-annotated.svg"
-               alt="The step response with the dead time, the time constant and the steady-state gain marked on the curve.">
-          <figcaption>The annotated step: θ before anything moves, τ for the rise, K from the
-            settled change divided by the size of the torque step.</figcaption>
-        </figure>
+        <p class="small" style="margin-top:0.5em"><strong>K</strong> = 2.21 km/h per N·m
+          &nbsp;·&nbsp; <strong>τ</strong> = 63.0 s &nbsp;·&nbsp; <strong>θ</strong> = 1.63 s</p>
         <div class="callout warn small">
-          <span class="label">θ is not the engine's 0.04 s delay</span>
-          It is forty times larger. Drag is quadratic, so the local time constant falls from
-          74.1 s at 90 km/h to 60.6 s at 110, and dead time is the only FOPTD parameter that can
-          absorb that curvature. The fit measures bend, not delay.
+          <span class="label">θ is not the engine's delay</span>
+          It is five times larger. Drag is quadratic, so the car's time constant changes across
+          the step, and θ is the only parameter that can absorb that. The fit measures bend,
+          not delay.
         </div>
       </div>
+      <figure class="fig">
+        <img src="assets/figures/01-step-response.svg"
+             alt="The speed response to the torque step: flat at 90 km/h, then an S-shaped climb settling at 110.">
+        <figcaption>The step response the three numbers are read from. θ is the flat piece
+          before it moves, τ the rise, K the settled change divided by the torque step.</figcaption>
+      </figure>
     </div>
     <aside class="notes">
       <p><strong>Read out</strong> all three values from the cell output, slowly, with units.
@@ -385,7 +492,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       free-body diagram, no equations of motion. If somebody handed you this car as a sealed
       box you could still have got here.</p>
       <p><strong>Do not skip the amber box, and do not let it embarrass you.</strong> A student
-      who knows the engine's delay is 0.04 s will see 1.63 s and conclude the fit is broken.
+      who knows the engine's delay is 0.3 s will see 1.63 s and conclude the fit is broken.
       It is not. FOPTD has three parameters and our car is not FOPTD — it is a <em>quadratic</em>
       drag law, so its time constant is different at every speed. The fit spends θ on the
       mismatch because θ is the only parameter left.</p>
@@ -401,6 +508,15 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       <p><strong>They get wrong:</strong> reading τ as "time to reach the final value". It is
       the time to reach 63 % of it. The helper uses the two-landmark construction from the
       tuning document, not an eyeball.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>K = 2.21 km/h per N·m</strong> — steady-state gain: how far the output moves per unit of input, once settled.</li>
+        <li><strong>τ = 63.0 s</strong> — time constant: how long it takes to get there, dominated by the vehicle, not the engine.</li>
+        <li><strong>θ = 1.63 s</strong> — dead time as the fit reports it. <em>Not</em> the engine's 0.3 s delay — see the amber box.</li>
+        <li><strong>FOPTD</strong> — first order plus dead time, the three-parameter shape these numbers describe.</li>
+        <li><strong>Tangent gain / time constant</strong> — the local values computed from the force balance at each end of the step: 74.1 s at 90 km/h, 60.6 s at 110. They bracket the fit honestly.</li>
+        <li><strong>Secant gain</strong> — the total speed change divided by the total torque change, 20 ÷ 9.04. What K should land near.</li>
+      </ul>
     </aside>
   </section>
 

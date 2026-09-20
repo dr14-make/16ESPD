@@ -7,12 +7,13 @@
     <p class="nb-no">Notebook 07</p>
     <h2>Derivative and noise</h2>
     <p class="thesis">The derivative does not care how big the noise is, only how fast.</p>
-    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/07-derivative-and-noise.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/07-derivative-and-noise.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> in section 05 the derivative was free. It cost nothing and it
       removed the overshoot. Here is the bill.</p>
       <p><strong>Timing:</strong> 10 minutes. The two-sines slide is the one that has to land;
       everything else is evidence.</p>
+          <p><strong>Cut order:</strong> first to go. Everything here is upside; the lecture stands without it.</p>
     </aside>
   </section>
 
@@ -57,6 +58,12 @@ plot(t, [v_true v_meas]; lw = 2,
       lecture's fallback, and a plot that changes on every run is worse than useless. Mention it
       only if someone asks why it looks periodic — then it is a good answer about reproducible
       simulation.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>plant.v_kmh</strong> — the true speed. <strong>noise.y</strong> — the measured speed, with noise added.</li>
+        <li><strong>N<sub>d</sub> = 10</strong> — a sane derivative filter coefficient for this first run.</li>
+        <li><strong>Deterministic noise</strong> — a sum of sines, not a random process, so the committed plots reproduce exactly. Say so only if asked why it looks periodic.</li>
+      </ul>
     </aside>
   </section>
 
@@ -91,6 +98,14 @@ plot(t, [v_true v_meas]; lw = 2,
       <p><strong>Ask the room:</strong> our noise is a hundredth of a km/h. If it sits at
       500 rad/s, what does the derivative make of it? <em>(Five km/h per second of apparent
       acceleration, out of nothing. Now multiply by T<sub>d</sub>.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>A</strong> — the amplitude of the noise. Unchanged between the two sines.</li>
+        <li><strong>ω</strong> — the angular frequency, radians per second. Ten times higher in the second.</li>
+        <li><strong>A·ω</strong> — the amplitude of the derivative. This is the whole argument: differentiation multiplies by frequency.</li>
+        <li><strong>ω = 1 rad/s</strong> — the break-even point. Above it the derivative amplifies; below it, attenuates.</li>
+        <li><strong>The yellow tangents</strong> — the slope at the steepest point of each sine, which is what the derivative reports.</li>
+      </ul>
     </aside>
   </section>
 
@@ -142,6 +157,13 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
       <p><strong>Ask the room:</strong> would a real cruise control ever run a pure derivative?
       <em>(No. Which is why the block you get in any real toolchain has a filter coefficient on
       it, and why most industrial loops are PI with no derivative at all.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>N<sub>d</sub> = 1000</strong> — filter cutoff pushed so high it is effectively no filter.</li>
+        <li><strong>extrema(...)</strong> — the minimum and maximum of the commanded torque, i.e. the full swing.</li>
+        <li><strong>TORQUE_CMD</strong> — the signal path for what the controller asks of the engine.</li>
+        <li><strong>delivered = nothing</strong> — the delivered trace is suppressed so the commanded chatter is not hidden behind it.</li>
+      </ul>
     </aside>
   </section>
 
@@ -182,6 +204,13 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <p><strong>Say:</strong> and notice the filter does not remove the noise. It attenuates
       it, so that after the derivative amplifies what is left, the result is small enough not to
       matter. Nothing here is exact.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>sN/(s + N)</strong> — a derivative in series with a first-order low-pass. At low frequency it is a derivative; at high frequency it flattens off instead of growing.</li>
+        <li><strong>N</strong> — the cutoff frequency in rad/s; <code>N<sub>d</sub></code> in the code.</li>
+        <li><strong>s</strong> — the Laplace variable; multiplying by s is differentiating.</li>
+        <li><strong>N<sub>d</sub> = 1000, 100, 20, 5</strong> — the sweep, from no filter to heavy.</li>
+      </ul>
     </aside>
   </section>
 
@@ -212,6 +241,13 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <em>sN/(s+N)</em> is algebraically identical to a feedback loop with <em>N</em> forward and
       an integrator in the feedback path. Same behavior, fewer operations, much harder to read.
       Worth mentioning that the block in your toolchain may well be implemented the second way.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Cutoff frequency</strong> — where the filter starts attenuating, conventionally at −3 dB.</li>
+        <li><strong>Low-pass</strong> — passes slow things, blocks fast ones.</li>
+        <li><strong>The trade-off</strong> — too high and the noise gets through; too low and you filter away the signal, and the derivative stops doing its job.</li>
+        <li><strong>When the bands overlap</strong> — no first-order filter helps, and you need a better sensor or a state estimator.</li>
+      </ul>
     </aside>
   </section>
 

@@ -7,12 +7,13 @@
     <p class="nb-no">Notebook 03</p>
     <h2>Proportional</h2>
     <p class="thesis">Proportional control gets you close, and close is where it stops.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/03-proportional.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/03-proportional.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> from here to the end of section 06 the car never changes. Not
       one parameter. Everything that happens is a change to the controller.</p>
       <p><strong>Timing:</strong> 10 minutes. Three cells, all of them fast, because the closed
       loop settles in seconds where the open loop took minutes.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -37,9 +38,6 @@
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Lecture1/CruiseLoop.dyad</code>
-        <span class="show">show — one <b><code>LimPID</code></b>, and the wire from
-          <code>plant.v_kmh</code> back to <code>controller.u_m</code>. That wire is the whole
-          difference between this section and section 02.</span>
       </div>
     </div>
     <aside class="notes">
@@ -54,6 +52,16 @@
       <p><strong>Ask the room:</strong> which of those two is our car? <em>(The drone. Holding
       110 km/h needs 40 N·m forever, because drag never stops. Let them get there; the next
       three slides are just evidence for the answer they gave.)</em></p>
+          <p><strong>In the model:</strong> One <b><code>LimPID</code></b>, and the wire from <code>plant.v_kmh</code> back to <code>controller.u_m</code>. That wire is the whole difference between this section and section 02.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>u = k·e</strong> — the entire proportional control law. Output is gain times error, and nothing else.</li>
+        <li><strong>k</strong> — the proportional gain, N·m per km/h. Sometimes written K<sub>p</sub>.</li>
+        <li><strong>e = v_set − v</strong> — the error, km/h. Positive means we are going too slowly.</li>
+        <li><strong>u</strong> — commanded engine torque, N·m.</li>
+        <li><strong>T_max = 150 N·m</strong> — the engine's physical ceiling. <strong>y_max</strong> — the controller's own output clamp, a separate number. Both lifted for this section.</li>
+        <li><strong>280 / 17,800 N·m</strong> — the peak torque the gentlest and fiercest gains here ask for at the instant of the step. Against 150 available.</li>
+      </ul>
     </aside>
   </section>
 
@@ -108,6 +116,15 @@ bracket_error!(plt, single; setpoint = 110, sig = SPEED)</code></pre>
       <p><strong>Contrast, loudly:</strong> the open-loop car took several minutes to change
       speed. This took seconds. Same engine, same mass, same drag. Feedback changed the
       dynamics of the system, not just how it is operated.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 14</strong> N·m per km/h — a deliberately gentle gain.</li>
+        <li><strong>2.9 km/h</strong> — the steady-state error: setpoint minus where it settled.</li>
+        <li><strong>≈ 40 N·m</strong> — the torque needed to hold 110 km/h, which is what the loop ends up delivering.</li>
+        <li><strong>280 N·m</strong> — the peak command, at the step, when the error is still the full 20 km/h.</li>
+        <li><strong>The bracket</strong> — drawn between the settled speed and the dashed setpoint. Its label is the error.</li>
+        <li><strong>stop = 30.0</strong> — the run length in seconds.</li>
+      </ul>
     </aside>
   </section>
 
@@ -152,11 +169,9 @@ plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")</code></pre>
           oscillating.</figcaption>
       </figure>
     </div>
-    <!-- Gains and errors here are the analytic values from docs/lecture-01-notebooks.md, hence
-         the daggers. They assume theta_e = 0.04 s. If theta_e moves to 0.2-0.3 s (HANDOVER
-         Risk 1) the ultimate gain drops to roughly 115 N.m per km/h, so the top two members of
-         this family would oscillate rather than settle and the family must be re-centred on
-         the executed notebook — around one, two and three times the lowest gain. -->
+    <!-- The four gains and their outcomes are read from the executed notebook at the shipped
+         theta_e = 0.3 s, where the ultimate gain is about 115 N.m per km/h. That is why the top
+         two members of the family oscillate rather than settle, and why the slide says so. -->
     <aside class="notes">
       <p><strong>Point at:</strong> the curves in order. Each one rises faster and each one
       stops closer. Then point at the dashed setpoint and say: none of them arrives.</p>
@@ -175,6 +190,13 @@ plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")</code></pre>
       gain grows — the commanded torque at the instant of the step, and the loop's appetite for
       sensor noise. We spend section 08 on exactly that bill.</p>
 
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 14, 56, 220, 890</strong> — four gains spanning about two decades, N·m per km/h.</li>
+        <li><strong>K<sub>u</sub> ≈ 115</strong> N·m per km/h — the <em>ultimate gain</em>: the gain at which the loop oscillates forever, neither growing nor decaying. Above it there is no steady state.</li>
+        <li><strong>Settled error</strong> — 2.9 km/h at k = 14, 0.7 at k = 56. The other two never settle, so the question does not apply to them.</li>
+        <li><strong>The right-hand panel</strong> — the last 30 seconds, magnified onto a 5 km/h window so the difference between "settled" and "still oscillating" is visible.</li>
+      </ul>
     </aside>
   </section>
 
@@ -231,6 +253,13 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code><
       control to reach the setpoint exactly? <em>(That holding the setpoint needs zero control
       effort. Walking across a room qualifies. Almost nothing you will ever be paid to control
       does.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>The blue curve</strong> — the error <em>solved</em> from the force balance, not simulated: the fixed point of e = T_cruise(v_set − e)/k. It has an answer at every gain.</li>
+        <li><strong>The shaded region</strong> — gains above K<sub>u</sub> = 115, where the loop does not settle, so the curve's answer is not a thing you could measure.</li>
+        <li><strong>Black dots</strong> — simulated runs that settled. <strong>Red crosses</strong> — gains the curve predicts but the simulation refuses to deliver.</li>
+        <li><strong>Log axis</strong> — the gain spans two and a half decades, so equal spacing means equal ratios, not equal differences.</li>
+      </ul>
     </aside>
   </section>
 
@@ -264,6 +293,12 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code><
       that does not depend on the error right now? <em>(Something accumulated. Steer them to
       "it should remember that it has been short for a while." Do not say "integral" for them —
       let the room produce the word.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>u_needed(110) ≈ 40 N·m</strong> — the effort required to hold the setpoint, which never goes away because drag never goes away.</li>
+        <li><strong>e<sub>∞</sub> = u_needed / k</strong> — the steady-state error. The most reusable formula in this section.</li>
+        <li><strong>e<sub>∞</sub></strong> — the subscript means "as time goes to infinity", i.e. once settled.</li>
+      </ul>
     </aside>
   </section>
 

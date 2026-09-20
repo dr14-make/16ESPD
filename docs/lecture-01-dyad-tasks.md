@@ -125,6 +125,22 @@ explicit RK solvers handle it better than BDF, as the multibody equivalent does.
 
 ## Lecture1 submodule
 
+### Parameter forwarding — the rule for scenario knobs
+
+**Anything a notebook varies is forwarded to the top-level model and exposed on the analysis.**
+`CarPlant` already does this for `theta_e` and `T_max`, and `CarStepTest` exposes `tau_lo`,
+`tau_hi`, `v0` and `t_step`. Follow that pattern for every new knob.
+
+Dyad also generates a nested override mechanism — keyword arguments split on a double
+underscore and forwarded down the tree, so `WideOpenThrottle(plant__body__m = 1600)` reaches
+`VehicleBody`. It works, and it is strict about unmatched names. It is still not the interface:
+that path encodes the model's internal structure, so renaming a subcomponent breaks every
+notebook using it, for a reason unrelated to anything those notebooks teach. Treat it as an
+escape hatch for one-off exploration.
+
+Forward only what is actually varied. `m`, `CdA` and the road gradient are scenario knobs;
+`rho` and `g` are not.
+
 ### Harnesses and analyses
 
 **A component with unconnected `RealInput` ports cannot be a `TransientAnalysis` model.**

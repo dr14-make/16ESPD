@@ -47,64 +47,40 @@
       never a change of subject — so whatever you understand about the car at minute ten is
       still true at minute ninety.</p>
       <p><strong>Timing:</strong> 90 minutes. The spine is sections 01, 03, 04, 05, 06, 08 —
-      about 60 minutes. Everything else is bonus; drop from the back, not the middle.</p>
+      about 60 minutes. Everything else is bonus; drop from the back, not the middle. Each
+      section's first slide tells you, in these notes, whether it is safe to cut.</p>
+      <p><strong>Driving the deck.</strong> <strong>→</strong> next notebook,
+      <strong>↓</strong> next slide within one. <strong>O</strong> overview of everything,
+      <strong>G</strong> jump to a slide number, <strong>F</strong> fullscreen,
+      <strong>?</strong> every key. <strong>S</strong> is this window; <strong>C</strong> puts
+      these same notes along the bottom of the projected deck if the popup was blocked.</p>
+      <p><strong>Two screens.</strong> Deck on the projector, Jupyter on the laptop. Every demo
+      slide names the notebook file and the cell heading and carries the code, with a copy
+      button, so you never hunt through a notebook with your back to the room. A grey strip
+      means there is a Dyad model worth having open for that beat.</p>
+      <p><strong>Handout:</strong> add <code>?print-pdf</code> to the URL and print to PDF —
+      one slide per page, these notes excluded.</p>
+      <p><strong>If a solve stalls in front of the room:</strong> every notebook is committed
+      with its outputs. Scroll to the plot that is already there and keep talking. Do not debug
+      live.</p>
     </aside>
   </section>
 
-  <section>
-    <h2>How this deck is driven</h2>
-    <div class="cols cols-wide-left">
-      <div>
-        <ul class="small">
-          <li><kbd>S</kbd> — speaker view: notes, timer, next slide. <kbd>C</kbd> — the same
-            notes as a panel here, if the popup is blocked.</li>
-          <li><kbd>→</kbd> moves to the next notebook; <kbd>↓</kbd> moves through one.</li>
-          <li><kbd>O</kbd> — overview of the whole lecture. <kbd>G</kbd> — jump to a slide
-            number. <kbd>F</kbd> — fullscreen. <kbd>?</kbd> — all keys.</li>
-          <li>Every demo card has a <strong>copy</strong> button: the code goes to the
-            clipboard, paste it into the notebook cell.</li>
-          <li><code>?print-pdf</code> appended to the URL renders the handout; print to PDF
-            from there.</li>
-        </ul>
-      </div>
-      <div>
-        <div class="callout">
-          <span class="label">Deep links</span>
-          <code>#/3</code> opens notebook 03's section, <code>#/3/2</code> its third slide.
-          Section number = notebook number, all the way through.
-        </div>
-        <div class="callout warn">
-          <span class="label">The dagger</span>
-          A number marked <span class="prov">†</span> is analytic and indicative. Read the
-          executed value off the notebook instead of quoting the slide.
-        </div>
-      </div>
-    </div>
-    <aside class="notes">
-      <p>This slide is for you, not for them — skip past it while the room settles.</p>
-      <p><strong>Two screens.</strong> Deck on the projector, Jupyter on the laptop. Every
-      demo slide names the notebook file, the cell heading, and carries the code itself, so you
-      never have to hunt through a notebook with your back to the room.</p>
-      <p><strong>If a solve stalls in front of the room:</strong> every notebook is committed
-      with its outputs already executed. Scroll to the plot that is already there and keep
-      talking. Do not debug live.</p>
-    </aside>
-  </section>
 
   <section>
     <h2>The ten notebooks</h2>
     <table>
-      <tr><th>#</th><th>Title</th><th>Punchline</th><th></th></tr>
-      <tr><td><a href="#/1">01</a></td><td>The car</td><td>transient vs steady state; read K, τ and θ off a step</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/2">02</a></td><td>Open vs closed loop</td><td>feedforward is right until the hill</td><td><span class="tier tier-2">Tier 2</span></td></tr>
-      <tr><td><a href="#/3">03</a></td><td>P</td><td>error shrinks with k but never reaches zero</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/4">04</a></td><td>PI</td><td>the integrator finds notebook 02's answer by itself</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/5">05</a></td><td>PID</td><td>three terms, three jobs: present, past, future</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/6">06</a></td><td>Windup</td><td>the hill the engine cannot climb</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/7">07</a></td><td>Derivative and noise</td><td>small noise, steep slope, ruined command</td><td><span class="tier tier-3">Tier 3</span></td></tr>
-      <tr><td><a href="#/8">08</a></td><td>Tuning</td><td>a gain set from one step test, without a model</td><td><span class="tier tier-1">Tier 1</span></td></tr>
-      <tr><td><a href="#/9">09</a></td><td>Discretization</td><td>the strobe light slows down</td><td><span class="tier tier-2">Tier 2</span></td></tr>
-      <tr><td><a href="#/10">10</a></td><td>Wheel and slip</td><td>cruise control meets black ice</td><td><span class="tier tier-3">Tier 3</span></td></tr>
+      <tr><th>#</th><th>Title</th><th>The point of it</th></tr>
+      <tr><td><a href="#/1">01</a></td><td>The car</td><td>transient vs steady state; read K, τ and θ off a step</td></tr>
+      <tr><td><a href="#/2">02</a></td><td>Open vs closed loop</td><td>feedforward is right until the hill</td></tr>
+      <tr><td><a href="#/3">03</a></td><td>P</td><td>error shrinks with k but never reaches zero</td></tr>
+      <tr><td><a href="#/4">04</a></td><td>PI</td><td>the integrator finds notebook 02's answer by itself</td></tr>
+      <tr><td><a href="#/5">05</a></td><td>PID</td><td>three terms, three jobs: present, past, future</td></tr>
+      <tr><td><a href="#/6">06</a></td><td>Windup</td><td>the hill the engine cannot climb</td></tr>
+      <tr><td><a href="#/7">07</a></td><td>Derivative and noise</td><td>small noise, steep slope, ruined command</td></tr>
+      <tr><td><a href="#/8">08</a></td><td>Tuning</td><td>a gain set from one step test, without a model</td></tr>
+      <tr><td><a href="#/9">09</a></td><td>Discretization</td><td>the strobe light slows down</td></tr>
+      <tr><td><a href="#/10">10</a></td><td>Wheel and slip</td><td>cruise control meets black ice</td></tr>
     </table>
     <aside class="notes">
       <p><strong>Say:</strong> here is the whole lecture on one slide. Ten short steps. Each
@@ -182,6 +158,15 @@
       feedback loop does not just make the picture fuzzy — it moves the car.</p>
       <p><strong>Ask the room:</strong> which of these five do you have direct control over?
       <em>(Only u. Everything else is either chosen by somebody else or done to you.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>r</strong> — the <em>reference</em>, also called the setpoint or the command. What we want. Units of whatever we are controlling; here km/h.</li>
+        <li><strong>e</strong> — the <em>error</em>, r minus the measurement. Same units as r. Zero means we are where we asked to be.</li>
+        <li><strong>u</strong> — the <em>control input</em>, also called the actuating signal or plant input. What the controller chooses. Here, newton-metres of commanded engine torque.</li>
+        <li><strong>d</strong> — the <em>disturbances</em>. Inputs we do not choose and cannot command: the hill, the wind, the luggage.</li>
+        <li><strong>x</strong> — the <em>state</em>. What the system is actually doing, and what it remembers. Here, road speed, and how full the inlet manifold is.</li>
+        <li><strong>y</strong> — the <em>measurement</em>, also called the controlled variable or plant output. What the sensor reports, which is the state plus noise.</li>
+      </ul>
     </aside>
   </section>
 
@@ -243,6 +228,14 @@
       <p><strong>Ask the room:</strong> where does a self-driving car's route planner sit on
       this picture? <em>(Top right. And it has to produce a reference the car can physically
       follow — which needs the model again.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Plant</strong> — the thing being controlled. Used interchangeably with "system" and "process". Ours is a car.</li>
+        <li><strong>Feedforward</strong> — computing u from r alone, with no measurement. Also called open-loop control.</li>
+        <li><strong>Feedback</strong> — computing u from the error. Also called closed-loop control.</li>
+        <li><strong>State estimation</strong> — recovering the state from noisy, incomplete measurements. Kalman filters live here.</li>
+        <li><strong>Planning</strong> — deciding what r should be in the first place. For us: the driver pressed a button.</li>
+      </ul>
     </aside>
   </section>
 
@@ -297,6 +290,13 @@
       control has? <em>(Brakes. Ours can only add torque, never remove it — which is why our
       car going downhill has no answer at all. Worth thirty seconds; it is an honest
       limitation.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>u</strong> — commanded engine torque, N·m. The single thing the controller gets to choose all lecture.</li>
+        <li><strong>d</strong> — road gradient (as tan α), a headwind (as extra drag area), payload (as extra mass).</li>
+        <li><strong>x</strong> — the true road speed, m/s internally.</li>
+        <li><strong>y</strong> — the measured speed in km/h, after the one conversion block on the sensor output.</li>
+      </ul>
     </aside>
   </section>
 
@@ -376,6 +376,17 @@
       O<sub>z</sub>, O<sub>s</sub> from the energy slides — same terms, drawn on a car instead of
       listed. O<sub>aux</sub>, the electrical loads, we are leaving out; say so, because leaving
       a term out should always be a decision you announce.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>F = T·i / r</strong> — tractive force at the road, N. Engine torque <em>T</em> (N·m) times gear ratio <em>i</em> (dimensionless), divided by wheel radius <em>r</em> (m).</li>
+        <li><strong>O_V</strong> — aerodynamic drag, N. Equals ½·ρ·C<sub>d</sub>A·v². Grows with the <em>square</em> of speed.</li>
+        <li><strong>O_f</strong> — rolling resistance, N. Equals f_r·m·g·cos α. Near enough constant, about 165 N for this car.</li>
+        <li><strong>O_s</strong> — the slope term, N. Equals m·g·sin α — the part of the car's weight pointing down the road.</li>
+        <li><strong>O_z</strong> — acceleration resistance, N. Equals m·dv/dt: whatever is left over goes into accelerating the mass.</li>
+        <li><strong>O_aux</strong> — auxiliary electrical loads. Named on the course slides, not modelled here.</li>
+        <li><strong>α</strong> — the road angle. We write gradients as tan α, so a 10 % climb is tan α = 0.10, about 5.7°.</li>
+        <li><strong>m·g</strong> — weight, N. 1400 kg times 9.81, about 13.7 kN.</li>
+      </ul>
     </aside>
   </section>
 
@@ -432,6 +443,13 @@
       <p><strong>Practical:</strong> when a slide carries a grey "open in Dyad" strip, that is
       the model to have on the second screen for that beat. You do not need it open all the
       time — only where the diagram says something the plot cannot.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Component</strong> — a Dyad block with ports, parameters and equations. <code>IdealEngine</code> is one.</li>
+        <li><strong>Harness</strong> — a component whose job is to make another one runnable, by connecting sources to its inputs and setting initial conditions.</li>
+        <li><strong>Analysis</strong> — a named, runnable experiment: a model plus a stop time plus the parameters you may vary. <code>CruiseLoopTransient</code> is one.</li>
+        <li><strong>Structural parameter</strong> — one that changes the <em>equations</em>, so each value is a separately compiled model. <code>with_I</code> is one; an ordinary parameter like <code>k</code> is not.</li>
+      </ul>
     </aside>
   </section>
 
@@ -449,9 +467,9 @@
           <tr><td>gear ratio <em>i</em></td><td class="num">4.0</td><td>—</td></tr>
           <tr><td>torque limit <em>T</em><sub>max</sub></td><td class="num">150</td><td>N·m</td></tr>
           <tr><td>manifold lag <em>τ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
-          <tr><td>transport delay <em>θ<sub>e</sub></em></td><td class="num">0.04</td><td>s</td></tr>
-          <caption>Quoted from <code>docs/HANDOVER.md</code>. In code, read them from
-            <code>CAR</code> — never retype a number into a cell.</caption>
+          <tr><td>transport delay <em>θ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
+          <caption>Nine numbers. Everything else in this lecture is arithmetic on
+            them.</caption>
         </table>
       </div>
       <div>
@@ -471,10 +489,9 @@
         </div>
       </div>
     </div>
-    <!-- theta_e is expected to change from 0.04 s to roughly 0.2-0.3 s (HANDOVER Risk 1):
-         at 0.04 s the Ziegler-Nichols demo in notebook 08 relay-limit-cycles against the
-         torque limit instead of oscillating cleanly. If that change lands, this table and
-         every gain quoted with a dagger in sections 03 and 08 move with it. -->
+    <!-- theta_e settled at 0.3 s (HANDOVER Risk 1, resolved): at 0.04 s the Ziegler-Nichols
+         demo in notebook 08 relay-limit-cycled against the torque limit instead of oscillating
+         cleanly. The shipped models and CAR both carry 0.3 s; this table follows them. -->
     <aside class="notes">
       <p><strong>Say:</strong> this is the entire car. Nine numbers. Everything else in the
       lecture — the terminal speed, the cruise torque, the hill that beats it, the gains —
@@ -486,9 +503,23 @@
       <p><strong>They get wrong:</strong> students read 150 N·m and think "that is a weak
       engine". It is engine torque before a gear ratio of 4 and a 0.31 m wheel — nearly 2 kN at
       the road. Do the multiplication out loud once.</p>
-      <p><strong>Housekeeping:</strong> if you changed <code>theta_e</code> from 0.04 s when
-      the models were built, correct this row out loud and say why — it is the whole powertrain
-      torque path, not just injection.</p>
+      <p><strong>On the transport delay:</strong> 0.3 s is the whole powertrain torque-response
+      path — ECU, fuelling, combustion, driveline compliance — not injection alone. If someone
+      objects that injection is faster than that, they are right, and the model lumps more than
+      injection into this one number.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>m</strong> = 1400 kg — vehicle mass.</li>
+        <li><strong>C<sub>d</sub>A</strong> = 0.63 m² — drag area: the drag coefficient times the frontal area, kept as one number because only the product matters.</li>
+        <li><strong>ρ</strong> = 1.2 kg/m³ — air density at sea level.</li>
+        <li><strong>f_r</strong> = 0.012 — rolling resistance coefficient, dimensionless. Tyre losses as a fraction of the normal load.</li>
+        <li><strong>r</strong> = 0.31 m — wheel rolling radius.</li>
+        <li><strong>i</strong> = 4.0 — total gear ratio, dimensionless. Engine turns four times per wheel turn.</li>
+        <li><strong>T<sub>max</sub></strong> = 150 N·m — the engine's torque ceiling.</li>
+        <li><strong>τ<sub>e</sub></strong> = 0.3 s — the manifold-filling lag: a first-order lag, how long the engine takes to build the torque it was asked for.</li>
+        <li><strong>θ<sub>e</sub></strong> = 0.3 s — the powertrain transport delay: a pure dead time, how long before anything at all happens.</li>
+        <li><strong>1935 N</strong> — maximum tractive force, T<sub>max</sub>·i/r. <strong>246 km/h</strong> — terminal speed. <strong>31 and 40 N·m</strong> — torque to hold 90 and 110 km/h.</li>
+      </ul>
     </aside>
   </section>
 
@@ -520,6 +551,12 @@
       a silent factor of 3.6. Put the conversion in the model where you can see it, once.</p>
       <p><strong>Ask the room:</strong> if I tell you my gain is 220, what is missing?
       <em>(Units. Wait for it — someone will say it.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k</strong> — the controller gain, N·m per km/h. "This many newton-metres for every km/h I am off."</li>
+        <li><strong>km/h</strong> — the unit of the setpoint, the measurement and therefore the error.</li>
+        <li><strong>SI inside</strong> — the plant computes in m/s, N, kg. One block, <code>ToKmPerHour</code>, converts, and it sits on the sensor output.</li>
+      </ul>
     </aside>
   </section>
 
@@ -537,13 +574,14 @@
     <p class="nb-no">Notebook 01</p>
     <h2>The car</h2>
     <p class="thesis">Before you can control something, you have to know what it does on its own.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/01-the-car.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/01-the-car.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> no controller in this notebook. Not one. We are going to spend
       the first ten minutes on the car alone, because every mistake people make with PID starts
       with not knowing the plant.</p>
       <p><strong>Timing:</strong> 10 minutes. Two simulations, both short to describe and slow
       to run — start the first solve while you are still talking about the force balance.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -571,9 +609,6 @@
     <div class="model solo">
       <span class="label">Open in Dyad</span>
       <code>dyad/Vehicle/CarPlant.dyad</code>
-      <span class="show">show — <b>two inputs on the left</b> (<code>tau_cmd</code>,
-        <code>grade</code>) and <b>one measurement out</b> (<code>v_kmh</code>). The four boxes
-        between them are the next forty minutes.</span>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> four boxes and you can describe any plant in this building. The
@@ -584,6 +619,14 @@
       <p><strong>Ask the room:</strong> is the gradient an input or a disturbance?
       <em>(Both, formally — it enters the same way. The difference is that we choose u and the
       hill chooses itself. That distinction is the whole lecture.)</em></p>
+          <p><strong>In the model:</strong> <b>two inputs on the left</b> (<code>tau_cmd</code>, <code>grade</code>) and <b>one measurement out</b> (<code>v_kmh</code>). The four boxes between them are the next forty minutes.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Input</strong> — anything that acts on the system. Split into what we choose (u) and what we do not (d).</li>
+        <li><strong>Output</strong> — what we can measure. Not the same as the state: a state we cannot observe is not an output.</li>
+        <li><strong>State</strong> — the smallest set of numbers that, with the future inputs, determines the future. Loosely: what the system remembers.</li>
+        <li><strong>Disturbance</strong> — an input we cannot command. The split between input and disturbance is a modelling choice, not a property of the car.</li>
+      </ul>
     </aside>
   </section>
 
@@ -606,9 +649,6 @@
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Vehicle/VehicleBody.dyad</code>
-        <span class="show">show — <b>four things pulling on one flange</b>: the mass, the
-          quadratic drag, the rolling resistance, the grade force. The equation above, as a
-          diagram.</span>
       </div>
     </div>
     <aside class="notes">
@@ -622,6 +662,17 @@
       because dropping terms is a decision, not an accident.</p>
       <p><strong>Tie back:</strong> slide 16 of the existing engine deck names these O<sub>V</sub>,
       O<sub>f</sub>, O<sub>z</sub>, O<sub>s</sub>. Same equation, their notation.</p>
+          <p><strong>In the model:</strong> <b>four things pulling on one flange</b>: the mass, the quadratic drag, the rolling resistance, the grade force. The equation above, as a diagram.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>m dv/dt</strong> — mass times acceleration, N. The left-hand side is Newton's second law along the direction of travel.</li>
+        <li><strong>T·i/r</strong> — tractive force, N. <em>T</em> engine torque (N·m), <em>i</em> gear ratio 4.0, <em>r</em> wheel radius 0.31 m.</li>
+        <li><strong>½ρC<sub>d</sub>Av²</strong> — drag, N. <em>ρ</em> air density, <em>C<sub>d</sub>A</em> drag area, <em>v</em> speed in m/s.</li>
+        <li><strong>f_r·m·g·cos α</strong> — rolling resistance, N. The cosine is 0.995 even on a 10 % slope, so it barely moves.</li>
+        <li><strong>m·g·sin α</strong> — the slope term, N.</li>
+        <li><strong>α</strong> — road angle. Gradients are given as tan α: 10 % means 0.10.</li>
+        <li><strong>O_V, O_f, O_z, O_s</strong> — the course slides' names for drag, rolling, acceleration and slope resistance. Same four terms, their notation.</li>
+      </ul>
     </aside>
   </section>
 
@@ -660,40 +711,120 @@ v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
       <p><strong>Ask the room, before you show the next slide:</strong> 246 km/h from a 150 N·m
       engine. Does anyone believe that? <em>(Let the discomfort sit for a second — the next
       slide is the answer, and it lands much harder if they noticed first.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>c_drag</strong> = ½ρC<sub>d</sub>A = 0.378 N per (m/s)² — the whole drag law compressed to one coefficient.</li>
+        <li><strong>F_roll</strong> = f_r·m·g = 165 N — rolling resistance on the flat.</li>
+        <li><strong>F_max</strong> = T<sub>max</sub>·i/r = 1935 N — every newton the engine can put on the road.</li>
+        <li><strong>v_terminal</strong> = √((F_max − F_roll)/c_drag) = 68.4 m/s = 246 km/h — where drag eats everything that is left.</li>
+        <li><strong>dv/dt = 0</strong> — the steady-state condition. Setting the derivative to zero is what turns a differential equation into arithmetic.</li>
+      </ul>
     </aside>
   </section>
 
   <section>
     <h2>246 km/h is wrong, and it is wrong on purpose</h2>
-    <div class="callout warn">
-      <span class="label">The model's honest limitation</span>
-      Our engine delivers its peak torque at every speed. A real one does not: peak torque
-      lives in a band of a few thousand rpm and falls away on both sides.
-    </div>
-    <ul class="small">
-      <li>Everything below 130 km/h — every demo in this lecture — is unaffected, because we
-        never ask for more than about 40 N·m of the 150 available.</li>
-      <li>The top end is fiction. Say so now rather than let a student find it later and
-        distrust the parts that are true.</li>
-      <li>Fixing it means an engine torque map — <strong>which is where lecture 2 starts.</strong></li>
-    </ul>
-    <div class="model solo">
-      <span class="label">Open in Dyad</span>
-      <code>dyad/Vehicle/IdealEngine.dyad</code>
-      <span class="show">show — the <b><code>limiter</code></b> block. Its ceiling is a
-        <em>constant</em>, <code>T_max</code>. Nothing in this model knows the engine's speed,
-        and that is exactly the assumption this slide is confessing.</span>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="callout warn small">
+          <span class="label">The model's honest limitation</span>
+          Our engine delivers peak torque at every speed. A real one does not: peak torque
+          lives in a band of a few thousand rpm and falls away on both sides.
+        </div>
+        <ul class="small">
+          <li>Every demo in this lecture runs between 90 and 130 km/h, and never asks for more
+            than about 51 N·m of the 150 available. Unaffected.</li>
+          <li>The top end is fiction. Say so now rather than let a student find it later and
+            distrust the parts that are true.</li>
+          <li>Fixing it means a torque map — <strong>which is where lecture 2 starts.</strong></li>
+        </ul>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Vehicle/IdealEngine.dyad</code>
+        </div>
+      </div>
+      <div>
+      <svg class="diagram" viewBox="0 0 600 330" role="img"
+           aria-label="Engine torque against crankshaft speed. A flat line at 150 newton-metres across the whole range is our model; a curve that rises, plateaus and falls away is the shape of a real engine. The band where this lecture operates is shaded, and the crankshaft speed implied by 246 km/h is marked well past the real curve's peak.">
+        <defs>
+          <marker id="tm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        </defs>
+
+        <rect x="235.4" y="30" width="69.9" height="250" fill="#eaf1fa"/>
+        <text class="lbl" x="214" y="300">90–130 km/h</text>
+        <text class="lbl" x="206" y="316">where this lecture lives</text>
+
+        <path class="wire" d="M78 30 V280 H548"/>
+        <text class="lbl" x="30" y="63">150</text>
+        <text class="lbl" x="44" y="284">0</text>
+        <text class="lbl" x="6" y="22">torque [N·m]</text>
+        <text class="lbl" x="78" y="318">crank speed [rpm]</text>
+
+        <path class="ghost" d="M78 59.4 H548"/>
+        <path class="arrow-acc" d="M78 59.4 H548" stroke-width="4"/>
+        <text class="f-lbl-acc" x="86" y="50">our model — 150 N·m, at every speed</text>
+
+        <polyline points="124.0,213.8 129.1,212.5 134.2,208.7 139.3,202.5 144.4,194.1 149.5,183.7 154.6,171.8 159.7,158.8 164.8,145.1 170.0,131.1 175.1,117.4 180.2,104.3 185.3,92.4 190.4,82.1 195.5,73.7 200.6,67.5 205.7,63.6 210.8,62.4 215.9,61.9 221.0,61.4 226.2,61.0 231.3,60.6 236.4,60.3 241.5,60.0 246.6,59.7 251.7,59.6 256.8,59.4 261.9,59.4 267.0,59.4 272.1,59.6 277.2,59.7 282.3,60.0 287.5,60.3 292.6,60.6 297.7,61.0 302.8,61.4 307.9,61.9 313.0,62.4 318.1,62.5 323.2,62.8 328.3,63.3 333.4,64.0 338.5,64.9 343.7,66.1 348.8,67.4 353.9,68.9 359.0,70.6 364.1,72.4 369.2,74.4 374.3,76.6 379.4,78.9 384.5,81.3 389.6,83.8 394.7,86.4 399.8,89.1 405.0,91.9 410.1,94.8 415.2,97.7 420.3,100.6 425.4,103.5 430.5,106.5 435.6,109.4 440.7,112.3 445.8,115.1 450.9,117.9 456.0,120.6 461.2,123.3 466.3,125.8 471.4,128.2 476.5,130.5 481.6,132.6 486.7,134.6 491.8,136.5 496.9,138.2 502.0,139.7 507.1,141.0 512.2,142.1 517.3,143.0 522.5,143.8 527.6,144.3 532.7,144.6 537.8,144.7 542.9,144.7 548.0,144.7" fill="none" stroke="#a81f16" stroke-width="3"/>
+        <text class="f-lbl-dngr" x="300" y="112">a real engine</text>
+
+        <path class="ghost" d="M508.8 59.4 V141.4"/>
+        <circle cx="508.8" cy="59.4" r="5" fill="#1f5fa8"/>
+        <circle cx="508.8" cy="141.4" r="5" fill="#a81f16"/>
+        <path class="arrow" d="M508.8 250 V152" marker-end="url(#tm-ar)"/>
+        <text class="lbl-strong" x="452" y="300">246 km/h</text>
+        <text class="lbl" x="456" y="316">= 8400 rpm</text>
+        <text class="f-lbl-dngr" x="514" y="176">≈ 95</text>
+      </svg>
+        <p class="small muted">The red curve is the <em>shape</em> of a petrol engine, drawn to
+          make the comparison — not a measurement, and not this car. The blue line is exact: it
+          is what <code>IdealEngine</code> actually computes.</p>
+      </div>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> a model is a set of assumptions with a speed limit on it, and
       the engineering skill is knowing where that limit is. Ours is honest from 0 to about
       130 km/h and a lie above it.</p>
+      <p><strong>Point at the plot, in this order:</strong></p>
+      <ul>
+        <li>The <strong>blue line</strong>. Flat, at 150, all the way across. That is not a
+          simplification of our model — it <em>is</em> our model. <code>IdealEngine</code>
+          contains a limiter whose ceiling is a constant, and nothing in it knows how fast the
+          crankshaft is turning.</li>
+        <li>The <strong>red curve</strong>. Same peak, but it only reaches it in a band, and it
+          falls away either side. Nothing here is measured — say that out loud — it is the
+          shape every petrol engine has, and the shape is the whole argument.</li>
+        <li>The <strong>shaded band</strong>. Everything we do today happens in there, roughly
+          3100 to 4400 rpm, and in there the two curves agree. Our model is fine <em>because of
+          where we are using it</em>, not because it is right.</li>
+        <li>The <strong>mark at 8400 rpm</strong>. That is where 246 km/h puts the crankshaft.
+          Our model still says 150 N·m. A real engine is down around 95 and falling — so the
+          car never gets there, and the terminal speed we computed is fiction.</li>
+      </ul>
+      <p><strong>Read out:</strong> 90 km/h is 3080 rpm, 130 km/h is 4450, and 246 km/h would be
+      8430. Those come from the same three numbers as the force balance — wheel radius, gear
+      ratio, road speed — so a student can check them.</p>
       <p><strong>They get wrong:</strong> students treat a simulation result as a measurement.
       This is the one slide in the lecture that exists purely to inoculate against that. Do not
       skip it even when short on time — it costs 40 seconds.</p>
       <p><strong>Ask the room:</strong> what would you have to add to the model to get a
       believable top speed? <em>(Torque as a function of engine speed. That is lecture 2 —
       and you have just written its first slide for me.)</em></p>
+          <p><strong>In the model:</strong> The <b><code>limiter</code></b> block. Its ceiling is a <em>constant</em>, <code>T_max</code>. Nothing in this model knows the engine's speed, and that is exactly the assumption this slide is confessing.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Ideal engine</strong> — one that delivers its peak torque at every speed. Ours does; a real one does not.</li>
+        <li><strong>Torque map</strong> — torque as a function of crankshaft speed, T<sub>max</sub>(ω) instead of a constant. The fix, and lecture 2's subject.</li>
+        <li><strong>Model validity</strong> — the range over which you are willing to believe it. Ours: honest to about 130 km/h, fiction above.</li>
+      </ul>
+      <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Crank speed</strong> — engine shaft speed in rpm, revolutions per minute. Road speed ÷ wheel radius gives wheel rad/s; times the gear ratio gives the crank.</li>
+        <li><strong>150 N·m</strong> — <code>T_max</code>, the constant ceiling in <code>IdealEngine</code>'s limiter. The blue line.</li>
+        <li><strong>≈ 95 N·m</strong> — what the red shape gives at 8400 rpm. Indicative of a real engine, not of ours.</li>
+        <li><strong>3080 / 4450 / 8430 rpm</strong> — the crank speeds for 90, 130 and 246 km/h in this gearing.</li>
+        <li><strong>51 N·m</strong> — the most any demo in this lecture asks of the engine, on the 130 km/h climb in section 06.</li>
+      </ul>
     </aside>
   </section>
 
@@ -723,9 +854,6 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/WideOpenThrottle.dyad</code>
-          <span class="show">show — <b>why a harness exists</b>: two constant sources feeding
-            the plant's two inputs, and the initial conditions. Leave those inputs dangling and
-            the model will not solve.</span>
         </div>
         <div class="callout warn small">
           <span class="label">Watch the time axis</span>
@@ -754,6 +882,14 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
       feedback in this lecture.</p>
       <p><strong>Check:</strong> if the curve runs away instead of flattening, the sign on the
       drag force is wrong.</p>
+          <p><strong>In the model:</strong> <b>why a harness exists</b>: two constant sources feeding the plant's two inputs, and the initial conditions. Leave those inputs dangling and the model will not solve.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>300 s</strong> — the run length. About twice the 143 s the car needs to reach 99 % of terminal speed.</li>
+        <li><strong>67 s</strong> — the car's own time constant near 100 km/h: m ÷ (dF/dv), mass divided by how hard drag pushes back per unit of speed.</li>
+        <li><strong>Time constant</strong> — the time to cover 63 % of the remaining distance to the final value. Three of them gets you to 95 %.</li>
+        <li><strong>The dashed line</strong> — the 246 km/h we computed by hand. Two routes, one number.</li>
+      </ul>
     </aside>
   </section>
 
@@ -784,9 +920,6 @@ plot_torque(step_test;
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CarStepTest.dyad</code>
-          <span class="show">show — <b><code>tau_lo</code> and <code>tau_hi</code> are
-            parameters</b>, so the step test runs the equation the students just wrote down.
-            Then <code>IdealEngine.dyad</code>: <b>delay → lag → limiter</b>, in that order.</span>
         </div>
         <ol class="small">
           <li>Wait until the process is at rest.</li>
@@ -817,6 +950,16 @@ plot_torque(step_test;
       <p><strong>Ask the room:</strong> why step from 31 to 41 N·m rather than 0 to 150?
       <em>(Because we want the response around the operating point we actually drive at. A huge
       step wanders across the nonlinearity in v².)</em></p>
+          <p><strong>In the model:</strong> <b><code>tau_lo</code> and <code>tau_hi</code> are parameters</b>, so the step test runs the equation the students just wrote down. Then <code>IdealEngine.dyad</code>: <b>delay → lag → limiter</b>, in that order.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T_90 = 31.1 N·m, T_110 = 40.1 N·m</strong> — the cruise torques for 90 and 110 km/h, derived from the force balance and handed to the model as parameters.</li>
+        <li><strong>t_step = 50 s</strong> — when the command steps.</li>
+        <li><strong>Commanded torque</strong> — <code>cmd.y</code>, what the controller asks for.</li>
+        <li><strong>Delivered torque</strong> — <code>plant.engine.limiter.y</code>, what comes out of the engine after the delay, the lag and the limit.</li>
+        <li><strong>Dead time</strong> — the flat gap at the start where the command has changed and nothing has happened. A pure delay.</li>
+        <li><strong>Lag</strong> — the curve after it. A first-order response, not a delay: it starts immediately and approaches gradually.</li>
+      </ul>
     </aside>
   </section>
 
@@ -855,6 +998,13 @@ plot_torque(step_test;
       <p><strong>Flag forward:</strong> every requirement you will ever be given is phrased in
       these terms — rise time and overshoot live in the transient, steady-state error lives in
       the other half.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Transient response</strong> — the temporary part, which decays. Rise time, overshoot and settling time are measured here.</li>
+        <li><strong>Steady-state response</strong> — what is left once the transient has died. Steady-state error is measured here.</li>
+        <li><strong>Dynamic response</strong> — the sum of the two. The whole journey from one settled state to the next.</li>
+        <li><strong>Settling time</strong> — when the response stays within a band, usually 2 % or 5 %, of its final value. The band is our choice, not the system's.</li>
+      </ul>
     </aside>
   </section>
 
@@ -880,27 +1030,21 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
             <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
           </div>
         </div>
-        <div class="readout">
-          <div class="r"><span class="v">2.21</span><span class="k">K, km/h per N·m</span></div>
-          <div class="r"><span class="v">63.0</span><span class="k">τ, seconds</span></div>
-          <div class="r"><span class="v">1.63</span><span class="k">θ, seconds</span></div>
-        </div>
-
-      </div>
-      <div>
-        <figure class="fig">
-          <img src="assets/figures/01-step-annotated.svg"
-               alt="The step response with the dead time, the time constant and the steady-state gain marked on the curve.">
-          <figcaption>The annotated step: θ before anything moves, τ for the rise, K from the
-            settled change divided by the size of the torque step.</figcaption>
-        </figure>
+        <p class="small" style="margin-top:0.5em"><strong>K</strong> = 2.21 km/h per N·m
+          &nbsp;·&nbsp; <strong>τ</strong> = 63.0 s &nbsp;·&nbsp; <strong>θ</strong> = 1.63 s</p>
         <div class="callout warn small">
-          <span class="label">θ is not the engine's 0.04 s delay</span>
-          It is forty times larger. Drag is quadratic, so the local time constant falls from
-          74.1 s at 90 km/h to 60.6 s at 110, and dead time is the only FOPTD parameter that can
-          absorb that curvature. The fit measures bend, not delay.
+          <span class="label">θ is not the engine's delay</span>
+          It is five times larger. Drag is quadratic, so the car's time constant changes across
+          the step, and θ is the only parameter that can absorb that. The fit measures bend,
+          not delay.
         </div>
       </div>
+      <figure class="fig">
+        <img src="assets/figures/01-step-response.svg"
+             alt="The speed response to the torque step: flat at 90 km/h, then an S-shaped climb settling at 110.">
+        <figcaption>The step response the three numbers are read from. θ is the flat piece
+          before it moves, τ the rise, K the settled change divided by the torque step.</figcaption>
+      </figure>
     </div>
     <aside class="notes">
       <p><strong>Read out</strong> all three values from the cell output, slowly, with units.
@@ -910,7 +1054,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       free-body diagram, no equations of motion. If somebody handed you this car as a sealed
       box you could still have got here.</p>
       <p><strong>Do not skip the amber box, and do not let it embarrass you.</strong> A student
-      who knows the engine's delay is 0.04 s will see 1.63 s and conclude the fit is broken.
+      who knows the engine's delay is 0.3 s will see 1.63 s and conclude the fit is broken.
       It is not. FOPTD has three parameters and our car is not FOPTD — it is a <em>quadratic</em>
       drag law, so its time constant is different at every speed. The fit spends θ on the
       mismatch because θ is the only parameter left.</p>
@@ -926,6 +1070,15 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       <p><strong>They get wrong:</strong> reading τ as "time to reach the final value". It is
       the time to reach 63 % of it. The helper uses the two-landmark construction from the
       tuning document, not an eyeball.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>K = 2.21 km/h per N·m</strong> — steady-state gain: how far the output moves per unit of input, once settled.</li>
+        <li><strong>τ = 63.0 s</strong> — time constant: how long it takes to get there, dominated by the vehicle, not the engine.</li>
+        <li><strong>θ = 1.63 s</strong> — dead time as the fit reports it. <em>Not</em> the engine's 0.3 s delay — see the amber box.</li>
+        <li><strong>FOPTD</strong> — first order plus dead time, the three-parameter shape these numbers describe.</li>
+        <li><strong>Tangent gain / time constant</strong> — the local values computed from the force balance at each end of the step: 74.1 s at 90 km/h, 60.6 s at 110. They bracket the fit honestly.</li>
+        <li><strong>Secant gain</strong> — the total speed change divided by the total torque change, 20 ÷ 9.04. What K should land near.</li>
+      </ul>
     </aside>
   </section>
 
@@ -961,7 +1114,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
     <p class="nb-no">Notebook 02</p>
     <h2>Open loop versus closed loop</h2>
     <p class="thesis">Feedforward is correct exactly as long as the world matches your model.</p>
-    <p class="meta"><span class="tier tier-2">Tier 2</span> &nbsp; <code>notebooks/lecture01/02-open-vs-closed-loop.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/02-open-vs-closed-loop.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> we have a model of the car that predicted its terminal speed
       correctly. So here is a fair question before we spend an hour on feedback: why measure
@@ -969,6 +1122,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       <p><strong>Timing:</strong> 8 minutes. This section is the <em>motivation</em> for
       everything after it, so if you cut it, make sure section 03 opens with the argument
       instead.</p>
+          <p><strong>Cut order:</strong> second to go. Drop this before touching the P → PI → PID → windup run.</p>
     </aside>
   </section>
 
@@ -1016,9 +1170,6 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
     <div class="model solo">
       <span class="label">Open in Dyad</span>
       <code>dyad/Lecture1/CruiseLoop.dyad</code>
-      <span class="show">show — <code>LimPID</code> has a <b>feedforward input</b>,
-        <code>u_ff</code>, and we have wired a constant <b>zero</b> to it. Both architectures
-        are in this one block; today we use only the right-hand half of it.</span>
     </div>
     <aside class="notes">
       <p><strong>Point at</strong> the missing wire in the left diagram. That absence is the
@@ -1030,6 +1181,15 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       into because we cannot know the plant and the world well enough. Given perfect knowledge
       we would not want the extra wire at all — it brings problems of its own, which is what the
       remaining sections are about.</p>
+          <p><strong>In the model:</strong> <code>LimPID</code> has a <b>feedforward input</b>, <code>u_ff</code>, and we have wired a constant <b>zero</b> to it. Both architectures are in this one block; today we use only the right-hand half of it.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Open loop / feedforward</strong> — u computed from r alone. No sensor, no error, no loop.</li>
+        <li><strong>Closed loop / feedback</strong> — u computed from the error. The output is fed back and compared.</li>
+        <li><strong>Comparator</strong> — the circle with + and −. It forms e = r − y, and it is the only place the two signals meet.</li>
+        <li><strong>Model inversion</strong> — solving the plant backwards: given the output you want, what input produces it? That is all a feedforward controller does.</li>
+        <li><strong>u_ff</strong> — <code>LimPID</code>'s feedforward input. Real controllers often use both paths; we tie this one to zero.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1059,7 +1219,7 @@ plot_speed(sol; setpoint = 90)</code></pre>
       </div>
       <div>
         <div class="readout">
-          <div class="r"><span class="v">31.1 <span class="prov">†</span></span><span class="k">N·m computed</span></div>
+          <div class="r"><span class="v">31.1</span><span class="k">N·m computed</span></div>
           <div class="r"><span class="v">90.0</span><span class="k">km/h achieved</span></div>
         </div>
         <div class="callout small">
@@ -1079,6 +1239,13 @@ plot_speed(sol; setpoint = 90)</code></pre>
       <p><strong>Ask the room:</strong> what has to be true for this to keep working?
       <em>(Collect answers — they will list the assumptions themselves, which is much better
       than you listing them. Then break exactly those assumptions on the next slide.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>v = 90/3.6 = 25 m/s</strong> — the target speed in SI, because the force balance is in SI.</li>
+        <li><strong>F</strong> — the total resisting force at that speed, N: drag plus rolling.</li>
+        <li><strong>tau_ff = F·r/i = 31.1 N·m</strong> — the torque at the engine that produces it. Divide by the gear ratio, multiply by the wheel radius: the driveline equation run backwards.</li>
+        <li><strong>Feedforward</strong> — this single number <em>is</em> the controller. There is nothing else in it.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1127,6 +1294,13 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
       <p><strong>Ask the room:</strong> which of the three would a driver notice first?
       <em>(The hill. And which would they never notice? The payload — the car is just quietly
       slower than they asked, forever.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>4 % grade</strong> — tan α = 0.04, about 2.3°.</li>
+        <li><strong>200 kg payload</strong> — m goes from 1400 to 1600 kg, changing both rolling resistance and the slope term.</li>
+        <li><strong>Headwind</strong> — modelled as a 30 % larger drag area, because relative airspeed is what drag actually depends on.</li>
+        <li><strong>The dashed line</strong> — the 90 km/h target nobody is holding any more.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1202,6 +1376,11 @@ end</code></pre>
       <p><strong>Flag forward:</strong> we will see the loop destabilize twice today — once on
       purpose in section 08, to measure it, and once by accident in section 09, from nothing
       more than a slow processor.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Dynamics</strong> — how a system evolves: its poles, its time constants, its stability. Feedforward leaves them alone; feedback rewrites them.</li>
+        <li><strong>Stability</strong> — whether a disturbance dies out or grows. Feedback can create it, and can destroy it.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1229,12 +1408,13 @@ end</code></pre>
     <p class="nb-no">Notebook 03</p>
     <h2>Proportional</h2>
     <p class="thesis">Proportional control gets you close, and close is where it stops.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/03-proportional.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/03-proportional.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> from here to the end of section 06 the car never changes. Not
       one parameter. Everything that happens is a change to the controller.</p>
       <p><strong>Timing:</strong> 10 minutes. Three cells, all of them fast, because the closed
       loop settles in seconds where the open loop took minutes.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -1259,9 +1439,6 @@ end</code></pre>
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Lecture1/CruiseLoop.dyad</code>
-        <span class="show">show — one <b><code>LimPID</code></b>, and the wire from
-          <code>plant.v_kmh</code> back to <code>controller.u_m</code>. That wire is the whole
-          difference between this section and section 02.</span>
       </div>
     </div>
     <aside class="notes">
@@ -1276,6 +1453,16 @@ end</code></pre>
       <p><strong>Ask the room:</strong> which of those two is our car? <em>(The drone. Holding
       110 km/h needs 40 N·m forever, because drag never stops. Let them get there; the next
       three slides are just evidence for the answer they gave.)</em></p>
+          <p><strong>In the model:</strong> One <b><code>LimPID</code></b>, and the wire from <code>plant.v_kmh</code> back to <code>controller.u_m</code>. That wire is the whole difference between this section and section 02.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>u = k·e</strong> — the entire proportional control law. Output is gain times error, and nothing else.</li>
+        <li><strong>k</strong> — the proportional gain, N·m per km/h. Sometimes written K<sub>p</sub>.</li>
+        <li><strong>e = v_set − v</strong> — the error, km/h. Positive means we are going too slowly.</li>
+        <li><strong>u</strong> — commanded engine torque, N·m.</li>
+        <li><strong>T_max = 150 N·m</strong> — the engine's physical ceiling. <strong>y_max</strong> — the controller's own output clamp, a separate number. Both lifted for this section.</li>
+        <li><strong>280 / 17,800 N·m</strong> — the peak torque the gentlest and fiercest gains here ask for at the instant of the step. Against 150 available.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1330,6 +1517,15 @@ bracket_error!(plt, single; setpoint = 110, sig = SPEED)</code></pre>
       <p><strong>Contrast, loudly:</strong> the open-loop car took several minutes to change
       speed. This took seconds. Same engine, same mass, same drag. Feedback changed the
       dynamics of the system, not just how it is operated.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 14</strong> N·m per km/h — a deliberately gentle gain.</li>
+        <li><strong>2.9 km/h</strong> — the steady-state error: setpoint minus where it settled.</li>
+        <li><strong>≈ 40 N·m</strong> — the torque needed to hold 110 km/h, which is what the loop ends up delivering.</li>
+        <li><strong>280 N·m</strong> — the peak command, at the step, when the error is still the full 20 km/h.</li>
+        <li><strong>The bracket</strong> — drawn between the settled speed and the dashed setpoint. Its label is the error.</li>
+        <li><strong>stop = 30.0</strong> — the run length in seconds.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1374,11 +1570,9 @@ plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")</code></pre>
           oscillating.</figcaption>
       </figure>
     </div>
-    <!-- Gains and errors here are the analytic values from docs/lecture-01-notebooks.md, hence
-         the daggers. They assume theta_e = 0.04 s. If theta_e moves to 0.2-0.3 s (HANDOVER
-         Risk 1) the ultimate gain drops to roughly 115 N.m per km/h, so the top two members of
-         this family would oscillate rather than settle and the family must be re-centred on
-         the executed notebook — around one, two and three times the lowest gain. -->
+    <!-- The four gains and their outcomes are read from the executed notebook at the shipped
+         theta_e = 0.3 s, where the ultimate gain is about 115 N.m per km/h. That is why the top
+         two members of the family oscillate rather than settle, and why the slide says so. -->
     <aside class="notes">
       <p><strong>Point at:</strong> the curves in order. Each one rises faster and each one
       stops closer. Then point at the dashed setpoint and say: none of them arrives.</p>
@@ -1397,6 +1591,13 @@ plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")</code></pre>
       gain grows — the commanded torque at the instant of the step, and the loop's appetite for
       sensor noise. We spend section 08 on exactly that bill.</p>
 
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 14, 56, 220, 890</strong> — four gains spanning about two decades, N·m per km/h.</li>
+        <li><strong>K<sub>u</sub> ≈ 115</strong> N·m per km/h — the <em>ultimate gain</em>: the gain at which the loop oscillates forever, neither growing nor decaying. Above it there is no steady state.</li>
+        <li><strong>Settled error</strong> — 2.9 km/h at k = 14, 0.7 at k = 56. The other two never settle, so the question does not apply to them.</li>
+        <li><strong>The right-hand panel</strong> — the last 30 seconds, magnified onto a 5 km/h window so the difference between "settled" and "still oscillating" is visible.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1453,6 +1654,13 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code><
       control to reach the setpoint exactly? <em>(That holding the setpoint needs zero control
       effort. Walking across a room qualifies. Almost nothing you will ever be paid to control
       does.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>The blue curve</strong> — the error <em>solved</em> from the force balance, not simulated: the fixed point of e = T_cruise(v_set − e)/k. It has an answer at every gain.</li>
+        <li><strong>The shaded region</strong> — gains above K<sub>u</sub> = 115, where the loop does not settle, so the curve's answer is not a thing you could measure.</li>
+        <li><strong>Black dots</strong> — simulated runs that settled. <strong>Red crosses</strong> — gains the curve predicts but the simulation refuses to deliver.</li>
+        <li><strong>Log axis</strong> — the gain spans two and a half decades, so equal spacing means equal ratios, not equal differences.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1486,6 +1694,12 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code><
       that does not depend on the error right now? <em>(Something accumulated. Steer them to
       "it should remember that it has been short for a while." Do not say "integral" for them —
       let the room produce the word.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>u_needed(110) ≈ 40 N·m</strong> — the effort required to hold the setpoint, which never goes away because drag never goes away.</li>
+        <li><strong>e<sub>∞</sub> = u_needed / k</strong> — the steady-state error. The most reusable formula in this section.</li>
+        <li><strong>e<sub>∞</sub></strong> — the subscript means "as time goes to infinity", i.e. once settled.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1515,13 +1729,14 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code><
     <p class="nb-no">Notebook 04</p>
     <h2>Proportional-integral</h2>
     <p class="thesis">The integrator works out the answer you would otherwise have to compute by hand.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/04-proportional-integral.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/04-proportional-integral.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> one boolean changes between the last notebook and this one.
       <code>with_I = true</code>. Same car, same gain, same step.</p>
       <p><strong>Timing:</strong> 12 minutes. The middle slide of this section — the
       integrator's own state settling on the number we computed with a pencil — is the best
       slide in the lecture. Do not rush to it and do not rush past it.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -1540,10 +1755,6 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code><
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Lecture1/CruiseLoop.dyad</code>
-        <span class="show">show — <b><code>with_I</code> is a <code>structural</code>
-          parameter</b>. The integrator is either compiled into the equations or it is not
-          there at all. P and PI are two different models, not one model with a gain at
-          zero.</span>
       </div>
       <div class="callout small">
         <span class="label">Read that last point again</span>
@@ -1560,6 +1771,15 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code><
       <p><strong>On T<sub>i</sub>:</strong> it is a <em>time</em>, not a gain, and it divides —
       so smaller T<sub>i</sub> is more aggressive integration. Say it now; it catches people out
       every single year.</p>
+          <p><strong>In the model:</strong> <b><code>with_I</code> is a <code>structural</code> parameter</b>. The integrator is either compiled into the equations or it is not there at all. P and PI are two different models, not one model with a gain at zero.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>∫e dτ</strong> — the accumulated error: the running total of how far off we have been, and for how long. Units here are km/h·s.</li>
+        <li><strong>T<sub>i</sub></strong> — the <em>integral time</em>, in seconds. It <em>divides</em>, so a smaller T<sub>i</sub> integrates harder. This catches people out every year.</li>
+        <li><strong>k</strong> — the same proportional gain, which multiplies the whole bracket, so it scales all three paths together.</li>
+        <li><strong>τ</strong> — here just the dummy variable of integration, not the plant time constant. Unfortunate collision; say so if anyone frowns.</li>
+        <li><strong>with_I</strong> — the boolean that compiles the integrator in or out.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1606,6 +1826,14 @@ pi_loop = Scenarios.CruiseLoopTransient(
       <p><strong>Ask the room:</strong> which one reached the setpoint faster to within, say,
       1 km/h? <em>(Usually P. Arriving eventually and arriving exactly are different
       requirements, and PID tuning is mostly about trading one for the other.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 56</strong> N·m per km/h, the same for both runs.</li>
+        <li><strong>T<sub>i</sub> = 10 s</strong> — the integral time for the PI run.</li>
+        <li><strong>stop = 60 s</strong> — run length.</li>
+        <li><strong>UNLIMITED = 1e6</strong> — the lifted torque ceiling, standing in for "no limit".</li>
+        <li><strong>SPEED = "loop.plant.v_kmh"</strong> — the signal path: inside the harness, inside the loop, the plant's km/h output.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1639,9 +1867,6 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CruiseLoop.dyad</code>
-          <span class="show">show — the integrator is <b>inside <code>LimPID</code></b>, and
-            <code>integrator.y</code> is its state <em>before</em> the gain. The plot multiplies
-            by <code>k</code> to get newton-metres.</span>
         </div>
       </div>
       <figure class="fig">
@@ -1669,6 +1894,15 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
       <p><strong>Check:</strong> if the integrator settles anywhere other than the hand-computed
       torque, the units or the gear ratio disagree between notebook and model — that mismatch
       is worth more than the slide, so stop and find it.</p>
+          <p><strong>In the model:</strong> The integrator is <b>inside <code>LimPID</code></b>, and <code>integrator.y</code> is its state <em>before</em> the gain. The plot multiplies by <code>k</code> to get newton-metres.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>integrator.y</strong> — the integrator's own state, <em>before</em> the gain k is applied. Multiply by k to get newton-metres.</li>
+        <li><strong>k·I = 40.119 N·m</strong> — where it settles.</li>
+        <li><strong>T_cruise(110) = 40.119 N·m</strong> — the same number, computed from the force balance with a pencil in section 01.</li>
+        <li><strong>The dashed line</strong> — that hand-computed value, drawn on so the coincidence is visible rather than asserted.</li>
+        <li><strong>stop = 90 s</strong> — a longer window than the step needs, because the last hundredths of a newton-metre take most of a minute.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1717,6 +1951,12 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
       <p><strong>Ask the room:</strong> so what could we add that reacts <em>before</em> we
       arrive, rather than after? <em>(Something that watches how fast we are closing. Straight
       into 05.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T<sub>i</sub> = 40, 20, 10, 5, 2.5 s</strong> — the sweep, from lazy to aggressive.</li>
+        <li><strong>Overshoot</strong> — the peak excursion past the setpoint, as a percentage of the commanded step. A 20 km/h step overshooting to 112 is 10 %.</li>
+        <li><strong>Every one of these settles at 110</strong> — the integrator guarantees that. The sweep is about the journey, not the destination.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1746,7 +1986,7 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
     <p class="nb-no">Notebook 05</p>
     <h2>Proportional-integral-derivative</h2>
     <p class="thesis">Three terms, three jobs: present, past, future.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/05-pid.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/05-pid.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> second boolean. <code>with_D = true</code>. That is the only
       change from the last notebook, and it completes the controller that runs most of the
@@ -1754,6 +1994,7 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
       <p><strong>Timing:</strong> 12 minutes. The three-contributions plot is the one to spend
       time on — it is the only place in the lecture where you can see the division of labor
       directly rather than infer it.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -1781,6 +2022,12 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
       <p><strong>Flag forward:</strong> in a real controller this is not a pure derivative —
       there is a filter on it, and section 07 shows what happens without one. Mention it now in
       one sentence so the <code>Nd</code> parameter is not a surprise later.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>de/dt</strong> — the rate of change of the error, km/h per second. Negative while closing on the setpoint.</li>
+        <li><strong>T<sub>d</sub></strong> — the <em>derivative time</em>, in seconds. It multiplies, so bigger is more derivative action — the opposite convention to T<sub>i</sub>.</li>
+        <li><strong>N<sub>d</sub></strong> — the derivative filter coefficient, mentioned here and explained in section 07. A real derivative is always filtered.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1827,6 +2074,13 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
       $T_i$ and $T_d$ are seconds, which you can compare against the plant's own time constant —
       and that comparison is how you sanity-check a gain set. $K_i$ is in N·m per km/h per
       second, which means nothing to anybody.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>K<sub>p</sub>, K<sub>i</sub>, K<sub>d</sub></strong> — the parallel form: three independent gains. K<sub>i</sub> is N·m per km/h per second; K<sub>d</sub> is N·m per km/h per second<sup>-1</sup>.</li>
+        <li><strong>k, T<sub>i</sub>, T<sub>d</sub></strong> — the standard (ISA) form: one gain and two times, in seconds.</li>
+        <li><strong>K<sub>p</sub> = k, K<sub>i</sub> = k/T<sub>i</sub>, K<sub>d</sub> = k·T<sub>d</sub></strong> — the conversion, left to right.</li>
+        <li><strong>T<sub>i</sub> = K<sub>p</sub>/K<sub>i</sub>, T<sub>d</sub> = K<sub>d</sub>/K<sub>p</sub></strong> — and back.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1867,6 +2121,14 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
       placement at all — they look like arithmetic on measured numbers. That is exactly their
       appeal: somebody else did the zero placement for a whole family of plants and left you a
       table.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>s</strong> — the Laplace variable. Multiplying by s is differentiating; dividing is integrating.</li>
+        <li><strong>C(s)</strong> — the controller's transfer function: output over input, in the frequency domain.</li>
+        <li><strong>Pole</strong> — a root of the denominator. The one at the origin (s = 0) is the integrator, and we do not get to move it.</li>
+        <li><strong>Zero</strong> — a root of the numerator. PID has two, and where you put them is exactly what T<sub>i</sub> and T<sub>d</sub> decide.</li>
+        <li><strong>Loop gain</strong> — the k out front, which slides the whole response up and down.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1916,6 +2178,13 @@ pid_loop = rerun(
       <p><strong>Ask the room:</strong> if a colleague showed you only the PID curve, what
       could you not tell? <em>(Whether it is well tuned or merely lucky. Which is exactly why
       section 08 exists.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 56, T<sub>i</sub> = 10 s, T<sub>d</sub> = 0.5 s</strong> — one gain set, three controllers.</li>
+        <li><strong>wd = 0.0</strong> — the derivative setpoint weight. Zero means the derivative acts on the <em>measurement</em> only, not on the setpoint, so a step in the setpoint does not produce an infinite kick. Standard practice, and why the code sets it.</li>
+        <li><strong>xd0</strong> — the derivative block's initial state, preloaded with the starting speed so the run does not begin with a spurious transient.</li>
+        <li><strong>V_START = 90 km/h</strong> — where the car is before the step.</li>
+      </ul>
     </aside>
   </section>
 
@@ -1966,6 +2235,13 @@ t_u, u_cmd = signal(pid_loop, "loop.controller.y")</code></pre>
       <p><strong>Ask the room:</strong> at t = 100 s, which term is holding the car at
       110 km/h? <em>(Only the integral. The other two are at zero. Make them say it out
       loud.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>proportional.y, integrator.y, derivative.y</strong> — each path's own output inside <code>LimPID</code>, before the shared gain.</li>
+        <li><strong>× k</strong> — every trace is multiplied by the gain so all four are in newton-metres and can share an axis.</li>
+        <li><strong>controller.y</strong> — the sum, which is what the engine is actually asked for.</li>
+        <li><strong>Zero at both ends</strong> — the derivative before the step and after settling, because the error is not moving at either time.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2012,6 +2288,12 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <p><strong>Ask the room:</strong> in a car, what does an aggressive derivative feel like
       to a passenger? <em>(Surging — the controller reacting to every small change. There is a
       comfort requirement hiding in the gain set.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T<sub>d</sub> = 0.1, 0.25, 0.5, 1.0, 2.0, 4.0 s</strong> — the sweep.</li>
+        <li><strong>xlims = (0, 40)</strong> — the window, in seconds.</li>
+        <li><strong>Sluggish</strong> — the response takes longer to arrive. <strong>Jittery</strong> — it reacts to small changes it should ignore.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2038,9 +2320,6 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Lecture1/CruiseLoop.dyad</code>
-        <span class="show">show — the two <b><code>structural parameter</code></b> lines, and
-          the single <code>LimPID</code> they configure. Four controllers, one file, twelve
-          lines apart.</span>
       </div>
     </div>
     <aside class="notes">
@@ -2053,6 +2332,13 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <p><strong>Say:</strong> and when would you leave the derivative out? <em>(When the
       measurement is noisy and you cannot filter it enough. Which is most of the time — a large
       fraction of industrial loops in service are PI, not PID.)</em></p>
+          <p><strong>In the model:</strong> The two <b><code>structural parameter</code></b> lines, and the single <code>LimPID</code> they configure. Four controllers, one file, twelve lines apart.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>P</strong> present only. <strong>PI</strong> present and past. <strong>PD</strong> present and future. <strong>PID</strong> all three.</li>
+        <li><strong>Why leave the integrator out</strong> — when the plant already integrates, e.g. a motor position loop, where holding position costs nothing.</li>
+        <li><strong>Why leave the derivative out</strong> — when the measurement is too noisy to differentiate. Most industrial loops in service are PI.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2083,13 +2369,14 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
     <p class="nb-no">Notebook 06</p>
     <h2>Integral windup</h2>
     <p class="thesis">The integrator does not know the engine has run out.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/06-windup.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/06-windup.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> everything so far has been true of a linear model. This section
       is about the first place where the real world stops being linear, and it is the failure
       that has actually destroyed hardware.</p>
       <p><strong>Timing:</strong> 14 minutes, and it is worth borrowing from section 09 if you
       need to. This is the most practically useful thing in the lecture.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -2107,9 +2394,6 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Vehicle/IdealEngine.dyad</code>
-        <span class="show">show — the <b><code>limiter</code></b>: <code>y_max = T_max</code>,
-          and <code>y_min = 0</code>. That second one matters too — this engine cannot brake,
-          so downhill it has no answer at all.</span>
       </div>
       <div class="callout danger small">
         <span class="label">The hill we are about to drive up</span>
@@ -2128,6 +2412,16 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <p><strong>Ask the room:</strong> what does the controller see when the engine is pinned
       at its limit? <em>(Exactly what it saw before: a speed that is too low. It has no sensor
       for "the actuator has given up". Hold that thought for two slides.)</em></p>
+          <p><strong>In the model:</strong> The <b><code>limiter</code></b>: <code>y_max = T_max</code>, and <code>y_min = 0</code>. That second one matters too — this engine cannot brake, so downhill it has no answer at all.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Actuator</strong> — the thing that supplies the force or energy. Our engine.</li>
+        <li><strong>Process</strong> — the thing being pushed. Our car.</li>
+        <li><strong>Saturation</strong> — an actuator at its limit, unable to follow the command it was given.</li>
+        <li><strong>2024 N</strong> — the tractive force a 10 % climb at 130 km/h demands. <strong>1935 N</strong> — what the engine can deliver. Five per cent short.</li>
+        <li><strong>118 km/h</strong> — where the car settles on that climb once it has lost the argument.</li>
+        <li><strong>y_min = 0</strong> — the limiter's lower bound. This engine cannot produce negative torque, so it cannot brake.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2158,9 +2452,6 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Vehicle/GradeProfile.dyad</code>
-          <span class="show">show — <code>gradient</code>, <code>start_time</code> and
-            <b><code>duration</code></b>. The road flattens again because the duration is
-            finite, and the flattening is where the damage shows.</span>
         </div>
       </div>
       <figure class="fig">
@@ -2187,6 +2478,16 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
       <p><strong>Say (the drone story, if it helps):</strong> it is the same as holding a drone
       down on the ground while it is trying to fly to 50 metres. The propellers max out at
       1000 rpm, the integrator winds the command to 2000, and the moment you let go…</p>
+          <p><strong>In the model:</strong> <code>gradient</code>, <code>start_time</code> and <b><code>duration</code></b>. The road flattens again because the duration is finite, and the flattening is where the damage shows.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>grade = 0.10</strong> — tan α, a 10 % climb, about 5.7°.</li>
+        <li><strong>t_climb = (30, 90) s</strong> — when the hill starts and ends.</li>
+        <li><strong>v_set = 130 km/h</strong> — the cruise setpoint.</li>
+        <li><strong>Commanded torque</strong> — what the controller asks for; it keeps climbing. <strong>Delivered torque</strong> — what the engine gives; it is flat on the limit.</li>
+        <li><strong>The integrator state</strong> — plotted separately, because it is the thing actually going wrong and it is invisible in the speed trace.</li>
+        <li><strong>antiwindup = :none</strong> — no protection, deliberately, so the failure is visible.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2220,6 +2521,12 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
       it takes to <em>unwind</em>, during which the controller is effectively disconnected.</p>
       <p><strong>Ask the room</strong> before running the next cell: how far past 130 km/h do
       you think we go? <em>(Take two guesses, write them on the board, then run it.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Windup</strong> — an integrator accumulating past the point where the actuator can act on it.</li>
+        <li><strong>Unwinding</strong> — coming back down. The harm is here, not in the winding: until the command falls back inside the limit, nothing the car does reaches the engine.</li>
+        <li><strong>Effectively disconnected</strong> — the phrase to use. During unwinding, the loop is open whether you designed it that way or not.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2265,6 +2572,12 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <p><strong>Ask the room:</strong> what would you change to stop it? <em>(Collect answers
       before showing the fix. "Limit the output" is the usual first one — and it is not enough
       on its own, which is a useful thing for them to discover in a moment.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>overshoot(sol, 130; y0 = 130)</strong> — peak excursion past the setpoint as a percentage of the step. <code>y0</code> is the pre-step speed, given explicitly here because the run starts at the setpoint.</li>
+        <li><strong>The dotted verticals</strong> — where the climb starts and ends.</li>
+        <li><strong>The peak</strong> — read it off and compare with the guesses on the board.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2334,6 +2647,14 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <p><strong>Also note:</strong> this is conditional integration, the method taught in the
       video the students were pointed at. It is not the only method — back-calculation feeds the
       saturation error back into the integrator instead — and we compare both next.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Condition one</strong> — the controller output before the saturation block differs from the output after it. That is what "saturating" means, operationally.</li>
+        <li><strong>Condition two</strong> — sign(e) = sign(u): the integrator is still pushing in the direction that is already maxed out.</li>
+        <li><strong>AND</strong> — both, and only both. Either one false and the integrator is released.</li>
+        <li><strong>The switch</strong> — sets the integrator's <em>input</em> to zero. It freezes; it does not reset and it does not decay.</li>
+        <li><strong>Conditional integration</strong> — the other name for clamping.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2365,9 +2686,6 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CruiseLoop.dyad</code>
-          <span class="show">show — <b><code>Ni</code></b>, the back-calculation parameter, and
-            <b><code>y_max</code> defaulting to <code>T_max</code></b> — the controller's own
-            ceiling, which the next slide argues should sit lower.</span>
         </div>
       </div>
     </div>
@@ -2382,6 +2700,14 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <em>(It unwinds while still saturated, rather than merely refusing to wind further. In a
       long saturation both end up in about the same place, which is what the next slide
       shows.)</em></p>
+          <p><strong>In the model:</strong> <b><code>Ni</code></b>, the back-calculation parameter, and <b><code>y_max</code> defaulting to <code>T_max</code></b> — the controller's own ceiling, which the next slide argues should sit lower.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>İ</strong> — the rate of change of the integrator state.</li>
+        <li><strong>u_sat − u</strong> — how much of the command did not get through. Zero whenever we are inside the limit, which is why the term vanishes in normal operation.</li>
+        <li><strong>T<sub>t</sub></strong> — the <em>tracking time constant</em>, seconds. How fast the integrator is dragged back when saturated. Small is aggressive.</li>
+        <li><strong>N<sub>i</sub></strong> — how <code>LimPID</code> exposes it: T<sub>t</sub> = N<sub>i</sub>·T<sub>i</sub>. Default 0.9.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2440,6 +2766,12 @@ end
       Clamping is cheaper and easier to explain to the next engineer; back-calculation is
       smoother, with a tuning parameter of its own. The real answer is: whichever one your
       framework already implements correctly.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>:none</strong> — no protection. <strong>:clamping</strong> — conditional integration. <strong>:backcalculation</strong> — <code>LimPID</code>'s built-in, via N<sub>i</sub>.</li>
+        <li><strong>Peak overshoot</strong> — the single number that separates them.</li>
+        <li><strong>What none of them fixes</strong> — the car still falls to 118 km/h on the climb. Anti-windup does not add performance; it stops you being punished for asking.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2471,6 +2803,12 @@ end
       <p><strong>Ask the room:</strong> where else in a vehicle would you apply that reasoning?
       <em>(Brake pressure, steering rate, battery current — anywhere the datasheet number is an
       optimistic one.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>y_max</strong> — the controller's output clamp, which <em>you</em> choose.</li>
+        <li><strong>T_max</strong> — the engine's nameplate ceiling, which the datasheet claims.</li>
+        <li><strong>The rule</strong> — set y_max below T_max by however much you distrust your model of the actuator. Hot, aged, at altitude, on poor fuel: all lower the real ceiling.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2502,12 +2840,13 @@ end
     <p class="nb-no">Notebook 07</p>
     <h2>Derivative and noise</h2>
     <p class="thesis">The derivative does not care how big the noise is, only how fast.</p>
-    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/07-derivative-and-noise.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/07-derivative-and-noise.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> in section 05 the derivative was free. It cost nothing and it
       removed the overshoot. Here is the bill.</p>
       <p><strong>Timing:</strong> 10 minutes. The two-sines slide is the one that has to land;
       everything else is evidence.</p>
+          <p><strong>Cut order:</strong> first to go. Everything here is upside; the lecture stands without it.</p>
     </aside>
   </section>
 
@@ -2552,6 +2891,12 @@ plot(t, [v_true v_meas]; lw = 2,
       lecture's fallback, and a plot that changes on every run is worse than useless. Mention it
       only if someone asks why it looks periodic — then it is a good answer about reproducible
       simulation.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>plant.v_kmh</strong> — the true speed. <strong>noise.y</strong> — the measured speed, with noise added.</li>
+        <li><strong>N<sub>d</sub> = 10</strong> — a sane derivative filter coefficient for this first run.</li>
+        <li><strong>Deterministic noise</strong> — a sum of sines, not a random process, so the committed plots reproduce exactly. Say so only if asked why it looks periodic.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2586,6 +2931,14 @@ plot(t, [v_true v_meas]; lw = 2,
       <p><strong>Ask the room:</strong> our noise is a hundredth of a km/h. If it sits at
       500 rad/s, what does the derivative make of it? <em>(Five km/h per second of apparent
       acceleration, out of nothing. Now multiply by T<sub>d</sub>.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>A</strong> — the amplitude of the noise. Unchanged between the two sines.</li>
+        <li><strong>ω</strong> — the angular frequency, radians per second. Ten times higher in the second.</li>
+        <li><strong>A·ω</strong> — the amplitude of the derivative. This is the whole argument: differentiation multiplies by frequency.</li>
+        <li><strong>ω = 1 rad/s</strong> — the break-even point. Above it the derivative amplifies; below it, attenuates.</li>
+        <li><strong>The yellow tangents</strong> — the slope at the steepest point of each sine, which is what the derivative reports.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2637,6 +2990,13 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
       <p><strong>Ask the room:</strong> would a real cruise control ever run a pure derivative?
       <em>(No. Which is why the block you get in any real toolchain has a filter coefficient on
       it, and why most industrial loops are PI with no derivative at all.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>N<sub>d</sub> = 1000</strong> — filter cutoff pushed so high it is effectively no filter.</li>
+        <li><strong>extrema(...)</strong> — the minimum and maximum of the commanded torque, i.e. the full swing.</li>
+        <li><strong>TORQUE_CMD</strong> — the signal path for what the controller asks of the engine.</li>
+        <li><strong>delivered = nothing</strong> — the delivered trace is suppressed so the commanded chatter is not hidden behind it.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2677,6 +3037,13 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <p><strong>Say:</strong> and notice the filter does not remove the noise. It attenuates
       it, so that after the derivative amplifies what is left, the result is small enough not to
       matter. Nothing here is exact.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>sN/(s + N)</strong> — a derivative in series with a first-order low-pass. At low frequency it is a derivative; at high frequency it flattens off instead of growing.</li>
+        <li><strong>N</strong> — the cutoff frequency in rad/s; <code>N<sub>d</sub></code> in the code.</li>
+        <li><strong>s</strong> — the Laplace variable; multiplying by s is differentiating.</li>
+        <li><strong>N<sub>d</sub> = 1000, 100, 20, 5</strong> — the sweep, from no filter to heavy.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2707,6 +3074,13 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <em>sN/(s+N)</em> is algebraically identical to a feedback loop with <em>N</em> forward and
       an integrator in the feedback path. Same behavior, fewer operations, much harder to read.
       Worth mentioning that the block in your toolchain may well be implemented the second way.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Cutoff frequency</strong> — where the filter starts attenuating, conventionally at −3 dB.</li>
+        <li><strong>Low-pass</strong> — passes slow things, blocks fast ones.</li>
+        <li><strong>The trade-off</strong> — too high and the noise gets through; too low and you filter away the signal, and the derivative stops doing its job.</li>
+        <li><strong>When the bands overlap</strong> — no first-order filter helps, and you need a better sensor or a state estimator.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2735,7 +3109,7 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
     <p class="nb-no">Notebook 08</p>
     <h2>Tuning</h2>
     <p class="thesis">You can compute a starting gain set from a single step test, without a model.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/08-tuning.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/08-tuning.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> so far I have been handing you gains. Where did they come from?
       This section is the answer, and it is also the practical task from the course slides —
@@ -2743,6 +3117,7 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <p><strong>Timing:</strong> 15 minutes. This section has the most cells of any in the
       lecture; if you are behind, do the step test, Ziegler-Nichols, and the saturation trap,
       and let Cohen-Coon and Tyreus-Luyben be read from the notebook afterwards.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -2782,6 +3157,14 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <p><strong>Ask the room:</strong> which box would a drone's attitude loop sit in?
       <em>(Unstable open loop — not well behaved. Which is why you do not tune a quadcopter by
       raising the gain until it oscillates.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Well behaved</strong> — stable open loop, near enough linear, minimum phase, manageable delay. No strict definition; it is a judgement.</li>
+        <li><strong>Minimum phase</strong> — no zero in the right half plane. In plain terms: the output does not first move the <em>wrong</em> way when you push it.</li>
+        <li><strong>Open-loop stable</strong> — left alone, disturbances die out. Our car coasts to a stop; a quadcopter falls over.</li>
+        <li><strong>Model-based tuning</strong> — pole placement, loop shaping, autotuning. Needs a mathematical model.</li>
+        <li><strong>Heuristic tuning</strong> — a table applied to measured numbers. Needs only an experiment.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2827,6 +3210,16 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <p><strong>Ask the room:</strong> what would make this car harder to control?
       <em>(More dead time. Which is exactly what sampling adds in section 09 — same ratio, made
       worse by our own software.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>G(s)</strong> — the plant's transfer function: output over input in the Laplace domain.</li>
+        <li><strong>K</strong> — steady-state gain. Output change per unit input change, once settled. Ours: 2.21 km/h per N·m.</li>
+        <li><strong>τ</strong> — time constant, seconds. Time to cover 63 % of the change. Ours: 63 s.</li>
+        <li><strong>θ</strong> — dead time, seconds. How long nothing happens first. Ours: 1.63 s as fitted.</li>
+        <li><strong>e<sup>−θs</sup></strong> — how a pure delay is written in the Laplace domain.</li>
+        <li><strong>r = θ/τ</strong> — the ratio every table keys on. Ours is about 0.026: the easy end.</li>
+        <li><strong>FOPTD</strong> — first order plus dead time. Also written FOPDT; same thing.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2877,6 +3270,13 @@ K, tau, theta = fopdt_fit(sol)
       <p><strong>They get wrong:</strong> stepping from zero, or stepping huge. The point of a
       step test is to characterize the plant <em>where you operate it</em>. On a plant with v²
       drag, a step from rest measures a different plant.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>tau_lo → tau_hi</strong> — step the manipulated variable from one settled value to another, here 31.1 → 40.1 N·m.</li>
+        <li><strong>A</strong> — the size of that input step, 9.04 N·m. Dividing by it is step 4 of the procedure and is what makes K a property of the plant.</li>
+        <li><strong>t0 = t_step</strong> — when the step was applied, handed to the fit rather than guessed.</li>
+        <li><strong>stop = 600 s</strong> — long enough for the response to settle; about ten time constants.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2938,6 +3338,16 @@ K, tau, theta = fopdt_fit(sol)
       rather than of how hard you happened to push.</p>
       <p><strong>They get wrong:</strong> reading τ as "time to reach the final value". It is
       63 % of it, and the remaining 37 % takes another three time constants.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>t₀</strong> — when the input stepped.</li>
+        <li><strong>B</strong> — the total change in the output, end to end.</li>
+        <li><strong>t₂</strong> — when the output had covered half of B.</li>
+        <li><strong>t₃</strong> — when it had covered 1 − 1/e of B, about 63.2 %.</li>
+        <li><strong>t₁</strong> — the intercept those two imply: where a pure first-order curve would have started. Everything before it is dead time.</li>
+        <li><strong>K = B/A</strong>, <strong>τ = t₃ − t₁</strong>, <strong>θ = t₁ − t₀</strong>.</li>
+        <li><strong>ln 2</strong> — appears because t₂ is the half-way point of an exponential.</li>
+      </ul>
     </aside>
   </section>
 
@@ -2993,6 +3403,14 @@ plot_speed(sol_cc; setpoint = 110)</code></pre>
       <p><strong>Point at</strong> the response and ask whether it looks like something you
       would ship. <em>(Cohen-Coon is usually quick and usually oscillatory. It is a starting
       point, not an answer — say that phrase every time a table produces a number.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>r = θ/τ</strong> — the same ratio, appearing in every cell of the table.</li>
+        <li><strong>1/K</strong> — the gain is inversely proportional to the plant's gain. A twitchy plant gets a gentler controller.</li>
+        <li><strong>τ/θ</strong> — and proportional to how little dead time there is. This is why k blows up as θ → 0.</li>
+        <li><strong>P / PI / PID rows</strong> — pick the row for the controller you intend to build; you do not have to use all three paths.</li>
+        <li><strong>The result</strong> — k in N·m per km/h, T<sub>i</sub> and T<sub>d</sub> in seconds.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3030,12 +3448,9 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
           <em>K<sub>u</sub></em> it neither — and its period is <em>P<sub>u</sub></em>.</figcaption>
       </figure>
     </div>
-    <!-- Ku and Pu are deliberately not printed on this slide. They depend on theta_e, which
-         HANDOVER Risk 1 expects to move from 0.04 s to 0.2-0.3 s: at 0.04 s the ultimate
-         period is around 0.22 s, at 0.3 s around 2.2 s, and the ultimate gain moves by two
-         orders of magnitude with it. Read both off the executed notebook.
-         Unit note: HANDOVER quotes Ku in N.m per m/s. This loop is in km/h, so the number the
-         notebook reports is that figure divided by 3.6. -->
+    <!-- At the shipped theta_e = 0.3 s the ultimate period is about 2.2 s and the ultimate
+         gain about 115 N.m per km/h. Unit note: HANDOVER quotes Ku in N.m per m/s; this loop
+         runs in km/h, so the number the notebook reports is that figure divided by 3.6. -->
     <aside class="notes">
       <p><strong>Say:</strong> this is a completely different kind of experiment. Cohen-Coon
       watched the plant on its own. Ziegler-Nichols closes the loop and pushes it towards
@@ -3052,6 +3467,14 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       squaring off against the torque limit rather than looking sinusoidal — say so plainly:
       that is relay limit-cycling, not the linear sustained oscillation the method assumes, and
       the K<sub>u</sub> you would read off it is not the one the table wants.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>K<sub>u</sub></strong> — the <em>ultimate gain</em>: the proportional gain at which the loop oscillates at constant amplitude. Ours is about 115 N·m per km/h.</li>
+        <li><strong>P<sub>u</sub></strong> — the <em>ultimate period</em>: the period of that oscillation, in seconds. About 2.2 s here.</li>
+        <li><strong>ks_probe</strong> — the ladder of gains you walk up to find K<sub>u</sub>.</li>
+        <li><strong>Sustained oscillation</strong> — neither growing nor decaying. Below K<sub>u</sub> it decays, above it grows.</li>
+        <li><strong>Relay limit cycling</strong> — squared-off oscillation caused by banging between actuator limits. Not the linear oscillation the method assumes; if you see it, the K<sub>u</sub> you read is not the one the table wants.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3087,6 +3510,13 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       language of the section 05 slide, Ziegler-Nichols always puts the two zeros in the same
       place relative to each other and only slides them with $P_u$. That is the whole content
       of the method.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>K<sub>u</sub>/2, /2.2, /1.7</strong> — the gain for P, PI and PID. Note it <em>falls</em> as you add paths.</li>
+        <li><strong>P<sub>u</sub>/1.2, /2, /8</strong> — the times, all fractions of the ultimate period.</li>
+        <li><strong>T<sub>i</sub> = 4·T<sub>d</sub></strong> — true in every ZN row, whatever P<sub>u</sub> is. The two zeros always sit in the same ratio.</li>
+        <li><strong>Quarter-amplitude decay</strong> — the design target: each overshoot a quarter of the one before. A 1940s process-plant taste, not a law.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3135,6 +3565,13 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       <p><strong>Say:</strong> which tells you something important — a tuning rule encodes
       somebody's requirements, not a law of nature. If their requirements are not yours, their
       table is not yours either.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>K<sub>u</sub>/3.2 and /2.2</strong> — lower gains than Ziegler-Nichols.</li>
+        <li><strong>2.2·P<sub>u</sub></strong> — the integral time is <em>multiplied</em> by the ultimate period where ZN divides it. That is a factor of 4.4 slower.</li>
+        <li><strong>P<sub>u</sub>/6.3</strong> — the derivative time.</li>
+        <li><strong>No P row</strong> — the method exists to be gentler, and a P controller has nothing to be gentle with.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3175,6 +3612,14 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       the process as little as you can get away with.)</em></p>
       <p><strong>We do not run this one</strong> in the notebooks — say so. It needs a relay
       block the model does not have, and it would tell us what Ziegler-Nichols already told us.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>d</strong> — the relay amplitude: how far above and below the steady output you switch. <em>You</em> choose it, and it bounds the disturbance.</li>
+        <li><strong>a</strong> — the amplitude of the resulting oscillation in the measured output.</li>
+        <li><strong>P<sub>u</sub></strong> — its period, read straight off the plot.</li>
+        <li><strong>K<sub>u</sub> = 4d/πa</strong> — the describing-function estimate. The 4/π is the first harmonic of a square wave of height d.</li>
+        <li><strong>Limit cycle</strong> — the sustained oscillation a relay produces. Here it is the measurement, not a fault.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3223,6 +3668,11 @@ end</code></pre>
       <p><strong>Say:</strong> and notice what we never did. We never used the mass of the car.
       A tuning method that needs no model is a method you can use on hardware somebody else
       built.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Three gain sets</strong> — Cohen-Coon, Ziegler-Nichols, Tyreus-Luyben, each a (k, T<sub>i</sub>, T<sub>d</sub>) triple.</li>
+        <li><strong>One plant, one step test</strong> — everything that differs between the curves came out of a table, not out of the car.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3253,6 +3703,13 @@ end</code></pre>
       one.)</em></p>
       <p><strong>Say:</strong> and the honest summary of all five — they get you into the right
       decade. The last factor of two is always yours.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Experiment</strong> — what you actually have to do to the plant.</li>
+        <li><strong>Measures</strong> — the two or three numbers you come away with.</li>
+        <li><strong>Risk</strong> — what the experiment costs you if it goes wrong. The column that decides which method you may use on the day.</li>
+        <li><strong>Starting point</strong> — what every one of these gives you. None is a finished design.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3281,6 +3738,12 @@ end</code></pre>
       <p><strong>Ask the room:</strong> what would you have to believe about the model for that
       to be safe? <em>(That it is right near the stability boundary — which is where models are
       least trustworthy. There is no free lunch here and they should feel that.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Edge of instability</strong> — where a small increase in gain makes oscillation grow instead of decay.</li>
+        <li><strong>Why simulation is different</strong> — an unstable model costs a re-run; an unstable vehicle costs rather more.</li>
+        <li><strong>The middle route</strong> — run ZN on the model, take the gains to the hardware. You trade risk for trust in the model, precisely where models are least trustworthy.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3309,9 +3772,6 @@ plot_torque(sol_hot)                  # now look at this</code></pre>
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CruiseLoop.dyad</code>
-          <span class="show">show — the notebooks lift <b><code>T_max</code> and
-            <code>y_max</code></b> to run this. Put them back to 150 and re-run: the beautiful
-            response is the first thing to go.</span>
         </div>
         <div class="callout danger small">
           <span class="label">The second plot</span>
@@ -3338,6 +3798,14 @@ plot_torque(sol_hot)                  # now look at this</code></pre>
       that without it this same design would also wind up.</p>
       <p><strong>Say the rule:</strong> always plot the actuator command. Every time. It is one
       extra line in the notebook and it is the difference between a design and a drawing.</p>
+          <p><strong>In the model:</strong> The notebooks lift <b><code>T_max</code> and <code>y_max</code></b> to run this. Put them back to 150 and re-run: the beautiful response is the first thing to go.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>8·k_zn, T<sub>i</sub>/2</strong> — gains pushed well past the table, to make the response look superb.</li>
+        <li><strong>The upper plot</strong> — speed. Looks perfect.</li>
+        <li><strong>The lower plot</strong> — commanded torque, with the 150 N·m limit drawn on. Read the peak out loud.</li>
+        <li><strong>The rule</strong> — always plot the actuator command. One extra line, and it is the difference between a design and a drawing.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3368,13 +3836,14 @@ plot_torque(sol_hot)                  # now look at this</code></pre>
     <p class="nb-no">Notebook 09</p>
     <h2>Discretization</h2>
     <p class="thesis">The same controller gets worse purely because it looks less often.</p>
-    <p class="meta"><span class="tier tier-2">Tier 2</span> &nbsp; <code>notebooks/lecture01/09-discretization.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/09-discretization.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> everything we have designed today is continuous. Nothing you
       will ever ship is. This section is the bridge, and it uses the gains we just derived in
       section 08 — same controller, nothing re-tuned.</p>
       <p><strong>Timing:</strong> 8 minutes. If you are short, the sample-time sweep alone
       carries the point.</p>
+          <p><strong>Cut order:</strong> second to go. Drop this before touching the P → PI → PID → windup run.</p>
     </aside>
   </section>
 
@@ -3404,6 +3873,13 @@ plot_torque(sol_hot)                  # now look at this</code></pre>
       <p><strong>Say:</strong> digital control brings other effects too — quantization, and the
       transport delay of the computation itself. We are only going to look at sample time,
       because it is the one that will bite you first.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Sample time T<sub>s</sub></strong> — the interval between one update and the next, seconds.</li>
+        <li><strong>Sample rate</strong> — its reciprocal, in Hz.</li>
+        <li><strong>Zero-order hold</strong> — holding the last commanded value constant until the next tick. The staircase.</li>
+        <li><strong>Quantization</strong> — the other digital effect, from finite word length. Real, and not our subject today.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3483,6 +3959,12 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
       <em>(Steer towards the reasoning rather than a number: fast compared with what? The
       plant's time constant is about a minute; the loop's own bandwidth is seconds. That second
       number is the one that matters.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T<sub>s</sub> = 0.01, 0.1, 0.4, 1.0 s</strong> — the sweep.</li>
+        <li><strong>k_zn, Ti_zn, Td_zn</strong> — the Ziegler-Nichols gains from section 08, untouched. Nothing is re-tuned.</li>
+        <li><strong>Ringing</strong> — oscillation that decays, but slowly. <strong>Diverging</strong> — it does not decay at all.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3515,6 +3997,12 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
       staircase hurts.</p>
       <p><strong>Ask the room:</strong> why would half a sample of delay be enough to destroy a
       loop that was fine? <em>(Because phase margin is a finite budget. Next slide.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Surrogate</strong> — a stand-in that reproduces the mechanism without being the real thing. Ours is a half-sample transport delay.</li>
+        <li><strong>Clocked partition</strong> — a genuinely sampled section of a model, with its own clock. Dyad ships no sampled blocks, so we do not have one.</li>
+        <li><strong>What is faithful</strong> — the phase loss, and therefore every trend in the previous plot. <strong>What is missing</strong> — the staircase.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3551,6 +4039,14 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
       divergence. That ordering is a diagnostic — if a loop that used to be fine starts
       overshooting after a software change, ask what happened to the loop rate before you touch
       a gain.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Δφ ≈ −ωT<sub>s</sub>/2</strong> — the phase a zero-order hold costs, in radians, at frequency ω.</li>
+        <li><strong>ω</strong> — angular frequency, rad/s. <strong>ω<sub>c</sub></strong> — the crossover frequency: where the loop gain passes through 1, and the frequency at which phase margin is measured.</li>
+        <li><strong>Phase margin</strong> — how much extra phase lag the loop can absorb before it oscillates. A budget, measured in degrees.</li>
+        <li><strong>The rule of thumb</strong> — spend at most 0.2 rad (≈12°) on sampling: T<sub>s</sub> &lt; 0.4/ω<sub>c</sub>, i.e. 20–30× the <em>closed-loop bandwidth</em>, not the plant's time constant.</li>
+        <li><strong>Bandwidth</strong> — roughly, the fastest thing the closed loop can follow.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3597,6 +4093,11 @@ sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
       <p><strong>Ask the room:</strong> is there a third option? <em>(Yes — a better discrete
       design rather than a continuous design converted. That is a course of its own, and it is
       why the conversion method matters.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Ku_slow, Pu_slow</strong> — the ultimate gain and period measured <em>at the slow sample rate</em>, which are not the continuous ones.</li>
+        <li><strong>Re-tuning buys stability, not performance</strong> — the slow loop stays a slow loop. The gap to the continuous design is what the cheap processor cost.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3645,7 +4146,7 @@ sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
     <p class="nb-no">Notebook 10</p>
     <h2>Wheel and slip</h2>
     <p class="thesis">The tire is an actuator too, and it saturates — which makes cruise control dangerous on ice.</p>
-    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/10-wheel-and-slip.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/10-wheel-and-slip.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> everything so far assumed the tire does whatever the driveline
       asks. We are going to remove that assumption, and it costs us more than anything else we
@@ -3653,6 +4154,7 @@ sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
       <p><strong>Timing:</strong> 12 minutes if you have them. This is the section students
       remember, and it is the one that motivates lecture 2 — so if you can only show one beat,
       show the ice patch.</p>
+          <p><strong>Cut order:</strong> first to go. Everything here is upside; the lecture stands without it.</p>
     </aside>
   </section>
 
@@ -3695,6 +4197,13 @@ plot_speed(sol_l1; setpoint = 110)
       that is worth showing on its own. Not every added detail matters. Knowing which ones do is
       the modeling skill.</p>
       <p><strong>Read out</strong> the rise time and overshoot and compare with section 05.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>L1</strong> — the model ladder's second rung: wheel inertia plus an ideal rolling contact. <strong>L0</strong> was everything up to section 09; <strong>L2</strong> adds slip.</li>
+        <li><strong>Wheel inertia J<sub>w</sub></strong> — rotational inertia the engine must also accelerate, kg·m².</li>
+        <li><strong>rise_time</strong> — 10 % to 90 % of the commanded step, seconds. <strong>overshoot</strong> — peak past the setpoint, per cent.</li>
+        <li><strong>Ideal rolling</strong> — wheel speed times radius <em>is</em> road speed, by definition. No sliding, ever.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3762,6 +4271,14 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       <em>(No. It watches the engine's saturation, and the engine is not saturating. This is a
       limit the controller has no way of seeing. That is the uncomfortable point of this whole
       section.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>mu_scale = 0.2</strong> — the road friction multiplier. 1.0 is dry tarmac; 0.2 is ice.</li>
+        <li><strong>wheel.v_wheel_kmh</strong> — the wheel's circumferential speed, ω·r, expressed in km/h so it can share an axis with the car.</li>
+        <li><strong>v_kmh</strong> — the car's actual road speed.</li>
+        <li><strong>Tsit5()</strong> — an explicit Runge-Kutta solver. The friction curve has a discontinuous second derivative, which explicit methods handle better than BDF.</li>
+        <li><strong>The limit that is not in the engine</strong> — the engine is nowhere near its ceiling. The ceiling is in the contact patch.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3808,6 +4325,15 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
       side of that peak? <em>(Less force, so less resistance to the engine's torque, so it
       accelerates, so more slip, so even less force. Let them build the loop themselves — it is
       the next slide and they can derive it.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>κ (kappa)</strong> — the <em>slip ratio</em>, dimensionless: (ω·r − v) / max(|v|, ε). Zero means pure rolling; positive means the wheel is turning faster than the car is moving.</li>
+        <li><strong>ω</strong> — wheel angular velocity, rad/s. <strong>r</strong> — wheel radius. <strong>v</strong> — vehicle speed, m/s.</li>
+        <li><strong>ε (v_eps)</strong> — a small floor on the denominator so slip is defined at standstill.</li>
+        <li><strong>μ (mu)</strong> — the friction coefficient: the fraction of the normal load available as tractive force.</li>
+        <li><strong>F<sub>z</sub></strong> — the normal load on the wheel, N. <strong>F<sub>x</sub> = μ·F<sub>z</sub></strong> — the longitudinal force it can make.</li>
+        <li><strong>sAdhesion, sSlide</strong> — where the curve peaks and where it has fully transitioned to sliding. <strong>μ_A, μ_S</strong> — the adhesion and sliding coefficients.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3839,6 +4365,12 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
       <p><strong>Ask the room:</strong> what would you have to control to stay on the left of
       the peak? <em>(Slip itself — which needs a sensor for it and a loop around it. Hold that;
       it is the last slide.)</em></p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Positive feedback</strong> — an effect that reinforces its own cause. Here it is inside the plant, and nobody wired it.</li>
+        <li><strong>Open-loop unstable</strong> — the plant runs away on its own, with no controller involved.</li>
+        <li><strong>The well-behaved gate</strong> — section 08's first question. Past the friction peak, the answer is no, and no PID tuning fixes it.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3892,6 +4424,14 @@ plot_ice_patch(sol)</code></pre>
       faster the better the controller is tuned.</p>
       <p><strong>Say:</strong> and in a real car the driver feels this as the back stepping out
       on a motorway at 90 km/h, caused by a system they switched on for comfort.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>mu_low = 0.15</strong> — friction during the ice patch.</li>
+        <li><strong>t_ice = (40, 42) s</strong> — two seconds of it.</li>
+        <li><strong>v_set = 90 km/h</strong> — the cruise speed.</li>
+        <li><strong>Four traces</strong> — vehicle speed, wheel speed, slip ratio, commanded torque, on a shared time axis with the patch shaded.</li>
+        <li><strong>traction_limit = true</strong> — the friction-aware torque ceiling, in the following run.</li>
+      </ul>
     </aside>
   </section>
 
@@ -3960,6 +4500,12 @@ sol_tc = solve(ODEProblem(mtkcompile(
       <p><strong>Say:</strong> that is a good note to end on generally — almost every advanced
       control architecture you will meet exists because somebody found a plant that defeated
       the simple one. Not because it was elegant.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Cascade control</strong> — one loop inside another: a fast inner loop regulating slip, a slower outer loop regulating speed. Lecture 2's subject.</li>
+        <li><strong>Inner loop</strong> — fast, local, rejects disturbances before the outer loop notices. <strong>Outer loop</strong> — slow, comfortable, sets the inner loop's setpoint.</li>
+        <li><strong>Why real cruise control disengages</strong> — two loops fighting over one actuator, and the speed loop has the worse information.</li>
+      </ul>
     </aside>
   </section>
 

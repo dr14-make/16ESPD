@@ -59,11 +59,25 @@
   function placeholderFor(img) {
     var box = document.createElement('div');
     box.className = 'fig-missing';
-    var src = img.dataset.intended || img.getAttribute('src');
     box.innerHTML =
-      '<span class="tag">FIGURE NOT YET GENERATED</span>' +
-      '<div class="what">' + (img.getAttribute('alt') || '') + '</div>' +
-      '<div class="src">drop in: ' + src + '</div>';
+      '<span class="tag">PLOT NOT YET GENERATED</span>' +
+      '<div class="what">' + (img.getAttribute('alt') || '') + '</div>';
+
+    // How to fill the slot is production detail: it belongs to whoever is driving, not to
+    // the room. It goes into this slide's speaker notes instead of onto the slide.
+    var src = img.dataset.intended || img.getAttribute('src');
+    var slug = src.split('/').pop().replace(/\.(svg|png)$/, '');
+    var slide = img.closest('section');
+    var notes = slide ? slide.querySelector('aside.notes') : null;
+    if (notes) {
+      var nb = slide.querySelector('.demo-head .nb');
+      var where = nb ? 'in ' + nb.textContent.trim().split('/').pop() + ', ' : '';
+      var p = document.createElement('p');
+      p.innerHTML = '<strong>This plot is not exported yet.</strong> The slide shows a marked ' +
+        'placeholder, so say what the plot would have shown and move on. To fill it: ' + where +
+        '<code>save_figure(plt, "' + slug + '")</code>, then re-run.';
+      notes.appendChild(p);
+    }
     return box;
   }
 

@@ -18,11 +18,21 @@ that runs reveal.js 5), and reveal's League Gothic face.
 
 ## Figures
 
-**The notebooks have not been executed, so no figure in this directory exists yet.** Each
-figure slot in the deck renders as a hatched placeholder naming the plot that belongs there
-and the file to drop in. Dropping the file in is the whole hand-off: no markup changes.
+Nine of the deck's thirty-one figures are in — all of sections 03, 04 and 05. Every other
+slot renders as a hatched placeholder naming the plot that belongs there and the call that
+fills it. Filling it is the whole hand-off: no markup changes.
 
 Naming: `<notebook number>-<slug>.svg`, matching the `<img src>` already in the deck.
+
+**This file's `index.html` is the authoritative list of figure names.** `save_figure` in
+`notebooks/lecture01/support.jl` reads the slots out of it and refuses a name that is not one,
+so a typo cannot go quiet in either direction — the notebook would otherwise write a file
+nothing loads while the slide went on showing a placeholder. Two consequences:
+
+- **Renaming a slot orphans its file.** Rename here, rename the file on disk, and re-run the
+  notebook that writes it.
+- `deck_figures()` caches the slot list per session, so a slot added while a kernel is live is
+  not visible to it until the kernel restarts.
 
     figures/01-speed-to-terminal.svg
     figures/03-gain-family.svg
@@ -42,8 +52,23 @@ Rules:
 
 From a notebook, with the plot in `plt`:
 
-    savefig(plt, joinpath(@__DIR__, "..", "..", "docs", "slides", "lecture-01",
-                          "assets", "figures", "03-gain-family.svg"))
+    save_figure(plt, "03-gain-family")
+
+### Slots with no producer yet
+
+Notebook 01 is executed and draws all three of its plots, but calls `save_figure` for none of
+them, so section 01 still shows placeholders. The three slots match its three plots one for
+one:
+
+| slot | notebook 01's plot |
+|---|---|
+| `01-speed-to-terminal.svg` | section 4, full torque from rest |
+| `01-step-response.svg` | section 5, the speed response to the torque step |
+| `01-torque-step.svg` | section 5, commanded against delivered torque, zoomed |
+
+There is deliberately no slot for an *annotated* step: the notebook prints `K`, `tau` and
+`theta` rather than drawing them on the curve, and the slide points at the plain response
+while the lecturer names the regions.
 
 ## Which figure belongs to which slide
 
@@ -124,6 +149,7 @@ and `_foot.html`:
 
     python3 build.py               rebuild index.html
     python3 build.py --check       fail if index.html is stale (for CI or a pre-commit hook)
+    python3 build.py --figures     which slots are filled, and which notebook writes each
 
 **Filename order is slide order, and the deck's deep links depend on it** — `#/3` is
 `03-proportional.html`. Renaming a file moves a section and breaks the landing page's links.
