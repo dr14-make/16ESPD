@@ -27,7 +27,7 @@ export setup, CAR,
     sweep, Sweep,
     plot_speed, plot_sweep, plot_torque, bracket_error!,
     steady_state_error, overshoot, rise_time, fopdt_fit,
-    signal, resolve
+    signal, resolve, solution_of
 
 # ---------------------------------------------------------------------------------------
 # Plant parameters
@@ -74,13 +74,17 @@ const CAR = (
 """
     SPEED_KMH, TORQUE_CMD, TORQUE_DELIVERED
 
-Default signal paths, naming the `Lecture1.CarPlant` ports and the engine's post-limiter
-torque as specified in `docs/lecture-01-dyad-tasks.md`. A notebook that wraps the plant
-inside an assembly passes its own path to the `sig` keyword instead.
+Default signal paths, relative to the root of a scenario analysis.
+
+A `TransientAnalysis` runs a harness, not the plant — `Vehicle.CarPlant` has unconnected
+`RealInput` ports and cannot be simulated on its own — so the root of every solution is the
+harness and the plant is a subcomponent of it. These defaults assume the harness names its
+plant `plant` and its torque source `cmd`; any scenario that departs from that passes its own
+path to the `sig`, `commanded` or `delivered` keyword.
 """
-const SPEED_KMH = "v_kmh"
-const TORQUE_CMD = "tau_cmd"
-const TORQUE_DELIVERED = "engine.limiter.y"
+const SPEED_KMH = "plant.v_kmh"
+const TORQUE_CMD = "cmd.y"
+const TORQUE_DELIVERED = "plant.engine.limiter.y"
 
 # ---------------------------------------------------------------------------------------
 # Environment bootstrap
@@ -102,10 +106,11 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
         backend::Symbol = :gr)
     install_orchestrator()
     Core.eval(@__MODULE__, :(using DyadOrchestrator))
-    orchestrator = getproperty(@__MODULE__, :DyadOrchestrator)
 
-    Base.invokelatest(orchestrator.prepare_environment, package_path)
-    pkg = Base.invokelatest(orchestrator.load_package, package_path; strategy = :include)
+    # A `using` executed from inside a running function creates its bindings in a world this
+    # method cannot see, so everything that touches those bindings is a separate method
+    # reached through `invokelatest`, which compiles it in the current world.
+    pkg = Base.invokelatest(bootstrap_package, package_path)
 
     # `strategy = :include` loads the module without binding it anywhere, so anything that
     # looks the package up by name — `list_analyses`, and the notebook's own cells — needs
@@ -113,15 +118,22 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
     pkg_sym = Symbol(nameof(pkg))
     isdefined(Main, pkg_sym) || Core.eval(Main, :($pkg_sym = $pkg))
 
-    install_plotting(orchestrator, backend)
+    Base.invokelatest(install_plotting, backend)
 
     imports = :(using ModelingToolkit, OrdinaryDiffEqDefault, Plots)
     Core.eval(@__MODULE__, imports)
     Core.eval(Main, imports)
-    Base.invokelatest(getproperty(@__MODULE__, :Plots).backend, backend)
+    Base.invokelatest(select_backend, backend)
 
     return pkg
 end
+
+function bootstrap_package(package_path)
+    DyadOrchestrator.prepare_environment(package_path)
+    return DyadOrchestrator.load_package(package_path; strategy = :include)
+end
+
+select_backend(backend::Symbol) = Plots.backend(backend)
 
 function install_orchestrator()
     isnothing(Base.identify_package("DyadOrchestrator")) || return nothing
@@ -142,10 +154,10 @@ end
 
 # Only what the chosen backend needs: `add_package` writes into the package's `Project.toml`,
 # which the Dyad compiler also owns.
-function install_plotting(orchestrator, backend::Symbol)
+function install_plotting(backend::Symbol)
     wanted = backend === :plotly ? ["Plots", "PlotlyBase", "PlotlyKaleido"] : ["Plots"]
     absent = filter(p -> isnothing(Base.identify_package(p)), wanted)
-    isempty(absent) || Base.invokelatest(orchestrator.add_package, absent)
+    isempty(absent) || DyadOrchestrator.add_package(absent)
     return nothing
 end
 
@@ -173,36 +185,83 @@ function resolve_in(sys, path::Union{AbstractString, Symbol})
             throw(ArgumentError("""
                 No signal or parameter `$path` in this model (failed at `$segment`).
 
+                Available there: $(join(available_names(node), ", "))
+
                 A Dyad `structural parameter` — `with_I`, `with_D`, `theta_e` — is baked in
-                when the component is constructed and is not reachable this way. Rebuild the
-                model with a different value instead.
+                when the component is constructed and is not reachable this way either;
+                rebuild the model with a different value instead of reaching for it here.
                 """))
         end
     end
 end
 
 """
+    available_names(node) -> Vector{String}
+
+Subcomponents, unknowns and parameters reachable one level down from `node`, for the error
+message above. A wrong signal path is the most common mistake a notebook makes, and the fix
+is almost always visible in this list.
+"""
+function available_names(node)
+    node isa ModelingToolkit.AbstractSystem || return String[]
+    names = String[]
+    append!(names, string.(nameof.(ModelingToolkit.get_systems(node))))
+    for v in vcat(ModelingToolkit.unknowns(node), ModelingToolkit.parameters(node))
+        name = replace(string(v), "(t)" => "")
+        occursin("₊", name) || push!(names, name)
+    end
+    return sort!(unique!(names))
+end
+
+"""
+    solution_of(x) -> ODESolution
+
+The solver result behind a Dyad analysis result, or the solution itself.
+
+A Dyad analysis returns an `AbstractAnalysisSolution` that wraps the solution in `.sol`.
+Everything downstream works on the solution, so the unwrapping happens once, here.
+
+Field lookups rather than `hasproperty` throughout this section, because `getproperty` on an
+MTK system searches the model hierarchy and a subcomponent named `sol` or `f` would answer
+for the wrapper's own field.
+"""
+solution_of(x) = hasfield(typeof(x), :sol) ? getfield(x, :sol) : x
+
+"""
     system_of(x) -> compiled System
 
-The compiled system behind a solution, a problem, or a system.
-
-Field lookups rather than `hasproperty`, because `getproperty` on an MTK system searches the
-model hierarchy and a subcomponent named `f` would answer for the problem's function field.
+The compiled system behind an analysis result, a solution, a problem, or a system.
 """
 function system_of(x)
     x isa ModelingToolkit.AbstractSystem && return x
+    hasfield(typeof(x), :sol) && return system_of(getfield(x, :sol))
     hasfield(typeof(x), :prob) && return system_of(getfield(x, :prob))
     hasfield(typeof(x), :f) && return getfield(x, :f).sys
     throw(ArgumentError("cannot find a compiled system in a $(typeof(x))"))
 end
 
 """
+    problem_of(x) -> ODEProblem
+
+The problem behind an analysis result or a solution. This is what [`sweep`](@ref) varies, so
+that a sweep started from a Dyad analysis still compiles the model only once: re-running the
+analysis per point would recompile it every time.
+"""
+function problem_of(x)
+    sol = solution_of(x)
+    hasfield(typeof(sol), :prob) && return getfield(sol, :prob)
+    throw(ArgumentError("cannot find an ODEProblem in a $(typeof(x))"))
+end
+
+"""
     signal(sol, path) -> (t, y)
 
-The time base and the samples of one signal, as plain vectors.
+The time base and the samples of one signal, as plain vectors. Accepts a Dyad analysis result
+or a bare solution.
 """
 function signal(sol, path::Union{AbstractString, Symbol})
-    return (collect(sol.t), collect(sol[resolve(sol, path)]))
+    s = solution_of(sol)
+    return (collect(s.t), collect(s[resolve(s, path)]))
 end
 
 # ---------------------------------------------------------------------------------------
@@ -232,9 +291,9 @@ Base.iterate(sw::Sweep, state = 1) =
 
 Solve `model` once per value in `vals`, varying `param`.
 
-`model` is an uncompiled system, a compiled system, or an `ODEProblem`; `param` is a dotted
-path (`"controller.k"`) or a symbolic taken from the compiled system. `tspan` is required
-unless `model` is already a problem. Remaining keywords go to the solver.
+`model` is a Dyad analysis result, an `ODEProblem`, or an uncompiled or compiled system;
+`param` is a dotted path (`"controller.k"`) or a symbolic taken from the compiled system.
+`tspan` is required only when `model` is a system. Remaining keywords go to the solver.
 
 The model is compiled and the `ODEProblem` built exactly once, and each point `remake`s that
 problem, which reuses the generated right-hand side rather than regenerating it. MTK
@@ -262,11 +321,15 @@ function sweep(model, param, vals; tspan = nothing, alg = nothing, kwargs...)
 end
 
 function as_problem(model, tspan)
-    model isa ModelingToolkit.AbstractSystem || return model
-    isnothing(tspan) && throw(ArgumentError(
-        "`tspan` is required when sweeping a system rather than an existing ODEProblem"))
-    sys = ModelingToolkit.isscheduled(model) ? model : mtkcompile(model)
-    return ODEProblem(sys, [], tspan)
+    if model isa ModelingToolkit.AbstractSystem
+        isnothing(tspan) && throw(ArgumentError(
+            "`tspan` is required when sweeping a system rather than an existing ODEProblem"))
+        sys = ModelingToolkit.isscheduled(model) ? model : mtkcompile(model)
+        return ODEProblem(sys, [], tspan)
+    end
+    hasfield(typeof(model), :sol) && return problem_of(model)
+    hasfield(typeof(model), :prob) && return problem_of(model)
+    return model
 end
 
 solve_problem(prob, ::Nothing; kwargs...) = solve(prob; kwargs...)
