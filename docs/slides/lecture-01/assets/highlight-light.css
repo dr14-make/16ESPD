@@ -1,0 +1,13 @@
+/* Light syntax theme for highlight.js — dark code blocks wash out under a projector
+   and print as solid ink in the ?print-pdf handout. */
+
+.hljs { display: block; overflow-x: auto; background: #fff; color: #16202c; }
+.hljs-comment, .hljs-quote { color: #6b7a8c; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-built_in { color: #8a2f8f; }
+.hljs-string, .hljs-doctag, .hljs-regexp { color: #256b42; }
+.hljs-number, .hljs-symbol, .hljs-meta { color: #a75d00; }
+.hljs-title, .hljs-section, .hljs-name, .hljs-title.function_ { color: #1f5fa8; }
+.hljs-variable, .hljs-template-variable, .hljs-attr, .hljs-attribute { color: #16202c; }
+.hljs-type, .hljs-class .hljs-title { color: #1f5fa8; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }

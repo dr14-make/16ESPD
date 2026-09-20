@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicle Systems &amp; Components</title>
+
+<!-- Self-contained by design: this page loads no stylesheet, no script and no font from
+     anywhere. It has to open from a memory stick in a lecture hall with no network. -->
+<style>
+  :root {
+    --ink: #16202c; --soft: #4a5a6b; --rule: #d7dde6; --accent: #1f5fa8;
+    --accent-bg: #eaf1fa; --ok: #256b42; --warn: #a75d00; --bg: #fbfcfd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
+
+  header { border-bottom: 1px solid var(--rule); background: #fff; margin-bottom: 36px; }
+  header .wrap { padding-top: 40px; padding-bottom: 28px; }
+  h1 { font-size: 2em; margin: 0 0 4px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--soft); }
+
+  h2 { font-size: 1.25em; margin: 36px 0 10px; }
+  h3 { font-size: 1em; margin: 0 0 6px; }
+  p { margin: 0 0 12px; }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9em;
+         background: #eef1f5; padding: 0.1em 0.35em; border-radius: 3px; }
+  .muted { color: var(--soft); }
+  .small { font-size: 0.88em; }
+
+  .lecture {
+    display: block; background: #fff; border: 1px solid var(--rule); border-radius: 8px;
+    padding: 20px 22px; text-decoration: none; color: inherit;
+  }
+  .lecture:hover { border-color: var(--accent); }
+  .lecture .kicker { font-size: 0.75em; letter-spacing: 0.14em; text-transform: uppercase;
+                     color: var(--soft); }
+  .lecture h3 { font-size: 1.3em; margin: 4px 0 6px; color: var(--accent); }
+  .lecture p { margin: 0; color: var(--soft); }
+
+  ol.sections { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--rule); }
+  ol.sections li { border-bottom: 1px solid var(--rule); }
+  ol.sections a {
+    display: grid; grid-template-columns: 3.2em 1fr auto; gap: 14px; align-items: baseline;
+    padding: 11px 6px; text-decoration: none; color: inherit;
+  }
+  ol.sections a:hover { background: var(--accent-bg); }
+  ol.sections .no { color: var(--soft); font-variant-numeric: tabular-nums; }
+  ol.sections .title { font-weight: 600; }
+  ol.sections .punch { color: var(--soft); font-weight: 400; }
+  .tier { font-size: 0.72em; letter-spacing: 0.06em; border: 1px solid currentColor;
+          border-radius: 999px; padding: 0.1em 0.6em; white-space: nowrap; }
+  .t1 { color: var(--ok); } .t2 { color: var(--accent); } .t3 { color: var(--soft); }
+
+  .note { background: #fff; border-left: 4px solid var(--warn); padding: 12px 16px;
+          border-radius: 0 6px 6px 0; }
+  .note .label { font-size: 0.75em; letter-spacing: 0.1em; text-transform: uppercase;
+                 color: var(--soft); display: block; margin-bottom: 4px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) {
+    .grid2 { grid-template-columns: 1fr; }
+    ol.sections a { grid-template-columns: 2.6em 1fr; }
+    ol.sections .tier { display: none; }
+  }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule);
+           color: var(--soft); font-size: 0.88em; }
+</style>
+</head>
+
+<body>
+<header>
+  <div class="wrap">
+    <h1>Vehicle Systems &amp; Components</h1>
+    <p>Course materials — slides, notebooks and models</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <a class="lecture" href="slides/lecture-01/index.html">
+    <span class="kicker">Lecture 1</span>
+    <h3>Control Systems: Introduction and PID</h3>
+    <p>One car, three fidelity levels, ten notebooks. Open loop and closed loop, P, PI and PID,
+       integral windup, the step test and heuristic tuning, discretization, and what happens to
+       cruise control on ice.</p>
+  </a>
+
+  <h2>Jump straight to a section</h2>
+  <p class="small muted">Section number is notebook number. These links open the deck at that
+     point rather than at the beginning.</p>
+  <ol class="sections">
+    <li><a href="slides/lecture-01/index.html#/1"><span class="no">01</span><span><span class="title">The car</span> — <span class="punch">transient vs steady state; read K, τ and θ off a step</span></span><span class="tier t1">Tier 1</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/2"><span class="no">02</span><span><span class="title">Open vs closed loop</span> — <span class="punch">feedforward is right until the hill</span></span><span class="tier t2">Tier 2</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/3"><span class="no">03</span><span><span class="title">Proportional</span> — <span class="punch">error shrinks with k but never reaches zero</span></span><span class="tier t1">Tier 1</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/4"><span class="no">04</span><span><span class="title">Proportional-integral</span> — <span class="punch">the integrator finds notebook 02's answer by itself</span></span><span class="tier t1">Tier 1</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/5"><span class="no">05</span><span><span class="title">PID</span> — <span class="punch">three terms, three jobs: present, past, future</span></span><span class="tier t1">Tier 1</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/6"><span class="no">06</span><span><span class="title">Integral windup</span> — <span class="punch">the hill the engine cannot climb</span></span><span class="tier t1">Tier 1</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/7"><span class="no">07</span><span><span class="title">Derivative and noise</span> — <span class="punch">small noise, steep slope, ruined command</span></span><span class="tier t3">Tier 3</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/8"><span class="no">08</span><span><span class="title">Tuning</span> — <span class="punch">a gain set from one step test, without a model</span></span><span class="tier t1">Tier 1</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/9"><span class="no">09</span><span><span class="title">Discretization</span> — <span class="punch">the strobe light slows down</span></span><span class="tier t2">Tier 2</span></a></li>
+    <li><a href="slides/lecture-01/index.html#/10"><span class="no">10</span><span><span class="title">Wheel and slip</span> — <span class="punch">cruise control meets black ice</span></span><span class="tier t3">Tier 3</span></a></li>
+  </ol>
+
+  <h2>For the lecturer</h2>
+  <div class="grid2">
+    <div>
+      <h3>Two screens</h3>
+      <p class="small">Deck on the projector, Jupyter on the laptop. Press <code>S</code> in the
+        deck for the speaker view — notes, timer and next slide. If the browser blocks the
+        popup, press <code>C</code> for the same notes as a panel in the deck window.</p>
+      <h3>Every demo slide is executable</h3>
+      <p class="small">Each one names the notebook file and the cell heading, carries the code,
+        and has a copy button.</p>
+    </div>
+    <div>
+      <h3>Handout</h3>
+      <p class="small">Append <code>?print-pdf</code> to the deck URL and print to PDF. One slide
+        per page, speaker notes excluded.</p>
+      <h3>No network needed</h3>
+      <p class="small">reveal.js and KaTeX are vendored into
+        <code>slides/lecture-01/assets/</code>. The deck opens from <code>file://</code> with the
+        wifi off — which is how it should be checked before the lecture.</p>
+    </div>
+  </div>
+
+  <h2>Status</h2>
+  <div class="note">
+    <span class="label">The notebooks have not been executed yet</span>
+    <p class="small" style="margin:0">Every figure slot in the deck is a marked placeholder
+      naming the plot that belongs there. Nothing in the deck is an invented or illustrative
+      plot. Dropping the exported figures into
+      <code>slides/lecture-01/assets/figures/</code> under the names the slides already point at
+      fills them in with no change to the markup — see that directory's
+      <code>README.md</code>.</p>
+  </div>
+
+  <h2>Planning documents</h2>
+  <p class="small">
+    <a href="HANDOVER.md">HANDOVER.md</a> — decisions, plant parameters, open risks &nbsp;·&nbsp;
+    <a href="lecture-01-plan.md">lecture-01-plan.md</a> — scope and the thesis of each notebook &nbsp;·&nbsp;
+    <a href="lecture-01-notebooks.md">lecture-01-notebooks.md</a> — cell-by-cell specification &nbsp;·&nbsp;
+    <a href="lecture-01-dyad-tasks.md">lecture-01-dyad-tasks.md</a> — the component specs
+  </p>
+
+  <footer>
+    Built with <a href="https://revealjs.com">reveal.js</a> and
+    <a href="https://katex.org">KaTeX</a>, both vendored. Source material and licenses are
+    listed in <code>slides/lecture-01/assets/README.md</code>.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,3488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Control Systems: Introduction and PID — Lecture 1</title>
+
+<!-- Every library is vendored under assets/. Nothing is fetched at run time: this deck is
+     presented from a lecture hall and a CDN that cannot be reached has no recovery.
+     See assets/README.md for versions and for what was trimmed from the upstream packages. -->
+<link rel="stylesheet" href="assets/reveal/dist/reset.css">
+<link rel="stylesheet" href="assets/reveal/dist/reveal.css">
+<link rel="stylesheet" href="assets/reveal/dist/theme/white.css" id="theme">
+<link rel="stylesheet" href="assets/highlight-light.css">
+<link rel="stylesheet" href="assets/deck.css">
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- =====================================================================================
+     Horizontal index 0 is front matter; horizontal index N is notebook N, so the landing
+     page deep-links a notebook's section as #/N and an individual slide as #/N/M.
+     ===================================================================================== -->
+
+<section data-section-title="Lecture 1">
+
+  <section class="deck-title">
+    <h1>Control Systems</h1>
+    <h1 style="font-size:1.5em; color:var(--accent); margin-top:-0.2em;">Introduction and PID</h1>
+    <p class="sub">Vehicle Systems &amp; Components — Lecture 1</p>
+    <p class="sub small">One car, three fidelity levels, ten notebooks.</p>
+    <p class="hint">
+      <kbd>S</kbd> speaker view &nbsp;·&nbsp; <kbd>C</kbd> cue panel &nbsp;·&nbsp;
+      <kbd>O</kbd> overview &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> sections &nbsp;·&nbsp;
+      <kbd>↑</kbd> <kbd>↓</kbd> within a section
+    </p>
+    <aside class="notes">
+      <p><strong>Before the room fills.</strong> Deck on the projector, notebooks on the laptop
+      screen. Press <strong>S</strong> now and check the speaker window opened; if the browser
+      blocked the popup, press <strong>C</strong> instead — the same notes appear as a panel
+      along the bottom of this window.</p>
+      <p><strong>Say:</strong> today we build one car and control it six different ways. The
+      car never changes. Every new idea in this lecture is a change to the <em>controller</em>,
+      never a change of subject — so whatever you understand about the car at minute ten is
+      still true at minute ninety.</p>
+      <p><strong>Timing:</strong> 90 minutes. The spine is sections 01, 03, 04, 05, 06, 08 —
+      about 60 minutes. Everything else is bonus; drop from the back, not the middle.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>How this deck is driven</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <ul class="small">
+          <li><kbd>S</kbd> — speaker view: notes, timer, next slide. <kbd>C</kbd> — the same
+            notes as a panel here, if the popup is blocked.</li>
+          <li><kbd>→</kbd> moves to the next notebook; <kbd>↓</kbd> moves through one.</li>
+          <li><kbd>O</kbd> — overview of the whole lecture. <kbd>G</kbd> — jump to a slide
+            number. <kbd>F</kbd> — fullscreen. <kbd>?</kbd> — all keys.</li>
+          <li>Every demo card has a <strong>copy</strong> button: the code goes to the
+            clipboard, paste it into the notebook cell.</li>
+          <li><code>?print-pdf</code> appended to the URL renders the handout; print to PDF
+            from there.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="callout">
+          <span class="label">Deep links</span>
+          <code>#/3</code> opens notebook 03's section, <code>#/3/2</code> its third slide.
+          Section number = notebook number, all the way through.
+        </div>
+        <div class="callout warn">
+          <span class="label">The dagger</span>
+          A number marked <span class="prov">†</span> is analytic and indicative. Read the
+          executed value off the notebook instead of quoting the slide.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p>This slide is for you, not for them — skip past it while the room settles.</p>
+      <p><strong>Two screens.</strong> Deck on the projector, Jupyter on the laptop. Every
+      demo slide names the notebook file, the cell heading, and carries the code itself, so you
+      never have to hunt through a notebook with your back to the room.</p>
+      <p><strong>If a solve stalls in front of the room:</strong> every notebook is committed
+      with its outputs already executed. Scroll to the plot that is already there and keep
+      talking. Do not debug live.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The ten notebooks</h2>
+    <table>
+      <tr><th>#</th><th>Title</th><th>Punchline</th><th></th></tr>
+      <tr><td><a href="#/1">01</a></td><td>The car</td><td>transient vs steady state; read K, τ and θ off a step</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/2">02</a></td><td>Open vs closed loop</td><td>feedforward is right until the hill</td><td><span class="tier tier-2">Tier 2</span></td></tr>
+      <tr><td><a href="#/3">03</a></td><td>P</td><td>error shrinks with k but never reaches zero</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/4">04</a></td><td>PI</td><td>the integrator finds notebook 02's answer by itself</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/5">05</a></td><td>PID</td><td>three terms, three jobs: present, past, future</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/6">06</a></td><td>Windup</td><td>the hill the engine cannot climb</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/7">07</a></td><td>Derivative and noise</td><td>small noise, steep slope, ruined command</td><td><span class="tier tier-3">Tier 3</span></td></tr>
+      <tr><td><a href="#/8">08</a></td><td>Tuning</td><td>a gain set from one step test, without a model</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/9">09</a></td><td>Discretization</td><td>the strobe light slows down</td><td><span class="tier tier-2">Tier 2</span></td></tr>
+      <tr><td><a href="#/10">10</a></td><td>Wheel and slip</td><td>cruise control meets black ice</td><td><span class="tier tier-3">Tier 3</span></td></tr>
+    </table>
+    <aside class="notes">
+      <p><strong>Say:</strong> here is the whole lecture on one slide. Ten short steps. Each
+      one is a notebook you can re-run yourself afterwards — they are committed with their
+      outputs, so they read even without the modeling tools installed.</p>
+      <p><strong>Point at:</strong> the column on the right. Rows 01, 03, 04, 05, 06, 08 are
+      the ones we will definitely do. The others are there if the room moves quickly.</p>
+      <p><strong>Cutting for time:</strong> drop 10, then 07, then 09, then 02. Never cut from
+      the middle of the P → PI → PID → windup run; that sequence is one argument.</p>
+    </aside>
+  </section>
+
+
+  <section>
+    <h2>One diagram, and all of control theory hangs off it</h2>
+    <svg class="diagram" viewBox="0 0 980 300" role="img"
+         aria-label="The general control diagram: a reference enters a comparator, the error goes to a controller which produces a control input u, u enters the system alongside a disturbance d, the system state x evolves, a sensor measures it producing a noisy measurement y, and y is fed back to the comparator.">
+      <defs>
+        <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        <marker id="ar-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+      </defs>
+
+      <text class="f-lbl" x="14" y="92">r</text>
+      <text class="lbl" x="6" y="114">reference</text>
+      <path class="arrow" d="M34 120 H86" marker-end="url(#ar-ink)"/>
+
+      <circle class="box" cx="104" cy="120" r="18"/>
+      <text x="96" y="114" font-size="14">+</text>
+      <text x="94" y="142" font-size="14">−</text>
+
+      <path class="arrow" d="M122 120 H186" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="146" y="108">e</text>
+
+      <rect class="box" x="186" y="92" width="170" height="58" rx="4"/>
+      <text x="271" y="127" text-anchor="middle" font-size="19">controller</text>
+
+      <path class="arrow" d="M356 120 H470" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="398" y="108">u</text>
+      <text class="lbl" x="372" y="146">what we choose</text>
+
+      <rect class="box-accent" x="470" y="92" width="180" height="58" rx="4"/>
+      <text x="560" y="127" text-anchor="middle" font-size="19">system</text>
+
+      <path class="arrow-warn" d="M560 34 V86" marker-end="url(#ar-warn)"/>
+      <text class="f-lbl-warn" x="572" y="40">d</text>
+      <text class="lbl" x="592" y="60">disturbances — wind, hills, bumps</text>
+
+      <path class="arrow" d="M650 120 H760" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="694" y="108">x</text>
+      <text class="lbl" x="668" y="146">the true state</text>
+
+      <rect class="box" x="760" y="92" width="150" height="58" rx="4"/>
+      <text x="835" y="127" text-anchor="middle" font-size="19">sensor</text>
+
+      <path class="arrow" d="M910 120 H950 V232 H104 V138" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="500" y="222">y — a noisy measurement, not the truth</text>
+    </svg>
+    <aside class="notes">
+      <p><strong>Say:</strong> this one picture is the map for the whole subject, and for the
+      next ninety minutes. Everything we build today is a change to one box in it.</p>
+      <p><strong>Walk it with your hand,</strong> naming each signal:</p>
+      <ul>
+        <li><em>r</em>, the reference — what we want. Somebody has to decide it; that is
+          <strong>planning</strong>, and for us it is just "the driver set 110".</li>
+        <li><em>u</em>, the control input — what we deliberately do. Steering, brake, throttle.</li>
+        <li><em>d</em>, the disturbances — what acts on the system anyway, and never asked us.</li>
+        <li><em>x</em>, the state — what the system is actually doing.</li>
+        <li><em>y</em>, the measurement — what we can <em>see</em> it doing, which is not the
+          same thing, because every sensor adds noise.</li>
+      </ul>
+      <p><strong>Say:</strong> and note the shape of the argument. Feedback means the sensor's
+      noise gets fed into the controller and therefore affects the true state. Noise in a
+      feedback loop does not just make the picture fuzzy — it moves the car.</p>
+      <p><strong>Ask the room:</strong> which of these five do you have direct control over?
+      <em>(Only u. Everything else is either chosen by somebody else or done to you.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The rest of the subject, in one picture</h2>
+    <div class="cols cols-wide-left">
+      <svg class="diagram" viewBox="0 0 560 360" role="img"
+           aria-label="A hub and spoke diagram with the model at the centre and four areas around it: control methods, planning, state estimation, and analysis, simulation and test.">
+        <rect class="box-accent" x="200" y="150" width="160" height="60" rx="6"/>
+        <text x="280" y="180" text-anchor="middle" font-size="20">model</text>
+        <text x="280" y="199" text-anchor="middle" font-size="12" fill="#4a5a6b">of the system</text>
+
+        <rect class="box" x="30"  y="30"  width="170" height="58" rx="4"/>
+        <text x="115" y="55" text-anchor="middle" font-size="16">control</text>
+        <text x="115" y="75" text-anchor="middle" font-size="12" fill="#4a5a6b">feedforward, feedback</text>
+
+        <rect class="box" x="360" y="30"  width="170" height="58" rx="4"/>
+        <text x="445" y="55" text-anchor="middle" font-size="16">planning</text>
+        <text x="445" y="75" text-anchor="middle" font-size="12" fill="#4a5a6b">what should it do</text>
+
+        <rect class="box" x="30"  y="272" width="170" height="58" rx="4"/>
+        <text x="115" y="297" text-anchor="middle" font-size="16">state estimation</text>
+        <text x="115" y="317" text-anchor="middle" font-size="12" fill="#4a5a6b">noise, observability</text>
+
+        <rect class="box" x="360" y="272" width="170" height="58" rx="4"/>
+        <text x="445" y="297" text-anchor="middle" font-size="16">analysis and test</text>
+        <text x="445" y="317" text-anchor="middle" font-size="12" fill="#4a5a6b">does it meet the spec</text>
+
+        <path class="ghost" d="M200 168 L170 88"/>
+        <path class="ghost" d="M360 168 L390 88"/>
+        <path class="ghost" d="M200 194 L170 272"/>
+        <path class="ghost" d="M360 194 L390 272"/>
+      </svg>
+      <div>
+        <p class="small">Four areas, and a model in the middle of all of them — because you need
+        one to design a controller, to estimate a state, to plan a path, and to check that any
+        of it worked.</p>
+        <div class="callout small">
+          <span class="label">Which is why today starts where it does</span>
+          Notebook 01 builds the model and controls nothing. That is not a warm-up; it is the
+          box everything else is wired to.
+        </div>
+        <p class="small muted">Today: the model, and the feedback half of "control". Planning is
+        a driver pressing a button, and estimation appears only as the noise in section 07.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> nobody knows all of this well. But you should know the shape of
+      it, because on a real project these are four different teams and you need to know whose
+      problem you are looking at.</p>
+      <p><strong>Say:</strong> and notice the middle box. Models are not an academic detour on
+      the way to the real work — they are the thing every other box consumes. That is the
+      justification for spending the first ten minutes of a control lecture with no controller
+      in sight.</p>
+      <p><strong>Say:</strong> feedback control itself is not one algorithm; it is a family —
+      PID, full state feedback, gain scheduling, sliding mode, robust, adaptive, optimal,
+      predictive, learned. We are doing the one that runs most of the machinery in the world,
+      and the one whose three knobs you can reason about without a transfer function.</p>
+      <p><strong>Ask the room:</strong> where does a self-driving car's route planner sit on
+      this picture? <em>(Top right. And it has to produce a reference the car can physically
+      follow — which needs the model again.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Our plant for the next ninety minutes</h2>
+    <svg class="diagram" viewBox="0 0 980 400" role="img"
+         aria-label="A side view of a car with its control input, disturbances and measured output labelled: commanded engine torque in at the driveline, road gradient and wind acting on the body, and speed read at the speedometer.">
+      <defs>
+        <marker id="ar2-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        <marker id="ar2-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+        <marker id="ar2-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+      </defs>
+
+      <g transform="translate(316,170)">
+        <path class="car-body" d="M18 118 L18 100 Q18 88 34 85 L92 78 L124 40 Q130 34 142 34 L232 34 Q244 34 252 42 L282 76 L342 82 Q356 85 356 100 L356 118 Z"/>
+        <path class="car-glass" d="M132 46 L230 46 L256 74 L114 74 Z"/>
+        <path class="wire" d="M182 46 V74"/>
+        <circle class="tyre" cx="92"  cy="126" r="24"/><circle class="hub" cx="92"  cy="126" r="9"/>
+        <circle class="tyre" cx="284" cy="126" r="24"/><circle class="hub" cx="284" cy="126" r="9"/>
+      </g>
+      <path class="road" d="M60 320 H940"/>
+
+      <path class="arrow-acc" d="M150 292 H336" marker-end="url(#ar2-acc)"/>
+      <text class="f-lbl-acc" x="60" y="272">u — commanded torque</text>
+      <text class="lbl" x="60" y="248">the one thing we choose</text>
+
+      <path class="arrow-warn" d="M500 116 V192" marker-end="url(#ar2-warn)"/>
+      <text class="f-lbl-warn" x="360" y="100">d — gradient, wind, payload</text>
+
+      <circle cx="594" cy="296" r="16" fill="none" stroke="#1f5fa8" stroke-width="3"/>
+      <path class="ghost" d="M610 296 H694"/>
+      <path class="arrow" d="M694 296 H860" marker-end="url(#ar2-ink)"/>
+      <text class="f-lbl" x="694" y="278">y — speed, in km/h</text>
+      <text class="lbl" x="694" y="316">converted once, here at the sensor</text>
+
+      <text class="lbl-strong" x="330" y="358">state x — how fast it is actually going</text>
+    </svg>
+    <aside class="notes">
+      <p><strong>Say:</strong> same diagram as the last one, with the boxes filled in. One
+      control input — commanded engine torque. Disturbances — the hill, the wind, the luggage.
+      One measurement — speed at the wheel.</p>
+      <p><strong>Point at</strong> the sensor and say: the conversion to km/h happens here, once,
+      inside the model. Every speed you see today is in km/h because the model emitted km/h, not
+      because a notebook multiplied something by 3.6 afterwards.</p>
+      <p><strong>Say:</strong> and that is the entire plant for the next ninety minutes. It does
+      not change. When the lecture gets to windup, or noise, or ice, it is still this car — we
+      are only ever changing the box on the left or the thing the road is doing.</p>
+      <p><strong>Ask the room:</strong> what is missing from this picture that a real cruise
+      control has? <em>(Brakes. Ours can only add torque, never remove it — which is why our
+      car going downhill has no answer at all. Worth thirty seconds; it is an honest
+      limitation.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The forces on a car</h2>
+    <svg class="diagram" viewBox="0 0 980 420" role="img"
+         aria-label="A car on an inclined road with the forces acting on it drawn as labelled arrows: tractive force up the slope at the driven wheel, aerodynamic drag and rolling resistance down the slope, and the weight resolved into a component along the slope and one into the road surface.">
+      <defs>
+        <marker id="ar3-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        <marker id="ar3-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+        <marker id="ar3-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+        <marker id="ar3-dngr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a81f16"/></marker>
+        <marker id="ar3-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#256b42"/></marker>
+      </defs>
+
+      <path class="road" d="M40 360 L940 119"/>
+      <path class="ghost" d="M40 360 H300"/>
+      <path class="ghost" d="M160 360 A 120 120 0 0 0 155.9 328.9"/>
+      <text class="f-lbl" x="170" y="346">α</text>
+
+      <g transform="translate(470,245) rotate(-15) translate(-181,-154.7)">
+        <path class="car-body" d="M18 118 L18 100 Q18 88 34 85 L92 78 L124 40 Q130 34 142 34 L232 34 Q244 34 252 42 L282 76 L342 82 Q356 85 356 100 L356 118 Z"/>
+        <path class="car-glass" d="M132 46 L230 46 L256 74 L114 74 Z"/>
+        <path class="wire" d="M182 46 V74"/>
+        <circle class="tyre" cx="92"  cy="126" r="24"/><circle class="hub" cx="92"  cy="126" r="9"/>
+        <circle class="tyre" cx="284" cy="126" r="24"/><circle class="hub" cx="284" cy="126" r="9"/>
+      </g>
+
+      <g transform="translate(470,245) rotate(-15) translate(-181,-154.7)">
+        <path class="arrow-ok"   d="M300 150 H412" marker-end="url(#ar3-ok)"/>
+        <path class="arrow-warn" d="M92 150 H-34"  marker-end="url(#ar3-warn)"/>
+        <path class="arrow-dngr" d="M470 62 H358"  marker-end="url(#ar3-dngr)"/>
+      </g>
+
+      <text class="f-lbl-ok"   x="612" y="242">F = T·i / r &nbsp; tractive</text>
+      <text class="f-lbl-warn" x="96"  y="330">O_f &nbsp; rolling resistance</text>
+      <text class="f-lbl-dngr" x="700" y="70">O_V &nbsp; aerodynamic drag</text>
+
+      <path class="arrow" d="M453 182 V342" marker-end="url(#ar3-ink)"/>
+      <text class="f-lbl" x="462" y="336">m·g</text>
+      <path class="arrow-acc" d="M453 182 L413 193" marker-end="url(#ar3-acc)"/>
+      <path class="ghost" d="M453 182 L493 331"/>
+      <path class="ghost" d="M413 193 L453 342"/>
+      <path class="ghost" d="M493 331 L453 342"/>
+      <text class="f-lbl-acc" x="196" y="200">O_s = m·g·sin α</text>
+      <circle cx="453" cy="182" r="5" fill="#16202c"/>
+
+      <text class="lbl" x="40" y="400">O_z = m·dv/dt is whatever is left over. O_aux, the electrical loads, is not modelled here. Slope drawn steeper than 10 % for legibility.</text>
+    </svg>
+    <aside class="notes">
+      <p><strong>Say:</strong> five forces, and the whole lecture's plant is the statement that
+      they add up.</p>
+      <p><strong>Point at each in turn</strong>, and give each one a physical sentence rather
+      than a formula:</p>
+      <ul>
+        <li><strong>Tractive force</strong>, green, up the slope. Engine torque through the gear
+          ratio, divided by the wheel radius. This is the only one we control.</li>
+        <li><strong>Aerodynamic drag</strong>, red. Goes with the <em>square</em> of speed, so it
+          is nothing at 30 km/h and it is most of the bill at 130.</li>
+        <li><strong>Rolling resistance</strong>, amber. Roughly constant — about 165 newtons for
+          this car, whatever the speed.</li>
+        <li><strong>The slope term</strong>, blue. The part of the car's own weight that points
+          down the road. On a 10 % grade that is about 1.4 kilonewtons — far more than drag and
+          rolling put together, which is why section 06's hill beats the engine.</li>
+        <li><strong>The inertia term.</strong> Whatever is left over goes into accelerating the
+          mass. If the others balance, there is nothing left and the speed is steady.</li>
+      </ul>
+      <p><strong>Ask the room:</strong> at 90 km/h on the flat, which is bigger — drag or rolling
+      resistance? <em>(Drag, by about a factor of one and a half. Ask them again for 30 km/h and
+      the answer flips. This is the square in action and it is worth the thirty seconds.)</em></p>
+      <p><strong>Tie back to the course deck:</strong> these are the O<sub>V</sub>, O<sub>f</sub>,
+      O<sub>z</sub>, O<sub>s</sub> from the energy slides — same terms, drawn on a car instead of
+      listed. O<sub>aux</sub>, the electrical loads, we are leaving out; say so, because leaving
+      a term out should always be a decision you announce.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The car, once</h2>
+    <div class="cols">
+      <div>
+        <table>
+          <tr><th>Parameter</th><th></th><th></th></tr>
+          <tr><td>mass <em>m</em></td><td class="num">1400</td><td>kg</td></tr>
+          <tr><td>drag area <em>C<sub>d</sub>A</em></td><td class="num">0.63</td><td>m²</td></tr>
+          <tr><td>air density <em>ρ</em></td><td class="num">1.2</td><td>kg/m³</td></tr>
+          <tr><td>rolling coefficient <em>f<sub>r</sub></em></td><td class="num">0.012</td><td>—</td></tr>
+          <tr><td>wheel radius <em>r</em></td><td class="num">0.31</td><td>m</td></tr>
+          <tr><td>gear ratio <em>i</em></td><td class="num">4.0</td><td>—</td></tr>
+          <tr><td>torque limit <em>T</em><sub>max</sub></td><td class="num">150</td><td>N·m</td></tr>
+          <tr><td>manifold lag <em>τ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
+          <tr><td>transport delay <em>θ<sub>e</sub></em></td><td class="num">0.04</td><td>s</td></tr>
+          <caption>Quoted from <code>docs/HANDOVER.md</code>. In code, read them from
+            <code>CAR</code> — never retype a number into a cell.</caption>
+        </table>
+      </div>
+      <div>
+        <h4>What follows from them</h4>
+        <div class="readout">
+          <div class="r"><span class="v">1935</span><span class="k">N max tractive</span></div>
+          <div class="r"><span class="v">246</span><span class="k">km/h terminal</span></div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">31.1</span><span class="k">N·m to hold 90</span></div>
+          <div class="r"><span class="v">40.1</span><span class="k">N·m to hold 110</span></div>
+        </div>
+        <div class="callout small">
+          <span class="label">Every one of these is derived in front of you</span>
+          Nothing in this lecture is a number that was chosen to make a point. The hill in
+          notebook 06 defeats the engine because 2024 N &gt; 1935 N, and you can check that.
+        </div>
+      </div>
+    </div>
+    <!-- theta_e is expected to change from 0.04 s to roughly 0.2-0.3 s (HANDOVER Risk 1):
+         at 0.04 s the Ziegler-Nichols demo in notebook 08 relay-limit-cycles against the
+         torque limit instead of oscillating cleanly. If that change lands, this table and
+         every gain quoted with a dagger in sections 03 and 08 move with it. -->
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the entire car. Nine numbers. Everything else in the
+      lecture — the terminal speed, the cruise torque, the hill that beats it, the gains —
+      comes out of these by arithmetic you will watch happen.</p>
+      <p><strong>Ask the room:</strong> which of these nine do you think matters most for how
+      hard this car is to control? <em>(Let two or three guesses land. The answer is the two at
+      the bottom — the lags. Without them the car is trivially controllable and half of this
+      lecture would not exist. Come back to this in section 01.)</em></p>
+      <p><strong>They get wrong:</strong> students read 150 N·m and think "that is a weak
+      engine". It is engine torque before a gear ratio of 4 and a 0.31 m wheel — nearly 2 kN at
+      the road. Do the multiplication out loud once.</p>
+      <p><strong>Housekeeping:</strong> if you changed <code>theta_e</code> from 0.04 s when
+      the models were built, correct this row out loud and say why — it is the whole powertrain
+      torque path, not just injection.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two conventions, for the whole lecture</h2>
+    <div class="cols">
+      <div>
+        <h3>The loop runs in km/h</h3>
+        <p class="small">Setpoint, measurement and error are all km/h. So every gain you see
+        today has the same units and means the same thing:</p>
+        <p class="center"><strong>k</strong> is in <strong>N·m per km/h</strong>.</p>
+        <p class="small muted">"Five newton-metres for every km/h I am off." That is a sentence
+        an engineer can sanity-check; <em>k = 220</em> in mixed units is not.</p>
+      </div>
+      <div>
+        <h3>SI inside, km/h at the sensor</h3>
+        <p class="small">The plant's internals are SI throughout. Exactly one conversion exists
+        in the whole model, and it is a visible block on the sensor output:</p>
+        <p class="center"><code>Vehicle.ToKmPerHour</code></p>
+        <p class="small muted">No notebook ever multiplies a plotted signal by 3.6. If a speed
+        axis says km/h it is because the model emitted km/h.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> two housekeeping rules, and then we start. Both exist so that a
+      number on a plot means one thing only.</p>
+      <p><strong>Why it matters:</strong> the most common way a student's cruise controller
+      "mysteriously" misbehaves is a gain tuned against m/s driving a loop that measures km/h —
+      a silent factor of 3.6. Put the conversion in the model where you can see it, once.</p>
+      <p><strong>Ask the room:</strong> if I tell you my gain is 220, what is missing?
+      <em>(Units. Wait for it — someone will say it.)</em></p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- Section 01's demo cards quote notebooks/lecture01/01-the-car.ipynb as executed. The other
+     nine notebooks did not exist when this deck was written; their cards use the scenario-
+     builder API documented in assets/README.md, which is a proposal to be reconciled once the
+     notebooks land. Cell headings and notebook filenames are the load-bearing part of a card. -->
+
+<!-- ===================== 01 — The car =================================================== -->
+<section data-section-title="01 — The car">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 01</p>
+    <h2>The car</h2>
+    <p class="thesis">Before you can control something, you have to know what it does on its own.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/01-the-car.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> no controller in this notebook. Not one. We are going to spend
+      the first ten minutes on the car alone, because every mistake people make with PID starts
+      with not knowing the plant.</p>
+      <p><strong>Timing:</strong> 10 minutes. Two simulations, both short to describe and slow
+      to run — start the first solve while you are still talking about the force balance.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What a system is</h2>
+    <div class="cols">
+      <div>
+        <ul>
+          <li><strong>Control inputs</strong> <em>u</em> — what we deliberately move.</li>
+          <li><strong>Disturbances</strong> <em>d</em> — what moves it anyway.</li>
+          <li><strong>State</strong> <em>x</em> — what it remembers.</li>
+          <li><strong>Output</strong> <em>y</em> — what we can measure.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>For this car</h4>
+        <table>
+          <tr><td><em>u</em></td><td>commanded engine torque</td></tr>
+          <tr><td><em>d</em></td><td>road gradient, wind, payload</td></tr>
+          <tr><td><em>x</em></td><td>speed (and, later, wheel speed)</td></tr>
+          <tr><td><em>y</em></td><td>speed at the speedometer, km/h</td></tr>
+        </table>
+      </div>
+    </div>
+    <p class="small muted">A system has structure, behavior and interconnectivity — parts that
+    transform inputs into outputs.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> four boxes and you can describe any plant in this building. The
+      only one students skip is <em>d</em>, and <em>d</em> is the reason feedback exists.</p>
+      <p><strong>Point at:</strong> the <em>x</em> row. Right now the state is one number —
+      speed. By the last notebook it is two, because the wheel gets to spin at its own rate,
+      and that second state is what makes ice dangerous.</p>
+      <p><strong>Ask the room:</strong> is the gradient an input or a disturbance?
+      <em>(Both, formally — it enters the same way. The difference is that we choose u and the
+      hill chooses itself. That distinction is the whole lecture.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The force balance</h2>
+    <p>$$ m\,\frac{dv}{dt} \;=\; \underbrace{T\frac{i}{r}}_{\text{tractive}}
+      \;-\; \underbrace{\tfrac{1}{2}\rho\,C_dA\,v^2}_{O_V\ \text{drag}}
+      \;-\; \underbrace{f_r\,m\,g\cos\alpha}_{O_f\ \text{rolling}}
+      \;-\; \underbrace{m\,g\sin\alpha}_{O_s\ \text{slope}} $$</p>
+    <div class="cols">
+      <div class="small">
+        <p>Acceleration resistance <em>O<sub>z</sub></em> is the left-hand side: the mass
+        itself. Auxiliary loads <em>O<sub>aux</sub></em> are not modeled here.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">Where the torque comes from</span>
+        <em>T</em> is not the commanded torque. Between command and shaft sit a transport delay
+        and a first-order lag — the next slides are about why they are not optional.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is first-principles modeling — the white-box method. We are
+      not fitting anything to data; we are writing down the physics we already believe, and
+      then we will be able to argue about every term in it.</p>
+      <p><strong>Point at:</strong> the drag term, <em>v²</em>. That square is why this car is
+      nearly linear around 100 km/h and not at all linear between 0 and 100.</p>
+      <p><strong>They get wrong:</strong> the cosine on the rolling term. On a 10 % grade
+      cos α = 0.995, so it looks ignorable — and it is, here. Say that you are keeping it
+      because dropping terms is a decision, not an accident.</p>
+      <p><strong>Tie back:</strong> slide 16 of the existing engine deck names these O<sub>V</sub>,
+      O<sub>f</sub>, O<sub>z</sub>, O<sub>s</sub>. Same equation, their notation.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Terminal speed, on paper first</h2>
+    <div class="demo">
+      <div class="demo-head">
+        <span class="nb">notebooks/lecture01/01-the-car.ipynb</span>
+        <span class="cell">cell <b>2. The force balance → Terminal speed</b></span>
+        <span class="spacer"></span>
+      </div>
+      <pre><code class="language-julia" data-trim data-noescape>c_drag = 0.5 * CAR.rho * CAR.CdA          # N per (m/s)^2
+F_roll = CAR.f_r * CAR.m * CAR.g          # N, flat road
+F_max  = CAR.T_max * CAR.i / CAR.r        # N, full torque through the driveline
+
+v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
+      <div class="demo-foot">
+        <button class="copy">copy</button>
+        <span class="spacer"></span>
+        <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+      </div>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">1935 N</span><span class="k">tractive</span></div>
+      <div class="r"><span class="v">165 N</span><span class="k">rolling</span></div>
+      <div class="r"><span class="v">68.4 m/s</span><span class="k">terminal</span></div>
+      <div class="r"><span class="v">246 km/h</span><span class="k">terminal</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Run this cell.</strong> It is arithmetic, it returns instantly.</p>
+      <p><strong>Read out:</strong> 1935 newtons at the road, 165 of rolling resistance, and
+      the speed where drag eats the rest — 68.4 m/s, <strong>246 km/h</strong>.</p>
+      <p><strong>Say:</strong> notice what we just did. We set the derivative to zero and
+      solved. That is the steady-state model, and in two notebooks' time an integrator will
+      find this same answer by itself, without being told any of this.</p>
+      <p><strong>Ask the room, before you show the next slide:</strong> 246 km/h from a 150 N·m
+      engine. Does anyone believe that? <em>(Let the discomfort sit for a second — the next
+      slide is the answer, and it lands much harder if they noticed first.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>246 km/h is wrong, and it is wrong on purpose</h2>
+    <div class="callout warn">
+      <span class="label">The model's honest limitation</span>
+      Our engine delivers its peak torque at every speed. A real one does not: peak torque
+      lives in a band of a few thousand rpm and falls away on both sides.
+    </div>
+    <ul class="small">
+      <li>Everything below 130 km/h — every demo in this lecture — is unaffected, because we
+        never ask for more than about 40 N·m of the 150 available.</li>
+      <li>The top end is fiction. Say so now rather than let a student find it later and
+        distrust the parts that are true.</li>
+      <li>Fixing it means an engine torque map — <strong>which is where lecture 2 starts.</strong></li>
+    </ul>
+    <aside class="notes">
+      <p><strong>Say:</strong> a model is a set of assumptions with a speed limit on it, and
+      the engineering skill is knowing where that limit is. Ours is honest from 0 to about
+      130 km/h and a lie above it.</p>
+      <p><strong>They get wrong:</strong> students treat a simulation result as a measurement.
+      This is the one slide in the lecture that exists purely to inoculate against that. Do not
+      skip it even when short on time — it costs 40 seconds.</p>
+      <p><strong>Ask the room:</strong> what would you have to add to the model to get a
+      believable top speed? <em>(Torque as a function of engine speed. That is lecture 2 —
+      and you have just written its first slide for me.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Full throttle from rest</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">01-the-car.ipynb</span>
+            <span class="cell">cell <b>4. Open loop to terminal speed</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>@named throttle = BlockComponents.Sources.Constant(k = CAR.T_max)
+@named road     = BlockComponents.Sources.Constant(k = 0.0)
+@named car      = VehicleSystemsComponents.Lecture1.CarPlant()
+@named wide_open = System(
+    [connect(throttle.y, car.tau_cmd), connect(road.y, car.grade)],
+    t; systems = [throttle, road, car])
+
+sol_wot = solve(ODEProblem(mtkcompile(wide_open), [], (0.0, 300.0)))
+plt = plot_speed(sol_wot; sig = "car.v_kmh", label = "speed")
+hline!(plt, [v_terminal * 3.6]; ls = :dash, label = "analytic")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="callout warn small">
+          <span class="label">Watch the time axis</span>
+          300 seconds, and the last stretch barely moves. The car's own time constant is
+          about <strong>67 s</strong>.
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/01-speed-to-terminal.svg"
+             alt="Speed against time, full torque from rest, rising asymptotically to about 246 km/h over several hundred seconds.">
+        <figcaption>Speed to terminal, full torque from rest. The asymptote is the number we
+          just computed by hand.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Run it</strong> before you start talking — it is the slowest solve in the
+      notebook.</p>
+      <p><strong>Point at:</strong> the flat top, and then at the time axis. Six and a half
+      minutes of flat-out acceleration. Drag is a very weak restoring force at low speed, so
+      the car is genuinely, physically sluggish.</p>
+      <p><strong>Read out:</strong> the asymptote, and compare it to the 246 km/h we computed.
+      Two independent routes to one number — that is how you know the model was built right.</p>
+      <p><strong>Say:</strong> remember this sixty seconds. In notebook 03 the closed loop will
+      do a 20 km/h step in a handful of seconds. Feedback did not make the engine stronger; it
+      made the <em>dynamics</em> different. That is the single most important sentence about
+      feedback in this lecture.</p>
+      <p><strong>Check:</strong> if the curve runs away instead of flattening, the sign on the
+      drag force is wrong.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The step test</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">01-the-car.ipynb</span>
+            <span class="cell">cell <b>5. The step test</b>, and the zoom below it</span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># settle for 500 s, step, then 500 s more
+@named throttle_step = BlockComponents.Sources.Step(
+    offset = T_90, height = T_110 - T_90, start_time = t_step)
+
+sol_step = solve(ODEProblem(mtkcompile(step_test), [], (0.0, 1000.0)))
+
+plot_torque(sol_step; commanded = "car_st.tau_cmd",
+    delivered = "car_st.engine.limiter.y", limit = nothing,
+    xlims = (t_step - 0.5, t_step + 3.0))</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+          </div>
+        </div>
+        <ol class="small">
+          <li>Wait until the process is at rest.</li>
+          <li>Put the controller in manual.</li>
+          <li>Change the control variable rapidly, and as large as noise allows.</li>
+          <li>Record the response and scale it by the size of the step.</li>
+        </ol>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/01-torque-step.svg"
+             alt="Commanded and delivered torque on one axes: the delivered trace starts late by the transport delay and then lags behind the command.">
+        <figcaption>Commanded against delivered torque. The gap at the start is the transport
+          delay; the curve after it is the manifold lag.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this procedure is four lines long and it is the foundation of
+      notebook 08. Every heuristic tuning rule in this lecture reads its numbers off this one
+      experiment.</p>
+      <p><strong>Point at, on the torque plot:</strong> first the flat piece where the command
+      has stepped and nothing has happened yet — that is <em>dead time</em>, the engine has not
+      been told yet. Then the curve — the manifold filling. Two different delays with two
+      different causes, and they need different treatment.</p>
+      <p><strong>Say:</strong> this is also why we did not model an ideal engine. An engine
+      with no lag makes this plant first order, and a first-order plant can never be driven to
+      sustained oscillation — so Ziegler-Nichols in notebook 08 would be impossible, and
+      Cohen-Coon would divide by a dead time of zero. The lags are load-bearing.</p>
+      <p><strong>Ask the room:</strong> why step from 31 to 41 N·m rather than 0 to 150?
+      <em>(Because we want the response around the operating point we actually drive at. A huge
+      step wanders across the nonlinearity in v².)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Three names for one curve</h2>
+    <div class="cols-3">
+      <div>
+        <h3>Transient</h3>
+        <p class="small">The temporary part. The system's reaction to an abrupt change, which
+        dies out.</p>
+      </div>
+      <div>
+        <h3>Steady state</h3>
+        <p class="small">What is left after long enough that every startup effect has gone. The
+        settled relationship between input and output.</p>
+      </div>
+      <div>
+        <h3>Dynamic response</h3>
+        <p class="small">The whole journey — their sum.</p>
+      </div>
+    </div>
+    <p>$$ y(t) \;=\; y_{\text{transient}}(t) \;+\; y_{\text{steady-state}}(t) $$</p>
+    <div class="callout small">
+      <span class="label">Why the vocabulary matters today</span>
+      Proportional control is about to fail in <em>steady state</em> while looking fine in the
+      <em>transient</em>. Without these three words that failure is invisible.
+    </div>
+    <aside class="notes">
+      <p><strong>Point at the speed plot from the previous slide</strong> and mark the two
+      regions with your hand: here it is moving, here it has stopped moving. Do it physically —
+      this is the one piece of vocabulary everyone thinks they already have and half the room
+      does not.</p>
+      <p><strong>Ask the room:</strong> where exactly does the transient end?
+      <em>(It does not — it decays asymptotically. We pick a threshold, usually 2 % or 5 %, and
+      that choice is ours, not the system's.)</em></p>
+      <p><strong>Flag forward:</strong> every requirement you will ever be given is phrased in
+      these terms — rise time and overshoot live in the transient, steady-state error lives in
+      the other half.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Reading K, τ and θ off the curve</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">01-the-car.ipynb</span>
+            <span class="cell">cell <b>7. Reading K, tau and theta off the curve</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>K, tau, theta = fopdt_fit(sol_step;
+    output = "car_st.v_kmh", A = T_110 - T_90, t0 = t_step)
+
+# K     km/h per N.m — steady-state gain
+# tau   s            — dominated by the vehicle, not the engine
+# theta s            — dead time, the engine's transport delay</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small muted">Three numbers. Notebook 08 turns exactly these into a gain set,
+        with no model of the car anywhere in the calculation.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/01-step-annotated.svg"
+             alt="The step response with the dead time, the time constant and the steady-state gain marked on the curve.">
+        <figcaption>The annotated step: θ before anything moves, τ for the rise, K from the
+          settled change divided by the size of the torque step.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> all three values from the cell output, slowly, with units.
+      Students will need them again in section 08 and they should write them down now.</p>
+      <p><strong>Say:</strong> this is the whole of system identification for a first-order
+      plant plus dead time — FOPTD. A step in, a curve out, three numbers off the curve. No
+      free-body diagram, no equations of motion. If somebody handed you this car as a sealed
+      box you could still have got here.</p>
+      <p><strong>Point at:</strong> τ — around a minute, which is the sluggishness we already
+      saw. And θ, which is a fraction of a second. The ratio θ/τ is what every tuning rule in
+      notebook 08 keys on: a plant with almost no dead time relative to its time constant is
+      an easy plant.</p>
+      <p><strong>They get wrong:</strong> reading τ as "time to reach the final value". It is
+      the time to reach 63 % of it. The helper uses the two-landmark construction from the
+      tuning document, not an eyeball.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A car with a known force balance, a known terminal speed, and a known lie above
+        130 km/h.</li>
+      <li>Three numbers off one step test — <em>K</em>, <em>τ</em>, <em>θ</em> — which
+        section 08 will turn into gains.</li>
+      <li>The vocabulary: transient, steady state, dynamic response.</li>
+    </ul>
+    <p class="lede">Next: we have a model of the car. Do we even need to measure it?
+      <a href="#/2">→ 02, open loop versus closed loop</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> we now know what the car does when left alone. That is the only
+      honest starting point for control, and it is the step people skip.</p>
+      <p><strong>Bridge:</strong> and here is an uncomfortable thought before the break in
+      pace — we have a model of the car that is good enough to predict its terminal speed. If
+      the model is that good, why measure anything at all? Why not just compute the right
+      throttle and apply it? <em>(That is notebook 02, and the answer is a hill.)</em></p>
+      <p><strong>If you are short on time</strong> and cutting section 02, bridge straight to
+      03 instead: "we know the car; now let us try to make it hold a speed we choose."</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 02 — Open vs closed loop ============================================ -->
+<section data-section-title="02 — Open vs closed loop">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 02</p>
+    <h2>Open loop versus closed loop</h2>
+    <p class="thesis">Feedforward is correct exactly as long as the world matches your model.</p>
+    <p class="meta"><span class="tier tier-2">Tier 2</span> &nbsp; <code>notebooks/lecture01/02-open-vs-closed-loop.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> we have a model of the car that predicted its terminal speed
+      correctly. So here is a fair question before we spend an hour on feedback: why measure
+      anything at all? Just compute the right throttle and apply it.</p>
+      <p><strong>Timing:</strong> 8 minutes. This section is the <em>motivation</em> for
+      everything after it, so if you cut it, make sure section 03 opens with the argument
+      instead.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two architectures</h2>
+    <div class="cols">
+      <div>
+        <h4>Open loop — feedforward</h4>
+        <svg class="diagram" viewBox="0 0 460 150" role="img"
+             aria-label="Open-loop block diagram: reference into controller into plant, producing an output, with a disturbance entering the plant and no path back.">
+          <path class="wire" d="M8 60 H60"/><text class="lbl-strong" x="14" y="50">r</text>
+          <rect class="box" x="60" y="34" width="120" height="52" rx="4"/>
+          <text x="120" y="65" text-anchor="middle" font-size="16">controller</text>
+          <path class="wire" d="M180 60 H240"/><text class="lbl" x="198" y="50">u</text>
+          <rect class="box-accent" x="240" y="34" width="120" height="52" rx="4"/>
+          <text x="300" y="65" text-anchor="middle" font-size="16">car</text>
+          <path class="wire" d="M360 60 H450"/><text class="lbl-strong" x="420" y="50">y</text>
+          <path class="wire" d="M300 120 V86"/>
+          <text class="lbl" x="288" y="138">d</text>
+        </svg>
+        <p class="small">The reference is fed forward and never comes back. There is no error
+        signal anywhere in this picture.</p>
+      </div>
+      <div>
+        <h4>Closed loop — feedback</h4>
+        <svg class="diagram" viewBox="0 0 460 150" role="img"
+             aria-label="Closed-loop block diagram: reference into a summing junction that subtracts the measured output, then controller, then plant, with a disturbance entering the plant and the output fed back to the summing junction.">
+          <path class="wire" d="M8 60 H38"/><text class="lbl-strong" x="14" y="50">r</text>
+          <circle class="box" cx="52" cy="60" r="14"/>
+          <text x="46" y="55" font-size="12">+</text><text x="44" y="78" font-size="12">−</text>
+          <path class="wire" d="M66 60 H96"/><text class="lbl" x="72" y="50">e</text>
+          <rect class="box" x="96" y="34" width="110" height="52" rx="4"/>
+          <text x="151" y="65" text-anchor="middle" font-size="16">controller</text>
+          <path class="wire" d="M206 60 H250"/>
+          <rect class="box-accent" x="250" y="34" width="110" height="52" rx="4"/>
+          <text x="305" y="65" text-anchor="middle" font-size="16">car</text>
+          <path class="wire" d="M360 60 H450"/><text class="lbl-strong" x="420" y="50">y</text>
+          <path class="wire" d="M305 126 V86"/><text class="lbl" x="293" y="143">d</text>
+          <path class="wire" d="M400 60 V20 H52 V46"/>
+        </svg>
+        <p class="small">The output is compared with the reference, and the difference — the
+        error — is what the controller acts on.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the missing wire in the left diagram. That absence is the
+      entire difference, and everything else follows from it.</p>
+      <p><strong>Say:</strong> feedforward needs a model, because the controller has to invert
+      the plant — given the speed you want, produce the torque that achieves it. Any error in
+      that inversion becomes an error in the output, permanently, with nothing to correct it.</p>
+      <p><strong>Say:</strong> and feedback is not obviously better. It is a hack we are forced
+      into because we cannot know the plant and the world well enough. Given perfect knowledge
+      we would not want the extra wire at all — it brings problems of its own, which is what the
+      remaining sections are about.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Invert the model, and drive</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">02-open-vs-closed-loop.ipynb</span>
+            <span class="cell">cell <b>Invert the model</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>v = 90 / 3.6                                  # m/s
+F = 0.5 * CAR.rho * CAR.CdA * v^2 +           # drag
+    CAR.f_r * CAR.m * CAR.g                   # rolling
+tau_ff = F * CAR.r / CAR.i                    # N.m at the engine
+
+sol = solve(ODEProblem(mtkcompile(
+    car_plant(tau_cmd = tau_ff)), [], (0.0, 400.0)))
+plot_speed(sol; setpoint = 90)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/02-open-vs-closed-loop.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="readout">
+          <div class="r"><span class="v">31.1 <span class="prov">†</span></span><span class="k">N·m computed</span></div>
+          <div class="r"><span class="v">90.0</span><span class="k">km/h achieved</span></div>
+        </div>
+        <div class="callout small">
+          <span class="label">It works</span>
+          No sensor. No error signal. No controller worth the name — and the car sits on
+          90 km/h. On a flat, dry road, with the car we modelled, feedforward is exactly right.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> and it is not a trick. This is a legitimate control strategy, it
+      is cheap, and it is fast — there is no loop to be unstable, so it cannot oscillate.
+      Feedforward is genuinely the right answer for a lot of problems.</p>
+      <p><strong>Point at</strong> the inversion in the code. That line <em>is</em> the
+      controller. Everything the controller knows about the car is in it: mass, drag area,
+      rolling coefficient, wheel radius, gear ratio.</p>
+      <p><strong>Ask the room:</strong> what has to be true for this to keep working?
+      <em>(Collect answers — they will list the assumptions themselves, which is much better
+      than you listing them. Then break exactly those assumptions on the next slide.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Break it three ways</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">02-open-vs-closed-loop.ipynb</span>
+            <span class="cell">cell <b>Break it three ways</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>cases = ["flat, as modelled" =&gt; car_plant(tau_cmd = tau_ff),
+         "4 % grade"        =&gt; car_plant(tau_cmd = tau_ff, grade = 0.04),
+         "200 kg payload"   =&gt; car_plant(tau_cmd = tau_ff, m = CAR.m + 200),
+         "headwind"         =&gt; car_plant(tau_cmd = tau_ff, CdA = 1.3 * CAR.CdA)]
+
+plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
+for (name, model) in cases
+    t, y = signal(solve(ODEProblem(mtkcompile(model), [], tspan)), SPEED_KMH)
+    plot!(plt, t, y; lw = 2, label = name)
+end
+hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/02-open-vs-closed-loop.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/02-open-loop-broken.svg"
+             alt="Four open-loop runs against a 90 km/h target: the nominal case sits on target, the grade, payload and headwind cases all settle at visibly different wrong speeds.">
+        <figcaption>Same torque, four worlds. Three of them settle somewhere the driver did not
+          ask for.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> the three wrong speeds.</p>
+      <p><strong>Say:</strong> and now the important part — <em>nothing in the controller went
+      wrong</em>. It computed 31.1 newton-metres, it commanded 31.1, it delivered 31.1. It is
+      still correct. The world moved.</p>
+      <p><strong>Say:</strong> and there is no error signal anywhere in this architecture, so
+      nothing in the system is even capable of noticing. The car is not failing to correct; it
+      has no concept of correction.</p>
+      <p><strong>Ask the room:</strong> which of the three would a driver notice first?
+      <em>(The hill. And which would they never notice? The payload — the car is just quietly
+      slower than they asked, forever.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Close the loop</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">02-open-vs-closed-loop.ipynb</span>
+            <span class="cell">cell <b>Close the loop</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># same three disturbances, now under proportional control
+for (name, kwargs) in disturbances
+    model = cruise_loop(with_I = false, with_D = false,
+                        k = 56.0, v_set = 90.0; kwargs...)
+    t, y  = signal(solve(ODEProblem(mtkcompile(model), [], tspan)),
+                   SPEED_KMH)
+    plot!(plt, t, y; lw = 2, label = name)
+end</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/02-open-vs-closed-loop.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small">All three come back towards the target — without the controller being
+        told which disturbance it is facing, or that there is one.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/02-closed-loop-recovered.svg"
+             alt="The same three disturbances under proportional control: all three responses return close to the 90 km/h target instead of settling at different wrong speeds.">
+        <figcaption>One controller, three different worlds, one outcome. That is the argument
+          for feedback.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the controller has no model. It does not know about the hill, or
+      the luggage, or the wind. It knows one number — how far off it is — and that is enough to
+      handle three disturbances it was never designed for.</p>
+      <p><strong>Point at</strong> the remaining gap between the curves and the target. It is
+      still there, and it is different for each disturbance. Do not explain it — say "hold that
+      thought" and let section 03 land it.</p>
+      <p><strong>Ask the room:</strong> what did we give up to get this? <em>(Next slide. Take
+      guesses first — "cost", "complexity", "a sensor" are all partly right, and the real answer
+      is more interesting than any of them.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What feedback costs</h2>
+    <div class="cols">
+      <div>
+        <p class="lede">Feedforward changes how a system is <em>operated</em>.</p>
+        <p class="lede">Feedback changes what the system <em>is</em>.</p>
+        <p class="small muted">The controller sets the rate of change as a function of the
+        current state, and that relationship is new dynamics — dynamics the car did not have
+        before you wired it up.</p>
+      </div>
+      <div class="callout danger small">
+        <span class="label">Which cuts both ways</span>
+        You can take an unstable system and make it stable. You can also take a perfectly
+        stable car and make it oscillate, or worse. A badly tuned loop is more dangerous than
+        no loop at all — and it is why the rest of this lecture exists.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the sentence to take away from the section. Feedforward
+      cannot destabilize anything — there is no loop. Feedback can, because there is.</p>
+      <p><strong>Say:</strong> which is why control engineering spends so much of its effort on
+      <em>analysis</em> rather than on design. Designing a controller that works on a good day
+      is not hard. Proving that it cannot do harm on a bad one is the job.</p>
+      <p><strong>Flag forward:</strong> we will see the loop destabilize twice today — once on
+      purpose in section 08, to measure it, and once by accident in section 09, from nothing
+      more than a slow processor.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A working feedforward controller — and three ordinary situations that defeat it.</li>
+      <li>The reason feedback exists: the world moves, and only an error signal notices.</li>
+      <li>The warning: feedback changes the dynamics, so it can make things worse.</li>
+    </ul>
+    <p class="lede">Next: the simplest thing that uses an error signal.
+      <a href="#/3">→ 03, proportional</a></p>
+    <aside class="notes">
+      <p><strong>Bridge:</strong> so we need feedback. Let us start with the least clever thing
+      we could possibly do with an error signal — multiply it by a number.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 03 — Proportional ============================================== -->
+<section data-section-title="03 — Proportional">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 03</p>
+    <h2>Proportional</h2>
+    <p class="thesis">Proportional control gets you close, and close is where it stops.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/03-proportional.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> from here to the end of section 06 the car never changes. Not
+      one parameter. Everything that happens is a change to the controller.</p>
+      <p><strong>Timing:</strong> 10 minutes. Three cells, all of them fast, because the closed
+      loop settles in seconds where the open loop took minutes.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The whole control law</h2>
+    <p>$$ u \;=\; k\,e \;=\; k\,\bigl(v_{\text{set}} - v\bigr) $$</p>
+    <div class="cols">
+      <div>
+        <p class="small">Torque command proportional to how far off we are. That is all of it.
+        No memory, no prediction.</p>
+        <p class="small">Units, once and for all: <em>e</em> is km/h, <em>u</em> is N·m, so
+        <strong>k is N·m per km/h</strong>.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">The scenario, for the rest of this run</span>
+        Cruise at <strong>90 km/h</strong>, step the setpoint to <strong>110 km/h</strong>,
+        flat road. Holding 90 needs 31 N·m, holding 110 needs 40 N·m — both far below the
+        150 N·m limit, so nothing saturates here. Saturation arrives in section 06, deliberately.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> think of walking to a line on a football pitch. Far away, walk
+      fast; close, slow down; on the line, stop. A proportional controller and a person
+      crossing a room are the same algorithm, and for that problem it works perfectly — you
+      stop exactly on the line.</p>
+      <p><strong>Then say:</strong> now think about a drone hovering at 50 m. At the target the
+      error is zero, so the controller commands zero, so the propellers stop, so it falls. That
+      system needs a non-zero output to <em>stay</em> where you put it — and proportional
+      control can only make a non-zero output out of a non-zero error.</p>
+      <p><strong>Ask the room:</strong> which of those two is our car? <em>(The drone. Holding
+      110 km/h needs 40 N·m forever, because drag never stops. Let them get there; the next
+      three slides are just evidence for the answer they gave.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>One gain, one step</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">03-proportional.ipynb</span>
+            <span class="cell">cell <b>One run</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>loop = cruise_loop(with_I = false, with_D = false,
+                   k = 56.0)
+sol  = solve(ODEProblem(mtkcompile(loop), [], (0.0, 120.0)))
+
+plt = plot_speed(sol; setpoint = 110)
+bracket_error!(plt, sol; setpoint = 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/03-proportional.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">0.7 <span class="prov">†</span></span><span class="k">km/h short</span></div>
+          <div class="r"><span class="v">≈ 40</span><span class="k">N·m held</span></div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/03-single-gain.svg"
+             alt="Step response from 90 to 110 km/h under proportional control, settling just below the setpoint with the gap marked by a bracket.">
+        <figcaption>The response settles, and it settles <em>below</em> the dashed setpoint.
+          The bracket is the steady-state error.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the dashed line, then the solid one, then the gap between
+      them. Do not say "error" yet — ask what they see.</p>
+      <p><strong>Ask the room:</strong> is this controller broken? <em>(No. It is doing exactly
+      what it was told. It is stable, it is quick, it stopped somewhere sensible — and it is
+      wrong, permanently, and it will never notice.)</em></p>
+      <p><strong>Read out:</strong> the bracket annotation. Roughly 0.7 km/h short at this
+      gain — read the executed number, not mine.</p>
+      <p><strong>Contrast, loudly:</strong> the open-loop car took several minutes to change
+      speed. This took seconds. Same engine, same mass, same drag. Feedback changed the
+      dynamics of the system, not just how it is operated.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Turn the gain up</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">03-proportional.ipynb</span>
+            <span class="cell">cell <b>The gain family</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = false, with_D = false),
+           "k", [14.0, 56.0, 220.0, 890.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/03-proportional.ipynb">open notebook</a>
+          </div>
+        </div>
+        <table>
+          <tr><th>k <span class="small muted">[N·m per km/h]</span></th><th>steady-state error <span class="small muted">[km/h]</span></th></tr>
+          <tr><td class="num">14</td><td class="num">2.8 <span class="prov">†</span></td></tr>
+          <tr><td class="num">56</td><td class="num">0.7 <span class="prov">†</span></td></tr>
+          <tr><td class="num">220</td><td class="num">0.18 <span class="prov">†</span></td></tr>
+          <tr><td class="num">890</td><td class="num">0.05 <span class="prov">†</span></td></tr>
+        </table>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/03-gain-family.svg"
+             alt="Four step responses at increasing proportional gain on one axes: each rises faster and settles closer to the setpoint, and none reaches it.">
+        <figcaption>Four gains across two decades. Faster, closer — and every one of them stops
+          short.</figcaption>
+      </figure>
+    </div>
+    <!-- Gains and errors here are the analytic values from docs/lecture-01-notebooks.md, hence
+         the daggers. They assume theta_e = 0.04 s. If theta_e moves to 0.2-0.3 s (HANDOVER
+         Risk 1) the ultimate gain drops to roughly 115 N.m per km/h, so the top two members of
+         this family would oscillate rather than settle and the family must be re-centred on
+         the executed notebook — around one, two and three times the lowest gain. -->
+    <aside class="notes">
+      <p><strong>Point at:</strong> the curves in order. Each one rises faster and each one
+      stops closer. Then point at the dashed setpoint and say: none of them arrives.</p>
+      <p><strong>Read out</strong> the error column from the executed notebook. The pattern is
+      what matters: every factor of four on the gain cuts the error by about four.</p>
+      <p><strong>Ask the room:</strong> so what gain do we need for zero error?
+      <em>(Infinite. Somebody will say it. That is the punchline of the next slide, so let them
+      say it and then make them prove it.)</em></p>
+      <p><strong>They get wrong:</strong> "just turn it up more". Ask what else grows when the
+      gain grows — the commanded torque at the instant of the step, and the loop's appetite for
+      sensor noise. We spend section 08 on exactly that bill.</p>
+      <p><strong>If the top gains oscillate</strong> in the executed run, that is not a bug to
+      hide: say the loop is near its stability limit, and promise section 08, where we find
+      that limit deliberately and use it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Error against gain</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">03-proportional.ipynb</span>
+            <span class="cell">cell <b>Error against gain</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>ks = exp10.(range(0.7, 3.0; length = 20))
+sw = sweep(cruise_loop(with_I = false, with_D = false),
+           "k", ks; tspan = (0.0, 120.0))
+
+errs = [steady_state_error(s, 110) for (_, s) in sw]
+plot(ks, errs; xscale = :log10, lw = 2, label = "",
+     xlabel = "k [N.m per km/h]",
+     ylabel = "steady-state error [km/h]")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/03-proportional.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/03-error-vs-gain.svg"
+             alt="Steady-state error against proportional gain on a logarithmic gain axis: a hyperbolic decay that approaches zero without reaching it.">
+        <figcaption>Hyperbolic decay. It approaches zero and it never arrives — at any gain the
+          curve is above the axis.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the curve hugging the axis on the right and never touching
+      it. This is the shape of "asymptotically, never".</p>
+      <p><strong>Say:</strong> and now the argument, which is three sentences and you should be
+      able to reproduce it in the exam. One: at 110 km/h the car needs about 40 N·m just to
+      stand still against drag. Two: a proportional controller's only source of output is
+      <em>k</em> times the error. Three: therefore the error cannot be zero, because if it were,
+      the torque would be zero, and the car would slow down.</p>
+      <p><strong>Ask the room:</strong> what would have to be true of a plant for proportional
+      control to reach the setpoint exactly? <em>(That holding the setpoint needs zero control
+      effort. Walking across a room qualifies. Almost nothing you will ever be paid to control
+      does.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why it cannot be zero</h2>
+    <div class="cols">
+      <div>
+        <p>$$ u_{\text{needed}}(110) \;\approx\; 40\ \mathrm{N{\cdot}m} \qquad u = k\,e $$</p>
+        <p>$$ \Rightarrow\quad e_{\infty} \;=\; \frac{u_{\text{needed}}}{k} \;\neq\; 0 $$</p>
+        <p class="small muted">Double the gain, halve the error. Never remove it.</p>
+      </div>
+      <div>
+        <div class="callout">
+          <span class="label">Same story, different plant</span>
+          The drone hovers <em>below</em> 50 m because it needs 100 rpm to stay up, and only
+          an error can produce 100 rpm. Our car cruises <em>below</em> 110 km/h because it
+          needs 40 N·m to stay there.
+          <br><strong>Drag is playing the part gravity played.</strong>
+        </div>
+      </div>
+    </div>
+    <p class="lede center">The fix has to be something that <em>remembers</em>.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> write that division down. It is the most reusable thing in this
+      section: steady-state error under proportional control is the effort you need divided by
+      the gain you chose.</p>
+      <p><strong>Say:</strong> and notice what it tells you about the plant — the harder the
+      job, the bigger the error. On a hill, this same controller is worse. We will watch that
+      happen in section 06.</p>
+      <p><strong>Ask the room, to set up 04:</strong> what could a controller add to its output
+      that does not depend on the error right now? <em>(Something accumulated. Steer them to
+      "it should remember that it has been short for a while." Do not say "integral" for them —
+      let the room produce the word.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A loop that is fast, stable, and permanently wrong.</li>
+      <li>A formula for how wrong: <em>e</em><sub>∞</sub> = effort needed ÷ gain chosen.</li>
+      <li>The knowledge that no gain fixes it — the fix has to be a different <em>kind</em> of
+        term.</li>
+    </ul>
+    <p class="lede">Next: give the controller a memory.
+      <a href="#/4">→ 04, proportional-integral</a></p>
+    <aside class="notes">
+      <p><strong>Check before moving on:</strong> if the error vanished at high gain in your
+      executed notebook, the integral path was left switched on — <code>with_I = false</code>
+      is the whole difference between this section and the next.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 04 — Proportional-integral ====================================== -->
+<section data-section-title="04 — Proportional-integral">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 04</p>
+    <h2>Proportional-integral</h2>
+    <p class="thesis">The integrator works out the answer you would otherwise have to compute by hand.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/04-proportional-integral.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> one boolean changes between the last notebook and this one.
+      <code>with_I = true</code>. Same car, same gain, same step.</p>
+      <p><strong>Timing:</strong> 12 minutes. The middle slide of this section — the
+      integrator's own state settling on the number we computed with a pencil — is the best
+      slide in the lecture. Do not rush to it and do not rush past it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Adding a memory</h2>
+    <p>$$ u \;=\; k\left(e \;+\; \frac{1}{T_i}\int_0^t e\,d\tau\right) $$</p>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li>The integral keeps a running total of the error.</li>
+          <li>So it keeps <em>changing</em> for as long as any error remains.</li>
+          <li>And it stops changing only when the error is exactly zero — at which point it
+            holds whatever value it has reached.</li>
+        </ul>
+      </div>
+      <div class="callout small">
+        <span class="label">Read that last point again</span>
+        An integrator's output at rest is <em>unconstrained by the error</em>. That is precisely
+        the freedom the proportional path did not have, and it is the whole fix.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> proportional is the present. Integral is the past. That is not a
+      slogan — it is literally what the two expressions compute.</p>
+      <p><strong>Ask the room:</strong> if the error has been zero for a while, what is the
+      integral path putting out? <em>(Whatever it accumulated before. Not zero. The room will
+      often answer "zero" — that confusion is exactly what the next two slides destroy.)</em></p>
+      <p><strong>On T<sub>i</sub>:</strong> it is a <em>time</em>, not a gain, and it divides —
+      so smaller T<sub>i</sub> is more aggressive integration. Say it now; it catches people out
+      every single year.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>PI against P</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">04-proportional-integral.ipynb</span>
+            <span class="cell">cell <b>PI against P</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>p  = cruise_loop(with_I = false, with_D = false, k = 56.0)
+pi_ = cruise_loop(with_I = true,  with_D = false, k = 56.0,
+                  Ti = 8.0)
+
+tspan = (0.0, 120.0)
+sol_p  = solve(ODEProblem(mtkcompile(p),  [], tspan))
+sol_pi = solve(ODEProblem(mtkcompile(pi_), [], tspan))
+
+plt  = plot_speed(sol_p; setpoint = 110, label = "P")
+t, y = signal(sol_pi, SPEED_KMH)
+plot!(plt, t, y; lw = 2, label = "PI")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/04-p-vs-pi.svg"
+             alt="Two step responses on one axes: the proportional run settles below the setpoint, the proportional-integral run climbs the last stretch and reaches it.">
+        <figcaption>Same gain, same step. P settles short; PI keeps going and arrives.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the place where the two curves separate — not at the step,
+      but afterwards, in the slow part. The proportional path has already given up there,
+      because its error is nearly zero. The integral path is still working, because its input
+      is still non-zero.</p>
+      <p><strong>Say:</strong> the two terms do different jobs at different times. Proportional
+      does the transient, integral does the last stretch. Watch for that division of labor
+      again in the next section, where we plot it directly.</p>
+      <p><strong>Ask the room:</strong> which one reached the setpoint faster to within, say,
+      1 km/h? <em>(Usually P. Arriving eventually and arriving exactly are different
+      requirements, and PID tuning is mostly about trading one for the other.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The punchline</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">04-proportional-integral.ipynb</span>
+            <span class="cell">cell <b>The punchline</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the integrator's own output, on its own axes
+t, u_I = signal(sol_pi, "controller.I.y")
+
+plot(t, u_I; lw = 2, label = "integral path",
+     xlabel = "time [s]", ylabel = "torque [N.m]")
+hline!([40.1]; ls = :dash, lw = 2, color = :black,
+       label = "torque to hold 110 km/h, by hand")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">40.1 <span class="prov">†</span></span><span class="k">N·m computed</span></div>
+          <div class="r"><span class="v">40.1 <span class="prov">†</span></span><span class="k">N·m discovered</span></div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/04-integrator-state.svg"
+             alt="The integral path's output rising and levelling off exactly on a dashed horizontal line marking the analytically computed cruise torque.">
+        <figcaption>The integrator's state settles on the dashed line — the cruise torque we
+          computed from the force balance, which the controller was never told.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>This is the slide.</strong> Slow down.</p>
+      <p><strong>Point at:</strong> the dashed line first. Say where it came from: we solved
+      the force balance at 110 km/h with a pencil, back in section 01, and got 40 newton-metres.</p>
+      <p><strong>Then point at:</strong> the curve arriving at it. Say: nobody gave the
+      controller the mass. Or the drag area. Or the gear ratio. It has never seen the model.
+      It has seen one number — how far off it was — and by accumulating that it has
+      <em>inverted the plant</em>.</p>
+      <p><strong>Say:</strong> that is what "an integrator removes steady-state error" actually
+      means. It is not a magic property of the formula. It is that the integrator can hold an
+      output that the error no longer justifies, and it will keep hunting until it holds
+      exactly the right one.</p>
+      <p><strong>Ask the room:</strong> what happens to that line if I put 200 kg of luggage in
+      the boot? <em>(It moves up, and the integrator finds the new value without being told.
+      That is the argument for feedback in one sentence.)</em></p>
+      <p><strong>Check:</strong> if the integrator settles anywhere other than the hand-computed
+      torque, the units or the gear ratio disagree between notebook and model — that mismatch
+      is worth more than the slide, so stop and find it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What it costs</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">04-proportional-integral.ipynb</span>
+            <span class="cell">cell <b>The cost</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = true, with_D = false,
+                      k = 56.0),
+           "Ti", [20.0, 8.0, 3.0, 1.2];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110)
+[overshoot(s, 110) for (_, s) in sw]      # percent</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small muted">Shrinking <em>T<sub>i</sub></em> integrates harder. The loop
+        arrives sooner, then past.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/04-ti-family.svg"
+             alt="Four step responses at decreasing integral time: each reaches the setpoint sooner and the fastest ones overshoot and oscillate before settling.">
+        <figcaption>The <em>T<sub>i</sub></em> family. Overshoot appears, and then grows.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the first curve that crosses the setpoint and comes back.
+      That crossing is new — the proportional controller never did it, at any gain.</p>
+      <p><strong>Say, and this is the explanation people remember:</strong> by the time the car
+      reaches 110, the integrator has been accumulating error for the whole climb, so it is
+      already holding <em>more</em> torque than 110 km/h needs. The only way to get rid of that
+      excess is to generate error with the opposite sign — which means spending time on the
+      far side of the setpoint. The overshoot is not a flaw in the tuning. It is how an
+      integrator unwinds.</p>
+      <p><strong>Read out</strong> the overshoot percentages from the cell output.</p>
+      <p><strong>Ask the room:</strong> so what could we add that reacts <em>before</em> we
+      arrive, rather than after? <em>(Something that watches how fast we are closing. Straight
+      into 05.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>Zero steady-state error, for free, with no model in the controller.</li>
+      <li>A demonstration that the integral path <em>is</em> the model inversion — the same
+        number, found two ways.</li>
+      <li>A new failure mode: overshoot, caused by unwinding.</li>
+    </ul>
+    <p class="lede">Next: a third path, to arrive without overshooting.
+      <a href="#/5">→ 05, PID</a></p>
+    <aside class="notes">
+      <p><strong>Flag forward, briefly:</strong> an integrator that has accumulated more than
+      the actuator can deliver is a much worse problem than overshoot. That is section 06, and
+      it is the one that breaks real vehicles.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 05 — PID ========================================================= -->
+<section data-section-title="05 — PID">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 05</p>
+    <h2>Proportional-integral-derivative</h2>
+    <p class="thesis">Three terms, three jobs: present, past, future.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/05-pid.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> second boolean. <code>with_D = true</code>. That is the only
+      change from the last notebook, and it completes the controller that runs most of the
+      machinery you will ever work on.</p>
+      <p><strong>Timing:</strong> 12 minutes. The three-contributions plot is the one to spend
+      time on — it is the only place in the lecture where you can see the division of labor
+      directly rather than infer it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The third path</h2>
+    <p>$$ u \;=\; k\left(e \;+\; \frac{1}{T_i}\int_0^t e\,d\tau \;+\; T_d\,\frac{de}{dt}\right) $$</p>
+    <div class="cols-3">
+      <div><h3>Present</h3><p class="small">Proportional. How far off am I <em>now</em>?</p></div>
+      <div><h3>Past</h3><p class="small">Integral. How long have I been off?</p></div>
+      <div><h3>Future</h3><p class="small">Derivative. How fast am I closing?</p></div>
+    </div>
+    <div class="callout small">
+      <span class="label">What the derivative actually does</span>
+      Closing on the setpoint fast means the error is shrinking fast — a large negative rate of
+      change — so the derivative path subtracts from the output and takes the foot off early.
+      It brakes <em>on approach</em>, not on arrival.
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the derivative does not know where the setpoint is. It only
+      knows how fast the error is moving. That is enough to anticipate an overshoot before it
+      happens, and it is why the derivative is sometimes called a prediction — a one-term
+      Taylor extrapolation, nothing more mystical than that.</p>
+      <p><strong>They get wrong:</strong> thinking the derivative pushes harder when you are far
+      away. It does the opposite. Far away and closing quickly, it is already pulling back.</p>
+      <p><strong>Flag forward:</strong> in a real controller this is not a pure derivative —
+      there is a filter on it, and section 07 shows what happens without one. Mention it now in
+      one sentence so the <code>Nd</code> parameter is not a surprise later.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>P, PI and PID, one step</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">05-pid.ipynb</span>
+            <span class="cell">cell <b>P vs PI vs PID</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>tspan = (0.0, 120.0)
+runs = ["P"   =&gt; cruise_loop(with_I = false, with_D = false, k = 56.0),
+        "PI"  =&gt; cruise_loop(with_I = true,  with_D = false, k = 56.0, Ti = 8.0),
+        "PID" =&gt; cruise_loop(with_I = true,  with_D = true,  k = 56.0, Ti = 8.0, Td = 1.5)]
+
+plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
+for (name, model) in runs
+    sol  = solve(ODEProblem(mtkcompile(model), [], tspan))
+    t, y = signal(sol, SPEED_KMH)
+    plot!(plt, t, y; lw = 2, label = name)
+end
+hline!(plt, [110]; ls = :dash, color = :black, label = "setpoint")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/05-pid.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/05-p-pi-pid.svg"
+             alt="Three step responses on one axes: P settling below the setpoint, PI reaching it with overshoot, PID reaching it with the overshoot suppressed.">
+        <figcaption>The spine of the lecture: short of target, past target, on target.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>This plot is the lecture in one picture.</strong> Give it a full minute of
+      silence before you say anything.</p>
+      <p><strong>Point at</strong> each curve in turn and let the room name the failure:
+      P stops short; PI arrives but goes past; PID arrives and stays.</p>
+      <p><strong>Say:</strong> every one of these is the same car and the same
+      <em>k</em>. Nothing physical changed between them. Three lines of configuration.</p>
+      <p><strong>Ask the room:</strong> if a colleague showed you only the PID curve, what
+      could you not tell? <em>(Whether it is well tuned or merely lucky. Which is exactly why
+      section 08 exists.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Who does what, and when</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">05-pid.ipynb</span>
+            <span class="cell">cell <b>The three contributions</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
+    cruise_loop(with_I = true, with_D = true,
+                k = 56.0, Ti = 8.0, Td = 1.5)), [], tspan))
+
+plt = plot(; xlabel = "time [s]", ylabel = "torque [N.m]")
+for (path, name) in [("controller.P.y", "proportional"),
+                     ("controller.I.y", "integral"),
+                     ("controller.D.y", "derivative")]
+    t, y = signal(sol, path)
+    plot!(plt, t, y; lw = 2, label = name)
+end
+plt</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/05-pid.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/05-three-contributions.svg"
+             alt="Three traces of controller output: a proportional spike at the step decaying away, an integral trace rising to a constant, and a derivative pulse that is zero before and after the transient.">
+        <figcaption>Proportional carries the transient. Integral holds the steady state.
+          Derivative exists only while the error is moving — zero at both ends.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the three traces in order and narrate them:</p>
+      <ul>
+        <li>Proportional: jumps at the step, then decays to almost nothing. It has done its job
+          in the first few seconds and then it retires.</li>
+        <li>Integral: starts at the old cruise torque, climbs, and settles at the new one. It
+          does almost nothing at the step and everything at the end.</li>
+        <li>Derivative: zero before the step, a pulse during the transient, zero after. It is
+          only ever present while something is changing.</li>
+      </ul>
+      <p><strong>Say:</strong> this is the answer to "which gain should I turn". They are not
+      three knobs on the same thing. They act at different times, and the symptom tells you
+      which one to reach for.</p>
+      <p><strong>Ask the room:</strong> at t = 100 s, which term is holding the car at
+      110 km/h? <em>(Only the integral. The other two are at zero. Make them say it out
+      loud.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>How much derivative</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">05-pid.ipynb</span>
+            <span class="cell">cell <b>Td family</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = true, with_D = true,
+                      k = 56.0, Ti = 8.0),
+           "Td", [0.0, 0.5, 1.5, 6.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/05-pid.ipynb">open notebook</a>
+          </div>
+        </div>
+        <ul class="small">
+          <li>Too little: the overshoot survives.</li>
+          <li>Too much: sluggish, and jittery — braking against every wobble.</li>
+        </ul>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/05-td-family.svg"
+             alt="Four step responses at increasing derivative time: overshoot shrinks and then the response becomes slow and ragged.">
+        <figcaption>There is a middle. Past it, more derivative makes the response worse in a
+          different way.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> notice that "more" stops helping. Proportional and integral both
+      trade one property for another monotonically; the derivative has an optimum, and past it
+      the cure is worse than the disease.</p>
+      <p><strong>Point at:</strong> the raggedness in the largest-<em>T<sub>d</sub></em> curve.
+      Say: and this is on a perfectly clean measurement. Put one per cent of speedometer noise
+      on the signal and that curve becomes unusable — section 07.</p>
+      <p><strong>Ask the room:</strong> in a car, what does an aggressive derivative feel like
+      to a passenger? <em>(Surging — the controller reacting to every small change. There is a
+      comfort requirement hiding in the gain set.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why P, PI and PD all have names</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Set a gain to zero and that path disappears. What is left gets named
+        after the letters that remain:</p>
+        <table>
+          <tr><th>Controller</th><th>Paths</th><th>In our model</th></tr>
+          <tr><td>P</td><td>present</td><td><code>with_I = false, with_D = false</code></td></tr>
+          <tr><td>PI</td><td>present, past</td><td><code>with_I = true, with_D = false</code></td></tr>
+          <tr><td>PD</td><td>present, future</td><td><code>with_I = false, with_D = true</code></td></tr>
+          <tr><td>PID</td><td>all three</td><td><code>with_I = true, with_D = true</code></td></tr>
+        </table>
+      </div>
+      <div class="callout small">
+        <span class="label">Which is what we have been doing</span>
+        Sections 03, 04 and 05 are one Dyad model with two booleans flipped. There is no
+        separate "P controller" anywhere in this repository — and there should not be, because
+        they are not separate things.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> PID is not an algorithm you pick off a shelf. It is a family, and
+      you select a member by deciding which of the three questions your plant actually needs
+      answered.</p>
+      <p><strong>Ask the room:</strong> when would you deliberately leave the integrator out?
+      <em>(When the plant already integrates — a motor position loop, where holding a position
+      needs no effort. Adding a second integrator there mostly buys you oscillation.)</em></p>
+      <p><strong>Say:</strong> and when would you leave the derivative out? <em>(When the
+      measurement is noisy and you cannot filter it enough. Which is most of the time — a large
+      fraction of industrial loops in service are PI, not PID.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A controller that reaches the setpoint and does not overshoot getting there.</li>
+      <li>A picture of which term does what, and when — the thing to consult when a loop
+        misbehaves.</li>
+      <li>Four controllers from two booleans.</li>
+    </ul>
+    <p class="lede">Next: the engine runs out of torque, and the integrator does not notice.
+      <a href="#/6">→ 06, integral windup</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything up to here has been on flat road with a step the
+      engine could easily deliver. Every plot has been well behaved. Now we point the car up a
+      hill it cannot climb, and the nice linear story breaks in a way that has hurt real
+      hardware.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 06 — Integral windup ============================================== -->
+<section data-section-title="06 — Integral windup">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 06</p>
+    <h2>Integral windup</h2>
+    <p class="thesis">The integrator does not know the engine has run out.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/06-windup.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything so far has been true of a linear model. This section
+      is about the first place where the real world stops being linear, and it is the failure
+      that has actually destroyed hardware.</p>
+      <p><strong>Timing:</strong> 14 minutes, and it is worth borrowing from section 09 if you
+      need to. This is the most practically useful thing in the lecture.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The plant has two halves</h2>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li>The <strong>actuator</strong> — the thing that supplies the force. Our engine.</li>
+          <li>The <strong>process</strong> — the thing being pushed. Our car.</li>
+        </ul>
+        <p class="small">Real actuators have backlash, rate limits and <strong>saturation</strong>.
+        A linear model has none of these: ask it for a million newton-metres and it will agree.</p>
+      </div>
+      <div class="callout danger small">
+        <span class="label">The hill we are about to drive up</span>
+        130 km/h on a sustained 10 % climb needs <strong>2024 N</strong> at the road.<br>
+        The engine can deliver <strong>1935 N</strong>.<br>
+        The car will lose, and settle back to about <strong>118 km/h</strong>.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the numbers in the red box are not chosen to make a point. They
+      come out of the force balance we wrote in section 01, with the parameters on the front
+      slide. You can compute them; that is the whole point of having built the car first.</p>
+      <p><strong>Say:</strong> and notice how close it is — 2024 against 1935. Five per cent
+      short. This is not a cartoon overload; it is the ordinary case of a fully loaded car on a
+      long climb.</p>
+      <p><strong>Ask the room:</strong> what does the controller see when the engine is pinned
+      at its limit? <em>(Exactly what it saw before: a speed that is too low. It has no sensor
+      for "the actuator has given up". Hold that thought for two slides.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The climb, with an ordinary PI controller</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">06-windup.ipynb</span>
+            <span class="cell">cell <b>The climb, no anti-windup</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>model = cruise_climb(k = 56.0, Ti = 8.0,
+                     v_set = 130.0, grade = 0.10,
+                     t_climb = (30.0, 90.0),
+                     antiwindup = :none)
+sol = solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
+
+plot_speed(sol; setpoint = 130)
+plot_torque(sol)                        # with the 150 N.m limit drawn on
+signal(sol, "controller.I.y")           # the integrator, separately</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/06-windup.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/06-climb-windup.svg"
+             alt="Stacked traces through a sustained climb: speed falling below the setpoint, delivered torque pinned flat on the limit line, commanded torque and the integrator state climbing far above it.">
+        <figcaption>Delivered torque is flat on the limit. Commanded torque and the integrator
+          keep climbing anyway.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at, in this order:</strong></p>
+      <ul>
+        <li>The speed trace sagging away from the setpoint at t = 30 s. The car is losing.</li>
+        <li>The delivered-torque trace lying flat on the limit line. The engine is doing
+          everything it can.</li>
+        <li>The commanded-torque trace carrying on upward, past the limit, off into nonsense.</li>
+        <li>The integrator, which is what is driving it there.</li>
+      </ul>
+      <p><strong>Say:</strong> the integrator's rule is "error is non-zero, therefore keep
+      accumulating". It is obeying that rule perfectly. Nothing in the loop tells it that the
+      accumulation has stopped buying anything.</p>
+      <p><strong>Read out</strong> the peak commanded torque and compare it to 150 N·m. Say the
+      ratio out loud — it is usually several times over.</p>
+      <p><strong>Say (the drone story, if it helps):</strong> it is the same as holding a drone
+      down on the ground while it is trying to fly to 50 metres. The propellers max out at
+      1000 rpm, the integrator winds the command to 2000, and the moment you let go…</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why the crash is already scheduled</h2>
+    <div class="cols">
+      <div>
+        <p class="small">When the road flattens at t = 90 s, the car accelerates. The error
+        changes sign. The integrator begins to unwind.</p>
+        <p class="small">But it is unwinding <em>from far above the limit</em>. While the
+        command falls from 400 N·m to 150, the engine delivers the same full torque it was
+        delivering before.</p>
+        <p class="small"><strong>Nothing the car does can be seen at the output until the
+        command comes back inside the limit.</strong></p>
+      </div>
+      <div class="callout danger small">
+        <span class="label">The dangerous property</span>
+        The delay between "the error changed sign" and "the actuator responded" is not set by
+        the plant, or by the gains. It is set by how far the integrator was allowed to wander
+        while nobody was looking.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say it with the drone numbers, they are cleaner:</strong> the integrator asks
+      for 2000 rpm, the motors do 1000. Let go. The drone shoots up past 50 m. The error goes
+      negative. The integrator starts coming down — 1900, still 1000 at the motors. 1500, still
+      1000. 1100, still 1000. Only at 1000 does anything at all begin to happen, and by then the
+      drone is out of sight.</p>
+      <p><strong>Say:</strong> and that is the actual harm. Winding up is not itself the
+      problem — commanding 400 N·m from a 150 N·m engine hurts nothing. The problem is the time
+      it takes to <em>unwind</em>, during which the controller is effectively disconnected.</p>
+      <p><strong>Ask the room</strong> before running the next cell: how far past 130 km/h do
+      you think we go? <em>(Take two guesses, write them on the board, then run it.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The overshoot</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">06-windup.ipynb</span>
+            <span class="cell">cell <b>The overshoot</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>plt = plot_speed(sol; setpoint = 130)
+vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
+       label = "climb starts / ends")
+
+@show overshoot(sol, 130; y0 = 130)     # percent of the step</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/06-windup.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="callout warn small">
+          <span class="label">In a real car</span>
+          This is a cruise control that, at the top of a long climb, accelerates hard for
+          several seconds while the driver is doing nothing at all.
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/06-overshoot.svg"
+             alt="Speed through and after the climb: a sag during the climb, then a large overshoot above the setpoint once the road flattens, before settling back.">
+        <figcaption>The road flattens at t = 90 s, and the car keeps accelerating well past the
+          setpoint before the integrator has unwound.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> the peak speed, and how long the car spends above the
+      setpoint. Compare against the guesses on the board.</p>
+      <p><strong>Say:</strong> nobody commanded this. The driver asked for 130 and the car
+      chose to do something else for several seconds. Any control failure that surprises the
+      operator is a safety problem, whatever the numbers say.</p>
+      <p><strong>Ask the room:</strong> what would you change to stop it? <em>(Collect answers
+      before showing the fix. "Limit the output" is the usual first one — and it is not enough
+      on its own, which is a useful thing for them to discover in a moment.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Clamping: two conditions</h2>
+    <svg class="diagram" viewBox="0 0 980 330" role="img"
+         aria-label="Block diagram of the clamping anti-windup logic: the controller output is compared before and after the saturation block, the sign of the error is compared with the sign of the output, and when both tests pass an AND gate switches the integrator input to zero.">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/>
+        </marker>
+      </defs>
+
+      <path class="wire" d="M14 56 H90" marker-end="url(#arrow)"/>
+      <text class="lbl-strong" x="16" y="44">e</text>
+      <rect class="box" x="90"  y="30" width="140" height="52" rx="4"/>
+      <text x="160" y="62" text-anchor="middle" font-size="17">integrator</text>
+      <path class="wire" d="M230 56 H290" marker-end="url(#arrow)"/>
+      <rect class="box" x="290" y="30" width="100" height="52" rx="4"/>
+      <text x="340" y="62" text-anchor="middle" font-size="17">Σ P+I+D</text>
+      <path class="wire" d="M390 56 H450" marker-end="url(#arrow)"/>
+      <rect class="box-accent" x="450" y="30" width="150" height="52" rx="4"/>
+      <text x="525" y="62" text-anchor="middle" font-size="17">saturation</text>
+      <path class="wire" d="M600 56 H670" marker-end="url(#arrow)"/>
+      <rect class="box" x="670" y="30" width="130" height="52" rx="4"/>
+      <text x="735" y="62" text-anchor="middle" font-size="17">actuator</text>
+      <path class="wire" d="M800 56 H950"/>
+      <text class="lbl-strong" x="905" y="44">u</text>
+
+      <path class="wire-soft" d="M425 56 V140 H480" marker-end="url(#arrow)"/>
+      <path class="wire-soft" d="M635 56 V140 H580" marker-end="url(#arrow)"/>
+      <rect class="box" x="480" y="116" width="100" height="48" rx="4"/>
+      <text x="530" y="146" text-anchor="middle" font-size="20">≠ ?</text>
+      <text class="lbl" x="598" y="112">is it saturating</text>
+
+      <path class="wire-soft" d="M45 56 V238 H470" marker-end="url(#arrow)"/>
+      <path class="wire-soft" d="M880 56 V238 H670" marker-end="url(#arrow)"/>
+      <rect class="box" x="470" y="214" width="200" height="48" rx="4"/>
+      <text x="570" y="244" text-anchor="middle" font-size="17">sign e = sign u ?</text>
+      <text class="lbl" x="200" y="228">is the integrator making it worse</text>
+
+      <path class="wire" d="M530 164 V196 H730" marker-end="url(#arrow)"/>
+      <path class="wire" d="M670 238 H730" marker-end="url(#arrow)"/>
+      <rect class="box-accent" x="730" y="166" width="90" height="100" rx="4"/>
+      <text x="775" y="222" text-anchor="middle" font-size="18">AND</text>
+
+      <path class="wire" d="M820 216 H900 V300 H160 V82" marker-end="url(#arrow)"/>
+      <text class="lbl-strong" x="420" y="292">when both hold, the integrator's input becomes zero</text>
+    </svg>
+    <p class="small center muted">Both true → stop integrating. Either one false → the
+      integrator is restored and starts coming down immediately.</p>
+    <aside class="notes">
+      <p><strong>Walk the diagram</strong> with your hand, in this order: output, saturation
+      block, the two comparisons, the AND, the switch back into the integrator.</p>
+      <p><strong>Say:</strong> first check — compare the controller's output before and after
+      the saturation block. Equal means we are inside the limit and everything is fine. Not
+      equal means we are saturating.</p>
+      <p><strong>Say:</strong> second check — do the error and the output have the same sign?
+      Same sign means the integrator is still pushing in the direction that is already
+      saturated. It is trying to make things worse.</p>
+      <p><strong>Say:</strong> both true, and only both, and we switch the integrator's input
+      to zero. It freezes. It does not reset, it does not decay — it holds, ready to move the
+      instant either condition stops being true.</p>
+      <p><strong>They get wrong:</strong> thinking clamping means "limit the integrator to some
+      maximum value". It does not. It stops the accumulation conditionally. A fixed cap would
+      still wind to the cap and still have to unwind from it.</p>
+      <p><strong>Also note:</strong> this is conditional integration, the method taught in the
+      video the students were pointed at. It is not the only method — back-calculation feeds the
+      saturation error back into the integrator instead — and we compare both next.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Three controllers, one hill</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">06-windup.ipynb</span>
+            <span class="cell">cell <b>Three-way comparison</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>variants = [:none, :clamping, :backcalculation]
+
+sols = map(variants) do aw
+    model = cruise_climb(k = 56.0, Ti = 8.0, v_set = 130.0,
+                         grade = 0.10, t_climb = (30.0, 90.0),
+                         antiwindup = aw)
+    solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
+end
+
+[overshoot(s, 130; y0 = 130) for s in sols]     # peak, percent</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/06-windup.ipynb">open notebook</a>
+          </div>
+        </div>
+        <table>
+          <tr><th>Variant</th><th>Peak overshoot</th></tr>
+          <tr><td>none</td><td class="muted">read from the notebook</td></tr>
+          <tr><td>clamping</td><td class="muted">read from the notebook</td></tr>
+          <tr><td>back-calculation</td><td class="muted">read from the notebook</td></tr>
+        </table>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/06-three-way-antiwindup.svg"
+             alt="Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both hold the integrator near the limit and follow the setpoint back cleanly.">
+        <figcaption>Speed above, integrator state below. The difference between the runs is
+          entirely in the lower plot.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at the lower plot first</strong>, not the speed. The integrator traces
+      are where the mechanism is visible: one of them wanders far above the limit, the other
+      two sit on it.</p>
+      <p><strong>Then point at the speed plot</strong> and say: same car, same hill, same gains.
+      The only difference is whether the integrator was allowed to accumulate something it could
+      not spend.</p>
+      <p><strong>Read out</strong> the three overshoot figures.</p>
+      <p><strong>Say:</strong> and note what anti-windup did <em>not</em> fix. The car still
+      falls back to 118 km/h on the climb. No controller can make a 150 N·m engine deliver
+      2024 N of tractive force. Anti-windup does not add performance — it stops you being
+      punished for asking.</p>
+      <p><strong>Ask the room:</strong> which of the two methods would you ship? <em>(Either.
+      Clamping is cheaper and easier to explain to the next engineer; back-calculation is
+      smoother, with a tuning parameter of its own. The real answer is: whichever one your
+      framework already implements correctly.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Set the limit below the real one</h2>
+    <div class="cols">
+      <div>
+        <p class="small">The clamping limit is a number <em>you</em> choose in the controller.
+        It should not be the engine's nameplate figure.</p>
+        <ul class="small">
+          <li>Engines lose torque when hot.</li>
+          <li>And with age.</li>
+          <li>And at altitude, and on poor fuel.</li>
+        </ul>
+        <p class="small">Clamp at exactly 150 N·m and on a hot day the real limit is 140 — so
+        the loop saturates ten newton-metres <em>below</em> where the anti-windup starts
+        working, and it winds up anyway.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">How much below?</span>
+        As much as you distrust your own model of the actuator. That is a judgement, not a
+        formula — and stating it as a judgement is more honest than a number that looks derived.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the part that gets left out of textbook treatments, and
+      it is the part that bites in service. Your anti-windup logic is only armed above the limit
+      you told it about. Tell it about a limit you are sure the hardware can beat.</p>
+      <p><strong>Ask the room:</strong> where else in a vehicle would you apply that reasoning?
+      <em>(Brake pressure, steering rate, battery current — anywhere the datasheet number is an
+      optimistic one.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>The first genuinely nonlinear failure in the lecture — and it came from the actuator,
+        not from the controller's mathematics.</li>
+      <li>Clamping: two conditions, one switch.</li>
+      <li>A rule for the limit itself: below the hardware's, by however much you distrust
+        your model of it.</li>
+    </ul>
+    <p class="lede">Next: the numbers that tell you where to start.
+      <a href="#/8">→ 08, tuning</a> &nbsp;<span class="small muted">(or <a href="#/7">07,
+      derivative and noise</a> if there is time)</span></p>
+    <aside class="notes">
+      <p><strong>This is the safe stopping point.</strong> If you are running long, everything
+      from here on can be cut except section 08, which carries the practical task from the
+      existing course slides. Go straight there.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 07 — Derivative and noise ============================================ -->
+<section data-section-title="07 — Derivative and noise">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 07</p>
+    <h2>Derivative and noise</h2>
+    <p class="thesis">The derivative does not care how big the noise is, only how fast.</p>
+    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/07-derivative-and-noise.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> in section 05 the derivative was free. It cost nothing and it
+      removed the overshoot. Here is the bill.</p>
+      <p><strong>Timing:</strong> 10 minutes. The two-sines slide is the one that has to land;
+      everything else is evidence.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Every sensor is noisy</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <p class="small">Thermal, shot, flicker, coupling from everything else in the vehicle —
+        noise is not a defect, it is a property. A speedometer has it too.</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">07-derivative-and-noise.ipynb</span>
+            <span class="cell">cell <b>The measurement</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
+    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 10.0)),
+    [], tspan))
+
+t, v_true = signal(sol, "plant.v_kmh")
+t, v_meas = signal(sol, "noise.y")
+plot(t, [v_true v_meas]; lw = 2,
+     label = ["true" "measured"])</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-true-vs-measured.svg"
+             alt="True and measured speed on one axes: the measured trace has small high-frequency wiggles on top of the true curve and looks essentially harmless.">
+        <figcaption>The measured trace, against the truth. Small enough to look harmless.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the measured trace and say: if I showed you this and asked
+      whether it was good enough, you would say yes. A fraction of a km/h. Down in the noise,
+      as the phrase goes.</p>
+      <p><strong>Note for you, not for them:</strong> this noise is a deterministic sum of
+      sines, not a random process. The notebooks are committed with their outputs as the
+      lecture's fallback, and a plot that changes on every run is worse than useless. Mention it
+      only if someone asks why it looks periodic — then it is a good answer about reproducible
+      simulation.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why small noise is not safe</h2>
+    <p>$$ \frac{d}{dt}\bigl[A\sin(\omega t)\bigr] \;=\; A\,\omega\cos(\omega t) $$</p>
+    <div class="cols cols-wide-right">
+      <div>
+        <ul class="small">
+          <li>Same amplitude <em>A</em>.</li>
+          <li>Frequency ten times higher.</li>
+          <li><strong>Slope ten times steeper.</strong></li>
+        </ul>
+        <p class="small">A derivative reports slope. It does not know or care that the wiggle
+        is small — it only sees how fast it moves.</p>
+        <p class="small muted">Above ω = 1 rad/s the derivative <em>amplifies</em>. High
+        frequencies are exactly where sensor noise lives.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-two-sines.svg"
+             alt="Two sine waves of equal amplitude, one slow and one ten times faster, each with a tangent line drawn at its steepest point: the fast one's tangent is far steeper.">
+        <figcaption>Equal amplitude, ten times the frequency, ten times the slope. The
+          derivative sees the tangent lines, not the envelopes.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Draw the tangents with your finger</strong> on the projected plot. This is a
+      visual argument and it works far better as a gesture than as an equation.</p>
+      <p><strong>Say:</strong> any signal is a sum of sine waves — that is what a Fourier
+      transform is telling you. So this is not a special case about sines; it is what a
+      derivative does to every high-frequency component in anything you feed it.</p>
+      <p><strong>Ask the room:</strong> our noise is a hundredth of a km/h. If it sits at
+      500 rad/s, what does the derivative make of it? <em>(Five km/h per second of apparent
+      acceleration, out of nothing. Now multiply by T<sub>d</sub>.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>A near-pure derivative</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">07-derivative-and-noise.ipynb</span>
+            <span class="cell">cell <b>Near-pure derivative</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd
+# pushes the cutoff up, towards no filter at all
+sol = solve(ODEProblem(mtkcompile(
+    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 1000.0)),
+    [], tspan))
+
+plot_torque(sol; delivered = nothing)
+extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="callout danger small">
+          <span class="label">Look at both plots together</span>
+          The speed trace still looks almost clean. The torque command is unusable. The failure
+          is invisible on the output and obvious on the actuator.
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-chattering-command.svg"
+             alt="Commanded torque against time with a near-pure derivative: a violently chattering trace swinging across a wide range, while the speed trace below remains smooth.">
+        <figcaption>Commanded torque with the filter effectively switched off.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> the range from <code>extrema</code>. Compare it to the
+      40 N·m the car actually needs.</p>
+      <p><strong>Say:</strong> and now think about what this is physically. That command goes
+      to an engine. Fuelling swinging like that, many times a second, forever. It will not break
+      today — it will wear something out, or overheat something, or simply feel terrible to sit
+      in.</p>
+      <p><strong>Say:</strong> and here is the same lesson as section 08 arriving from a
+      different direction — <em>always plot the actuator command</em>. The controlled variable
+      looked fine in both cases.</p>
+      <p><strong>Ask the room:</strong> would a real cruise control ever run a pure derivative?
+      <em>(No. Which is why the block you get in any real toolchain has a filter coefficient on
+      it, and why most industrial loops are PI with no derivative at all.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Filter it</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <p class="small">A first-order low-pass on the derivative path, with cutoff
+        <em>N</em> in rad/s:</p>
+        <p>$$ \frac{s\,N}{s+N} \qquad\text{instead of}\qquad s $$</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">07-derivative-and-noise.ipynb</span>
+            <span class="cell">cell <b>Nd family</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5),
+           "Nd", [1000.0, 100.0, 20.0, 5.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-nd-family.svg"
+             alt="Commanded torque at four derivative filter coefficients: the chatter shrinks steadily as the cutoff comes down until the command is smooth.">
+        <figcaption>The same loop at four cutoffs. The chatter subsides.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is what the <code>Nd</code> parameter is for. Every PID
+      block in every toolchain has one, and most people never touch it because they never look
+      at the actuator command. Now you know what it does and why it is there.</p>
+      <p><strong>Say:</strong> and notice the filter does not remove the noise. It attenuates
+      it, so that after the derivative amplifies what is left, the result is small enough not to
+      matter. Nothing here is exact.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Choosing the cutoff</h2>
+    <div class="cols">
+      <div>
+        <p class="lede">Low enough to remove the noise.</p>
+        <p class="lede">High enough to leave the signal.</p>
+        <p class="small muted">If those two ranges overlap, no first-order filter will save you
+        and you need a different measurement — a better sensor, or a state estimator that uses a
+        model to tell signal from noise.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">Not a recipe</span>
+        There is no formula here, because the answer depends on where your plant's dynamics sit
+        and where your sensor's noise sits. Find both, then choose. Anyone who gives you a
+        single number has assumed your plant.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> and the useful case is the common one — the signal you care about
+      is slow and has most of the power, the noise is fast and has very little. When those are
+      well separated, a first-order filter is all you need and the choice is easy.</p>
+      <p><strong>Say:</strong> when they are not separated, that is a Kalman filter conversation,
+      and it is a different course.</p>
+      <p><strong>Optional aside, only if time and appetite:</strong> a filtered derivative
+      <em>sN/(s+N)</em> is algebraically identical to a feedback loop with <em>N</em> forward and
+      an integrator in the feedback path. Same behavior, fewer operations, much harder to read.
+      Worth mentioning that the block in your toolchain may well be implemented the second way.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>The derivative's real cost: it amplifies by frequency, and noise is all frequency.</li>
+      <li>A concrete reason the <code>Nd</code> parameter exists.</li>
+      <li>The rule, arriving for the second time today: plot the actuator command.</li>
+    </ul>
+    <p class="lede">Next: the tire has a limit too, and it is not in the engine.
+      <a href="#/10">→ 10, wheel and slip</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> we have now seen the controller defeated by an actuator that
+      saturates and by a sensor that lies. The last section is defeated by neither — it is
+      defeated by the plant itself changing character.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 08 — Tuning ======================================================== -->
+<section data-section-title="08 — Tuning">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 08</p>
+    <h2>Tuning</h2>
+    <p class="thesis">You can compute a starting gain set from a single step test, without a model.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/08-tuning.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> so far I have been handing you gains. Where did they come from?
+      This section is the answer, and it is also the practical task from the course slides —
+      the one you will be asked to perform.</p>
+      <p><strong>Timing:</strong> 15 minutes. This section has the most cells of any in the
+      lecture; if you are behind, do the step test, Ziegler-Nichols, and the saturation trap,
+      and let Cohen-Coon and Tyreus-Luyben be read from the notebook afterwards.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>First question: is the system well behaved?</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Not well behaved means: strongly nonlinear, or unstable and you are
+        trying to stabilize it, or a lot of delay, or non-minimum phase. Those need more than
+        PID, or at least more than these methods.</p>
+        <h4>Our car</h4>
+        <ul class="small">
+          <li>stable open loop ✓</li>
+          <li>near enough linear around 100 km/h ✓</li>
+          <li>minimum phase ✓</li>
+          <li>a manageable amount of delay ✓</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Then: model, or hardware?</h4>
+        <table>
+          <tr><th>You have</th><th>You can</th></tr>
+          <tr><td>hardware only</td><td>guess and check; or a step test and a heuristic table</td></tr>
+          <tr><td>a model</td><td>pole placement, loop shaping, autotuning — or the same tables, safely</td></tr>
+        </table>
+        <p class="small muted">We have a model, and we will deliberately use the
+        hardware methods on it — because those are the ones that transfer to a car.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> tuning advice splits people into two camps — "it is an art" and
+      "here are three rules". Both are right, for different plants. The flowchart is what tells
+      you which camp you are in today.</p>
+      <p><strong>Say:</strong> and the gate at the top matters more than anything below it. If
+      the plant is running away from you, no table will save you. Remember that sentence —
+      section 10 shows you a plant that fails this gate, and it is the same car.</p>
+      <p><strong>Ask the room:</strong> which box would a drone's attitude loop sit in?
+      <em>(Unstable open loop — not well behaved. Which is why you do not tune a quadcopter by
+      raising the gain until it oscillates.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The step test, again — for real this time</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">08-tuning.ipynb</span>
+            <span class="cell">cell <b>The open-loop step test</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># 1. settle  2. step  3. record  4. scale by the step size
+model = car_step_test(tau_lo = 31.0, tau_hi = 41.0,
+                      t_step = 100.0)
+sol = solve(ODEProblem(mtkcompile(model), [], (0.0, 600.0)))
+
+K, tau, theta = fopdt_fit(sol)
+@show K tau theta</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/08-tuning.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">K</span><span class="k">km/h per N·m</span></div>
+          <div class="r"><span class="v">τ</span><span class="k">seconds</span></div>
+          <div class="r"><span class="v">θ</span><span class="k">seconds</span></div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/08-step-test-annotated.svg"
+             alt="The open-loop step response with the dead time, the time constant and the total change marked, in the style of the Cohen-Coon step-test figure.">
+        <figcaption>The same three landmarks as section 01, read by the construction in the
+          tuning document rather than by eye.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> K, τ and θ and ask the room to check them against what they
+      wrote down in section 01. They must be the same numbers — it is the same test.</p>
+      <p><strong>Say:</strong> and that is the whole measurement. Everything for the next four
+      slides comes out of these three numbers. Not the mass, not the drag area, not the gear
+      ratio — those never appear again.</p>
+      <p><strong>Say:</strong> the scaling step matters. We stepped by 10 N·m, so we divide the
+      speed change by 10. That is what makes K a property of the plant rather than of the
+      experiment.</p>
+      <p><strong>They get wrong:</strong> stepping from zero, or stepping huge. The point of a
+      step test is to characterize the plant <em>where you operate it</em>. On a plant with v²
+      drag, a step from rest measures a different plant.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Cohen-Coon: from the open-loop response</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <p class="small">With $r = \theta/\tau$:</p>
+        <p>$$ k = \frac{1}{rK}\left(\frac{4}{3} + \frac{r}{4}\right) \qquad
+             T_i = \theta\,\frac{32 + 6r}{13 + 8r} \qquad
+             T_d = \theta\,\frac{4}{11 + 2r} $$</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">08-tuning.ipynb</span>
+            <span class="cell">cell <b>Cohen-Coon</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
+
+sol_cc = solve(ODEProblem(mtkcompile(
+    cruise_loop(with_I = true, with_D = true,
+                k = k_cc, Ti = Ti_cc, Td = Td_cc)), [], tspan))
+plot_speed(sol_cc; setpoint = 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/08-tuning.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="callout small">
+          <span class="label">Why the dead time is in the denominator</span>
+          <em>k</em> grows without bound as θ goes to zero. A plant with no dead time has no
+          Cohen-Coon tuning at all — which is the second reason the engine's transport delay is
+          in the model.
+        </div>
+        <p class="small muted">The tables are transcribed in
+          <code>test/tuning_tables.jl</code>, with every coefficient checked against
+          <code>materials/ControlTheory/tuning_methods.pdf</code> by hand.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is a formula someone fitted to a family of plants in 1953.
+      It is not derived from our car and it knows nothing about it. What it knows is the
+      <em>shape</em> — first order plus dead time — and that shape is enough for a starting
+      point.</p>
+      <p><strong>Read out</strong> the three gains, with units on the first one: newton-metres
+      per km/h.</p>
+      <p><strong>Point at</strong> the response and ask whether it looks like something you
+      would ship. <em>(Cohen-Coon is usually quick and usually oscillatory. It is a starting
+      point, not an answer — say that phrase every time a table produces a number.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Ziegler-Nichols: find the edge of stability</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">08-tuning.ipynb</span>
+            <span class="cell">cell <b>Ziegler-Nichols</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># raise k under pure proportional control until the
+# oscillation neither grows nor decays
+sw = sweep(cruise_loop(with_I = false, with_D = false),
+           "k", ks_probe; tspan = (0.0, 60.0))
+plot_sweep(sw; setpoint = 110)
+
+Ku = ...          # the gain at which it sustains
+Pu = ...          # the period of that oscillation, seconds
+k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/08-tuning.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p>$$ k = \frac{K_u}{1.7} \qquad T_i = \frac{P_u}{2} \qquad T_d = \frac{P_u}{8} $$</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/08-ultimate-oscillation.svg"
+             alt="Three proportional runs at increasing gain: one decaying oscillation, one sustained oscillation of constant amplitude, and one growing oscillation.">
+        <figcaption>Below <em>K<sub>u</sub></em> the oscillation decays, above it grows. At
+          <em>K<sub>u</sub></em> it neither — and its period is <em>P<sub>u</sub></em>.</figcaption>
+      </figure>
+    </div>
+    <!-- Ku and Pu are deliberately not printed on this slide. They depend on theta_e, which
+         HANDOVER Risk 1 expects to move from 0.04 s to 0.2-0.3 s: at 0.04 s the ultimate
+         period is around 0.22 s, at 0.3 s around 2.2 s, and the ultimate gain moves by two
+         orders of magnitude with it. Read both off the executed notebook.
+         Unit note: HANDOVER quotes Ku in N.m per m/s. This loop is in km/h, so the number the
+         notebook reports is that figure divided by 3.6. -->
+    <aside class="notes">
+      <p><strong>Say:</strong> this is a completely different kind of experiment. Cohen-Coon
+      watched the plant on its own. Ziegler-Nichols closes the loop and pushes it towards
+      instability on purpose, then reads two numbers off the wreckage.</p>
+      <p><strong>Point at</strong> the three curves: decaying, sustained, growing. The middle
+      one is the measurement. Everything either side of it is how you find it.</p>
+      <p><strong>Read out</strong> K<sub>u</sub> and P<sub>u</sub> from the executed notebook —
+      I have deliberately not printed them on the slide, because they move with the engine's
+      transport delay. Say the units for K<sub>u</sub>: newton-metres per km/h.</p>
+      <p><strong>Ask the room:</strong> we are deliberately making a car oscillate. Would you
+      do this on a real vehicle? <em>(This is the setup for the slide after next — let them
+      answer before you agree.)</em></p>
+      <p><strong>If the oscillation is not clean</strong> in the executed run — if it is
+      squaring off against the torque limit rather than looking sinusoidal — say so plainly:
+      that is relay limit-cycling, not the linear sustained oscillation the method assumes, and
+      the K<sub>u</sub> you would read off it is not the one the table wants.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Tyreus-Luyben: same measurement, calmer answer</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <p>$$ k = \frac{K_u}{2.2} \qquad T_i = 2.2\,P_u \qquad T_d = \frac{P_u}{6.3} $$</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">08-tuning.ipynb</span>
+            <span class="cell">cell <b>Tyreus-Luyben</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>k_tl, Ti_tl, Td_tl = tyreus_luyben(Ku, Pu)   # same Ku, Pu</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/08-tuning.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <table>
+          <tr><th></th><th>k</th><th>T<sub>i</sub></th></tr>
+          <tr><td>Ziegler-Nichols</td><td>K<sub>u</sub>/1.7</td><td>P<sub>u</sub>/2</td></tr>
+          <tr><td>Tyreus-Luyben</td><td>K<sub>u</sub>/2.2</td><td>2.2 P<sub>u</sub></td></tr>
+        </table>
+        <p class="small">Less gain, and an integrator roughly <strong>four times slower</strong>.
+        Same two measured numbers.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the T<sub>i</sub> column. That is the real difference: one
+      table divides the ultimate period, the other multiplies it. A factor of more than four in
+      integrator speed, from the same experiment.</p>
+      <p><strong>Say:</strong> Ziegler-Nichols was designed when a quarter-amplitude decay was
+      considered a good response. That is far more oscillatory than anyone wants in a vehicle.
+      Tyreus-Luyben is the same idea with modern taste.</p>
+      <p><strong>Say:</strong> which tells you something important — a tuning rule encodes
+      somebody's requirements, not a law of nature. If their requirements are not yours, their
+      table is not yours either.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>All three, one axes</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">08-tuning.ipynb</span>
+            <span class="cell">cell <b>All three overlaid</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>gains = ["Cohen-Coon"     =&gt; (k_cc, Ti_cc, Td_cc),
+         "Ziegler-Nichols" =&gt; (k_zn, Ti_zn, Td_zn),
+         "Tyreus-Luyben"   =&gt; (k_tl, Ti_tl, Td_tl)]
+
+plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
+for (name, (k, Ti, Td)) in gains
+    sol  = solve(ODEProblem(mtkcompile(cruise_loop(
+        with_I = true, with_D = true, k, Ti, Td)), [], tspan))
+    t, y = signal(sol, SPEED_KMH)
+    plot!(plt, t, y; lw = 2, label = name)
+end</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/08-tuning.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/08-three-tunings.svg"
+             alt="Three step responses from three tuning tables on one axes, ranging from quick and oscillatory to slow and smooth.">
+        <figcaption>Three tables, one plant, one step test. They do not agree — and that is the
+          honest state of heuristic tuning.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Ask the room, and make them commit:</strong> which of these three would you
+      ship in a car? Hands up for each. <em>(Usually the calmest. Then ask why — and the
+      answers will be about passengers and about margin, not about rise time. That is a real
+      engineering conversation and it is worth ninety seconds.)</em></p>
+      <p><strong>Say:</strong> none of these is "the" answer. They are three starting points
+      from three sets of assumptions, and every one of them expects you to tweak afterwards.
+      The value of a table is that it gets you into the right decade in one experiment.</p>
+      <p><strong>Say:</strong> and notice what we never did. We never used the mass of the car.
+      A tuning method that needs no model is a method you can use on hardware somebody else
+      built.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The danger in Ziegler-Nichols</h2>
+    <div class="callout danger">
+      <span class="label">On real hardware</span>
+      The method requires you to drive the plant deliberately to the edge of instability, and
+      to sit there long enough to measure a period.
+    </div>
+    <ul class="small">
+      <li>On a simulation: free. Make it unstable, it costs a re-run.</li>
+      <li>On a thermal chamber: probably acceptable.</li>
+      <li>On a vehicle at 110 km/h, on a public road, with a passenger: <strong>no.</strong></li>
+    </ul>
+    <p class="small muted">This is why Cohen-Coon exists. An open-loop step test never leaves
+    the stable region.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the answer to the question I asked you two slides ago.
+      The method is not wrong; it is dangerous, and knowing which of your tools are dangerous
+      is most of professional judgement.</p>
+      <p><strong>Say:</strong> and there is a middle route that we have just used without
+      remarking on it — run Ziegler-Nichols on a <em>model</em>, then take the gains to the
+      hardware. You get the measurement without the risk, at the price of trusting the model.
+      Which is exactly why we spent the first ten minutes of this lecture on the model.</p>
+      <p><strong>Ask the room:</strong> what would you have to believe about the model for that
+      to be safe? <em>(That it is right near the stability boundary — which is where models are
+      least trustworthy. There is no free lunch here and they should feel that.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The trap</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">08-tuning.ipynb</span>
+            <span class="cell">cell <b>The saturation trap</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># push the gains until the response looks superb
+hot = cruise_loop(with_I = true, with_D = true,
+                  k = 8 * k_zn, Ti = Ti_zn / 2, Td = Td_zn)
+sol_hot = solve(ODEProblem(mtkcompile(hot), [], tspan))
+
+plot_speed(sol_hot; setpoint = 110)   # looks perfect
+plot_torque(sol_hot)                  # now look at this</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/08-tuning.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="callout danger small">
+          <span class="label">The second plot</span>
+          The commanded torque at the instant of the step is far outside anything the engine can
+          deliver — and the speed plot gave you no hint at all.
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/08-saturation-trap.svg"
+             alt="Two panels: a near-perfect speed response above, and below it the commanded torque spiking far above the engine's 150 newton-metre limit line.">
+        <figcaption>Above: the response you were hoping for. Below: what it costs, against the
+          torque limit drawn on.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Show the speed plot first and say nothing about torque.</strong> Let them admire
+      it. Ask whether anyone would sign this off.</p>
+      <p><strong>Then show the torque plot.</strong> Read out the peak and compare it to 150.</p>
+      <p><strong>Say:</strong> a linear model will happily accept a controller your hardware
+      cannot execute, and it will not warn you. There is no error, no exception, no red line.
+      The simulation is internally consistent and completely useless.</p>
+      <p><strong>Then re-run with the limiter active</strong> and watch the beautiful response
+      disappear. Point out that the anti-windup from section 06 is now doing real work — and
+      that without it this same design would also wind up.</p>
+      <p><strong>Say the rule:</strong> always plot the actuator command. Every time. It is one
+      extra line in the notebook and it is the difference between a design and a drawing.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A gain set from one step test, with no model of the car in the calculation.</li>
+      <li>Three tables, three answers, and the judgement to choose between them.</li>
+      <li>One rule that outlives all three: <strong>plot the actuator command.</strong></li>
+    </ul>
+    <p class="lede">Next: the same controller, running on a computer that only looks
+      occasionally. <a href="#/9">→ 09, discretization</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> if you remember one slide from this lecture in five years, make
+      it the previous one. Everything else here you can look up.</p>
+      <p><strong>The practical task</strong> from the course slides is exactly what we just did
+      — study the system, apply Ziegler-Nichols, find suitable constants. You now have the
+      notebook that does it, and you can re-run it with your own numbers.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 09 — Discretization ================================================ -->
+<section data-section-title="09 — Discretization">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 09</p>
+    <h2>Discretization</h2>
+    <p class="thesis">The same controller gets worse purely because it looks less often.</p>
+    <p class="meta"><span class="tier tier-2">Tier 2</span> &nbsp; <code>notebooks/lecture01/09-discretization.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything we have designed today is continuous. Nothing you
+      will ever ship is. This section is the bridge, and it uses the gains we just derived in
+      section 08 — same controller, nothing re-tuned.</p>
+      <p><strong>Timing:</strong> 8 minutes. If you are short, the sample-time sweep alone
+      carries the point.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>A digital controller does nothing, most of the time</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Every sample period, in order:</p>
+        <ol class="small">
+          <li>read the sensors</li>
+          <li>compute</li>
+          <li>command the actuators</li>
+          <li><strong>hold that command, and do nothing at all, until the next tick</strong></li>
+        </ol>
+      </div>
+      <div class="callout small">
+        <span class="label">The part that matters</span>
+        Step four. Between ticks the actuator is holding a decision made with old information,
+        and the plant has moved on since. Everything in this section follows from that.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> an analog controller is changing its output continuously and
+      smoothly. A digital one changes it in steps and then stops thinking. If the steps are
+      small enough and frequent enough, nobody can tell the difference — and that is the whole
+      engineering question: how fast is fast enough?</p>
+      <p><strong>Say:</strong> digital control brings other effects too — quantization, and the
+      transport delay of the computation itself. We are only going to look at sample time,
+      because it is the one that will bite you first.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The strobe light</h2>
+    <div class="cols">
+      <div>
+        <p>You have to walk a winding corridor.</p>
+        <ul class="small">
+          <li><strong>Lights on:</strong> you can see everything as it happens and correct
+            continuously. You could run.</li>
+          <li><strong>Fast strobe:</strong> indistinguishable from the lights being on. Still
+            running.</li>
+          <li><strong>One flash a second:</strong> you slow right down.</li>
+          <li><strong>One flash every few seconds:</strong> you walk into a wall.</li>
+        </ul>
+      </div>
+      <div class="callout">
+        <span class="label">The point of the analogy</span>
+        The corridor never changed. Your <em>information rate</em> did. And the correct response
+        to less information is to move more cautiously — which for a controller means
+        <em>lower gains</em>.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say it as a story, not as a diagram.</strong> Walk a couple of steps while you
+      describe it. The room remembers this one.</p>
+      <p><strong>Ask the room:</strong> if the strobe slows down, what do you do differently?
+      <em>(Slow down. Everyone says it. Then: that is exactly what re-tuning for a slower
+      sample rate means — the fix at the end of this section is not clever, it is the obvious
+      thing you already said.)</em></p>
+      <p><strong>They get wrong:</strong> assuming a slow loop is merely less responsive. It is
+      not — it goes <em>unstable</em>. Less information does not degrade the loop gently; past
+      a point it destroys it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The same gains, at four sample times</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">09-discretization.ipynb</span>
+            <span class="cell">cell <b>The sample-time sweep</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the gains from section 08, untouched
+sw = sweep(cruise_sampled(k = k_zn, Ti = Ti_zn, Td = Td_zn),
+           "Ts", [0.01, 0.1, 0.4, 1.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small">Overshoot grows. Then the loop rings. Then it does not come back.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/09-sample-time-family.svg"
+             alt="Four step responses at increasing sample time: the fastest is indistinguishable from continuous, the next overshoots, the next rings for a long time, and the slowest diverges.">
+        <figcaption>One controller, one car, one gain set. The only difference is how often the
+          loop looks.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the fastest run and say: that is the continuous design. It
+      is indistinguishable from what we drew in section 08.</p>
+      <p><strong>Then walk out along the family</strong> and name each failure as it appears:
+      overshoot, ringing, divergence.</p>
+      <p><strong>Say:</strong> nothing was re-tuned. Nobody touched a gain. The controller that
+      was correct at ten milliseconds is dangerous at one second, and it is the same
+      controller.</p>
+      <p><strong>Ask the room:</strong> which sample time would you pick for a cruise control?
+      <em>(Steer towards the reasoning rather than a number: fast compared with what? The
+      plant's time constant is about a minute; the loop's own bandwidth is seconds. That second
+      number is the one that matters.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What you are looking at</h2>
+    <div class="callout warn">
+      <span class="label">Be straight with the room about this</span>
+      Dyad ships no sampled blocks, so the sampling in this notebook is modelled as a
+      <strong>half-sample transport delay</strong> in the feedback path, not as a real clocked
+      partition. A zero-order hold costs the loop about half a sample of phase, and that is
+      exactly what this reproduces.
+    </div>
+    <ul class="small">
+      <li><strong>What is faithful:</strong> the destabilizing mechanism, and therefore every
+        trend in the previous plot.</li>
+      <li><strong>What is missing:</strong> the staircase. A real held command is piecewise
+        constant; ours is smooth.</li>
+    </ul>
+    <!-- HANDOVER Risk 3: if the clocked-partition stretch landed, this slide becomes the
+         staircase plot instead, and the surrogate stays only as the explanation of why the
+         phase is lost. Replace the callout, not the section. -->
+    <aside class="notes">
+      <p><strong>Say this plainly and do not bury it.</strong> A demonstration that is really a
+      surrogate is fine; a surrogate presented as the real thing is not. Students who later
+      build a real discrete controller need to know which part of today's plot they should
+      expect to see and which part they should not.</p>
+      <p><strong>If the real clocked partition was built</strong> and the notebook shows a
+      genuine staircase command, say so, show it, and point at the flat treads: that is the
+      controller not thinking. Then keep the phase explanation anyway — it is the reason the
+      staircase hurts.</p>
+      <p><strong>Ask the room:</strong> why would half a sample of delay be enough to destroy a
+      loop that was fine? <em>(Because phase margin is a finite budget. Next slide.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why it goes unstable</h2>
+    <div class="cols">
+      <div>
+        <p class="small">A zero-order hold delays the average command by about half a sample
+        period.</p>
+        <p class="small">Delay costs <strong>phase</strong>, and phase margin is a finite
+        budget that your tuning already spent most of.</p>
+        <ul class="small">
+          <li>Spend a little: more overshoot.</li>
+          <li>Spend most of it: the loop rings.</li>
+          <li>Spend all of it: it does not recover.</li>
+        </ul>
+      </div>
+      <div class="callout small">
+        <span class="label">Which is also the section 01 story again</span>
+        The engine's transport delay was the reason this plant could be driven to sustained
+        oscillation at all. Sampling adds more of exactly the same thing — only this time
+        <em>we</em> added it, by choosing a cheaper processor.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the same currency as the dead time in section 01. Delay
+      is delay, whether it comes from fuel injection or from a scheduler. Your loop has a fixed
+      tolerance for it and every source draws on the same account.</p>
+      <p><strong>Say:</strong> and notice the ordering. Overshoot first, ringing next, then
+      divergence. That ordering is a diagnostic — if a loop that used to be fine starts
+      overshooting after a software change, ask what happened to the loop rate before you touch
+      a gain.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two fixes</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">09-discretization.ipynb</span>
+            <span class="cell">cell <b>The fixes</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># 1. sample faster — same gains, Ts back down
+# 2. re-tune for the rate you actually have
+k2, Ti2, Td2 = ziegler_nichols(Ku_slow, Pu_slow)
+
+sol_slow  = solve(ODEProblem(mtkcompile(cruise_sampled(
+    Ts = 1.0, k = k_zn, Ti = Ti_zn, Td = Td_zn)), [], tspan))
+sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
+    Ts = 1.0, k = k2, Ti = Ti2, Td = Td2)), [], tspan))</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small muted">Re-tuning buys back stability, not performance. The slow loop is
+        a slower loop, permanently.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/09-retuned.svg"
+             alt="Two responses at the same slow sample time: the original gains ringing badly, and the re-tuned gains settling smoothly but noticeably slower than the continuous design.">
+        <figcaption>Same slow rate, two gain sets. The re-tuned one is stable — and slower than
+          the design we started from.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the re-tuned curve and then, from memory, at where the
+      continuous design sat. The gap between them is what the cheap processor cost.</p>
+      <p><strong>Say:</strong> this is a real design conversation and it happens on every
+      project. Faster loop rate means more expensive hardware, more power, more heat. Slower
+      means less performance. Somebody has to put a number on that trade, and it is usually the
+      control engineer, because nobody else can.</p>
+      <p><strong>Ask the room:</strong> is there a third option? <em>(Yes — a better discrete
+      design rather than a continuous design converted. That is a course of its own, and it is
+      why the conversion method matters.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>So why design in continuous time at all?</h2>
+    <ul class="small">
+      <li>The mathematics is easier and far better tooled.</li>
+      <li>The plant is continuous anyway — the car does not tick.</li>
+      <li>Modeling plant and controller in the same domain keeps the problem simple.</li>
+    </ul>
+    <p class="lede">Design continuous. Convert. <strong>Then verify that the rate you actually
+    have held up</strong> — which is the plot we just made.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> it is the same argument as using a linear model for a nonlinear
+      plant. We work where the tools are good and then we check the approximation, rather than
+      working where it is hard and being right from the start. The checking is not optional; it
+      is the price of the shortcut.</p>
+      <p><strong>Say:</strong> the gains also change when you convert. The continuous
+      k, T<sub>i</sub>, T<sub>d</sub> and the discrete ones are not the same numbers even for
+      equivalent controllers, and there are several conversion methods that disagree. Mention
+      it; do not go down that road today.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A loop that we broke without touching a single gain.</li>
+      <li>The reason: sampling costs phase, and phase margin is a budget.</li>
+      <li>A workflow: design continuous, convert, verify the rate.</li>
+    </ul>
+    <p class="lede">Next: the tire is an actuator too.
+      <a href="#/10">→ 10, wheel and slip</a></p>
+    <aside class="notes">
+      <p><strong>If you are stopping here,</strong> close on the whole-lecture summary instead —
+      it is the last slide of section 10, and it works from anywhere.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 10 — Wheel and slip ================================================== -->
+<section data-section-title="10 — Wheel and slip">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 10</p>
+    <h2>Wheel and slip</h2>
+    <p class="thesis">The tire is an actuator too, and it saturates — which makes cruise control dangerous on ice.</p>
+    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/10-wheel-and-slip.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything so far assumed the tire does whatever the driveline
+      asks. We are going to remove that assumption, and it costs us more than anything else we
+      have removed today.</p>
+      <p><strong>Timing:</strong> 12 minutes if you have them. This is the section students
+      remember, and it is the one that motivates lecture 2 — so if you can only show one beat,
+      show the ice patch.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>First, just add the wheel</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>L1, the wheel appears</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># same gains as section 05, now with wheel inertia
+# and an ideal rolling contact
+sol_l1 = solve(ODEProblem(mtkcompile(
+    wheeled_cruise_loop(k = 56.0, Ti = 8.0, Td = 1.5)),
+    [], tspan))
+
+plot_speed(sol_l1; setpoint = 110)
+@show rise_time(sol_l1, 110) overshoot(sol_l1, 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="small">A rotating wheel is extra inertia the engine has to accelerate, so the
+        plant is slightly heavier than it was. The gains should survive.</p>
+        <div class="callout small">
+          <span class="label">If the response shifted</span>
+          Say by how much. "The gains still work" is a claim, and a rise time is the evidence
+          for it.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is a fidelity increase that changes nothing important, and
+      that is worth showing on its own. Not every added detail matters. Knowing which ones do is
+      the modeling skill.</p>
+      <p><strong>Read out</strong> the rise time and overshoot and compare with section 05.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What ideal rolling assumes</h2>
+    <p class="lede">That the contact patch never slides.</p>
+    <p class="small">Every plot in this lecture up to this slide has quietly assumed it. Wheel
+    speed times radius <em>is</em> road speed, by definition, with no way for them to disagree.</p>
+    <div class="callout warn">
+      <span class="label">On a dry road that is nearly true</span>
+      A driven tire at cruise slips by a per cent or two, and nothing in our story depended on
+      the difference. On ice it is not true at all, and the difference is the whole story.
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> assumptions do not announce themselves. This one has been in
+      every model today and nobody noticed, because on a dry road it costs nothing.</p>
+      <p><strong>Ask the room:</strong> what else have we quietly assumed? <em>(That the road is
+      straight. That the mass is constant. That the engine makes peak torque at every speed —
+      that one we did flag, in section 01. Good answers are worth thirty seconds.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Beat one: the wheel runs away</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>L2, beat one: wheelspin</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the friction curve's second derivative is discontinuous
+# at the transitions: explicit RK handles it, BDF struggles
+sol = solve(ODEProblem(mtkcompile(
+    standing_start(mu_scale = 0.2, tau_cmd = CAR.T_max)),
+    [], (0.0, 20.0)), Tsit5())
+
+plot(signal(sol, "wheel.v_wheel_kmh")...; lw = 2, label = "wheel")
+plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small">Under closed loop the error stays large, so the integrator winds up —
+        against a limit <strong>that is not in the engine at all</strong>.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-wheelspin.svg"
+             alt="Wheel speed and vehicle speed from a standing start on low friction: the wheel accelerates rapidly while the vehicle speed barely rises.">
+        <figcaption>Wheel speed against vehicle speed. The engine is working; the car is not
+          moving.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the two traces diverging. Say: the engine delivered
+      everything it was asked for. The driveline turned. The wheel spun. And the car stayed
+      where it was.</p>
+      <p><strong>Say:</strong> and now connect it to section 06. The integrator sees a large,
+      persistent error and winds up, exactly as it did on the hill. But this time the limit is
+      not the engine's torque ceiling — the engine is nowhere near it. The limit is in the
+      contact patch, and no amount of torque gets past it.</p>
+      <p><strong>Ask the room:</strong> would the anti-windup from section 06 help here?
+      <em>(No. It watches the engine's saturation, and the engine is not saturating. This is a
+      limit the controller has no way of seeing. That is the uncomfortable point of this whole
+      section.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Beat two: the curve</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <p>$$ \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
+             \qquad F_x \;=\; \mu(\kappa)\,F_z $$</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>Beat two: the curve</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>plot(kappas, mu.(kappas); lw = 2, label = "",
+     xlabel = "slip ratio", ylabel = "mu")
+scatter!([kappa_peak], [mu_peak]; label = "peak")
+
+# where the wheelspin run actually sat
+scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-mu-slip-curve.svg"
+             alt="Friction coefficient against slip ratio: a curve rising steeply to a marked peak and then falling away, with the wheelspin run's operating points marked on the falling side.">
+        <figcaption>μ against slip ratio, with the peak marked — and the wheelspin run's
+          operating points sitting past it.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the rising part first: more slip, more force. That is the
+      region everything is designed for, and it behaves the way intuition expects.</p>
+      <p><strong>Then point at the peak</strong> — that is the most force this tire can make on
+      this surface, full stop. It is an actuator limit, the same kind of thing as the engine's
+      150 N·m, and it moves with the weather.</p>
+      <p><strong>Then point past the peak</strong> and say slowly: here, <em>more slip gives
+      less force</em>.</p>
+      <p><strong>Ask the room:</strong> what happens to a wheel that ends up on the right-hand
+      side of that peak? <em>(Less force, so less resistance to the engine's torque, so it
+      accelerates, so more slip, so even less force. Let them build the loop themselves — it is
+      the next slide and they can derive it.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why it runs away</h2>
+    <div class="cols">
+      <div>
+        <p class="lede">More slip → less force → more slip.</p>
+        <p class="small">That is a positive feedback loop, and it is <em>inside the plant</em>.
+        Nobody wired it; it is what the tire does.</p>
+        <p class="small">In that region the plant is <strong>open-loop unstable</strong>.</p>
+      </div>
+      <div class="callout danger">
+        <span class="label">Remember the first question in section 08</span>
+        <em>Is the system well behaved?</em> Stable, near enough linear, minimum phase,
+        manageable delay.
+        <br><br>
+        Here, past the peak, the answer is <strong>no</strong> — and no amount of PID tuning
+        fixes a plant that is running away from you.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> and notice this is the same car. The plant did not get replaced;
+      it moved into a region where it has a different character. That is what "nonlinear" means
+      in practice — not a curved graph, but different rules in different places.</p>
+      <p><strong>Say:</strong> which is why the tuning flowchart puts that question first and
+      not third. If you tune a loop on the good side of the peak and it occasionally visits the
+      bad side, your gains are answering a question the plant has stopped asking.</p>
+      <p><strong>Ask the room:</strong> what would you have to control to stay on the left of
+      the peak? <em>(Slip itself — which needs a sensor for it and a loop around it. Hold that;
+      it is the last slide.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Beat three: cruise control on ice</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>Beat three: the ice patch</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># cruising at 90 km/h; friction collapses for two seconds
+sol = solve(ODEProblem(mtkcompile(
+    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
+              mu_low = 0.15, t_ice = (40.0, 42.0))),
+    [], (0.0, 90.0)), Tsit5())
+
+# speed, wheel speed, slip ratio, commanded torque,
+# on shared time axes with the patch shaded
+plot_ice_patch(sol)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small"><strong>The controller reads falling speed, commands more torque,
+        spins the driven wheel — and destroys the traction it was trying to use.</strong></p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-ice-patch.svg"
+             alt="Four stacked traces across a shaded two-second low-friction patch: vehicle speed falling, wheel speed climbing away, slip ratio past the peak, and commanded torque rising in response.">
+        <figcaption>Speed, wheel speed, slip ratio and commanded torque, with the ice patch
+          shaded.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Narrate the four traces in time order,</strong> as a sequence of entirely
+      reasonable decisions:</p>
+      <ul>
+        <li>Friction collapses. The car starts to lose speed.</li>
+        <li>The controller sees speed below setpoint — which is true — and commands more torque.
+          That is exactly what it is for.</li>
+        <li>The extra torque cannot go into the road, so it goes into spinning the wheel.</li>
+        <li>Slip passes the peak. Available force <em>falls</em>. The car slows further.</li>
+        <li>The controller sees a bigger error and commands more torque still.</li>
+      </ul>
+      <p><strong>Say:</strong> nothing in that chain is a bug. Every step is the controller
+      doing its job correctly. The system as a whole does the wrong thing, and it does it
+      faster the better the controller is tuned.</p>
+      <p><strong>Say:</strong> and in a real car the driver feels this as the back stepping out
+      on a motorway at 90 km/h, caused by a system they switched on for comfort.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What should have happened</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>What should have happened</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the same run, with a friction-aware torque limit
+sol_tc = solve(ODEProblem(mtkcompile(
+    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
+              mu_low = 0.15, t_ice = (40.0, 42.0),
+              traction_limit = true)),
+    [], (0.0, 90.0)), Tsit5())</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small">The car still loses speed on the ice — physics is physics. It does not
+        lose the wheel.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-ice-patch-limited.svg"
+             alt="The same ice patch run overlaid with a friction-aware torque limit: the wheel stays near vehicle speed and the slip ratio stays on the near side of the peak, while speed dips and recovers.">
+        <figcaption>Overlaid against the unlimited run. The difference is entirely in the slip
+          trace.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> and be precise about what the fix bought. The car still slows
+      down. It has to — there is less friction available and no controller can conjure grip.
+      What the limit prevented was the controller <em>making it worse</em>.</p>
+      <p><strong>Say:</strong> that is a general shape worth naming. When an actuator's limit
+      depends on conditions the controller cannot see, somebody has to tell it. That is not
+      tuning. That is architecture.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two lessons</h2>
+    <div class="cols">
+      <div>
+        <h3>One</h3>
+        <p class="small">Real cruise control disengages when traction control intervenes. Now
+        you know exactly why — the two loops are fighting over the same actuator, and the speed
+        loop is the one with the worse information.</p>
+      </div>
+      <div>
+        <h3>Two</h3>
+        <p class="small">The fix is an <strong>inner loop regulating slip</strong> inside an
+        <strong>outer loop regulating speed</strong>. The inner one is fast and local; the outer
+        one is slow and comfortable.</p>
+        <p class="small">That is <strong>cascade control</strong>.</p>
+      </div>
+    </div>
+    <p class="lede center">Which is where lecture 2 begins.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> and notice we did not need a new controller type to see the need
+      for one. The need came out of the plant, by removing one assumption about a tire.</p>
+      <p><strong>Say:</strong> that is a good note to end on generally — almost every advanced
+      control architecture you will meet exists because somebody found a plant that defeated
+      the simple one. Not because it was elegant.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Ninety minutes, one car</h2>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li><strong>01</strong> know the plant before you control it.</li>
+          <li><strong>02</strong> feedback exists because the world moves.</li>
+          <li><strong>03</strong> P is fast and permanently wrong.</li>
+          <li><strong>04</strong> the integrator inverts the plant for you.</li>
+          <li><strong>05</strong> present, past, future — three jobs.</li>
+        </ul>
+      </div>
+      <div>
+        <ul class="small">
+          <li><strong>06</strong> actuators saturate; integrators do not notice.</li>
+          <li><strong>07</strong> derivatives amplify by frequency.</li>
+          <li><strong>08</strong> one step test, three tables — and plot the command.</li>
+          <li><strong>09</strong> sampling costs phase.</li>
+          <li><strong>10</strong> the tire is an actuator, and it has a peak.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lede center">Every notebook is in the repository, executed, with its plots.
+      Re-run them.</p>
+    <aside class="notes">
+      <p><strong>Close with this:</strong> if you take one habit away, take the one that showed
+      up three times today without being planned — <em>plot the actuator command</em>. Section
+      06 found windup with it. Section 08 found an undeliverable design with it. Section 07
+      found chatter with it. In all three the controlled variable looked fine.</p>
+      <p><strong>Point them at</strong> the notebooks and at <code>docs/</code>. Everything on
+      these slides is reproducible, and the plots are committed so they can read them without
+      installing anything.</p>
+      <p><strong>Next lecture:</strong> the engine torque map, which fixes the 246 km/h lie
+      from section 01 — and cascade control, which fixes the ice patch.</p>
+    </aside>
+  </section>
+
+</section>
+
+</div>
+</div>
+
+<script src="assets/reveal/dist/reveal.js"></script>
+<script src="assets/reveal/plugin/notes/notes.js"></script>
+<script src="assets/reveal/plugin/highlight/highlight.js"></script>
+<script src="assets/reveal/plugin/math/math.js"></script>
+<script src="assets/reveal/plugin/zoom/zoom.js"></script>
+<script src="assets/reveal/plugin/search/search.js"></script>
+<script src="assets/deck.js"></script>
+<script>
+Reveal.initialize({
+  // Deep links are part of the deck's contract with the landing page: #/3 is notebook 03.
+  center: false,
+  hash: true,
+  slideNumber: 'c/t',
+  width: 1280,
+  height: 760,
+  margin: 0.05,
+  minScale: 0.2,
+  maxScale: 1.8,
+
+  // No slide transitions. A projector at 30 Hz makes them look broken, and a lecturer
+  // stepping back and forth through a plot wants the plot, not an animation.
+  transition: 'none',
+  backgroundTransition: 'none',
+
+  pdfMaxPagesPerSlide: 1,
+  pdfSeparateFragments: false,
+
+  // KaTeX is vendored; `local` is what stops the plugin reaching for a CDN.
+  katex: { local: 'assets/katex' },
+
+  plugins: [ RevealNotes, RevealHighlight, RevealMath.KaTeX, RevealZoom, RevealSearch ]
+}).then(function () {
+  initDeck(Reveal);
+});
+</script>
+</body>
+</html>

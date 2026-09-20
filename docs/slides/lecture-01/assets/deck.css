@@ -1,0 +1,254 @@
+/* Lecture 1 deck — light theme overrides on top of reveal's `white`.
+   Tuned for a lit lecture hall and for ?print-pdf handouts: dark ink on white,
+   no large flat areas of color, nothing that depends on a projector's black level. */
+
+:root {
+  --ink:      #16202c;
+  --ink-soft: #4a5a6b;
+  --rule:     #d7dde6;
+  --accent:   #1f5fa8;
+  --accent-bg:#eaf1fa;
+  --warn:     #a75d00;
+  --warn-bg:  #fdf3e3;
+  --danger:   #a81f16;
+  --danger-bg:#fdeeec;
+  --ok:       #256b42;
+  --code-bg:  #f4f6f9;
+}
+
+.reveal { font-size: 34px; color: var(--ink); }
+.reveal .slides { text-align: left; }
+
+.reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 0.4em;
+}
+.reveal h2 { font-size: 1.5em; }
+.reveal h3 { font-size: 1.15em; }
+.reveal h4 { font-size: 0.95em; color: var(--ink-soft); }
+
+.reveal p, .reveal li { line-height: 1.4; }
+.reveal ul { margin-left: 1em; }
+.reveal li { margin-bottom: 0.35em; }
+.reveal strong { color: var(--ink); }
+.reveal em { font-style: italic; }
+.reveal a { color: var(--accent); }
+
+/* --- deck title ------------------------------------------------------------------ */
+
+.deck-title { text-align: center; padding-top: 1.4em; }
+.deck-title h1 { font-size: 2.1em; margin-bottom: 0.1em; }
+.deck-title .sub { font-size: 0.95em; color: var(--ink-soft); }
+.deck-title .hint {
+  margin-top: 1.4em; font-size: 0.6em; color: var(--ink-soft);
+}
+
+/* --- section covers --------------------------------------------------------------- */
+
+.cover { border-left: 10px solid var(--accent); padding-left: 0.7em; }
+.cover .nb-no {
+  font-size: 0.7em; letter-spacing: 0.22em; color: var(--ink-soft);
+  text-transform: uppercase;
+}
+.cover h2 { margin: 0.1em 0 0.35em; font-size: 1.8em; }
+.cover .thesis {
+  font-size: 1.05em; font-style: italic; color: var(--accent);
+  border-top: 1px solid var(--rule); padding-top: 0.5em; max-width: 22em;
+}
+.cover .meta { margin-top: 0.8em; font-size: 0.62em; color: var(--ink-soft); }
+
+/* --- tier badges ------------------------------------------------------------------ */
+
+.tier {
+  display: inline-block; font-size: 0.5em; padding: 0.15em 0.6em;
+  border-radius: 999px; vertical-align: middle; letter-spacing: 0.06em;
+  border: 1px solid currentColor;
+}
+.tier-1 { color: var(--ok); }
+.tier-2 { color: var(--accent); }
+.tier-3 { color: var(--ink-soft); }
+
+/* --- layout helpers ---------------------------------------------------------------- */
+
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; align-items: start; }
+.cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8em; }
+.cols-wide-left { grid-template-columns: 1.4fr 1fr; }
+.cols-wide-right { grid-template-columns: 1fr 1.4fr; }
+.reveal .cols li, .reveal .cols-3 li { font-size: 0.9em; }
+
+.lede { font-size: 1.05em; color: var(--ink); max-width: 24em; }
+.small { font-size: 0.75em; }
+.muted { color: var(--ink-soft); }
+.center { text-align: center; }
+
+/* --- callouts ---------------------------------------------------------------------- */
+
+.callout {
+  border-left: 5px solid var(--accent); background: var(--accent-bg);
+  padding: 0.5em 0.8em; font-size: 0.8em; margin: 0.6em 0;
+}
+.callout.warn   { border-color: var(--warn);   background: var(--warn-bg); }
+.callout.danger { border-color: var(--danger); background: var(--danger-bg); }
+.callout .label {
+  display: block; font-size: 0.75em; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.2em;
+}
+
+/* --- numbers to read out ------------------------------------------------------------ */
+
+.readout { display: flex; gap: 1.2em; flex-wrap: wrap; margin: 0.6em 0; }
+.readout .r { border-top: 3px solid var(--accent); padding-top: 0.25em; min-width: 5em; }
+.readout .r .v { font-size: 1.25em; font-weight: 600; display: block; }
+.readout .r .k { font-size: 0.55em; color: var(--ink-soft); text-transform: uppercase;
+                 letter-spacing: 0.08em; }
+
+/* Indicative value — confirm against the executed notebook. */
+.prov { color: var(--warn); font-size: 0.7em; vertical-align: super; }
+
+/* --- parameter tables ---------------------------------------------------------------- */
+
+.reveal table { font-size: 0.68em; border-collapse: collapse; width: 100%; }
+.reveal table th, .reveal table td {
+  border: none; border-bottom: 1px solid var(--rule);
+  padding: 0.25em 0.5em; text-align: left;
+}
+.reveal table th { color: var(--ink-soft); font-weight: 600; font-size: 0.9em; }
+.reveal table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.reveal table caption {
+  caption-side: bottom; font-size: 0.8em; color: var(--ink-soft);
+  text-align: left; padding-top: 0.4em;
+}
+
+/* --- demo run cards ------------------------------------------------------------------ */
+
+.demo {
+  border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  background: #fff; margin-top: 0.4em;
+}
+.demo-head {
+  display: flex; align-items: baseline; gap: 0.7em; flex-wrap: wrap;
+  background: var(--code-bg); border-bottom: 1px solid var(--rule);
+  padding: 0.35em 0.7em; font-size: 0.52em;
+}
+.demo-head .nb {
+  font-family: monospace; color: var(--accent); font-weight: 600;
+}
+.demo-head .cell { color: var(--ink-soft); }
+.demo-head .cell b { color: var(--ink); font-weight: 600; }
+.demo-head .spacer { flex: 1; }
+.demo pre { box-shadow: none; margin: 0; width: 100%; font-size: 0.42em; }
+.demo pre code {
+  padding: 0.7em 0.8em; max-height: 15em; background: #fff;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+.demo-foot {
+  display: flex; gap: 0.6em; align-items: center;
+  border-top: 1px solid var(--rule); padding: 0.3em 0.7em; font-size: 0.5em;
+}
+.demo-foot a { color: var(--accent); text-decoration: none; }
+.demo-foot a:hover { text-decoration: underline; }
+.demo-foot .spacer { flex: 1; }
+
+button.copy {
+  font: inherit; font-size: 1em; cursor: pointer; color: var(--ink);
+  background: #fff; border: 1px solid var(--rule); border-radius: 4px;
+  padding: 0.15em 0.7em;
+}
+button.copy:hover { border-color: var(--accent); color: var(--accent); }
+button.copy.done { color: var(--ok); border-color: var(--ok); }
+
+/* --- figures and their placeholders ---------------------------------------------------- */
+
+.fig { margin: 0; text-align: center; }
+.fig img { max-height: 11em; width: auto; border: 1px solid var(--rule); background: #fff; }
+.fig figcaption { font-size: 0.55em; color: var(--ink-soft); margin-top: 0.3em; text-align: left; }
+
+.fig-missing {
+  border: 2px dashed var(--warn); background: repeating-linear-gradient(
+    135deg, #fff, #fff 12px, var(--warn-bg) 12px, var(--warn-bg) 24px);
+  padding: 0.8em 1em; text-align: left; font-size: 0.55em; color: var(--ink);
+}
+.fig-missing .tag {
+  display: inline-block; background: var(--warn); color: #fff;
+  font-size: 0.8em; letter-spacing: 0.1em; padding: 0.1em 0.5em; margin-bottom: 0.4em;
+}
+.fig-missing .what { font-size: 1.05em; margin: 0.2em 0; }
+.fig-missing .src { font-family: monospace; color: var(--ink-soft); font-size: 0.9em; }
+
+/* --- inline code ------------------------------------------------------------------------ */
+
+.reveal code:not(.hljs) {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg); padding: 0.05em 0.3em; border-radius: 3px;
+  font-size: 0.9em;
+}
+.reveal kbd {
+  font-family: inherit; font-size: 0.8em; border: 1px solid var(--rule);
+  border-bottom-width: 2px; border-radius: 4px; padding: 0.05em 0.4em; background: #fff;
+}
+
+/* --- block diagrams (inline SVG) ---------------------------------------------------------- */
+
+.diagram { width: 100%; }
+.diagram text { font-family: inherit; fill: var(--ink); }
+.diagram .box { fill: #fff; stroke: var(--ink); stroke-width: 2; }
+.diagram .box-accent { fill: var(--accent-bg); stroke: var(--accent); stroke-width: 2; }
+.diagram .wire { stroke: var(--ink); stroke-width: 2; fill: none; }
+.diagram .wire-soft { stroke: var(--ink-soft); stroke-width: 2; fill: none; stroke-dasharray: 5 4; }
+.diagram .lbl { font-size: 13px; fill: var(--ink-soft); }
+.diagram .lbl-strong { font-size: 14px; fill: var(--ink); font-weight: 600; }
+
+/* --- slide footer ---------------------------------------------------------------------------- */
+
+.reveal .deck-footer {
+  position: absolute; bottom: 8px; left: 12px;
+  font-size: 13px; color: var(--ink-soft); pointer-events: none;
+}
+
+/* --- speaker-notes fallback panel ------------------------------------------------------------- */
+
+#notes-panel {
+  position: fixed; inset: auto 0 0 0; max-height: 46vh; overflow-y: auto;
+  background: #fffdf5; border-top: 3px solid var(--warn);
+  padding: 14px 20px 18px; font-size: 15px; line-height: 1.45; color: var(--ink);
+  z-index: 60; display: none; box-shadow: 0 -6px 20px rgba(0,0,0,0.12);
+}
+#notes-panel.on { display: block; }
+#notes-panel h5 {
+  margin: 0 0 6px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--warn);
+}
+#notes-panel p { margin: 0 0 6px; }
+#notes-panel ul { margin: 0 0 6px 18px; }
+#notes-panel li { margin-bottom: 3px; }
+
+/* --- print ------------------------------------------------------------------------------------- */
+
+@media print {
+  .demo pre code { max-height: none; }
+  #notes-panel { display: none !important; }
+  .fig-missing { background: #fff; }
+}
+
+/* --- illustration primitives (car, forces, panorama) ------------------------------------------ */
+
+.diagram .arrow      { stroke: var(--ink);    stroke-width: 3; fill: none; }
+.diagram .arrow-acc  { stroke: var(--accent); stroke-width: 3; fill: none; }
+.diagram .arrow-warn { stroke: var(--warn);   stroke-width: 3; fill: none; }
+.diagram .arrow-dngr { stroke: var(--danger); stroke-width: 3; fill: none; }
+.diagram .arrow-ok   { stroke: var(--ok);     stroke-width: 3; fill: none; }
+
+.diagram .car-body  { fill: var(--accent-bg); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.diagram .car-glass { fill: #fff; stroke: var(--ink); stroke-width: 2; }
+.diagram .tyre      { fill: #16202c; }
+.diagram .hub       { fill: #fff; }
+.diagram .road      { stroke: var(--ink); stroke-width: 3; fill: none; }
+.diagram .ghost     { stroke: var(--ink-soft); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+
+.diagram .f-lbl      { font-size: 16px; font-weight: 600; fill: var(--ink); }
+.diagram .f-lbl-acc  { font-size: 16px; font-weight: 600; fill: var(--accent); }
+.diagram .f-lbl-warn { font-size: 16px; font-weight: 600; fill: var(--warn); }
+.diagram .f-lbl-dngr { font-size: 16px; font-weight: 600; fill: var(--danger); }
+.diagram .f-lbl-ok   { font-size: 16px; font-weight: 600; fill: var(--ok); }
