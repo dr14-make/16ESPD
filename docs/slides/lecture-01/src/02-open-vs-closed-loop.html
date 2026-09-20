@@ -7,7 +7,7 @@
     <p class="nb-no">Notebook 02</p>
     <h2>Open loop versus closed loop</h2>
     <p class="thesis">Feedforward is correct exactly as long as the world matches your model.</p>
-    <p class="meta"><span class="tier tier-2">Tier 2</span> &nbsp; <code>notebooks/lecture01/02-open-vs-closed-loop.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/02-open-vs-closed-loop.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> we have a model of the car that predicted its terminal speed
       correctly. So here is a fair question before we spend an hour on feedback: why measure
@@ -15,6 +15,7 @@
       <p><strong>Timing:</strong> 8 minutes. This section is the <em>motivation</em> for
       everything after it, so if you cut it, make sure section 03 opens with the argument
       instead.</p>
+          <p><strong>Cut order:</strong> second to go. Drop this before touching the P → PI → PID → windup run.</p>
     </aside>
   </section>
 
@@ -62,9 +63,6 @@
     <div class="model solo">
       <span class="label">Open in Dyad</span>
       <code>dyad/Lecture1/CruiseLoop.dyad</code>
-      <span class="show">show — <code>LimPID</code> has a <b>feedforward input</b>,
-        <code>u_ff</code>, and we have wired a constant <b>zero</b> to it. Both architectures
-        are in this one block; today we use only the right-hand half of it.</span>
     </div>
     <aside class="notes">
       <p><strong>Point at</strong> the missing wire in the left diagram. That absence is the
@@ -76,6 +74,15 @@
       into because we cannot know the plant and the world well enough. Given perfect knowledge
       we would not want the extra wire at all — it brings problems of its own, which is what the
       remaining sections are about.</p>
+          <p><strong>In the model:</strong> <code>LimPID</code> has a <b>feedforward input</b>, <code>u_ff</code>, and we have wired a constant <b>zero</b> to it. Both architectures are in this one block; today we use only the right-hand half of it.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Open loop / feedforward</strong> — u computed from r alone. No sensor, no error, no loop.</li>
+        <li><strong>Closed loop / feedback</strong> — u computed from the error. The output is fed back and compared.</li>
+        <li><strong>Comparator</strong> — the circle with + and −. It forms e = r − y, and it is the only place the two signals meet.</li>
+        <li><strong>Model inversion</strong> — solving the plant backwards: given the output you want, what input produces it? That is all a feedforward controller does.</li>
+        <li><strong>u_ff</strong> — <code>LimPID</code>'s feedforward input. Real controllers often use both paths; we tie this one to zero.</li>
+      </ul>
     </aside>
   </section>
 
@@ -105,7 +112,7 @@ plot_speed(sol; setpoint = 90)</code></pre>
       </div>
       <div>
         <div class="readout">
-          <div class="r"><span class="v">31.1 <span class="prov">†</span></span><span class="k">N·m computed</span></div>
+          <div class="r"><span class="v">31.1</span><span class="k">N·m computed</span></div>
           <div class="r"><span class="v">90.0</span><span class="k">km/h achieved</span></div>
         </div>
         <div class="callout small">
@@ -125,6 +132,13 @@ plot_speed(sol; setpoint = 90)</code></pre>
       <p><strong>Ask the room:</strong> what has to be true for this to keep working?
       <em>(Collect answers — they will list the assumptions themselves, which is much better
       than you listing them. Then break exactly those assumptions on the next slide.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>v = 90/3.6 = 25 m/s</strong> — the target speed in SI, because the force balance is in SI.</li>
+        <li><strong>F</strong> — the total resisting force at that speed, N: drag plus rolling.</li>
+        <li><strong>tau_ff = F·r/i = 31.1 N·m</strong> — the torque at the engine that produces it. Divide by the gear ratio, multiply by the wheel radius: the driveline equation run backwards.</li>
+        <li><strong>Feedforward</strong> — this single number <em>is</em> the controller. There is nothing else in it.</li>
+      </ul>
     </aside>
   </section>
 
@@ -173,6 +187,13 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
       <p><strong>Ask the room:</strong> which of the three would a driver notice first?
       <em>(The hill. And which would they never notice? The payload — the car is just quietly
       slower than they asked, forever.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>4 % grade</strong> — tan α = 0.04, about 2.3°.</li>
+        <li><strong>200 kg payload</strong> — m goes from 1400 to 1600 kg, changing both rolling resistance and the slope term.</li>
+        <li><strong>Headwind</strong> — modelled as a 30 % larger drag area, because relative airspeed is what drag actually depends on.</li>
+        <li><strong>The dashed line</strong> — the 90 km/h target nobody is holding any more.</li>
+      </ul>
     </aside>
   </section>
 
@@ -248,6 +269,11 @@ end</code></pre>
       <p><strong>Flag forward:</strong> we will see the loop destabilize twice today — once on
       purpose in section 08, to measure it, and once by accident in section 09, from nothing
       more than a slow processor.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>Dynamics</strong> — how a system evolves: its poles, its time constants, its stability. Feedforward leaves them alone; feedback rewrites them.</li>
+        <li><strong>Stability</strong> — whether a disturbance dies out or grows. Feedback can create it, and can destroy it.</li>
+      </ul>
     </aside>
   </section>
 

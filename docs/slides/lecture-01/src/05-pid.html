@@ -7,7 +7,7 @@
     <p class="nb-no">Notebook 05</p>
     <h2>Proportional-integral-derivative</h2>
     <p class="thesis">Three terms, three jobs: present, past, future.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/05-pid.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/05-pid.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> second boolean. <code>with_D = true</code>. That is the only
       change from the last notebook, and it completes the controller that runs most of the
@@ -15,6 +15,7 @@
       <p><strong>Timing:</strong> 12 minutes. The three-contributions plot is the one to spend
       time on — it is the only place in the lecture where you can see the division of labor
       directly rather than infer it.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -42,6 +43,12 @@
       <p><strong>Flag forward:</strong> in a real controller this is not a pure derivative —
       there is a filter on it, and section 07 shows what happens without one. Mention it now in
       one sentence so the <code>Nd</code> parameter is not a surprise later.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>de/dt</strong> — the rate of change of the error, km/h per second. Negative while closing on the setpoint.</li>
+        <li><strong>T<sub>d</sub></strong> — the <em>derivative time</em>, in seconds. It multiplies, so bigger is more derivative action — the opposite convention to T<sub>i</sub>.</li>
+        <li><strong>N<sub>d</sub></strong> — the derivative filter coefficient, mentioned here and explained in section 07. A real derivative is always filtered.</li>
+      </ul>
     </aside>
   </section>
 
@@ -88,6 +95,13 @@
       $T_i$ and $T_d$ are seconds, which you can compare against the plant's own time constant —
       and that comparison is how you sanity-check a gain set. $K_i$ is in N·m per km/h per
       second, which means nothing to anybody.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>K<sub>p</sub>, K<sub>i</sub>, K<sub>d</sub></strong> — the parallel form: three independent gains. K<sub>i</sub> is N·m per km/h per second; K<sub>d</sub> is N·m per km/h per second<sup>-1</sup>.</li>
+        <li><strong>k, T<sub>i</sub>, T<sub>d</sub></strong> — the standard (ISA) form: one gain and two times, in seconds.</li>
+        <li><strong>K<sub>p</sub> = k, K<sub>i</sub> = k/T<sub>i</sub>, K<sub>d</sub> = k·T<sub>d</sub></strong> — the conversion, left to right.</li>
+        <li><strong>T<sub>i</sub> = K<sub>p</sub>/K<sub>i</sub>, T<sub>d</sub> = K<sub>d</sub>/K<sub>p</sub></strong> — and back.</li>
+      </ul>
     </aside>
   </section>
 
@@ -128,6 +142,14 @@
       placement at all — they look like arithmetic on measured numbers. That is exactly their
       appeal: somebody else did the zero placement for a whole family of plants and left you a
       table.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>s</strong> — the Laplace variable. Multiplying by s is differentiating; dividing is integrating.</li>
+        <li><strong>C(s)</strong> — the controller's transfer function: output over input, in the frequency domain.</li>
+        <li><strong>Pole</strong> — a root of the denominator. The one at the origin (s = 0) is the integrator, and we do not get to move it.</li>
+        <li><strong>Zero</strong> — a root of the numerator. PID has two, and where you put them is exactly what T<sub>i</sub> and T<sub>d</sub> decide.</li>
+        <li><strong>Loop gain</strong> — the k out front, which slides the whole response up and down.</li>
+      </ul>
     </aside>
   </section>
 
@@ -177,6 +199,13 @@ pid_loop = rerun(
       <p><strong>Ask the room:</strong> if a colleague showed you only the PID curve, what
       could you not tell? <em>(Whether it is well tuned or merely lucky. Which is exactly why
       section 08 exists.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 56, T<sub>i</sub> = 10 s, T<sub>d</sub> = 0.5 s</strong> — one gain set, three controllers.</li>
+        <li><strong>wd = 0.0</strong> — the derivative setpoint weight. Zero means the derivative acts on the <em>measurement</em> only, not on the setpoint, so a step in the setpoint does not produce an infinite kick. Standard practice, and why the code sets it.</li>
+        <li><strong>xd0</strong> — the derivative block's initial state, preloaded with the starting speed so the run does not begin with a spurious transient.</li>
+        <li><strong>V_START = 90 km/h</strong> — where the car is before the step.</li>
+      </ul>
     </aside>
   </section>
 
@@ -227,6 +256,13 @@ t_u, u_cmd = signal(pid_loop, "loop.controller.y")</code></pre>
       <p><strong>Ask the room:</strong> at t = 100 s, which term is holding the car at
       110 km/h? <em>(Only the integral. The other two are at zero. Make them say it out
       loud.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>proportional.y, integrator.y, derivative.y</strong> — each path's own output inside <code>LimPID</code>, before the shared gain.</li>
+        <li><strong>× k</strong> — every trace is multiplied by the gain so all four are in newton-metres and can share an axis.</li>
+        <li><strong>controller.y</strong> — the sum, which is what the engine is actually asked for.</li>
+        <li><strong>Zero at both ends</strong> — the derivative before the step and after settling, because the error is not moving at either time.</li>
+      </ul>
     </aside>
   </section>
 
@@ -273,6 +309,12 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <p><strong>Ask the room:</strong> in a car, what does an aggressive derivative feel like
       to a passenger? <em>(Surging — the controller reacting to every small change. There is a
       comfort requirement hiding in the gain set.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T<sub>d</sub> = 0.1, 0.25, 0.5, 1.0, 2.0, 4.0 s</strong> — the sweep.</li>
+        <li><strong>xlims = (0, 40)</strong> — the window, in seconds.</li>
+        <li><strong>Sluggish</strong> — the response takes longer to arrive. <strong>Jittery</strong> — it reacts to small changes it should ignore.</li>
+      </ul>
     </aside>
   </section>
 
@@ -299,9 +341,6 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Lecture1/CruiseLoop.dyad</code>
-        <span class="show">show — the two <b><code>structural parameter</code></b> lines, and
-          the single <code>LimPID</code> they configure. Four controllers, one file, twelve
-          lines apart.</span>
       </div>
     </div>
     <aside class="notes">
@@ -314,6 +353,13 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
       <p><strong>Say:</strong> and when would you leave the derivative out? <em>(When the
       measurement is noisy and you cannot filter it enough. Which is most of the time — a large
       fraction of industrial loops in service are PI, not PID.)</em></p>
+          <p><strong>In the model:</strong> The two <b><code>structural parameter</code></b> lines, and the single <code>LimPID</code> they configure. Four controllers, one file, twelve lines apart.</p>
+          <p><strong>Terms, if anyone asks</strong></p>
+      <ul>
+        <li><strong>P</strong> present only. <strong>PI</strong> present and past. <strong>PD</strong> present and future. <strong>PID</strong> all three.</li>
+        <li><strong>Why leave the integrator out</strong> — when the plant already integrates, e.g. a motor position loop, where holding position costs nothing.</li>
+        <li><strong>Why leave the derivative out</strong> — when the measurement is too noisy to differentiate. Most industrial loops in service are PI.</li>
+      </ul>
     </aside>
   </section>
 

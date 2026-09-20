@@ -7,13 +7,14 @@
     <p class="nb-no">Notebook 04</p>
     <h2>Proportional-integral</h2>
     <p class="thesis">The integrator works out the answer you would otherwise have to compute by hand.</p>
-    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/04-proportional-integral.ipynb</code></p>
+    <p class="meta"><code>notebooks/lecture01/04-proportional-integral.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> one boolean changes between the last notebook and this one.
       <code>with_I = true</code>. Same car, same gain, same step.</p>
       <p><strong>Timing:</strong> 12 minutes. The middle slide of this section — the
       integrator's own state settling on the number we computed with a pencil — is the best
       slide in the lecture. Do not rush to it and do not rush past it.</p>
+          <p><strong>Cut order:</strong> this is spine — do not cut it. The lecture is not complete without it.</p>
     </aside>
   </section>
 
@@ -32,10 +33,6 @@
       <div class="model">
         <span class="label">Open in Dyad</span>
         <code>dyad/Lecture1/CruiseLoop.dyad</code>
-        <span class="show">show — <b><code>with_I</code> is a <code>structural</code>
-          parameter</b>. The integrator is either compiled into the equations or it is not
-          there at all. P and PI are two different models, not one model with a gain at
-          zero.</span>
       </div>
       <div class="callout small">
         <span class="label">Read that last point again</span>
@@ -52,6 +49,15 @@
       <p><strong>On T<sub>i</sub>:</strong> it is a <em>time</em>, not a gain, and it divides —
       so smaller T<sub>i</sub> is more aggressive integration. Say it now; it catches people out
       every single year.</p>
+          <p><strong>In the model:</strong> <b><code>with_I</code> is a <code>structural</code> parameter</b>. The integrator is either compiled into the equations or it is not there at all. P and PI are two different models, not one model with a gain at zero.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>∫e dτ</strong> — the accumulated error: the running total of how far off we have been, and for how long. Units here are km/h·s.</li>
+        <li><strong>T<sub>i</sub></strong> — the <em>integral time</em>, in seconds. It <em>divides</em>, so a smaller T<sub>i</sub> integrates harder. This catches people out every year.</li>
+        <li><strong>k</strong> — the same proportional gain, which multiplies the whole bracket, so it scales all three paths together.</li>
+        <li><strong>τ</strong> — here just the dummy variable of integration, not the plant time constant. Unfortunate collision; say so if anyone frowns.</li>
+        <li><strong>with_I</strong> — the boolean that compiles the integrator in or out.</li>
+      </ul>
     </aside>
   </section>
 
@@ -98,6 +104,14 @@ pi_loop = Scenarios.CruiseLoopTransient(
       <p><strong>Ask the room:</strong> which one reached the setpoint faster to within, say,
       1 km/h? <em>(Usually P. Arriving eventually and arriving exactly are different
       requirements, and PID tuning is mostly about trading one for the other.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>k = 56</strong> N·m per km/h, the same for both runs.</li>
+        <li><strong>T<sub>i</sub> = 10 s</strong> — the integral time for the PI run.</li>
+        <li><strong>stop = 60 s</strong> — run length.</li>
+        <li><strong>UNLIMITED = 1e6</strong> — the lifted torque ceiling, standing in for "no limit".</li>
+        <li><strong>SPEED = "loop.plant.v_kmh"</strong> — the signal path: inside the harness, inside the loop, the plant's km/h output.</li>
+      </ul>
     </aside>
   </section>
 
@@ -131,9 +145,6 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CruiseLoop.dyad</code>
-          <span class="show">show — the integrator is <b>inside <code>LimPID</code></b>, and
-            <code>integrator.y</code> is its state <em>before</em> the gain. The plot multiplies
-            by <code>k</code> to get newton-metres.</span>
         </div>
       </div>
       <figure class="fig">
@@ -161,6 +172,15 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
       <p><strong>Check:</strong> if the integrator settles anywhere other than the hand-computed
       torque, the units or the gear ratio disagree between notebook and model — that mismatch
       is worth more than the slide, so stop and find it.</p>
+          <p><strong>In the model:</strong> The integrator is <b>inside <code>LimPID</code></b>, and <code>integrator.y</code> is its state <em>before</em> the gain. The plot multiplies by <code>k</code> to get newton-metres.</p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>integrator.y</strong> — the integrator's own state, <em>before</em> the gain k is applied. Multiply by k to get newton-metres.</li>
+        <li><strong>k·I = 40.119 N·m</strong> — where it settles.</li>
+        <li><strong>T_cruise(110) = 40.119 N·m</strong> — the same number, computed from the force balance with a pencil in section 01.</li>
+        <li><strong>The dashed line</strong> — that hand-computed value, drawn on so the coincidence is visible rather than asserted.</li>
+        <li><strong>stop = 90 s</strong> — a longer window than the step needs, because the last hundredths of a newton-metre take most of a minute.</li>
+      </ul>
     </aside>
   </section>
 
@@ -209,6 +229,12 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
       <p><strong>Ask the room:</strong> so what could we add that reacts <em>before</em> we
       arrive, rather than after? <em>(Something that watches how fast we are closing. Straight
       into 05.)</em></p>
+          <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>T<sub>i</sub> = 40, 20, 10, 5, 2.5 s</strong> — the sweep, from lazy to aggressive.</li>
+        <li><strong>Overshoot</strong> — the peak excursion past the setpoint, as a percentage of the commanded step. A 20 km/h step overshooting to 112 is 10 %.</li>
+        <li><strong>Every one of these settles at 110</strong> — the integrator guarantees that. The sweep is about the journey, not the destination.</li>
+      </ul>
     </aside>
   </section>
 
