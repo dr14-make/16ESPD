@@ -43,8 +43,13 @@
         </table>
       </div>
     </div>
-    <p class="small muted">A system has structure, behavior and interconnectivity — parts that
-    transform inputs into outputs.</p>
+    <div class="model solo">
+      <span class="label">Open in Dyad</span>
+      <code>dyad/Vehicle/CarPlant.dyad</code>
+      <span class="show">show — <b>two inputs on the left</b> (<code>tau_cmd</code>,
+        <code>grade</code>) and <b>one measurement out</b> (<code>v_kmh</code>). The four boxes
+        between them are the next forty minutes.</span>
+    </div>
     <aside class="notes">
       <p><strong>Say:</strong> four boxes and you can describe any plant in this building. The
       only one students skip is <em>d</em>, and <em>d</em> is the reason feedback exists.</p>
@@ -72,6 +77,13 @@
         <span class="label">Where the torque comes from</span>
         <em>T</em> is not the commanded torque. Between command and shaft sit a transport delay
         and a first-order lag — the next slides are about why they are not optional.
+      </div>
+      <div class="model">
+        <span class="label">Open in Dyad</span>
+        <code>dyad/Vehicle/VehicleBody.dyad</code>
+        <span class="show">show — <b>four things pulling on one flange</b>: the mass, the
+          quadratic drag, the rolling resistance, the grade force. The equation above, as a
+          diagram.</span>
       </div>
     </div>
     <aside class="notes">
@@ -140,6 +152,13 @@ v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
         distrust the parts that are true.</li>
       <li>Fixing it means an engine torque map — <strong>which is where lecture 2 starts.</strong></li>
     </ul>
+    <div class="model solo">
+      <span class="label">Open in Dyad</span>
+      <code>dyad/Vehicle/IdealEngine.dyad</code>
+      <span class="show">show — the <b><code>limiter</code></b> block. Its ceiling is a
+        <em>constant</em>, <code>T_max</code>. Nothing in this model knows the engine's speed,
+        and that is exactly the assumption this slide is confessing.</span>
+    </div>
     <aside class="notes">
       <p><strong>Say:</strong> a model is a set of assumptions with a speed limit on it, and
       the engineering skill is knowing where that limit is. Ours is honest from 0 to about
@@ -162,21 +181,26 @@ v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
             <span class="nb">01-the-car.ipynb</span>
             <span class="cell">cell <b>4. Open loop to terminal speed</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>@named throttle = BlockComponents.Sources.Constant(k = CAR.T_max)
-@named road     = BlockComponents.Sources.Constant(k = 0.0)
-@named car      = VehicleSystemsComponents.Lecture1.CarPlant()
-@named wide_open = System(
-    [connect(throttle.y, car.tau_cmd), connect(road.y, car.grade)],
-    t; systems = [throttle, road, car])
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-sol_wot = solve(ODEProblem(mtkcompile(wide_open), [], (0.0, 300.0)))
-plt = plot_speed(sol_wot; sig = "car.v_kmh", label = "speed")
-hline!(plt, [v_terminal * 3.6]; ls = :dash, label = "analytic")</code></pre>
+wot = Scenarios.WideOpenThrottleTransient()
+
+plt = plot_speed(wot; sig = "plant.v_kmh", label = "speed",
+                 title = "Full torque from rest, flat road")
+hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
+       label = "terminal speed, analytic")</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
             <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
           </div>
+        </div>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Lecture1/WideOpenThrottle.dyad</code>
+          <span class="show">show — <b>why a harness exists</b>: two constant sources feeding
+            the plant's two inputs, and the initial conditions. Leave those inputs dangling and
+            the model will not solve.</span>
         </div>
         <div class="callout warn small">
           <span class="label">Watch the time axis</span>
@@ -217,20 +241,27 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, label = "analytic")</code></pre>
             <span class="nb">01-the-car.ipynb</span>
             <span class="cell">cell <b>5. The step test</b>, and the zoom below it</span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># settle for 500 s, step, then 500 s more
-@named throttle_step = BlockComponents.Sources.Step(
-    offset = T_90, height = T_110 - T_90, start_time = t_step)
+          <pre><code class="language-julia" data-trim data-noescape># the two cruise torques derived on paper, handed to the model
+step_test = Scenarios.CarStepTestTransient(
+    tau_lo = T_90, tau_hi = T_110, v0 = 90 / 3.6, t_step = t_step)
 
-sol_step = solve(ODEProblem(mtkcompile(step_test), [], (0.0, 1000.0)))
-
-plot_torque(sol_step; commanded = "car_st.tau_cmd",
-    delivered = "car_st.engine.limiter.y", limit = nothing,
+plot_torque(step_test;
+    commanded = "cmd.y",
+    delivered = "plant.engine.limiter.y",
+    limit = nothing,
     xlims = (t_step - 0.5, t_step + 3.0))</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
             <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
           </div>
+        </div>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Lecture1/CarStepTest.dyad</code>
+          <span class="show">show — <b><code>tau_lo</code> and <code>tau_hi</code> are
+            parameters</b>, so the step test runs the equation the students just wrote down.
+            Then <code>IdealEngine.dyad</code>: <b>delay → lag → limiter</b>, in that order.</span>
         </div>
         <ol class="small">
           <li>Wait until the process is at rest.</li>
@@ -311,12 +342,13 @@ plot_torque(sol_step; commanded = "car_st.tau_cmd",
             <span class="nb">01-the-car.ipynb</span>
             <span class="cell">cell <b>7. Reading K, tau and theta off the curve</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>K, tau, theta = fopdt_fit(sol_step;
-    output = "car_st.v_kmh", A = T_110 - T_90, t0 = t_step)
+          <pre><code class="language-julia" data-trim data-noescape>K, tau, theta = fopdt_fit(step_test;
+    output = "plant.v_kmh", A = T_110 - T_90, t0 = t_step)
 
-# K     km/h per N.m — steady-state gain
-# tau   s            — dominated by the vehicle, not the engine
-# theta s            — dead time, the engine's transport delay</code></pre>
+# and, for comparison, the tangent gain and time constant at
+# each end of the step, straight from the force balance
+local_gain(v) = 3.6 / (2 * c_drag * v * CAR.r / CAR.i)
+local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>

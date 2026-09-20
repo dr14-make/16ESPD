@@ -138,20 +138,22 @@
         <div class="demo">
           <div class="demo-head">
             <span class="nb">05-pid.ipynb</span>
-            <span class="cell">cell <b>P vs PI vs PID</b></span>
+            <span class="cell">cell <b>2. Two decisions before the first run</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>tspan = (0.0, 120.0)
-runs = ["P"   =&gt; cruise_loop(with_I = false, with_D = false, k = 56.0),
-        "PI"  =&gt; cruise_loop(with_I = true,  with_D = false, k = 56.0, Ti = 8.0),
-        "PID" =&gt; cruise_loop(with_I = true,  with_D = true,  k = 56.0, Ti = 8.0, Td = 1.5)]
+          <pre><code class="language-julia" data-trim data-noescape>controller(; with_I, with_D) = Scenarios.CruiseLoopStep(;
+    name = :CruiseLoopStep, with_I = with_I, with_D = with_D)
 
-plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
-for (name, model) in runs
-    sol  = solve(ODEProblem(mtkcompile(model), [], tspan))
-    t, y = signal(sol, SPEED_KMH)
-    plot!(plt, t, y; lw = 2, label = name)
-end
-hline!(plt, [110]; ls = :dash, color = :black, label = "setpoint")</code></pre>
+p_only  = Scenarios.CruiseLoopTransient(
+    k = GAIN, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+pi_loop = Scenarios.CruiseLoopTransient(
+    model = controller(with_I = true, with_D = false),
+    k = GAIN, Ti = T_I, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+pid_loop = rerun(
+    Scenarios.CruiseLoopTransient(
+        model = controller(with_I = true, with_D = true),
+        k = GAIN, Ti = T_I, Td = T_D, wd = 0.0,
+        T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0),
+    "loop.controller.xd0" =&gt; -V_START)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -185,20 +187,16 @@ hline!(plt, [110]; ls = :dash, color = :black, label = "setpoint")</code></pre>
         <div class="demo">
           <div class="demo-head">
             <span class="nb">05-pid.ipynb</span>
-            <span class="cell">cell <b>The three contributions</b></span>
+            <span class="cell">cell <b>3. The three contributions</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
-    cruise_loop(with_I = true, with_D = true,
-                k = 56.0, Ti = 8.0, Td = 1.5)), [], tspan))
+          <pre><code class="language-julia" data-trim data-noescape># each path's state, scaled by k so every trace is in N.m
+contribution(run, path) = (signal(run, path)[1],
+                           GAIN .* signal(run, path)[2])
 
-plt = plot(; xlabel = "time [s]", ylabel = "torque [N.m]")
-for (path, name) in [("controller.P.y", "proportional"),
-                     ("controller.I.y", "integral"),
-                     ("controller.D.y", "derivative")]
-    t, y = signal(sol, path)
-    plot!(plt, t, y; lw = 2, label = name)
-end
-plt</code></pre>
+t_p, u_p = contribution(pid_loop, "loop.controller.proportional.y")
+t_i, u_i = contribution(pid_loop, "loop.controller.integrator.y")
+t_d, u_d = contribution(pid_loop, "loop.controller.derivative.y")
+t_u, u_cmd = signal(pid_loop, "loop.controller.y")</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -239,14 +237,14 @@ plt</code></pre>
         <div class="demo">
           <div class="demo-head">
             <span class="nb">05-pid.ipynb</span>
-            <span class="cell">cell <b>Td family</b></span>
+            <span class="cell">cell <b>4. Choosing Td</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = true, with_D = true,
-                      k = 56.0, Ti = 8.0),
-           "Td", [0.0, 0.5, 1.5, 6.0];
-           tspan = (0.0, 120.0))
+          <pre><code class="language-julia" data-trim data-noescape>TDS = [0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
 
-plot_sweep(sw; setpoint = 110)</code></pre>
+td_family = sweep(pid_loop, "Td", TDS)
+
+plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
+           xlims = (0, 40))</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -297,6 +295,13 @@ plot_sweep(sw; setpoint = 110)</code></pre>
         Sections 03, 04 and 05 are one Dyad model with two booleans flipped. There is no
         separate "P controller" anywhere in this repository — and there should not be, because
         they are not separate things.
+      </div>
+      <div class="model">
+        <span class="label">Open in Dyad</span>
+        <code>dyad/Lecture1/CruiseLoop.dyad</code>
+        <span class="show">show — the two <b><code>structural parameter</code></b> lines, and
+          the single <code>LimPID</code> they configure. Four controllers, one file, twelve
+          lines apart.</span>
       </div>
     </div>
     <aside class="notes">

@@ -53,37 +53,62 @@ nothing; searching `../index.html` for it finds the slide.
 
 ## What the code on the demo slides assumes
 
-The notebooks did not exist when the deck was written, so the snippets on the demo cards were
-written against what *does* exist and one thing that does not yet.
+Sections 01, 03, 04 and 05 quote the executed notebooks verbatim — the shipped Dyad analyses,
+the real signal paths, the real numbers. Sections 02 and 06–10 have no notebook yet; their
+cards use the same idiom against models that do exist, and are a proposal until those
+notebooks land.
 
-Real, and used as documented:
+Shipped and used as documented:
 
-- `notebooks/lecture01/support.jl` — `setup`, `CAR`, `sweep`, `signal`, `plot_speed`,
-  `plot_sweep`, `plot_torque`, `bracket_error!`, `steady_state_error`, `overshoot`, `rise_time`,
-  `fopdt_fit`, and the `SPEED_KMH` / `TORQUE_CMD` / `TORQUE_DELIVERED` signal paths.
+- `notebooks/lecture01/support.jl` — `setup`, `CAR`, `sweep`, `rerun`, `signal`, `save_figure`,
+  `plot_speed`, `plot_sweep`, `plot_torque`, `bracket_error!`, `steady_state_error`,
+  `overshoot`, `rise_time`, `fopdt_fit`.
 - `test/tuning_tables.jl` — `cohen_coon(K, tau, theta)`, `ziegler_nichols(Ku, Pu)`,
   `tyreus_luyben(Ku, Pu)`, each returning `(k, Ti, Td)`.
-- The Dyad component and parameter names from `docs/lecture-01-dyad-tasks.md` — `CarPlant`,
-  `CruiseLoop`, `with_I`, `with_D`, `k`, `Ti`, `Td`, `Nd`, `GradeProfile`, `FrictionProfile`.
+- The Dyad analyses, called directly as the notebooks call them:
 
-Proposed, and named consistently across all ten sections — the scenario builders that
-`lecture-01-plan.md` places in the shared helper under `src/`. Each returns an uncompiled
-system, so a notebook either solves it or hands it to `sweep`:
+      Scenarios = VehicleSystemsComponents.Lecture1
+      Scenarios.WideOpenThrottleTransient()
+      Scenarios.CarStepTestTransient(tau_lo =, tau_hi =, v0 =, t_step =)
+      Scenarios.CruiseLoopTransient(k =, Ti =, Td =, T_max =, y_max =, stop =)
 
-    car_plant(; tau_cmd, grade = 0.0, m, CdA)      open loop at a constant torque
-    car_step_test(; tau_lo, tau_hi, t_step)        open-loop torque step
-    cruise_loop(; with_I, with_D, k, Ti, Td, v_set)   the 90 -> 110 km/h step scenario
-    cruise_climb(; grade, t_climb, v_set, antiwindup)  the sustained climb
-    cruise_sampled(; Ts, k, Ti, Td)                the sampled loop
-    cruise_noisy(; Nd, k, Ti, Td)                  the noisy speedometer
-    wheeled_cruise_loop(...)  standing_start(; mu_scale)  ice_patch(; mu_low, t_ice)
+  PI and PID come from passing a differently-configured harness, because `with_I` and `with_D`
+  are structural:
 
-Two internal signal paths are also assumed, for plotting a controller path on its own:
-`controller.P.y`, `controller.I.y`, `controller.D.y`.
+      model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep, with_I = true, with_D = false)
 
-**If the notebooks land under different names, the slides need a search and replace, not a
-redesign.** Each card's notebook filename and cell heading are the load-bearing part; the code
-block is a convenience.
+- Signal paths: `plant.v_kmh` and `plant.engine.limiter.y` inside the open-loop harnesses;
+  `loop.plant.v_kmh`, `loop.controller.y`, `loop.controller.integrator.y`,
+  `loop.controller.proportional.y`, `loop.controller.derivative.y` inside the loop.
+
+Still proposed, for the notebooks that do not exist yet — the climb, the sampler, the noise
+source and the slip scenarios have no harness in `dyad/Lecture1/` yet:
+
+    cruise_climb(; grade, t_climb, v_set, antiwindup)
+    cruise_sampled(; Ts, ...)     cruise_noisy(; Nd, ...)
+    wheeled_cruise_loop(...)      standing_start(; mu_scale)     ice_patch(; mu_low, t_ice)
+
+**The notebook filename and the cell heading are the load-bearing part of a card**; the code
+block is a convenience, and a rename is a search-and-replace rather than a redesign.
+
+## "Open in Dyad" strips
+
+A demo card says what to *run*. A `.model` strip says what to *open beside it* and what to
+point at:
+
+    <div class="model">
+      <span class="label">Open in Dyad</span>
+      <code>dyad/Vehicle/IdealEngine.dyad</code>
+      <span class="show">show — <b>delay → lag → limiter</b>, in that order.</span>
+    </div>
+
+Add `class="model solo"` when it stands on a concept slide with no demo card above it.
+
+These are deliberately sparse. A strip earns its place only where the diagram says something
+the plot cannot — the four forces on one flange in `VehicleBody`, the constant ceiling in
+`IdealEngine`'s limiter, the feedback wire and the two `structural parameter` lines in
+`CruiseLoop`, the finite `duration` in `GradeProfile`. Everywhere else the model is a
+distraction from the plot.
 
 ## Editing the deck
 

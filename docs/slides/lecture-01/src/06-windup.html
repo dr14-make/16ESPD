@@ -28,6 +28,13 @@
         <p class="small">Real actuators have backlash, rate limits and <strong>saturation</strong>.
         A linear model has none of these: ask it for a million newton-metres and it will agree.</p>
       </div>
+      <div class="model">
+        <span class="label">Open in Dyad</span>
+        <code>dyad/Vehicle/IdealEngine.dyad</code>
+        <span class="show">show — the <b><code>limiter</code></b>: <code>y_max = T_max</code>,
+          and <code>y_min = 0</code>. That second one matters too — this engine cannot brake,
+          so downhill it has no answer at all.</span>
+      </div>
       <div class="callout danger small">
         <span class="label">The hill we are about to drive up</span>
         130 km/h on a sustained 10 % climb needs <strong>2024 N</strong> at the road.<br>
@@ -71,6 +78,13 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
             <span class="spacer"></span>
             <a href="../../../notebooks/lecture01/06-windup.ipynb">open notebook</a>
           </div>
+        </div>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Vehicle/GradeProfile.dyad</code>
+          <span class="show">show — <code>gradient</code>, <code>start_time</code> and
+            <b><code>duration</code></b>. The road flattens again because the duration is
+            finite, and the flattening is where the damage shows.</span>
         </div>
       </div>
       <figure class="fig">
@@ -272,6 +286,13 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
         </table>
         <p class="small muted">Both keep the integrator near the limit rather than far above it,
         which is the only thing that matters.</p>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Lecture1/CruiseLoop.dyad</code>
+          <span class="show">show — <b><code>Ni</code></b>, the back-calculation parameter, and
+            <b><code>y_max</code> defaulting to <code>T_max</code></b> — the controller's own
+            ceiling, which the next slide argues should sit lower.</span>
+        </div>
       </div>
     </div>
     <aside class="notes">

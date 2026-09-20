@@ -162,7 +162,7 @@ button.copy.done { color: var(--ok); border-color: var(--ok); }
 /* --- figures and their placeholders ---------------------------------------------------- */
 
 .fig { margin: 0; text-align: center; }
-.fig img { max-height: 11em; width: auto; border: 1px solid var(--rule); background: #fff; }
+.fig img { max-height: 13em; width: auto; border: 1px solid var(--rule); background: #fff; }
 .fig figcaption { font-size: 0.55em; color: var(--ink-soft); margin-top: 0.3em; text-align: left; }
 
 .fig-missing {
@@ -252,3 +252,36 @@ button.copy.done { color: var(--ok); border-color: var(--ok); }
 .diagram .f-lbl-warn { font-size: 16px; font-weight: 600; fill: var(--warn); }
 .diagram .f-lbl-dngr { font-size: 16px; font-weight: 600; fill: var(--danger); }
 .diagram .f-lbl-ok   { font-size: 16px; font-weight: 600; fill: var(--ok); }
+
+/* --- "open this model" strips ------------------------------------------------------------
+   The lecturer drives three things: the deck, the notebook, and the Dyad model. A demo card
+   says what to run; this strip says what to open beside it and what to point at in it. */
+
+.model {
+  display: flex; align-items: baseline; gap: 0.6em; flex-wrap: wrap;
+  border: 1px solid var(--rule); border-left: 5px solid var(--ink-soft);
+  background: #f7f9fb; border-radius: 0 5px 5px 0;
+  padding: 0.35em 0.7em; margin-top: 0.5em; font-size: 0.52em;
+}
+.model .label {
+  font-size: 0.82em; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
+}
+.model code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: none; padding: 0; color: var(--ink); font-weight: 600;
+}
+.model .show { color: var(--ink-soft); }
+.model .show b { color: var(--ink); font-weight: 600; }
+
+/* Standalone on a concept slide, where there is no demo card to sit under. */
+.model.solo { font-size: 0.62em; margin-top: 0.8em; }
+
+/* --- the model map ------------------------------------------------------------------------ */
+
+.map { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; font-size: 0.7em; }
+.map h4 { margin: 0 0 0.3em; color: var(--accent); font-size: 1em; }
+.map .rule { font-size: 0.82em; color: var(--ink-soft); margin: 0 0 0.6em; }
+.map ul { list-style: none; margin: 0; padding: 0; }
+.map li { margin-bottom: 0.25em; }
+.map code { background: none; padding: 0; font-size: 0.95em; }
+.map .used { color: var(--ink-soft); font-size: 0.82em; }

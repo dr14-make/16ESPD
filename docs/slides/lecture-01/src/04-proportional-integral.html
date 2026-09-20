@@ -29,6 +29,14 @@
             holds whatever value it has reached.</li>
         </ul>
       </div>
+      <div class="model">
+        <span class="label">Open in Dyad</span>
+        <code>dyad/Lecture1/CruiseLoop.dyad</code>
+        <span class="show">show — <b><code>with_I</code> is a <code>structural</code>
+          parameter</b>. The integrator is either compiled into the equations or it is not
+          there at all. P and PI are two different models, not one model with a gain at
+          zero.</span>
+      </div>
       <div class="callout small">
         <span class="label">Read that last point again</span>
         An integrator's output at rest is <em>unconstrained by the error</em>. That is precisely
@@ -54,19 +62,18 @@
         <div class="demo">
           <div class="demo-head">
             <span class="nb">04-proportional-integral.ipynb</span>
-            <span class="cell">cell <b>PI against P</b></span>
+            <span class="cell">cell <b>1. Adding memory</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>p  = cruise_loop(with_I = false, with_D = false, k = 56.0)
-pi_ = cruise_loop(with_I = true,  with_D = false, k = 56.0,
-                  Ti = 8.0)
+          <pre><code class="language-julia" data-trim data-noescape>SPEED = "loop.plant.v_kmh"
+GAIN, T_I, UNLIMITED = 56.0, 10.0, 1.0e6
 
-tspan = (0.0, 120.0)
-sol_p  = solve(ODEProblem(mtkcompile(p),  [], tspan))
-sol_pi = solve(ODEProblem(mtkcompile(pi_), [], tspan))
+p_only = Scenarios.CruiseLoopTransient(
+    k = GAIN, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
 
-plt  = plot_speed(sol_p; setpoint = 110, label = "P")
-t, y = signal(sol_pi, SPEED_KMH)
-plot!(plt, t, y; lw = 2, label = "PI")</code></pre>
+pi_loop = Scenarios.CruiseLoopTransient(
+    model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                     with_I = true, with_D = false),
+    k = GAIN, Ti = T_I, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -101,15 +108,16 @@ plot!(plt, t, y; lw = 2, label = "PI")</code></pre>
         <div class="demo">
           <div class="demo-head">
             <span class="nb">04-proportional-integral.ipynb</span>
-            <span class="cell">cell <b>The punchline</b></span>
+            <span class="cell">cell <b>2. What is the integrator holding?</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># the integrator's own output, on its own axes
-t, u_I = signal(sol_pi, "controller.I.y")
+          <pre><code class="language-julia" data-trim data-noescape>INTEGRAL = "loop.controller.integrator.y"   # state, before the gain
 
-plot(t, u_I; lw = 2, label = "integral path",
-     xlabel = "time [s]", ylabel = "torque [N.m]")
-hline!([40.1]; ls = :dash, lw = 2, color = :black,
-       label = "torque to hold 110 km/h, by hand")</code></pre>
+t, integral = signal(settling, INTEGRAL)
+torque = GAIN .* integral                   # k * I, in N.m
+
+plot(t, torque; lw = 3, xlabel = "time [s]", ylabel = "torque [N.m]")
+hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
+       label = "torque to hold 110 km/h, from the force balance")</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -117,8 +125,15 @@ hline!([40.1]; ls = :dash, lw = 2, color = :black,
           </div>
         </div>
         <div class="readout">
-          <div class="r"><span class="v">40.1 <span class="prov">†</span></span><span class="k">N·m computed</span></div>
-          <div class="r"><span class="v">40.1 <span class="prov">†</span></span><span class="k">N·m discovered</span></div>
+          <div class="r"><span class="v">40.1</span><span class="k">N·m computed</span></div>
+          <div class="r"><span class="v">40.1</span><span class="k">N·m discovered</span></div>
+        </div>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Lecture1/CruiseLoop.dyad</code>
+          <span class="show">show — the integrator is <b>inside <code>LimPID</code></b>, and
+            <code>integrator.y</code> is its state <em>before</em> the gain. The plot multiplies
+            by <code>k</code> to get newton-metres.</span>
         </div>
       </div>
       <figure class="fig">
@@ -156,22 +171,23 @@ hline!([40.1]; ls = :dash, lw = 2, color = :black,
         <div class="demo">
           <div class="demo-head">
             <span class="nb">04-proportional-integral.ipynb</span>
-            <span class="cell">cell <b>The cost</b></span>
+            <span class="cell">cell <b>4. The cost</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = true, with_D = false,
-                      k = 56.0),
-           "Ti", [20.0, 8.0, 3.0, 1.2];
-           tspan = (0.0, 120.0))
+          <pre><code class="language-julia" data-trim data-noescape>TIS = [40.0, 20.0, 10.0, 5.0, 2.5]
 
-plot_sweep(sw; setpoint = 110)
-[overshoot(s, 110) for (_, s) in sw]      # percent</code></pre>
+ti_family = sweep(pi_loop, "Ti", TIS)
+
+plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
+           xlims = (0, 20))
+[overshoot(s, 110; sig = SPEED) for (_, s) in ti_family]</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
             <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
           </div>
         </div>
-        <p class="small muted">Still an unlimited engine. Shrinking <em>T<sub>i</sub></em> integrates harder. The loop
+        <p class="small muted">Still an unlimited engine. Shrinking <em>T<sub>i</sub></em> integrates harder.
+        Every one of these settles at 110 — the question is what it does on the way. The loop
         arrives sooner, then past.</p>
       </div>
       <figure class="fig">

@@ -28,12 +28,18 @@
       </div>
       <div class="callout warn small">
         <span class="label">One idealization, stated out loud</span>
-        Cruise at <strong>90 km/h</strong>, step the setpoint to <strong>110 km/h</strong>, flat
-        road. <em>Holding</em> those speeds takes 31 and 40 N·m — nothing. But the instant the
-        setpoint jumps, the error is 20 km/h, and <em>k</em> times 20 is a large number: even the
-        gentlest gain here commands about 280 N·m, and the fiercest about 17,800.
-        <br><strong>So for this section the engine delivers whatever we ask.</strong> The torque
-        limit goes back on in section 06, and that is where it earns its keep.
+        Cruise at <strong>90</strong>, step the setpoint to <strong>110 km/h</strong>, flat road.
+        <em>Holding</em> those speeds takes 31 and 40 N·m. But at the step the error is 20 km/h,
+        and <em>k</em> times 20 is large — the gentlest gain here asks for 280 N·m, the fiercest
+        for 17,800. <strong>So this section's engine delivers whatever we ask</strong>
+        (<code>T_max</code> and <code>y_max</code> lifted). The limit returns in section 06.
+      </div>
+      <div class="model">
+        <span class="label">Open in Dyad</span>
+        <code>dyad/Lecture1/CruiseLoop.dyad</code>
+        <span class="show">show — one <b><code>LimPID</code></b>, and the wire from
+          <code>plant.v_kmh</code> back to <code>controller.u_m</code>. That wire is the whole
+          difference between this section and section 02.</span>
       </div>
     </div>
     <aside class="notes">
@@ -58,14 +64,17 @@
         <div class="demo">
           <div class="demo-head">
             <span class="nb">03-proportional.ipynb</span>
-            <span class="cell">cell <b>One run</b></span>
+            <span class="cell">cell <b>2. One assumption, stated before it is used</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>loop = cruise_loop(with_I = false, with_D = false,
-                   k = 56.0)
-sol  = solve(ODEProblem(mtkcompile(loop), [], (0.0, 120.0)))
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
+SPEED = "loop.plant.v_kmh"
+UNLIMITED = 1.0e6            # N.m, the ceiling lifted away
 
-plt = plot_speed(sol; setpoint = 110)
-bracket_error!(plt, sol; setpoint = 110)</code></pre>
+single = Scenarios.CruiseLoopTransient(
+    k = 14.0, T_max = UNLIMITED, y_max = UNLIMITED, stop = 30.0)
+
+plt = plot_speed(single; sig = SPEED, setpoint = 110, label = "k = 14")
+bracket_error!(plt, single; setpoint = 110, sig = SPEED)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -73,8 +82,9 @@ bracket_error!(plt, sol; setpoint = 110)</code></pre>
           </div>
         </div>
         <div class="readout">
-          <div class="r"><span class="v">0.7 <span class="prov">†</span></span><span class="k">km/h short</span></div>
-          <div class="r"><span class="v">≈ 40</span><span class="k">N·m held</span></div>
+          <div class="r"><span class="v">2.9</span><span class="k">km/h short</span></div>
+          <div class="r"><span class="v">≈ 40</span><span class="k">N·m to hold 110</span></div>
+          <div class="r"><span class="v">280</span><span class="k">N·m peak command</span></div>
         </div>
       </div>
       <figure class="fig">
@@ -90,8 +100,11 @@ bracket_error!(plt, sol; setpoint = 110)</code></pre>
       <p><strong>Ask the room:</strong> is this controller broken? <em>(No. It is doing exactly
       what it was told. It is stable, it is quick, it stopped somewhere sensible — and it is
       wrong, permanently, and it will never notice.)</em></p>
-      <p><strong>Read out:</strong> the bracket annotation. Roughly 0.7 km/h short at this
-      gain — read the executed number, not mine.</p>
+      <p><strong>Read out:</strong> the bracket annotation — 2.9 km/h short at this gain. And
+      then the third number on the slide, which is the one nobody expects: to make that
+      modest-looking response the controller asked for <strong>280 N·m</strong> at the instant
+      of the step, from an engine that can give 150. We lifted the limit to get this plot. Say
+      so.</p>
       <p><strong>Contrast, loudly:</strong> the open-loop car took several minutes to change
       speed. This took seconds. Same engine, same mass, same drag. Feedback changed the
       dynamics of the system, not just how it is operated.</p>
@@ -105,13 +118,16 @@ bracket_error!(plt, sol; setpoint = 110)</code></pre>
         <div class="demo">
           <div class="demo-head">
             <span class="nb">03-proportional.ipynb</span>
-            <span class="cell">cell <b>The gain family</b></span>
+            <span class="cell">cell <b>3. Raising the gain</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = false, with_D = false),
-           "k", [14.0, 56.0, 220.0, 890.0];
-           tspan = (0.0, 120.0))
+          <pre><code class="language-julia" data-trim data-noescape>GAINS = [14.0, 56.0, 220.0, 890.0]
 
-plot_sweep(sw; setpoint = 110)</code></pre>
+family = sweep(
+    Scenarios.CruiseLoopTransient(
+        k = 14.0, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0),
+    "k", GAINS)
+
+plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -119,18 +135,21 @@ plot_sweep(sw; setpoint = 110)</code></pre>
           </div>
         </div>
         <table>
-          <tr><th>k <span class="small muted">[N·m per km/h]</span></th><th>steady-state error <span class="small muted">[km/h]</span></th></tr>
-          <tr><td class="num">14</td><td class="num">2.8 <span class="prov">†</span></td></tr>
-          <tr><td class="num">56</td><td class="num">0.7 <span class="prov">†</span></td></tr>
-          <tr><td class="num">220</td><td class="num">0.18 <span class="prov">†</span></td></tr>
-          <tr><td class="num">890</td><td class="num">0.05 <span class="prov">†</span></td></tr>
+          <tr><th>k <span class="small muted">[N·m per km/h]</span></th><th>what it does</th></tr>
+          <tr><td class="num">14</td><td>settles, 2.9 km/h short</td></tr>
+          <tr><td class="num">56</td><td>settles, 0.7 km/h short</td></tr>
+          <tr><td class="num">220</td><td><strong>never settles</strong> — past K<sub>u</sub></td></tr>
+          <tr><td class="num">890</td><td><strong>never settles</strong> — past K<sub>u</sub></td></tr>
+          <caption>The ultimate gain is about <strong>115</strong> N·m per km/h. Two of these
+            four are on the far side of it.</caption>
         </table>
       </div>
       <figure class="fig">
         <img src="assets/figures/03-gain-family.svg"
              alt="Four step responses at increasing proportional gain on one axes: each rises faster and settles closer to the setpoint, and none reaches it.">
-        <figcaption>Four gains across two decades. Faster, closer — and every one of them stops
-          short.</figcaption>
+        <figcaption>Left: four gains across two decades. Right: the last half minute,
+          magnified — the two lowest gains have settled short, the two highest are still
+          oscillating.</figcaption>
       </figure>
     </div>
     <!-- Gains and errors here are the analytic values from docs/lecture-01-notebooks.md, hence
@@ -141,17 +160,21 @@ plot_sweep(sw; setpoint = 110)</code></pre>
     <aside class="notes">
       <p><strong>Point at:</strong> the curves in order. Each one rises faster and each one
       stops closer. Then point at the dashed setpoint and say: none of them arrives.</p>
-      <p><strong>Read out</strong> the error column from the executed notebook. The pattern is
-      what matters: every factor of four on the gain cuts the error by about four.</p>
-      <p><strong>Ask the room:</strong> so what gain do we need for zero error?
-      <em>(Infinite. Somebody will say it. That is the punchline of the next slide, so let them
-      say it and then make them prove it.)</em></p>
+      <p><strong>Point at the right-hand panel</strong>, the magnified last half minute. Two of
+      these curves are flat lines below the setpoint. The other two are still oscillating, and
+      they will still be oscillating tomorrow.</p>
+      <p><strong>Say:</strong> so the pattern only holds while the loop is stable. Between 56
+      and 220 we crossed something — the <em>ultimate gain</em>, about 115 N·m per km/h.
+      Past it, "steady-state error" is not a small number, it is a question with no answer.</p>
+      <p><strong>Ask the room:</strong> so what gain do we need for zero error? <em>(Infinite.
+      Somebody will say it — and now you can answer that we cannot even reach 220. There is a
+      ceiling on this approach and we just hit it.)</em></p>
+      <p><strong>Promise section 08:</strong> that ultimate gain is not a nuisance. It is a
+      measurement, and two of the three tuning methods in this lecture are built on it.</p>
       <p><strong>They get wrong:</strong> "just turn it up more". Ask what else grows when the
       gain grows — the commanded torque at the instant of the step, and the loop's appetite for
       sensor noise. We spend section 08 on exactly that bill.</p>
-      <p><strong>If the top gains oscillate</strong> in the executed run, that is not a bug to
-      hide: say the loop is near its stability limit, and promise section 08, where we find
-      that limit deliberately and use it.</p>
+
     </aside>
   </section>
 
@@ -162,16 +185,20 @@ plot_sweep(sw; setpoint = 110)</code></pre>
         <div class="demo">
           <div class="demo-head">
             <span class="nb">03-proportional.ipynb</span>
-            <span class="cell">cell <b>Error against gain</b></span>
+            <span class="cell">cell <b>4. Error against gain</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>ks = exp10.(range(0.7, 3.0; length = 20))
-sw = sweep(cruise_loop(with_I = false, with_D = false),
-           "k", ks; tspan = (0.0, 120.0))
+          <pre><code class="language-julia" data-trim data-noescape># solved from the force balance, not simulated: e = T(v_set - e)/k
+function settled_error(k; v_set = 110.0)
+    e = 0.0
+    for _ in 1:20
+        e = cruise_torque(v_set - e) / k
+    end
+    return e
+end
 
-errs = [steady_state_error(s, 110) for (_, s) in sw]
-plot(ks, errs; xscale = :log10, lw = 2, label = "",
-     xlabel = "k [N.m per km/h]",
-     ylabel = "steady-state error [km/h]")</code></pre>
+K_ULTIMATE = 115.0     # N.m per km/h
+plot(ks, settled_error.(ks); xscale = :log10, lw = 2.5)
+vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -182,13 +209,19 @@ plot(ks, errs; xscale = :log10, lw = 2, label = "",
       <figure class="fig">
         <img src="assets/figures/03-error-vs-gain.svg"
              alt="Steady-state error against proportional gain on a logarithmic gain axis: a hyperbolic decay that approaches zero without reaching it.">
-        <figcaption>Hyperbolic decay. It approaches zero and it never arrives — at any gain the
-          curve is above the axis.</figcaption>
+        <figcaption>Hyperbolic decay, solved from the force balance so it is defined
+          everywhere. It approaches zero and never arrives — and past K<sub>u</sub>, shaded,
+          there is no steady state left to measure.</figcaption>
       </figure>
     </div>
     <aside class="notes">
       <p><strong>Point at:</strong> the curve hugging the axis on the right and never touching
       it. This is the shape of "asymptotically, never".</p>
+      <p><strong>Then point at the shaded region</strong> and be precise about what changed.
+      This curve is <em>solved</em>, not simulated — it is the fixed point of
+      e = T(v−e)/k, which has an answer at every gain. The shading marks where that answer
+      stops meaning anything, because the loop no longer settles. The crosses are the two gains
+      from the last slide that the curve predicts and the simulation refuses to deliver.</p>
       <p><strong>Say:</strong> and now the argument, which is three sentences and you should be
       able to reproduce it in the exam. One: at 110 km/h the car needs about 40 N·m just to
       stand still against drag. Two: a proportional controller's only source of output is

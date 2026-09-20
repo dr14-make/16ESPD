@@ -352,6 +352,62 @@
     </aside>
   </section>
 
+
+  <section>
+    <h2>Where the models live</h2>
+    <div class="map">
+      <div>
+        <h4>Vehicle/ &nbsp;— the car</h4>
+        <p class="rule">Physical components. Lecture 2 uses these unchanged, which is the test
+          for whether something belongs here.</p>
+        <ul>
+          <li><code>IdealEngine.dyad</code> <span class="used">delay, lag, torque limit</span></li>
+          <li><code>Driveline.dyad</code> <span class="used">gear, wheel</span></li>
+          <li><code>VehicleBody.dyad</code> <span class="used">mass, drag, rolling, grade</span></li>
+          <li><code>GradeForce.dyad</code> <span class="used">the hill, as a force</span></li>
+          <li><code>Conversions.dyad</code> <span class="used">ToKmPerHour — the one conversion</span></li>
+          <li><code>CarPlant.dyad</code> <span class="used">all of the above, wired up</span></li>
+          <li><code>GradeProfile.dyad</code> <span class="used">flat → climb → flat</span></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Lecture1/ &nbsp;— what we do to it</h4>
+        <p class="rule">Controllers and scenario harnesses. A plant cannot run on its own: its
+          inputs would be unconnected, so every demo is a harness around <code>CarPlant</code>.</p>
+        <ul>
+          <li><code>WideOpenThrottle.dyad</code> <span class="used">→ section 01</span></li>
+          <li><code>CarStepTest.dyad</code> <span class="used">→ sections 01, 08</span></li>
+          <li><code>CruiseLoop.dyad</code> <span class="used">→ sections 02–06, 08, 09</span></li>
+        </ul>
+        <div class="callout small" style="margin-top:0.8em">
+          <span class="label">Each harness ships an analysis</span>
+          <code>WideOpenThrottleTransient</code>, <code>CarStepTestTransient</code>,
+          <code>CruiseLoopTransient</code> — the sources, the initial conditions and the run
+          window live in the model, so a notebook cell is a run and a plot.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>This slide is the map for the whole lecture.</strong> Leave it up while you say
+      the rule, because it is the thing students most often get wrong when they build their own:</p>
+      <p><strong>Say:</strong> the car goes in one place and the experiment goes in another. If
+      lecture 2 would use it unchanged, it is a <em>Vehicle</em>. If it exists because of what we
+      are teaching today — a step source, a setpoint, a controller — it is a
+      <em>Lecture1</em>. Moving a component between them later breaks every reference to it, so
+      the line gets drawn at the start.</p>
+      <p><strong>Say:</strong> and notice why the harnesses exist at all. <code>CarPlant</code>
+      has two inputs, torque and grade. Leave them unconnected and the model is not solvable —
+      it has more unknowns than equations. So every single demo today is the same plant with
+      something different plugged into those two inputs.</p>
+      <p><strong>Ask the room:</strong> where would a traffic-light sequence belong? A tyre
+      pressure? <em>(The sequence is a scenario — Lecture1. The pressure is the car —
+      Vehicle.)</em></p>
+      <p><strong>Practical:</strong> when a slide carries a grey "open in Dyad" strip, that is
+      the model to have on the second screen for that beat. You do not need it open all the
+      time — only where the diagram says something the plot cannot.</p>
+    </aside>
+  </section>
+
   <section>
     <h2>The car, once</h2>
     <div class="cols">
