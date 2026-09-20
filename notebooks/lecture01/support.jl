@@ -22,11 +22,13 @@ reference to them below is resolved when a function is first called rather than 
 module Lecture01Support
 
 using Pkg
+using Markdown
 
 export setup, CAR,
     sweep, Sweep, rerun,
     plot_speed, plot_sweep, plot_torque, bracket_error!,
     save_figure, deck_figures,
+    show_dyad, dyad_source, dyad_definitions,
     steady_state_error, overshoot, rise_time, fopdt_fit,
     signal, resolve, solution_of
 
@@ -517,6 +519,85 @@ end
 
 pretty(x::Real) = isinteger(x) ? string(Int(round(x))) : string(round(x; sigdigits = 3))
 pretty(x) = string(x)
+
+# ---------------------------------------------------------------------------------------
+# Dyad source
+#
+# A notebook that plots a model's behaviour without ever showing the model asks the reader to
+# take the physics on trust. These pull the declaration straight out of `dyad/`, so the source
+# is carried in the executed output and a student reading the committed notebook sees it
+# without needing the repository checked out.
+# ---------------------------------------------------------------------------------------
+
+"""
+    DYAD_DIR
+
+The Dyad sources, which are the authority on every model these notebooks run.
+"""
+const DYAD_DIR = normpath(@__DIR__, "..", "..", "dyad")
+
+const _DECL = r"^(?:partial\s+|test\s+|external\s+)*(?:component|analysis|connector|type)\s+([A-Za-z_]\w*)"
+
+"""
+    dyad_definitions() -> Vector{String}
+
+Every definition name declared under `dyad/`, sorted. Useful when a name in a notebook no
+longer matches the models.
+"""
+function dyad_definitions()
+    names = String[]
+    for (root, _, files) in walkdir(DYAD_DIR), f in files
+        endswith(f, ".dyad") || continue
+        for line in eachline(joinpath(root, f))
+            m = match(_DECL, line)
+            isnothing(m) || push!(names, m.captures[1])
+        end
+    end
+    return sort!(unique!(names))
+end
+
+"""
+    dyad_source(name) -> (path, first_line, text)
+
+The Dyad declaration of `name`, lifted from `dyad/` with its docstring attached.
+
+A `.dyad` file holds several definitions, so the block runs from the declaration — including
+any `\"\"\"` docstring immediately above it — to the `end` that closes it at column zero.
+"""
+function dyad_source(name::AbstractString)
+    for (root, _, files) in walkdir(DYAD_DIR), f in files
+        endswith(f, ".dyad") || continue
+        path = joinpath(root, f)
+        lines = readlines(path)
+        start = findfirst(l -> (m = match(_DECL, l)) !== nothing && m.captures[1] == name, lines)
+        isnothing(start) && continue
+        # Take the docstring above the declaration when there is one.
+        first_line = start
+        if start > 1 && rstrip(lines[start - 1]) == "\"\"\""
+            opening = findlast(i -> startswith(lines[i], "\"\"\""), 1:(start - 2))
+            isnothing(opening) || (first_line = opening)
+        end
+        stop = findfirst(i -> rstrip(lines[i]) == "end", start:length(lines))
+        isnothing(stop) && throw(ErrorException("`$name` in $path is not closed by `end` at column 0"))
+        stop = start + stop - 1
+        rel = relpath(path, normpath(DYAD_DIR, ".."))
+        return (rel, first_line, join(lines[first_line:stop], "\n"))
+    end
+    near = filter(n -> occursin(lowercase(name), lowercase(n)), dyad_definitions())
+    hint = isempty(near) ? "" : "\nDid you mean: " * join(first(near, 5), ", ")
+    throw(ArgumentError("no Dyad definition named `$name` under dyad/.$hint"))
+end
+
+"""
+    show_dyad(name)
+
+Render the Dyad declaration of `name` in the notebook, headed by the file and line it came
+from so a reader can go and edit the real thing.
+"""
+function show_dyad(name::AbstractString)
+    rel, line, text = dyad_source(name)
+    return Markdown.parse("**`$name`** — [`$rel`]($(joinpath("..", "..", rel))) line $line\n\n```julia\n$text\n```")
+end
 
 # ---------------------------------------------------------------------------------------
 # Figure export
