@@ -1,0 +1,69 @@
+"""
+Torque command in, shaft torque out, through the two lags that make the plant FOPTD.
+
+The transport delay and the first-order lag are load-bearing, not decoration. Without
+them the plant is first order: no proportional gain can drive it to sustained oscillation,
+so Ziegler-Nichols has no ultimate gain to find and Cohen-Coon has no dead time to fit.
+Both lags are physically real — injection-to-torque is a transport delay of roughly one
+engine cycle, manifold filling is a first-order lag of a few tenths of a second — so they
+stay explicit and must not be collapsed into an instantaneous torque source.
+"""
+component IdealEngine
+  "Commanded torque"
+  tau_cmd = RealInput()
+  "Engine output shaft"
+  spline = Spline()
+  "Reaction support (engine mounts)"
+  support = Spline()
+  # Structural because PadeDelay computes its coefficients from delayTime at construction,
+  # so the delay must be a concrete value rather than a symbolic parameter.
+  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.04
+  "Manifold-filling first-order lag"
+  parameter tau_e::Time = 0.3
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150.0
+  delay = BlockComponents.Nonlinear.PadeDelay(delayTime = theta_e)
+  lag = BlockComponents.Continuous.FirstOrder(T = tau_e)
+  # y_min held at zero: the engine cannot deliver braking torque through this path.
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = T_max, y_min = 0)
+  torque = RotationalComponents.Sources.TorqueSource()
+relations
+  connect(tau_cmd, delay.u)
+  connect(delay.y, lag.u)
+  connect(lag.y, limiter.u)
+  connect(limiter.y, torque.tau)
+  connect(torque.spline, spline)
+  connect(torque.support, support)
+end
+
+test component TestIdealEngine
+  "Command above the torque ceiling, applied after a settled start"
+  cmd = BlockComponents.Sources.Step(height = 200.0, offset = 0.0, start_time = 0.5)
+  engine = VehicleSystemsComponents.Vehicle.IdealEngine()
+  "Unit inertia so delivered torque reads directly as angular acceleration"
+  load = RotationalComponents.Components.Inertia(J = 1.0)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(cmd.y, engine.tau_cmd)
+  connect(engine.spline, load.spline_a)
+  connect(engine.support, fixed.spline)
+  initial engine.lag.x = 0.0
+  initial load.w = 0.0
+  initial load.phi = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 5,
+        "atol": {"load.a": 0.001, "load.w": 0.01},
+        "expect": {
+          "initial": {"load.a": 0, "load.w": 0},
+          "final": {"load.a": 150},
+          "signals": ["load.a", "load.w", "engine.limiter.y"]
+        }
+      }
+    }
+  }
+}
+end

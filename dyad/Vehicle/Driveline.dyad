@@ -1,0 +1,64 @@
+"""
+Gearbox and wheel: engine shaft in, road force out.
+
+The gear is kept as its own subcomponent rather than folded into an effective wheel
+radius. Notebook 01 derives the tractive force as `T * i / r` on the board, and the
+model is meant to read the same way: the gear supplies the ratio `i`, the rolling wheel
+supplies the radius `r`, and the composition is their product.
+"""
+component Driveline
+  "Rotational input from the engine"
+  spline = Spline()
+  "Rotational support (gearbox housing)"
+  support_r = Spline()
+  "Translational output to the vehicle body"
+  flange = Flange()
+  "Translational support (road reference)"
+  support_t = Flange()
+  "Gear ratio (engine revolutions per wheel revolution)"
+  parameter i::Real = 4.0
+  "Wheel rolling radius"
+  parameter r::Length = 0.31
+  gear = RotationalComponents.Components.IdealGear(ratio = i)
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = r)
+relations
+  connect(spline, gear.spline_a)
+  connect(gear.spline_b, wheel.spline)
+  connect(wheel.flange, flange)
+  connect(gear.support, support_r)
+  connect(wheel.support_r, support_r)
+  connect(wheel.support_t, support_t)
+end
+
+test component TestDriveline
+  "Constant engine-side torque"
+  torque = RotationalComponents.Sources.ConstantTorque(tau_constant = 100.0)
+  driveline = VehicleSystemsComponents.Vehicle.Driveline()
+  fixed_r = RotationalComponents.Components.Fixed()
+  "Vehicle mass the tractive force accelerates"
+  mass = TranslationalComponents.Components.Mass(m = 1400.0)
+  fixed_t = TranslationalComponents.Components.Fixed()
+relations
+  connect(torque.spline, driveline.spline)
+  connect(torque.support, fixed_r.spline)
+  connect(driveline.support_r, fixed_r.spline)
+  connect(driveline.flange, mass.flange_a)
+  connect(driveline.support_t, fixed_t.flange)
+  initial mass.s = 0.0
+  initial mass.v = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 10,
+        "atol": {"mass.a": 0.0001, "mass.v": 0.001},
+        "expect": {
+          "initial": {"mass.a": 0.9216589862, "mass.v": 0},
+          "final": {"mass.a": 0.9216589862, "mass.v": 9.216589862},
+          "signals": ["mass.a", "mass.v"]
+        }
+      }
+    }
+  }
+}
+end

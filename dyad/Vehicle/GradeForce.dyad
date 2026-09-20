@@ -1,0 +1,53 @@
+"""
+Road-grade force from a time-varying gradient input.
+
+`TranslationalComponents.Components.Mass` only offers a fixed `theta` parameter for
+slope, which cannot represent a hill that begins partway through a run. This force
+source takes the gradient as a signal instead, so a scenario can switch the road from
+flat to a climb at an arbitrary time. `grade` is `tan(alpha)`, matching the convention
+of `RollingResistance`'s `inclination` input so both can be driven from one signal.
+"""
+component GradeForce
+  extends TranslationalComponents.Interfaces.PartialForce
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Vehicle mass"
+  parameter m::Dyad.Mass
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+relations
+  # A force source drives the mass with -flange.f (the same sign convention the stdlib
+  # RollingResistance relies on), so a retarding force needs positive f. A positive grade
+  # is a climb and must decelerate a forward-moving car, hence the positive sign here —
+  # the along-slope gravity term m*g*sin(alpha) opposing travel.
+  f = m * g * sin(atan(grade))
+end
+
+test component TestGradeForce
+  "Flat road, then a 10% climb switched on partway through"
+  grade = BlockComponents.Sources.Step(height = 0.10, offset = 0.0, start_time = 1.0)
+  gf = VehicleSystemsComponents.Vehicle.GradeForce(m = 1400.0)
+  mass = TranslationalComponents.Components.Mass(m = 1400.0)
+  fixed = TranslationalComponents.Components.Fixed()
+relations
+  connect(grade.y, gf.grade)
+  connect(gf.flange, mass.flange_a)
+  connect(gf.support, fixed.flange)
+  initial mass.s = 0.0
+  initial mass.v = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 5,
+        "atol": {"gf.f": 0.01, "mass.a": 0.0001},
+        "expect": {
+          "initial": {"gf.f": 0, "mass.a": 0},
+          "final": {"gf.f": 1366.1174045921907, "mass.a": -0.9757981461372791},
+          "signals": ["gf.f", "mass.a", "mass.v"]
+        }
+      }
+    }
+  }
+}
+end

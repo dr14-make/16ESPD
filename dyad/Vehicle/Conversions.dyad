@@ -1,0 +1,103 @@
+"""
+Signal-level unit conversion: m/s to km/h.
+
+A deliberate exception to composing the standard library. `BlockComponents.Math.Gain(k = 3.6)`
+computes the same thing, but a bare gain in a diagram does not say what it converts, and a
+gain subcomponent plus two connect statements is more indirection than the single equation it
+would hide. Naming the unit lets the schematic document itself.
+"""
+component ToKmPerHour
+  extends BlockComponents.Interfaces.SISO
+relations
+  y = 3.6 * u
+end
+
+test component TestToKmPerHour
+  src = BlockComponents.Sources.Constant(k = 10.0)
+  conv = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+relations
+  connect(src.y, conv.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 1,
+        "atol": {"conv.y": 1e-9},
+        "expect": {
+          "initial": {"conv.y": 36.0},
+          "final": {"conv.y": 36.0},
+          "signals": ["conv.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+"""
+Signal-level unit conversion: rad/s to revolutions per minute.
+
+Same rationale as `ToKmPerHour`: the equation `y = (60 / (2*pi)) * u` is clearer standing on
+its own than hidden inside a `Gain` whose constant `9.5493...` says nothing about what it means.
+"""
+component ToRPM
+  extends BlockComponents.Interfaces.SISO
+relations
+  y = (60 / (2 * pi)) * u
+end
+
+test component TestToRPM
+  src = BlockComponents.Sources.Constant(k = 100.0)
+  conv = VehicleSystemsComponents.Vehicle.ToRPM()
+relations
+  connect(src.y, conv.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 1,
+        "atol": {"conv.y": 1e-9},
+        "expect": {
+          "initial": {"conv.y": 954.9296585513721},
+          "final": {"conv.y": 954.9296585513721},
+          "signals": ["conv.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+"""
+Signal-level unit conversion: fraction to percent.
+
+Same rationale as `ToKmPerHour`: `y = 100 * u` reads as a percentage conversion where a bare
+`Gain(k = 100)` would not.
+"""
+component ToPercent
+  extends BlockComponents.Interfaces.SISO
+relations
+  y = 100 * u
+end
+
+test component TestToPercent
+  src = BlockComponents.Sources.Constant(k = 0.5)
+  conv = VehicleSystemsComponents.Vehicle.ToPercent()
+relations
+  connect(src.y, conv.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 1,
+        "atol": {"conv.y": 1e-9},
+        "expect": {
+          "initial": {"conv.y": 50.0},
+          "final": {"conv.y": 50.0},
+          "signals": ["conv.y"]
+        }
+      }
+    }
+  }
+}
+end

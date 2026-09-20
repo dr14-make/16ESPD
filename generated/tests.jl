@@ -20,3 +20,4 @@ include("test_internals.jl")
 @testset "`VehicleSystemsComponents`" begin
 include("Hello_test.jl")
 end
+include("Vehicle/tests.jl")
