@@ -115,6 +115,7 @@ card that is missing from this deck from one that no cell declares.
 _deck_json(deck::Deck) = Dict{String,Any}(
     "path" => deck.path,
     "notebook" => deck.notebook_path,
+    "preamble" => deck.preamble,
     "slides" => [Dict{String,Any}("cards" => _card_json.(slide.cards)) for slide in deck.slides],
     "cards" => Dict(name => string(cell_id) for (name, cell_id) in deck.cards),
 )

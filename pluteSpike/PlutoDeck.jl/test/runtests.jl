@@ -13,4 +13,5 @@ const LECTURE_DECK = joinpath(FIXTURES, "lecture.deck.json")
     include("deck.jl")
     include("server.jl")
     include("session.jl")
+    include("browser.jl")
 end

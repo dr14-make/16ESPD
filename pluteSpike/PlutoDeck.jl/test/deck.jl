@@ -27,6 +27,7 @@ const ONE_CARD = """
         ]
         @test only(deck.slides[2].cards).name == "metrics"
         @test only(deck.slides[2].cards).snapshot === nothing
+        @test deck.preamble == String[]
         @test deck.cards == cards(THREE_CARDS)
     end
 
@@ -118,6 +119,33 @@ const ONE_CARD = """
             """))
 
         @test only(only(deck.slides).cards).snapshot == "metrics.html"
+    end
+
+    @testset "a preamble names cards that are rendered before any slide and shown on none" begin
+        deck = load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "preamble": ["speed-plot", "target-speed"],
+              "slides": [{ "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
+            """))
+
+        @test deck.preamble == ["speed-plot", "target-speed"]
+        @test only(only(deck.slides).cards).name == "metrics"
+    end
+
+    @testset "a preamble card the notebook does not publish is refused like any other" begin
+        @test_throws ["preamble 1", "declares card = \"plotly\""] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "preamble": ["plotly"],
+              "slides": [{ "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
+            """))
+        @test_throws ["\"preamble\" must be an array"] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK", "preamble": "speed-plot",
+              "slides": [{ "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
+            """))
+        @test_throws ["preamble 2", "must be a non-empty card name"] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK", "preamble": ["speed-plot", ""],
+              "slides": [{ "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
+            """))
     end
 
     @testset "a structural fault names the deck rather than throwing a parse error" begin

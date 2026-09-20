@@ -1,7 +1,7 @@
 "The keys a card placement may carry. `snapshot` names a cached rendering; the loader carries it without interpreting it."
 const CARD_PLACEMENT_KEYS = ("card", "x", "y", "w", "h", "snapshot")
 const SLIDE_KEYS = ("cards",)
-const DECK_KEYS = ("notebook", "slides")
+const DECK_KEYS = ("notebook", "preamble", "slides")
 
 """
     CardPlacement(name, x, y, w, h, snapshot)
@@ -27,14 +27,20 @@ struct Slide
 end
 
 """
-    Deck(path, notebook_path, slides, cards)
+    Deck(path, notebook_path, preamble, slides, cards)
 
-A loaded deck. Every card name on every slide resolves to a cell of `notebook_path`; `cards`
-carries that resolution for the whole notebook, including cards no slide places.
+A loaded deck. Every card name in `preamble` and on every slide resolves to a cell of
+`notebook_path`; `cards` carries that resolution for the whole notebook, including cards the
+deck does not use.
+
+`preamble` names cards that are rendered before any slide and never shown. A cell whose output
+is a side-effecting script — `enable_plutoplotly_offline()` loads a library onto `window` — has
+to have run before a card that depends on it renders, and belongs on no slide.
 """
 struct Deck
     path::String
     notebook_path::String
+    preamble::Vector{String}
     slides::Vector{Slide}
     cards::Dict{String,UUID}
 end
@@ -90,6 +96,7 @@ function load_deck(path::AbstractString)::Deck
     _reject_unknown_keys!(problems, raw, DECK_KEYS, "the deck")
 
     notebook_ref = _string_field(problems, raw, "notebook", "the deck")
+    preamble = _parse_preamble(problems, raw)
     slides = _parse_slides(problems, raw)
 
     notebook_path = if notebook_ref === nothing
@@ -106,10 +113,29 @@ function load_deck(path::AbstractString)::Deck
     (isempty(problems) && notebook_path !== nothing) || throw(DeckLoadError(deck_path, problems))
 
     published = cards(notebook_path)
-    hints = _resolve_cards!(problems, slides, published, notebook_path)
+    hints = _resolve_cards!(problems, preamble, slides, published, notebook_path)
     isempty(problems) || throw(DeckLoadError(deck_path, problems, hints))
 
-    return Deck(deck_path, notebook_path, slides, published)
+    return Deck(deck_path, notebook_path, preamble, slides, published)
+end
+
+function _parse_preamble(problems::Vector{String}, raw::Dict)
+    preamble_raw = get(raw, "preamble", nothing)
+    preamble_raw === nothing && return String[]
+    if !(preamble_raw isa Vector)
+        push!(problems, "the deck: \"preamble\" must be an array of card names, got $(_json_repr(preamble_raw))")
+        return String[]
+    end
+
+    names = String[]
+    for (index, name) in enumerate(preamble_raw)
+        if !(name isa AbstractString) || isempty(strip(name))
+            push!(problems, "preamble $index: must be a non-empty card name, got $(_json_repr(name))")
+            continue
+        end
+        push!(names, String(name))
+    end
+    return names
 end
 
 function _parse_slides(problems::Vector{String}, raw::Dict)
@@ -177,9 +203,14 @@ function _parse_card(problems::Vector{String}, raw, context::String)
 end
 
 "Report every card no cell publishes, and return the hints that help place them."
-function _resolve_cards!(problems::Vector{String}, slides::Vector{Slide},
-        published::Dict{String,UUID}, notebook_path::String)
+function _resolve_cards!(problems::Vector{String}, preamble::Vector{String},
+        slides::Vector{Slide}, published::Dict{String,UUID}, notebook_path::String)
     unresolved = false
+    for (index, name) in enumerate(preamble)
+        haskey(published, name) && continue
+        unresolved = true
+        push!(problems, "preamble $index: no cell of $notebook_path declares card = \"$name\"")
+    end
     for (index, slide) in enumerate(slides), placement in slide.cards
         haskey(published, placement.name) && continue
         unresolved = true

@@ -19,8 +19,9 @@ with Pluto's own renderer, so plots stay interactive and `@bind` widgets defined
 working. One kernel per running instance, never a multi-tenant server. The package lives in
 `PlutoDeck.jl/` and carries the card contract, the deck loader, and the runtime:
 `PlutoDeck.present("<a deck.json>")` starts Pluto, opens the notebook in place and serves the
-deck, with no Node anywhere. What it serves is still a placeholder per card — the renderer
-that fills them is the spike in this directory.
+deck, with no Node anywhere. Cards now show live output: the frontend is plain ES modules
+served straight from `frontend/`, with the Rainbow bundles vendored under `frontend/vendor/`
+because the build pipeline of issue 007 is still deferred.
 
 ## Status
 
@@ -31,7 +32,9 @@ that fills them is the spike in this directory.
     [x] Issue 009     de-risking spike PROVEN — Plotly renders and updates live
     [x] Issues 001-003  PlutoDeck.jl/ — skeleton, card keys, deck loader; `] test PlutoDeck` green
     [x] Issues 004-006  session, HTTP server, present(); Node is out of the runtime
-    [ ] Issues 007-008, 010-015
+    [x] Issues 008-010  kernel client, card renderer, card state machine; cards are live
+    [~] Issue 013     headless-Chrome harness, enough to verify the above
+    [ ] Issues 007, 011-012, 014-015
 
 ## Run the spike
 
@@ -100,12 +103,15 @@ machine or a lecture-hall laptop. Without it, PlutoPlotly fetches from `cdn.plot
 `esm.sh` and `jsdelivr`, which forfeits the offline guarantee the existing deck states three
 times.
 
-### Risk 2 — a deck needs a card that is rendered but not shown
+### Risk 2 — a deck needs a card that is rendered but not shown — **closed**
 
 `enable_plutoplotly_offline()` is a cell whose output is a *side-effecting script*: it must be
 in the DOM and executed before any plot card renders, yet it is not something a slide should
-display. `deck.json` therefore needs a notion of a preamble card — rendered, hidden, ordered
-first. This is not in DESIGN.md and not in any issue; it was found by this spike.
+display. `deck.json` now carries an optional top-level `"preamble"`, an array of card names
+rendered into a hidden container before any slide and shown on none. The frontend waits for
+those cards' scripts to finish — Pluto's own `PlutoJSInitializingContext` set reports that —
+before it paints anything else, so a plot card never draws against a library that has not
+loaded. This was not in DESIGN.md and not in any issue; it was found by the 009 spike.
 
 ### Risk 2b — the kernel gets OOM-killed, and the deck does not notice
 
@@ -132,6 +138,20 @@ Measured at 12.1 s to serving HTML, 29.1 s to kernel ready, 31.2 s to first real
 notebook loading **no** packages. The notebook this course needs will be far worse. Issues 010
 and 012 make that legible rather than shorter; cached snapshots are deliberately deferred.
 
+## Found while implementing 008-010
+
+**Settling cannot require every watched cell to re-run.** The spike waited for *all* watched
+cells' `last_run_timestamp` to advance, which works only because every cell it watched was
+downstream of every bond. A deck has cards that no bond reaches, and waiting for those times out
+on every slider move. The rule that carries both findings is: believe `isIdle()` only once it
+has held, and once no watched cell has produced anything new, for a short quiet window.
+
+**A batch only exists if the write waits for the turn to finish.** Each widget reports its own
+value as its card's scripts finish, so writing the first bond the moment it arrives makes it a
+reactive run of its own — and that run sees every other bond still `missing`, which is the exact
+failure `_setBonds` was written to avoid. A 20 ms collecting window before each write turns a
+page-load burst into one run.
+
 ## Gotchas
 
 All ten live in `README.md` with the reasoning. The three that cost the most:
@@ -152,9 +172,8 @@ Status lives only in `spec/PLAN.md`. Recording progress never means editing an i
 
 ## State of the tree
 
-Nothing is committed; `pluteSpike/` is untracked in full. The package is `pluteSpike/PlutoDeck.jl/`,
-whose own `.gitignore` covers `frontend-dist`, `frontend-dist-*` and `Manifest.toml`. `backend/notebook.jl` has been
-canonicalized by Pluto and carries three probe cells added for the 009 spike
-(`script_probe`, `plotly_offline`, `plotly_demo`) plus a hidden `eval_in_pluto` cell left by
-`worker.execute()` diagnostics. All four are spike scaffolding, not design, and should be
-removed or deliberately kept before a first commit.
+The package is `pluteSpike/PlutoDeck.jl/`, whose own `.gitignore` covers `frontend-dist`,
+`frontend-dist-*` and `Manifest.toml`. `backend/notebook.jl` has been canonicalized by Pluto and
+carries three probe cells added for the 009 spike (`script_probe`, `plotly_offline`,
+`plotly_demo`) plus a hidden `eval_in_pluto` cell left by `worker.execute()` diagnostics. All
+four are spike scaffolding, not design, and should be removed or deliberately kept.
