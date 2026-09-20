@@ -110,7 +110,9 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
     # A `using` executed from inside a running function creates its bindings in a world this
     # method cannot see, so everything that touches those bindings is a separate method
     # reached through `invokelatest`, which compiles it in the current world.
-    pkg = Base.invokelatest(bootstrap_package, package_path)
+    Base.invokelatest(prepare_environment, package_path)
+    check_distribution()
+    pkg = Base.invokelatest(load_package, package_path)
 
     # `strategy = :include` loads the module without binding it anywhere, so anything that
     # looks the package up by name — `list_analyses`, and the notebook's own cells — needs
@@ -128,9 +130,41 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
     return pkg
 end
 
-function bootstrap_package(package_path)
-    DyadOrchestrator.prepare_environment(package_path)
-    return DyadOrchestrator.load_package(package_path; strategy = :include)
+prepare_environment(package_path) = DyadOrchestrator.prepare_environment(package_path)
+load_package(package_path) = DyadOrchestrator.load_package(package_path; strategy = :include)
+
+"""
+    check_distribution()
+
+Fail before loading the library if this Julia cannot see the project's dependencies.
+
+The lecture's `Manifest.toml` is resolved against the Dyad distribution, so on a stock Julia
+the packages resolve by name but are not installed. Loading the library then dies several
+frames deep inside `generated/internals.jl` on whichever dependency happens to be imported
+first, which says nothing about the real cause — the wrong kernel.
+"""
+function check_distribution()
+    absent = filter(("ModelingToolkit", "BlockComponents", "TranslationalComponents")) do name
+        id = Base.identify_package(name)
+        isnothing(id) || isnothing(Base.locate_package(id))
+    end
+    isempty(absent) && return nothing
+
+    error("""
+        This Julia cannot load the project's dependencies: $(join(absent, ", ")) \
+        resolve by name but are not installed.
+
+            running Julia $(VERSION)
+            from $(Sys.BINDIR)
+
+        The notebooks need the Dyad distribution — the `dyad-3.3.0` juliaup channel that
+        `.vscode/settings.json` names in `julia.executablePath`, which is Julia 1.12.7. The
+        juliaup default channel is `release`, Julia 1.12.6, and its depot does not have these
+        packages installed.
+
+        In VS Code: use the kernel picker at the top right of the notebook and choose the
+        Julia 1.12.7 kernel rather than 1.12.6.
+        """)
 end
 
 select_backend(backend::Symbol) = Plots.backend(backend)
