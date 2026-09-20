@@ -724,26 +724,86 @@ v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
 
   <section>
     <h2>246 km/h is wrong, and it is wrong on purpose</h2>
-    <div class="callout warn">
-      <span class="label">The model's honest limitation</span>
-      Our engine delivers its peak torque at every speed. A real one does not: peak torque
-      lives in a band of a few thousand rpm and falls away on both sides.
-    </div>
-    <ul class="small">
-      <li>Everything below 130 km/h — every demo in this lecture — is unaffected, because we
-        never ask for more than about 40 N·m of the 150 available.</li>
-      <li>The top end is fiction. Say so now rather than let a student find it later and
-        distrust the parts that are true.</li>
-      <li>Fixing it means an engine torque map — <strong>which is where lecture 2 starts.</strong></li>
-    </ul>
-    <div class="model solo">
-      <span class="label">Open in Dyad</span>
-      <code>dyad/Vehicle/IdealEngine.dyad</code>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="callout warn small">
+          <span class="label">The model's honest limitation</span>
+          Our engine delivers peak torque at every speed. A real one does not: peak torque
+          lives in a band of a few thousand rpm and falls away on both sides.
+        </div>
+        <ul class="small">
+          <li>Every demo in this lecture runs between 90 and 130 km/h, and never asks for more
+            than about 51 N·m of the 150 available. Unaffected.</li>
+          <li>The top end is fiction. Say so now rather than let a student find it later and
+            distrust the parts that are true.</li>
+          <li>Fixing it means a torque map — <strong>which is where lecture 2 starts.</strong></li>
+        </ul>
+        <div class="model">
+          <span class="label">Open in Dyad</span>
+          <code>dyad/Vehicle/IdealEngine.dyad</code>
+        </div>
+      </div>
+      <div>
+      <svg class="diagram" viewBox="0 0 600 330" role="img"
+           aria-label="Engine torque against crankshaft speed. A flat line at 150 newton-metres across the whole range is our model; a curve that rises, plateaus and falls away is the shape of a real engine. The band where this lecture operates is shaded, and the crankshaft speed implied by 246 km/h is marked well past the real curve's peak.">
+        <defs>
+          <marker id="tm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        </defs>
+
+        <rect x="235.4" y="30" width="69.9" height="250" fill="#eaf1fa"/>
+        <text class="lbl" x="214" y="300">90–130 km/h</text>
+        <text class="lbl" x="206" y="316">where this lecture lives</text>
+
+        <path class="wire" d="M78 30 V280 H548"/>
+        <text class="lbl" x="30" y="63">150</text>
+        <text class="lbl" x="44" y="284">0</text>
+        <text class="lbl" x="6" y="22">torque [N·m]</text>
+        <text class="lbl" x="78" y="318">crank speed [rpm]</text>
+
+        <path class="ghost" d="M78 59.4 H548"/>
+        <path class="arrow-acc" d="M78 59.4 H548" stroke-width="4"/>
+        <text class="f-lbl-acc" x="86" y="50">our model — 150 N·m, at every speed</text>
+
+        <polyline points="124.0,213.8 129.1,212.5 134.2,208.7 139.3,202.5 144.4,194.1 149.5,183.7 154.6,171.8 159.7,158.8 164.8,145.1 170.0,131.1 175.1,117.4 180.2,104.3 185.3,92.4 190.4,82.1 195.5,73.7 200.6,67.5 205.7,63.6 210.8,62.4 215.9,61.9 221.0,61.4 226.2,61.0 231.3,60.6 236.4,60.3 241.5,60.0 246.6,59.7 251.7,59.6 256.8,59.4 261.9,59.4 267.0,59.4 272.1,59.6 277.2,59.7 282.3,60.0 287.5,60.3 292.6,60.6 297.7,61.0 302.8,61.4 307.9,61.9 313.0,62.4 318.1,62.5 323.2,62.8 328.3,63.3 333.4,64.0 338.5,64.9 343.7,66.1 348.8,67.4 353.9,68.9 359.0,70.6 364.1,72.4 369.2,74.4 374.3,76.6 379.4,78.9 384.5,81.3 389.6,83.8 394.7,86.4 399.8,89.1 405.0,91.9 410.1,94.8 415.2,97.7 420.3,100.6 425.4,103.5 430.5,106.5 435.6,109.4 440.7,112.3 445.8,115.1 450.9,117.9 456.0,120.6 461.2,123.3 466.3,125.8 471.4,128.2 476.5,130.5 481.6,132.6 486.7,134.6 491.8,136.5 496.9,138.2 502.0,139.7 507.1,141.0 512.2,142.1 517.3,143.0 522.5,143.8 527.6,144.3 532.7,144.6 537.8,144.7 542.9,144.7 548.0,144.7" fill="none" stroke="#a81f16" stroke-width="3"/>
+        <text class="f-lbl-dngr" x="300" y="112">a real engine</text>
+
+        <path class="ghost" d="M508.8 59.4 V141.4"/>
+        <circle cx="508.8" cy="59.4" r="5" fill="#1f5fa8"/>
+        <circle cx="508.8" cy="141.4" r="5" fill="#a81f16"/>
+        <path class="arrow" d="M508.8 250 V152" marker-end="url(#tm-ar)"/>
+        <text class="lbl-strong" x="452" y="300">246 km/h</text>
+        <text class="lbl" x="456" y="316">= 8400 rpm</text>
+        <text class="f-lbl-dngr" x="514" y="176">≈ 95</text>
+      </svg>
+        <p class="small muted">The red curve is the <em>shape</em> of a petrol engine, drawn to
+          make the comparison — not a measurement, and not this car. The blue line is exact: it
+          is what <code>IdealEngine</code> actually computes.</p>
+      </div>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> a model is a set of assumptions with a speed limit on it, and
       the engineering skill is knowing where that limit is. Ours is honest from 0 to about
       130 km/h and a lie above it.</p>
+      <p><strong>Point at the plot, in this order:</strong></p>
+      <ul>
+        <li>The <strong>blue line</strong>. Flat, at 150, all the way across. That is not a
+          simplification of our model — it <em>is</em> our model. <code>IdealEngine</code>
+          contains a limiter whose ceiling is a constant, and nothing in it knows how fast the
+          crankshaft is turning.</li>
+        <li>The <strong>red curve</strong>. Same peak, but it only reaches it in a band, and it
+          falls away either side. Nothing here is measured — say that out loud — it is the
+          shape every petrol engine has, and the shape is the whole argument.</li>
+        <li>The <strong>shaded band</strong>. Everything we do today happens in there, roughly
+          3100 to 4400 rpm, and in there the two curves agree. Our model is fine <em>because of
+          where we are using it</em>, not because it is right.</li>
+        <li>The <strong>mark at 8400 rpm</strong>. That is where 246 km/h puts the crankshaft.
+          Our model still says 150 N·m. A real engine is down around 95 and falling — so the
+          car never gets there, and the terminal speed we computed is fiction.</li>
+      </ul>
+      <p><strong>Read out:</strong> 90 km/h is 3080 rpm, 130 km/h is 4450, and 246 km/h would be
+      8430. Those come from the same three numbers as the force balance — wheel radius, gear
+      ratio, road speed — so a student can check them.</p>
       <p><strong>They get wrong:</strong> students treat a simulation result as a measurement.
       This is the one slide in the lecture that exists purely to inoculate against that. Do not
       skip it even when short on time — it costs 40 seconds.</p>
@@ -756,6 +816,14 @@ v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
         <li><strong>Ideal engine</strong> — one that delivers its peak torque at every speed. Ours does; a real one does not.</li>
         <li><strong>Torque map</strong> — torque as a function of crankshaft speed, T<sub>max</sub>(ω) instead of a constant. The fix, and lecture 2's subject.</li>
         <li><strong>Model validity</strong> — the range over which you are willing to believe it. Ours: honest to about 130 km/h, fiction above.</li>
+      </ul>
+      <p><strong>Readout — every symbol on this slide</strong></p>
+      <ul>
+        <li><strong>Crank speed</strong> — engine shaft speed in rpm, revolutions per minute. Road speed ÷ wheel radius gives wheel rad/s; times the gear ratio gives the crank.</li>
+        <li><strong>150 N·m</strong> — <code>T_max</code>, the constant ceiling in <code>IdealEngine</code>'s limiter. The blue line.</li>
+        <li><strong>≈ 95 N·m</strong> — what the red shape gives at 8400 rpm. Indicative of a real engine, not of ours.</li>
+        <li><strong>3080 / 4450 / 8430 rpm</strong> — the crank speeds for 90, 130 and 246 km/h in this gearing.</li>
+        <li><strong>51 N·m</strong> — the most any demo in this lecture asks of the engine, on the 130 km/h climb in section 06.</li>
       </ul>
     </aside>
   </section>
