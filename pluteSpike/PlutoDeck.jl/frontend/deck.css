@@ -1,0 +1,38 @@
+:root {
+  --ink: #1c1c1c;
+  --muted: #6b6b6b;
+  --edge: #d6d6d6;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 2rem 1rem;
+  font-family: system-ui, sans-serif;
+  color: var(--ink);
+}
+
+h1 { margin: 0; font-size: 1.4rem; }
+header p { margin: 0.25rem 0; color: var(--muted); font-size: 0.9rem; }
+
+.slide { margin-block: 2rem; }
+.slide h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: 3rem;
+  gap: 0.5rem;
+}
+
+.card {
+  border: 1px dashed var(--edge);
+  border-radius: 0.4rem;
+  padding: 0.6rem;
+  overflow: hidden;
+}
+
+.card h3 { margin: 0; font-size: 0.95rem; }
+.card p { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.8rem; }
+.cell-id { font-family: ui-monospace, monospace; font-size: 0.7rem; }

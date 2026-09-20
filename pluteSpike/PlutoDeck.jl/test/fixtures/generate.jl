@@ -41,6 +41,16 @@ function write_fixture(name, cells)
     @info "wrote" path
 end
 
+# A bond starts as `missing` until a browser reports a widget's value, so every cell that
+# reads one has to stand on its own before that happens.
+runnable_cells() = [
+    carded(1, "frequency", "@bind freq html\"<input type=range min=1 max=10 value=1>\""),
+    uncarded(2, "cycles = coalesce(freq, 1)"),
+    carded(3, "samples", "samples = round.(sin.(range(0, 2\u03c0; length=9)[1:8] .* cycles); digits=3)"),
+    carded(4, "readout", "md\"\"\"**freq** \$(cycles), **samples** \$(length(samples))\"\"\""),
+]
+
 write_fixture("three-cards.jl", three_carded_cells())
+write_fixture("runnable.jl", runnable_cells())
 write_fixture("duplicate-cards.jl",
     push!(three_carded_cells(), carded(5, "metrics", "md\"a second cell claiming the same card\"")))

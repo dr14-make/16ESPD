@@ -17,8 +17,10 @@ their own Pluto metadata; a hand-authored `deck.json` arranges those cards onto 
 gridstack layouts; a Julia package serves a prebuilt TypeScript frontend that renders each card
 with Pluto's own renderer, so plots stay interactive and `@bind` widgets defined in Julia keep
 working. One kernel per running instance, never a multi-tenant server. The package lives in
-`PlutoDeck.jl/` and so far carries the card contract and the deck loader; everything that
-renders is still the spike in this directory that proves the transport works.
+`PlutoDeck.jl/` and carries the card contract, the deck loader, and the runtime:
+`PlutoDeck.present("<a deck.json>")` starts Pluto, opens the notebook in place and serves the
+deck, with no Node anywhere. What it serves is still a placeholder per card — the renderer
+that fills them is the spike in this directory.
 
 ## Status
 
@@ -28,7 +30,8 @@ renders is still the spike in this directory that proves the transport works.
     [x] Spec          spec/PLAN.md, fifteen issues
     [x] Issue 009     de-risking spike PROVEN — Plotly renders and updates live
     [x] Issues 001-003  PlutoDeck.jl/ — skeleton, card keys, deck loader; `] test PlutoDeck` green
-    [ ] Issues 004-008, 010-015
+    [x] Issues 004-006  session, HTTP server, present(); Node is out of the runtime
+    [ ] Issues 007-008, 010-015
 
 ## Run the spike
 

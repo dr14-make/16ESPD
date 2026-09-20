@@ -18,9 +18,9 @@ call open.
 | [001](issues/001-package-skeleton-and-build-layout.md) | Package skeleton and build layout | `enhancement` | `high` | `s` | yes | — | **done** |
 | [002](issues/002-read-card-keys-from-notebook-cell-metadata.md) | Read card keys from notebook cell metadata | `enhancement` | `high` | `s` | yes | 001 | **done** |
 | [003](issues/003-deck-json-schema-loader-and-validation.md) | deck.json schema, loader and validation | `enhancement` | `high` | `m` | yes | 002 | **done** |
-| [004](issues/004-pluto-session-lifecycle.md) | Pluto session lifecycle | `enhancement` | `high` | `m` | yes | 001 | todo |
-| [005](issues/005-http-server-and-the-frontend-directory-toggle.md) | HTTP server and the frontend_directory toggle | `enhancement` | `high` | `m` | yes | 001, 003, 004 | todo |
-| [006](issues/006-present-entry-point.md) | present entry point | `enhancement` | `high` | `s` | yes | 003, 004, 005 | todo |
+| [004](issues/004-pluto-session-lifecycle.md) | Pluto session lifecycle | `enhancement` | `high` | `m` | yes | 001 | **done** |
+| [005](issues/005-http-server-and-the-frontend-directory-toggle.md) | HTTP server and the frontend_directory toggle | `enhancement` | `high` | `m` | yes | 001, 003, 004 | **done** |
+| [006](issues/006-present-entry-point.md) | present entry point | `enhancement` | `high` | `s` | yes | 003, 004, 005 | **done** |
 | [007](issues/007-typescript-build-pipeline.md) | TypeScript build pipeline | `enhancement` | `high` | `m` | yes | 001 | todo |
 | [008](issues/008-kernel-client-connect-bonds-settle.md) | Kernel client: connect, bonds, settle | `enhancement` | `high` | `m` | yes | 007 | todo |
 | [009](issues/009-card-renderer-via-rainbow-ui.md) | Card renderer via rainbow ui | `enhancement` | `high` | `m` | yes | 007 | **spiked** |
