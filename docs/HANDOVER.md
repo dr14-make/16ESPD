@@ -62,28 +62,42 @@ notebooks 03-05 never saturate. Saturation is introduced deliberately in 06 and 
 
 ## Open risks
 
-### Risk 1 — theta_e = 0.04 s is probably too small for the Ziegler-Nichols demo
+### Risk 1 — RESOLVED: theta_e ships at 0.3 s
 
-This is the one that can cost a Tier 1 notebook. Linearizing about 30 m/s:
+Measured, and cross-checked by two independent calculations that agree to three figures:
 
-    vehicle drag slope    dF/dv = 2*0.378*30.6  = 23.1 N/(m/s)
-    vehicle time constant m/(dF/dv) = 1400/23.1 = 60.6 s      (very slow)
-    plant DC gain, torque to speed  (i/r)/23.1  = 0.559 (m/s)/N.m
+    theta_e     w_180        Pu          Ku (N.m per km/h)
+    0.04 s      8.96 rad/s   0.702 s     773
+    0.30 s      2.88 rad/s   2.182 s     115
 
-With theta_e = 0.04 s the loop crosses -180 degrees at roughly 29 rad/s, giving an ultimate
-period of about 0.22 s and an ultimate gain around 27,000 N.m per m/s. At that gain a
-hundredth of a m/s of error saturates a 150 N.m engine, so what the agent will find is relay
-limit-cycling against the torque limit, not the clean linear sustained oscillation that
-Ziegler-Nichols assumes.
+An earlier version of this section predicted `w_180 = 29 rad/s`, `Pu = 0.22 s` and `Ku = 7500`.
+Those numbers were wrong — the transport delay contributes `omega*theta` **radians** of phase,
+and 1.16 rad was mistakenly used as 2.3 degrees. The corrected figures are above; anything
+quoting the old ones is stale.
 
-**Lever:** raise `theta_e`. At theta_e = 0.3 s the crossing moves to about 2.9 rad/s, Pu to
-roughly 2.2 s, and Ku to around 420 — which oscillates at torque amplitudes well inside the
-limit. A 0.2-0.3 s delay is defensible if it is framed as the whole powertrain torque-response
-path (ECU, fuelling, combustion, driveline compliance) rather than injection alone, and that
-framing is also more honest about what the model lumps together.
+**Ship `theta_e = 0.3 s.`** At 0.04 s the Ziegler-Nichols PID gains come out at `Kp = 455`,
+which commands 9100 N.m on a 20 km/h step — sixty-one times what the engine can deliver. At
+0.3 s the same method gives `Kp = 67.5`, which is nine times over. Neither fits inside the
+actuator, but only one of them is recognisably a controller for this car. A 0.2-0.3 s delay is
+defensible as the whole powertrain torque-response path (ECU, fuelling, combustion, driveline
+compliance) rather than injection alone, and the engine's third-order Pade approximation was
+already sized for it.
 
-Task 3 is written to make the agent report a missing `Ku` rather than work around it. If that
-report arrives, raise `theta_e` first before touching anything else.
+Cost of the change: `theta_e` is structural, so it is a recompile. The Vehicle snapshots
+regenerate and notebook 01 must be re-executed, because its fitted dead time shifts. Terminal
+speed and the climb settling speed are unaffected — neither depends on the delay.
+
+### Finding — no heuristic tuning fits inside the actuator on a 20 km/h step
+
+At `theta_e = 0.3 s`, Ziegler-Nichols commands nine times the torque limit and Cohen-Coon from
+the notebook 01 step test (`k = 23.4`) commands about three times it. This is arithmetic, not a
+modelling defect: holding 110 km/h takes 40 N.m, so any gain small enough to fit a 20 km/h step
+inside 150 N.m leaves a steady-state error of about 7 km/h.
+
+Notebook 08 should say so rather than hide it. The honest conclusion is that a heuristic tuning
+gives a starting point, not a shippable controller, and the two real fixes are anti-windup
+(notebook 06) or ramping the setpoint instead of stepping it — which is what production cruise
+control does.
 
 ### Risk 1b — notebooks 03-05 must run with the torque limit lifted
 
