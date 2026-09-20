@@ -1,0 +1,62 @@
+"""
+Open-loop torque step from one cruise to another, on flat road.
+
+The step test of notebook 01: hold a low cruise torque, then step to a higher one and read
+K, tau and theta off the speed response. The two torques are the cruise values the notebook
+derives from the steady-state force balance on paper — `tau_lo` holds 90 km/h, `tau_hi` holds
+110 km/h — and are exposed as parameters so the step test literally runs the equation the
+students just wrote down.
+
+The lag state starts at `tau_lo` and the speed at its matching cruise value, so the car begins
+in equilibrium. Without that the run would burn hundreds of seconds settling before the step,
+since the vehicle's own time constant is about 60 s.
+"""
+component CarStepTest
+  "Cruise torque before the step (holds 90 km/h)"
+  parameter tau_lo::Torque = 31.078
+  "Cruise torque after the step (holds 110 km/h)"
+  parameter tau_hi::Torque = 40.119
+  "Initial speed, matching the tau_lo cruise (25 m/s = 90 km/h)"
+  parameter v0::Velocity = 25.0
+  "Time of the torque step"
+  parameter t_step::Time = 50.0
+  plant = VehicleSystemsComponents.Vehicle.CarPlant()
+  cmd = BlockComponents.Sources.Step(offset = tau_lo, height = tau_hi - tau_lo, start_time = t_step)
+  "Flat road"
+  road = BlockComponents.Sources.Constant(k = 0.0)
+relations
+  connect(cmd.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  initial plant.body.mass.s = 0.0
+  initial plant.body.mass.v = v0
+  initial plant.engine.lag.x = tau_lo
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 500,
+        "atol": {"plant.v_kmh": 0.05, "plant.engine.limiter.y": 0.001},
+        "expect": {
+          "initial": {"plant.v_kmh": 90.0, "plant.engine.limiter.y": 31.078},
+          "final": {"plant.v_kmh": 110.0, "plant.engine.limiter.y": 40.119},
+          "signals": ["plant.v_kmh", "plant.engine.limiter.y", "cmd.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis CarStepTestTransient
+  extends TransientAnalysis(stop = 500)
+  "Cruise torque before the step (holds 90 km/h)"
+  parameter tau_lo::Torque = 31.078
+  "Cruise torque after the step (holds 110 km/h)"
+  parameter tau_hi::Torque = 40.119
+  "Initial speed, matching the tau_lo cruise (25 m/s = 90 km/h)"
+  parameter v0::Velocity = 25.0
+  "Time of the torque step"
+  parameter t_step::Time = 50.0
+  model = VehicleSystemsComponents.Lecture1.CarStepTest(tau_lo = tau_lo, tau_hi = tau_hi, v0 = v0, t_step = t_step)
+relations
+end

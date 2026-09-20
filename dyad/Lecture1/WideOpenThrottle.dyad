@@ -1,0 +1,44 @@
+"""
+Open-loop wide-open-throttle run: full torque from rest on flat road.
+
+A `CarPlant` cannot be a `TransientAnalysis` model on its own — its `tau_cmd` and `grade`
+inputs would be unconnected. This harness drives both from constant sources and carries the
+initial conditions, so notebook 01 can run it to terminal speed and read the transient.
+The command is well above the torque ceiling so the engine clamps at its limit throughout.
+"""
+component WideOpenThrottle
+  plant = VehicleSystemsComponents.Vehicle.CarPlant()
+  "Full throttle: commanded torque above the ceiling so the engine clamps at T_max"
+  cmd = BlockComponents.Sources.Constant(k = 300.0)
+  "Flat road"
+  road = BlockComponents.Sources.Constant(k = 0.0)
+relations
+  connect(cmd.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  initial plant.body.mass.s = 0.0
+  initial plant.body.mass.v = 0.0
+  initial plant.engine.lag.x = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 300,
+        "atol": {"plant.v_kmh": 0.05, "plant.engine.limiter.y": 0.001},
+        "expect": {
+          "initial": {"plant.v_kmh": 0.0},
+          "final": {"plant.v_kmh": 246.40, "plant.engine.limiter.y": 150.0},
+          "signals": ["plant.v_kmh", "plant.engine.limiter.y", "cmd.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis WideOpenThrottleTransient
+  # stop = 300 s is about twice the 143 s the car needs to reach 99% of terminal speed,
+  # so the plot shows the full approach to the steady state.
+  extends TransientAnalysis(stop = 300)
+  model = VehicleSystemsComponents.Lecture1.WideOpenThrottle()
+relations
+end
