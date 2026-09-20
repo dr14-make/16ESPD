@@ -203,11 +203,15 @@ component.
 end
 
 
+include("CarPlant_definition.jl")
 include("Driveline_definition.jl")
 include("GradeForce_definition.jl")
+include("GradeProfile_definition.jl")
 include("IdealEngine_definition.jl")
+include("TestCarPlant_definition.jl")
 include("TestDriveline_definition.jl")
 include("TestGradeForce_definition.jl")
+include("TestGradeProfile_definition.jl")
 include("TestIdealEngine_definition.jl")
 include("TestToKmPerHour_definition.jl")
 include("TestToPercent_definition.jl")

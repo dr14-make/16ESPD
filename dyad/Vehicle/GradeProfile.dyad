@@ -1,0 +1,41 @@
+"""
+Road-grade scenario: flat, then a sustained climb from a given start time.
+
+A step in the gradient signal — flat (zero) until `start_time`, then a constant `gradient`
+held for the rest of the run. Drives a `CarPlant`'s `grade` input. Composed from a standard
+source; no new equations.
+"""
+component GradeProfile
+  "Road gradient output, tan(alpha)"
+  y = RealOutput()
+  "Gradient of the climb, tan(alpha)"
+  parameter gradient::Real = 0.10
+  "Time at which the climb begins"
+  parameter start_time::Time = 30.0
+  step = BlockComponents.Sources.Step(height = gradient, offset = 0.0, start_time = start_time)
+relations
+  connect(step.y, y)
+end
+
+test component TestGradeProfile
+  "Flat until t = 1, then a sustained 10% climb"
+  gp = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = 0.10, start_time = 1.0)
+  sink = BlockComponents.Routing.RealPassThrough()
+relations
+  connect(gp.y, sink.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 2,
+        "atol": {"sink.y": 1e-9},
+        "expect": {
+          "initial": {"sink.y": 0.0},
+          "final": {"sink.y": 0.10},
+          "signals": ["sink.y"]
+        }
+      }
+    }
+  }
+}
+end

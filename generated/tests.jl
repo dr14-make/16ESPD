@@ -21,3 +21,4 @@ include("test_internals.jl")
 include("Hello_test.jl")
 end
 include("Vehicle/tests.jl")
+include("Lecture1/tests.jl")

@@ -1,0 +1,82 @@
+"""
+Longitudinal car plant (L0): torque command and road grade in, speed out.
+
+Chains the engine, driveline and body, and measures the body speed with a velocity sensor.
+The measurement is exposed twice: `v` in SI (m/s) for the internal/physics view, and `v_kmh`
+through the single `ToKmPerHour` conversion in the whole model. `v_kmh` is the primary
+measurement so the control loop built around this plant runs entirely in km/h — setpoint,
+measurement and error all in km/h. The plant internals stay SI; this is the only place a unit
+is converted, and no second conversion is added anywhere downstream.
+"""
+component CarPlant
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Primary measurement: vehicle speed in km/h"
+  v_kmh = RealOutput()
+  "Vehicle speed in SI units (m/s)"
+  v = RealOutput(units = "m/s")
+  engine = VehicleSystemsComponents.Vehicle.IdealEngine()
+  driveline = VehicleSystemsComponents.Vehicle.Driveline()
+  body = VehicleSystemsComponents.Vehicle.VehicleBody()
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+  "Rotational ground for the engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Road reference for the driveline contact"
+  trans_ground = TranslationalComponents.Components.Fixed()
+relations
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, driveline.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(driveline.support_r, rot_ground.spline)
+  connect(driveline.flange, body.flange)
+  connect(driveline.support_t, trans_ground.flange)
+  connect(grade, body.grade)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, v)
+  connect(vsensor.v, tokmh.u)
+  connect(tokmh.y, v_kmh)
+end
+
+test component TestCarPlant
+  "Full torque (clamps to the engine limit)"
+  cmd = BlockComponents.Sources.Constant(k = 300.0)
+  "Road gradient, overridden per case"
+  grade_src = BlockComponents.Sources.Constant(k = 0.0)
+  plant = VehicleSystemsComponents.Vehicle.CarPlant()
+relations
+  connect(cmd.y, plant.tau_cmd)
+  connect(grade_src.y, plant.grade)
+  initial plant.body.mass.s = 0.0
+  initial plant.engine.lag.x = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "terminal_flat": {
+        "stop": 800,
+        "params": {"grade_src.k": 0.0},
+        "initial": {"plant.body.mass.v": 0.0},
+        "atol": {"plant.v_kmh": 0.05, "plant.v": 0.02},
+        "expect": {
+          "initial": {"plant.v_kmh": 0.0},
+          "final": {"plant.v_kmh": 246.3956505391459},
+          "signals": ["plant.v_kmh", "plant.v"]
+        }
+      },
+      "grade_saturation": {
+        "stop": 800,
+        "params": {"grade_src.k": 0.10},
+        "initial": {"plant.body.mass.v": 36.111111111111114},
+        "atol": {"plant.v_kmh": 0.05, "plant.engine.limiter.y": 0.001},
+        "expect": {
+          "initial": {"plant.v_kmh": 130.00000000000003},
+          "final": {"plant.v_kmh": 117.90055362058746, "plant.engine.limiter.y": 150.0},
+          "signals": ["plant.v_kmh", "plant.engine.limiter.y"]
+        }
+      }
+    }
+  }
+}
+end

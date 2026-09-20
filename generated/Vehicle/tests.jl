@@ -16,11 +16,15 @@ end
 
 
 @testset "`VehicleSystemsComponents.Vehicle`" begin
+include("CarPlant_test.jl")
 include("Driveline_test.jl")
 include("GradeForce_test.jl")
+include("GradeProfile_test.jl")
 include("IdealEngine_test.jl")
+include("TestCarPlant_test.jl")
 include("TestDriveline_test.jl")
 include("TestGradeForce_test.jl")
+include("TestGradeProfile_test.jl")
 include("TestIdealEngine_test.jl")
 include("TestToKmPerHour_test.jl")
 include("TestToPercent_test.jl")

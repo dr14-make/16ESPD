@@ -87,7 +87,7 @@ stay explicit and must not be collapsed into an instantaneous torque source.
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent delay of type BlockComponents.Nonlinear.PadeDelay
   delay_overrides = __pop_subcomponent_overrides!(__overrides, "delay")
-  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; delayTime=theta_e, delay_overrides...))
+  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; n=3, delayTime=theta_e, delay_overrides...))
   # Subcomponent lag of type BlockComponents.Continuous.FirstOrder
   lag_overrides = __pop_subcomponent_overrides!(__overrides, "lag")
   push!(__systems, @named lag = BlockComponents.Continuous.FirstOrder(; T=tau_e, lag_overrides...))

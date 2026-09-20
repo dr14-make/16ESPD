@@ -23,7 +23,13 @@ component IdealEngine
   parameter tau_e::Time = 0.3
   "Peak deliverable torque"
   parameter T_max::Torque = 150.0
-  delay = BlockComponents.Nonlinear.PadeDelay(delayTime = theta_e)
+  # Order 3 (m = n, all-pass): phase error stays under 0.005 rad out to omega*theta = 2.5,
+  # so the delay's phase lag is faithful past the loop crossover and does not under-report
+  # the lag the way a first-order Pade does. At theta_e = 0.3 s (where Ziegler-Nichols is
+  # expected to need it) the fastest Pade pole is ~17 rad/s, only ~5x the lag pole, so it
+  # does not stiffen the plant. Sized for that value so the order need not change when
+  # theta_e rises.
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 3, delayTime = theta_e)
   lag = BlockComponents.Continuous.FirstOrder(T = tau_e)
   # y_min held at zero: the engine cannot deliver braking torque through this path.
   limiter = BlockComponents.Nonlinear.Limiter(y_max = T_max, y_min = 0)
