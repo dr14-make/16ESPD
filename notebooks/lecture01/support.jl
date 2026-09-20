@@ -29,7 +29,7 @@ export setup, CAR,
     plot_speed, plot_sweep, plot_torque, bracket_error!,
     save_figure, deck_figures,
     show_dyad, dyad_source, dyad_definitions,
-    steady_state_error, overshoot, rise_time, fopdt_fit,
+    steady_state_error, overshoot, rise_time, crossing_time, fopdt_fit,
     signal, resolve, solution_of
 
 # ---------------------------------------------------------------------------------------
