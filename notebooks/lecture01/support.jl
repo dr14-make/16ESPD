@@ -127,6 +127,7 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
     Core.eval(@__MODULE__, imports)
     Core.eval(Main, imports)
     Base.invokelatest(select_backend, backend)
+    Base.invokelatest(apply_house_style)
 
     return pkg
 end
@@ -169,6 +170,29 @@ function check_distribution()
 end
 
 select_backend(backend::Symbol) = Plots.backend(backend)
+
+"""
+    apply_house_style()
+
+Set the figure defaults every plot in this lecture inherits: a 16:9 landscape canvas and
+margins wide enough for the axis labels.
+
+The deck caps a figure by its height, so a landscape default is what keeps an exported figure
+legible on the slide it lands on. The margins are not cosmetic either — at the default of
+zero, a two-digit y-axis and its label are cropped by the edge of the canvas.
+"""
+function apply_house_style()
+    Plots.default(;
+        size = (960, 540),
+        left_margin = 7Plots.mm,
+        bottom_margin = 6Plots.mm,
+        top_margin = 3Plots.mm,
+        right_margin = 5Plots.mm,
+        titlefontsize = 12,
+        legendfontsize = 9,
+    )
+    return nothing
+end
 
 function install_orchestrator()
     isnothing(Base.identify_package("DyadOrchestrator")) || return nothing
@@ -425,7 +449,9 @@ lowest parameter value to the highest so the family reads as an ordering rather 
 unrelated colours. Each legend entry is the parameter value that produced the curve.
 """
 function plot_sweep(sw::Sweep; sig = SPEED_KMH, setpoint = nothing, name = sw.name, kwargs...)
-    ramp = Plots.palette(:viridis, max(length(sw), 2))
+    # One shade more than the family needs, with the brightest dropped: viridis ends in a
+    # yellow that is unreadable on the white background a slide and a handout both have.
+    ramp = Plots.palette(:viridis, max(length(sw), 2) + 1)
     plt = Plots.plot(; SPEED_AXIS..., kwargs...)
     for (n, (value, sol)) in enumerate(sw)
         t, y = signal(sol, sig)
