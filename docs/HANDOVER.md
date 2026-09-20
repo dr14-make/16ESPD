@@ -124,10 +124,13 @@ Decisions and the reason each was taken, so a takeover does not relitigate them.
 | Noise source | deterministic sum of sines | committed outputs must reproduce; an RNG gives a different plot every run |
 | Anti-windup | build a clamping variant alongside LimPID's back-calculation | the source video teaches clamping and notebook 06 is Tier 1, so the mismatch would be visible on screen |
 | Slip model | 1D, on the multibody friction-curve shape | the 3D slip models are high-index DAEs, far too heavy for an introductory lecture |
+| Unit conversion | a Dyad component on the sensor output, not notebook arithmetic | the conversion is visible as a block in the diagram, and a plotted signal is never transformed after the fact |
+| Loop units | the whole control loop runs in km/h | setpoint, measurement and error are all km/h, so every gain in every notebook means the same thing and the numbers match a dashboard. Plant internals stay SI; exactly one conversion exists, at the sensor |
 
 ## Conventions
 
-- Prose in English. SI internally, km/h on every speed axis.
+- Prose in English. Plant internals SI; the control loop and every speed axis in km/h, via
+  `Vehicle.ToKmPerHour` on the sensor output. Controller gain `k` is therefore N.m per km/h.
 - Model construction and solving go in a shared helper under `src/`; notebook cells stay thin
   so the later Pluto port is a rebind rather than a rewrite.
 - Never edit anything under `generated/`.

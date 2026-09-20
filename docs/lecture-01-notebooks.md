@@ -4,7 +4,9 @@ Cell-by-cell detail for all ten notebooks. Written so that someone who has not s
 planning conversation can build any one of them without asking questions.
 
 Shared conventions: every notebook opens with a one-cell setup that activates the project and
-loads the shared helper from `src/`; every speed axis is km/h; every notebook ends with a short
+loads the shared helper from `notebooks/lecture01/support.jl`; speed axes are km/h because the
+model emits km/h through `Vehicle.ToKmPerHour`, not because the notebook converts anything;
+the control loop runs in km/h throughout, so every gain `k` is in N.m per km/h; every notebook ends with a short
 "what this bought us" markdown cell that names the next notebook. Model construction and
 solving happen in `src/`, so a code cell in a notebook is a call and a plot, not twenty lines
 of assembly.
@@ -102,8 +104,8 @@ the limit, so nothing saturates here. Saturation arrives in notebook 06 and not 
 2. *Code — one run.* Step response at a middling gain, with the steady-state error annotated
    on the plot.
 3. *Code — the gain family.* Four gains spanning about two decades on one axes. Indicative
-   values, to be confirmed: k = 50, 200, 800, 3200 give errors of roughly 2.8, 0.7, 0.18 and
-   0.05 km/h. Confirm the units `LimPID` expects for `k` before trusting these.
+   values, to be confirmed: k = 14, 56, 220, 890 N.m per km/h give steady-state errors of
+   roughly 2.8, 0.7, 0.18 and 0.05 km/h.
 4. *Code — error against gain.* Plot steady-state error against k on a log axis. It decays
    hyperbolically and never reaches zero.
 5. *Markdown — why.* At equilibrium the car needs a non-zero torque just to hold speed against

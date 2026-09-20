@@ -174,3 +174,34 @@ Notebook 10, Tier 3 — build this last.
 
 Verify: a standing start at `mu_scale = 0.2` produces wheelspin — the wheel accelerates while
 the car barely does. Report wheel speed and vehicle speed at the end.
+
+---
+
+## Task 1b — Unit conversion components (addendum to task 1)
+
+Add to the `Vehicle` submodule. These are signal-level conversions that belong in the model, so
+that a diagram shows the conversion as a block and notebooks never do arithmetic on a plotted
+signal.
+
+    ToKmPerHour   extends BlockComponents.Interfaces.SISO,  y = 3.6 * u
+    ToRPM         extends BlockComponents.Interfaces.SISO,  y = (60 / (2*pi)) * u
+    ToPercent     extends BlockComponents.Interfaces.SISO,  y = 100 * u
+
+These are the one deliberate exception to "compose the standard library rather than write
+equations". `BlockComponents.Math.Gain` would do the job, but a subcomponent plus two connect
+statements to express `y = 3.6*u` is more indirection than the equation it hides, and a bare
+`Gain(k = 3.6)` in a diagram does not say what it converts. Name the unit in the component and
+the diagram documents itself.
+
+**Then rewire `CarPlant`** (task 2) so the loop runs in km/h:
+
+- the velocity sensor output passes through `ToKmPerHour`;
+- `CarPlant` exposes `RealOutput v_kmh` as its primary measurement, and keeps `RealOutput v`
+  in m/s available for plots that want SI;
+- `CruiseLoop`'s setpoint input is therefore in km/h, the error is in km/h, and the controller
+  gain `k` has units of N.m per km/h.
+
+This is a single decision applied once: the plant's internals stay SI, and exactly one
+conversion exists in the whole model. Do not add a second one anywhere.
+
+Notebook 10 needs `ToRPM` for wheel speed, and `ToPercent` is for displaying road gradient.

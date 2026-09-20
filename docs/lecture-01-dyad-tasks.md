@@ -86,6 +86,15 @@ fixed `theta` parameter, which cannot represent a hill that starts at t = 30 s.
 `RollingResistance` takes `cr` and `inclination` as inputs, not parameters — drive `cr` from a
 `BlockComponents.Sources.Constant` and `inclination` from the same grade signal as `GradeForce`.
 
+### `ToKmPerHour`, `ToRPM`, `ToPercent`
+
+Signal-level unit conversions, each `extends BlockComponents.Interfaces.SISO` with a single
+equation (`y = 3.6*u`, `y = (60/(2*pi))*u`, `y = 100*u`).
+
+The one deliberate exception to composing the standard library: `Math.Gain` would do it, but a
+subcomponent and two connects to express `y = 3.6*u` is more indirection than the equation it
+hides, and a bare `Gain(k = 3.6)` in a diagram does not say what it converts.
+
 ### `WheeledDriveline` (L1, notebook 10)
 
 As `Driveline` but with `RotationalComponents.Components.Inertia(J_w)` between gear and wheel,
@@ -113,8 +122,14 @@ explicit RK solvers handle it better than BDF, as the multibody equivalent does.
 
 ### `CarPlant` (L0)
 
-`IdealEngine` + `Driveline` + `VehicleBody` + `TranslationalComponents.Sensors.VelocitySensor`.
-Ports: `RealInput tau_cmd`, `RealInput grade`, `RealOutput v`.
+`IdealEngine` + `Driveline` + `VehicleBody` + `TranslationalComponents.Sensors.VelocitySensor`,
+with the sensor output passed through `Vehicle.ToKmPerHour`.
+Ports: `RealInput tau_cmd`, `RealInput grade`, `RealOutput v_kmh` (primary measurement),
+`RealOutput v` (SI, for plots that want it).
+
+**The control loop runs in km/h.** Setpoint, measurement and error are all km/h, so the
+controller gain `k` has units of N.m per km/h. Plant internals stay SI and exactly one
+conversion exists in the whole model — do not add a second one anywhere.
 
 ### `CruiseLoop`
 
