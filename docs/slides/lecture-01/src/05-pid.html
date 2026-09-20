@@ -1,0 +1,333 @@
+
+
+<!-- ===================== 05 — PID ========================================================= -->
+<section data-section-title="05 — PID">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 05</p>
+    <h2>Proportional-integral-derivative</h2>
+    <p class="thesis">Three terms, three jobs: present, past, future.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/05-pid.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> second boolean. <code>with_D = true</code>. That is the only
+      change from the last notebook, and it completes the controller that runs most of the
+      machinery you will ever work on.</p>
+      <p><strong>Timing:</strong> 12 minutes. The three-contributions plot is the one to spend
+      time on — it is the only place in the lecture where you can see the division of labor
+      directly rather than infer it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The third path</h2>
+    <p>$$ u \;=\; k\left(e \;+\; \frac{1}{T_i}\int_0^t e\,d\tau \;+\; T_d\,\frac{de}{dt}\right) $$</p>
+    <div class="cols-3">
+      <div><h3>Present</h3><p class="small">Proportional. How far off am I <em>now</em>?</p></div>
+      <div><h3>Past</h3><p class="small">Integral. How long have I been off?</p></div>
+      <div><h3>Future</h3><p class="small">Derivative. How fast am I closing?</p></div>
+    </div>
+    <div class="callout small">
+      <span class="label">What the derivative actually does</span>
+      Closing on the setpoint fast means the error is shrinking fast — a large negative rate of
+      change — so the derivative path subtracts from the output and takes the foot off early.
+      It brakes <em>on approach</em>, not on arrival.
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the derivative does not know where the setpoint is. It only
+      knows how fast the error is moving. That is enough to anticipate an overshoot before it
+      happens, and it is why the derivative is sometimes called a prediction — a one-term
+      Taylor extrapolation, nothing more mystical than that.</p>
+      <p><strong>They get wrong:</strong> thinking the derivative pushes harder when you are far
+      away. It does the opposite. Far away and closing quickly, it is already pulling back.</p>
+      <p><strong>Flag forward:</strong> in a real controller this is not a pure derivative —
+      there is a filter on it, and section 07 shows what happens without one. Mention it now in
+      one sentence so the <code>Nd</code> parameter is not a surprise later.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two ways to write the same controller</h2>
+    <div class="cols">
+      <div>
+        <h4>Parallel form — three independent gains</h4>
+        <p>$$ u \;=\; K_p\,e \;+\; K_i\!\int_0^t\! e\,d\tau \;+\; K_d\,\frac{de}{dt} $$</p>
+        <p class="small muted">What the course slides show, and what most code and most
+        textbooks use.</p>
+      </div>
+      <div>
+        <h4>Standard form — one gain and two times</h4>
+        <p>$$ u \;=\; k\left(e + \frac{1}{T_i}\!\int_0^t\! e\,d\tau + T_d\,\frac{de}{dt}\right) $$</p>
+        <p class="small muted">What <code>LimPID</code> takes, and what this lecture uses
+        throughout.</p>
+      </div>
+    </div>
+    <div class="cols">
+      <div>
+        <table>
+          <tr><th>From standard to parallel</th><th>and back</th></tr>
+          <tr><td>$K_p = k$</td><td>$k = K_p$</td></tr>
+          <tr><td>$K_i = k/T_i$</td><td>$T_i = K_p/K_i$</td></tr>
+          <tr><td>$K_d = k\,T_d$</td><td>$T_d = K_d/K_p$</td></tr>
+        </table>
+      </div>
+      <div class="callout warn small">
+        <span class="label">Why this slide exists</span>
+        The two forms are the same controller and they are not the same numbers. Handing
+        somebody a $K_i$ where they expected a $T_i$ inverts the meaning of "bigger" — and the
+        tuning tables in section 08 are written in the standard form.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> there is no deep content on this slide and it will still save you
+      an afternoon one day. Every PID library picks one of these two conventions and they rarely
+      say which on the front page.</p>
+      <p><strong>Point at</strong> the middle row. In the parallel form a bigger number means
+      more integral action. In the standard form a bigger number means <em>less</em>, because
+      $T_i$ divides. Same controller, opposite intuition.</p>
+      <p><strong>Ask the room:</strong> which form makes the units easier? <em>(Standard.
+      $T_i$ and $T_d$ are seconds, which you can compare against the plant's own time constant —
+      and that comparison is how you sanity-check a gain set. $K_i$ is in N·m per km/h per
+      second, which means nothing to anybody.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What tuning actually is</h2>
+    <p>$$ C(s) \;=\; k\left(1 + \frac{1}{T_i s} + T_d s\right)
+         \;=\; \underbrace{k}_{\text{gain}}\;
+           \frac{\overbrace{T_i T_d\,s^2 + T_i\,s + 1}^{\text{two zeros}}}
+                {\underbrace{T_i\,s}_{\text{a pole at the origin}}} $$</p>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li>The <strong>pole at the origin</strong> is the integrator. You do not get to move
+            it; it is what kills steady-state error.</li>
+          <li>The <strong>two zeros</strong> are yours to place, and where you put them is set
+            by $T_i$ and $T_d$.</li>
+          <li>The <strong>gain</strong> slides the whole thing up and down.</li>
+        </ul>
+      </div>
+      <div class="callout small">
+        <span class="label">So</span>
+        Everything anyone has ever written about PID tuning — root locus, loop shaping, the
+        three tables in section 08, and turning the knob until it looks right — is a method for
+        answering the same question: <strong>where do the two zeros go, and how much gain?</strong>
+      </div>
+    </div>
+    <p class="small muted">A real controller has one more pole, from the filter on the
+      derivative — section 07's $N_d$.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> if you have had a linear systems course, this is where PID stops
+      looking like three heuristic knobs and starts looking like an ordinary compensator design.
+      If you have not, take the sentence in the box and move on — it is still true and still
+      useful.</p>
+      <p><strong>Say:</strong> and it explains why there are so many tuning methods that all
+      work. They are answering one question with three free parameters, and several different
+      routes get to a good answer.</p>
+      <p><strong>Flag forward:</strong> the methods in section 08 do not look like zero
+      placement at all — they look like arithmetic on measured numbers. That is exactly their
+      appeal: somebody else did the zero placement for a whole family of plants and left you a
+      table.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>P, PI and PID, one step</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">05-pid.ipynb</span>
+            <span class="cell">cell <b>P vs PI vs PID</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>tspan = (0.0, 120.0)
+runs = ["P"   =&gt; cruise_loop(with_I = false, with_D = false, k = 56.0),
+        "PI"  =&gt; cruise_loop(with_I = true,  with_D = false, k = 56.0, Ti = 8.0),
+        "PID" =&gt; cruise_loop(with_I = true,  with_D = true,  k = 56.0, Ti = 8.0, Td = 1.5)]
+
+plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
+for (name, model) in runs
+    sol  = solve(ODEProblem(mtkcompile(model), [], tspan))
+    t, y = signal(sol, SPEED_KMH)
+    plot!(plt, t, y; lw = 2, label = name)
+end
+hline!(plt, [110]; ls = :dash, color = :black, label = "setpoint")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/05-pid.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/05-p-pi-pid.svg"
+             alt="Three step responses on one axes: P settling below the setpoint, PI reaching it with overshoot, PID reaching it with the overshoot suppressed.">
+        <figcaption>The spine of the lecture: short of target, past target, on target.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>This plot is the lecture in one picture.</strong> Give it a full minute of
+      silence before you say anything.</p>
+      <p><strong>Point at</strong> each curve in turn and let the room name the failure:
+      P stops short; PI arrives but goes past; PID arrives and stays.</p>
+      <p><strong>Say:</strong> every one of these is the same car and the same
+      <em>k</em>. Nothing physical changed between them. Three lines of configuration.</p>
+      <p><strong>Ask the room:</strong> if a colleague showed you only the PID curve, what
+      could you not tell? <em>(Whether it is well tuned or merely lucky. Which is exactly why
+      section 08 exists.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Who does what, and when</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">05-pid.ipynb</span>
+            <span class="cell">cell <b>The three contributions</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
+    cruise_loop(with_I = true, with_D = true,
+                k = 56.0, Ti = 8.0, Td = 1.5)), [], tspan))
+
+plt = plot(; xlabel = "time [s]", ylabel = "torque [N.m]")
+for (path, name) in [("controller.P.y", "proportional"),
+                     ("controller.I.y", "integral"),
+                     ("controller.D.y", "derivative")]
+    t, y = signal(sol, path)
+    plot!(plt, t, y; lw = 2, label = name)
+end
+plt</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/05-pid.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/05-three-contributions.svg"
+             alt="Three traces of controller output: a proportional spike at the step decaying away, an integral trace rising to a constant, and a derivative pulse that is zero before and after the transient.">
+        <figcaption>Proportional carries the transient. Integral holds the steady state.
+          Derivative exists only while the error is moving — zero at both ends.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the three traces in order and narrate them:</p>
+      <ul>
+        <li>Proportional: jumps at the step, then decays to almost nothing. It has done its job
+          in the first few seconds and then it retires.</li>
+        <li>Integral: starts at the old cruise torque, climbs, and settles at the new one. It
+          does almost nothing at the step and everything at the end.</li>
+        <li>Derivative: zero before the step, a pulse during the transient, zero after. It is
+          only ever present while something is changing.</li>
+      </ul>
+      <p><strong>Say:</strong> this is the answer to "which gain should I turn". They are not
+      three knobs on the same thing. They act at different times, and the symptom tells you
+      which one to reach for.</p>
+      <p><strong>Ask the room:</strong> at t = 100 s, which term is holding the car at
+      110 km/h? <em>(Only the integral. The other two are at zero. Make them say it out
+      loud.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>How much derivative</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">05-pid.ipynb</span>
+            <span class="cell">cell <b>Td family</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = true, with_D = true,
+                      k = 56.0, Ti = 8.0),
+           "Td", [0.0, 0.5, 1.5, 6.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/05-pid.ipynb">open notebook</a>
+          </div>
+        </div>
+        <ul class="small">
+          <li>Too little: the overshoot survives.</li>
+          <li>Too much: sluggish, and jittery — braking against every wobble.</li>
+        </ul>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/05-td-family.svg"
+             alt="Four step responses at increasing derivative time: overshoot shrinks and then the response becomes slow and ragged.">
+        <figcaption>There is a middle. Past it, more derivative makes the response worse in a
+          different way.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> notice that "more" stops helping. Proportional and integral both
+      trade one property for another monotonically; the derivative has an optimum, and past it
+      the cure is worse than the disease.</p>
+      <p><strong>Point at:</strong> the raggedness in the largest-<em>T<sub>d</sub></em> curve.
+      Say: and this is on a perfectly clean measurement. Put one per cent of speedometer noise
+      on the signal and that curve becomes unusable — section 07.</p>
+      <p><strong>Ask the room:</strong> in a car, what does an aggressive derivative feel like
+      to a passenger? <em>(Surging — the controller reacting to every small change. There is a
+      comfort requirement hiding in the gain set.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why P, PI and PD all have names</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Set a gain to zero and that path disappears. What is left gets named
+        after the letters that remain:</p>
+        <table>
+          <tr><th>Controller</th><th>Paths</th><th>In our model</th></tr>
+          <tr><td>P</td><td>present</td><td><code>with_I = false, with_D = false</code></td></tr>
+          <tr><td>PI</td><td>present, past</td><td><code>with_I = true, with_D = false</code></td></tr>
+          <tr><td>PD</td><td>present, future</td><td><code>with_I = false, with_D = true</code></td></tr>
+          <tr><td>PID</td><td>all three</td><td><code>with_I = true, with_D = true</code></td></tr>
+        </table>
+      </div>
+      <div class="callout small">
+        <span class="label">Which is what we have been doing</span>
+        Sections 03, 04 and 05 are one Dyad model with two booleans flipped. There is no
+        separate "P controller" anywhere in this repository — and there should not be, because
+        they are not separate things.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> PID is not an algorithm you pick off a shelf. It is a family, and
+      you select a member by deciding which of the three questions your plant actually needs
+      answered.</p>
+      <p><strong>Ask the room:</strong> when would you deliberately leave the integrator out?
+      <em>(When the plant already integrates — a motor position loop, where holding a position
+      needs no effort. Adding a second integrator there mostly buys you oscillation.)</em></p>
+      <p><strong>Say:</strong> and when would you leave the derivative out? <em>(When the
+      measurement is noisy and you cannot filter it enough. Which is most of the time — a large
+      fraction of industrial loops in service are PI, not PID.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A controller that reaches the setpoint and does not overshoot getting there.</li>
+      <li>A picture of which term does what, and when — the thing to consult when a loop
+        misbehaves.</li>
+      <li>Four controllers from two booleans.</li>
+    </ul>
+    <p class="lede">Next: the engine runs out of torque, and the integrator does not notice.
+      <a href="#/6">→ 06, integral windup</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything up to here has been on flat road with a step the
+      engine could easily deliver. Every plot has been well behaved. Now we point the car up a
+      hill it cannot climb, and the nice linear story breaks in a way that has hurt real
+      hardware.</p>
+    </aside>
+  </section>
+
+</section>

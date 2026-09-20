@@ -1,0 +1,278 @@
+
+
+<!-- ===================== 09 — Discretization ================================================ -->
+<section data-section-title="09 — Discretization">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 09</p>
+    <h2>Discretization</h2>
+    <p class="thesis">The same controller gets worse purely because it looks less often.</p>
+    <p class="meta"><span class="tier tier-2">Tier 2</span> &nbsp; <code>notebooks/lecture01/09-discretization.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything we have designed today is continuous. Nothing you
+      will ever ship is. This section is the bridge, and it uses the gains we just derived in
+      section 08 — same controller, nothing re-tuned.</p>
+      <p><strong>Timing:</strong> 8 minutes. If you are short, the sample-time sweep alone
+      carries the point.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>A digital controller does nothing, most of the time</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Every sample period, in order:</p>
+        <ol class="small">
+          <li>read the sensors</li>
+          <li>compute</li>
+          <li>command the actuators</li>
+          <li><strong>hold that command, and do nothing at all, until the next tick</strong></li>
+        </ol>
+      </div>
+      <div class="callout small">
+        <span class="label">The part that matters</span>
+        Step four. Between ticks the actuator is holding a decision made with old information,
+        and the plant has moved on since. Everything in this section follows from that.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> an analog controller is changing its output continuously and
+      smoothly. A digital one changes it in steps and then stops thinking. If the steps are
+      small enough and frequent enough, nobody can tell the difference — and that is the whole
+      engineering question: how fast is fast enough?</p>
+      <p><strong>Say:</strong> digital control brings other effects too — quantization, and the
+      transport delay of the computation itself. We are only going to look at sample time,
+      because it is the one that will bite you first.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The strobe light</h2>
+    <div class="cols">
+      <div>
+        <p>You have to walk a winding corridor.</p>
+        <ul class="small">
+          <li><strong>Lights on:</strong> you can see everything as it happens and correct
+            continuously. You could run.</li>
+          <li><strong>Fast strobe:</strong> indistinguishable from the lights being on. Still
+            running.</li>
+          <li><strong>One flash a second:</strong> you slow right down.</li>
+          <li><strong>One flash every few seconds:</strong> you walk into a wall.</li>
+        </ul>
+      </div>
+      <div class="callout">
+        <span class="label">The point of the analogy</span>
+        The corridor never changed. Your <em>information rate</em> did. And the correct response
+        to less information is to move more cautiously — which for a controller means
+        <em>lower gains</em>.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say it as a story, not as a diagram.</strong> Walk a couple of steps while you
+      describe it. The room remembers this one.</p>
+      <p><strong>Ask the room:</strong> if the strobe slows down, what do you do differently?
+      <em>(Slow down. Everyone says it. Then: that is exactly what re-tuning for a slower
+      sample rate means — the fix at the end of this section is not clever, it is the obvious
+      thing you already said.)</em></p>
+      <p><strong>They get wrong:</strong> assuming a slow loop is merely less responsive. It is
+      not — it goes <em>unstable</em>. Less information does not degrade the loop gently; past
+      a point it destroys it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The same gains, at four sample times</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">09-discretization.ipynb</span>
+            <span class="cell">cell <b>The sample-time sweep</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the gains from section 08, untouched
+sw = sweep(cruise_sampled(k = k_zn, Ti = Ti_zn, Td = Td_zn),
+           "Ts", [0.01, 0.1, 0.4, 1.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small">Overshoot grows. Then the loop rings. Then it does not come back.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/09-sample-time-family.svg"
+             alt="Four step responses at increasing sample time: the fastest is indistinguishable from continuous, the next overshoots, the next rings for a long time, and the slowest diverges.">
+        <figcaption>One controller, one car, one gain set. The only difference is how often the
+          loop looks.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the fastest run and say: that is the continuous design. It
+      is indistinguishable from what we drew in section 08.</p>
+      <p><strong>Then walk out along the family</strong> and name each failure as it appears:
+      overshoot, ringing, divergence.</p>
+      <p><strong>Say:</strong> nothing was re-tuned. Nobody touched a gain. The controller that
+      was correct at ten milliseconds is dangerous at one second, and it is the same
+      controller.</p>
+      <p><strong>Ask the room:</strong> which sample time would you pick for a cruise control?
+      <em>(Steer towards the reasoning rather than a number: fast compared with what? The
+      plant's time constant is about a minute; the loop's own bandwidth is seconds. That second
+      number is the one that matters.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What you are looking at</h2>
+    <div class="callout warn">
+      <span class="label">Be straight with the room about this</span>
+      Dyad ships no sampled blocks, so the sampling in this notebook is modelled as a
+      <strong>half-sample transport delay</strong> in the feedback path, not as a real clocked
+      partition. A zero-order hold costs the loop about half a sample of phase, and that is
+      exactly what this reproduces.
+    </div>
+    <ul class="small">
+      <li><strong>What is faithful:</strong> the destabilizing mechanism, and therefore every
+        trend in the previous plot.</li>
+      <li><strong>What is missing:</strong> the staircase. A real held command is piecewise
+        constant; ours is smooth.</li>
+    </ul>
+    <!-- HANDOVER Risk 3: if the clocked-partition stretch landed, this slide becomes the
+         staircase plot instead, and the surrogate stays only as the explanation of why the
+         phase is lost. Replace the callout, not the section. -->
+    <aside class="notes">
+      <p><strong>Say this plainly and do not bury it.</strong> A demonstration that is really a
+      surrogate is fine; a surrogate presented as the real thing is not. Students who later
+      build a real discrete controller need to know which part of today's plot they should
+      expect to see and which part they should not.</p>
+      <p><strong>If the real clocked partition was built</strong> and the notebook shows a
+      genuine staircase command, say so, show it, and point at the flat treads: that is the
+      controller not thinking. Then keep the phase explanation anyway — it is the reason the
+      staircase hurts.</p>
+      <p><strong>Ask the room:</strong> why would half a sample of delay be enough to destroy a
+      loop that was fine? <em>(Because phase margin is a finite budget. Next slide.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why it goes unstable</h2>
+    <div class="cols">
+      <div>
+        <p class="small">A zero-order hold delays the average command by about half a sample
+        period, so at frequency $\omega$ it costs</p>
+        <p>$$ \Delta\varphi \;\approx\; -\,\frac{\omega\,T_s}{2} \ \text{rad} $$</p>
+        <p class="small">Phase margin is a finite budget that your tuning already spent most of.</p>
+        <ul class="small">
+          <li>Spend a little: more overshoot.</li>
+          <li>Spend most of it: the loop rings.</li>
+          <li>Spend all of it: it does not recover.</li>
+        </ul>
+      </div>
+      <div class="callout small">
+        <span class="label">A rule of thumb worth keeping</span>
+        Spend at most about 0.2 rad — roughly 12° — of phase on sampling at the loop's crossover
+        frequency $\omega_c$. That is $T_s &lt; 0.4/\omega_c$: sample some
+        <strong>20 to 30 times faster</strong> than the closed-loop bandwidth, not than the
+        plant.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the same currency as the dead time in section 01. The
+      engine's transport delay was the reason this plant could be driven to sustained
+      oscillation at all; sampling adds more of exactly the same thing, only this time
+      <em>we</em> added it, by choosing a cheaper processor. Delay
+      is delay, whether it comes from fuel injection or from a scheduler. Your loop has a fixed
+      tolerance for it and every source draws on the same account.</p>
+      <p><strong>Say:</strong> and notice the ordering. Overshoot first, ringing next, then
+      divergence. That ordering is a diagnostic — if a loop that used to be fine starts
+      overshooting after a software change, ask what happened to the loop rate before you touch
+      a gain.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two fixes</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">09-discretization.ipynb</span>
+            <span class="cell">cell <b>The fixes</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># 1. sample faster — same gains, Ts back down
+# 2. re-tune for the rate you actually have
+k2, Ti2, Td2 = ziegler_nichols(Ku_slow, Pu_slow)
+
+sol_slow  = solve(ODEProblem(mtkcompile(cruise_sampled(
+    Ts = 1.0, k = k_zn, Ti = Ti_zn, Td = Td_zn)), [], tspan))
+sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
+    Ts = 1.0, k = k2, Ti = Ti2, Td = Td2)), [], tspan))</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small muted">Re-tuning buys back stability, not performance. The slow loop is
+        a slower loop, permanently.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/09-retuned.svg"
+             alt="Two responses at the same slow sample time: the original gains ringing badly, and the re-tuned gains settling smoothly but noticeably slower than the continuous design.">
+        <figcaption>Same slow rate, two gain sets. The re-tuned one is stable — and slower than
+          the design we started from.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the re-tuned curve and then, from memory, at where the
+      continuous design sat. The gap between them is what the cheap processor cost.</p>
+      <p><strong>Say:</strong> this is a real design conversation and it happens on every
+      project. Faster loop rate means more expensive hardware, more power, more heat. Slower
+      means less performance. Somebody has to put a number on that trade, and it is usually the
+      control engineer, because nobody else can.</p>
+      <p><strong>Ask the room:</strong> is there a third option? <em>(Yes — a better discrete
+      design rather than a continuous design converted. That is a course of its own, and it is
+      why the conversion method matters.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>So why design in continuous time at all?</h2>
+    <ul class="small">
+      <li>The mathematics is easier and far better tooled.</li>
+      <li>The plant is continuous anyway — the car does not tick.</li>
+      <li>Modeling plant and controller in the same domain keeps the problem simple.</li>
+    </ul>
+    <p class="lede">Design continuous. Convert. <strong>Then verify that the rate you actually
+    have held up</strong> — which is the plot we just made.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> it is the same argument as using a linear model for a nonlinear
+      plant. We work where the tools are good and then we check the approximation, rather than
+      working where it is hard and being right from the start. The checking is not optional; it
+      is the price of the shortcut.</p>
+      <p><strong>Say:</strong> the gains also change when you convert. The continuous
+      k, T<sub>i</sub>, T<sub>d</sub> and the discrete ones are not the same numbers even for
+      equivalent controllers, and there are several conversion methods that disagree. Mention
+      it; do not go down that road today.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A loop that we broke without touching a single gain.</li>
+      <li>The reason: sampling costs phase, and phase margin is a budget.</li>
+      <li>A workflow: design continuous, convert, verify the rate.</li>
+    </ul>
+    <p class="lede">Next: the tire is an actuator too.
+      <a href="#/10">→ 10, wheel and slip</a></p>
+    <aside class="notes">
+      <p><strong>If you are stopping here,</strong> close on the whole-lecture summary instead —
+      it is the last slide of section 10, and it works from anywhere.</p>
+    </aside>
+  </section>
+
+</section>

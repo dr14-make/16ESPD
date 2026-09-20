@@ -7,14 +7,25 @@ source; no new equations.
 """
 component GradeProfile
   "Road gradient output, tan(alpha)"
-  y = RealOutput()
+  y = RealOutput() {^y}
+  step = BlockComponents.Sources.Step(height = gradient, offset = 0.0, start_time = start_time) {^step}
   "Gradient of the climb, tan(alpha)"
   parameter gradient::Real = 0.10
   "Time at which the climb begins"
   parameter start_time::Time = 30.0
-  step = BlockComponents.Sources.Step(height = gradient, offset = 0.0, start_time = start_time)
 relations
-  connect(step.y, y)
+  connect(step.y, y) {^id3}
+metadata {
+  "_links": {
+    "y": {
+      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 450, "y2": 550}}}
+    },
+    "step": {
+      "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 450, "y2": 550}}}
+    },
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end
 
 test component TestGradeProfile
@@ -29,11 +40,7 @@ metadata {
       "case1": {
         "stop": 2,
         "atol": {"sink.y": 1e-9},
-        "expect": {
-          "initial": {"sink.y": 0.0},
-          "final": {"sink.y": 0.10},
-          "signals": ["sink.y"]
-        }
+        "expect": {"initial": {"sink.y": 0}, "final": {"sink.y": 0.1}, "signals": ["sink.y"]}
       }
     }
   }

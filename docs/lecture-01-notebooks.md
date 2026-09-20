@@ -46,9 +46,13 @@ correct this file where they differ.
    delivered torque on one axes, and speed below.
 7. *Markdown — the three responses.* Mark the transient region and the steady-state region on
    the speed plot. Dynamic response is their sum — slide 6, in the students' own notation.
-8. *Code — read K, tau and theta off the curve.* The dead band at the start is `theta_e`, the
-   rise is dominated by the vehicle's `tau`, and the gain is the steady-state change in speed
-   divided by the change in torque. State all three; notebook 08 uses exactly these.
+8. *Code — read K, tau and theta off the curve.* Report `K = 2.21 (km/h)/N.m`, `tau = 63.0 s`,
+   `theta = 1.63 s`. **Do not claim the fitted `theta` recovers the engine's 0.04 s delay** — it
+   is forty times larger, and it is measuring curvature rather than delay. Drag is quadratic, so
+   the local time constant falls from 74.1 s at 90 km/h to 60.6 s at 110, and dead time is the
+   only FOPTD parameter that can absorb that. Present the tangent gain and time constant at each
+   end instead; they bracket the fit honestly. Notebook 08 uses these three numbers as they
+   stand, because that is what a practitioner would have.
 
 **Plots.** Speed to terminal; commanded vs delivered torque showing lag and dead time; the
 annotated step response with K, tau and theta marked.
@@ -72,9 +76,14 @@ integral and derivative off.
    slide 3's diagram in the notebook's own terms.
 2. *Code — invert the model.* Compute by hand the torque that holds 90 km/h on flat dry road:
    about 31 N.m. Run it open loop. It works.
-3. *Code — break it three ways.* Same constant torque, but (a) a 4% grade, (b) 200 kg of
-   payload, (c) a headwind modelled as a drag-area increase. Plot all four runs on one axes
-   against the 90 km/h target.
+3. *Code — break it three ways.* Same constant torque, but (a) a **1%** grade, (b) 200 kg of
+   payload, (c) a headwind as a 20% drag-area increase. Plot all four runs on one axes against
+   the 90 km/h target. Predicted settling speeds: 58.25, 85.40 and 82.16 km/h.
+
+   The gradient must stay small. Feedforward at 90 km/h commands 31.078 N.m, which is 401 N of
+   tractive force; a 4% grade alone costs 549 N, so the car does not settle low — it stops and
+   rolls backwards. That is a different and much less useful lesson than "the controller was
+   right and the world moved".
 4. *Markdown — what went wrong.* Nothing in the controller. The controller was right; the
    world moved. There is no error signal anywhere in this architecture, so nothing can notice.
 5. *Code — close the loop.* The same three disturbances under proportional control. All three
@@ -95,8 +104,15 @@ integral and derivative off.
 
 **Model.** `Lecture1.CruiseLoop(with_I = false, with_D = false)`.
 
-**Scenario.** Step 90 -> 110 km/h on flat road. Required torque goes 31 -> 40 N.m, well inside
-the limit, so nothing saturates here. Saturation arrives in notebook 06 and not before.
+**Scenario.** Step 90 -> 110 km/h on flat road, **with `y_max` lifted so the engine is
+effectively unlimited**, and a markdown cell saying so: *assume for now an engine that delivers
+whatever we ask; notebook 06 removes that assumption.*
+
+That assumption is not cosmetic. Holding 110 km/h takes about 40 N.m, so any gain leaving a
+visible steady-state error commands many times that during the step — `k = 14` peaks at 280 N.m
+against a real limit of 150, and `k = 890` peaks at 17,800. There is no gain range that both
+sweeps two decades and stays inside the limit, so the honest move is to state the idealization
+and spend it in notebook 06. See Risk 1b in `HANDOVER.md`.
 
 **Cells.**
 

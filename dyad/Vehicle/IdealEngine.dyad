@@ -10,11 +10,22 @@ stay explicit and must not be collapsed into an instantaneous torque source.
 """
 component IdealEngine
   "Commanded torque"
-  tau_cmd = RealInput()
+  tau_cmd = RealInput() {^tau_cmd}
   "Engine output shaft"
-  spline = Spline()
+  spline = Spline() {^spline}
   "Reaction support (engine mounts)"
-  support = Spline()
+  support = Spline() {^support}
+  # Order 3 (m = n, all-pass): phase error stays under 0.005 rad out to omega*theta = 2.5,
+  # so the delay's phase lag is faithful past the loop crossover and does not under-report
+  # the lag the way a first-order Pade does. At theta_e = 0.3 s (where Ziegler-Nichols is
+  # expected to need it) the fastest Pade pole is ~17 rad/s, only ~5x the lag pole, so it
+  # does not stiffen the plant. Sized for that value so the order need not change when
+  # theta_e rises.
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 3, delayTime = theta_e) {^delay}
+  lag = BlockComponents.Continuous.FirstOrder(T = tau_e) {^lag}
+  # y_min held at zero: the engine cannot deliver braking torque through this path.
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = T_max, y_min = 0) {^limiter}
+  torque = RotationalComponents.Sources.TorqueSource() {^torque}
   # Structural because PadeDelay computes its coefficients from delayTime at construction,
   # so the delay must be a concrete value rather than a symbolic parameter.
   "Injection-to-torque transport delay"
@@ -23,24 +34,46 @@ component IdealEngine
   parameter tau_e::Time = 0.3
   "Peak deliverable torque"
   parameter T_max::Torque = 150.0
-  # Order 3 (m = n, all-pass): phase error stays under 0.005 rad out to omega*theta = 2.5,
-  # so the delay's phase lag is faithful past the loop crossover and does not under-report
-  # the lag the way a first-order Pade does. At theta_e = 0.3 s (where Ziegler-Nichols is
-  # expected to need it) the fastest Pade pole is ~17 rad/s, only ~5x the lag pole, so it
-  # does not stiffen the plant. Sized for that value so the order need not change when
-  # theta_e rises.
-  delay = BlockComponents.Nonlinear.PadeDelay(n = 3, delayTime = theta_e)
-  lag = BlockComponents.Continuous.FirstOrder(T = tau_e)
-  # y_min held at zero: the engine cannot deliver braking torque through this path.
-  limiter = BlockComponents.Nonlinear.Limiter(y_max = T_max, y_min = 0)
-  torque = RotationalComponents.Sources.TorqueSource()
 relations
-  connect(tau_cmd, delay.u)
-  connect(delay.y, lag.u)
-  connect(lag.y, limiter.u)
-  connect(limiter.y, torque.tau)
-  connect(torque.spline, spline)
-  connect(torque.support, support)
+  connect(tau_cmd, delay.u) {^id8}
+  connect(delay.y, lag.u) {^id9}
+  connect(lag.y, limiter.u) {^id10}
+  connect(limiter.y, torque.tau) {^id11}
+  connect(torque.spline, spline) {^id12}
+  connect(torque.support, support) {^id13}
+metadata {
+  "_links": {
+    "tau_cmd": {
+      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 450, "y2": 550}}}
+    },
+    "spline": {
+      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}
+    },
+    "delay": {
+      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}
+    },
+    "lag": {
+      "Dyad": {"placement": {"diagram": {"x1": 280, "x2": 380, "y1": 450, "y2": 550}}}
+    },
+    "limiter": {
+      "Dyad": {"placement": {"diagram": {"x1": 440, "x2": 540, "y1": 450, "y2": 550}}}
+    },
+    "torque": {
+      "Dyad": {"placement": {"diagram": {"x1": 580, "x2": 680, "y1": 450, "y2": 550}}}
+    },
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id13": {
+      "Dyad": {"edges": [{"S": 1, "M": [{"x": 630, "y": 1000}], "E": 2}], "path": {}}
+    }
+  }
+}
 end
 
 test component TestIdealEngine

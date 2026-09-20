@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cruise control — live Pluto slide</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Closed-loop cruise control</h1>
+    <p class="sub">Vehicle Systems &amp; Components — live spike against a real Pluto kernel</p>
+  </div>
+  <div id="status" class="status" data-state="connecting"><span class="dot"></span><span class="txt">connecting…</span></div>
+</header>
+
+<main>
+  <section class="panel controls">
+    <h2>Inputs <span class="hint">written as Pluto <code>@bind</code> values</span></h2>
+    <pluto-bind var="v_ref_kmh" label="Target speed" min="60"  max="160" step="1"   value="110" unit=" km/h"></pluto-bind>
+    <pluto-bind var="Kp"        label="Kp"           min="0"   max="20"  step="0.1" value="2"></pluto-bind>
+    <pluto-bind var="Ki"        label="Ki"           min="0"   max="2"   step="0.01" value="0.1"></pluto-bind>
+    <pluto-bind var="Kd"        label="Kd"           min="0"   max="20"  step="0.1" value="0"></pluto-bind>
+    <pluto-bind var="grade_pct" label="Road grade"   min="-8"  max="12"  step="0.5" value="0" unit=" %"></pluto-bind>
+    <pluto-bind var="antiwindup" label="Anti-windup" type="checkbox" value="true"></pluto-bind>
+
+    <h2>Outputs <span class="hint">read back from the notebook</span></h2>
+    <pluto-out cell="metrics"></pluto-out>
+  </section>
+
+  <section class="panel chart">
+    <canvas id="plot"></canvas>
+    <p class="legend">
+      <span class="k k-v"></span> speed &nbsp;
+      <span class="k k-ref"></span> setpoint &nbsp;
+      <span class="k k-tc"></span> commanded torque &nbsp;
+      <span class="k k-td"></span> delivered torque
+    </p>
+  </section>
+</main>
+
+<footer>
+  <span id="trace">—</span>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

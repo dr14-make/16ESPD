@@ -8,26 +8,61 @@ supplies the radius `r`, and the composition is their product.
 """
 component Driveline
   "Rotational input from the engine"
-  spline = Spline()
+  spline = Spline() {^spline}
   "Rotational support (gearbox housing)"
-  support_r = Spline()
+  support_r = Spline() {^support_r}
   "Translational output to the vehicle body"
-  flange = Flange()
+  flange = Flange() {^flange}
   "Translational support (road reference)"
-  support_t = Flange()
+  support_t = Flange() {^support_t}
+  gear = RotationalComponents.Components.IdealGear(ratio = i) {^gear}
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = r) {^wheel}
   "Gear ratio (engine revolutions per wheel revolution)"
   parameter i::Real = 4.0
   "Wheel rolling radius"
   parameter r::Length = 0.31
-  gear = RotationalComponents.Components.IdealGear(ratio = i)
-  wheel = RotationalComponents.Components.IdealRollingWheel(radius = r)
 relations
-  connect(spline, gear.spline_a)
-  connect(gear.spline_b, wheel.spline)
-  connect(wheel.flange, flange)
-  connect(gear.support, support_r)
-  connect(wheel.support_r, support_r)
-  connect(wheel.support_t, support_t)
+  connect(spline, gear.spline_a) {^id7}
+  connect(gear.spline_b, wheel.spline) {^id8}
+  connect(wheel.flange, flange) {^id9}
+  connect(gear.support, support_r) {^id10}
+  connect(wheel.support_r, support_r) {^id11}
+  connect(wheel.support_t, support_t) {^id12}
+metadata {
+  "_links": {
+    "spline": {
+      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 450, "y2": 550}}}
+    },
+    "support_r": {
+      "Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 950, "y2": 1050}}}
+    },
+    "flange": {
+      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    },
+    "support_t": {
+      "Dyad": {"placement": {"diagram": {"x1": 560, "x2": 660, "y1": 950, "y2": 1050}}}
+    },
+    "gear": {
+      "Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 450, "y2": 550}}}
+    },
+    "wheel": {
+      "Dyad": {"placement": {"diagram": {"x1": 520, "x2": 620, "y1": 450, "y2": 550}}}
+    },
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 535, "y": 590}, {"x": 380, "y": 590}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id12": {
+      "Dyad": {"edges": [{"S": 1, "M": [{"x": 605, "y": 1000}], "E": 2}], "path": {}}
+    }
+  }
+}
 end
 
 test component TestDriveline

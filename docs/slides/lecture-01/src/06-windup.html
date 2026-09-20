@@ -1,0 +1,399 @@
+
+
+<!-- ===================== 06 — Integral windup ============================================== -->
+<section data-section-title="06 — Integral windup">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 06</p>
+    <h2>Integral windup</h2>
+    <p class="thesis">The integrator does not know the engine has run out.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/06-windup.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything so far has been true of a linear model. This section
+      is about the first place where the real world stops being linear, and it is the failure
+      that has actually destroyed hardware.</p>
+      <p><strong>Timing:</strong> 14 minutes, and it is worth borrowing from section 09 if you
+      need to. This is the most practically useful thing in the lecture.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The plant has two halves</h2>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li>The <strong>actuator</strong> — the thing that supplies the force. Our engine.</li>
+          <li>The <strong>process</strong> — the thing being pushed. Our car.</li>
+        </ul>
+        <p class="small">Real actuators have backlash, rate limits and <strong>saturation</strong>.
+        A linear model has none of these: ask it for a million newton-metres and it will agree.</p>
+      </div>
+      <div class="callout danger small">
+        <span class="label">The hill we are about to drive up</span>
+        130 km/h on a sustained 10 % climb needs <strong>2024 N</strong> at the road.<br>
+        The engine can deliver <strong>1935 N</strong>.<br>
+        The car will lose, and settle back to about <strong>118 km/h</strong>.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the numbers in the red box are not chosen to make a point. They
+      come out of the force balance we wrote in section 01, with the parameters on the front
+      slide. You can compute them; that is the whole point of having built the car first.</p>
+      <p><strong>Say:</strong> and notice how close it is — 2024 against 1935. Five per cent
+      short. This is not a cartoon overload; it is the ordinary case of a fully loaded car on a
+      long climb.</p>
+      <p><strong>Ask the room:</strong> what does the controller see when the engine is pinned
+      at its limit? <em>(Exactly what it saw before: a speed that is too low. It has no sensor
+      for "the actuator has given up". Hold that thought for two slides.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The climb, with an ordinary PI controller</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">06-windup.ipynb</span>
+            <span class="cell">cell <b>The climb, no anti-windup</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>model = cruise_climb(k = 56.0, Ti = 8.0,
+                     v_set = 130.0, grade = 0.10,
+                     t_climb = (30.0, 90.0),
+                     antiwindup = :none)
+sol = solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
+
+plot_speed(sol; setpoint = 130)
+plot_torque(sol)                        # with the 150 N.m limit drawn on
+signal(sol, "controller.I.y")           # the integrator, separately</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/06-windup.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/06-climb-windup.svg"
+             alt="Stacked traces through a sustained climb: speed falling below the setpoint, delivered torque pinned flat on the limit line, commanded torque and the integrator state climbing far above it.">
+        <figcaption>Delivered torque is flat on the limit. Commanded torque and the integrator
+          keep climbing anyway.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at, in this order:</strong></p>
+      <ul>
+        <li>The speed trace sagging away from the setpoint at t = 30 s. The car is losing.</li>
+        <li>The delivered-torque trace lying flat on the limit line. The engine is doing
+          everything it can.</li>
+        <li>The commanded-torque trace carrying on upward, past the limit, off into nonsense.</li>
+        <li>The integrator, which is what is driving it there.</li>
+      </ul>
+      <p><strong>Say:</strong> the integrator's rule is "error is non-zero, therefore keep
+      accumulating". It is obeying that rule perfectly. Nothing in the loop tells it that the
+      accumulation has stopped buying anything.</p>
+      <p><strong>Read out</strong> the peak commanded torque and compare it to 150 N·m. Say the
+      ratio out loud — it is usually several times over.</p>
+      <p><strong>Say (the drone story, if it helps):</strong> it is the same as holding a drone
+      down on the ground while it is trying to fly to 50 metres. The propellers max out at
+      1000 rpm, the integrator winds the command to 2000, and the moment you let go…</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why the crash is already scheduled</h2>
+    <div class="cols">
+      <div>
+        <p class="small">When the road flattens at t = 90 s, the car accelerates. The error
+        changes sign. The integrator begins to unwind.</p>
+        <p class="small">But it is unwinding <em>from far above the limit</em>. While the
+        command falls from 400 N·m to 150, the engine delivers the same full torque it was
+        delivering before.</p>
+        <p class="small"><strong>Nothing the car does can be seen at the output until the
+        command comes back inside the limit.</strong></p>
+      </div>
+      <div class="callout danger small">
+        <span class="label">The dangerous property</span>
+        The delay between "the error changed sign" and "the actuator responded" is not set by
+        the plant, or by the gains. It is set by how far the integrator was allowed to wander
+        while nobody was looking.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say it with the drone numbers, they are cleaner:</strong> the integrator asks
+      for 2000 rpm, the motors do 1000. Let go. The drone shoots up past 50 m. The error goes
+      negative. The integrator starts coming down — 1900, still 1000 at the motors. 1500, still
+      1000. 1100, still 1000. Only at 1000 does anything at all begin to happen, and by then the
+      drone is out of sight.</p>
+      <p><strong>Say:</strong> and that is the actual harm. Winding up is not itself the
+      problem — commanding 400 N·m from a 150 N·m engine hurts nothing. The problem is the time
+      it takes to <em>unwind</em>, during which the controller is effectively disconnected.</p>
+      <p><strong>Ask the room</strong> before running the next cell: how far past 130 km/h do
+      you think we go? <em>(Take two guesses, write them on the board, then run it.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The overshoot</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">06-windup.ipynb</span>
+            <span class="cell">cell <b>The overshoot</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>plt = plot_speed(sol; setpoint = 130)
+vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
+       label = "climb starts / ends")
+
+@show overshoot(sol, 130; y0 = 130)     # percent of the step</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/06-windup.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="callout warn small">
+          <span class="label">In a real car</span>
+          This is a cruise control that, at the top of a long climb, accelerates hard for
+          several seconds while the driver is doing nothing at all.
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/06-overshoot.svg"
+             alt="Speed through and after the climb: a sag during the climb, then a large overshoot above the setpoint once the road flattens, before settling back.">
+        <figcaption>The road flattens at t = 90 s, and the car keeps accelerating well past the
+          setpoint before the integrator has unwound.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> the peak speed, and how long the car spends above the
+      setpoint. Compare against the guesses on the board.</p>
+      <p><strong>Say:</strong> nobody commanded this. The driver asked for 130 and the car
+      chose to do something else for several seconds. Any control failure that surprises the
+      operator is a safety problem, whatever the numbers say.</p>
+      <p><strong>Ask the room:</strong> what would you change to stop it? <em>(Collect answers
+      before showing the fix. "Limit the output" is the usual first one — and it is not enough
+      on its own, which is a useful thing for them to discover in a moment.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Clamping: two conditions</h2>
+    <svg class="diagram" viewBox="0 0 980 330" role="img"
+         aria-label="Block diagram of the clamping anti-windup logic: the controller output is compared before and after the saturation block, the sign of the error is compared with the sign of the output, and when both tests pass an AND gate switches the integrator input to zero.">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/>
+        </marker>
+      </defs>
+
+      <path class="wire" d="M14 56 H90" marker-end="url(#arrow)"/>
+      <text class="lbl-strong" x="16" y="44">e</text>
+      <rect class="box" x="90"  y="30" width="140" height="52" rx="4"/>
+      <text x="160" y="62" text-anchor="middle" font-size="17">integrator</text>
+      <path class="wire" d="M230 56 H290" marker-end="url(#arrow)"/>
+      <rect class="box" x="290" y="30" width="100" height="52" rx="4"/>
+      <text x="340" y="62" text-anchor="middle" font-size="17">Σ P+I+D</text>
+      <path class="wire" d="M390 56 H450" marker-end="url(#arrow)"/>
+      <rect class="box-accent" x="450" y="30" width="150" height="52" rx="4"/>
+      <text x="525" y="62" text-anchor="middle" font-size="17">saturation</text>
+      <path class="wire" d="M600 56 H670" marker-end="url(#arrow)"/>
+      <rect class="box" x="670" y="30" width="130" height="52" rx="4"/>
+      <text x="735" y="62" text-anchor="middle" font-size="17">actuator</text>
+      <path class="wire" d="M800 56 H950"/>
+      <text class="lbl-strong" x="905" y="44">u</text>
+
+      <path class="wire-soft" d="M425 56 V140 H480" marker-end="url(#arrow)"/>
+      <path class="wire-soft" d="M635 56 V140 H580" marker-end="url(#arrow)"/>
+      <rect class="box" x="480" y="116" width="100" height="48" rx="4"/>
+      <text x="530" y="146" text-anchor="middle" font-size="20">≠ ?</text>
+      <text class="lbl" x="598" y="112">is it saturating</text>
+
+      <path class="wire-soft" d="M45 56 V238 H470" marker-end="url(#arrow)"/>
+      <path class="wire-soft" d="M880 56 V238 H670" marker-end="url(#arrow)"/>
+      <rect class="box" x="470" y="214" width="200" height="48" rx="4"/>
+      <text x="570" y="244" text-anchor="middle" font-size="17">sign e = sign u ?</text>
+      <text class="lbl" x="200" y="228">is the integrator making it worse</text>
+
+      <path class="wire" d="M530 164 V196 H730" marker-end="url(#arrow)"/>
+      <path class="wire" d="M670 238 H730" marker-end="url(#arrow)"/>
+      <rect class="box-accent" x="730" y="166" width="90" height="100" rx="4"/>
+      <text x="775" y="222" text-anchor="middle" font-size="18">AND</text>
+
+      <path class="wire" d="M820 216 H900 V300 H160 V82" marker-end="url(#arrow)"/>
+      <text class="lbl-strong" x="420" y="292">when both hold, the integrator's input becomes zero</text>
+    </svg>
+    <p class="small center muted">Both true → stop integrating. Either one false → the
+      integrator is restored and starts coming down immediately.</p>
+    <aside class="notes">
+      <p><strong>Walk the diagram</strong> with your hand, in this order: output, saturation
+      block, the two comparisons, the AND, the switch back into the integrator.</p>
+      <p><strong>Say:</strong> first check — compare the controller's output before and after
+      the saturation block. Equal means we are inside the limit and everything is fine. Not
+      equal means we are saturating.</p>
+      <p><strong>Say:</strong> second check — do the error and the output have the same sign?
+      Same sign means the integrator is still pushing in the direction that is already
+      saturated. It is trying to make things worse.</p>
+      <p><strong>Say:</strong> both true, and only both, and we switch the integrator's input
+      to zero. It freezes. It does not reset, it does not decay — it holds, ready to move the
+      instant either condition stops being true.</p>
+      <p><strong>They get wrong:</strong> thinking clamping means "limit the integrator to some
+      maximum value". It does not. It stops the accumulation conditionally. A fixed cap would
+      still wind to the cap and still have to unwind from it.</p>
+      <p><strong>Also note:</strong> this is conditional integration, the method taught in the
+      video the students were pointed at. It is not the only method — back-calculation feeds the
+      saturation error back into the integrator instead — and we compare both next.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The other way: back-calculation</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Instead of switching the integrator off, feed the part of the command
+        that did not get through back into it:</p>
+        <p>$$ \dot{I} \;=\; \frac{k}{T_i}\,e \;+\; \frac{1}{T_t}\bigl(u_{sat} - u\bigr)
+             \qquad T_t = N_i\,T_i $$</p>
+        <ul class="small">
+          <li>Inside the limit $u_{sat} = u$, the second term is zero, and it is an ordinary
+            integrator.</li>
+          <li>In saturation the term is negative and pulls the integrator back down towards the
+            value that would just reach the limit.</li>
+        </ul>
+      </div>
+      <div>
+        <table>
+          <tr><th></th><th>Clamping</th><th>Back-calculation</th></tr>
+          <tr><td>Action</td><td>on / off</td><td>continuous</td></tr>
+          <tr><td>Tuning</td><td>none</td><td>$N_i$ — how fast it unwinds</td></tr>
+          <tr><td>Reads</td><td>trivially</td><td>needs a second look</td></tr>
+          <tr><td>In <code>LimPID</code></td><td>the variant built for task 4</td><td>built in, via <code>Ni</code></td></tr>
+        </table>
+        <p class="small muted">Both keep the integrator near the limit rather than far above it,
+        which is the only thing that matters.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the method your toolbox most likely implements, so it is
+      worth being able to read. Clamping is the one that is easy to explain and easy to get
+      right; back-calculation is the one with a smoother handover and one more number to choose.</p>
+      <p><strong>Point at</strong> the tracking time constant $T_t$. Small means the integrator
+      is dragged back hard the moment you saturate; large means it barely notices. Set it too
+      small and the integral path stops contributing at all near the limit.</p>
+      <p><strong>Ask the room:</strong> what does back-calculation do that clamping does not?
+      <em>(It unwinds while still saturated, rather than merely refusing to wind further. In a
+      long saturation both end up in about the same place, which is what the next slide
+      shows.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Three controllers, one hill</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">06-windup.ipynb</span>
+            <span class="cell">cell <b>Three-way comparison</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>variants = [:none, :clamping, :backcalculation]
+
+sols = map(variants) do aw
+    model = cruise_climb(k = 56.0, Ti = 8.0, v_set = 130.0,
+                         grade = 0.10, t_climb = (30.0, 90.0),
+                         antiwindup = aw)
+    solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
+end
+
+[overshoot(s, 130; y0 = 130) for s in sols]     # peak, percent</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/06-windup.ipynb">open notebook</a>
+          </div>
+        </div>
+        <table>
+          <tr><th>Variant</th><th>Peak overshoot</th></tr>
+          <tr><td>none</td><td class="muted">read from the notebook</td></tr>
+          <tr><td>clamping</td><td class="muted">read from the notebook</td></tr>
+          <tr><td>back-calculation</td><td class="muted">read from the notebook</td></tr>
+        </table>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/06-three-way-antiwindup.svg"
+             alt="Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both hold the integrator near the limit and follow the setpoint back cleanly.">
+        <figcaption>Speed above, integrator state below. The difference between the runs is
+          entirely in the lower plot.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at the lower plot first</strong>, not the speed. The integrator traces
+      are where the mechanism is visible: one of them wanders far above the limit, the other
+      two sit on it.</p>
+      <p><strong>Then point at the speed plot</strong> and say: same car, same hill, same gains.
+      The only difference is whether the integrator was allowed to accumulate something it could
+      not spend.</p>
+      <p><strong>Read out</strong> the three overshoot figures.</p>
+      <p><strong>Say:</strong> and note what anti-windup did <em>not</em> fix. The car still
+      falls back to 118 km/h on the climb. No controller can make a 150 N·m engine deliver
+      2024 N of tractive force. Anti-windup does not add performance — it stops you being
+      punished for asking.</p>
+      <p><strong>Ask the room:</strong> which of the two methods would you ship? <em>(Either.
+      Clamping is cheaper and easier to explain to the next engineer; back-calculation is
+      smoother, with a tuning parameter of its own. The real answer is: whichever one your
+      framework already implements correctly.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Set the limit below the real one</h2>
+    <div class="cols">
+      <div>
+        <p class="small">The clamping limit is a number <em>you</em> choose in the controller.
+        It should not be the engine's nameplate figure.</p>
+        <ul class="small">
+          <li>Engines lose torque when hot.</li>
+          <li>And with age.</li>
+          <li>And at altitude, and on poor fuel.</li>
+        </ul>
+        <p class="small">Clamp at exactly 150 N·m and on a hot day the real limit is 140 — so
+        the loop saturates ten newton-metres <em>below</em> where the anti-windup starts
+        working, and it winds up anyway.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">How much below?</span>
+        As much as you distrust your own model of the actuator. That is a judgement, not a
+        formula — and stating it as a judgement is more honest than a number that looks derived.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the part that gets left out of textbook treatments, and
+      it is the part that bites in service. Your anti-windup logic is only armed above the limit
+      you told it about. Tell it about a limit you are sure the hardware can beat.</p>
+      <p><strong>Ask the room:</strong> where else in a vehicle would you apply that reasoning?
+      <em>(Brake pressure, steering rate, battery current — anywhere the datasheet number is an
+      optimistic one.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>The first genuinely nonlinear failure in the lecture — and it came from the actuator,
+        not from the controller's mathematics.</li>
+      <li>Clamping: two conditions, one switch.</li>
+      <li>A rule for the limit itself: below the hardware's, by however much you distrust
+        your model of it.</li>
+    </ul>
+    <p class="lede">Next: the numbers that tell you where to start.
+      <a href="#/8">→ 08, tuning</a> &nbsp;<span class="small muted">(or <a href="#/7">07,
+      derivative and noise</a> if there is time)</span></p>
+    <aside class="notes">
+      <p><strong>This is the safe stopping point.</strong> If you are running long, everything
+      from here on can be cut except section 08, which carries the practical task from the
+      existing course slides. Go straight there.</p>
+    </aside>
+  </section>
+
+</section>

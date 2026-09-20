@@ -13,6 +13,16 @@ component VehicleBody
   flange = Flange()
   "Road gradient, tan(alpha)"
   grade = RealInput()
+  mass = TranslationalComponents.Components.Mass(m = m)
+  # f_nominal is negative so the quadratic force acts as a load (drag) rather than a
+  # propulsion: the stdlib source drives the mass with -flange.f, and its own docstring
+  # states a negative nominal force is what makes it oppose motion in the positive direction.
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g)
+  cr_const = BlockComponents.Sources.Constant(k = f_r)
+  gradeforce = VehicleSystemsComponents.Vehicle.GradeForce(m = m)
+  "Road reference for the resistance reaction forces"
+  ground = TranslationalComponents.Components.Fixed()
   "Vehicle mass"
   parameter m::Dyad.Mass = 1400.0
   "Aerodynamic drag area (Cd * A)"
@@ -25,16 +35,6 @@ component VehicleBody
   parameter f_r::Real = 0.012
   "Gravitational acceleration"
   parameter g::Acceleration = 9.80665
-  mass = TranslationalComponents.Components.Mass(m = m)
-  # f_nominal is negative so the quadratic force acts as a load (drag) rather than a
-  # propulsion: the stdlib source drives the mass with -flange.f, and its own docstring
-  # states a negative nominal force is what makes it oppose motion in the positive direction.
-  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
-  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g)
-  cr_const = BlockComponents.Sources.Constant(k = f_r)
-  gradeforce = VehicleSystemsComponents.Vehicle.GradeForce(m = m)
-  "Road reference for the resistance reaction forces"
-  ground = TranslationalComponents.Components.Fixed()
 relations
   connect(flange, mass.flange_a)
   connect(drag.flange, mass.flange_a)

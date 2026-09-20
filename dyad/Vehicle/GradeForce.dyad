@@ -10,7 +10,7 @@ of `RollingResistance`'s `inclination` input so both can be driven from one sign
 component GradeForce
   extends TranslationalComponents.Interfaces.PartialForce
   "Road gradient, tan(alpha)"
-  grade = RealInput()
+  grade = RealInput() {^grade}
   "Vehicle mass"
   parameter m::Dyad.Mass
   "Gravitational acceleration"
@@ -21,6 +21,13 @@ relations
   # is a climb and must decelerate a forward-moving car, hence the positive sign here —
   # the along-slope gravity term m*g*sin(alpha) opposing travel.
   f = m * g * sin(atan(grade))
+metadata {
+  "_links": {
+    "grade": {
+      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 450, "y2": 550}}}
+    }
+  }
+}
 end
 
 test component TestGradeForce

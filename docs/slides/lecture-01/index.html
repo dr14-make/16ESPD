@@ -792,15 +792,27 @@ plot_torque(sol_step; commanded = "car_st.tau_cmd",
             <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
           </div>
         </div>
-        <p class="small muted">Three numbers. Notebook 08 turns exactly these into a gain set,
-        with no model of the car anywhere in the calculation.</p>
+        <div class="readout">
+          <div class="r"><span class="v">2.21</span><span class="k">K, km/h per N·m</span></div>
+          <div class="r"><span class="v">63.0</span><span class="k">τ, seconds</span></div>
+          <div class="r"><span class="v">1.63</span><span class="k">θ, seconds</span></div>
+        </div>
+
       </div>
-      <figure class="fig">
-        <img src="assets/figures/01-step-annotated.svg"
-             alt="The step response with the dead time, the time constant and the steady-state gain marked on the curve.">
-        <figcaption>The annotated step: θ before anything moves, τ for the rise, K from the
-          settled change divided by the size of the torque step.</figcaption>
-      </figure>
+      <div>
+        <figure class="fig">
+          <img src="assets/figures/01-step-annotated.svg"
+               alt="The step response with the dead time, the time constant and the steady-state gain marked on the curve.">
+          <figcaption>The annotated step: θ before anything moves, τ for the rise, K from the
+            settled change divided by the size of the torque step.</figcaption>
+        </figure>
+        <div class="callout warn small">
+          <span class="label">θ is not the engine's 0.04 s delay</span>
+          It is forty times larger. Drag is quadratic, so the local time constant falls from
+          74.1 s at 90 km/h to 60.6 s at 110, and dead time is the only FOPTD parameter that can
+          absorb that curvature. The fit measures bend, not delay.
+        </div>
+      </div>
     </div>
     <aside class="notes">
       <p><strong>Read out</strong> all three values from the cell output, slowly, with units.
@@ -809,10 +821,20 @@ plot_torque(sol_step; commanded = "car_st.tau_cmd",
       plant plus dead time — FOPTD. A step in, a curve out, three numbers off the curve. No
       free-body diagram, no equations of motion. If somebody handed you this car as a sealed
       box you could still have got here.</p>
-      <p><strong>Point at:</strong> τ — around a minute, which is the sluggishness we already
-      saw. And θ, which is a fraction of a second. The ratio θ/τ is what every tuning rule in
-      notebook 08 keys on: a plant with almost no dead time relative to its time constant is
-      an easy plant.</p>
+      <p><strong>Do not skip the amber box, and do not let it embarrass you.</strong> A student
+      who knows the engine's delay is 0.04 s will see 1.63 s and conclude the fit is broken.
+      It is not. FOPTD has three parameters and our car is not FOPTD — it is a <em>quadratic</em>
+      drag law, so its time constant is different at every speed. The fit spends θ on the
+      mismatch because θ is the only parameter left.</p>
+      <p><strong>Say:</strong> and this is what a practitioner would have. You do not get to
+      know that your plant is really quadratic; you get a curve and three numbers. Notebook 08
+      tunes from these three exactly as they stand, and the controller works — which is the
+      more interesting result.</p>
+      <p><strong>Point at:</strong> the ratio θ/τ — about 0.026 here. That is the number every
+      tuning rule in notebook 08 keys on, and it puts this car at the easy end of the range.</p>
+      <p><strong>Honest framing, if asked:</strong> quote the tangent gain and time constant at
+      each end of the step — 74.1 s at 90 km/h, 60.6 s at 110. They bracket the fit rather than
+      pretending it is exact.</p>
       <p><strong>They get wrong:</strong> reading τ as "time to reach the final value". It is
       the time to reach 63 % of it. The helper uses the two-landmark construction from the
       tuning document, not an eyeball.</p>
@@ -1131,11 +1153,14 @@ end</code></pre>
         <p class="small">Units, once and for all: <em>e</em> is km/h, <em>u</em> is N·m, so
         <strong>k is N·m per km/h</strong>.</p>
       </div>
-      <div class="callout small">
-        <span class="label">The scenario, for the rest of this run</span>
-        Cruise at <strong>90 km/h</strong>, step the setpoint to <strong>110 km/h</strong>,
-        flat road. Holding 90 needs 31 N·m, holding 110 needs 40 N·m — both far below the
-        150 N·m limit, so nothing saturates here. Saturation arrives in section 06, deliberately.
+      <div class="callout warn small">
+        <span class="label">One idealization, stated out loud</span>
+        Cruise at <strong>90 km/h</strong>, step the setpoint to <strong>110 km/h</strong>, flat
+        road. <em>Holding</em> those speeds takes 31 and 40 N·m — nothing. But the instant the
+        setpoint jumps, the error is 20 km/h, and <em>k</em> times 20 is a large number: even the
+        gentlest gain here commands about 280 N·m, and the fiercest about 17,800.
+        <br><strong>So for this section the engine delivers whatever we ask.</strong> The torque
+        limit goes back on in section 06, and that is where it earns its keep.
       </div>
     </div>
     <aside class="notes">
@@ -1526,7 +1551,7 @@ plot_sweep(sw; setpoint = 110)
             <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
           </div>
         </div>
-        <p class="small muted">Shrinking <em>T<sub>i</sub></em> integrates harder. The loop
+        <p class="small muted">Still an unlimited engine. Shrinking <em>T<sub>i</sub></em> integrates harder. The loop
         arrives sooner, then past.</p>
       </div>
       <figure class="fig">
@@ -1612,6 +1637,92 @@ plot_sweep(sw; setpoint = 110)
       <p><strong>Flag forward:</strong> in a real controller this is not a pure derivative —
       there is a filter on it, and section 07 shows what happens without one. Mention it now in
       one sentence so the <code>Nd</code> parameter is not a surprise later.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two ways to write the same controller</h2>
+    <div class="cols">
+      <div>
+        <h4>Parallel form — three independent gains</h4>
+        <p>$$ u \;=\; K_p\,e \;+\; K_i\!\int_0^t\! e\,d\tau \;+\; K_d\,\frac{de}{dt} $$</p>
+        <p class="small muted">What the course slides show, and what most code and most
+        textbooks use.</p>
+      </div>
+      <div>
+        <h4>Standard form — one gain and two times</h4>
+        <p>$$ u \;=\; k\left(e + \frac{1}{T_i}\!\int_0^t\! e\,d\tau + T_d\,\frac{de}{dt}\right) $$</p>
+        <p class="small muted">What <code>LimPID</code> takes, and what this lecture uses
+        throughout.</p>
+      </div>
+    </div>
+    <div class="cols">
+      <div>
+        <table>
+          <tr><th>From standard to parallel</th><th>and back</th></tr>
+          <tr><td>$K_p = k$</td><td>$k = K_p$</td></tr>
+          <tr><td>$K_i = k/T_i$</td><td>$T_i = K_p/K_i$</td></tr>
+          <tr><td>$K_d = k\,T_d$</td><td>$T_d = K_d/K_p$</td></tr>
+        </table>
+      </div>
+      <div class="callout warn small">
+        <span class="label">Why this slide exists</span>
+        The two forms are the same controller and they are not the same numbers. Handing
+        somebody a $K_i$ where they expected a $T_i$ inverts the meaning of "bigger" — and the
+        tuning tables in section 08 are written in the standard form.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> there is no deep content on this slide and it will still save you
+      an afternoon one day. Every PID library picks one of these two conventions and they rarely
+      say which on the front page.</p>
+      <p><strong>Point at</strong> the middle row. In the parallel form a bigger number means
+      more integral action. In the standard form a bigger number means <em>less</em>, because
+      $T_i$ divides. Same controller, opposite intuition.</p>
+      <p><strong>Ask the room:</strong> which form makes the units easier? <em>(Standard.
+      $T_i$ and $T_d$ are seconds, which you can compare against the plant's own time constant —
+      and that comparison is how you sanity-check a gain set. $K_i$ is in N·m per km/h per
+      second, which means nothing to anybody.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What tuning actually is</h2>
+    <p>$$ C(s) \;=\; k\left(1 + \frac{1}{T_i s} + T_d s\right)
+         \;=\; \underbrace{k}_{\text{gain}}\;
+           \frac{\overbrace{T_i T_d\,s^2 + T_i\,s + 1}^{\text{two zeros}}}
+                {\underbrace{T_i\,s}_{\text{a pole at the origin}}} $$</p>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li>The <strong>pole at the origin</strong> is the integrator. You do not get to move
+            it; it is what kills steady-state error.</li>
+          <li>The <strong>two zeros</strong> are yours to place, and where you put them is set
+            by $T_i$ and $T_d$.</li>
+          <li>The <strong>gain</strong> slides the whole thing up and down.</li>
+        </ul>
+      </div>
+      <div class="callout small">
+        <span class="label">So</span>
+        Everything anyone has ever written about PID tuning — root locus, loop shaping, the
+        three tables in section 08, and turning the knob until it looks right — is a method for
+        answering the same question: <strong>where do the two zeros go, and how much gain?</strong>
+      </div>
+    </div>
+    <p class="small muted">A real controller has one more pole, from the filter on the
+      derivative — section 07's $N_d$.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> if you have had a linear systems course, this is where PID stops
+      looking like three heuristic knobs and starts looking like an ordinary compensator design.
+      If you have not, take the sentence in the box and move on — it is still true and still
+      useful.</p>
+      <p><strong>Say:</strong> and it explains why there are so many tuning methods that all
+      work. They are answering one question with three free parameters, and several different
+      routes get to a good answer.</p>
+      <p><strong>Flag forward:</strong> the methods in section 08 do not look like zero
+      placement at all — they look like arithmetic on measured numbers. That is exactly their
+      appeal: somebody else did the zero placement for a whole family of plants and left you a
+      table.</p>
     </aside>
   </section>
 
@@ -2064,6 +2175,47 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
   </section>
 
   <section>
+    <h2>The other way: back-calculation</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Instead of switching the integrator off, feed the part of the command
+        that did not get through back into it:</p>
+        <p>$$ \dot{I} \;=\; \frac{k}{T_i}\,e \;+\; \frac{1}{T_t}\bigl(u_{sat} - u\bigr)
+             \qquad T_t = N_i\,T_i $$</p>
+        <ul class="small">
+          <li>Inside the limit $u_{sat} = u$, the second term is zero, and it is an ordinary
+            integrator.</li>
+          <li>In saturation the term is negative and pulls the integrator back down towards the
+            value that would just reach the limit.</li>
+        </ul>
+      </div>
+      <div>
+        <table>
+          <tr><th></th><th>Clamping</th><th>Back-calculation</th></tr>
+          <tr><td>Action</td><td>on / off</td><td>continuous</td></tr>
+          <tr><td>Tuning</td><td>none</td><td>$N_i$ — how fast it unwinds</td></tr>
+          <tr><td>Reads</td><td>trivially</td><td>needs a second look</td></tr>
+          <tr><td>In <code>LimPID</code></td><td>the variant built for task 4</td><td>built in, via <code>Ni</code></td></tr>
+        </table>
+        <p class="small muted">Both keep the integrator near the limit rather than far above it,
+        which is the only thing that matters.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the method your toolbox most likely implements, so it is
+      worth being able to read. Clamping is the one that is easy to explain and easy to get
+      right; back-calculation is the one with a smoother handover and one more number to choose.</p>
+      <p><strong>Point at</strong> the tracking time constant $T_t$. Small means the integrator
+      is dragged back hard the moment you saturate; large means it barely notices. Set it too
+      small and the integral path stops contributing at all near the limit.</p>
+      <p><strong>Ask the room:</strong> what does back-calculation do that clamping does not?
+      <em>(It unwinds while still saturated, rather than merely refusing to wind further. In a
+      long saturation both end up in about the same place, which is what the next slide
+      shows.)</em></p>
+    </aside>
+  </section>
+
+  <section>
     <h2>Three controllers, one hill</h2>
     <div class="cols cols-wide-right">
       <div>
@@ -2464,6 +2616,51 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
   </section>
 
   <section>
+    <h2>What every one of these tables assumes</h2>
+    <p>$$ G(s) \;=\; \frac{K\,e^{-\theta s}}{\tau s + 1} \qquad\text{first order plus dead time}$$</p>
+    <div class="cols cols-wide-left">
+      <div>
+        <table>
+          <tr><th></th><th>is</th><th>here</th></tr>
+          <tr><td>$K$</td><td>steady-state gain — output change per unit of input change</td><td>km/h per N·m</td></tr>
+          <tr><td>$\tau$</td><td>time constant — time to cover 63 % of the change</td><td>s</td></tr>
+          <tr><td>$\theta$</td><td>dead time — how long nothing happens first</td><td>s</td></tr>
+        </table>
+        <p class="small">Three numbers. Not a model of a car — a model of a <em>shape</em>, and
+        a great many industrial plants have that shape.</p>
+      </div>
+      <div>
+        <h4>The ratio that decides everything</h4>
+        <p class="center">$$ r \;=\; \theta/\tau $$</p>
+        <table>
+          <tr><th>$\theta/\tau$</th><th>character</th></tr>
+          <tr><td>&lt; 0.1</td><td>easy — high gains are available, PI is usually enough</td></tr>
+          <tr><td>0.1 – 1</td><td>ordinary — what the tables were fitted for</td></tr>
+          <tr><td>&gt; 1</td><td>dead-time dominated — PID struggles; you want a predictor</td></tr>
+        </table>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> before any table, this. Every heuristic method in this section
+      assumes your plant looks like that transfer function. Ours does, because we built it to —
+      a first-order body with a lag and a transport delay in front of it.</p>
+      <p><strong>Point at</strong> the ratio table. This is the number that tells you whether
+      the job is easy. A plant with almost no dead time relative to its time constant will take
+      almost any gain you throw at it; a plant that is mostly dead time will not.</p>
+      <p><strong>Read out</strong> our car's ratio: θ = 1.63 s against τ = 63 s, so
+      θ/τ ≈ 0.026 — the easy end of the table, and comfortably inside where these rules were
+      fitted.</p>
+      <p><strong>And flag the consequence now,</strong> because it explains a plot several
+      slides from here: Cohen-Coon's gain scales as τ/θ, so a small ratio buys a large gain —
+      mathematically correct, and quite possibly more than a 150 N·m engine can execute. That is
+      not the table being wrong. That is the saturation trap arriving early.</p>
+      <p><strong>Ask the room:</strong> what would make this car harder to control?
+      <em>(More dead time. Which is exactly what sampling adds in section 09 — same ratio, made
+      worse by our own software.)</em></p>
+    </aside>
+  </section>
+
+  <section>
     <h2>The step test, again — for real this time</h2>
     <div class="cols cols-wide-right">
       <div>
@@ -2514,13 +2711,78 @@ K, tau, theta = fopdt_fit(sol)
   </section>
 
   <section>
+    <h2>Reading the three numbers off the curve</h2>
+    <svg class="diagram" viewBox="0 0 980 282" role="img"
+         aria-label="A step response with the construction that yields the three FOPTD parameters: the input step at t0, the half-change and 63 percent landmarks at t2 and t3, the intercept t1 they imply, the dead time theta from t0 to t1 and the time constant tau from t1 to t3.">
+      <defs>
+        <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+      </defs>
+
+      <path class="wire" d="M96 26 V216 H696"/>
+      <text class="lbl" x="90" y="18">output</text>
+      <text class="lbl" x="666" y="236">time</text>
+
+      <polyline class="arrow-acc" points="96.0,216.0 98.5,216.0 101.0,216.0 103.5,216.0 106.0,216.0 108.5,216.0 111.0,216.0 113.5,216.0 116.0,216.0 118.5,216.0 121.0,216.0 123.5,216.0 126.0,216.0 128.5,216.0 131.0,216.0 133.5,216.0 136.0,216.0 138.5,216.0 141.0,216.0 143.5,216.0 146.0,216.0 148.5,216.0 151.0,216.0 153.5,216.0 156.0,216.0 158.5,216.0 161.0,216.0 163.5,216.0 166.0,216.0 168.5,215.3 171.0,212.0 173.5,208.7 176.0,205.5 178.5,202.3 181.0,199.2 183.5,196.1 186.0,193.2 188.5,190.2 191.0,187.3 193.5,184.5 196.0,181.7 198.5,179.0 201.0,176.4 203.5,173.7 206.0,171.2 208.5,168.6 211.0,166.2 213.5,163.7 216.0,161.4 218.5,159.0 221.0,156.7 223.5,154.5 226.0,152.3 228.5,150.1 231.0,148.0 233.5,145.9 236.0,143.8 238.5,141.8 241.0,139.9 243.5,137.9 246.0,136.0 248.5,134.2 251.0,132.3 253.5,130.5 256.0,128.8 258.5,127.1 261.0,125.4 263.5,123.7 266.0,122.1 268.5,120.5 271.0,118.9 273.5,117.4 276.0,115.8 278.5,114.4 281.0,112.9 283.5,111.5 286.0,110.1 288.5,108.7 291.0,107.3 293.5,106.0 296.0,104.7 298.5,103.4 301.0,102.2 303.5,101.0 306.0,99.8 308.5,98.6 311.0,97.4 313.5,96.3 316.0,95.2 318.5,94.1 321.0,93.0 323.5,91.9 326.0,90.9 328.5,89.9 331.0,88.9 333.5,87.9 336.0,87.0 338.5,86.0 341.0,85.1 343.5,84.2 346.0,83.3 348.5,82.4 351.0,81.6 353.5,80.7 356.0,79.9 358.5,79.1 361.0,78.3 363.5,77.5 366.0,76.7 368.5,76.0 371.0,75.3 373.5,74.5 376.0,73.8 378.5,73.1 381.0,72.5 383.5,71.8 386.0,71.1 388.5,70.5 391.0,69.8 393.5,69.2 396.0,68.6 398.5,68.0 401.0,67.4 403.5,66.9 406.0,66.3 408.5,65.7 411.0,65.2 413.5,64.7 416.0,64.1 418.5,63.6 421.0,63.1 423.5,62.6 426.0,62.1 428.5,61.7 431.0,61.2 433.5,60.7 436.0,60.3 438.5,59.8 441.0,59.4 443.5,59.0 446.0,58.6 448.5,58.2 451.0,57.8 453.5,57.4 456.0,57.0 458.5,56.6 461.0,56.2 463.5,55.9 466.0,55.5 468.5,55.2 471.0,54.8 473.5,54.5 476.0,54.1 478.5,53.8 481.0,53.5 483.5,53.2 486.0,52.9 488.5,52.6 491.0,52.3 493.5,52.0 496.0,51.7 498.5,51.4 501.0,51.1 503.5,50.9 506.0,50.6 508.5,50.3 511.0,50.1 513.5,49.8 516.0,49.6 518.5,49.4 521.0,49.1 523.5,48.9 526.0,48.7 528.5,48.4 531.0,48.2 533.5,48.0 536.0,47.8 538.5,47.6 541.0,47.4 543.5,47.2 546.0,47.0 548.5,46.8 551.0,46.6 553.5,46.4 556.0,46.2 558.5,46.1 561.0,45.9 563.5,45.7 566.0,45.5 568.5,45.4 571.0,45.2 573.5,45.1 576.0,44.9 578.5,44.8 581.0,44.6 583.5,44.5 586.0,44.3 588.5,44.2 591.0,44.0 593.5,43.9 596.0,43.8 598.5,43.6 601.0,43.5 603.5,43.4 606.0,43.2 608.5,43.1 611.0,43.0 613.5,42.9 616.0,42.8 618.5,42.7 621.0,42.5 623.5,42.4 626.0,42.3 628.5,42.2 631.0,42.1 633.5,42.0 636.0,41.9 638.5,41.8 641.0,41.7 643.5,41.6 646.0,41.5 648.5,41.5 651.0,41.4 653.5,41.3 656.0,41.2 658.5,41.1 661.0,41.0 663.5,41.0 666.0,40.9 668.5,40.8 671.0,40.7 673.5,40.6 676.0,40.6 678.5,40.5 681.0,40.4 683.5,40.4 686.0,40.3 688.5,40.2 691.0,40.2 693.5,40.1 696.0,40.0" fill="none"/>
+
+      <path class="ghost" d="M96 36.8 H696"/>
+      <path class="ghost" d="M96 126.4 H259.5"/>
+      <path class="ghost" d="M96 102.7 H300.0"/>
+      <text class="lbl" x="62" y="41.8">B</text>
+      <text class="lbl" x="32" y="107.7">0.632 B</text>
+      <text class="lbl" x="44" y="131.4">0.5 B</text>
+
+      <path class="ghost" d="M259.5 126.4 V216"/>
+      <path class="ghost" d="M300.0 102.7 V216"/>
+      <circle cx="259.5" cy="126.4" r="5" fill="#1f5fa8"/>
+      <circle cx="300.0" cy="102.7" r="5" fill="#1f5fa8"/>
+      <path class="ghost" d="M168.0 210 V222"/>
+
+      <text class="lbl" x="90" y="236">t₀</text>
+      <text class="lbl" x="162" y="236">t₁</text>
+      <text class="lbl" x="253" y="236">t₂</text>
+      <text class="lbl" x="294" y="236">t₃</text>
+
+      <text class="f-lbl" x="126" y="260">θ</text>
+      <path class="arrow" d="M97.0 270 H164.0" marker-start="url(#ar4)" marker-end="url(#ar4)"/>
+      <text class="f-lbl" x="228" y="260">τ</text>
+      <path class="arrow" d="M172.0 270 H299.0" marker-start="url(#ar4)" marker-end="url(#ar4)"/>
+
+      <path class="wire" d="M770 216 H812 V164 H944"/>
+      <text class="lbl" x="822" y="156">the input step, size A</text>
+      <text class="lbl" x="764" y="236">t₀</text>
+    </svg>
+    <p class="center">$$ t_1 = \frac{t_2 - \ln 2\,\cdot t_3}{1 - \ln 2} \qquad
+         K = \frac{B}{A} \qquad \tau = t_3 - t_1 \qquad \theta = t_1 - t_0 $$</p>
+    <p class="small muted">Use the exact constants, not rounded ones — t₁ magnifies any error
+      in the two landmarks by about 2.3 time constants. <code>fopdt_fit</code> in
+      <code>support.jl</code> is this construction.</p>
+    <aside class="notes">
+      <p><strong>Walk the figure:</strong> the output sits still for a while — that is dead
+      time. Then it climbs and settles. Mark where it has covered half its total change, and
+      where it has covered 63 %. Those two times are the whole measurement.</p>
+      <p><strong>Say:</strong> $t_1$ is where the first-order curve would have started if there
+      had been no dead time at all. Everything before it is θ; everything from it to $t_3$ is τ.</p>
+      <p><strong>Say:</strong> and the division by $A$ matters. Scale the response by the size
+      of the step you made — step 4 of the procedure — and $K$ becomes a property of the plant
+      rather than of how hard you happened to push.</p>
+      <p><strong>They get wrong:</strong> reading τ as "time to reach the final value". It is
+      63 % of it, and the remaining 37 % takes another three time constants.</p>
+    </aside>
+  </section>
+
+  <section>
     <h2>Cohen-Coon: from the open-loop response</h2>
     <div class="cols cols-wide-left">
       <div>
-        <p class="small">With $r = \theta/\tau$:</p>
-        <p>$$ k = \frac{1}{rK}\left(\frac{4}{3} + \frac{r}{4}\right) \qquad
-             T_i = \theta\,\frac{32 + 6r}{13 + 8r} \qquad
-             T_d = \theta\,\frac{4}{11 + 2r} $$</p>
+        <table>
+          <tr><th>with $r = \theta/\tau$</th><th>$k$</th><th>$T_i$</th><th>$T_d$</th></tr>
+          <tr><td>P</td><td>$\dfrac{1}{K}\dfrac{\tau}{\theta}\left(1 + \dfrac{r}{3}\right)$</td><td>—</td><td>—</td></tr>
+          <tr><td>PI</td><td>$\dfrac{1}{K}\dfrac{\tau}{\theta}\left(0.9 + \dfrac{r}{12}\right)$</td><td>$\theta\,\dfrac{30 + 3r}{9 + 20r}$</td><td>—</td></tr>
+          <tr><td>PID</td><td>$\dfrac{1}{K}\dfrac{\tau}{\theta}\left(\dfrac{4}{3} + \dfrac{r}{4}\right)$</td><td>$\theta\,\dfrac{32 + 6r}{13 + 8r}$</td><td>$\theta\,\dfrac{4}{11 + 2r}$</td></tr>
+          <caption>Cohen-Coon, from <code>tuning_methods.pdf</code> Table 1. One open-loop step
+            test, three rows, pick the controller you want.</caption>
+        </table>
         <div class="demo">
           <div class="demo-head">
             <span class="nb">08-tuning.ipynb</span>
@@ -2588,7 +2850,8 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
             <a href="../../../notebooks/lecture01/08-tuning.ipynb">open notebook</a>
           </div>
         </div>
-        <p>$$ k = \frac{K_u}{1.7} \qquad T_i = \frac{P_u}{2} \qquad T_d = \frac{P_u}{8} $$</p>
+        <p class="small muted">Two numbers come out of this experiment, and two tuning
+          tables consume them — the next two slides.</p>
       </div>
       <figure class="fig">
         <img src="assets/figures/08-ultimate-oscillation.svg"
@@ -2623,10 +2886,51 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
   </section>
 
   <section>
+    <h2>The Ziegler-Nichols table</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <table>
+          <tr><th>from $K_u$ and $P_u$</th><th>$k$</th><th>$T_i$</th><th>$T_d$</th></tr>
+          <tr><td>P</td><td>$K_u/2$</td><td>—</td><td>—</td></tr>
+          <tr><td>PI</td><td>$K_u/2.2$</td><td>$P_u/1.2$</td><td>—</td></tr>
+          <tr><td>PID</td><td>$K_u/1.7$</td><td>$P_u/2$</td><td>$P_u/8$</td></tr>
+          <caption><code>tuning_methods.pdf</code> Table 2. Note what the rows cost: adding the
+            integral path <em>lowers</em> the gain you may use.</caption>
+        </table>
+      </div>
+      <div class="callout small">
+        <span class="label">What the numbers encode</span>
+        Ziegler and Nichols were aiming at a <strong>quarter-amplitude decay</strong> — each
+        overshoot a quarter of the one before. That was a reasonable target for a 1940s process
+        plant. It is far more oscillatory than anyone wants in a vehicle.
+      </div>
+    </div>
+    <p class="small muted">$T_i = 4\,T_d$ in every ZN row, whatever $P_u$ is — the two zeros
+      are always placed in the same ratio.</p>
+    <aside class="notes">
+      <p><strong>Read the table out</strong> row by row and let them copy it. This is the one
+      table from this lecture they are most likely to use in anger.</p>
+      <p><strong>Point at</strong> the gain column going <em>down</em> as you add paths. That
+      surprises people: it is not that PID is better than P at the same gain, it is that adding
+      the integral spends phase margin, so you must give gain back.</p>
+      <p><strong>Say:</strong> and the footnote — $T_i$ is always four times $T_d$. In the
+      language of the section 05 slide, Ziegler-Nichols always puts the two zeros in the same
+      place relative to each other and only slides them with $P_u$. That is the whole content
+      of the method.</p>
+    </aside>
+  </section>
+
+  <section>
     <h2>Tyreus-Luyben: same measurement, calmer answer</h2>
     <div class="cols cols-wide-left">
       <div>
-        <p>$$ k = \frac{K_u}{2.2} \qquad T_i = 2.2\,P_u \qquad T_d = \frac{P_u}{6.3} $$</p>
+        <table>
+          <tr><th>same $K_u$, $P_u$</th><th>$k$</th><th>$T_i$</th><th>$T_d$</th></tr>
+          <tr><td>PI</td><td>$K_u/3.2$</td><td>$2.2\,P_u$</td><td>—</td></tr>
+          <tr><td>PID</td><td>$K_u/2.2$</td><td>$2.2\,P_u$</td><td>$P_u/6.3$</td></tr>
+          <caption><code>tuning_methods.pdf</code> Table 3. There is no P row: the method exists
+            to be gentler, and a P controller has nothing to be gentle with.</caption>
+        </table>
         <div class="demo">
           <div class="demo-head">
             <span class="nb">08-tuning.ipynb</span>
@@ -2642,12 +2946,13 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       </div>
       <div>
         <table>
-          <tr><th></th><th>k</th><th>T<sub>i</sub></th></tr>
-          <tr><td>Ziegler-Nichols</td><td>K<sub>u</sub>/1.7</td><td>P<sub>u</sub>/2</td></tr>
-          <tr><td>Tyreus-Luyben</td><td>K<sub>u</sub>/2.2</td><td>2.2 P<sub>u</sub></td></tr>
+          <tr><th>PID row</th><th>$k$</th><th>$T_i$</th><th>$T_d$</th></tr>
+          <tr><td>Ziegler-Nichols</td><td>$K_u/1.7$</td><td>$P_u/2$</td><td>$P_u/8$</td></tr>
+          <tr><td>Tyreus-Luyben</td><td>$K_u/2.2$</td><td>$2.2\,P_u$</td><td>$P_u/6.3$</td></tr>
         </table>
-        <p class="small">Less gain, and an integrator roughly <strong>four times slower</strong>.
-        Same two measured numbers.</p>
+        <p class="small">Three quarters of the gain, and an integrator
+        <strong>4.4 times slower</strong> — $2.2P_u$ against $P_u/2$. Same two measured
+        numbers.</p>
       </div>
     </div>
     <aside class="notes">
@@ -2660,6 +2965,46 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       <p><strong>Say:</strong> which tells you something important — a tuning rule encodes
       somebody's requirements, not a law of nature. If their requirements are not yours, their
       table is not yours either.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Relay autotune: $K_u$ without the cliff edge</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <ol class="small">
+          <li>Let the plant settle, and move the setpoint to where it already is.</li>
+          <li>Replace the controller with a <strong>relay</strong>: output $u_0 + d$ while the
+            error is positive, $u_0 - d$ while it is negative.</li>
+          <li>The loop limit-cycles. Measure the output amplitude $a$ and the period $P_u$.</li>
+        </ol>
+        <p>$$ K_u \;=\; \frac{4d}{\pi a} $$</p>
+        <p class="small">Then feed $K_u$ and $P_u$ into either of the last two tables.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">Why this is the one that ships</span>
+        You choose $d$, so you choose how hard the plant is shaken. The oscillation is bounded
+        by construction — you never have to walk the gain up towards instability and hope you
+        notice in time. This is what the "autotune" button on industrial hardware is doing.
+      </div>
+    </div>
+    <p class="small muted">The formula is the describing-function approximation of the relay:
+      it takes the first harmonic of a square wave of amplitude $d$, which has amplitude
+      $4d/\pi$.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> the lecturer's own slide lists five tuning methods and this is
+      the fifth. It is the only one of the closed-loop family that is safe on hardware, and it
+      is the reason your thermal chamber has an autotune button and your car does not have a
+      "raise the gain until it oscillates" button.</p>
+      <p><strong>Point at</strong> the formula and say where it comes from: a relay puts out a
+      square wave, the plant mostly responds to its first harmonic, and a square wave of height
+      $d$ has a first harmonic of $4d/\pi$. Divide by the response amplitude and you have the
+      gain at which the loop would sustain — which is the definition of $K_u$.</p>
+      <p><strong>Ask the room:</strong> what would you pick $d$ to be on a real machine?
+      <em>(As small as gives a clean measurement above the noise. The whole point is to disturb
+      the process as little as you can get away with.)</em></p>
+      <p><strong>We do not run this one</strong> in the notebooks — say so. It needs a relay
+      block the model does not have, and it would tell us what Ziegler-Nichols already told us.</p>
     </aside>
   </section>
 
@@ -2708,6 +3053,36 @@ end</code></pre>
       <p><strong>Say:</strong> and notice what we never did. We never used the mass of the car.
       A tuning method that needs no model is a method you can use on hardware somebody else
       built.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Five methods, one page</h2>
+    <table>
+      <tr><th>Method</th><th>Experiment</th><th>Measures</th><th>Risk to the plant</th><th>Tends to give</th></tr>
+      <tr><td>Guess and check</td><td>any</td><td>your patience</td><td>whatever you do to it</td><td>an intuition for the knobs</td></tr>
+      <tr><td>Cohen-Coon</td><td>open-loop step</td><td>$K$, $\tau$, $\theta$</td><td>none — never leaves the stable region</td><td>quick, oscillatory</td></tr>
+      <tr><td>Ziegler-Nichols</td><td>closed loop, P only</td><td>$K_u$, $P_u$</td><td><strong>drives it to the edge of instability</strong></td><td>aggressive, quarter-decay</td></tr>
+      <tr><td>Tyreus-Luyben</td><td>the same experiment</td><td>$K_u$, $P_u$</td><td>the same</td><td>conservative, sluggish</td></tr>
+      <tr><td>Relay autotune</td><td>closed loop, relay</td><td>$d$, $a$, $P_u$</td><td>bounded by the $d$ you chose</td><td>$K_u$ safely, then a table</td></tr>
+    </table>
+    <div class="callout">
+      <span class="label">The common thread</span>
+      Every row is a way of buying <strong>two or three numbers</strong> about the plant and
+      spending them in a formula somebody else fitted. None of them is a design. All of them are
+      a starting point you then adjust.
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the slide to photograph.</p>
+      <p><strong>Point at</strong> the risk column. That is the column that decides which method
+      you are allowed to use on the day, and it has nothing to do with control theory — it is
+      about what you are willing to do to the equipment.</p>
+      <p><strong>Ask the room:</strong> you have a customer's machine, in their factory, running
+      their product. Which row? <em>(Cohen-Coon, or relay autotune if you can install one.
+      Certainly not Ziegler-Nichols — and that is a professional judgement, not a technical
+      one.)</em></p>
+      <p><strong>Say:</strong> and the honest summary of all five — they get you into the right
+      decade. The last factor of two is always yours.</p>
     </aside>
   </section>
 
@@ -2971,9 +3346,9 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
     <div class="cols">
       <div>
         <p class="small">A zero-order hold delays the average command by about half a sample
-        period.</p>
-        <p class="small">Delay costs <strong>phase</strong>, and phase margin is a finite
-        budget that your tuning already spent most of.</p>
+        period, so at frequency $\omega$ it costs</p>
+        <p>$$ \Delta\varphi \;\approx\; -\,\frac{\omega\,T_s}{2} \ \text{rad} $$</p>
+        <p class="small">Phase margin is a finite budget that your tuning already spent most of.</p>
         <ul class="small">
           <li>Spend a little: more overshoot.</li>
           <li>Spend most of it: the loop rings.</li>
@@ -2981,14 +3356,18 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
         </ul>
       </div>
       <div class="callout small">
-        <span class="label">Which is also the section 01 story again</span>
-        The engine's transport delay was the reason this plant could be driven to sustained
-        oscillation at all. Sampling adds more of exactly the same thing — only this time
-        <em>we</em> added it, by choosing a cheaper processor.
+        <span class="label">A rule of thumb worth keeping</span>
+        Spend at most about 0.2 rad — roughly 12° — of phase on sampling at the loop's crossover
+        frequency $\omega_c$. That is $T_s &lt; 0.4/\omega_c$: sample some
+        <strong>20 to 30 times faster</strong> than the closed-loop bandwidth, not than the
+        plant.
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the same currency as the dead time in section 01. Delay
+      <p><strong>Say:</strong> this is the same currency as the dead time in section 01. The
+      engine's transport delay was the reason this plant could be driven to sustained
+      oscillation at all; sampling adds more of exactly the same thing, only this time
+      <em>we</em> added it, by choosing a cheaper processor. Delay
       is delay, whether it comes from fuel injection or from a scheduler. Your loop has a fixed
       tolerance for it and every source draws on the same account.</p>
       <p><strong>Say:</strong> and notice the ordering. Overshoot first, ringing next, then

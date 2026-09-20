@@ -1,0 +1,443 @@
+<section data-section-title="Lecture 1">
+
+  <section class="deck-title">
+    <h1>Control Systems</h1>
+    <h1 style="font-size:1.5em; color:var(--accent); margin-top:-0.2em;">Introduction and PID</h1>
+    <p class="sub">Vehicle Systems &amp; Components — Lecture 1</p>
+    <p class="sub small">One car, three fidelity levels, ten notebooks.</p>
+    <p class="hint">
+      <kbd>S</kbd> speaker view &nbsp;·&nbsp; <kbd>C</kbd> cue panel &nbsp;·&nbsp;
+      <kbd>O</kbd> overview &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> sections &nbsp;·&nbsp;
+      <kbd>↑</kbd> <kbd>↓</kbd> within a section
+    </p>
+    <aside class="notes">
+      <p><strong>Before the room fills.</strong> Deck on the projector, notebooks on the laptop
+      screen. Press <strong>S</strong> now and check the speaker window opened; if the browser
+      blocked the popup, press <strong>C</strong> instead — the same notes appear as a panel
+      along the bottom of this window.</p>
+      <p><strong>Say:</strong> today we build one car and control it six different ways. The
+      car never changes. Every new idea in this lecture is a change to the <em>controller</em>,
+      never a change of subject — so whatever you understand about the car at minute ten is
+      still true at minute ninety.</p>
+      <p><strong>Timing:</strong> 90 minutes. The spine is sections 01, 03, 04, 05, 06, 08 —
+      about 60 minutes. Everything else is bonus; drop from the back, not the middle.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>How this deck is driven</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <ul class="small">
+          <li><kbd>S</kbd> — speaker view: notes, timer, next slide. <kbd>C</kbd> — the same
+            notes as a panel here, if the popup is blocked.</li>
+          <li><kbd>→</kbd> moves to the next notebook; <kbd>↓</kbd> moves through one.</li>
+          <li><kbd>O</kbd> — overview of the whole lecture. <kbd>G</kbd> — jump to a slide
+            number. <kbd>F</kbd> — fullscreen. <kbd>?</kbd> — all keys.</li>
+          <li>Every demo card has a <strong>copy</strong> button: the code goes to the
+            clipboard, paste it into the notebook cell.</li>
+          <li><code>?print-pdf</code> appended to the URL renders the handout; print to PDF
+            from there.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="callout">
+          <span class="label">Deep links</span>
+          <code>#/3</code> opens notebook 03's section, <code>#/3/2</code> its third slide.
+          Section number = notebook number, all the way through.
+        </div>
+        <div class="callout warn">
+          <span class="label">The dagger</span>
+          A number marked <span class="prov">†</span> is analytic and indicative. Read the
+          executed value off the notebook instead of quoting the slide.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p>This slide is for you, not for them — skip past it while the room settles.</p>
+      <p><strong>Two screens.</strong> Deck on the projector, Jupyter on the laptop. Every
+      demo slide names the notebook file, the cell heading, and carries the code itself, so you
+      never have to hunt through a notebook with your back to the room.</p>
+      <p><strong>If a solve stalls in front of the room:</strong> every notebook is committed
+      with its outputs already executed. Scroll to the plot that is already there and keep
+      talking. Do not debug live.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The ten notebooks</h2>
+    <table>
+      <tr><th>#</th><th>Title</th><th>Punchline</th><th></th></tr>
+      <tr><td><a href="#/1">01</a></td><td>The car</td><td>transient vs steady state; read K, τ and θ off a step</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/2">02</a></td><td>Open vs closed loop</td><td>feedforward is right until the hill</td><td><span class="tier tier-2">Tier 2</span></td></tr>
+      <tr><td><a href="#/3">03</a></td><td>P</td><td>error shrinks with k but never reaches zero</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/4">04</a></td><td>PI</td><td>the integrator finds notebook 02's answer by itself</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/5">05</a></td><td>PID</td><td>three terms, three jobs: present, past, future</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/6">06</a></td><td>Windup</td><td>the hill the engine cannot climb</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/7">07</a></td><td>Derivative and noise</td><td>small noise, steep slope, ruined command</td><td><span class="tier tier-3">Tier 3</span></td></tr>
+      <tr><td><a href="#/8">08</a></td><td>Tuning</td><td>a gain set from one step test, without a model</td><td><span class="tier tier-1">Tier 1</span></td></tr>
+      <tr><td><a href="#/9">09</a></td><td>Discretization</td><td>the strobe light slows down</td><td><span class="tier tier-2">Tier 2</span></td></tr>
+      <tr><td><a href="#/10">10</a></td><td>Wheel and slip</td><td>cruise control meets black ice</td><td><span class="tier tier-3">Tier 3</span></td></tr>
+    </table>
+    <aside class="notes">
+      <p><strong>Say:</strong> here is the whole lecture on one slide. Ten short steps. Each
+      one is a notebook you can re-run yourself afterwards — they are committed with their
+      outputs, so they read even without the modeling tools installed.</p>
+      <p><strong>Point at:</strong> the column on the right. Rows 01, 03, 04, 05, 06, 08 are
+      the ones we will definitely do. The others are there if the room moves quickly.</p>
+      <p><strong>Cutting for time:</strong> drop 10, then 07, then 09, then 02. Never cut from
+      the middle of the P → PI → PID → windup run; that sequence is one argument.</p>
+    </aside>
+  </section>
+
+
+  <section>
+    <h2>One diagram, and all of control theory hangs off it</h2>
+    <svg class="diagram" viewBox="0 0 980 300" role="img"
+         aria-label="The general control diagram: a reference enters a comparator, the error goes to a controller which produces a control input u, u enters the system alongside a disturbance d, the system state x evolves, a sensor measures it producing a noisy measurement y, and y is fed back to the comparator.">
+      <defs>
+        <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        <marker id="ar-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+      </defs>
+
+      <text class="f-lbl" x="14" y="92">r</text>
+      <text class="lbl" x="6" y="114">reference</text>
+      <path class="arrow" d="M34 120 H86" marker-end="url(#ar-ink)"/>
+
+      <circle class="box" cx="104" cy="120" r="18"/>
+      <text x="96" y="114" font-size="14">+</text>
+      <text x="94" y="142" font-size="14">−</text>
+
+      <path class="arrow" d="M122 120 H186" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="146" y="108">e</text>
+
+      <rect class="box" x="186" y="92" width="170" height="58" rx="4"/>
+      <text x="271" y="127" text-anchor="middle" font-size="19">controller</text>
+
+      <path class="arrow" d="M356 120 H470" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="398" y="108">u</text>
+      <text class="lbl" x="372" y="146">what we choose</text>
+
+      <rect class="box-accent" x="470" y="92" width="180" height="58" rx="4"/>
+      <text x="560" y="127" text-anchor="middle" font-size="19">system</text>
+
+      <path class="arrow-warn" d="M560 34 V86" marker-end="url(#ar-warn)"/>
+      <text class="f-lbl-warn" x="572" y="40">d</text>
+      <text class="lbl" x="592" y="60">disturbances — wind, hills, bumps</text>
+
+      <path class="arrow" d="M650 120 H760" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="694" y="108">x</text>
+      <text class="lbl" x="668" y="146">the true state</text>
+
+      <rect class="box" x="760" y="92" width="150" height="58" rx="4"/>
+      <text x="835" y="127" text-anchor="middle" font-size="19">sensor</text>
+
+      <path class="arrow" d="M910 120 H950 V232 H104 V138" marker-end="url(#ar-ink)"/>
+      <text class="f-lbl" x="500" y="222">y — a noisy measurement, not the truth</text>
+    </svg>
+    <aside class="notes">
+      <p><strong>Say:</strong> this one picture is the map for the whole subject, and for the
+      next ninety minutes. Everything we build today is a change to one box in it.</p>
+      <p><strong>Walk it with your hand,</strong> naming each signal:</p>
+      <ul>
+        <li><em>r</em>, the reference — what we want. Somebody has to decide it; that is
+          <strong>planning</strong>, and for us it is just "the driver set 110".</li>
+        <li><em>u</em>, the control input — what we deliberately do. Steering, brake, throttle.</li>
+        <li><em>d</em>, the disturbances — what acts on the system anyway, and never asked us.</li>
+        <li><em>x</em>, the state — what the system is actually doing.</li>
+        <li><em>y</em>, the measurement — what we can <em>see</em> it doing, which is not the
+          same thing, because every sensor adds noise.</li>
+      </ul>
+      <p><strong>Say:</strong> and note the shape of the argument. Feedback means the sensor's
+      noise gets fed into the controller and therefore affects the true state. Noise in a
+      feedback loop does not just make the picture fuzzy — it moves the car.</p>
+      <p><strong>Ask the room:</strong> which of these five do you have direct control over?
+      <em>(Only u. Everything else is either chosen by somebody else or done to you.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The rest of the subject, in one picture</h2>
+    <div class="cols cols-wide-left">
+      <svg class="diagram" viewBox="0 0 560 360" role="img"
+           aria-label="A hub and spoke diagram with the model at the centre and four areas around it: control methods, planning, state estimation, and analysis, simulation and test.">
+        <rect class="box-accent" x="200" y="150" width="160" height="60" rx="6"/>
+        <text x="280" y="180" text-anchor="middle" font-size="20">model</text>
+        <text x="280" y="199" text-anchor="middle" font-size="12" fill="#4a5a6b">of the system</text>
+
+        <rect class="box" x="30"  y="30"  width="170" height="58" rx="4"/>
+        <text x="115" y="55" text-anchor="middle" font-size="16">control</text>
+        <text x="115" y="75" text-anchor="middle" font-size="12" fill="#4a5a6b">feedforward, feedback</text>
+
+        <rect class="box" x="360" y="30"  width="170" height="58" rx="4"/>
+        <text x="445" y="55" text-anchor="middle" font-size="16">planning</text>
+        <text x="445" y="75" text-anchor="middle" font-size="12" fill="#4a5a6b">what should it do</text>
+
+        <rect class="box" x="30"  y="272" width="170" height="58" rx="4"/>
+        <text x="115" y="297" text-anchor="middle" font-size="16">state estimation</text>
+        <text x="115" y="317" text-anchor="middle" font-size="12" fill="#4a5a6b">noise, observability</text>
+
+        <rect class="box" x="360" y="272" width="170" height="58" rx="4"/>
+        <text x="445" y="297" text-anchor="middle" font-size="16">analysis and test</text>
+        <text x="445" y="317" text-anchor="middle" font-size="12" fill="#4a5a6b">does it meet the spec</text>
+
+        <path class="ghost" d="M200 168 L170 88"/>
+        <path class="ghost" d="M360 168 L390 88"/>
+        <path class="ghost" d="M200 194 L170 272"/>
+        <path class="ghost" d="M360 194 L390 272"/>
+      </svg>
+      <div>
+        <p class="small">Four areas, and a model in the middle of all of them — because you need
+        one to design a controller, to estimate a state, to plan a path, and to check that any
+        of it worked.</p>
+        <div class="callout small">
+          <span class="label">Which is why today starts where it does</span>
+          Notebook 01 builds the model and controls nothing. That is not a warm-up; it is the
+          box everything else is wired to.
+        </div>
+        <p class="small muted">Today: the model, and the feedback half of "control". Planning is
+        a driver pressing a button, and estimation appears only as the noise in section 07.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> nobody knows all of this well. But you should know the shape of
+      it, because on a real project these are four different teams and you need to know whose
+      problem you are looking at.</p>
+      <p><strong>Say:</strong> and notice the middle box. Models are not an academic detour on
+      the way to the real work — they are the thing every other box consumes. That is the
+      justification for spending the first ten minutes of a control lecture with no controller
+      in sight.</p>
+      <p><strong>Say:</strong> feedback control itself is not one algorithm; it is a family —
+      PID, full state feedback, gain scheduling, sliding mode, robust, adaptive, optimal,
+      predictive, learned. We are doing the one that runs most of the machinery in the world,
+      and the one whose three knobs you can reason about without a transfer function.</p>
+      <p><strong>Ask the room:</strong> where does a self-driving car's route planner sit on
+      this picture? <em>(Top right. And it has to produce a reference the car can physically
+      follow — which needs the model again.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Our plant for the next ninety minutes</h2>
+    <svg class="diagram" viewBox="0 0 980 400" role="img"
+         aria-label="A side view of a car with its control input, disturbances and measured output labelled: commanded engine torque in at the driveline, road gradient and wind acting on the body, and speed read at the speedometer.">
+      <defs>
+        <marker id="ar2-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        <marker id="ar2-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+        <marker id="ar2-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+      </defs>
+
+      <g transform="translate(316,170)">
+        <path class="car-body" d="M18 118 L18 100 Q18 88 34 85 L92 78 L124 40 Q130 34 142 34 L232 34 Q244 34 252 42 L282 76 L342 82 Q356 85 356 100 L356 118 Z"/>
+        <path class="car-glass" d="M132 46 L230 46 L256 74 L114 74 Z"/>
+        <path class="wire" d="M182 46 V74"/>
+        <circle class="tyre" cx="92"  cy="126" r="24"/><circle class="hub" cx="92"  cy="126" r="9"/>
+        <circle class="tyre" cx="284" cy="126" r="24"/><circle class="hub" cx="284" cy="126" r="9"/>
+      </g>
+      <path class="road" d="M60 320 H940"/>
+
+      <path class="arrow-acc" d="M150 292 H336" marker-end="url(#ar2-acc)"/>
+      <text class="f-lbl-acc" x="60" y="272">u — commanded torque</text>
+      <text class="lbl" x="60" y="248">the one thing we choose</text>
+
+      <path class="arrow-warn" d="M500 116 V192" marker-end="url(#ar2-warn)"/>
+      <text class="f-lbl-warn" x="360" y="100">d — gradient, wind, payload</text>
+
+      <circle cx="594" cy="296" r="16" fill="none" stroke="#1f5fa8" stroke-width="3"/>
+      <path class="ghost" d="M610 296 H694"/>
+      <path class="arrow" d="M694 296 H860" marker-end="url(#ar2-ink)"/>
+      <text class="f-lbl" x="694" y="278">y — speed, in km/h</text>
+      <text class="lbl" x="694" y="316">converted once, here at the sensor</text>
+
+      <text class="lbl-strong" x="330" y="358">state x — how fast it is actually going</text>
+    </svg>
+    <aside class="notes">
+      <p><strong>Say:</strong> same diagram as the last one, with the boxes filled in. One
+      control input — commanded engine torque. Disturbances — the hill, the wind, the luggage.
+      One measurement — speed at the wheel.</p>
+      <p><strong>Point at</strong> the sensor and say: the conversion to km/h happens here, once,
+      inside the model. Every speed you see today is in km/h because the model emitted km/h, not
+      because a notebook multiplied something by 3.6 afterwards.</p>
+      <p><strong>Say:</strong> and that is the entire plant for the next ninety minutes. It does
+      not change. When the lecture gets to windup, or noise, or ice, it is still this car — we
+      are only ever changing the box on the left or the thing the road is doing.</p>
+      <p><strong>Ask the room:</strong> what is missing from this picture that a real cruise
+      control has? <em>(Brakes. Ours can only add torque, never remove it — which is why our
+      car going downhill has no answer at all. Worth thirty seconds; it is an honest
+      limitation.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The forces on a car</h2>
+    <svg class="diagram" viewBox="0 0 980 420" role="img"
+         aria-label="A car on an inclined road with the forces acting on it drawn as labelled arrows: tractive force up the slope at the driven wheel, aerodynamic drag and rolling resistance down the slope, and the weight resolved into a component along the slope and one into the road surface.">
+      <defs>
+        <marker id="ar3-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        <marker id="ar3-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+        <marker id="ar3-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+        <marker id="ar3-dngr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#a81f16"/></marker>
+        <marker id="ar3-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="#256b42"/></marker>
+      </defs>
+
+      <path class="road" d="M40 360 L940 119"/>
+      <path class="ghost" d="M40 360 H300"/>
+      <path class="ghost" d="M160 360 A 120 120 0 0 0 155.9 328.9"/>
+      <text class="f-lbl" x="170" y="346">α</text>
+
+      <g transform="translate(470,245) rotate(-15) translate(-181,-154.7)">
+        <path class="car-body" d="M18 118 L18 100 Q18 88 34 85 L92 78 L124 40 Q130 34 142 34 L232 34 Q244 34 252 42 L282 76 L342 82 Q356 85 356 100 L356 118 Z"/>
+        <path class="car-glass" d="M132 46 L230 46 L256 74 L114 74 Z"/>
+        <path class="wire" d="M182 46 V74"/>
+        <circle class="tyre" cx="92"  cy="126" r="24"/><circle class="hub" cx="92"  cy="126" r="9"/>
+        <circle class="tyre" cx="284" cy="126" r="24"/><circle class="hub" cx="284" cy="126" r="9"/>
+      </g>
+
+      <g transform="translate(470,245) rotate(-15) translate(-181,-154.7)">
+        <path class="arrow-ok"   d="M300 150 H412" marker-end="url(#ar3-ok)"/>
+        <path class="arrow-warn" d="M92 150 H-34"  marker-end="url(#ar3-warn)"/>
+        <path class="arrow-dngr" d="M470 62 H358"  marker-end="url(#ar3-dngr)"/>
+      </g>
+
+      <text class="f-lbl-ok"   x="612" y="242">F = T·i / r &nbsp; tractive</text>
+      <text class="f-lbl-warn" x="96"  y="330">O_f &nbsp; rolling resistance</text>
+      <text class="f-lbl-dngr" x="700" y="70">O_V &nbsp; aerodynamic drag</text>
+
+      <path class="arrow" d="M453 182 V342" marker-end="url(#ar3-ink)"/>
+      <text class="f-lbl" x="462" y="336">m·g</text>
+      <path class="arrow-acc" d="M453 182 L413 193" marker-end="url(#ar3-acc)"/>
+      <path class="ghost" d="M453 182 L493 331"/>
+      <path class="ghost" d="M413 193 L453 342"/>
+      <path class="ghost" d="M493 331 L453 342"/>
+      <text class="f-lbl-acc" x="196" y="200">O_s = m·g·sin α</text>
+      <circle cx="453" cy="182" r="5" fill="#16202c"/>
+
+      <text class="lbl" x="40" y="400">O_z = m·dv/dt is whatever is left over. O_aux, the electrical loads, is not modelled here. Slope drawn steeper than 10 % for legibility.</text>
+    </svg>
+    <aside class="notes">
+      <p><strong>Say:</strong> five forces, and the whole lecture's plant is the statement that
+      they add up.</p>
+      <p><strong>Point at each in turn</strong>, and give each one a physical sentence rather
+      than a formula:</p>
+      <ul>
+        <li><strong>Tractive force</strong>, green, up the slope. Engine torque through the gear
+          ratio, divided by the wheel radius. This is the only one we control.</li>
+        <li><strong>Aerodynamic drag</strong>, red. Goes with the <em>square</em> of speed, so it
+          is nothing at 30 km/h and it is most of the bill at 130.</li>
+        <li><strong>Rolling resistance</strong>, amber. Roughly constant — about 165 newtons for
+          this car, whatever the speed.</li>
+        <li><strong>The slope term</strong>, blue. The part of the car's own weight that points
+          down the road. On a 10 % grade that is about 1.4 kilonewtons — far more than drag and
+          rolling put together, which is why section 06's hill beats the engine.</li>
+        <li><strong>The inertia term.</strong> Whatever is left over goes into accelerating the
+          mass. If the others balance, there is nothing left and the speed is steady.</li>
+      </ul>
+      <p><strong>Ask the room:</strong> at 90 km/h on the flat, which is bigger — drag or rolling
+      resistance? <em>(Drag, by about a factor of one and a half. Ask them again for 30 km/h and
+      the answer flips. This is the square in action and it is worth the thirty seconds.)</em></p>
+      <p><strong>Tie back to the course deck:</strong> these are the O<sub>V</sub>, O<sub>f</sub>,
+      O<sub>z</sub>, O<sub>s</sub> from the energy slides — same terms, drawn on a car instead of
+      listed. O<sub>aux</sub>, the electrical loads, we are leaving out; say so, because leaving
+      a term out should always be a decision you announce.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The car, once</h2>
+    <div class="cols">
+      <div>
+        <table>
+          <tr><th>Parameter</th><th></th><th></th></tr>
+          <tr><td>mass <em>m</em></td><td class="num">1400</td><td>kg</td></tr>
+          <tr><td>drag area <em>C<sub>d</sub>A</em></td><td class="num">0.63</td><td>m²</td></tr>
+          <tr><td>air density <em>ρ</em></td><td class="num">1.2</td><td>kg/m³</td></tr>
+          <tr><td>rolling coefficient <em>f<sub>r</sub></em></td><td class="num">0.012</td><td>—</td></tr>
+          <tr><td>wheel radius <em>r</em></td><td class="num">0.31</td><td>m</td></tr>
+          <tr><td>gear ratio <em>i</em></td><td class="num">4.0</td><td>—</td></tr>
+          <tr><td>torque limit <em>T</em><sub>max</sub></td><td class="num">150</td><td>N·m</td></tr>
+          <tr><td>manifold lag <em>τ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
+          <tr><td>transport delay <em>θ<sub>e</sub></em></td><td class="num">0.04</td><td>s</td></tr>
+          <caption>Quoted from <code>docs/HANDOVER.md</code>. In code, read them from
+            <code>CAR</code> — never retype a number into a cell.</caption>
+        </table>
+      </div>
+      <div>
+        <h4>What follows from them</h4>
+        <div class="readout">
+          <div class="r"><span class="v">1935</span><span class="k">N max tractive</span></div>
+          <div class="r"><span class="v">246</span><span class="k">km/h terminal</span></div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">31.1</span><span class="k">N·m to hold 90</span></div>
+          <div class="r"><span class="v">40.1</span><span class="k">N·m to hold 110</span></div>
+        </div>
+        <div class="callout small">
+          <span class="label">Every one of these is derived in front of you</span>
+          Nothing in this lecture is a number that was chosen to make a point. The hill in
+          notebook 06 defeats the engine because 2024 N &gt; 1935 N, and you can check that.
+        </div>
+      </div>
+    </div>
+    <!-- theta_e is expected to change from 0.04 s to roughly 0.2-0.3 s (HANDOVER Risk 1):
+         at 0.04 s the Ziegler-Nichols demo in notebook 08 relay-limit-cycles against the
+         torque limit instead of oscillating cleanly. If that change lands, this table and
+         every gain quoted with a dagger in sections 03 and 08 move with it. -->
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the entire car. Nine numbers. Everything else in the
+      lecture — the terminal speed, the cruise torque, the hill that beats it, the gains —
+      comes out of these by arithmetic you will watch happen.</p>
+      <p><strong>Ask the room:</strong> which of these nine do you think matters most for how
+      hard this car is to control? <em>(Let two or three guesses land. The answer is the two at
+      the bottom — the lags. Without them the car is trivially controllable and half of this
+      lecture would not exist. Come back to this in section 01.)</em></p>
+      <p><strong>They get wrong:</strong> students read 150 N·m and think "that is a weak
+      engine". It is engine torque before a gear ratio of 4 and a 0.31 m wheel — nearly 2 kN at
+      the road. Do the multiplication out loud once.</p>
+      <p><strong>Housekeeping:</strong> if you changed <code>theta_e</code> from 0.04 s when
+      the models were built, correct this row out loud and say why — it is the whole powertrain
+      torque path, not just injection.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two conventions, for the whole lecture</h2>
+    <div class="cols">
+      <div>
+        <h3>The loop runs in km/h</h3>
+        <p class="small">Setpoint, measurement and error are all km/h. So every gain you see
+        today has the same units and means the same thing:</p>
+        <p class="center"><strong>k</strong> is in <strong>N·m per km/h</strong>.</p>
+        <p class="small muted">"Five newton-metres for every km/h I am off." That is a sentence
+        an engineer can sanity-check; <em>k = 220</em> in mixed units is not.</p>
+      </div>
+      <div>
+        <h3>SI inside, km/h at the sensor</h3>
+        <p class="small">The plant's internals are SI throughout. Exactly one conversion exists
+        in the whole model, and it is a visible block on the sensor output:</p>
+        <p class="center"><code>Vehicle.ToKmPerHour</code></p>
+        <p class="small muted">No notebook ever multiplies a plotted signal by 3.6. If a speed
+        axis says km/h it is because the model emitted km/h.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> two housekeeping rules, and then we start. Both exist so that a
+      number on a plot means one thing only.</p>
+      <p><strong>Why it matters:</strong> the most common way a student's cruise controller
+      "mysteriously" misbehaves is a gain tuned against m/s driving a loop that measures km/h —
+      a silent factor of 3.6. Put the conversion in the model where you can see it, once.</p>
+      <p><strong>Ask the room:</strong> if I tell you my gain is 220, what is missing?
+      <em>(Units. Wait for it — someone will say it.)</em></p>
+    </aside>
+  </section>
+
+</section>

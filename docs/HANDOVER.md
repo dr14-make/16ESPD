@@ -85,6 +85,33 @@ framing is also more honest about what the model lumps together.
 Task 3 is written to make the agent report a missing `Ku` rather than work around it. If that
 report arrives, raise `theta_e` first before touching anything else.
 
+### Risk 1b — notebooks 03-05 must run with the torque limit lifted
+
+The plan originally asserted that the 90 -> 110 km/h step never saturates, so that saturation
+could be introduced deliberately in notebook 06. That is false, and no choice of gains fixes it.
+
+Holding speed at 110 km/h needs about 40 N.m, so a gain that leaves a steady-state error of
+`e` commands roughly `40/e` per km/h of error. On a 20 km/h step the peak command is therefore
+`20/e` times the holding torque. Staying under 150 N.m needs `e` above about 7 km/h — an error
+so large the controller looks broken. The indicative gain family saturates throughout:
+
+    k =  14  ->    280 N.m     2x the limit
+    k =  56  ->   1120 N.m     7x
+    k = 220  ->   4400 N.m    29x
+    k = 890  ->  17800 N.m   119x
+
+Raising `T_max` is not the fix: at 250 N.m the 10% climb no longer saturates and notebook 06
+loses its scenario instead.
+
+**Resolution.** Notebooks 03, 04 and 05 set `y_max` high enough to be irrelevant and say so in
+the prose: *assume for now an engine that delivers whatever we ask; notebook 06 removes that
+assumption.* This is how the source videos teach it — ideal PID first, then "real actuators
+saturate" — and it makes notebook 06 a reveal rather than a footnote. The gains those notebooks
+quote are then honest, because they are the gains of the linear design.
+
+It also arms notebook 08's closing lesson with a number from the students' own work: the
+Cohen-Coon gains below command 469 N.m on that step against an engine that has 150.
+
 ### Risk 2 — the vehicle's own time constant is 60 seconds
 
 Drag alone is a very weak restoring force, so the open-loop car is extremely sluggish. Two
@@ -127,6 +154,25 @@ Decisions and the reason each was taken, so a takeover does not relitigate them.
 | Slip model | 1D, on the multibody friction-curve shape | the 3D slip models are high-index DAEs, far too heavy for an introductory lecture |
 | Unit conversion | a Dyad component on the sensor output, not notebook arithmetic | the conversion is visible as a block in the diagram, and a plotted signal is never transformed after the fact |
 | Loop units | the whole control loop runs in km/h | setpoint, measurement and error are all km/h, so every gain in every notebook means the same thing and the numbers match a dashboard. Plant internals stay SI; exactly one conversion exists, at the sensor |
+
+### Finding — the step test's dead time is curvature, not delay
+
+Fitting FOPTD to the 90 -> 110 km/h step gives `K = 2.21 (km/h)/N.m`, `tau = 63.0 s`,
+`theta = 1.63 s` — a dead time forty times the engine's actual 0.04 s transport delay.
+
+It is not an error. Drag is quadratic, so the local time constant falls from 74.1 s at 90 km/h
+to 60.6 s at 110 km/h, and dead time is the only parameter in the FOPTD form that can absorb
+that curvature. Shrinking the step shrinks the fitted `theta`, and at 0.2 km/h it goes negative
+— which is impossible for a real delay and proves what is being measured.
+
+Two consequences. Notebook 01 must not claim the fitted `theta` recovers `theta_e`; it should
+present the tangent gain and time constant at each end of the step, which genuinely bracket the
+fit (`K = 2.21` sits on the secant 2.212, `tau = 63.0` between 60.6 and 74.1). And notebook 08
+gains a real lesson: a step test does not know what is inside the plant, and reports an
+effective dead time that lumps curvature and unmodeled dynamics together with any true delay.
+
+This does not affect Risk 1. The ultimate gain is set by phase at about 29 rad/s, where real
+dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
 
 ## Gotchas found during the build
 

@@ -1,0 +1,398 @@
+
+
+<!-- Section 01's demo cards quote notebooks/lecture01/01-the-car.ipynb as executed. The other
+     nine notebooks did not exist when this deck was written; their cards use the scenario-
+     builder API documented in assets/README.md, which is a proposal to be reconciled once the
+     notebooks land. Cell headings and notebook filenames are the load-bearing part of a card. -->
+
+<!-- ===================== 01 — The car =================================================== -->
+<section data-section-title="01 — The car">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 01</p>
+    <h2>The car</h2>
+    <p class="thesis">Before you can control something, you have to know what it does on its own.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/01-the-car.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> no controller in this notebook. Not one. We are going to spend
+      the first ten minutes on the car alone, because every mistake people make with PID starts
+      with not knowing the plant.</p>
+      <p><strong>Timing:</strong> 10 minutes. Two simulations, both short to describe and slow
+      to run — start the first solve while you are still talking about the force balance.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What a system is</h2>
+    <div class="cols">
+      <div>
+        <ul>
+          <li><strong>Control inputs</strong> <em>u</em> — what we deliberately move.</li>
+          <li><strong>Disturbances</strong> <em>d</em> — what moves it anyway.</li>
+          <li><strong>State</strong> <em>x</em> — what it remembers.</li>
+          <li><strong>Output</strong> <em>y</em> — what we can measure.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>For this car</h4>
+        <table>
+          <tr><td><em>u</em></td><td>commanded engine torque</td></tr>
+          <tr><td><em>d</em></td><td>road gradient, wind, payload</td></tr>
+          <tr><td><em>x</em></td><td>speed (and, later, wheel speed)</td></tr>
+          <tr><td><em>y</em></td><td>speed at the speedometer, km/h</td></tr>
+        </table>
+      </div>
+    </div>
+    <p class="small muted">A system has structure, behavior and interconnectivity — parts that
+    transform inputs into outputs.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> four boxes and you can describe any plant in this building. The
+      only one students skip is <em>d</em>, and <em>d</em> is the reason feedback exists.</p>
+      <p><strong>Point at:</strong> the <em>x</em> row. Right now the state is one number —
+      speed. By the last notebook it is two, because the wheel gets to spin at its own rate,
+      and that second state is what makes ice dangerous.</p>
+      <p><strong>Ask the room:</strong> is the gradient an input or a disturbance?
+      <em>(Both, formally — it enters the same way. The difference is that we choose u and the
+      hill chooses itself. That distinction is the whole lecture.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The force balance</h2>
+    <p>$$ m\,\frac{dv}{dt} \;=\; \underbrace{T\frac{i}{r}}_{\text{tractive}}
+      \;-\; \underbrace{\tfrac{1}{2}\rho\,C_dA\,v^2}_{O_V\ \text{drag}}
+      \;-\; \underbrace{f_r\,m\,g\cos\alpha}_{O_f\ \text{rolling}}
+      \;-\; \underbrace{m\,g\sin\alpha}_{O_s\ \text{slope}} $$</p>
+    <div class="cols">
+      <div class="small">
+        <p>Acceleration resistance <em>O<sub>z</sub></em> is the left-hand side: the mass
+        itself. Auxiliary loads <em>O<sub>aux</sub></em> are not modeled here.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">Where the torque comes from</span>
+        <em>T</em> is not the commanded torque. Between command and shaft sit a transport delay
+        and a first-order lag — the next slides are about why they are not optional.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is first-principles modeling — the white-box method. We are
+      not fitting anything to data; we are writing down the physics we already believe, and
+      then we will be able to argue about every term in it.</p>
+      <p><strong>Point at:</strong> the drag term, <em>v²</em>. That square is why this car is
+      nearly linear around 100 km/h and not at all linear between 0 and 100.</p>
+      <p><strong>They get wrong:</strong> the cosine on the rolling term. On a 10 % grade
+      cos α = 0.995, so it looks ignorable — and it is, here. Say that you are keeping it
+      because dropping terms is a decision, not an accident.</p>
+      <p><strong>Tie back:</strong> slide 16 of the existing engine deck names these O<sub>V</sub>,
+      O<sub>f</sub>, O<sub>z</sub>, O<sub>s</sub>. Same equation, their notation.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Terminal speed, on paper first</h2>
+    <div class="demo">
+      <div class="demo-head">
+        <span class="nb">notebooks/lecture01/01-the-car.ipynb</span>
+        <span class="cell">cell <b>2. The force balance → Terminal speed</b></span>
+        <span class="spacer"></span>
+      </div>
+      <pre><code class="language-julia" data-trim data-noescape>c_drag = 0.5 * CAR.rho * CAR.CdA          # N per (m/s)^2
+F_roll = CAR.f_r * CAR.m * CAR.g          # N, flat road
+F_max  = CAR.T_max * CAR.i / CAR.r        # N, full torque through the driveline
+
+v_terminal = sqrt((F_max - F_roll) / c_drag)          # m/s</code></pre>
+      <div class="demo-foot">
+        <button class="copy">copy</button>
+        <span class="spacer"></span>
+        <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+      </div>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">1935 N</span><span class="k">tractive</span></div>
+      <div class="r"><span class="v">165 N</span><span class="k">rolling</span></div>
+      <div class="r"><span class="v">68.4 m/s</span><span class="k">terminal</span></div>
+      <div class="r"><span class="v">246 km/h</span><span class="k">terminal</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Run this cell.</strong> It is arithmetic, it returns instantly.</p>
+      <p><strong>Read out:</strong> 1935 newtons at the road, 165 of rolling resistance, and
+      the speed where drag eats the rest — 68.4 m/s, <strong>246 km/h</strong>.</p>
+      <p><strong>Say:</strong> notice what we just did. We set the derivative to zero and
+      solved. That is the steady-state model, and in two notebooks' time an integrator will
+      find this same answer by itself, without being told any of this.</p>
+      <p><strong>Ask the room, before you show the next slide:</strong> 246 km/h from a 150 N·m
+      engine. Does anyone believe that? <em>(Let the discomfort sit for a second — the next
+      slide is the answer, and it lands much harder if they noticed first.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>246 km/h is wrong, and it is wrong on purpose</h2>
+    <div class="callout warn">
+      <span class="label">The model's honest limitation</span>
+      Our engine delivers its peak torque at every speed. A real one does not: peak torque
+      lives in a band of a few thousand rpm and falls away on both sides.
+    </div>
+    <ul class="small">
+      <li>Everything below 130 km/h — every demo in this lecture — is unaffected, because we
+        never ask for more than about 40 N·m of the 150 available.</li>
+      <li>The top end is fiction. Say so now rather than let a student find it later and
+        distrust the parts that are true.</li>
+      <li>Fixing it means an engine torque map — <strong>which is where lecture 2 starts.</strong></li>
+    </ul>
+    <aside class="notes">
+      <p><strong>Say:</strong> a model is a set of assumptions with a speed limit on it, and
+      the engineering skill is knowing where that limit is. Ours is honest from 0 to about
+      130 km/h and a lie above it.</p>
+      <p><strong>They get wrong:</strong> students treat a simulation result as a measurement.
+      This is the one slide in the lecture that exists purely to inoculate against that. Do not
+      skip it even when short on time — it costs 40 seconds.</p>
+      <p><strong>Ask the room:</strong> what would you have to add to the model to get a
+      believable top speed? <em>(Torque as a function of engine speed. That is lecture 2 —
+      and you have just written its first slide for me.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Full throttle from rest</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">01-the-car.ipynb</span>
+            <span class="cell">cell <b>4. Open loop to terminal speed</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>@named throttle = BlockComponents.Sources.Constant(k = CAR.T_max)
+@named road     = BlockComponents.Sources.Constant(k = 0.0)
+@named car      = VehicleSystemsComponents.Lecture1.CarPlant()
+@named wide_open = System(
+    [connect(throttle.y, car.tau_cmd), connect(road.y, car.grade)],
+    t; systems = [throttle, road, car])
+
+sol_wot = solve(ODEProblem(mtkcompile(wide_open), [], (0.0, 300.0)))
+plt = plot_speed(sol_wot; sig = "car.v_kmh", label = "speed")
+hline!(plt, [v_terminal * 3.6]; ls = :dash, label = "analytic")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="callout warn small">
+          <span class="label">Watch the time axis</span>
+          300 seconds, and the last stretch barely moves. The car's own time constant is
+          about <strong>67 s</strong>.
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/01-speed-to-terminal.svg"
+             alt="Speed against time, full torque from rest, rising asymptotically to about 246 km/h over several hundred seconds.">
+        <figcaption>Speed to terminal, full torque from rest. The asymptote is the number we
+          just computed by hand.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Run it</strong> before you start talking — it is the slowest solve in the
+      notebook.</p>
+      <p><strong>Point at:</strong> the flat top, and then at the time axis. Six and a half
+      minutes of flat-out acceleration. Drag is a very weak restoring force at low speed, so
+      the car is genuinely, physically sluggish.</p>
+      <p><strong>Read out:</strong> the asymptote, and compare it to the 246 km/h we computed.
+      Two independent routes to one number — that is how you know the model was built right.</p>
+      <p><strong>Say:</strong> remember this sixty seconds. In notebook 03 the closed loop will
+      do a 20 km/h step in a handful of seconds. Feedback did not make the engine stronger; it
+      made the <em>dynamics</em> different. That is the single most important sentence about
+      feedback in this lecture.</p>
+      <p><strong>Check:</strong> if the curve runs away instead of flattening, the sign on the
+      drag force is wrong.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The step test</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">01-the-car.ipynb</span>
+            <span class="cell">cell <b>5. The step test</b>, and the zoom below it</span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># settle for 500 s, step, then 500 s more
+@named throttle_step = BlockComponents.Sources.Step(
+    offset = T_90, height = T_110 - T_90, start_time = t_step)
+
+sol_step = solve(ODEProblem(mtkcompile(step_test), [], (0.0, 1000.0)))
+
+plot_torque(sol_step; commanded = "car_st.tau_cmd",
+    delivered = "car_st.engine.limiter.y", limit = nothing,
+    xlims = (t_step - 0.5, t_step + 3.0))</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+          </div>
+        </div>
+        <ol class="small">
+          <li>Wait until the process is at rest.</li>
+          <li>Put the controller in manual.</li>
+          <li>Change the control variable rapidly, and as large as noise allows.</li>
+          <li>Record the response and scale it by the size of the step.</li>
+        </ol>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/01-torque-step.svg"
+             alt="Commanded and delivered torque on one axes: the delivered trace starts late by the transport delay and then lags behind the command.">
+        <figcaption>Commanded against delivered torque. The gap at the start is the transport
+          delay; the curve after it is the manifold lag.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this procedure is four lines long and it is the foundation of
+      notebook 08. Every heuristic tuning rule in this lecture reads its numbers off this one
+      experiment.</p>
+      <p><strong>Point at, on the torque plot:</strong> first the flat piece where the command
+      has stepped and nothing has happened yet — that is <em>dead time</em>, the engine has not
+      been told yet. Then the curve — the manifold filling. Two different delays with two
+      different causes, and they need different treatment.</p>
+      <p><strong>Say:</strong> this is also why we did not model an ideal engine. An engine
+      with no lag makes this plant first order, and a first-order plant can never be driven to
+      sustained oscillation — so Ziegler-Nichols in notebook 08 would be impossible, and
+      Cohen-Coon would divide by a dead time of zero. The lags are load-bearing.</p>
+      <p><strong>Ask the room:</strong> why step from 31 to 41 N·m rather than 0 to 150?
+      <em>(Because we want the response around the operating point we actually drive at. A huge
+      step wanders across the nonlinearity in v².)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Three names for one curve</h2>
+    <div class="cols-3">
+      <div>
+        <h3>Transient</h3>
+        <p class="small">The temporary part. The system's reaction to an abrupt change, which
+        dies out.</p>
+      </div>
+      <div>
+        <h3>Steady state</h3>
+        <p class="small">What is left after long enough that every startup effect has gone. The
+        settled relationship between input and output.</p>
+      </div>
+      <div>
+        <h3>Dynamic response</h3>
+        <p class="small">The whole journey — their sum.</p>
+      </div>
+    </div>
+    <p>$$ y(t) \;=\; y_{\text{transient}}(t) \;+\; y_{\text{steady-state}}(t) $$</p>
+    <div class="callout small">
+      <span class="label">Why the vocabulary matters today</span>
+      Proportional control is about to fail in <em>steady state</em> while looking fine in the
+      <em>transient</em>. Without these three words that failure is invisible.
+    </div>
+    <aside class="notes">
+      <p><strong>Point at the speed plot from the previous slide</strong> and mark the two
+      regions with your hand: here it is moving, here it has stopped moving. Do it physically —
+      this is the one piece of vocabulary everyone thinks they already have and half the room
+      does not.</p>
+      <p><strong>Ask the room:</strong> where exactly does the transient end?
+      <em>(It does not — it decays asymptotically. We pick a threshold, usually 2 % or 5 %, and
+      that choice is ours, not the system's.)</em></p>
+      <p><strong>Flag forward:</strong> every requirement you will ever be given is phrased in
+      these terms — rise time and overshoot live in the transient, steady-state error lives in
+      the other half.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Reading K, τ and θ off the curve</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">01-the-car.ipynb</span>
+            <span class="cell">cell <b>7. Reading K, tau and theta off the curve</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>K, tau, theta = fopdt_fit(sol_step;
+    output = "car_st.v_kmh", A = T_110 - T_90, t0 = t_step)
+
+# K     km/h per N.m — steady-state gain
+# tau   s            — dominated by the vehicle, not the engine
+# theta s            — dead time, the engine's transport delay</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/01-the-car.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">2.21</span><span class="k">K, km/h per N·m</span></div>
+          <div class="r"><span class="v">63.0</span><span class="k">τ, seconds</span></div>
+          <div class="r"><span class="v">1.63</span><span class="k">θ, seconds</span></div>
+        </div>
+
+      </div>
+      <div>
+        <figure class="fig">
+          <img src="assets/figures/01-step-annotated.svg"
+               alt="The step response with the dead time, the time constant and the steady-state gain marked on the curve.">
+          <figcaption>The annotated step: θ before anything moves, τ for the rise, K from the
+            settled change divided by the size of the torque step.</figcaption>
+        </figure>
+        <div class="callout warn small">
+          <span class="label">θ is not the engine's 0.04 s delay</span>
+          It is forty times larger. Drag is quadratic, so the local time constant falls from
+          74.1 s at 90 km/h to 60.6 s at 110, and dead time is the only FOPTD parameter that can
+          absorb that curvature. The fit measures bend, not delay.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> all three values from the cell output, slowly, with units.
+      Students will need them again in section 08 and they should write them down now.</p>
+      <p><strong>Say:</strong> this is the whole of system identification for a first-order
+      plant plus dead time — FOPTD. A step in, a curve out, three numbers off the curve. No
+      free-body diagram, no equations of motion. If somebody handed you this car as a sealed
+      box you could still have got here.</p>
+      <p><strong>Do not skip the amber box, and do not let it embarrass you.</strong> A student
+      who knows the engine's delay is 0.04 s will see 1.63 s and conclude the fit is broken.
+      It is not. FOPTD has three parameters and our car is not FOPTD — it is a <em>quadratic</em>
+      drag law, so its time constant is different at every speed. The fit spends θ on the
+      mismatch because θ is the only parameter left.</p>
+      <p><strong>Say:</strong> and this is what a practitioner would have. You do not get to
+      know that your plant is really quadratic; you get a curve and three numbers. Notebook 08
+      tunes from these three exactly as they stand, and the controller works — which is the
+      more interesting result.</p>
+      <p><strong>Point at:</strong> the ratio θ/τ — about 0.026 here. That is the number every
+      tuning rule in notebook 08 keys on, and it puts this car at the easy end of the range.</p>
+      <p><strong>Honest framing, if asked:</strong> quote the tangent gain and time constant at
+      each end of the step — 74.1 s at 90 km/h, 60.6 s at 110. They bracket the fit rather than
+      pretending it is exact.</p>
+      <p><strong>They get wrong:</strong> reading τ as "time to reach the final value". It is
+      the time to reach 63 % of it. The helper uses the two-landmark construction from the
+      tuning document, not an eyeball.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A car with a known force balance, a known terminal speed, and a known lie above
+        130 km/h.</li>
+      <li>Three numbers off one step test — <em>K</em>, <em>τ</em>, <em>θ</em> — which
+        section 08 will turn into gains.</li>
+      <li>The vocabulary: transient, steady state, dynamic response.</li>
+    </ul>
+    <p class="lede">Next: we have a model of the car. Do we even need to measure it?
+      <a href="#/2">→ 02, open loop versus closed loop</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> we now know what the car does when left alone. That is the only
+      honest starting point for control, and it is the step people skip.</p>
+      <p><strong>Bridge:</strong> and here is an uncomfortable thought before the break in
+      pace — we have a model of the car that is good enough to predict its terminal speed. If
+      the model is that good, why measure anything at all? Why not just compute the right
+      throttle and apply it? <em>(That is notebook 02, and the answer is a hill.)</em></p>
+      <p><strong>If you are short on time</strong> and cutting section 02, bridge straight to
+      03 instead: "we know the car; now let us try to make it hold a speed we choose."</p>
+    </aside>
+  </section>
+
+</section>

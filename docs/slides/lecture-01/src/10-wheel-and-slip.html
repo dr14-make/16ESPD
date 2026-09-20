@@ -1,0 +1,365 @@
+
+
+<!-- ===================== 10 — Wheel and slip ================================================== -->
+<section data-section-title="10 — Wheel and slip">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 10</p>
+    <h2>Wheel and slip</h2>
+    <p class="thesis">The tire is an actuator too, and it saturates — which makes cruise control dangerous on ice.</p>
+    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/10-wheel-and-slip.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything so far assumed the tire does whatever the driveline
+      asks. We are going to remove that assumption, and it costs us more than anything else we
+      have removed today.</p>
+      <p><strong>Timing:</strong> 12 minutes if you have them. This is the section students
+      remember, and it is the one that motivates lecture 2 — so if you can only show one beat,
+      show the ice patch.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>First, just add the wheel</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>L1, the wheel appears</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># same gains as section 05, now with wheel inertia
+# and an ideal rolling contact
+sol_l1 = solve(ODEProblem(mtkcompile(
+    wheeled_cruise_loop(k = 56.0, Ti = 8.0, Td = 1.5)),
+    [], tspan))
+
+plot_speed(sol_l1; setpoint = 110)
+@show rise_time(sol_l1, 110) overshoot(sol_l1, 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="small">A rotating wheel is extra inertia the engine has to accelerate, so the
+        plant is slightly heavier than it was. The gains should survive.</p>
+        <div class="callout small">
+          <span class="label">If the response shifted</span>
+          Say by how much. "The gains still work" is a claim, and a rise time is the evidence
+          for it.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is a fidelity increase that changes nothing important, and
+      that is worth showing on its own. Not every added detail matters. Knowing which ones do is
+      the modeling skill.</p>
+      <p><strong>Read out</strong> the rise time and overshoot and compare with section 05.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What ideal rolling assumes</h2>
+    <p class="lede">That the contact patch never slides.</p>
+    <p class="small">Every plot in this lecture up to this slide has quietly assumed it. Wheel
+    speed times radius <em>is</em> road speed, by definition, with no way for them to disagree.</p>
+    <div class="callout warn">
+      <span class="label">On a dry road that is nearly true</span>
+      A driven tire at cruise slips by a per cent or two, and nothing in our story depended on
+      the difference. On ice it is not true at all, and the difference is the whole story.
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> assumptions do not announce themselves. This one has been in
+      every model today and nobody noticed, because on a dry road it costs nothing.</p>
+      <p><strong>Ask the room:</strong> what else have we quietly assumed? <em>(That the road is
+      straight. That the mass is constant. That the engine makes peak torque at every speed —
+      that one we did flag, in section 01. Good answers are worth thirty seconds.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Beat one: the wheel runs away</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>L2, beat one: wheelspin</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the friction curve's second derivative is discontinuous
+# at the transitions: explicit RK handles it, BDF struggles
+sol = solve(ODEProblem(mtkcompile(
+    standing_start(mu_scale = 0.2, tau_cmd = CAR.T_max)),
+    [], (0.0, 20.0)), Tsit5())
+
+plot(signal(sol, "wheel.v_wheel_kmh")...; lw = 2, label = "wheel")
+plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small">Under closed loop the error stays large, so the integrator winds up —
+        against a limit <strong>that is not in the engine at all</strong>.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-wheelspin.svg"
+             alt="Wheel speed and vehicle speed from a standing start on low friction: the wheel accelerates rapidly while the vehicle speed barely rises.">
+        <figcaption>Wheel speed against vehicle speed. The engine is working; the car is not
+          moving.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the two traces diverging. Say: the engine delivered
+      everything it was asked for. The driveline turned. The wheel spun. And the car stayed
+      where it was.</p>
+      <p><strong>Say:</strong> and now connect it to section 06. The integrator sees a large,
+      persistent error and winds up, exactly as it did on the hill. But this time the limit is
+      not the engine's torque ceiling — the engine is nowhere near it. The limit is in the
+      contact patch, and no amount of torque gets past it.</p>
+      <p><strong>Ask the room:</strong> would the anti-windup from section 06 help here?
+      <em>(No. It watches the engine's saturation, and the engine is not saturating. This is a
+      limit the controller has no way of seeing. That is the uncomfortable point of this whole
+      section.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Beat two: the curve</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <p>$$ \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
+             \qquad F_x \;=\; \mu(\kappa)\,F_z $$</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>Beat two: the curve</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>plot(kappas, mu.(kappas); lw = 2, label = "",
+     xlabel = "slip ratio", ylabel = "mu")
+scatter!([kappa_peak], [mu_peak]; label = "peak")
+
+# where the wheelspin run actually sat
+scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-mu-slip-curve.svg"
+             alt="Friction coefficient against slip ratio: a curve rising steeply to a marked peak and then falling away, with the wheelspin run's operating points marked on the falling side.">
+        <figcaption>μ against slip ratio, with the peak marked — and the wheelspin run's
+          operating points sitting past it.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the rising part first: more slip, more force. That is the
+      region everything is designed for, and it behaves the way intuition expects.</p>
+      <p><strong>Then point at the peak</strong> — that is the most force this tire can make on
+      this surface, full stop. It is an actuator limit, the same kind of thing as the engine's
+      150 N·m, and it moves with the weather.</p>
+      <p><strong>Then point past the peak</strong> and say slowly: here, <em>more slip gives
+      less force</em>.</p>
+      <p><strong>Ask the room:</strong> what happens to a wheel that ends up on the right-hand
+      side of that peak? <em>(Less force, so less resistance to the engine's torque, so it
+      accelerates, so more slip, so even less force. Let them build the loop themselves — it is
+      the next slide and they can derive it.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why it runs away</h2>
+    <div class="cols">
+      <div>
+        <p class="lede">More slip → less force → more slip.</p>
+        <p class="small">That is a positive feedback loop, and it is <em>inside the plant</em>.
+        Nobody wired it; it is what the tire does.</p>
+        <p class="small">In that region the plant is <strong>open-loop unstable</strong>.</p>
+      </div>
+      <div class="callout danger">
+        <span class="label">Remember the first question in section 08</span>
+        <em>Is the system well behaved?</em> Stable, near enough linear, minimum phase,
+        manageable delay.
+        <br><br>
+        Here, past the peak, the answer is <strong>no</strong> — and no amount of PID tuning
+        fixes a plant that is running away from you.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> and notice this is the same car. The plant did not get replaced;
+      it moved into a region where it has a different character. That is what "nonlinear" means
+      in practice — not a curved graph, but different rules in different places.</p>
+      <p><strong>Say:</strong> which is why the tuning flowchart puts that question first and
+      not third. If you tune a loop on the good side of the peak and it occasionally visits the
+      bad side, your gains are answering a question the plant has stopped asking.</p>
+      <p><strong>Ask the room:</strong> what would you have to control to stay on the left of
+      the peak? <em>(Slip itself — which needs a sensor for it and a loop around it. Hold that;
+      it is the last slide.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Beat three: cruise control on ice</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>Beat three: the ice patch</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># cruising at 90 km/h; friction collapses for two seconds
+sol = solve(ODEProblem(mtkcompile(
+    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
+              mu_low = 0.15, t_ice = (40.0, 42.0))),
+    [], (0.0, 90.0)), Tsit5())
+
+# speed, wheel speed, slip ratio, commanded torque,
+# on shared time axes with the patch shaded
+plot_ice_patch(sol)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small"><strong>The controller reads falling speed, commands more torque,
+        spins the driven wheel — and destroys the traction it was trying to use.</strong></p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-ice-patch.svg"
+             alt="Four stacked traces across a shaded two-second low-friction patch: vehicle speed falling, wheel speed climbing away, slip ratio past the peak, and commanded torque rising in response.">
+        <figcaption>Speed, wheel speed, slip ratio and commanded torque, with the ice patch
+          shaded.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Narrate the four traces in time order,</strong> as a sequence of entirely
+      reasonable decisions:</p>
+      <ul>
+        <li>Friction collapses. The car starts to lose speed.</li>
+        <li>The controller sees speed below setpoint — which is true — and commands more torque.
+          That is exactly what it is for.</li>
+        <li>The extra torque cannot go into the road, so it goes into spinning the wheel.</li>
+        <li>Slip passes the peak. Available force <em>falls</em>. The car slows further.</li>
+        <li>The controller sees a bigger error and commands more torque still.</li>
+      </ul>
+      <p><strong>Say:</strong> nothing in that chain is a bug. Every step is the controller
+      doing its job correctly. The system as a whole does the wrong thing, and it does it
+      faster the better the controller is tuned.</p>
+      <p><strong>Say:</strong> and in a real car the driver feels this as the back stepping out
+      on a motorway at 90 km/h, caused by a system they switched on for comfort.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What should have happened</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">10-wheel-and-slip.ipynb</span>
+            <span class="cell">cell <b>What should have happened</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the same run, with a friction-aware torque limit
+sol_tc = solve(ODEProblem(mtkcompile(
+    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
+              mu_low = 0.15, t_ice = (40.0, 42.0),
+              traction_limit = true)),
+    [], (0.0, 90.0)), Tsit5())</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small">The car still loses speed on the ice — physics is physics. It does not
+        lose the wheel.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/10-ice-patch-limited.svg"
+             alt="The same ice patch run overlaid with a friction-aware torque limit: the wheel stays near vehicle speed and the slip ratio stays on the near side of the peak, while speed dips and recovers.">
+        <figcaption>Overlaid against the unlimited run. The difference is entirely in the slip
+          trace.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> and be precise about what the fix bought. The car still slows
+      down. It has to — there is less friction available and no controller can conjure grip.
+      What the limit prevented was the controller <em>making it worse</em>.</p>
+      <p><strong>Say:</strong> that is a general shape worth naming. When an actuator's limit
+      depends on conditions the controller cannot see, somebody has to tell it. That is not
+      tuning. That is architecture.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two lessons</h2>
+    <div class="cols">
+      <div>
+        <h3>One</h3>
+        <p class="small">Real cruise control disengages when traction control intervenes. Now
+        you know exactly why — the two loops are fighting over the same actuator, and the speed
+        loop is the one with the worse information.</p>
+      </div>
+      <div>
+        <h3>Two</h3>
+        <p class="small">The fix is an <strong>inner loop regulating slip</strong> inside an
+        <strong>outer loop regulating speed</strong>. The inner one is fast and local; the outer
+        one is slow and comfortable.</p>
+        <p class="small">That is <strong>cascade control</strong>.</p>
+      </div>
+    </div>
+    <p class="lede center">Which is where lecture 2 begins.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> and notice we did not need a new controller type to see the need
+      for one. The need came out of the plant, by removing one assumption about a tire.</p>
+      <p><strong>Say:</strong> that is a good note to end on generally — almost every advanced
+      control architecture you will meet exists because somebody found a plant that defeated
+      the simple one. Not because it was elegant.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Ninety minutes, one car</h2>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li><strong>01</strong> know the plant before you control it.</li>
+          <li><strong>02</strong> feedback exists because the world moves.</li>
+          <li><strong>03</strong> P is fast and permanently wrong.</li>
+          <li><strong>04</strong> the integrator inverts the plant for you.</li>
+          <li><strong>05</strong> present, past, future — three jobs.</li>
+        </ul>
+      </div>
+      <div>
+        <ul class="small">
+          <li><strong>06</strong> actuators saturate; integrators do not notice.</li>
+          <li><strong>07</strong> derivatives amplify by frequency.</li>
+          <li><strong>08</strong> one step test, three tables — and plot the command.</li>
+          <li><strong>09</strong> sampling costs phase.</li>
+          <li><strong>10</strong> the tire is an actuator, and it has a peak.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="lede center">Every notebook is in the repository, executed, with its plots.
+      Re-run them.</p>
+    <aside class="notes">
+      <p><strong>Close with this:</strong> if you take one habit away, take the one that showed
+      up three times today without being planned — <em>plot the actuator command</em>. Section
+      06 found windup with it. Section 08 found an undeliverable design with it. Section 07
+      found chatter with it. In all three the controlled variable looked fine.</p>
+      <p><strong>Point them at</strong> the notebooks and at <code>docs/</code>. Everything on
+      these slides is reproducible, and the plots are committed so they can read them without
+      installing anything.</p>
+      <p><strong>Next lecture:</strong> the engine torque map, which fixes the 246 km/h lie
+      from section 01 — and cascade control, which fixes the ice patch.</p>
+    </aside>
+  </section>
+
+</section>

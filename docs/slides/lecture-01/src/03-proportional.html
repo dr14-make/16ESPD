@@ -1,0 +1,254 @@
+
+
+<!-- ===================== 03 — Proportional ============================================== -->
+<section data-section-title="03 — Proportional">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 03</p>
+    <h2>Proportional</h2>
+    <p class="thesis">Proportional control gets you close, and close is where it stops.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/03-proportional.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> from here to the end of section 06 the car never changes. Not
+      one parameter. Everything that happens is a change to the controller.</p>
+      <p><strong>Timing:</strong> 10 minutes. Three cells, all of them fast, because the closed
+      loop settles in seconds where the open loop took minutes.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The whole control law</h2>
+    <p>$$ u \;=\; k\,e \;=\; k\,\bigl(v_{\text{set}} - v\bigr) $$</p>
+    <div class="cols">
+      <div>
+        <p class="small">Torque command proportional to how far off we are. That is all of it.
+        No memory, no prediction.</p>
+        <p class="small">Units, once and for all: <em>e</em> is km/h, <em>u</em> is N·m, so
+        <strong>k is N·m per km/h</strong>.</p>
+      </div>
+      <div class="callout warn small">
+        <span class="label">One idealization, stated out loud</span>
+        Cruise at <strong>90 km/h</strong>, step the setpoint to <strong>110 km/h</strong>, flat
+        road. <em>Holding</em> those speeds takes 31 and 40 N·m — nothing. But the instant the
+        setpoint jumps, the error is 20 km/h, and <em>k</em> times 20 is a large number: even the
+        gentlest gain here commands about 280 N·m, and the fiercest about 17,800.
+        <br><strong>So for this section the engine delivers whatever we ask.</strong> The torque
+        limit goes back on in section 06, and that is where it earns its keep.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> think of walking to a line on a football pitch. Far away, walk
+      fast; close, slow down; on the line, stop. A proportional controller and a person
+      crossing a room are the same algorithm, and for that problem it works perfectly — you
+      stop exactly on the line.</p>
+      <p><strong>Then say:</strong> now think about a drone hovering at 50 m. At the target the
+      error is zero, so the controller commands zero, so the propellers stop, so it falls. That
+      system needs a non-zero output to <em>stay</em> where you put it — and proportional
+      control can only make a non-zero output out of a non-zero error.</p>
+      <p><strong>Ask the room:</strong> which of those two is our car? <em>(The drone. Holding
+      110 km/h needs 40 N·m forever, because drag never stops. Let them get there; the next
+      three slides are just evidence for the answer they gave.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>One gain, one step</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">03-proportional.ipynb</span>
+            <span class="cell">cell <b>One run</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>loop = cruise_loop(with_I = false, with_D = false,
+                   k = 56.0)
+sol  = solve(ODEProblem(mtkcompile(loop), [], (0.0, 120.0)))
+
+plt = plot_speed(sol; setpoint = 110)
+bracket_error!(plt, sol; setpoint = 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/03-proportional.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">0.7 <span class="prov">†</span></span><span class="k">km/h short</span></div>
+          <div class="r"><span class="v">≈ 40</span><span class="k">N·m held</span></div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/03-single-gain.svg"
+             alt="Step response from 90 to 110 km/h under proportional control, settling just below the setpoint with the gap marked by a bracket.">
+        <figcaption>The response settles, and it settles <em>below</em> the dashed setpoint.
+          The bracket is the steady-state error.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the dashed line, then the solid one, then the gap between
+      them. Do not say "error" yet — ask what they see.</p>
+      <p><strong>Ask the room:</strong> is this controller broken? <em>(No. It is doing exactly
+      what it was told. It is stable, it is quick, it stopped somewhere sensible — and it is
+      wrong, permanently, and it will never notice.)</em></p>
+      <p><strong>Read out:</strong> the bracket annotation. Roughly 0.7 km/h short at this
+      gain — read the executed number, not mine.</p>
+      <p><strong>Contrast, loudly:</strong> the open-loop car took several minutes to change
+      speed. This took seconds. Same engine, same mass, same drag. Feedback changed the
+      dynamics of the system, not just how it is operated.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Turn the gain up</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">03-proportional.ipynb</span>
+            <span class="cell">cell <b>The gain family</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = false, with_D = false),
+           "k", [14.0, 56.0, 220.0, 890.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110)</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/03-proportional.ipynb">open notebook</a>
+          </div>
+        </div>
+        <table>
+          <tr><th>k <span class="small muted">[N·m per km/h]</span></th><th>steady-state error <span class="small muted">[km/h]</span></th></tr>
+          <tr><td class="num">14</td><td class="num">2.8 <span class="prov">†</span></td></tr>
+          <tr><td class="num">56</td><td class="num">0.7 <span class="prov">†</span></td></tr>
+          <tr><td class="num">220</td><td class="num">0.18 <span class="prov">†</span></td></tr>
+          <tr><td class="num">890</td><td class="num">0.05 <span class="prov">†</span></td></tr>
+        </table>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/03-gain-family.svg"
+             alt="Four step responses at increasing proportional gain on one axes: each rises faster and settles closer to the setpoint, and none reaches it.">
+        <figcaption>Four gains across two decades. Faster, closer — and every one of them stops
+          short.</figcaption>
+      </figure>
+    </div>
+    <!-- Gains and errors here are the analytic values from docs/lecture-01-notebooks.md, hence
+         the daggers. They assume theta_e = 0.04 s. If theta_e moves to 0.2-0.3 s (HANDOVER
+         Risk 1) the ultimate gain drops to roughly 115 N.m per km/h, so the top two members of
+         this family would oscillate rather than settle and the family must be re-centred on
+         the executed notebook — around one, two and three times the lowest gain. -->
+    <aside class="notes">
+      <p><strong>Point at:</strong> the curves in order. Each one rises faster and each one
+      stops closer. Then point at the dashed setpoint and say: none of them arrives.</p>
+      <p><strong>Read out</strong> the error column from the executed notebook. The pattern is
+      what matters: every factor of four on the gain cuts the error by about four.</p>
+      <p><strong>Ask the room:</strong> so what gain do we need for zero error?
+      <em>(Infinite. Somebody will say it. That is the punchline of the next slide, so let them
+      say it and then make them prove it.)</em></p>
+      <p><strong>They get wrong:</strong> "just turn it up more". Ask what else grows when the
+      gain grows — the commanded torque at the instant of the step, and the loop's appetite for
+      sensor noise. We spend section 08 on exactly that bill.</p>
+      <p><strong>If the top gains oscillate</strong> in the executed run, that is not a bug to
+      hide: say the loop is near its stability limit, and promise section 08, where we find
+      that limit deliberately and use it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Error against gain</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">03-proportional.ipynb</span>
+            <span class="cell">cell <b>Error against gain</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>ks = exp10.(range(0.7, 3.0; length = 20))
+sw = sweep(cruise_loop(with_I = false, with_D = false),
+           "k", ks; tspan = (0.0, 120.0))
+
+errs = [steady_state_error(s, 110) for (_, s) in sw]
+plot(ks, errs; xscale = :log10, lw = 2, label = "",
+     xlabel = "k [N.m per km/h]",
+     ylabel = "steady-state error [km/h]")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/03-proportional.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/03-error-vs-gain.svg"
+             alt="Steady-state error against proportional gain on a logarithmic gain axis: a hyperbolic decay that approaches zero without reaching it.">
+        <figcaption>Hyperbolic decay. It approaches zero and it never arrives — at any gain the
+          curve is above the axis.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the curve hugging the axis on the right and never touching
+      it. This is the shape of "asymptotically, never".</p>
+      <p><strong>Say:</strong> and now the argument, which is three sentences and you should be
+      able to reproduce it in the exam. One: at 110 km/h the car needs about 40 N·m just to
+      stand still against drag. Two: a proportional controller's only source of output is
+      <em>k</em> times the error. Three: therefore the error cannot be zero, because if it were,
+      the torque would be zero, and the car would slow down.</p>
+      <p><strong>Ask the room:</strong> what would have to be true of a plant for proportional
+      control to reach the setpoint exactly? <em>(That holding the setpoint needs zero control
+      effort. Walking across a room qualifies. Almost nothing you will ever be paid to control
+      does.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why it cannot be zero</h2>
+    <div class="cols">
+      <div>
+        <p>$$ u_{\text{needed}}(110) \;\approx\; 40\ \mathrm{N{\cdot}m} \qquad u = k\,e $$</p>
+        <p>$$ \Rightarrow\quad e_{\infty} \;=\; \frac{u_{\text{needed}}}{k} \;\neq\; 0 $$</p>
+        <p class="small muted">Double the gain, halve the error. Never remove it.</p>
+      </div>
+      <div>
+        <div class="callout">
+          <span class="label">Same story, different plant</span>
+          The drone hovers <em>below</em> 50 m because it needs 100 rpm to stay up, and only
+          an error can produce 100 rpm. Our car cruises <em>below</em> 110 km/h because it
+          needs 40 N·m to stay there.
+          <br><strong>Drag is playing the part gravity played.</strong>
+        </div>
+      </div>
+    </div>
+    <p class="lede center">The fix has to be something that <em>remembers</em>.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> write that division down. It is the most reusable thing in this
+      section: steady-state error under proportional control is the effort you need divided by
+      the gain you chose.</p>
+      <p><strong>Say:</strong> and notice what it tells you about the plant — the harder the
+      job, the bigger the error. On a hill, this same controller is worse. We will watch that
+      happen in section 06.</p>
+      <p><strong>Ask the room, to set up 04:</strong> what could a controller add to its output
+      that does not depend on the error right now? <em>(Something accumulated. Steer them to
+      "it should remember that it has been short for a while." Do not say "integral" for them —
+      let the room produce the word.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>A loop that is fast, stable, and permanently wrong.</li>
+      <li>A formula for how wrong: <em>e</em><sub>∞</sub> = effort needed ÷ gain chosen.</li>
+      <li>The knowledge that no gain fixes it — the fix has to be a different <em>kind</em> of
+        term.</li>
+    </ul>
+    <p class="lede">Next: give the controller a memory.
+      <a href="#/4">→ 04, proportional-integral</a></p>
+    <aside class="notes">
+      <p><strong>Check before moving on:</strong> if the error vanished at high gain in your
+      executed notebook, the integral path was left switched on — <code>with_I = false</code>
+      is the whole difference between this section and the next.</p>
+    </aside>
+  </section>
+
+</section>

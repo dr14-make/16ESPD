@@ -84,3 +84,31 @@ Two internal signal paths are also assumed, for plotting a controller path on it
 **If the notebooks land under different names, the slides need a search and replace, not a
 redesign.** Each card's notebook filename and cell heading are the load-bearing part; the code
 block is a convenience.
+
+## Editing the deck
+
+`index.html` is assembled from `../src/` — one file per horizontal section, plus `_head.html`
+and `_foot.html`:
+
+    src/_head.html                 <head>, the stylesheets, the opening <div class="slides">
+    src/00-front-matter.html       horizontal index 0
+    src/01-the-car.html            horizontal index 1
+    ...
+    src/10-wheel-and-slip.html     horizontal index 10
+    src/_foot.html                 the scripts and Reveal.initialize
+
+    python3 build.py               rebuild index.html
+    python3 build.py --check       fail if index.html is stale (for CI or a pre-commit hook)
+
+**Filename order is slide order, and the deck's deep links depend on it** — `#/3` is
+`03-proportional.html`. Renaming a file moves a section and breaks the landing page's links.
+
+`index.html` is committed as well as generated. The deck is presented from a laptop in a
+lecture hall, sometimes from a copied directory, so it must never need a build step to open.
+Edit under `src/`, run `build.py`, commit both.
+
+Splitting per *slide* rather than per section was considered and rejected: a section is the
+unit anyone actually edits, 99 files would need a manifest to keep ordered, and reveal.js needs
+every slide in one document anyway — `data-markdown` external files are fetched over XHR, which
+a `file://` origin blocks, so runtime splitting would break the one requirement that matters
+most.

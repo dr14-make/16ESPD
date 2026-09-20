@@ -1,0 +1,216 @@
+
+
+<!-- ===================== 04 — Proportional-integral ====================================== -->
+<section data-section-title="04 — Proportional-integral">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 04</p>
+    <h2>Proportional-integral</h2>
+    <p class="thesis">The integrator works out the answer you would otherwise have to compute by hand.</p>
+    <p class="meta"><span class="tier tier-1">Tier 1</span> &nbsp; <code>notebooks/lecture01/04-proportional-integral.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> one boolean changes between the last notebook and this one.
+      <code>with_I = true</code>. Same car, same gain, same step.</p>
+      <p><strong>Timing:</strong> 12 minutes. The middle slide of this section — the
+      integrator's own state settling on the number we computed with a pencil — is the best
+      slide in the lecture. Do not rush to it and do not rush past it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Adding a memory</h2>
+    <p>$$ u \;=\; k\left(e \;+\; \frac{1}{T_i}\int_0^t e\,d\tau\right) $$</p>
+    <div class="cols">
+      <div>
+        <ul class="small">
+          <li>The integral keeps a running total of the error.</li>
+          <li>So it keeps <em>changing</em> for as long as any error remains.</li>
+          <li>And it stops changing only when the error is exactly zero — at which point it
+            holds whatever value it has reached.</li>
+        </ul>
+      </div>
+      <div class="callout small">
+        <span class="label">Read that last point again</span>
+        An integrator's output at rest is <em>unconstrained by the error</em>. That is precisely
+        the freedom the proportional path did not have, and it is the whole fix.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> proportional is the present. Integral is the past. That is not a
+      slogan — it is literally what the two expressions compute.</p>
+      <p><strong>Ask the room:</strong> if the error has been zero for a while, what is the
+      integral path putting out? <em>(Whatever it accumulated before. Not zero. The room will
+      often answer "zero" — that confusion is exactly what the next two slides destroy.)</em></p>
+      <p><strong>On T<sub>i</sub>:</strong> it is a <em>time</em>, not a gain, and it divides —
+      so smaller T<sub>i</sub> is more aggressive integration. Say it now; it catches people out
+      every single year.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>PI against P</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">04-proportional-integral.ipynb</span>
+            <span class="cell">cell <b>PI against P</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>p  = cruise_loop(with_I = false, with_D = false, k = 56.0)
+pi_ = cruise_loop(with_I = true,  with_D = false, k = 56.0,
+                  Ti = 8.0)
+
+tspan = (0.0, 120.0)
+sol_p  = solve(ODEProblem(mtkcompile(p),  [], tspan))
+sol_pi = solve(ODEProblem(mtkcompile(pi_), [], tspan))
+
+plt  = plot_speed(sol_p; setpoint = 110, label = "P")
+t, y = signal(sol_pi, SPEED_KMH)
+plot!(plt, t, y; lw = 2, label = "PI")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/04-p-vs-pi.svg"
+             alt="Two step responses on one axes: the proportional run settles below the setpoint, the proportional-integral run climbs the last stretch and reaches it.">
+        <figcaption>Same gain, same step. P settles short; PI keeps going and arrives.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the place where the two curves separate — not at the step,
+      but afterwards, in the slow part. The proportional path has already given up there,
+      because its error is nearly zero. The integral path is still working, because its input
+      is still non-zero.</p>
+      <p><strong>Say:</strong> the two terms do different jobs at different times. Proportional
+      does the transient, integral does the last stretch. Watch for that division of labor
+      again in the next section, where we plot it directly.</p>
+      <p><strong>Ask the room:</strong> which one reached the setpoint faster to within, say,
+      1 km/h? <em>(Usually P. Arriving eventually and arriving exactly are different
+      requirements, and PID tuning is mostly about trading one for the other.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The punchline</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">04-proportional-integral.ipynb</span>
+            <span class="cell">cell <b>The punchline</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># the integrator's own output, on its own axes
+t, u_I = signal(sol_pi, "controller.I.y")
+
+plot(t, u_I; lw = 2, label = "integral path",
+     xlabel = "time [s]", ylabel = "torque [N.m]")
+hline!([40.1]; ls = :dash, lw = 2, color = :black,
+       label = "torque to hold 110 km/h, by hand")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">40.1 <span class="prov">†</span></span><span class="k">N·m computed</span></div>
+          <div class="r"><span class="v">40.1 <span class="prov">†</span></span><span class="k">N·m discovered</span></div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/04-integrator-state.svg"
+             alt="The integral path's output rising and levelling off exactly on a dashed horizontal line marking the analytically computed cruise torque.">
+        <figcaption>The integrator's state settles on the dashed line — the cruise torque we
+          computed from the force balance, which the controller was never told.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>This is the slide.</strong> Slow down.</p>
+      <p><strong>Point at:</strong> the dashed line first. Say where it came from: we solved
+      the force balance at 110 km/h with a pencil, back in section 01, and got 40 newton-metres.</p>
+      <p><strong>Then point at:</strong> the curve arriving at it. Say: nobody gave the
+      controller the mass. Or the drag area. Or the gear ratio. It has never seen the model.
+      It has seen one number — how far off it was — and by accumulating that it has
+      <em>inverted the plant</em>.</p>
+      <p><strong>Say:</strong> that is what "an integrator removes steady-state error" actually
+      means. It is not a magic property of the formula. It is that the integrator can hold an
+      output that the error no longer justifies, and it will keep hunting until it holds
+      exactly the right one.</p>
+      <p><strong>Ask the room:</strong> what happens to that line if I put 200 kg of luggage in
+      the boot? <em>(It moves up, and the integrator finds the new value without being told.
+      That is the argument for feedback in one sentence.)</em></p>
+      <p><strong>Check:</strong> if the integrator settles anywhere other than the hand-computed
+      torque, the units or the gear ratio disagree between notebook and model — that mismatch
+      is worth more than the slide, so stop and find it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What it costs</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">04-proportional-integral.ipynb</span>
+            <span class="cell">cell <b>The cost</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_loop(with_I = true, with_D = false,
+                      k = 56.0),
+           "Ti", [20.0, 8.0, 3.0, 1.2];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; setpoint = 110)
+[overshoot(s, 110) for (_, s) in sw]      # percent</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/04-proportional-integral.ipynb">open notebook</a>
+          </div>
+        </div>
+        <p class="small muted">Still an unlimited engine. Shrinking <em>T<sub>i</sub></em> integrates harder. The loop
+        arrives sooner, then past.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/04-ti-family.svg"
+             alt="Four step responses at decreasing integral time: each reaches the setpoint sooner and the fastest ones overshoot and oscillate before settling.">
+        <figcaption>The <em>T<sub>i</sub></em> family. Overshoot appears, and then grows.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the first curve that crosses the setpoint and comes back.
+      That crossing is new — the proportional controller never did it, at any gain.</p>
+      <p><strong>Say, and this is the explanation people remember:</strong> by the time the car
+      reaches 110, the integrator has been accumulating error for the whole climb, so it is
+      already holding <em>more</em> torque than 110 km/h needs. The only way to get rid of that
+      excess is to generate error with the opposite sign — which means spending time on the
+      far side of the setpoint. The overshoot is not a flaw in the tuning. It is how an
+      integrator unwinds.</p>
+      <p><strong>Read out</strong> the overshoot percentages from the cell output.</p>
+      <p><strong>Ask the room:</strong> so what could we add that reacts <em>before</em> we
+      arrive, rather than after? <em>(Something that watches how fast we are closing. Straight
+      into 05.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>Zero steady-state error, for free, with no model in the controller.</li>
+      <li>A demonstration that the integral path <em>is</em> the model inversion — the same
+        number, found two ways.</li>
+      <li>A new failure mode: overshoot, caused by unwinding.</li>
+    </ul>
+    <p class="lede">Next: a third path, to arrive without overshooting.
+      <a href="#/5">→ 05, PID</a></p>
+    <aside class="notes">
+      <p><strong>Flag forward, briefly:</strong> an integrator that has accumulated more than
+      the actuator can deliver is a much worse problem than overshoot. That is section 06, and
+      it is the one that breaks real vehicles.</p>
+    </aside>
+  </section>
+
+</section>

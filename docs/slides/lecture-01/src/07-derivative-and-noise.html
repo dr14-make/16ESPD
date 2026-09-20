@@ -1,0 +1,234 @@
+
+
+<!-- ===================== 07 — Derivative and noise ============================================ -->
+<section data-section-title="07 — Derivative and noise">
+
+  <section class="cover">
+    <p class="nb-no">Notebook 07</p>
+    <h2>Derivative and noise</h2>
+    <p class="thesis">The derivative does not care how big the noise is, only how fast.</p>
+    <p class="meta"><span class="tier tier-3">Tier 3</span> &nbsp; <code>notebooks/lecture01/07-derivative-and-noise.ipynb</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> in section 05 the derivative was free. It cost nothing and it
+      removed the overshoot. Here is the bill.</p>
+      <p><strong>Timing:</strong> 10 minutes. The two-sines slide is the one that has to land;
+      everything else is evidence.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Every sensor is noisy</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <p class="small">Thermal, shot, flicker, coupling from everything else in the vehicle —
+        noise is not a defect, it is a property. A speedometer has it too.</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">07-derivative-and-noise.ipynb</span>
+            <span class="cell">cell <b>The measurement</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
+    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 10.0)),
+    [], tspan))
+
+t, v_true = signal(sol, "plant.v_kmh")
+t, v_meas = signal(sol, "noise.y")
+plot(t, [v_true v_meas]; lw = 2,
+     label = ["true" "measured"])</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-true-vs-measured.svg"
+             alt="True and measured speed on one axes: the measured trace has small high-frequency wiggles on top of the true curve and looks essentially harmless.">
+        <figcaption>The measured trace, against the truth. Small enough to look harmless.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at</strong> the measured trace and say: if I showed you this and asked
+      whether it was good enough, you would say yes. A fraction of a km/h. Down in the noise,
+      as the phrase goes.</p>
+      <p><strong>Note for you, not for them:</strong> this noise is a deterministic sum of
+      sines, not a random process. The notebooks are committed with their outputs as the
+      lecture's fallback, and a plot that changes on every run is worse than useless. Mention it
+      only if someone asks why it looks periodic — then it is a good answer about reproducible
+      simulation.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Why small noise is not safe</h2>
+    <p>$$ \frac{d}{dt}\bigl[A\sin(\omega t)\bigr] \;=\; A\,\omega\cos(\omega t) $$</p>
+    <div class="cols cols-wide-right">
+      <div>
+        <ul class="small">
+          <li>Same amplitude <em>A</em>.</li>
+          <li>Frequency ten times higher.</li>
+          <li><strong>Slope ten times steeper.</strong></li>
+        </ul>
+        <p class="small">A derivative reports slope. It does not know or care that the wiggle
+        is small — it only sees how fast it moves.</p>
+        <p class="small muted">Above ω = 1 rad/s the derivative <em>amplifies</em>. High
+        frequencies are exactly where sensor noise lives.</p>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-two-sines.svg"
+             alt="Two sine waves of equal amplitude, one slow and one ten times faster, each with a tangent line drawn at its steepest point: the fast one's tangent is far steeper.">
+        <figcaption>Equal amplitude, ten times the frequency, ten times the slope. The
+          derivative sees the tangent lines, not the envelopes.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Draw the tangents with your finger</strong> on the projected plot. This is a
+      visual argument and it works far better as a gesture than as an equation.</p>
+      <p><strong>Say:</strong> any signal is a sum of sine waves — that is what a Fourier
+      transform is telling you. So this is not a special case about sines; it is what a
+      derivative does to every high-frequency component in anything you feed it.</p>
+      <p><strong>Ask the room:</strong> our noise is a hundredth of a km/h. If it sits at
+      500 rad/s, what does the derivative make of it? <em>(Five km/h per second of apparent
+      acceleration, out of nothing. Now multiply by T<sub>d</sub>.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>A near-pure derivative</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">07-derivative-and-noise.ipynb</span>
+            <span class="cell">cell <b>Near-pure derivative</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd
+# pushes the cutoff up, towards no filter at all
+sol = solve(ODEProblem(mtkcompile(
+    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 1000.0)),
+    [], tspan))
+
+plot_torque(sol; delivered = nothing)
+extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+          </div>
+        </div>
+        <div class="callout danger small">
+          <span class="label">Look at both plots together</span>
+          The speed trace still looks almost clean. The torque command is unusable. The failure
+          is invisible on the output and obvious on the actuator.
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-chattering-command.svg"
+             alt="Commanded torque against time with a near-pure derivative: a violently chattering trace swinging across a wide range, while the speed trace below remains smooth.">
+        <figcaption>Commanded torque with the filter effectively switched off.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Read out</strong> the range from <code>extrema</code>. Compare it to the
+      40 N·m the car actually needs.</p>
+      <p><strong>Say:</strong> and now think about what this is physically. That command goes
+      to an engine. Fuelling swinging like that, many times a second, forever. It will not break
+      today — it will wear something out, or overheat something, or simply feel terrible to sit
+      in.</p>
+      <p><strong>Say:</strong> and here is the same lesson as section 08 arriving from a
+      different direction — <em>always plot the actuator command</em>. The controlled variable
+      looked fine in both cases.</p>
+      <p><strong>Ask the room:</strong> would a real cruise control ever run a pure derivative?
+      <em>(No. Which is why the block you get in any real toolchain has a filter coefficient on
+      it, and why most industrial loops are PI with no derivative at all.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Filter it</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <p class="small">A first-order low-pass on the derivative path, with cutoff
+        <em>N</em> in rad/s:</p>
+        <p>$$ \frac{s\,N}{s+N} \qquad\text{instead of}\qquad s $$</p>
+        <div class="demo">
+          <div class="demo-head">
+            <span class="nb">07-derivative-and-noise.ipynb</span>
+            <span class="cell">cell <b>Nd family</b></span>
+          </div>
+          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5),
+           "Nd", [1000.0, 100.0, 20.0, 5.0];
+           tspan = (0.0, 120.0))
+
+plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
+          <div class="demo-foot">
+            <button class="copy">copy</button>
+            <span class="spacer"></span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+          </div>
+        </div>
+      </div>
+      <figure class="fig">
+        <img src="assets/figures/07-nd-family.svg"
+             alt="Commanded torque at four derivative filter coefficients: the chatter shrinks steadily as the cutoff comes down until the command is smooth.">
+        <figcaption>The same loop at four cutoffs. The chatter subsides.</figcaption>
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is what the <code>Nd</code> parameter is for. Every PID
+      block in every toolchain has one, and most people never touch it because they never look
+      at the actuator command. Now you know what it does and why it is there.</p>
+      <p><strong>Say:</strong> and notice the filter does not remove the noise. It attenuates
+      it, so that after the derivative amplifies what is left, the result is small enough not to
+      matter. Nothing here is exact.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Choosing the cutoff</h2>
+    <div class="cols">
+      <div>
+        <p class="lede">Low enough to remove the noise.</p>
+        <p class="lede">High enough to leave the signal.</p>
+        <p class="small muted">If those two ranges overlap, no first-order filter will save you
+        and you need a different measurement — a better sensor, or a state estimator that uses a
+        model to tell signal from noise.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">Not a recipe</span>
+        There is no formula here, because the answer depends on where your plant's dynamics sit
+        and where your sensor's noise sits. Find both, then choose. Anyone who gives you a
+        single number has assumed your plant.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> and the useful case is the common one — the signal you care about
+      is slow and has most of the power, the noise is fast and has very little. When those are
+      well separated, a first-order filter is all you need and the choice is easy.</p>
+      <p><strong>Say:</strong> when they are not separated, that is a Kalman filter conversation,
+      and it is a different course.</p>
+      <p><strong>Optional aside, only if time and appetite:</strong> a filtered derivative
+      <em>sN/(s+N)</em> is algebraically identical to a feedback loop with <em>N</em> forward and
+      an integrator in the feedback path. Same behavior, fewer operations, much harder to read.
+      Worth mentioning that the block in your toolchain may well be implemented the second way.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What this bought us</h2>
+    <ul>
+      <li>The derivative's real cost: it amplifies by frequency, and noise is all frequency.</li>
+      <li>A concrete reason the <code>Nd</code> parameter exists.</li>
+      <li>The rule, arriving for the second time today: plot the actuator command.</li>
+    </ul>
+    <p class="lede">Next: the tire has a limit too, and it is not in the engine.
+      <a href="#/10">→ 10, wheel and slip</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> we have now seen the controller defeated by an actuator that
+      saturates and by a sensor that lies. The last section is defeated by neither — it is
+      defeated by the plant itself changing character.</p>
+    </aside>
+  </section>
+
+</section>

@@ -1,0 +1,42 @@
+
+
+</div>
+</div>
+
+<script src="assets/reveal/dist/reveal.js"></script>
+<script src="assets/reveal/plugin/notes/notes.js"></script>
+<script src="assets/reveal/plugin/highlight/highlight.js"></script>
+<script src="assets/reveal/plugin/math/math.js"></script>
+<script src="assets/reveal/plugin/zoom/zoom.js"></script>
+<script src="assets/reveal/plugin/search/search.js"></script>
+<script src="assets/deck.js"></script>
+<script>
+Reveal.initialize({
+  // Deep links are part of the deck's contract with the landing page: #/3 is notebook 03.
+  center: false,
+  hash: true,
+  slideNumber: 'c/t',
+  width: 1280,
+  height: 760,
+  margin: 0.05,
+  minScale: 0.2,
+  maxScale: 1.8,
+
+  // No slide transitions. A projector at 30 Hz makes them look broken, and a lecturer
+  // stepping back and forth through a plot wants the plot, not an animation.
+  transition: 'none',
+  backgroundTransition: 'none',
+
+  pdfMaxPagesPerSlide: 1,
+  pdfSeparateFragments: false,
+
+  // KaTeX is vendored; `local` is what stops the plugin reaching for a CDN.
+  katex: { local: 'assets/katex' },
+
+  plugins: [ RevealNotes, RevealHighlight, RevealMath.KaTeX, RevealZoom, RevealSearch ]
+}).then(function () {
+  initDeck(Reveal);
+});
+</script>
+</body>
+</html>

@@ -10,45 +10,168 @@ is converted, and no second conversion is added anywhere downstream.
 """
 component CarPlant
   "Commanded engine torque"
-  tau_cmd = RealInput()
+  tau_cmd = RealInput() {^tau_cmd}
   "Road gradient, tan(alpha)"
-  grade = RealInput()
+  grade = RealInput() {^grade}
   "Primary measurement: vehicle speed in km/h"
-  v_kmh = RealOutput()
+  v_kmh = RealOutput() {^v_kmh}
   "Vehicle speed in SI units (m/s)"
-  v = RealOutput(units = "m/s")
-  engine = VehicleSystemsComponents.Vehicle.IdealEngine()
-  driveline = VehicleSystemsComponents.Vehicle.Driveline()
-  body = VehicleSystemsComponents.Vehicle.VehicleBody()
-  vsensor = TranslationalComponents.Sensors.VelocitySensor()
-  tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+  v = RealOutput(units = "m/s") {^v}
+  engine = VehicleSystemsComponents.Vehicle.IdealEngine() {^engine}
+  driveline = VehicleSystemsComponents.Vehicle.Driveline() {^driveline}
+  body = VehicleSystemsComponents.Vehicle.VehicleBody() {^body}
+  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
+  tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^tokmh}
   "Rotational ground for the engine mounts and gearbox housing"
-  rot_ground = RotationalComponents.Components.Fixed()
+  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
   "Road reference for the driveline contact"
-  trans_ground = TranslationalComponents.Components.Fixed()
+  trans_ground = TranslationalComponents.Components.Fixed() {^trans_ground}
 relations
-  connect(tau_cmd, engine.tau_cmd)
-  connect(engine.spline, driveline.spline)
-  connect(engine.support, rot_ground.spline)
-  connect(driveline.support_r, rot_ground.spline)
-  connect(driveline.flange, body.flange)
-  connect(driveline.support_t, trans_ground.flange)
-  connect(grade, body.grade)
-  connect(vsensor.flange, body.flange)
-  connect(vsensor.v, v)
-  connect(vsensor.v, tokmh.u)
-  connect(tokmh.y, v_kmh)
+  connect(tau_cmd, engine.tau_cmd) {^id12}
+  connect(engine.spline, driveline.spline) {^id13}
+  connect(engine.support, rot_ground.spline) {^id14}
+  connect(driveline.support_r, rot_ground.spline) {^id15}
+  connect(driveline.flange, body.flange) {^id16}
+  connect(driveline.support_t, trans_ground.flange) {^id17}
+  connect(grade, body.grade) {^id18}
+  connect(vsensor.flange, body.flange) {^id19}
+  connect(vsensor.v, v) {^id20}
+  connect(vsensor.v, tokmh.u) {^id21}
+  connect(tokmh.y, v_kmh) {^id22}
+metadata {
+  "_links": {
+    "tau_cmd": {
+      "Dyad": {"placement": {"diagram": {"x1": -80, "x2": 20, "y1": 450, "y2": 550}}}
+    },
+    "grade": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 470, "x2": 570, "y1": 950, "y2": 1050, "rot": 270}}
+      }
+    },
+    "v_kmh": {
+      "Dyad": {"placement": {"diagram": {"x1": 980, "x2": 1080, "y1": 630, "y2": 730}}}
+    },
+    "v": {
+      "Dyad": {"placement": {"diagram": {"x1": 970, "x2": 1070, "y1": 310, "y2": 410}}}
+    },
+    "engine": {
+      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 665, "y2": 765}}}
+    },
+    "driveline": {
+      "Dyad": {"placement": {"diagram": {"x1": 295, "x2": 395, "y1": 460, "y2": 560}}}
+    },
+    "body": {
+      "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 260, "y2": 360}}}
+    },
+    "vsensor": {
+      "Dyad": {"placement": {"diagram": {"x1": 295, "x2": 395, "y1": 20, "y2": 120}}}
+    },
+    "tokmh": {
+      "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 140, "y2": 240}}}
+    },
+    "rot_ground": {
+      "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 670, "y2": 770}}}
+    },
+    "trans_ground": {
+      "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 465, "y2": 565}}}
+    },
+    "id12": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 135, "y": 500}, {"x": 135, "y": 715}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id13": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 130, "y": 715}, {"x": 130, "y": 510}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id14": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [{"x": 140, "y": 715}, {"x": 140, "y": 615}, {"x": 480, "y": 615}],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id15": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [{"x": 280, "y": 510}], "E": -1},
+          {"S": -1, "M": [{"x": 480, "y": 615}], "E": 2}
+        ],
+        "junctions": [{"x": 280, "y": 615}],
+        "path": {}
+      }
+    },
+    "id16": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 260, "y": 510}, {"x": 260, "y": 310}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id17": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [{"x": 270, "y": 510}, {"x": 270, "y": 410}, {"x": 480, "y": 410}],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id18": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 760, "y": 1000}, {"x": 760, "y": 310}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id19": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 260, "y": 70}], "E": -1}, {"S": -1, "M": [], "E": 2}],
+        "junctions": [{"x": 260, "y": 310}],
+        "path": {}
+      }
+    },
+    "id20": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 980, "y": 70}, {"x": 980, "y": 360}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id21": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 410, "y": 190}], "E": 2}],
+        "junctions": [{"x": 410, "y": 70}],
+        "path": {}
+      }
+    },
+    "id22": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 572.5, "y": 190}, {"x": 572.5, "y": 680}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
 end
 
 test component TestCarPlant
   "Full torque (clamps to the engine limit)"
-  cmd = BlockComponents.Sources.Constant(k = 300.0)
+  cmd = BlockComponents.Sources.Constant(k = 300.0) {^cmd}
   "Road gradient, overridden per case"
-  grade_src = BlockComponents.Sources.Constant(k = 0.0)
-  plant = VehicleSystemsComponents.Vehicle.CarPlant()
+  grade_src = BlockComponents.Sources.Constant(k = 0.0) {^grade_src}
+  plant = VehicleSystemsComponents.Vehicle.CarPlant() {^plant}
 relations
-  connect(cmd.y, plant.tau_cmd)
-  connect(grade_src.y, plant.grade)
+  connect(cmd.y, plant.tau_cmd) {^id4}
+  connect(grade_src.y, plant.grade) {^id5}
   initial plant.body.mass.s = 0.0
   initial plant.engine.lag.x = 0.0
 metadata {
@@ -56,27 +179,38 @@ metadata {
     "tests": {
       "terminal_flat": {
         "stop": 800,
-        "params": {"grade_src.k": 0.0},
-        "initial": {"plant.body.mass.v": 0.0},
+        "params": {"grade_src.k": 0},
+        "initial": {"plant.body.mass.v": 0},
         "atol": {"plant.v_kmh": 0.05, "plant.v": 0.02},
         "expect": {
-          "initial": {"plant.v_kmh": 0.0},
+          "initial": {"plant.v_kmh": 0},
           "final": {"plant.v_kmh": 246.3956505391459},
           "signals": ["plant.v_kmh", "plant.v"]
         }
       },
       "grade_saturation": {
         "stop": 800,
-        "params": {"grade_src.k": 0.10},
+        "params": {"grade_src.k": 0.1},
         "initial": {"plant.body.mass.v": 36.111111111111114},
         "atol": {"plant.v_kmh": 0.05, "plant.engine.limiter.y": 0.001},
         "expect": {
           "initial": {"plant.v_kmh": 130.00000000000003},
-          "final": {"plant.v_kmh": 117.90055362058746, "plant.engine.limiter.y": 150.0},
+          "final": {"plant.v_kmh": 117.90055362058746, "plant.engine.limiter.y": 150},
           "signals": ["plant.v_kmh", "plant.engine.limiter.y"]
         }
       }
     }
+  },
+  "_links": {
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
+    "grade_src": {
+      "Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 280, "y2": 380}}}
+    },
+    "plant": {
+      "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 20, "y2": 120}}}
+    },
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 210, "y": 330}], "E": 2}], "path": {}}}
   }
 }
 end
