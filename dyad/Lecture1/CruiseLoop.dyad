@@ -1,0 +1,148 @@
+"""
+Cruise-control loop around the longitudinal car plant.
+
+The setpoint and feedback signal are both in km/h, so `k` is interpreted as N.m per km/h.
+Integral and derivative action are removed structurally when disabled; the same assembly therefore
+serves the P, PI, and PID lecture notebooks.
+"""
+component CruiseLoop
+  "Vehicle-speed setpoint in km/h"
+  setpoint = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Powertrain transport delay"
+  structural parameter theta_e::Time = 0.04
+  "Whether to include integral action"
+  structural parameter with_I::Boolean = true
+  "Whether to include derivative action"
+  structural parameter with_D::Boolean = true
+  "Controller gain in N.m per km/h"
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter y_max::Real = 1e6
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = y_max)
+  controller = BlockComponents.Continuous.LimPID(
+    with_I = with_I,
+    with_D = with_D,
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    Ni = Ni,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd)
+  "No separate feedforward path in this feedback loop"
+  zero_ff = BlockComponents.Sources.Constant(k = 0.0)
+relations
+  connect(setpoint, controller.u_s)
+  connect(plant.v_kmh, controller.u_m)
+  connect(zero_ff.y, controller.u_ff)
+  connect(controller.y, plant.tau_cmd)
+  connect(grade, plant.grade)
+end
+
+"""
+Flat-road 90 to 110 km/h setpoint-step scenario for `CruiseLoop`.
+
+The engine lag is preloaded with the torque holding the initial speed. The step occurs at the
+start of the run, avoiding an artificial pre-step interval in which a P-only controller would
+command zero torque at zero error.
+"""
+component CruiseLoopStep
+  structural parameter theta_e::Time = 0.04
+  structural parameter with_I::Boolean = false
+  structural parameter with_D::Boolean = false
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter y_max::Real = 1e6
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter v_lo::Real = 90.0
+  parameter v_hi::Real = 110.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter t_step::Time = 0.0
+  loop = VehicleSystemsComponents.Lecture1.CruiseLoop(
+    theta_e = theta_e,
+    with_I = with_I,
+    with_D = with_D,
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    Ni = Ni,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd)
+  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step)
+  road = BlockComponents.Sources.Constant(k = 0.0)
+relations
+  connect(demand.y, loop.setpoint)
+  connect(road.y, loop.grade)
+  initial loop.plant.body.mass.s = 0.0
+  initial loop.plant.body.mass.v = v0
+  initial loop.plant.engine.lag.x = tau0
+metadata {
+  "Dyad": {
+    "tests": {
+      "p_only": {
+        "stop": 100,
+        "atol": {"loop.plant.v_kmh": 0.05},
+        "expect": {
+          "initial": {"loop.plant.v_kmh": 90.0},
+          "final": {"loop.plant.v_kmh": 109.3},
+          "signals": ["loop.plant.v_kmh", "loop.controller.y", "demand.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis CruiseLoopTransient
+  extends TransientAnalysis(stop = 100)
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter y_max::Real = 1e6
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter v_lo::Real = 90.0
+  parameter v_hi::Real = 110.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter t_step::Time = 0.0
+  # This analysis is the P-only setpoint-step harness used for gain sweeps and the ZN gate.
+  model = VehicleSystemsComponents.Lecture1.CruiseLoopStep(
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    Ni = Ni,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd,
+    v_lo = v_lo,
+    v_hi = v_hi,
+    v0 = v0,
+    tau0 = tau0,
+    t_step = t_step)
+relations
+end

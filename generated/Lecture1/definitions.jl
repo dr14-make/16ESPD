@@ -205,5 +205,8 @@ end
 
 include("CarStepTestTransient_definition.jl")
 include("CarStepTest_definition.jl")
+include("CruiseLoopStep_definition.jl")
+include("CruiseLoopTransient_definition.jl")
+include("CruiseLoop_definition.jl")
 include("WideOpenThrottleTransient_definition.jl")
 include("WideOpenThrottle_definition.jl")

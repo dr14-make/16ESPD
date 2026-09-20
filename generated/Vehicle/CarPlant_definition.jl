@@ -7,7 +7,7 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   CarPlant(; name)
+   CarPlant(; name, theta_e, T_max)
 
 Longitudinal car plant (L0): torque command and road grade in, speed out.
 
@@ -18,6 +18,13 @@ measurement so the control loop built around this plant runs entirely in km/h â€
 measurement and error all in km/h. The plant internals stay SI; this is the only place a unit
 is converted, and no second conversion is added anywhere downstream.
 
+## Parameters:
+
+| Name         | Description                         | Units  |   Default value |
+| ------------ | ----------------------------------- | ------ | --------------- |
+| `theta_e`         | Powertrain transport delay                         | s  |   0.04 |
+| `T_max`         | Peak deliverable engine torque                         | N.m  |   150.0 |
+
 ## Connectors
 
  * `tau_cmd` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
@@ -25,7 +32,7 @@ is converted, and no second conversion is added anywhere downstream.
  * `v_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CarPlant(; name = nothing, kwargs...)
+@component function CarPlant(; name = nothing, theta_e=0.04, T_max=Float64(150.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,6 +63,9 @@ is converted, and no second conversion is added anywhere downstream.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Real), [description = "Peak deliverable engine torque"])
+  __initial_conditions[T_max] = __local__T_max
 
   ### Final Parameters (assignments)
 
@@ -75,7 +85,7 @@ is converted, and no second conversion is added anywhere downstream.
   ### Components
   # Subcomponent engine of type VehicleSystemsComponents.Vehicle.IdealEngine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.IdealEngine(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.IdealEngine(; theta_e=theta_e, T_max=T_max, engine_overrides...))
   # Subcomponent driveline of type VehicleSystemsComponents.Vehicle.Driveline
   driveline_overrides = __pop_subcomponent_overrides!(__overrides, "driveline")
   push!(__systems, @named driveline = VehicleSystemsComponents.Vehicle.Driveline(; driveline_overrides...))

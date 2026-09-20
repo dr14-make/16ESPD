@@ -10,4 +10,6 @@ end
 
 
 include("CarStepTest_experiment.jl")
+include("CruiseLoopStep_experiment.jl")
+include("CruiseLoop_experiment.jl")
 include("WideOpenThrottle_experiment.jl")
