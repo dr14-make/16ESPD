@@ -6,7 +6,13 @@ planning conversation can build any one of them without asking questions.
 Shared conventions: every notebook opens with a one-cell setup that activates the project and
 loads the shared helper from `notebooks/lecture01/support.jl`; speed axes are km/h because the
 model emits km/h through `Vehicle.ToKmPerHour`, not because the notebook converts anything;
-the control loop runs in km/h throughout, so every gain `k` is in N.m per km/h; every notebook ends with a short
+the control loop runs in km/h throughout, so every gain `k` is in N.m per km/h;
+**every notebook shows the Dyad model it runs**, near where that model is introduced — either
+`show_dyad("CruiseLoop")`, which lifts the declaration out of `dyad/` with its docstring and
+renders it inline, or a markdown link to the source where the same model has already been shown
+in an earlier notebook. A notebook that plots a model's behavior without ever showing the model
+asks its reader to take the physics on trust, and these notebooks are the students' study
+material, not just the lecturer's script; every notebook ends with a short
 "what this bought us" markdown cell that names the next notebook. Model construction and
 solving happen in `src/`, so a code cell in a notebook is a call and a plot, not twenty lines
 of assembly.
