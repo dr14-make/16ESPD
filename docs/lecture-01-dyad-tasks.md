@@ -7,8 +7,13 @@ notebook consumes them.
 ## Submodule layout
 
     dyad/
-      Vehicle/      physical models, shared by every lecture
-      Lecture1/     control assemblies and scenarios, specific to this lecture
+      Vehicle/      the vehicle and its environment, shared by every lecture
+      Lecture1/     controllers, teaching harnesses and analyses, specific to this lecture
+
+The dividing line: if lecture 2 would use it unchanged, it belongs in `Vehicle/`. That puts
+`CarPlant` and `GradeProfile` in `Vehicle/` — a car is a car and a hill is a hill regardless of
+what is being taught about them. `CruiseLoop`, the scenario harnesses and every analysis go in
+`Lecture1/`, because they exist to teach control rather than to be a vehicle.
 
 Lecture-structured where lectures actually differ. The car itself is reused by lecture 2
 (engine control) and beyond, and promoting a component to a different submodule later breaks
@@ -120,7 +125,19 @@ explicit RK solvers handle it better than BDF, as the multibody equivalent does.
 
 ## Lecture1 submodule
 
-### `CarPlant` (L0)
+### Harnesses and analyses
+
+**A component with unconnected `RealInput` ports cannot be a `TransientAnalysis` model.**
+`CarPlant` takes `tau_cmd` and `grade`, so every notebook scenario needs a harness component
+that drives those inputs, plus an analysis extending `TransientAnalysis` that points at it.
+This was missing from the first version of this brief.
+
+Harnesses also carry the initial conditions. `CarPlant` will not initialize without
+`plant.body.mass.s`, and a harness that starts from a settled cruise should also set
+`plant.engine.lag.x` to the holding torque — otherwise the run wastes hundreds of seconds
+settling before the interesting part, because the vehicle's own time constant is about 60 s.
+
+### `CarPlant` (L0) — in the `Vehicle` submodule
 
 `IdealEngine` + `Driveline` + `VehicleBody` + `TranslationalComponents.Sensors.VelocitySensor`,
 with the sensor output passed through `Vehicle.ToKmPerHour`.

@@ -123,9 +123,28 @@ Decisions and the reason each was taken, so a takeover does not relitigate them.
 | Submodules | `Vehicle/` + `Lecture1/` | the car is reused by later lectures; moving a component between submodules later breaks every reference |
 | Noise source | deterministic sum of sines | committed outputs must reproduce; an RNG gives a different plot every run |
 | Anti-windup | build a clamping variant alongside LimPID's back-calculation | the source video teaches clamping and notebook 06 is Tier 1, so the mismatch would be visible on screen |
+| Submodule split | `Vehicle/` is the vehicle and its environment (`CarPlant`, `GradeProfile` included); `Lecture1/` is controllers, harnesses and analyses | the test is whether lecture 2 would use it unchanged. A car is a car regardless of what is being taught about it |
 | Slip model | 1D, on the multibody friction-curve shape | the 3D slip models are high-index DAEs, far too heavy for an introductory lecture |
 | Unit conversion | a Dyad component on the sensor output, not notebook arithmetic | the conversion is visible as a block in the diagram, and a plotted signal is never transformed after the fact |
 | Loop units | the whole control loop runs in km/h | setpoint, measurement and error are all km/h, so every gain in every notebook means the same thing and the numbers match a dashboard. Plant internals stay SI; exactly one conversion exists, at the sensor |
+
+## Gotchas found during the build
+
+- **A model with unconnected `RealInput` ports cannot be a `TransientAnalysis` model.** Every
+  notebook scenario therefore needs a harness component driving those inputs, plus its own
+  analysis. This was missing from the first version of the Dyad brief.
+- **`CarPlant` will not initialize without `plant.body.mass.s`.** A harness starting from
+  settled cruise should also set `plant.engine.lag.x` to the holding torque, or the run spends
+  hundreds of seconds settling first — the vehicle's own time constant is about 60 s.
+- **World age in `setup()`.** `Core.eval(@__MODULE__, :(using X))` creates a binding that the
+  already-compiled calling method cannot see, giving `UndefVarError ... The binding may be too
+  new`. Split the calls into separate methods reached through `invokelatest`.
+- **Neither `jupyter` nor `IJulia` is installed on this machine**, so no notebook can be
+  executed here until one is. Committed outputs are a decision from the planning session, not a
+  nicety — they are the projector fallback and the student-facing artifact.
+- **Memory.** Running several agents alongside the Dyad language server exhausts this machine;
+  `earlyoom` is configured to prefer killing `julia`. A run that dies with no error message was
+  probably killed, not broken. Retry before debugging.
 
 ## Conventions
 
