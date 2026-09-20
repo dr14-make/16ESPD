@@ -56,6 +56,12 @@ import Moshi as __Ext__Moshi
   # Subcomponent gp of type VehicleSystemsComponents.Vehicle.GradeProfile
   gp_overrides = __pop_subcomponent_overrides!(__overrides, "gp")
   push!(__systems, @named gp = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=0.1, start_time=Float64(1.0), gp_overrides...))
+  # Subcomponent gp_finite of type VehicleSystemsComponents.Vehicle.GradeProfile
+  gp_finite_overrides = __pop_subcomponent_overrides!(__overrides, "gp_finite")
+  push!(__systems, @named gp_finite = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=0.1, start_time=0.5, duration=0.5, gp_finite_overrides...))
+  # Subcomponent sink_finite of type BlockComponents.Routing.RealPassThrough
+  sink_finite_overrides = __pop_subcomponent_overrides!(__overrides, "sink_finite")
+  push!(__systems, @named sink_finite = BlockComponents.Routing.RealPassThrough(; sink_finite_overrides...))
   # Subcomponent sink of type BlockComponents.Routing.RealPassThrough
   sink_overrides = __pop_subcomponent_overrides!(__overrides, "sink")
   push!(__systems, @named sink = BlockComponents.Routing.RealPassThrough(; sink_overrides...))
@@ -72,6 +78,7 @@ import Moshi as __Ext__Moshi
 
   ### Equations
   push!(__eqs, connect(gp.y, sink.u))
+  push!(__eqs, connect(gp_finite.y, sink_finite.u))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -22,7 +22,7 @@ stay explicit and must not be collapsed into an instantaneous torque source.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `theta_e`         | Injection-to-torque transport delay                         | s  |   0.04 |
+| `theta_e`         | Injection-to-torque transport delay                         | s  |   0.3 |
 | `tau_e`         | Manifold-filling first-order lag                         | s  |   0.3 |
 | `T_max`         | Peak deliverable torque                         | N.m  |   150.0 |
 
@@ -32,7 +32,7 @@ stay explicit and must not be collapsed into an instantaneous torque source.
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
 """
-@component function IdealEngine(; name = nothing, theta_e=0.04, tau_e=0.3, T_max=Float64(150.0), kwargs...)
+@component function IdealEngine(; name = nothing, theta_e=0.3, tau_e=0.3, T_max=Float64(150.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

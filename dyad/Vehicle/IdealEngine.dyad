@@ -29,7 +29,7 @@ component IdealEngine
   # Structural because PadeDelay computes its coefficients from delayTime at construction,
   # so the delay must be a concrete value rather than a symbolic parameter.
   "Injection-to-torque transport delay"
-  structural parameter theta_e::Time = 0.04
+  structural parameter theta_e::Time = 0.3
   "Manifold-filling first-order lag"
   parameter tau_e::Time = 0.3
   "Peak deliverable torque"

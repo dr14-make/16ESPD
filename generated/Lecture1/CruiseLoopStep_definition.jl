@@ -7,7 +7,7 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   CruiseLoopStep(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, y_max, y_min, wp, wd, v_lo, v_hi, v0, tau0, t_step)
+   CruiseLoopStep(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, v_lo, v_hi, v0, tau0, t_step)
 
 Flat-road 90 to 110 km/h setpoint-step scenario for `CruiseLoop`.
 
@@ -19,7 +19,7 @@ command zero torque at zero error.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `theta_e`         |                          | s  |   0.04 |
+| `theta_e`         |                          | s  |   0.3 |
 | `with_I`         |                          | --  |   false |
 | `with_D`         |                          | --  |   false |
 | `k`         |                          | --  |   56.0 |
@@ -27,7 +27,8 @@ command zero torque at zero error.
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
 | `Ni`         |                          | --  |   0.9 |
-| `y_max`         |                          | --  |   1e6 |
+| `T_max`         |                          | N.m  |   150.0 |
+| `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
 | `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
@@ -37,7 +38,7 @@ command zero torque at zero error.
 | `tau0`         |                          | N.m  |   31.078 |
 | `t_step`         |                          | s  |   0.0 |
 """
-@component function CruiseLoopStep(; name = nothing, theta_e=0.04, with_I=false, with_D=false, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, y_max=Float64(1000000.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), kwargs...)
+@component function CruiseLoopStep(; name = nothing, theta_e=0.3, with_I=false, with_D=false, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -83,6 +84,9 @@ command zero torque at zero error.
   __local__Ni = Ni
   append!(__params, @parameters (Ni::Real))
   __initial_conditions[Ni] = __local__Ni
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Real))
+  __initial_conditions[T_max] = __local__T_max
   __local__y_max = y_max
   append!(__params, @parameters (y_max::Real))
   __initial_conditions[y_max] = __local__y_max
@@ -125,7 +129,7 @@ command zero torque at zero error.
   ### Components
   # Subcomponent loop of type VehicleSystemsComponents.Lecture1.CruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wp=wp, wd=wd, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, loop_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=v_lo, height=v_hi - v_lo, start_time=t_step, demand_overrides...))

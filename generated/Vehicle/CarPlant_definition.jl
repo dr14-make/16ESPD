@@ -22,7 +22,7 @@ is converted, and no second conversion is added anywhere downstream.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `theta_e`         | Powertrain transport delay                         | s  |   0.04 |
+| `theta_e`         | Powertrain transport delay                         | s  |   0.3 |
 | `T_max`         | Peak deliverable engine torque                         | N.m  |   150.0 |
 
 ## Connectors
@@ -32,7 +32,7 @@ is converted, and no second conversion is added anywhere downstream.
  * `v_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CarPlant(; name = nothing, theta_e=0.04, T_max=Float64(150.0), kwargs...)
+@component function CarPlant(; name = nothing, theta_e=0.3, T_max=Float64(150.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

@@ -7,13 +7,13 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   GradeProfile(; name, gradient, start_time)
+   GradeProfile(; name, gradient, start_time, duration)
 
-Road-grade scenario: flat, then a sustained climb from a given start time.
+Road-grade scenario: flat, climb, then flat again.
 
-A step in the gradient signal — flat (zero) until `start_time`, then a constant `gradient`
-held for the rest of the run. Drives a `CarPlant`'s `grade` input. Composed from a standard
-source; no new equations.
+The climb starts at `start_time` and lasts for `duration`. The default infinite duration retains
+the original flat-to-sustained-climb behavior. A finite duration exposes the recovery transient
+needed for the windup demonstration.
 
 ## Parameters:
 
@@ -21,12 +21,13 @@ source; no new equations.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `gradient`         | Gradient of the climb, tan(alpha)                         | --  |   0.10 |
 | `start_time`         | Time at which the climb begins                         | s  |   30.0 |
+| `duration`         | Climb duration; Inf retains a sustained climb                         | s  |   Inf |
 
 ## Connectors
 
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function GradeProfile(; name = nothing, gradient=0.1, start_time=Float64(30.0), kwargs...)
+@component function GradeProfile(; name = nothing, gradient=0.1, start_time=Float64(30.0), duration=Inf, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -63,6 +64,9 @@ source; no new equations.
   __local__start_time = start_time
   append!(__params, @parameters (start_time::Real), [description = "Time at which the climb begins"])
   __initial_conditions[start_time] = __local__start_time
+  __local__duration = duration
+  append!(__params, @parameters (duration::Real), [description = "Climb duration; Inf retains a sustained climb"])
+  __initial_conditions[duration] = __local__duration
 
   ### Final Parameters (assignments)
 
@@ -77,9 +81,9 @@ source; no new equations.
   __constants = Any[]
 
   ### Components
-  # Subcomponent step of type BlockComponents.Sources.Step
-  step_overrides = __pop_subcomponent_overrides!(__overrides, "step")
-  push!(__systems, @named step = BlockComponents.Sources.Step(; height=gradient, offset=Float64(0.0), start_time=start_time, step_overrides...))
+  # Subcomponent pulse of type BlockComponents.Sources.Pulse
+  pulse_overrides = __pop_subcomponent_overrides!(__overrides, "pulse")
+  push!(__systems, @named pulse = BlockComponents.Sources.Pulse(; amplitude=gradient, offset=Float64(0.0), start_time=start_time, duty_cycle=Float64(1.0), period=duration, pulse_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -92,7 +96,7 @@ source; no new equations.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(step.y, y))
+  push!(__eqs, connect(pulse.y, y))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

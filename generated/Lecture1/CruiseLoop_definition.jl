@@ -7,7 +7,7 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   CruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, y_max, y_min, wp, wd)
+   CruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd)
 
 Cruise-control loop around the longitudinal car plant.
 
@@ -19,7 +19,7 @@ serves the P, PI, and PID lecture notebooks.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `theta_e`         | Powertrain transport delay                         | s  |   0.04 |
+| `theta_e`         | Powertrain transport delay                         | s  |   0.3 |
 | `with_I`         | Whether to include integral action                         | --  |   true |
 | `with_D`         | Whether to include derivative action                         | --  |   true |
 | `k`         | Controller gain in N.m per km/h                         | --  |   56.0 |
@@ -27,7 +27,8 @@ serves the P, PI, and PID lecture notebooks.
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
 | `Ni`         |                          | --  |   0.9 |
-| `y_max`         |                          | --  |   1e6 |
+| `T_max`         | Physical engine torque ceiling                         | N.m  |   150.0 |
+| `y_max`         | Controller output ceiling; defaults to the physical ceiling                         | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
 | `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
@@ -37,7 +38,7 @@ serves the P, PI, and PID lecture notebooks.
  * `setpoint` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function CruiseLoop(; name = nothing, theta_e=0.04, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, y_max=Float64(1000000.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), kwargs...)
+@component function CruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -83,8 +84,11 @@ serves the P, PI, and PID lecture notebooks.
   __local__Ni = Ni
   append!(__params, @parameters (Ni::Real))
   __initial_conditions[Ni] = __local__Ni
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Real), [description = "Physical engine torque ceiling"])
+  __initial_conditions[T_max] = __local__T_max
   __local__y_max = y_max
-  append!(__params, @parameters (y_max::Real))
+  append!(__params, @parameters (y_max::Real), [description = "Controller output ceiling; defaults to the physical ceiling"])
   __initial_conditions[y_max] = __local__y_max
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
@@ -112,7 +116,7 @@ serves the P, PI, and PID lecture notebooks.
   ### Components
   # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; theta_e=theta_e, T_max=y_max, plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; theta_e=theta_e, T_max=T_max, plant_overrides...))
   # Subcomponent controller of type BlockComponents.Continuous.LimPID
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
   push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wp=wp, wd=wd, controller_overrides...))

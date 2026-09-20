@@ -1,26 +1,29 @@
 """
-Road-grade scenario: flat, then a sustained climb from a given start time.
+Road-grade scenario: flat, climb, then flat again.
 
-A step in the gradient signal — flat (zero) until `start_time`, then a constant `gradient`
-held for the rest of the run. Drives a `CarPlant`'s `grade` input. Composed from a standard
-source; no new equations.
+The climb starts at `start_time` and lasts for `duration`. The default infinite duration retains
+the original flat-to-sustained-climb behavior. A finite duration exposes the recovery transient
+needed for the windup demonstration.
 """
 component GradeProfile
   "Road gradient output, tan(alpha)"
   y = RealOutput() {^y}
-  step = BlockComponents.Sources.Step(height = gradient, offset = 0.0, start_time = start_time) {^step}
+  pulse = BlockComponents.Sources.Pulse(amplitude = gradient, offset = 0.0,
+    start_time = start_time, duty_cycle = 1.0, period = duration) {^step}
   "Gradient of the climb, tan(alpha)"
   parameter gradient::Real = 0.10
   "Time at which the climb begins"
   parameter start_time::Time = 30.0
+  "Climb duration; Inf retains a sustained climb"
+  parameter duration::Time = Inf
 relations
-  connect(step.y, y) {^id3}
+  connect(pulse.y, y) {^id3}
 metadata {
   "_links": {
     "y": {
       "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 450, "y2": 550}}}
     },
-    "step": {
+    "pulse": {
       "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 450, "y2": 550}}}
     },
     "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
@@ -31,9 +34,15 @@ end
 test component TestGradeProfile
   "Flat until t = 1, then a sustained 10% climb"
   gp = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = 0.10, start_time = 1.0)
+  "Finite climb used to verify the return to flat road"
+  gp_finite = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = 0.10, start_time = 0.5, duration = 0.5)
+  sink_finite = BlockComponents.Routing.RealPassThrough()
+
   sink = BlockComponents.Routing.RealPassThrough()
 relations
   connect(gp.y, sink.u)
+  connect(gp_finite.y, sink_finite.u)
+
 metadata {
   "Dyad": {
     "tests": {
@@ -41,6 +50,11 @@ metadata {
         "stop": 2,
         "atol": {"sink.y": 1e-9},
         "expect": {"initial": {"sink.y": 0}, "final": {"sink.y": 0.1}, "signals": ["sink.y"]}
+      },
+      "finite": {
+        "stop": 2,
+        "atol": {"sink_finite.y": 1e-9},
+        "expect": {"initial": {"sink_finite.y": 0}, "final": {"sink_finite.y": 0}, "signals": ["sink_finite.y"]}
       }
     }
   }

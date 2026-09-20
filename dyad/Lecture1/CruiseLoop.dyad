@@ -11,7 +11,7 @@ component CruiseLoop
   "Road gradient, tan(alpha)"
   grade = RealInput()
   "Powertrain transport delay"
-  structural parameter theta_e::Time = 0.04
+  structural parameter theta_e::Time = 0.3
   "Whether to include integral action"
   structural parameter with_I::Boolean = true
   "Whether to include derivative action"
@@ -22,11 +22,14 @@ component CruiseLoop
   parameter Td::Time = 0.1
   parameter Nd::Real = 10.0
   parameter Ni::Real = 0.9
-  parameter y_max::Real = 1e6
+  "Physical engine torque ceiling"
+  parameter T_max::Torque = 150.0
+  "Controller output ceiling; defaults to the physical ceiling"
+  parameter y_max::Real = T_max
   parameter y_min::Real = 0.0
   parameter wp::Real = 1.0
   parameter wd::Real = 1.0
-  plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = y_max)
+  plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = T_max)
   controller = BlockComponents.Continuous.LimPID(
     with_I = with_I,
     with_D = with_D,
@@ -57,7 +60,7 @@ start of the run, avoiding an artificial pre-step interval in which a P-only con
 command zero torque at zero error.
 """
 component CruiseLoopStep
-  structural parameter theta_e::Time = 0.04
+  structural parameter theta_e::Time = 0.3
   structural parameter with_I::Boolean = false
   structural parameter with_D::Boolean = false
   parameter k::Real = 56.0
@@ -65,7 +68,8 @@ component CruiseLoopStep
   parameter Td::Time = 0.1
   parameter Nd::Real = 10.0
   parameter Ni::Real = 0.9
-  parameter y_max::Real = 1e6
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
   parameter y_min::Real = 0.0
   parameter wp::Real = 1.0
   parameter wd::Real = 1.0
@@ -83,6 +87,7 @@ component CruiseLoopStep
     Td = Td,
     Nd = Nd,
     Ni = Ni,
+    T_max = T_max,
     y_max = y_max,
     y_min = y_min,
     wp = wp,
@@ -119,7 +124,8 @@ analysis CruiseLoopTransient
   parameter Td::Time = 0.1
   parameter Nd::Real = 10.0
   parameter Ni::Real = 0.9
-  parameter y_max::Real = 1e6
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
   parameter y_min::Real = 0.0
   parameter wp::Real = 1.0
   parameter wd::Real = 1.0
@@ -135,6 +141,7 @@ analysis CruiseLoopTransient
     Td = Td,
     Nd = Nd,
     Ni = Ni,
+    T_max = T_max,
     y_max = y_max,
     y_min = y_min,
     wp = wp,

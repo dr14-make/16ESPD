@@ -18,7 +18,7 @@ component CarPlant
   "Vehicle speed in SI units (m/s)"
   v = RealOutput(units = "m/s") {^v}
   "Powertrain transport delay"
-  structural parameter theta_e::Time = 0.04
+  structural parameter theta_e::Time = 0.3
   "Peak deliverable engine torque"
   parameter T_max::Torque = 150.0
   engine = VehicleSystemsComponents.Vehicle.IdealEngine(theta_e = theta_e, T_max = T_max) {^engine}
