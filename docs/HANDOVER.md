@@ -18,19 +18,25 @@ reused by later lectures) and `Lecture1/` (control assemblies and scenarios).
 
 ## Status
 
-    [ ] Task 1  Vehicle components                 IN PROGRESS (Dyad agent)
-    [ ] Task 2  CarPlant, GradeProfile
-    [ ] Task 3  CruiseLoop + Ziegler-Nichols gate   <-- validates the whole design
-    [ ] Task 4  Clamping anti-windup
-    [ ] Task 5  Sampler
-    [ ] Task 6  MeasurementNoise
+    [x] Task 1  Vehicle components
+    [x] Task 2  CarPlant, GradeProfile
+    [x] Task 3  CruiseLoop + Ziegler-Nichols gate   Ku = 114.56, Pu = 2.175 s
+    [x] Task 4  Clamping anti-windup                ClampingPID + ClampingCruiseClimb
+    [x] Task 5  Sampler                             surrogate only — see Risk 3
+    [x] Task 6  MeasurementNoise                    the block; no loop wires it in yet
     [ ] Task 7  Wheel and slip
 
-    [ ] src/ shared helper
-    [ ] Notebooks 01, 03, 04, 05, 06   (Tier 1)
-    [ ] Notebook 08                    (Tier 1)
-    [ ] Notebooks 09, 02               (Tier 2)
+    [x] shared helper                              notebooks/lecture01/support.jl, not src/
+    [x] Notebooks 01, 03, 04, 05, 06   (Tier 1)
+    [x] Notebook 08                    (Tier 1)
+    [x] Notebooks 09, 02               (Tier 2)
     [ ] Notebooks 07, 10               (Tier 3)
+
+    [ ] Notebook 07 is blocked: `MeasurementNoise` exists but nothing wires it into a loop.
+        Needs a `NoisyCruiseLoop` / `NoisyCruiseStep` / `NoisyCruiseTransient` in dyad/Lecture1.
+    [ ] Notebook 09 and dyad/Lecture1/Sampler.dyad carry a Pade surrogate rather than a clocked
+        partition, and should be translated to DiscreteComponents. Blocked upstream — see
+        Risk 3 and https://github.com/dr14-make/16ESPD/issues/1
 
 Update this block as things land. If the lecture has to be given from whatever is finished,
 Tier 1 alone is a complete lecture: intro, P, PI, PID, windup, heuristic tuning.
@@ -55,7 +61,9 @@ Derived, computed analytically and to be confirmed against simulation:
     cruise torque at 90 km/h                   = 31.1 N.m
     cruise torque at 110 km/h                  = 40.1 N.m
     10% climb at 130 km/h needs                = 2024 N  >  1935 N available  -> saturates
-    speed it falls back to on that climb       = 32.7 m/s = 118 km/h
+    speed the climb drives it towards          = 32.7 m/s = 118 km/h (asymptote)
+      — 120 s of hill reaches 119.05 km/h and is still falling, so say "heads for", not
+        "settles at", anywhere a finite climb is being described
 
 The 90 -> 110 km/h step needs torque to go from 31 to 40 N.m, comfortably inside the limit, so
 notebooks 03-05 never saturate. Saturation is introduced deliberately in 06 and nowhere earlier.
@@ -136,12 +144,37 @@ km/h really does take a long time — but the time axes must be chosen to suit i
 loop will be dramatically faster than the open loop, which is itself worth saying out loud in
 the lecture.
 
-### Risk 3 — the sampler may not be buildable as a real clocked partition
+### Risk 3 — RESOLVED: the surrogate ships, and the reason recorded here was wrong
 
-Dyad ships no sampled blocks and the `external`-component route over ModelingToolkit clocks is
-unverified against this kernel. Task 5 mandates a guaranteed-working surrogate first. If the
-stretch fails, notebook 09 still exists and must state plainly that it demonstrates the
-mechanism rather than a real sampler.
+Notebook 09 runs `Lecture1.HalfSampleDelay`, a third-order Pade transport delay of `Ts/2` in the
+feedback path. It reproduces the phase a zero-order hold costs, so every trend the notebook
+teaches is faithful, and it produces no staircase. The notebook states that plainly.
+
+The reason recorded here was "Dyad ships no sampled blocks". **That is false.**
+`DiscreteComponents` is a declared dependency of this package and ships `PeriodicClock`,
+`Sampler`, `ZeroOrderHold`, `SampleWithADEffects`, `UnitDelay`, `DiscreteIntegrator`,
+`DiscretePIDStandard`, `DiscreteStateSpace` and `DiscreteTransferFunction` — plus an
+`Examples/SimplePID` with exactly the topology notebook 09 wants.
+
+The real blocker is the compiler. Measured against the `dyad-3.3.0` channel, Julia 1.12.7:
+
+    HybridSystemNotSupportedException: ModelingToolkitBase.jl cannot simplify systems
+    with both `Shift` and `Differential` operators.
+
+A clocked controller around a continuous plant carries both operators by construction, so no
+choice of parameters or topology avoids it. `TestPeriodicClock`, `TestZeroOrderHold`,
+`TestSampleWithADEffects` and `TestUnitDelay` all fail that way. `TestDiscreteIntegrator` and
+`Examples/SimplePID` fail earlier still, on `MethodError: input_timedomain(::SampleTime, ...)` —
+`SynchToolkit` carries no dispatch for the `SampleTime` operator, which is the default of
+`structural parameter Ts` in `DiscretePIDStandard` and the discrete filters.
+
+So the surrogate was the only route available, for a different reason than the one written down.
+Do not re-derive this: the check is one line, and it is the whole test.
+
+    mtkcompile(DiscreteComponents.Examples.SimplePID(; name = :m))
+
+When that returns a system instead of throwing, the translation is unblocked. It is tracked in
+[issue #1](https://github.com/dr14-make/16ESPD/issues/1).
 
 ### Risk 4 — terminal speed of 246 km/h is unrealistically high
 
