@@ -30,8 +30,8 @@ call open.
 | [013](issues/013-end-to-end-browser-test-harness.md) | End-to-end browser test harness | `enhancement` | `medium` | `m` | yes | 006, 012 | **partial** |
 | [014](issues/014-example-deck-lecture-1-cruise-control.md) | Example deck: lecture 1 cruise control | `enhancement` | `medium` | `s` | no | 006, 012 | **done** |
 | [015](issues/015-release-process-build-force-add-bundle-tag.md) | Release process: build, force-add bundle, tag | `enhancement` `tech-debt` | `medium` | `s` | yes | 001, 007 | todo |
-| [016](issues/016-publish-the-deck-theme-as-a-bond.md) | Publish the deck's theme as a bond | `enhancement` | `high` | `m` | no | 008, 012 | todo |
-| [017](issues/017-repainting-a-plotly-card-mutates-a-shared-payload.md) | Repainting a Plotly card mutates the payload it was given | `bug` | `medium` | `m` | no | 009, 010 | todo |
+| [016](issues/016-publish-the-deck-theme-as-a-bond.md) | Publish the deck's theme as a bond | `enhancement` | `high` | `m` | no | 008, 012 | **done** |
+| [017](issues/017-repainting-a-plotly-card-mutates-a-shared-payload.md) | Repainting a Plotly card mutates the payload it was given | `bug` | `high` | `s` | yes | 009, 010 | **done** |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
@@ -47,7 +47,13 @@ GridStack library; the design decision it traces to calls only for a schema shap
 GridStack's, and assigns drag-and-drop to the visual editor it defers. A 12-column CSS grid
 already renders that schema exactly, so the 2.1 MB dependency bought nothing this version uses.
 What the grid does not do is complain, so the loader now refuses a deck whose cards overlap or
-reach past the last column. The broken-card state is what remains open.
+reach past the last column.
+
+`h` has since been made to mean what it says. A figure is given its card's height rather than
+drawing itself 400 px inside it, a markdown card no longer spends 32 px of its box on a margin
+Pluto's own stylesheet would have reset, and the lecture deck's geometry was retuned against
+both: no card on any of its six slides clips, measured. The broken-card state is what remains
+open.
 
 014 chose six slides, one per lecture beat, which needed an open-loop cell the spike notebook
 did not have — notebook 01's beat is a car with no controller, and setting every gain to zero
@@ -56,11 +62,25 @@ live kernel: six titled slides, forty cards live, seven interactive plots, pagin
 six, and a gain change reaching every dependent card. It is not silent, though — 017 records
 the console error it logs while doing all of that.
 
+017 turned out to be blocking rather than cosmetic: four of the lecture deck's seven plots
+were blank, holding their full data with no line drawn, because Plotly aborts a draw on a
+duplicate modebar button after attaching the traces. The deck now hands every draw its own copy
+of a payload's object spine, which shares the typed arrays and the 3.82 MB library string and
+so costs nothing. The suite asserts a *drawn* line, on a cell placed on two slides, which is
+the case that breaks.
+
+016 is **done** against the lecture deck and the browser suite: the deck writes `deck_theme`
+on connect and whenever the viewer's scheme changes, and the notebook picks its Plotly template
+off it. Two findings came out of building it, both in `../HANDOFF.md` — `bonds` cannot say
+whether a notebook declares a bond, and a card painting a body whose payload the kernel has
+already replaced renders nothing at all.
+
 013 is **partial**: the harness drives headless Chrome over the DevTools protocol and runs as
 part of `] test PlutoDeck`, covering the deck page, a bond round trip, console errors and the
 deck chrome 012 adds — navigation by pointer and by keyboard, the ends, a widget that keeps the
-arrow keys it needs, and the geometry a hidden slide holds on to. It drives `start_session` and
-`serve` rather than `present`.
+arrow keys it needs, the geometry a hidden slide holds on to, a plot drawn on both the slides
+it is placed on, and a plot repainting to match the viewer's color scheme. It drives
+`start_session` and `serve` rather than `present`.
 
 ## Order
 
