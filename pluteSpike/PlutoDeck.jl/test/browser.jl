@@ -1,4 +1,4 @@
-# The deck, driven in real headless Chrome against a real kernel.
+# The deck, driven in real headless Chrome against a real kernel `present` brought up.
 #
 # Everything here is asserted through the DOM the browser actually built, over HTTP, because the
 # two bugs that cost this project the most were invisible to anything less: a missing `process`
@@ -7,9 +7,17 @@
 
 include("devtools.jl")
 
-using PlutoDeck: load_deck, serve, shutdown!, start_session
+import Sockets
+
+using PlutoDeck: load_deck, present
 
 const BROWSER_NOTEBOOK = joinpath(FIXTURES, "browser.jl")
+
+"How long `present` may take to serve its first page, in seconds. A cold kernel is most of it."
+const PRESENT_TIMEOUT = 300.0
+
+"How long `present` may take to bring its kernel down after the interrupt, in seconds."
+const SHUTDOWN_TIMEOUT = 60.0
 
 """
 The deck the browser drives, in a directory of its own.
@@ -48,6 +56,78 @@ function browser_workspace()
     }
     """)
     return load_deck(joinpath(workspace, "browser.deck.json"))
+end
+
+"""
+    free_port() -> Int
+
+A port nothing is listening on.
+
+`present` takes its port as given, so that a port in use is an error rather than a deck quietly
+served somewhere else. Nothing can hold one open for it, so the gap between letting go here and
+`present` binding there is a race — lost, it fails the run rather than hiding.
+"""
+function free_port()
+    socket = Sockets.listen(Sockets.localhost, 0)
+    port = Int(Sockets.getsockname(socket)[2])
+    close(socket)
+    return port
+end
+
+"Whether the deck is answering on `url` yet."
+function serving(url::AbstractString)
+    try
+        return HTTP.get(url; retry=false, status_exception=false, connect_timeout=1).status == 200
+    catch
+        return false
+    end
+end
+
+"""
+    with_present(body, deck_path) -> String
+
+Run `body(url)` against a deck `present` is serving, and stop it the way its own last line
+says to, however `body` ends.
+
+Returns how `present` stopped rather than anything `body` produced, which asserts through
+`@testset` as it goes: `"interrupt"` when the interrupt alone ended it cleanly, `"exit <code>"`
+when it ended on its own terms but not cleanly, and `"kill"` when it had to be killed. Either
+of the last two is a shutdown that did not finish.
+
+In a process of its own, because blocking until interrupted is the whole of `present`'s
+contract: one call brings up the kernel, the server and the pages, and Ctrl-C takes all three
+down again. Composing `start_session` and `serve` by hand covers everything about it except
+that composition.
+"""
+function with_present(body, deck_path::AbstractString)
+    port = free_port()
+    url = "http://localhost:$port"
+    log = tempname()
+    process = run(pipeline(`$(Base.julia_cmd()) --startup-file=no
+            --project=$(Base.active_project())
+            -e "using PlutoDeck; present(ARGS[1]; port = parse(Int, ARGS[2]))"
+            $deck_path $port`; stdout=log, stderr=log); wait=false)
+
+    stopped = ""
+    try
+        deadline = time() + PRESENT_TIMEOUT
+        while !serving("$url/api/deck")
+            Base.process_running(process) ||
+                error("present exited before it served $url:\n", read(log, String))
+            time() > deadline &&
+                error("present did not serve $url within $(PRESENT_TIMEOUT)s:\n", read(log, String))
+            sleep(0.2)
+        end
+        body(url)
+    finally
+        kill(process, Base.SIGINT)
+        killed = timedwait(() -> !Base.process_running(process), SHUTDOWN_TIMEOUT) !== :ok
+        killed && kill(process)
+        wait(process)
+        stopped = killed ? "kill" :
+            process.exitcode == 0 ? "interrupt" : "exit $(process.exitcode)"
+    end
+    return stopped
 end
 
 """
@@ -120,17 +200,15 @@ const MOVE_THE_SLIDER = """
         @test_skip "the deck renders against a live kernel in a real browser"
     else
         deck = browser_workspace()
-        session = start_session(deck.notebook_path; io=nothing)
-        server = serve(deck, session; port=0, listenany=true)
 
-        try
+        presented = with_present(deck.path) do url
             with_browser() do browser
                 view = page(browser)
-                navigate(browser, view, server.url; before=RECORD_CARD_SOURCES)
+                navigate(browser, view, url; before=RECORD_CARD_SOURCES)
 
                 @testset "the deck is served over HTTP, not loaded from disk" begin
                     @test evaluate(browser, view, "location.protocol") == "http:"
-                    @test evaluate(browser, view, "location.origin") == server.url
+                    @test evaluate(browser, view, "location.origin") == url
                 end
 
                 @testset "every card shows its cell's live output" begin
@@ -290,6 +368,26 @@ const MOVE_THE_SLIDER = """
                     @test all(>(0), drawn)
                 end
 
+                @testset "a figure is as tall as the card the deck gave it" begin
+                    # `h` is a hint until something tells the figure how tall its box is: a
+                    # Plotly graph given no height draws itself 400 px whatever it sits in.
+                    # `deck.css` gives the chain under a figure card an explicit height, and
+                    # this is the only assertion that notices it stop matching — a 400 px plot
+                    # still draws its lines, still reports `live`, and still answers every
+                    # other selector in this suite.
+                    #
+                    # Against the body rather than the card, which also carries the padding and
+                    # the border, so the ratio does not move with either.
+                    filled = JSON.parse(evaluate(browser, view, """
+                        JSON.stringify([...document.querySelectorAll('[data-card="wave"]')]
+                          .map((card) => card.querySelector(".js-plotly-plot").getBoundingClientRect().height
+                                       / card.querySelector(".card-body").getBoundingClientRect().height))
+                        """))
+
+                    @test length(filled) == 2
+                    @test all(ratio -> 0.98 <= ratio <= 1.02, filled)
+                end
+
                 @testset "the chrome carries one global kernel state" begin
                     await(browser, view, """document.body.dataset.kernel === "ready" """;
                         what="the chrome to report the kernel ready")
@@ -414,7 +512,7 @@ const MOVE_THE_SLIDER = """
                     # bundle without `process` defined. The 404 page is a document on the deck's
                     # own origin whose module graph is empty, so the import runs unshimmed.
                     bare = page(browser)
-                    navigate(browser, bare, "$(server.url)/not-a-page")
+                    navigate(browser, bare, "$url/not-a-page")
 
                     unshimmed = evaluate(browser, bare, """
                         import("/vendor/rainbow.esm.js").then(() => "imported", (error) => String(error))
@@ -423,9 +521,14 @@ const MOVE_THE_SLIDER = """
                     @test occursin("process is not defined", unshimmed)
                 end
             end
-        finally
-            close(server)
-            shutdown!(session)
+        end
+
+        @testset "an interrupt is the whole of stopping a deck" begin
+            # The lifecycle `present` prints as its last line, and the only one a lecturer has.
+            # Anything else here says the shutdown it runs on the way out did not finish, and
+            # what that shutdown closes is a two-gigabyte worker. That the worker itself is
+            # gone is asserted in `session.jl`, from the process that owns it.
+            @test presented == "interrupt"
         end
     end
 end

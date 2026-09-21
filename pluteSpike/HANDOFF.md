@@ -35,7 +35,7 @@ because the build pipeline of issue 007 is still deferred.
     [x] Issues 008-010  kernel client, card renderer, card state machine; cards are live
     [~] Issue 011     re-scoped: the geometry already rendered, overlap now refused
     [x] Issue 012     deck chrome — paging by pointer and keyboard, four kernel states
-    [~] Issue 013     headless-Chrome harness, enough to verify the above
+    [x] Issue 013     headless-Chrome harness, driving `present` itself
     [x] Issue 014     lecture-1 deck — six slides, the notebook carries its card keys
     [x] Issue 016     the deck writes `deck_theme`; a plot follows the viewer's scheme
     [x] Issue 017     one payload per draw; the suite asserts a plot is drawn, not present
@@ -205,11 +205,39 @@ Plotly instances live, is 115-127 MB of JS heap. The 3.82 MB payload is a string
 reference, so it is neither multiplied per instance nor copied per repaint — nothing here
 multiplies the way the crash report suggested.
 
-A reload is the part that does not settle. Two runs of the same script, same deck, same
-browser: 127 → 136 MB with 9470 DOM nodes and 9 documents, and 127 → 226 MB with 27702 nodes
-and 26 documents. So the previous document is sometimes retained rather than collected, by a
-factor that varies run to run. That is the thread worth pulling on for the renderer crash, and
-it is not the payload. The paint model was deliberately left alone.
+**Nothing is retained across a reload either** — the counts that read as a leak are Chrome
+deferring a collection, and they are a sawtooth rather than a climb. Fifteen reloads of the
+lecture deck with nothing forced go 9 → 19 → 29 documents, then 9 again, round and round,
+peaking at 31 documents and 261 MB and never passing it. Collect at any point in that cycle and
+the page is back to 2 documents, 3942 nodes and 18.2 MB — the floor after a single load,
+identical at every one of the fifteen. The two runs that started this, 9 documents with 9470
+nodes and 26 with 27702, are that sawtooth sampled at two different phases.
+
+Asked directly rather than counted, the answer is the same and names its objects:
+`Runtime.queryObjects(Document.prototype)` collects before it answers, and after six loads the
+only documents alive are the page itself — 2542 elements, 40 cards, seven plots — and the
+harness's own `about:blank`. No previous deck document survives, so there is no retaining edge
+to find and no detached `pluto-cell` to trace one from.
+
+What the counter counts is what made this read as a leak. A single load already stands at 9
+documents, of which 7 are garbage the moment they exist; each reload adds about ten more and
+about 9470 nodes, which is over twice a whole live deck. Those documents were never decks.
+Measured in headless Chrome over the DevTools protocol — a headed Chrome with DevTools open
+retains what its console was handed, which is a different experiment.
+
+The renderer crash is therefore not explained by anything the deck does to memory, and the
+paint model needs no change on this account.
+
+**The height rule under a figure card does more than fill the box.** `deck.css` gives the chain
+under a card holding a figure an explicit height, and the suite now measures that a plot is as
+tall as its card body rather than only that it drew — nothing else there would notice the rule
+stop matching, since a 400 px plot still draws its lines, still reports `live`, and still
+answers every selector the suite uses. Taking the rule out to check the assertion fails turned
+out to do something worse than leave blank space: the page stopped answering the DevTools
+protocol from the moment the second plot became visible, and every assertion after that point
+timed out. A figure with no height inside a card that scrolls its own overflow is evidently not
+a layout that settles. The mechanism was not chased — the rule is staying either way — but it is
+a stronger reason to keep it than the 262 px of blank it was put there for.
 
 ## Found while implementing 011, 012 and 014
 

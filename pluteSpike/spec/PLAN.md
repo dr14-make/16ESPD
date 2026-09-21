@@ -27,7 +27,7 @@ call open.
 | [010](issues/010-card-state-machine-placeholder-to-live.md) | Card state machine: placeholder to live | `enhancement` | `high` | `s` | yes | 008, 009 | **done** |
 | [011](issues/011-slide-layout-geometry-and-broken-cards.md) | Slide layout: geometry, overlap and broken cards | `enhancement` | `high` | `s` | yes | 003, 010 | **partial** |
 | [012](issues/012-deck-chrome-navigation-and-kernel-status.md) | Deck chrome: navigation and kernel status | `enhancement` | `medium` | `s` | yes | 011 | **done** |
-| [013](issues/013-end-to-end-browser-test-harness.md) | End-to-end browser test harness | `enhancement` | `medium` | `m` | yes | 006, 012 | **partial** |
+| [013](issues/013-end-to-end-browser-test-harness.md) | End-to-end browser test harness | `enhancement` | `medium` | `m` | yes | 006, 012 | **done** |
 | [014](issues/014-example-deck-lecture-1-cruise-control.md) | Example deck: lecture 1 cruise control | `enhancement` | `medium` | `s` | no | 006, 012 | **done** |
 | [015](issues/015-release-process-build-force-add-bundle-tag.md) | Release process: build, force-add bundle, tag | `enhancement` `tech-debt` | `medium` | `s` | yes | 001, 007 | todo |
 | [016](issues/016-publish-the-deck-theme-as-a-bond.md) | Publish the deck's theme as a bond | `enhancement` | `high` | `m` | no | 008, 012 | **done** |
@@ -75,12 +75,25 @@ off it. Two findings came out of building it, both in `../HANDOFF.md` — `bonds
 whether a notebook declares a bond, and a card painting a body whose payload the kernel has
 already replaced renders nothing at all.
 
-013 is **partial**: the harness drives headless Chrome over the DevTools protocol and runs as
-part of `] test PlutoDeck`, covering the deck page, a bond round trip, console errors and the
-deck chrome 012 adds — navigation by pointer and by keyboard, the ends, a widget that keeps the
-arrow keys it needs, the geometry a hidden slide holds on to, a plot drawn on both the slides
-it is placed on, and a plot repainting to match the viewer's color scheme. It drives
-`start_session` and `serve` rather than `present`.
+013 is **done**. The harness drives headless Chrome over the DevTools protocol as part of
+`] test PlutoDeck`, and it now drives `present` itself — in a process of its own, because
+blocking until interrupted is the whole of what `present` adds over `start_session` and
+`serve`, and the interrupt it prints as its last line is what has to take the kernel down
+again. That the interrupt alone ends it, cleanly, is asserted; that no worker is left is
+asserted in `session.jl`, from the process that owns one.
+
+What it covers: the deck page over HTTP, a bond round trip, console errors, the chrome 012
+adds — navigation by pointer and by keyboard, the ends, a widget that keeps the arrow keys it
+needs — the geometry a hidden slide holds on to, a plot drawn on both the slides it is placed
+on, a plot repainting to match the viewer's color scheme, and a figure being as tall as the
+card the deck gave it. That last one is the only assertion that notices `deck.css` losing its
+grip on a figure's height: a 400 px plot still draws, still reports `live`, and still answers
+every other selector in the suite.
+
+Still open, and not 013's to close: no browser ever loads a deck out of `frontend-dist`,
+because 007 has not built one. `server.jl` covers which directory `frontend_directory()`
+picks and how a hashed asset is cached, against a stand-in bundle; a real one arrives with
+007 and 015.
 
 ## Order
 
