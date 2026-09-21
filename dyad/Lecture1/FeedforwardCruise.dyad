@@ -12,6 +12,11 @@ The lag state is preloaded with `tau_ff` and the speed with `v0`, so the nominal
 already settled instead of spending the vehicle's ~60 s time constant getting there.
 """
 component FeedforwardCruise
+  plant = VehicleSystemsComponents.Vehicle.CarPlant(m = m, CdA = CdA) {^plant}
+  "Fixed feedforward torque command"
+  cmd = BlockComponents.Sources.Constant(k = tau_ff) {^cmd}
+  "Constant road gradient"
+  road = BlockComponents.Sources.Constant(k = grade) {^road}
   "Feedforward torque holding the target speed on the nominal car"
   parameter tau_ff::Torque = 31.078
   "Constant road gradient, tan(alpha)"
@@ -22,14 +27,9 @@ component FeedforwardCruise
   parameter CdA::Area = 0.63
   "Initial speed (25 m/s = 90 km/h)"
   parameter v0::Velocity = 25.0
-  plant = VehicleSystemsComponents.Vehicle.CarPlant(m = m, CdA = CdA)
-  "Fixed feedforward torque command"
-  cmd = BlockComponents.Sources.Constant(k = tau_ff)
-  "Constant road gradient"
-  road = BlockComponents.Sources.Constant(k = grade)
 relations
-  connect(cmd.y, plant.tau_cmd)
-  connect(road.y, plant.grade)
+  connect(cmd.y, plant.tau_cmd) {^id4}
+  connect(road.y, plant.grade) {^id5}
   initial plant.body.mass.s = 0.0
   initial plant.body.mass.v = v0
   initial plant.engine.lag.x = tau_ff
@@ -40,20 +40,35 @@ metadata {
         "stop": 400,
         "atol": {"plant.v_kmh": 0.05, "plant.engine.limiter.y": 0.001},
         "expect": {
-          "initial": {"plant.v_kmh": 90.0, "plant.engine.limiter.y": 31.078},
-          "final": {"plant.v_kmh": 90.0, "plant.engine.limiter.y": 31.078},
+          "initial": {"plant.v_kmh": 90, "plant.engine.limiter.y": 31.078},
+          "final": {"plant.v_kmh": 90, "plant.engine.limiter.y": 31.078},
           "signals": ["plant.v_kmh", "plant.engine.limiter.y", "cmd.y"]
         }
       }
     }
+  },
+  "_links": {
+    "plant": {
+      "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 20, "y2": 120}}}
+    },
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
+    "road": {
+      "Dyad": {"placement": {"diagram": {"x1": 10, "x2": 110, "y1": 250, "y2": 350}}}
+    },
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 210, "y": 300}], "E": 2}], "path": {}}}
   }
 }
 end
 
 analysis FeedforwardCruiseTransient
-  # 400 s is several times the car's ~60 s time constant, so the disturbed open-loop runs of
-  # notebook 02 reach their (wrong) steady state within the window.
+  # 400 s settles the nominal case, which starts in equilibrium and never leaves it. A
+  # disturbed run needs roughly 1200 s and the notebook overrides `stop` accordingly: the
+  # ~60 s time constant is the value at 90 km/h, and it grows as the car slows, because drag
+  # is the only thing restoring it and drag weakens with speed. On the 1% climb the car is
+  # still 0.76 km/h high at 400 s.
   extends TransientAnalysis(stop = 400)
+  model = VehicleSystemsComponents.Lecture1.FeedforwardCruise(tau_ff = tau_ff, grade = grade, m = m, CdA = CdA, v0 = v0)
   "Feedforward torque holding the target speed on the nominal car"
   parameter tau_ff::Torque = 31.078
   "Constant road gradient, tan(alpha)"
@@ -64,11 +79,5 @@ analysis FeedforwardCruiseTransient
   parameter CdA::Area = 0.63
   "Initial speed (25 m/s = 90 km/h)"
   parameter v0::Velocity = 25.0
-  model = VehicleSystemsComponents.Lecture1.FeedforwardCruise(
-    tau_ff = tau_ff,
-    grade = grade,
-    m = m,
-    CdA = CdA,
-    v0 = v0)
 relations
 end
