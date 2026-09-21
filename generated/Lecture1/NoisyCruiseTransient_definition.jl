@@ -8,8 +8,8 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct SampledCruiseTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :SampledCruiseTransient
+@kwdef mutable struct NoisyCruiseTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :NoisyCruiseTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
   var"stop"::Float64 = 100
@@ -34,22 +34,25 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"y_min"::Float64 = 0.0
   var"wp"::Float64 = 1.0
   var"wd"::Float64 = 1.0
+  var"m"::Float64 = 1400.0
+  var"CdA"::Float64 = 0.63
+  var"grade"::Float64 = 0.0
   var"v_lo"::Float64 = 90.0
   var"v_hi"::Float64 = 110.0
   var"v0"::Float64 = 25.0
   var"tau0"::Float64 = 31.078
   var"t_step"::Float64 = 0.0
-  # Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
+  var"amplitude"::Float64 = 0.2
+  # Flat-road 90 to 110 km/h setpoint-step scenario for `NoisyCruiseLoop`.
   # 
-  # Mirrors `CruiseLoopStep` but through the sampled loop, so notebook 09 can sweep `Ts` and watch
-  # the step response ring and then diverge as the half-sample phase lag eats the stability margin.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.SampledCruiseStep(; name=:SampledCruiseStep)
+  # The PID actions are enabled so varying the ordinary parameter `Nd` changes derivative filtering
+  # without rebuilding the model.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.NoisyCruiseStep(; name=:NoisyCruiseStep)
 end
 
-function DyadInterface.run_analysis(spec::SampledCruiseTransientSpec)
+function DyadInterface.run_analysis(spec::NoisyCruiseTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  push!(overrides, no_namespace_model.Ts => spec.var"Ts")
   push!(overrides, no_namespace_model.k => spec.var"k")
   push!(overrides, no_namespace_model.Ti => spec.var"Ti")
   push!(overrides, no_namespace_model.Td => spec.var"Td")
@@ -60,16 +63,20 @@ function DyadInterface.run_analysis(spec::SampledCruiseTransientSpec)
   push!(overrides, no_namespace_model.y_min => spec.var"y_min")
   push!(overrides, no_namespace_model.wp => spec.var"wp")
   push!(overrides, no_namespace_model.wd => spec.var"wd")
+  push!(overrides, no_namespace_model.m => spec.var"m")
+  push!(overrides, no_namespace_model.CdA => spec.var"CdA")
+  push!(overrides, no_namespace_model.grade => spec.var"grade")
   push!(overrides, no_namespace_model.v_lo => spec.var"v_lo")
   push!(overrides, no_namespace_model.v_hi => spec.var"v_hi")
   push!(overrides, no_namespace_model.v0 => spec.var"v0")
   push!(overrides, no_namespace_model.tau0 => spec.var"tau0")
   push!(overrides, no_namespace_model.t_step => spec.var"t_step")
+  push!(overrides, no_namespace_model.amplitude => spec.var"amplitude")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )
   run_analysis(base_spec)
 end
 
-SampledCruiseTransient(;kwargs...) = run_analysis(SampledCruiseTransientSpec(;kwargs...))
-export SampledCruiseTransient, SampledCruiseTransientSpec
+NoisyCruiseTransient(;kwargs...) = run_analysis(NoisyCruiseTransientSpec(;kwargs...))
+export NoisyCruiseTransient, NoisyCruiseTransientSpec

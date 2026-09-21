@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(;),
+  params=(; T_max=1000000, y_max=1000000),
   initial_conditions=Tuple[],
   expected_initial=Tuple[(m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 90, 0.05, 1e-5)],
   expected_final=Tuple[(m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 109.3, 0.05, 1e-5)],

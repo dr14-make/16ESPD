@@ -236,6 +236,13 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
 - **Neither `jupyter` nor `IJulia` is installed on this machine**, so no notebook can be
   executed here until one is. Committed outputs are a decision from the planning session, not a
   nicety — they are the projector fallback and the student-facing artifact.
+- **Editing a `.dyad` file does not update `generated/`.** The suite runs the checked-in
+  generated Julia, so a source edit sits inert until the Dyad compiler runs. A suite run right
+  after editing a source file tests the *old* code and passes — which looks like confirmation
+  and is its opposite. This cost a whole cycle: a test-case pin was added, the references were
+  regenerated without it, and the run went green comparing unpinned against unpinned. The pin
+  only took effect when an unrelated build triggered a recompile. After any `.dyad` edit,
+  confirm the change appears in the matching `generated/` file before trusting a test result.
 - **Run the test suite from `test/`, not the repository root.** `generated/test_internals.jl`
   resolves references at the relative path `joinpath("snapshots", ...)`. `Pkg.test()` runs from
   `test/` so this works; a direct `julia test/runtests.jl` from the root finds no snapshots,
