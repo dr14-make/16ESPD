@@ -156,25 +156,40 @@ The reason recorded here was "Dyad ships no sampled blocks". **That is false.**
 `DiscretePIDStandard`, `DiscreteStateSpace` and `DiscreteTransferFunction` — plus an
 `Examples/SimplePID` with exactly the topology notebook 09 wants.
 
-The real blocker is the compiler. Measured against the `dyad-3.3.0` channel, Julia 1.12.7:
-
-    HybridSystemNotSupportedException: ModelingToolkitBase.jl cannot simplify systems
-    with both `Shift` and `Differential` operators.
-
-A clocked controller around a continuous plant carries both operators by construction, so no
-choice of parameters or topology avoids it. `TestPeriodicClock`, `TestZeroOrderHold`,
-`TestSampleWithADEffects` and `TestUnitDelay` all fail that way. `TestDiscreteIntegrator` and
-`Examples/SimplePID` fail earlier still, on `MethodError: input_timedomain(::SampleTime, ...)` —
-`SynchToolkit` carries no dispatch for the `SampleTime` operator, which is the default of
-`structural parameter Ts` in `DiscretePIDStandard` and the discrete filters.
-
-So the surrogate was the only route available, for a different reason than the one written down.
-Do not re-derive this: the check is one line, and it is the whole test.
+The real blocker is the compiler. Independently reproduced against the `dyad-3.3.0` channel,
+Julia 1.12.7, with `DiscreteComponents` 0.2.0
+(`ae11bd6ca7e94d72412d9ef95d6557f94ffbb2e3`), `ModelingToolkit` 11.35.1 and
+`ModelingToolkitBase` 1.58.2. The one-line repro
 
     mtkcompile(DiscreteComponents.Examples.SimplePID(; name = :m))
 
-When that returns a system instead of throwing, the translation is unblocked. It is tracked in
-[issue #1](https://github.com/dr14-make/16ESPD/issues/1).
+first throws:
+
+    MethodError: no method matching input_timedomain(
+        ::SampleTime,
+        ::SymbolicUtils.SmallVec{...})
+
+This first failure is a library default/dispatch defect, but it is not the fundamental blocker.
+`SimplePID` already gives its `PeriodicClock` an explicit `dt = 0.1`; overriding the controller's
+default explicitly,
+
+    mtkcompile(DiscreteComponents.Examples.SimplePID(
+        name = :m, discretepidstandard__Ts = 0.1))
+
+gets past `input_timedomain` and then throws the exact blocking exception:
+
+    HybridSystemNotSupportedException: Hybrid continuous-discrete systems are currently not
+    supported with the standard MTK compiler.
+
+The same result occurs for `Examples.TestDiscreteIntegrator` when all three integrators receive
+explicit numeric `Ts` values. Thus an explicit sample time fixes the earlier default-parameter
+failure, but a clean Sampler/discrete-controller/ZeroOrderHold boundary around a continuous
+plant still reaches the standard compiler's unsupported hybrid-system path. This is upstream
+library/compiler support, not a topology or notebook usage problem.
+
+So the surrogate remains the available route. Do not re-derive this beyond the one-line check.
+When the explicit-`Ts` repro returns a system instead of throwing, the translation is unblocked.
+It is tracked in [issue #1](https://github.com/dr14-make/16ESPD/issues/1).
 
 ### Risk 4 — terminal speed of 246 km/h is unrealistically high
 
