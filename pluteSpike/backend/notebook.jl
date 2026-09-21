@@ -135,6 +135,16 @@ md"""**road gradient** $(@bind grade_pct html"<input type=range min=-8 max=12 st
 # ╠═╡ card = "antiwindup"
 md"""**anti-windup** $(@bind antiwindup html"<input type=checkbox checked>") hold the integrator at the stop"""
 
+# ╔═╡ a1000000-0000-4000-8000-0000000000d1
+# Written by the deck, not by this element: an empty target reports no value of its own, so
+# nothing overwrites what the deck set.
+@bind deck_theme html"<span></span>"
+
+# ╔═╡ a1000000-0000-4000-8000-0000000000d2
+# `Layout` bakes in the light default template and no stylesheet reaches inside a rendered
+# figure, so the scheme has to arrive from the deck. Outside a deck nothing sets `deck_theme`.
+plot_template = templates[coalesce(deck_theme, "light") == "dark" ? :plotly_dark : :plotly_white]
+
 # ╔═╡ a1000000-0000-4000-8000-000000000008
 sim = if any(ismissing, (v_ref_kmh, Kp, Ki, Kd, grade_pct, antiwindup))
     missing
@@ -226,7 +236,8 @@ open_loop = let dt = 0.02, t_end = 120.0, step_at = 10.0
         Layout(title = "open loop: +20 N·m at t = $(round(Int, step_at)) s",
                xaxis = attr(title = "time (s)"),
                yaxis = attr(title = "speed (km/h)"),
-               margin = attr(l = 60, r = 10, t = 40, b = 45)),
+               margin = attr(l = 60, r = 10, t = 40, b = 45),
+               template = plot_template),
     )
 end
 
@@ -247,7 +258,8 @@ else
             Layout(xaxis = attr(title = "time (s)"),
                    yaxis = attr(title = "speed (km/h)"),
                    legend = attr(orientation = "h", y = 1.14),
-                   margin = attr(l = 60, r = 10, t = 30, b = 45)),
+                   margin = attr(l = 60, r = 10, t = 30, b = 45),
+                   template = plot_template),
         )
     end
 end
@@ -270,7 +282,8 @@ else
             Layout(xaxis = attr(title = "time (s)"),
                    yaxis = attr(title = "torque (N·m)"),
                    legend = attr(orientation = "h", y = 1.14),
-                   margin = attr(l = 60, r = 10, t = 30, b = 45)),
+                   margin = attr(l = 60, r = 10, t = 30, b = 45),
+                   template = plot_template),
         )
     end
 end
@@ -720,6 +733,8 @@ version = "17.7.0+0"
 # ╠═a1000000-0000-4000-8000-000000000005
 # ╠═a1000000-0000-4000-8000-000000000006
 # ╠═a1000000-0000-4000-8000-000000000007
+# ╠═a1000000-0000-4000-8000-0000000000d1
+# ╠═a1000000-0000-4000-8000-0000000000d2
 # ╠═a1000000-0000-4000-8000-000000000008
 # ╠═00000000-0000-0208-1991-000000000000
 # ╟─a1000000-0000-4000-8000-00000000000a

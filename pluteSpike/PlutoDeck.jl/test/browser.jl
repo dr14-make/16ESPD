@@ -369,6 +369,34 @@ const MOVE_THE_SLIDER = """
                     @test mutations["plotly"] == 0
                 end
 
+                @testset "a Julia-rendered plot follows the deck into dark mode" begin
+                    # The one thing no stylesheet can reach: a plot's paper is in the payload
+                    # the kernel sent. The deck writes `deck_theme`, the notebook picks its
+                    # template off it, and the card repaints — so this asserts the whole pipe,
+                    # from a media query in the browser to a color chosen in Julia.
+                    # Read off the template the kernel sent rather than off a pixel: it is the
+                    # payload that has to change, and a rendered color would also pass if the
+                    # deck had reached in and repainted the figure itself.
+                    # Optional all the way down: a repainting card holds no plot for a moment,
+                    # and a poll that throws there is a harness bug, not a deck one.
+                    paper = """document.querySelector('[data-card="wave"] .js-plotly-plot')
+                                 ?.layout?.template?.layout?.paper_bgcolor"""
+                    @test evaluate(browser, view, paper) == "white"
+
+                    command(browser, "Emulation.setEmulatedMedia", Dict("features" =>
+                        [Dict("name" => "prefers-color-scheme", "value" => "dark")]); session=view)
+
+                    await(browser, view, """$paper === "rgb(17,17,17)" """;
+                        what="the plot to repaint against the dark template")
+
+                    # Both placements repaint, against one payload: the case 017 broke.
+                    drawn = JSON.parse(evaluate(browser, view, """
+                        JSON.stringify([...document.querySelectorAll('[data-card="wave"]')]
+                          .map((card) => card.querySelectorAll("path.js-line").length))
+                        """))
+                    @test all(>(0), drawn)
+                end
+
                 @testset "no card is showing a Julia error" begin
                     # A cell that threw renders as `<jlerror>`, reports `live` like any other
                     # card, and logs nothing — so neither `data-source` nor the console says

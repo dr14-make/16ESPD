@@ -149,6 +149,30 @@ Pluto's renderer is what makes interactive plots and Julia-defined widgets work 
 
 The cost is the bundle: `dist/ui/ui.esm.js` is 3.7 MB against 464 KB for the standalone client.
 
+### The deck tells the notebook which color scheme it is being shown in
+
+A card's colors are the deck's; a plot's colors are the kernel's. No stylesheet reaches
+inside a rendered Plotly figure, because its palette is in the payload the kernel sent — so a
+dark deck otherwise carries a white slab per plot, the one bright rectangle in a dark hall.
+
+The deck therefore sets one bond, `deck_theme`, to `"light"` or `"dark"` on connect and
+whenever the viewer's scheme changes. A notebook opts in by declaring it:
+
+```julia
+@bind deck_theme html"<span></span>"
+
+plot_template = templates[coalesce(deck_theme, "light") == "dark" ? :plotly_dark : :plotly_white]
+```
+
+The element reports no value of its own, which is the point: the deck is the only writer, and
+a repaint cannot clobber what it set. A notebook that declares no bond of that name is
+untouched, and one opened directly in Pluto reads `missing` and falls back to light.
+
+This adds no machinery. Bonds already carry values from the browser into the kernel and a
+reactive run already repaints every card downstream, so the scheme travels the path a slider
+travels. The name is a contract with every notebook that opts in, which is why it is fixed
+here rather than left to each deck.
+
 ### One kernel per running instance; never a multi-tenant server
 
 Measured on a developer laptop, with a notebook that loads no packages whatsoever:

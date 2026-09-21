@@ -106,6 +106,19 @@ export class Kernel {
     return this.#worker.getState()?.bonds ?? {}
   }
 
+  /**
+   * Whether the notebook has a variable of this name.
+   *
+   * Not a question `bonds` can answer: it carries the values a browser has reported, so a bond
+   * nothing has written yet is absent from it — which is exactly the bond the deck is about to
+   * write. The dependency graph is where a declared name exists before it has a value.
+   */
+  declares(name) {
+    const dependencies = this.#worker.getState()?.cell_dependencies ?? {}
+    return Object.values(dependencies).some((cell) =>
+      name in (cell.downstream_cells_map ?? {}) || name in (cell.upstream_cells_map ?? {}))
+  }
+
   notebook() {
     return this.#worker.getState()
   }

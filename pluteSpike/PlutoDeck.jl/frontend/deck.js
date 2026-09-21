@@ -9,6 +9,17 @@ import { connect } from "./kernel.js"
 import { createPainter, whenScriptsSettled } from "./render.js"
 import { kernelStatus } from "./status.js"
 
+/**
+ * The bond a notebook declares to be told which color scheme the deck is being shown in.
+ *
+ * A contract with every notebook that opts in, so renaming it is a migration across all of
+ * them. A notebook that declares no bond of this name is left alone.
+ */
+const THEME_BOND = "deck_theme"
+
+/** The scheme the deck itself is styled for, which `deck.css` follows through the same query. */
+const darkScheme = window.matchMedia("(prefers-color-scheme: dark)")
+
 /** Keys that move the deck, and by how many slides. */
 const NAVIGATION_KEYS = {
   ArrowRight: 1,
@@ -72,6 +83,9 @@ paintContent = createPainter(kernel)
 // cell the deck reads has come to rest — not only the one a bond feeds.
 kernel.watch([...preamble, ...placed].map((card) => cellIdOf(card.name)))
 
+darkScheme.addEventListener("change", publishTheme)
+await publishTheme()
+
 kernel.onChange(refresh)
 kernel.onConnectionChange((state) => {
   connected = state.connected
@@ -103,6 +117,21 @@ async function refresh() {
   } finally {
     refreshing = false
   }
+}
+
+/**
+ * Tell the kernel which color scheme the viewer is in.
+ *
+ * A plot paints its own paper in Julia, where nothing knows what the browser is showing, so a
+ * dark deck otherwise carries a white slab per plot. No stylesheet reaches inside a rendered
+ * figure — the colors are in the payload the kernel sent — so the only way to change them is
+ * to have the kernel send different ones, which is what a bond and a reactive run already do.
+ *
+ * Written before the first paint, so a card is not painted light and then repainted dark.
+ */
+function publishTheme() {
+  if (!kernel.declares(THEME_BOND)) return Promise.resolve()
+  return kernel.setBond(THEME_BOND, darkScheme.matches ? "dark" : "light")
 }
 
 /** Show each card its cell's current output, and report whether any of them repainted. */
