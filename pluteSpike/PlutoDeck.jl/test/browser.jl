@@ -20,8 +20,10 @@ kernel is pointed at it.
 function browser_workspace()
     workspace = mktempdir()
     cp(BROWSER_NOTEBOOK, joinpath(workspace, "browser.jl"))
-    # The plot sits on the second slide on purpose: it is painted while its slide is hidden,
-    # which is the case that tells `visibility: hidden` apart from `display: none`.
+    # The plot is placed on both slides on purpose, and it is the second placement every
+    # assertion about it reads. One cell rendered twice is the case that breaks a payload the
+    # two draws share, and the second copy is also painted while its slide is hidden, which is
+    # what tells `visibility: hidden` apart from `display: none`.
     write(joinpath(workspace, "browser.deck.json"), """
     {
       "notebook": "browser.jl",
@@ -31,7 +33,8 @@ function browser_workspace()
           "title": "A wave you can drive",
           "cards": [
             { "card": "frequency", "x": 0, "y": 0, "w": 4, "h": 2 },
-            { "card": "readout", "x": 4, "y": 0, "w": 4, "h": 2 }
+            { "card": "readout", "x": 4, "y": 0, "w": 4, "h": 2 },
+            { "card": "wave", "x": 0, "y": 2, "w": 8, "h": 6 }
           ]
         },
         {
@@ -93,6 +96,14 @@ const CURRENT_SLIDE =
 "The position the chrome reports, which is what a keyboard move announces."
 const SLIDE_POSITION = """document.getElementById("slide-position").textContent"""
 
+"""
+The plot card on the slide that is hidden when the deck first paints.
+
+The deck places the plot cell on both slides, so a bare selector matches the copy on the slide
+that is showing — which is the one that would still be drawn if a shared payload were broken.
+"""
+const HIDDEN_PLOT = """document.querySelectorAll('[data-card="wave"]')[1]"""
+
 "Move the frequency slider the way a hand would, through the event Pluto's bond listener waits on."
 const MOVE_THE_SLIDER = """
 (() => {
@@ -125,7 +136,8 @@ const MOVE_THE_SLIDER = """
                 @testset "every card shows its cell's live output" begin
                     # `every` over no cards is true, so the count comes first: an assertion that
                     # passes against an empty DOM is how a page that never rendered looks healthy.
-                    @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 6
+                    # Seven placements over six cells, the plot being placed on both slides.
+                    @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 7
                     await(browser, view,
                         """[...document.querySelectorAll(".card")].every((c) => c.dataset.source === "live")""";
                         what="every card to go live")
@@ -163,6 +175,13 @@ const MOVE_THE_SLIDER = """
                     # PlutoPlotly ships both the library and the plot data through
                     # `published_to_js`, so a plot on screen is proof that a card reaches
                     # `notebook.published_objects` through its <pluto-cell> ancestor.
+                    #
+                    # Awaited rather than read: a card whose payload has not arrived yet holds
+                    # its placeholder rather than painting a body it cannot resolve, so a plot
+                    # appears some runs after every card first reports `live`.
+                    await(browser, view,
+                        """document.querySelectorAll('[data-card="wave"] .js-plotly-plot').length === 2""";
+                        what="both copies of the plot to draw")
                     @test evaluate(browser, view,
                         """!!document.querySelector('[data-card="wave"] .js-plotly-plot')""") === true
                     @test evaluate(browser, view,
@@ -243,19 +262,32 @@ const MOVE_THE_SLIDER = """
 
                 @testset "a slide that is not showing keeps its cards' geometry" begin
                     # `display: none` would collapse these to zero width, and a Plotly card
-                    # painted at zero width draws a graph that size — which is why the plot in
-                    # this deck is on the slide that is hidden when it first paints.
+                    # painted at zero width draws a graph that size — which is why the plot
+                    # read here is the copy on the slide that is hidden when it first paints.
                     @test evaluate(browser, view, CURRENT_SLIDE) == 0
                     @test evaluate(browser, view, """
-                        getComputedStyle(document.querySelector('[data-card="wave"]').closest(".slide")).visibility
+                        getComputedStyle($HIDDEN_PLOT.closest(".slide")).visibility
                         """) == "hidden"
 
-                    @test evaluate(browser, view,
-                        """document.querySelector('[data-card="wave"]').offsetWidth""") > 200
+                    @test evaluate(browser, view, "$HIDDEN_PLOT.offsetWidth") > 200
                     @test evaluate(browser, view, """
-                        Math.round(document.querySelector('[data-card="wave"] .js-plotly-plot')
+                        Math.round($HIDDEN_PLOT.querySelector(".js-plotly-plot")
                           .getBoundingClientRect().width)
                         """) > 200
+                end
+
+                @testset "a plot placed on two slides draws its lines on both" begin
+                    # One cell, two cards, and one payload Pluto published for that cell. A draw
+                    # that writes to what it was given breaks the next one *after* the traces
+                    # are attached, so the card arrives holding its data with nothing drawn —
+                    # which is a plot that rendered by every other measure this suite takes.
+                    drawn = JSON.parse(evaluate(browser, view, """
+                        JSON.stringify([...document.querySelectorAll('[data-card="wave"]')]
+                          .map((card) => card.querySelectorAll("path.js-line").length))
+                        """))
+
+                    @test length(drawn) == 2
+                    @test all(>(0), drawn)
                 end
 
                 @testset "the chrome carries one global kernel state" begin
