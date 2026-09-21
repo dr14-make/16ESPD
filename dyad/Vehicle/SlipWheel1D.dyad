@@ -1,0 +1,112 @@
+"""
+One-dimensional tire contact with longitudinal slip-dependent friction.
+
+Positive shaft rotation drives positive vehicle motion. The friction law uses the same point-
+symmetric triple-S shape as `MultibodyComponents.SlipWheelJoint`: it rises to `mu_A` at
+`sAdhesion`, falls to `mu_S` at `sSlide`, and remains at the sliding level beyond it. `F_z` is
+the normal load carried by the modeled driven axle; approximately half the vehicle weight is a
+representative default for a single driven axle.
+
+The curve is continuously differentiable but has a discontinuous second derivative at its
+transitions. Explicit Runge-Kutta solvers generally handle it better than BDF methods.
+"""
+component SlipWheel1D
+  "Wheel shaft"
+  spline = Spline()
+  "Longitudinal connection to the vehicle body"
+  flange = Flange()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  "Wheel rolling radius"
+  parameter radius::Length = 0.31
+  "Normal load carried by the driven axle"
+  parameter F_z::Force = 6864.655
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.7
+  "Low-speed denominator floor; 0.5 m/s avoids singular standstill slip without masking launch dynamics"
+  parameter v_eps::Velocity = 0.5
+  "Wheel angular speed"
+  variable omega::AngularVelocity
+  "Vehicle longitudinal speed"
+  variable v::Velocity
+  "Regularized longitudinal slip ratio"
+  variable kappa::Real
+  "Signed friction coefficient after road scaling"
+  variable mu::Real
+  "Longitudinal tire force"
+  variable F_x::Force
+relations
+  omega = der(spline.phi)
+  v = der(flange.s)
+  kappa = (omega * radius - v) / max(abs(v), v_eps)
+  # This is the triple-S interpolation used by the multibody wheel, written locally so the
+  # lightweight 1D lecture model does not acquire a multibody dependency.
+  mu = mu_scale * ifelse(kappa > sAdhesion,
+    ifelse(kappa >= sSlide, mu_S,
+      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 *
+        (-0.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 +
+          1.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))),
+    ifelse(kappa < -sAdhesion,
+      ifelse(kappa <= -sSlide, -mu_S,
+        -(mu_A + mu_S) / 2 - (mu_S - mu_A) / 2 *
+          (-0.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 +
+            1.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))),
+      mu_A * (-0.5 * (kappa / sAdhesion) ^ 3 + 1.5 * kappa / sAdhesion)))
+  F_x = mu * F_z
+  # Flow is positive into this component. The tire therefore reports negative flange force while
+  # applying positive traction to the connected body; the shaft sees the matching resisting torque.
+  flange.f = -F_x
+  0 = spline.tau + radius * flange.f
+end
+
+test component TestSlipWheel1D
+  "Full engine torque after the 4:1 final drive"
+  torque = RotationalComponents.Sources.ConstantTorque(tau_constant = 600.0)
+  inertia = RotationalComponents.Components.Inertia(J = 1.0)
+  wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D()
+  mass = TranslationalComponents.Components.Mass(m = 1400.0)
+  mu_src = BlockComponents.Sources.Constant(k = 0.2)
+  fixed_r = RotationalComponents.Components.Fixed()
+relations
+  connect(torque.spline, inertia.spline_a)
+  connect(torque.support, fixed_r.spline)
+  connect(inertia.spline_b, wheel.spline)
+  connect(wheel.flange, mass.flange_a)
+  connect(mu_src.y, wheel.mu_scale)
+  initial inertia.phi = 0.0
+  initial inertia.w = 0.0
+  initial mass.s = 0.0
+  initial mass.v = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "low_friction": {
+        "stop": 5,
+        "params": {"mu_src.k": 0.2},
+        "atol": {"wheel.kappa": 0.02, "mass.v": 0.02},
+        "expect": {
+          "initial": {"wheel.kappa": 0, "mass.v": 0},
+          "final": {"wheel.kappa": 135.40498, "mass.v": 3.43243},
+          "signals": ["wheel.kappa", "wheel.mu", "wheel.F_x", "mass.v", "inertia.w"]
+        }
+      },
+      "dry_road": {
+        "stop": 5,
+        "params": {"mu_src.k": 1.0},
+        "atol": {"wheel.kappa": 0.02, "mass.v": 0.02},
+        "expect": {
+          "initial": {"wheel.kappa": 0, "mass.v": 0},
+          "final": {"wheel.kappa": 0.0075525, "mass.v": 6.86106},
+          "signals": ["wheel.kappa", "wheel.mu", "wheel.F_x", "mass.v", "inertia.w"]
+        }
+      }
+    }
+  }
+}
+end

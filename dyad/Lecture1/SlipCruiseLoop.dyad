@@ -1,0 +1,144 @@
+"""
+Cruise-control loop around the slip-capable car plant.
+
+The controller retains the existing km/h convention and tuning interface. Road friction is an
+explicit input so the loop cannot hide the tire saturation from the scenario that drives it.
+"""
+component SlipCruiseLoop
+  "Vehicle-speed setpoint in km/h"
+  setpoint = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  structural parameter theta_e::Time = 0.3
+  structural parameter with_I::Boolean = true
+  structural parameter with_D::Boolean = true
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter CdA::Area = 0.63
+  parameter J_w::MomentOfInertia = 1.0
+  parameter F_z::Force = 6864.655
+  parameter mu_A::Real = 1.0
+  parameter mu_S::Real = 0.7
+  "Initial measured speed in km/h"
+  parameter m0::Real = 90.0
+  "Initial integrator state"
+  parameter xi0::Real = 0.0
+  parameter xd0::Real = (wd - 1) * m0
+  plant = VehicleSystemsComponents.Lecture1.SlipCarPlant(theta_e = theta_e, T_max = T_max,
+    m = m, CdA = CdA, J_w = J_w, F_z = F_z, mu_A = mu_A, mu_S = mu_S)
+  controller = BlockComponents.Continuous.LimPID(with_I = with_I, with_D = with_D,
+    k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, y_max = y_max, y_min = y_min,
+    wp = wp, wd = wd, xi0 = xi0, xd0 = xd0)
+  zero_ff = BlockComponents.Sources.Constant(k = 0.0)
+relations
+  connect(setpoint, controller.u_s)
+  connect(plant.v_kmh, controller.u_m)
+  connect(zero_ff.y, controller.u_ff)
+  connect(controller.y, plant.tau_cmd)
+  connect(grade, plant.grade)
+  connect(mu_scale, plant.mu_scale)
+end
+
+"""Settled 90 km/h cruise crossing a finite low-friction patch."""
+component SlipCruiseIcePatch
+  structural parameter theta_e::Time = 0.3
+  structural parameter with_I::Boolean = true
+  structural parameter with_D::Boolean = true
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter CdA::Area = 0.63
+  parameter J_w::MomentOfInertia = 1.0
+  parameter F_z::Force = 6864.655
+  parameter mu_A::Real = 1.0
+  parameter mu_S::Real = 0.7
+  parameter v_set::Real = 90.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter mu_low::Real = 0.05
+  parameter patch_start::Time = 10.0
+  parameter patch_duration::Time = 2.0
+  loop = VehicleSystemsComponents.Lecture1.SlipCruiseLoop(theta_e = theta_e,
+    with_I = with_I, with_D = with_D, k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni,
+    T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd, m = m, CdA = CdA,
+    J_w = J_w, F_z = F_z, mu_A = mu_A, mu_S = mu_S, m0 = v_set, xi0 = tau0 / k)
+  demand = BlockComponents.Sources.Constant(k = v_set)
+  road = BlockComponents.Sources.Constant(k = 0.0)
+  friction = VehicleSystemsComponents.Vehicle.FrictionProfile(low = mu_low,
+    start_time = patch_start, duration = patch_duration)
+relations
+  connect(demand.y, loop.setpoint)
+  connect(road.y, loop.grade)
+  connect(friction.y, loop.mu_scale)
+  initial loop.plant.body.mass.s = 0.0
+  initial loop.plant.body.mass.v = v0
+  initial loop.plant.engine.lag.x = tau0
+  initial loop.plant.wheel_inertia.phi = 0.0
+  initial loop.plant.wheel_inertia.w = v0 / loop.plant.radius
+metadata {
+  "Dyad": {
+    "tests": {
+      "ice_patch": {
+        "stop": 30,
+        "atol": {"loop.plant.v_kmh": 0.1, "loop.plant.kappa": 0.05},
+        "expect": {
+          "initial": {"loop.plant.v_kmh": 90, "loop.plant.kappa": 0},
+          "final": {"loop.plant.v_kmh": 89.99954, "loop.plant.kappa": 0.0015586},
+          "signals": ["loop.plant.v_kmh", "loop.plant.wheel_rpm", "loop.plant.kappa", "loop.controller.y", "friction.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis SlipCruiseTransient
+  extends TransientAnalysis(stop = 30)
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter CdA::Area = 0.63
+  parameter J_w::MomentOfInertia = 1.0
+  parameter F_z::Force = 6864.655
+  parameter mu_A::Real = 1.0
+  parameter mu_S::Real = 0.7
+  parameter v_set::Real = 90.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter mu_low::Real = 0.05
+  parameter patch_start::Time = 10.0
+  parameter patch_duration::Time = 2.0
+  model = VehicleSystemsComponents.Lecture1.SlipCruiseIcePatch(k = k, Ti = Ti, Td = Td,
+    Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd,
+    m = m, CdA = CdA, J_w = J_w, F_z = F_z, mu_A = mu_A, mu_S = mu_S,
+    v_set = v_set, v0 = v0, tau0 = tau0, mu_low = mu_low, patch_start = patch_start,
+    patch_duration = patch_duration)
+relations
+end

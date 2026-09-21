@@ -1,0 +1,106 @@
+"""
+Longitudinal car plant with wheel inertia and slip-limited tire contact.
+
+Vehicle and wheel speeds are separate outputs. `wheel_rpm` passes the shaft speed through
+`Vehicle.ToRPM`, while `v` and `v_kmh` retain the existing plant conventions.
+"""
+component SlipCarPlant
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  "Vehicle speed in m/s"
+  v = RealOutput(units = "m/s")
+  "Road-wheel speed in revolutions per minute"
+  wheel_rpm = RealOutput()
+  "Longitudinal slip ratio"
+  kappa = RealOutput()
+  structural parameter theta_e::Time = 0.3
+  parameter T_max::Torque = 150.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter CdA::Area = 0.63
+  parameter i::Real = 4.0
+  parameter radius::Length = 0.31
+  parameter J_w::MomentOfInertia = 1.0
+  parameter F_z::Force = 6864.655
+  parameter sAdhesion::Real = 0.04
+  parameter sSlide::Real = 0.12
+  parameter mu_A::Real = 1.0
+  parameter mu_S::Real = 0.7
+  parameter v_eps::Velocity = 0.5
+  engine = VehicleSystemsComponents.Vehicle.IdealEngine(theta_e = theta_e, T_max = T_max)
+  gear = RotationalComponents.Components.IdealGear(ratio = i)
+  wheel_inertia = RotationalComponents.Components.Inertia(J = J_w)
+  wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(radius = radius, F_z = F_z,
+    sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S, v_eps = v_eps)
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m, CdA = CdA)
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  wsensor = RotationalComponents.Sensors.VelocitySensor()
+  tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+  torpm = VehicleSystemsComponents.Vehicle.ToRPM()
+  rot_ground = RotationalComponents.Components.Fixed()
+relations
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, gear.spline_a)
+  connect(gear.spline_b, wheel_inertia.spline_a)
+  connect(wheel_inertia.spline_b, wheel.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(gear.support, rot_ground.spline)
+  connect(wheel.flange, body.flange)
+  connect(grade, body.grade)
+  connect(mu_scale, wheel.mu_scale)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, v)
+  connect(vsensor.v, tokmh.u)
+  connect(tokmh.y, v_kmh)
+  connect(wsensor.spline, wheel.spline)
+  connect(wsensor.w, torpm.u)
+  connect(torpm.y, wheel_rpm)
+  kappa = wheel.kappa
+end
+
+test component TestSlipCarPlant
+  cmd = BlockComponents.Sources.Constant(k = 150.0)
+  road = BlockComponents.Sources.Constant(k = 0.0)
+  friction = BlockComponents.Sources.Constant(k = 0.2)
+  plant = VehicleSystemsComponents.Lecture1.SlipCarPlant()
+relations
+  connect(cmd.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  connect(friction.y, plant.mu_scale)
+  initial plant.body.mass.s = 0.0
+  initial plant.body.mass.v = 0.0
+  initial plant.engine.lag.x = 0.0
+  initial plant.wheel_inertia.phi = 0.0
+  initial plant.wheel_inertia.w = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "low_friction": {
+        "stop": 5,
+        "params": {"friction.k": 0.2},
+        "atol": {"plant.v": 0.03, "plant.kappa": 0.1},
+        "expect": {
+          "initial": {"plant.v": 0, "plant.kappa": 0},
+          "final": {"plant.v": 2.81008, "plant.kappa": 147.38059},
+          "signals": ["plant.v", "plant.v_kmh", "plant.wheel_rpm", "plant.kappa"]
+        }
+      },
+      "dry_road": {
+        "stop": 5,
+        "params": {"friction.k": 1.0},
+        "atol": {"plant.v": 0.03, "plant.kappa": 0.02},
+        "expect": {
+          "initial": {"plant.v": 0, "plant.kappa": 0},
+          "final": {"plant.v": 5.85446, "plant.kappa": 0.0075578},
+          "signals": ["plant.v", "plant.v_kmh", "plant.wheel_rpm", "plant.kappa"]
+        }
+      }
+    }
+  }
+}
+end

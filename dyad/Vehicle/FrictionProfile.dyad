@@ -1,0 +1,38 @@
+"""
+Road-friction scenario: normal grip, a finite low-friction patch, then normal grip again.
+
+The low-friction interval starts at `start_time` and lasts for `duration`. The finite duration is
+part of the scenario interface because recovery after leaving the patch is the teaching result.
+"""
+component FrictionProfile
+  "Road-friction multiplier"
+  y = RealOutput()
+  pulse = BlockComponents.Sources.Pulse(amplitude = low, offset = 1.0,
+    start_time = start_time, duty_cycle = 1.0, period = duration)
+  "Friction multiplier on the low-grip patch"
+  parameter low::Real = 0.2
+  "Time at which the patch begins"
+  parameter start_time::Time = 10.0
+  "Duration of the low-grip patch"
+  parameter duration::Time = 2.0
+relations
+  connect(pulse.y, y)
+end
+
+test component TestFrictionProfile
+  profile = VehicleSystemsComponents.Vehicle.FrictionProfile(start_time = 0.5, duration = 0.5)
+  sink = BlockComponents.Routing.RealPassThrough()
+relations
+  connect(profile.y, sink.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 2,
+        "atol": {"sink.y": 1e-9},
+        "expect": {"initial": {"sink.y": 1}, "final": {"sink.y": 1}, "signals": ["sink.y"]}
+      }
+    }
+  }
+}
+end

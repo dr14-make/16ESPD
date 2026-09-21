@@ -1,0 +1,143 @@
+"""
+Longitudinal car plant with no-slip rolling and explicit road-wheel inertia.
+
+Its ports match `Vehicle.CarPlant`, allowing a controller or notebook scenario to exchange the
+L0 and L1 plants without changing signal wiring.
+"""
+component WheeledCarPlant
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  "Vehicle speed in m/s"
+  v = RealOutput(units = "m/s")
+  structural parameter theta_e::Time = 0.3
+  parameter T_max::Torque = 150.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter CdA::Area = 0.63
+  parameter J_w::MomentOfInertia = 1.0
+  engine = VehicleSystemsComponents.Vehicle.IdealEngine(theta_e = theta_e, T_max = T_max)
+  driveline = VehicleSystemsComponents.Vehicle.WheeledDriveline(J_w = J_w)
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m, CdA = CdA)
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+  rot_ground = RotationalComponents.Components.Fixed()
+  trans_ground = TranslationalComponents.Components.Fixed()
+relations
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, driveline.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(driveline.support_r, rot_ground.spline)
+  connect(driveline.flange, body.flange)
+  connect(driveline.support_t, trans_ground.flange)
+  connect(grade, body.grade)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, v)
+  connect(vsensor.v, tokmh.u)
+  connect(tokmh.y, v_kmh)
+end
+
+test component TestWheeledCarPlant
+  cmd = BlockComponents.Sources.Constant(k = 150.0)
+  road = BlockComponents.Sources.Constant(k = 0.0)
+  plant = VehicleSystemsComponents.Lecture1.WheeledCarPlant()
+relations
+  connect(cmd.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  initial plant.body.mass.s = 0.0
+  initial plant.body.mass.v = 0.0
+  initial plant.engine.lag.x = 0.0
+  initial plant.driveline.inertia.phi = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 10,
+        "atol": {"plant.v_kmh": 0.05},
+        "expect": {
+          "initial": {"plant.v_kmh": 0},
+          "final": {"plant.v_kmh": 43.27408},
+          "signals": ["plant.v_kmh", "plant.v", "plant.driveline.inertia.w"]
+        }
+      }
+    }
+  }
+}
+end
+
+
+"""PID setpoint step around the L1 no-slip wheeled plant."""
+component WheeledCruiseStep
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.5
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 1e6
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wd::Real = 0.0
+  parameter J_w::MomentOfInertia = 1.0
+  parameter v_lo::Real = 90.0
+  parameter v_hi::Real = 110.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter t_step::Time = 0.0
+  plant = VehicleSystemsComponents.Lecture1.WheeledCarPlant(T_max = T_max, J_w = J_w)
+  controller = BlockComponents.Continuous.LimPID(with_I = true, with_D = true, k = k,
+    Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, y_max = y_max, y_min = y_min, wd = wd,
+    xi0 = 0.0, xd0 = (wd - 1) * v_lo)
+  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step)
+  road = BlockComponents.Sources.Constant(k = 0.0)
+  zero_ff = BlockComponents.Sources.Constant(k = 0.0)
+relations
+  connect(demand.y, controller.u_s)
+  connect(plant.v_kmh, controller.u_m)
+  connect(zero_ff.y, controller.u_ff)
+  connect(controller.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  initial plant.body.mass.s = 0.0
+  initial plant.body.mass.v = v0
+  initial plant.engine.lag.x = tau0
+  initial plant.driveline.inertia.phi = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 60,
+        "atol": {"plant.v_kmh": 0.05},
+        "expect": {
+          "initial": {"plant.v_kmh": 90},
+          "final": {"plant.v_kmh": 110},
+          "signals": ["plant.v_kmh", "controller.y", "demand.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis WheeledCruiseTransient
+  extends TransientAnalysis(stop = 60)
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.5
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 1e6
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wd::Real = 0.0
+  parameter J_w::MomentOfInertia = 1.0
+  parameter v_lo::Real = 90.0
+  parameter v_hi::Real = 110.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter t_step::Time = 0.0
+  model = VehicleSystemsComponents.Lecture1.WheeledCruiseStep(k = k, Ti = Ti, Td = Td,
+    Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wd = wd, J_w = J_w,
+    v_lo = v_lo, v_hi = v_hi, v0 = v0, tau0 = tau0, t_step = t_step)
+relations
+end
