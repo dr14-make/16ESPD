@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
-# Boots the Pluto backend and the deck bridge together. Ctrl-C stops both.
+# Runs the SPIKE, not PlutoDeck.
+#
+# To present a deck, use `mise run deck` from the repository root. That path needs no Node
+# and is what issues 004-006 replaced this with.
+#
+# What this still earns its place for is /ui-probe.html, the rendering proof behind issue 009
+# and the working reference `spec/START-HERE.md` points at: the <pluto-cell> wrapper, the Set
+# for PlutoJSInitializingContext, and change-driven repainting.
+#
+# Boots the Pluto backend and the Node bridge together. Ctrl-C stops both.
 set -euo pipefail
 cd "$(dirname "$0")"
 
