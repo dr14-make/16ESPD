@@ -264,6 +264,11 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   silently skips every trajectory comparison, writes a stray `snapshots/` at the root, and
   still exits 0. The tell is the assertion count — the real suite is about 4700, the crippled
   one about 70. Use `cd test && julia --project=.. runtests.jl`.
+- **Exported figures carry their clipped points.** Setting `xlims` on a plot hides data from
+  the eye, not from the SVG: one sweep figure came out at 2.7 MB, six times the largest other
+  figure, which would make the deck crawl on a projector. Hand each panel only the window it is
+  read over. Do not decimate instead — that aliases high-frequency chatter into a waveform the
+  simulation never produced.
 - **Memory.** Running several agents alongside the Dyad language server exhausts this machine;
   `earlyoom` is configured to prefer killing `julia`. A run that dies with no error message was
   probably killed, not broken. Retry before debugging.
