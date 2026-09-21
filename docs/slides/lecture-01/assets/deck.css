@@ -147,6 +147,17 @@
   display: flex; gap: 0.6em; align-items: center;
   border-top: 1px solid var(--rule); padding: 0.3em 0.7em; font-size: 0.5em;
 }
+/* A card whose model does not exist yet. Marked, and with no copy button, because the
+   copy button is what puts a call that cannot run into a lecturer's notebook. */
+.demo.unbuilt { border: 2px dashed var(--warn); }
+.demo.unbuilt .demo-head { background: var(--warn-bg); }
+.demo.unbuilt pre code { background: var(--warn-bg); }
+.demo-head .unbuilt-tag {
+  background: var(--warn); color: #fff; font-size: 0.85em; letter-spacing: 0.08em;
+  padding: 0.05em 0.45em; border-radius: 2px;
+}
+.demo-foot .nocopy { color: var(--warn); font-style: italic; }
+
 .demo-foot a { color: var(--accent); text-decoration: none; }
 .demo-foot a:hover { text-decoration: underline; }
 .demo-foot .spacer { flex: 1; }

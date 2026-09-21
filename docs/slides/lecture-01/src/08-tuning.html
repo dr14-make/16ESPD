@@ -98,8 +98,8 @@
       <p><strong>Point at</strong> the ratio table. This is the number that tells you whether
       the job is easy. A plant with almost no dead time relative to its time constant will take
       almost any gain you throw at it; a plant that is mostly dead time will not.</p>
-      <p><strong>Read out</strong> our car's ratio: θ = 1.63 s against τ = 63 s, so
-      θ/τ ≈ 0.026 — the easy end of the table, and comfortably inside where these rules were
+      <p><strong>Read out</strong> our car's ratio: θ = 1.88 s against τ = 63 s, so
+      θ/τ ≈ 0.030 — the easy end of the table, and comfortably inside where these rules were
       fitted.</p>
       <p><strong>And flag the consequence now,</strong> because it explains a plot several
       slides from here: Cohen-Coon's gain scales as τ/θ, so a small ratio buys a large gain —
@@ -113,9 +113,9 @@
         <li><strong>G(s)</strong> — the plant's transfer function: output over input in the Laplace domain.</li>
         <li><strong>K</strong> — steady-state gain. Output change per unit input change, once settled. Ours: 2.21 km/h per N·m.</li>
         <li><strong>τ</strong> — time constant, seconds. Time to cover 63 % of the change. Ours: 63 s.</li>
-        <li><strong>θ</strong> — dead time, seconds. How long nothing happens first. Ours: 1.63 s as fitted.</li>
+        <li><strong>θ</strong> — dead time, seconds. How long nothing happens first. Ours: 1.878 s as fitted.</li>
         <li><strong>e<sup>−θs</sup></strong> — how a pure delay is written in the Laplace domain.</li>
-        <li><strong>r = θ/τ</strong> — the ratio every table keys on. Ours is about 0.026: the easy end.</li>
+        <li><strong>r = θ/τ</strong> — the ratio every table keys on. Ours is about 0.030: the easy end.</li>
         <li><strong>FOPTD</strong> — first order plus dead time. Also written FOPDT; same thing.</li>
       </ul>
     </aside>
@@ -131,11 +131,17 @@
             <span class="cell">cell <b>The open-loop step test</b></span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># 1. settle  2. step  3. record  4. scale by the step size
-model = car_step_test(tau_lo = 31.0, tau_hi = 41.0,
-                      t_step = 100.0)
-sol = solve(ODEProblem(mtkcompile(model), [], (0.0, 600.0)))
+Scenarios = VehicleSystemsComponents.Lecture1
 
-K, tau, theta = fopdt_fit(sol)
+V_START, SETPOINT, T_STEP = 90.0, 110.0, 50.0
+A_STEP = cruise_torque(SETPOINT) - cruise_torque(V_START)
+
+step_test = Scenarios.CarStepTestTransient(
+    tau_lo = cruise_torque(V_START), tau_hi = cruise_torque(SETPOINT),
+    v0 = V_START / 3.6, t_step = T_STEP)
+
+K, tau, theta = fopdt_fit(step_test;
+    output = "plant.v_kmh", A = A_STEP, t0 = T_STEP)
 @show K tau theta</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
@@ -173,7 +179,7 @@ K, tau, theta = fopdt_fit(sol)
         <li><strong>tau_lo → tau_hi</strong> — step the manipulated variable from one settled value to another, here 31.1 → 40.1 N·m.</li>
         <li><strong>A</strong> — the size of that input step, 9.04 N·m. Dividing by it is step 4 of the procedure and is what makes K a property of the plant.</li>
         <li><strong>t0 = t_step</strong> — when the step was applied, handed to the fit rather than guessed.</li>
-        <li><strong>stop = 600 s</strong> — long enough for the response to settle; about ten time constants.</li>
+        <li><strong>stop = 500 s</strong> — the analysis default, long enough for the response to settle; about eight time constants.</li>
       </ul>
     </aside>
   </section>
@@ -266,12 +272,20 @@ K, tau, theta = fopdt_fit(sol)
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Cohen-Coon</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
+          <pre><code class="language-julia" data-trim data-noescape>SPEED = "loop.plant.v_kmh"
+UNLIMITED = 1.0e6                  # N.m — the ceiling lifted away
 
-sol_cc = solve(ODEProblem(mtkcompile(
-    cruise_loop(with_I = true, with_D = true,
-                k = k_cc, Ti = Ti_cc, Td = Td_cc)), [], tspan))
-plot_speed(sol_cc; setpoint = 110)</code></pre>
+k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
+
+# `with_I` and `with_D` are structural, so a PID is a different compiled
+# model rather than the same one with gains set.
+pid = Scenarios.CruiseLoopTransient(
+    model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                     with_I = true, with_D = true),
+    k = k_cc, Ti = Ti_cc, Td = Td_cc, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+
+plot_speed(pid; sig = SPEED, setpoint = 110)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -321,11 +335,17 @@ plot_speed(sol_cc; setpoint = 110)</code></pre>
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Ziegler-Nichols</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># raise k under pure proportional control until the
-# oscillation neither grows nor decays
-sw = sweep(cruise_loop(with_I = false, with_D = false),
-           "k", ks_probe; tspan = (0.0, 60.0))
-plot_sweep(sw; setpoint = 110)
+          <pre><code class="language-julia" data-trim data-noescape># Raise k under pure proportional control until the oscillation neither
+# grows nor decays. `CruiseLoopStep` leaves both switches off, so the
+# plain analysis is already the P-only loop this step needs.
+DELTA = 0.1        # km/h — the smallest poke that still measures cleanly
+
+probe = Scenarios.CruiseLoopTransient(
+    k = 100.0, v_lo = V_START, v_hi = V_START + DELTA,
+    T_max = UNLIMITED, y_max = UNLIMITED, stop = 30.0)
+
+ladder = sweep(probe, "k", [80.0, 100.0, 110.0, 114.0, 115.0, 125.0])
+plot_sweep(ladder; sig = SPEED, name = "k")
 
 Ku = ...          # the gain at which it sustains
 Pu = ...          # the period of that oscillation, seconds
@@ -530,16 +550,18 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>All three overlaid</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>gains = ["Cohen-Coon"     =&gt; (k_cc, Ti_cc, Td_cc),
+          <pre><code class="language-julia" data-trim data-noescape>gains = ["Cohen-Coon"      =&gt; (k_cc, Ti_cc, Td_cc),
          "Ziegler-Nichols" =&gt; (k_zn, Ti_zn, Td_zn),
          "Tyreus-Luyben"   =&gt; (k_tl, Ti_tl, Td_tl)]
 
+# One compiled model for all three: `rerun` swaps the gains in the problem
+# the compiler already built.
+tuned(k, Ti, Td) = rerun(pid, "k" =&gt; k, "Ti" =&gt; Ti, "Td" =&gt; Td,
+                         "loop.controller.xd0" =&gt; -V_START)
+
 plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
 for (name, (k, Ti, Td)) in gains
-    sol  = solve(ODEProblem(mtkcompile(cruise_loop(
-        with_I = true, with_D = true, k, Ti, Td)), [], tspan))
-    t, y = signal(sol, SPEED_KMH)
-    plot!(plt, t, y; lw = 2, label = name)
+    plot!(plt, signal(tuned(k, Ti, Td), SPEED)...; lw = 2, label = name)
 end</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
@@ -655,12 +677,11 @@ end</code></pre>
             <span class="cell">cell <b>The saturation trap</b></span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># push the gains until the response looks superb
-hot = cruise_loop(with_I = true, with_D = true,
-                  k = 8 * k_zn, Ti = Ti_zn / 2, Td = Td_zn)
-sol_hot = solve(ODEProblem(mtkcompile(hot), [], tspan))
+hot = tuned(8 * k_zn, Ti_zn / 2, Td_zn)
 
-plot_speed(sol_hot; setpoint = 110)   # looks perfect
-plot_torque(sol_hot)                  # now look at this</code></pre>
+plot_speed(hot; sig = SPEED, setpoint = 110)   # looks perfect
+plot_torque(hot; commanded = "loop.controller.y",
+            delivered = "loop.plant.engine.limiter.y")</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>

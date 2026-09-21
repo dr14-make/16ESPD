@@ -23,10 +23,11 @@
       <div>
         <p class="small">Thermal, shot, flicker, coupling from everything else in the vehicle —
         noise is not a defect, it is a property. A speedometer has it too.</p>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
             <span class="cell">cell <b>The measurement</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
     cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 10.0)),
@@ -37,9 +38,9 @@ t, v_meas = signal(sol, "noise.y")
 plot(t, [v_true v_meas]; lw = 2,
      label = ["true" "measured"])</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>
@@ -113,10 +114,11 @@ plot(t, [v_true v_meas]; lw = 2,
     <h2>A near-pure derivative</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
             <span class="cell">cell <b>Near-pure derivative</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd
 # pushes the cutoff up, towards no filter at all
@@ -127,9 +129,9 @@ sol = solve(ODEProblem(mtkcompile(
 plot_torque(sol; delivered = nothing)
 extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <div class="callout danger small">
@@ -174,10 +176,11 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
         <p class="small">A first-order low-pass on the derivative path, with cutoff
         <em>N</em> in rad/s:</p>
         <p>$$ \frac{s\,N}{s+N} \qquad\text{instead of}\qquad s $$</p>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
             <span class="cell">cell <b>Nd family</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5),
            "Nd", [1000.0, 100.0, 20.0, 5.0];
@@ -185,9 +188,9 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
 
 plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>

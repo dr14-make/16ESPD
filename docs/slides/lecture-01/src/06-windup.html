@@ -72,15 +72,23 @@
             <span class="nb">06-windup.ipynb</span>
             <span class="cell">cell <b>The climb, no anti-windup</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>model = cruise_climb(k = 56.0, Ti = 8.0,
-                     v_set = 130.0, grade = 0.10,
-                     t_climb = (30.0, 90.0),
-                     antiwindup = :none)
-sol = solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-plot_speed(sol; setpoint = 130)
-plot_torque(sol)                        # with the 150 N.m limit drawn on
-signal(sol, "controller.I.y")           # the integrator, separately</code></pre>
+SPEED = "loop.plant.v_kmh"
+COMMAND = "loop.controller.y"
+DELIVERED = "loop.plant.engine.limiter.y"
+INTEGRAL = "loop.controller.integrator.y"
+
+# `Ni` is the back-calculation tracking factor; a large value makes the
+# correction negligible, which is the no-anti-windup case.
+none = Scenarios.CruiseClimbTransient(
+    k = 56.0, Ti = 8.0, Ni = 1.0e6,
+    v_set = 130.0, gradient = 0.10,
+    start_time = 30.0, duration = 120.0, stop = 400.0)
+
+plot_speed(none; sig = SPEED, setpoint = 130)
+plot_torque(none; commanded = COMMAND, delivered = DELIVERED)
+signal(none, INTEGRAL)                  # the integrator, separately</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -89,7 +97,7 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
         </div>
         <div class="model">
           <span class="label">Open in Dyad</span>
-          <code>dyad/Vehicle/GradeProfile.dyad</code>
+          <code>dyad/Lecture1/WindupClimb.dyad</code>
         </div>
       </div>
       <figure class="fig">
@@ -120,7 +128,7 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>grade = 0.10</strong> — tan α, a 10 % climb, about 5.7°.</li>
-        <li><strong>t_climb = (30, 90) s</strong> — when the hill starts and ends.</li>
+        <li><strong>start_time = 30 s, duration = 120 s</strong> — the hill starts at 30 s and the road flattens again at 150 s.</li>
         <li><strong>v_set = 130 km/h</strong> — the cruise setpoint.</li>
         <li><strong>Commanded torque</strong> — what the controller asks for; it keeps climbing. <strong>Delivered torque</strong> — what the engine gives; it is flat on the limit.</li>
         <li><strong>The integrator state</strong> — plotted separately, because it is the thing actually going wrong and it is invisible in the speed trace.</li>
@@ -133,7 +141,7 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
     <h2>Why the crash is already scheduled</h2>
     <div class="cols">
       <div>
-        <p class="small">When the road flattens at t = 90 s, the car accelerates. The error
+        <p class="small">When the road flattens at t = 150 s, the car accelerates. The error
         changes sign. The integrator begins to unwind.</p>
         <p class="small">But it is unwinding <em>from far above the limit</em>. While the
         command falls from 400 N·m to 150, the engine delivers the same full torque it was
@@ -177,11 +185,11 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
             <span class="nb">06-windup.ipynb</span>
             <span class="cell">cell <b>The overshoot</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>plt = plot_speed(sol; setpoint = 130)
-vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
+          <pre><code class="language-julia" data-trim data-noescape>plt = plot_speed(none; sig = SPEED, setpoint = 130)
+vline!(plt, [30.0, 150.0]; ls = :dot, color = :gray,
        label = "climb starts / ends")
 
-@show overshoot(sol, 130; y0 = 130)     # percent of the step</code></pre>
+@show overshoot(none, 130; sig = SPEED, y0 = 130)   # percent</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -197,7 +205,7 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <figure class="fig">
         <img src="assets/figures/06-overshoot.svg"
              alt="Speed through and after the climb: a sag during the climb, then a large overshoot above the setpoint once the road flattens, before settling back.">
-        <figcaption>The road flattens at t = 90 s, and the car keeps accelerating well past the
+        <figcaption>The road flattens at t = 150 s, and the car keeps accelerating well past the
           setpoint before the integrator has unwound.</figcaption>
       </figure>
     </div>
@@ -358,16 +366,16 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
             <span class="nb">06-windup.ipynb</span>
             <span class="cell">cell <b>Three-way comparison</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>variants = [:none, :clamping, :backcalculation]
+          <pre><code class="language-julia" data-trim data-noescape># Three schemes, three calls: `Ni` switches back-calculation on and off,
+# and clamping is a different controller, so a different analysis.
+CLIMB = (k = 56.0, Ti = 8.0, v_set = 130.0, gradient = 0.10,
+         start_time = 30.0, duration = 120.0, stop = 400.0)
 
-sols = map(variants) do aw
-    model = cruise_climb(k = 56.0, Ti = 8.0, v_set = 130.0,
-                         grade = 0.10, t_climb = (30.0, 90.0),
-                         antiwindup = aw)
-    solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
-end
+runs = ["none"             =&gt; Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CLIMB...),
+        "back-calculation" =&gt; Scenarios.CruiseClimbTransient(; Ni = 0.9, CLIMB...),
+        "clamping"         =&gt; Scenarios.ClampingCruiseClimbTransient(; CLIMB...)]
 
-[overshoot(s, 130; y0 = 130) for s in sols]     # peak, percent</code></pre>
+[name =&gt; overshoot(s, 130; sig = SPEED, y0 = 130) for (name, s) in runs]</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>

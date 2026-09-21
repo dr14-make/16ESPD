@@ -95,14 +95,16 @@
             <span class="nb">02-open-vs-closed-loop.ipynb</span>
             <span class="cell">cell <b>Invert the model</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>v = 90 / 3.6                                  # m/s
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
+
+v = 90 / 3.6                                  # m/s
 F = 0.5 * CAR.rho * CAR.CdA * v^2 +           # drag
     CAR.f_r * CAR.m * CAR.g                   # rolling
 tau_ff = F * CAR.r / CAR.i                    # N.m at the engine
 
-sol = solve(ODEProblem(mtkcompile(
-    car_plant(tau_cmd = tau_ff)), [], (0.0, 400.0)))
-plot_speed(sol; setpoint = 90)</code></pre>
+nominal = Scenarios.FeedforwardCruiseTransient(
+    tau_ff = tau_ff, stop = 1200.0)
+plot_speed(nominal; setpoint = 90)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -151,15 +153,19 @@ plot_speed(sol; setpoint = 90)</code></pre>
             <span class="nb">02-open-vs-closed-loop.ipynb</span>
             <span class="cell">cell <b>Break it three ways</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>cases = ["flat, as modelled" =&gt; car_plant(tau_cmd = tau_ff),
-         "4 % grade"        =&gt; car_plant(tau_cmd = tau_ff, grade = 0.04),
-         "200 kg payload"   =&gt; car_plant(tau_cmd = tau_ff, m = CAR.m + 200),
-         "headwind"         =&gt; car_plant(tau_cmd = tau_ff, CdA = 1.3 * CAR.CdA)]
+          <pre><code class="language-julia" data-trim data-noescape>WORLDS = [("flat road, nominal car", (grade = 0.0,  m = CAR.m,       CdA = CAR.CdA)),
+          ("1% grade",               (grade = 0.01, m = CAR.m,       CdA = CAR.CdA)),
+          ("200 kg payload",         (grade = 0.0,  m = CAR.m + 200, CdA = CAR.CdA)),
+          ("20% more drag area",     (grade = 0.0,  m = CAR.m,       CdA = 1.2 * CAR.CdA))]
+
+open_loop = [name =&gt; Scenarios.FeedforwardCruiseTransient(
+                 tau_ff = tau_ff, grade = w.grade, m = w.m, CdA = w.CdA,
+                 stop = 1200.0)
+             for (name, w) in WORLDS]
 
 plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
-for (name, model) in cases
-    t, y = signal(solve(ODEProblem(mtkcompile(model), [], tspan)), SPEED_KMH)
-    plot!(plt, t, y; lw = 2, label = name)
+for (name, sol) in open_loop
+    plot!(plt, signal(sol, "plant.v_kmh")...; lw = 2, label = name)
 end
 hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
           <div class="demo-foot">
@@ -171,7 +177,7 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/02-open-loop-broken.svg"
-             alt="Four open-loop runs against a 90 km/h target: the nominal case sits on target, the grade, payload and headwind cases all settle at visibly different wrong speeds.">
+             alt="Four open-loop runs against a 90 km/h target over twenty minutes: the nominal case sits on target, while the 1% grade, the 200 kg payload and the 20% larger drag area each settle at a visibly different wrong speed, the grade lowest.">
         <figcaption>Same torque, four worlds. Three of them settle somewhere the driver did not
           ask for.</figcaption>
       </figure>
@@ -189,9 +195,9 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
       slower than they asked, forever.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>4 % grade</strong> — tan α = 0.04, about 2.3°.</li>
-        <li><strong>200 kg payload</strong> — m goes from 1400 to 1600 kg, changing both rolling resistance and the slope term.</li>
-        <li><strong>Headwind</strong> — modelled as a 30 % larger drag area, because relative airspeed is what drag actually depends on.</li>
+        <li><strong>1 % grade</strong> — tan α = 0.01, about 0.57°. A gentle motorway rise, and it costs 137 N against the 401 N the engine is holding — the car falls to 58.25 km/h.</li>
+        <li><strong>200 kg payload</strong> — m goes from 1400 to 1600 kg, changing both rolling resistance and the slope term. Settles at 85.40 km/h.</li>
+        <li><strong>20 % more drag area</strong> — a roof box or a headwind, since relative airspeed is what drag depends on. Settles at 82.16 km/h.</li>
         <li><strong>The dashed line</strong> — the 90 km/h target nobody is holding any more.</li>
       </ul>
     </aside>
@@ -206,13 +212,18 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
             <span class="nb">02-open-vs-closed-loop.ipynb</span>
             <span class="cell">cell <b>Close the loop</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># same three disturbances, now under proportional control
-for (name, kwargs) in disturbances
-    model = cruise_loop(with_I = false, with_D = false,
-                        k = 56.0, v_set = 90.0; kwargs...)
-    t, y  = signal(solve(ODEProblem(mtkcompile(model), [], tspan)),
-                   SPEED_KMH)
-    plot!(plt, t, y; lw = 2, label = name)
+          <pre><code class="language-julia" data-trim data-noescape># the same four worlds, now with the loop closed
+K = 25.0                   # N.m per km/h
+UNLIMITED = 1.0e6          # N.m — both torque ceilings lifted
+
+closed = [name =&gt; Scenarios.CruiseLoopTransient(
+              k = K, v_lo = 90.0, v_hi = 90.0,
+              grade = w.grade, m = w.m, CdA = w.CdA,
+              T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+          for (name, w) in WORLDS]
+
+for (name, sol) in closed
+    plot!(plt, signal(sol, "loop.plant.v_kmh")...; lw = 2, label = name)
 end</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
@@ -225,7 +236,7 @@ end</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/02-closed-loop-recovered.svg"
-             alt="The same three disturbances under proportional control: all three responses return close to the 90 km/h target instead of settling at different wrong speeds.">
+             alt="Two panels. Left: the same four worlds under proportional control, every run climbing back to within about two km/h of the 90 km/h target, with dotted lines marking where the open loop had settled. Right: the first twenty seconds magnified onto the last two km/h, showing the runs arriving within five seconds and the small error each one keeps.">
         <figcaption>One controller, three different worlds, one outcome. That is the argument
           for feedback.</figcaption>
       </figure>

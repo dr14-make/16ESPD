@@ -1031,7 +1031,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
           </div>
         </div>
         <p class="small" style="margin-top:0.5em"><strong>K</strong> = 2.21 km/h per N·m
-          &nbsp;·&nbsp; <strong>τ</strong> = 63.0 s &nbsp;·&nbsp; <strong>θ</strong> = 1.63 s</p>
+          &nbsp;·&nbsp; <strong>τ</strong> = 63.0 s &nbsp;·&nbsp; <strong>θ</strong> = 1.88 s</p>
         <div class="callout warn small">
           <span class="label">θ is not the engine's delay</span>
           It is five times larger. Drag is quadratic, so the car's time constant changes across
@@ -1054,7 +1054,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       free-body diagram, no equations of motion. If somebody handed you this car as a sealed
       box you could still have got here.</p>
       <p><strong>Do not skip the amber box, and do not let it embarrass you.</strong> A student
-      who knows the engine's delay is 0.3 s will see 1.63 s and conclude the fit is broken.
+      who knows the engine's delay is 0.3 s will see 1.88 s and conclude the fit is broken.
       It is not. FOPTD has three parameters and our car is not FOPTD — it is a <em>quadratic</em>
       drag law, so its time constant is different at every speed. The fit spends θ on the
       mismatch because θ is the only parameter left.</p>
@@ -1062,7 +1062,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       know that your plant is really quadratic; you get a curve and three numbers. Notebook 08
       tunes from these three exactly as they stand, and the controller works — which is the
       more interesting result.</p>
-      <p><strong>Point at:</strong> the ratio θ/τ — about 0.026 here. That is the number every
+      <p><strong>Point at:</strong> the ratio θ/τ — about 0.030 here. That is the number every
       tuning rule in notebook 08 keys on, and it puts this car at the easy end of the range.</p>
       <p><strong>Honest framing, if asked:</strong> quote the tangent gain and time constant at
       each end of the step — 74.1 s at 90 km/h, 60.6 s at 110. They bracket the fit rather than
@@ -1074,7 +1074,7 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
       <ul>
         <li><strong>K = 2.21 km/h per N·m</strong> — steady-state gain: how far the output moves per unit of input, once settled.</li>
         <li><strong>τ = 63.0 s</strong> — time constant: how long it takes to get there, dominated by the vehicle, not the engine.</li>
-        <li><strong>θ = 1.63 s</strong> — dead time as the fit reports it. <em>Not</em> the engine's 0.3 s delay — see the amber box.</li>
+        <li><strong>θ = 1.878 s</strong> — dead time as the fit reports it. <em>Not</em> the engine's 0.3 s delay — see the amber box.</li>
         <li><strong>FOPTD</strong> — first order plus dead time, the three-parameter shape these numbers describe.</li>
         <li><strong>Tangent gain / time constant</strong> — the local values computed from the force balance at each end of the step: 74.1 s at 90 km/h, 60.6 s at 110. They bracket the fit honestly.</li>
         <li><strong>Secant gain</strong> — the total speed change divided by the total torque change, 20 ÷ 9.04. What K should land near.</li>
@@ -1202,14 +1202,16 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)</code></pre>
             <span class="nb">02-open-vs-closed-loop.ipynb</span>
             <span class="cell">cell <b>Invert the model</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>v = 90 / 3.6                                  # m/s
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
+
+v = 90 / 3.6                                  # m/s
 F = 0.5 * CAR.rho * CAR.CdA * v^2 +           # drag
     CAR.f_r * CAR.m * CAR.g                   # rolling
 tau_ff = F * CAR.r / CAR.i                    # N.m at the engine
 
-sol = solve(ODEProblem(mtkcompile(
-    car_plant(tau_cmd = tau_ff)), [], (0.0, 400.0)))
-plot_speed(sol; setpoint = 90)</code></pre>
+nominal = Scenarios.FeedforwardCruiseTransient(
+    tau_ff = tau_ff, stop = 1200.0)
+plot_speed(nominal; setpoint = 90)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -1258,15 +1260,19 @@ plot_speed(sol; setpoint = 90)</code></pre>
             <span class="nb">02-open-vs-closed-loop.ipynb</span>
             <span class="cell">cell <b>Break it three ways</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>cases = ["flat, as modelled" =&gt; car_plant(tau_cmd = tau_ff),
-         "4 % grade"        =&gt; car_plant(tau_cmd = tau_ff, grade = 0.04),
-         "200 kg payload"   =&gt; car_plant(tau_cmd = tau_ff, m = CAR.m + 200),
-         "headwind"         =&gt; car_plant(tau_cmd = tau_ff, CdA = 1.3 * CAR.CdA)]
+          <pre><code class="language-julia" data-trim data-noescape>WORLDS = [("flat road, nominal car", (grade = 0.0,  m = CAR.m,       CdA = CAR.CdA)),
+          ("1% grade",               (grade = 0.01, m = CAR.m,       CdA = CAR.CdA)),
+          ("200 kg payload",         (grade = 0.0,  m = CAR.m + 200, CdA = CAR.CdA)),
+          ("20% more drag area",     (grade = 0.0,  m = CAR.m,       CdA = 1.2 * CAR.CdA))]
+
+open_loop = [name =&gt; Scenarios.FeedforwardCruiseTransient(
+                 tau_ff = tau_ff, grade = w.grade, m = w.m, CdA = w.CdA,
+                 stop = 1200.0)
+             for (name, w) in WORLDS]
 
 plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
-for (name, model) in cases
-    t, y = signal(solve(ODEProblem(mtkcompile(model), [], tspan)), SPEED_KMH)
-    plot!(plt, t, y; lw = 2, label = name)
+for (name, sol) in open_loop
+    plot!(plt, signal(sol, "plant.v_kmh")...; lw = 2, label = name)
 end
 hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
           <div class="demo-foot">
@@ -1278,7 +1284,7 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/02-open-loop-broken.svg"
-             alt="Four open-loop runs against a 90 km/h target: the nominal case sits on target, the grade, payload and headwind cases all settle at visibly different wrong speeds.">
+             alt="Four open-loop runs against a 90 km/h target over twenty minutes: the nominal case sits on target, while the 1% grade, the 200 kg payload and the 20% larger drag area each settle at a visibly different wrong speed, the grade lowest.">
         <figcaption>Same torque, four worlds. Three of them settle somewhere the driver did not
           ask for.</figcaption>
       </figure>
@@ -1296,9 +1302,9 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
       slower than they asked, forever.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>4 % grade</strong> — tan α = 0.04, about 2.3°.</li>
-        <li><strong>200 kg payload</strong> — m goes from 1400 to 1600 kg, changing both rolling resistance and the slope term.</li>
-        <li><strong>Headwind</strong> — modelled as a 30 % larger drag area, because relative airspeed is what drag actually depends on.</li>
+        <li><strong>1 % grade</strong> — tan α = 0.01, about 0.57°. A gentle motorway rise, and it costs 137 N against the 401 N the engine is holding — the car falls to 58.25 km/h.</li>
+        <li><strong>200 kg payload</strong> — m goes from 1400 to 1600 kg, changing both rolling resistance and the slope term. Settles at 85.40 km/h.</li>
+        <li><strong>20 % more drag area</strong> — a roof box or a headwind, since relative airspeed is what drag depends on. Settles at 82.16 km/h.</li>
         <li><strong>The dashed line</strong> — the 90 km/h target nobody is holding any more.</li>
       </ul>
     </aside>
@@ -1313,13 +1319,18 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")</code></pre>
             <span class="nb">02-open-vs-closed-loop.ipynb</span>
             <span class="cell">cell <b>Close the loop</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># same three disturbances, now under proportional control
-for (name, kwargs) in disturbances
-    model = cruise_loop(with_I = false, with_D = false,
-                        k = 56.0, v_set = 90.0; kwargs...)
-    t, y  = signal(solve(ODEProblem(mtkcompile(model), [], tspan)),
-                   SPEED_KMH)
-    plot!(plt, t, y; lw = 2, label = name)
+          <pre><code class="language-julia" data-trim data-noescape># the same four worlds, now with the loop closed
+K = 25.0                   # N.m per km/h
+UNLIMITED = 1.0e6          # N.m — both torque ceilings lifted
+
+closed = [name =&gt; Scenarios.CruiseLoopTransient(
+              k = K, v_lo = 90.0, v_hi = 90.0,
+              grade = w.grade, m = w.m, CdA = w.CdA,
+              T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+          for (name, w) in WORLDS]
+
+for (name, sol) in closed
+    plot!(plt, signal(sol, "loop.plant.v_kmh")...; lw = 2, label = name)
 end</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
@@ -1332,7 +1343,7 @@ end</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/02-closed-loop-recovered.svg"
-             alt="The same three disturbances under proportional control: all three responses return close to the 90 km/h target instead of settling at different wrong speeds.">
+             alt="Two panels. Left: the same four worlds under proportional control, every run climbing back to within about two km/h of the 90 km/h target, with dotted lines marking where the open loop had settled. Right: the first twenty seconds magnified onto the last two km/h, showing the runs arriving within five seconds and the small error each one keeps.">
         <figcaption>One controller, three different worlds, one outcome. That is the argument
           for feedback.</figcaption>
       </figure>
@@ -1491,7 +1502,7 @@ bracket_error!(plt, single; setpoint = 110, sig = SPEED)</code></pre>
           </div>
         </div>
         <div class="readout">
-          <div class="r"><span class="v">2.9</span><span class="k">km/h short</span></div>
+          <div class="r"><span class="v">2.8</span><span class="k">km/h short</span></div>
           <div class="r"><span class="v">≈ 40</span><span class="k">N·m to hold 110</span></div>
           <div class="r"><span class="v">280</span><span class="k">N·m peak command</span></div>
         </div>
@@ -1509,7 +1520,7 @@ bracket_error!(plt, single; setpoint = 110, sig = SPEED)</code></pre>
       <p><strong>Ask the room:</strong> is this controller broken? <em>(No. It is doing exactly
       what it was told. It is stable, it is quick, it stopped somewhere sensible — and it is
       wrong, permanently, and it will never notice.)</em></p>
-      <p><strong>Read out:</strong> the bracket annotation — 2.9 km/h short at this gain. And
+      <p><strong>Read out:</strong> the bracket annotation — 2.8 km/h short at this gain. And
       then the third number on the slide, which is the one nobody expects: to make that
       modest-looking response the controller asked for <strong>280 N·m</strong> at the instant
       of the step, from an engine that can give 150. We lifted the limit to get this plot. Say
@@ -1520,7 +1531,7 @@ bracket_error!(plt, single; setpoint = 110, sig = SPEED)</code></pre>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>k = 14</strong> N·m per km/h — a deliberately gentle gain.</li>
-        <li><strong>2.9 km/h</strong> — the steady-state error: setpoint minus where it settled.</li>
+        <li><strong>2.8 km/h</strong> — the steady-state error: setpoint minus where it settled.</li>
         <li><strong>≈ 40 N·m</strong> — the torque needed to hold 110 km/h, which is what the loop ends up delivering.</li>
         <li><strong>280 N·m</strong> — the peak command, at the step, when the error is still the full 20 km/h.</li>
         <li><strong>The bracket</strong> — drawn between the settled speed and the dashed setpoint. Its label is the error.</li>
@@ -1554,7 +1565,7 @@ plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")</code></pre>
         </div>
         <table>
           <tr><th>k <span class="small muted">[N·m per km/h]</span></th><th>what it does</th></tr>
-          <tr><td class="num">14</td><td>settles, 2.9 km/h short</td></tr>
+          <tr><td class="num">14</td><td>settles, 2.8 km/h short</td></tr>
           <tr><td class="num">56</td><td>settles, 0.7 km/h short</td></tr>
           <tr><td class="num">220</td><td><strong>never settles</strong> — past K<sub>u</sub></td></tr>
           <tr><td class="num">890</td><td><strong>never settles</strong> — past K<sub>u</sub></td></tr>
@@ -1595,7 +1606,7 @@ plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")</code></pre>
       <ul>
         <li><strong>k = 14, 56, 220, 890</strong> — four gains spanning about two decades, N·m per km/h.</li>
         <li><strong>K<sub>u</sub> ≈ 115</strong> N·m per km/h — the <em>ultimate gain</em>: the gain at which the loop oscillates forever, neither growing nor decaying. Above it there is no steady state.</li>
-        <li><strong>Settled error</strong> — 2.9 km/h at k = 14, 0.7 at k = 56. The other two never settle, so the question does not apply to them.</li>
+        <li><strong>Settled error</strong> — 2.8 km/h at k = 14, 0.7 at k = 56. The other two never settle, so the question does not apply to them.</li>
         <li><strong>The right-hand panel</strong> — the last 30 seconds, magnified onto a 5 km/h window so the difference between "settled" and "still oscillating" is visible.</li>
       </ul>
     </aside>
@@ -2434,15 +2445,23 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
             <span class="nb">06-windup.ipynb</span>
             <span class="cell">cell <b>The climb, no anti-windup</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>model = cruise_climb(k = 56.0, Ti = 8.0,
-                     v_set = 130.0, grade = 0.10,
-                     t_climb = (30.0, 90.0),
-                     antiwindup = :none)
-sol = solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-plot_speed(sol; setpoint = 130)
-plot_torque(sol)                        # with the 150 N.m limit drawn on
-signal(sol, "controller.I.y")           # the integrator, separately</code></pre>
+SPEED = "loop.plant.v_kmh"
+COMMAND = "loop.controller.y"
+DELIVERED = "loop.plant.engine.limiter.y"
+INTEGRAL = "loop.controller.integrator.y"
+
+# `Ni` is the back-calculation tracking factor; a large value makes the
+# correction negligible, which is the no-anti-windup case.
+none = Scenarios.CruiseClimbTransient(
+    k = 56.0, Ti = 8.0, Ni = 1.0e6,
+    v_set = 130.0, gradient = 0.10,
+    start_time = 30.0, duration = 120.0, stop = 400.0)
+
+plot_speed(none; sig = SPEED, setpoint = 130)
+plot_torque(none; commanded = COMMAND, delivered = DELIVERED)
+signal(none, INTEGRAL)                  # the integrator, separately</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -2451,7 +2470,7 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
         </div>
         <div class="model">
           <span class="label">Open in Dyad</span>
-          <code>dyad/Vehicle/GradeProfile.dyad</code>
+          <code>dyad/Lecture1/WindupClimb.dyad</code>
         </div>
       </div>
       <figure class="fig">
@@ -2482,7 +2501,7 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>grade = 0.10</strong> — tan α, a 10 % climb, about 5.7°.</li>
-        <li><strong>t_climb = (30, 90) s</strong> — when the hill starts and ends.</li>
+        <li><strong>start_time = 30 s, duration = 120 s</strong> — the hill starts at 30 s and the road flattens again at 150 s.</li>
         <li><strong>v_set = 130 km/h</strong> — the cruise setpoint.</li>
         <li><strong>Commanded torque</strong> — what the controller asks for; it keeps climbing. <strong>Delivered torque</strong> — what the engine gives; it is flat on the limit.</li>
         <li><strong>The integrator state</strong> — plotted separately, because it is the thing actually going wrong and it is invisible in the speed trace.</li>
@@ -2495,7 +2514,7 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
     <h2>Why the crash is already scheduled</h2>
     <div class="cols">
       <div>
-        <p class="small">When the road flattens at t = 90 s, the car accelerates. The error
+        <p class="small">When the road flattens at t = 150 s, the car accelerates. The error
         changes sign. The integrator begins to unwind.</p>
         <p class="small">But it is unwinding <em>from far above the limit</em>. While the
         command falls from 400 N·m to 150, the engine delivers the same full torque it was
@@ -2539,11 +2558,11 @@ signal(sol, "controller.I.y")           # the integrator, separately</code></pre
             <span class="nb">06-windup.ipynb</span>
             <span class="cell">cell <b>The overshoot</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>plt = plot_speed(sol; setpoint = 130)
-vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
+          <pre><code class="language-julia" data-trim data-noescape>plt = plot_speed(none; sig = SPEED, setpoint = 130)
+vline!(plt, [30.0, 150.0]; ls = :dot, color = :gray,
        label = "climb starts / ends")
 
-@show overshoot(sol, 130; y0 = 130)     # percent of the step</code></pre>
+@show overshoot(none, 130; sig = SPEED, y0 = 130)   # percent</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -2559,7 +2578,7 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
       <figure class="fig">
         <img src="assets/figures/06-overshoot.svg"
              alt="Speed through and after the climb: a sag during the climb, then a large overshoot above the setpoint once the road flattens, before settling back.">
-        <figcaption>The road flattens at t = 90 s, and the car keeps accelerating well past the
+        <figcaption>The road flattens at t = 150 s, and the car keeps accelerating well past the
           setpoint before the integrator has unwound.</figcaption>
       </figure>
     </div>
@@ -2720,16 +2739,16 @@ vline!(plt, [30.0, 90.0]; ls = :dot, color = :gray,
             <span class="nb">06-windup.ipynb</span>
             <span class="cell">cell <b>Three-way comparison</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>variants = [:none, :clamping, :backcalculation]
+          <pre><code class="language-julia" data-trim data-noescape># Three schemes, three calls: `Ni` switches back-calculation on and off,
+# and clamping is a different controller, so a different analysis.
+CLIMB = (k = 56.0, Ti = 8.0, v_set = 130.0, gradient = 0.10,
+         start_time = 30.0, duration = 120.0, stop = 400.0)
 
-sols = map(variants) do aw
-    model = cruise_climb(k = 56.0, Ti = 8.0, v_set = 130.0,
-                         grade = 0.10, t_climb = (30.0, 90.0),
-                         antiwindup = aw)
-    solve(ODEProblem(mtkcompile(model), [], (0.0, 200.0)))
-end
+runs = ["none"             =&gt; Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CLIMB...),
+        "back-calculation" =&gt; Scenarios.CruiseClimbTransient(; Ni = 0.9, CLIMB...),
+        "clamping"         =&gt; Scenarios.ClampingCruiseClimbTransient(; CLIMB...)]
 
-[overshoot(s, 130; y0 = 130) for s in sols]     # peak, percent</code></pre>
+[name =&gt; overshoot(s, 130; sig = SPEED, y0 = 130) for (name, s) in runs]</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -2856,10 +2875,11 @@ end
       <div>
         <p class="small">Thermal, shot, flicker, coupling from everything else in the vehicle —
         noise is not a defect, it is a property. A speedometer has it too.</p>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
             <span class="cell">cell <b>The measurement</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
     cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 10.0)),
@@ -2870,9 +2890,9 @@ t, v_meas = signal(sol, "noise.y")
 plot(t, [v_true v_meas]; lw = 2,
      label = ["true" "measured"])</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>
@@ -2946,10 +2966,11 @@ plot(t, [v_true v_meas]; lw = 2,
     <h2>A near-pure derivative</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
             <span class="cell">cell <b>Near-pure derivative</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd
 # pushes the cutoff up, towards no filter at all
@@ -2960,9 +2981,9 @@ sol = solve(ODEProblem(mtkcompile(
 plot_torque(sol; delivered = nothing)
 extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <div class="callout danger small">
@@ -3007,10 +3028,11 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
         <p class="small">A first-order low-pass on the derivative path, with cutoff
         <em>N</em> in rad/s:</p>
         <p>$$ \frac{s\,N}{s+N} \qquad\text{instead of}\qquad s $$</p>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
             <span class="cell">cell <b>Nd family</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5),
            "Nd", [1000.0, 100.0, 20.0, 5.0];
@@ -3018,9 +3040,9 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
 
 plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>
@@ -3200,8 +3222,8 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <p><strong>Point at</strong> the ratio table. This is the number that tells you whether
       the job is easy. A plant with almost no dead time relative to its time constant will take
       almost any gain you throw at it; a plant that is mostly dead time will not.</p>
-      <p><strong>Read out</strong> our car's ratio: θ = 1.63 s against τ = 63 s, so
-      θ/τ ≈ 0.026 — the easy end of the table, and comfortably inside where these rules were
+      <p><strong>Read out</strong> our car's ratio: θ = 1.88 s against τ = 63 s, so
+      θ/τ ≈ 0.030 — the easy end of the table, and comfortably inside where these rules were
       fitted.</p>
       <p><strong>And flag the consequence now,</strong> because it explains a plot several
       slides from here: Cohen-Coon's gain scales as τ/θ, so a small ratio buys a large gain —
@@ -3215,9 +3237,9 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
         <li><strong>G(s)</strong> — the plant's transfer function: output over input in the Laplace domain.</li>
         <li><strong>K</strong> — steady-state gain. Output change per unit input change, once settled. Ours: 2.21 km/h per N·m.</li>
         <li><strong>τ</strong> — time constant, seconds. Time to cover 63 % of the change. Ours: 63 s.</li>
-        <li><strong>θ</strong> — dead time, seconds. How long nothing happens first. Ours: 1.63 s as fitted.</li>
+        <li><strong>θ</strong> — dead time, seconds. How long nothing happens first. Ours: 1.878 s as fitted.</li>
         <li><strong>e<sup>−θs</sup></strong> — how a pure delay is written in the Laplace domain.</li>
-        <li><strong>r = θ/τ</strong> — the ratio every table keys on. Ours is about 0.026: the easy end.</li>
+        <li><strong>r = θ/τ</strong> — the ratio every table keys on. Ours is about 0.030: the easy end.</li>
         <li><strong>FOPTD</strong> — first order plus dead time. Also written FOPDT; same thing.</li>
       </ul>
     </aside>
@@ -3233,11 +3255,17 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
             <span class="cell">cell <b>The open-loop step test</b></span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># 1. settle  2. step  3. record  4. scale by the step size
-model = car_step_test(tau_lo = 31.0, tau_hi = 41.0,
-                      t_step = 100.0)
-sol = solve(ODEProblem(mtkcompile(model), [], (0.0, 600.0)))
+Scenarios = VehicleSystemsComponents.Lecture1
 
-K, tau, theta = fopdt_fit(sol)
+V_START, SETPOINT, T_STEP = 90.0, 110.0, 50.0
+A_STEP = cruise_torque(SETPOINT) - cruise_torque(V_START)
+
+step_test = Scenarios.CarStepTestTransient(
+    tau_lo = cruise_torque(V_START), tau_hi = cruise_torque(SETPOINT),
+    v0 = V_START / 3.6, t_step = T_STEP)
+
+K, tau, theta = fopdt_fit(step_test;
+    output = "plant.v_kmh", A = A_STEP, t0 = T_STEP)
 @show K tau theta</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
@@ -3275,7 +3303,7 @@ K, tau, theta = fopdt_fit(sol)
         <li><strong>tau_lo → tau_hi</strong> — step the manipulated variable from one settled value to another, here 31.1 → 40.1 N·m.</li>
         <li><strong>A</strong> — the size of that input step, 9.04 N·m. Dividing by it is step 4 of the procedure and is what makes K a property of the plant.</li>
         <li><strong>t0 = t_step</strong> — when the step was applied, handed to the fit rather than guessed.</li>
-        <li><strong>stop = 600 s</strong> — long enough for the response to settle; about ten time constants.</li>
+        <li><strong>stop = 500 s</strong> — the analysis default, long enough for the response to settle; about eight time constants.</li>
       </ul>
     </aside>
   </section>
@@ -3368,12 +3396,20 @@ K, tau, theta = fopdt_fit(sol)
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Cohen-Coon</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
+          <pre><code class="language-julia" data-trim data-noescape>SPEED = "loop.plant.v_kmh"
+UNLIMITED = 1.0e6                  # N.m — the ceiling lifted away
 
-sol_cc = solve(ODEProblem(mtkcompile(
-    cruise_loop(with_I = true, with_D = true,
-                k = k_cc, Ti = Ti_cc, Td = Td_cc)), [], tspan))
-plot_speed(sol_cc; setpoint = 110)</code></pre>
+k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
+
+# `with_I` and `with_D` are structural, so a PID is a different compiled
+# model rather than the same one with gains set.
+pid = Scenarios.CruiseLoopTransient(
+    model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                     with_I = true, with_D = true),
+    k = k_cc, Ti = Ti_cc, Td = Td_cc, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+
+plot_speed(pid; sig = SPEED, setpoint = 110)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -3423,11 +3459,17 @@ plot_speed(sol_cc; setpoint = 110)</code></pre>
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Ziegler-Nichols</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># raise k under pure proportional control until the
-# oscillation neither grows nor decays
-sw = sweep(cruise_loop(with_I = false, with_D = false),
-           "k", ks_probe; tspan = (0.0, 60.0))
-plot_sweep(sw; setpoint = 110)
+          <pre><code class="language-julia" data-trim data-noescape># Raise k under pure proportional control until the oscillation neither
+# grows nor decays. `CruiseLoopStep` leaves both switches off, so the
+# plain analysis is already the P-only loop this step needs.
+DELTA = 0.1        # km/h — the smallest poke that still measures cleanly
+
+probe = Scenarios.CruiseLoopTransient(
+    k = 100.0, v_lo = V_START, v_hi = V_START + DELTA,
+    T_max = UNLIMITED, y_max = UNLIMITED, stop = 30.0)
+
+ladder = sweep(probe, "k", [80.0, 100.0, 110.0, 114.0, 115.0, 125.0])
+plot_sweep(ladder; sig = SPEED, name = "k")
 
 Ku = ...          # the gain at which it sustains
 Pu = ...          # the period of that oscillation, seconds
@@ -3632,16 +3674,18 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>All three overlaid</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>gains = ["Cohen-Coon"     =&gt; (k_cc, Ti_cc, Td_cc),
+          <pre><code class="language-julia" data-trim data-noescape>gains = ["Cohen-Coon"      =&gt; (k_cc, Ti_cc, Td_cc),
          "Ziegler-Nichols" =&gt; (k_zn, Ti_zn, Td_zn),
          "Tyreus-Luyben"   =&gt; (k_tl, Ti_tl, Td_tl)]
 
+# One compiled model for all three: `rerun` swaps the gains in the problem
+# the compiler already built.
+tuned(k, Ti, Td) = rerun(pid, "k" =&gt; k, "Ti" =&gt; Ti, "Td" =&gt; Td,
+                         "loop.controller.xd0" =&gt; -V_START)
+
 plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
 for (name, (k, Ti, Td)) in gains
-    sol  = solve(ODEProblem(mtkcompile(cruise_loop(
-        with_I = true, with_D = true, k, Ti, Td)), [], tspan))
-    t, y = signal(sol, SPEED_KMH)
-    plot!(plt, t, y; lw = 2, label = name)
+    plot!(plt, signal(tuned(k, Ti, Td), SPEED)...; lw = 2, label = name)
 end</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
@@ -3757,12 +3801,11 @@ end</code></pre>
             <span class="cell">cell <b>The saturation trap</b></span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># push the gains until the response looks superb
-hot = cruise_loop(with_I = true, with_D = true,
-                  k = 8 * k_zn, Ti = Ti_zn / 2, Td = Td_zn)
-sol_hot = solve(ODEProblem(mtkcompile(hot), [], tspan))
+hot = tuned(8 * k_zn, Ti_zn / 2, Td_zn)
 
-plot_speed(sol_hot; setpoint = 110)   # looks perfect
-plot_torque(sol_hot)                  # now look at this</code></pre>
+plot_speed(hot; sig = SPEED, setpoint = 110)   # looks perfect
+plot_torque(hot; commanded = "loop.controller.y",
+            delivered = "loop.plant.engine.limiter.y")</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -3927,15 +3970,29 @@ plot_torque(sol_hot)                  # now look at this</code></pre>
             <span class="cell">cell <b>The sample-time sweep</b></span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># the gains from section 08, untouched
-sw = sweep(cruise_sampled(k = k_zn, Ti = Ti_zn, Td = Td_zn),
-           "Ts", [0.01, 0.1, 0.4, 1.0];
-           tspan = (0.0, 120.0))
+Scenarios = VehicleSystemsComponents.Lecture1
+SPEED = "loop.plant.v_kmh"
+UNLIMITED = 1.0e6
 
-plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
+# `Ts` is structural — the Pade delay bakes its delay time in at
+# construction — so a sample-time sweep is one compiled model per value,
+# not `sweep` over one of them.
+sampled(Ts) = Scenarios.SampledCruiseStep(;
+    name = :SampledCruiseStep, Ts = Ts, with_I = true, with_D = true,
+    k = k_zn, Ti = Ti_zn, Td = Td_zn, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED)
+
+runs = [Ts =&gt; solve(ODEProblem(mtkcompile(sampled(Ts)), [], (0.0, 120.0)))
+        for Ts in [0.01, 0.1, 0.4, 1.0]]
+
+plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
+for (Ts, sol) in runs
+    plot!(plt, signal(sol, SPEED)...; lw = 2, label = "Ts = $Ts s")
+end</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small">Overshoot grows. Then the loop rings. Then it does not come back.</p>
@@ -4063,14 +4120,17 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
 # 2. re-tune for the rate you actually have
 k2, Ti2, Td2 = ziegler_nichols(Ku_slow, Pu_slow)
 
-sol_slow  = solve(ODEProblem(mtkcompile(cruise_sampled(
-    Ts = 1.0, k = k_zn, Ti = Ti_zn, Td = Td_zn)), [], tspan))
-sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
-    Ts = 1.0, k = k2, Ti = Ti2, Td = Td2)), [], tspan))</code></pre>
+retuned(Ts, k, Ti, Td) = solve(ODEProblem(mtkcompile(
+    Scenarios.SampledCruiseStep(; name = :SampledCruiseStep, Ts = Ts,
+        with_I = true, with_D = true, k = k, Ti = Ti, Td = Td, wd = 0.0,
+        T_max = UNLIMITED, y_max = UNLIMITED)), [], (0.0, 120.0)))
+
+sol_slow  = retuned(1.0, k_zn, Ti_zn, Td_zn)
+sol_retun = retuned(1.0, k2, Ti2, Td2)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small muted">Re-tuning buys back stability, not performance. The slow loop is
@@ -4162,10 +4222,11 @@ sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
     <h2>First, just add the wheel</h2>
     <div class="cols cols-wide-left">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>L1, the wheel appears</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># same gains as section 05, now with wheel inertia
 # and an ideal rolling contact
@@ -4176,9 +4237,9 @@ sol_l1 = solve(ODEProblem(mtkcompile(
 plot_speed(sol_l1; setpoint = 110)
 @show rise_time(sol_l1, 110) overshoot(sol_l1, 110)</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>
@@ -4230,10 +4291,11 @@ plot_speed(sol_l1; setpoint = 110)
     <h2>Beat one: the wheel runs away</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>L2, beat one: wheelspin</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># the friction curve's second derivative is discontinuous
 # at the transitions: explicit RK handles it, BDF struggles
@@ -4244,9 +4306,9 @@ sol = solve(ODEProblem(mtkcompile(
 plot(signal(sol, "wheel.v_wheel_kmh")...; lw = 2, label = "wheel")
 plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small">Under closed loop the error stays large, so the integrator winds up —
@@ -4288,10 +4350,11 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       <div>
         <p>$$ \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
              \qquad F_x \;=\; \mu(\kappa)\,F_z $$</p>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>Beat two: the curve</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape>plot(kappas, mu.(kappas); lw = 2, label = "",
      xlabel = "slip ratio", ylabel = "mu")
@@ -4300,9 +4363,9 @@ scatter!([kappa_peak], [mu_peak]; label = "peak")
 # where the wheelspin run actually sat
 scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>
@@ -4378,10 +4441,11 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
     <h2>Beat three: cruise control on ice</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>Beat three: the ice patch</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># cruising at 90 km/h; friction collapses for two seconds
 sol = solve(ODEProblem(mtkcompile(
@@ -4393,9 +4457,9 @@ sol = solve(ODEProblem(mtkcompile(
 # on shared time axes with the patch shaded
 plot_ice_patch(sol)</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small"><strong>The controller reads falling speed, commands more torque,
@@ -4439,10 +4503,11 @@ plot_ice_patch(sol)</code></pre>
     <h2>What should have happened</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>What should have happened</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># the same run, with a friction-aware torque limit
 sol_tc = solve(ODEProblem(mtkcompile(
@@ -4451,9 +4516,9 @@ sol_tc = solve(ODEProblem(mtkcompile(
               traction_limit = true)),
     [], (0.0, 90.0)), Tsit5())</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small">The car still loses speed on the ice — physics is physics. It does not

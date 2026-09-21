@@ -98,15 +98,29 @@
             <span class="cell">cell <b>The sample-time sweep</b></span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># the gains from section 08, untouched
-sw = sweep(cruise_sampled(k = k_zn, Ti = Ti_zn, Td = Td_zn),
-           "Ts", [0.01, 0.1, 0.4, 1.0];
-           tspan = (0.0, 120.0))
+Scenarios = VehicleSystemsComponents.Lecture1
+SPEED = "loop.plant.v_kmh"
+UNLIMITED = 1.0e6
 
-plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
+# `Ts` is structural — the Pade delay bakes its delay time in at
+# construction — so a sample-time sweep is one compiled model per value,
+# not `sweep` over one of them.
+sampled(Ts) = Scenarios.SampledCruiseStep(;
+    name = :SampledCruiseStep, Ts = Ts, with_I = true, with_D = true,
+    k = k_zn, Ti = Ti_zn, Td = Td_zn, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED)
+
+runs = [Ts =&gt; solve(ODEProblem(mtkcompile(sampled(Ts)), [], (0.0, 120.0)))
+        for Ts in [0.01, 0.1, 0.4, 1.0]]
+
+plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
+for (Ts, sol) in runs
+    plot!(plt, signal(sol, SPEED)...; lw = 2, label = "Ts = $Ts s")
+end</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small">Overshoot grows. Then the loop rings. Then it does not come back.</p>
@@ -234,14 +248,17 @@ plot_sweep(sw; setpoint = 110, name = "Ts")</code></pre>
 # 2. re-tune for the rate you actually have
 k2, Ti2, Td2 = ziegler_nichols(Ku_slow, Pu_slow)
 
-sol_slow  = solve(ODEProblem(mtkcompile(cruise_sampled(
-    Ts = 1.0, k = k_zn, Ti = Ti_zn, Td = Td_zn)), [], tspan))
-sol_retun = solve(ODEProblem(mtkcompile(cruise_sampled(
-    Ts = 1.0, k = k2, Ti = Ti2, Td = Td2)), [], tspan))</code></pre>
+retuned(Ts, k, Ti, Td) = solve(ODEProblem(mtkcompile(
+    Scenarios.SampledCruiseStep(; name = :SampledCruiseStep, Ts = Ts,
+        with_I = true, with_D = true, k = k, Ti = Ti, Td = Td, wd = 0.0,
+        T_max = UNLIMITED, y_max = UNLIMITED)), [], (0.0, 120.0)))
+
+sol_slow  = retuned(1.0, k_zn, Ti_zn, Td_zn)
+sol_retun = retuned(1.0, k2, Ti2, Td2)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small muted">Re-tuning buys back stability, not performance. The slow loop is

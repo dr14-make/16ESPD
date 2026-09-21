@@ -23,10 +23,11 @@
     <h2>First, just add the wheel</h2>
     <div class="cols cols-wide-left">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>L1, the wheel appears</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># same gains as section 05, now with wheel inertia
 # and an ideal rolling contact
@@ -37,9 +38,9 @@ sol_l1 = solve(ODEProblem(mtkcompile(
 plot_speed(sol_l1; setpoint = 110)
 @show rise_time(sol_l1, 110) overshoot(sol_l1, 110)</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>
@@ -91,10 +92,11 @@ plot_speed(sol_l1; setpoint = 110)
     <h2>Beat one: the wheel runs away</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>L2, beat one: wheelspin</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># the friction curve's second derivative is discontinuous
 # at the transitions: explicit RK handles it, BDF struggles
@@ -105,9 +107,9 @@ sol = solve(ODEProblem(mtkcompile(
 plot(signal(sol, "wheel.v_wheel_kmh")...; lw = 2, label = "wheel")
 plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small">Under closed loop the error stays large, so the integrator winds up —
@@ -149,10 +151,11 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       <div>
         <p>$$ \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
              \qquad F_x \;=\; \mu(\kappa)\,F_z $$</p>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>Beat two: the curve</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape>plot(kappas, mu.(kappas); lw = 2, label = "",
      xlabel = "slip ratio", ylabel = "mu")
@@ -161,9 +164,9 @@ scatter!([kappa_peak], [mu_peak]; label = "peak")
 # where the wheelspin run actually sat
 scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
       </div>
@@ -239,10 +242,11 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
     <h2>Beat three: cruise control on ice</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>Beat three: the ice patch</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># cruising at 90 km/h; friction collapses for two seconds
 sol = solve(ODEProblem(mtkcompile(
@@ -254,9 +258,9 @@ sol = solve(ODEProblem(mtkcompile(
 # on shared time axes with the patch shaded
 plot_ice_patch(sol)</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small"><strong>The controller reads falling speed, commands more torque,
@@ -300,10 +304,11 @@ plot_ice_patch(sol)</code></pre>
     <h2>What should have happened</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo">
+        <div class="demo unbuilt">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
             <span class="cell">cell <b>What should have happened</b></span>
+            <span class="unbuilt-tag">MODEL NOT BUILT</span>
           </div>
           <pre><code class="language-julia" data-trim data-noescape># the same run, with a friction-aware torque limit
 sol_tc = solve(ODEProblem(mtkcompile(
@@ -312,9 +317,9 @@ sol_tc = solve(ODEProblem(mtkcompile(
               traction_limit = true)),
     [], (0.0, 90.0)), Tsit5())</code></pre>
           <div class="demo-foot">
-            <button class="copy">copy</button>
+            <span class="nocopy">not runnable yet</span>
             <span class="spacer"></span>
-            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
+            <span class="nocopy">notebook not written yet</span>
           </div>
         </div>
         <p class="small">The car still loses speed on the ice — physics is physics. It does not
