@@ -148,12 +148,25 @@ body[data-kernel="error"] #kernel-status { color: var(--bad); }
   font-family: ui-monospace, monospace;
 }
 
-/* Pluto sizes its own output; a card only stops it overflowing its grid cell. */
 .card-body,
 .card-body pluto-cell { display: block; min-width: 0; }
 
-.card-body > :first-child { margin-block-start: 0; }
-.card-body > :last-child { margin-block-end: 0; }
+/* A figure is told how tall its card is; everything else is left to ask for its own height.
+   A plot sizes itself to the box it is given and, given none, draws itself 400 px and leaves
+   the rest of the card blank — so without this `h` is a hint for exactly the cards it matters
+   most for. The same rule over a card of prose or a table would stretch the paragraph or
+   distribute the rows, which is why it is scoped to what Plotly rendered rather than applied
+   to every body. Content taller than its card still scrolls: an overflowing descendant
+   extends the card's own scroll region. */
+.card-body:has(.js-plotly-plot),
+.card-body:has(.js-plotly-plot) > pluto-cell,
+.card-body:has(.js-plotly-plot) > pluto-cell > * { height: 100%; }
+
+/* Not `> :first-child`, which reaches only Pluto's own wrapper: a markdown cell's paragraph
+   sits one level further in and keeps its 1em margins, which is 32 px of a card spent before
+   anything is drawn — enough on its own to turn a two-row widget card into a scroll-box. */
+.card-body :first-child { margin-block-start: 0; }
+.card-body :last-child { margin-block-end: 0; }
 
 /* A card renders Pluto's output without Pluto's own stylesheet, so every readout table a
    notebook emits — a markdown table, or the raw one `metrics` builds — arrives unstyled. */

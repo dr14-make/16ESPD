@@ -12,8 +12,8 @@
     {
       "title": "Proportional",
       "cards": [
-        { "card": "gain-p", "x": 0, "y": 0, "w": 3, "h": 2 },
-        { "card": "target-speed", "x": 0, "y": 2, "w": 3, "h": 2 },
+        { "card": "gain-p", "x": 0, "y": 0, "w": 3, "h": 3 },
+        { "card": "target-speed", "x": 0, "y": 3, "w": 3, "h": 3 },
         { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 12 },
         { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
         { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
@@ -22,9 +22,9 @@
     {
       "title": "Proportional-integral",
       "cards": [
-        { "card": "gain-p", "x": 0, "y": 0, "w": 3, "h": 2 },
-        { "card": "gain-i", "x": 0, "y": 2, "w": 3, "h": 2 },
-        { "card": "target-speed", "x": 0, "y": 4, "w": 3, "h": 2 },
+        { "card": "gain-p", "x": 0, "y": 0, "w": 3, "h": 3 },
+        { "card": "gain-i", "x": 0, "y": 3, "w": 3, "h": 3 },
+        { "card": "target-speed", "x": 0, "y": 6, "w": 3, "h": 3 },
         { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 12 },
         { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
         { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
@@ -33,10 +33,10 @@
     {
       "title": "Proportional-integral-derivative",
       "cards": [
-        { "card": "gain-d", "x": 0, "y": 0, "w": 3, "h": 2 },
-        { "card": "gain-p", "x": 0, "y": 2, "w": 3, "h": 2 },
-        { "card": "gain-i", "x": 0, "y": 4, "w": 3, "h": 2 },
-        { "card": "target-speed", "x": 0, "y": 6, "w": 3, "h": 2 },
+        { "card": "gain-d", "x": 0, "y": 0, "w": 3, "h": 3 },
+        { "card": "gain-p", "x": 0, "y": 3, "w": 3, "h": 3 },
+        { "card": "gain-i", "x": 0, "y": 6, "w": 3, "h": 3 },
+        { "card": "target-speed", "x": 0, "y": 9, "w": 3, "h": 3 },
         { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 12 },
         { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
         { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
