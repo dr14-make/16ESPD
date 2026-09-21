@@ -30,10 +30,8 @@ reused by later lectures) and `Lecture1/` (control assemblies and scenarios).
     [x] Notebooks 01, 03, 04, 05, 06   (Tier 1)
     [x] Notebook 08                    (Tier 1)
     [x] Notebooks 09, 02               (Tier 2)
-    [ ] Notebooks 07, 10               (Tier 3)
+    [x] Notebooks 07, 10               (Tier 3)
 
-    [ ] Notebook 07 is blocked: `MeasurementNoise` exists but nothing wires it into a loop.
-        Needs a `NoisyCruiseLoop` / `NoisyCruiseStep` / `NoisyCruiseTransient` in dyad/Lecture1.
     [ ] Notebook 09 and dyad/Lecture1/Sampler.dyad carry a Pade surrogate rather than a clocked
         partition, and should be translated to DiscreteComponents. Blocked upstream — see
         Risk 3 and https://github.com/dr14-make/16ESPD/issues/1
@@ -269,6 +267,11 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   figure, which would make the deck crawl on a projector. Hand each panel only the window it is
   read over. Do not decimate instead — that aliases high-frequency chatter into a waveform the
   simulation never produced.
+- **Quote anchors from what the lecture runs, not from a model's defaults.** Twice a brief
+  carried measurements taken at a component's default derivative time while the notebooks were
+  running the value the PID notebook arrives at. Both times the notebook agent caught the
+  mismatch and both times the notebook was right to keep the lecture's value. Before quoting a
+  number into a brief, check which parameter set produced it.
 - **Memory.** Running several agents alongside the Dyad language server exhausts this machine;
   `earlyoom` is configured to prefer killing `julia`. A run that dies with no error message was
   probably killed, not broken. Retry before debugging.
