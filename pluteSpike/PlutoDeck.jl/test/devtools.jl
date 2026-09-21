@@ -191,15 +191,22 @@ function await(browser::Browser, session::AbstractString, expression::AbstractSt
 end
 
 """
-The keys the harness can press, and the virtual key code Chrome expects for each.
+The keys the harness can press: each `event.key` against the `event.code` and virtual key code
+Chrome expects for it.
 
 A `KeyboardEvent` built in `Runtime.evaluate` would prove only that a listener is attached to
 something. `Input.dispatchKeyEvent` goes in where a keyboard goes, so what is under test is the
 deck reacting to a key press — including whether the element holding focus swallowed it first.
+
+`code` is the physical key and is not the name of the character it produces, which is why a
+letter cannot be dispatched by repeating its `key`.
 """
-const VIRTUAL_KEY_CODES = Dict(
-    "ArrowLeft" => 37, "ArrowUp" => 38, "ArrowRight" => 39, "ArrowDown" => 40,
-    "PageUp" => 33, "PageDown" => 34, "Home" => 36, "End" => 35,
+const VIRTUAL_KEYS = Dict(
+    "ArrowLeft" => ("ArrowLeft", 37), "ArrowUp" => ("ArrowUp", 38),
+    "ArrowRight" => ("ArrowRight", 39), "ArrowDown" => ("ArrowDown", 40),
+    "PageUp" => ("PageUp", 33), "PageDown" => ("PageDown", 34),
+    "Home" => ("Home", 36), "End" => ("End", 35),
+    "c" => ("KeyC", 67),
 )
 
 """
@@ -211,16 +218,17 @@ Press and release `key` in the page, wherever focus currently is.
 navigation key has none of.
 """
 function press(browser::Browser, session::AbstractString, key::AbstractString)
-    code = get(VIRTUAL_KEY_CODES, key, nothing)
-    code === nothing && error("press: no virtual key code for \"$key\"")
+    physical = get(VIRTUAL_KEYS, key, nothing)
+    physical === nothing && error("press: no virtual key code for \"$key\"")
+    code, virtual = physical
 
     for type in ("rawKeyDown", "keyUp")
         command(browser, "Input.dispatchKeyEvent", Dict(
             "type" => type,
             "key" => key,
-            "code" => key,
-            "windowsVirtualKeyCode" => code,
-            "nativeVirtualKeyCode" => code,
+            "code" => code,
+            "windowsVirtualKeyCode" => virtual,
+            "nativeVirtualKeyCode" => virtual,
         ); session)
     end
     return nothing

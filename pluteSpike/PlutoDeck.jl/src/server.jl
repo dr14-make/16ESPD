@@ -122,8 +122,27 @@ _deck_json(deck::Deck) = Dict{String,Any}(
 
 _slide_json(slide::Slide) = Dict{String,Any}(
     "title" => slide.title,
+    "notes" => _notes_json(slide.notes),
     "cards" => _card_json.(slide.cards),
 )
+
+"""
+A slide's speaker cues, read now rather than when the deck was loaded.
+
+Carrying either `markdown` or `error`, never both: a cue file that has gone missing since load
+is a fault the lecturer has to see, and an empty panel says nothing went wrong.
+"""
+_notes_json(::Nothing) = nothing
+
+function _notes_json(path::String)
+    text = try
+        read(path, String)
+    catch err
+        err isa InterruptException && rethrow()
+        return Dict{String,Any}("path" => path, "error" => sprint(showerror, err))
+    end
+    return Dict{String,Any}("path" => path, "markdown" => text)
+end
 
 _card_json(placement::CardPlacement) = Dict{String,Any}(
     "card" => placement.name,

@@ -73,6 +73,11 @@ body[data-kernel="error"] #kernel-status { color: var(--bad); }
 
 #deck-nav button:disabled { color: var(--muted); cursor: default; }
 
+#toggle-cues[aria-pressed="true"] {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
 #slide-position {
   margin: 0;
   color: var(--muted);
@@ -188,3 +193,38 @@ body[data-kernel="error"] #kernel-status { color: var(--bad); }
 /* Readouts are numbers against a label, and a column of numbers only scans if it is aligned
    and does not reflow as the digits change. */
 .card-body td { text-align: end; font-variant-numeric: tabular-nums; }
+
+/* --- speaker cues ------------------------------------------------------------------------ */
+
+/* Fixed rather than placed in the flow: the panel covers the slide it belongs to, and a card's
+   geometry — which `h` and the clipping of a figure both depend on — must not move when a
+   lecturer opens it mid-lecture. */
+#speaker-cues {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10;
+  max-block-size: 46vh;
+  /* Several hundred words is the normal length of a cue and there is no geometry for it to
+     overflow, so the panel scrolls rather than the page. */
+  overflow-y: auto;
+  padding: 1rem 1.25rem 1.25rem;
+  /* `--surface` alone is the page's own white in light mode, which leaves the panel reading as
+     more deck rather than as the lecturer's own margin. */
+  background: color-mix(in srgb, var(--warn) 5%, var(--surface));
+  border-block-start: 3px solid var(--warn);
+  box-shadow: 0 -6px 20px rgb(0 0 0 / 0.18);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* The deck's own measure: a cue set edge to edge on a projector is a 1400 px line. */
+#cue-body {
+  margin-inline: auto;
+  max-inline-size: 72rem;
+}
+
+#cue-body :first-child { margin-block-start: 0; }
+#cue-body :last-child { margin-block-end: 0; }
+#cue-body code { font-family: ui-monospace, monospace; font-size: 0.9em; }
+#cue-body a { color: inherit; }
+#cue-body .cue-absent { color: var(--muted); font-style: italic; }

@@ -1,8 +1,14 @@
 using PlutoDeck: CardPlacement, DeckLoadError, Deck, DuplicateCardsError, cards, load_deck
 
 "A deck file in its own directory, so a relative notebook reference resolves from somewhere real."
-function deck_file(body::AbstractString; notebook::AbstractString=THREE_CARDS)
-    path = joinpath(mktempdir(), "temp.deck.json")
+function deck_file(body::AbstractString; notebook::AbstractString=THREE_CARDS,
+        beside::Dict{String,String}=Dict{String,String}())
+    directory = mktempdir()
+    for (name, contents) in beside
+        mkpath(joinpath(directory, dirname(name)))
+        write(joinpath(directory, name), contents)
+    end
+    path = joinpath(directory, "temp.deck.json")
     write(path, replace(body, "NOTEBOOK" => escape_string(notebook)))
     return path
 end
@@ -160,6 +166,42 @@ const ONE_CARD = """
         @test_throws ["slide 1", "\"title\" must be a non-empty string", "got 7"] load_deck(deck_file("""
             { "notebook": "NOTEBOOK",
               "slides": [{ "title": 7,
+                           "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
+            """))
+    end
+
+    @testset "a slide names its speaker cues, resolved against the deck file" begin
+        path = deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [
+                { "title": "Proportional", "notes": "notes/proportional.md",
+                  "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] },
+                { "cards": [{ "card": "speed-plot", "x": 0, "y": 0, "w": 4, "h": 3 }] }
+              ] }
+            """; beside=Dict("notes/proportional.md" => "hold **Kp** at 2"))
+        deck = load_deck(path)
+
+        @test deck.slides[1].notes == joinpath(dirname(path), "notes", "proportional.md")
+        @test deck.slides[2].notes === nothing
+    end
+
+    @testset "a deck naming cues that are not there fails at load, path and all" begin
+        # The panel opening empty in front of a room is the failure this forecloses, and it is
+        # one a deck that started successfully can no longer report.
+        @test_throws ["slide 2", "\"notes\": no such file", "gone.md"] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [
+                { "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] },
+                { "notes": "notes/gone.md",
+                  "cards": [{ "card": "speed-plot", "x": 0, "y": 0, "w": 4, "h": 3 }] }
+              ] }
+            """))
+    end
+
+    @testset "cues carrying geometry are refused: a cue is not placed anywhere" begin
+        @test_throws ["slide 1", "\"notes\" must be a non-empty string", "an object"] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [{ "notes": { "path": "notes/p.md", "x": 0, "y": 0, "w": 4, "h": 3 },
                            "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
             """))
     end

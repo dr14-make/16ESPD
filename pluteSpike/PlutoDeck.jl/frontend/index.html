@@ -25,6 +25,13 @@
   <!-- Live, because after a keyboard move the position is the only thing that announces it. -->
   <p id="slide-position" aria-live="polite"></p>
   <button id="next-slide" type="button" disabled>Next slide</button>
+  <button id="toggle-cues" type="button" aria-pressed="false">Speaker cues (C)</button>
 </nav>
+
+<!-- Over the slide rather than in it: a cue is for the lecturer, and the room is looking at
+     the same screen. `hidden` is the whole of the closed state. -->
+<aside id="speaker-cues" aria-label="Speaker cues" hidden>
+  <div id="cue-body"></div>
+</aside>
 
 <script type="module" src="deck.js"></script>

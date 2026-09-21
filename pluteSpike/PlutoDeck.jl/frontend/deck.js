@@ -5,6 +5,7 @@
 // ever given content.
 
 import { Card } from "./card.js"
+import { Cues } from "./cues.js"
 import { connect } from "./kernel.js"
 import { createPainter, whenScriptsSettled } from "./render.js"
 import { kernelStatus } from "./status.js"
@@ -20,6 +21,9 @@ const THEME_BOND = "deck_theme"
 /** The scheme the deck itself is styled for, which `deck.css` follows through the same query. */
 const darkScheme = window.matchMedia("(prefers-color-scheme: dark)")
 
+/** The key that puts the current slide's speaker cues over it, and takes them away again. */
+const CUE_KEY = "c"
+
 /** Keys that move the deck, and by how many slides. */
 const NAVIGATION_KEYS = {
   ArrowRight: 1,
@@ -34,6 +38,7 @@ const statusElement = document.getElementById("kernel-status")
 const positionElement = document.getElementById("slide-position")
 const previousButton = document.getElementById("previous-slide")
 const nextButton = document.getElementById("next-slide")
+const cuesButton = document.getElementById("toggle-cues")
 
 const [session, deck] = await Promise.all([
   fetch("/api/session").then((response) => response.json()),
@@ -56,6 +61,14 @@ const preamble = deck.preamble.map((name) => mount(preambleElement, name))
 const sections = deck.slides.map(buildSlide)
 const placed = deck.slides.flatMap((slide, index) => placeCards(sections[index], slide))
 
+// Built before the kernel is reached, and deliberately: `connect` throws when there is no
+// kernel to reach, and a cue is worth most in the minutes a lecturer spends without one.
+const cues = new Cues({
+  panel: document.getElementById("speaker-cues"),
+  body: document.getElementById("cue-body"),
+  slides: deck.slides,
+})
+
 let kernel = null
 let current = 0
 let connected = true
@@ -66,6 +79,7 @@ let refreshAgain = false
 showSlide(0)
 previousButton.addEventListener("click", () => showSlide(current - 1))
 nextButton.addEventListener("click", () => showSlide(current + 1))
+cuesButton.addEventListener("click", toggleCues)
 window.addEventListener("keydown", onKeyDown)
 
 showStatus()
@@ -159,6 +173,12 @@ function showSlide(index) {
   positionElement.textContent = `${index + 1} / ${sections.length}`
   previousButton.disabled = index === 0
   nextButton.disabled = index === sections.length - 1
+  cues.show(index)
+}
+
+function toggleCues() {
+  cues.toggle()
+  cuesButton.setAttribute("aria-pressed", String(cues.open))
 }
 
 function onKeyDown(event) {
@@ -166,9 +186,18 @@ function onKeyDown(event) {
   // browser too, so only an unmodified key moves the deck.
   if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
 
-  // A range input is driven with the same arrow keys: a lecturer nudging a gain must not be
-  // thrown onto the next slide for it.
+  // A range input is driven with the same arrow keys, and every other key is a character a
+  // text field is owed: a lecturer nudging a gain must not be thrown onto the next slide for
+  // it, and one typing must not open the cues.
   if (event.target instanceof Element && event.target.closest("input, select, textarea, [contenteditable]")) {
+    return
+  }
+
+  // Case-folded, because caps lock is not a modifier: it would otherwise leave the cue key
+  // silently dead in exactly the room the cues exist for.
+  if (event.key.toLowerCase() === CUE_KEY) {
+    event.preventDefault()
+    toggleCues()
     return
   }
 
