@@ -20,22 +20,25 @@ kernel is pointed at it.
 function browser_workspace()
     workspace = mktempdir()
     cp(BROWSER_NOTEBOOK, joinpath(workspace, "browser.jl"))
+    # The plot sits on the second slide on purpose: it is painted while its slide is hidden,
+    # which is the case that tells `visibility: hidden` apart from `display: none`.
     write(joinpath(workspace, "browser.deck.json"), """
     {
       "notebook": "browser.jl",
       "preamble": ["plotly"],
       "slides": [
         {
+          "title": "A wave you can drive",
           "cards": [
             { "card": "frequency", "x": 0, "y": 0, "w": 4, "h": 2 },
-            { "card": "wave", "x": 4, "y": 0, "w": 8, "h": 6 }
+            { "card": "readout", "x": 4, "y": 0, "w": 4, "h": 2 }
           ]
         },
         {
           "cards": [
-            { "card": "readout", "x": 0, "y": 0, "w": 4, "h": 2 },
-            { "card": "constant", "x": 4, "y": 0, "w": 4, "h": 2 },
-            { "card": "plain", "x": 8, "y": 0, "w": 4, "h": 2 }
+            { "card": "wave", "x": 0, "y": 0, "w": 8, "h": 6 },
+            { "card": "constant", "x": 8, "y": 0, "w": 4, "h": 2 },
+            { "card": "plain", "x": 8, "y": 2, "w": 4, "h": 2 }
           ]
         }
       ]
@@ -82,6 +85,13 @@ const COUNT_CARD_MUTATIONS = """
   return true
 })()
 """
+
+"Which slide is showing, counting from zero, or -1 if none is."
+const CURRENT_SLIDE =
+    """[...document.querySelectorAll(".slide")].findIndex((s) => s.dataset.current === "true")"""
+
+"The position the chrome reports, which is what a keyboard move announces."
+const SLIDE_POSITION = """document.getElementById("slide-position").textContent"""
 
 "Move the frequency slider the way a hand would, through the event Pluto's bond listener waits on."
 const MOVE_THE_SLIDER = """
@@ -168,6 +178,118 @@ const MOVE_THE_SLIDER = """
                     @test evaluate(browser, view, "$plain.querySelector('b, script') === null") === true
                 end
 
+                @testset "a slide is headed by the deck's title for it, or numbered" begin
+                    headings = JSON.parse(evaluate(browser, view,
+                        """JSON.stringify([...document.querySelectorAll(".slide h2")].map((h) => h.textContent))"""))
+
+                    @test headings == ["A wave you can drive", "Slide 2"]
+                    @test evaluate(browser, view,
+                        """document.querySelectorAll('.slide[data-titled="true"]').length""") == 1
+                end
+
+                @testset "the deck pages through its slides by pointer" begin
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+                    @test evaluate(browser, view, SLIDE_POSITION) == "1 / 2"
+                    @test evaluate(browser, view, """document.getElementById("previous-slide").disabled""") === true
+
+                    click(browser, view, "#next-slide")
+
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
+                    @test evaluate(browser, view, SLIDE_POSITION) == "2 / 2"
+                    @test evaluate(browser, view, """document.getElementById("next-slide").disabled""") === true
+
+                    click(browser, view, "#previous-slide")
+
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+                end
+
+                @testset "the deck pages through its slides by keyboard" begin
+                    press(browser, view, "ArrowRight")
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
+
+                    press(browser, view, "ArrowLeft")
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+
+                    press(browser, view, "PageDown")
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
+
+                    press(browser, view, "PageUp")
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+                end
+
+                @testset "the deck stops at its ends rather than wrapping round" begin
+                    press(browser, view, "ArrowLeft")
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+
+                    press(browser, view, "PageDown")
+                    press(browser, view, "ArrowRight")
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
+
+                    press(browser, view, "PageUp")
+                end
+
+                @testset "an arrow key inside a widget drives the widget, not the deck" begin
+                    # A range input is driven with the keys the deck navigates by, so a lecturer
+                    # nudging a gain one step must not be thrown onto the next slide for it.
+                    slider = """document.querySelector('[data-card="frequency"] bond input')"""
+                    focus(browser, view, """[data-card="frequency"] bond input""")
+                    before = evaluate(browser, view, "$slider.value")
+
+                    press(browser, view, "ArrowRight")
+
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+                    @test evaluate(browser, view, "$slider.value") != before
+                end
+
+                @testset "a slide that is not showing keeps its cards' geometry" begin
+                    # `display: none` would collapse these to zero width, and a Plotly card
+                    # painted at zero width draws a graph that size — which is why the plot in
+                    # this deck is on the slide that is hidden when it first paints.
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+                    @test evaluate(browser, view, """
+                        getComputedStyle(document.querySelector('[data-card="wave"]').closest(".slide")).visibility
+                        """) == "hidden"
+
+                    @test evaluate(browser, view,
+                        """document.querySelector('[data-card="wave"]').offsetWidth""") > 200
+                    @test evaluate(browser, view, """
+                        Math.round(document.querySelector('[data-card="wave"] .js-plotly-plot')
+                          .getBoundingClientRect().width)
+                        """) > 200
+                end
+
+                @testset "the chrome carries one global kernel state" begin
+                    await(browser, view, """document.body.dataset.kernel === "ready" """;
+                        what="the chrome to report the kernel ready")
+                    @test evaluate(browser, view,
+                        """document.getElementById("kernel-status").textContent""") == "kernel ready"
+
+                    # The states a live kernel does not pass through are asserted against the
+                    # mapping itself: taking the kernel down to see "offline" would end the run.
+                    states = JSON.parse(evaluate(browser, view, """
+                        (async () => {
+                          const { kernelStatus } = await import("/status.js")
+                          return JSON.stringify({
+                            cold: kernelStatus({ process: null }).state,
+                            starting: kernelStatus({ process: "starting" }).state,
+                            ready: kernelStatus({ process: "ready" }).state,
+                            dropped: kernelStatus({ connected: false, process: "ready" }).state,
+                            gone: kernelStatus({ process: "no_process" }).state,
+                            refused: kernelStatus({ failure: "no websocket" }).state,
+                          })
+                        })()
+                        """))
+
+                    @test states == Dict(
+                        "cold" => "connecting",
+                        "starting" => "connecting",
+                        "ready" => "ready",
+                        "dropped" => "offline",
+                        "gone" => "offline",
+                        "refused" => "error",
+                    )
+                end
+
                 @testset "a Julia-defined widget writes its value back to the kernel" begin
                     @test evaluate(browser, view, COUNT_CARD_MUTATIONS) === true
                     @test evaluate(browser, view,
@@ -213,6 +335,14 @@ const MOVE_THE_SLIDER = """
                     @test mutations["constant"] == 0
                     @test mutations["plain"] == 0
                     @test mutations["plotly"] == 0
+                end
+
+                @testset "no card is showing a Julia error" begin
+                    # A cell that threw renders as `<jlerror>`, reports `live` like any other
+                    # card, and logs nothing — so neither `data-source` nor the console says
+                    # anything is wrong, and the deck looks healthy showing six error boxes.
+                    @test evaluate(browser, view,
+                        """document.querySelectorAll(".card jlerror").length""") == 0
                 end
 
                 @testset "the deck reports no console error at all" begin

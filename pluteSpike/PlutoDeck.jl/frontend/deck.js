@@ -1,15 +1,28 @@
 // The deck: build a card per placement, then feed every card the kernel's output.
 //
 // Nothing here renders output or talks to the websocket. `render.js` owns Pluto's renderer,
-// `kernel.js` owns the connection, and a card is only ever given content.
+// `kernel.js` owns the connection, `status.js` owns the chrome's state, and a card is only
+// ever given content.
 
 import { Card } from "./card.js"
 import { connect } from "./kernel.js"
 import { createPainter, whenScriptsSettled } from "./render.js"
+import { kernelStatus } from "./status.js"
+
+/** Keys that move the deck, and by how many slides. */
+const NAVIGATION_KEYS = {
+  ArrowRight: 1,
+  PageDown: 1,
+  ArrowLeft: -1,
+  PageUp: -1,
+}
 
 const slidesElement = document.getElementById("slides")
 const preambleElement = document.getElementById("preamble")
 const statusElement = document.getElementById("kernel-status")
+const positionElement = document.getElementById("slide-position")
+const previousButton = document.getElementById("previous-slide")
+const nextButton = document.getElementById("next-slide")
 
 const [session, deck] = await Promise.all([
   fetch("/api/session").then((response) => response.json()),
@@ -29,13 +42,30 @@ const paint = (host, content) => paintContent(host, content)
 // output is a script that loads a library onto `window`, which every plot card needs to have
 // run and no slide should display.
 const preamble = deck.preamble.map((name) => mount(preambleElement, name))
-const placed = deck.slides.flatMap(buildSlide)
+const sections = deck.slides.map(buildSlide)
+const placed = deck.slides.flatMap((slide, index) => placeCards(sections[index], slide))
 
+let kernel = null
+let current = 0
+let connected = true
+let failure = null
 let refreshing = false
 let refreshAgain = false
 
-setStatus("waiting", "connecting to the kernel")
-const kernel = await connect(session)
+showSlide(0)
+previousButton.addEventListener("click", () => showSlide(current - 1))
+nextButton.addEventListener("click", () => showSlide(current + 1))
+window.addEventListener("keydown", onKeyDown)
+
+showStatus()
+
+try {
+  kernel = await connect(session)
+} catch (error) {
+  failure = `the kernel could not be reached: ${error.message}`
+  showStatus()
+  throw error
+}
 paintContent = createPainter(kernel)
 
 // Downstream cells finish after the cell they depend on, so a run is only settled once every
@@ -43,8 +73,9 @@ paintContent = createPainter(kernel)
 kernel.watch([...preamble, ...placed].map((card) => cellIdOf(card.name)))
 
 kernel.onChange(refresh)
-kernel.onConnectionChange(({ connected }) => {
-  if (!connected) setStatus("waiting", "the kernel connection dropped")
+kernel.onConnectionChange((state) => {
+  connected = state.connected
+  showStatus()
 })
 await refresh()
 
@@ -67,8 +98,7 @@ async function refresh() {
       // groups are painted in order rather than together.
       if (show(preamble)) await whenScriptsSettled()
       show(placed)
-      const status = kernel.status
-      setStatus(status === "ready" ? "ready" : "waiting", `kernel ${status.replace(/_/g, " ")}`)
+      showStatus()
     } while (refreshAgain)
   } finally {
     refreshing = false
@@ -82,15 +112,64 @@ function show(cards) {
   return repainted
 }
 
+/**
+ * Move to slide `index`, if there is one there.
+ *
+ * Every slide stays mounted and painted; only which one is visible changes. Unmounting would
+ * throw away a Plotly card's rendered graph and have it rebuilt against a multi-megabyte
+ * payload on the way back.
+ */
+function showSlide(index) {
+  if (index < 0 || index >= sections.length) return
+  current = index
+
+  for (const [at, section] of sections.entries()) {
+    section.dataset.current = String(at === index)
+  }
+
+  positionElement.textContent = `${index + 1} / ${sections.length}`
+  previousButton.disabled = index === 0
+  nextButton.disabled = index === sections.length - 1
+}
+
+function onKeyDown(event) {
+  // Alt+ArrowLeft is the browser's own history, and Ctrl/Meta combinations belong to the
+  // browser too, so only an unmodified key moves the deck.
+  if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+
+  // A range input is driven with the same arrow keys: a lecturer nudging a gain must not be
+  // thrown onto the next slide for it.
+  if (event.target instanceof Element && event.target.closest("input, select, textarea, [contenteditable]")) {
+    return
+  }
+
+  const step = NAVIGATION_KEYS[event.key]
+  if (step === undefined) return
+
+  event.preventDefault()
+  showSlide(current + step)
+}
+
 function buildSlide(slide, index) {
   const section = document.createElement("section")
   section.className = "slide"
-  section.append(Object.assign(document.createElement("h2"), { textContent: `Slide ${index + 1}` }))
+  // An untitled slide still needs a heading to be navigable by one; it just reads as a label
+  // rather than as a title, which is what `data-titled` lets the stylesheet say.
+  section.dataset.titled = String(slide.title != null)
+  section.append(Object.assign(document.createElement("h2"), {
+    textContent: slide.title ?? `Slide ${index + 1}`,
+  }))
 
   const grid = document.createElement("div")
   grid.className = "grid"
   section.append(grid)
   slidesElement.append(section)
+
+  return section
+}
+
+function placeCards(section, slide) {
+  const grid = section.querySelector(".grid")
 
   return slide.cards.map((placement) => {
     const card = mount(grid, placement.card)
@@ -114,7 +193,8 @@ function fileName(path) {
   return path.split("/").pop()
 }
 
-function setStatus(state, text) {
-  statusElement.textContent = text
+function showStatus() {
+  const { state, message } = kernelStatus({ failure, connected, process: kernel?.status ?? null })
+  statusElement.textContent = message
   document.body.dataset.kernel = state
 }

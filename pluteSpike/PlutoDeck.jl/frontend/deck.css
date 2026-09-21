@@ -7,6 +7,7 @@
   --row: 3rem;
   --ok: #1f7a3d;
   --warn: #a8660b;
+  --bad: #b3261e;
   color-scheme: light dark;
 }
 
@@ -21,6 +22,7 @@
     --edge: #2e343d;
     --ok: #4ade80;
     --warn: #fbbf24;
+    --bad: #f87171;
   }
 }
 
@@ -46,11 +48,71 @@ header p { margin: 0.25rem 0; color: var(--muted); font-size: 0.9rem; }
   background: currentColor;
 }
 
-body[data-kernel="waiting"] #kernel-status { color: var(--warn); }
+body[data-kernel="connecting"] #kernel-status { color: var(--warn); }
 body[data-kernel="ready"] #kernel-status { color: var(--ok); }
+body[data-kernel="offline"] #kernel-status { color: var(--muted); }
+body[data-kernel="error"] #kernel-status { color: var(--bad); }
 
-.slide { margin-block: 2rem; }
-.slide h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+#deck-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block: 1.5rem;
+}
+
+#deck-nav button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+#deck-nav button:disabled { color: var(--muted); cursor: default; }
+
+#slide-position {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  /* The counter changes on every move; proportional digits make the nav jitter as it does. */
+  font-variant-numeric: tabular-nums;
+}
+
+#slides { position: relative; }
+
+/* Every slide stays mounted, and the ones not showing keep their box. `visibility` is what
+   makes that safe where `display: none` would not: a hidden card would measure zero wide, and
+   Plotly draws a graph the size of the element it is given. */
+.slide {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  visibility: hidden;
+  margin-block: 2rem;
+}
+
+.slide[data-current="true"] {
+  position: relative;
+  visibility: visible;
+}
+
+.slide h2 {
+  margin-block: 0 0.75rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.slide[data-titled="true"] h2 {
+  font-size: 1.15rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+}
 
 .grid {
   display: grid;
@@ -89,3 +151,27 @@ body[data-kernel="ready"] #kernel-status { color: var(--ok); }
 /* Pluto sizes its own output; a card only stops it overflowing its grid cell. */
 .card-body,
 .card-body pluto-cell { display: block; min-width: 0; }
+
+.card-body > :first-child { margin-block-start: 0; }
+.card-body > :last-child { margin-block-end: 0; }
+
+/* A card renders Pluto's output without Pluto's own stylesheet, so every readout table a
+   notebook emits — a markdown table, or the raw one `metrics` builds — arrives unstyled. */
+.card-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.card-body th,
+.card-body td {
+  padding: 0.2rem 0.4rem;
+  border-block-end: 1px solid var(--edge);
+  text-align: start;
+}
+
+.card-body th { font-weight: 600; color: var(--muted); }
+
+/* Readouts are numbers against a label, and a column of numbers only scans if it is aligned
+   and does not reflow as the digits change. */
+.card-body td { text-align: end; font-variant-numeric: tabular-nums; }

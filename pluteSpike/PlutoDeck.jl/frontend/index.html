@@ -10,7 +10,7 @@
   <h1 id="deck-title">PlutoDeck</h1>
   <p id="deck-notebook"></p>
   <p>
-    <span id="kernel-status">starting</span> ·
+    <span id="kernel-status">the kernel is starting</span> ·
     <a id="editor-link" href="#">open the notebook in Pluto</a>
   </p>
 </header>
@@ -19,5 +19,12 @@
 <div id="preamble" hidden></div>
 
 <main id="slides"></main>
+
+<nav id="deck-nav" aria-label="Slides">
+  <button id="previous-slide" type="button" disabled>Previous slide</button>
+  <!-- Live, because after a keyboard move the position is the only thing that announces it. -->
+  <p id="slide-position" aria-live="polite"></p>
+  <button id="next-slide" type="button" disabled>Next slide</button>
+</nav>
 
 <script type="module" src="deck.js"></script>
