@@ -1,0 +1,39 @@
+# PlutoDeck — present a Pluto notebook as a slide deck.
+#
+# `present` opens the notebook in place and Pluto rewrites what it opens, so running a deck
+# leaves the notebook showing as modified. That is the editing loop working, not a fault:
+# edits made in Pluto save straight back to the file the deck names.
+#
+# Julia comes from juliaup on the `dyad-3.3.0` channel, matching .vscode/settings.json.
+
+[env]
+PLUTODECK_PROJECT = "pluteSpike/PlutoDeck.jl"
+PLUTODECK_DECK = "pluteSpike/backend/lecture-01.deck.json"
+PLUTODECK_PORT = "8140"
+
+[tasks.deck]
+description = "Present a deck and its live kernel. DECK=<path> PORT=<n> to override"
+run = '''
+julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e '
+    using PlutoDeck
+    present(ARGS[1]; port = parse(Int, ARGS[2]))
+' "${DECK:-$PLUTODECK_DECK}" "${PORT:-$PLUTODECK_PORT}"
+'''
+
+[tasks.deck-check]
+description = "Load a deck and report what it publishes, without starting a kernel"
+run = '''
+julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e '
+    using PlutoDeck: load_deck, list_cards
+    deck = load_deck(ARGS[1])
+    println(length(deck.slides), " slides · ", length(deck.cards), " cards · ", deck.notebook_path)
+    for (i, slide) in enumerate(deck.slides)
+        println("  ", i, ". ", something(slide.title, "(untitled)"), " — ", length(slide.cards), " cards")
+    end
+    list_cards(stdout, deck.notebook_path)
+' "${DECK:-$PLUTODECK_DECK}"
+'''
+
+[tasks.deck-test]
+description = "Run the PlutoDeck suite, browser tests included (needs Chrome, ~2 GB free)"
+run = 'julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e "using Pkg; Pkg.test()"'
