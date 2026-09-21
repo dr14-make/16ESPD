@@ -32,6 +32,9 @@ call open.
 | [015](issues/015-release-process-build-force-add-bundle-tag.md) | Release process: build, force-add bundle, tag | `enhancement` `tech-debt` | `medium` | `s` | yes | 001, 007 | todo |
 | [016](issues/016-publish-the-deck-theme-as-a-bond.md) | Publish the deck's theme as a bond | `enhancement` | `high` | `m` | no | 008, 012 | **done** |
 | [017](issues/017-repainting-a-plotly-card-mutates-a-shared-payload.md) | Repainting a Plotly card mutates the payload it was given | `bug` | `high` | `s` | yes | 009, 010 | **done** |
+| [018](issues/018-speaker-cues-and-the-on-slide-overlay.md) | Speaker cues and the on-slide overlay | `enhancement` | `high` | `m` | yes | 003, 012 | **in progress** |
+| [019](issues/019-cue-only-speaker-window.md) | Cue-only speaker window | `enhancement` | `medium` | `s` | no | 018 | todo |
+| [020](issues/020-on-demand-clipping-check-across-every-card.md) | On-demand clipping check across every card | `enhancement` `tech-debt` | `medium` | `s` | yes | 011, 012 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
@@ -95,6 +98,17 @@ because 007 has not built one. `server.jl` covers which directory `frontend_dire
 picks and how a hashed asset is cached, against a stand-in bundle; a real one arrives with
 007 and 015.
 
+018 and 019 come from a second design pass, on prose PlutoDeck had no home for. It ended
+smaller than it started. Guidance prose on the slide — "drag Kp until it oscillates" — was
+designed and then deferred, because a notebook `md` cell carrying a `card` key already renders
+in Pluto and on the slide from one source, and duplicating that in the deck buys wording that
+differs per deck at the price of a second thing to keep in step. `DESIGN.md` records the two
+cases that would bring it back. Speaker cues stayed, because the card contract leaves them
+nowhere else to live.
+
+020 was found while designing those and is independent of both: this plan says the lecture
+deck's geometry was measured by hand, and nothing has measured it since.
+
 ## Order
 
 Three tracks that converge. Julia and TypeScript are independent until 013.
@@ -127,6 +141,7 @@ Every issue names the `DESIGN.md` section it implements. The reverse mapping:
 | Cards show placeholders until the kernel is live | 010, 012 |
 | Cards render through Pluto's own renderer | 009, 016 |
 | Spike findings carried forward | 005, 008, 013 |
+| Speaker cues are the deck's, and reach the lecturer without a popup | 018, 019 |
 
 `DESIGN.md` § Open produced no issues on purpose. `persist_js_state` and Plotly zoom retention,
 the sanitization posture, navigation deep links and schema versioning all settle better against
