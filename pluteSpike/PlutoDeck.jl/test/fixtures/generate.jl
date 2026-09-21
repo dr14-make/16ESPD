@@ -12,7 +12,7 @@ Pkg.activate(joinpath(@__DIR__, "..", ".."))
 using UUIDs: UUID
 import Pluto
 
-const CELL_IDS = UUID[UUID("a1000000-0000-4000-8000-" * lpad(i, 12, '0')) for i in 1:8]
+const CELL_IDS = UUID[UUID("a1000000-0000-4000-8000-" * lpad(i, 12, '0')) for i in 1:10]
 
 carded(index, card, code) = Pluto.Cell(;
     cell_id=CELL_IDS[index],
@@ -47,7 +47,8 @@ runnable_cells() = [
 # What the browser harness drives. Between them these cells cover every path a card can take:
 # a side-effecting preamble, a Julia-defined widget writing back, two cells downstream of it, a
 # `published_to_js` payload reached through the <pluto-cell> ancestor, a text/plain body that
-# must not be parsed as markup, and one card that no bond can reach.
+# must not be parsed as markup, one card that no bond can reach, and the theme bond the deck
+# writes without any element ever reporting it.
 browser_cells() = [
     carded(1, "plotly", """
     plotly_offline = begin
@@ -58,11 +59,15 @@ browser_cells() = [
     uncarded(3, "cycles = ismissing(freq) ? 1 : Int(freq)"),
     carded(4, "wave", """
     let t = range(0, 1; length=201)
-        plot(scatter(; x=collect(t), y=sin.(2\u03c0 .* cycles .* t)))
+        plot(scatter(; x=collect(t), y=sin.(2\u03c0 .* cycles .* t)),
+             Layout(template = plot_template))
     end"""),
     carded(5, "readout", "md\"\"\"**cycles** \$(cycles)\"\"\""),
     carded(6, "constant", "md\"\"\"the car weighs **1400 kg**\"\"\""),
     carded(7, "plain", "Text(\"<b>not bold</b> & <script>never runs</script>\")"),
+    uncarded(8, "@bind deck_theme html\"<span></span>\""),
+    uncarded(9,
+        "plot_template = templates[coalesce(deck_theme, \"light\") == \"dark\" ? :plotly_dark : :plotly_white]"),
 ]
 
 write_fixture("three-cards.jl", three_carded_cells())

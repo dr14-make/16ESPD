@@ -126,6 +126,12 @@ and it cannot be designed well before the hand-authored version has carried one 
 Writing `{x, y, w, h}` into the schema from the start costs nothing and makes the editor
 additive rather than a migration.
 
+What this decision buys is the *schema*, not the library. A 12-column CSS grid with a fixed row
+track renders `{x, y, w, h}` exactly and in no bytes, so GridStack is a dependency of the
+editor rather than of version one. It does not carry the schema, and nothing here waits on it.
+What a plain grid does not do is refuse a layout that cannot work, so the loader checks overlap
+and grid width instead.
+
 ### Cards render through Pluto's own renderer
 
 `@plutojl/rainbow/ui` exports `CellOutput`, `OutputBody`, `RawHTMLContainer`, and the bond
@@ -142,6 +148,30 @@ PlutoUI widgets, most `@bind` elements — renders as an empty box under `innerH
 Pluto's renderer is what makes interactive plots and Julia-defined widgets work at all.
 
 The cost is the bundle: `dist/ui/ui.esm.js` is 3.7 MB against 464 KB for the standalone client.
+
+### The deck tells the notebook which color scheme it is being shown in
+
+A card's colors are the deck's; a plot's colors are the kernel's. No stylesheet reaches
+inside a rendered Plotly figure, because its palette is in the payload the kernel sent — so a
+dark deck otherwise carries a white slab per plot, the one bright rectangle in a dark hall.
+
+The deck therefore sets one bond, `deck_theme`, to `"light"` or `"dark"` on connect and
+whenever the viewer's scheme changes. A notebook opts in by declaring it:
+
+```julia
+@bind deck_theme html"<span></span>"
+
+plot_template = templates[coalesce(deck_theme, "light") == "dark" ? :plotly_dark : :plotly_white]
+```
+
+The element reports no value of its own, which is the point: the deck is the only writer, and
+a repaint cannot clobber what it set. A notebook that declares no bond of that name is
+untouched, and one opened directly in Pluto reads `missing` and falls back to light.
+
+This adds no machinery. Bonds already carry values from the browser into the kernel and a
+reactive run already repaints every card downstream, so the scheme travels the path a slider
+travels. The name is a contract with every notebook that opts in, which is why it is fixed
+here rather than left to each deck.
 
 ### One kernel per running instance; never a multi-tenant server
 
@@ -213,8 +243,13 @@ is its most fragile part.
 Deliberately unsettled, because they resolve better against real code than in the abstract:
 `persist_js_state` and whether a Plotly card keeps its zoom across bond updates; the
 sanitization posture, given `RawHTMLContainer` takes a `sanitize_html` flag and Pluto's security
-model assumes a trusted notebook; slide navigation and whether a slide is addressable by URL
-fragment; and the exact `deck.json` schema.
+model assumes a trusted notebook; and whether a slide is addressable by URL fragment.
+
+Two of these have since settled against real code. Paging is by pointer and keyboard, and a
+slide is not addressable by URL — the fragment question stays open on its own. The schema
+gained one key, `title` on a slide, because the reason a deck is a separate file is that one
+notebook backs several decks, and titles authored in Julia would force all of them to share
+wording. A widget's label stays in Julia, where it is part of the widget.
 
 ## Implementation notes carried from the spike
 

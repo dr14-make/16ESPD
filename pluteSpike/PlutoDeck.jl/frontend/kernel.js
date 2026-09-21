@@ -20,6 +20,9 @@ const NO_RUN_MS = 800
 /** How long a single reactive run may take before the deck stops waiting for it. */
 const SETTLE_TIMEOUT_MS = 30_000
 
+/** How a cell body reaches for a `published_to_js` payload, as PlutoRunner writes it. */
+const PUBLISHED_REFERENCE = /getPublishedObject\("([^"]+)"\)/g
+
 /**
  * Connect to the Pluto server `session` describes and attach to its notebook.
  *
@@ -61,19 +64,35 @@ export class Kernel {
   }
 
   /**
-   * What a cell is currently showing, or `null` while it has produced nothing.
+   * What a cell is currently showing, or `null` while it has nothing whole to show.
    *
    * `stamp` is the cell's own `last_run_timestamp`, which is what tells a card whether this is
-   * output it has already painted.
+   * output it has already painted. `published` is every payload the body may reach for.
    */
   content(cellId) {
-    const output = this.#worker.getState()?.cell_results?.[cellId]?.output
+    const state = this.#worker.getState()
+    const output = state?.cell_results?.[cellId]?.output
     if (output == null || output.body == null) return null
+
+    const published = state.published_objects ?? {}
+    // A body and the payloads it reaches for arrive in separate patches, and the body can be
+    // first. A card painted in that window resolves `getPublishedObject` to `undefined`, and
+    // the script it was handed throws — leaving a card that reports `live`, logs to the
+    // console nobody is reading, and shows an empty box. Output only half here is not output.
+    if (typeof output.body === "string") {
+      for (const [, id] of output.body.matchAll(PUBLISHED_REFERENCE)) {
+        if (!(id in published)) return null
+      }
+    }
+
     return {
       source: "live",
       stamp: output.last_run_timestamp ?? 0,
       mime: output.mime,
       body: output.body,
+      // Taken with the body rather than read when a script asks, because a re-run landing in
+      // between replaces `published_objects` whole and takes this body's ids with it.
+      published: { ...published },
       cellId,
     }
   }
@@ -85,6 +104,19 @@ export class Kernel {
 
   bonds() {
     return this.#worker.getState()?.bonds ?? {}
+  }
+
+  /**
+   * Whether the notebook has a variable of this name.
+   *
+   * Not a question `bonds` can answer: it carries the values a browser has reported, so a bond
+   * nothing has written yet is absent from it — which is exactly the bond the deck is about to
+   * write. The dependency graph is where a declared name exists before it has a value.
+   */
+  declares(name) {
+    const dependencies = this.#worker.getState()?.cell_dependencies ?? {}
+    return Object.values(dependencies).some((cell) =>
+      name in (cell.downstream_cells_map ?? {}) || name in (cell.upstream_cells_map ?? {}))
   }
 
   notebook() {

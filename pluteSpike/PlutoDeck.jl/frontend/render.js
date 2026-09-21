@@ -6,6 +6,7 @@
 // they run, resolves `published_to_js` payloads, and wires bound elements back to the kernel.
 
 import "./vendor/browser-shim.js" // must precede the bundle; see that file
+import { isolate } from "./published.js"
 import {
   OutputBody,
   PlutoActionsContext,
@@ -31,10 +32,26 @@ const SCRIPT_POLL_MS = 20
 const SCRIPT_TIMEOUT_MS = 20_000
 
 /**
+ * The payloads each card's recent renders were handed, newest first.
+ *
+ * A card's scripts finish well after the paint that started them, and a repaint replaces the
+ * resolver they call. Without the renders before it, a script still running from an earlier
+ * paint asks the newest one for an id that went out with its own run, is handed `undefined`,
+ * and throws — leaving a card that reports `live` and draws nothing.
+ */
+const PAYLOADS = new WeakMap()
+
+/** How many renders' payloads a card keeps, which is how many repaints may be in flight. */
+const PAYLOAD_DEPTH = 3
+
+/**
  * Build the painter every card renders through.
  *
  * `kernel` is read for the contexts Pluto's own components expect — the bonds a widget shows,
  * the published payloads a script asks for, and the bond setter a widget writes through.
+ *
+ * A payload is isolated on the way out: Pluto publishes one object per cell, and a deck renders
+ * a cell once per slide it is placed on. See `published.js`.
  */
 export function createPainter(kernel) {
   // The effect that executes a card's scripts lists `pluto_actions` among its dependencies, so
@@ -42,7 +59,7 @@ export function createPainter(kernel) {
   const actions = {
     set_bond: (name, value) => kernel.setBond(name, value),
     get_notebook: () => kernel.notebook(),
-    get_published_object: (id) => kernel.publishedObject(id),
+    get_published_object: (id) => isolate(kernel.publishedObject(id)),
     get_launch_params: () => ({}),
     set_doc_query: () => {},
     focus_on_neighbor: () => {},
@@ -58,7 +75,13 @@ export function createPainter(kernel) {
       cell = document.createElement("pluto-cell")
       host.replaceChildren(cell)
     }
-    cell.getPublishedObject = (id) => kernel.publishedObject(id)
+    const payloads = [content.published ?? {},
+                      ...(PAYLOADS.get(cell) ?? []).slice(0, PAYLOAD_DEPTH - 1)]
+    PAYLOADS.set(cell, payloads)
+    cell.getPublishedObject = (id) => {
+      for (const published of payloads) if (id in published) return isolate(published[id])
+      return isolate(kernel.publishedObject(id))
+    }
 
     render(
       html`<${PlutoActionsContext.Provider} value=${actions}>

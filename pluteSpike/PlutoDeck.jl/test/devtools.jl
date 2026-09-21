@@ -191,6 +191,84 @@ function await(browser::Browser, session::AbstractString, expression::AbstractSt
 end
 
 """
+The keys the harness can press, and the virtual key code Chrome expects for each.
+
+A `KeyboardEvent` built in `Runtime.evaluate` would prove only that a listener is attached to
+something. `Input.dispatchKeyEvent` goes in where a keyboard goes, so what is under test is the
+deck reacting to a key press — including whether the element holding focus swallowed it first.
+"""
+const VIRTUAL_KEY_CODES = Dict(
+    "ArrowLeft" => 37, "ArrowUp" => 38, "ArrowRight" => 39, "ArrowDown" => 40,
+    "PageUp" => 33, "PageDown" => 34, "Home" => 36, "End" => 35,
+)
+
+"""
+    press(browser, session, key)
+
+Press and release `key` in the page, wherever focus currently is.
+
+`rawKeyDown` rather than `keyDown`: the latter also asks Chrome to insert text, which a
+navigation key has none of.
+"""
+function press(browser::Browser, session::AbstractString, key::AbstractString)
+    code = get(VIRTUAL_KEY_CODES, key, nothing)
+    code === nothing && error("press: no virtual key code for \"$key\"")
+
+    for type in ("rawKeyDown", "keyUp")
+        command(browser, "Input.dispatchKeyEvent", Dict(
+            "type" => type,
+            "key" => key,
+            "code" => key,
+            "windowsVirtualKeyCode" => code,
+            "nativeVirtualKeyCode" => code,
+        ); session)
+    end
+    return nothing
+end
+
+"""
+    click(browser, session, selector)
+
+Click the element `selector` matches, with a real mouse press at its centre.
+
+The element is scrolled into view first, because a click is dispatched at viewport coordinates
+and the deck chrome sits below the fold on a short window.
+"""
+function click(browser::Browser, session::AbstractString, selector::AbstractString)
+    centre = JSON.parse(evaluate(browser, session, """
+        (() => {
+          const element = document.querySelector($(repr(selector)))
+          if (element === null) throw new Error("nothing matches $(selector)")
+          element.scrollIntoView({ block: "center" })
+          const box = element.getBoundingClientRect()
+          return JSON.stringify({ x: box.x + box.width / 2, y: box.y + box.height / 2 })
+        })()
+        """))
+
+    for type in ("mousePressed", "mouseReleased")
+        command(browser, "Input.dispatchMouseEvent", Dict(
+            "type" => type,
+            "x" => centre["x"],
+            "y" => centre["y"],
+            "button" => "left",
+            "buttons" => type == "mousePressed" ? 1 : 0,
+            "clickCount" => 1,
+        ); session)
+    end
+    return nothing
+end
+
+"""
+    focus(browser, session, selector)
+
+Put keyboard focus on the element `selector` matches.
+"""
+function focus(browser::Browser, session::AbstractString, selector::AbstractString)
+    evaluate(browser, session, """document.querySelector($(repr(selector))).focus()""")
+    return nothing
+end
+
+"""
     problems(browser, session) -> Vector{String}
 
 Every console error, uncaught exception and browser log error the page has produced.

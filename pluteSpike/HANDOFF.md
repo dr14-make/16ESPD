@@ -33,8 +33,13 @@ because the build pipeline of issue 007 is still deferred.
     [x] Issues 001-003  PlutoDeck.jl/ — skeleton, card keys, deck loader; `] test PlutoDeck` green
     [x] Issues 004-006  session, HTTP server, present(); Node is out of the runtime
     [x] Issues 008-010  kernel client, card renderer, card state machine; cards are live
+    [~] Issue 011     re-scoped: the geometry already rendered, overlap now refused
+    [x] Issue 012     deck chrome — paging by pointer and keyboard, four kernel states
     [~] Issue 013     headless-Chrome harness, enough to verify the above
-    [ ] Issues 007, 011-012, 014-015
+    [x] Issue 014     lecture-1 deck — six slides, the notebook carries its card keys
+    [x] Issue 016     the deck writes `deck_theme`; a plot follows the viewer's scheme
+    [x] Issue 017     one payload per draw; the suite asserts a plot is drawn, not present
+    [ ] Issues 007, 015
 
 ## Run the spike
 
@@ -138,6 +143,129 @@ Measured at 12.1 s to serving HTML, 29.1 s to kernel ready, 31.2 s to first real
 notebook loading **no** packages. The notebook this course needs will be far worse. Issues 010
 and 012 make that legible rather than shorter; cached snapshots are deliberately deferred.
 
+## Found while fixing 017 and implementing 016
+
+**A blank plot holds all of its data.** Four of the lecture deck's seven plots drew nothing.
+Measured on the live deck: `speed-plot` is placed on five slides, and one of the five had its
+two lines while the other four had the traces, the 591 points and no line at all. One exception
+per draw, `button name 'Copy PNG to Clipboard' is taken`, thrown after Plotly attaches the
+traces and before it paints them. So `.js-plotly-plot` exists, the card reports `live`, and
+every assertion the suite made about a plot passed over four empty boxes. The suite now asserts
+a drawn `path.js-line`, on a cell placed on two slides.
+
+**What crosses between draws is the button array, not the payload.** `published_to_js` sends
+one object per cell and every render of that cell is handed it; PlutoPlotly appends its modebar
+buttons to that object's `config` each time, through a `_.union` that compares by identity and
+so cannot dedupe an object literal. The deck now copies a payload's object spine per draw and
+shares everything else, so the 3.82 MB library string and every trace's typed arrays are passed
+by reference. Deep-copying the payload is the obvious fix and the expensive one; it was never
+needed.
+
+**`bonds` cannot answer whether a notebook declares a bond.** Pluto's notebook state carries
+the values a browser has *reported*, so a bond nothing has written is simply absent — which is
+exactly the bond the deck wants to write. Measured: a notebook with seven `@bind` cells showed
+six, the seventh being the one whose element reports nothing. The name lives in
+`cell_dependencies` before it has a value, and that is what the deck tests.
+
+**A card's payloads have to outlive the paint that asked for them, twice over.** Writing a
+bond before the first paint adds a reactive run at exactly the wrong moment, and two separate
+races came out of it. Both end the same way: `getPublishedObject` returns `undefined`,
+PlutoPlotly throws on `plot_obj.layout`, and the card reports `live` showing nothing.
+
+The first is arrival order. A cell's body and the payloads it reaches for come in separate
+patches and the body can be first, so a card painted in that window cannot resolve its own
+ids. The deck now treats a body whose `getPublishedObject("…")` references are not all present
+as output that has not arrived, and paints it on a later patch instead.
+
+The second only appears once the first is fixed, and is the deck's own doing. The resolver
+lives on the card's `<pluto-cell>`, and a repaint replaces it — while the previous render's
+scripts are still running, because `RawHTMLContainer` executes them asynchronously. Those
+scripts then ask the *new* render for ids that went out with the old one. A card now keeps the
+payloads of its last three renders, so a script in flight still finds its own.
+
+The cost of getting this wrong is that it looks like nothing: measured on the fixture deck, a
+plot card sat empty for the rest of the run with `data-source="live"` and one line in a console
+no lecturer has open.
+
+**A Plotly figure never told how tall its box is draws itself 400 px.** Measured across the
+lecture deck: every plot was 400 px whatever `h` the deck gave its card — so a twelve-row card
+held a plot and 262 px of blank, and a six-row card clipped by 98 px. The container Pluto
+renders is as tall as its content, so nothing pushes back. Giving a figure card's chain an
+explicit height makes the plot follow: 638 px in a twelve-row card, 302 px in a six-row one.
+The rule is scoped to cards holding a figure, because the same height over a card of prose
+stretches the paragraph and over a table distributes its rows.
+
+**32 px of a widget card went to a margin.** `.card-body > :first-child` reaches Pluto's
+wrapper, not the paragraph one level inside it, so every markdown card kept its `1em` top and
+bottom margins. That alone is what made the Ki and Kd cards scroll-boxes: 91 px of content in a
+102 px card, plus 32 px of margin.
+
+**Memory across a reload, measured after 017.** One load of the six-slide deck, all seven
+Plotly instances live, is 115-127 MB of JS heap. The 3.82 MB payload is a string shared by
+reference, so it is neither multiplied per instance nor copied per repaint — nothing here
+multiplies the way the crash report suggested.
+
+A reload is the part that does not settle. Two runs of the same script, same deck, same
+browser: 127 → 136 MB with 9470 DOM nodes and 9 documents, and 127 → 226 MB with 27702 nodes
+and 26 documents. So the previous document is sometimes retained rather than collected, by a
+factor that varies run to run. That is the thread worth pulling on for the renderer crash, and
+it is not the payload. The paint model was deliberately left alone.
+
+## Found while implementing 011, 012 and 014
+
+**011 asked for a dependency its design decision never did.** The issue file called for
+GridStack; DESIGN.md asks only for a schema shaped like GridStack's, and assigns drag-and-drop
+to the visual editor it defers. A 12-column CSS grid already renders that schema exactly, so
+the 2.1 MB was buying nothing this version uses. The issue has been re-scoped to what the grid
+genuinely does not do — complain — and the loader now refuses a deck whose cards overlap or
+reach past the last column. Nothing forecloses GridStack; it arrives with the editor that needs
+it, against a schema that already carries its geometry.
+
+**A hidden slide must keep its box, not lose it.** Paging means all but one slide is out of
+sight, and the obvious `display: none` is wrong: a card hidden that way measures zero wide, and
+a Plotly card painted at zero width draws a graph that size. Measured, with the plot on the
+slide that is hidden when it first paints — `display: none` gives a card of `offsetWidth` 0 and
+a graph 0 px across. `visibility: hidden` keeps layout, so every slide's cards are laid out at
+the width they will be shown at. The browser suite asserts this.
+
+**Slide titles went into the deck rather than the notebook.** DESIGN.md says the presentation
+layer owns layout and nothing else, which argues for titles as Julia-authored content. Against
+that, the stated reason the deck is a separate file is that one notebook backs several decks —
+the full lecture, a revision deck, a student-facing cut — and titles in Julia would force all
+three to share wording. Slide titles are therefore a `title` key on a slide; a widget's label
+stays in Julia, where it is part of the widget. This is the first addition to the 003 schema.
+
+**A cell's top-level assignment is a Pluto global, including inside an `if`.** The two plot
+cells were written with `idx = 1:...:length(sim.t)` in their `else` branch, which is not a local
+— both cells claimed `idx`, and Pluto answered with "Multiple definitions for idx" on every one
+of the six cards those cells back. The card rendered the error, reported `live`, and logged
+nothing, so the deck showed six identical 308-byte boxes and a clean console. Reading those 308
+bytes rather than inferring them is what found it; a card's `data-source` says where its content
+came from, never whether the content is an error. Both cells now bind `idx` in a `let`.
+
+**A published payload is shared, and a library treated it as scratch space.** The lecture deck
+draws seven Plotly cards and logs `button name 'Copy PNG to Clipboard' is taken` sixteen times
+while rendering perfectly. PlutoPlotly appends its modebar button to the plot's config on every
+draw through `_.union`, which compares by identity and so cannot dedupe an object literal —
+harmless in a notebook that draws each plot once, and not in a deck, which repaints a card
+whenever its cell re-runs and places one cell on as many slides as it likes. Issue 017 carries
+it. The measurement that matters before fixing it: the payload is 3.82 MB, so copying it per
+repaint is not the answer it looks like.
+
+**The deck's gains are not the lecture's gains.** `simulate` in the spike notebook is a
+parallel-form PID in `Kp`, `Ki`, `Kd`; notebooks 03 to 05 run `LimPID` in standard form, `k`,
+`T_i` and `T_d`, and notebook 08's tuning tables produce that second set. `Ki = k/T_i` and
+`Kd = k*T_d` relate them, but a student moving between the deck and the notebooks meets two
+different parameterisations of the same controller. The deck labels its sliders as what they
+actually are rather than papering over it. Reconciling the two is a decision for the author,
+not a rename.
+
+**The spike's scaffolding cells are deliberately kept.** `script_probe`, `plotly_demo`, `freq`
+and the hidden `eval_in_pluto` cell stay in `backend/notebook.jl`. `frontend/ui-probe.js` and
+`frontend/app.js` still address them by name, and those are the reference implementations
+`spec/START-HERE.md` tells every agent to copy rather than rediscover. Keeping them costs
+nothing: a cell with no `card` key cannot reach a slide, so the deck never sees them.
+
 ## Found while implementing 008-010
 
 **Settling cannot require every watched cell to re-run.** The spike waited for *all* watched
@@ -173,7 +301,13 @@ Status lives only in `spec/PLAN.md`. Recording progress never means editing an i
 ## State of the tree
 
 The package is `pluteSpike/PlutoDeck.jl/`, whose own `.gitignore` covers `frontend-dist`,
-`frontend-dist-*` and `Manifest.toml`. `backend/notebook.jl` has been canonicalized by Pluto and
-carries three probe cells added for the 009 spike (`script_probe`, `plotly_offline`,
-`plotly_demo`) plus a hidden `eval_in_pluto` cell left by `worker.execute()` diagnostics. All
-four are spike scaffolding, not design, and should be removed or deliberately kept.
+`frontend-dist-*` and `Manifest.toml`. `backend/notebook.jl` now carries the lecture-1 deck: 13
+cards, six labelled widget cells, and the plot and readout cells the slides place. Its 009
+scaffolding is kept on purpose, for the reason recorded above. `backend/lecture-01.deck.json`
+is the deck itself.
+
+The `card` keys were written through Pluto's own reader and writer rather than by a text patch,
+with no server holding the notebook open — the mechanism `test/fixtures/generate.jl` uses. That
+round trip was checked first on a copy: same cell set, same `Cell order:` footer, both nbpkg
+cells intact, and the only difference is Pluto canonicalising body order to match its own
+footer, which it does on the next open regardless.

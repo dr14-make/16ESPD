@@ -23,6 +23,10 @@ until interrupted, then takes the kernel down with it.
 
 The deck and Pluto are two ports of one Julia process. The browser talks to both: the deck
 for its own pages, Pluto directly for the websocket that carries cell output and bonds.
+
+A notebook that declares a bond named `deck_theme` is told which color scheme the deck is
+being shown in, as `"light"` or `"dark"`, which is how a Julia-rendered plot follows the deck
+into dark mode. See `DESIGN.md`.
 """
 function present(deck_path::AbstractString;
         port::Integer=DECK_PORT_DEFAULT,

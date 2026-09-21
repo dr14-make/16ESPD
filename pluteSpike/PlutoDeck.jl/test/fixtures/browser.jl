@@ -33,7 +33,8 @@ cycles = ismissing(freq) ? 1 : Int(freq)
 # ╔═╡ a1000000-0000-4000-8000-000000000004
 # ╠═╡ card = "wave"
 let t = range(0, 1; length=201)
-    plot(scatter(; x=collect(t), y=sin.(2π .* cycles .* t)))
+    plot(scatter(; x=collect(t), y=sin.(2π .* cycles .* t)),
+         Layout(template = plot_template))
 end
 
 # ╔═╡ a1000000-0000-4000-8000-000000000005
@@ -48,6 +49,12 @@ md"""the car weighs **1400 kg**"""
 # ╠═╡ card = "plain"
 Text("<b>not bold</b> & <script>never runs</script>")
 
+# ╔═╡ a1000000-0000-4000-8000-000000000008
+@bind deck_theme html"<span></span>"
+
+# ╔═╡ a1000000-0000-4000-8000-000000000009
+plot_template = templates[coalesce(deck_theme, "light") == "dark" ? :plotly_dark : :plotly_white]
+
 # ╔═╡ Cell order:
 # ╠═a1000000-0000-4000-8000-000000000001
 # ╠═a1000000-0000-4000-8000-000000000002
@@ -56,3 +63,5 @@ Text("<b>not bold</b> & <script>never runs</script>")
 # ╠═a1000000-0000-4000-8000-000000000005
 # ╠═a1000000-0000-4000-8000-000000000006
 # ╠═a1000000-0000-4000-8000-000000000007
+# ╠═a1000000-0000-4000-8000-000000000008
+# ╠═a1000000-0000-4000-8000-000000000009

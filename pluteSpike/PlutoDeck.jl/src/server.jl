@@ -116,8 +116,13 @@ _deck_json(deck::Deck) = Dict{String,Any}(
     "path" => deck.path,
     "notebook" => deck.notebook_path,
     "preamble" => deck.preamble,
-    "slides" => [Dict{String,Any}("cards" => _card_json.(slide.cards)) for slide in deck.slides],
+    "slides" => [_slide_json(slide) for slide in deck.slides],
     "cards" => Dict(name => string(cell_id) for (name, cell_id) in deck.cards),
+)
+
+_slide_json(slide::Slide) = Dict{String,Any}(
+    "title" => slide.title,
+    "cards" => _card_json.(slide.cards),
 )
 
 _card_json(placement::CardPlacement) = Dict{String,Any}(

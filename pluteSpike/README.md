@@ -90,8 +90,18 @@ a settled notebook, not for data bound to the reactive cycle.
 `eval_in_pluto` cell to register the js-link, and with the notebook opened in place that cell
 is saved to disk. Harmless but permanent; another reason to publish data as ordinary cells.
 
-**Bonds start as `missing`.** A widget's own `value=` is never reported by itself, so the
-deck states every input once on load (`pushAllBinds`).
+**Bonds start as `missing`, and who fixes that depends on who owns the widget.** A
+widget's own `value=` is never reported to the kernel by the act of rendering it. In this
+spike the sliders are plain HTML in the deck's own page, outside anything Pluto rendered, so
+nothing would ever report them and the bridge states every input once on load
+(`pushAllBinds`). That is a property of *this* architecture and not of Pluto.
+
+PlutoDeck does not work this way and must not copy it. Its widgets are Julia-defined, so they
+arrive as `<bond>` elements inside cell output, and `RawHTMLContainer` calls
+`set_bound_elements_to_their_value` and `add_bonds_listener` over that output itself: each
+widget reports its own value as its card's scripts finish. A deck that also pushed every bond
+on load would be writing values that are already on their way, and the batching in
+`kernel.js` exists precisely because those self-reports arrive as a burst.
 
 **The ESM build is not browser-ready as published.** It expects a bundler: immer reads
 `process.env.NODE_ENV`, and the embedded browserify bundles reference `process` and
