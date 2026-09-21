@@ -20,8 +20,11 @@ working. One kernel per running instance, never a multi-tenant server. The packa
 `PlutoDeck.jl/` and carries the card contract, the deck loader, and the runtime:
 `PlutoDeck.present("<a deck.json>")` starts Pluto, opens the notebook in place and serves the
 deck, with no Node anywhere. Cards now show live output: the frontend is plain ES modules
-served straight from `frontend/`, with the Rainbow bundles vendored under `frontend/vendor/`
-because the build pipeline of issue 007 is still deferred.
+served straight from `frontend/`, with its dependencies vendored under `frontend/vendor/`
+because the build pipeline of issue 007 is still deferred — the two Rainbow bundles, and
+`marked.esm.js` (marked 18.0.13, MIT, no dependencies of its own, copied from the npm tarball's
+`lib/marked.esm.js`), which renders speaker cues in the browser so that they survive a kernel
+that is slow to start or has been killed.
 
 ## Status
 
