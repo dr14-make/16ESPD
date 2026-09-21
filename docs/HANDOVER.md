@@ -203,6 +203,12 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
 - **Neither `jupyter` nor `IJulia` is installed on this machine**, so no notebook can be
   executed here until one is. Committed outputs are a decision from the planning session, not a
   nicety — they are the projector fallback and the student-facing artifact.
+- **Run the test suite from `test/`, not the repository root.** `generated/test_internals.jl`
+  resolves references at the relative path `joinpath("snapshots", ...)`. `Pkg.test()` runs from
+  `test/` so this works; a direct `julia test/runtests.jl` from the root finds no snapshots,
+  silently skips every trajectory comparison, writes a stray `snapshots/` at the root, and
+  still exits 0. The tell is the assertion count — the real suite is about 4700, the crippled
+  one about 70. Use `cd test && julia --project=.. runtests.jl`.
 - **Memory.** Running several agents alongside the Dyad language server exhausts this machine;
   `earlyoom` is configured to prefer killing `julia`. A run that dies with no error message was
   probably killed, not broken. Retry before debugging.
