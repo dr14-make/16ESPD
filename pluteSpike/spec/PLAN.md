@@ -25,11 +25,13 @@ call open.
 | [008](issues/008-kernel-client-connect-bonds-settle.md) | Kernel client: connect, bonds, settle | `enhancement` | `high` | `m` | yes | 007 | **done** |
 | [009](issues/009-card-renderer-via-rainbow-ui.md) | Card renderer via rainbow ui | `enhancement` | `high` | `m` | yes | 007 | **done** |
 | [010](issues/010-card-state-machine-placeholder-to-live.md) | Card state machine: placeholder to live | `enhancement` | `high` | `s` | yes | 008, 009 | **done** |
-| [011](issues/011-slide-and-gridstack-layout-rendering.md) | Slide and gridstack layout rendering | `enhancement` | `high` | `m` | yes | 003, 010 | todo |
-| [012](issues/012-deck-chrome-navigation-and-kernel-status.md) | Deck chrome: navigation and kernel status | `enhancement` | `medium` | `s` | yes | 011 | todo |
+| [011](issues/011-slide-layout-geometry-and-broken-cards.md) | Slide layout: geometry, overlap and broken cards | `enhancement` | `high` | `s` | yes | 003, 010 | **partial** |
+| [012](issues/012-deck-chrome-navigation-and-kernel-status.md) | Deck chrome: navigation and kernel status | `enhancement` | `medium` | `s` | yes | 011 | **done** |
 | [013](issues/013-end-to-end-browser-test-harness.md) | End-to-end browser test harness | `enhancement` | `medium` | `m` | yes | 006, 012 | **partial** |
-| [014](issues/014-example-deck-lecture-1-cruise-control.md) | Example deck: lecture 1 cruise control | `enhancement` | `medium` | `s` | no | 006, 012 | todo |
+| [014](issues/014-example-deck-lecture-1-cruise-control.md) | Example deck: lecture 1 cruise control | `enhancement` | `medium` | `s` | no | 006, 012 | **done** |
 | [015](issues/015-release-process-build-force-add-bundle-tag.md) | Release process: build, force-add bundle, tag | `enhancement` `tech-debt` | `medium` | `s` | yes | 001, 007 | todo |
+| [016](issues/016-publish-the-deck-theme-as-a-bond.md) | Publish the deck's theme as a bond | `enhancement` | `high` | `m` | no | 008, 012 | todo |
+| [017](issues/017-repainting-a-plotly-card-mutates-a-shared-payload.md) | Repainting a Plotly card mutates the payload it was given | `bug` | `medium` | `m` | no | 009, 010 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
@@ -40,10 +42,25 @@ state. `../HANDOFF.md` carries the detail; the preamble is now part of the deck 
 serves. 007 stays deferred, so `frontend/vendor/` holds the Rainbow bundles rather than a build
 producing them.
 
+011 was re-scoped rather than implemented, and is **partial**. Its issue file called for the
+GridStack library; the design decision it traces to calls only for a schema shaped like
+GridStack's, and assigns drag-and-drop to the visual editor it defers. A 12-column CSS grid
+already renders that schema exactly, so the 2.1 MB dependency bought nothing this version uses.
+What the grid does not do is complain, so the loader now refuses a deck whose cards overlap or
+reach past the last column. The broken-card state is what remains open.
+
+014 chose six slides, one per lecture beat, which needed an open-loop cell the spike notebook
+did not have — notebook 01's beat is a car with no controller, and setting every gain to zero
+commands no torque rather than constant throttle. The deck is **done** and verified against a
+live kernel: six titled slides, forty cards live, seven interactive plots, paging across all
+six, and a gain change reaching every dependent card. It is not silent, though — 017 records
+the console error it logs while doing all of that.
+
 013 is **partial**: the harness drives headless Chrome over the DevTools protocol and runs as
-part of `] test PlutoDeck`, covering the deck page, a bond round trip and console errors. It
-drives `start_session` and `serve` rather than `present`, and it has no coverage of the deck
-chrome that 012 adds.
+part of `] test PlutoDeck`, covering the deck page, a bond round trip, console errors and the
+deck chrome 012 adds — navigation by pointer and by keyboard, the ends, a widget that keeps the
+arrow keys it needs, and the geometry a hidden slide holds on to. It drives `start_session` and
+`serve` rather than `present`.
 
 ## Order
 
@@ -75,6 +92,7 @@ Every issue names the `DESIGN.md` section it implements. The reverse mapping:
 | Cards render through Pluto's own renderer | 009 |
 | One kernel per instance, never multi-tenant | 004 |
 | Cards show placeholders until the kernel is live | 010, 012 |
+| Cards render through Pluto's own renderer | 009, 016 |
 | Spike findings carried forward | 005, 008, 013 |
 
 `DESIGN.md` § Open produced no issues on purpose. `persist_js_state` and Plotly zoom retention,

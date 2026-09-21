@@ -126,6 +126,12 @@ and it cannot be designed well before the hand-authored version has carried one 
 Writing `{x, y, w, h}` into the schema from the start costs nothing and makes the editor
 additive rather than a migration.
 
+What this decision buys is the *schema*, not the library. A 12-column CSS grid with a fixed row
+track renders `{x, y, w, h}` exactly and in no bytes, so GridStack is a dependency of the
+editor rather than of version one. It does not carry the schema, and nothing here waits on it.
+What a plain grid does not do is refuse a layout that cannot work, so the loader checks overlap
+and grid width instead.
+
 ### Cards render through Pluto's own renderer
 
 `@plutojl/rainbow/ui` exports `CellOutput`, `OutputBody`, `RawHTMLContainer`, and the bond
@@ -213,8 +219,13 @@ is its most fragile part.
 Deliberately unsettled, because they resolve better against real code than in the abstract:
 `persist_js_state` and whether a Plotly card keeps its zoom across bond updates; the
 sanitization posture, given `RawHTMLContainer` takes a `sanitize_html` flag and Pluto's security
-model assumes a trusted notebook; slide navigation and whether a slide is addressable by URL
-fragment; and the exact `deck.json` schema.
+model assumes a trusted notebook; and whether a slide is addressable by URL fragment.
+
+Two of these have since settled against real code. Paging is by pointer and keyboard, and a
+slide is not addressable by URL — the fragment question stays open on its own. The schema
+gained one key, `title` on a slide, because the reason a deck is a separate file is that one
+notebook backs several decks, and titles authored in Julia would force all of them to share
+wording. A widget's label stays in Julia, where it is part of the widget.
 
 ## Implementation notes carried from the spike
 

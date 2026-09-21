@@ -1,0 +1,75 @@
+{
+  "notebook": "notebook.jl",
+  "preamble": ["plotly"],
+  "slides": [
+    {
+      "title": "The car",
+      "cards": [
+        { "card": "car", "x": 0, "y": 0, "w": 3, "h": 12 },
+        { "card": "open-loop", "x": 3, "y": 0, "w": 9, "h": 12 }
+      ]
+    },
+    {
+      "title": "Proportional",
+      "cards": [
+        { "card": "gain-p", "x": 0, "y": 0, "w": 3, "h": 2 },
+        { "card": "target-speed", "x": 0, "y": 2, "w": 3, "h": 2 },
+        { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 12 },
+        { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
+        { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
+      ]
+    },
+    {
+      "title": "Proportional-integral",
+      "cards": [
+        { "card": "gain-p", "x": 0, "y": 0, "w": 3, "h": 2 },
+        { "card": "gain-i", "x": 0, "y": 2, "w": 3, "h": 2 },
+        { "card": "target-speed", "x": 0, "y": 4, "w": 3, "h": 2 },
+        { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 12 },
+        { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
+        { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
+      ]
+    },
+    {
+      "title": "Proportional-integral-derivative",
+      "cards": [
+        { "card": "gain-d", "x": 0, "y": 0, "w": 3, "h": 2 },
+        { "card": "gain-p", "x": 0, "y": 2, "w": 3, "h": 2 },
+        { "card": "gain-i", "x": 0, "y": 4, "w": 3, "h": 2 },
+        { "card": "target-speed", "x": 0, "y": 6, "w": 3, "h": 2 },
+        { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 12 },
+        { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
+        { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
+      ]
+    },
+    {
+      "title": "Windup",
+      "cards": [
+        { "card": "grade", "x": 0, "y": 0, "w": 3, "h": 2 },
+        { "card": "antiwindup", "x": 0, "y": 2, "w": 3, "h": 2 },
+        { "card": "gain-p", "x": 0, "y": 4, "w": 3, "h": 2 },
+        { "card": "gain-i", "x": 0, "y": 6, "w": 3, "h": 2 },
+        { "card": "gain-d", "x": 0, "y": 8, "w": 3, "h": 2 },
+        { "card": "target-speed", "x": 0, "y": 10, "w": 3, "h": 2 },
+        { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 6 },
+        { "card": "torque-plot", "x": 3, "y": 6, "w": 6, "h": 6 },
+        { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
+        { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
+      ]
+    },
+    {
+      "title": "Tuning",
+      "cards": [
+        { "card": "gain-p", "x": 0, "y": 0, "w": 3, "h": 2 },
+        { "card": "gain-i", "x": 0, "y": 2, "w": 3, "h": 2 },
+        { "card": "gain-d", "x": 0, "y": 4, "w": 3, "h": 2 },
+        { "card": "target-speed", "x": 0, "y": 6, "w": 3, "h": 2 },
+        { "card": "grade", "x": 0, "y": 8, "w": 3, "h": 2 },
+        { "card": "antiwindup", "x": 0, "y": 10, "w": 3, "h": 2 },
+        { "card": "speed-plot", "x": 3, "y": 0, "w": 6, "h": 12 },
+        { "card": "settings", "x": 9, "y": 0, "w": 3, "h": 5 },
+        { "card": "metrics", "x": 9, "y": 5, "w": 3, "h": 7 }
+      ]
+    }
+  ]
+}
