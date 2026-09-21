@@ -1,6 +1,14 @@
+"""
+The number of columns a slide's grid offers.
+
+The frontend lays a slide out as `repeat(12, 1fr)`, so a card reaching past column 12 lands in
+an implicit column that no other card shares and the slide's proportions silently change.
+"""
+const GRID_COLUMNS = 12
+
 "The keys a card placement may carry. `snapshot` names a cached rendering; the loader carries it without interpreting it."
 const CARD_PLACEMENT_KEYS = ("card", "x", "y", "w", "h", "snapshot")
-const SLIDE_KEYS = ("cards",)
+const SLIDE_KEYS = ("title", "cards")
 const DECK_KEYS = ("notebook", "preamble", "slides")
 
 """
@@ -18,11 +26,16 @@ struct CardPlacement
 end
 
 """
-    Slide(cards)
+    Slide(title, cards)
 
 One slide: the cards placed on it, in the order the deck file lists them.
+
+`title` is the deck's own heading for the slide, or `nothing` to leave it numbered. It lives
+here rather than in the notebook because one notebook backs several decks — the full lecture,
+a revision deck, a student-facing cut — and each titles the same cards for its own audience.
 """
 struct Slide
+    title::Union{Nothing,String}
     cards::Vector{CardPlacement}
 end
 
@@ -98,6 +111,7 @@ function load_deck(path::AbstractString)::Deck
     notebook_ref = _string_field(problems, raw, "notebook", "the deck")
     preamble = _parse_preamble(problems, raw)
     slides = _parse_slides(problems, raw)
+    _reject_unplaceable!(problems, slides)
 
     notebook_path = if notebook_ref === nothing
         nothing
@@ -166,12 +180,18 @@ function _parse_slides(problems::Vector{String}, raw::Dict)
             continue
         end
 
+        title = if haskey(slide_raw, "title") && slide_raw["title"] !== nothing
+            _string_field(problems, slide_raw, "title", context)
+        else
+            nothing
+        end
+
         placements = CardPlacement[]
         for (card_index, card_raw) in enumerate(cards_raw)
             placement = _parse_card(problems, card_raw, "$context, card $card_index")
             placement === nothing || push!(placements, placement)
         end
-        push!(slides, Slide(placements))
+        push!(slides, Slide(title, placements))
     end
     return slides
 end
@@ -201,6 +221,36 @@ function _parse_card(problems::Vector{String}, raw, context::String)
     any(isnothing, (name, x, y, w, h)) && return nothing
     return CardPlacement(name, x, y, w, h, snapshot)
 end
+
+"""
+Report every card that cannot be laid out where the deck puts it.
+
+A hand-authored deck is the only kind this version has, and both faults below render as a
+plausible slide rather than as an error: overlapping cards stack in the same grid area, and a
+card reaching past the last column adds one no other card occupies.
+"""
+function _reject_unplaceable!(problems::Vector{String}, slides::Vector{Slide})
+    for (index, slide) in enumerate(slides)
+        for placement in slide.cards
+            placement.x + placement.w <= GRID_COLUMNS && continue
+            push!(problems, "slide $index: \"$(placement.name)\" reaches column " *
+                "$(placement.x + placement.w) of a $GRID_COLUMNS-column grid; " *
+                "\"x\" plus \"w\" may not exceed $GRID_COLUMNS")
+        end
+        for (i, a) in enumerate(slide.cards), b in slide.cards[(i + 1):end]
+            _overlaps(a, b) || continue
+            push!(problems, "slide $index: \"$(a.name)\" ($(_extent(a))) overlaps " *
+                "\"$(b.name)\" ($(_extent(b)))")
+        end
+    end
+    return nothing
+end
+
+_overlaps(a::CardPlacement, b::CardPlacement) =
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+
+_extent(p::CardPlacement) =
+    "columns $(p.x)-$(p.x + p.w - 1), rows $(p.y)-$(p.y + p.h - 1)"
 
 "Report every card no cell publishes, and return the hints that help place them."
 function _resolve_cards!(problems::Vector{String}, preamble::Vector{String},

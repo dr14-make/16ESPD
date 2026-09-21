@@ -76,6 +76,37 @@ const ONE_CARD = """
             """))
     end
 
+    @testset "cards that cannot be laid out where the deck puts them are refused" begin
+        @test_throws ["slide 1", "\"metrics\" (columns 0-5, rows 0-2)",
+                      "overlaps \"speed-plot\" (columns 4-11, rows 2-5)"] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [{ "cards": [
+                { "card": "metrics", "x": 0, "y": 0, "w": 6, "h": 3 },
+                { "card": "speed-plot", "x": 4, "y": 2, "w": 8, "h": 4 }] }] }
+            """))
+
+        @test_throws ["slide 2", "\"metrics\" reaches column 14 of a 12-column grid"] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [
+                { "cards": [{ "card": "speed-plot", "x": 0, "y": 0, "w": 12, "h": 3 }] },
+                { "cards": [{ "card": "metrics", "x": 6, "y": 0, "w": 8, "h": 3 }] }] }
+            """))
+    end
+
+    @testset "cards that share a column or a row but no area are placed" begin
+        # Edges touching is what a deck looks like when it is right: the card below starts on
+        # the row the card above ends, and the card beside it starts on the column it ends.
+        deck = load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [{ "cards": [
+                { "card": "target-speed", "x": 0, "y": 0, "w": 4, "h": 2 },
+                { "card": "metrics", "x": 0, "y": 2, "w": 4, "h": 3 },
+                { "card": "speed-plot", "x": 4, "y": 0, "w": 8, "h": 5 }] }] }
+            """))
+
+        @test length(only(deck.slides).cards) == 3
+    end
+
     @testset "every fault in one file is reported by one load" begin
         err = try
             load_deck(deck_file("""
@@ -105,9 +136,31 @@ const ONE_CARD = """
             { "notebook": "NOTEBOOK",
               "slides": [{ "cards": [{ "card": "metrics", "x": 0, "y": 0, "width": 4, "w": 4, "h": 3 }] }] }
             """))
-        @test_throws ["unknown key \"title\""] load_deck(deck_file("""
+        @test_throws ["unknown key \"heading\""] load_deck(deck_file("""
             { "notebook": "NOTEBOOK",
-              "slides": [{ "title": "Cruise control", "cards": [] }] }
+              "slides": [{ "heading": "Cruise control", "cards": [] }] }
+            """))
+    end
+
+    @testset "a slide carries the deck's own title for it, or none" begin
+        deck = load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [
+                { "title": "Proportional",
+                  "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] },
+                { "cards": [{ "card": "speed-plot", "x": 0, "y": 0, "w": 4, "h": 3 }] }
+              ] }
+            """))
+
+        @test deck.slides[1].title == "Proportional"
+        @test deck.slides[2].title === nothing
+    end
+
+    @testset "a title that is not a name is refused rather than rendered" begin
+        @test_throws ["slide 1", "\"title\" must be a non-empty string", "got 7"] load_deck(deck_file("""
+            { "notebook": "NOTEBOOK",
+              "slides": [{ "title": 7,
+                           "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
             """))
     end
 
