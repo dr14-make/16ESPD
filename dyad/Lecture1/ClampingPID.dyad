@@ -1,0 +1,137 @@
+"""
+PID controller with output limiting and clamping (conditional-integration) anti-windup.
+
+A drop-in for `BlockComponents.Continuous.LimPID` in every respect except the anti-windup
+scheme. `LimPID` unwinds the integrator by back-calculation — feeding the saturation error back
+through `1/(k*Ni)`. This block instead *freezes* the integrator while it would only make things
+worse, and lets it run otherwise. Notebook 06 compares the two.
+
+The freeze needs both conditions to hold:
+
+1. the output is saturated (`y` at a limit), and
+2. the error carries the same sign as the output, so integrating further pushes the command
+   deeper into the limit.
+
+The second condition is what makes the freeze one-directional. Freezing on saturation alone
+would trap the integrator when the disturbance ends and the loop needs it to come back down;
+requiring same-sign lets the integrator unwind the instant the error reverses. There is no
+tracking time constant to tune — the price of that simplicity is that nothing pulls the
+integrator back before release, so it starts unwinding from wherever the freeze caught it.
+
+The structure mirrors `LimPID` (P, filtered D, setpoint weighting, feed-forward, limiter) so
+the only behavioral difference on screen is the anti-windup itself.
+"""
+component ClampingPID
+  extends BlockComponents.Interfaces.SingleVariableController
+  "Feed-forward input, added after the gain and before the limiter"
+  u_ff = RealInput()
+  add_p = BlockComponents.Math.Add(k1 = wp, k2 = -1)
+  add_d = BlockComponents.Math.Add(k1 = wd, k2 = -1) if with_D
+  proportional = BlockComponents.Math.Gain(k = 1)
+  derivative = BlockComponents.Continuous.Derivative(k = Td, T = max(Td / Nd, 1e-14), x0 = xd0) if with_D
+  integrator = BlockComponents.Continuous.Integrator(k = 1 / Ti, x0 = xi0) if with_I
+  "Zero contribution of the structurally removed derivative part"
+  zero_d = BlockComponents.Sources.Constant(k = 0) if !with_D
+  "Zero contribution of the structurally removed integral part"
+  zero_i = BlockComponents.Sources.Constant(k = 0) if !with_I
+  add_pid = BlockComponents.Math.Add3(k1 = 1, k2 = 1, k3 = 1)
+  gain_pid = BlockComponents.Math.Gain(k = k)
+  add_ff = BlockComponents.Math.Add(k1 = 1, k2 = k_ff)
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = y_max, y_min = y_min)
+  variable control_error::Real
+  "Whether or not to include the integral part"
+  structural parameter with_I::Boolean = true
+  "Whether or not to include the derivative part"
+  structural parameter with_D::Boolean = true
+  "Gain of controller"
+  parameter k::Real = 1
+  "Time constant of the integrator block (only active if `with_I = true`)"
+  parameter Ti::Time = 0.5
+  "Time constant of the derivative block (only active if `with_D = true`)"
+  parameter Td::Time = 0.1
+  "Maximum output"
+  parameter y_max::Real = 1e300
+  "Minimum output"
+  parameter y_min::Real = -y_max
+  "Set-point weight for proportional block"
+  parameter wp::Real = 1
+  "Set-point weight for derivative block (only active if `with_D = true`)"
+  parameter wd::Real = 1
+  "Maximum derivative gain (only active if `with_D = true`)"
+  parameter Nd::Real = 10
+  "Gain of the feed-forward input"
+  parameter k_ff::Real = 1
+  "Initial value for integrator state (only active if `with_I = true`)"
+  parameter xi0::Real = 0
+  "Initial value for derivative-filter state (only active if `with_D = true`)"
+  parameter xd0::Real = 0
+relations
+  connect(add_p.y, proportional.u)
+  connect(proportional.y, add_pid.u1)
+  connect(add_pid.y, gain_pid.u)
+  connect(gain_pid.y, add_ff.u1)
+  connect(add_ff.y, limiter.u)
+  control_error = u_s - u_m
+  connect(limiter.y, y)
+  connect(add_ff.u2, u_ff)
+  connect(add_p.u1, u_s)
+  connect(u_m, add_p.u2)
+  if with_D
+    connect(add_d.y, derivative.u)
+    connect(derivative.y, add_pid.u2)
+    connect(add_d.u1, u_s)
+    connect(add_d.u2, u_m)
+  else
+    connect(zero_d.y, add_pid.u2)
+  end
+  if with_I
+    # Conditional integration. `limiter.y` is the saturated output, so `limiter.y >= y_max`
+    # (resp. `<= y_min`) detects upper (resp. lower) saturation. The freeze applies only when
+    # the error would drive the command further into that limit; on the other sign the
+    # integrator is allowed to run so it can unwind. Nested ifelse avoids boolean operators.
+    integrator.u = ifelse(limiter.y >= y_max,
+                     ifelse(control_error >= 0, 0.0, control_error),
+                     ifelse(limiter.y <= y_min,
+                       ifelse(control_error <= 0, 0.0, control_error),
+                       control_error))
+    connect(integrator.y, add_pid.u3)
+  else
+    connect(zero_i.y, add_pid.u3)
+  end
+end
+
+test component TestClampingPID
+  "Constant setpoint above the measurement: a fixed positive error"
+  sp = BlockComponents.Sources.Constant(k = 3.0)
+  "Constant measurement"
+  meas = BlockComponents.Sources.Constant(k = 0.0)
+  "No feed-forward"
+  ff = BlockComponents.Sources.Constant(k = 0.0)
+  # PI with a low ceiling: the proportional term alone (3) is below y_max = 5, so the loop
+  # starts unsaturated and the integrator ramps. It saturates when P + I reaches 5, at I = 2,
+  # after which the error is still positive and the output is at the limit, so clamping freezes
+  # the integrator there rather than letting it wind up without bound.
+  ctrl = VehicleSystemsComponents.Lecture1.ClampingPID(with_I = true, with_D = false, k = 1.0, Ti = 1.0, y_max = 5.0, y_min = -5.0)
+relations
+  connect(sp.y, ctrl.u_s)
+  connect(meas.y, ctrl.u_m)
+  connect(ff.y, ctrl.u_ff)
+metadata {
+  "Dyad": {
+    "tests": {
+      "clamp_freeze": {
+        "stop": 5,
+        # The integrator freezes at the analytic value 2.0 (where P + I first reaches y_max).
+        # A default-tolerance solve overshoots the ifelse threshold by ~0.17 once, then holds
+        # flat; the tolerance covers that one-time step-through of the discontinuity.
+        "atol": {"ctrl.y": 0.01, "ctrl.integrator.y": 0.25},
+        "expect": {
+          "initial": {"ctrl.y": 3.0, "ctrl.integrator.y": 0.0},
+          "final": {"ctrl.y": 5.0, "ctrl.integrator.y": 2.0},
+          "signals": ["ctrl.y", "ctrl.integrator.y"]
+        }
+      }
+    }
+  }
+}
+end

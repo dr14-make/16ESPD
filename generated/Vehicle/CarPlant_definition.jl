@@ -7,7 +7,7 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   CarPlant(; name, theta_e, T_max)
+   CarPlant(; name, theta_e, T_max, m, CdA)
 
 Longitudinal car plant (L0): torque command and road grade in, speed out.
 
@@ -24,6 +24,8 @@ is converted, and no second conversion is added anywhere downstream.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `theta_e`         | Powertrain transport delay                         | s  |   0.3 |
 | `T_max`         | Peak deliverable engine torque                         | N.m  |   150.0 |
+| `m`         | Vehicle mass                         | kg  |   1400.0 |
+| `CdA`         | Aerodynamic drag area (Cd * A)                         | m2  |   0.63 |
 
 ## Connectors
 
@@ -32,7 +34,7 @@ is converted, and no second conversion is added anywhere downstream.
  * `v_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CarPlant(; name = nothing, theta_e=0.3, T_max=Float64(150.0), kwargs...)
+@component function CarPlant(; name = nothing, theta_e=0.3, T_max=Float64(150.0), m=Float64(1400.0), CdA=0.63, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -66,6 +68,12 @@ is converted, and no second conversion is added anywhere downstream.
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Peak deliverable engine torque"])
   __initial_conditions[T_max] = __local__T_max
+  __local__m = m
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  __initial_conditions[m] = __local__m
+  __local__CdA = CdA
+  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A)"])
+  __initial_conditions[CdA] = __local__CdA
 
   ### Final Parameters (assignments)
 
@@ -91,7 +99,7 @@ is converted, and no second conversion is added anywhere downstream.
   push!(__systems, @named driveline = VehicleSystemsComponents.Vehicle.Driveline(; driveline_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, CdA=CdA, body_overrides...))
   # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
   vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
   push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))

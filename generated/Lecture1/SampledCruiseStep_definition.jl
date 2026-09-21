@@ -7,13 +7,12 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   CruiseLoopStep(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, grade, v_lo, v_hi, v0, tau0, t_step)
+   SampledCruiseStep(; name, theta_e, with_I, with_D, Ts, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, v_lo, v_hi, v0, tau0, t_step)
 
-Flat-road 90 to 110 km/h setpoint-step scenario for `CruiseLoop`.
+Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
 
-The engine lag is preloaded with the torque holding the initial speed. The step occurs at the
-start of the run, avoiding an artificial pre-step interval in which a P-only controller would
-command zero torque at zero error.
+Mirrors `CruiseLoopStep` but through the sampled loop, so notebook 09 can sweep `Ts` and watch
+the step response ring and then diverge as the half-sample phase lag eats the stability margin.
 
 ## Parameters:
 
@@ -22,6 +21,7 @@ command zero torque at zero error.
 | `theta_e`         |                          | s  |   0.3 |
 | `with_I`         |                          | --  |   false |
 | `with_D`         |                          | --  |   false |
+| `Ts`         |                          | s  |   0.1 |
 | `k`         |                          | --  |   56.0 |
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
@@ -32,21 +32,18 @@ command zero torque at zero error.
 | `y_min`         |                          | --  |   0.0 |
 | `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
-| `m`         | Vehicle mass                         | kg  |   1400.0 |
-| `CdA`         | Aerodynamic drag area (Cd * A)                         | m2  |   0.63 |
-| `grade`         | Constant road gradient, tan(alpha)                         | --  |   0.0 |
 | `v_lo`         |                          | --  |   90.0 |
 | `v_hi`         |                          | --  |   110.0 |
 | `v0`         |                          | m/s  |   25.0 |
 | `tau0`         |                          | N.m  |   31.078 |
 | `t_step`         |                          | s  |   0.0 |
 """
-@component function CruiseLoopStep(; name = nothing, theta_e=0.3, with_I=false, with_D=false, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, grade=Float64(0.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
+@component function SampledCruiseStep(; name = nothing, theta_e=0.3, with_I=false, with_D=false, Ts=0.1, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = CruiseLoopStep()
+    @named model = SampledCruiseStep()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -102,15 +99,6 @@ command zero torque at zero error.
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
-  __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
-  __local__CdA = CdA
-  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A)"])
-  __initial_conditions[CdA] = __local__CdA
-  __local__grade = grade
-  append!(__params, @parameters (grade::Real), [description = "Constant road gradient, tan(alpha)"])
-  __initial_conditions[grade] = __local__grade
   __local__v_lo = v_lo
   append!(__params, @parameters (v_lo::Real))
   __initial_conditions[v_lo] = __local__v_lo
@@ -139,15 +127,15 @@ command zero torque at zero error.
   __constants = Any[]
 
   ### Components
-  # Subcomponent loop of type VehicleSystemsComponents.Lecture1.CruiseLoop
+  # Subcomponent loop of type VehicleSystemsComponents.Lecture1.SampledCruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m=m, CdA=CdA, m0=v_lo, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.SampledCruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, Ts=Ts, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m0=v_lo, loop_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=v_lo, height=v_hi - v_lo, start_time=t_step, demand_overrides...))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=grade, road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0.0), road_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -169,4 +157,4 @@ command zero torque at zero error.
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export CruiseLoopStep
+export SampledCruiseStep

@@ -1,11 +1,60 @@
 """
-Cruise-control loop around the longitudinal car plant.
+Half-sample transport delay standing in for a zero-order-hold sampler.
 
-The setpoint and feedback signal are both in km/h, so `k` is interpreted as N.m per km/h.
-Integral and derivative action are removed structurally when disabled; the same assembly therefore
-serves the P, PI, and PID lecture notebooks.
+Dyad ships no sampled blocks, so notebook 09 reproduces the *effect* of sampling rather than a
+real sampler. Holding a measurement for one sample period costs the loop, on average, half a
+sample period of phase — and phase lag is exactly what erodes stability margin as the sample
+rate drops. A pure transport delay of `Ts/2` in the feedback path injects that same phase lag,
+so the loop goes unstable as `Ts` grows for the same reason a real digital loop does.
+
+This is a surrogate and produces no staircase: the signal it passes is continuous and merely
+delayed, not held piecewise-constant. It reproduces the destabilizing phase lag, not the
+sample-and-hold waveform. `delayTime` is baked in at construction, so `Ts` is structural.
 """
-component CruiseLoop
+component HalfSampleDelay
+  extends BlockComponents.Interfaces.SISO
+  "Sample period; the feedback is delayed by half of it"
+  structural parameter Ts::Time = 0.1
+  "Padé order of the delay approximation"
+  structural parameter n::Integer = 3
+  delay = BlockComponents.Nonlinear.PadeDelay(n = n, delayTime = Ts / 2)
+relations
+  connect(u, delay.u)
+  connect(delay.y, y)
+end
+
+test component TestHalfSampleDelay
+  "Constant input: a delayed constant is the same constant once the delay has filled"
+  src = BlockComponents.Sources.Constant(k = 5.0)
+  d = VehicleSystemsComponents.Lecture1.HalfSampleDelay(Ts = 0.1)
+relations
+  connect(src.y, d.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "constant_passthrough": {
+        "stop": 5,
+        "atol": {"d.y": 0.001},
+        "expect": {
+          "initial": {"d.y": 5.0},
+          "final": {"d.y": 5.0},
+          "signals": ["d.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+"""
+Cruise loop with a half-sample delay in the feedback path.
+
+Identical to `CruiseLoop` except the speed measurement reaches the controller through a
+`HalfSampleDelay`. Increasing `Ts` adds phase lag and drives the loop toward instability, which
+is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop` (`plant`,
+`controller`) so a harness reads the same signal paths.
+"""
+component SampledCruiseLoop
   "Vehicle-speed setpoint in km/h"
   setpoint = RealInput()
   "Road gradient, tan(alpha)"
@@ -16,32 +65,24 @@ component CruiseLoop
   structural parameter with_I::Boolean = true
   "Whether to include derivative action"
   structural parameter with_D::Boolean = true
+  "Sample period; the feedback is delayed by half of it"
+  structural parameter Ts::Time = 0.1
   "Controller gain in N.m per km/h"
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
   parameter Nd::Real = 10.0
   parameter Ni::Real = 0.9
-  "Physical engine torque ceiling"
   parameter T_max::Torque = 150.0
-  "Controller output ceiling; defaults to the physical ceiling"
   parameter y_max::Real = T_max
   parameter y_min::Real = 0.0
   parameter wp::Real = 1.0
   parameter wd::Real = 1.0
-  "Vehicle mass"
   parameter m::Dyad.Mass = 1400.0
-  "Aerodynamic drag area (Cd * A)"
   parameter CdA::Area = 0.63
   "Initial measured speed in km/h, the settled cruise the loop starts from"
   parameter m0::Real = 90.0
-  "Initial integrator state"
   parameter xi0::Real = 0.0
-  # The derivative filter tracks its input wd*u_s - u_m. Starting it at zero while the
-  # measurement is already m0 makes the filter see a step of -u_m at t=0 and command a spike
-  # of -k*Nd*m0 (e.g. -50400 N.m at k=56, Nd=10, m0=90 with wd=0). Seeding it at the settled
-  # value (wd-1)*m0 — the input the filter would hold at a steady cruise where u_s = u_m = m0 —
-  # removes that spike while preserving any genuine derivative kick on a later setpoint change.
   "Initial derivative-filter state, seeded from the initial measurement"
   parameter xd0::Real = (wd - 1) * m0
   plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA)
@@ -59,27 +100,29 @@ component CruiseLoop
     wd = wd,
     xi0 = xi0,
     xd0 = xd0)
+  sampler = VehicleSystemsComponents.Lecture1.HalfSampleDelay(Ts = Ts)
   "No separate feedforward path in this feedback loop"
   zero_ff = BlockComponents.Sources.Constant(k = 0.0)
 relations
   connect(setpoint, controller.u_s)
-  connect(plant.v_kmh, controller.u_m)
+  connect(plant.v_kmh, sampler.u)
+  connect(sampler.y, controller.u_m)
   connect(zero_ff.y, controller.u_ff)
   connect(controller.y, plant.tau_cmd)
   connect(grade, plant.grade)
 end
 
 """
-Flat-road 90 to 110 km/h setpoint-step scenario for `CruiseLoop`.
+Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
 
-The engine lag is preloaded with the torque holding the initial speed. The step occurs at the
-start of the run, avoiding an artificial pre-step interval in which a P-only controller would
-command zero torque at zero error.
+Mirrors `CruiseLoopStep` but through the sampled loop, so notebook 09 can sweep `Ts` and watch
+the step response ring and then diverge as the half-sample phase lag eats the stability margin.
 """
-component CruiseLoopStep
+component SampledCruiseStep
   structural parameter theta_e::Time = 0.3
   structural parameter with_I::Boolean = false
   structural parameter with_D::Boolean = false
+  structural parameter Ts::Time = 0.1
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
@@ -90,21 +133,16 @@ component CruiseLoopStep
   parameter y_min::Real = 0.0
   parameter wp::Real = 1.0
   parameter wd::Real = 1.0
-  "Vehicle mass"
-  parameter m::Dyad.Mass = 1400.0
-  "Aerodynamic drag area (Cd * A)"
-  parameter CdA::Area = 0.63
-  "Constant road gradient, tan(alpha)"
-  parameter grade::Real = 0.0
   parameter v_lo::Real = 90.0
   parameter v_hi::Real = 110.0
   parameter v0::Velocity = 25.0
   parameter tau0::Torque = 31.078
   parameter t_step::Time = 0.0
-  loop = VehicleSystemsComponents.Lecture1.CruiseLoop(
+  loop = VehicleSystemsComponents.Lecture1.SampledCruiseLoop(
     theta_e = theta_e,
     with_I = with_I,
     with_D = with_D,
+    Ts = Ts,
     k = k,
     Ti = Ti,
     Td = Td,
@@ -115,29 +153,21 @@ component CruiseLoopStep
     y_min = y_min,
     wp = wp,
     wd = wd,
-    m = m,
-    CdA = CdA,
     m0 = v_lo)
   demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step)
-  road = BlockComponents.Sources.Constant(k = grade)
+  road = BlockComponents.Sources.Constant(k = 0.0)
 relations
   connect(demand.y, loop.setpoint)
   connect(road.y, loop.grade)
   initial loop.plant.body.mass.s = 0.0
   initial loop.plant.body.mass.v = v0
   initial loop.plant.engine.lag.x = tau0
-# The p_only case pins an unlimited actuator. Notebooks 03 to 05 all run the proportional
-# loop that way: any gain leaving a visible steady-state error commands several times the
-# holding torque during the step, so a real ceiling would clip every curve in the gain family.
-# The engine limit is introduced deliberately in the windup notebook. Pinned here rather than
-# left to default, so the case keeps testing the lecture rather than tracking CruiseLoop.
 metadata {
   "Dyad": {
     "tests": {
-      "p_only": {
+      "p_only_small_Ts": {
         "stop": 100,
-        "params": {"T_max": 1e6, "y_max": 1e6},
-        "atol": {"loop.plant.v_kmh": 0.05},
+        "atol": {"loop.plant.v_kmh": 0.1},
         "expect": {
           "initial": {"loop.plant.v_kmh": 90.0},
           "final": {"loop.plant.v_kmh": 109.3},
@@ -149,7 +179,11 @@ metadata {
 }
 end
 
-analysis CruiseLoopTransient
+analysis SampledCruiseTransient
+  # `Ts` is structural (PadeDelay bakes its delayTime at construction), so it cannot be
+  # forwarded through the analysis's runtime overrides — this harness runs at the component's
+  # default Ts. To sweep the sample period, notebook 09 constructs `SampledCruiseStep` directly
+  # with different `Ts` values (mtkcompile + solve) rather than through this analysis.
   extends TransientAnalysis(stop = 100)
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
@@ -161,19 +195,13 @@ analysis CruiseLoopTransient
   parameter y_min::Real = 0.0
   parameter wp::Real = 1.0
   parameter wd::Real = 1.0
-  "Vehicle mass"
-  parameter m::Dyad.Mass = 1400.0
-  "Aerodynamic drag area (Cd * A)"
-  parameter CdA::Area = 0.63
-  "Constant road gradient, tan(alpha)"
-  parameter grade::Real = 0.0
   parameter v_lo::Real = 90.0
   parameter v_hi::Real = 110.0
   parameter v0::Velocity = 25.0
   parameter tau0::Torque = 31.078
   parameter t_step::Time = 0.0
-  # This analysis is the P-only setpoint-step harness used for gain sweeps and the ZN gate.
-  model = VehicleSystemsComponents.Lecture1.CruiseLoopStep(
+  model = VehicleSystemsComponents.Lecture1.SampledCruiseStep(
+    Ts = Ts,
     k = k,
     Ti = Ti,
     Td = Td,
@@ -184,9 +212,6 @@ analysis CruiseLoopTransient
     y_min = y_min,
     wp = wp,
     wd = wd,
-    m = m,
-    CdA = CdA,
-    grade = grade,
     v_lo = v_lo,
     v_hi = v_hi,
     v0 = v0,

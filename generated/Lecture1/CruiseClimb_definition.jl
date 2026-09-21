@@ -7,46 +7,51 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   CruiseLoopStep(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, grade, v_lo, v_hi, v0, tau0, t_step)
+   CruiseClimb(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, v_set, v0, tau0, gradient, start_time, duration)
 
-Flat-road 90 to 110 km/h setpoint-step scenario for `CruiseLoop`.
+Windup scenario: cruise at 130 km/h, meet a finite 10% climb, then watch the road flatten.
 
-The engine lag is preloaded with the torque holding the initial speed. The step occurs at the
-start of the run, avoiding an artificial pre-step interval in which a P-only controller would
-command zero torque at zero error.
+Drives `CruiseLoop`'s (back-calculation) controller with a constant setpoint and a `GradeProfile`
+that switches on a climb at `start_time` and off again after `duration`. The climb needs more
+tractive force than the engine can supply, so it saturates and the car falls back to about
+118 km/h. The lesson is the recovery after the climb ends: an integrator that accumulated
+against the saturated engine still commands acceleration once the load is gone, producing an
+overshoot whose size is set by how long the hill lasted.
+
+Set `Ni` large (e.g. 1e6) to make the back-calculation correction negligible and reproduce the
+no-anti-windup case; leave it at 0.9 for the back-calculation case. Set `y_max` below `T_max`
+to clamp the controller under the physical ceiling, as notebook 06's closing section does.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `theta_e`         |                          | s  |   0.3 |
-| `with_I`         |                          | --  |   false |
-| `with_D`         |                          | --  |   false |
+| `with_I`         |                          | --  |   true |
+| `with_D`         |                          | --  |   true |
 | `k`         |                          | --  |   56.0 |
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
-| `Ni`         |                          | --  |   0.9 |
+| `Ni`         | Back-calculation tracking-time factor; large values disable anti-windup                         | --  |   0.9 |
 | `T_max`         |                          | N.m  |   150.0 |
 | `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
 | `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
-| `m`         | Vehicle mass                         | kg  |   1400.0 |
-| `CdA`         | Aerodynamic drag area (Cd * A)                         | m2  |   0.63 |
-| `grade`         | Constant road gradient, tan(alpha)                         | --  |   0.0 |
-| `v_lo`         |                          | --  |   90.0 |
-| `v_hi`         |                          | --  |   110.0 |
-| `v0`         |                          | m/s  |   25.0 |
-| `tau0`         |                          | N.m  |   31.078 |
-| `t_step`         |                          | s  |   0.0 |
+| `v_set`         | Cruise setpoint in km/h                         | --  |   130.0 |
+| `v0`         | Initial speed (36.1111 m/s = 130 km/h)                         | m/s  |   36.111111111111114 |
+| `tau0`         | Holding torque at 130 km/h on flat road                         | N.m  |   50.9693 |
+| `gradient`         | Gradient of the climb, tan(alpha)                         | --  |   0.10 |
+| `start_time`         | Time at which the climb begins                         | s  |   30.0 |
+| `duration`         | Climb duration; the road returns to flat afterwards                         | s  |   120.0 |
 """
-@component function CruiseLoopStep(; name = nothing, theta_e=0.3, with_I=false, with_D=false, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, grade=Float64(0.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
+@component function CruiseClimb(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), v_set=Float64(130.0), v0=36.111111111111114, tau0=50.9693, gradient=0.1, start_time=Float64(30.0), duration=Float64(120.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = CruiseLoopStep()
+    @named model = CruiseClimb()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -85,7 +90,7 @@ command zero torque at zero error.
   append!(__params, @parameters (Nd::Real))
   __initial_conditions[Nd] = __local__Nd
   __local__Ni = Ni
-  append!(__params, @parameters (Ni::Real))
+  append!(__params, @parameters (Ni::Real), [description = "Back-calculation tracking-time factor; large values disable anti-windup"])
   __initial_conditions[Ni] = __local__Ni
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
@@ -102,30 +107,24 @@ command zero torque at zero error.
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
-  __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
-  __local__CdA = CdA
-  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A)"])
-  __initial_conditions[CdA] = __local__CdA
-  __local__grade = grade
-  append!(__params, @parameters (grade::Real), [description = "Constant road gradient, tan(alpha)"])
-  __initial_conditions[grade] = __local__grade
-  __local__v_lo = v_lo
-  append!(__params, @parameters (v_lo::Real))
-  __initial_conditions[v_lo] = __local__v_lo
-  __local__v_hi = v_hi
-  append!(__params, @parameters (v_hi::Real))
-  __initial_conditions[v_hi] = __local__v_hi
+  __local__v_set = v_set
+  append!(__params, @parameters (v_set::Real), [description = "Cruise setpoint in km/h"])
+  __initial_conditions[v_set] = __local__v_set
   __local__v0 = v0
-  append!(__params, @parameters (v0::Real))
+  append!(__params, @parameters (v0::Real), [description = "Initial speed (36.1111 m/s = 130 km/h)"])
   __initial_conditions[v0] = __local__v0
   __local__tau0 = tau0
-  append!(__params, @parameters (tau0::Real))
+  append!(__params, @parameters (tau0::Real), [description = "Holding torque at 130 km/h on flat road"])
   __initial_conditions[tau0] = __local__tau0
-  __local__t_step = t_step
-  append!(__params, @parameters (t_step::Real))
-  __initial_conditions[t_step] = __local__t_step
+  __local__gradient = gradient
+  append!(__params, @parameters (gradient::Real), [description = "Gradient of the climb, tan(alpha)"])
+  __initial_conditions[gradient] = __local__gradient
+  __local__start_time = start_time
+  append!(__params, @parameters (start_time::Real), [description = "Time at which the climb begins"])
+  __initial_conditions[start_time] = __local__start_time
+  __local__duration = duration
+  append!(__params, @parameters (duration::Real), [description = "Climb duration; the road returns to flat afterwards"])
+  __initial_conditions[duration] = __local__duration
 
   ### Final Parameters (assignments)
 
@@ -141,13 +140,13 @@ command zero torque at zero error.
   ### Components
   # Subcomponent loop of type VehicleSystemsComponents.Lecture1.CruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m=m, CdA=CdA, m0=v_lo, loop_overrides...))
-  # Subcomponent demand of type BlockComponents.Sources.Step
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m0=v_set, loop_overrides...))
+  # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=v_lo, height=v_hi - v_lo, start_time=t_step, demand_overrides...))
-  # Subcomponent road of type BlockComponents.Sources.Constant
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=v_set, demand_overrides...))
+  # Subcomponent road of type VehicleSystemsComponents.Vehicle.GradeProfile
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=grade, road_overrides...))
+  push!(__systems, @named road = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=gradient, start_time=start_time, duration=duration, road_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -169,4 +168,4 @@ command zero torque at zero error.
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export CruiseLoopStep
+export CruiseClimb

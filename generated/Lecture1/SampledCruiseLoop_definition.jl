@@ -7,13 +7,14 @@
 import Moshi as __Ext__Moshi
 
 @doc Markdown.doc"""
-   CruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, m0, xi0, xd0)
+   SampledCruiseLoop(; name, theta_e, with_I, with_D, Ts, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, m0, xi0, xd0)
 
-Cruise-control loop around the longitudinal car plant.
+Cruise loop with a half-sample delay in the feedback path.
 
-The setpoint and feedback signal are both in km/h, so `k` is interpreted as N.m per km/h.
-Integral and derivative action are removed structurally when disabled; the same assembly therefore
-serves the P, PI, and PID lecture notebooks.
+Identical to `CruiseLoop` except the speed measurement reaches the controller through a
+`HalfSampleDelay`. Increasing `Ts` adds phase lag and drives the loop toward instability, which
+is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop` (`plant`,
+`controller`) so a harness reads the same signal paths.
 
 ## Parameters:
 
@@ -22,20 +23,21 @@ serves the P, PI, and PID lecture notebooks.
 | `theta_e`         | Powertrain transport delay                         | s  |   0.3 |
 | `with_I`         | Whether to include integral action                         | --  |   true |
 | `with_D`         | Whether to include derivative action                         | --  |   true |
+| `Ts`         | Sample period; the feedback is delayed by half of it                         | s  |   0.1 |
 | `k`         | Controller gain in N.m per km/h                         | --  |   56.0 |
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
 | `Ni`         |                          | --  |   0.9 |
-| `T_max`         | Physical engine torque ceiling                         | N.m  |   150.0 |
-| `y_max`         | Controller output ceiling; defaults to the physical ceiling                         | --  |   T_max |
+| `T_max`         |                          | N.m  |   150.0 |
+| `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
 | `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
-| `m`         | Vehicle mass                         | kg  |   1400.0 |
-| `CdA`         | Aerodynamic drag area (Cd * A)                         | m2  |   0.63 |
+| `m`         |                          | kg  |   1400.0 |
+| `CdA`         |                          | m2  |   0.63 |
 | `m0`         | Initial measured speed in km/h, the settled cruise the loop starts from                         | --  |   90.0 |
-| `xi0`         | Initial integrator state                         | --  |   0.0 |
+| `xi0`         |                          | --  |   0.0 |
 | `xd0`         | Initial derivative-filter state, seeded from the initial measurement                         | --  |   (wd - 1) * m0 |
 
 ## Connectors
@@ -43,12 +45,12 @@ serves the P, PI, and PID lecture notebooks.
  * `setpoint` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function CruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
+@component function SampledCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, Ts=0.1, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = CruiseLoop()
+    @named model = SampledCruiseLoop()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -90,10 +92,10 @@ serves the P, PI, and PID lecture notebooks.
   append!(__params, @parameters (Ni::Real))
   __initial_conditions[Ni] = __local__Ni
   __local__T_max = T_max
-  append!(__params, @parameters (T_max::Real), [description = "Physical engine torque ceiling"])
+  append!(__params, @parameters (T_max::Real))
   __initial_conditions[T_max] = __local__T_max
   __local__y_max = y_max
-  append!(__params, @parameters (y_max::Real), [description = "Controller output ceiling; defaults to the physical ceiling"])
+  append!(__params, @parameters (y_max::Real))
   __initial_conditions[y_max] = __local__y_max
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
@@ -105,16 +107,16 @@ serves the P, PI, and PID lecture notebooks.
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
   __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  append!(__params, @parameters (m::Real), [bounds = (0, Inf)])
   __initial_conditions[m] = __local__m
   __local__CdA = CdA
-  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A)"])
+  append!(__params, @parameters (CdA::Real))
   __initial_conditions[CdA] = __local__CdA
   __local__m0 = m0
   append!(__params, @parameters (m0::Real), [description = "Initial measured speed in km/h, the settled cruise the loop starts from"])
   __initial_conditions[m0] = __local__m0
   __local__xi0 = xi0
-  append!(__params, @parameters (xi0::Real), [description = "Initial integrator state"])
+  append!(__params, @parameters (xi0::Real))
   __initial_conditions[xi0] = __local__xi0
   __local__xd0 = xd0
   append!(__params, @parameters (xd0::Real), [description = "Initial derivative-filter state, seeded from the initial measurement"])
@@ -140,6 +142,9 @@ serves the P, PI, and PID lecture notebooks.
   # Subcomponent controller of type BlockComponents.Continuous.LimPID
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
   push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wp=wp, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
+  # Subcomponent sampler of type VehicleSystemsComponents.Lecture1.HalfSampleDelay
+  sampler_overrides = __pop_subcomponent_overrides!(__overrides, "sampler")
+  push!(__systems, @named sampler = VehicleSystemsComponents.Lecture1.HalfSampleDelay(; Ts=Ts, sampler_overrides...))
   # Subcomponent zero_ff of type BlockComponents.Sources.Constant
   zero_ff_overrides = __pop_subcomponent_overrides!(__overrides, "zero_ff")
   push!(__systems, @named zero_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_ff_overrides...))
@@ -156,7 +161,8 @@ serves the P, PI, and PID lecture notebooks.
 
   ### Equations
   push!(__eqs, connect(setpoint, controller.u_s))
-  push!(__eqs, connect(plant.v_kmh, controller.u_m))
+  push!(__eqs, connect(plant.v_kmh, sampler.u))
+  push!(__eqs, connect(sampler.y, controller.u_m))
   push!(__eqs, connect(zero_ff.y, controller.u_ff))
   push!(__eqs, connect(controller.y, plant.tau_cmd))
   push!(__eqs, connect(grade, plant.grade))
@@ -164,4 +170,4 @@ serves the P, PI, and PID lecture notebooks.
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export CruiseLoop
+export SampledCruiseLoop

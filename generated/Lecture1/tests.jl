@@ -17,7 +17,19 @@ end
 
 @testset "`VehicleSystemsComponents.Lecture1`" begin
 include("CarStepTest_test.jl")
+include("ClampingCruiseClimb_test.jl")
+include("ClampingCruiseLoop_test.jl")
+include("ClampingPID_test.jl")
+include("CruiseClimb_test.jl")
 include("CruiseLoopStep_test.jl")
 include("CruiseLoop_test.jl")
+include("FeedforwardCruise_test.jl")
+include("HalfSampleDelay_test.jl")
+include("MeasurementNoise_test.jl")
+include("SampledCruiseLoop_test.jl")
+include("SampledCruiseStep_test.jl")
+include("TestClampingPID_test.jl")
+include("TestHalfSampleDelay_test.jl")
+include("TestMeasurementNoise_test.jl")
 include("WideOpenThrottle_test.jl")
 end

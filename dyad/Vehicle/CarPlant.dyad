@@ -21,9 +21,13 @@ component CarPlant
   structural parameter theta_e::Time = 0.3
   "Peak deliverable engine torque"
   parameter T_max::Torque = 150.0
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400.0
+  "Aerodynamic drag area (Cd * A)"
+  parameter CdA::Area = 0.63
   engine = VehicleSystemsComponents.Vehicle.IdealEngine(theta_e = theta_e, T_max = T_max) {^engine}
   driveline = VehicleSystemsComponents.Vehicle.Driveline() {^driveline}
-  body = VehicleSystemsComponents.Vehicle.VehicleBody() {^body}
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m, CdA = CdA) {^body}
   vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
   tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^tokmh}
   "Rotational ground for the engine mounts and gearbox housing"

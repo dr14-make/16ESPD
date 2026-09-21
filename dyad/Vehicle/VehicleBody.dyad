@@ -10,19 +10,19 @@ gradient of the along-slope gravity term.
 """
 component VehicleBody
   "Tractive force from the driveline"
-  flange = Flange()
+  flange = Flange() {^flange}
   "Road gradient, tan(alpha)"
-  grade = RealInput()
-  mass = TranslationalComponents.Components.Mass(m = m)
+  grade = RealInput() {^grade}
+  mass = TranslationalComponents.Components.Mass(m = m) {^mass}
   # f_nominal is negative so the quadratic force acts as a load (drag) rather than a
   # propulsion: the stdlib source drives the mass with -flange.f, and its own docstring
   # states a negative nominal force is what makes it oppose motion in the positive direction.
-  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
-  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g)
-  cr_const = BlockComponents.Sources.Constant(k = f_r)
-  gradeforce = VehicleSystemsComponents.Vehicle.GradeForce(m = m)
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2) {^drag}
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g) {^rolling}
+  cr_const = BlockComponents.Sources.Constant(k = f_r) {^cr_const}
+  gradeforce = VehicleSystemsComponents.Vehicle.GradeForce(m = m) {^gradeforce}
   "Road reference for the resistance reaction forces"
-  ground = TranslationalComponents.Components.Fixed()
+  ground = TranslationalComponents.Components.Fixed() {^ground}
   "Vehicle mass"
   parameter m::Dyad.Mass = 1400.0
   "Aerodynamic drag area (Cd * A)"
@@ -36,16 +36,100 @@ component VehicleBody
   "Gravitational acceleration"
   parameter g::Acceleration = 9.80665
 relations
-  connect(flange, mass.flange_a)
-  connect(drag.flange, mass.flange_a)
-  connect(rolling.flange, mass.flange_a)
-  connect(gradeforce.flange, mass.flange_a)
-  connect(drag.support, ground.flange)
-  connect(rolling.support, ground.flange)
-  connect(gradeforce.support, ground.flange)
-  connect(cr_const.y, rolling.cr)
-  connect(grade, rolling.inclination)
-  connect(grade, gradeforce.grade)
+  connect(flange, mass.flange_a) {^id9}
+  connect(drag.flange, mass.flange_a) {^id10}
+  connect(rolling.flange, mass.flange_a) {^id11}
+  connect(gradeforce.flange, mass.flange_a) {^id12}
+  connect(drag.support, ground.flange) {^id13}
+  connect(rolling.support, ground.flange) {^id14}
+  connect(gradeforce.support, ground.flange) {^id15}
+  connect(cr_const.y, rolling.cr) {^id16}
+  connect(grade, rolling.inclination) {^id17}
+  connect(grade, gradeforce.grade) {^id18}
+metadata {
+  "_links": {
+    "flange": {
+      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    },
+    "grade": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "mass": {
+      "Dyad": {"placement": {"diagram": {"x1": 660, "x2": 760, "y1": 250, "y2": 350}}}
+    },
+    "drag": {
+      "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 450, "y1": 550, "y2": 650}}}
+    },
+    "rolling": {
+      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 250, "y2": 350}}}
+    },
+    "cr_const": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
+    "gradeforce": {
+      "Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 830, "y2": 930}}}
+    },
+    "ground": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 990, "y2": 1090}}}
+    },
+    "id9": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 410, "y": 500}, {"x": 410, "y": 300}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id10": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 410, "y": 600}, {"x": 410, "y": 300}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id11": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}],
+        "junctions": [{"x": 390, "y": 300}],
+        "path": {}
+      }
+    },
+    "id12": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 300, "y": 880}], "E": -1}, {"S": -1, "M": [], "E": 2}],
+        "junctions": [{"x": 300, "y": 300}],
+        "path": {}
+      }
+    },
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 200, "y": 720}], "E": -1}, {"S": -1, "M": [], "E": 2}],
+        "junctions": [{"x": 500, "y": 720}],
+        "path": {}
+      }
+    },
+    "id15": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 170, "y": 960}, {"x": 500, "y": 960}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id16": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 140, "y": 70}, {"x": 140, "y": 270}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id17": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 90, "y": 500}, {"x": 90, "y": 325}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id18": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 90, "y": 500}, {"x": 90, "y": 880}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
 end
 
 test component TestVehicleBody

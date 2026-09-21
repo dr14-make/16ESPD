@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct CruiseLoopTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :CruiseLoopTransient
+@kwdef mutable struct CruiseClimbTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :CruiseClimbTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 100
+  var"stop"::Float64 = 400
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -28,32 +28,33 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"Ti"::Float64 = 10.0
   var"Td"::Float64 = 0.1
   var"Nd"::Float64 = 10.0
+  # Back-calculation tracking-time factor; large values disable anti-windup
   var"Ni"::Float64 = 0.9
   var"T_max"::Float64 = 150.0
   var"y_max"::Float64 = T_max
   var"y_min"::Float64 = 0.0
   var"wp"::Float64 = 1.0
   var"wd"::Float64 = 1.0
-  # Vehicle mass
-  var"m"::Float64 = 1400.0
-  # Aerodynamic drag area (Cd * A)
-  var"CdA"::Float64 = 0.63
-  # Constant road gradient, tan(alpha)
-  var"grade"::Float64 = 0.0
-  var"v_lo"::Float64 = 90.0
-  var"v_hi"::Float64 = 110.0
-  var"v0"::Float64 = 25.0
-  var"tau0"::Float64 = 31.078
-  var"t_step"::Float64 = 0.0
-  # Flat-road 90 to 110 km/h setpoint-step scenario for `CruiseLoop`.
+  var"v_set"::Float64 = 130.0
+  var"gradient"::Float64 = 0.1
+  var"start_time"::Float64 = 30.0
+  var"duration"::Float64 = 120.0
+  # Windup scenario: cruise at 130 km/h, meet a finite 10% climb, then watch the road flatten.
   # 
-  # The engine lag is preloaded with the torque holding the initial speed. The step occurs at the
-  # start of the run, avoiding an artificial pre-step interval in which a P-only controller would
-  # command zero torque at zero error.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.CruiseLoopStep(; name=:CruiseLoopStep)
+  # Drives `CruiseLoop`'s (back-calculation) controller with a constant setpoint and a `GradeProfile`
+  # that switches on a climb at `start_time` and off again after `duration`. The climb needs more
+  # tractive force than the engine can supply, so it saturates and the car falls back to about
+  # 118 km/h. The lesson is the recovery after the climb ends: an integrator that accumulated
+  # against the saturated engine still commands acceleration once the load is gone, producing an
+  # overshoot whose size is set by how long the hill lasted.
+  # 
+  # Set `Ni` large (e.g. 1e6) to make the back-calculation correction negligible and reproduce the
+  # no-anti-windup case; leave it at 0.9 for the back-calculation case. Set `y_max` below `T_max`
+  # to clamp the controller under the physical ceiling, as notebook 06's closing section does.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.CruiseClimb(; name=:CruiseClimb)
 end
 
-function DyadInterface.run_analysis(spec::CruiseLoopTransientSpec)
+function DyadInterface.run_analysis(spec::CruiseClimbTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.k => spec.var"k")
@@ -66,19 +67,15 @@ function DyadInterface.run_analysis(spec::CruiseLoopTransientSpec)
   push!(overrides, no_namespace_model.y_min => spec.var"y_min")
   push!(overrides, no_namespace_model.wp => spec.var"wp")
   push!(overrides, no_namespace_model.wd => spec.var"wd")
-  push!(overrides, no_namespace_model.m => spec.var"m")
-  push!(overrides, no_namespace_model.CdA => spec.var"CdA")
-  push!(overrides, no_namespace_model.grade => spec.var"grade")
-  push!(overrides, no_namespace_model.v_lo => spec.var"v_lo")
-  push!(overrides, no_namespace_model.v_hi => spec.var"v_hi")
-  push!(overrides, no_namespace_model.v0 => spec.var"v0")
-  push!(overrides, no_namespace_model.tau0 => spec.var"tau0")
-  push!(overrides, no_namespace_model.t_step => spec.var"t_step")
+  push!(overrides, no_namespace_model.v_set => spec.var"v_set")
+  push!(overrides, no_namespace_model.gradient => spec.var"gradient")
+  push!(overrides, no_namespace_model.start_time => spec.var"start_time")
+  push!(overrides, no_namespace_model.duration => spec.var"duration")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )
   run_analysis(base_spec)
 end
 
-CruiseLoopTransient(;kwargs...) = run_analysis(CruiseLoopTransientSpec(;kwargs...))
-export CruiseLoopTransient, CruiseLoopTransientSpec
+CruiseClimbTransient(;kwargs...) = run_analysis(CruiseClimbTransientSpec(;kwargs...))
+export CruiseClimbTransient, CruiseClimbTransientSpec

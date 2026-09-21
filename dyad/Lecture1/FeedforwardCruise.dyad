@@ -1,0 +1,74 @@
+"""
+Open-loop feedforward cruise: a fixed torque computed from the nominal force balance.
+
+The command is a constant `tau_ff` — the torque that holds the target speed on the nominal car
+on flat road, run backwards through the driveline from the steady-state force balance. There is
+no measurement and no correction: the plant is driven open loop, so the settled speed is exactly
+right only when the world matches the model the torque was computed for. `grade`, `m` and `CdA`
+are exposed so notebook 02 can perturb that world and show the open-loop error each perturbation
+produces.
+
+The lag state is preloaded with `tau_ff` and the speed with `v0`, so the nominal run begins
+already settled instead of spending the vehicle's ~60 s time constant getting there.
+"""
+component FeedforwardCruise
+  "Feedforward torque holding the target speed on the nominal car"
+  parameter tau_ff::Torque = 31.078
+  "Constant road gradient, tan(alpha)"
+  parameter grade::Real = 0.0
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400.0
+  "Aerodynamic drag area (Cd * A)"
+  parameter CdA::Area = 0.63
+  "Initial speed (25 m/s = 90 km/h)"
+  parameter v0::Velocity = 25.0
+  plant = VehicleSystemsComponents.Vehicle.CarPlant(m = m, CdA = CdA)
+  "Fixed feedforward torque command"
+  cmd = BlockComponents.Sources.Constant(k = tau_ff)
+  "Constant road gradient"
+  road = BlockComponents.Sources.Constant(k = grade)
+relations
+  connect(cmd.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  initial plant.body.mass.s = 0.0
+  initial plant.body.mass.v = v0
+  initial plant.engine.lag.x = tau_ff
+metadata {
+  "Dyad": {
+    "tests": {
+      "nominal": {
+        "stop": 400,
+        "atol": {"plant.v_kmh": 0.05, "plant.engine.limiter.y": 0.001},
+        "expect": {
+          "initial": {"plant.v_kmh": 90.0, "plant.engine.limiter.y": 31.078},
+          "final": {"plant.v_kmh": 90.0, "plant.engine.limiter.y": 31.078},
+          "signals": ["plant.v_kmh", "plant.engine.limiter.y", "cmd.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis FeedforwardCruiseTransient
+  # 400 s is several times the car's ~60 s time constant, so the disturbed open-loop runs of
+  # notebook 02 reach their (wrong) steady state within the window.
+  extends TransientAnalysis(stop = 400)
+  "Feedforward torque holding the target speed on the nominal car"
+  parameter tau_ff::Torque = 31.078
+  "Constant road gradient, tan(alpha)"
+  parameter grade::Real = 0.0
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400.0
+  "Aerodynamic drag area (Cd * A)"
+  parameter CdA::Area = 0.63
+  "Initial speed (25 m/s = 90 km/h)"
+  parameter v0::Velocity = 25.0
+  model = VehicleSystemsComponents.Lecture1.FeedforwardCruise(
+    tau_ff = tau_ff,
+    grade = grade,
+    m = m,
+    CdA = CdA,
+    v0 = v0)
+relations
+end

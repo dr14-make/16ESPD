@@ -8,8 +8,8 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct CruiseLoopTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :CruiseLoopTransient
+@kwdef mutable struct SampledCruiseTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :SampledCruiseTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
   var"stop"::Float64 = 100
@@ -24,6 +24,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"respecialize"::Bool = false
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
+  var"Ts"::Float64 = 0.1
   var"k"::Float64 = 56.0
   var"Ti"::Float64 = 10.0
   var"Td"::Float64 = 0.1
@@ -34,28 +35,22 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"y_min"::Float64 = 0.0
   var"wp"::Float64 = 1.0
   var"wd"::Float64 = 1.0
-  # Vehicle mass
-  var"m"::Float64 = 1400.0
-  # Aerodynamic drag area (Cd * A)
-  var"CdA"::Float64 = 0.63
-  # Constant road gradient, tan(alpha)
-  var"grade"::Float64 = 0.0
   var"v_lo"::Float64 = 90.0
   var"v_hi"::Float64 = 110.0
   var"v0"::Float64 = 25.0
   var"tau0"::Float64 = 31.078
   var"t_step"::Float64 = 0.0
-  # Flat-road 90 to 110 km/h setpoint-step scenario for `CruiseLoop`.
+  # Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
   # 
-  # The engine lag is preloaded with the torque holding the initial speed. The step occurs at the
-  # start of the run, avoiding an artificial pre-step interval in which a P-only controller would
-  # command zero torque at zero error.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.CruiseLoopStep(; name=:CruiseLoopStep)
+  # Mirrors `CruiseLoopStep` but through the sampled loop, so notebook 09 can sweep `Ts` and watch
+  # the step response ring and then diverge as the half-sample phase lag eats the stability margin.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.SampledCruiseStep(; name=:SampledCruiseStep)
 end
 
-function DyadInterface.run_analysis(spec::CruiseLoopTransientSpec)
+function DyadInterface.run_analysis(spec::SampledCruiseTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
+  push!(overrides, no_namespace_model.Ts => spec.var"Ts")
   push!(overrides, no_namespace_model.k => spec.var"k")
   push!(overrides, no_namespace_model.Ti => spec.var"Ti")
   push!(overrides, no_namespace_model.Td => spec.var"Td")
@@ -66,9 +61,6 @@ function DyadInterface.run_analysis(spec::CruiseLoopTransientSpec)
   push!(overrides, no_namespace_model.y_min => spec.var"y_min")
   push!(overrides, no_namespace_model.wp => spec.var"wp")
   push!(overrides, no_namespace_model.wd => spec.var"wd")
-  push!(overrides, no_namespace_model.m => spec.var"m")
-  push!(overrides, no_namespace_model.CdA => spec.var"CdA")
-  push!(overrides, no_namespace_model.grade => spec.var"grade")
   push!(overrides, no_namespace_model.v_lo => spec.var"v_lo")
   push!(overrides, no_namespace_model.v_hi => spec.var"v_hi")
   push!(overrides, no_namespace_model.v0 => spec.var"v0")
@@ -80,5 +72,5 @@ function DyadInterface.run_analysis(spec::CruiseLoopTransientSpec)
   run_analysis(base_spec)
 end
 
-CruiseLoopTransient(;kwargs...) = run_analysis(CruiseLoopTransientSpec(;kwargs...))
-export CruiseLoopTransient, CruiseLoopTransientSpec
+SampledCruiseTransient(;kwargs...) = run_analysis(SampledCruiseTransientSpec(;kwargs...))
+export SampledCruiseTransient, SampledCruiseTransientSpec

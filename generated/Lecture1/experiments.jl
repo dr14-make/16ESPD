@@ -10,6 +10,18 @@ end
 
 
 include("CarStepTest_experiment.jl")
+include("ClampingCruiseClimb_experiment.jl")
+include("ClampingCruiseLoop_experiment.jl")
+include("ClampingPID_experiment.jl")
+include("CruiseClimb_experiment.jl")
 include("CruiseLoopStep_experiment.jl")
 include("CruiseLoop_experiment.jl")
+include("FeedforwardCruise_experiment.jl")
+include("HalfSampleDelay_experiment.jl")
+include("MeasurementNoise_experiment.jl")
+include("SampledCruiseLoop_experiment.jl")
+include("SampledCruiseStep_experiment.jl")
+include("TestClampingPID_experiment.jl")
+include("TestHalfSampleDelay_experiment.jl")
+include("TestMeasurementNoise_experiment.jl")
 include("WideOpenThrottle_experiment.jl")

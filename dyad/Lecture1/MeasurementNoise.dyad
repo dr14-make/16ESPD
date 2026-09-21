@@ -1,0 +1,67 @@
+"""
+Additive measurement noise: a deterministic sum of sines.
+
+Adds broadband noise to a signal (the km/h speed measurement in notebook 07) so the notebook can
+show what the controller's derivative term does with a noisy input. The noise is a fixed sum of
+sinusoids, never a random-number generator: the notebooks ship with executed outputs, and a plot
+that changes between runs is worthless in a lecture.
+
+Every component has the same amplitude and the frequencies are spread over about a decade and a
+half. That is deliberate. The filtered derivative's gain rises with frequency, so with equal
+amplitudes the high-frequency components dominate the derivative output — the amplification shows
+up as a function of frequency rather than of amplitude, which is the point notebook 07 makes.
+"""
+component MeasurementNoise
+  extends BlockComponents.Interfaces.SISO
+  "Amplitude of each sinusoid; equal across components so amplification tracks frequency, not amplitude"
+  parameter amplitude::Real = 0.2
+  "Component frequencies in Hz, spread over ~1.5 decades"
+  parameter f1::Frequency = 0.5
+  parameter f2::Frequency = 1.0
+  parameter f3::Frequency = 2.0
+  parameter f4::Frequency = 4.0
+  parameter f5::Frequency = 8.0
+  parameter f6::Frequency = 16.0
+  # Fixed, non-zero phase offsets so the components do not all peak at t = 0 and masquerade as a
+  # single spike. Any fixed set works; these keep the sum reproducible run to run.
+  parameter p1::Real = 0.0
+  parameter p2::Real = 0.7
+  parameter p3::Real = 1.5
+  parameter p4::Real = 2.2
+  parameter p5::Real = 3.0
+  parameter p6::Real = 3.9
+relations
+  y = u + amplitude * (
+    sin(2 * pi * f1 * time + p1) +
+    sin(2 * pi * f2 * time + p2) +
+    sin(2 * pi * f3 * time + p3) +
+    sin(2 * pi * f4 * time + p4) +
+    sin(2 * pi * f5 * time + p5) +
+    sin(2 * pi * f6 * time + p6))
+end
+
+test component TestMeasurementNoise
+  "Constant carrier the noise rides on"
+  carrier = BlockComponents.Sources.Constant(k = 90.0)
+  noise = VehicleSystemsComponents.Lecture1.MeasurementNoise()
+relations
+  connect(carrier.y, noise.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "sum_of_sines": {
+        # stop = 2 s: every default frequency completes a whole number of cycles by then
+        # (0.5..16 Hz all give integer counts at t = 2), so the deterministic sum returns to
+        # its t = 0 value and the endpoints are exact rather than solver-dependent.
+        "stop": 2,
+        "atol": {"noise.y": 0.001},
+        "expect": {
+          "initial": {"noise.y": 90.38071258530745},
+          "final": {"noise.y": 90.38071258530745},
+          "signals": ["noise.y"]
+        }
+      }
+    }
+  }
+}
+end

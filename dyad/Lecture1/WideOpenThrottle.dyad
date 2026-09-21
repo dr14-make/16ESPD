@@ -7,14 +7,14 @@ initial conditions, so notebook 01 can run it to terminal speed and read the tra
 The command is well above the torque ceiling so the engine clamps at its limit throughout.
 """
 component WideOpenThrottle
-  plant = VehicleSystemsComponents.Vehicle.CarPlant()
+  plant = VehicleSystemsComponents.Vehicle.CarPlant() {^plant}
   "Full throttle: commanded torque above the ceiling so the engine clamps at T_max"
-  cmd = BlockComponents.Sources.Constant(k = 300.0)
+  cmd = BlockComponents.Sources.Constant(k = 300.0) {^cmd}
   "Flat road"
-  road = BlockComponents.Sources.Constant(k = 0.0)
+  road = BlockComponents.Sources.Constant(k = 0.0) {^road}
 relations
-  connect(cmd.y, plant.tau_cmd)
-  connect(road.y, plant.grade)
+  connect(cmd.y, plant.tau_cmd) {^id4}
+  connect(road.y, plant.grade) {^id5}
   initial plant.body.mass.s = 0.0
   initial plant.body.mass.v = 0.0
   initial plant.engine.lag.x = 0.0
@@ -25,12 +25,23 @@ metadata {
         "stop": 300,
         "atol": {"plant.v_kmh": 0.05, "plant.engine.limiter.y": 0.001},
         "expect": {
-          "initial": {"plant.v_kmh": 0.0},
-          "final": {"plant.v_kmh": 246.40, "plant.engine.limiter.y": 150.0},
+          "initial": {"plant.v_kmh": 0},
+          "final": {"plant.v_kmh": 246.4, "plant.engine.limiter.y": 150},
           "signals": ["plant.v_kmh", "plant.engine.limiter.y", "cmd.y"]
         }
       }
     }
+  },
+  "_links": {
+    "plant": {
+      "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 20, "y2": 120}}}
+    },
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
+    "road": {
+      "Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 290, "y2": 390}}}
+    },
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 210, "y": 340}], "E": 2}], "path": {}}}
   }
 }
 end

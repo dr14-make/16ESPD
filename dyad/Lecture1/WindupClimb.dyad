@@ -1,0 +1,285 @@
+"""
+Cruise-control loop around the car, closed with the clamping controller.
+
+Identical to `CruiseLoop` except the controller is `ClampingPID` (conditional-integration
+anti-windup) rather than `LimPID` (back-calculation). The subcomponent names match `CruiseLoop`
+— `plant`, `controller`, and `controller.integrator` — so a harness can read the same signal
+paths regardless of which anti-windup scheme is in the loop.
+"""
+component ClampingCruiseLoop
+  "Vehicle-speed setpoint in km/h"
+  setpoint = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Powertrain transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Whether to include integral action"
+  structural parameter with_I::Boolean = true
+  "Whether to include derivative action"
+  structural parameter with_D::Boolean = true
+  "Controller gain in N.m per km/h"
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  "Physical engine torque ceiling"
+  parameter T_max::Torque = 150.0
+  "Controller output ceiling; defaults to the physical ceiling"
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400.0
+  "Aerodynamic drag area (Cd * A)"
+  parameter CdA::Area = 0.63
+  "Initial measured speed in km/h, the settled cruise the loop starts from"
+  parameter m0::Real = 90.0
+  "Initial integrator state"
+  parameter xi0::Real = 0.0
+  "Initial derivative-filter state, seeded from the initial measurement"
+  parameter xd0::Real = (wd - 1) * m0
+  plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA)
+  controller = VehicleSystemsComponents.Lecture1.ClampingPID(
+    with_I = with_I,
+    with_D = with_D,
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd,
+    xi0 = xi0,
+    xd0 = xd0)
+  "No separate feedforward path in this feedback loop"
+  zero_ff = BlockComponents.Sources.Constant(k = 0.0)
+relations
+  connect(setpoint, controller.u_s)
+  connect(plant.v_kmh, controller.u_m)
+  connect(zero_ff.y, controller.u_ff)
+  connect(controller.y, plant.tau_cmd)
+  connect(grade, plant.grade)
+end
+
+"""
+Windup scenario: cruise at 130 km/h, meet a finite 10% climb, then watch the road flatten.
+
+Drives `CruiseLoop`'s (back-calculation) controller with a constant setpoint and a `GradeProfile`
+that switches on a climb at `start_time` and off again after `duration`. The climb needs more
+tractive force than the engine can supply, so it saturates and the car falls back to about
+118 km/h. The lesson is the recovery after the climb ends: an integrator that accumulated
+against the saturated engine still commands acceleration once the load is gone, producing an
+overshoot whose size is set by how long the hill lasted.
+
+Set `Ni` large (e.g. 1e6) to make the back-calculation correction negligible and reproduce the
+no-anti-windup case; leave it at 0.9 for the back-calculation case. Set `y_max` below `T_max`
+to clamp the controller under the physical ceiling, as notebook 06's closing section does.
+"""
+component CruiseClimb
+  structural parameter theta_e::Time = 0.3
+  structural parameter with_I::Boolean = true
+  structural parameter with_D::Boolean = true
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  "Back-calculation tracking-time factor; large values disable anti-windup"
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  "Cruise setpoint in km/h"
+  parameter v_set::Real = 130.0
+  "Initial speed (36.1111 m/s = 130 km/h)"
+  parameter v0::Velocity = 36.111111111111114
+  "Holding torque at 130 km/h on flat road"
+  parameter tau0::Torque = 50.9693
+  "Gradient of the climb, tan(alpha)"
+  parameter gradient::Real = 0.10
+  "Time at which the climb begins"
+  parameter start_time::Time = 30.0
+  "Climb duration; the road returns to flat afterwards"
+  parameter duration::Time = 120.0
+  loop = VehicleSystemsComponents.Lecture1.CruiseLoop(
+    theta_e = theta_e,
+    with_I = with_I,
+    with_D = with_D,
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    Ni = Ni,
+    T_max = T_max,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd,
+    m0 = v_set)
+  demand = BlockComponents.Sources.Constant(k = v_set)
+  road = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = gradient, start_time = start_time, duration = duration)
+relations
+  connect(demand.y, loop.setpoint)
+  connect(road.y, loop.grade)
+  initial loop.plant.body.mass.s = 0.0
+  initial loop.plant.body.mass.v = v0
+  initial loop.plant.engine.lag.x = tau0
+metadata {
+  "Dyad": {
+    "tests": {
+      "backcalc": {
+        "stop": 400,
+        "atol": {"loop.plant.v_kmh": 0.1},
+        "expect": {
+          "initial": {"loop.plant.v_kmh": 130.0},
+          "final": {"loop.plant.v_kmh": 130.0},
+          "signals": ["loop.plant.v_kmh", "loop.controller.y", "loop.plant.engine.limiter.y", "loop.controller.integrator.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+"""
+The clamping counterpart of `CruiseClimb`: same scenario, closed with `ClampingCruiseLoop`.
+
+Signal paths match `CruiseClimb` — `loop.plant.v_kmh`, `loop.controller.y`,
+`loop.plant.engine.limiter.y`, `loop.controller.integrator.y` — so notebook 06 reads all three
+anti-windup cases the same way, swapping only the analysis.
+"""
+component ClampingCruiseClimb
+  structural parameter theta_e::Time = 0.3
+  structural parameter with_I::Boolean = true
+  structural parameter with_D::Boolean = true
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  "Cruise setpoint in km/h"
+  parameter v_set::Real = 130.0
+  "Initial speed (36.1111 m/s = 130 km/h)"
+  parameter v0::Velocity = 36.111111111111114
+  "Holding torque at 130 km/h on flat road"
+  parameter tau0::Torque = 50.9693
+  "Gradient of the climb, tan(alpha)"
+  parameter gradient::Real = 0.10
+  "Time at which the climb begins"
+  parameter start_time::Time = 30.0
+  "Climb duration; the road returns to flat afterwards"
+  parameter duration::Time = 120.0
+  loop = VehicleSystemsComponents.Lecture1.ClampingCruiseLoop(
+    theta_e = theta_e,
+    with_I = with_I,
+    with_D = with_D,
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    T_max = T_max,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd,
+    m0 = v_set)
+  demand = BlockComponents.Sources.Constant(k = v_set)
+  road = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = gradient, start_time = start_time, duration = duration)
+relations
+  connect(demand.y, loop.setpoint)
+  connect(road.y, loop.grade)
+  initial loop.plant.body.mass.s = 0.0
+  initial loop.plant.body.mass.v = v0
+  initial loop.plant.engine.lag.x = tau0
+metadata {
+  "Dyad": {
+    "tests": {
+      "clamping": {
+        "stop": 400,
+        "atol": {"loop.plant.v_kmh": 0.1},
+        "expect": {
+          "initial": {"loop.plant.v_kmh": 130.0},
+          "final": {"loop.plant.v_kmh": 130.0},
+          "signals": ["loop.plant.v_kmh", "loop.controller.y", "loop.plant.engine.limiter.y", "loop.controller.integrator.y"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis CruiseClimbTransient
+  # The climb ends at start_time + duration = 150 s; the window runs well past it so the whole
+  # post-climb excursion (the windup unwinding) is captured.
+  extends TransientAnalysis(stop = 400)
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  "Back-calculation tracking-time factor; large values disable anti-windup"
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter v_set::Real = 130.0
+  parameter gradient::Real = 0.10
+  parameter start_time::Time = 30.0
+  parameter duration::Time = 120.0
+  model = VehicleSystemsComponents.Lecture1.CruiseClimb(
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    Ni = Ni,
+    T_max = T_max,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd,
+    v_set = v_set,
+    gradient = gradient,
+    start_time = start_time,
+    duration = duration)
+relations
+end
+
+analysis ClampingCruiseClimbTransient
+  extends TransientAnalysis(stop = 400)
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter v_set::Real = 130.0
+  parameter gradient::Real = 0.10
+  parameter start_time::Time = 30.0
+  parameter duration::Time = 120.0
+  model = VehicleSystemsComponents.Lecture1.ClampingCruiseClimb(
+    k = k,
+    Ti = Ti,
+    Td = Td,
+    Nd = Nd,
+    T_max = T_max,
+    y_max = y_max,
+    y_min = y_min,
+    wp = wp,
+    wd = wd,
+    v_set = v_set,
+    gradient = gradient,
+    start_time = start_time,
+    duration = duration)
+relations
+end
