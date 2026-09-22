@@ -150,6 +150,25 @@ Measured at 12.1 s to serving HTML, 29.1 s to kernel ready, 31.2 s to first real
 notebook loading **no** packages. The notebook this course needs will be far worse. Issues 010
 and 012 make that legible rather than shorter; cached snapshots are deliberately deferred.
 
+## Found while pinning 018
+
+**Pluto's client retries a refused websocket forever, so `connect` never settles.** Not a
+rejection, not a timeout — it keeps trying. `deck.js` awaits it before registering anything, so
+against an unreachable Pluto the `catch` beside the await never runs and the
+`onConnectionChange` handler below it is never reached. `connected` stays `true` and `kernel`
+stays `null`, which `kernelStatus` reads as a cold start. The chrome says "the kernel is
+starting; cards fill in when it is" over a kernel that is dead, and goes on saying it — watched
+for 96 seconds. Issue 021 carries it. The cues render throughout, which is the whole point of
+parsing their markdown in the browser.
+
+**A page's `load` event fires while the deck's module is still evaluating.** A module script
+delays `load` until it has *started*, not finished, and `deck.js` awaits its kernel at the top
+level. A key pressed immediately after `navigate` therefore reaches a page that has not bound
+its listeners, and the test fails in a way that looks like the key handler being wrong. Wait on
+something the module sets after the binding instead — `document.body.dataset.kernel` is the one
+the suite uses, and against a live kernel `=== "ready"` doubles as the assertion that a refresh
+found the kernel still running. This will bite the next test that navigates and presses.
+
 ## Found while fixing 017 and implementing 016
 
 **A blank plot holds all of its data.** Four of the lecture deck's seven plots drew nothing.

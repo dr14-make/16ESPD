@@ -35,6 +35,7 @@ call open.
 | [018](issues/018-speaker-cues-and-the-on-slide-overlay.md) | Speaker cues and the on-slide overlay | `enhancement` | `high` | `m` | yes | 003, 012 | **done** |
 | [019](issues/019-cue-only-speaker-window.md) | Cue-only speaker window | `enhancement` | `medium` | `s` | no | 018 | todo |
 | [020](issues/020-on-demand-clipping-check-across-every-card.md) | On-demand clipping check across every card | `enhancement` `tech-debt` | `medium` | `s` | yes | 011, 012 | todo |
+| [021](issues/021-the-deck-cannot-tell-a-dead-kernel-from-a-cold-one.md) | The deck cannot tell a dead kernel from a cold one | `bug` | `high` | `s` | no | 012 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
@@ -108,6 +109,12 @@ nowhere else to live.
 
 020 was found while designing those and is independent of both: this plan says the lecture
 deck's geometry was measured by hand, and nothing has measured it since.
+
+Pinning 018's remaining conditions turned up 021. Asserting that the cues render against a
+Pluto that is not there is the only test that puts the deck in front of an unreachable kernel,
+and it showed the chrome reporting a cold start over a dead one — indefinitely. The cues
+themselves were unaffected, so 018 is **done** on its own terms; what 021 carries is the chrome
+lying about everything else on the slide.
 
 ## Order
 
