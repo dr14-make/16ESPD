@@ -166,6 +166,26 @@ awaits `connect` at the top level, so anything constructed after that await does
 deck whose Pluto is unreachable — which is the deck the speaker window matters most to. The
 publisher is built beside the cues, above the await, for the same reason they are.
 
+## Found while building 019
+
+**`present` exits 1 on an interrupt, about half the time, and the exception is in a background
+task.** Three clean runs on main before 019's tests; three clean and three `exit 1` in six runs
+with them. 019 added no Julia code — its browser work lengthens the window the interrupt lands
+in, which is what made a standing race visible, the same way 017's duplicate modebar only
+showed once a card was on two slides. The one trace caught ends in `jl_finish_task` /
+`start_task`. `_block_until_interrupted` catches an `InterruptException` in the main task and
+nothing covers it arriving elsewhere. Issue 023.
+
+**Leaving browser pages open across testsets is not what causes it.** That was the first
+theory — that Chrome's teardown dropping every tab at once while `present` was being
+interrupted loaded the exit path — and closing each page per testset did not stop the flake.
+Recorded because it is a plausible theory that costs a day, and the evidence against it is
+cheap to state and expensive to re-gather.
+
+**`earlyoom` deaths are a different signature and not evidence.** SIGTERM and exit 143, against
+this flake's exit 1. Three runs during the investigation died that way on a box whose swap was
+exhausted, and reading them as the flake sends you looking in the wrong place.
+
 ## Found while pinning 018
 
 **Pluto's client retries a refused websocket forever, so `connect` never settles.** Not a

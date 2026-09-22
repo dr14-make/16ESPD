@@ -37,6 +37,7 @@ call open.
 | [020](issues/020-on-demand-clipping-check-across-every-card.md) | On-demand clipping check across every card | `enhancement` `tech-debt` | `medium` | `s` | yes | 011, 012 | todo |
 | [021](issues/021-the-deck-cannot-tell-a-dead-kernel-from-a-cold-one.md) | The deck cannot tell a dead kernel from a cold one | `bug` | `high` | `s` | yes | 012 | todo |
 | [022](issues/022-what-is-coming-next-on-the-speaker-page.md) | What is coming next, on the speaker page | `enhancement` | `low` | `s` | yes | 019 | todo |
+| [023](issues/023-ctrl-c-does-not-always-stop-present-cleanly.md) | Ctrl-C does not always stop `present` cleanly | `bug` | `high` | `m` | no | 006 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
