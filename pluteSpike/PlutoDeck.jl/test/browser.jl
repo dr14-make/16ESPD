@@ -187,9 +187,11 @@ function with_present(body, deck_path::AbstractString)
         stopped = killed ? "kill" :
             process.exitcode == 0 ? "interrupt" : "exit $(process.exitcode)"
         # A shutdown that did not finish reads as `exit 1` and nothing else, and what threw is
-        # in the process's own output — which every other path here already reports.
+        # in the process's own output — which every other path here already reports. It goes in
+        # the message rather than beside it, because a trace passed as a log value is shown
+        # middle-elided and the elided middle is the part that names what threw.
         stopped == "interrupt" ||
-            @warn "present did not stop cleanly" stopped output = read(log, String)
+            @warn "present did not stop cleanly ($stopped), and said:\n" * read(log, String)
     end
     return stopped
 end
