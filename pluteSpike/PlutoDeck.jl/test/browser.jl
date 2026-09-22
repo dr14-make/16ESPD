@@ -28,6 +28,10 @@ kernel is pointed at it.
 function browser_workspace()
     workspace = mktempdir()
     cp(BROWSER_NOTEBOOK, joinpath(workspace, "browser.jl"))
+    # Every construct the reveal.js deck's own notes use, so that what renders here is what a
+    # lecturer already writes. Long enough to overflow the panel, which is the normal case.
+    mkpath(joinpath(workspace, "notes"))
+    write(joinpath(workspace, "notes", "wave.md"), CUE_MARKDOWN)
     # The plot is placed on both slides on purpose, and it is the second placement every
     # assertion about it reads. One cell rendered twice is the case that breaks a payload the
     # two draws share, and the second copy is also painted while its slide is hidden, which is
@@ -39,6 +43,7 @@ function browser_workspace()
       "slides": [
         {
           "title": "A wave you can drive",
+          "notes": "notes/wave.md",
           "cards": [
             { "card": "frequency", "x": 0, "y": 0, "w": 4, "h": 2 },
             { "card": "readout", "x": 4, "y": 0, "w": 4, "h": 2 },
@@ -57,6 +62,39 @@ function browser_workspace()
     """)
     return load_deck(joinpath(workspace, "browser.deck.json"))
 end
+
+"""
+The cues the browser reads, carrying the markdown a cue is actually written in.
+
+`CUE_SENTENCE` is asserted against the rendered panel, and against everywhere it must not
+appear: a cue is for the lecturer, and the room is looking at the same screen.
+"""
+const CUE_SENTENCE = "nothing here is precomputed"
+
+const CUE_MARKDOWN = """
+**Beat:** the wave, and the slider that drives it. ~4 minutes.
+
+Open on *one* cycle and say what the axis is before touching anything. Then drag `freq` and
+let the room watch the period halve. Drag [the slider](https://example.invalid/cue) rather
+than typing a number — the point is that the kernel re-runs while they watch.
+
+- start at one cycle
+  - read the axis out loud
+  - ask what four cycles will look like *before* dragging
+- drag to four
+  - the readout card follows, and so does the plot
+- if the plot does not move, the kernel is still warming; keep talking
+
+The sentence to land is that **$CUE_SENTENCE**: drag the slider and the whole notebook re-runs
+between one frame and the next. That is the difference between this and a slide with a picture
+of a plot on it.
+
+**If a student asks** why the plot is interactive at all, it is Plotly, and the modebar is
+theirs to use — zoom is not a trap.
+
+**If the kernel dies** mid-lecture, these cues keep rendering, because the browser parsed
+them. That is the whole reason they are not a notebook cell.
+"""
 
 """
     free_port() -> Int
@@ -183,6 +221,12 @@ The deck places the plot cell on both slides, so a bare selector matches the cop
 that is showing — which is the one that would still be drawn if a shared payload were broken.
 """
 const HIDDEN_PLOT = """document.querySelectorAll('[data-card="wave"]')[1]"""
+
+"Whether the cue panel is showing."
+const CUES_SHOWING = """!document.getElementById("speaker-cues").hidden"""
+
+"What the cue panel is reading out, as a lecturer sees it."
+const CUE_TEXT = """document.getElementById("cue-body").textContent"""
 
 "Move the frequency slider the way a hand would, through the event Pluto's bond listener waits on."
 const MOVE_THE_SLIDER = """
@@ -501,6 +545,91 @@ const MOVE_THE_SLIDER = """
                     # anything is wrong, and the deck looks healthy showing six error boxes.
                     @test evaluate(browser, view,
                         """document.querySelectorAll(".card jlerror").length""") == 0
+                end
+
+                @testset "a key puts the slide's cues over it, and takes them away again" begin
+                    @test evaluate(browser, view, CUES_SHOWING) === false
+                    # A key nothing names is a key nobody presses, so the chrome carries it
+                    # the way it carries the buttons that move the deck.
+                    @test occursin("(C)", evaluate(browser, view,
+                        """document.querySelector("#deck-nav #toggle-cues").textContent"""))
+
+                    # The cue key follows the rule the arrow keys already do: a lecturer typing
+                    # in a widget is typing, not opening a panel over the slide.
+                    focus(browser, view, """[data-card="frequency"] bond input""")
+                    press(browser, view, "c")
+                    @test evaluate(browser, view, CUES_SHOWING) === false
+
+                    evaluate(browser, view, "document.activeElement.blur()")
+                    press(browser, view, "c")
+                    @test evaluate(browser, view, CUES_SHOWING) === true
+                    @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
+                    @test evaluate(browser, view,
+                        """document.getElementById("toggle-cues").getAttribute("aria-pressed")""") == "true"
+
+                    press(browser, view, "c")
+                    @test evaluate(browser, view, CUES_SHOWING) === false
+                end
+
+                @testset "a cue renders as markdown, not as the text a lecturer typed" begin
+                    press(browser, view, "c")
+                    cue = """document.getElementById("cue-body")"""
+
+                    @test evaluate(browser, view, "$cue.querySelectorAll('strong').length") > 0
+                    @test evaluate(browser, view, "$cue.querySelectorAll('em').length") > 0
+                    @test evaluate(browser, view, "$cue.querySelector('code').textContent") == "freq"
+                    @test evaluate(browser, view, "$cue.querySelector('a').getAttribute('href')") ==
+                        "https://example.invalid/cue"
+                    # The nested list is the construct a hand-written parser renders flat, with
+                    # no error, in front of a room — which is why one is vendored.
+                    @test evaluate(browser, view, "$cue.querySelectorAll('ul ul > li').length") == 3
+                    @test !occursin("**", evaluate(browser, view, CUE_TEXT))
+                end
+
+                @testset "the panel scrolls its own overflow rather than the page" begin
+                    # Several hundred words is the normal length of a cue, and the panel is
+                    # fixed over a slide whose geometry must not move to make room for it.
+                    @test evaluate(browser, view, """
+                        getComputedStyle(document.getElementById("speaker-cues")).position
+                        """) == "fixed"
+                    @test evaluate(browser, view, """
+                        (() => {
+                          const panel = document.getElementById("speaker-cues")
+                          return panel.scrollHeight > panel.clientHeight
+                        })()
+                        """) === true
+                end
+
+                @testset "paging with the cues open moves them to the new slide" begin
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+
+                    press(browser, view, "ArrowRight")
+
+                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
+                    @test evaluate(browser, view, CUES_SHOWING) === true
+                    # Slide 2 names no cues, and an empty panel is indistinguishable from a
+                    # panel that failed to render.
+                    @test !occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
+                    @test evaluate(browser, view,
+                        """!!document.querySelector("#cue-body .cue-absent")""") === true
+
+                    press(browser, view, "ArrowLeft")
+                    @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
+
+                    press(browser, view, "c")
+                end
+
+                @testset "cue text never reaches a slide, nor the cards the deck publishes" begin
+                    # The room is looking at the same screen the lecturer is: a cue that leaks
+                    # onto a slide, or into a card, is the one failure worse than no cues.
+                    @test !occursin(CUE_SENTENCE,
+                        evaluate(browser, view, """document.getElementById("slides").textContent"""))
+                    @test evaluate(browser, view, """
+                        (async () => {
+                          const deck = await fetch("/api/deck").then((r) => r.json())
+                          return JSON.stringify(deck.cards).includes($(repr(CUE_SENTENCE)))
+                        })()
+                        """) === false
                 end
 
                 @testset "the deck reports no console error at all" begin

@@ -8,7 +8,7 @@ const GRID_COLUMNS = 12
 
 "The keys a card placement may carry. `snapshot` names a cached rendering; the loader carries it without interpreting it."
 const CARD_PLACEMENT_KEYS = ("card", "x", "y", "w", "h", "snapshot")
-const SLIDE_KEYS = ("title", "cards")
+const SLIDE_KEYS = ("title", "notes", "cards")
 const DECK_KEYS = ("notebook", "preamble", "slides")
 
 """
@@ -26,16 +26,21 @@ struct CardPlacement
 end
 
 """
-    Slide(title, cards)
+    Slide(title, notes, cards)
 
 One slide: the cards placed on it, in the order the deck file lists them.
 
 `title` is the deck's own heading for the slide, or `nothing` to leave it numbered. It lives
 here rather than in the notebook because one notebook backs several decks — the full lecture,
 a revision deck, a student-facing cut — and each titles the same cards for its own audience.
+
+`notes` is the resolved path of the slide's speaker cues, or `nothing`. The path is held, never
+the text: a cue rewritten five minutes before a lecture has to cost a browser refresh rather
+than a kernel restart, so the file is read when `/api/deck` is asked.
 """
 struct Slide
     title::Union{Nothing,String}
+    notes::Union{Nothing,String}
     cards::Vector{CardPlacement}
 end
 
@@ -110,7 +115,7 @@ function load_deck(path::AbstractString)::Deck
 
     notebook_ref = _string_field(problems, raw, "notebook", "the deck")
     preamble = _parse_preamble(problems, raw)
-    slides = _parse_slides(problems, raw)
+    slides = _parse_slides(problems, raw, dirname(deck_path))
     _reject_unplaceable!(problems, slides)
 
     notebook_path = if notebook_ref === nothing
@@ -152,7 +157,7 @@ function _parse_preamble(problems::Vector{String}, raw::Dict)
     return names
 end
 
-function _parse_slides(problems::Vector{String}, raw::Dict)
+function _parse_slides(problems::Vector{String}, raw::Dict, deck_directory::AbstractString)
     slides_raw = get(raw, "slides", nothing)
     if slides_raw === nothing
         push!(problems, "the deck: missing key \"slides\"")
@@ -185,15 +190,35 @@ function _parse_slides(problems::Vector{String}, raw::Dict)
         else
             nothing
         end
+        notes = _parse_notes(problems, slide_raw, deck_directory, context)
 
         placements = CardPlacement[]
         for (card_index, card_raw) in enumerate(cards_raw)
             placement = _parse_card(problems, card_raw, "$context, card $card_index")
             placement === nothing || push!(placements, placement)
         end
-        push!(slides, Slide(title, placements))
+        push!(slides, Slide(title, notes, placements))
     end
     return slides
+end
+
+"""
+Resolve a slide's speaker cues against the deck file, and report a file that is not there.
+
+Checked here and never again: a deck that names cues it cannot find must fail at load rather
+than start and show an empty panel in front of a room.
+"""
+function _parse_notes(problems::Vector{String}, slide_raw::Dict, deck_directory::AbstractString,
+        context::String)
+    (haskey(slide_raw, "notes") && slide_raw["notes"] !== nothing) || return nothing
+
+    reference = _string_field(problems, slide_raw, "notes", context)
+    reference === nothing && return nothing
+
+    resolved = isabspath(reference) ? reference :
+        normpath(joinpath(deck_directory, reference))
+    isfile(resolved) || push!(problems, "$context: \"notes\": no such file: $resolved")
+    return resolved
 end
 
 function _parse_card(problems::Vector{String}, raw, context::String)
