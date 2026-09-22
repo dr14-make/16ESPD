@@ -1,12 +1,13 @@
 // Handing a published payload to a script that treats it as scratch space.
 //
-// Separate from `render.js` because it is decidable without a browser: a total function from a
-// payload to a payload.
+// A total function from a payload to a payload.
 
 /** Whether `value` is an object literal, rather than an instance of something. */
-const isPlainObject = (value) => {
-  if (typeof value !== "object" || value === null) return false
-  const prototype = Object.getPrototypeOf(value)
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null) {
+    return false
+  }
+  const prototype: unknown = Object.getPrototypeOf(value)
   return prototype === Object.prototype || prototype === null
 }
 
@@ -23,11 +24,17 @@ const isPlainObject = (value) => {
  * or an array are shared, which is what keeps this cheap: the offline Plotly bundle is a 3.82 MB
  * string and a trace's coordinates are typed arrays, so neither is ever copied.
  */
-export function isolate(value) {
-  if (Array.isArray(value)) return value.map(isolate)
-  if (!isPlainObject(value)) return value
+export function isolate(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(isolate)
+  }
+  if (!isPlainObject(value)) {
+    return value
+  }
 
-  const copy = {}
-  for (const key of Object.keys(value)) copy[key] = isolate(value[key])
+  const copy: Record<string, unknown> = {}
+  for (const key of Object.keys(value)) {
+    copy[key] = isolate(value[key])
+  }
   return copy
 }

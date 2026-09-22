@@ -235,6 +235,33 @@ function press(browser::Browser, session::AbstractString, key::AbstractString)
 end
 
 """
+    element(selector) -> String
+    elements(selector) -> String
+
+JavaScript resolving `selector`, crossing a shadow boundary wherever it reads `>>>`.
+
+The deck chrome, the nav, the cue overlay and the speaker page are Lit components that render
+into shadow roots, and `document.querySelector` does not cross one. A card is the deliberate
+exception — its output stays in light DOM so that Pluto's renderer can resolve a payload
+through `closest("pluto-cell")` — so a selector reaching a card carries no `>>>`, and one that
+does names the component that owns the element.
+"""
+element(selector::AbstractString) = _resolve(selector, "querySelector")
+elements(selector::AbstractString) = _resolve(selector, "querySelectorAll")
+
+function _resolve(selector::AbstractString, final::AbstractString)
+    steps = strip.(split(selector, ">>>"))
+    js = "document"
+    for (index, step) in enumerate(steps)
+        last = index == length(steps)
+        query = last ? final : "querySelector"
+        js = index == 1 ? "$js.$query($(repr(String(step))))" :
+                          "$js?.shadowRoot?.$query($(repr(String(step))))"
+    end
+    return js
+end
+
+"""
     click(browser, session, selector)
 
 Click the element `selector` matches, with a real mouse press at its centre.
@@ -245,7 +272,7 @@ and the deck chrome sits below the fold on a short window.
 function click(browser::Browser, session::AbstractString, selector::AbstractString)
     centre = JSON.parse(evaluate(browser, session, """
         (() => {
-          const element = document.querySelector($(repr(selector)))
+          const element = $(element(selector))
           if (element === null) throw new Error("nothing matches $(selector)")
           element.scrollIntoView({ block: "center" })
           const box = element.getBoundingClientRect()
@@ -272,7 +299,7 @@ end
 Put keyboard focus on the element `selector` matches.
 """
 function focus(browser::Browser, session::AbstractString, selector::AbstractString)
-    evaluate(browser, session, """document.querySelector($(repr(selector))).focus()""")
+    evaluate(browser, session, """$(element(selector)).focus()""")
     return nothing
 end
 

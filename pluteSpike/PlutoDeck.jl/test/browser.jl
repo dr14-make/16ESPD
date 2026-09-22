@@ -10,7 +10,7 @@ include("devtools.jl")
 import Pluto
 import Sockets
 
-using PlutoDeck: Session, load_deck, present, serve
+using PlutoDeck: Session, frontend_directory, load_deck, present, serve
 
 const BROWSER_NOTEBOOK = joinpath(FIXTURES, "browser.jl")
 
@@ -208,7 +208,10 @@ new MutationObserver((records) => {
   for (const record of records) {
     const name = record.target.dataset?.card
     if (name === undefined) continue
-    ;(window.__sources[name] ??= []).push([record.oldValue, record.target.dataset.source])
+    const seen = (window.__sources[name] ??= [])
+    const source = record.target.dataset.source
+    // A repaint rewrites `live` over `live`, which is a mutation and not a transition.
+    if (seen[seen.length - 1] !== source) seen.push(source)
   }
 }).observe(document, {
   subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ["data-source"],
@@ -240,7 +243,7 @@ const CURRENT_SLIDE =
     """[...document.querySelectorAll(".slide")].findIndex((s) => s.dataset.current === "true")"""
 
 "The position the chrome reports, which is what a keyboard move announces."
-const SLIDE_POSITION = """document.getElementById("slide-position").textContent"""
+const SLIDE_POSITION = element("deck-nav >>> .position") * ".textContent"
 
 """
 The plot card on the slide that is hidden when the deck first paints.
@@ -250,11 +253,19 @@ that is showing — which is the one that would still be drawn if a shared paylo
 """
 const HIDDEN_PLOT = """document.querySelectorAll('[data-card="wave"]')[1]"""
 
-"Whether the cue panel is showing."
-const CUES_SHOWING = """!document.getElementById("speaker-cues").hidden"""
+"Whether the cue panel is showing. `open` is the whole of the overlay's state."
+const CUES_SHOWING = """document.querySelector("cue-overlay").hasAttribute("open")"""
+
+"The overlay itself, which is the element that scrolls its own overflow."
+const CUE_PANEL = """document.querySelector("cue-overlay")"""
 
 "What the cue panel is reading out, as a lecturer sees it."
-const CUE_TEXT = """document.getElementById("cue-body").textContent"""
+const CUE_BODY = element("cue-overlay >>> .cue-body")
+const CUE_TEXT = CUE_BODY * ".textContent"
+
+"The speaker page renders the same cues through the same renderer, in a root of its own."
+const SPEAKER_CUE_BODY = element("speaker-page >>> .cue-body")
+const SPEAKER_CUE_TEXT = SPEAKER_CUE_BODY * ".textContent"
 
 """
 The speaker window's own chrome: which slide it believes the deck is on, and whether it still
@@ -264,9 +275,9 @@ believes anything at all.
 `load` fires while its module is still evaluating and the harness would otherwise assert
 against a document that is listening to nothing.
 """
-const SPEAKER_STATE = """document.getElementById("speaker-state").textContent"""
-const SPEAKER_POSITION = """document.getElementById("speaker-position").textContent"""
-const SPEAKER_SLIDE = """document.getElementById("speaker-slide").textContent"""
+const SPEAKER_STATE = element("speaker-page >>> .state") * ".textContent"
+const SPEAKER_POSITION = element("speaker-page >>> .position") * ".textContent"
+const SPEAKER_SLIDE = element("speaker-page >>> h1") * ".textContent"
 const SPEAKER_READY = """'deck' in document.body.dataset"""
 
 """
@@ -352,24 +363,43 @@ const MOVE_THE_SLIDER = """
 
                     @test sort(collect(keys(sources))) ==
                         ["constant", "frequency", "plain", "plotly", "readout", "wave"]
-                    @test all(first(transitions) == ["placeholder", "live"]
+                    @test all(transitions == ["placeholder", "live"]
                               for transitions in values(sources))
                 end
 
-                @testset "a card with no content yet is labelled rather than blank" begin
-                    card = JSON.parse(evaluate(browser, view, """
-                        (async () => {
-                          const { Card } = await import("/card.js")
-                          const card = new Card({ name: "speed-plot", paint: () => {} })
-                          return JSON.stringify({
-                            source: card.element.dataset.source,
-                            label: card.element.textContent.trim(),
-                          })
+                @testset "nothing between a card's output and the document is a shadow root" begin
+                    # Two separate mechanisms break the moment one appears, both of them
+                    # silently. Pluto's renderer resolves a `published_to_js` payload through
+                    # `root_node.closest("pluto-cell")`, and `closest` does not cross a shadow
+                    # boundary; `deck.css` reaches a card's output from the document, and a
+                    # document stylesheet does not either. A card would report `live` and draw
+                    # nothing, with a clean console. `LightDomElement` is what holds the rule and
+                    # this is what says so out loud.
+                    @test evaluate(browser, view, """
+                        (() => {
+                          const shadowed = []
+                          for (const card of document.querySelectorAll(".card")) {
+                            for (let node = card; node !== null; node = node.parentElement) {
+                              if (node.shadowRoot !== null) shadowed.push(node.tagName.toLowerCase())
+                            }
+                          }
+                          return JSON.stringify([...new Set(shadowed)])
                         })()
-                        """))
+                        """) == "[]"
 
-                    @test card["source"] == "placeholder"
-                    @test card["label"] == "speed-plot"
+                    # The chrome is the other half of the same rule: it holds no cards, so it is
+                    # free to encapsulate, and it does.
+                    @test evaluate(browser, view, """
+                        ["deck-chrome", "deck-nav", "cue-overlay"]
+                          .every((tag) => document.querySelector(tag).shadowRoot !== null)
+                        """) === true
+
+                    # A card's output has the ancestor `execute_scripttags` looks for, reachable
+                    # by the call it actually makes.
+                    @test evaluate(browser, view, """
+                        [...document.querySelectorAll(".card-body pluto-cell")]
+                          .every((cell) => cell.closest("pluto-cell") === cell)
+                        """) === true
                 end
 
                 @testset "a Plotly card renders interactive, which is the published_to_js path" begin
@@ -410,15 +440,17 @@ const MOVE_THE_SLIDER = """
                 @testset "the deck pages through its slides by pointer" begin
                     @test evaluate(browser, view, CURRENT_SLIDE) == 0
                     @test evaluate(browser, view, SLIDE_POSITION) == "1 / 2"
-                    @test evaluate(browser, view, """document.getElementById("previous-slide").disabled""") === true
+                    @test evaluate(browser, view,
+                        element("deck-nav >>> button.previous") * ".disabled") === true
 
-                    click(browser, view, "#next-slide")
+                    click(browser, view, "deck-nav >>> button.next")
 
                     @test evaluate(browser, view, CURRENT_SLIDE) == 1
                     @test evaluate(browser, view, SLIDE_POSITION) == "2 / 2"
-                    @test evaluate(browser, view, """document.getElementById("next-slide").disabled""") === true
+                    @test evaluate(browser, view,
+                        element("deck-nav >>> button.next") * ".disabled") === true
 
-                    click(browser, view, "#previous-slide")
+                    click(browser, view, "deck-nav >>> button.previous")
 
                     @test evaluate(browser, view, CURRENT_SLIDE) == 0
                 end
@@ -515,32 +547,14 @@ const MOVE_THE_SLIDER = """
                     await(browser, view, """document.body.dataset.kernel === "ready" """;
                         what="the chrome to report the kernel ready")
                     @test evaluate(browser, view,
-                        """document.getElementById("kernel-status").textContent""") == "kernel ready"
+                        element("deck-chrome >>> .status") * ".textContent") == "kernel ready"
 
-                    # The states a live kernel does not pass through are asserted against the
-                    # mapping itself: taking the kernel down to see "offline" would end the run.
-                    states = JSON.parse(evaluate(browser, view, """
-                        (async () => {
-                          const { kernelStatus } = await import("/status.js")
-                          return JSON.stringify({
-                            cold: kernelStatus({ process: null }).state,
-                            starting: kernelStatus({ process: "starting" }).state,
-                            ready: kernelStatus({ process: "ready" }).state,
-                            dropped: kernelStatus({ connected: false, process: "ready" }).state,
-                            gone: kernelStatus({ process: "no_process" }).state,
-                            refused: kernelStatus({ failure: "no websocket" }).state,
-                          })
-                        })()
-                        """))
-
-                    @test states == Dict(
-                        "cold" => "connecting",
-                        "starting" => "connecting",
-                        "ready" => "ready",
-                        "dropped" => "offline",
-                        "gone" => "offline",
-                        "refused" => "error",
-                    )
+                    # The chrome colors itself off the same state rather than off a second
+                    # reading of the kernel. The states a live kernel never passes through are
+                    # pinned in `frontend/src/kernel.status.test.ts`: taking the kernel down to
+                    # see "offline" would end this run.
+                    @test evaluate(browser, view,
+                        element("deck-chrome") * """.dataset.kernel""") == "ready"
                 end
 
                 @testset "a Julia-defined widget writes its value back to the kernel" begin
@@ -552,32 +566,6 @@ const MOVE_THE_SLIDER = """
                     await(browser, view,
                         """document.querySelector('[data-card="readout"]').textContent.includes("cycles 4")""";
                         what="the readout to follow the slider")
-                end
-
-                @testset "a burst of bond changes is one notebook update, not six" begin
-                    # Six sequential updates are six reactive runs, and the first five see bonds
-                    # that are still `missing`. Driven against a stub worker rather than the
-                    # kernel, because what is under test is the batching, not the round trip.
-                    updates = JSON.parse(evaluate(browser, view, """
-                        (async () => {
-                          const { Kernel } = await import("/kernel.js")
-                          const updates = []
-                          const kernel = new Kernel({
-                            getState: () => ({ cell_results: {}, bonds: {}, published_objects: {} }),
-                            isIdle: () => true,
-                            _update_notebook_state: (mutate) => {
-                              const notebook = { bonds: {} }
-                              mutate(notebook)
-                              updates.push(Object.keys(notebook.bonds))
-                            },
-                          })
-                          const names = ["a", "b", "c", "d", "e", "f"]
-                          await Promise.all(names.map((name, index) => kernel.setBond(name, index)))
-                          return JSON.stringify(updates)
-                        })()
-                        """))
-
-                    @test updates == [["a", "b", "c", "d", "e", "f"]]
                 end
 
                 @testset "a card does not repaint when an unrelated cell re-runs" begin
@@ -631,7 +619,7 @@ const MOVE_THE_SLIDER = """
                     # A key nothing names is a key nobody presses, so the chrome carries it
                     # the way it carries the buttons that move the deck.
                     @test occursin("(C)", evaluate(browser, view,
-                        """document.querySelector("#deck-nav #toggle-cues").textContent"""))
+                        element("deck-nav >>> button.cues") * ".textContent"))
 
                     # The cue key follows the rule the arrow keys already do: a lecturer typing
                     # in a widget is typing, not opening a panel over the slide.
@@ -644,7 +632,7 @@ const MOVE_THE_SLIDER = """
                     @test evaluate(browser, view, CUES_SHOWING) === true
                     @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
                     @test evaluate(browser, view,
-                        """document.getElementById("toggle-cues").getAttribute("aria-pressed")""") == "true"
+                        element("deck-nav >>> button.cues") * """.getAttribute("aria-pressed")""") == "true"
 
                     press(browser, view, "c")
                     @test evaluate(browser, view, CUES_SHOWING) === false
@@ -671,7 +659,7 @@ const MOVE_THE_SLIDER = """
 
                 @testset "a cue renders as markdown, not as the text a lecturer typed" begin
                     press(browser, view, "c")
-                    cue = """document.getElementById("cue-body")"""
+                    cue = CUE_BODY
 
                     @test evaluate(browser, view, "$cue.querySelectorAll('strong').length") > 0
                     @test evaluate(browser, view, "$cue.querySelectorAll('em').length") > 0
@@ -687,12 +675,11 @@ const MOVE_THE_SLIDER = """
                 @testset "the panel scrolls its own overflow rather than the page" begin
                     # Several hundred words is the normal length of a cue, and the panel is
                     # fixed over a slide whose geometry must not move to make room for it.
-                    @test evaluate(browser, view, """
-                        getComputedStyle(document.getElementById("speaker-cues")).position
-                        """) == "fixed"
+                    @test evaluate(browser, view,
+                        """getComputedStyle($CUE_PANEL).position""") == "fixed"
                     @test evaluate(browser, view, """
                         (() => {
-                          const panel = document.getElementById("speaker-cues")
+                          const panel = $CUE_PANEL
                           return panel.scrollHeight > panel.clientHeight
                         })()
                         """) === true
@@ -709,7 +696,7 @@ const MOVE_THE_SLIDER = """
                     # panel that failed to render.
                     @test !occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
                     @test evaluate(browser, view,
-                        """!!document.querySelector("#cue-body .cue-absent")""") === true
+                        "!!" * element("cue-overlay >>> .cue-body .cue-absent")) === true
 
                     press(browser, view, "ArrowLeft")
                     @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
@@ -721,7 +708,7 @@ const MOVE_THE_SLIDER = """
                     # The room is looking at the same screen the lecturer is: a cue that leaks
                     # onto a slide, or into a card, is the one failure worse than no cues.
                     @test !occursin(CUE_SENTENCE,
-                        evaluate(browser, view, """document.getElementById("slides").textContent"""))
+                        evaluate(browser, view, """document.querySelector("main.slides").textContent"""))
                     @test evaluate(browser, view, """
                         (async () => {
                           const deck = await fetch("/api/deck").then((r) => r.json())
@@ -752,6 +739,12 @@ const MOVE_THE_SLIDER = """
                             [...document.querySelectorAll(".card")]
                               .every((card) => card.dataset.source === "placeholder")
                             """) === true
+                        # Labelled with its own name rather than blank: the chrome carries the
+                        # one explanation, and a card says which card it is still waiting for.
+                        @test evaluate(browser, offline, """
+                            [...document.querySelectorAll(".card")]
+                              .every((card) => card.textContent.trim() === card.dataset.card)
+                            """) === true
 
                         press(browser, offline, "c")
                         @test evaluate(browser, offline, CUES_SHOWING) === true
@@ -760,7 +753,7 @@ const MOVE_THE_SLIDER = """
                         press(browser, offline, "ArrowRight")
                         @test evaluate(browser, offline, CURRENT_SLIDE) == 1
                         @test evaluate(browser, offline,
-                            """!!document.querySelector("#cue-body .cue-absent")""") === true
+                            "!!" * element("cue-overlay >>> .cue-body .cue-absent")) === true
 
                         press(browser, offline, "ArrowLeft")
                         @test occursin(CUE_SENTENCE, evaluate(browser, offline, CUE_TEXT))
@@ -790,9 +783,9 @@ const MOVE_THE_SLIDER = """
                     # `window.open` from a key handler is the call browsers block, and the
                     # whole reason the on-slide overlay exists. A link is the viewer's click.
                     @test evaluate(browser, view,
-                        """document.getElementById("speaker-link").href""") == "$url/speaker.html"
+                        element("deck-chrome >>> .speaker-link") * ".href") == "$url/speaker.html"
                     @test evaluate(browser, view,
-                        """document.getElementById("speaker-link").target""") == "_blank"
+                        element("deck-chrome >>> .speaker-link") * ".target") == "_blank"
                 end
 
                 @testset "the speaker window carries the cues and none of the deck" begin
@@ -801,11 +794,11 @@ const MOVE_THE_SLIDER = """
 
                     @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
                     @test evaluate(browser, speaker, SPEAKER_SLIDE) == "A wave you can drive"
-                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
                     # Markdown, from the same renderer the overlay uses rather than a second
                     # one: a nested list is what a hand-written parser flattens silently.
                     @test evaluate(browser, speaker,
-                        """document.querySelectorAll("#cue-body ul ul > li").length""") == 3
+                        elements("speaker-page >>> .cue-body ul ul > li") * ".length") == 3
 
                     # No cards, no kernel, no Rainbow bundle: that is what keeps this a second
                     # page rather than a second renderer, and what lets it outlive a kernel.
@@ -822,14 +815,14 @@ const MOVE_THE_SLIDER = """
                     # Slide 2 names no cues, and an empty page is indistinguishable from one
                     # that failed to render.
                     @test evaluate(browser, speaker,
-                        """!!document.querySelector("#cue-body .cue-absent")""") === true
-                    @test !occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                        "!!" * element("speaker-page >>> .cue-body .cue-absent")) === true
+                    @test !occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
                     @test evaluate(browser, speaker, SPEAKER_SLIDE) == "Slide 2"
 
                     press(browser, view, "ArrowLeft")
                     await(browser, speaker, """$SPEAKER_POSITION === "1 / 2" """;
                         what="the speaker window to follow the deck back")
-                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
                 end
 
                 @testset "the overlay still works while the speaker window is open" begin
@@ -857,7 +850,7 @@ const MOVE_THE_SLIDER = """
                     @test occursin("gone", evaluate(browser, speaker, SPEAKER_STATE))
                     # The cues stay: the lecturer is still talking to that slide, and it is the
                     # chrome's job to say that nothing is confirming it any more.
-                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
                     @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
                 end
 
@@ -936,7 +929,7 @@ const MOVE_THE_SLIDER = """
 
                         @test evaluate(browser, cold, """document.body.dataset.deck""") == "waiting"
                         @test evaluate(browser, cold, SPEAKER_POSITION) == "—"
-                        @test !occursin(CUE_SENTENCE, evaluate(browser, cold, CUE_TEXT))
+                        @test !occursin(CUE_SENTENCE, evaluate(browser, cold, SPEAKER_CUE_TEXT))
                         @test occursin("No deck window", evaluate(browser, cold, SPEAKER_STATE))
 
                         @test problems(browser, cold) == String[]
@@ -970,7 +963,7 @@ const MOVE_THE_SLIDER = """
                         what="the refreshed deck to find the kernel still running")
                     press(browser, view, "c")
                     absence = evaluate(browser, view,
-                        """document.querySelector("#cue-body .cue-absent")?.textContent ?? "" """)
+                        element("cue-overlay >>> .cue-body .cue-absent") * """?.textContent ?? "" """)
 
                     @test evaluate(browser, view, CUES_SHOWING) === true
                     # The path and the reason, because the lecturer is the only one who can put
@@ -983,18 +976,20 @@ const MOVE_THE_SLIDER = """
                     @test problems(browser, view) == String[]
                 end
 
-                @testset "the harness can see a missing browser shim" begin
-                    # The one failure a Node-side harness cannot reach: importing the Rainbow
-                    # bundle without `process` defined. The 404 page is a document on the deck's
-                    # own origin whose module graph is empty, so the import runs unshimmed.
+                @testset "the bundle imports into a page that defines nothing for it" begin
+                    # The 404 page is a document on the deck's own origin whose module graph is
+                    # empty, so nothing has run ahead of the import and no shim can be hiding the
+                    # failure. Why the import would fail unbundled is in `frontend/build.mjs`,
+                    # where the substitution that prevents it lives.
                     bare = page(browser)
                     navigate(browser, bare, "$url/not-a-page")
 
-                    unshimmed = evaluate(browser, bare, """
-                        import("/vendor/rainbow.esm.js").then(() => "imported", (error) => String(error))
+                    entry = only(filter(startswith("deck.entry-"), readdir(frontend_directory())))
+                    imported = evaluate(browser, bare, """
+                        import("/$entry").then(() => "imported", (error) => String(error))
                         """)
 
-                    @test occursin("process is not defined", unshimmed)
+                    @test imported == "imported"
                 end
             end
         end

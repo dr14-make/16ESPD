@@ -1,3 +1,8 @@
-frontend-dist
-frontend-dist-*
+# The built bundle is committed: it is the only servable form of the frontend, so a checkout
+# that cannot run `npm` can still present. See ../DESIGN.md § The built bundle is committed.
+frontend/node_modules
 Manifest.toml
+
+# `npm run dev` writes source maps beside the bundle it rebuilds. They are for whoever is
+# editing the frontend, and committing them would put 8 MB of generated text in every commit.
+frontend-dist/*.map

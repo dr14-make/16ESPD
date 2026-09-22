@@ -1,0 +1,180 @@
+/* The deck's document stylesheet.
+ *
+ * It carries the tokens every component reads through `var()`, and the whole of a card — the
+ * slide grid, the card box, and the rules that reach a card's rendered output. A card renders
+ * Pluto's HTML without Pluto's own stylesheet, and it renders in light DOM so that Pluto's
+ * renderer can resolve a payload through `closest("pluto-cell")`, so these rules have to reach
+ * it from the document. The chrome, the nav, the cue overlay and the speaker page own their own
+ * styles, because they hold no cards.
+ */
+
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --ink: #1c1c1c;
+  --muted: #5c6470;
+  --edge: #d6d6d6;
+  --row: 3rem;
+  --ok: #1f7a3d;
+  --warn: #a8660b;
+  --bad: #b3261e;
+  color-scheme: light dark;
+}
+
+/* Two blocks rather than `light-dark()`: the bundle targets Chrome 120 and Safari 17.0, and
+   `light-dark()` is Chrome 123 and Safari 17.5. `color-scheme: light dark` hands the page a dark
+   background from the OS, so every token it pairs with has to move with it. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a;
+    --surface: #1b1e24;
+    --ink: #e6e8eb;
+    --muted: #98a1ad;
+    --edge: #2e343d;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --bad: #f87171;
+  }
+}
+
+body {
+  margin: 0 auto;
+  max-inline-size: 72rem;
+  padding: 2rem 1rem;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+deck-app,
+speaker-page {
+  display: block;
+}
+
+.slides {
+  position: relative;
+}
+
+/* Every slide stays mounted, and the ones not showing keep their box. `visibility` is what
+   makes that safe where `display: none` would not: a hidden card would measure zero wide, and
+   Plotly draws a graph the size of the element it is given. */
+.slide {
+  display: block;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  visibility: hidden;
+  margin-block: 2rem;
+}
+
+.slide[data-current="true"] {
+  position: relative;
+  visibility: visible;
+}
+
+.slide h2 {
+  margin-block: 0 0.75rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.slide[data-titled="true"] h2 {
+  font-size: 1.15rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--ink);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  /* A fixed track, not `minmax(_, auto)`: a card spans `h` of these and keeps that height
+     whether it holds a placeholder or a plot, so nothing reflows when content arrives. */
+  grid-auto-rows: var(--row);
+  gap: 0.5rem;
+}
+
+.card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  padding: 0.75rem;
+  /* Grid items default to min-height:auto, which lets content push a card past its span.
+     Both zeroed so the card keeps the size the deck gave it and scrolls its own overflow. */
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.card[data-source="placeholder"] {
+  border-style: dashed;
+  display: grid;
+  place-items: center;
+}
+
+.card-waiting {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-family: ui-monospace, monospace;
+}
+
+.card-body,
+.card-body pluto-cell {
+  display: block;
+  min-inline-size: 0;
+}
+
+/* A figure is told how tall its card is; everything else is left to ask for its own height.
+   A plot sizes itself to the box it is given and, given none, draws itself 400 px and leaves
+   the rest of the card blank — so without this `h` is a hint for exactly the cards it matters
+   most for. The same rule over a card of prose or a table would stretch the paragraph or
+   distribute the rows, which is why it is scoped to what Plotly rendered rather than applied
+   to every body. Content taller than its card still scrolls: an overflowing descendant
+   extends the card's own scroll region. */
+.card-body:has(.js-plotly-plot),
+.card-body:has(.js-plotly-plot) > pluto-cell,
+.card-body:has(.js-plotly-plot) > pluto-cell > * {
+  block-size: 100%;
+}
+
+/* Not `> :first-child`, which reaches only Pluto's own wrapper: a markdown cell's paragraph
+   sits one level further in and keeps its 1em margins, which is 32 px of a card spent before
+   anything is drawn — enough on its own to turn a two-row widget card into a scroll-box. */
+.card-body :first-child {
+  margin-block-start: 0;
+}
+
+.card-body :last-child {
+  margin-block-end: 0;
+}
+
+/* A card renders Pluto's output without Pluto's own stylesheet, so every readout table a
+   notebook emits — a markdown table, or the raw one `metrics` builds — arrives unstyled. */
+.card-body table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.card-body th,
+.card-body td {
+  padding: 0.2rem 0.4rem;
+  border-block-end: 1px solid var(--edge);
+  text-align: start;
+}
+
+.card-body th {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Readouts are numbers against a label, and a column of numbers only scans if it is aligned
+   and does not reflow as the digits change. */
+.card-body td {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

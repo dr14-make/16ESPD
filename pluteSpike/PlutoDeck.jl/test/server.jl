@@ -18,10 +18,10 @@ fake_session() = Session(
     "s3cr3t42",
 )
 
-"A package root laid out like an installed or a checked-out package."
-function package_root(; bundle::Bool=false, source::Bool=true)
+"A package root holding a built bundle, which is the only form a frontend is served in."
+function package_root(; bundle::Bool=true)
     root = mktempdir()
-    source && mkdir(joinpath(root, "frontend"))
+    mkdir(joinpath(root, "frontend"))
     if bundle
         mkdir(joinpath(root, "frontend-dist"))
         write(joinpath(root, "frontend-dist", "index.html"), "<!DOCTYPE html>")
@@ -32,28 +32,24 @@ end
 request(handler, target) = handler(HTTP.Request("GET", target))
 
 @testset "server" begin
-    @testset "a checkout serves its source, and a bundle only when forced" begin
-        root = package_root(; bundle=true)
-
-        @test frontend_directory(root) == joinpath(root, "frontend")
-        withenv("JULIA_PLUTODECK_FORCE_BUNDLED" => "ja") do
-            @test frontend_directory(root) == joinpath(root, "frontend-dist")
-            @test frontend_directory(root; allow_bundled=false) == joinpath(root, "frontend")
-        end
-    end
-
-    @testset "an empty frontend-dist is a leftover directory, not a bundle" begin
+    @testset "serving refuses a bundle that was never built" begin
+        # `frontend/` holds TypeScript, so a missing bundle is a deck with nothing to serve
+        # rather than one that quietly falls back to source.
         root = package_root(; bundle=false)
-        mkdir(joinpath(root, "frontend-dist"))
 
-        withenv("JULIA_PLUTODECK_FORCE_BUNDLED" => "ja") do
-            @test frontend_directory(root) == joinpath(root, "frontend")
-        end
+        @test !PlutoDeck._holds_a_bundle(joinpath(root, "frontend-dist"))
+        @test !PlutoDeck._holds_a_bundle(mkdir(joinpath(root, "frontend-dist")))
     end
 
-    @testset "the package as shipped serves a frontend that exists" begin
+    @testset "the package as shipped serves a bundle that exists" begin
         @test isdir(frontend_directory())
         @test isfile(joinpath(frontend_directory(), "index.html"))
+        @test isfile(joinpath(frontend_directory(), "speaker.html"))
+    end
+
+    @testset "the bundle carries no vendored dependency" begin
+        # Every dependency comes from npm and is bundled; `frontend/vendor/` is gone.
+        @test !isdir(joinpath(PlutoDeck.PACKAGE_ROOT, "frontend", "vendor"))
     end
 
     handler = PlutoDeck._handler(frontend_directory(), load_deck(LECTURE_DECK), fake_session())
@@ -67,21 +63,20 @@ request(handler, target) = handler(HTTP.Request("GET", target))
     end
 
     @testset "an asset is served with its own content type" begin
-        @test HTTP.header(request(handler, "/deck.js"), "Content-Type") == "text/javascript; charset=utf-8"
-        @test HTTP.header(request(handler, "/deck.css"), "Content-Type") == "text/css; charset=utf-8"
+        entry = only(filter(startswith("deck.entry-"), readdir(frontend_directory())))
+        style = only(filter(endswith(".css"), readdir(frontend_directory())))
+
+        @test HTTP.header(request(handler, "/" * entry), "Content-Type") == "text/javascript; charset=utf-8"
+        @test HTTP.header(request(handler, "/" * style), "Content-Type") == "text/css; charset=utf-8"
     end
 
-    @testset "a development asset is never cached" begin
-        @test HTTP.header(request(handler, "/deck.js"), "Cache-Control") == "no-store"
-    end
+    @testset "a content-hashed asset is cached hard, and the page that names it is not" begin
+        root = package_root()
+        write(joinpath(root, "frontend-dist", "deck.entry-A1B2C3D4.js"), "export {}")
+        serving = PlutoDeck._handler(frontend_directory(root), load_deck(LECTURE_DECK), fake_session())
 
-    @testset "a content-hashed bundled asset is cached hard" begin
-        root = package_root(; bundle=true)
-        write(joinpath(root, "frontend-dist", "deck.a1b2c3d4.js"), "export {}")
-        bundled = withenv(() -> frontend_directory(root), "JULIA_PLUTODECK_FORCE_BUNDLED" => "ja")
-        serving = PlutoDeck._handler(bundled, load_deck(LECTURE_DECK), fake_session())
-
-        @test occursin("immutable", HTTP.header(request(serving, "/deck.a1b2c3d4.js"), "Cache-Control"))
+        @test occursin("immutable",
+            HTTP.header(request(serving, "/deck.entry-A1B2C3D4.js"), "Cache-Control"))
         @test HTTP.header(request(serving, "/index.html"), "Cache-Control") == "no-store"
     end
 

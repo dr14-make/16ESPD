@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    // Node types are here for the `.test.ts` files and the build script. Browser code reaching
+    // for a Node API is caught by the bundle rather than by the compiler: esbuild has no
+    // `node:*` to resolve, and Node is a build-time tool that never runs when a deck is shown.
+    "types": ["node"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+
+    "noEmit": true,
+    // A `.test.ts` names the module it tests by its real extension, because Node's own test
+    // runner resolves the specifier as written and does not rewrite `.js` to `.ts`.
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

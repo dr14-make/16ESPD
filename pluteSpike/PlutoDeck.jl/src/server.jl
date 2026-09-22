@@ -2,38 +2,29 @@
 
 const PACKAGE_ROOT = normpath(joinpath(@__DIR__, ".."))
 
-"Set to `\"ja\"` to serve the built bundle from a development checkout. Mirrors `JULIA_PLUTO_FORCE_BUNDLED`."
-const FORCE_BUNDLED_ENV = "JULIA_PLUTODECK_FORCE_BUNDLED"
-
 const DECK_PORT_DEFAULT = 8099
 
 "A bundled asset carries a content hash in its name, so it can be cached for as long as it exists."
-const CONTENT_HASHED = r"\.[0-9a-f]{8}\."
+const CONTENT_HASHED = r"-[0-9A-Z]{8}\."
 
 const DAY_IN_SECONDS = 24 * 60 * 60
 
 """
-    frontend_directory(root=PACKAGE_ROOT; allow_bundled=true) -> String
+    frontend_directory(root=PACKAGE_ROOT) -> String
 
-The directory the deck is served from: `frontend-dist/` when a bundle is there,
-`frontend/` otherwise.
+The directory the deck is served from: `frontend-dist/`, the bundle `frontend/` is built into.
 
-A development checkout serves its TypeScript source, so editing the frontend is a rebuild
-and a refresh rather than a release. An installed package has no source to serve and takes
-the bundle. Set `$FORCE_BUNDLED_ENV=ja` to serve the bundle from a checkout anyway.
+There is one directory rather than a choice between two. `frontend/` holds TypeScript, which no
+browser can run, so the bundle is the only servable form of the frontend in a checkout and in an
+installed package alike. Editing the frontend is `npm run dev` in `frontend/`, which rebuilds the
+bundle in place on every save, so the loop is still edit and refresh.
 """
-function frontend_directory(root::AbstractString=PACKAGE_ROOT; allow_bundled::Bool=true)
-    bundle = joinpath(root, "frontend-dist")
-    prefer_bundle = get(ENV, FORCE_BUNDLED_ENV, "nein") == "ja" || !_is_development_checkout(root)
-    return allow_bundled && prefer_bundle && _holds_a_bundle(bundle) ? bundle :
-        joinpath(root, "frontend")
+function frontend_directory(root::AbstractString=PACKAGE_ROOT)
+    return joinpath(root, "frontend-dist")
 end
 
 "An empty `frontend-dist/` is a leftover directory, not a bundle."
 _holds_a_bundle(bundle::AbstractString) = isdir(bundle) && !isempty(readdir(bundle))
-
-_is_development_checkout(root::AbstractString) =
-    !any(depot -> startswith(root, joinpath(depot, "packages")), DEPOT_PATH)
 
 """
     DeckServer(http, url, root, deck, session)
@@ -53,7 +44,7 @@ Base.close(server::DeckServer) = close(server.http)
 Base.isopen(server::DeckServer) = isopen(server.http)
 
 """
-    serve(deck, session; port, host, allow_bundled, listenany) -> DeckServer
+    serve(deck, session; port, host, listenany) -> DeckServer
 
 Serve `deck` against `session` on `port`, and return once the server is listening.
 
@@ -66,20 +57,20 @@ served somewhere else; `listenany` takes the first free port from `port` instead
 function serve(deck::Deck, session::Session;
         port::Integer=DECK_PORT_DEFAULT,
         host::AbstractString=HOST_DEFAULT,
-        allow_bundled::Bool=true,
         listenany::Bool=false)
-    root = frontend_directory(; allow_bundled)
-    isdir(root) || throw(ArgumentError("the frontend directory is missing: $root"))
+    root = frontend_directory()
+    _holds_a_bundle(root) || throw(ArgumentError(
+        "the frontend bundle is missing: $root. Build it with `npm ci && npm run build` in " *
+        joinpath(PACKAGE_ROOT, "frontend")))
 
     http = HTTP.serve!(_handler(root, deck, session), host, port; listenany, verbose=-1)
     return DeckServer(http, _origin(host, HTTP.Servers.port(http)), root, deck, session)
 end
 
 function _handler(root::AbstractString, deck::Deck, session::Session)
-    bundled = basename(root) == "frontend-dist"
     return function (request::HTTP.Request)
         try
-            _respond(request, root, bundled, deck, session)
+            _respond(request, root, deck, session)
         catch err
             err isa InterruptException && rethrow()
             # Only a genuinely absent file is a 404. Answering 404 for anything else hides a
@@ -90,12 +81,11 @@ function _handler(root::AbstractString, deck::Deck, session::Session)
     end
 end
 
-function _respond(request::HTTP.Request, root::AbstractString, bundled::Bool,
-        deck::Deck, session::Session)
+function _respond(request::HTTP.Request, root::AbstractString, deck::Deck, session::Session)
     path = HTTP.URI(request.target).path
     path == "/api/session" && return _json_response(_session_json(session))
     path == "/api/deck" && return _json_response(_deck_json(deck))
-    return _asset_response(root, bundled, path)
+    return _asset_response(root, path)
 end
 
 "What the browser needs to reach Pluto: the deck does not proxy it, so it connects there itself."
@@ -153,14 +143,14 @@ _card_json(placement::CardPlacement) = Dict{String,Any}(
     "snapshot" => placement.snapshot,
 )
 
-function _asset_response(root::AbstractString, bundled::Bool, path::AbstractString)
+function _asset_response(root::AbstractString, path::AbstractString)
     file = _resolve_asset(root, path)
     file === nothing && return _text_response(403, "forbidden")
     isfile(file) || return _text_response(404, "not found")
 
     body = read(file)
     headers = ["Content-Type" => _content_type(file), "Content-Length" => string(length(body))]
-    push!(headers, "Cache-Control" => bundled && occursin(CONTENT_HASHED, basename(file)) ?
+    push!(headers, "Cache-Control" => occursin(CONTENT_HASHED, basename(file)) ?
         "public, max-age=$(30 * DAY_IN_SECONDS), immutable" : "no-store")
     return HTTP.Response(200, headers, body)
 end

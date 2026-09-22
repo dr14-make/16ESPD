@@ -6,14 +6,60 @@
 #
 # Julia comes from juliaup on the `dyad-3.3.0` channel, matching .vscode/settings.json.
 
+# Node 22.18 is where `node --test` discovers and type-strips `*.test.ts` with no flag. Below
+# it the runner matches no files, reports zero tests and exits 0 — so `frontend-check` would go
+# green on a machine where the unit suite has never run. Julia is selected per task instead,
+# with `+dyad-3.3.0`, matching .vscode/settings.json.
+[tools]
+node = "22"
+
 [env]
 PLUTODECK_PROJECT = "pluteSpike/PlutoDeck.jl"
+PLUTODECK_FRONTEND = "pluteSpike/PlutoDeck.jl/frontend"
 PLUTODECK_DECK = "pluteSpike/backend/lecture-01.deck.json"
 PLUTODECK_PORT = "8140"
+
+[tasks.frontend-install]
+description = "Install the frontend's build-time dependencies. Needed only to edit the frontend"
+dir = "pluteSpike/PlutoDeck.jl/frontend"
+run = "npm ci"
+
+[tasks.frontend-build]
+description = "Build the frontend bundle into frontend-dist/, which is what a deck serves"
+dir = "pluteSpike/PlutoDeck.jl/frontend"
+run = "npm run build"
+
+[tasks.frontend-check]
+description = "Typecheck, lint and unit-test the frontend"
+dir = "pluteSpike/PlutoDeck.jl/frontend"
+run = ["npm run typecheck", "npm run lint", "npm test"]
+
+[tasks.frontend-watch]
+description = "Rebuild the bundle on every save. `deck` runs this for you; use it for a second window"
+dir = "pluteSpike/PlutoDeck.jl/frontend"
+run = "npm run dev"
 
 [tasks.deck]
 description = "Present a deck and its live kernel. DECK=<path> PORT=<n> to override"
 run = '''
+# The frontend is TypeScript and the bundle is what gets served, so an edit reaches the browser
+# through a rebuild. esbuild watches alongside the deck — about 200 ms per save — which keeps
+# the loop to edit and refresh, and it is stopped with the deck. A checkout that has not run
+# `mise run frontend-install` presents the committed bundle instead, which is all a lecturer
+# needs and is the reason Node is not required to present.
+if [ -d "$PLUTODECK_FRONTEND/node_modules" ]; then
+    npm --prefix "$PLUTODECK_FRONTEND" run dev &
+    watcher=$!
+    # The watcher rebuilds into the committed bundle and its builds carry source maps, so a
+    # deck that has been presented leaves `frontend-dist/` holding a development build under
+    # different content hashes. Restoring the release build on the way out is what keeps
+    # "I ran the deck" from turning into a committed dev bundle.
+    trap 'kill "$watcher" 2>/dev/null; npm --prefix "$PLUTODECK_FRONTEND" run build >/dev/null 2>&1' EXIT
+else
+    echo "frontend/node_modules is absent: serving the committed bundle, edits will not rebuild."
+    echo "Run \`mise run frontend-install\` if you mean to edit the frontend."
+fi
+
 julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e '
     using PlutoDeck
     present(ARGS[1]; port = parse(Int, ARGS[2]))
