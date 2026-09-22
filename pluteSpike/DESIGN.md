@@ -236,7 +236,12 @@ that works without preparation rather than the degraded one.
 
 A cue-only speaker window follows it, separately. It renders no cards — no kernel, no Rainbow
 bundle, no bonds, only the cue text and which slide it belongs to — so it is a second page
-rather than a second renderer. Reveal's `S` is blocked because a keypress calls `window.open`
+rather than a second renderer. That is what rules out reveal's answer to the same problem, which
+loads the whole deck into two `<iframe>`s to preview the current and the next slide: here each
+frame would open its own kernel connection, and writing the `deck_theme` bond is a reactive run,
+so a preview would make the presentation re-run cells. What the page can say about what is
+coming is the next slide's title and the opening of its cue, which is also what distinguishes
+slides whose pictures barely differ. Reveal's `S` is blocked because a keypress calls `window.open`
 from code; a link in the deck chrome is a click the viewer made and is not, and the two windows
 are same-origin, so the slide number crosses on a `BroadcastChannel`.
 
