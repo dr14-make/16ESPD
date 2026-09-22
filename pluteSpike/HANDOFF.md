@@ -44,16 +44,19 @@ that is slow to start or has been killed.
     [x] Issue 017     one payload per draw; the suite asserts a plot is drawn, not present
     [ ] Issues 007, 015
 
-## Run the spike
+## Run the deck
 
-    ./start.sh          # then open http://localhost:8099
+    mise run deck          # presents lecture 1, prints the URL and the Pluto editor link
+    mise run deck-check    # what a deck publishes, without starting a kernel
+    mise run deck-test     # the suite, browser tests included (needs Chrome, ~2 GB free)
 
-First run installs Pluto into `backend/` and takes a minute. Julia comes from the `dyad-3.3.0`
-channel, matching `.vscode/settings.json`. `start.sh` prints the Pluto editor URL; the secret is
-regenerated per run. Ctrl-C stops both processes — note the trap takes Pluto down with the
-bridge, so killing one kills both.
+Julia comes from the `dyad-3.3.0` channel, matching `.vscode/settings.json`. Presenting opens
+the notebook **in place**, and Pluto rewrites what it opens, so a deck run leaves the notebook
+showing as modified — that is the editing loop working, not a fault. Run against a copy if that
+is not what you want.
 
-The `rainbow/ui` probe is a second page on the same server: `http://localhost:8099/ui-probe.html`.
+The spike's own stack is gone: no `start.sh`, no Node bridge, no second frontend. `present`
+starts Pluto from Julia and serves the deck from the same process.
 
 ## Issue 009 — proven
 
@@ -95,10 +98,11 @@ Plotly card that means rebuilding the graph against a multi-megabyte payload rep
 a repaint on the card's own `last_run_timestamp` took the plot from dozens of rebuilds to
 exactly one per slider position.
 
-**Where it lives.** `frontend/ui-probe.html` and `frontend/ui-probe.js`, served at
-`/ui-probe.html` by the same bridge. The `freq` slider and the cell it drives were added
-**over the websocket**, not by editing `notebook.jl` — Pluto owns that file and wrote them to
-disk itself, which is the mechanism `PlutoDeck` should use for any cell it needs to inject.
+**Where it lives.** It was proven in a standalone probe page, since removed; the technique is
+`PlutoDeck.jl/frontend/render.js` and the repaint rule is `card.js`. The `freq` slider and the
+cell it drives were added **over the websocket**, not by editing `notebook.jl` — Pluto owns that
+file and wrote them to disk itself, which is the mechanism `PlutoDeck` should use for any cell
+it needs to inject.
 
 ## Open risks
 
@@ -127,7 +131,7 @@ loaded. This was not in DESIGN.md and not in any issue; it was found by the 009 
 Pluto was killed twice during one session (22:20 and 22:30), each time while several 2 GB Julia
 workers and a large browser were resident on a 30 GB box.
 
-Both times **the bridge survived and kept answering 200 with a dead kernel underneath**, so the
+Both times **the server survived and kept answering 200 with a dead kernel underneath**, so the
 deck looked healthy and served a page that could never update. An HTTP check is not a health
 check. The only honest probe is to change a bond and confirm a watched cell re-runs; a
 throwaway version of that is worth keeping as part of issue 013.
@@ -291,11 +295,12 @@ different parameterisations of the same controller. The deck labels its sliders 
 actually are rather than papering over it. Reconciling the two is a decision for the author,
 not a rename.
 
-**The spike's scaffolding cells are deliberately kept.** `script_probe`, `plotly_demo`, `freq`
-and the hidden `eval_in_pluto` cell stay in `backend/notebook.jl`. `frontend/ui-probe.js` and
-`frontend/app.js` still address them by name, and those are the reference implementations
-`spec/START-HERE.md` tells every agent to copy rather than rediscover. Keeping them costs
-nothing: a cell with no `card` key cannot reach a slide, so the deck never sees them.
+**The spike's scaffolding cells are still in the notebook.** `script_probe`, `plotly_demo`,
+`freq` and the hidden `eval_in_pluto` cell stay in `backend/notebook.jl`. What kept them was the
+probe pages that addressed them by name, and those are gone — but removing a cell means going
+through Pluto's websocket, because Pluto owns that file, so it is a job rather than an edit.
+They cost nothing meanwhile: a cell with no `card` key cannot reach a slide, so no deck sees
+them.
 
 ## Found while implementing 008-010
 

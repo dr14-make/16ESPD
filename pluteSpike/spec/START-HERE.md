@@ -66,14 +66,15 @@ if you get it wrong.
 
 | What | Where |
 |---|---|
-| connect with secret, attach by id, restart if not ready | `frontend/rainbow-bridge.js` |
-| batch bonds into **one** `update_notebook` | `rainbow-bridge.js` `_setBonds` |
-| settle on watched cells' `last_run_timestamp`, not `isIdle()` | `rainbow-bridge.js` `_settle` |
+| connect with secret, attach by id, restart if not ready | `PlutoDeck.jl/frontend/kernel.js` |
+| batch bonds into **one** `update_notebook` | `kernel.js` |
+| settle on watched cells' `last_run_timestamp`, not `isIdle()` | `kernel.js` |
 | `process` / `global` shim, imported **before** the bundle | `frontend/vendor/browser-shim.js` |
-| render a cell through `rainbow/ui`, with the contexts | `frontend/ui-probe.js` `paint()` |
-| `<pluto-cell>` wrapper carrying `getPublishedObject` | `frontend/ui-probe.js` `paint()` |
-| repaint a card only when its own cell re-ran | `frontend/ui-probe.js` `painted` map |
-| open a notebook in place with `execution_allowed=true` | `bridge/orchestrator.mjs` |
+| render a cell through `rainbow/ui`, with the contexts | `frontend/render.js` |
+| `<pluto-cell>` wrapper carrying `getPublishedObject` | `frontend/render.js` |
+| repaint a card only when its own cell re-ran | `frontend/card.js` |
+| one payload per draw, so a card on two slides draws twice | `frontend/published.js` |
+| open a notebook in place with `execution_allowed=true` | `src/session.jl` |
 
 The three that fail **silently**, with no exception and nothing rendered:
 
@@ -83,19 +84,20 @@ The three that fail **silently**, with no exception and nothing rendered:
 - Watching only the root cell when settling — you read the previous run's downstream output,
   which looks exactly like bonds not working.
 
-## What is running right now
+## The shape of the tree
 
-The spike may still be up: deck on `:8099`, Pluto on `:1235`, `./start.sh` runs both and its
-trap takes Pluto down when the bridge stops. `/ui-probe.html` is the `rainbow/ui` probe with a
-live Plotly card. `start.sh` prints the Pluto editor URL; the secret is regenerated per run.
+`PlutoDeck.jl/` is the package and the only code. `backend/` holds the lecture-1 notebook, its
+deck file and its speaker cues — content, not implementation.
 
-`backend/notebook.jl` carries four cells that are spike scaffolding rather than design —
+The spike this directory is named after is gone: its `frontend/`, its Node `bridge/` and
+`start.sh` were removed once every technique they proved had a home in the package. `README.md`
+keeps the findings, which have not expired. Read the code itself in the history.
+
+`backend/notebook.jl` still carries four cells that are spike scaffolding rather than design —
 `script_probe`, `plotly_offline`, `plotly_demo`, `@bind freq` — plus a hidden `eval_in_pluto`
-cell left by `worker.execute()` diagnostics. Decide deliberately whether to keep them; they are
-useful as a rendering fixture and misleading as an example.
-
-Nothing is committed beyond what the user committed themselves. `spec/`, `HANDOFF.md`,
-`ui-probe.*` and `vendor/rainbow-ui.esm.js` are untracked.
+cell left by `worker.execute()` diagnostics. A cell with no `card` key cannot reach a slide, so
+they are invisible to every deck; removing them means going through the websocket, because
+Pluto owns that file.
 
 ## Handing back
 
