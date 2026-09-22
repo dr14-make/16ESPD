@@ -11,7 +11,10 @@
   <p id="deck-notebook"></p>
   <p>
     <span id="kernel-status">the kernel is starting</span> ·
-    <a id="editor-link" href="#">open the notebook in Pluto</a>
+    <a id="editor-link" href="#">open the notebook in Pluto</a> ·
+    <!-- A link the viewer clicks, never `window.open` from a key handler: that is the call
+         browsers block, and the reason the cue overlay exists at all. -->
+    <a id="speaker-link" href="speaker.html" target="_blank" rel="noopener">cues in a window</a>
   </p>
 </header>
 

@@ -150,6 +150,22 @@ Measured at 12.1 s to serving HTML, 29.1 s to kernel ready, 31.2 s to first real
 notebook loading **no** packages. The notebook this course needs will be far worse. Issues 010
 and 012 make that legible rather than shorter; cached snapshots are deliberately deferred.
 
+## Found while building 019
+
+**A page outlives the server that served it, and `listenany` hands its port straight back.**
+The cold-open test — a speaker page with no deck driving it — served a second deck on
+`listenany=true`, which took back the port the offline deck of 018 had been served on. That
+server was closed, but its *page* was still open in the browser and still announcing its slide
+every two seconds, and a page and a server that share an origin share a `BroadcastChannel`. So
+the page that was asserting it had no deck to follow reported `live` on slide 1 / 2, against a
+server that had been shut down two testsets earlier. Anything asserting an absence over a
+channel now takes `port=free_port()`, not the default one something else has already used.
+
+**The deck's own module has to announce the slide before it reaches its kernel.** `deck.js`
+awaits `connect` at the top level, so anything constructed after that await does not exist on a
+deck whose Pluto is unreachable — which is the deck the speaker window matters most to. The
+publisher is built beside the cues, above the await, for the same reason they are.
+
 ## Found while pinning 018
 
 **Pluto's client retries a refused websocket forever, so `connect` never settles.** Not a

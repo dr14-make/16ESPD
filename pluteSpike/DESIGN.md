@@ -238,7 +238,25 @@ A cue-only speaker window follows it, separately. It renders no cards — no ker
 bundle, no bonds, only the cue text and which slide it belongs to — so it is a second page
 rather than a second renderer. Reveal's `S` is blocked because a keypress calls `window.open`
 from code; a link in the deck chrome is a click the viewer made and is not, and the two windows
-are same-origin and share a slide number over `BroadcastChannel` with no handshake.
+are same-origin, so the slide number crosses on a `BroadcastChannel`.
+
+**What that page shows when no deck is driving it is the decision the page turns on.**
+`BroadcastChannel` carries no presence and fires no disconnect event, so a deck that was closed
+and a deck nobody has paged for a minute are the same silence. A handshake alone — the page
+announces itself on open, any deck answers with its index — meets every condition 019 lists,
+including re-establishing after a reload, and still leaves a slide number that was true once
+sitting there looking live in front of a room. So a deck repeats where it is every two seconds
+as well as on every move, and a page that has heard nothing for three beats says it has lost the
+deck instead of freezing on what it was last told. Three beats rather than one, because a missed
+beat is a busy main thread repainting every card, and blaming a deck that is fine is its own way
+of being wrong in a lecture hall. The cues stay on screen through it — the lecturer is still
+talking to that slide — and it is the chrome that turns red.
+
+A window also announces its departure on `pagehide`, which is what keeps a reload from costing a
+whole staleness window, with the timer underneath for the close that never got to say it. Every
+message carries the deck's path and a per-window id: two windows on one deck are same-origin and
+same-path, so only the id tells them apart, and a speaker page that can only follow whichever
+spoke last has to say that rather than flip between them.
 
 **Guidance prose on the slide is deferred, not rejected.** A sentence like "drag Kp until it
 oscillates" could be authored in the deck as well, and for a while this design said it should
