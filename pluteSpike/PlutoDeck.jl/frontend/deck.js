@@ -7,6 +7,7 @@
 import { Card } from "./card.js"
 import { Cues } from "./cues.js"
 import { connect } from "./kernel.js"
+import { Position } from "./position.js"
 import { createPainter, whenScriptsSettled } from "./render.js"
 import { kernelStatus } from "./status.js"
 
@@ -68,6 +69,10 @@ const cues = new Cues({
   body: document.getElementById("cue-body"),
   slides: deck.slides,
 })
+
+// Announced from here for the same reason the cues are built here: the speaker window carries
+// no kernel, and a deck that never reached one still has to drive it.
+const position = new Position({ deck: deck.path })
 
 let kernel = null
 let current = 0
@@ -174,6 +179,7 @@ function showSlide(index) {
   previousButton.disabled = index === 0
   nextButton.disabled = index === sections.length - 1
   cues.show(index)
+  position.moved(index)
 }
 
 function toggleCues() {

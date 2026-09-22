@@ -186,6 +186,10 @@ function with_present(body, deck_path::AbstractString)
         wait(process)
         stopped = killed ? "kill" :
             process.exitcode == 0 ? "interrupt" : "exit $(process.exitcode)"
+        # A shutdown that did not finish reads as `exit 1` and nothing else, and what threw is
+        # in the process's own output — which every other path here already reports.
+        stopped == "interrupt" ||
+            @warn "present did not stop cleanly" stopped output = read(log, String)
     end
     return stopped
 end
@@ -249,6 +253,36 @@ const CUES_SHOWING = """!document.getElementById("speaker-cues").hidden"""
 
 "What the cue panel is reading out, as a lecturer sees it."
 const CUE_TEXT = """document.getElementById("cue-body").textContent"""
+
+"""
+The speaker window's own chrome: which slide it believes the deck is on, and whether it still
+believes anything at all.
+
+`SPEAKER_READY` is the statement the module sets after it has subscribed, because a page's
+`load` fires while its module is still evaluating and the harness would otherwise assert
+against a document that is listening to nothing.
+"""
+const SPEAKER_STATE = """document.getElementById("speaker-state").textContent"""
+const SPEAKER_POSITION = """document.getElementById("speaker-position").textContent"""
+const SPEAKER_SLIDE = """document.getElementById("speaker-slide").textContent"""
+const SPEAKER_READY = """'deck' in document.body.dataset"""
+
+"""
+Silence a deck window without closing it.
+
+A window that is closed or reloaded says so on `pagehide`, so only a deck that stops talking
+without saying anything — crashed, killed, or a laptop that went to sleep — is left to the
+staleness timer, and that is the case a handshake alone cannot see.
+"""
+const MUTE_DECK = """
+(() => {
+  BroadcastChannel.prototype.postMessage = () => {}
+  return true
+})()
+"""
+
+"How long to allow for a silence to be called stale: `STALE_MS` and then some."
+const LOST_TIMEOUT = 30.0
 
 """
 Put a select, a textarea and a contenteditable on the slide that is showing.
@@ -738,6 +772,174 @@ const MOVE_THE_SLIDER = """
                         end === :ok
                     finally
                         close(offline_deck)
+                    end
+                end
+
+                # Opened once and carried through the testsets below: what a reload of the
+                # deck must not cost is this page, so it cannot be rebuilt between assertions.
+                # The link is read rather than clicked — a new tab is a target the harness has
+                # not attached to, and the href and the target are assertable on their own.
+                speaker = page(browser)
+                navigate(browser, speaker, "$url/speaker.html")
+                await(browser, speaker, SPEAKER_READY;
+                    what="the speaker window to subscribe to the deck")
+
+                @testset "the chrome offers the speaker window as a link, not as a key" begin
+                    # `window.open` from a key handler is the call browsers block, and the
+                    # whole reason the on-slide overlay exists. A link is the viewer's click.
+                    @test evaluate(browser, view,
+                        """document.getElementById("speaker-link").href""") == "$url/speaker.html"
+                    @test evaluate(browser, view,
+                        """document.getElementById("speaker-link").target""") == "_blank"
+                end
+
+                @testset "the speaker window carries the cues and none of the deck" begin
+                    await(browser, speaker, """document.body.dataset.deck === "live" """;
+                        what="the speaker window to hear the deck it was opened from")
+
+                    @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
+                    @test evaluate(browser, speaker, SPEAKER_SLIDE) == "A wave you can drive"
+                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                    # Markdown, from the same renderer the overlay uses rather than a second
+                    # one: a nested list is what a hand-written parser flattens silently.
+                    @test evaluate(browser, speaker,
+                        """document.querySelectorAll("#cue-body ul ul > li").length""") == 3
+
+                    # No cards, no kernel, no Rainbow bundle: that is what keeps this a second
+                    # page rather than a second renderer, and what lets it outlive a kernel.
+                    @test evaluate(browser, speaker, """document.querySelectorAll(".card").length""") == 0
+                    @test evaluate(browser, speaker,
+                        """!("kernel" in document.body.dataset)""") === true
+                end
+
+                @testset "paging the deck moves the speaker window with it" begin
+                    press(browser, view, "ArrowRight")
+
+                    await(browser, speaker, """$SPEAKER_POSITION === "2 / 2" """;
+                        what="the speaker window to follow the deck to slide 2")
+                    # Slide 2 names no cues, and an empty page is indistinguishable from one
+                    # that failed to render.
+                    @test evaluate(browser, speaker,
+                        """!!document.querySelector("#cue-body .cue-absent")""") === true
+                    @test !occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                    @test evaluate(browser, speaker, SPEAKER_SLIDE) == "Slide 2"
+
+                    press(browser, view, "ArrowLeft")
+                    await(browser, speaker, """$SPEAKER_POSITION === "1 / 2" """;
+                        what="the speaker window to follow the deck back")
+                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                end
+
+                @testset "the overlay still works while the speaker window is open" begin
+                    # The second window is the comfortable path, not a replacement: a lecturer
+                    # who finds the hall mirrors its projector falls back to the overlay.
+                    press(browser, view, "c")
+                    @test evaluate(browser, view, CUES_SHOWING) === true
+                    @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
+                    @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
+
+                    press(browser, view, "c")
+                    @test evaluate(browser, view, CUES_SHOWING) === false
+                end
+
+                @testset "a deck that has gone quiet is reported, not left looking live" begin
+                    # `BroadcastChannel` has no presence and no disconnect event, so a slide
+                    # number that was true once sits there looking live — in front of a room,
+                    # against a deck that was closed a minute ago.
+                    @test evaluate(browser, view, MUTE_DECK) === true
+
+                    await(browser, speaker, """document.body.dataset.deck === "lost" """;
+                        what="the speaker window to call its slide number stale",
+                        timeout=LOST_TIMEOUT)
+
+                    @test occursin("gone", evaluate(browser, speaker, SPEAKER_STATE))
+                    # The cues stay: the lecturer is still talking to that slide, and it is the
+                    # chrome's job to say that nothing is confirming it any more.
+                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, CUE_TEXT))
+                    @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
+                end
+
+                @testset "a reloaded deck re-establishes the link, speaker window untouched" begin
+                    # Planted on the page rather than counted from outside: what has to survive
+                    # is this document, and a reload of it would take the mark with it.
+                    @test evaluate(browser, speaker,
+                        """(() => { window.speakerGeneration = "first"; return true })()""") === true
+
+                    navigate(browser, view, url)
+                    await(browser, view, """document.body.dataset.kernel === "ready" """;
+                        what="the reloaded deck to find the kernel still running")
+
+                    await(browser, speaker, """document.body.dataset.deck === "live" """;
+                        what="the speaker window to hear the reloaded deck",
+                        timeout=LOST_TIMEOUT)
+
+                    press(browser, view, "ArrowRight")
+                    await(browser, speaker, """$SPEAKER_POSITION === "2 / 2" """;
+                        what="the reloaded deck to drive the speaker window")
+                    press(browser, view, "ArrowLeft")
+
+                    @test evaluate(browser, speaker, "window.speakerGeneration") == "first"
+                    # One deck, reloaded, is not two decks: a window says so on its way out, so
+                    # the page it was driving does not spend a staleness window blaming it.
+                    @test !occursin("deck windows", evaluate(browser, speaker, SPEAKER_STATE))
+                end
+
+                @testset "two decks driving one speaker window are visible, not interleaved" begin
+                    # Sent on the wire rather than by opening a second deck: what the follower
+                    # has to handle is a second `source` on the channel, and a second live deck
+                    # would also write the theme bond and re-run the notebook under every
+                    # assertion that follows. The channel name is position.js's, so a rename
+                    # fails here rather than going quiet.
+                    @test evaluate(browser, view, """
+                        (() => {
+                          new BroadcastChannel("plutodeck-position").postMessage({
+                            type: "at", deck: $(repr(deck.path)), source: "a-second-deck", index: 1,
+                          })
+                          return true
+                        })()
+                        """) === true
+
+                    await(browser, speaker, """$SPEAKER_STATE.includes("2 deck windows")""";
+                        what="the speaker window to report both decks")
+                    # The slide number is not asserted here on purpose: two decks that
+                    # disagree are two heartbeats overwriting each other, and that flipping is
+                    # what the warning exists to make visible rather than to hide.
+
+                    # The warning has to clear itself, or the lecturer closes a window and the
+                    # page goes on telling them to close a window.
+                    await(browser, speaker, """!$SPEAKER_STATE.includes("deck windows")""";
+                        what="the second deck to age out of the speaker window",
+                        timeout=LOST_TIMEOUT)
+                    await(browser, speaker, """$SPEAKER_POSITION === "1 / 2" """;
+                        what="the remaining deck to put the speaker window back on its slide")
+                end
+
+                @testset "opened with nothing driving it, the speaker window says so" begin
+                    # A cold open is the case a handshake cannot answer, and slide one's cues
+                    # shown as though they were live is the lie the whole design refuses. The
+                    # server is kernel-less as well, because this page must never need one.
+                    #
+                    # On a port of its own, and that is not a detail: `listenany` starts from
+                    # the default port and would take back the one the offline deck above was
+                    # served on. That deck's page is still open and still announcing itself —
+                    # a page outlives the server that sent it — so this page would pair with it
+                    # over a shared origin and be anything but cold.
+                    lonely = serve(deck, kernel_less_session(deck.notebook_path);
+                        port=free_port(), listenany=true)
+                    try
+                        cold = page(browser)
+                        navigate(browser, cold, "$(lonely.url)/speaker.html")
+                        await(browser, cold, SPEAKER_READY;
+                            what="the speaker window to subscribe with no deck to hear")
+
+                        @test evaluate(browser, cold, """document.body.dataset.deck""") == "waiting"
+                        @test evaluate(browser, cold, SPEAKER_POSITION) == "—"
+                        @test !occursin(CUE_SENTENCE, evaluate(browser, cold, CUE_TEXT))
+                        @test occursin("No deck window", evaluate(browser, cold, SPEAKER_STATE))
+
+                        @test problems(browser, cold) == String[]
+                    finally
+                        close(lonely)
                     end
                 end
 

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Speaker cues</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- An empty data URL is what stops the browser asking for a favicon and logging the 404. -->
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="deck.css">
+
+<header id="speaker-chrome">
+  <h1 id="speaker-slide"></h1>
+  <p>
+    <span id="speaker-position">—</span> ·
+    <span id="speaker-deck"></span>
+  </p>
+  <!-- Live, because the state this page reports changes with no one touching it: a deck that
+       has gone quiet has to announce itself to a lecturer who is looking at the cues. -->
+  <p id="speaker-state" aria-live="polite">No deck window is driving this page.</p>
+</header>
+
+<main id="cue-body"></main>
+
+<script type="module" src="speaker.js"></script>

@@ -228,3 +228,38 @@ body[data-kernel="error"] #kernel-status { color: var(--bad); }
 #cue-body code { font-family: ui-monospace, monospace; font-size: 0.9em; }
 #cue-body a { color: inherit; }
 #cue-body .cue-absent { color: var(--muted); font-style: italic; }
+
+/* --- the speaker window ------------------------------------------------------------------- */
+
+/* Sticky, because a cue long enough to scroll would otherwise take which slide it belongs to
+   and whether anything is still confirming it off the top of the page. */
+#speaker-chrome {
+  position: sticky;
+  inset-block-start: 0;
+  padding-block-end: 0.75rem;
+  margin-block-end: 1rem;
+  background: var(--bg);
+  border-block-end: 1px solid var(--edge);
+}
+
+#speaker-state::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+body[data-deck="waiting"] #speaker-state { color: var(--warn); }
+body[data-deck="live"] #speaker-state { color: var(--ok); }
+/* Read across a lecture hall's worth of peripheral vision: a lecturer looking at the cues has
+   to see that nothing is confirming them without reading the line. */
+body[data-deck="lost"] #speaker-state { color: var(--bad); font-weight: 600; }
+
+/* The cues are the page here rather than a panel over a slide, so they carry a reading size. */
+body[data-deck] #cue-body {
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
