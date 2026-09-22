@@ -27,11 +27,11 @@ project you can get fully right without fighting a kernel.
 uncarded cell and one duplicate behaves as issue 002 specifies; a deck referencing an unknown
 card fails at load naming that card and its slide index.
 
-**Then** 004 + 005 + 006 (port the bridge into Julia; Node leaves the runtime, which is the
+**Then** 004 + 005 + 006 (open the notebook from Julia, so Node leaves the runtime — the
 single biggest quality jump available), then 008, then 011 with 010 and 012 minimal, then 014.
 
-**Skip 007 for now.** Serve ES modules straight from `frontend/` as the spike does —
-`frontend_directory()` already has that branch. A bundler buys content hashing and a smaller
+**Skip 007 for now.** Serve ES modules straight from `PlutoDeck.jl/frontend/`, which is what
+`frontend_directory()` already does when no bundle is there. A bundler buys content hashing and a smaller
 payload, and neither matters until you tag. Standing up a build toolchain before anything
 renders is how you spend two days with nothing to show. 013 and 015 likewise wait.
 
@@ -46,8 +46,8 @@ the reason `DESIGN.md` puts the deck in a separate file. To add or change a cell
 the websocket — `waitSnippet` / `updateSnippetCode` — and let Pluto write to disk. This is
 proven: the `freq` slider cell was added that way and survived an OOM kill.
 
-**An HTTP 200 is not a health check.** The bridge has twice kept serving `200` over a kernel
-that was dead. The only honest probe changes a bond and confirms a watched cell's
+**An HTTP 200 is not a health check.** The deck's server has twice kept serving `200` over a
+kernel that was dead. The only honest probe changes a bond and confirms a watched cell's
 `last_run_timestamp` advances. Write that probe early; you will use it constantly.
 
 **Watch memory, and close what you open.** `earlyoom` here runs `--prefer (julia|node)` and
@@ -61,8 +61,8 @@ hidden cell into the notebook file. Publish anything the deck needs as an ordina
 
 ## Techniques already proven — copy them, do not rediscover them
 
-Working reference code is in the spike. These are not suggestions; each one is a silent failure
-if you get it wrong.
+Working reference code is in the package, at the paths below. These are not suggestions; each
+one is a silent failure if you get it wrong.
 
 | What | Where |
 |---|---|
