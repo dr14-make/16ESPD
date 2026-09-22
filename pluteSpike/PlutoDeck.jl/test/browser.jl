@@ -7,9 +7,10 @@
 
 include("devtools.jl")
 
+import Pluto
 import Sockets
 
-using PlutoDeck: load_deck, present
+using PlutoDeck: Session, load_deck, present, serve
 
 const BROWSER_NOTEBOOK = joinpath(FIXTURES, "browser.jl")
 
@@ -18,6 +19,9 @@ const PRESENT_TIMEOUT = 300.0
 
 "How long `present` may take to bring its kernel down after the interrupt, in seconds."
 const SHUTDOWN_TIMEOUT = 60.0
+
+"How long the page may take to report the websocket it cannot open, in seconds."
+const OFFLINE_REPORT_TIMEOUT = 30.0
 
 """
 The deck the browser drives, in a directory of its own.
@@ -95,6 +99,24 @@ theirs to use — zoom is not a trap.
 **If the kernel dies** mid-lecture, these cues keep rendering, because the browser parsed
 them. That is the whole reason they are not a notebook cell.
 """
+
+"""
+    kernel_less_session(notebook_path) -> Session
+
+A session naming a Pluto server that is not there.
+
+The deck the overlay is designed for: cues are worth most in the minutes before a kernel exists
+or after one has been killed, and only an unreachable Pluto proves they survive it. The URL
+names a port nothing is listening on, so the websocket is refused rather than answered by
+something else.
+"""
+kernel_less_session(notebook_path::AbstractString) = Session(
+    Pluto.ServerSession(),
+    Pluto.RunningPlutoServer(nothing, @task nothing),
+    Pluto.Notebook(Pluto.Cell[], notebook_path),
+    "http://localhost:$(free_port())",
+    "no-secret",
+)
 
 """
     free_port() -> Int
@@ -227,6 +249,27 @@ const CUES_SHOWING = """!document.getElementById("speaker-cues").hidden"""
 
 "What the cue panel is reading out, as a lecturer sees it."
 const CUE_TEXT = """document.getElementById("cue-body").textContent"""
+
+"""
+Put a select, a textarea and a contenteditable on the slide that is showing.
+
+The deck's own cards carry a range input and nothing else, so the widgets a notebook may hand
+a slide — `PlutoUI.Select`, `PlutoUI.TextField`, any cell returning editable HTML — have to be
+planted to be pressed against. Each one is somewhere a lecturer types, and every key the deck
+listens to is a character one of them is owed.
+"""
+const PLANT_WIDGETS = """
+(() => {
+  const host = document.createElement("div")
+  host.id = "planted-widgets"
+  host.innerHTML = `
+    <select id="planted-select"><option>one</option><option>two</option></select>
+    <textarea id="planted-textarea"></textarea>
+    <div id="planted-contenteditable" contenteditable="true">a cue in progress</div>`
+  document.querySelector('.slide[data-current="true"]').append(host)
+  return true
+})()
+"""
 
 "Move the frequency slider the way a hand would, through the event Pluto's bond listener waits on."
 const MOVE_THE_SLIDER = """
@@ -571,6 +614,25 @@ const MOVE_THE_SLIDER = """
                     @test evaluate(browser, view, CUES_SHOWING) === false
                 end
 
+                @testset "a key inside any other widget drives that widget, not the deck" begin
+                    # A panel thrown over the slide mid-sentence lands on the room, not on
+                    # the lecturer who typed.
+                    @test evaluate(browser, view, PLANT_WIDGETS) === true
+
+                    @testset "$selector" for selector in
+                            ("#planted-select", "#planted-textarea", "#planted-contenteditable")
+                        focus(browser, view, selector)
+
+                        press(browser, view, "c")
+                        @test evaluate(browser, view, CUES_SHOWING) === false
+
+                        press(browser, view, "ArrowRight")
+                        @test evaluate(browser, view, CURRENT_SLIDE) == 0
+                    end
+
+                    evaluate(browser, view, """document.getElementById("planted-widgets").remove()""")
+                end
+
                 @testset "a cue renders as markdown, not as the text a lecturer typed" begin
                     press(browser, view, "c")
                     cue = """document.getElementById("cue-body")"""
@@ -630,6 +692,87 @@ const MOVE_THE_SLIDER = """
                           return JSON.stringify(deck.cards).includes($(repr(CUE_SENTENCE)))
                         })()
                         """) === false
+                end
+
+                @testset "the cues render with no kernel to reach at all" begin
+                    # The case the design is built around, and the only one a live kernel
+                    # cannot stage: Pluto has to be somewhere the websocket cannot reach. A
+                    # second server over the same deck, so what is under test is the page
+                    # rather than a second `present` — and a page of its own, because this one
+                    # logs a refusal every few seconds and the deck's own console must stay
+                    # asserted to be silent.
+                    offline_deck = serve(deck, kernel_less_session(deck.notebook_path); listenany=true)
+                    try
+                        offline = page(browser)
+                        navigate(browser, offline, offline_deck.url)
+                        # The load event fires while the deck's module is still running, so
+                        # what is waited for is the statement after the key listener is bound.
+                        await(browser, offline, """'kernel' in document.body.dataset""";
+                            what="the deck to finish wiring itself up")
+
+                        # Every card labelled rather than blank is what says the deck built
+                        # itself whole, rather than stopping where the kernel should have been.
+                        @test evaluate(browser, offline, """
+                            [...document.querySelectorAll(".card")]
+                              .every((card) => card.dataset.source === "placeholder")
+                            """) === true
+
+                        press(browser, offline, "c")
+                        @test evaluate(browser, offline, CUES_SHOWING) === true
+                        @test occursin(CUE_SENTENCE, evaluate(browser, offline, CUE_TEXT))
+
+                        press(browser, offline, "ArrowRight")
+                        @test evaluate(browser, offline, CURRENT_SLIDE) == 1
+                        @test evaluate(browser, offline,
+                            """!!document.querySelector("#cue-body .cue-absent")""") === true
+
+                        press(browser, offline, "ArrowLeft")
+                        @test occursin(CUE_SENTENCE, evaluate(browser, offline, CUE_TEXT))
+
+                        # Pluto's client retries its websocket forever, so `connect` never
+                        # returns and the chrome stays on "connecting": the console is the only
+                        # place the refusal shows, and it is what says the kernel really was
+                        # out of reach rather than quietly reached after all.
+                        @test timedwait(OFFLINE_REPORT_TIMEOUT) do
+                            any(contains("WebSocket connection to"), problems(browser, offline))
+                        end === :ok
+                    finally
+                        close(offline_deck)
+                    end
+                end
+
+                @testset "a cue rewritten before a lecture costs a refresh, not a restart" begin
+                    # `test/server.jl` asserts the payload changes; what is asserted here is
+                    # that a browser refresh is the whole of the lecturer's side of it. Waiting
+                    # for "ready" is both the guard against pressing a key at a half-built page
+                    # and the assertion that the refresh reached the kernel already running.
+                    write(first(deck.slides).notes, "the **rewritten** cue, minutes before the room fills")
+
+                    navigate(browser, view, url)
+                    await(browser, view, """document.body.dataset.kernel === "ready" """;
+                        what="the refreshed deck to find the kernel still running")
+                    press(browser, view, "c")
+
+                    @test evaluate(browser, view, CUES_SHOWING) === true
+                    @test occursin("the rewritten cue", evaluate(browser, view, CUE_TEXT))
+                    @test !occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
+                end
+
+                @testset "a cue file deleted under a running deck is reported, not blank" begin
+                    rm(first(deck.slides).notes)
+
+                    navigate(browser, view, url)
+                    await(browser, view, """document.body.dataset.kernel === "ready" """;
+                        what="the refreshed deck to find the kernel still running")
+                    press(browser, view, "c")
+                    absence = evaluate(browser, view,
+                        """document.querySelector("#cue-body .cue-absent")?.textContent ?? "" """)
+
+                    @test evaluate(browser, view, CUES_SHOWING) === true
+                    # The path and the reason, because the lecturer is the only one who can put
+                    # the file back and a blank panel tells them nothing to do it with.
+                    @test occursin(joinpath("notes", "wave.md"), absence)
+                    @test occursin("could not be read", absence)
                 end
 
                 @testset "the deck reports no console error at all" begin
