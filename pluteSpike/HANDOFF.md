@@ -19,12 +19,10 @@ with Pluto's own renderer, so plots stay interactive and `@bind` widgets defined
 working. One kernel per running instance, never a multi-tenant server. The package lives in
 `PlutoDeck.jl/` and carries the card contract, the deck loader, and the runtime:
 `PlutoDeck.present("<a deck.json>")` starts Pluto, opens the notebook in place and serves the
-deck, with no Node anywhere. Cards now show live output: the frontend is plain ES modules
-served straight from `frontend/`, with its dependencies vendored under `frontend/vendor/`
-because the build pipeline of issue 007 is still deferred — the two Rainbow bundles, and
-`marked.esm.js` (marked 18.0.13, MIT, no dependencies of its own, copied from the npm tarball's
-`lib/marked.esm.js`), which renders speaker cues in the browser so that they survive a kernel
-that is slow to start or has been killed.
+deck, with no Node anywhere. The frontend is TypeScript and Lit under `frontend/src/`, bundled by
+esbuild into `frontend-dist/`, which is committed and is what a deck serves. Every dependency
+comes from npm — `@plutojl/rainbow`, `marked`, `lit`, `@lit/context` — and `frontend/vendor/` is
+gone. Node is a build-time tool: it is needed to *edit* the frontend and never to present one.
 
 ## Status
 
@@ -42,13 +40,48 @@ that is slow to start or has been killed.
     [x] Issue 014     lecture-1 deck — six slides, the notebook carries its card keys
     [x] Issue 016     the deck writes `deck_theme`; a plot follows the viewer's scheme
     [x] Issue 017     one payload per draw; the suite asserts a plot is drawn, not present
-    [ ] Issues 007, 015
+    [x] Issue 007     TypeScript + Lit + @lit/context, bundled by esbuild; the shim is gone
+    [ ] Issue 015
 
 ## Run the deck
 
     mise run deck          # presents lecture 1, prints the URL and the Pluto editor link
     mise run deck-check    # what a deck publishes, without starting a kernel
     mise run deck-test     # the suite, browser tests included (needs Chrome, ~2 GB free)
+
+Presenting needs Julia and a browser. It does not need Node: `frontend-dist/` is committed, and
+that is the whole of what `frontend_directory()` serves.
+
+## Editing the frontend
+
+    mise run frontend-install   # npm ci — once per checkout, and only to edit the frontend
+    mise run frontend-check     # typecheck, lint, and the Node unit tests
+    mise run frontend-watch     # rebuild the bundle on every save
+    mise run frontend-build     # one build
+
+**The loop is still edit and refresh**, but what the browser reads is the bundle, so an edit
+reaches it through a rebuild. `mise run deck` starts esbuild in watch mode alongside the deck for
+exactly this reason — about 200 ms per save — and stops it with the deck. A checkout that has not
+run `frontend-install` presents the committed bundle and says so, which is all a lecturer needs.
+
+**A watcher over a committed bundle leaves a development build behind.** `npm run dev` rebuilds
+into `frontend-dist/`, and its builds carry source maps — so the content hashes differ from the
+release build and `*.js.map` files appear beside them. Present a deck and the committed bundle is
+replaced by a development one; commit without looking and that is what ships. `.gitignore` covers
+the maps, and `mise run deck` now runs `npm run build` from its exit trap so the release build is
+restored when the deck stops. `npm run build` empties the directory first, so the restored bundle
+is byte-identical to what was committed.
+
+**The trap this was expected to be, and what it turned out to be.** Committing a bundle was
+expected to shadow the source: `frontend_directory()` used to prefer `frontend/` in a development
+checkout and `frontend-dist/` otherwise, so a committed bundle would have meant every checkout
+silently served the bundle and editing a source file did nothing. That shape cannot arise,
+because `frontend/` no longer holds anything a browser can run — there is no source-serving mode
+left to shadow. So the fork went away rather than gaining an inverse: `frontend_directory()`
+names one directory, `JULIA_PLUTODECK_FORCE_BUNDLED` is gone with nothing to force, and `serve`
+refuses a missing bundle naming the command that builds one. The failure that replaces it is
+"I edited a `.ts` file and nothing changed", whose cause is a watcher that is not running, and
+`mise run deck` is what keeps that from being the default.
 
 Julia comes from the `dyad-3.3.0` channel, matching `.vscode/settings.json`. Presenting opens
 the notebook **in place**, and Pluto rewrites what it opens, so a deck run leaves the notebook
@@ -149,6 +182,57 @@ locally-served deck, unexamined for anything published.
 Measured at 12.1 s to serving HTML, 29.1 s to kernel ready, 31.2 s to first real content, on a
 notebook loading **no** packages. The notebook this course needs will be far worse. Issues 010
 and 012 make that legible rather than shorter; cached snapshots are deliberately deferred.
+
+## Found while implementing 007
+
+**`@plutojl/rainbow` does not type what `getState()` returns, and `skipLibCheck` hides it.**
+`dist/standalone/client.d.ts` declares `getState(): NotebookData | null` without importing
+`NotebookData` anywhere in the file — the name is simply unresolved. TypeScript reports that as
+an error *inside* a declaration file, which `skipLibCheck: true` suppresses, and the type then
+degrades to `any`. So `tsc` was clean over a kernel client that had no type safety at all on its
+main read path, and it was ESLint's `no-unsafe-member-access` that said so. The deck now declares
+the slice of the notebook state it reads in `pluto.interface.ts` and narrows `getState()` through
+`isNotebookState`, which is also where a Rainbow upgrade that changes the shape stops being a
+card that renders nothing. Worth reporting upstream; the file also carries
+`export * from "./getters.ts"`, a `.ts` extension inside a `.d.ts`.
+
+**`tsc --noEmit` silently ignores a file whose name begins with a dot.** A `src/.probe.ts`
+written to check whether a type resolved was excluded from the program by the `include: ["src"]`
+glob, so the check passed by not running. It cost a wrong conclusion about the above, and the
+only reason it was caught is that ESLint disagreed. A scratch file used to answer a question
+needs an ordinary name.
+
+**The shim was the whole issue, and `define` alone was enough.** Counted rather than assumed:
+the root bundle has six bare `process.env.NODE_ENV` reads, all of them immer's, and one
+`process.cwd` that turned out to be inside a string. Every `global` reference in either bundle is
+the browserify `typeof` probe, and `dist/ui/ui.esm.js` assigns `window.process` itself in a
+`try`. So one `define` entry retires `frontend/vendor/browser-shim.js`, `inject` was not needed,
+and defining `global` would have changed no byte. `DESIGN.md` § The bundler is what replaced the
+browser shim carries this, and `browser.jl` asserts it in a real browser.
+
+**Three tests were importing frontend modules over HTTP, and a bundle has no such URLs.** The
+browser suite unit-tested `kernelStatus`, the `Card` placeholder and the bond batching by
+`import("/status.js")` and friends. Two of those are pure functions that were written to be
+decidable without a browser, and the third became one: the batching and settling rules moved out
+of `Kernel` into `bond.queue.ts`, which imports nothing. They are now `node --test` files beside
+the source — Node 22 discovers and type-strips `*.test.ts` with no flag and no added dependency —
+and the browser keeps what genuinely needs one. The `Card` test became an assertion on the deck
+that has no kernel, where a labelled placeholder is what a lecturer is actually looking at, which
+is a better test than the hand-built object it replaced.
+
+**A Lit component whose children belong to another renderer must render one constant template.**
+A card's body is painted by Preact and a cue body by `marked`, both writing into an element Lit
+created. Lit only revisits the bindings in a template, so a `render` returning a template with no
+bindings inside that element leaves its children alone on every subsequent update. Getting this
+wrong would not error; it would quietly restore a placeholder over a rendered plot.
+
+**A context update reaches a card on Lit's next turn, and `whenScriptsSettled` cannot see that.**
+The preamble has to finish running its scripts before any plot card draws, and the old code got
+that ordering from calling `show()` synchronously. Publishing content through a context is
+asynchronous, so `whenScriptsSettled` was being asked about a card that had not painted yet and
+answered "nothing running" immediately. `#cardsPainted` awaits the cards' own `updateComplete`
+before the wait begins. The cost of getting it wrong is the one 009 already documented: a plot
+card drawn against a library that has not loaded shows nothing and reports `live`.
 
 ## Found while building 019
 
@@ -377,8 +461,9 @@ All ten live in `README.md` with the reasoning. The three that cost the most:
 
 - `worker.isIdle()` returns true *before* a run starts, so it alone means "settled" instantly.
 - Watching only the root cell hands back the previous run's downstream output.
-- The published ESM build needs `process` and `global` shimmed before import, and **no Node-side
-  test harness can catch this**, because Node defines `process` itself.
+- The published ESM build reads `process.env.NODE_ENV` as a bare global, and **no Node-side test
+  harness can catch this**, because Node defines `process` itself. esbuild's `define` is what
+  answers it now; `browser.jl` is what checks that the answer still holds.
 
 ## Conventions
 
@@ -391,8 +476,11 @@ Status lives only in `spec/PLAN.md`. Recording progress never means editing an i
 
 ## State of the tree
 
-The package is `pluteSpike/PlutoDeck.jl/`, whose own `.gitignore` covers `frontend-dist`,
-`frontend-dist-*` and `Manifest.toml`. `backend/notebook.jl` now carries the lecture-1 deck: 13
+The package is `pluteSpike/PlutoDeck.jl/`. Its `.gitignore` now covers `frontend/node_modules`
+and `Manifest.toml`: **`frontend-dist/` is committed**, for the reasons in `DESIGN.md` § The
+built bundle is committed, which also records what would move that back. `frontend/` holds
+TypeScript, `package.json`, `package-lock.json`, `tsconfig.json`, `eslint.config.js` and
+`build.mjs`; `frontend/vendor/` is gone and every dependency comes from npm, pinned exactly. `backend/notebook.jl` now carries the lecture-1 deck: 13
 cards, six labelled widget cells, and the plot and readout cells the slides place. Its 009
 scaffolding is kept on purpose, for the reason recorded above. `backend/lecture-01.deck.json`
 is the deck itself.

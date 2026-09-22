@@ -27,8 +27,8 @@ PlutoDeck.jl/
 │   ├── deck.jl           load deck.json, validate card references against the notebook
 │   ├── cards.jl          read the `card` key out of cell metadata
 │   └── server.jl         HTTP.jl: serve frontend_directory(), /api/session, /api/deck
-├── frontend/             TypeScript source, served in development
-├── frontend-dist/        built bundle, served in production
+├── frontend/             TypeScript source, its npm manifest, and the esbuild build
+├── frontend-dist/        the bundle esbuild writes: committed, and what is always served
 └── test/
 ```
 
@@ -43,8 +43,10 @@ VehicleSystemsComponents/
 The package knows nothing about any particular course, and a course repository knows nothing
 about TypeScript. The entire contract between them is the `card` keys and the deck schema.
 
-`frontend_directory(; allow_bundled)` selects source or bundle the way Pluto's own does, so
-editing TypeScript is a rebuild-and-refresh loop and presenting never touches Node.
+`frontend_directory()` names one directory rather than choosing between two, because a browser
+cannot run TypeScript and the bundle is therefore the only servable form. Editing the frontend is
+a rebuild-and-refresh loop — `mise run deck` rebuilds on every save, in about 200 ms — and
+presenting never touches Node.
 
 ## Decisions
 
@@ -55,28 +57,43 @@ Requiring a Node runtime to present is a second toolchain to install, to version
 before a class. Building in TypeScript and shipping the artifact means `npm` is a tool only the
 package author runs.
 
-Pluto itself is the precedent: `frontend/` for source, `frontend-dist/` for the built bundle,
-`frontend-dist-offline/` for a network-free variant, and `frontend_directory(; allow_bundled)`
-to choose, with `JULIA_PLUTO_FORCE_BUNDLED` to override during development.
+Pluto is the precedent for the layout: `frontend/` for source and `frontend-dist/` for the built
+bundle. It is not the precedent for choosing between them. Pluto's `frontend/` is servable
+JavaScript, so it can offer `frontend_directory(; allow_bundled)` and a
+`JULIA_PLUTO_FORCE_BUNDLED` override; ours is TypeScript, so there is nothing to choose and no
+inverse to want. Every dependency comes from npm and is bundled, which is what makes the shipped
+artifact self-contained — see § The bundler is what replaced the browser shim.
 
 This buys no same-origin benefit. Pluto's router is not publicly extensible, so PlutoDeck runs
 its own HTTP server in the same Julia process on its own port and the browser talks to Pluto
 directly on Pluto's port. That is fine: Pluto answers `Access-Control-Allow-Origin: *` and
 accepts websockets from any origin. The benefit is the absence of Node, nothing more.
 
-### The built bundle is gitignored in development and force-added on the release commit
+### The built bundle is committed
 
-A content-hashed bundle changes in its entirety on every frontend edit. Committing it normally
-adds megabytes per commit for files no one will read again.
+`frontend-dist/` is in the tree, and it is what `frontend_directory()` serves in a checkout and
+in an installed package alike.
 
-Pluto's `.gitignore` carries `frontend-dist` and `frontend-dist-*`, yet an installed Pluto has
-12 MB of `frontend-dist` and neither an `Artifacts.toml` nor a `deps/build.jl`. The bundle is
-force-added onto the release commit, past the ignore rule.
+It is committed because it is the only servable form: `frontend/` holds TypeScript, so an
+ignored bundle would mean a fresh clone can neither present a deck nor run the browser half of
+`] test PlutoDeck` until someone has installed Node and built one — which is the dependency this
+package exists to keep out of a lecturer's way. At 2.6 MB it is also smaller than the 4.2 MB of
+hand-copied dependencies the tree carried before it, and source maps are written only by
+`npm run dev` — `.gitignore` keeps them out.
 
-No CI is required to start; force-add by hand when tagging. The one rule is that a tag is never
-cut without a rebuild. A Julia Artifact pointing at a GitHub release — as PlutoPlotly does for
-its offline Plotly bundle — is where to go if clone size ever becomes painful, and nothing here
-blocks that move.
+The cost is real and pulls the other way: a content-hashed bundle changes in its entirety on
+every frontend edit, so a one-line change to a component reads in a diff as a rewritten 2.1 MB
+file. Review the source; the bundle is output. This decision replaced an earlier one to gitignore
+the bundle and force-add it onto the release commit, which is the state the paragraph below
+describes returning to.
+
+**What would move us back.** A frontend edited often enough for the repository to feel it, or a
+second bundle variant to keep in step. The move is the one Pluto makes — ignore `frontend-dist`,
+force-add it onto the release commit — and what it needs is that a missing bundle fails loudly
+rather than silently serving nothing, which `serve` already does. Either way a tag is never cut
+without a rebuild, which is 015's to enforce. A Julia Artifact pointing at a GitHub release, as
+PlutoPlotly does for its offline Plotly bundle, is the step past that, and nothing here blocks
+it.
 
 ### The deck is a separate JSON file
 
@@ -150,6 +167,73 @@ PlutoUI widgets, most `@bind` elements — renders as an empty box under `innerH
 Pluto's renderer is what makes interactive plots and Julia-defined widgets work at all.
 
 The cost is the bundle: `dist/ui/ui.esm.js` is 3.7 MB against 464 KB for the standalone client.
+Bundled and minified, the deck entry is 2.1 MB of that; the speaker page shares none of it.
+
+### The chrome is Lit; a card's own output is light DOM, and that is not a preference
+
+The deck chrome, the navigation, the cue overlay and the speaker page are Lit components with
+shadow roots of their own. What those four have in common is that they hold no cards.
+
+**A card renders into light DOM, and so does every element above it.** Two separate mechanisms
+break the moment a shadow boundary appears on the path from the document to a card's output, and
+both break silently, with no exception and nothing rendered. Pluto's renderer resolves a
+`published_to_js` payload through `root_node.closest("pluto-cell")`, and `closest` does not cross
+a shadow root — which is how PlutoPlotly reaches both its library and its plot data. And
+`deck.css` reaches a card's output from the document: a card renders Pluto's HTML *without*
+Pluto's stylesheet, so every readout table a notebook emits is styled by `.card-body table` and
+its neighbours. A document stylesheet does not cross a shadow root either. So `deck-app`,
+`deck-slide` and `deck-card` all render into light DOM, which `LightDomElement` carries and which
+`browser.jl` asserts rather than leaving to a comment.
+
+**Rainbow is Preact, and it stays Preact.** `deck-card` owns the box and hands Pluto's renderer a
+plain element to paint into; the two renderers are not unified. A card's body is therefore a node
+Lit creates once and never revisits, which is why `render` returns one constant template with no
+bindings inside it.
+
+### Shared state travels through `@lit/context`
+
+The kernel client, the loaded deck, the current slide index and the kernel status were
+module-level `let` bindings in `deck.js`, reached by closure. Every one of them is read by
+something that is not the module that owns it — the chrome reads the status, the nav and the cue
+overlay read the slide index, every card reads its own content — so `<deck-app>` provides them
+and everything below it consumes. The provider boundary is the element, which is what makes it
+inspectable.
+
+One of the four does not cross that boundary as itself. The kernel has exactly one consumer, the
+painter that closes over it, and § Cards show placeholders until the kernel is live says a card
+holds no worker reference of its own so that a second source of content stays one more `show`
+call rather than a second renderer. So what is provided is the painter and a map of content by
+card name, and the kernel stays inside `<deck-app>`. A card consuming a kernel would be able to
+pull, and the state machine only stays a state machine while it cannot.
+
+### The bundler is what replaced the browser shim
+
+`@plutojl/rainbow` publishes an ESM build meant to be handed to a bundler rather than to a page.
+The root bundle embeds immer, which reads `process.env.NODE_ENV` as a bare global six times, so
+importing it into a page throws `ReferenceError: process is not defined` before anything
+connects. `frontend/vendor/browser-shim.js` existed for that and for nothing else, and it had to
+stay the first import in the module that reached Rainbow — an ordering nothing enforced and no
+Node-side harness could check, because Node defines `process` itself.
+
+esbuild's `define` substitutes the value at build time, so the bundle imports into a page that
+defines nothing for it. That is what makes the shim unnecessary rather than merely relocated,
+and it is the substantive reason this package has a build step at all.
+
+`global` needs no substitution and gets none: every reference in either Rainbow bundle is the
+browserify `typeof global !== "undefined" ? global : …` probe, and `typeof` on an undeclared name
+does not throw. `dist/ui/ui.esm.js` additionally assigns `window.process` itself, in a `try`, for
+the same reason the shim existed. Defining `global` anyway would be a substitution that provably
+changes no byte, so it is left out rather than carried as insurance.
+
+`inject` was not needed. It is where a module-scoped polyfill would go if a dependency ever needs
+a real object rather than a value, and the test below is what would catch that.
+
+**How this is checked.** `browser.jl` imports the built entry into a 404 page on the deck's own
+origin — a document whose module graph is empty, so nothing has run ahead of the import and no
+shim can be hiding the failure — and asserts it resolves. That test replaced one that asserted
+the *unshimmed* import throws, which is the same question asked from the other side. Neither can
+be answered in Node, and this is the one finding in `README.md` that a Node harness is
+structurally unable to reach.
 
 ### The deck tells the notebook which color scheme it is being shown in
 
@@ -216,15 +300,14 @@ on the next browser refresh with the kernel untouched. Baking it into the loaded
 make fixing one word cost a thirty-second kernel restart, and wording that expensive to look at
 gets written blind.
 
-The browser renders the markdown, with a parser vendored into `frontend/vendor/` beside the two
-Rainbow bundles already there. Julia's `Markdown` stdlib needs a live kernel, and a cue is worth
+The browser renders the markdown, with `marked` taken from npm and bundled like every other
+dependency. Julia's `Markdown` stdlib needs a live kernel, and a cue is worth
 most when the kernel is slow to start or has been killed — exactly the case a round-trip would
 fail. A hand-written subset was the tempting middle, and the gridstack decision above rejected a
 2.1 MB dependency for ten lines of CSS on what looks like the same reasoning. It does not
 transfer: `{x, y, w, h}` is a closed problem a CSS grid implements exactly, while markdown has
 no bottom, and a subset fails by rendering a nested list flat, with no error, in front of a
-room. Against the 3.7 MB of `rainbow-ui.esm.js` already served by hand, a parser is a rounding
-error.
+room. Against the Rainbow UI bundle the deck already carries, a parser is a rounding error.
 
 Cues reach the lecturer through an on-slide overlay bound to a key, which is what the reveal.js
 deck in `docs/slides/lecture-01/` already does, for a reason recorded in its `deck.js`: a second
@@ -378,8 +461,9 @@ All ten findings in `README.md` are load-bearing for any implementation. These i
 - One `setBond` per call is one reactive run each; a batch belongs in a single notebook update.
 - `worker.execute()` races workspace rotation and writes a hidden cell to the notebook file.
 - Bonds start as `missing`; a widget's own default is never reported by itself.
-- The published ESM build needs `process` and `global` shimmed before it is imported, and no
-  Node-side test harness can catch that.
+- The published ESM build reads `process.env.NODE_ENV` as a bare global, and no Node-side test
+  harness can catch that, because Node defines `process` itself. The build substitutes it; see
+  § The bundler is what replaced the browser shim.
 
 `createWorker` cannot reach a secret-protected server, which is why the spike needs a Node
 bridge. Opening the notebook from Julia removes that constraint along with the bridge.

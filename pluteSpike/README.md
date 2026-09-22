@@ -5,8 +5,10 @@ values and whose readouts were Pluto cell outputs, driven over [`@plutojl/rainbo
 a Node bridge.
 
 **Its code is gone.** Every technique it proved is in the package now — the kernel client in
-`PlutoDeck.jl/frontend/kernel.js`, the renderer in `render.js`, the repaint rule in `card.js`,
-the browser shim in `frontend/vendor/`, and opening a notebook in place in `src/session.jl`.
+`PlutoDeck.jl/frontend/src/kernel.client.ts`, the renderer in `render.painter.ts`, the repaint
+rule in `deck-card.component.ts`, and opening a notebook in place in `src/session.jl`. The
+browser shim it also proved is the one technique that did *not* move: see the last finding
+below.
 The spike's own `frontend/`, `bridge/` and `start.sh` were kept only as reference
 implementations, and a reference implementation nobody reads is a second copy that drifts. Read
 them in the history if you need them; `PlutoDeck.jl` is what runs.
@@ -60,14 +62,22 @@ arrive as `<bond>` elements inside cell output, and `RawHTMLContainer` calls
 `set_bound_elements_to_their_value` and `add_bonds_listener` over that output itself: each
 widget reports its own value as its card's scripts finish. A deck that also pushed every bond
 on load would be writing values that are already on their way, and the batching in
-`kernel.js` exists precisely because those self-reports arrive as a burst.
+`bond.queue.ts` exists precisely because those self-reports arrive as a burst.
 
 **The ESM build is not browser-ready as published.** It expects a bundler: immer reads
-`process.env.NODE_ENV`, and the embedded browserify bundles reference `process` and
-`global`. Importing `dist/index.esm.js` straight into a page throws `ReferenceError:
-process is not defined` before anything connects. `PlutoDeck.jl/frontend/vendor/browser-shim.js`
-supplies the three globals and must stay the first import in `render.js`. A jsdom or Node
-harness cannot catch this, because Node defines `process` itself — only a real browser does.
+`process.env.NODE_ENV` as a bare global. Importing `dist/index.esm.js` straight into a page
+throws `ReferenceError: process is not defined` before anything connects, and a jsdom or Node
+harness cannot catch that, because Node defines `process` itself — only a real browser does.
+
+The finding stands; the remedy changed. The spike answered it with
+`frontend/vendor/browser-shim.js`, which had to stay the first import in whichever module
+reached Rainbow — an ordering nothing enforced. Issue 007 gave the package the bundler this
+build was always asking for, and esbuild's `define` substitutes the value at build time, so the
+shim is gone rather than relocated. `global` turned out never to have needed one: every reference
+in either bundle is the browserify `typeof global !== "undefined"` probe, which does not throw on
+an undeclared name, and `dist/ui/ui.esm.js` assigns `window.process` itself, in a `try`. What
+still holds, and holds harder now, is that only a real browser can tell you — so `browser.jl`
+imports the built bundle into a page whose module graph is empty and asserts that it resolves.
 
 **The Node integration has undeclared dependencies.** `@plutojl/rainbow/node-polyfill`
 imports `ws` and `jsdom` without listing them. Only relevant off-browser.
@@ -75,8 +85,8 @@ imports `ws` and `jsdom` without listing them. Only relevant off-browser.
 ## Measured
 
 Steady-state, after the first run: **80–125 ms** from slider to redrawn chart and metrics.
-`rainbow.esm.js` is 464 KB and imports nothing, which is why it vendors into an offline deck the
-same way `reveal` and `katex` already do.
+The standalone client is 464 KB and imports nothing, which is what keeps an offline deck's
+payload down to the UI bundle plus the deck's own code.
 
 ## What the spike did not solve
 

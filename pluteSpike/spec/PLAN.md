@@ -21,7 +21,7 @@ call open.
 | [004](issues/004-pluto-session-lifecycle.md) | Pluto session lifecycle | `enhancement` | `high` | `m` | yes | 001 | **done** |
 | [005](issues/005-http-server-and-the-frontend-directory-toggle.md) | HTTP server and the frontend_directory toggle | `enhancement` | `high` | `m` | yes | 001, 003, 004 | **done** |
 | [006](issues/006-present-entry-point.md) | present entry point | `enhancement` | `high` | `s` | yes | 003, 004, 005 | **done** |
-| [007](issues/007-typescript-build-pipeline.md) | TypeScript build pipeline | `enhancement` | `high` | `m` | yes | 001 | todo |
+| [007](issues/007-typescript-build-pipeline.md) | TypeScript build pipeline | `enhancement` | `high` | `m` | yes | 001 | **done** |
 | [008](issues/008-kernel-client-connect-bonds-settle.md) | Kernel client: connect, bonds, settle | `enhancement` | `high` | `m` | yes | 007 | **done** |
 | [009](issues/009-card-renderer-via-rainbow-ui.md) | Card renderer via rainbow ui | `enhancement` | `high` | `m` | yes | 007 | **done** |
 | [010](issues/010-card-state-machine-placeholder-to-live.md) | Card state machine: placeholder to live | `enhancement` | `high` | `s` | yes | 008, 009 | **done** |
@@ -29,7 +29,7 @@ call open.
 | [012](issues/012-deck-chrome-navigation-and-kernel-status.md) | Deck chrome: navigation and kernel status | `enhancement` | `medium` | `s` | yes | 011 | **done** |
 | [013](issues/013-end-to-end-browser-test-harness.md) | End-to-end browser test harness | `enhancement` | `medium` | `m` | yes | 006, 012 | **done** |
 | [014](issues/014-example-deck-lecture-1-cruise-control.md) | Example deck: lecture 1 cruise control | `enhancement` | `medium` | `s` | no | 006, 012 | **done** |
-| [015](issues/015-release-process-build-force-add-bundle-tag.md) | Release process: build, force-add bundle, tag | `enhancement` `tech-debt` | `medium` | `s` | yes | 001, 007 | todo |
+| [015](issues/015-release-process-build-force-add-bundle-tag.md) | Release process: build, force-add bundle, tag | `enhancement` `tech-debt` | `medium` | `s` | yes | 001, 007 | todo — unblocked |
 | [016](issues/016-publish-the-deck-theme-as-a-bond.md) | Publish the deck's theme as a bond | `enhancement` | `high` | `m` | no | 008, 012 | **done** |
 | [017](issues/017-repainting-a-plotly-card-mutates-a-shared-payload.md) | Repainting a Plotly card mutates the payload it was given | `bug` | `high` | `s` | yes | 009, 010 | **done** |
 | [018](issues/018-speaker-cues-and-the-on-slide-overlay.md) | Speaker cues and the on-slide overlay | `enhancement` | `high` | `m` | yes | 003, 012 | **done** |
@@ -38,15 +38,38 @@ call open.
 | [021](issues/021-the-deck-cannot-tell-a-dead-kernel-from-a-cold-one.md) | The deck cannot tell a dead kernel from a cold one | `bug` | `high` | `s` | yes | 012 | todo |
 | [022](issues/022-what-is-coming-next-on-the-speaker-page.md) | What is coming next, on the speaker page | `enhancement` | `low` | `s` | yes | 019 | todo |
 | [023](issues/023-ctrl-c-does-not-always-stop-present-cleanly.md) | Ctrl-C does not always stop `present` cleanly | `bug` | `high` | `m` | no | 006 | todo |
+| [024](issues/024-light-dom-components-carry-their-identity-twice.md) | Light-DOM components carry their identity twice | `refactor` `tech-debt` | `low` | `s` | yes | 007 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
 `DESIGN.md`: decks need a hidden preamble card, and offline Plotly costs 3.82 MB of notebook
 state. `../HANDOFF.md` carries the detail; the preamble is now part of the deck schema.
 
-008, 009 and 010 landed together, against the plain ES modules `frontend_directory()` already
-serves. 007 stays deferred, so `frontend/vendor/` holds the Rainbow bundles rather than a build
-producing them.
+008, 009 and 010 landed together, against the plain ES modules `frontend_directory()` served
+before 007, with `frontend/vendor/` holding hand-copied dependencies.
+
+007 is **done**, and it changed two things the rest of this plan assumed. The frontend is
+TypeScript and Lit under `frontend/src/`, bundled by esbuild into `frontend-dist/`; every
+dependency comes from npm, pinned exactly, and `frontend/vendor/` is deleted. The deck chrome,
+the nav, the cue overlay and the speaker page are Lit components, and the state `deck.js` held in
+module-level bindings travels through `@lit/context` from a provider boundary that is now an
+element. What stayed exactly as it was is the part that breaks silently: a card's output renders
+in light DOM, because `closest("pluto-cell")` and `deck.css` both stop at a shadow root, and
+Rainbow's Preact renderer is untouched.
+
+The issue file says two things that are no longer true, and were already recorded as such before
+the work started: it asks for `gridstack` to be vendored, which 011's re-scoping had already
+ruled out, and it assumes the bundle is gitignored. **The bundle is committed**, which reverses a
+`DESIGN.md` decision; that section now says what the tree does and what would move it back.
+`JULIA_PLUTODECK_FORCE_BUNDLED` is gone — with `frontend/` holding TypeScript there is no source
+mode to force, or to fall back to — and `serve` refuses a missing bundle naming the command that
+builds one. The dev loop is `mise run deck`, which now runs esbuild in watch mode beside the
+deck.
+
+The browser suite grew the assertion the whole issue exists for: the built bundle imports into a
+page whose module graph is empty and resolves, where the published Rainbow build alone throws
+`process is not defined`. Three tests that unit-tested frontend modules by importing them over
+HTTP moved to `node --test` files beside the source, which is where two of them always belonged.
 
 011 was re-scoped rather than implemented, and is **partial**. Its issue file called for the
 GridStack library; the design decision it traces to calls only for a schema shaped like
@@ -96,10 +119,9 @@ card the deck gave it. That last one is the only assertion that notices `deck.cs
 grip on a figure's height: a 400 px plot still draws, still reports `live`, and still answers
 every other selector in the suite.
 
-Still open, and not 013's to close: no browser ever loads a deck out of `frontend-dist`,
-because 007 has not built one. `server.jl` covers which directory `frontend_directory()`
-picks and how a hashed asset is cached, against a stand-in bundle; a real one arrives with
-007 and 015.
+What was open and 007 closed: until it landed, no browser had ever loaded a deck out of
+`frontend-dist`, because nothing had built one. Every browser test now runs against the real
+bundle, which is the only thing served.
 
 018 and 019 come from a second design pass, on prose PlutoDeck had no home for. It ended
 smaller than it started. Guidance prose on the slide — "drag Kp until it oscillates" — was
@@ -141,7 +163,10 @@ Every issue names the `DESIGN.md` section it implements. The reverse mapping:
 | Design decision | Issues |
 |---|---|
 | Julia package serving a prebuilt TypeScript bundle | 001, 005, 007 |
-| Bundle gitignored, force-added on release | 001, 015 |
+| The chrome is Lit; a card's output is light DOM | 007, 009, 011 |
+| Shared state travels through `@lit/context` | 007, 012 |
+| The bundler is what replaced the browser shim | 007 |
+| The built bundle is committed | 001, 007, 015 |
 | The deck is a separate JSON file | 003 |
 | Cards address cells by a `card` metadata key | 002, 003 |
 | Layout gridstack-shaped, hand-authored first | 003, 011 |
