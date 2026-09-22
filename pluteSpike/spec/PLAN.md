@@ -35,7 +35,7 @@ call open.
 | [018](issues/018-speaker-cues-and-the-on-slide-overlay.md) | Speaker cues and the on-slide overlay | `enhancement` | `high` | `m` | yes | 003, 012 | **done** |
 | [019](issues/019-cue-only-speaker-window.md) | Cue-only speaker window | `enhancement` | `medium` | `s` | no | 018 | todo |
 | [020](issues/020-on-demand-clipping-check-across-every-card.md) | On-demand clipping check across every card | `enhancement` `tech-debt` | `medium` | `s` | yes | 011, 012 | todo |
-| [021](issues/021-the-deck-cannot-tell-a-dead-kernel-from-a-cold-one.md) | The deck cannot tell a dead kernel from a cold one | `bug` | `high` | `s` | no | 012 | todo |
+| [021](issues/021-the-deck-cannot-tell-a-dead-kernel-from-a-cold-one.md) | The deck cannot tell a dead kernel from a cold one | `bug` | `high` | `s` | yes | 012 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
