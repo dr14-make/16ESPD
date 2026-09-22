@@ -562,10 +562,9 @@
 
 </section>
 
-<!-- Section 01's demo cards quote notebooks/lecture01/01-the-car.ipynb as executed. The other
-     nine notebooks did not exist when this deck was written; their cards use the scenario-
-     builder API documented in assets/README.md, which is a proposal to be reconciled once the
-     notebooks land. Cell headings and notebook filenames are the load-bearing part of a card. -->
+<!-- Every demo card quotes its notebook as executed: the same analysis, the same parameter
+     names, the same values. Cell headings and notebook filenames are the load-bearing part of
+     a card, because the copy button hands the code to a lecturer in front of a room. -->
 
 <!-- ===================== 01 — The car =================================================== -->
 <section data-section-title="01 — The car">
@@ -2410,7 +2409,8 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
         <span class="label">The hill we are about to drive up</span>
         130 km/h on a sustained 10 % climb needs <strong>2024 N</strong> at the road.<br>
         The engine can deliver <strong>1935 N</strong>.<br>
-        The car will lose, and settle back to about <strong>118 km/h</strong>.
+        The car will lose, and head for about <strong>118 km/h</strong> — a 120 s climb
+        gets it to <strong>119.05</strong>, still falling.
       </div>
     </div>
     <aside class="notes">
@@ -2430,7 +2430,7 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
         <li><strong>Process</strong> — the thing being pushed. Our car.</li>
         <li><strong>Saturation</strong> — an actuator at its limit, unable to follow the command it was given.</li>
         <li><strong>2024 N</strong> — the tractive force a 10 % climb at 130 km/h demands. <strong>1935 N</strong> — what the engine can deliver. Five per cent short.</li>
-        <li><strong>118 km/h</strong> — where the car settles on that climb once it has lost the argument.</li>
+        <li><strong>118 km/h</strong> — the asymptote this climb heads for. Say <em>heads for</em>, not <em>settles at</em>: the climb is 120 s long and the car is at 119.05 km/h and still falling when the road flattens.</li>
         <li><strong>y_min = 0</strong> — the limiter's lower bound. This engine cannot produce negative torque, so it cannot brake.</li>
       </ul>
     </aside>
@@ -2447,21 +2447,21 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
           </div>
           <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-SPEED = "loop.plant.v_kmh"
-COMMAND = "loop.controller.y"
-DELIVERED = "loop.plant.engine.limiter.y"
-INTEGRAL = "loop.controller.integrator.y"
+SPEED     = "loop.plant.v_kmh"
+COMMAND   = "loop.controller.add_ff.y"      # before the limiter
+DELIVERED = "loop.plant.engine.limiter.y"   # on the crankshaft
+INTEGRAL  = "loop.controller.integrator.y"
 
 # `Ni` is the back-calculation tracking factor; a large value makes the
 # correction negligible, which is the no-anti-windup case.
-none = Scenarios.CruiseClimbTransient(
-    k = 56.0, Ti = 8.0, Ni = 1.0e6,
+no_aw = Scenarios.CruiseClimbTransient(
+    k = 56.0, Ti = 10.0, Td = 0.5, Ni = 1.0e6,
     v_set = 130.0, gradient = 0.10,
     start_time = 30.0, duration = 120.0, stop = 400.0)
 
-plot_speed(none; sig = SPEED, setpoint = 130)
-plot_torque(none; commanded = COMMAND, delivered = DELIVERED)
-signal(none, INTEGRAL)                  # the integrator, separately</code></pre>
+plot_speed(no_aw; sig = SPEED, setpoint = 130)
+plot_torque(no_aw; commanded = COMMAND, delivered = DELIVERED)
+signal(no_aw, INTEGRAL)                 # the integrator, separately</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -2558,11 +2558,16 @@ signal(none, INTEGRAL)                  # the integrator, separately</code></pre
             <span class="nb">06-windup.ipynb</span>
             <span class="cell">cell <b>The overshoot</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>plt = plot_speed(none; sig = SPEED, setpoint = 130)
+          <pre><code class="language-julia" data-trim data-noescape>t, v = signal(no_aw, SPEED)
+
+plt = plot_speed(no_aw; sig = SPEED, setpoint = 130)
 vline!(plt, [30.0, 150.0]; ls = :dot, color = :gray,
        label = "climb starts / ends")
 
-@show overshoot(none, 130; sig = SPEED, y0 = 130)   # percent</code></pre>
+# The car starts AT the setpoint, so there is no step to normalize
+# against: `overshoot` would divide by zero. Measure the excess.
+peak = maximum(v)
+@show peak peak - 130 t[argmax(v)]      # km/h, km/h over, s</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -2716,9 +2721,13 @@ vline!(plt, [30.0, 150.0]; ls = :dot, color = :gray,
       is dragged back hard the moment you saturate; large means it barely notices. Set it too
       small and the integral path stops contributing at all near the limit.</p>
       <p><strong>Ask the room:</strong> what does back-calculation do that clamping does not?
-      <em>(It unwinds while still saturated, rather than merely refusing to wind further. In a
-      long saturation both end up in about the same place, which is what the next slide
-      shows.)</em></p>
+      <em>(It unwinds while still saturated, rather than merely refusing to wind further. You
+      would expect it to recover better. On this hill it does not — clamping overshoots 0.17 km/h
+      and recovers in 3.5 s, back-calculation 1.11 km/h and 13.6 s. Back-calculation balances
+      rather than freezes, and with T<sub>t</sub> = N<sub>i</sub>·T<sub>i</sub> = 9 s it settles
+      high and still has a surplus to unwind. That is a library default left alone, not a verdict
+      on the method — and it is why the lecture demonstrates clamping, which has no parameter to
+      leave wrong.)</em></p>
           <p><strong>In the model:</strong> <b><code>Ni</code></b>, the back-calculation parameter, and <b><code>y_max</code> defaulting to <code>T_max</code></b> — the controller's own ceiling, which the next slide argues should sit lower.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
@@ -2741,14 +2750,15 @@ vline!(plt, [30.0, 150.0]; ls = :dot, color = :gray,
           </div>
           <pre><code class="language-julia" data-trim data-noescape># Three schemes, three calls: `Ni` switches back-calculation on and off,
 # and clamping is a different controller, so a different analysis.
-CLIMB = (k = 56.0, Ti = 8.0, v_set = 130.0, gradient = 0.10,
+CLIMB = (k = 56.0, Ti = 10.0, Td = 0.5, v_set = 130.0, gradient = 0.10,
          start_time = 30.0, duration = 120.0, stop = 400.0)
 
 runs = ["none"             =&gt; Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CLIMB...),
         "back-calculation" =&gt; Scenarios.CruiseClimbTransient(; Ni = 0.9, CLIMB...),
         "clamping"         =&gt; Scenarios.ClampingCruiseClimbTransient(; CLIMB...)]
 
-[name =&gt; overshoot(s, 130; sig = SPEED, y0 = 130) for (name, s) in runs]</code></pre>
+# peak over setpoint, not `overshoot`: no step to normalize against
+[name =&gt; maximum(signal(s, SPEED)[2]) - 130 for (name, s) in runs]</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -2756,10 +2766,10 @@ runs = ["none"             =&gt; Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CL
           </div>
         </div>
         <table>
-          <tr><th>Variant</th><th>Peak overshoot</th></tr>
-          <tr><td>none</td><td class="muted">read from the notebook</td></tr>
-          <tr><td>clamping</td><td class="muted">read from the notebook</td></tr>
-          <tr><td>back-calculation</td><td class="muted">read from the notebook</td></tr>
+          <tr><th>Variant</th><th>Over setpoint</th><th>Recovery</th></tr>
+          <tr><td>none</td><td>+49.80 km/h</td><td>68.3 s</td></tr>
+          <tr><td>clamping</td><td>+0.17 km/h</td><td>3.5 s</td></tr>
+          <tr><td>back-calculation</td><td>+1.11 km/h</td><td>13.6 s</td></tr>
         </table>
       </div>
       <figure class="fig">
@@ -2777,8 +2787,8 @@ runs = ["none"             =&gt; Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CL
       The only difference is whether the integrator was allowed to accumulate something it could
       not spend.</p>
       <p><strong>Read out</strong> the three overshoot figures.</p>
-      <p><strong>Say:</strong> and note what anti-windup did <em>not</em> fix. The car still
-      falls back to 118 km/h on the climb. No controller can make a 150 N·m engine deliver
+      <p><strong>Say:</strong> and note what anti-windup did <em>not</em> fix. All three traces
+      sag to the same 119 km/h on the climb. No controller can make a 150 N·m engine deliver
       2024 N of tractive force. Anti-windup does not add performance — it stops you being
       punished for asking.</p>
       <p><strong>Ask the room:</strong> which of the two methods would you ship? <em>(Either.
@@ -2789,44 +2799,65 @@ runs = ["none"             =&gt; Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CL
       <ul>
         <li><strong>:none</strong> — no protection. <strong>:clamping</strong> — conditional integration. <strong>:backcalculation</strong> — <code>LimPID</code>'s built-in, via N<sub>i</sub>.</li>
         <li><strong>Peak overshoot</strong> — the single number that separates them.</li>
-        <li><strong>What none of them fixes</strong> — the car still falls to 118 km/h on the climb. Anti-windup does not add performance; it stops you being punished for asking.</li>
+        <li><strong>What none of them fixes</strong> — all three sag to the same 119.05 km/h on the climb. Anti-windup does not add performance; it stops you being punished for asking.</li>
       </ul>
     </aside>
   </section>
 
   <section>
-    <h2>Set the limit below the real one</h2>
+    <h2>Two limits, and only one of them is real</h2>
     <div class="cols">
       <div>
-        <p class="small">The clamping limit is a number <em>you</em> choose in the controller.
-        It should not be the engine's nameplate figure.</p>
         <ul class="small">
-          <li>Engines lose torque when hot.</li>
-          <li>And with age.</li>
-          <li>And at altitude, and on poor fuel.</li>
+          <li><code>T_max</code> is what the <strong>engine enforces</strong>. A fact about the
+            hardware, true whether or not any software knows it.</li>
+          <li><code>y_max</code> is what the <strong>controller believes</strong>. A constant in
+            a program — and what the saturation detector compares against.</li>
         </ul>
-        <p class="small">Clamp at exactly 150 N·m and on a hot day the real limit is 140 — so
-        the loop saturates ten newton-metres <em>below</em> where the anti-windup starts
-        working, and it winds up anyway.</p>
+        <table class="small">
+          <tr><th>Engine</th><th>Controller believes</th><th>Lowest on climb</th><th>Peak after</th></tr>
+          <tr><td>150</td><td>140 — margin</td><td>102.04</td><td>130.15</td></tr>
+          <tr><td>150</td><td>150 — exactly at it</td><td>119.04</td><td>130.17</td></tr>
+          <tr><td>150</td><td>200 — optimism</td><td>119.09</td><td>130.55</td></tr>
+          <tr><td>150</td><td>300 — twice</td><td>119.09</td><td>131.58</td></tr>
+          <tr><td>150</td><td>none at all</td><td>119.10</td><td><b>179.48</b></td></tr>
+        </table>
       </div>
-      <div class="callout small">
-        <span class="label">How much below?</span>
-        As much as you distrust your own model of the actuator. That is a judgement, not a
-        formula — and stating it as a judgement is more honest than a number that looks derived.
+      <div class="callout danger small">
+        <span class="label">The rule is ordering, not margin</span>
+        <strong>The clamp must not sit above what the actuator enforces.</strong> Above it, the
+        damage is the size of the gap. Below it buys almost nothing and is <em>not free</em>:
+        clamping at 140 against an engine that has 150 costs <strong>17 km/h</strong> of
+        climbing authority to buy back <strong>0.02 km/h</strong> of overshoot.
+        <br><br>
+        How far below is a trade against authority — made with both numbers in front of you,
+        not by reflex.
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the part that gets left out of textbook treatments, and
-      it is the part that bites in service. Your anti-windup logic is only armed above the limit
-      you told it about. Tell it about a limit you are sure the hardware can beat.</p>
-      <p><strong>Ask the room:</strong> where else in a vehicle would you apply that reasoning?
-      <em>(Brake pressure, steering rate, battery current — anywhere the datasheet number is an
-      optimistic one.)</em></p>
+      <p><strong>Say:</strong> the folklore here is "leave yourself a margin below the
+      nameplate". We measured it, and on this car it is a bad trade. Read the
+      <em>peak after</em> column downwards: below the ceiling and at it are both safe, and above
+      it the damage grows with the gap.</p>
+      <p><strong>Point at the last row.</strong> A controller with no output clamp at all
+      reproduces the windup run to within a fraction of a km/h — and that row is not
+      hypothetical, it is what notebooks 03, 04 and 05 were running. Correct anti-windup logic
+      that is never reached is the most expensive kind of correct: it passes review, and it does
+      nothing.</p>
+      <p><strong>Why the margin costs so much here:</strong> the proportional term has already
+      driven the command hundreds of N·m past both numbers, so 10 N·m of gap is worth almost
+      nothing in overshoot — while 10 N·m of authority you refused to use is worth 17 km/h on a
+      10 % climb.</p>
+      <p><strong>Where the reflex does earn its keep:</strong> systems where the gap can be
+      large — a valve that sticks, a rudder meeting current, an amplifier sagging under load —
+      and where the loop gain is low enough that the command lives inside the gap rather than
+      far above it.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>y_max</strong> — the controller's output clamp, which <em>you</em> choose.</li>
-        <li><strong>T_max</strong> — the engine's nameplate ceiling, which the datasheet claims.</li>
-        <li><strong>The rule</strong> — set y_max below T_max by however much you distrust your model of the actuator. Hot, aged, at altitude, on poor fuel: all lower the real ceiling.</li>
+        <li><strong>y_max</strong> — the controller's output clamp, which <em>you</em> choose. It decides when the integrator freezes.</li>
+        <li><strong>T_max</strong> — what the engine enforces. Hot, aged, at altitude, on poor fuel, the real ceiling sits below the nameplate.</li>
+        <li><strong>The rule</strong> — ordering, not margin: y_max must not sit <em>above</em> T_max. How far below is a trade against climbing authority, and on this car the prudent-sounding margin loses that trade 17 km/h to 0.02.</li>
+        <li><strong>The band between them</strong> — if y_max sits above what the engine delivers, there is a range where the engine is saturated, the error will not close, and the controller sees no saturation at all. That is windup, back again.</li>
       </ul>
     </aside>
   </section>
@@ -2875,24 +2906,31 @@ runs = ["none"             =&gt; Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CL
       <div>
         <p class="small">Thermal, shot, flicker, coupling from everything else in the vehicle —
         noise is not a defect, it is a property. A speedometer has it too.</p>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
-            <span class="cell">cell <b>The measurement</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>1. Every sensor is noisy</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
-    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 10.0)),
-    [], tspan))
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-t, v_true = signal(sol, "plant.v_kmh")
-t, v_meas = signal(sol, "noise.y")
-plot(t, [v_true v_meas]; lw = 2,
-     label = ["true" "measured"])</code></pre>
+TRUE_SPEED = "loop.plant.v_kmh"    # what the car is doing
+MEASURED   = "loop.noise.y"        # what it is told
+COMMAND    = "loop.controller.y"   # what it asks for
+UNLIMITED  = 1.0e6                 # N.m, both ways
+
+# Nd = 10 is the LimPID default, and what every
+# notebook since 05 has silently been running.
+noisy = Scenarios.NoisyCruiseTransient(
+    k = 56.0, Ti = 10.0, Td = 0.5, Nd = 10.0, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED,
+    y_min = -UNLIMITED, stop = 40.0)
+
+t, v_true = signal(noisy, TRUE_SPEED)
+_, v_meas = signal(noisy, MEASURED)</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
           </div>
         </div>
       </div>
@@ -2948,9 +2986,9 @@ plot(t, [v_true v_meas]; lw = 2,
       <p><strong>Say:</strong> any signal is a sum of sine waves — that is what a Fourier
       transform is telling you. So this is not a special case about sines; it is what a
       derivative does to every high-frequency component in anything you feed it.</p>
-      <p><strong>Ask the room:</strong> our noise is a hundredth of a km/h. If it sits at
-      500 rad/s, what does the derivative make of it? <em>(Five km/h per second of apparent
-      acceleration, out of nothing. Now multiply by T<sub>d</sub>.)</em></p>
+      <p><strong>Ask the room:</strong> each of our six noise components is 0.2 km/h. The top
+      one sits at 16 Hz. What does the derivative path make of it? <em>(k·T<sub>d</sub>·A·ω =
+      563 N.m, out of a wiggle two tenths of a km/h wide. The engine makes 150.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>A</strong> — the amplitude of the noise. Unchanged between the two sines.</li>
@@ -2966,24 +3004,23 @@ plot(t, [v_true v_meas]; lw = 2,
     <h2>A near-pure derivative</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
-            <span class="cell">cell <b>Near-pure derivative</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>3. A near-pure derivative</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd
-# pushes the cutoff up, towards no filter at all
-sol = solve(ODEProblem(mtkcompile(
-    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 1000.0)),
-    [], tspan))
+          <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd pushes
+# the cutoff up, towards no filter at all. Nd = 100 puts it
+# at 200 rad/s, above the noise band's 16 Hz top.
+near_pure = rerun(noisy, "Nd" =&gt; 100.0)
 
-plot_torque(sol; delivered = nothing)
-extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
+t, u = signal(near_pure, COMMAND)
+cruise = 20.0 .&lt;= t .&lt;= 30.0    # settled, the step long over
+extrema(u[cruise])              # the damage, in N.m</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
           </div>
         </div>
         <div class="callout danger small">
@@ -2999,8 +3036,9 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Read out</strong> the range from <code>extrema</code>. Compare it to the
-      40 N·m the car actually needs.</p>
+      <p><strong>Read out</strong> the range from <code>extrema</code>: the command swings
+      across 1760 N·m, twelve times the 150 N·m the engine can deliver and forty times the
+      40 N·m the car actually needs to hold this speed.</p>
       <p><strong>Say:</strong> and now think about what this is physically. That command goes
       to an engine. Fuelling swinging like that, many times a second, forever. It will not break
       today — it will wear something out, or overheat something, or simply feel terrible to sit
@@ -3013,10 +3051,11 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
       it, and why most industrial loops are PI with no derivative at all.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>N<sub>d</sub> = 1000</strong> — filter cutoff pushed so high it is effectively no filter.</li>
+        <li><strong>N<sub>d</sub> = 100</strong> — cutoff at N<sub>d</sub>/T<sub>d</sub> = 200 rad/s, above the noise band's 16 Hz top: no filter left, in effect.</li>
+        <li><strong>rerun</strong> — <code>Nd</code> is an ordinary parameter, so this re-solves the compiled model rather than building a second one.</li>
         <li><strong>extrema(...)</strong> — the minimum and maximum of the commanded torque, i.e. the full swing.</li>
-        <li><strong>TORQUE_CMD</strong> — the signal path for what the controller asks of the engine.</li>
-        <li><strong>delivered = nothing</strong> — the delivered trace is suppressed so the commanded chatter is not hidden behind it.</li>
+        <li><strong>COMMAND</strong> — <code>loop.controller.y</code>, what the controller asks of the engine.</li>
+        <li><strong>the 20–30 s window</strong> — settled cruise, with the step long over, so what is left in it is the noise and nothing else.</li>
       </ul>
     </aside>
   </section>
@@ -3028,28 +3067,33 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
         <p class="small">A first-order low-pass on the derivative path, with cutoff
         <em>N</em> in rad/s:</p>
         <p>$$ \frac{s\,N}{s+N} \qquad\text{instead of}\qquad s $$</p>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
-            <span class="cell">cell <b>Nd family</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>4. Filter it</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5),
-           "Nd", [1000.0, 100.0, 20.0, 5.0];
-           tspan = (0.0, 120.0))
+          <pre><code class="language-julia" data-trim data-noescape># `Nd` is an ordinary parameter, so the whole family is one
+# compiled model re-solved four times, not four models.
+NDS = [100.0, 20.0, 5.0, 2.0]   # cutoffs 200, 40, 10, 4 rad/s
 
-plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
+nd_family = sweep(near_pure, "Nd", NDS)
+
+for (nd, sol) in nd_family
+    tt, uu = signal(sol, COMMAND)
+    @show nd extrema(uu[20.0 .&lt;= tt .&lt;= 30.0])
+end</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
           </div>
         </div>
       </div>
       <figure class="fig">
         <img src="assets/figures/07-nd-family.svg"
              alt="Commanded torque at four derivative filter coefficients: the chatter shrinks steadily as the cutoff comes down until the command is smooth.">
-        <figcaption>The same loop at four cutoffs. The chatter subsides.</figcaption>
+        <figcaption>The same loop at four cutoffs. The chatter subsides — from 1760 N·m to
+          315, with the engine's 150 N·m limit still inside the band.</figcaption>
       </figure>
     </div>
     <aside class="notes">
@@ -3057,14 +3101,15 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       block in every toolchain has one, and most people never touch it because they never look
       at the actuator command. Now you know what it does and why it is there.</p>
       <p><strong>Say:</strong> and notice the filter does not remove the noise. It attenuates
-      it, so that after the derivative amplifies what is left, the result is small enough not to
-      matter. Nothing here is exact.</p>
+      it, so that after the derivative amplifies what is left, the result is smaller. On this car
+      that is not the same as small enough: the command falls from 1760 N·m to 315, and 315 is
+      still twice what the engine can deliver.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>sN/(s + N)</strong> — a derivative in series with a first-order low-pass. At low frequency it is a derivative; at high frequency it flattens off instead of growing.</li>
         <li><strong>N</strong> — the cutoff frequency in rad/s; <code>N<sub>d</sub></code> in the code.</li>
         <li><strong>s</strong> — the Laplace variable; multiplying by s is differentiating.</li>
-        <li><strong>N<sub>d</sub> = 1000, 100, 20, 5</strong> — the sweep, from no filter to heavy.</li>
+        <li><strong>N<sub>d</sub> = 100, 20, 5, 2</strong> — the sweep, from no filter to heavy: cutoffs at 200, 40, 10 and 4 rad/s.</li>
       </ul>
     </aside>
   </section>
@@ -3075,23 +3120,36 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <div>
         <p class="lede">Low enough to remove the noise.</p>
         <p class="lede">High enough to leave the signal.</p>
-        <p class="small muted">If those two ranges overlap, no first-order filter will save you
-        and you need a different measurement — a better sensor, or a state estimator that uses a
-        model to tell signal from noise.</p>
+        <p class="small">On this car those two ranges nearly touch. The loop works at about
+        0.2 Hz; the speedometer's noise starts at 0.5 Hz. <strong>Half a decade</strong> — and a
+        first-order filter rolls off at 6 dB per octave, so it cannot cut one without starting
+        on the other.</p>
+        <p class="small muted">From <em>N<sub>d</sub></em> = 20 down to 2 the filter is free: the
+        perfect-sensor overshoot does not move while the command range falls by a factor of
+        three. Below 2 it starts charging — at <em>N<sub>d</sub></em> = 0.5 the overshoot
+        quintuples <em>on a sensor with no noise on it at all</em>.</p>
       </div>
-      <div class="callout small">
-        <span class="label">Not a recipe</span>
-        There is no formula here, because the answer depends on where your plant's dynamics sit
-        and where your sensor's noise sits. Find both, then choose. Anyone who gives you a
-        single number has assumed your plant.
+      <div class="callout danger small">
+        <span class="label">No cutoff rescues this loop</span>
+        The command range bottoms out around 300 N.m at an <code>Nd</code> where the response is
+        still intact — twice the engine's limit. The honest answers are the ones that leave the
+        filter alone: <strong>less derivative</strong> (T<sub>d</sub> multiplies the noise too),
+        <strong>a better sensor</strong>, or <strong>an estimator</strong> that decides by model
+        rather than by frequency. Anyone who gives you a single number for <code>Nd</code> has
+        assumed your plant.
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> and the useful case is the common one — the signal you care about
-      is slow and has most of the power, the noise is fast and has very little. When those are
-      well separated, a first-order filter is all you need and the choice is easy.</p>
-      <p><strong>Say:</strong> when they are not separated, that is a Kalman filter conversation,
-      and it is a different course.</p>
+      <p><strong>Say:</strong> the easy case is the well-separated one — the signal you care
+      about is slow and has most of the power, the noise is fast and has very little. Then a
+      first-order filter is all you need and the choice is easy.</p>
+      <p><strong>Do not let them leave thinking this car was that case.</strong> It was not. We
+      filtered it as hard as the response would allow and the command still swings twice the
+      engine's limit. The notebook measures both ends of the trade and there is no value of
+      <code>Nd</code> that wins — that is the result, not a failure to tune.</p>
+      <p><strong>Say:</strong> so the fix is upstream of the filter. Use less derivative, get a
+      better measurement, or estimate. The last of those is a Kalman filter, and it is a
+      different course.</p>
       <p><strong>Optional aside, only if time and appetite:</strong> a filtered derivative
       <em>sN/(s+N)</em> is algebraically identical to a feedback loop with <em>N</em> forward and
       an integrator in the feedback path. Same behavior, fewer operations, much harder to read.
@@ -3101,7 +3159,7 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
         <li><strong>Cutoff frequency</strong> — where the filter starts attenuating, conventionally at −3 dB.</li>
         <li><strong>Low-pass</strong> — passes slow things, blocks fast ones.</li>
         <li><strong>The trade-off</strong> — too high and the noise gets through; too low and you filter away the signal, and the derivative stops doing its job.</li>
-        <li><strong>When the bands overlap</strong> — no first-order filter helps, and you need a better sensor or a state estimator.</li>
+        <li><strong>When the bands are close</strong> — as they are here, half a decade apart — no choice of cutoff helps, and the answer is less derivative, a better sensor or a state estimator.</li>
       </ul>
     </aside>
   </section>
@@ -3396,8 +3454,9 @@ K, tau, theta = fopdt_fit(step_test;
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Cohen-Coon</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>SPEED = "loop.plant.v_kmh"
-UNLIMITED = 1.0e6                  # N.m — the ceiling lifted away
+          <pre><code class="language-julia" data-trim data-noescape>SPEED = "loop.plant.v_kmh"       # the plant's km/h, inside the harness
+COMMAND = "loop.controller.y"    # torque asked of the engine
+UNLIMITED = 1.0e6                # N.m — the ceiling lifted away
 
 k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
 
@@ -3459,21 +3518,31 @@ plot_speed(pid; sig = SPEED, setpoint = 110)</code></pre>
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Ziegler-Nichols</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># Raise k under pure proportional control until the oscillation neither
-# grows nor decays. `CruiseLoopStep` leaves both switches off, so the
-# plain analysis is already the P-only loop this step needs.
-DELTA = 0.1        # km/h — the smallest poke that still measures cleanly
+          <pre><code class="language-julia" data-trim data-noescape># `CruiseLoopStep` leaves both switches off, so the plain
+# analysis is already the P-only loop this step needs.
+DELTA = 0.1     # km/h — the smallest poke that measures cleanly
 
 probe = Scenarios.CruiseLoopTransient(
     k = 100.0, v_lo = V_START, v_hi = V_START + DELTA,
     T_max = UNLIMITED, y_max = UNLIMITED, stop = 30.0)
 
-ladder = sweep(probe, "k", [80.0, 100.0, 110.0, 114.0, 115.0, 125.0])
-plot_sweep(ladder; sig = SPEED, name = "k")
+ladder = sweep(probe, "k",
+    [80.0, 100.0, 110.0, 112.0, 114.0, 115.0, 125.0])
 
-Ku = ...          # the gain at which it sustains
-Pu = ...          # the period of that oscillation, seconds
-k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
+# `oscillation` gives the period and the peak-to-trough amplitude
+# ratio per cycle: under one below Ku, over one above, one at Ku.
+walk = [(k = k, osc = oscillation(sol),
+         floor = minimum(signal(sol, COMMAND)[2])) for (k, sol) in ladder]
+usable = filter(w -&gt; w.floor &gt; 0, walk)  # zero command = limit cycle
+
+# interpolate the crossing; do not call a run sustained by eye
+i = findlast(w -&gt; w.osc.ratio &lt; 1, usable)
+below, above = usable[i], usable[i + 1]
+Ku = below.k + (1 - below.osc.ratio) * (above.k - below.k) /
+               (above.osc.ratio - below.osc.ratio)
+Pu = oscillation(rerun(probe, "k" =&gt; Ku)).period
+
+k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)  # 114.56, 2.175 s</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -3609,7 +3678,7 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       table is not yours either.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>K<sub>u</sub>/3.2 and /2.2</strong> — lower gains than Ziegler-Nichols.</li>
+        <li><strong>K<sub>u</sub>/2.2</strong> — against Ziegler-Nichols' K<sub>u</sub>/1.7. Three quarters of the gain: 52.07 against 67.39 N·m per km/h.</li>
         <li><strong>2.2·P<sub>u</sub></strong> — the integral time is <em>multiplied</em> by the ultimate period where ZN divides it. That is a factor of 4.4 slower.</li>
         <li><strong>P<sub>u</sub>/6.3</strong> — the derivative time.</li>
         <li><strong>No P row</strong> — the method exists to be gentler, and a P controller has nothing to be gentle with.</li>
@@ -3969,30 +4038,36 @@ plot_torque(hot; commanded = "loop.controller.y",
             <span class="nb">09-discretization.ipynb</span>
             <span class="cell">cell <b>The sample-time sweep</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># the gains from section 08, untouched
-Scenarios = VehicleSystemsComponents.Lecture1
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 SPEED = "loop.plant.v_kmh"
-UNLIMITED = 1.0e6
+V_START, SETPOINT, UNLIMITED = 90.0, 110.0, 1.0e6
+
+# Notebook 08's gains and the measurement they came from, restated
+# rather than imported: this notebook is its own kernel.
+K_ZN, TI_ZN, TD_ZN = 67.39, 1.087, 0.272
+KU, PU = 114.56, 2.175          # N.m per km/h, s
 
 # `Ts` is structural — the Pade delay bakes its delay time in at
-# construction — so a sample-time sweep is one compiled model per value,
+# construction — so this is one compiled model per sample time,
 # not `sweep` over one of them.
-sampled(Ts) = Scenarios.SampledCruiseStep(;
-    name = :SampledCruiseStep, Ts = Ts, with_I = true, with_D = true,
-    k = k_zn, Ti = Ti_zn, Td = Td_zn, wd = 0.0,
-    T_max = UNLIMITED, y_max = UNLIMITED)
+sampled(Ts; k = K_ZN, Ti = TI_ZN, Td = TD_ZN) =
+    Scenarios.SampledCruiseStep(; name = :SampledCruiseStep, Ts = Ts,
+        with_I = true, with_D = true, wd = 0.0, k = k, Ti = Ti, Td = Td,
+        v_lo = V_START, v_hi = SETPOINT,
+        T_max = UNLIMITED, y_max = UNLIMITED)
 
-runs = [Ts =&gt; solve(ODEProblem(mtkcompile(sampled(Ts)), [], (0.0, 120.0)))
-        for Ts in [0.01, 0.1, 0.4, 1.0]]
+problem(Ts; kw...) =
+    ODEProblem(mtkcompile(sampled(Ts; kw...)), [], (0.0, 120.0))
+solve_at(Ts; kw...) = solve(problem(Ts; kw...))
 
-plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
-for (Ts, sol) in runs
-    plot!(plt, signal(sol, SPEED)...; lw = 2, label = "Ts = $Ts s")
-end</code></pre>
+# The problems are kept, not just their solutions: the next cell
+# re-solves the one at Ts = 1 s with different gains.
+problems = [Ts =&gt; problem(Ts) for Ts in [0.01, 0.1, 0.4, 1.0]]
+runs = [Ts =&gt; solve(p) for (Ts, p) in problems]</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small">Overshoot grows. Then the loop rings. Then it does not come back.</p>
@@ -4116,21 +4191,22 @@ end</code></pre>
             <span class="nb">09-discretization.ipynb</span>
             <span class="cell">cell <b>The fixes</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># 1. sample faster — same gains, Ts back down
-# 2. re-tune for the rate you actually have
+          <pre><code class="language-julia" data-trim data-noescape># Ziegler-Nichols again, on the measurement made *through* the
+# sampler: Ku_slow = 49.82, Pu_slow = 4.294 s from section 5.
 k2, Ti2, Td2 = ziegler_nichols(Ku_slow, Pu_slow)
 
-retuned(Ts, k, Ti, Td) = solve(ODEProblem(mtkcompile(
-    Scenarios.SampledCruiseStep(; name = :SampledCruiseStep, Ts = Ts,
-        with_I = true, with_D = true, k = k, Ti = Ti, Td = Td, wd = 0.0,
-        T_max = UNLIMITED, y_max = UNLIMITED)), [], (0.0, 120.0)))
+# Fix one — sample faster, gains untouched. `Ts` is structural,
+# so this is the only new compile in the cell.
+faster = solve_at(0.05)
 
-sol_slow  = retuned(1.0, k_zn, Ti_zn, Td_zn)
-sol_retun = retuned(1.0, k2, Ti2, Td2)</code></pre>
+# Fix two — re-tune for the rate you have. The Ts = 1 s problem
+# was kept, so this is a `remake`, not another compile.
+retuned_slow = rerun(last(last(problems)),
+                     "k" =&gt; k2, "Ti" =&gt; Ti2, "Td" =&gt; Td2)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small muted">Re-tuning buys back stability, not performance. The slow loop is
@@ -4155,7 +4231,7 @@ sol_retun = retuned(1.0, k2, Ti2, Td2)</code></pre>
       why the conversion method matters.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>Ku_slow, Pu_slow</strong> — the ultimate gain and period measured <em>at the slow sample rate</em>, which are not the continuous ones.</li>
+        <li><strong>Ku_slow, Pu_slow</strong> — the ultimate gain and period measured <em>at the slow sample rate</em>: 49.82 N·m per km/h and 4.294 s, against 114.56 and 2.175 continuously. The sampler cost 56.5 % of the ultimate gain.</li>
         <li><strong>Re-tuning buys stability, not performance</strong> — the slow loop stays a slow loop. The gap to the continuous design is what the cheap processor cost.</li>
       </ul>
     </aside>
@@ -4222,24 +4298,29 @@ sol_retun = retuned(1.0, k2, Ti2, Td2)</code></pre>
     <h2>First, just add the wheel</h2>
     <div class="cols cols-wide-left">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>L1, the wheel appears</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>1. The wheel appears</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># same gains as section 05, now with wheel inertia
-# and an ideal rolling contact
-sol_l1 = solve(ODEProblem(mtkcompile(
-    wheeled_cruise_loop(k = 56.0, Ti = 8.0, Td = 1.5)),
-    [], tspan))
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-plot_speed(sol_l1; setpoint = 110)
-@show rise_time(sol_l1, 110) overshoot(sol_l1, 110)</code></pre>
+SPEED_L1  = "plant.v_kmh"    # the L1 harness is the loop
+GAIN, T_I, T_D = 56.0, 10.0, 0.5
+UNLIMITED = 1.0e6            # N.m, as in notebooks 03 to 05
+
+# same gains as section 05, now with wheel inertia
+# and an ideal rolling contact
+l1 = Scenarios.WheeledCruiseTransient(
+    k = GAIN, Ti = T_I, Td = T_D, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+
+t1, y1 = signal(l1, SPEED_L1)
+@show rise_time(t1, y1, 110) overshoot(t1, y1, 110)</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
       </div>
@@ -4291,24 +4372,30 @@ plot_speed(sol_l1; setpoint = 110)
     <h2>Beat one: the wheel runs away</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>L2, beat one: wheelspin</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>2. Wheelspin</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># the friction curve's second derivative is discontinuous
-# at the transitions: explicit RK handles it, BDF struggles
-sol = solve(ODEProblem(mtkcompile(
-    standing_start(mu_scale = 0.2, tau_cmd = CAR.T_max)),
-    [], (0.0, 20.0)), Tsit5())
+          <pre><code class="language-julia" data-trim data-noescape>@named standing = Scenarios.TestSlipCarPlant()
 
-plot(signal(sol, "wheel.v_wheel_kmh")...; lw = 2, label = "wheel")
-plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
+MU_SNOW, MU_DRY = 0.2, 1.0   # packed snow, dry asphalt
+
+# `saveat` is dense output, not decimation: the launch
+# transient is over inside one adaptive step.
+launch = sweep(standing, "friction.k", [MU_SNOW, MU_DRY];
+               tspan = (0.0, 5.0), saveat = 0.01)
+runs = Dict(launch.values .=&gt; launch.sols)
+
+# four panels: rpm and km/h do not share an axis
+for path in ("plant.v_kmh", "plant.wheel_rpm",
+             "plant.kappa", "plant.wheel.F_x")
+    @show path signal(runs[MU_SNOW], path)[2][end]
+end</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small">Under closed loop the error stays large, so the integrator winds up —
@@ -4316,15 +4403,18 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/10-wheelspin.svg"
-             alt="Wheel speed and vehicle speed from a standing start on low friction: the wheel accelerates rapidly while the vehicle speed barely rises.">
-        <figcaption>Wheel speed against vehicle speed. The engine is working; the car is not
-          moving.</figcaption>
+             alt="Four panels from two standing starts, on snow and on dry asphalt: vehicle speed, wheel speed in rpm, slip ratio, and longitudinal tire force. On snow the wheel runs away to 12 843 rpm while the car reaches only 10 km/h, and the force trace peaks then collapses to a plateau.">
+        <figcaption>Two standing starts, same command. On snow the wheel reaches 12 843 rpm and
+          the car reaches 10 km/h; on dry asphalt, 182 rpm and 21 km/h.</figcaption>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Point at</strong> the two traces diverging. Say: the engine delivered
-      everything it was asked for. The driveline turned. The wheel spun. And the car stayed
-      where it was.</p>
+      <p><strong>Point at</strong> the force panel, bottom right — it has the whole argument in
+      one step. For the first four tenths of a second both surfaces carry every newton the engine
+      asks for. Then the snow hits 1 373 N, everything it has, and falls off a cliff to 961 N,
+      where it stays. <strong>More wheel speed bought less force.</strong></p>
+      <p><strong>Say:</strong> the engine delivered everything it was asked for. The driveline
+      turned. The wheel spun to 12 843 rpm. And the car got to 10 km/h.</p>
       <p><strong>Say:</strong> and now connect it to section 06. The integrator sees a large,
       persistent error and winds up, exactly as it did on the hill. But this time the limit is
       not the engine's torque ceiling — the engine is nowhere near it. The limit is in the
@@ -4335,10 +4425,10 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       section.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>mu_scale = 0.2</strong> — the road friction multiplier. 1.0 is dry tarmac; 0.2 is ice.</li>
-        <li><strong>wheel.v_wheel_kmh</strong> — the wheel's circumferential speed, ω·r, expressed in km/h so it can share an axis with the car.</li>
-        <li><strong>v_kmh</strong> — the car's actual road speed.</li>
-        <li><strong>Tsit5()</strong> — an explicit Runge-Kutta solver. The friction curve has a discontinuous second derivative, which explicit methods handle better than BDF.</li>
+        <li><strong>friction.k</strong> — the road friction multiplier, swept over two values. 1.0 is dry asphalt; 0.2 is packed snow. The ice patch later in this section is 0.05.</li>
+        <li><strong>plant.wheel_rpm</strong> — the driven wheel's rotational speed. It gets its own panel because rpm and km/h do not share an axis.</li>
+        <li><strong>plant.v_kmh</strong> — the car's actual road speed. <strong>plant.kappa</strong> — the slip ratio. <strong>plant.wheel.F_x</strong> — the longitudinal force the tire makes.</li>
+        <li><strong>saveat = 0.01</strong> — dense output, not decimation: the launch transient is over inside one adaptive step, so the raw step points would draw straight lines.</li>
         <li><strong>The limit that is not in the engine</strong> — the engine is nowhere near its ceiling. The ceiling is in the contact patch.</li>
       </ul>
     </aside>
@@ -4350,22 +4440,31 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       <div>
         <p>$$ \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
              \qquad F_x \;=\; \mu(\kappa)\,F_z $$</p>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>Beat two: the curve</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>3. The friction curve</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>plot(kappas, mu.(kappas); lw = 2, label = "",
-     xlabel = "slip ratio", ylabel = "mu")
-scatter!([kappa_peak], [mu_peak]; label = "peak")
+          <pre><code class="language-julia" data-trim data-noescape># the `mu` equation lifted out of the component, not a
+# formula retyped: change the model and this plot changes
+wheel_model = complete(
+    VehicleSystemsComponents.Vehicle.SlipWheel1D(name = :wheel))
+mu_law = only(eq for eq in equations(wheel_model)
+              if isequal(eq.lhs, wheel_model.mu))
 
-# where the wheelspin run actually sat
-scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
+mu_of = build_function(
+    substitute(mu_law.rhs,
+        Dict{Any, Any}(initial_conditions(wheel_model))),
+    wheel_model.kappa, wheel_model.mu_scale;
+    expression = Val(false))
+
+kappas = range(0.0, 0.5; length = 2001)
+dry_curve = mu_of.(kappas, MU_DRY)
+peak_kappa = kappas[argmax(dry_curve)]</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
       </div>
@@ -4441,25 +4540,29 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
     <h2>Beat three: cruise control on ice</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>Beat three: the ice patch</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>4. Cruise control on ice</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># cruising at 90 km/h; friction collapses for two seconds
-sol = solve(ODEProblem(mtkcompile(
-    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
-              mu_low = 0.15, t_ice = (40.0, 42.0))),
-    [], (0.0, 90.0)), Tsit5())
+          <pre><code class="language-julia" data-trim data-noescape>CRUISE, MU_ICE = 90.0, 0.05           # km/h; the ice
+PATCH_START, PATCH_LENGTH = 4.0, 8.0  # s
 
-# speed, wheel speed, slip ratio, commanded torque,
-# on shared time axes with the patch shaded
-plot_ice_patch(sol)</code></pre>
+ice_patch(; kwargs...) = Scenarios.SlipCruiseTransient(;
+    k = GAIN, Ti = T_I, Td = T_D, v_set = CRUISE,
+    mu_low = MU_ICE, patch_start = PATCH_START, kwargs...)
+
+# cruising at 90 km/h; friction collapses for eight seconds
+blind = ice_patch(patch_duration = PATCH_LENGTH, stop = 45.0)
+
+SPEED   = "loop.plant.v_kmh"      # what it measures
+RPM     = "loop.plant.wheel_rpm"  # what it does not
+SLIP    = "loop.plant.kappa"      # nor this
+COMMAND = "loop.controller.y"</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small"><strong>The controller reads falling speed, commands more torque,
@@ -4467,9 +4570,9 @@ plot_ice_patch(sol)</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/10-ice-patch.svg"
-             alt="Four stacked traces across a shaded two-second low-friction patch: vehicle speed falling, wheel speed climbing away, slip ratio past the peak, and commanded torque rising in response.">
-        <figcaption>Speed, wheel speed, slip ratio and commanded torque, with the ice patch
-          shaded.</figcaption>
+             alt="Four panels across a shaded eight-second low-friction patch: vehicle speed sagging by three km/h and then surging past the setpoint, wheel speed climbing to 29 000 rpm, slip ratio past the adhesion peak to 38, and commanded torque rising to the engine's limit.">
+        <figcaption>Speed, wheel speed, slip ratio and commanded torque, with the eight seconds
+          of ice shaded. Only the first panel has a sensor on it.</figcaption>
       </figure>
     </div>
     <aside class="notes">
@@ -4486,15 +4589,23 @@ plot_ice_patch(sol)</code></pre>
       <p><strong>Say:</strong> nothing in that chain is a bug. Every step is the controller
       doing its job correctly. The system as a whole does the wrong thing, and it does it
       faster the better the controller is tuned.</p>
+      <p><strong>The numbers, if you want them on the board:</strong> the speed sags
+      <b>3.10 km/h</b> across the eight seconds — less than a gentle hill would cost, which is
+      the trap. Meanwhile the wheel goes to <b>29 101 rpm</b> and the slip ratio to <b>38</b>;
+      the tire crossed its adhesion peak <b>0.08 s</b> into the patch and never came back. When
+      the ice ends the car surges to <b>111.88 km/h</b>, nearly 22 km/h over the setpoint, and
+      takes <b>20.4 s</b> to come back inside half a km/h of 90.</p>
+      <p><strong>If someone asks where the surge comes from:</strong> the wheel is a flywheel
+      holding <b>4.64 MJ</b> at its peak, against <b>0.44 MJ</b> for the whole car at 90 km/h.
+      When grip returns, that energy has somewhere to go.</p>
       <p><strong>Say:</strong> and in a real car the driver feels this as the back stepping out
       on a motorway at 90 km/h, caused by a system they switched on for comfort.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>mu_low = 0.15</strong> — friction during the ice patch.</li>
-        <li><strong>t_ice = (40, 42) s</strong> — two seconds of it.</li>
-        <li><strong>v_set = 90 km/h</strong> — the cruise speed.</li>
-        <li><strong>Four traces</strong> — vehicle speed, wheel speed, slip ratio, commanded torque, on a shared time axis with the patch shaded.</li>
-        <li><strong>traction_limit = true</strong> — the friction-aware torque ceiling, in the following run.</li>
+        <li><strong>mu_low = 0.05</strong> — the friction multiplier during the patch. The road carries 343 N at its peak, against the 401 N it takes to hold 90 km/h.</li>
+        <li><strong>patch_start = 4 s, patch_duration = 8 s</strong> — eight seconds of it. Two seconds cannot produce a visible speed drop: at 90 km/h a total loss of traction for two seconds costs about 2 km/h.</li>
+        <li><strong>v_set = 90 km/h</strong> — the cruise speed. <strong>stop = 45 s</strong> — long enough to capture the recovery.</li>
+        <li><strong>Four traces</strong> — vehicle speed, wheel speed, slip ratio, commanded torque, on a shared time axis with the patch shaded. <strong>Only the first has a sensor on it.</strong></li>
       </ul>
     </aside>
   </section>
@@ -4503,38 +4614,54 @@ plot_ice_patch(sol)</code></pre>
     <h2>What should have happened</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>What should have happened</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>5. What a friction-aware limit would have done</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># the same run, with a friction-aware torque limit
-sol_tc = solve(ODEProblem(mtkcompile(
-    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
-              mu_low = 0.15, t_ice = (40.0, 42.0),
-              traction_limit = true)),
-    [], (0.0, 90.0)), Tsit5())</code></pre>
+          <pre><code class="language-julia" data-trim data-noescape># half the car's weight on the driven axle, which is the
+# `F_z` the wheel model ships
+F_Z = CAR.m * CAR.g / 2
+
+# the engine torque that reaches the most force the ice
+# can carry: 26.6 N.m, against the 31.1 that holds 90 km/h
+ICE_CEILING = maximum(dry_curve) * MU_ICE * F_Z * CAR.r / CAR.i
+
+# the same compiled run, with the ceiling brought down to it
+capped = rerun(blind, "y_max" =&gt; ICE_CEILING; saveat = 0.05)</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
-        <p class="small">The car still loses speed on the ice — physics is physics. It does not
-        lose the wheel.</p>
+        <p class="small">The car still loses speed on the ice — physics is physics. It loses
+        <strong>less</strong> of it: 1.99 km/h against 3.10, while being asked for a fifth as
+        much torque. And it does not lose the wheel — 1 846 rpm against 29 101.</p>
       </div>
       <figure class="fig">
         <img src="assets/figures/10-ice-patch-limited.svg"
              alt="The same ice patch run overlaid with a friction-aware torque limit: the wheel stays near vehicle speed and the slip ratio stays on the near side of the peak, while speed dips and recovers.">
-        <figcaption>Overlaid against the unlimited run. The difference is entirely in the slip
-          trace.</figcaption>
+        <figcaption>Against the blind run. The capped car commands a fifth of the torque and
+          loses <em>less</em> speed doing it — 1.99 km/h against 3.10.</figcaption>
       </figure>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> and be precise about what the fix bought. The car still slows
       down. It has to — there is less friction available and no controller can conjure grip.
-      What the limit prevented was the controller <em>making it worse</em>.</p>
+      What the limit prevented was the controller <em>making it worse</em>. Averaged over the
+      eight seconds the capped tire put <em>more</em> force on the road — 275 N against 242 —
+      while being asked for a fifth as much torque. More command, less force. That is the whole
+      of traction control in one line.</p>
+      <p><strong>Do not oversell it.</strong> The cap did not hold the tire at its peak: the
+      capped run still ends the patch at a slip ratio of 1.5, nowhere near 0.04. A constant
+      ceiling cannot track a peak — it can only stop the command running away from the surface,
+      and that turns out to be most of the benefit.</p>
+      <p><strong>The honest caveat:</strong> <code>y_max</code> is a constant, so the cap is on
+      for the whole run, including the dry road either side. 26.6 N.m is less than the 31.1 that
+      holds 90 km/h, so the capped car reaches the ice at 89.47 km/h and drifts down afterwards.
+      Watch the green trace past t = 12 s. A fixed cap is the right idea with the wrong
+      information — which is exactly why lecture 2 needs a loop around slip.</p>
       <p><strong>Say:</strong> that is a general shape worth naming. When an actuator's limit
       depends on conditions the controller cannot see, somebody has to tell it. That is not
       tuning. That is architecture.</p>

@@ -272,8 +272,9 @@ K, tau, theta = fopdt_fit(step_test;
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Cohen-Coon</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>SPEED = "loop.plant.v_kmh"
-UNLIMITED = 1.0e6                  # N.m — the ceiling lifted away
+          <pre><code class="language-julia" data-trim data-noescape>SPEED = "loop.plant.v_kmh"       # the plant's km/h, inside the harness
+COMMAND = "loop.controller.y"    # torque asked of the engine
+UNLIMITED = 1.0e6                # N.m — the ceiling lifted away
 
 k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
 
@@ -335,21 +336,31 @@ plot_speed(pid; sig = SPEED, setpoint = 110)</code></pre>
             <span class="nb">08-tuning.ipynb</span>
             <span class="cell">cell <b>Ziegler-Nichols</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># Raise k under pure proportional control until the oscillation neither
-# grows nor decays. `CruiseLoopStep` leaves both switches off, so the
-# plain analysis is already the P-only loop this step needs.
-DELTA = 0.1        # km/h — the smallest poke that still measures cleanly
+          <pre><code class="language-julia" data-trim data-noescape># `CruiseLoopStep` leaves both switches off, so the plain
+# analysis is already the P-only loop this step needs.
+DELTA = 0.1     # km/h — the smallest poke that measures cleanly
 
 probe = Scenarios.CruiseLoopTransient(
     k = 100.0, v_lo = V_START, v_hi = V_START + DELTA,
     T_max = UNLIMITED, y_max = UNLIMITED, stop = 30.0)
 
-ladder = sweep(probe, "k", [80.0, 100.0, 110.0, 114.0, 115.0, 125.0])
-plot_sweep(ladder; sig = SPEED, name = "k")
+ladder = sweep(probe, "k",
+    [80.0, 100.0, 110.0, 112.0, 114.0, 115.0, 125.0])
 
-Ku = ...          # the gain at which it sustains
-Pu = ...          # the period of that oscillation, seconds
-k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
+# `oscillation` gives the period and the peak-to-trough amplitude
+# ratio per cycle: under one below Ku, over one above, one at Ku.
+walk = [(k = k, osc = oscillation(sol),
+         floor = minimum(signal(sol, COMMAND)[2])) for (k, sol) in ladder]
+usable = filter(w -&gt; w.floor &gt; 0, walk)  # zero command = limit cycle
+
+# interpolate the crossing; do not call a run sustained by eye
+i = findlast(w -&gt; w.osc.ratio &lt; 1, usable)
+below, above = usable[i], usable[i + 1]
+Ku = below.k + (1 - below.osc.ratio) * (above.k - below.k) /
+               (above.osc.ratio - below.osc.ratio)
+Pu = oscillation(rerun(probe, "k" =&gt; Ku)).period
+
+k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)  # 114.56, 2.175 s</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -485,7 +496,7 @@ k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)</code></pre>
       table is not yours either.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>K<sub>u</sub>/3.2 and /2.2</strong> — lower gains than Ziegler-Nichols.</li>
+        <li><strong>K<sub>u</sub>/2.2</strong> — against Ziegler-Nichols' K<sub>u</sub>/1.7. Three quarters of the gain: 52.07 against 67.39 N·m per km/h.</li>
         <li><strong>2.2·P<sub>u</sub></strong> — the integral time is <em>multiplied</em> by the ultimate period where ZN divides it. That is a factor of 4.4 slower.</li>
         <li><strong>P<sub>u</sub>/6.3</strong> — the derivative time.</li>
         <li><strong>No P row</strong> — the method exists to be gentler, and a P controller has nothing to be gentle with.</li>

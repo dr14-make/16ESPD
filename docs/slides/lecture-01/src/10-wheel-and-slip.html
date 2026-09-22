@@ -23,24 +23,29 @@
     <h2>First, just add the wheel</h2>
     <div class="cols cols-wide-left">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>L1, the wheel appears</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>1. The wheel appears</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># same gains as section 05, now with wheel inertia
-# and an ideal rolling contact
-sol_l1 = solve(ODEProblem(mtkcompile(
-    wheeled_cruise_loop(k = 56.0, Ti = 8.0, Td = 1.5)),
-    [], tspan))
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-plot_speed(sol_l1; setpoint = 110)
-@show rise_time(sol_l1, 110) overshoot(sol_l1, 110)</code></pre>
+SPEED_L1  = "plant.v_kmh"    # the L1 harness is the loop
+GAIN, T_I, T_D = 56.0, 10.0, 0.5
+UNLIMITED = 1.0e6            # N.m, as in notebooks 03 to 05
+
+# same gains as section 05, now with wheel inertia
+# and an ideal rolling contact
+l1 = Scenarios.WheeledCruiseTransient(
+    k = GAIN, Ti = T_I, Td = T_D, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
+
+t1, y1 = signal(l1, SPEED_L1)
+@show rise_time(t1, y1, 110) overshoot(t1, y1, 110)</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
       </div>
@@ -92,24 +97,30 @@ plot_speed(sol_l1; setpoint = 110)
     <h2>Beat one: the wheel runs away</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>L2, beat one: wheelspin</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>2. Wheelspin</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># the friction curve's second derivative is discontinuous
-# at the transitions: explicit RK handles it, BDF struggles
-sol = solve(ODEProblem(mtkcompile(
-    standing_start(mu_scale = 0.2, tau_cmd = CAR.T_max)),
-    [], (0.0, 20.0)), Tsit5())
+          <pre><code class="language-julia" data-trim data-noescape>@named standing = Scenarios.TestSlipCarPlant()
 
-plot(signal(sol, "wheel.v_wheel_kmh")...; lw = 2, label = "wheel")
-plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
+MU_SNOW, MU_DRY = 0.2, 1.0   # packed snow, dry asphalt
+
+# `saveat` is dense output, not decimation: the launch
+# transient is over inside one adaptive step.
+launch = sweep(standing, "friction.k", [MU_SNOW, MU_DRY];
+               tspan = (0.0, 5.0), saveat = 0.01)
+runs = Dict(launch.values .=&gt; launch.sols)
+
+# four panels: rpm and km/h do not share an axis
+for path in ("plant.v_kmh", "plant.wheel_rpm",
+             "plant.kappa", "plant.wheel.F_x")
+    @show path signal(runs[MU_SNOW], path)[2][end]
+end</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small">Under closed loop the error stays large, so the integrator winds up —
@@ -117,15 +128,18 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/10-wheelspin.svg"
-             alt="Wheel speed and vehicle speed from a standing start on low friction: the wheel accelerates rapidly while the vehicle speed barely rises.">
-        <figcaption>Wheel speed against vehicle speed. The engine is working; the car is not
-          moving.</figcaption>
+             alt="Four panels from two standing starts, on snow and on dry asphalt: vehicle speed, wheel speed in rpm, slip ratio, and longitudinal tire force. On snow the wheel runs away to 12 843 rpm while the car reaches only 10 km/h, and the force trace peaks then collapses to a plateau.">
+        <figcaption>Two standing starts, same command. On snow the wheel reaches 12 843 rpm and
+          the car reaches 10 km/h; on dry asphalt, 182 rpm and 21 km/h.</figcaption>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Point at</strong> the two traces diverging. Say: the engine delivered
-      everything it was asked for. The driveline turned. The wheel spun. And the car stayed
-      where it was.</p>
+      <p><strong>Point at</strong> the force panel, bottom right — it has the whole argument in
+      one step. For the first four tenths of a second both surfaces carry every newton the engine
+      asks for. Then the snow hits 1 373 N, everything it has, and falls off a cliff to 961 N,
+      where it stays. <strong>More wheel speed bought less force.</strong></p>
+      <p><strong>Say:</strong> the engine delivered everything it was asked for. The driveline
+      turned. The wheel spun to 12 843 rpm. And the car got to 10 km/h.</p>
       <p><strong>Say:</strong> and now connect it to section 06. The integrator sees a large,
       persistent error and winds up, exactly as it did on the hill. But this time the limit is
       not the engine's torque ceiling — the engine is nowhere near it. The limit is in the
@@ -136,10 +150,10 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       section.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>mu_scale = 0.2</strong> — the road friction multiplier. 1.0 is dry tarmac; 0.2 is ice.</li>
-        <li><strong>wheel.v_wheel_kmh</strong> — the wheel's circumferential speed, ω·r, expressed in km/h so it can share an axis with the car.</li>
-        <li><strong>v_kmh</strong> — the car's actual road speed.</li>
-        <li><strong>Tsit5()</strong> — an explicit Runge-Kutta solver. The friction curve has a discontinuous second derivative, which explicit methods handle better than BDF.</li>
+        <li><strong>friction.k</strong> — the road friction multiplier, swept over two values. 1.0 is dry asphalt; 0.2 is packed snow. The ice patch later in this section is 0.05.</li>
+        <li><strong>plant.wheel_rpm</strong> — the driven wheel's rotational speed. It gets its own panel because rpm and km/h do not share an axis.</li>
+        <li><strong>plant.v_kmh</strong> — the car's actual road speed. <strong>plant.kappa</strong> — the slip ratio. <strong>plant.wheel.F_x</strong> — the longitudinal force the tire makes.</li>
+        <li><strong>saveat = 0.01</strong> — dense output, not decimation: the launch transient is over inside one adaptive step, so the raw step points would draw straight lines.</li>
         <li><strong>The limit that is not in the engine</strong> — the engine is nowhere near its ceiling. The ceiling is in the contact patch.</li>
       </ul>
     </aside>
@@ -151,22 +165,31 @@ plot!(signal(sol, "v_kmh")...;           lw = 2, label = "car")</code></pre>
       <div>
         <p>$$ \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
              \qquad F_x \;=\; \mu(\kappa)\,F_z $$</p>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>Beat two: the curve</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>3. The friction curve</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>plot(kappas, mu.(kappas); lw = 2, label = "",
-     xlabel = "slip ratio", ylabel = "mu")
-scatter!([kappa_peak], [mu_peak]; label = "peak")
+          <pre><code class="language-julia" data-trim data-noescape># the `mu` equation lifted out of the component, not a
+# formula retyped: change the model and this plot changes
+wheel_model = complete(
+    VehicleSystemsComponents.Vehicle.SlipWheel1D(name = :wheel))
+mu_law = only(eq for eq in equations(wheel_model)
+              if isequal(eq.lhs, wheel_model.mu))
 
-# where the wheelspin run actually sat
-scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
+mu_of = build_function(
+    substitute(mu_law.rhs,
+        Dict{Any, Any}(initial_conditions(wheel_model))),
+    wheel_model.kappa, wheel_model.mu_scale;
+    expression = Val(false))
+
+kappas = range(0.0, 0.5; length = 2001)
+dry_curve = mu_of.(kappas, MU_DRY)
+peak_kappa = kappas[argmax(dry_curve)]</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
       </div>
@@ -242,25 +265,29 @@ scatter!(operating_points(sol); label = "during wheelspin")</code></pre>
     <h2>Beat three: cruise control on ice</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>Beat three: the ice patch</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>4. Cruise control on ice</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># cruising at 90 km/h; friction collapses for two seconds
-sol = solve(ODEProblem(mtkcompile(
-    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
-              mu_low = 0.15, t_ice = (40.0, 42.0))),
-    [], (0.0, 90.0)), Tsit5())
+          <pre><code class="language-julia" data-trim data-noescape>CRUISE, MU_ICE = 90.0, 0.05           # km/h; the ice
+PATCH_START, PATCH_LENGTH = 4.0, 8.0  # s
 
-# speed, wheel speed, slip ratio, commanded torque,
-# on shared time axes with the patch shaded
-plot_ice_patch(sol)</code></pre>
+ice_patch(; kwargs...) = Scenarios.SlipCruiseTransient(;
+    k = GAIN, Ti = T_I, Td = T_D, v_set = CRUISE,
+    mu_low = MU_ICE, patch_start = PATCH_START, kwargs...)
+
+# cruising at 90 km/h; friction collapses for eight seconds
+blind = ice_patch(patch_duration = PATCH_LENGTH, stop = 45.0)
+
+SPEED   = "loop.plant.v_kmh"      # what it measures
+RPM     = "loop.plant.wheel_rpm"  # what it does not
+SLIP    = "loop.plant.kappa"      # nor this
+COMMAND = "loop.controller.y"</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small"><strong>The controller reads falling speed, commands more torque,
@@ -268,9 +295,9 @@ plot_ice_patch(sol)</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/10-ice-patch.svg"
-             alt="Four stacked traces across a shaded two-second low-friction patch: vehicle speed falling, wheel speed climbing away, slip ratio past the peak, and commanded torque rising in response.">
-        <figcaption>Speed, wheel speed, slip ratio and commanded torque, with the ice patch
-          shaded.</figcaption>
+             alt="Four panels across a shaded eight-second low-friction patch: vehicle speed sagging by three km/h and then surging past the setpoint, wheel speed climbing to 29 000 rpm, slip ratio past the adhesion peak to 38, and commanded torque rising to the engine's limit.">
+        <figcaption>Speed, wheel speed, slip ratio and commanded torque, with the eight seconds
+          of ice shaded. Only the first panel has a sensor on it.</figcaption>
       </figure>
     </div>
     <aside class="notes">
@@ -287,15 +314,23 @@ plot_ice_patch(sol)</code></pre>
       <p><strong>Say:</strong> nothing in that chain is a bug. Every step is the controller
       doing its job correctly. The system as a whole does the wrong thing, and it does it
       faster the better the controller is tuned.</p>
+      <p><strong>The numbers, if you want them on the board:</strong> the speed sags
+      <b>3.10 km/h</b> across the eight seconds — less than a gentle hill would cost, which is
+      the trap. Meanwhile the wheel goes to <b>29 101 rpm</b> and the slip ratio to <b>38</b>;
+      the tire crossed its adhesion peak <b>0.08 s</b> into the patch and never came back. When
+      the ice ends the car surges to <b>111.88 km/h</b>, nearly 22 km/h over the setpoint, and
+      takes <b>20.4 s</b> to come back inside half a km/h of 90.</p>
+      <p><strong>If someone asks where the surge comes from:</strong> the wheel is a flywheel
+      holding <b>4.64 MJ</b> at its peak, against <b>0.44 MJ</b> for the whole car at 90 km/h.
+      When grip returns, that energy has somewhere to go.</p>
       <p><strong>Say:</strong> and in a real car the driver feels this as the back stepping out
       on a motorway at 90 km/h, caused by a system they switched on for comfort.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>mu_low = 0.15</strong> — friction during the ice patch.</li>
-        <li><strong>t_ice = (40, 42) s</strong> — two seconds of it.</li>
-        <li><strong>v_set = 90 km/h</strong> — the cruise speed.</li>
-        <li><strong>Four traces</strong> — vehicle speed, wheel speed, slip ratio, commanded torque, on a shared time axis with the patch shaded.</li>
-        <li><strong>traction_limit = true</strong> — the friction-aware torque ceiling, in the following run.</li>
+        <li><strong>mu_low = 0.05</strong> — the friction multiplier during the patch. The road carries 343 N at its peak, against the 401 N it takes to hold 90 km/h.</li>
+        <li><strong>patch_start = 4 s, patch_duration = 8 s</strong> — eight seconds of it. Two seconds cannot produce a visible speed drop: at 90 km/h a total loss of traction for two seconds costs about 2 km/h.</li>
+        <li><strong>v_set = 90 km/h</strong> — the cruise speed. <strong>stop = 45 s</strong> — long enough to capture the recovery.</li>
+        <li><strong>Four traces</strong> — vehicle speed, wheel speed, slip ratio, commanded torque, on a shared time axis with the patch shaded. <strong>Only the first has a sensor on it.</strong></li>
       </ul>
     </aside>
   </section>
@@ -304,38 +339,54 @@ plot_ice_patch(sol)</code></pre>
     <h2>What should have happened</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">10-wheel-and-slip.ipynb</span>
-            <span class="cell">cell <b>What should have happened</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>5. What a friction-aware limit would have done</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># the same run, with a friction-aware torque limit
-sol_tc = solve(ODEProblem(mtkcompile(
-    ice_patch(k = 56.0, Ti = 8.0, v_set = 90.0,
-              mu_low = 0.15, t_ice = (40.0, 42.0),
-              traction_limit = true)),
-    [], (0.0, 90.0)), Tsit5())</code></pre>
+          <pre><code class="language-julia" data-trim data-noescape># half the car's weight on the driven axle, which is the
+# `F_z` the wheel model ships
+F_Z = CAR.m * CAR.g / 2
+
+# the engine torque that reaches the most force the ice
+# can carry: 26.6 N.m, against the 31.1 that holds 90 km/h
+ICE_CEILING = maximum(dry_curve) * MU_ICE * F_Z * CAR.r / CAR.i
+
+# the same compiled run, with the ceiling brought down to it
+capped = rerun(blind, "y_max" =&gt; ICE_CEILING; saveat = 0.05)</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
-        <p class="small">The car still loses speed on the ice — physics is physics. It does not
-        lose the wheel.</p>
+        <p class="small">The car still loses speed on the ice — physics is physics. It loses
+        <strong>less</strong> of it: 1.99 km/h against 3.10, while being asked for a fifth as
+        much torque. And it does not lose the wheel — 1 846 rpm against 29 101.</p>
       </div>
       <figure class="fig">
         <img src="assets/figures/10-ice-patch-limited.svg"
              alt="The same ice patch run overlaid with a friction-aware torque limit: the wheel stays near vehicle speed and the slip ratio stays on the near side of the peak, while speed dips and recovers.">
-        <figcaption>Overlaid against the unlimited run. The difference is entirely in the slip
-          trace.</figcaption>
+        <figcaption>Against the blind run. The capped car commands a fifth of the torque and
+          loses <em>less</em> speed doing it — 1.99 km/h against 3.10.</figcaption>
       </figure>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> and be precise about what the fix bought. The car still slows
       down. It has to — there is less friction available and no controller can conjure grip.
-      What the limit prevented was the controller <em>making it worse</em>.</p>
+      What the limit prevented was the controller <em>making it worse</em>. Averaged over the
+      eight seconds the capped tire put <em>more</em> force on the road — 275 N against 242 —
+      while being asked for a fifth as much torque. More command, less force. That is the whole
+      of traction control in one line.</p>
+      <p><strong>Do not oversell it.</strong> The cap did not hold the tire at its peak: the
+      capped run still ends the patch at a slip ratio of 1.5, nowhere near 0.04. A constant
+      ceiling cannot track a peak — it can only stop the command running away from the surface,
+      and that turns out to be most of the benefit.</p>
+      <p><strong>The honest caveat:</strong> <code>y_max</code> is a constant, so the cap is on
+      for the whole run, including the dry road either side. 26.6 N.m is less than the 31.1 that
+      holds 90 km/h, so the capped car reaches the ice at 89.47 km/h and drifts down afterwards.
+      Watch the green trace past t = 12 s. A fixed cap is the right idea with the wrong
+      information — which is exactly why lecture 2 needs a loop around slip.</p>
       <p><strong>Say:</strong> that is a general shape worth naming. When an actuator's limit
       depends on conditions the controller cannot see, somebody has to tell it. That is not
       tuning. That is architecture.</p>

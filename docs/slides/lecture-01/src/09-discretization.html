@@ -97,30 +97,36 @@
             <span class="nb">09-discretization.ipynb</span>
             <span class="cell">cell <b>The sample-time sweep</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># the gains from section 08, untouched
-Scenarios = VehicleSystemsComponents.Lecture1
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 SPEED = "loop.plant.v_kmh"
-UNLIMITED = 1.0e6
+V_START, SETPOINT, UNLIMITED = 90.0, 110.0, 1.0e6
+
+# Notebook 08's gains and the measurement they came from, restated
+# rather than imported: this notebook is its own kernel.
+K_ZN, TI_ZN, TD_ZN = 67.39, 1.087, 0.272
+KU, PU = 114.56, 2.175          # N.m per km/h, s
 
 # `Ts` is structural — the Pade delay bakes its delay time in at
-# construction — so a sample-time sweep is one compiled model per value,
+# construction — so this is one compiled model per sample time,
 # not `sweep` over one of them.
-sampled(Ts) = Scenarios.SampledCruiseStep(;
-    name = :SampledCruiseStep, Ts = Ts, with_I = true, with_D = true,
-    k = k_zn, Ti = Ti_zn, Td = Td_zn, wd = 0.0,
-    T_max = UNLIMITED, y_max = UNLIMITED)
+sampled(Ts; k = K_ZN, Ti = TI_ZN, Td = TD_ZN) =
+    Scenarios.SampledCruiseStep(; name = :SampledCruiseStep, Ts = Ts,
+        with_I = true, with_D = true, wd = 0.0, k = k, Ti = Ti, Td = Td,
+        v_lo = V_START, v_hi = SETPOINT,
+        T_max = UNLIMITED, y_max = UNLIMITED)
 
-runs = [Ts =&gt; solve(ODEProblem(mtkcompile(sampled(Ts)), [], (0.0, 120.0)))
-        for Ts in [0.01, 0.1, 0.4, 1.0]]
+problem(Ts; kw...) =
+    ODEProblem(mtkcompile(sampled(Ts; kw...)), [], (0.0, 120.0))
+solve_at(Ts; kw...) = solve(problem(Ts; kw...))
 
-plt = plot(; xlabel = "time [s]", ylabel = "speed [km/h]")
-for (Ts, sol) in runs
-    plot!(plt, signal(sol, SPEED)...; lw = 2, label = "Ts = $Ts s")
-end</code></pre>
+# The problems are kept, not just their solutions: the next cell
+# re-solves the one at Ts = 1 s with different gains.
+problems = [Ts =&gt; problem(Ts) for Ts in [0.01, 0.1, 0.4, 1.0]]
+runs = [Ts =&gt; solve(p) for (Ts, p) in problems]</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small">Overshoot grows. Then the loop rings. Then it does not come back.</p>
@@ -244,21 +250,22 @@ end</code></pre>
             <span class="nb">09-discretization.ipynb</span>
             <span class="cell">cell <b>The fixes</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># 1. sample faster — same gains, Ts back down
-# 2. re-tune for the rate you actually have
+          <pre><code class="language-julia" data-trim data-noescape># Ziegler-Nichols again, on the measurement made *through* the
+# sampler: Ku_slow = 49.82, Pu_slow = 4.294 s from section 5.
 k2, Ti2, Td2 = ziegler_nichols(Ku_slow, Pu_slow)
 
-retuned(Ts, k, Ti, Td) = solve(ODEProblem(mtkcompile(
-    Scenarios.SampledCruiseStep(; name = :SampledCruiseStep, Ts = Ts,
-        with_I = true, with_D = true, k = k, Ti = Ti, Td = Td, wd = 0.0,
-        T_max = UNLIMITED, y_max = UNLIMITED)), [], (0.0, 120.0)))
+# Fix one — sample faster, gains untouched. `Ts` is structural,
+# so this is the only new compile in the cell.
+faster = solve_at(0.05)
 
-sol_slow  = retuned(1.0, k_zn, Ti_zn, Td_zn)
-sol_retun = retuned(1.0, k2, Ti2, Td2)</code></pre>
+# Fix two — re-tune for the rate you have. The Ts = 1 s problem
+# was kept, so this is a `remake`, not another compile.
+retuned_slow = rerun(last(last(problems)),
+                     "k" =&gt; k2, "Ti" =&gt; Ti2, "Td" =&gt; Td2)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/09-discretization.ipynb">open notebook</a>
           </div>
         </div>
         <p class="small muted">Re-tuning buys back stability, not performance. The slow loop is
@@ -283,7 +290,7 @@ sol_retun = retuned(1.0, k2, Ti2, Td2)</code></pre>
       why the conversion method matters.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>Ku_slow, Pu_slow</strong> — the ultimate gain and period measured <em>at the slow sample rate</em>, which are not the continuous ones.</li>
+        <li><strong>Ku_slow, Pu_slow</strong> — the ultimate gain and period measured <em>at the slow sample rate</em>: 49.82 N·m per km/h and 4.294 s, against 114.56 and 2.175 continuously. The sampler cost 56.5 % of the ultimate gain.</li>
         <li><strong>Re-tuning buys stability, not performance</strong> — the slow loop stays a slow loop. The gap to the continuous design is what the cheap processor cost.</li>
       </ul>
     </aside>

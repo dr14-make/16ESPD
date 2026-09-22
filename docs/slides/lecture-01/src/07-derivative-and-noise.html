@@ -23,24 +23,31 @@
       <div>
         <p class="small">Thermal, shot, flicker, coupling from everything else in the vehicle —
         noise is not a defect, it is a property. A speedometer has it too.</p>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
-            <span class="cell">cell <b>The measurement</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>1. Every sensor is noisy</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sol = solve(ODEProblem(mtkcompile(
-    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 10.0)),
-    [], tspan))
+          <pre><code class="language-julia" data-trim data-noescape>Scenarios = VehicleSystemsComponents.Lecture1
 
-t, v_true = signal(sol, "plant.v_kmh")
-t, v_meas = signal(sol, "noise.y")
-plot(t, [v_true v_meas]; lw = 2,
-     label = ["true" "measured"])</code></pre>
+TRUE_SPEED = "loop.plant.v_kmh"    # what the car is doing
+MEASURED   = "loop.noise.y"        # what it is told
+COMMAND    = "loop.controller.y"   # what it asks for
+UNLIMITED  = 1.0e6                 # N.m, both ways
+
+# Nd = 10 is the LimPID default, and what every
+# notebook since 05 has silently been running.
+noisy = Scenarios.NoisyCruiseTransient(
+    k = 56.0, Ti = 10.0, Td = 0.5, Nd = 10.0, wd = 0.0,
+    T_max = UNLIMITED, y_max = UNLIMITED,
+    y_min = -UNLIMITED, stop = 40.0)
+
+t, v_true = signal(noisy, TRUE_SPEED)
+_, v_meas = signal(noisy, MEASURED)</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
           </div>
         </div>
       </div>
@@ -96,9 +103,9 @@ plot(t, [v_true v_meas]; lw = 2,
       <p><strong>Say:</strong> any signal is a sum of sine waves — that is what a Fourier
       transform is telling you. So this is not a special case about sines; it is what a
       derivative does to every high-frequency component in anything you feed it.</p>
-      <p><strong>Ask the room:</strong> our noise is a hundredth of a km/h. If it sits at
-      500 rad/s, what does the derivative make of it? <em>(Five km/h per second of apparent
-      acceleration, out of nothing. Now multiply by T<sub>d</sub>.)</em></p>
+      <p><strong>Ask the room:</strong> each of our six noise components is 0.2 km/h. The top
+      one sits at 16 Hz. What does the derivative path make of it? <em>(k·T<sub>d</sub>·A·ω =
+      563 N.m, out of a wiggle two tenths of a km/h wide. The engine makes 150.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>A</strong> — the amplitude of the noise. Unchanged between the two sines.</li>
@@ -114,24 +121,23 @@ plot(t, [v_true v_meas]; lw = 2,
     <h2>A near-pure derivative</h2>
     <div class="cols cols-wide-right">
       <div>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
-            <span class="cell">cell <b>Near-pure derivative</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>3. A near-pure derivative</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd
-# pushes the cutoff up, towards no filter at all
-sol = solve(ODEProblem(mtkcompile(
-    cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5, Nd = 1000.0)),
-    [], tspan))
+          <pre><code class="language-julia" data-trim data-noescape># Nd is the derivative filter coefficient: large Nd pushes
+# the cutoff up, towards no filter at all. Nd = 100 puts it
+# at 200 rad/s, above the noise band's 16 Hz top.
+near_pure = rerun(noisy, "Nd" =&gt; 100.0)
 
-plot_torque(sol; delivered = nothing)
-extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
+t, u = signal(near_pure, COMMAND)
+cruise = 20.0 .&lt;= t .&lt;= 30.0    # settled, the step long over
+extrema(u[cruise])              # the damage, in N.m</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
           </div>
         </div>
         <div class="callout danger small">
@@ -147,8 +153,9 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Read out</strong> the range from <code>extrema</code>. Compare it to the
-      40 N·m the car actually needs.</p>
+      <p><strong>Read out</strong> the range from <code>extrema</code>: the command swings
+      across 1760 N·m, twelve times the 150 N·m the engine can deliver and forty times the
+      40 N·m the car actually needs to hold this speed.</p>
       <p><strong>Say:</strong> and now think about what this is physically. That command goes
       to an engine. Fuelling swinging like that, many times a second, forever. It will not break
       today — it will wear something out, or overheat something, or simply feel terrible to sit
@@ -161,10 +168,11 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
       it, and why most industrial loops are PI with no derivative at all.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>N<sub>d</sub> = 1000</strong> — filter cutoff pushed so high it is effectively no filter.</li>
+        <li><strong>N<sub>d</sub> = 100</strong> — cutoff at N<sub>d</sub>/T<sub>d</sub> = 200 rad/s, above the noise band's 16 Hz top: no filter left, in effect.</li>
+        <li><strong>rerun</strong> — <code>Nd</code> is an ordinary parameter, so this re-solves the compiled model rather than building a second one.</li>
         <li><strong>extrema(...)</strong> — the minimum and maximum of the commanded torque, i.e. the full swing.</li>
-        <li><strong>TORQUE_CMD</strong> — the signal path for what the controller asks of the engine.</li>
-        <li><strong>delivered = nothing</strong> — the delivered trace is suppressed so the commanded chatter is not hidden behind it.</li>
+        <li><strong>COMMAND</strong> — <code>loop.controller.y</code>, what the controller asks of the engine.</li>
+        <li><strong>the 20–30 s window</strong> — settled cruise, with the step long over, so what is left in it is the noise and nothing else.</li>
       </ul>
     </aside>
   </section>
@@ -176,28 +184,33 @@ extrema(signal(sol, TORQUE_CMD)[2])     # the damage, in N.m</code></pre>
         <p class="small">A first-order low-pass on the derivative path, with cutoff
         <em>N</em> in rad/s:</p>
         <p>$$ \frac{s\,N}{s+N} \qquad\text{instead of}\qquad s $$</p>
-        <div class="demo unbuilt">
+        <div class="demo">
           <div class="demo-head">
             <span class="nb">07-derivative-and-noise.ipynb</span>
-            <span class="cell">cell <b>Nd family</b></span>
-            <span class="unbuilt-tag">MODEL NOT BUILT</span>
+            <span class="cell">cell <b>4. Filter it</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape>sw = sweep(cruise_noisy(k = 56.0, Ti = 8.0, Td = 1.5),
-           "Nd", [1000.0, 100.0, 20.0, 5.0];
-           tspan = (0.0, 120.0))
+          <pre><code class="language-julia" data-trim data-noescape># `Nd` is an ordinary parameter, so the whole family is one
+# compiled model re-solved four times, not four models.
+NDS = [100.0, 20.0, 5.0, 2.0]   # cutoffs 200, 40, 10, 4 rad/s
 
-plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
+nd_family = sweep(near_pure, "Nd", NDS)
+
+for (nd, sol) in nd_family
+    tt, uu = signal(sol, COMMAND)
+    @show nd extrema(uu[20.0 .&lt;= tt .&lt;= 30.0])
+end</code></pre>
           <div class="demo-foot">
-            <span class="nocopy">not runnable yet</span>
+            <button class="copy">copy</button>
             <span class="spacer"></span>
-            <span class="nocopy">notebook not written yet</span>
+            <a href="../../../notebooks/lecture01/07-derivative-and-noise.ipynb">open notebook</a>
           </div>
         </div>
       </div>
       <figure class="fig">
         <img src="assets/figures/07-nd-family.svg"
              alt="Commanded torque at four derivative filter coefficients: the chatter shrinks steadily as the cutoff comes down until the command is smooth.">
-        <figcaption>The same loop at four cutoffs. The chatter subsides.</figcaption>
+        <figcaption>The same loop at four cutoffs. The chatter subsides — from 1760 N·m to
+          315, with the engine's 150 N·m limit still inside the band.</figcaption>
       </figure>
     </div>
     <aside class="notes">
@@ -205,14 +218,15 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       block in every toolchain has one, and most people never touch it because they never look
       at the actuator command. Now you know what it does and why it is there.</p>
       <p><strong>Say:</strong> and notice the filter does not remove the noise. It attenuates
-      it, so that after the derivative amplifies what is left, the result is small enough not to
-      matter. Nothing here is exact.</p>
+      it, so that after the derivative amplifies what is left, the result is smaller. On this car
+      that is not the same as small enough: the command falls from 1760 N·m to 315, and 315 is
+      still twice what the engine can deliver.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>sN/(s + N)</strong> — a derivative in series with a first-order low-pass. At low frequency it is a derivative; at high frequency it flattens off instead of growing.</li>
         <li><strong>N</strong> — the cutoff frequency in rad/s; <code>N<sub>d</sub></code> in the code.</li>
         <li><strong>s</strong> — the Laplace variable; multiplying by s is differentiating.</li>
-        <li><strong>N<sub>d</sub> = 1000, 100, 20, 5</strong> — the sweep, from no filter to heavy.</li>
+        <li><strong>N<sub>d</sub> = 100, 20, 5, 2</strong> — the sweep, from no filter to heavy: cutoffs at 200, 40, 10 and 4 rad/s.</li>
       </ul>
     </aside>
   </section>
@@ -223,23 +237,36 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
       <div>
         <p class="lede">Low enough to remove the noise.</p>
         <p class="lede">High enough to leave the signal.</p>
-        <p class="small muted">If those two ranges overlap, no first-order filter will save you
-        and you need a different measurement — a better sensor, or a state estimator that uses a
-        model to tell signal from noise.</p>
+        <p class="small">On this car those two ranges nearly touch. The loop works at about
+        0.2 Hz; the speedometer's noise starts at 0.5 Hz. <strong>Half a decade</strong> — and a
+        first-order filter rolls off at 6 dB per octave, so it cannot cut one without starting
+        on the other.</p>
+        <p class="small muted">From <em>N<sub>d</sub></em> = 20 down to 2 the filter is free: the
+        perfect-sensor overshoot does not move while the command range falls by a factor of
+        three. Below 2 it starts charging — at <em>N<sub>d</sub></em> = 0.5 the overshoot
+        quintuples <em>on a sensor with no noise on it at all</em>.</p>
       </div>
-      <div class="callout small">
-        <span class="label">Not a recipe</span>
-        There is no formula here, because the answer depends on where your plant's dynamics sit
-        and where your sensor's noise sits. Find both, then choose. Anyone who gives you a
-        single number has assumed your plant.
+      <div class="callout danger small">
+        <span class="label">No cutoff rescues this loop</span>
+        The command range bottoms out around 300 N.m at an <code>Nd</code> where the response is
+        still intact — twice the engine's limit. The honest answers are the ones that leave the
+        filter alone: <strong>less derivative</strong> (T<sub>d</sub> multiplies the noise too),
+        <strong>a better sensor</strong>, or <strong>an estimator</strong> that decides by model
+        rather than by frequency. Anyone who gives you a single number for <code>Nd</code> has
+        assumed your plant.
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> and the useful case is the common one — the signal you care about
-      is slow and has most of the power, the noise is fast and has very little. When those are
-      well separated, a first-order filter is all you need and the choice is easy.</p>
-      <p><strong>Say:</strong> when they are not separated, that is a Kalman filter conversation,
-      and it is a different course.</p>
+      <p><strong>Say:</strong> the easy case is the well-separated one — the signal you care
+      about is slow and has most of the power, the noise is fast and has very little. Then a
+      first-order filter is all you need and the choice is easy.</p>
+      <p><strong>Do not let them leave thinking this car was that case.</strong> It was not. We
+      filtered it as hard as the response would allow and the command still swings twice the
+      engine's limit. The notebook measures both ends of the trade and there is no value of
+      <code>Nd</code> that wins — that is the result, not a failure to tune.</p>
+      <p><strong>Say:</strong> so the fix is upstream of the filter. Use less derivative, get a
+      better measurement, or estimate. The last of those is a Kalman filter, and it is a
+      different course.</p>
       <p><strong>Optional aside, only if time and appetite:</strong> a filtered derivative
       <em>sN/(s+N)</em> is algebraically identical to a feedback loop with <em>N</em> forward and
       an integrator in the feedback path. Same behavior, fewer operations, much harder to read.
@@ -249,7 +276,7 @@ plot_sweep(sw; sig = TORQUE_CMD, name = "Nd")</code></pre>
         <li><strong>Cutoff frequency</strong> — where the filter starts attenuating, conventionally at −3 dB.</li>
         <li><strong>Low-pass</strong> — passes slow things, blocks fast ones.</li>
         <li><strong>The trade-off</strong> — too high and the noise gets through; too low and you filter away the signal, and the derivative stops doing its job.</li>
-        <li><strong>When the bands overlap</strong> — no first-order filter helps, and you need a better sensor or a state estimator.</li>
+        <li><strong>When the bands are close</strong> — as they are here, half a decade apart — no choice of cutoff helps, and the answer is less derivative, a better sensor or a state estimator.</li>
       </ul>
     </aside>
   </section>
