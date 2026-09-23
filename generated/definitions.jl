@@ -17,7 +17,6 @@ if isfile(joinpath((@__DIR__) |> Base.dirname, "dyad", "definitions.jl"))
 end
 
 import BlockComponents
-import DiscreteComponents
 import DyadControlSystems
 import DyadData
 import DyadInterface
