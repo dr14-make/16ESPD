@@ -12,7 +12,7 @@ Pkg.activate(joinpath(@__DIR__, "..", ".."))
 using UUIDs: UUID
 import Pluto
 
-const CELL_IDS = UUID[UUID("a1000000-0000-4000-8000-" * lpad(i, 12, '0')) for i in 1:10]
+const CELL_IDS = UUID[UUID("a1000000-0000-4000-8000-" * lpad(i, 12, '0')) for i in 1:12]
 
 carded(index, card, code) = Pluto.Cell(;
     cell_id=CELL_IDS[index],
@@ -47,8 +47,8 @@ runnable_cells() = [
 # What the browser harness drives. Between them these cells cover every path a card can take:
 # a side-effecting preamble, a Julia-defined widget writing back, two cells downstream of it, a
 # `published_to_js` payload reached through the <pluto-cell> ancestor, a text/plain body that
-# must not be parsed as markup, one card that no bond can reach, and the theme bond the deck
-# writes without any element ever reporting it.
+# must not be parsed as markup, one card that no bond can reach, math in both the shapes
+# PlutoRunner marks up, and the theme bond the deck writes without any element ever reporting it.
 browser_cells() = [
     carded(1, "plotly", """
     plotly_offline = begin
@@ -68,6 +68,24 @@ browser_cells() = [
     uncarded(8, "@bind deck_theme html\"<span></span>\""),
     uncarded(9,
         "plot_template = templates[coalesce(deck_theme, \"light\") == \"dark\" ? :plotly_dark : :plotly_white]"),
+    # A formula on a card that re-runs, which is the only thing that exercises clearing the
+    # math MathJax has already drawn. The equation is static and the bond is outside it: what
+    # matters is that the card repaints, not that the formula changes.
+    carded(11, "formula-live", """
+    md\"\"\"**cycles** \$(cycles)
+
+    \$\$\\omega = 2\\pi f\$\$
+    \"\"\""""),
+    # Both shapes in one cell, because they are marked up by two different methods:
+    # `Markdown.html` writes the display paragraph and `Markdown.htmlinline` the inline span.
+    carded(10, "formula", """
+    md\"\"\"
+    The first-order plant with dead time:
+
+    \$\$G(s) = \\frac{K e^{-\\theta s}}{\\tau s + 1}\$\$
+
+    with steady-state gain \$K\$ and time constant \$\\tau\$.
+    \"\"\""""),
 ]
 
 write_fixture("three-cards.jl", three_carded_cells())

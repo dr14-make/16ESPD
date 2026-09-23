@@ -5,9 +5,19 @@
 // kernel, and a cue is worth most in the twenty-odd seconds before one exists or after one has
 // been killed — so the parser is bundled and the text arrives as markdown in `/api/deck`.
 
-import { marked } from "marked"
+import { Marked } from "marked"
 import { hasCueText } from "./deck.interface.js"
 import type { SlideNotes } from "./deck.interface.js"
+import { texMarkup } from "./math.markup.js"
+import { clearMath, typesetMath } from "./math.typesetter.js"
+
+/**
+ * The parser, carrying the math a cue may hold.
+ *
+ * Its own instance: the module-level `marked` is a singleton every importer shares, so
+ * configuring it would configure it for whatever else reaches for it.
+ */
+const parser = new Marked(texMarkup)
 
 /**
  * Put the cues of one slide into `body`.
@@ -27,7 +37,9 @@ export function renderCues(body: Element, notes: SlideNotes | null): void {
   }
   // A cue file is authored by whoever authored the deck and the notebook, and is trusted
   // exactly as far as they are: markdown carrying raw HTML renders as that HTML.
-  body.innerHTML = marked.parse(notes.markdown, { async: false })
+  clearMath(body)
+  body.innerHTML = parser.parse(notes.markdown, { async: false })
+  void typesetMath(body)
 }
 
 function absence(message: string): HTMLParagraphElement {

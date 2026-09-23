@@ -55,6 +55,23 @@ Text("<b>not bold</b> & <script>never runs</script>")
 # ╔═╡ a1000000-0000-4000-8000-000000000009
 plot_template = templates[coalesce(deck_theme, "light") == "dark" ? :plotly_dark : :plotly_white]
 
+# ╔═╡ a1000000-0000-4000-8000-000000000011
+# ╠═╡ card = "formula-live"
+md"""**cycles** $(cycles)
+
+$$\omega = 2\pi f$$
+"""
+
+# ╔═╡ a1000000-0000-4000-8000-000000000010
+# ╠═╡ card = "formula"
+md"""
+The first-order plant with dead time:
+
+$$G(s) = \frac{K e^{-\theta s}}{\tau s + 1}$$
+
+with steady-state gain $K$ and time constant $\tau$.
+"""
+
 # ╔═╡ Cell order:
 # ╠═a1000000-0000-4000-8000-000000000001
 # ╠═a1000000-0000-4000-8000-000000000002
@@ -65,3 +82,5 @@ plot_template = templates[coalesce(deck_theme, "light") == "dark" ? :plotly_dark
 # ╠═a1000000-0000-4000-8000-000000000007
 # ╠═a1000000-0000-4000-8000-000000000008
 # ╠═a1000000-0000-4000-8000-000000000009
+# ╠═a1000000-0000-4000-8000-000000000011
+# ╠═a1000000-0000-4000-8000-000000000010

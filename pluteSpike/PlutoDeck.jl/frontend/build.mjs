@@ -12,6 +12,16 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const SOURCE = join(HERE, "src")
 const OUT = join(HERE, "..", "frontend-dist")
 
+/**
+ * The MathJax build the deck serves itself, so that a lecture hall's network is never on the
+ * path to an equation.
+ *
+ * Copied, not bundled: it is a classic script that assigns `window.MathJax`, not a module.
+ * Resolved through the package rather than by path, so an install layout that does not put it
+ * under a flat `node_modules` fails here instead of naming a file that is not there.
+ */
+const MATHJAX = fileURLToPath(import.meta.resolve("mathjax/es5/tex-svg-full.js"))
+
 /** Each page, its entry module, and the template that references the built assets. */
 const PAGES = [
   { template: "index.html", entry: "deck.entry.ts", token: "deck.js" },
@@ -35,7 +45,7 @@ const watch = process.argv.includes("--watch")
  */
 const define = { "process.env.NODE_ENV": '"production"' }
 
-async function emitPages(metafile) {
+async function emitPages(metafile, mathjax) {
   const outputs = Object.entries(metafile.outputs)
 
   const assetFor = (entrySuffix) => {
@@ -52,6 +62,7 @@ async function emitPages(metafile) {
     const template = await readFile(join(SOURCE, page.template), "utf8")
     const rendered = template
       .replaceAll("{{deck.css}}", stylesheet)
+      .replaceAll("{{mathjax.js}}", mathjax)
       .replaceAll(`{{${page.token}}}`, assetFor(`src/${page.entry}`))
 
     if (rendered.includes("{{")) {
@@ -61,17 +72,49 @@ async function emitPages(metafile) {
   }
 }
 
-/** Rewriting the HTML is part of every build, because the asset names carry a content hash. */
-const emitPagesPlugin = {
-  name: "emit-pages",
-  setup(build) {
-    build.onEnd(async (result) => {
-      if (result.metafile !== undefined && result.errors.length === 0) {
-        await emitPages(result.metafile)
-      }
-    })
-  },
+/**
+ * Copy MathJax into the bundle, under a content-hashed name, and report what it is called.
+ *
+ * A build of its own because the `copy` loader is keyed by extension: setting it for `.js` in
+ * the main build would stop esbuild bundling every `.js` its module graph reaches through
+ * `node_modules` and copy those too.
+ */
+async function copyMathJax() {
+  const result = await esbuild.build({
+    absWorkingDir: HERE,
+    entryPoints: [{ in: MATHJAX, out: "tex-svg-full" }],
+    outdir: OUT,
+    loader: { ".js": "copy" },
+    entryNames: "[name]-[hash]",
+    metafile: true,
+  })
+  const [built] = Object.keys(result.metafile.outputs)
+  if (built === undefined) {
+    throw new Error(`nothing was copied from ${MATHJAX}`)
+  }
+  return relative(OUT, join(HERE, built))
 }
+
+/** Rewriting the HTML is part of every build, because the asset names carry a content hash. */
+function emitPagesPlugin(mathjax) {
+  return {
+    name: "emit-pages",
+    setup(build) {
+      build.onEnd(async (result) => {
+        if (result.metafile !== undefined && result.errors.length === 0) {
+          await emitPages(result.metafile, mathjax)
+        }
+      })
+    },
+  }
+}
+
+await rm(OUT, { recursive: true, force: true })
+await mkdir(OUT, { recursive: true })
+
+// Before the options, because the plugin closes over the name the copy landed under, and once
+// rather than per rebuild: a pinned dependency cannot change while a watcher is running.
+const mathjax = await copyMathJax()
 
 const options = {
   // The metafile's output keys are resolved against this, so naming it is what makes the asset
@@ -101,11 +144,8 @@ const options = {
   metafile: true,
   logLevel: "info",
   define,
-  plugins: [emitPagesPlugin],
+  plugins: [emitPagesPlugin(mathjax)],
 }
-
-await rm(OUT, { recursive: true, force: true })
-await mkdir(OUT, { recursive: true })
 
 if (watch) {
   const context = await esbuild.context(options)

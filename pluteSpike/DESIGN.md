@@ -77,9 +77,13 @@ in an installed package alike.
 It is committed because it is the only servable form: `frontend/` holds TypeScript, so an
 ignored bundle would mean a fresh clone can neither present a deck nor run the browser half of
 `] test PlutoDeck` until someone has installed Node and built one — which is the dependency this
-package exists to keep out of a lecturer's way. At 2.6 MB it is also smaller than the 4.2 MB of
-hand-copied dependencies the tree carried before it, and source maps are written only by
-`npm run dev` — `.gitignore` keeps them out.
+package exists to keep out of a lecturer's way. Source maps are written only by `npm run dev` —
+`.gitignore` keeps them out.
+
+Most of it is now the MathJax build that § Math is Pluto's markup ships locally, and that file is
+the argument for committing the directory rather than against it: a pinned dependency copied
+verbatim changes only when the pin does, and a checkout that had to build one before it could
+present would need Node to show an equation.
 
 The cost is real and pulls the other way: a content-hashed bundle changes in its entirety on
 every frontend edit, so a one-line change to a component reads in a diff as a rewritten 2.1 MB
@@ -355,6 +359,135 @@ student-facing cut over one notebook — the argument that moved slide titles �
 that has to be readable in the twenty seconds before a kernel exists, which a notebook cell
 never is. Neither is pressing, and the machinery cues need is most of what it would take.
 
+### Math is Pluto's markup, drawn by Pluto's renderer
+
+The course is a control-theory lecture and its equations are most of its content, so a deck that
+renders `$…$` as the dollars a lecturer typed is not showing the lecture.
+
+Half of this is not a decision. `PlutoRunner/src/display/LaTeX.jl` overrides Julia's Markdown
+HTML writer inside the kernel — `Markdown.htmlinline` writes `<span class="tex">$formula$</span>`
+and `Markdown.html` writes `<p class="tex">$$formula$$</p>` — so every card the deck paints
+already carries `.tex` elements, with inline and display told apart by the tag and by the
+delimiter. There is nothing to parse and no text to scan for `$`, which is why a dollar in prose
+is not a false positive. The renderer is Pluto's too: MathJax 3.2.2 `tex-svg-full`, configured as
+`frontend/common/SetupMathJax.js` configures it. Matching it is what makes one formula read
+identically in the notebook, on a card and in the speaker window.
+
+One part of that configuration is load-bearing: SVG output draws every glyph as a path, so
+there are no font files to serve — which is the reason for MathJax over KaTeX, whose `.woff2`
+assets would have to be bundled and served too. `tex-svg-full` rather than a smaller build is
+the same guarantee one layer down, because MathJax's own loader fetches a missing component from
+the directory it was served out of, and there is no component tree there.
+
+**The font cache is `local` where Pluto's is `global`, and that is a correctness fix rather than
+a preference.** A global cache emits every glyph once into a single `<svg>` in the document and
+has each formula reach it through `<use href="#…">`. That reference does not cross a shadow
+boundary, so a cue in the overlay or the speaker window drew a correctly sized, correctly
+positioned box with nothing painted inside it. Measured: inside a shadow root, two of two
+references resolved to nothing and the formula carried no glyph paths of its own; local caching
+repeats the paths in each formula's own `<defs>` and both resolve. Nothing about the offline
+guarantee changes — local output is still paths and still no font files — it costs bytes per
+formula, which is the whole of the trade.
+
+This is also the failure that a test asserting the shape of the DOM cannot see. `mjx-container`
+was present, its `<svg>` had the right width, and the delimiters were gone; the glyphs were
+simply not drawn. What catches it is asserting that a formula's own subtree holds the paths.
+
+`ignoreHtmlClass` and `processHtmlClass` are carried from Pluto verbatim and are inert here.
+Both govern the walk MathJax makes looking for math inside the elements it is given, and the
+elements it is given are the `.tex` nodes themselves, whose only child is the text it reads —
+so there is nothing for either option to skip or to force. Nothing carries `no-MαθJax` either.
+What pairs with the kernel's markup is the `querySelectorAll(".tex")` in `math.typesetter.ts`.
+They are kept because matching Pluto's configuration costs nothing — but calling them
+load-bearing would have the next person preserve the wrong thing.
+
+**There is no `MathJax.Hub` shim, and Pluto's comment is why one looked necessary.** That
+comment — *"plotly uses MathJax 2, so we have this shim to make it work kindof"* — predates
+Plotly's MathJax 3 support, and a shim was carried here on the strength of it before anyone
+checked the caller. Plotly from 2.x on branches on `parseInt(MathJax.version)` and takes a
+MathJax 3 path that calls `MathJax.typeset` and never touches `Hub`; PlutoPlotly ships 2.34.0.
+Plotly 1.x does call `Hub.Typeset`, with a single element rather than a list, and then reads
+its result back out of `.MathJax_SVG` — a class MathJax 3 never writes. So the older path cannot
+be served by any shim over MathJax 3, and the newer one does not want one. "Kindof" is doing
+real work in that sentence.
+
+A `Hub` that answers a call and quietly drops it is worse than no `Hub`, because `Hub` is what a
+caller feature-detects on, so the choice was between making it work and removing it. It cannot
+be made to work, so it is gone.
+
+**The font cache is `local` where Pluto's is `global`, and that is a correctness fix rather than
+a preference.** A global cache emits every glyph once into a single `<svg>` in the document and
+has each formula reach it through `<use href="#…">`. That reference does not cross a shadow
+boundary, so a cue in the overlay or the speaker window drew a correctly sized, correctly
+positioned box with nothing painted inside it. Measured: inside a shadow root, two of two
+references resolved to nothing and the formula carried no glyph paths of its own; local caching
+repeats the paths in each formula's own `<defs>` and both resolve. Nothing about the offline
+guarantee changes — local output is still paths and still no font files — it costs bytes per
+formula, which is the whole of the trade.
+
+This is also the failure that a test asserting the shape of the DOM cannot see. `mjx-container`
+was present, its `<svg>` had the right width, and the delimiters were gone; the glyphs were
+simply not drawn. What catches it is asserting that a formula's own subtree holds the paths.
+
+The file is served by the deck, not fetched. Pluto's normal build loads it from jsdelivr and its
+offline build ships it locally; the size is not what decides this. A lecture hall's network is
+not the lecturer's to rely on, which the reveal deck this one replaces states three times.
+
+**Cues are where the decision actually is**, because `marked` has no math and no precedent to
+follow. The cue renderer emits Pluto's markup rather than a math extension with conventions of
+its own, so one typeset pass covers cards and cues and the codebase carries one convention rather
+than two. A tokenizer rather than a pass over rendered HTML: `_`, `*` and `\` are markdown's
+too, and `$a_1 + b_2$` left to the inline lexer arrives as emphasis wrapped around half a formula
+with the underscores gone and nothing to say they were ever there.
+
+What counts as inline math follows Julia's own rule, `parse_inline_wrapper`: a run of
+delimiters, no whitespace after the opening run or before the closing one. That clause is what
+leaves `costs $5 and $6` as the prose it is.
+
+The two parsers part company in three places, and each divergence is the same trade: a cue file
+is authored by hand and never round-trips through Julia, so there is no parser to stay
+compatible with, and fidelity that hurts the lecturer buys nothing.
+
+- **A paragraph that merely opens with `$…$`** becomes a display block in Julia and stays the
+  paragraph it reads as here. Bug-compatibility would tear a cue's sentence in half.
+- **Display math spaced inside its delimiters** — `$$ u \;=\; k\,e $$`, and the form broken over
+  three lines — is math here and is not math in Julia at all. Every display equation in the
+  reveal deck this one replaces is written with the spaces, so copying one across is the
+  likeliest thing anyone will do with either. Two delimiters are unambiguous on their own, so
+  accepting them guesses at nothing.
+
+  **What Julia does with that line is worse than refusing it, and is the strongest argument for
+  this divergence.** `Markdown.parse` leaves a bare `:$` in the tree — `Any[:$, Paragraph(["u =
+  k e ", :$])]` — and the `md` string macro reads a symbol there as an interpolation target, so
+  the cell throws `UndefVarError: $ not defined` and the whole card is lost. Not a line rendered
+  wrong: no card. In a cue the same line renders. So the asymmetry is not "prose here, math
+  there" but "a dead cell there, a drawn equation here", and a lecturer pasting an equation has
+  no visible dollars to tell them what went wrong.
+- **`costs $5 and $6` is prose here and is neither prose nor math in Julia.** Those are
+  *interpolation* nodes — `Markdown.parse` yields `Int64(5)` and `Int64(6)` — so a notebook cell
+  renders "costs 5 and 6", dollars eaten, with the whitespace rule never consulted. On this one
+  the cue renderer is better than the parser it otherwise follows rather than compatible with it.
+
+**A shadow root needs MathJax's stylesheet handed to it.** MathJax writes one `<style>` into
+`document.head` and grows it as it meets constructs it has not drawn before. A document
+stylesheet does not cross a shadow boundary, and the rule that matters most is the one hiding
+`mjx-assistive-mml` behind `position: absolute` and a 1px clip — so a cue rendered in the overlay
+or the speaker window lays the MathML a screen reader reads out as visible text beside the
+glyphs. Measured, an inline formula came out 41.5 px against the 21.4 px of the same formula in
+light DOM, with the glyphs pushed off the baseline. Display math survived it well enough to look
+fine, which is what made this worth a measurement rather than a glance. Every pass therefore
+copies that stylesheet into the root it just drew into, and copies it again each time, because
+the sheet is not finished growing.
+
+**Loading is where this leaves Pluto**, and both deviations come from one place. Pluto loads
+MathJax behind `requestIdleCallback` and typesets the whole document when it arrives, because a
+cell can render before the script lands and Pluto cannot tell which did. The deck awaits the load
+and names the container it just painted. Cues are read in the minutes before a kernel exists and
+after one has been killed, so a formula skipped for arriving early would be showing its dollars
+for the whole of the window the cues exist for — and a document-wide pass reaches no cue at all,
+because the overlay and the speaker page are Lit components with shadow roots. A deck whose
+notebook and cues carry no math never asks for the typesetter, so it never fetches the build.
+
 ### One kernel per running instance; never a multi-tenant server
 
 Measured on a developer laptop, with a notebook that loads no packages whatsoever:
@@ -434,6 +567,16 @@ its keep when the kernel is slow to start or has died.
 **A hand-written markdown subset.** Its failure mode is silent — a nested list rendered flat,
 with no error, in front of a room. The gridstack reasoning does not carry over, because
 `{x, y, w, h}` is a closed problem and markdown is not.
+
+**KaTeX for the math.** Faster, and it would need its `.woff2` fonts bundled and served; MathJax
+draws paths and needs nothing beyond the one script. The deck also cannot sensibly carry two
+renderers, because a formula would then be set by whichever one reached it first.
+
+**A math extension for `marked` with conventions of its own.** It would put a second definition
+of what math is into a codebase whose cards already arrive carrying Pluto's.
+
+**Scanning rendered text for `$`.** The markup already distinguishes math from a dollar in prose,
+and a scanner would have to guess — in a course where a cost in dollars is a plausible sentence.
 
 **Speaker cues in the notebook.** The card contract publishes any cell carrying a `card` key, so
 a cue there is either shown to every student or unreachable by the deck.

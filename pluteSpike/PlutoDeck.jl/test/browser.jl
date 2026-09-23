@@ -51,14 +51,16 @@ function browser_workspace()
           "cards": [
             { "card": "frequency", "x": 0, "y": 0, "w": 4, "h": 2 },
             { "card": "readout", "x": 4, "y": 0, "w": 4, "h": 2 },
-            { "card": "wave", "x": 0, "y": 2, "w": 8, "h": 6 }
+            { "card": "wave", "x": 0, "y": 2, "w": 8, "h": 6 },
+            { "card": "formula", "x": 8, "y": 0, "w": 4, "h": 4 }
           ]
         },
         {
           "cards": [
             { "card": "wave", "x": 0, "y": 0, "w": 8, "h": 6 },
             { "card": "constant", "x": 8, "y": 0, "w": 4, "h": 2 },
-            { "card": "plain", "x": 8, "y": 2, "w": 4, "h": 2 }
+            { "card": "plain", "x": 8, "y": 2, "w": 4, "h": 2 },
+            { "card": "formula-live", "x": 8, "y": 4, "w": 4, "h": 2 }
           ]
         }
       ]
@@ -92,6 +94,13 @@ than typing a number — the point is that the kernel re-runs while they watch.
 The sentence to land is that **$CUE_SENTENCE**: drag the slider and the whole notebook re-runs
 between one frame and the next. That is the difference between this and a slide with a picture
 of a plot on it.
+
+The plant behind the wave is
+
+\$\$ G(s) \\;=\\; \\frac{K e^{-\\theta s}}{\\tau s + 1} \$\$
+
+so \$\\tau\$ is what the slider is really changing. A ticket costs \$5 and a coffee \$3,
+which is prose and not a formula.
 
 **If a student asks** why the plot is interactive at all, it is Plotly, and the modebar is
 theirs to use — zoom is not a trap.
@@ -253,6 +262,14 @@ that is showing — which is the one that would still be drawn if a shared paylo
 """
 const HIDDEN_PLOT = """document.querySelectorAll('[data-card="wave"]')[1]"""
 
+"""
+The card whose cell carries math, in both the shapes PlutoRunner marks up.
+
+Drawn math is asserted rather than present math: the markup arrives whether or not anything
+typesets it, so a `.tex` element proves only that the kernel wrote what it always writes.
+"""
+const FORMULA_CARD = """document.querySelector('[data-card="formula"]')"""
+
 "Whether the cue panel is showing. `open` is the whole of the overlay's state."
 const CUES_SHOWING = """document.querySelector("cue-overlay").hasAttribute("open")"""
 
@@ -348,8 +365,8 @@ const MOVE_THE_SLIDER = """
                 @testset "every card shows its cell's live output" begin
                     # `every` over no cards is true, so the count comes first: an assertion that
                     # passes against an empty DOM is how a page that never rendered looks healthy.
-                    # Seven placements over six cells, the plot being placed on both slides.
-                    @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 7
+                    # Nine placements over eight cells, the plot being placed on both slides.
+                    @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 9
                     await(browser, view,
                         """[...document.querySelectorAll(".card")].every((c) => c.dataset.source === "live")""";
                         what="every card to go live")
@@ -362,7 +379,8 @@ const MOVE_THE_SLIDER = """
                     sources = JSON.parse(evaluate(browser, view, "JSON.stringify(window.__sources)"))
 
                     @test sort(collect(keys(sources))) ==
-                        ["constant", "frequency", "plain", "plotly", "readout", "wave"]
+                        ["constant", "formula", "formula-live", "frequency", "plain", "plotly",
+                         "readout", "wave"]
                     @test all(transitions == ["placeholder", "live"]
                               for transitions in values(sources))
                 end
@@ -426,6 +444,64 @@ const MOVE_THE_SLIDER = """
 
                     @test occursin("<b>not bold</b>", evaluate(browser, view, "$plain.textContent"))
                     @test evaluate(browser, view, "$plain.querySelector('b, script') === null") === true
+                end
+
+                @testset "a card's math is drawn, not left as the dollars the cell was written in" begin
+                    # The markup is the kernel's own and needs no parsing here: PlutoRunner
+                    # overrides Julia's Markdown HTML writer, so `Markdown.html` wrote the
+                    # display paragraph and `Markdown.htmlinline` the two inline spans.
+                    @test evaluate(browser, view, "$FORMULA_CARD.querySelectorAll('p.tex').length") == 1
+                    @test evaluate(browser, view, "$FORMULA_CARD.querySelectorAll('span.tex').length") == 2
+
+                    await(browser, view,
+                        "$FORMULA_CARD.querySelectorAll('mjx-container svg').length === 3";
+                        what="every formula on the card to be typeset")
+
+                    # Which delimiter it was still decides how it is set, which is the whole of
+                    # what distinguishes an equation on its own line from one in a sentence.
+                    @test evaluate(browser, view,
+                        "$FORMULA_CARD.querySelectorAll('mjx-container[display=true]').length") == 1
+
+                    # SVG output is glyph paths and says nothing to a screen reader. What one
+                    # reads is the assistive MathML beside each container, which the
+                    # `startup.ready` override must go on letting MathJax build.
+                    @test evaluate(browser, view,
+                        "$FORMULA_CARD.querySelectorAll('mjx-assistive-mml math').length") == 3
+
+                    # Drawn rather than merely marked up: MathJax consumes the delimiters and
+                    # the macros, so what is left is glyphs.
+                    text = evaluate(browser, view, "$FORMULA_CARD.textContent")
+                    @test !occursin("\$", text)
+                    @test !occursin("frac", text)
+                end
+
+                @testset "MathJax is served by the deck, never fetched from a network" begin
+                    # Stated three times in the reveal deck this one replaces, and it holds
+                    # here: a lecture hall's network is not the lecturer's to rely on, and
+                    # Pluto's own build loads this file from jsdelivr.
+                    source = evaluate(browser, view,
+                        """document.head.querySelector('link[rel="mathjax-source"]').href""")
+                    @test startswith(source, url)
+                    # The name `server.jl` answers `immutable` for; a build that stopped
+                    # hashing it would have every refresh of every deck re-fetch the build.
+                    @test occursin(r"/tex-svg-full-[0-9A-Z]{8}\.js$", source)
+
+                    # Appended by the typesetter rather than written into the page, so this is
+                    # also what says the link was read rather than merely emitted.
+                    @test evaluate(browser, view, """
+                        [...document.querySelectorAll("script[src]")]
+                          .filter((s) => s.src.includes("tex-svg-full")).length
+                        """) == 1
+                    @test evaluate(browser, view, """
+                        [...document.querySelectorAll("script[src]")]
+                          .every((s) => s.src.startsWith(location.origin))
+                        """) === true
+                    # The deck's own entry and MathJax, and nothing else. `tex-svg-full` carries
+                    # every component the deck asks for, so MathJax's loader never runs — and a
+                    # component it did fetch would resolve against the script's own directory and
+                    # so be same-origin, which an origin check cannot see and a count can.
+                    @test evaluate(browser, view,
+                        """document.querySelectorAll("script[src]").length""") == 2
                 end
 
                 @testset "a slide is headed by the deck's title for it, or numbered" begin
@@ -573,9 +649,31 @@ const MOVE_THE_SLIDER = """
 
                     @test mutations["readout"] > 0
                     @test mutations["wave"] > 0
+                    @test mutations["formula-live"] > 0
                     @test mutations["constant"] == 0
                     @test mutations["plain"] == 0
                     @test mutations["plotly"] == 0
+                    # Typesetting rewrites a card, and the pass over this one was awaited
+                    # before these observers existed: what this adds is that no second pass
+                    # follows it, so the formula is drawn once and then left alone.
+                    @test mutations["formula"] == 0
+                end
+
+                @testset "a formula on a card that re-ran is still drawn" begin
+                    # The slider moved in the testset above, so this card has repainted at
+                    # least once. A repaint replaces what MathJax drew, and MathJax finds its
+                    # own output by `contains` — so the pass that follows has to draw the new
+                    # body rather than leave the card holding the delimiters it was given.
+                    live = """document.querySelectorAll('[data-card="formula-live"]')[0]"""
+                    await(browser, view, "$live.textContent.includes(\"cycles 4\")";
+                        what="the live formula card to follow the slider")
+                    await(browser, view,
+                        "$live.querySelectorAll('mjx-container svg defs path[d]').length > 0";
+                        what="the repainted formula to be drawn again")
+
+                    @test evaluate(browser, view,
+                        "$live.querySelectorAll('mjx-container').length") == 1
+                    @test !occursin("\$", evaluate(browser, view, "$live.textContent"))
                 end
 
                 @testset "a Julia-rendered plot follows the deck into dark mode" begin
@@ -672,6 +770,56 @@ const MOVE_THE_SLIDER = """
                     @test !occursin("**", evaluate(browser, view, CUE_TEXT))
                 end
 
+                @testset "a cue's math is drawn through the markup a card's is" begin
+                    # `marked` has no math, so the cue renderer emits what the kernel emits.
+                    # One convention and one typeset pass, rather than a second of each.
+                    @test evaluate(browser, view, "$CUE_BODY.querySelectorAll('p.tex').length") == 1
+                    @test evaluate(browser, view, "$CUE_BODY.querySelectorAll('span.tex').length") == 1
+
+                    await(browser, view, "$CUE_BODY.querySelectorAll('mjx-container svg').length === 2";
+                        what="the cue's formulas to be typeset")
+                    @test evaluate(browser, view,
+                        "$CUE_BODY.querySelectorAll('mjx-container[display=true]').length") == 1
+
+                    # The assertion a suite written against markup cannot make. MathJax writes
+                    # one stylesheet into `document.head`, and a document stylesheet does not
+                    # cross a shadow boundary — so without the deck adopting it, the MathML a
+                    # screen reader reads is laid out as visible text beside the glyphs, and
+                    # every inline formula in a cue is about twice its proper width.
+                    @test evaluate(browser, view, """
+                        getComputedStyle($CUE_BODY.querySelector("mjx-assistive-mml")).position
+                        """) == "absolute"
+                    # The assertion a width could not make, and the one this went wrong on: a
+                    # formula's glyphs must be inside its own subtree. A global font cache puts
+                    # them in one `<svg>` in the document and reaches them by `<use href="#…">`,
+                    # which does not cross a shadow boundary — leaving a correctly sized box
+                    # with nothing painted in it, on every formula in every cue.
+                    @test evaluate(browser, view, """
+                        [...$CUE_BODY.querySelectorAll("mjx-container svg")]
+                          .every((svg) => svg.querySelectorAll("defs path[d]").length > 0)
+                        """) === true
+                    @test evaluate(browser, view, """
+                        [...$CUE_BODY.querySelectorAll("mjx-container svg use")]
+                          .every((u) => u.getRootNode().querySelector(
+                            u.getAttribute("xlink:href") ?? u.getAttribute("href")) !== null)
+                        """) === true
+
+                    # Measured rather than inferred: the container is as wide as its glyphs.
+                    @test evaluate(browser, view, """
+                        (() => {
+                          const c = $CUE_BODY.querySelector('span.tex mjx-container')
+                          return c.getBoundingClientRect().width <=
+                                 c.querySelector("svg").getBoundingClientRect().width + 1
+                        })()
+                        """) === true
+
+                    text = evaluate(browser, view, CUE_TEXT)
+                    @test !occursin("frac", text)
+                    # A price is prose. The delimiter rule refuses a closing `\$` that follows
+                    # whitespace, which is the whole of what keeps this sentence readable.
+                    @test occursin("costs \$5 and a coffee \$3", text)
+                end
+
                 @testset "the panel scrolls its own overflow rather than the page" begin
                     # Several hundred words is the normal length of a cue, and the panel is
                     # fixed over a slide whose geometry must not move to make room for it.
@@ -750,6 +898,15 @@ const MOVE_THE_SLIDER = """
                         @test evaluate(browser, offline, CUES_SHOWING) === true
                         @test occursin(CUE_SENTENCE, evaluate(browser, offline, CUE_TEXT))
 
+                        # The window the cues exist for. Nothing about drawing a formula wants
+                        # a kernel — the parser and MathJax are both in the bundle — so a cue
+                        # that showed its dollars until Pluto came up would be showing them for
+                        # the whole of the wait the cues are there to cover.
+                        await(browser, offline,
+                            "$CUE_BODY.querySelectorAll('mjx-container svg').length === 2";
+                            what="the cue's formulas to be typeset with no kernel to reach")
+                        @test !occursin("frac", evaluate(browser, offline, CUE_TEXT))
+
                         press(browser, offline, "ArrowRight")
                         @test evaluate(browser, offline, CURRENT_SLIDE) == 1
                         @test evaluate(browser, offline,
@@ -799,6 +956,15 @@ const MOVE_THE_SLIDER = """
                     # one: a nested list is what a hand-written parser flattens silently.
                     @test evaluate(browser, speaker,
                         elements("speaker-page >>> .cue-body ul ul > li") * ".length") == 3
+
+                    # Typeset inside a shadow root, which is why the pass names the container
+                    # it just rendered: neither `querySelectorAll` from the document nor a
+                    # document-wide MathJax sweep crosses that boundary, and both would leave
+                    # this page showing the dollars while the overlay showed the formula.
+                    await(browser, speaker,
+                        "$SPEAKER_CUE_BODY.querySelectorAll('mjx-container svg').length === 2";
+                        what="the speaker window's formulas to be typeset")
+                    @test !occursin("frac", evaluate(browser, speaker, SPEAKER_CUE_TEXT))
 
                     # No cards, no kernel, no Rainbow bundle: that is what keeps this a second
                     # page rather than a second renderer, and what lets it outlive a kernel.

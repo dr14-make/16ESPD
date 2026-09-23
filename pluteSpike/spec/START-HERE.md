@@ -50,6 +50,12 @@ proven: the `freq` slider cell was added that way and survived an OOM kill.
 kernel that was dead. The only honest probe changes a bond and confirms a watched cell's
 `last_run_timestamp` advances. Write that probe early; you will use it constantly.
 
+**The browser suite runs the committed bundle, not your source.** `frontend_directory()` serves
+`frontend-dist/`, so a frontend edit reaches a test only through `npm run build`. Skip it and the
+suite passes or fails against whatever was built last, which reads as a bug in code you are
+looking at and cannot find. `mise run deck` runs esbuild in watch mode beside the deck; `mise run
+deck-test` does not.
+
 **Watch memory, and close what you open.** `earlyoom` here runs `--prefer (julia|node)` and
 will kill your kernel without warning. Each Pluto worker is about 2 GB. If you drive a headless
 browser, close the tab and kill the browser after each run — do not let instances accumulate.

@@ -39,6 +39,7 @@ call open.
 | [022](issues/022-what-is-coming-next-on-the-speaker-page.md) | What is coming next, on the speaker page | `enhancement` | `low` | `s` | yes | 019 | todo |
 | [023](issues/023-ctrl-c-does-not-always-stop-present-cleanly.md) | Ctrl-C does not always stop `present` cleanly | `bug` | `high` | `m` | no | 006 | todo |
 | [024](issues/024-light-dom-components-carry-their-identity-twice.md) | Light-DOM components carry their identity twice | `refactor` `tech-debt` | `low` | `s` | yes | 007 | todo |
+| [025](issues/025-render-the-math-a-control-theory-lecture-is-made-of.md) | Render the math a control-theory lecture is made of | `enhancement` | `high` | `m` | yes | 007, 009, 018 | **done** |
 | [026](issues/026-attach-to-a-pluto-server-that-is-already-running.md) | Attach to a Pluto server that is already running | `enhancement` | `high` | `m` | no | 004, 021 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
@@ -141,6 +142,66 @@ and it showed the chrome reporting a cold start over a dead one — indefinitely
 themselves were unaffected, so 018 is **done** on its own terms; what 021 carries is the chrome
 lying about everything else on the slide.
 
+025 is the first issue whose gap was invisible in the deck rather than visible in it: nothing
+under `frontend/src/` mentioned MathJax, KaTeX or `.tex`, and the lecture-1 notebook happens to
+carry no LaTeX, so six slides of a control-theory course rendered correctly while the thing the
+course is mostly made of had no path to a screen at all.
+
+Half of it needed no design. `PlutoRunner/src/display/LaTeX.jl` overrides Julia's Markdown HTML
+writer inside the kernel, so every card the deck paints already carries `.tex` elements with
+inline and display distinguished by the tag and by the delimiter — verified against a live
+PlutoRunner rather than read off the source, because the override is invisible to a bare
+`using Markdown`. There is nothing to parse and nothing to scan for `$`, so a dollar in prose is
+not a false positive. The renderer and its configuration are Pluto's too.
+
+Copying that configuration is where this issue went wrong on the way through, twice, and both
+corrections are in `../DESIGN.md` rather than quietly applied. `ignoreHtmlClass` and
+`processHtmlClass` were called load-bearing and are inert: they govern the walk inside the
+elements a pass is handed, and those are the `.tex` nodes themselves. The `MathJax.Hub` shim was
+called load-bearing and is gone — Plotly 2.x takes the MathJax 3 path and never calls it, and
+Plotly 1.x calls `Hub.Typeset` with a single element and then reads `.MathJax_SVG` back out,
+which MathJax 3 never writes, so no shim over MathJax 3 could serve it either. Copying Pluto's
+comment instead of reading the caller is what put it there, and reading the caller is what
+took it out.
+
+The cue half had no precedent, because `marked` has no math. The renderer now emits Pluto's own
+markup rather than a second convention, so one typeset pass covers a card and a cue alike and one
+formula reads identically in the notebook, on a slide and in the speaker window. What counts as
+math follows Julia's delimiter rule — no whitespace after an opening delimiter or before a
+closing one — which is the whole of what leaves `costs $5 and $6` as the prose it is. Where the
+two parsers genuinely disagree is recorded in `../DESIGN.md`.
+
+Two things only showed up on a deck someone looked at, and neither would have failed the suite
+as it stood. Display math copied out of the reveal deck — `$$ u \;=\; k\,e $$`, spaced inside its
+delimiters — rendered as mangled prose, because Julia refuses that form and the tokenizer was
+faithful to it. The cue tokenizer now accepts it, which makes the divergence list three rather
+than one — and the card side of that divergence is worse than it first looked: the same line in
+a notebook cell is not prose but `UndefVarError`, because Julia leaves a bare `$` for the `md`
+macro to interpolate, so the whole card is lost rather than one line set wrong. And every inline formula in a cue was about twice its proper width: MathJax's
+stylesheet lives in `document.head`, a document stylesheet does not cross a shadow boundary, and
+the rule it was missing is the one hiding the assistive MathML.
+
+Fixing the second turned up a third underneath it, and it is the one worth carrying forward:
+the glyphs had never been drawn in a cue at all. `fontCache: "global"` emits every glyph once
+into one `<svg>` in the document and reaches it by `<use href="#…">`, which does not cross a
+shadow boundary, so each formula was a correctly sized box containing nothing — and what had
+been legible in a cue until then was the unstyled assistive MathML, which is exactly what fixing
+the stylesheet hid. Three assertions had passed over it: the container was present, its width
+was right, and the delimiters were gone. Only looking at a rendered deck found it. The cache is
+`local` now, and the suite asserts that a formula's glyphs are inside its own subtree.
+
+All three are recorded in `../DESIGN.md`. The lesson the plan should keep is narrower than "test
+the browser", which this project already does: an assertion about the shape of rendered math
+says nothing about whether any of it was painted.
+
+Two deviations from Pluto are deliberate and both come from the same place. Pluto loads MathJax
+behind `requestIdleCallback` and typesets the whole document on arrival, because a cell can
+render before the script lands and Pluto cannot tell which did. The deck awaits the load and
+names the container it just painted instead: cues are read in the minutes before a kernel exists,
+so a formula skipped for arriving early would show its dollars for the whole of the window the
+cues are there to cover — and a document-wide pass reaches no cue at all, because the overlay and
+the speaker page are Lit components with shadow roots.
+
 ## Order
 
 Three tracks that converge. Julia and TypeScript are independent until 013.
@@ -176,7 +237,8 @@ Every issue names the `DESIGN.md` section it implements. The reverse mapping:
 | Cards show placeholders until the kernel is live | 010, 012 |
 | Cards render through Pluto's own renderer | 009, 016 |
 | Spike findings carried forward | 005, 008, 013 |
-| Speaker cues are the deck's, and reach the lecturer without a popup | 018, 019 |
+| Speaker cues are the deck's, and reach the lecturer without a popup | 018, 019, 025 |
+| Math is Pluto's markup, drawn by Pluto's renderer | 025 |
 
 `DESIGN.md` § Open produced no issues on purpose. `persist_js_state` and Plotly zoom retention,
 the sanitization posture, navigation deep links and schema versioning all settle better against

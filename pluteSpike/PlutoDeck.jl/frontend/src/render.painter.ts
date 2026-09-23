@@ -18,6 +18,7 @@ import {
 } from "@plutojl/rainbow/ui"
 import type { CardContent } from "./deck.interface.js"
 import type { Kernel } from "./kernel.client.js"
+import { clearMath, typesetMath } from "./math.typesetter.js"
 import { isolate } from "./published.helper.js"
 
 /**
@@ -111,6 +112,10 @@ export function createPainter(kernel: Kernel): Painter {
       return isolate(kernel.publishedObject(id))
     }
 
+    // Before the render that replaces it: MathJax finds what it has drawn with `contains`, so
+    // once the old output is detached it can no longer be reached to be forgotten.
+    clearMath(cell)
+
     render(
       html`<${PlutoActionsContext.Provider} value=${actions}>
         <${PlutoBondsContext.Provider} value=${kernel.bonds()}>
@@ -128,6 +133,10 @@ export function createPainter(kernel: Kernel): Painter {
       <//>`,
       cell,
     )
+
+    // `RawHTMLContainer` sets the cell's HTML in a layout effect, which Preact flushes before
+    // `render` returns, so the `.tex` elements the kernel wrote are in the document by here.
+    void typesetMath(cell)
   }
 }
 

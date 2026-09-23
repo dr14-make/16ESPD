@@ -13,6 +13,7 @@ which asserts the process stops the way its own last line tells a lecturer it wi
 |---|---|---|
 | main, before 019's tests | 3 | clean every time |
 | with 019's tests | 6 | 3 clean, 3 `exit 1` |
+| with 025's tests | 4 | 3 clean, 1 `exit 1` |
 
 019 added no Julia code. What it added is browser work that lengthens the window the interrupt
 lands in, which is how a race already present became visible — the same way 017's duplicate
@@ -27,6 +28,33 @@ was already interrupted, so a `TaskFailedException` reaches top level and the pr
 Three of the deaths during that investigation were `earlyoom` rather than this, on a box whose
 swap was exhausted. Those are a separate signature — a SIGTERM and exit 143, not exit 1 — and
 are not evidence here.
+
+A second trace, from 025's suite, puts the arrival point one frame finer. The exception is not
+merely off the main task; it lands in the scheduler's own task-switch path:
+
+```
+fatal: error thrown and no exception handler available.
+InterruptException()
+_jl_mutex_unlock at src/threading.c:1054
+jl_mutex_unlock at src/julia_locks.h:80 [inlined]
+ijl_task_get_next at src/scheduler.c:461
+poptask at ./task.jl:1216
+wait at ./task.jl:1228
+task_done_hook at ./task.jl:868
+jl_finish_task at src/task.c:342
+start_task at src/task.c:1264
+```
+
+`task_done_hook` runs as a finishing task hands control back, so the interrupt arrives while the
+scheduler holds its lock and there is no frame between it and `start_task` that could carry a
+handler. That is consistent with the shape above and narrows where a fix has to catch.
+
+**The open question below is answered for this instance, and the answer lowers the stakes.** The
+process that exited 1 left no Pluto worker behind: immediately after the run, the only `julia`
+processes on the box belonged to the editor's own Dyad Studio (`dyad-3x4x0`), and none from the
+suite's channel (`dyad-3x3x0`) survived. So the `finally` does reach `shutdown!` while unwinding,
+and what is wrong is the exit code rather than the cleanup. One observation is not every path —
+the interrupt could land somewhere else next time — but nothing so far shows a leak.
 
 ## Why this is worth a `high`
 
