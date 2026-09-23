@@ -39,6 +39,7 @@ call open.
 | [022](issues/022-what-is-coming-next-on-the-speaker-page.md) | What is coming next, on the speaker page | `enhancement` | `low` | `s` | yes | 019 | todo |
 | [023](issues/023-ctrl-c-does-not-always-stop-present-cleanly.md) | Ctrl-C does not always stop `present` cleanly | `bug` | `high` | `m` | no | 006 | todo |
 | [024](issues/024-light-dom-components-carry-their-identity-twice.md) | Light-DOM components carry their identity twice | `refactor` `tech-debt` | `low` | `s` | yes | 007 | todo |
+| [026](issues/026-attach-to-a-pluto-server-that-is-already-running.md) | Attach to a Pluto server that is already running | `enhancement` | `high` | `m` | no | 004, 021 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in
