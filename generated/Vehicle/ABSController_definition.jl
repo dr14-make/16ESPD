@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSController(; name, kappa_target, kp)
+   ABSController(; name, kappa_target, kp, v_min, v_band)
 
 Continuous longitudinal-slip brake modulator for forward braking.
 
@@ -13,26 +13,37 @@ The controller passes the full driver demand until braking slip approaches `kapp
 the target it proportionally releases brake torque. Saturation keeps the command between zero and
 the driver demand. Hydraulic dynamics are represented by the downstream brake actuator.
 
+Below `v_min` the modulator hands full authority back to the driver, as production ABS does at
+walking pace (typically 3-7 km/h). Two reasons: the slip estimate is meaningless once the speed
+used to normalise it approaches the regularisation floor of the tire model, and a car must be able
+to lock its wheels to come to a complete stop and stay there. The handover is blended over
+`v_band` so the command stays continuous. `v_ref` is the vehicle reference speed; its sign is
+ignored, so the dropout works in either travel direction.
+
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `kappa_target`         | Magnitude of target braking slip                         | --  |   0.04 |
 | `kp`         | Brake-release gain per unit slip                         | --  |   50.0 |
+| `v_min`         | Speed below which the modulator is fully handed back to the driver                         | m/s  |   1.4 |
+| `v_band`         | Blend width of the dropout handover                         | m/s  |   0.4 |
 
 ## Connectors
 
  * `kappa` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `demand` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `v_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `modulation`         |                          | --  |
+| `modulation`         | Slip-proportional brake release, one is full demand                         | --  |
+| `authority`         | Modulator authority, one above the dropout speed and zero below it                         | --  |
 """
-@component function ABSController(; name = nothing, kappa_target=0.04, kp=Float64(50.0), kwargs...)
+@component function ABSController(; name = nothing, kappa_target=0.04, kp=Float64(50.0), v_min=1.4, v_band=0.4, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -69,21 +80,32 @@ the driver demand. Hydraulic dynamics are represented by the downstream brake ac
   __local__kp = kp
   append!(__params, @parameters (kp::Real), [description = "Brake-release gain per unit slip"])
   __initial_conditions[kp] = __local__kp
+  __local__v_min = v_min
+  append!(__params, @parameters (v_min::Real), [description = "Speed below which the modulator is fully handed back to the driver"])
+  __initial_conditions[v_min] = __local__v_min
+  __local__v_band = v_band
+  append!(__params, @parameters (v_band::Real), [description = "Blend width of the dropout handover", bounds = (eps(Float64), Inf)])
+  __initial_conditions[v_band] = __local__v_band
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
   append!(__vars, @variables (kappa(t)::Real), [input = true])
   append!(__vars, @variables (demand(t)::Real), [input = true])
+  append!(__vars, @variables (v_ref(t)::Real), [input = true])
   append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (modulation(t)::Real))
+  append!(__vars, @variables (modulation(t)::Real), [description = "Slip-proportional brake release, one is full demand"])
+  append!(__vars, @variables (authority(t)::Real), [description = "Modulator authority, one above the dropout speed and zero below it"])
 
   ### Variables (assignments)
   __ovr_modulation = pop!(__overrides, "modulation", nothing); isnothing(__ovr_modulation) || push!(__eqs, modulation ~ __ovr_modulation)
   __ovr_modulation__initial = pop!(__overrides, "modulation__initial", nothing); isnothing(__ovr_modulation__initial) || (__initial_conditions[modulation] = __ovr_modulation__initial)
   __ovr_modulation__guess = pop!(__overrides, "modulation__guess", nothing)
+  __ovr_authority = pop!(__overrides, "authority", nothing); isnothing(__ovr_authority) || push!(__eqs, authority ~ __ovr_authority)
+  __ovr_authority__initial = pop!(__overrides, "authority__initial", nothing); isnothing(__ovr_authority__initial) || (__initial_conditions[authority] = __ovr_authority__initial)
+  __ovr_authority__guess = pop!(__overrides, "authority__guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -95,6 +117,7 @@ the driver demand. Hydraulic dynamics are represented by the downstream brake ac
 
   ### Guesses
   isnothing(__ovr_modulation__guess) || (__guesses[modulation] = __ovr_modulation__guess)
+  isnothing(__ovr_authority__guess) || (__guesses[authority] = __ovr_authority__guess)
 
   ### Initialization Equations
 
@@ -102,8 +125,9 @@ the driver demand. Hydraulic dynamics are represented by the downstream brake ac
   __assertions = []
 
   ### Equations
+  push!(__eqs, authority ~ min(max((abs(v_ref) - v_min) / v_band, 0.0), 1.0))
   push!(__eqs, modulation ~ min(max(1.0 + kp * (kappa + kappa_target), 0.0), 1.0))
-  push!(__eqs, tau_cmd ~ max(demand, 0.0) * modulation)
+  push!(__eqs, tau_cmd ~ max(demand, 0.0) * (authority * modulation + (1.0 - authority)))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

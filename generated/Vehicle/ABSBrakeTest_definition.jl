@@ -5,28 +5,39 @@
 
 
 @doc Markdown.doc"""
-   ABSBrakeTest(; name, v0, brake_demand, brake_time, abs_enabled, road_mu, m, radius, J_w)
+   ABSBrakeTest(; name, v0, brake_demand, brake_time, abs_enabled, road_mu, m, radius, J_w, w0, T_meas)
 
 Single-wheel-equivalent straight-line ABS braking test.
 
 The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
-when `abs_enabled` is one, or directly to the hydraulic actuator when it is zero. The modeled wheel
-represents one axle, with its normal load set consistently to half the vehicle weight.
+when `abs_enabled` is one, or directly to the hydraulic actuator when it is zero.
+
+The whole vehicle is lumped onto one equivalent wheel: `F_z` is the full vehicle weight and `J_w`
+is the four road wheels together, so `brake_demand` is the total of all four brakes. This is what
+makes the deceleration representative of a real stop. Loading the equivalent wheel with only half
+the weight, as a single-axle reading would, halves the friction ceiling and roughly doubles the
+stopping distance, because the whole vehicle mass is still being retarded. `SlipWheel1D` keeps a
+half-weight default because its own traction test models one driven axle; braking uses all four.
+
+Load transfer is not modelled, so `F_z` is static. A real stop moves load forward and the axles
+reach their friction limits at different times; this lumped model reports the average.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `v0`         | Initial vehicle speed                         | m/s  |   25.0 |
-| `brake_demand`         | Driver brake demand                         | N.m  |   3000.0 |
+| `brake_demand`         | Driver brake demand, total across all four brakes                         | N.m  |   6000.0 |
 | `brake_time`         | Brake application time                         | s  |   0.5 |
 | `abs_enabled`         | One enables ABS; zero bypasses modulation                         | --  |   1.0 |
 | `road_mu`         | Road-friction multiplier                         | --  |   1.0 |
 | `m`         | Vehicle mass                         | kg  |   1400.0 |
 | `radius`         | Wheel radius                         | m  |   0.31 |
-| `J_w`         | Wheel inertia                         | kg.m2  |   1.0 |
+| `J_w`         | Lumped inertia of the four road wheels                         | kg.m2  |   4.0 |
+| `w0`         | Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep                         | rad/s  |   0.2 |
+| `T_meas`         | Wheel-speed sensing and slip-estimation lag                         | s  |   0.005 |
 """
-@component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(3000.0), brake_time=0.5, abs_enabled=Float64(1.0), road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(1.0), kwargs...)
+@component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, abs_enabled=Float64(1.0), road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, T_meas=0.005, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -61,7 +72,7 @@ represents one axle, with its normal load set consistently to half the vehicle w
   append!(__params, @parameters (v0::Real), [description = "Initial vehicle speed"])
   __initial_conditions[v0] = __local__v0
   __local__brake_demand = brake_demand
-  append!(__params, @parameters (brake_demand::Real), [description = "Driver brake demand"])
+  append!(__params, @parameters (brake_demand::Real), [description = "Driver brake demand, total across all four brakes"])
   __initial_conditions[brake_demand] = __local__brake_demand
   __local__brake_time = brake_time
   append!(__params, @parameters (brake_time::Real), [description = "Brake application time"])
@@ -79,8 +90,14 @@ represents one axle, with its normal load set consistently to half the vehicle w
   append!(__params, @parameters (radius::Real), [description = "Wheel radius"])
   __initial_conditions[radius] = __local__radius
   __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real), [description = "Wheel inertia"])
+  append!(__params, @parameters (J_w::Real), [description = "Lumped inertia of the four road wheels"])
   __initial_conditions[J_w] = __local__J_w
+  __local__w0 = w0
+  append!(__params, @parameters (w0::Real), [description = "Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep"])
+  __initial_conditions[w0] = __local__w0
+  __local__T_meas = T_meas
+  append!(__params, @parameters (T_meas::Real), [description = "Wheel-speed sensing and slip-estimation lag"])
+  __initial_conditions[T_meas] = __local__T_meas
 
   ### Final Parameters (assignments)
 
@@ -106,15 +123,21 @@ represents one axle, with its normal load set consistently to half the vehicle w
   # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
   push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; controller_overrides...))
+  # Subcomponent slipfilter of type BlockComponents.Continuous.FirstOrder
+  slipfilter_overrides = __pop_subcomponent_overrides!(__overrides, "slipfilter")
+  push!(__systems, @named slipfilter = BlockComponents.Continuous.FirstOrder(; T=T_meas, slipfilter_overrides...))
+  # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
+  vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
+  push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
   # Subcomponent brake of type VehicleSystemsComponents.Vehicle.BrakeActuator
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.BrakeActuator(; tau_max=brake_demand, brake_overrides...))
+  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.BrakeActuator(; tau_max=brake_demand, w0=w0, brake_overrides...))
   # Subcomponent wheel_inertia of type RotationalComponents.Components.Inertia
   wheel_inertia_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_inertia")
   push!(__systems, @named wheel_inertia = RotationalComponents.Components.Inertia(; J=J_w, wheel_inertia_overrides...))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.SlipWheel1D
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(; radius=radius, F_z=0.5 * m * 9.80665, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(; radius=radius, F_z=m * 9.80665, wheel_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, body_overrides...))
@@ -129,6 +152,7 @@ represents one axle, with its normal load set consistently to half the vehicle w
 
   ### Initialization Equations
   push!(__initialization_eqs, brake.tau_actual ~ 0.0)
+  push!(__initialization_eqs, slipfilter.x ~ 0.0)
   push!(__initialization_eqs, wheel_inertia.phi ~ 0.0)
   push!(__initialization_eqs, wheel_inertia.w ~ v0 / radius)
   push!(__initialization_eqs, body.mass.s ~ 0.0)
@@ -138,11 +162,14 @@ represents one axle, with its normal load set consistently to half the vehicle w
   __assertions = []
 
   ### Equations
-  push!(__eqs, controller.kappa ~ wheel.kappa)
+  push!(__eqs, slipfilter.u ~ wheel.kappa)
   push!(__eqs, brake.tau_cmd ~ demand.y * (1.0 - abs_enabled) + controller.tau_cmd * abs_enabled)
   push!(__eqs, connect(demand.y, controller.demand))
-  push!(__eqs, connect(brake.spline, wheel_inertia.spline_a))
-  push!(__eqs, connect(wheel_inertia.spline_b, wheel.spline))
+  push!(__eqs, connect(slipfilter.y, controller.kappa))
+  push!(__eqs, connect(vsensor.flange, body.flange))
+  push!(__eqs, connect(vsensor.v, controller.v_ref))
+  push!(__eqs, connect(wheel_inertia.spline_b, brake.spline_a))
+  push!(__eqs, connect(brake.spline_b, wheel.spline))
   push!(__eqs, connect(brake.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange))
   push!(__eqs, connect(road.y, wheel.mu_scale))

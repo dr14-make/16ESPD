@@ -1,6 +1,0 @@
-analysis ABSBrakeTransient
-  extends Dyad.TransientAnalysis(stop = 4.0)
-  model = VehicleSystemsComponents.Vehicle.ABSBrakeTest(road_mu = road_mu, abs_enabled = 1.0)
-  parameter road_mu::Real = 1.0
-relations
-end

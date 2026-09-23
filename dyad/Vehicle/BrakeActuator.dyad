@@ -1,37 +1,75 @@
 """
-Unidirectional wheel-brake actuator with first-order hydraulic response.
+In-line wheel brake: commanded-magnitude Coulomb friction with first-order hydraulic response.
 
-A nonnegative command requests braking torque. The actuator saturates the request at `tau_max`
-and applies torque opposing positive shaft rotation. This model targets forward ABS braking; reverse-
-direction braking is outside its operating regime.
+The brake sits in the shaft line between `spline_a` and `spline_b`, with the friction reaction
+taken by the `support` housing. The disc is rigid with the shaft, so the two splines share an
+angle and the brake adds no relative-rotation state; it removes `tau_friction` from the shaft
+line and passes the remainder through. `spline_b.tau` is therefore the torque actually
+transmitted downstream, which is the quantity a hub or half-shaft is sized against.
+
+A nonnegative command requests braking torque. The request is saturated at `tau_max` and filtered
+by the hydraulic time constant `T` to give the friction magnitude `tau_actual`. That magnitude is
+applied against the direction of shaft rotation, so the brake decelerates in both travel
+directions and cannot spin the shaft up in reverse once it reaches standstill.
+
+This mirrors `RotationalComponents.Sources.SignTorque` with its `Sine` regularization. The stdlib
+source is not reused directly for two reasons: its `tau_nominal` is a parameter and cannot carry
+the ABS-modulated command, and its `Regularization` enum is a Moshi-style enum whose variants are
+not distinct Julia types, so this workspace's `isa`-based `switch` codegen cannot dispatch on it.
+
+The regularization replaces the discontinuous `sign(w)` over `|w| < w0` with a sine ramp, which is
+C1 at `±w0`. It is not stiction: the brake holds no torque at exact standstill, so a wheel parked
+on a grade will creep. For ABS studies, where the wheel repeatedly approaches but does not dwell
+at zero speed, this is the appropriate fidelity.
 """
 component BrakeActuator
-  "Wheel shaft"
-  spline = Spline()
-  "Brake reaction support"
-  support = Spline()
+  extends RotationalComponents.Interfaces.PartialElementaryTwoSplinesAndSupport
   "Requested brake torque"
-  tau_cmd = RealInput()
+  tau_cmd = RealInput() {^tau_cmd}
   "Hydraulic time constant"
   parameter T::Time = 0.03
   "Maximum brake torque"
   parameter tau_max::Torque = 2000.0
-  "Applied brake-torque magnitude"
+  "Regularization below this shaft speed"
+  parameter w0::AngularVelocity(min = eps(Float64)) = 1.0
+  "Applied brake-torque magnitude, always nonnegative"
   variable tau_actual::Torque
+  "Shaft angle with respect to the support"
+  variable phi::Angle
+  "Shaft speed with respect to the support (= der(phi))"
+  variable w::AngularVelocity
+  "Signed friction torque removed from the shaft line; carries the sign of w"
+  variable tau_friction::Torque
 relations
+  phi = spline_a.phi - phi_support
+  w = der(phi)
+  # The disc is rigid with the shaft: no relative rotation, hence no extra state.
+  spline_b.phi = spline_a.phi
   der(tau_actual) = (min(max(tau_cmd, 0.0), tau_max) - tau_actual) / T
-  spline.tau = tau_actual
-  support.tau = -spline.tau
+  tau_friction = tau_actual * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0))
+  # Torque entering from both splines is what the friction interface absorbs; the base class
+  # passes the negated sum out through the support.
+  spline_a.tau + spline_b.tau = tau_friction
+metadata {
+  "_links": {
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 90}}
+      }
+    }
+  }
+}
 end
 
 test component TestBrakeActuator
+  "Brake demand exceeding what is needed to stop the inertia, held past standstill"
   command = BlockComponents.Sources.Step(height = 500.0, offset = 0.0, start_time = 0.1)
-  brake = VehicleSystemsComponents.Vehicle.BrakeActuator(T = 0.03, tau_max = 400.0)
+  brake = VehicleSystemsComponents.Vehicle.BrakeActuator(T = 0.03, tau_max = 400.0, w0 = 1.0)
   wheel = RotationalComponents.Components.Inertia(J = 10.0)
   fixed = RotationalComponents.Components.Fixed()
 relations
   connect(command.y, brake.tau_cmd)
-  connect(brake.spline, wheel.spline_a)
+  connect(wheel.spline_b, brake.spline_a)
   connect(brake.support, fixed.spline)
   initial brake.tau_actual = 0.0
   initial wheel.phi = 0.0
@@ -39,7 +77,7 @@ relations
 end
 
 analysis BrakeActuatorTransient
-  extends TransientAnalysis(stop = 0.5)
+  extends TransientAnalysis(stop = 1.5)
   model = TestBrakeActuator()
 relations
 end

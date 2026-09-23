@@ -12,7 +12,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   name::Symbol = :LockedBrakeTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 4.0
+  var"stop"::Float64 = 6.0
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -29,8 +29,17 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # Single-wheel-equivalent straight-line ABS braking test.
   # 
   # The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
-  # when `abs_enabled` is one, or directly to the hydraulic actuator when it is zero. The modeled wheel
-  # represents one axle, with its normal load set consistently to half the vehicle weight.
+  # when `abs_enabled` is one, or directly to the hydraulic actuator when it is zero.
+  # 
+  # The whole vehicle is lumped onto one equivalent wheel: `F_z` is the full vehicle weight and `J_w`
+  # is the four road wheels together, so `brake_demand` is the total of all four brakes. This is what
+  # makes the deceleration representative of a real stop. Loading the equivalent wheel with only half
+  # the weight, as a single-axle reading would, halves the friction ceiling and roughly doubles the
+  # stopping distance, because the whole vehicle mass is still being retarded. `SlipWheel1D` keeps a
+  # half-weight default because its own traction test models one driven axle; braking uses all four.
+  # 
+  # Load transfer is not modelled, so `F_z` is static. A real stop moves load forward and the axles
+  # reach their friction limits at different times; this lumped model reports the average.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.ABSBrakeTest(; name=:ABSBrakeTest)
 end
 

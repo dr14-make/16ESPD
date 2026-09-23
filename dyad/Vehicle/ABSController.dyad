@@ -4,36 +4,75 @@ Continuous longitudinal-slip brake modulator for forward braking.
 The controller passes the full driver demand until braking slip approaches `kappa_target`. Beyond
 the target it proportionally releases brake torque. Saturation keeps the command between zero and
 the driver demand. Hydraulic dynamics are represented by the downstream brake actuator.
+
+Below `v_min` the modulator hands full authority back to the driver, as production ABS does at
+walking pace (typically 3-7 km/h). Two reasons: the slip estimate is meaningless once the speed
+used to normalise it approaches the regularisation floor of the tire model, and a car must be able
+to lock its wheels to come to a complete stop and stay there. The handover is blended over
+`v_band` so the command stays continuous. `v_ref` is the vehicle reference speed; its sign is
+ignored, so the dropout works in either travel direction.
 """
 component ABSController
   "Longitudinal slip; negative during braking"
   kappa = RealInput()
   "Driver-requested brake torque"
   demand = RealInput()
+  "Vehicle reference speed used only for the low-speed dropout"
+  v_ref = RealInput()
   "Modulated brake-torque request"
   tau_cmd = RealOutput()
   "Magnitude of target braking slip"
   parameter kappa_target::Real = 0.04
   "Brake-release gain per unit slip"
   parameter kp::Real = 50.0
+  "Speed below which the modulator is fully handed back to the driver"
+  parameter v_min::Velocity = 1.4
+  "Blend width of the dropout handover"
+  parameter v_band::Velocity(min = eps(Float64)) = 0.4
+  "Slip-proportional brake release, one is full demand"
   variable modulation::Real
+  "Modulator authority, one above the dropout speed and zero below it"
+  variable authority::Real
 relations
+  authority = min(max((abs(v_ref) - v_min) / v_band, 0.0), 1.0)
   modulation = min(max(1.0 + kp * (kappa + kappa_target), 0.0), 1.0)
-  tau_cmd = max(demand, 0.0) * modulation
+  # authority = 1 gives pure slip control; authority = 0 gives the raw driver demand.
+  tau_cmd = max(demand, 0.0) * (authority * modulation + (1.0 - authority))
 end
 
 test component TestABSController
   "Slip ramp from free rolling to deep braking slip"
   slip = BlockComponents.Sources.Ramp(offset = 0.0, height = -0.15, duration = 0.3, start_time = 0.1)
   demand = BlockComponents.Sources.Constant(k = 1000.0)
+  "Held well above the dropout so this case exercises slip control alone"
+  speed = BlockComponents.Sources.Constant(k = 20.0)
   controller = VehicleSystemsComponents.Vehicle.ABSController(kappa_target = 0.04, kp = 20.0)
 relations
   connect(slip.y, controller.kappa)
   connect(demand.y, controller.demand)
+  connect(speed.y, controller.v_ref)
 end
 
 analysis ABSControllerTransient
   extends TransientAnalysis(stop = 0.5)
   model = TestABSController()
+relations
+end
+
+test component TestABSControllerDropout
+  "Speed ramping down through the dropout band while slip sits deep in lock"
+  speed = BlockComponents.Sources.Ramp(offset = 5.0, height = -5.0, duration = 1.0, start_time = 0.0)
+  slip = BlockComponents.Sources.Constant(k = -1.0)
+  demand = BlockComponents.Sources.Constant(k = 1000.0)
+  controller = VehicleSystemsComponents.Vehicle.ABSController(kappa_target = 0.04, kp = 50.0)
+relations
+  connect(slip.y, controller.kappa)
+  connect(demand.y, controller.demand)
+  connect(speed.y, controller.v_ref)
+end
+
+analysis ABSControllerDropoutTransient
+  extends TransientAnalysis(stop = 1.0)
+  model = TestABSControllerDropout()
 relations
 end

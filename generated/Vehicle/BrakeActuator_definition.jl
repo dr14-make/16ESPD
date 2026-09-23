@@ -5,13 +5,30 @@
 
 
 @doc Markdown.doc"""
-   BrakeActuator(; name, T, tau_max)
+   BrakeActuator(; name, T, tau_max, w0)
 
-Unidirectional wheel-brake actuator with first-order hydraulic response.
+In-line wheel brake: commanded-magnitude Coulomb friction with first-order hydraulic response.
 
-A nonnegative command requests braking torque. The actuator saturates the request at `tau_max`
-and applies torque opposing positive shaft rotation. This model targets forward ABS braking; reverse-
-direction braking is outside its operating regime.
+The brake sits in the shaft line between `spline_a` and `spline_b`, with the friction reaction
+taken by the `support` housing. The disc is rigid with the shaft, so the two splines share an
+angle and the brake adds no relative-rotation state; it removes `tau_friction` from the shaft
+line and passes the remainder through. `spline_b.tau` is therefore the torque actually
+transmitted downstream, which is the quantity a hub or half-shaft is sized against.
+
+A nonnegative command requests braking torque. The request is saturated at `tau_max` and filtered
+by the hydraulic time constant `T` to give the friction magnitude `tau_actual`. That magnitude is
+applied against the direction of shaft rotation, so the brake decelerates in both travel
+directions and cannot spin the shaft up in reverse once it reaches standstill.
+
+This mirrors `RotationalComponents.Sources.SignTorque` with its `Sine` regularization. The stdlib
+source is not reused directly for two reasons: its `tau_nominal` is a parameter and cannot carry
+the ABS-modulated command, and its `Regularization` enum is a Moshi-style enum whose variants are
+not distinct Julia types, so this workspace's `isa`-based `switch` codegen cannot dispatch on it.
+
+The regularization replaces the discontinuous `sign(w)` over `|w| < w0` with a sine ramp, which is
+C1 at `±w0`. It is not stiction: the brake holds no torque at exact standstill, so a wheel parked
+on a grade will creep. For ABS studies, where the wheel repeatedly approaches but does not dwell
+at zero speed, this is the appropriate fidelity.
 
 ## Parameters:
 
@@ -19,10 +36,12 @@ direction braking is outside its operating regime.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `T`         | Hydraulic time constant                         | s  |   0.03 |
 | `tau_max`         | Maximum brake torque                         | N.m  |   2000.0 |
+| `w0`         | Regularization below this shaft speed                         | rad/s  |   1.0 |
 
 ## Connectors
 
- * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
+ * `spline_a` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
+ * `spline_b` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `tau_cmd` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
@@ -30,9 +49,13 @@ direction braking is outside its operating regime.
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `tau_actual`         | Applied brake-torque magnitude                         | N.m  |
+| `phi_support`         | Variable for the absolute angle of the support spline                         | rad  |
+| `tau_actual`         | Applied brake-torque magnitude, always nonnegative                         | N.m  |
+| `phi`         | Shaft angle with respect to the support                         | rad  |
+| `w`         | Shaft speed with respect to the support (= der(phi))                         | rad/s  |
+| `tau_friction`         | Signed friction torque removed from the shaft line; carries the sign of w                         | N.m  |
 """
-@component function BrakeActuator(; name = nothing, T=0.03, tau_max=Float64(2000.0), kwargs...)
+@component function BrakeActuator(; name = nothing, T=0.03, tau_max=Float64(2000.0), w0=Float64(1.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -69,6 +92,9 @@ direction braking is outside its operating regime.
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque"])
   __initial_conditions[tau_max] = __local__tau_max
+  __local__w0 = w0
+  append!(__params, @parameters (w0::Real), [description = "Regularization below this shaft speed", bounds = (eps(Float64), Inf)])
+  __initial_conditions[w0] = __local__w0
 
   ### Final Parameters (assignments)
 
@@ -76,25 +102,46 @@ direction braking is outside its operating regime.
   append!(__vars, @variables (tau_cmd(t)::Real), [input = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (tau_actual(t)::Real), [description = "Applied brake-torque magnitude"])
+  append!(__vars, @variables (phi_support(t)::Real), [description = "Variable for the absolute angle of the support spline"])
+  append!(__vars, @variables (tau_actual(t)::Real), [description = "Applied brake-torque magnitude, always nonnegative"])
+  append!(__vars, @variables (phi(t)::Real), [description = "Shaft angle with respect to the support"])
+  append!(__vars, @variables (w(t)::Real), [description = "Shaft speed with respect to the support (= der(phi))"])
+  append!(__vars, @variables (tau_friction(t)::Real), [description = "Signed friction torque removed from the shaft line; carries the sign of w"])
 
   ### Variables (assignments)
+  __ovr_phi_support = pop!(__overrides, "phi_support", nothing); isnothing(__ovr_phi_support) || push!(__eqs, phi_support ~ __ovr_phi_support)
+  __ovr_phi_support__initial = pop!(__overrides, "phi_support__initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
+  __ovr_phi_support__guess = pop!(__overrides, "phi_support__guess", nothing)
   __ovr_tau_actual = pop!(__overrides, "tau_actual", nothing); isnothing(__ovr_tau_actual) || push!(__eqs, tau_actual ~ __ovr_tau_actual)
   __ovr_tau_actual__initial = pop!(__overrides, "tau_actual__initial", nothing); isnothing(__ovr_tau_actual__initial) || (__initial_conditions[tau_actual] = __ovr_tau_actual__initial)
   __ovr_tau_actual__guess = pop!(__overrides, "tau_actual__guess", nothing)
+  __ovr_phi = pop!(__overrides, "phi", nothing); isnothing(__ovr_phi) || push!(__eqs, phi ~ __ovr_phi)
+  __ovr_phi__initial = pop!(__overrides, "phi__initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
+  __ovr_phi__guess = pop!(__overrides, "phi__guess", nothing)
+  __ovr_w = pop!(__overrides, "w", nothing); isnothing(__ovr_w) || push!(__eqs, w ~ __ovr_w)
+  __ovr_w__initial = pop!(__overrides, "w__initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
+  __ovr_w__guess = pop!(__overrides, "w__guess", nothing)
+  __ovr_tau_friction = pop!(__overrides, "tau_friction", nothing); isnothing(__ovr_tau_friction) || push!(__eqs, tau_friction ~ __ovr_tau_friction)
+  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction__initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
+  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction__guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named spline = __Dyad__Spline())
+  push!(__systems, @named spline_a = __Dyad__Spline())
+  push!(__systems, @named spline_b = __Dyad__Spline())
   push!(__systems, @named support = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
 
   ### Guesses
+  isnothing(__ovr_phi_support__guess) || (__guesses[phi_support] = __ovr_phi_support__guess)
   isnothing(__ovr_tau_actual__guess) || (__guesses[tau_actual] = __ovr_tau_actual__guess)
+  isnothing(__ovr_phi__guess) || (__guesses[phi] = __ovr_phi__guess)
+  isnothing(__ovr_w__guess) || (__guesses[w] = __ovr_w__guess)
+  isnothing(__ovr_tau_friction__guess) || (__guesses[tau_friction] = __ovr_tau_friction__guess)
 
   ### Initialization Equations
 
@@ -102,9 +149,14 @@ direction braking is outside its operating regime.
   __assertions = []
 
   ### Equations
+  push!(__eqs, support.phi ~ phi_support)
+  push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)
+  push!(__eqs, phi ~ spline_a.phi - phi_support)
+  push!(__eqs, w ~ ModelingToolkit.D_nounits(phi))
+  push!(__eqs, spline_b.phi ~ spline_a.phi)
   push!(__eqs, ModelingToolkit.D_nounits(tau_actual) ~ (min(max(tau_cmd, 0.0), tau_max) - tau_actual) / T)
-  push!(__eqs, spline.tau ~ tau_actual)
-  push!(__eqs, support.tau ~ -spline.tau)
+  push!(__eqs, tau_friction ~ tau_actual * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0)))
+  push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
