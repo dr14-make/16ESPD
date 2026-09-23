@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    WheeledCruiseStep(; name, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wd, J_w, v_lo, v_hi, v0, tau0, t_step)
 

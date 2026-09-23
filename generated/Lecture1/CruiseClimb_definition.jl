@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    CruiseClimb(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, v_set, v0, tau0, gradient, start_time, duration)
 

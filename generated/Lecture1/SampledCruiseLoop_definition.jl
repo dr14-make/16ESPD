@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    SampledCruiseLoop(; name, theta_e, with_I, with_D, Ts, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, m0, xi0, xd0)
 

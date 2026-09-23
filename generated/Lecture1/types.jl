@@ -6,7 +6,6 @@
 
 using ModelingToolkit
 import Markdown
-import Moshi
 
 if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Lecture1", "types.jl"))
   include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Lecture1", "types.jl"))

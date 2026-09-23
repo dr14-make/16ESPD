@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    NoisyCruiseStep(; name, theta_e, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, grade, v_lo, v_hi, v0, tau0, t_step, amplitude)
 

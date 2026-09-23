@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    SlipCruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, J_w, F_z, mu_A, mu_S, m0, xi0, xd0)
 

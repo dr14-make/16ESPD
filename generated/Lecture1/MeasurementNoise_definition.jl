@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    MeasurementNoise(; name, amplitude, f1, f2, f3, f4, f5, f6, p1, p2, p3, p4, p5, p6)
 

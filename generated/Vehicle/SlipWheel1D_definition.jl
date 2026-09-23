@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    SlipWheel1D(; name, radius, F_z, sAdhesion, sSlide, mu_A, mu_S, v_eps)
 

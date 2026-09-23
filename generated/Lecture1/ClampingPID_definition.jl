@@ -4,8 +4,6 @@
 ### Instead, update the Dyad source code and regenerate this file
 
 
-import Moshi as __Ext__Moshi
-
 @doc Markdown.doc"""
    ClampingPID(; name, with_I, with_D, k, Ti, Td, y_max, y_min, wp, wd, Nd, k_ff, xi0, xd0)
 

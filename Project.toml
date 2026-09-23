@@ -5,8 +5,6 @@ authors = [" <>"]
 
 [deps]
 BlockComponents = "1ef5d832-be8e-447f-9f2c-8b5d17d15fd3"
-DiscreteComponents = "b5590941-51af-4a5a-9bca-5ae7cd448b75"
-DyadControlSystems = "6f9e59d0-2838-4fee-9bce-c163a6c9592b"
 DyadData = "cab12561-e36c-4498-ae70-c9a5e79fef2a"
 DyadInterface = "99806f68-afab-45ca-9d8c-ceff6bc61f54"
 ElectricalComponents = "3fc4c519-469d-4ff5-98c9-d4d06b1514a2"
@@ -24,20 +22,18 @@ ThermalComponents = "084a29d9-4f48-4925-95b4-b7d4c79725f4"
 TranslationalComponents = "42acc370-819b-4877-bdd6-eb3294461f5d"
 
 [compat]
-BlockComponents = "4.5.1"
-DiscreteComponents = "0.2.0"
-DyadControlSystems = "2.3.0"
+BlockComponents = "=4.6.0"
 DyadData = "2.0.1"
-ElectricalComponents = "2.2.1"
+ElectricalComponents = "=2.2.2"
 JSON = "0.21, 1"
 Markdown = "1"
-RotationalComponents = "2.5.4"
+RotationalComponents = "=2.5.5"
 TOML = "1"
-ThermalComponents = "2.0.5"
-TranslationalComponents = "2.5.0"
+ThermalComponents = "=2.0.6"
+TranslationalComponents = "=2.5.1"
 
 [dyad]
-kernel = "3.3.0"
+kernel = "3.4.0"
 
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
