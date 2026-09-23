@@ -79,14 +79,17 @@ return mod
 
 The `blob:` row above is that change measured on the real bundle: 0.17 GB.
 
-Either route closes this, and the choice is the judgment call that keeps this issue off
-`agent-ready` for the *fix*, not for the *measurement*:
+**Chosen route — 028.** The deck serves Plotly as a file, the way `build.mjs` already serves
+MathJax, and populates `window.plutoplotly_imports` itself. That is the `http://` row above,
+0.18 GB, and it keeps offline plots working without waiting on an upstream release. The two
+routes not taken:
 
-- **Upstream.** Patch `import_local_js` in PlutoPlotly and carry it until released. Fixes every
-  consumer of `enable_plutoplotly_offline()`, not just this deck.
-- **Deck-side.** Drop `enable_plutoplotly_offline()` from `backend/notebook.jl` and let Plotly
-  come over the network. Cheap, and gives up exactly what offline mode exists to provide — which
-  matters for a lecture given on a room's wifi.
+- **Upstream.** Patch `import_local_js` in PlutoPlotly. The more correct fix, and still worth
+  reporting there, since every caller of `enable_plutoplotly_offline()` pays this. Rejected as
+  the primary route only because it puts a lecture behind someone else's release.
+- **Drop offline mode.** Delete the call from `backend/notebook.jl` and fetch Plotly from the
+  network. One line, and it gives up exactly what offline mode exists to provide. Worth keeping
+  in mind as the emergency move if a lecture lands before 028 does.
 
 ## Done when
 
