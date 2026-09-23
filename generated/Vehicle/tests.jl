@@ -16,6 +16,9 @@ end
 
 
 @testset "`VehicleSystemsComponents.Vehicle`" begin
+include("ABSBrakeTest_test.jl")
+include("ABSController_test.jl")
+include("BrakeActuator_test.jl")
 include("CarPlant_test.jl")
 include("Driveline_test.jl")
 include("FrictionProfile_test.jl")
@@ -23,6 +26,8 @@ include("GradeForce_test.jl")
 include("GradeProfile_test.jl")
 include("IdealEngine_test.jl")
 include("SlipWheel1D_test.jl")
+include("TestABSController_test.jl")
+include("TestBrakeActuator_test.jl")
 include("TestCarPlant_test.jl")
 include("TestDriveline_test.jl")
 include("TestFrictionProfile_test.jl")

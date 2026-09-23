@@ -1,0 +1,63 @@
+"""
+Single-wheel-equivalent straight-line ABS braking test.
+
+The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
+when `abs_enabled` is one, or directly to the hydraulic actuator when it is zero. The modeled wheel
+represents one axle, with its normal load set consistently to half the vehicle weight.
+"""
+component ABSBrakeTest
+  "Initial vehicle speed"
+  parameter v0::Velocity = 25.0
+  "Driver brake demand"
+  parameter brake_demand::Torque = 3000.0
+  "Brake application time"
+  parameter brake_time::Time = 0.5
+  "One enables ABS; zero bypasses modulation"
+  parameter abs_enabled::Real = 1.0
+  "Road-friction multiplier"
+  parameter road_mu::Real = 1.0
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400.0
+  "Wheel radius"
+  parameter radius::Length = 0.31
+  "Wheel inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
+  road = BlockComponents.Sources.Constant(k = road_mu)
+  flat = BlockComponents.Sources.Constant(k = 0.0)
+  controller = VehicleSystemsComponents.Vehicle.ABSController()
+  brake = VehicleSystemsComponents.Vehicle.BrakeActuator(tau_max = brake_demand)
+  wheel_inertia = RotationalComponents.Components.Inertia(J = J_w)
+  wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(radius = radius, F_z = 0.5 * m * 9.80665)
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(demand.y, controller.demand)
+  controller.kappa = wheel.kappa
+  brake.tau_cmd = demand.y * (1.0 - abs_enabled) + controller.tau_cmd * abs_enabled
+  connect(brake.spline, wheel_inertia.spline_a)
+  connect(wheel_inertia.spline_b, wheel.spline)
+  connect(brake.support, fixed.spline)
+  connect(wheel.flange, body.flange)
+  connect(road.y, wheel.mu_scale)
+  connect(flat.y, body.grade)
+  initial brake.tau_actual = 0.0
+  initial wheel_inertia.phi = 0.0
+  initial wheel_inertia.w = v0 / radius
+  initial body.mass.s = 0.0
+  initial body.mass.v = v0
+end
+
+analysis ABSBrakeTransient
+  extends TransientAnalysis(stop = 4.0)
+  parameter road_mu::Real = 1.0
+  model = ABSBrakeTest(road_mu = road_mu, abs_enabled = 1.0)
+relations
+end
+
+analysis LockedBrakeTransient
+  extends TransientAnalysis(stop = 4.0)
+  parameter road_mu::Real = 1.0
+  model = ABSBrakeTest(road_mu = road_mu, abs_enabled = 0.0)
+relations
+end

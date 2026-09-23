@@ -1,0 +1,39 @@
+"""
+Continuous longitudinal-slip brake modulator for forward braking.
+
+The controller passes the full driver demand until braking slip approaches `kappa_target`. Beyond
+the target it proportionally releases brake torque. Saturation keeps the command between zero and
+the driver demand. Hydraulic dynamics are represented by the downstream brake actuator.
+"""
+component ABSController
+  "Longitudinal slip; negative during braking"
+  kappa = RealInput()
+  "Driver-requested brake torque"
+  demand = RealInput()
+  "Modulated brake-torque request"
+  tau_cmd = RealOutput()
+  "Magnitude of target braking slip"
+  parameter kappa_target::Real = 0.04
+  "Brake-release gain per unit slip"
+  parameter kp::Real = 50.0
+  variable modulation::Real
+relations
+  modulation = min(max(1.0 + kp * (kappa + kappa_target), 0.0), 1.0)
+  tau_cmd = max(demand, 0.0) * modulation
+end
+
+test component TestABSController
+  "Slip ramp from free rolling to deep braking slip"
+  slip = BlockComponents.Sources.Ramp(offset = 0.0, height = -0.15, duration = 0.3, start_time = 0.1)
+  demand = BlockComponents.Sources.Constant(k = 1000.0)
+  controller = VehicleSystemsComponents.Vehicle.ABSController(kappa_target = 0.04, kp = 20.0)
+relations
+  connect(slip.y, controller.kappa)
+  connect(demand.y, controller.demand)
+end
+
+analysis ABSControllerTransient
+  extends TransientAnalysis(stop = 0.5)
+  model = TestABSController()
+relations
+end

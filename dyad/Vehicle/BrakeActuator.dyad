@@ -1,0 +1,45 @@
+"""
+Unidirectional wheel-brake actuator with first-order hydraulic response.
+
+A nonnegative command requests braking torque. The actuator saturates the request at `tau_max`
+and applies torque opposing positive shaft rotation. This model targets forward ABS braking; reverse-
+direction braking is outside its operating regime.
+"""
+component BrakeActuator
+  "Wheel shaft"
+  spline = Spline()
+  "Brake reaction support"
+  support = Spline()
+  "Requested brake torque"
+  tau_cmd = RealInput()
+  "Hydraulic time constant"
+  parameter T::Time = 0.03
+  "Maximum brake torque"
+  parameter tau_max::Torque = 2000.0
+  "Applied brake-torque magnitude"
+  variable tau_actual::Torque
+relations
+  der(tau_actual) = (min(max(tau_cmd, 0.0), tau_max) - tau_actual) / T
+  spline.tau = tau_actual
+  support.tau = -spline.tau
+end
+
+test component TestBrakeActuator
+  command = BlockComponents.Sources.Step(height = 500.0, offset = 0.0, start_time = 0.1)
+  brake = VehicleSystemsComponents.Vehicle.BrakeActuator(T = 0.03, tau_max = 400.0)
+  wheel = RotationalComponents.Components.Inertia(J = 10.0)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(command.y, brake.tau_cmd)
+  connect(brake.spline, wheel.spline_a)
+  connect(brake.support, fixed.spline)
+  initial brake.tau_actual = 0.0
+  initial wheel.phi = 0.0
+  initial wheel.w = 20.0
+end
+
+analysis BrakeActuatorTransient
+  extends TransientAnalysis(stop = 0.5)
+  model = TestBrakeActuator()
+relations
+end
