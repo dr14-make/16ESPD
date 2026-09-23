@@ -41,6 +41,7 @@ call open.
 | [024](issues/024-light-dom-components-carry-their-identity-twice.md) | Light-DOM components carry their identity twice | `refactor` `tech-debt` | `low` | `s` | yes | 007 | todo |
 | [025](issues/025-render-the-math-a-control-theory-lecture-is-made-of.md) | Render the math a control-theory lecture is made of | `enhancement` | `high` | `m` | yes | 007, 009, 018 | **done** |
 | [026](issues/026-attach-to-a-pluto-server-that-is-already-running.md) | Attach to a Pluto server that is already running | `enhancement` | `high` | `m` | no | 004, 021 | todo |
+| [027](issues/027-offline-plotly-is-imported-from-a-data-url-and-costs-7gb.md) | Offline Plotly is imported from a `data:` URL, and the renderer pays 7 GB | `bug` | `high` | `s` | no | 014 | todo |
 
 009 was run first as a de-risking spike, out of dependency order, because it is the only issue
 whose failure would invalidate the design. Two findings from that spike were new and are not in

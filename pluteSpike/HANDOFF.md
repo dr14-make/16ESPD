@@ -371,8 +371,71 @@ about 9470 nodes, which is over twice a whole live deck. Those documents were ne
 Measured in headless Chrome over the DevTools protocol — a headed Chrome with DevTools open
 retains what its console was handed, which is a different experiment.
 
-The renderer crash is therefore not explained by anything the deck does to memory, and the
-paint model needs no change on this account.
+Nothing the deck's **paint model** does across a reload explains a renderer crash, and the
+paint model needs no change on this account. That is the whole of what this experiment covers:
+it varied reloads, it counted documents, and it read `usedJSHeapSize`. A renderer can hold
+gigabytes that none of those three can see — see the next section, which found exactly that.
+
+**A 7.4 GB renderer, and it is one `import()`.** A deck tab measured 7,430,164K in Chrome's own
+task manager. The cause is not the paint model and not the deck: presenting a deck loads the
+offline Plotly bundle by importing it from a `data:text/javascript;base64,` URL, and Chrome
+answers a single such import with gigabytes.
+
+Reduced to one variable. The same file — `plotly-esm-min.mjs`, 3,740,861 bytes, the artifact
+PlutoPlotly ships — imported three ways into an otherwise empty page, nothing else on it:
+
+| `import()` of `plotly-esm-min.mjs` | renderer RSS |
+|---|---|
+| over `http://` | 0.18 GB |
+| from a `blob:` URL | 0.17 GB |
+| from a `data:text/javascript;base64,` URL | ≥4.70 GB, still climbing when the run was stopped |
+
+`PlutoPlotly.import_local_js` builds the third one: `readAsDataURL` over a `Blob` of the bundle,
+then `import(reader.result)`. So the cost is not the deck's and not this notebook's — it is paid
+by anything that calls `enable_plutoplotly_offline()`.
+
+**What the 7.4 GB is made of, read out of the live process.** The tab was still running, so it
+was dissected rather than inferred. Of 7.04 GB resident, `[anon:partition_alloc]` holds 7,022 MB
+and `[anon:v8]` — the JavaScript heap — holds **40.6 MB**. Scanning partition_alloc for long
+base64 runs accounts for 6.79 GB in 2,907 runs, which is **100% of its non-zero bytes**, and the
+runs are copies of that one data URL: the first bytes after `data:text/javascript;base64,` match
+`base64 plotly-esm-min.mjs` exactly. At 4,987,816 base64 bytes per copy that is about 1,430
+retentions of a 4.76 MB string, from one import.
+
+This is why the reload experiment above found nothing and was right not to. The retained bytes
+are Blink strings, not JS objects: `usedJSHeapSize` reports 40 MB of a 7.4 GB renderer, and
+`Runtime.queryObjects(Document.prototype)` cannot see them at all. **A JS-heap instrument is the
+wrong instrument for this bug** — the honest one is the renderer's RSS in `/proc`.
+
+**Causation, not just correlation.** `Page.addScriptToEvaluateOnNewDocument` wrapped
+`FileReader.prototype.readAsDataURL` to swap the blob for a stub after the first call. The deck
+then loaded — kernel `ready`, cards painted, math typeset — and the renderer sat **flat at
+0.31 GB** for the whole run, against 7.45 GB uncapped on the same deck. The probe counted four
+`readAsDataURL` calls, one of them carrying 3,740,861 bytes; `window.created_imports.size` was 1.
+One call, ~7.1 GB.
+
+**Eliminated, each by measurement rather than argument.**
+
+- **Repaint.** The balloon is finished inside a second of load, sampled at `plots=0`, before any
+  bond was driven. Nothing repaint-proportional is left to find: the data URL is already 100% of
+  the non-zero bytes.
+- **Detached graphs, resize listeners, retained payloads, `PAYLOAD_DEPTH`.** All of these live on
+  the JS heap, which is 40.6 MB. There is no room in it for this.
+- **MathJax's SVG output.** Present and drawn in the capped run that stayed at 0.31 GB.
+- **Headed versus headless.** Settled, and it is not the axis: the user's headed tab plateaued at
+  7.43 GB and a headless renderer on the same deck at 7.45 GB. The earlier all-clear and this
+  measurement disagreed because one read the JS heap and the other reads RSS, not because one
+  browser was headed.
+
+**The fix is not in this repo, and is not made here.** `import_local_js` in
+`PlutoPlotly/src/local_plotly_library.jl` would swap `readAsDataURL` for
+`URL.createObjectURL(blob)` — the `blob:` row above, same module, 0.17 GB — and revoke it after
+the import resolves. That is the pattern Pluto's own frontend already uses: `CellOutput.js`
+builds a `blob:` URL for an image and for an iframe and revokes it on detach, and the only
+`readAsDataURL` in Pluto's frontend is in `PlutoHash.js`, where nothing is imported. PlutoPlotly
+is the outlier here, not the precedent. A deck-side workaround would drop `enable_plutoplotly_offline()` from
+`backend/notebook.jl` and pay a network fetch for Plotly instead, which is the thing offline mode
+exists to avoid. Issue 027 carries both and the evidence.
 
 **The height rule under a figure card does more than fill the box.** `deck.css` gives the chain
 under a card holding a figure an explicit height, and the suite now measures that a plot is as
