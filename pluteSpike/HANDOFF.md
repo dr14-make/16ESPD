@@ -183,6 +183,58 @@ Measured at 12.1 s to serving HTML, 29.1 s to kernel ready, 31.2 s to first real
 notebook loading **no** packages. The notebook this course needs will be far worse. Issues 010
 and 012 make that legible rather than shorter; cached snapshots are deliberately deferred.
 
+## Found while implementing 028
+
+**Offline Plotly was one of three imports off the internet, not one.** 027 traced the renderer
+to `enable_plutoplotly_offline()` and the `data:` URL it builds, and 028 was scoped to replace
+that one import. Cutting name resolution in the browser — Chrome's `--host-resolver-rules`
+mapping everything but the loopback to `~NOTFOUND` — found two more. Both are unconditional,
+both are top-level awaits inside every plot cell's own script, so either one unreachable is a
+plot card that draws nothing at all:
+
+```js
+const _ = await import('https://cdn.jsdelivr.net/npm/lodash-es@4.17.21/+esm')
+const { default: interact } = await import('https://esm.sh/interactjs@1.10.19')
+```
+
+`enable_plutoplotly_offline()` never covered these — PlutoPlotly's own source says so, in a
+comment beside the first one — so a deck that called it was not offline either, and the
+property 028 asks for was never true before this change. Both libraries are now bundled and
+named by an import map in `index.html`. The map reaches the dynamic `import()` inside a cell's
+script because Rainbow compiles that script with `Function(…)`, and a document's import map
+governs resolution for code compiled that way; that was measured against a stub module before
+anything was built on it.
+
+The suite now runs its whole deck session with the network cut, so "the plot draws" and "the
+plot redraws from a bond" are statements about a lecture hall rather than about this desk. It
+is also what makes a fourth CDN import, or a version drift, fail loudly instead of silently.
+
+**The version PlutoPlotly asks for is 2.34.0, not the 3.0.1 issue 028 names.**
+`get_plotly_version()` reads it from the `plotly-esm-min` artifact, which PlutoPlotly 0.6.6
+pins at the v2.34.0 release — the same 3,740,861-byte file 027 measured.
+`frontend/package.json` pins `plotly.js-dist-min` to match, and `test/server.jl` fails if the
+two ever drift.
+
+**npm's UMD distribution satisfies the hybrid import.** This was the assumption the whole route
+rested on, since PlutoPlotly ships a custom ESM build and npm ships UMD. Checked in a real
+browser before anything was built on it: `plotly.js-dist-min@2.34.0` loaded as a classic script
+puts an object on `window.Plotly` carrying `react`, `relayout`, `toImage`, `downloadImage` and
+`Icons.camera` — every member PlutoPlotly's scripts touch — and `Plotly.react` draws. Serving
+PlutoPlotly's own artifact through a `src/server.jl` route was the fallback and was not needed.
+
+**The renderer, measured the way 027 measured it.** Presenting lecture-1 with the network cut:
+seven plots drawn, 39 cards live, no `data:text/javascript` URL created by anyone, and the
+largest renderer **0.24 GB** against 7.4 GB. Over http:// a 3.6 MB library costs what a 3.6 MB
+library should.
+
+**Opening the lecture notebook re-resolves its embedded manifest.** Removing the
+`enable_plutoplotly_offline()` cell went through Pluto, as it has to. Pluto saved the file, and
+on the `dyad-3.3.0` channel that also rewrote `PLUTO_MANIFEST_TOML_CONTENTS`: `julia_version`
+1.12.6 → 1.12.7-dyad, the `AbstractPlutoDingetjes` compat entry dropped as a stdlib, one `_jll`
+patch bump, and 22 `git-tree-sha1` lines gone. That is not this change's doing — `mise run
+deck` opens the same notebook the same way — but it is in this commit, and a manifest with no
+tree hashes is a weaker pin than the one it replaced.
+
 ## Found while implementing 007
 
 **`@plutojl/rainbow` does not type what `getState()` returns, and `skipLibCheck` hides it.**
@@ -433,9 +485,12 @@ One call, ~7.1 GB.
 the import resolves. That is the pattern Pluto's own frontend already uses: `CellOutput.js`
 builds a `blob:` URL for an image and for an iframe and revokes it on detach, and the only
 `readAsDataURL` in Pluto's frontend is in `PlutoHash.js`, where nothing is imported. PlutoPlotly
-is the outlier here, not the precedent. A deck-side workaround would drop `enable_plutoplotly_offline()` from
-`backend/notebook.jl` and pay a network fetch for Plotly instead, which is the thing offline mode
-exists to avoid. Issue 027 carries both and the evidence.
+is the outlier here, not the precedent, and it is still worth reporting there.
+
+The route taken instead keeps the library off the network entirely: the deck serves it as a
+file and fills `window.plutoplotly_imports` itself, so `enable_plutoplotly_offline()` comes out
+of `backend/notebook.jl` and nothing imports anything out of a string. Issue 027 carries the
+evidence, 028 the change, and § Found while implementing 028 what that turned up.
 
 **The height rule under a figure card does more than fill the box.** `deck.css` gives the chain
 under a card holding a figure an explicit height, and the suite now measures that a plot is as

@@ -52,8 +52,8 @@ A loaded deck. Every card name in `preamble` and on every slide resolves to a ce
 deck does not use.
 
 `preamble` names cards that are rendered before any slide and never shown. A cell whose output
-is a side-effecting script — `enable_plutoplotly_offline()` loads a library onto `window` — has
-to have run before a card that depends on it renders, and belongs on no slide.
+is a side-effecting script has to have run before a card that depends on it renders, and
+belongs on no slide.
 """
 struct Deck
     path::String

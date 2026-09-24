@@ -1,6 +1,6 @@
 {
   "notebook": "notebook.jl",
-  "preamble": ["plotly"],
+  "preamble": [],
   "slides": [
     {
       "title": "The car",

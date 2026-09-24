@@ -14,11 +14,15 @@ HTTP = "1"
 JSON = "0.21"
 MIMEs = "0.1, 1"
 Pluto = "0.19, 1"
+PlutoPlotly = "0.6"
 julia = "1.10"
 
 [extras]
+# A test dependency only, and only so the suite can read the Plotly version a plot cell will
+# ask for. Nothing PlutoDeck ships imports it.
+PlutoPlotly = "8e989ff0-3d88-8e9f-f020-2b208a939ff0"
 Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Sockets", "Test"]
+test = ["PlutoPlotly", "Sockets", "Test"]

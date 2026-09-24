@@ -43,7 +43,7 @@ function browser_workspace()
     write(joinpath(workspace, "browser.deck.json"), """
     {
       "notebook": "browser.jl",
-      "preamble": ["plotly"],
+      "preamble": ["probe"],
       "slides": [
         {
           "title": "A wave you can drive",
@@ -228,6 +228,24 @@ new MutationObserver((records) => {
 """
 
 """
+Record every `FileReader.readAsDataURL` this page performs, before anything can perform one.
+
+The one call issue 027 traced cost the renderer ~7.1 GB, and it left no other trace: the bytes
+it retained are Blink strings rather than JavaScript objects, and the URL is never written to
+the DOM. Wrapping the call is what makes its absence assertable.
+"""
+const WATCH_DATA_URLS = """
+;(() => {
+  window.__dataUrls = []
+  const original = FileReader.prototype.readAsDataURL
+  FileReader.prototype.readAsDataURL = function (blob) {
+    window.__dataUrls.push({ type: blob?.type ?? "", size: blob?.size ?? 0 })
+    return original.call(this, blob)
+  }
+})()
+"""
+
+"""
 Count every DOM change inside each card from here on.
 
 A card that repaints when an unrelated cell re-runs is not a correctness bug but a performance
@@ -353,9 +371,13 @@ const MOVE_THE_SLIDER = """
         deck = browser_workspace()
 
         presented = with_present(deck.path) do url
-            with_browser() do browser
+            # Every assertion below is made on a browser that can reach nothing but this
+            # machine, so "the plot draws" and "the plot redraws from a bond" are statements
+            # about a lecture hall with no wifi rather than about this desk. A deck that let
+            # any library come off a CDN would fail here and pass everywhere else.
+            with_browser(; arguments=[NO_NETWORK]) do browser
                 view = page(browser)
-                navigate(browser, view, url; before=RECORD_CARD_SOURCES)
+                navigate(browser, view, url; before=RECORD_CARD_SOURCES * WATCH_DATA_URLS)
 
                 @testset "the deck is served over HTTP, not loaded from disk" begin
                     @test evaluate(browser, view, "location.protocol") == "http:"
@@ -365,7 +387,8 @@ const MOVE_THE_SLIDER = """
                 @testset "every card shows its cell's live output" begin
                     # `every` over no cards is true, so the count comes first: an assertion that
                     # passes against an empty DOM is how a page that never rendered looks healthy.
-                    # Nine placements over eight cells, the plot being placed on both slides.
+                    # Nine cards: eight placements over seven cells, the plot being placed on
+                    # both slides, plus the preamble card, which is on no slide at all.
                     @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 9
                     await(browser, view,
                         """[...document.querySelectorAll(".card")].every((c) => c.dataset.source === "live")""";
@@ -379,10 +402,27 @@ const MOVE_THE_SLIDER = """
                     sources = JSON.parse(evaluate(browser, view, "JSON.stringify(window.__sources)"))
 
                     @test sort(collect(keys(sources))) ==
-                        ["constant", "formula", "formula-live", "frequency", "plain", "plotly",
+                        ["constant", "formula", "formula-live", "frequency", "plain", "probe",
                          "readout", "wave"]
                     @test all(transitions == ["placeholder", "live"]
                               for transitions in values(sources))
+                end
+
+                @testset "a preamble card's script runs before any slide card is painted" begin
+                    # What `preamble` is for: a card whose output is a side effect the slides
+                    # depend on. `#publish` publishes and paints that group first and awaits
+                    # `whenScriptsSettled`, and nothing but a browser can check that it does.
+                    # The probe card records what the deck had painted at the moment it ran.
+                    ran = JSON.parse(evaluate(browser, view, "JSON.stringify(window.__preambleRan ?? null)"))
+
+                    @test ran !== nothing
+                    @test ran["slideCardsLive"] == 0
+
+                    # And it reaches no slide: the room sees the side effect, never the card.
+                    @test evaluate(browser, view,
+                        """document.querySelectorAll('.slide [data-card="probe"]').length""") == 0
+                    @test evaluate(browser, view,
+                        """!!document.querySelector('.preamble [data-card="probe"]')""") === true
                 end
 
                 @testset "nothing between a card's output and the document is a shadow root" begin
@@ -421,9 +461,9 @@ const MOVE_THE_SLIDER = """
                 end
 
                 @testset "a Plotly card renders interactive, which is the published_to_js path" begin
-                    # PlutoPlotly ships both the library and the plot data through
-                    # `published_to_js`, so a plot on screen is proof that a card reaches
-                    # `notebook.published_objects` through its <pluto-cell> ancestor.
+                    # PlutoPlotly ships the plot data through `published_to_js`, so a plot on
+                    # screen is proof that a card reaches `notebook.published_objects` through
+                    # its <pluto-cell> ancestor.
                     #
                     # Awaited rather than read: a card whose payload has not arrived yet holds
                     # its placeholder rather than painting a body it cannot resolve, so a plot
@@ -437,6 +477,56 @@ const MOVE_THE_SLIDER = """
                         """!!document.querySelector('[data-card="wave"] .modebar')""") === true
                     @test evaluate(browser, view,
                         """document.querySelectorAll('[data-card="wave"] svg').length""") > 0
+                end
+
+                @testset "Plotly is served by the deck, never imported out of a string" begin
+                    # The library reaches the browser as a file, over HTTP. Shipped through
+                    # notebook state instead it arrives as a *string*, and PlutoPlotly invents
+                    # a URL for it — `data:text/javascript` plus 4.76 MB of base64, which
+                    # Chrome answers with gigabytes. See issue 027.
+                    source = evaluate(browser, view,
+                        """document.head.querySelector('link[rel="plotly-source"]').href""")
+                    @test startswith(source, url)
+                    @test occursin(r"/plotly-[0-9A-Z]{8}\.js$", source)
+
+                    # Appended by the loader rather than written into the page, so this is also
+                    # what says a card asked for the library rather than the page shipping it
+                    # to every deck.
+                    @test evaluate(browser, view, """
+                        [...document.querySelectorAll("script[src]")]
+                          .filter((s) => s.src.includes("plotly-")).length
+                        """) == 1
+
+                    # No data URL was built for anything, by anyone, at any point in the load.
+                    @test JSON.parse(evaluate(browser, view,
+                        "JSON.stringify(window.__dataUrls.filter((r) => r.type.includes('javascript')))")) == []
+                end
+
+                @testset "a plot draws with the version the deck bundled, not one off a CDN" begin
+                    # A plot cell reads `window.plutoplotly_imports[<version>]` and falls
+                    # through to esm.sh for any other key. The fall-through is silent, works at
+                    # a desk, and fails in the room — so what is asserted is that the key the
+                    # deck published is the one a drawn plot used. With the network cut, a plot
+                    # that fell through draws nothing at all.
+                    version = evaluate(browser, view,
+                        """document.head.querySelector('link[rel="plotly-source"]').dataset.version""")
+                    @test evaluate(browser, view,
+                        "JSON.stringify(Object.keys(window.plutoplotly_imports ?? {}))") ==
+                        JSON.json([version])
+                end
+
+                # `/proc` is the only instrument that sees these bytes, and it is Linux's.
+                if Sys.islinux()
+                    @testset "the renderer is a browser tab, not a memory incident" begin
+                        # Read from the process rather than from `performance.memory`: the
+                        # bytes a `data:` import retains are Blink strings, which no JS-heap
+                        # reading sees. See issue 027 and `renderer_rss`.
+                        resident = renderer_rss(browser)
+                        @test !isempty(resident)
+                        @test maximum(resident) < 500 * 1024
+                    end
+                else
+                    @test_skip "the renderer's resident size is read from /proc"
                 end
 
                 @testset "a plain-text body renders as text, not as markup" begin
@@ -496,12 +586,13 @@ const MOVE_THE_SLIDER = """
                         [...document.querySelectorAll("script[src]")]
                           .every((s) => s.src.startsWith(location.origin))
                         """) === true
-                    # The deck's own entry and MathJax, and nothing else. `tex-svg-full` carries
-                    # every component the deck asks for, so MathJax's loader never runs — and a
-                    # component it did fetch would resolve against the script's own directory and
-                    # so be same-origin, which an origin check cannot see and a count can.
+                    # The deck's own entry, MathJax and Plotly, and nothing else.
+                    # `tex-svg-full` carries every component the deck asks for, so MathJax's
+                    # loader never runs — and a component it did fetch would resolve against the
+                    # script's own directory and so be same-origin, which an origin check cannot
+                    # see and a count can.
                     @test evaluate(browser, view,
-                        """document.querySelectorAll("script[src]").length""") == 2
+                        """document.querySelectorAll("script[src]").length""") == 3
                 end
 
                 @testset "a slide is headed by the deck's title for it, or numbered" begin
@@ -652,7 +743,7 @@ const MOVE_THE_SLIDER = """
                     @test mutations["formula-live"] > 0
                     @test mutations["constant"] == 0
                     @test mutations["plain"] == 0
-                    @test mutations["plotly"] == 0
+                    @test mutations["probe"] == 0
                     # Typesetting rewrites a card, and the pass over this one was awaited
                     # before these observers existed: what this adds is that no second pass
                     # follows it, so the formula is drawn once and then left alone.

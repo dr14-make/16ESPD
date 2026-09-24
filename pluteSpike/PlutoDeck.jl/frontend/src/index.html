@@ -7,6 +7,13 @@
 <link rel="stylesheet" href="{{deck.css}}">
 <!-- Not preloaded: fetched only by a deck that has math to draw. -->
 <link rel="mathjax-source" href="{{mathjax.js}}">
+<!-- Likewise fetched only by a deck that has a plot to draw. `data-version` is the key a plot
+     cell asks for: a deck serving any other version is one whose plots all go to the network. -->
+<link rel="plotly-source" href="{{plotly.js}}" data-version="{{plotly.version}}">
+
+<!-- What a plot cell imports off the internet, served from here instead; see `VENDORED_IMPORTS`
+     in build.mjs. Ahead of every module script, because a map is read only before the first. -->
+<script type="importmap">{{importmap}}</script>
 
 <deck-app></deck-app>
 

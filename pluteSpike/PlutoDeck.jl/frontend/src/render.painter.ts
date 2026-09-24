@@ -143,8 +143,8 @@ export function createPainter(kernel: Kernel): Painter {
 /**
  * Resolve once no card's scripts are still running.
  *
- * A preamble card's whole purpose is a side effect its scripts perform — loading the offline
- * Plotly bundle onto `window` — and a plot card rendered before that finishes draws nothing.
+ * A preamble card's whole purpose is a side effect its scripts perform, and a card that
+ * depends on that effect and is rendered before it finishes draws nothing.
  */
 export function whenScriptsSettled(): Promise<void> {
   const deadline = Date.now() + SCRIPT_TIMEOUT_MS

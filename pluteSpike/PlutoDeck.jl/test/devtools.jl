@@ -68,15 +68,26 @@ end
 Base.showerror(io::IO, err::ProtocolError) = print(io, "ProtocolError: ", err.method, ": ", err.message)
 
 """
-    with_browser(body) -> Any
+Resolve nothing but the loopback, so a fetch off this machine fails the way it would in a
+lecture hall with no wifi.
+
+A deck holds every library it draws with, and every way it can stop doing so is silent at a
+desk: a plot falls through to esm.sh when the bundled Plotly version and the notebook's
+disagree, and PlutoPlotly's own script imports lodash and interact.js from a CDN outright. A
+machine with wifi cannot tell any of them from working. See issue 028.
+"""
+const NO_NETWORK = "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1"
+
+"""
+    with_browser(body; arguments) -> Any
 
 Run `body(browser)` against a freshly launched headless Chrome, and take the browser down
-afterwards however `body` ends.
+afterwards however `body` ends. `arguments` are extra flags for that Chrome.
 
 A leaked headless instance is not a tidiness problem here: `earlyoom` on this machine prefers
 these processes, and accumulated browsers are what got a Pluto kernel killed twice.
 """
-function with_browser(body)
+function with_browser(body; arguments::Vector{String}=String[])
     binary = chrome_binary()
     binary === nothing && error("no Chrome on PATH; looked for " * join(CHROME_BINARIES, ", "))
 
@@ -94,6 +105,7 @@ function with_browser(body)
             --disable-extensions
             --disable-background-networking
             --disable-component-update
+            $arguments
             about:blank`; stdout=devnull, stderr=devnull); wait=false)
 
     try
@@ -112,6 +124,72 @@ function with_browser(body)
         kill(process)
         wait(process)
     end
+end
+
+"""
+    renderer_rss(browser) -> Vector{Int}
+
+The resident size of every renderer process `browser` is running, in kilobytes, read from
+`/proc`.
+
+The renderer 027 measured held 7.0 GB of Blink strings against a 40.6 MB JavaScript heap, so
+`performance.memory` and `Runtime.queryObjects` are blind to this class of bug by construction.
+Only the process's own resident size sees those bytes, and only Linux publishes it here.
+
+Every renderer rather than one, because a browser driving several pages has several and the
+page under test is not identifiable from out here: what a caller asserts is the largest.
+"""
+function renderer_rss(browser::Browser)
+    sizes = Int[]
+    for pid in _descendants(getpid(browser.process))
+        cmdline = _proc_read("/proc/$pid/cmdline")
+        (cmdline === nothing || !occursin("--type=renderer", cmdline)) && continue
+        status = _proc_read("/proc/$pid/status")
+        status === nothing && continue
+        matched = match(r"VmRSS:\s+(\d+) kB", status)
+        matched === nothing || push!(sizes, parse(Int, matched[1]))
+    end
+    return sizes
+end
+
+"A process that exited between the scan and the read is gone, not a failure to read it."
+function _proc_read(path::AbstractString)
+    return try
+        read(path, String)
+    catch err
+        err isa InterruptException && rethrow()
+        nothing
+    end
+end
+
+"""
+Every descendant of `pid`, transitively.
+
+A renderer is a grandchild rather than a child — Chrome forks them from its zygote — so the
+whole tree is walked rather than one generation of it.
+"""
+function _descendants(pid::Integer)
+    children = Dict{Int,Vector{Int}}()
+    for entry in readdir("/proc")
+        all(isdigit, entry) || continue
+        stat = _proc_read(joinpath("/proc", entry, "stat"))
+        stat === nothing && continue
+        # A process name can hold spaces and parentheses, so the fields after it are read from
+        # the last `)` rather than by splitting the whole line.
+        closing = findlast(')', stat)
+        closing === nothing && continue
+        parent = tryparse(Int, split(strip(stat[(closing + 1):end]))[2])
+        parent === nothing || push!(get!(children, parent, Int[]), parse(Int, entry))
+    end
+
+    found, queue = Int[], [Int(pid)]
+    while !isempty(queue)
+        for child in get(children, popfirst!(queue), Int[])
+            push!(found, child)
+            push!(queue, child)
+        end
+    end
+    return found
 end
 
 """

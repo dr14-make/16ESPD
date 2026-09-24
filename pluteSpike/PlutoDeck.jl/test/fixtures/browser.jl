@@ -17,11 +17,11 @@ macro bind(def, element)
 end
 
 # ╔═╡ a1000000-0000-4000-8000-000000000001
-# ╠═╡ card = "plotly"
-plotly_offline = begin
-    using PlutoPlotly
-    enable_plutoplotly_offline()
-end
+using PlutoPlotly
+
+# ╔═╡ a1000000-0000-4000-8000-000000000012
+# ╠═╡ card = "probe"
+probe = HTML("<script>window.__preambleRan = { at: performance.now(), slideCardsLive: document.querySelectorAll('.slide .card[data-source=live]').length }</script>")
 
 # ╔═╡ a1000000-0000-4000-8000-000000000002
 # ╠═╡ card = "frequency"
@@ -74,6 +74,7 @@ with steady-state gain $K$ and time constant $\tau$.
 
 # ╔═╡ Cell order:
 # ╠═a1000000-0000-4000-8000-000000000001
+# ╠═a1000000-0000-4000-8000-000000000012
 # ╠═a1000000-0000-4000-8000-000000000002
 # ╠═a1000000-0000-4000-8000-000000000003
 # ╠═a1000000-0000-4000-8000-000000000004

@@ -25,6 +25,7 @@ import type { Kernel } from "./kernel.client.js"
 import { kernelStatus } from "./kernel.status.js"
 import type { KernelStatus } from "./kernel.status.js"
 import { LightDomElement } from "./light-dom.element.js"
+import { loadPlotly, needsPlotly } from "./plotly.loader.js"
 import { Position } from "./position.channel.js"
 import { createPainter, whenScriptsSettled } from "./render.painter.js"
 import type { Painter } from "./render.painter.js"
@@ -231,9 +232,12 @@ export class DeckApp extends LightDomElement {
   /**
    * Hand the cards their content, the preamble first.
    *
-   * A plot card drawn before the preamble's script has loaded the offline Plotly bundle draws
-   * nothing, so the two groups are published in order rather than together, and the paint is
-   * awaited: `whenScriptsSettled` reports an empty set until a card has actually rendered.
+   * A card whose script performs a side effect the rest of the deck depends on is published
+   * and painted before the others rather than alongside them, and the paint is awaited:
+   * `whenScriptsSettled` reports an empty set until a card has actually rendered.
+   *
+   * Plotly is on `window` before either paint, because a plot card drawn before the library
+   * is there draws nothing.
    */
   async #publish(): Promise<void> {
     const deck = this.deck
@@ -247,6 +251,13 @@ export class DeckApp extends LightDomElement {
       return cellId === undefined ? null : kernel.content(cellId)
     }
 
+    // Ahead of both paints, so that no card reaches for the library before it is there —
+    // including a plot card a deck names in its preamble.
+    const contents = collect(this.#everyCardName(deck), contentOf)
+    if ([...contents.values()].some((content) => needsPlotly(content.body))) {
+      await loadPlotly()
+    }
+
     const preamble = collect(deck.preamble, contentOf)
     if (this.#holdsNewContent(preamble)) {
       this.contents = preamble
@@ -254,7 +265,7 @@ export class DeckApp extends LightDomElement {
       await whenScriptsSettled()
     }
 
-    this.contents = collect(this.#everyCardName(deck), contentOf)
+    this.contents = contents
     await this.#cardsPainted()
   }
 

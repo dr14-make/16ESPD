@@ -45,16 +45,24 @@ runnable_cells() = [
 ]
 
 # What the browser harness drives. Between them these cells cover every path a card can take:
-# a side-effecting preamble, a Julia-defined widget writing back, two cells downstream of it, a
-# `published_to_js` payload reached through the <pluto-cell> ancestor, a text/plain body that
-# must not be parsed as markup, one card that no bond can reach, math in both the shapes
-# PlutoRunner marks up, and the theme bond the deck writes without any element ever reporting it.
+# a side-effecting preamble card, a Julia-defined widget writing back, two cells downstream of
+# it, a `published_to_js` payload reached through the <pluto-cell> ancestor, a text/plain body
+# that must not be parsed as markup, one card that no bond can reach, math in both the shapes
+# PlutoRunner marks up, and the theme bond the deck writes without any element ever reporting
+# it.
+#
+# No cell calls `enable_plutoplotly_offline()`: the deck fills `window.plutoplotly_imports`
+# itself, and a notebook that also ships the library through notebook state has PlutoPlotly
+# import it from a `data:` URL, which costs the renderer gigabytes. See issue 027.
 browser_cells() = [
-    carded(1, "plotly", """
-    plotly_offline = begin
-        using PlutoPlotly
-        enable_plutoplotly_offline()
-    end"""),
+    uncarded(1, "using PlutoPlotly"),
+    # A preamble card: its whole output is a side effect, it reaches no slide, and it records
+    # what the deck had painted at the moment its script ran. Unquoted `live` in the selector
+    # keeps the cell source free of nested quotes.
+    carded(12, "probe",
+        "probe = HTML(\"<script>window.__preambleRan = { at: performance.now(), " *
+        "slideCardsLive: document.querySelectorAll('.slide .card[data-source=live]').length }" *
+        "</script>\")"),
     carded(2, "frequency", "@bind freq html\"<input type=range min=1 max=5 step=1 value=1>\""),
     uncarded(3, "cycles = ismissing(freq) ? 1 : Int(freq)"),
     carded(4, "wave", """

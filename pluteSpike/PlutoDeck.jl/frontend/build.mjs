@@ -13,14 +13,47 @@ const SOURCE = join(HERE, "src")
 const OUT = join(HERE, "..", "frontend-dist")
 
 /**
- * The MathJax build the deck serves itself, so that a lecture hall's network is never on the
- * path to an equation.
+ * The two libraries the deck serves itself, so that a lecture hall's network is never on the
+ * path to an equation or a plot.
  *
- * Copied, not bundled: it is a classic script that assigns `window.MathJax`, not a module.
- * Resolved through the package rather than by path, so an install layout that does not put it
- * under a flat `node_modules` fails here instead of naming a file that is not there.
+ * Copied, not bundled: each is a classic script assigning a global — `window.MathJax`,
+ * `window.Plotly` — rather than a module. Resolved through the package rather than by path, so
+ * an install layout that does not put them under a flat `node_modules` fails here instead of
+ * naming a file that is not there.
  */
 const MATHJAX = fileURLToPath(import.meta.resolve("mathjax/es5/tex-svg-full.js"))
+const PLOTLY = fileURLToPath(import.meta.resolve("plotly.js-dist-min/plotly.min.js"))
+
+/**
+ * The version of that Plotly build, read from the package rather than written down.
+ *
+ * It is the key a plot cell asks `window.plutoplotly_imports` for, so a version this build and
+ * the notebook's PlutoPlotly disagree on is a deck whose every plot silently fetches from
+ * esm.sh — working at a desk, failing in a lecture room. `server.jl` asserts they agree.
+ */
+const PLOTLY_VERSION = JSON.parse(
+  await readFile(fileURLToPath(import.meta.resolve("plotly.js-dist-min/package.json")), "utf8"),
+).version
+
+/**
+ * What a plot cell's script imports by absolute URL, against the module of the deck's own that
+ * satisfies it.
+ *
+ * PlutoPlotly's scripts import both with a top-level `await`, so either one unreachable is a
+ * plot card that draws nothing at all. An import map is how a page says what satisfies a
+ * specifier, and it reaches the dynamic `import()` inside a cell's script because Rainbow
+ * compiles that script with `Function(…)` and a document's map governs resolution for code
+ * compiled that way.
+ *
+ * One object rather than a list in each place it is needed: the entry points, the map written
+ * into the page and this rationale would otherwise be three edits, and the one that gets
+ * forgotten is a silent CDN fetch. `server.jl` fails if PlutoPlotly imports a URL not named
+ * here.
+ */
+const VENDORED_IMPORTS = {
+  "https://cdn.jsdelivr.net/npm/lodash-es@4.17.21/+esm": "lodash.vendor.ts",
+  "https://esm.sh/interactjs@1.10.19": "interact.vendor.ts",
+}
 
 /** Each page, its entry module, and the template that references the built assets. */
 const PAGES = [
@@ -45,7 +78,7 @@ const watch = process.argv.includes("--watch")
  */
 const define = { "process.env.NODE_ENV": '"production"' }
 
-async function emitPages(metafile, mathjax) {
+async function emitPages(metafile, vendored) {
   const outputs = Object.entries(metafile.outputs)
 
   const assetFor = (entrySuffix) => {
@@ -62,7 +95,10 @@ async function emitPages(metafile, mathjax) {
     const template = await readFile(join(SOURCE, page.template), "utf8")
     const rendered = template
       .replaceAll("{{deck.css}}", stylesheet)
-      .replaceAll("{{mathjax.js}}", mathjax)
+      .replaceAll("{{mathjax.js}}", vendored.mathjax)
+      .replaceAll("{{plotly.js}}", vendored.plotly)
+      .replaceAll("{{plotly.version}}", PLOTLY_VERSION)
+      .replaceAll("{{importmap}}", importMap(assetFor))
       .replaceAll(`{{${page.token}}}`, assetFor(`src/${page.entry}`))
 
     if (rendered.includes("{{")) {
@@ -72,17 +108,30 @@ async function emitPages(metafile, mathjax) {
   }
 }
 
+/** The import map `index.html` carries, naming each vendored module by its built asset. */
+function importMap(assetFor) {
+  return JSON.stringify({
+    imports: Object.fromEntries(
+      Object.entries(VENDORED_IMPORTS).map(([specifier, file]) => [
+        specifier,
+        `./${assetFor(`src/${file}`)}`,
+      ]),
+    ),
+  })
+}
+
 /**
- * Copy MathJax into the bundle, under a content-hashed name, and report what it is called.
+ * Copy `source` into the bundle as `name`, under a content-hashed name, and report what it is
+ * called.
  *
  * A build of its own because the `copy` loader is keyed by extension: setting it for `.js` in
  * the main build would stop esbuild bundling every `.js` its module graph reaches through
  * `node_modules` and copy those too.
  */
-async function copyMathJax() {
+async function copyVendored(source, name) {
   const result = await esbuild.build({
     absWorkingDir: HERE,
-    entryPoints: [{ in: MATHJAX, out: "tex-svg-full" }],
+    entryPoints: [{ in: source, out: name }],
     outdir: OUT,
     loader: { ".js": "copy" },
     entryNames: "[name]-[hash]",
@@ -90,19 +139,19 @@ async function copyMathJax() {
   })
   const [built] = Object.keys(result.metafile.outputs)
   if (built === undefined) {
-    throw new Error(`nothing was copied from ${MATHJAX}`)
+    throw new Error(`nothing was copied from ${source}`)
   }
   return relative(OUT, join(HERE, built))
 }
 
 /** Rewriting the HTML is part of every build, because the asset names carry a content hash. */
-function emitPagesPlugin(mathjax) {
+function emitPagesPlugin(vendored) {
   return {
     name: "emit-pages",
     setup(build) {
       build.onEnd(async (result) => {
         if (result.metafile !== undefined && result.errors.length === 0) {
-          await emitPages(result.metafile, mathjax)
+          await emitPages(result.metafile, vendored)
         }
       })
     },
@@ -112,9 +161,12 @@ function emitPagesPlugin(mathjax) {
 await rm(OUT, { recursive: true, force: true })
 await mkdir(OUT, { recursive: true })
 
-// Before the options, because the plugin closes over the name the copy landed under, and once
-// rather than per rebuild: a pinned dependency cannot change while a watcher is running.
-const mathjax = await copyMathJax()
+// Before the options, because the plugin closes over the names the copies landed under, and
+// once rather than per rebuild: a pinned dependency cannot change while a watcher is running.
+const vendored = {
+  mathjax: await copyVendored(MATHJAX, "tex-svg-full"),
+  plotly: await copyVendored(PLOTLY, "plotly"),
+}
 
 const options = {
   // The metafile's output keys are resolved against this, so naming it is what makes the asset
@@ -123,6 +175,8 @@ const options = {
   entryPoints: [
     join(SOURCE, "deck.entry.ts"),
     join(SOURCE, "speaker.entry.ts"),
+    // Reached by no import of the deck's own, only by the import map `index.html` carries.
+    ...Object.values(VENDORED_IMPORTS).map((file) => join(SOURCE, file)),
     join(SOURCE, "deck.css"),
   ],
   outdir: OUT,
@@ -144,7 +198,7 @@ const options = {
   metafile: true,
   logLevel: "info",
   define,
-  plugins: [emitPagesPlugin(mathjax)],
+  plugins: [emitPagesPlugin(vendored)],
 }
 
 if (watch) {

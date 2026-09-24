@@ -99,11 +99,11 @@ The spike this directory is named after is gone: its `frontend/`, its Node `brid
 `start.sh` were removed once every technique they proved had a home in the package. `README.md`
 keeps the findings, which have not expired. Read the code itself in the history.
 
-`backend/notebook.jl` still carries four cells that are spike scaffolding rather than design —
-`script_probe`, `plotly_offline`, `plotly_demo`, `@bind freq` — plus a hidden `eval_in_pluto`
-cell left by `worker.execute()` diagnostics. A cell with no `card` key cannot reach a slide, so
-they are invisible to every deck; removing them means going through the websocket, because
-Pluto owns that file.
+`backend/notebook.jl` still carries three cells that are spike scaffolding rather than design —
+`script_probe`, `plotly_demo`, `@bind freq` — plus a hidden `eval_in_pluto` cell left by
+`worker.execute()` diagnostics. `plotly_offline` was a fourth until 028 took it out. A cell
+with no `card` key cannot reach a slide, so they are invisible to every deck; removing them
+means going through the websocket, because Pluto owns that file.
 
 ## Handing back
 

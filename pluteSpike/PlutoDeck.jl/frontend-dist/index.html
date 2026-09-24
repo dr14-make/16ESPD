@@ -7,7 +7,14 @@
 <link rel="stylesheet" href="deck-SIAWQ32A.css">
 <!-- Not preloaded: fetched only by a deck that has math to draw. -->
 <link rel="mathjax-source" href="tex-svg-full-FCOWBU3W.js">
+<!-- Likewise fetched only by a deck that has a plot to draw. `data-version` is the key a plot
+     cell asks for: a deck serving any other version is one whose plots all go to the network. -->
+<link rel="plotly-source" href="plotly-KYR37CSP.js" data-version="2.34.0">
+
+<!-- What a plot cell imports off the internet, served from here instead; see `VENDORED_IMPORTS`
+     in build.mjs. Ahead of every module script, because a map is read only before the first. -->
+<script type="importmap">{"imports":{"https://cdn.jsdelivr.net/npm/lodash-es@4.17.21/+esm":"./lodash.vendor-6I6UDOUA.js","https://esm.sh/interactjs@1.10.19":"./interact.vendor-4XKKCQZ7.js"}}</script>
 
 <deck-app></deck-app>
 
-<script type="module" src="deck.entry-FJEFCOBL.js"></script>
+<script type="module" src="deck.entry-PUYMRDI5.js"></script>
