@@ -13,7 +13,8 @@ Positive shaft rotation drives positive vehicle motion. The friction law uses th
 symmetric triple-S shape as `MultibodyComponents.SlipWheelJoint`: it rises to `mu_A` at
 `sAdhesion`, falls to `mu_S` at `sSlide`, and remains at the sliding level beyond it. `F_z` is
 the normal load carried by the modeled driven axle; approximately half the vehicle weight is a
-representative default for a single driven axle.
+representative default for a single driven axle. A braking model loads all four wheels, so
+`BrakedWheel` overrides this with the full vehicle weight.
 
 The curve is continuously differentiable but has a discontinuous second derivative at its
 transitions. Explicit Runge-Kutta solvers generally handle it better than BDF methods.

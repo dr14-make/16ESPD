@@ -11,8 +11,8 @@ using OrdinaryDiffEqDefault
 using RuntimeGeneratedFunctions
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
-if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "definitions.jl"))
-  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "definitions.jl"))
+if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "Wheel", "definitions.jl"))
+  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "Wheel", "definitions.jl"))
 end
 
 import BlockComponents
@@ -200,33 +200,11 @@ component.
 end
 
 
-include("ABSBrakeTest_definition.jl")
-include("ABSBrakeTransient_definition.jl")
-include("ABSControllerDropoutTransient_definition.jl")
-include("ABSControllerTransient_definition.jl")
-include("ABSController_definition.jl")
-include("CarPlant_definition.jl")
-include("Driveline_definition.jl")
-include("FrictionProfile_definition.jl")
-include("GradeForce_definition.jl")
-include("GradeProfile_definition.jl")
-include("IdealEngine_definition.jl")
-include("LockedBrakeTransient_definition.jl")
-include("TestABSControllerDropout_definition.jl")
-include("TestABSController_definition.jl")
-include("TestCarPlant_definition.jl")
-include("TestDriveline_definition.jl")
-include("TestFrictionProfile_definition.jl")
-include("TestGradeForce_definition.jl")
-include("TestGradeProfile_definition.jl")
-include("TestIdealEngine_definition.jl")
-include("TestToKmPerHour_definition.jl")
-include("TestToPercent_definition.jl")
-include("TestToRPM_definition.jl")
-include("TestVehicleBody_definition.jl")
-include("TestWheeledDriveline_definition.jl")
-include("ToKmPerHour_definition.jl")
-include("ToPercent_definition.jl")
-include("ToRPM_definition.jl")
-include("VehicleBody_definition.jl")
-include("WheeledDriveline_definition.jl")
+include("BrakeActuatorTransient_definition.jl")
+include("BrakeActuator_definition.jl")
+include("BrakedWheelTransient_definition.jl")
+include("BrakedWheel_definition.jl")
+include("SlipWheel1D_definition.jl")
+include("TestBrakeActuator_definition.jl")
+include("TestBrakedWheel_definition.jl")
+include("TestSlipWheel1D_definition.jl")

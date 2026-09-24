@@ -35,7 +35,7 @@ component SlipCarPlant
   engine = VehicleSystemsComponents.Vehicle.IdealEngine(theta_e = theta_e, T_max = T_max)
   gear = RotationalComponents.Components.IdealGear(ratio = i)
   wheel_inertia = RotationalComponents.Components.Inertia(J = J_w)
-  wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(radius = radius, F_z = F_z,
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(radius = radius, F_z = F_z,
     sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S, v_eps = v_eps)
   body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m, CdA = CdA)
   vsensor = TranslationalComponents.Sensors.VelocitySensor()

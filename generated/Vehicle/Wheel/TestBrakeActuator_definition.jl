@@ -54,9 +54,9 @@
   # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
   push!(__systems, @named command = BlockComponents.Sources.Step(; height=Float64(500.0), offset=Float64(0.0), start_time=0.1, command_overrides...))
-  # Subcomponent brake of type VehicleSystemsComponents.Vehicle.BrakeActuator
+  # Subcomponent brake of type VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.BrakeActuator(; T=0.03, tau_max=Float64(400.0), w0=Float64(1.0), brake_overrides...))
+  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(; T=0.03, tau_max=Float64(400.0), w0=Float64(1.0), brake_overrides...))
   # Subcomponent wheel of type RotationalComponents.Components.Inertia
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
   push!(__systems, @named wheel = RotationalComponents.Components.Inertia(; J=Float64(10.0), wheel_overrides...))

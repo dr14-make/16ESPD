@@ -57,9 +57,9 @@
   # Subcomponent inertia of type RotationalComponents.Components.Inertia
   inertia_overrides = __pop_subcomponent_overrides!(__overrides, "inertia")
   push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=Float64(1.0), inertia_overrides...))
-  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.SlipWheel1D
+  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(; wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(; wheel_overrides...))
   # Subcomponent mass of type TranslationalComponents.Components.Mass
   mass_overrides = __pop_subcomponent_overrides!(__overrides, "mass")
   push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=Float64(1400.0), mass_overrides...))

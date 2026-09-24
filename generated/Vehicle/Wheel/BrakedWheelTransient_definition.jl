@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct BrakeActuatorTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :BrakeActuatorTransient
+@kwdef mutable struct BrakedWheelTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :BrakedWheelTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 1.5
+  var"stop"::Float64 = 5.0
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -25,10 +25,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.TestBrakeActuator(; name=:TestBrakeActuator)
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.Wheel.TestBrakedWheel(; name=:TestBrakedWheel)
 end
 
-function DyadInterface.run_analysis(spec::BrakeActuatorTransientSpec)
+function DyadInterface.run_analysis(spec::BrakedWheelTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   
@@ -38,5 +38,5 @@ function DyadInterface.run_analysis(spec::BrakeActuatorTransientSpec)
   run_analysis(base_spec)
 end
 
-BrakeActuatorTransient(;kwargs...) = run_analysis(BrakeActuatorTransientSpec(;kwargs...))
-export BrakeActuatorTransient, BrakeActuatorTransientSpec
+BrakedWheelTransient(;kwargs...) = run_analysis(BrakedWheelTransientSpec(;kwargs...))
+export BrakedWheelTransient, BrakedWheelTransientSpec

@@ -136,9 +136,9 @@ Vehicle and wheel speeds are separate outputs. `wheel_rpm` passes the shaft spee
   # Subcomponent wheel_inertia of type RotationalComponents.Components.Inertia
   wheel_inertia_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_inertia")
   push!(__systems, @named wheel_inertia = RotationalComponents.Components.Inertia(; J=J_w, wheel_inertia_overrides...))
-  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.SlipWheel1D
+  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, v_eps=v_eps, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, v_eps=v_eps, wheel_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, CdA=CdA, body_overrides...))

@@ -1,0 +1,63 @@
+{
+  "schema": 3,
+  "subjects": [
+    {
+      "id": "run-c97b3be2-8f06-4e9e-bb83-f6246f3879be",
+      "name": "Run 1",
+      "outcome": "success",
+      "provider": "julia",
+      "runnable": {
+        "name": "Vehicle.ABSControllerTransient",
+        "parameters": {}
+      },
+      "type": "dyad:solution/2",
+      "payload": "run-c97b3be2-8f06-4e9e-bb83-f6246f3879be",
+      "provenance": {
+        "source": "/home/dr14/16ESPD",
+        "revision": "b9c79b6",
+        "capturedAt": "2026-09-23T22:27:17.247Z",
+        "runtime": {
+          "name": "DyadRuntime",
+          "version": "0.2.0",
+          "environment": {
+            "julia": "1.12.7-dyad",
+            "dyad": "3.4.0"
+          }
+        }
+      },
+      "ranAt": "2026-09-23T22:27:17.403Z"
+    }
+  ],
+  "decks": [
+    {
+      "title": "Deck 1",
+      "cards": [
+        {
+          "id": "card-5c65d4ae-ae6a-4cbb-8bea-c39960962c13",
+          "renderer": "plot",
+          "title": "Plot 1",
+          "binding": {
+            "asks": []
+          }
+        },
+        {
+          "id": "card-32678eb8-a19a-4d44-88d4-723db2b83001",
+          "renderer": "plot",
+          "title": "Plot 2",
+          "binding": {
+            "asks": []
+          }
+        }
+      ],
+      "arrangement": [
+        {
+          "id": "card-32678eb8-a19a-4d44-88d4-723db2b83001",
+          "x": 0,
+          "y": 3,
+          "w": 6,
+          "h": 3
+        }
+      ]
+    }
+  ]
+}
