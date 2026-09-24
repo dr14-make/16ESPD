@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct ABSControllerDropoutTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :ABSControllerDropoutTransient
+@kwdef mutable struct ABSControllerRecoveryTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :ABSControllerRecoveryTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 1.0
+  var"stop"::Float64 = 0.8
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -25,10 +25,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.TestABSControllerDropout(; name=:TestABSControllerDropout)
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.TestABSControllerRecovery(; name=:TestABSControllerRecovery)
 end
 
-function DyadInterface.run_analysis(spec::ABSControllerDropoutTransientSpec)
+function DyadInterface.run_analysis(spec::ABSControllerRecoveryTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   
@@ -38,5 +38,5 @@ function DyadInterface.run_analysis(spec::ABSControllerDropoutTransientSpec)
   run_analysis(base_spec)
 end
 
-ABSControllerDropoutTransient(;kwargs...) = run_analysis(ABSControllerDropoutTransientSpec(;kwargs...))
-export ABSControllerDropoutTransient, ABSControllerDropoutTransientSpec
+ABSControllerRecoveryTransient(;kwargs...) = run_analysis(ABSControllerRecoveryTransientSpec(;kwargs...))
+export ABSControllerRecoveryTransient, ABSControllerRecoveryTransientSpec

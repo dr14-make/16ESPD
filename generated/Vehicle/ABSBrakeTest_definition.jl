@@ -32,7 +32,7 @@ reach their friction limits at different times; this lumped model reports the av
 | `radius`         | Wheel radius                         | m  |   0.31 |
 | `J_w`         | Lumped inertia of the four road wheels                         | kg.m2  |   4.0 |
 | `w0`         | Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep                         | rad/s  |   0.2 |
-| `T_meas`         | Wheel-speed sensing and slip-estimation lag                         | s  |   0.005 |
+| `T_meas`         | Wheel-speed differentiator filter time constant                         | s  |   0.005 |
 """
 @component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, abs_enabled=Float64(1.0), road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, T_meas=0.005, kwargs...)
   isnothing(name) && throw(ArgumentError("""
@@ -93,7 +93,7 @@ reach their friction limits at different times; this lumped model reports the av
   append!(__params, @parameters (w0::Real), [description = "Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep"])
   __initial_conditions[w0] = __local__w0
   __local__T_meas = T_meas
-  append!(__params, @parameters (T_meas::Real), [description = "Wheel-speed sensing and slip-estimation lag"])
+  append!(__params, @parameters (T_meas::Real), [description = "Wheel-speed differentiator filter time constant"])
   __initial_conditions[T_meas] = __local__T_meas
 
   ### Final Parameters (assignments)
@@ -119,13 +119,10 @@ reach their friction limits at different times; this lumped model reports the av
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), flat_overrides...))
   # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; controller_overrides...))
-  # Subcomponent slipfilter of type BlockComponents.Continuous.FirstOrder
-  slipfilter_overrides = __pop_subcomponent_overrides!(__overrides, "slipfilter")
-  push!(__systems, @named slipfilter = BlockComponents.Continuous.FirstOrder(; T=T_meas, slipfilter_overrides...))
-  # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
-  vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
-  push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; T_filter=T_meas, omega0=v0 / radius, controller_overrides...))
+  # Subcomponent wsensor of type RotationalComponents.Sensors.VelocitySensor
+  wsensor_overrides = __pop_subcomponent_overrides!(__overrides, "wsensor")
+  push!(__systems, @named wsensor = RotationalComponents.Sensors.VelocitySensor(; wsensor_overrides...))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
   push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, wheel_overrides...))
@@ -143,7 +140,6 @@ reach their friction limits at different times; this lumped model reports the av
 
   ### Initialization Equations
   push!(__initialization_eqs, wheel.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, slipfilter.x ~ 0.0)
   push!(__initialization_eqs, wheel.inertia.phi ~ 0.0)
   push!(__initialization_eqs, wheel.inertia.w ~ v0 / radius)
   push!(__initialization_eqs, body.mass.s ~ 0.0)
@@ -155,10 +151,8 @@ reach their friction limits at different times; this lumped model reports the av
   ### Equations
   push!(__eqs, wheel.tau_cmd ~ demand.y * (1.0 - abs_enabled) + controller.tau_cmd * abs_enabled)
   push!(__eqs, connect(demand.y, controller.demand))
-  push!(__eqs, connect(wheel.kappa, slipfilter.u))
-  push!(__eqs, connect(slipfilter.y, controller.kappa))
-  push!(__eqs, connect(vsensor.flange, body.flange))
-  push!(__eqs, connect(vsensor.v, controller.v_ref))
+  push!(__eqs, connect(wsensor.spline, wheel.spline))
+  push!(__eqs, connect(wsensor.w, controller.omega))
   push!(__eqs, connect(wheel.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange))
   push!(__eqs, connect(road.y, wheel.mu_scale))

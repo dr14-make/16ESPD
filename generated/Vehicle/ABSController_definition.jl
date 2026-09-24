@@ -5,45 +5,46 @@
 
 
 @doc Markdown.doc"""
-   ABSController(; name, kappa_target, kp, v_min, v_band)
+   ABSController(; name, decel_threshold, release_rate, apply_rate, T_filter, omega0)
 
-Continuous longitudinal-slip brake modulator for forward braking.
+Wheel-speed-based brake modulator for forward braking.
 
-The controller passes the full driver demand until braking slip approaches `kappa_target`. Beyond
-the target it proportionally releases brake torque. Saturation keeps the command between zero and
-the driver demand. Hydraulic dynamics are represented by the downstream brake actuator.
+The controller uses only measured wheel angular velocity. A first-order filtered differentiator
+estimates wheel angular acceleration; rapid wheel deceleration indicates incipient lock and causes
+brake release. As the wheel recovers, the controller reapplies the driver's demand. Saturation
+keeps the request between zero and the driver demand. Hydraulic dynamics are represented by the
+downstream brake actuator.
 
-Below `v_min` the modulator hands full authority back to the driver, as production ABS does at
-walking pace (typically 3-7 km/h). Two reasons: the slip estimate is meaningless once the speed
-used to normalise it approaches the regularisation floor of the tire model, and a car must be able
-to lock its wheels to come to a complete stop and stay there. The handover is blended over
-`v_band` so the command stays continuous. `v_ref` is the vehicle reference speed; its sign is
-ignored, so the dropout works in either travel direction.
+The modulation state is reduced during excessive wheel deceleration and increased again when wheel
+deceleration returns below the threshold. With wheel speed as the sole measurement, vehicle
+standstill cannot be distinguished from a locked wheel, so no wheel-speed dropout is applied inside
+this controller.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `kappa_target`         | Magnitude of target braking slip                         | --  |   0.04 |
-| `kp`         | Brake-release gain per unit slip                         | --  |   50.0 |
-| `v_min`         | Speed below which the modulator is fully handed back to the driver                         | m/s  |   1.4 |
-| `v_band`         | Blend width of the dropout handover                         | m/s  |   0.4 |
+| `decel_threshold`         | Wheel-deceleration magnitude at which brake release begins                         | --  |   50.0 |
+| `release_rate`         | Rate at which excessive deceleration releases the brake                         | --  |   0.1 |
+| `apply_rate`         | Rate at which wheel deceleration below the threshold reapplies the brake                         | --  |   0.01 |
+| `T_filter`         | Differentiator filter time constant                         | s  |   0.01 |
+| `omega0`         | Initial filtered wheel speed                         | rad/s  |   0.0 |
 
 ## Connectors
 
- * `kappa` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `omega` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `demand` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `v_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `modulation`         | Slip-proportional brake release, one is full demand                         | --  |
-| `authority`         | Modulator authority, one above the dropout speed and zero below it                         | --  |
+| `omega_filtered`         | Low-pass state used by the filtered differentiator                         | rad/s  |
+| `alpha_est`         | Estimated wheel angular acceleration                         | --  |
+| `modulation`         | Acceleration-based brake modulation, one is full demand                         | --  |
 """
-@component function ABSController(; name = nothing, kappa_target=0.04, kp=Float64(50.0), v_min=1.4, v_band=0.4, kwargs...)
+@component function ABSController(; name = nothing, decel_threshold=Float64(50.0), release_rate=0.1, apply_rate=0.01, T_filter=0.01, omega0=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -74,38 +75,44 @@ ignored, so the dropout works in either travel direction.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__kappa_target = kappa_target
-  append!(__params, @parameters (kappa_target::Real), [description = "Magnitude of target braking slip"])
-  __initial_conditions[kappa_target] = __local__kappa_target
-  __local__kp = kp
-  append!(__params, @parameters (kp::Real), [description = "Brake-release gain per unit slip"])
-  __initial_conditions[kp] = __local__kp
-  __local__v_min = v_min
-  append!(__params, @parameters (v_min::Real), [description = "Speed below which the modulator is fully handed back to the driver"])
-  __initial_conditions[v_min] = __local__v_min
-  __local__v_band = v_band
-  append!(__params, @parameters (v_band::Real), [description = "Blend width of the dropout handover", bounds = (eps(Float64), Inf)])
-  __initial_conditions[v_band] = __local__v_band
+  __local__decel_threshold = decel_threshold
+  append!(__params, @parameters (decel_threshold::Real), [description = "Wheel-deceleration magnitude at which brake release begins"])
+  __initial_conditions[decel_threshold] = __local__decel_threshold
+  __local__release_rate = release_rate
+  append!(__params, @parameters (release_rate::Real), [description = "Rate at which excessive deceleration releases the brake"])
+  __initial_conditions[release_rate] = __local__release_rate
+  __local__apply_rate = apply_rate
+  append!(__params, @parameters (apply_rate::Real), [description = "Rate at which wheel deceleration below the threshold reapplies the brake"])
+  __initial_conditions[apply_rate] = __local__apply_rate
+  __local__T_filter = T_filter
+  append!(__params, @parameters (T_filter::Real), [description = "Differentiator filter time constant", bounds = (eps(Float64), Inf)])
+  __initial_conditions[T_filter] = __local__T_filter
+  __local__omega0 = omega0
+  append!(__params, @parameters (omega0::Real), [description = "Initial filtered wheel speed"])
+  __initial_conditions[omega0] = __local__omega0
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (kappa(t)::Real), [input = true])
+  append!(__vars, @variables (omega(t)::Real), [input = true])
   append!(__vars, @variables (demand(t)::Real), [input = true])
-  append!(__vars, @variables (v_ref(t)::Real), [input = true])
   append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (modulation(t)::Real), [description = "Slip-proportional brake release, one is full demand"])
-  append!(__vars, @variables (authority(t)::Real), [description = "Modulator authority, one above the dropout speed and zero below it"])
+  append!(__vars, @variables (omega_filtered(t)::Real), [description = "Low-pass state used by the filtered differentiator"])
+  append!(__vars, @variables (alpha_est(t)::Real), [description = "Estimated wheel angular acceleration"])
+  append!(__vars, @variables (modulation(t)::Real), [description = "Acceleration-based brake modulation, one is full demand"])
 
   ### Variables (assignments)
+  __ovr_omega_filtered = pop!(__overrides, "omega_filtered", nothing); isnothing(__ovr_omega_filtered) || push!(__eqs, omega_filtered ~ __ovr_omega_filtered)
+  __ovr_omega_filtered__initial = pop!(__overrides, "omega_filtered__initial", nothing); isnothing(__ovr_omega_filtered__initial) || (__initial_conditions[omega_filtered] = __ovr_omega_filtered__initial)
+  __ovr_omega_filtered__guess = pop!(__overrides, "omega_filtered__guess", nothing)
+  __ovr_alpha_est = pop!(__overrides, "alpha_est", nothing); isnothing(__ovr_alpha_est) || push!(__eqs, alpha_est ~ __ovr_alpha_est)
+  __ovr_alpha_est__initial = pop!(__overrides, "alpha_est__initial", nothing); isnothing(__ovr_alpha_est__initial) || (__initial_conditions[alpha_est] = __ovr_alpha_est__initial)
+  __ovr_alpha_est__guess = pop!(__overrides, "alpha_est__guess", nothing)
   __ovr_modulation = pop!(__overrides, "modulation", nothing); isnothing(__ovr_modulation) || push!(__eqs, modulation ~ __ovr_modulation)
   __ovr_modulation__initial = pop!(__overrides, "modulation__initial", nothing); isnothing(__ovr_modulation__initial) || (__initial_conditions[modulation] = __ovr_modulation__initial)
   __ovr_modulation__guess = pop!(__overrides, "modulation__guess", nothing)
-  __ovr_authority = pop!(__overrides, "authority", nothing); isnothing(__ovr_authority) || push!(__eqs, authority ~ __ovr_authority)
-  __ovr_authority__initial = pop!(__overrides, "authority__initial", nothing); isnothing(__ovr_authority__initial) || (__initial_conditions[authority] = __ovr_authority__initial)
-  __ovr_authority__guess = pop!(__overrides, "authority__guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -116,18 +123,22 @@ ignored, so the dropout works in either travel direction.
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
 
   ### Guesses
+  isnothing(__ovr_omega_filtered__guess) || (__guesses[omega_filtered] = __ovr_omega_filtered__guess)
+  isnothing(__ovr_alpha_est__guess) || (__guesses[alpha_est] = __ovr_alpha_est__guess)
   isnothing(__ovr_modulation__guess) || (__guesses[modulation] = __ovr_modulation__guess)
-  isnothing(__ovr_authority__guess) || (__guesses[authority] = __ovr_authority__guess)
 
   ### Initialization Equations
+  push!(__initialization_eqs, omega_filtered ~ omega0)
+  push!(__initialization_eqs, modulation ~ 1.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, authority ~ min(max((abs(v_ref) - v_min) / v_band, 0.0), 1.0))
-  push!(__eqs, modulation ~ min(max(1.0 + kp * (kappa + kappa_target), 0.0), 1.0))
-  push!(__eqs, tau_cmd ~ max(demand, 0.0) * (authority * modulation + (1.0 - authority)))
+  push!(__eqs, ModelingToolkit.D_nounits(omega_filtered) ~ (omega - omega_filtered) / T_filter)
+  push!(__eqs, alpha_est ~ (omega - omega_filtered) / T_filter)
+  push!(__eqs, ModelingToolkit.D_nounits(modulation) ~ ifelse(modulation <= 0.0, max(apply_rate * (alpha_est + decel_threshold), 0.0), ifelse(modulation >= 1.0, min(release_rate * (alpha_est + decel_threshold), 0.0), ifelse(alpha_est + decel_threshold < 0.0, release_rate * (alpha_est + decel_threshold), apply_rate * (alpha_est + decel_threshold)))))
+  push!(__eqs, tau_cmd ~ max(demand, 0.0) * min(max(modulation, 0.0), 1.0))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

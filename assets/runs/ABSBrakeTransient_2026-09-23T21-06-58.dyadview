@@ -1,0 +1,48 @@
+{
+  "schema": 2,
+  "subjects": [
+    {
+      "id": "run-34f6fd2c-76ac-4b68-87ed-ba3984ce9a3d",
+      "name": "Run 1",
+      "outcome": "success",
+      "provider": "julia",
+      "runnable": {
+        "name": "ABSBrakeTransient",
+        "parameters": {}
+      },
+      "type": "dyad:solution/2",
+      "payload": "run-34f6fd2c-76ac-4b68-87ed-ba3984ce9a3d",
+      "provenance": {
+        "source": "/home/dr14/CVUT/VehicleSystemsComponents",
+        "revision": "722efc9",
+        "capturedAt": "2026-09-23T21:07:04.370Z",
+        "dirty": true,
+        "runtime": {
+          "name": "DyadRuntime",
+          "version": "0.2.0",
+          "environment": {
+            "julia": "1.12.7-dyad",
+            "dyad": "3.4.0"
+          }
+        }
+      },
+      "ranAt": "2026-09-23T21:07:05.838Z"
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-f0715c71-437e-4ea2-8c87-55c5144c54b4",
+      "renderer": "plot",
+      "title": "Plot 1",
+      "binding": {
+        "asks": [
+          {
+            "reference": "dyad-subject:run-34f6fd2c-76ac-4b68-87ed-ba3984ce9a3d",
+            "path": "signals/body.drag.v",
+            "type": "dyad:signal/1"
+          }
+        ]
+      }
+    }
+  ]
+}

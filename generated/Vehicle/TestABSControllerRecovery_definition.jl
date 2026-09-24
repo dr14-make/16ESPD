@@ -5,14 +5,14 @@
 
 
 @doc Markdown.doc"""
-   TestABSControllerDropout(; name)
+   TestABSControllerRecovery(; name)
 """
-@component function TestABSControllerDropout(; name = nothing, kwargs...)
+@component function TestABSControllerRecovery(; name = nothing, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = TestABSControllerDropout()
+    @named model = TestABSControllerRecovery()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -51,18 +51,21 @@
   __constants = Any[]
 
   ### Components
-  # Subcomponent speed of type BlockComponents.Sources.Ramp
+  # Subcomponent speed_down of type BlockComponents.Sources.Ramp
+  speed_down_overrides = __pop_subcomponent_overrides!(__overrides, "speed_down")
+  push!(__systems, @named speed_down = BlockComponents.Sources.Ramp(; offset=Float64(80.0), height=-40.0, duration=0.2, start_time=0.1, speed_down_overrides...))
+  # Subcomponent speed_up of type BlockComponents.Sources.Ramp
+  speed_up_overrides = __pop_subcomponent_overrides!(__overrides, "speed_up")
+  push!(__systems, @named speed_up = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=Float64(30.0), duration=0.2, start_time=0.4, speed_up_overrides...))
+  # Subcomponent speed of type BlockComponents.Math.Add
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Ramp(; offset=Float64(5.0), height=-5.0, duration=Float64(1.0), start_time=Float64(0.0), speed_overrides...))
-  # Subcomponent slip of type BlockComponents.Sources.Constant
-  slip_overrides = __pop_subcomponent_overrides!(__overrides, "slip")
-  push!(__systems, @named slip = BlockComponents.Sources.Constant(; k=-1.0, slip_overrides...))
+  push!(__systems, @named speed = BlockComponents.Math.Add(; speed_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
   # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; kappa_target=0.04, kp=Float64(50.0), controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; decel_threshold=Float64(80.0), release_rate=0.02, apply_rate=0.02, omega0=Float64(80.0), controller_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -75,11 +78,12 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(slip.y, controller.kappa))
+  push!(__eqs, connect(speed_down.y, speed.u1))
+  push!(__eqs, connect(speed_up.y, speed.u2))
+  push!(__eqs, connect(speed.y, controller.omega))
   push!(__eqs, connect(demand.y, controller.demand))
-  push!(__eqs, connect(speed.y, controller.v_ref))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export TestABSControllerDropout
+export TestABSControllerRecovery

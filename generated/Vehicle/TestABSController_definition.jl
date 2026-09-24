@@ -51,18 +51,15 @@
   __constants = Any[]
 
   ### Components
-  # Subcomponent slip of type BlockComponents.Sources.Ramp
-  slip_overrides = __pop_subcomponent_overrides!(__overrides, "slip")
-  push!(__systems, @named slip = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=-0.15, duration=0.3, start_time=0.1, slip_overrides...))
+  # Subcomponent speed of type BlockComponents.Sources.Ramp
+  speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
+  push!(__systems, @named speed = BlockComponents.Sources.Ramp(; offset=Float64(80.0), height=-60.0, duration=0.3, start_time=0.1, speed_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
-  # Subcomponent speed of type BlockComponents.Sources.Constant
-  speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), speed_overrides...))
   # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; kappa_target=0.04, kp=Float64(20.0), controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; decel_threshold=Float64(80.0), release_rate=0.01, apply_rate=0.01, omega0=Float64(80.0), controller_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -75,9 +72,8 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(slip.y, controller.kappa))
+  push!(__eqs, connect(speed.y, controller.omega))
   push!(__eqs, connect(demand.y, controller.demand))
-  push!(__eqs, connect(speed.y, controller.v_ref))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

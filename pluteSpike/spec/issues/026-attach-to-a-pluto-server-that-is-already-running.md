@@ -73,7 +73,34 @@ is friendlier and is a security decision, not a convenience: something that find
 localhost and attaches to it is also something a malicious page would like to do. Pluto itself
 requires the secret for exactly this reason.
 
-**What happens when the notebook is already open there.** Reusing the open notebook is the point,
-but its state is whatever the lecturer left it in — bonds already moved, cells already run, a
-`deck_theme` that is not this deck's. Deciding whether the deck adopts that state or resets it is
-a behavioural choice a lecturer will notice.
+**Which of three cases a run is in, and how much of it the deck owns.** A Pluto server holds
+`notebooks::Dict{UUID,Notebook}` and one `secret` covering all of them, so naming a server and
+naming a notebook are separate questions: the secret authenticates the server, the `notebook_id`
+selects one of its notebooks. Workers are per notebook — `WorkspaceManager`'s
+`active_workspaces` is keyed by notebook id — so a server with three notebooks open is one HTTP
+server and three ~2 GB workers. What this issue removes is a duplicate worker and a second
+process holding the notebook file, not a duplicate server process.
+
+That splits the work into three cases, each owning a different amount of what it attached to:
+
+| Case | The deck starts | The deck must release |
+|---|---|---|
+| No server named | server, notebook, worker | all of it, as today |
+| Server named, notebook not open there | notebook, worker | the notebook's worker only |
+| Server named, notebook already open | nothing | nothing |
+
+The middle case is named in Scope and is the easy one: `SessionActions.open` against someone
+else's server gives a cold kernel with no inherited state, and its cleanup is
+`SessionActions.shutdown(session, notebook)` without `close(server)`.
+
+The third case is where the behavioural choice lives, and it is the one a lecturer notices. Its
+state is whatever they left: bonds already moved, cells already run, a `deck_theme` that is not
+this deck's. Adopting it is the point of attaching, and is also how a deck opens on slide one
+showing a gain someone nudged an hour ago. Resetting it costs the re-run the attach was meant to
+save.
+
+**`shutdown!` is where getting this wrong is worst.** It closes the worker and then the server,
+unconditionally. Against a shared server that takes down every *other* notebook the lecturer had
+open — a strictly larger blast radius than the second server this issue exists to avoid. So the
+rule in Scope reads per case rather than per run: the middle case does own a worker, and leaving
+it running is the opposite mistake.

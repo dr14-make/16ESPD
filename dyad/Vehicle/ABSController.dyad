@@ -1,53 +1,60 @@
 """
-Continuous longitudinal-slip brake modulator for forward braking.
+Wheel-speed-based brake modulator for forward braking.
 
-The controller passes the full driver demand until braking slip approaches `kappa_target`. Beyond
-the target it proportionally releases brake torque. Saturation keeps the command between zero and
-the driver demand. Hydraulic dynamics are represented by the downstream brake actuator.
+The controller uses only measured wheel angular velocity. A first-order filtered differentiator
+estimates wheel angular acceleration; rapid wheel deceleration indicates incipient lock and causes
+brake release. As the wheel recovers, the controller reapplies the driver's demand. Saturation
+keeps the request between zero and the driver demand. Hydraulic dynamics are represented by the
+downstream brake actuator.
 
-Below `v_min` the modulator hands full authority back to the driver, as production ABS does at
-walking pace (typically 3-7 km/h). Two reasons: the slip estimate is meaningless once the speed
-used to normalise it approaches the regularisation floor of the tire model, and a car must be able
-to lock its wheels to come to a complete stop and stay there. The handover is blended over
-`v_band` so the command stays continuous. `v_ref` is the vehicle reference speed; its sign is
-ignored, so the dropout works in either travel direction.
+The modulation state is reduced during excessive wheel deceleration and increased again when wheel
+deceleration returns below the threshold. With wheel speed as the sole measurement, vehicle
+standstill cannot be distinguished from a locked wheel, so no wheel-speed dropout is applied inside
+this controller.
 """
 component ABSController
-  "Longitudinal slip; negative during braking"
-  kappa = RealInput() {^kappa}
+  "Measured wheel angular velocity"
+  omega = RealInput() {^omega}
   "Driver-requested brake torque"
   demand = RealInput() {^demand}
-  "Vehicle reference speed used only for the low-speed dropout"
-  v_ref = RealInput() {^v_ref}
   "Modulated brake-torque request"
   tau_cmd = RealOutput() {^tau_cmd}
-  "Magnitude of target braking slip"
-  parameter kappa_target::Real = 0.04
-  "Brake-release gain per unit slip"
-  parameter kp::Real = 50.0
-  "Speed below which the modulator is fully handed back to the driver"
-  parameter v_min::Velocity = 1.4
-  "Blend width of the dropout handover"
-  parameter v_band::Velocity(min = eps(Float64)) = 0.4
-  "Slip-proportional brake release, one is full demand"
+  "Wheel-deceleration magnitude at which brake release begins"
+  parameter decel_threshold::Real = 50.0
+  "Rate at which excessive deceleration releases the brake"
+  parameter release_rate::Real = 0.1
+  "Rate at which wheel deceleration below the threshold reapplies the brake"
+  parameter apply_rate::Real = 0.01
+  "Differentiator filter time constant"
+  parameter T_filter::Time(min = eps(Float64)) = 0.01
+  "Initial filtered wheel speed"
+  parameter omega0::AngularVelocity = 0.0
+  "Low-pass state used by the filtered differentiator"
+  variable omega_filtered::AngularVelocity
+  "Estimated wheel angular acceleration"
+  variable alpha_est::Real
+  "Acceleration-based brake modulation, one is full demand"
   variable modulation::Real
-  "Modulator authority, one above the dropout speed and zero below it"
-  variable authority::Real
 relations
-  authority = min(max((abs(v_ref) - v_min) / v_band, 0.0), 1.0)
-  modulation = min(max(1.0 + kp * (kappa + kappa_target), 0.0), 1.0)
-  # authority = 1 gives pure slip control; authority = 0 gives the raw driver demand.
-  tau_cmd = max(demand, 0.0) * (authority * modulation + (1.0 - authority))
+  initial omega_filtered = omega0
+  initial modulation = 1.0
+  der(omega_filtered) = (omega - omega_filtered) / T_filter
+  alpha_est = (omega - omega_filtered) / T_filter
+  der(modulation) = ifelse(modulation <= 0.0,
+    max(apply_rate * (alpha_est + decel_threshold), 0.0),
+    ifelse(modulation >= 1.0,
+      min(release_rate * (alpha_est + decel_threshold), 0.0),
+      ifelse(alpha_est + decel_threshold < 0.0,
+        release_rate * (alpha_est + decel_threshold),
+        apply_rate * (alpha_est + decel_threshold))))
+  tau_cmd = max(demand, 0.0) * min(max(modulation, 0.0), 1.0)
 metadata {
   "_links": {
-    "kappa": {
+    "omega": {
       "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
     },
     "demand": {
       "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 190, "y2": 290}}}
-    },
-    "v_ref": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 780, "y2": 880}}}
     },
     "tau_cmd": {
       "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
@@ -57,16 +64,14 @@ metadata {
 end
 
 test component TestABSController
-  "Slip ramp from free rolling to deep braking slip"
-  slip = BlockComponents.Sources.Ramp(offset = 0.0, height = -0.15, duration = 0.3, start_time = 0.1)
+  "Wheel speed ramps down rapidly to represent incipient lock"
+  speed = BlockComponents.Sources.Ramp(offset = 80.0, height = -60.0, duration = 0.3, start_time = 0.1)
   demand = BlockComponents.Sources.Constant(k = 1000.0)
-  "Held well above the dropout so this case exercises slip control alone"
-  speed = BlockComponents.Sources.Constant(k = 20.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSController(kappa_target = 0.04, kp = 20.0)
+  controller = VehicleSystemsComponents.Vehicle.ABSController(decel_threshold = 80.0,
+    release_rate = 0.01, apply_rate = 0.01, omega0 = 80.0)
 relations
-  connect(slip.y, controller.kappa)
+  connect(speed.y, controller.omega)
   connect(demand.y, controller.demand)
-  connect(speed.y, controller.v_ref)
 end
 
 analysis ABSControllerTransient
@@ -75,20 +80,25 @@ analysis ABSControllerTransient
 relations
 end
 
-test component TestABSControllerDropout
-  "Speed ramping down through the dropout band while slip sits deep in lock"
-  speed = BlockComponents.Sources.Ramp(offset = 5.0, height = -5.0, duration = 1.0, start_time = 0.0)
-  slip = BlockComponents.Sources.Constant(k = -1.0)
+test component TestABSControllerRecovery
+  "Wheel speed falls rapidly and then recovers"
+  speed_down = BlockComponents.Sources.Ramp(offset = 80.0, height = -40.0,
+    duration = 0.2, start_time = 0.1)
+  speed_up = BlockComponents.Sources.Ramp(offset = 0.0, height = 30.0,
+    duration = 0.2, start_time = 0.4)
+  speed = BlockComponents.Math.Add()
   demand = BlockComponents.Sources.Constant(k = 1000.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSController(kappa_target = 0.04, kp = 50.0)
+  controller = VehicleSystemsComponents.Vehicle.ABSController(decel_threshold = 80.0,
+    release_rate = 0.02, apply_rate = 0.02, omega0 = 80.0)
 relations
-  connect(slip.y, controller.kappa)
+  connect(speed_down.y, speed.u1)
+  connect(speed_up.y, speed.u2)
+  connect(speed.y, controller.omega)
   connect(demand.y, controller.demand)
-  connect(speed.y, controller.v_ref)
 end
 
-analysis ABSControllerDropoutTransient
-  extends TransientAnalysis(stop = 1.0)
-  model = TestABSControllerDropout()
+analysis ABSControllerRecoveryTransient
+  extends TransientAnalysis(stop = 0.8)
+  model = TestABSControllerRecovery()
 relations
 end

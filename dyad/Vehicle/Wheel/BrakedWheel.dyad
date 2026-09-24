@@ -29,6 +29,9 @@ component BrakedWheel
   mu_scale = RealInput()
   "Contact longitudinal slip, negative during braking; no sensing dynamics applied"
   kappa = RealOutput()
+  inertia = RotationalComponents.Components.Inertia(J = J_w)
+  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0)
+  tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S)
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   "Rotating inertia; the default is four road wheels lumped together"
@@ -49,10 +52,6 @@ component BrakedWheel
   parameter mu_A::Real = 1.0
   "Sliding friction coefficient"
   parameter mu_S::Real = 0.7
-  inertia = RotationalComponents.Components.Inertia(J = J_w)
-  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0)
-  tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(radius = radius, F_z = F_z,
-    sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S)
 relations
   connect(spline, inertia.spline_a)
   connect(inertia.spline_b, brake.spline_a)
