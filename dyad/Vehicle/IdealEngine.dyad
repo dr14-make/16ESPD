@@ -15,13 +15,19 @@ component IdealEngine
   spline = Spline() {^spline}
   "Reaction support (engine mounts)"
   support = Spline() {^support}
-  # Order 3 (m = n, all-pass): phase error stays under 0.005 rad out to omega*theta = 2.5,
-  # so the delay's phase lag is faithful past the loop crossover and does not under-report
-  # the lag the way a first-order Pade does. At theta_e = 0.3 s (where Ziegler-Nichols is
-  # expected to need it) the fastest Pade pole is ~17 rad/s, only ~5x the lag pole, so it
-  # does not stiffen the plant. Sized for that value so the order need not change when
-  # theta_e rises.
-  delay = BlockComponents.Nonlinear.PadeDelay(n = 3, delayTime = theta_e) {^delay}
+  # Pade (n = 6, m = 5). The numerator order is deliberately below the denominator so the block
+  # has no direct feedthrough. An all-pass Pade (m = n) has H(inf) = (-1)^n, so a step of height H
+  # lands instantaneously on -H and then rings through the delay window; the limiter's y_min = 0
+  # downstream rectifies that ringing into a spurious pre-delay torque pulse, which shortens the
+  # effective dead time and makes it amplitude dependent. The dead time is the whole point of this
+  # block, so that artifact is not acceptable here.
+  #
+  # Order 6 rather than the minimum that removes feedthrough: matching to order n + m = 11 puts the
+  # phase error at 5e-8 rad at omega*theta = 2.5, against 0.0047 for a (3,3) all-pass and 0.00028
+  # for (4,3). Residual ringing inside the dead-time window falls to ~1.3% of T_max. The cost is
+  # a fastest pole of 31 rad/s against 17 for (3,3); with the lag pole at 3.3 rad/s the plant is
+  # still an order of magnitude away from stiff, and the six states are linear.
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = theta_e) {^delay}
   lag = BlockComponents.Continuous.FirstOrder(T = tau_e) {^lag}
   # y_min held at zero: the engine cannot deliver braking torque through this path.
   limiter = BlockComponents.Nonlinear.Limiter(y_max = T_max, y_min = 0) {^limiter}

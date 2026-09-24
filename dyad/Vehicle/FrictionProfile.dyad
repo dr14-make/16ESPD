@@ -6,9 +6,8 @@ part of the scenario interface because recovery after leaving the patch is the t
 """
 component FrictionProfile
   "Road-friction multiplier"
-  y = RealOutput()
-  pulse = BlockComponents.Sources.Pulse(amplitude = low, offset = 1.0,
-    start_time = start_time, duty_cycle = 1.0, period = duration)
+  y = RealOutput() {^y}
+  pulse = BlockComponents.Sources.Pulse(amplitude = low, offset = 1.0, start_time = start_time, duty_cycle = 1.0, period = duration) {^pulse}
   "Friction multiplier on the low-grip patch"
   parameter low::Real = 0.2
   "Time at which the patch begins"
@@ -16,7 +15,18 @@ component FrictionProfile
   "Duration of the low-grip patch"
   parameter duration::Time = 2.0
 relations
-  connect(pulse.y, y)
+  connect(pulse.y, y) {^id3}
+metadata {
+  "_links": {
+    "y": {
+      "Dyad": {"placement": {"diagram": {"x1": 970, "x2": 1070, "y1": 450, "y2": 550}}}
+    },
+    "pulse": {
+      "Dyad": {"placement": {"diagram": {"x1": 440, "x2": 540, "y1": 450, "y2": 550}}}
+    },
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end
 
 test component TestFrictionProfile

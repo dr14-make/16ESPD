@@ -16,7 +16,6 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Vehicle"
 end
 
 import BlockComponents
-import DyadControlSystems
 import DyadData
 import DyadInterface
 import ElectricalComponents
@@ -203,6 +202,7 @@ end
 
 include("ABSBrakeTest_definition.jl")
 include("ABSBrakeTransient_definition.jl")
+include("ABSControllerDropoutTransient_definition.jl")
 include("ABSControllerTransient_definition.jl")
 include("ABSController_definition.jl")
 include("BrakeActuatorTransient_definition.jl")
@@ -215,6 +215,7 @@ include("GradeProfile_definition.jl")
 include("IdealEngine_definition.jl")
 include("LockedBrakeTransient_definition.jl")
 include("SlipWheel1D_definition.jl")
+include("TestABSControllerDropout_definition.jl")
 include("TestABSController_definition.jl")
 include("TestBrakeActuator_definition.jl")
 include("TestCarPlant_definition.jl")

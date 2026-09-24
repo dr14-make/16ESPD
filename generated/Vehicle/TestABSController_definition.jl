@@ -57,6 +57,9 @@
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
+  # Subcomponent speed of type BlockComponents.Sources.Constant
+  speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), speed_overrides...))
   # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
   push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; kappa_target=0.04, kp=Float64(20.0), controller_overrides...))
@@ -74,6 +77,7 @@
   ### Equations
   push!(__eqs, connect(slip.y, controller.kappa))
   push!(__eqs, connect(demand.y, controller.demand))
+  push!(__eqs, connect(speed.y, controller.v_ref))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
