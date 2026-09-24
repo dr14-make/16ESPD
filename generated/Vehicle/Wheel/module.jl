@@ -3,18 +3,17 @@
 ### If you edit this code it is likely to get overwritten.
 ### Instead, update the Dyad source code and regenerate this file
 
-module Vehicle
+module Wheel
 
 using ..VehicleSystemsComponents
 using ..VehicleSystemsComponents: __build_overrides, __dyad_sym_union, __pop_subcomponent_overrides!, __dyad_isa_variant, __dyad_promoted_value_fits, @__dyad_switch
 
-if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "module.jl"))
-  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "module.jl"))
+if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "Wheel", "module.jl"))
+  include(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "dyad", "Vehicle", "Wheel", "module.jl"))
 end
 include("types.jl")
 include("definitions.jl")
 include("experiments.jl")
-include("Wheel/module.jl")
 include("precompilation.jl")
 
-end # module Vehicle
+end # module Wheel

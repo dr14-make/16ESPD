@@ -5,11 +5,11 @@
 
 
 __dyad_run_test_case!(
-  VehicleSystemsComponents.Vehicle.TestSlipWheel1D,
-  "low_friction for VehicleSystemsComponents.Vehicle.TestSlipWheel1D";
+  VehicleSystemsComponents.Vehicle.Wheel.TestSlipWheel1D,
+  "low_friction for VehicleSystemsComponents.Vehicle.Wheel.TestSlipWheel1D";
   case_name="low_friction",
   component_stem="TestSlipWheel1D",
-  module_path=String["Vehicle"],
+  module_path=String["Vehicle", "Wheel"],
   start=0e+0,
   stop=5e+0,
   abstol=1e-6,
@@ -34,11 +34,11 @@ __dyad_run_test_case!(
   ],
 )
 __dyad_run_test_case!(
-  VehicleSystemsComponents.Vehicle.TestSlipWheel1D,
-  "dry_road for VehicleSystemsComponents.Vehicle.TestSlipWheel1D";
+  VehicleSystemsComponents.Vehicle.Wheel.TestSlipWheel1D,
+  "dry_road for VehicleSystemsComponents.Vehicle.Wheel.TestSlipWheel1D";
   case_name="dry_road",
   component_stem="TestSlipWheel1D",
-  module_path=String["Vehicle"],
+  module_path=String["Vehicle", "Wheel"],
   start=0e+0,
   stop=5e+0,
   abstol=1e-6,

@@ -10,14 +10,11 @@
 Single-wheel-equivalent straight-line ABS braking test.
 
 The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
-when `abs_enabled` is one, or directly to the hydraulic actuator when it is zero.
+when `abs_enabled` is one, or directly to the wheel's brake when it is zero.
 
-The whole vehicle is lumped onto one equivalent wheel: `F_z` is the full vehicle weight and `J_w`
-is the four road wheels together, so `brake_demand` is the total of all four brakes. This is what
-makes the deceleration representative of a real stop. Loading the equivalent wheel with only half
-the weight, as a single-axle reading would, halves the friction ceiling and roughly doubles the
-stopping distance, because the whole vehicle mass is still being retarded. `SlipWheel1D` keeps a
-half-weight default because its own traction test models one driven axle; braking uses all four.
+The whole vehicle is lumped onto one equivalent `BrakedWheel`: `F_z` is the full vehicle weight
+and `J_w` is the four road wheels together, so `brake_demand` is the total of all four brakes.
+This is what makes the deceleration representative of a real stop.
 
 Load transfer is not modelled, so `F_z` is static. A real stop moves load forward and the axles
 reach their friction limits at different times; this lumped model reports the average.
@@ -129,15 +126,9 @@ reach their friction limits at different times; this lumped model reports the av
   # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
   vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
   push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
-  # Subcomponent brake of type VehicleSystemsComponents.Vehicle.BrakeActuator
-  brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.BrakeActuator(; tau_max=brake_demand, w0=w0, brake_overrides...))
-  # Subcomponent wheel_inertia of type RotationalComponents.Components.Inertia
-  wheel_inertia_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_inertia")
-  push!(__systems, @named wheel_inertia = RotationalComponents.Components.Inertia(; J=J_w, wheel_inertia_overrides...))
-  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.SlipWheel1D
+  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D(; radius=radius, F_z=m * 9.80665, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, wheel_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, body_overrides...))
@@ -151,10 +142,10 @@ reach their friction limits at different times; this lumped model reports the av
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, brake.tau_actual ~ 0.0)
+  push!(__initialization_eqs, wheel.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, slipfilter.x ~ 0.0)
-  push!(__initialization_eqs, wheel_inertia.phi ~ 0.0)
-  push!(__initialization_eqs, wheel_inertia.w ~ v0 / radius)
+  push!(__initialization_eqs, wheel.inertia.phi ~ 0.0)
+  push!(__initialization_eqs, wheel.inertia.w ~ v0 / radius)
   push!(__initialization_eqs, body.mass.s ~ 0.0)
   push!(__initialization_eqs, body.mass.v ~ v0)
 
@@ -162,15 +153,13 @@ reach their friction limits at different times; this lumped model reports the av
   __assertions = []
 
   ### Equations
-  push!(__eqs, slipfilter.u ~ wheel.kappa)
-  push!(__eqs, brake.tau_cmd ~ demand.y * (1.0 - abs_enabled) + controller.tau_cmd * abs_enabled)
+  push!(__eqs, wheel.tau_cmd ~ demand.y * (1.0 - abs_enabled) + controller.tau_cmd * abs_enabled)
   push!(__eqs, connect(demand.y, controller.demand))
+  push!(__eqs, connect(wheel.kappa, slipfilter.u))
   push!(__eqs, connect(slipfilter.y, controller.kappa))
   push!(__eqs, connect(vsensor.flange, body.flange))
   push!(__eqs, connect(vsensor.v, controller.v_ref))
-  push!(__eqs, connect(wheel_inertia.spline_b, brake.spline_a))
-  push!(__eqs, connect(brake.spline_b, wheel.spline))
-  push!(__eqs, connect(brake.support, fixed.spline))
+  push!(__eqs, connect(wheel.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange))
   push!(__eqs, connect(road.y, wheel.mu_scale))
   push!(__eqs, connect(flat.y, body.grade))

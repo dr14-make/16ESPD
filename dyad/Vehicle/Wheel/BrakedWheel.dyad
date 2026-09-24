@@ -1,0 +1,90 @@
+"""
+A braked road wheel: rotating inertia, in-line friction brake, and slip-dependent tire contact.
+
+The three pieces that always appear together in a braking model, wired in the order torque
+physically travels: driveline shaft -> inertia -> brake -> tire contact -> road. `spline` is the
+inboard end, free when nothing drives the wheel. `support` carries the brake reaction into the
+hub carrier. `flange` is the longitudinal connection to the vehicle body.
+
+`kappa` is the raw contact slip. It is published without sensing dynamics on purpose: a real
+controller reads wheel speed from a sensor and infers slip using a vehicle-speed estimate, and
+neither the sensor lag nor the estimator belongs inside the mechanical assembly. Put that lag
+between this output and the controller.
+
+Defaults describe the whole vehicle lumped onto one equivalent wheel — `J_w` is four road wheels
+and `F_z` is the full weight of a 1400 kg car — because that is the configuration a straight-line
+braking study needs. Loading the equivalent wheel with one axle's share while still retarding the
+whole vehicle mass halves the friction ceiling and roughly doubles the stopping distance.
+"""
+component BrakedWheel
+  "Inboard shaft; the driveline end, free if nothing drives the wheel"
+  spline = Spline()
+  "Brake reaction support (hub carrier)"
+  support = Spline()
+  "Longitudinal connection to the vehicle body"
+  flange = Flange()
+  "Requested brake torque"
+  tau_cmd = RealInput()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  "Contact longitudinal slip, negative during braking; no sensing dynamics applied"
+  kappa = RealOutput()
+  "Wheel rolling radius"
+  parameter radius::Length = 0.31
+  "Rotating inertia; the default is four road wheels lumped together"
+  parameter J_w::MomentOfInertia = 4.0
+  "Normal load; the default is the full weight of a 1400 kg vehicle"
+  parameter F_z::Force = 13729.31
+  "Maximum brake torque, total across the brakes represented"
+  parameter tau_max::Torque = 6000.0
+  "Hydraulic time constant"
+  parameter T_brake::Time = 0.03
+  "Brake regularisation speed"
+  parameter w0::AngularVelocity = 0.2
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.7
+  inertia = RotationalComponents.Components.Inertia(J = J_w)
+  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0)
+  tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(radius = radius, F_z = F_z,
+    sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S)
+relations
+  connect(spline, inertia.spline_a)
+  connect(inertia.spline_b, brake.spline_a)
+  connect(brake.spline_b, tire.spline)
+  connect(brake.support, support)
+  connect(tire.flange, flange)
+  connect(tau_cmd, brake.tau_cmd)
+  connect(mu_scale, tire.mu_scale)
+  kappa = tire.kappa
+end
+
+test component TestBrakedWheel
+  "Brake demand large enough to exceed the dry-road friction ceiling"
+  command = BlockComponents.Sources.Step(height = 6000.0, offset = 0.0, start_time = 0.5)
+  road = BlockComponents.Sources.Constant(k = 1.0)
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel()
+  body = TranslationalComponents.Components.Mass(m = 1400.0)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(command.y, wheel.tau_cmd)
+  connect(road.y, wheel.mu_scale)
+  connect(wheel.support, fixed.spline)
+  connect(wheel.flange, body.flange_a)
+  initial wheel.brake.tau_actual = 0.0
+  initial wheel.inertia.phi = 0.0
+  initial wheel.inertia.w = 25.0 / 0.31
+  initial body.s = 0.0
+  initial body.v = 25.0
+end
+
+analysis BrakedWheelTransient
+  extends TransientAnalysis(stop = 5.0)
+  model = TestBrakedWheel()
+relations
+end

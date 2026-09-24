@@ -5,18 +5,19 @@ Positive shaft rotation drives positive vehicle motion. The friction law uses th
 symmetric triple-S shape as `MultibodyComponents.SlipWheelJoint`: it rises to `mu_A` at
 `sAdhesion`, falls to `mu_S` at `sSlide`, and remains at the sliding level beyond it. `F_z` is
 the normal load carried by the modeled driven axle; approximately half the vehicle weight is a
-representative default for a single driven axle.
+representative default for a single driven axle. A braking model loads all four wheels, so
+`BrakedWheel` overrides this with the full vehicle weight.
 
 The curve is continuously differentiable but has a discontinuous second derivative at its
 transitions. Explicit Runge-Kutta solvers generally handle it better than BDF methods.
 """
 component SlipWheel1D
   "Wheel shaft"
-  spline = Spline() {^spline}
+  spline = Spline()
   "Longitudinal connection to the vehicle body"
-  flange = Flange() {^flange}
+  flange = Flange()
   "Road-friction multiplier"
-  mu_scale = RealInput() {^mu_scale}
+  mu_scale = RealInput()
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   "Normal load carried by the driven axle"
@@ -47,34 +48,29 @@ relations
   kappa = (omega * radius - v) / max(abs(v), v_eps)
   # This is the triple-S interpolation used by the multibody wheel, written locally so the
   # lightweight 1D lecture model does not acquire a multibody dependency.
-  mu = mu_scale * ifelse(kappa > sAdhesion, ifelse(kappa >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))), ifelse(kappa < -sAdhesion, ifelse(kappa <= -sSlide, -mu_S, -(mu_A + mu_S) / 2 - (mu_S - mu_A) / 2 * (-0.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))), mu_A * (-0.5 * (kappa / sAdhesion) ^ 3 + 1.5 * kappa / sAdhesion)))
+  mu = mu_scale * ifelse(kappa > sAdhesion,
+    ifelse(kappa >= sSlide, mu_S,
+      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 *
+        (-0.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 +
+          1.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))),
+    ifelse(kappa < -sAdhesion,
+      ifelse(kappa <= -sSlide, -mu_S,
+        -(mu_A + mu_S) / 2 - (mu_S - mu_A) / 2 *
+          (-0.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 +
+            1.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))),
+      mu_A * (-0.5 * (kappa / sAdhesion) ^ 3 + 1.5 * kappa / sAdhesion)))
   F_x = mu * F_z
   # Flow is positive into this component. The tire therefore reports negative flange force while
   # applying positive traction to the connected body; the shaft sees the matching resisting torque.
   flange.f = -F_x
   0 = spline.tau + radius * flange.f
-metadata {
-  "_links": {
-    "spline": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
-    },
-    "flange": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 440, "y2": 540}}}
-    },
-    "mu_scale": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 460, "x2": 560, "y1": -50, "y2": 50, "rot": 90}}
-      }
-    }
-  }
-}
 end
 
 test component TestSlipWheel1D
   "Full engine torque after the 4:1 final drive"
   torque = RotationalComponents.Sources.ConstantTorque(tau_constant = 600.0)
   inertia = RotationalComponents.Components.Inertia(J = 1.0)
-  wheel = VehicleSystemsComponents.Vehicle.SlipWheel1D()
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D()
   mass = TranslationalComponents.Components.Mass(m = 1400.0)
   mu_src = BlockComponents.Sources.Constant(k = 0.2)
   fixed_r = RotationalComponents.Components.Fixed()
@@ -103,7 +99,7 @@ metadata {
       },
       "dry_road": {
         "stop": 5,
-        "params": {"mu_src.k": 1},
+        "params": {"mu_src.k": 1.0},
         "atol": {"wheel.kappa": 0.02, "mass.v": 0.02},
         "expect": {
           "initial": {"wheel.kappa": 0, "mass.v": 0},

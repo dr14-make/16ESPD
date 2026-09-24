@@ -14,13 +14,13 @@ ignored, so the dropout works in either travel direction.
 """
 component ABSController
   "Longitudinal slip; negative during braking"
-  kappa = RealInput()
+  kappa = RealInput() {^kappa}
   "Driver-requested brake torque"
-  demand = RealInput()
+  demand = RealInput() {^demand}
   "Vehicle reference speed used only for the low-speed dropout"
-  v_ref = RealInput()
+  v_ref = RealInput() {^v_ref}
   "Modulated brake-torque request"
-  tau_cmd = RealOutput()
+  tau_cmd = RealOutput() {^tau_cmd}
   "Magnitude of target braking slip"
   parameter kappa_target::Real = 0.04
   "Brake-release gain per unit slip"
@@ -38,6 +38,22 @@ relations
   modulation = min(max(1.0 + kp * (kappa + kappa_target), 0.0), 1.0)
   # authority = 1 gives pure slip control; authority = 0 gives the raw driver demand.
   tau_cmd = max(demand, 0.0) * (authority * modulation + (1.0 - authority))
+metadata {
+  "_links": {
+    "kappa": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "demand": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 190, "y2": 290}}}
+    },
+    "v_ref": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 780, "y2": 880}}}
+    },
+    "tau_cmd": {
+      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
 end
 
 test component TestABSController
