@@ -57,9 +57,9 @@
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
-  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSController
+  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.LegacyABSController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; decel_threshold=Float64(80.0), release_rate=0.01, apply_rate=0.01, omega0=Float64(80.0), controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.LegacyABSController(; decel_threshold=Float64(80.0), release_rate=0.01, apply_rate=0.01, omega0=Float64(80.0), controller_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

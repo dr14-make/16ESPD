@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct ABSBrakeTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :ABSBrakeTransient
+@kwdef mutable struct ABSLockedWheelRecoveryTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :ABSLockedWheelRecoveryTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 6.0
+  var"stop"::Float64 = 0.5
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -25,9 +25,6 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  var"road_mu"::Float64 = 1.0
-  var"a_ref"::Float64 = 10.0
-  var"k_inc_slow"::Float64 = 8000.0
   # Single-wheel-equivalent straight-line ABS braking test.
   # 
   # The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
@@ -42,18 +39,17 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.ABSBrakeTest(; name=:ABSBrakeTest)
 end
 
-function DyadInterface.run_analysis(spec::ABSBrakeTransientSpec)
+function DyadInterface.run_analysis(spec::ABSLockedWheelRecoveryTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
+  push!(overrides, no_namespace_model.brake_time => 0.0)
   push!(overrides, no_namespace_model.abs_enabled => 1.0)
-  push!(overrides, no_namespace_model.a_ref => spec.var"a_ref")
-  push!(overrides, no_namespace_model.k_inc_slow => spec.var"k_inc_slow")
+  push!(overrides, no_namespace_model.wheel_w0 => 0.0)
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )
   run_analysis(base_spec)
 end
 
-ABSBrakeTransient(;kwargs...) = run_analysis(ABSBrakeTransientSpec(;kwargs...))
-export ABSBrakeTransient, ABSBrakeTransientSpec
+ABSLockedWheelRecoveryTransient(;kwargs...) = run_analysis(ABSLockedWheelRecoveryTransientSpec(;kwargs...))
+export ABSLockedWheelRecoveryTransient, ABSLockedWheelRecoveryTransientSpec

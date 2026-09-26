@@ -5,14 +5,14 @@
 
 
 @doc Markdown.doc"""
-   TestABSControllerRecovery(; name)
+   TestABSModulatorLocked(; name)
 """
-@component function TestABSControllerRecovery(; name = nothing, kwargs...)
+@component function TestABSModulatorLocked(; name = nothing, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = TestABSControllerRecovery()
+    @named model = TestABSModulatorLocked()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -51,21 +51,21 @@
   __constants = Any[]
 
   ### Components
-  # Subcomponent speed_down of type BlockComponents.Sources.Ramp
-  speed_down_overrides = __pop_subcomponent_overrides!(__overrides, "speed_down")
-  push!(__systems, @named speed_down = BlockComponents.Sources.Ramp(; offset=Float64(80.0), height=-40.0, duration=0.2, start_time=0.1, speed_down_overrides...))
-  # Subcomponent speed_up of type BlockComponents.Sources.Ramp
-  speed_up_overrides = __pop_subcomponent_overrides!(__overrides, "speed_up")
-  push!(__systems, @named speed_up = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=Float64(30.0), duration=0.2, start_time=0.4, speed_up_overrides...))
-  # Subcomponent speed of type BlockComponents.Math.Add
-  speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Math.Add(; speed_overrides...))
+  # Subcomponent wheel_speed of type BlockComponents.Sources.Constant
+  wheel_speed_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_speed")
+  push!(__systems, @named wheel_speed = BlockComponents.Sources.Constant(; k=Float64(0.0), wheel_speed_overrides...))
+  # Subcomponent wheel_accel of type BlockComponents.Sources.Constant
+  wheel_accel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_accel")
+  push!(__systems, @named wheel_accel = BlockComponents.Sources.Constant(; k=Float64(0.0), wheel_accel_overrides...))
+  # Subcomponent reference_speed of type BlockComponents.Sources.Constant
+  reference_speed_overrides = __pop_subcomponent_overrides!(__overrides, "reference_speed")
+  push!(__systems, @named reference_speed = BlockComponents.Sources.Constant(; k=Float64(25.0), reference_speed_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
-  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.LegacyABSController
-  controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.LegacyABSController(; decel_threshold=Float64(80.0), release_rate=0.02, apply_rate=0.02, omega0=Float64(80.0), controller_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(6000.0), demand_overrides...))
+  # Subcomponent modulator of type VehicleSystemsComponents.Vehicle.ABSModulator
+  modulator_overrides = __pop_subcomponent_overrides!(__overrides, "modulator")
+  push!(__systems, @named modulator = VehicleSystemsComponents.Vehicle.ABSModulator(; modulator_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -78,12 +78,12 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(speed_down.y, speed.u1))
-  push!(__eqs, connect(speed_up.y, speed.u2))
-  push!(__eqs, connect(speed.y, controller.omega))
-  push!(__eqs, connect(demand.y, controller.demand))
+  push!(__eqs, connect(wheel_speed.y, modulator.omega))
+  push!(__eqs, connect(wheel_accel.y, modulator.a_w))
+  push!(__eqs, connect(reference_speed.y, modulator.v_ref))
+  push!(__eqs, connect(demand.y, modulator.demand))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export TestABSControllerRecovery
+export TestABSModulatorLocked

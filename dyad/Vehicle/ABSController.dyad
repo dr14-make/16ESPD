@@ -12,7 +12,7 @@ deceleration returns below the threshold. With wheel speed as the sole measureme
 standstill cannot be distinguished from a locked wheel, so no wheel-speed dropout is applied inside
 this controller.
 """
-component ABSController
+component LegacyABSController
   "Measured wheel angular velocity"
   omega = RealInput() {^omega}
   "Driver-requested brake torque"
@@ -67,7 +67,7 @@ test component TestABSController
   "Wheel speed ramps down rapidly to represent incipient lock"
   speed = BlockComponents.Sources.Ramp(offset = 80.0, height = -60.0, duration = 0.3, start_time = 0.1)
   demand = BlockComponents.Sources.Constant(k = 1000.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSController(decel_threshold = 80.0,
+  controller = VehicleSystemsComponents.Vehicle.LegacyABSController(decel_threshold = 80.0,
     release_rate = 0.01, apply_rate = 0.01, omega0 = 80.0)
 relations
   connect(speed.y, controller.omega)
@@ -88,7 +88,7 @@ test component TestABSControllerRecovery
     duration = 0.2, start_time = 0.4)
   speed = BlockComponents.Math.Add()
   demand = BlockComponents.Sources.Constant(k = 1000.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSController(decel_threshold = 80.0,
+  controller = VehicleSystemsComponents.Vehicle.LegacyABSController(decel_threshold = 80.0,
     release_rate = 0.02, apply_rate = 0.02, omega0 = 80.0)
 relations
   connect(speed_down.y, speed.u1)
@@ -101,4 +101,232 @@ analysis ABSControllerRecoveryTransient
   extends TransientAnalysis(stop = 0.8)
   model = TestABSControllerRecovery()
 relations
+end
+
+"""Filtered wheel-surface acceleration estimator from measured angular velocity."""
+component WheelAccelEstimator
+  omega = RealInput()
+  a_w = RealOutput()
+  parameter radius::Length = 0.31
+  parameter T_filter::Time(min = eps(Float64)) = 0.005
+  parameter omega0::AngularVelocity = 0.0
+  variable omega_filtered::AngularVelocity
+relations
+  initial omega_filtered = omega0
+  der(omega_filtered) = (omega - omega_filtered) / T_filter
+  a_w = radius * (omega - omega_filtered) / T_filter
+end
+
+test component TestWheelAccelEstimator
+  speed = BlockComponents.Sources.Ramp(offset = 80.0, height = -40.0,
+    duration = 0.2, start_time = 0.1)
+  estimator = VehicleSystemsComponents.Vehicle.WheelAccelEstimator(radius = 0.31,
+    T_filter = 0.005, omega0 = 80.0)
+relations
+  connect(speed.y, estimator.omega)
+end
+
+analysis WheelAccelEstimatorTransient
+  extends TransientAnalysis(stop = 0.4)
+  model = TestWheelAccelEstimator()
+relations
+end
+
+
+"""
+Vehicle reference-speed estimator using wheel speed alone.
+
+When the wheel runs below the estimate, the estimate falls only at `a_ref`, allowing a rapid wheel
+lock to appear as estimated slip. With one wheel this underestimates slip if `a_ref` is too large
+for the available road friction.
+"""
+component ReferenceSpeedWheelOnly
+  omega = RealInput()
+  v_ref = RealOutput()
+  parameter radius::Length = 0.31
+  parameter a_ref::Acceleration = 10.0
+  parameter T_up::Time(min = eps(Float64)) = 0.01
+  parameter v_ref0::Velocity = 0.0
+  variable v_w::Velocity
+relations
+  initial v_ref = v_ref0
+  v_w = omega * radius
+  der(v_ref) = ifelse(v_w > v_ref, (v_w - v_ref) / T_up,
+    ifelse(v_ref > 0.0, -a_ref, 0.0))
+end
+
+test component TestReferenceSpeedWheelOnly
+  "Wheel surface speed collapses from 25 m/s to zero in 0.1 s"
+  speed = BlockComponents.Sources.Ramp(offset = 25.0 / 0.31, height = -25.0 / 0.31,
+    duration = 0.1, start_time = 0.1)
+  estimator = VehicleSystemsComponents.Vehicle.ReferenceSpeedWheelOnly(radius = 0.31,
+    a_ref = 10.0, v_ref0 = 25.0)
+relations
+  connect(speed.y, estimator.omega)
+end
+
+analysis ReferenceSpeedWheelOnlyTransient
+  extends TransientAnalysis(stop = 0.5)
+  model = TestReferenceSpeedWheelOnly()
+relations
+end
+
+
+"""
+ABS increase/hold/decrease valve logic with an integrated brake-torque request.
+
+`phase` is -1 while releasing, 0 while holding, 1 while applying, and 2 while ABS is off.
+Continuous 1 ms latch states retain the active and recovery phases without discrete events.
+"""
+component ABSModulator
+  a_w = RealInput()
+  v_ref = RealInput()
+  omega = RealInput()
+  demand = RealInput()
+  tau_cmd = RealOutput()
+  parameter radius::Length = 0.31
+  parameter a_minus::Acceleration = 16.0
+  parameter a_plus::Acceleration = 5.0
+  parameter lambda_1::Real = 0.06
+  parameter lambda_lock::Real = 0.20
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 40000.0
+  parameter k_inc_slow::Real = 8000.0
+  parameter v_min::Velocity = 1.5
+  parameter v_eps::Velocity(min = eps(Float64)) = 0.5
+  parameter T_track::Time(min = eps(Float64)) = 0.01
+  parameter T_latch::Time(min = eps(Float64)) = 0.001
+  variable lambda_hat::Real
+  variable phase::Real
+  variable p::Torque
+  variable active_latch::Real
+  variable recovering_latch::Real
+  variable active_target::Real
+  variable recovering_target::Real
+  variable requested_rate::Real
+  variable pressure_rate::Real
+relations
+  initial p = 0.0
+  initial active_latch = 0.0
+  initial recovering_latch = 0.0
+  lambda_hat = (omega * radius - v_ref) / max(v_ref, v_eps)
+
+  active_target = ifelse(v_ref < v_min or demand <= 0.0, 0.0,
+    ifelse(lambda_hat < -lambda_lock or (a_w < -a_minus and lambda_hat < -lambda_1),
+      1.0, ifelse(active_latch > 0.5, 1.0, 0.0)))
+  recovering_target = ifelse(v_ref < v_min or demand <= 0.0, 0.0,
+    ifelse(lambda_hat < -lambda_lock or (a_w < -a_minus and lambda_hat < -lambda_1),
+      1.0, ifelse(recovering_latch > 0.5 and lambda_hat > -lambda_1 and a_w < a_plus,
+        0.0, ifelse(recovering_latch > 0.5, 1.0, 0.0))))
+  der(active_latch) = (active_target - active_latch) / T_latch
+  der(recovering_latch) = (recovering_target - recovering_latch) / T_latch
+
+  phase = ifelse(v_ref < v_min or demand <= 0.0, 2.0,
+    ifelse(lambda_hat < -lambda_lock or (a_w < -a_minus and lambda_hat < -lambda_1), -1.0,
+      ifelse(a_w < -a_minus, 0.0,
+        ifelse(recovering_latch > 0.5, 0.0,
+          ifelse(active_latch > 0.5, 1.0, 1.0)))))
+  requested_rate = ifelse(phase < -0.5, -k_dec,
+    ifelse(phase < 0.5, 0.0,
+      ifelse(phase < 1.5, ifelse(active_latch > 0.5, k_inc_slow, k_inc_fast), 0.0)))
+  pressure_rate = ifelse(v_ref < v_min or demand <= 0.0, (max(demand, 0.0) - p) / T_track,
+    ifelse(p > max(demand, 0.0), (max(demand, 0.0) - p) / T_track,
+      ifelse(p <= 0.0 and requested_rate < 0.0, 0.0,
+        ifelse(p >= max(demand, 0.0) and requested_rate > 0.0, 0.0, requested_rate))))
+  der(p) = pressure_rate
+  tau_cmd = min(max(p, 0.0), max(demand, 0.0))
+end
+
+test component TestABSModulatorLocked
+  "Already-locked wheel: zero wheel acceleration but large estimated slip"
+  wheel_speed = BlockComponents.Sources.Constant(k = 0.0)
+  wheel_accel = BlockComponents.Sources.Constant(k = 0.0)
+  reference_speed = BlockComponents.Sources.Constant(k = 25.0)
+  demand = BlockComponents.Sources.Constant(k = 6000.0)
+  modulator = VehicleSystemsComponents.Vehicle.ABSModulator()
+relations
+  connect(wheel_speed.y, modulator.omega)
+  connect(wheel_accel.y, modulator.a_w)
+  connect(reference_speed.y, modulator.v_ref)
+  connect(demand.y, modulator.demand)
+end
+
+analysis ABSModulatorLockedTransient
+  extends TransientAnalysis(stop = 0.1)
+  model = TestABSModulatorLocked()
+relations
+end
+
+
+"""Wheel-speed-only ABS controller with reference-speed and wheel-acceleration estimators."""
+component ABSControllerWheelOnly
+  omega = RealInput()
+  demand = RealInput()
+  tau_cmd = RealOutput()
+  parameter radius::Length = 0.31
+  parameter a_ref::Acceleration = 10.0
+  parameter T_filter::Time(min = eps(Float64)) = 0.005
+  parameter T_up::Time(min = eps(Float64)) = 0.01
+  parameter omega0::AngularVelocity = 0.0
+  parameter v_ref0::Velocity = 0.0
+  parameter a_minus::Acceleration = 16.0
+  parameter a_plus::Acceleration = 5.0
+  parameter lambda_1::Real = 0.06
+  parameter lambda_lock::Real = 0.20
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 40000.0
+  parameter k_inc_slow::Real = 8000.0
+  parameter v_min::Velocity = 1.5
+  parameter v_eps::Velocity(min = eps(Float64)) = 0.5
+  parameter T_track::Time(min = eps(Float64)) = 0.01
+  variable a_w::Acceleration
+  variable v_ref::Velocity
+  variable lambda_hat::Real
+  variable phase::Real
+  variable p::Torque
+  accel = VehicleSystemsComponents.Vehicle.WheelAccelEstimator(radius = radius,
+    T_filter = T_filter, omega0 = omega0)
+  reference = VehicleSystemsComponents.Vehicle.ReferenceSpeedWheelOnly(radius = radius,
+    a_ref = a_ref, T_up = T_up, v_ref0 = v_ref0)
+  modulator = VehicleSystemsComponents.Vehicle.ABSModulator(radius = radius,
+    a_minus = a_minus, a_plus = a_plus, lambda_1 = lambda_1, lambda_lock = lambda_lock,
+    k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min,
+    v_eps = v_eps, T_track = T_track)
+relations
+  connect(omega, accel.omega)
+  connect(omega, reference.omega)
+  connect(omega, modulator.omega)
+  connect(accel.a_w, modulator.a_w)
+  connect(reference.v_ref, modulator.v_ref)
+  connect(demand, modulator.demand)
+  connect(modulator.tau_cmd, tau_cmd)
+  a_w = accel.a_w
+  v_ref = reference.v_ref
+  lambda_hat = modulator.lambda_hat
+  phase = modulator.phase
+  p = modulator.p
+end
+
+test component TestABSControllerWheelOnly
+  "Rapid wheel-speed collapse under full brake demand"
+  speed = BlockComponents.Sources.Ramp(offset = 25.0 / 0.31, height = -25.0 / 0.31,
+    duration = 0.1, start_time = 0.1)
+  demand = BlockComponents.Sources.Step(height = 6000.0, offset = 0.0, start_time = 0.05)
+  controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(
+    omega0 = 25.0 / 0.31, v_ref0 = 25.0)
+relations
+  connect(speed.y, controller.omega)
+  connect(demand.y, controller.demand)
+end
+
+analysis ABSControllerWheelOnlyTransient
+  extends TransientAnalysis(stop = 0.5)
+  model = TestABSControllerWheelOnly()
+relations
+end
+
+
+"""Default ABS controller: wheel-speed-only estimator and valve modulator."""
+component ABSController
+  extends VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly
 end

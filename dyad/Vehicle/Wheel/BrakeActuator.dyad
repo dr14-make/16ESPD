@@ -25,7 +25,7 @@ at zero speed, this is the appropriate fidelity.
 component BrakeActuator
   extends RotationalComponents.Interfaces.PartialElementaryTwoSplinesAndSupport
   "Requested brake torque"
-  tau_cmd = RealInput()
+  tau_cmd = RealInput() {^tau_cmd}
   "Hydraulic time constant"
   parameter T::Time = 0.03
   "Maximum brake torque"
@@ -50,6 +50,15 @@ relations
   # Torque entering from both splines is what the friction interface absorbs; the base class
   # passes the negated sum out through the support.
   spline_a.tau + spline_b.tau = tau_friction
+metadata {
+  "_links": {
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 90}}
+      }
+    }
+  }
+}
 end
 
 test component TestBrakeActuator

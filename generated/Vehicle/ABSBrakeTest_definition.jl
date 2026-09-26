@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSBrakeTest(; name, v0, brake_demand, brake_time, abs_enabled, road_mu, m, radius, J_w, w0, T_meas)
+   ABSBrakeTest(; name, v0, brake_demand, brake_time, abs_enabled, road_mu, m, radius, J_w, w0, T_meas, a_ref, k_inc_slow, wheel_w0)
 
 Single-wheel-equivalent straight-line ABS braking test.
 
@@ -33,8 +33,11 @@ reach their friction limits at different times; this lumped model reports the av
 | `J_w`         | Lumped inertia of the four road wheels                         | kg.m2  |   4.0 |
 | `w0`         | Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep                         | rad/s  |   0.2 |
 | `T_meas`         | Wheel-speed differentiator filter time constant                         | s  |   0.005 |
+| `a_ref`         | Maximum fall rate of the wheel-only vehicle-speed estimate                         | m/s2  |   10.0 |
+| `k_inc_slow`         | ABS pressure increase rate after its first release cycle                         | --  |   8000.0 |
+| `wheel_w0`         | Initial wheel angular speed; set to zero for the locked-wheel recovery test                         | rad/s  |   v0 / radius |
 """
-@component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, abs_enabled=Float64(1.0), road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, T_meas=0.005, kwargs...)
+@component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, abs_enabled=Float64(1.0), road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, T_meas=0.005, a_ref=Float64(10.0), k_inc_slow=Float64(8000.0), wheel_w0=v0 / radius, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -95,6 +98,15 @@ reach their friction limits at different times; this lumped model reports the av
   __local__T_meas = T_meas
   append!(__params, @parameters (T_meas::Real), [description = "Wheel-speed differentiator filter time constant"])
   __initial_conditions[T_meas] = __local__T_meas
+  __local__a_ref = a_ref
+  append!(__params, @parameters (a_ref::Real), [description = "Maximum fall rate of the wheel-only vehicle-speed estimate"])
+  __initial_conditions[a_ref] = __local__a_ref
+  __local__k_inc_slow = k_inc_slow
+  append!(__params, @parameters (k_inc_slow::Real), [description = "ABS pressure increase rate after its first release cycle"])
+  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __local__wheel_w0 = wheel_w0
+  append!(__params, @parameters (wheel_w0::Real), [description = "Initial wheel angular speed; set to zero for the locked-wheel recovery test"])
+  __initial_conditions[wheel_w0] = __local__wheel_w0
 
   ### Final Parameters (assignments)
 
@@ -117,9 +129,9 @@ reach their friction limits at different times; this lumped model reports the av
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), flat_overrides...))
-  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSController
+  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSController(; T_filter=T_meas, omega0=v0 / radius, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(; radius=radius, a_ref=a_ref, T_filter=T_meas, omega0=wheel_w0, v_ref0=v0, k_inc_slow=k_inc_slow, controller_overrides...))
   # Subcomponent wsensor of type RotationalComponents.Sensors.VelocitySensor
   wsensor_overrides = __pop_subcomponent_overrides!(__overrides, "wsensor")
   push!(__systems, @named wsensor = RotationalComponents.Sensors.VelocitySensor(; wsensor_overrides...))
@@ -141,7 +153,7 @@ reach their friction limits at different times; this lumped model reports the av
   ### Initialization Equations
   push!(__initialization_eqs, wheel.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, wheel.inertia.phi ~ 0.0)
-  push!(__initialization_eqs, wheel.inertia.w ~ v0 / radius)
+  push!(__initialization_eqs, wheel.inertia.w ~ wheel_w0)
   push!(__initialization_eqs, body.mass.s ~ 0.0)
   push!(__initialization_eqs, body.mass.v ~ v0)
 

@@ -18,20 +18,20 @@ whole vehicle mass halves the friction ceiling and roughly doubles the stopping 
 """
 component BrakedWheel
   "Inboard shaft; the driveline end, free if nothing drives the wheel"
-  spline = Spline()
+  spline = Spline() {^spline}
   "Brake reaction support (hub carrier)"
-  support = Spline()
+  support = Spline() {^support}
   "Longitudinal connection to the vehicle body"
-  flange = Flange()
+  flange = Flange() {^flange}
   "Requested brake torque"
-  tau_cmd = RealInput()
+  tau_cmd = RealInput() {^tau_cmd}
   "Road-friction multiplier"
-  mu_scale = RealInput()
+  mu_scale = RealInput() {^mu_scale}
   "Contact longitudinal slip, negative during braking; no sensing dynamics applied"
-  kappa = RealOutput()
-  inertia = RotationalComponents.Components.Inertia(J = J_w)
-  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0)
-  tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S)
+  kappa = RealOutput() {^kappa}
+  inertia = RotationalComponents.Components.Inertia(J = J_w) {^inertia}
+  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(tau_max = tau_max, T = T_brake, w0 = w0) {^brake}
+  tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {^tire}
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   "Rotating inertia; the default is four road wheels lumped together"
@@ -53,14 +53,65 @@ component BrakedWheel
   "Sliding friction coefficient"
   parameter mu_S::Real = 0.7
 relations
-  connect(spline, inertia.spline_a)
-  connect(inertia.spline_b, brake.spline_a)
-  connect(brake.spline_b, tire.spline)
-  connect(brake.support, support)
-  connect(tire.flange, flange)
-  connect(tau_cmd, brake.tau_cmd)
-  connect(mu_scale, tire.mu_scale)
+  connect(spline, inertia.spline_a) {^id10}
+  connect(inertia.spline_b, brake.spline_a) {^id11}
+  connect(brake.spline_b, tire.spline) {^id12}
+  connect(brake.support, support) {^id13}
+  connect(tire.flange, flange) {^id14}
+  connect(tau_cmd, brake.tau_cmd) {^id15}
+  connect(mu_scale, tire.mu_scale) {^id16}
   kappa = tire.kappa
+metadata {
+  "_links": {
+    "spline": {
+      "Dyad": {"placement": {"diagram": {"x1": -80, "x2": 20, "y1": 450, "y2": 550}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}
+    },
+    "flange": {
+      "Dyad": {"placement": {"diagram": {"x1": 940, "x2": 1040, "y1": 450, "y2": 550}}}
+    },
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 90}}
+      }
+    },
+    "mu_scale": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 720, "x2": 820, "y1": 950, "y2": 1050, "rot": 270}}
+      }
+    },
+    "kappa": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
+    "inertia": {
+      "Dyad": {"placement": {"diagram": {"x1": 210, "x2": 310, "y1": 450, "y2": 550}}}
+    },
+    "brake": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+    },
+    "tire": {
+      "Dyad": {"placement": {"diagram": {"x1": 630, "x2": 730, "y1": 550, "y2": 450}}}
+    },
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id16": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [{"x": 770, "y": 960}, {"x": 680, "y": 960}, {"x": 680, "y": 550}],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    }
+  }
+}
 end
 
 test component TestBrakedWheel

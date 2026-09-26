@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   ABSController(; name, radius, a_ref, T_filter, T_up, omega0, v_ref0, a_minus, a_plus, lambda_1, lambda_lock, k_dec, k_inc_fast, k_inc_slow, v_min, v_eps, T_track)
+   ABSControllerWheelOnly(; name, radius, a_ref, T_filter, T_up, omega0, v_ref0, a_minus, a_plus, lambda_1, lambda_lock, k_dec, k_inc_fast, k_inc_slow, v_min, v_eps, T_track)
 
-Default ABS controller: wheel-speed-only estimator and valve modulator.
+Wheel-speed-only ABS controller with reference-speed and wheel-acceleration estimators.
 
 ## Parameters:
 
@@ -46,12 +46,12 @@ Default ABS controller: wheel-speed-only estimator and valve modulator.
 | `phase`         |                          | --  |
 | `p`         |                          | N.m  |
 """
-@component function ABSController(; name = nothing, radius=0.31, a_ref=Float64(10.0), T_filter=0.005, T_up=0.01, omega0=Float64(0.0), v_ref0=Float64(0.0), a_minus=Float64(16.0), a_plus=Float64(5.0), lambda_1=0.06, lambda_lock=0.2, k_dec=Float64(40000.0), k_inc_fast=Float64(40000.0), k_inc_slow=Float64(8000.0), v_min=1.5, v_eps=0.5, T_track=0.01, kwargs...)
+@component function ABSControllerWheelOnly(; name = nothing, radius=0.31, a_ref=Float64(10.0), T_filter=0.005, T_up=0.01, omega0=Float64(0.0), v_ref0=Float64(0.0), a_minus=Float64(16.0), a_plus=Float64(5.0), lambda_1=0.06, lambda_lock=0.2, k_dec=Float64(40000.0), k_inc_fast=Float64(40000.0), k_inc_slow=Float64(8000.0), v_min=1.5, v_eps=0.5, T_track=0.01, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = ABSController()
+    @named model = ABSControllerWheelOnly()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -203,4 +203,4 @@ Default ABS controller: wheel-speed-only estimator and valve modulator.
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export ABSController
+export ABSControllerWheelOnly

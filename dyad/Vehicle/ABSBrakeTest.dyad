@@ -32,11 +32,18 @@ component ABSBrakeTest
   parameter w0::AngularVelocity = 0.2
   "Wheel-speed differentiator filter time constant"
   parameter T_meas::Time = 0.005
+  "Maximum fall rate of the wheel-only vehicle-speed estimate"
+  parameter a_ref::Acceleration = 10.0
+  "ABS pressure increase rate after its first release cycle"
+  parameter k_inc_slow::Real = 8000.0
+  "Initial wheel angular speed; set to zero for the locked-wheel recovery test"
+  parameter wheel_w0::AngularVelocity = v0 / radius
   demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
   road = BlockComponents.Sources.Constant(k = road_mu)
   flat = BlockComponents.Sources.Constant(k = 0.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSController(T_filter = T_meas,
-    omega0 = v0 / radius)
+  controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(radius = radius,
+    a_ref = a_ref, T_filter = T_meas, omega0 = wheel_w0, v_ref0 = v0,
+    k_inc_slow = k_inc_slow)
   "Ideal wheel-speed sensor mounted on the wheel spline"
   wsensor = RotationalComponents.Sensors.VelocitySensor()
   wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
@@ -55,7 +62,7 @@ relations
   connect(flat.y, body.grade)
   initial wheel.brake.tau_actual = 0.0
   initial wheel.inertia.phi = 0.0
-  initial wheel.inertia.w = v0 / radius
+  initial wheel.inertia.w = wheel_w0
   initial body.mass.s = 0.0
   initial body.mass.v = v0
 end
@@ -63,7 +70,10 @@ end
 analysis ABSBrakeTransient
   extends TransientAnalysis(stop = 6.0)
   parameter road_mu::Real = 1.0
-  model = ABSBrakeTest(road_mu = road_mu, abs_enabled = 1.0)
+  parameter a_ref::Acceleration = 10.0
+  parameter k_inc_slow::Real = 8000.0
+  model = ABSBrakeTest(road_mu = road_mu, abs_enabled = 1.0, a_ref = a_ref,
+    k_inc_slow = k_inc_slow)
 relations
 end
 
@@ -71,5 +81,12 @@ analysis LockedBrakeTransient
   extends TransientAnalysis(stop = 6.0)
   parameter road_mu::Real = 1.0
   model = ABSBrakeTest(road_mu = road_mu, abs_enabled = 0.0)
+relations
+end
+
+
+analysis ABSLockedWheelRecoveryTransient
+  extends TransientAnalysis(stop = 0.5)
+  model = ABSBrakeTest(brake_time = 0.0, abs_enabled = 1.0, wheel_w0 = 0.0)
 relations
 end
