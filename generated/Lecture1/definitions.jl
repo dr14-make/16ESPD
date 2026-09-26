@@ -19,6 +19,7 @@ import BlockComponents
 import DyadData
 import DyadInterface
 import ElectricalComponents
+import HydraulicComponents
 import RotationalComponents
 import ThermalComponents
 import TranslationalComponents

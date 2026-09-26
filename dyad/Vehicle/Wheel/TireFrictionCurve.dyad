@@ -1,0 +1,113 @@
+"""
+Tire friction characteristic: the friction coefficient as a function of longitudinal slip.
+
+Triple-S shape, point-symmetric about zero slip. `mu` rises from zero to the adhesion peak `mu_A`
+at `|kappa| = sAdhesion`, falls to the sliding level `mu_S` at `|kappa| = sSlide`, and stays at
+`mu_S` up to the locked wheel (`|kappa| = 1`) and beyond. Each segment is a cubic with zero slope
+at its ends, so the curve is continuously differentiable but its second derivative jumps at
+`sAdhesion` and `sSlide`.
+
+The input is slip, not sliding speed: a tire's characteristic is measured against slip, and
+keeping it there makes the peak location independent of vehicle speed. The output is the
+coefficient for the reference road; scale it for road condition where the normal force is
+applied.
+"""
+component TireFrictionCurve
+  "Longitudinal slip ratio, negative while braking"
+  kappa = RealInput() {^kappa}
+  "Friction coefficient, carrying the sign of the slip"
+  mu = RealOutput() {^mu}
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau; must exceed sAdhesion"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.7
+  "Slip magnitude"
+  variable slip::Real
+  "Friction magnitude"
+  variable mu_abs::Real
+relations
+  slip = abs(kappa)
+  # -0.5·x³ + 1.5·x maps [-1, 1] onto [-1, 1] with zero slope at both ends.
+  mu_abs = ifelse(slip <= sAdhesion,
+    mu_A * (-0.5 * (slip / sAdhesion) ^ 3 + 1.5 * (slip / sAdhesion)),
+    ifelse(slip >= sSlide, mu_S,
+      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))
+  mu = sign(kappa) * mu_abs
+metadata {
+  "_links": {
+    "kappa": {
+      "Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "mu": {
+      "Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end
+
+test component TestTireFrictionCurve
+  slip = BlockComponents.Sources.Constant(k = -0.04)
+  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve()
+relations
+  connect(slip.y, curve.kappa)
+metadata {
+  "Dyad": {
+    "tests": {
+      "free_rolling": {
+        "stop": 1,
+        "params": {"slip.k": 0},
+        "atol": {"curve.mu": 1e-9},
+        "expect": {"final": {"curve.mu": 0}}
+      },
+      "braking_peak": {
+        "stop": 1,
+        "params": {"slip.k": -0.04},
+        "atol": {"curve.mu": 1e-9},
+        "expect": {"final": {"curve.mu": -1.0}}
+      },
+      "braking_transition_midpoint": {
+        "stop": 1,
+        "params": {"slip.k": -0.08},
+        "atol": {"curve.mu": 1e-9},
+        "expect": {"final": {"curve.mu": -0.85}}
+      },
+      "braking_sliding": {
+        "stop": 1,
+        "params": {"slip.k": -0.3},
+        "atol": {"curve.mu": 1e-9},
+        "expect": {"final": {"curve.mu": -0.7}}
+      },
+      "locked_wheel": {
+        "stop": 1,
+        "params": {"slip.k": -1},
+        "atol": {"curve.mu": 1e-9},
+        "expect": {"final": {"curve.mu": -0.7}}
+      },
+      "driving_peak": {
+        "stop": 1,
+        "params": {"slip.k": 0.04},
+        "atol": {"curve.mu": 1e-9},
+        "expect": {"final": {"curve.mu": 1.0}}
+      }
+    }
+  }
+}
+end
+
+analysis TireFrictionCurveSweep
+  extends TransientAnalysis(stop = 2.0)
+  model = TestTireFrictionCurveSweep()
+relations
+end
+
+"""Slip swept from a locked wheel under braking to full wheelspin, to plot `curve.mu` against `curve.kappa`."""
+test component TestTireFrictionCurveSweep
+  slip = BlockComponents.Sources.Ramp(offset = -1.0, height = 2.0, duration = 2.0, start_time = 0.0)
+  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve()
+relations
+  connect(slip.y, curve.kappa)
+end

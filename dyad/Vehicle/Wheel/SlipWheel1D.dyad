@@ -1,9 +1,10 @@
 """
 One-dimensional tire contact with longitudinal slip-dependent friction.
 
-Positive shaft rotation drives positive vehicle motion. The friction law uses the same point-
-symmetric triple-S shape as `MultibodyComponents.SlipWheelJoint`: it rises to `mu_A` at
-`sAdhesion`, falls to `mu_S` at `sSlide`, and remains at the sliding level beyond it. `F_z` is
+Positive shaft rotation drives positive vehicle motion. The friction law is the `curve`
+subcomponent, a `TireFrictionCurve` with the same point-symmetric triple-S shape as
+`MultibodyComponents.SlipWheelJoint`: it rises to `mu_A` at `sAdhesion`, falls to `mu_S` at
+`sSlide`, and remains at the sliding level beyond it. `mu_scale` scales it for the road. `F_z` is
 the normal load carried by the modeled driven axle; approximately half the vehicle weight is a
 representative default for a single driven axle. A braking model loads all four wheels, so
 `BrakedWheel` overrides this with the full vehicle weight.
@@ -18,6 +19,9 @@ component SlipWheel1D
   flange = Flange() {^flange}
   "Road-friction multiplier"
   mu_scale = RealInput() {^mu_scale}
+  "Friction coefficient against slip, for the reference road"
+  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(sAdhesion = sAdhesion,
+    sSlide = sSlide, mu_A = mu_A, mu_S = mu_S)
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   "Normal load carried by the driven axle"
@@ -46,9 +50,8 @@ relations
   omega = der(spline.phi)
   v = der(flange.s)
   kappa = (omega * radius - v) / max(abs(v), v_eps)
-  # This is the triple-S interpolation used by the multibody wheel, written locally so the
-  # lightweight 1D lecture model does not acquire a multibody dependency.
-  mu = mu_scale * ifelse(kappa > sAdhesion, ifelse(kappa >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))), ifelse(kappa < -sAdhesion, ifelse(kappa <= -sSlide, -mu_S, -(mu_A + mu_S) / 2 - (mu_S - mu_A) / 2 * (-0.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))), mu_A * (-0.5 * (kappa / sAdhesion) ^ 3 + 1.5 * kappa / sAdhesion)))
+  curve.kappa = kappa
+  mu = mu_scale * curve.mu
   F_x = mu * F_z
   # Flow is positive into this component. The tire therefore reports negative flange force while
   # applying positive traction to the connected body; the shaft sees the matching resisting torque.

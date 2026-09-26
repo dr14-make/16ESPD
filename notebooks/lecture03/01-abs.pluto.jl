@@ -32,8 +32,13 @@ end
 md"""
 # Lecture 3 — Anti-lock braking (ABS)
 
-This notebook compares the same straight-line braking manoeuvre with and without ABS.
-The vehicle starts at **25 m/s (90 km/h)** and receives a 3000 N·m brake request at 0.5 s.
+This notebook compares the same straight-line emergency stop **with and without ABS** and
+measures the one number a driver cares about: the **braking distance**.
+
+The vehicle starts at **25 m/s (90 km/h)**, and at 0.5 s the driver steps on the brake with a
+6000 N·m demand, more than the tire can transmit. Without ABS that torque locks the wheel. With
+ABS, the wheel-speed-only controller (`ABSControllerWheelOnly`) modulates the torque to keep the
+wheel rolling.
 
 The wheel model separates vehicle speed from wheel speed and calculates longitudinal slip
 
@@ -41,53 +46,156 @@ The wheel model separates vehicle speed from wheel speed and calculates longitud
 \kappa = \frac{r\omega-v}{\max(|v|,v_\epsilon)}.
 ```
 
-During braking, slip is negative. The tire reaches peak adhesion near `κ = -0.04`; a locked wheel
-moves far into the sliding region.
+During braking, slip is negative. The tire reaches peak adhesion `μ_A` near `κ = -0.04` and
+falls to the sliding value `μ_S` beyond `κ = -0.12`; a locked wheel sits at `κ = -1`.
 """
 
 # ╔═╡ c09e1780-cb2b-4c19-ad89-fd1d0575486e
 md"""
 ## Experiment
 
-Select the road-friction multiplier. `1.0` represents the dry-road tire curve; smaller values
-reduce all available longitudinal tire force.
+**Road friction** scales the whole tire curve: `1.0` is a dry road, about `0.5` is wet, and
+`0.2` is snow.
 """
 
 # ╔═╡ 4a25ea4b-5258-43df-9e06-94a99607359f
 @bind road_mu Slider(0.2:0.1:1.0; default=1.0, show_value=true)
 
+# ╔═╡ 724f33cb-97c6-4673-9d87-8917eb9d5cda
+md"""
+**ABS tuning.** `a_ref` is the fastest deceleration the controller believes the car can reach.
+It uses that value to extrapolate vehicle speed while the wheel slips. `k_inc_slow` is the rate
+at which pressure is rebuilt after each release.
+"""
+
+# ╔═╡ 816bf90c-eeba-40d9-a9b2-b01ca6afcf2b
+md"`a_ref` [m/s²] $(@bind a_ref Slider(2.0:1.0:14.0; default=10.0, show_value=true))"
+
+# ╔═╡ c4806dd3-f4c9-48ee-94b5-48e8c68ea863
+md"`k_inc_slow` [N·m/s] $(@bind k_inc_slow Slider(2000.0:2000.0:40000.0; default=8000.0, show_value=true))"
+
+# ╔═╡ 8fc92403-b541-46ba-9277-fdd5dab80847
+begin
+    V0 = 25.0
+    BRAKE_TIME = 0.5
+    V_STOP = 0.5
+    G = 9.80665
+
+    # The locked wheel is the slowest stop; simulate it with a margin so every run comes to rest.
+    stop_time(mu) = BRAKE_TIME + 1.5 * V0 / (0.7 * mu * G) + 1.0
+
+    """
+    Distance and time from brake application until the vehicle speed first falls below
+    `V_STOP`, plus the traces of speed over distance travelled since braking began.
+    """
+    function braking(run)
+        model = symbolic_container(run)
+        sol = run.sol
+        t, v, s = sol.t, sol[model.body.mass.v], sol[model.body.mass.s]
+        s_brake = sol(BRAKE_TIME, idxs=model.body.mass.s)
+        braking_phase = t .>= BRAKE_TIME
+        i_stop = findfirst(i -> braking_phase[i] && v[i] < V_STOP, eachindex(t))
+        isnothing(i_stop) && error("vehicle still at $(round(v[end]; digits=2)) m/s when the run ended")
+        (; model, sol,
+            distance=s[i_stop] - s_brake,
+            time=t[i_stop] - BRAKE_TIME,
+            s=s[braking_phase] .- s_brake,
+            v=v[braking_phase])
+    end
+
+    abs_braking(mu) = braking(VehicleSystemsComponents.Vehicle.ABSBrakeTransient(
+        road_mu=mu, a_ref=a_ref, k_inc_slow=k_inc_slow, stop=stop_time(mu)))
+    locked_braking(mu) = braking(VehicleSystemsComponents.Vehicle.LockedBrakeTransient(
+        road_mu=mu, stop=stop_time(mu)))
+end
+
 # ╔═╡ ebde0e45-07be-45cc-a8d1-5a028eb1741f
 begin
-    abs_run = VehicleSystemsComponents.Vehicle.ABSBrakeTransient(road_mu=road_mu)
-    locked_run = VehicleSystemsComponents.Vehicle.LockedBrakeTransient(road_mu=road_mu)
+    with_abs = abs_braking(road_mu)
+    without_abs = locked_braking(road_mu)
 
-    abs_model = symbolic_container(abs_run)
-    locked_model = symbolic_container(locked_run)
+    abs_model, abs_sol = with_abs.model, with_abs.sol
+    locked_model, locked_sol = without_abs.model, without_abs.sol
 
-    abs_sol = abs_run.sol
-    locked_sol = locked_run.sol
+    mu_A = abs_sol.ps[abs_model.wheel.mu_A]
+    mu_S = abs_sol.ps[abs_model.wheel.mu_S]
+    # Constant-deceleration stops at the tire's peak and sliding friction, ignoring the brake lag.
+    ideal_distance(mu) = V0^2 / (2 * mu * mu_A * G)
+    sliding_distance(mu) = V0^2 / (2 * mu * mu_S * G)
 end
 
 # ╔═╡ f05016c5-aa2e-4c7b-8bf3-750021471d22
 md"""
-## Vehicle response
+## Braking distance
 
-ABS modulates brake torque to retain tire adhesion. Without modulation, the requested torque can
-stop the wheel while the vehicle continues moving. The model runs for four seconds, so the distance
-reported below is **distance travelled by 4 s**, not necessarily total stopping distance.
+Braking distance is measured from the moment the driver presses the pedal (0.5 s) until the car
+falls below 0.5 m/s. The dotted gray curve is the best possible stop: a constant deceleration of
+`μ·μ_A·g`, which the tire delivers only if it is held exactly at its adhesion peak for the whole
+stop.
+"""
+
+# ╔═╡ ef0d4e60-8da0-4180-868f-16e80a2481f9
+begin
+    distance_plot = plot(
+        with_abs.s, 3.6 .* with_abs.v;
+        lw=3, label="ABS", color=:steelblue,
+        xlabel="distance since brake applied [m]", ylabel="vehicle speed [km/h]",
+        title="Speed over braking distance", legend=:topright,
+    )
+    plot!(distance_plot, without_abs.s, 3.6 .* without_abs.v;
+        lw=3, ls=:dash, label="no ABS (locked)", color=:firebrick)
+    let d = ideal_distance(road_mu), s = range(0, d; length=200)
+        plot!(distance_plot, s, 3.6 .* sqrt.(max.(V0^2 .- 2 * road_mu * mu_A * G .* s, 0.0));
+            lw=2, ls=:dot, color=:gray, label="ideal (peak μ)")
+    end
+    vline!(distance_plot, [with_abs.distance]; color=:steelblue, ls=:dot, label="")
+    vline!(distance_plot, [without_abs.distance]; color=:firebrick, ls=:dot, label="")
+    distance_plot
+end
+
+# ╔═╡ 6d192d2d-e574-4ca2-a12f-949911caf28e
+let
+    r(x) = round(x; digits=1)
+    delta = with_abs.distance - without_abs.distance
+    verdict = delta < 0 ?
+        "ABS shortens the stop by **$(r(-delta)) m**." :
+        "ABS **lengthens** the stop by **$(r(delta)) m**: this controller releases more braking than it needs to."
+    Markdown.parse("""
+    | | braking distance [m] | time to stop [s] | mean deceleration [m/s²] |
+    |---|---:|---:|---:|
+    | ABS | $(r(with_abs.distance)) | $(round(with_abs.time; digits=2)) | $(r(V0^2 / (2 * with_abs.distance))) |
+    | no ABS (locked) | $(r(without_abs.distance)) | $(round(without_abs.time; digits=2)) | $(r(V0^2 / (2 * without_abs.distance))) |
+    | ideal at peak `μ_A` | $(r(ideal_distance(road_mu))) | | $(r(road_mu * mu_A * G)) |
+    | locked at sliding `μ_S` | $(r(sliding_distance(road_mu))) | | $(r(road_mu * mu_S * G)) |
+
+    $verdict
+    """)
+end
+
+# ╔═╡ 5185b6bd-a789-4ff9-87d7-2717b0dc9451
+md"""
+## What the wheel is doing
+
+The distance follows from the slip. Each ABS cycle the wheel starts to lock, the controller
+releases, the wheel spins back up, and pressure is rebuilt. Any time spent far from the
+adhesion peak, whether deep in slip or with too little torque, is braking force lost.
 """
 
 # ╔═╡ 0e526996-1049-4457-92da-a4f6122b7853
 begin
     speed_plot = plot(
         abs_sol.t, 3.6 .* abs_sol[abs_model.body.mass.v];
-        lw=3, label="ABS", color=:steelblue,
-        xlabel="time [s]", ylabel="vehicle speed [km/h]",
-        title="Vehicle speed", legend=:topright,
+        lw=3, label="ABS vehicle", color=:steelblue,
+        xlabel="time [s]", ylabel="speed [km/h]",
+        title="Vehicle and wheel speed", legend=:topright,
     )
+    plot!(speed_plot, abs_sol.t,
+        3.6 .* abs_sol.ps[abs_model.radius] .* abs_sol[abs_model.wheel.inertia.w];
+        lw=1.5, label="ABS wheel surface", color=:steelblue, alpha=0.5)
     plot!(speed_plot, locked_sol.t, 3.6 .* locked_sol[locked_model.body.mass.v];
-        lw=3, ls=:dash, label="no ABS", color=:firebrick)
-    vline!(speed_plot, [0.5]; color=:gray, ls=:dot, label="brake applied")
+        lw=3, ls=:dash, label="no ABS vehicle", color=:firebrick)
+    vline!(speed_plot, [BRAKE_TIME]; color=:gray, ls=:dot, label="brake applied")
+    xlims!(speed_plot, 0, BRAKE_TIME + max(with_abs.time, without_abs.time) + 0.5)
     speed_plot
 end
 
@@ -95,61 +203,150 @@ end
 begin
     slip_plot = plot(
         abs_sol.t, abs_sol[abs_model.wheel.kappa];
-        lw=3, label="ABS", color=:steelblue,
+        lw=2, label="ABS", color=:steelblue,
         xlabel="time [s]", ylabel="longitudinal slip κ",
-        title="Wheel slip (display limited to κ ≥ -2)",
-        ylims=(-2.0, 0.1), legend=:bottomleft,
+        title="Wheel slip", ylims=(-1.1, 0.1), legend=:bottomleft,
     )
     plot!(slip_plot, locked_sol.t, locked_sol[locked_model.wheel.kappa];
         lw=2.5, ls=:dash, label="no ABS", color=:firebrick)
-    hline!(slip_plot, [-0.04]; color=:black, ls=:dot, label="adhesion target")
+    hline!(slip_plot, [-0.04]; color=:black, ls=:dot, label="adhesion peak")
+    xlims!(slip_plot, 0, BRAKE_TIME + max(with_abs.time, without_abs.time) + 0.5)
     slip_plot
 end
 
 # ╔═╡ 1da46c66-fe04-45ac-ac44-9707a58a06b5
 begin
     torque_plot = plot(
-        abs_sol.t, abs_sol[abs_model.brake.tau_actual];
-        lw=3, label="ABS", color=:steelblue,
+        abs_sol.t, abs_sol[abs_model.wheel.brake.tau_actual];
+        lw=2, label="ABS", color=:steelblue,
         xlabel="time [s]", ylabel="brake torque [N·m]",
-        title="Hydraulic brake response", legend=:bottomright,
+        title="Brake torque at the caliper", legend=:bottomright,
     )
-    plot!(torque_plot, locked_sol.t, locked_sol[locked_model.brake.tau_actual];
+    plot!(torque_plot, locked_sol.t, locked_sol[locked_model.wheel.brake.tau_actual];
         lw=2.5, ls=:dash, label="no ABS", color=:firebrick)
+    friction_limit = road_mu * mu_A * abs_sol.ps[abs_model.wheel.F_z] * abs_sol.ps[abs_model.radius]
+    hline!(torque_plot, [friction_limit]; color=:black, ls=:dot, label="tire limit at peak μ")
+    xlims!(torque_plot, 0, BRAKE_TIME + max(with_abs.time, without_abs.time) + 0.5)
     torque_plot
 end
 
-# ╔═╡ 6d192d2d-e574-4ca2-a12f-949911caf28e
-begin
-    t_report = 4.0
-    comparison = (
-        road_friction = road_mu,
-        abs_speed_kmh = round(3.6 * abs_sol(t_report, idxs=abs_model.body.mass.v), digits=2),
-        no_abs_speed_kmh = round(3.6 * locked_sol(t_report, idxs=locked_model.body.mass.v), digits=2),
-        abs_slip = round(abs_sol(t_report, idxs=abs_model.wheel.kappa), digits=3),
-        no_abs_slip = round(locked_sol(t_report, idxs=locked_model.wheel.kappa), digits=3),
-        abs_distance_m = round(abs_sol(t_report, idxs=abs_model.body.mass.s), digits=2),
-        no_abs_distance_m = round(locked_sol(t_report, idxs=locked_model.body.mass.s), digits=2),
+# ╔═╡ 9b98e3c7-6727-4467-b897-a0c4ac62d760
+md"""
+### Where on the tire curve the wheel operates
+
+The tire's friction coefficient `μ` is a function of slip alone. It rises to the adhesion
+peak `μ_A` near `κ = -0.04`, then falls to the sliding value `μ_S` from `κ = -0.12` onwards.
+Each dot below is one millisecond of the stop, so dense regions are where the wheel spends its
+time. A good ABS keeps its dots clustered at the peak. The plot shows slip down to `-0.3`;
+the friction stays at `μ_S` all the way to the locked wheel at `κ = -1`.
+"""
+
+# ╔═╡ 8210d0e8-3c03-4f19-ad31-140b8a39a92c
+friction_plot = let
+    samples(run, model, sol) = begin
+        t = BRAKE_TIME:0.001:(BRAKE_TIME + run.time)
+        (sol(t, idxs=model.wheel.kappa).u, sol(t, idxs=model.wheel.tire.mu).u)
+    end
+    abs_kappa, abs_mu = samples(with_abs, abs_model, abs_sol)
+    locked_kappa, locked_mu = samples(without_abs, locked_model, locked_sol)
+
+    # μ depends on κ alone, so the samples of both runs sorted by κ trace the model's curve.
+    curve_kappa = [abs_kappa; locked_kappa]
+    order = sortperm(curve_kappa)
+    curve_mu = [abs_mu; locked_mu][order]
+
+    near_peak = count(k -> 0.02 <= -k <= 0.08, abs_kappa) / length(abs_kappa)
+    sliding = count(k -> -k >= 0.12, abs_kappa) / length(abs_kappa)
+
+    p = plot(
+        curve_kappa[order], curve_mu;
+        lw=2, color=:gray, label="tire curve (μ_A = $(road_mu * mu_A), μ_S = $(road_mu * mu_S))",
+        xlabel="longitudinal slip κ", ylabel="friction coefficient μ",
+        title="ABS: $(round(Int, 100near_peak)) % of the stop near the peak, $(round(Int, 100sliding)) % sliding",
+        xlims=(-0.3, 0.005), legend=:bottomleft,
     )
+    scatter!(p, locked_kappa, locked_mu;
+        ms=3, msw=0, alpha=0.3, color=:firebrick, label="no ABS")
+    scatter!(p, abs_kappa, abs_mu;
+        ms=3, msw=0, alpha=0.3, color=:steelblue, label="ABS")
+    vline!(p, [-0.04]; color=:black, ls=:dot, label="adhesion peak")
+    annotate!(p, -0.29, -road_mu * mu_S + 0.06,
+        text("no ABS: sits at κ = -1, μ = μ_S (off the left edge)", 8, :left, :firebrick))
+    p
+end
+
+# ╔═╡ b93db903-d64f-458b-a015-93b7b92ba637
+md"""
+## Braking distance across road surfaces
+
+The same stop repeated from dry asphalt down to snow, using the ABS tuning selected above. The
+gray band is bounded by the two constant-friction stops: peak adhesion below it, full sliding
+above it.
+"""
+
+# ╔═╡ d88841c5-0c60-494f-b63d-9f18fcf30b90
+begin
+    sweep_mu = collect(0.2:0.1:1.0)
+    sweep_abs = [abs_braking(mu).distance for mu in sweep_mu]
+    sweep_locked = [locked_braking(mu).distance for mu in sweep_mu]
+end
+
+# ╔═╡ b141561d-487a-4d4c-8725-8d42808ab781
+begin
+    sweep_plot = plot(
+        sweep_mu, ideal_distance.(sweep_mu);
+        fillrange=sliding_distance.(sweep_mu), fillalpha=0.15, color=:gray, lw=1,
+        label="ideal … sliding", xlabel="road friction multiplier",
+        ylabel="braking distance [m]", title="Braking distance from 90 km/h",
+        legend=:topright,
+    )
+    plot!(sweep_plot, sweep_mu, sweep_abs;
+        lw=3, marker=:circle, color=:steelblue, label="ABS")
+    plot!(sweep_plot, sweep_mu, sweep_locked;
+        lw=3, ls=:dash, marker=:square, color=:firebrick, label="no ABS (locked)")
+    vline!(sweep_plot, [road_mu]; color=:black, ls=:dot, label="selected μ")
+    sweep_plot
+end
+
+# ╔═╡ 53a89ecf-62d1-4310-9051-f37ceba0e833
+let
+    r(x) = round(x; digits=1)
+    rows = join(("| $(mu) | $(r(a)) | $(r(l)) | $(r(a - l)) | $(r(ideal_distance(mu))) |"
+                 for (mu, a, l) in zip(sweep_mu, sweep_abs, sweep_locked)), "\n")
+    Markdown.parse("""
+    | road μ | ABS [m] | no ABS [m] | ABS − no ABS [m] | ideal [m] |
+    |---:|---:|---:|---:|---:|
+    $rows
+    """)
 end
 
 # ╔═╡ 479ee972-0a70-4f65-a8ba-84cb772388b3
 md"""
 ## Interpretation
 
-- Near `κ = -0.04`, the tire operates around peak longitudinal adhesion.
-- Large negative slip means wheel circumferential speed has fallen far below vehicle speed; this is
-  wheel lock in the present one-dimensional model.
+- **Locked wheel.** A locked wheel slides at `μ_S = 0.7`, so its stop is close to the
+  "sliding" bound. It is also the stop in which the driver cannot steer.
+- **Ideal ABS.** An ideal ABS would hold slip at the adhesion peak `κ ≈ -0.04` and approach the
+  "ideal" bound, about 30 % shorter than the locked stop on this tire.
+- **This ABS.** The wheel-speed-only controller cycles slowly, at roughly 1.3 releases per
+  second. The wheel reaches `κ ≈ -0.3`, deep in the sliding region, before the release starts.
+  Each release then drops the torque to a few hundred N·m, far below the tire limit, and
+  `k_inc_slow` spends most of the cycle rebuilding it. The mean brake torque is about half of
+  what the tire could carry, so the ABS stop is **longer** than the locked one on every road
+  surface. It still prevents lock, and so keeps the car steerable, but it does not shorten the
+  stop.
+- The two sliders move the result only a few metres. Raising `k_inc_slow` to its maximum
+  shortens the dry stop from about 56 m to 52 m, still behind the locked wheel's 44 m. The loss
+  lies in how late and how deep each release is. Closing the gap to the ideal curve is a
+  controller-tuning task (release thresholds `lambda_1`, `lambda_lock`, `a_minus` and release
+  rate `k_dec`), not something the notebook can fix.
 - The actuator has a 30 ms hydraulic time constant, so commanded torque is not applied instantly.
-- On low-friction roads, the fixed-gain controller still prevents sustained wheel lock, but its slip
-  excursions grow. A production ABS would use discrete pressure build/hold/release logic and wheel
-  acceleration estimates.
 
 ### Current scope
 
-This is a single-wheel-equivalent longitudinal model. It can demonstrate ABS physics, but not ESP.
-ESP additionally requires lateral tire forces, steering input, yaw dynamics, axle geometry, and
-independent braking at four wheels.
+This is a single-wheel-equivalent longitudinal model without load transfer. It can demonstrate
+ABS physics, but not ESP. ESP additionally requires lateral tire forces, steering input, yaw
+dynamics, axle geometry, and independent braking at four wheels.
 """
 
 # ╔═╡ Cell order:
@@ -157,10 +354,22 @@ independent braking at four wheels.
 # ╠═5ea5fa1c-b6fd-42b5-b15d-b8d547e5962f
 # ╟─c09e1780-cb2b-4c19-ad89-fd1d0575486e
 # ╠═4a25ea4b-5258-43df-9e06-94a99607359f
+# ╟─724f33cb-97c6-4673-9d87-8917eb9d5cda
+# ╟─816bf90c-eeba-40d9-a9b2-b01ca6afcf2b
+# ╟─c4806dd3-f4c9-48ee-94b5-48e8c68ea863
+# ╠═8fc92403-b541-46ba-9277-fdd5dab80847
 # ╠═ebde0e45-07be-45cc-a8d1-5a028eb1741f
 # ╟─f05016c5-aa2e-4c7b-8bf3-750021471d22
+# ╠═ef0d4e60-8da0-4180-868f-16e80a2481f9
+# ╟─6d192d2d-e574-4ca2-a12f-949911caf28e
+# ╟─5185b6bd-a789-4ff9-87d7-2717b0dc9451
 # ╠═0e526996-1049-4457-92da-a4f6122b7853
 # ╠═306de942-02bb-4126-a171-01b08501ae01
 # ╠═1da46c66-fe04-45ac-ac44-9707a58a06b5
-# ╠═6d192d2d-e574-4ca2-a12f-949911caf28e
+# ╟─9b98e3c7-6727-4467-b897-a0c4ac62d760
+# ╠═8210d0e8-3c03-4f19-ad31-140b8a39a92c
+# ╟─b93db903-d64f-458b-a015-93b7b92ba637
+# ╠═d88841c5-0c60-494f-b63d-9f18fcf30b90
+# ╠═b141561d-487a-4d4c-8725-8d42808ab781
+# ╟─53a89ecf-62d1-4310-9051-f37ceba0e833
 # ╟─479ee972-0a70-4f65-a8ba-84cb772388b3

@@ -22,4 +22,7 @@ include("SlipWheel1D_test.jl")
 include("TestBrakeActuator_test.jl")
 include("TestBrakedWheel_test.jl")
 include("TestSlipWheel1D_test.jl")
+include("TestTireFrictionCurveSweep_test.jl")
+include("TestTireFrictionCurve_test.jl")
+include("TireFrictionCurve_test.jl")
 end

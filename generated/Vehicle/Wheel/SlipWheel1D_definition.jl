@@ -9,9 +9,10 @@
 
 One-dimensional tire contact with longitudinal slip-dependent friction.
 
-Positive shaft rotation drives positive vehicle motion. The friction law uses the same point-
-symmetric triple-S shape as `MultibodyComponents.SlipWheelJoint`: it rises to `mu_A` at
-`sAdhesion`, falls to `mu_S` at `sSlide`, and remains at the sliding level beyond it. `F_z` is
+Positive shaft rotation drives positive vehicle motion. The friction law is the `curve`
+subcomponent, a `TireFrictionCurve` with the same point-symmetric triple-S shape as
+`MultibodyComponents.SlipWheelJoint`: it rises to `mu_A` at `sAdhesion`, falls to `mu_S` at
+`sSlide`, and remains at the sliding level beyond it. `mu_scale` scales it for the road. `F_z` is
 the normal load carried by the modeled driven axle; approximately half the vehicle weight is a
 representative default for a single driven axle. A braking model loads all four wheels, so
 `BrakedWheel` overrides this with the full vehicle weight.
@@ -135,6 +136,9 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
   ### Components
   push!(__systems, @named spline = __Dyad__Spline())
   push!(__systems, @named flange = __Dyad__Flange())
+  # Subcomponent curve of type VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve
+  curve_overrides = __pop_subcomponent_overrides!(__overrides, "curve")
+  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(; sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, curve_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -155,7 +159,8 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
   push!(__eqs, omega ~ ModelingToolkit.D_nounits(spline.phi))
   push!(__eqs, v ~ ModelingToolkit.D_nounits(flange.s))
   push!(__eqs, kappa ~ (omega * radius - v) / max(abs(v), v_eps))
-  push!(__eqs, mu ~ mu_scale * ifelse(kappa > sAdhesion, ifelse(kappa >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))), ifelse(kappa < -sAdhesion, ifelse(kappa <= -sSlide, -mu_S, -(mu_A + mu_S) / 2 - (mu_S - mu_A) / 2 * (-0.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((-kappa - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))), mu_A * (-0.5 * (kappa / sAdhesion) ^ 3 + 1.5 * kappa / sAdhesion))))
+  push!(__eqs, curve.kappa ~ kappa)
+  push!(__eqs, mu ~ mu_scale * curve.mu)
   push!(__eqs, F_x ~ mu * F_z)
   push!(__eqs, flange.f ~ -F_x)
   push!(__eqs, 0 ~ spline.tau + radius * flange.f)

@@ -19,6 +19,7 @@ import BlockComponents
 import DyadData
 import DyadInterface
 import ElectricalComponents
+import HydraulicComponents
 import RotationalComponents
 import ThermalComponents
 import TranslationalComponents
@@ -208,3 +209,7 @@ include("SlipWheel1D_definition.jl")
 include("TestBrakeActuator_definition.jl")
 include("TestBrakedWheel_definition.jl")
 include("TestSlipWheel1D_definition.jl")
+include("TestTireFrictionCurveSweep_definition.jl")
+include("TestTireFrictionCurve_definition.jl")
+include("TireFrictionCurveSweep_definition.jl")
+include("TireFrictionCurve_definition.jl")
