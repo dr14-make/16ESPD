@@ -4,12 +4,12 @@
 # leaves the notebook showing as modified. That is the editing loop working, not a fault:
 # edits made in Pluto save straight back to the file the deck names.
 #
-# Julia comes from juliaup on the `dyad-3.3.0` channel, matching .vscode/settings.json.
+# Julia comes from juliaup on the `dyad-3.4.0` channel, matching .vscode/settings.json.
 
 # Node 22.18 is where `node --test` discovers and type-strips `*.test.ts` with no flag. Below
 # it the runner matches no files, reports zero tests and exits 0 — so `frontend-check` would go
 # green on a machine where the unit suite has never run. Julia is selected per task instead,
-# with `+dyad-3.3.0`, matching .vscode/settings.json.
+# with `+dyad-3.4.0`, matching .vscode/settings.json.
 [tools]
 node = "22"
 
@@ -60,7 +60,7 @@ else
     echo "Run \`mise run frontend-install\` if you mean to edit the frontend."
 fi
 
-julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e '
+julia +dyad-3.4.0 --project="$PLUTODECK_PROJECT" -e '
     using PlutoDeck
     present(ARGS[1]; port = parse(Int, ARGS[2]))
 ' "${DECK:-$PLUTODECK_DECK}" "${PORT:-$PLUTODECK_PORT}"
@@ -69,7 +69,7 @@ julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e '
 [tasks.deck-check]
 description = "Load a deck and report what it publishes, without starting a kernel"
 run = '''
-julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e '
+julia +dyad-3.4.0 --project="$PLUTODECK_PROJECT" -e '
     using PlutoDeck: load_deck, list_cards
     deck = load_deck(ARGS[1])
     println(length(deck.slides), " slides · ", length(deck.cards), " cards · ", deck.notebook_path)
@@ -82,4 +82,4 @@ julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e '
 
 [tasks.deck-test]
 description = "Run the PlutoDeck suite, browser tests included (needs Chrome, ~2 GB free)"
-run = 'julia +dyad-3.3.0 --project="$PLUTODECK_PROJECT" -e "using Pkg; Pkg.test()"'
+run = 'julia +dyad-3.4.0 --project="$PLUTODECK_PROJECT" -e "using Pkg; Pkg.test()"'

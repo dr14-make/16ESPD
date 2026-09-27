@@ -161,7 +161,7 @@ function check_distribution()
             running Julia $(VERSION)
             from $(Sys.BINDIR)
 
-        The notebooks need the Dyad distribution — the `dyad-3.3.0` juliaup channel that
+        The notebooks need the Dyad distribution — the `dyad-3.4.0` juliaup channel that
         `.vscode/settings.json` names in `julia.executablePath`, which is Julia 1.12.7. The
         juliaup default channel is `release`, Julia 1.12.6, and its depot does not have these
         packages installed.
