@@ -132,7 +132,7 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
   push!(__eqs, input.s - support.s ~ rod_out.s - support.s)
   push!(__eqs, F_in ~ -input.f)
   push!(__eqs, F_out ~ rod_out.f)
-  push!(__eqs, F_out ~ ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max)))
+  push!(__eqs, F_out ~ max(0.0, ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max))))
   push!(__eqs, input.f + rod_out.f + support.f ~ 0.0)
 
   # Return completely constructed System

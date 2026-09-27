@@ -15,7 +15,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"stop"::Float64 = 5.0
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
-  var"saveat"::Float64 = 0
+  var"saveat"::Float64 = 0.01
   var"dtmax"::Float64 = 0
   var"tstops"::Array{Float64, 1} = []
   var"automatic_discontinuity_detection"::Bool = false

@@ -33,8 +33,11 @@ using DyadInterface: symbolic_container
 
     no_vacuum = VehicleSystemsComponents.Vehicle.Brake.ForceChainTransient(p_vac=101325.0)
     no_vacuum_model = symbolic_container(no_vacuum)
+    booster_force_no_vacuum = no_vacuum.sol[no_vacuum_model.booster.F_out]
+    @test all(booster_force_no_vacuum .>= 0.0)
+
     p_no_vacuum = no_vacuum.sol(5.0, idxs=no_vacuum_model.master.p_mc)
     expected_no_vacuum = (3.5 * 500.0 - 315.0) / A_mc
     @test p_no_vacuum ≈ expected_no_vacuum rtol=0.02
-    @test p_no_vacuum / 1e5 ≈ 29.0 rtol=0.02
+    @test p_no_vacuum / 1e5 ≈ 29.2 rtol=0.02
 end

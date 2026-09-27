@@ -9,8 +9,8 @@
 
 Quasi-static tandem master cylinder with two physical hydraulic circuit connectors.
 
-Both circuits carry the same master-cylinder pressure. Connector flow is mass flow positive into
-this component, so fluid delivered to either brake circuit increases `V_disp`. Rod travel is dead
+Both circuits carry the same master-cylinder pressure. Port mass flow is positive into the
+component, so fluid leaving through either port increases `V_disp`. Rod travel is dead
 stroke plus displaced fluid volume divided by bore area.
 
 ## Parameters:

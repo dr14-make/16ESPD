@@ -30,15 +30,16 @@ relations
   F_rod = i_p * F_ped
   pedal.f + rod.f + support.f = 0.0
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/BrakePedal.svg"}},
   "_links": {
     "pedal": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 440, "y2": 540}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
     },
     "rod": {
-      "Dyad": {"placement": {"diagram": {"x1": 940, "x2": 1040, "y1": 450, "y2": 550}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
     },
     "support": {
-      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
     }
   }
 }

@@ -35,18 +35,19 @@ relations
   input.s - support.s = rod_out.s - support.s
   F_in = -input.f
   F_out = rod_out.f
-  F_out = ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max))
+  F_out = max(0.0, ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max)))
   input.f + rod_out.f + support.f = 0.0
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/StaticBooster.svg"}},
   "_links": {
     "input": {
-      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 440, "y2": 540}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
     },
     "rod_out": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 440, "y2": 540}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
     },
     "support": {
-      "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": 950, "y2": 1050}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
     }
   }
 }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 500 H130"/>
+    <rect x="130" y="270" width="700" height="460" rx="70" fill="#eceff1"/>
+    <path d="M320 300 V700 M570 300 V700"/>
+    <path d="M185 500 H320 M320 500 H570 M570 500 H790"/>
+    <path d="M830 350 H930 V250 H1000" stroke="#0277bd"/>
+    <path d="M830 650 H930 V750 H1000" stroke="#0277bd"/>
+    <path d="M500 730 V1000"/>
+    <path d="M210 500 l45 -45 m-45 45 l45 45 M445 500 l45 -45 m-45 45 l45 45"/>
+  </g>
+  <text x="500" y="160" text-anchor="middle" font-family="sans-serif" font-size="80" fill="#263238">TANDEM MC</text>
+</svg>

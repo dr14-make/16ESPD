@@ -5,9 +5,10 @@ component ClosedHydraulicPort
 relations
   port.m_flow = 0.0
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/ClosedHydraulicPort.svg"}},
   "_links": {
     "port": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
     }
   }
 }

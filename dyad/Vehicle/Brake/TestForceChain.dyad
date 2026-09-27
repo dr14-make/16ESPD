@@ -26,8 +26,8 @@ test component TestForceChain
 relations
   connect(pedal_force.y, driver.f) {^id9}
   connect(driver.flange_a, pedal.pedal) {^id10}
-  connect(pedal.rod, booster.input)
-  connect(booster.rod_out, master.pushrod)
+  connect(pedal.rod, booster.input) {^id17}
+  connect(booster.rod_out, master.pushrod) {^id18}
   connect(driver.flange_b, fixed.flange) {^id11}
   connect(pedal.support, fixed.flange) {^id12}
   connect(booster.support, fixed.flange) {^id13}
@@ -138,13 +138,15 @@ metadata {
         "edges": [{"S": 1, "M": [{"x": 810, "y": 525}, {"x": 810, "y": 650}], "E": 2}],
         "path": {}
       }
-    }
+    },
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "renderStyle": "standard"}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "renderStyle": "standard"}}
   }
 }
 end
 
 analysis ForceChainTransient
-  extends TransientAnalysis(stop = 5.0)
+  extends TransientAnalysis(stop = 5.0, saveat = 0.01)
   model = VehicleSystemsComponents.Vehicle.Brake.TestForceChain(p_vac = p_vac)
   "Vacuum-chamber absolute pressure [Pa] (PATH)"
   parameter p_vac::Pressure = 33e3

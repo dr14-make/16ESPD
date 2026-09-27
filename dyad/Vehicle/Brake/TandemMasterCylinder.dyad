@@ -1,8 +1,8 @@
 """
 Quasi-static tandem master cylinder with two physical hydraulic circuit connectors.
 
-Both circuits carry the same master-cylinder pressure. Connector flow is mass flow positive into
-this component, so fluid delivered to either brake circuit increases `V_disp`. Rod travel is dead
+Both circuits carry the same master-cylinder pressure. Port mass flow is positive into the
+component, so fluid leaving through either port increases `V_disp`. Rod travel is dead
 stroke plus displaced fluid volume divided by bore area.
 """
 component TandemMasterCylinder
@@ -44,28 +44,25 @@ relations
   x_rod = s_dead + V_disp / A_mc
   initial V_disp = 0.0
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/TandemMasterCylinder.svg"}},
   "_links": {
     "pushrod": {
-      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 450, "y2": 550}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
     },
     "support": {
-      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 940, "y2": 1040}}}
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
     },
     "front": {
-      "Dyad": {"placement": {"diagram": {"x1": 970, "x2": 1070, "y1": 190, "y2": 290}}}
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}
     },
     "rear": {
-      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 700, "y2": 800}}}
+      "Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}
     },
     "p_mc": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 220, "x2": 320, "y1": -50, "y2": 50, "rot": 270}}
-      }
+      "Dyad": {"placement": {"icon": {"x1": 200, "x2": 300, "y1": -50, "y2": 50, "rot": 270}}}
     },
     "x_rod": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 740, "x2": 840, "y1": -50, "y2": 50, "rot": 270}}
-      }
+      "Dyad": {"placement": {"icon": {"x1": 700, "x2": 800, "y1": -50, "y2": 50, "rot": 270}}}
     }
   }
 }
