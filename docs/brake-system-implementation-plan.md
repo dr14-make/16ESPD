@@ -22,10 +22,18 @@ Background documents:
    with the harness setting `BrakedWheel(T_brake = 0.005, tau_max = 1e5)`. Both are existing
    parameters, so nothing is edited.
 2. **New sublibrary `dyad/Vehicle/Brake/`**, laid out like `dyad/Vehicle/Wheel/`.
-3. **Build causal, signal-level components.** Every capacitance component owns a volume (or mass)
-   state and publishes a pressure. Every resistance component takes two pressures and publishes a
-   flow. Node equation: `dV/dt = Σ q_in − Σ q_out`. This leaves no algebraic loops and no need for
-   the stdlib `HydraulicComponents` ports, which lack orifices, valves, accumulators and pumps.
+3. **Use physical connectors so the diagram looks like the real system.** Mechanical parts
+   (pedal, booster pushrods, master-cylinder piston) use translational `Flange`s. Fluid parts
+   use `HydraulicComponents.Interfaces.Port` with the brake-fluid medium set once per harness
+   through `continuity`, as `TestForceChain` does. The stdlib has no orifice, line, caliper,
+   valve, check valve, accumulator or pump, so each one is a custom component on those ports.
+   Keep the R–C split inside them: capacitance components (caliper, accumulator) own a volume
+   state and set port pressure, and resistance components (line, valve, orifice) set mass flow
+   from the pressure difference. RealInput/RealOutput is used only for true signals: driver
+   force commands, valve commands, sensor outputs, and published diagnostics like `p_mc`.
+   Step 2's booster needs a pneumatic port, which does not exist yet. Decide in increment 2b
+   whether to write a minimal gas connector or keep the chamber air internal to the booster and
+   expose only a vacuum-supply port.
 4. **SI units inside components.** Bar, cm³ and inHg appear only in docstrings, tests and plots.
 5. **Keep every hydraulic time constant at 1 ms or more.** Use laminar regularization
    `Δp_cr ≈ 1 bar` on orifices and drop line inertance, so the explicit Tsit5 solver the tire model
