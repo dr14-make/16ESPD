@@ -1,0 +1,152 @@
+"""
+Increment 1a force-chain demonstration. A controlled translational source ramps pedal force from
+0 to 500 N in 5 s, while closed front and rear hydraulic connectors hold both circuit flows at zero.
+"""
+test component TestForceChain
+  "Driver pedal-force ramp [N]"
+  pedal_force = BlockComponents.Sources.Ramp(offset = 0.0, height = 500.0, duration = 5.0, start_time = 0.0) {^pedal_force}
+  "Controlled mechanical source applying driver force"
+  driver = TranslationalComponents.Sources.Force() {^driver}
+  "Pedal lever"
+  pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal}
+  "Static vacuum booster"
+  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster(p_vac = p_vac) {^booster}
+  "Quasi-static tandem master cylinder"
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
+  "Common fixed reference for pedal pivot, booster housing, and master-cylinder housing"
+  fixed = TranslationalComponents.Components.Fixed() {^fixed}
+  "Closed front circuit for the zero-flow increment"
+  front_closed = VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort() {^front_closed}
+  "Closed rear circuit for the zero-flow increment"
+  rear_closed = VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort() {^rear_closed}
+  "Vacuum-chamber absolute pressure [Pa] (PATH)"
+  parameter p_vac::Pressure = 33e3
+  "Brake-fluid medium with 1.4 GPa bulk modulus and 1045 kg/m^3 density (derived from cited DOT 4 data)"
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(pedal_force.y, driver.f) {^id9}
+  connect(driver.flange_a, pedal.pedal) {^id10}
+  connect(pedal.rod, booster.input)
+  connect(booster.rod_out, master.pushrod)
+  connect(driver.flange_b, fixed.flange) {^id11}
+  connect(pedal.support, fixed.flange) {^id12}
+  connect(booster.support, fixed.flange) {^id13}
+  connect(master.support, fixed.flange) {^id14}
+  connect(master.front, front_closed.port) {^id15}
+  connect(master.rear, rear_closed.port) {^id16}
+  continuity(medium, master.front.medium)
+  continuity(medium, master.rear.medium)
+metadata {
+  "Dyad": {
+    "tests": {
+      "default_force_chain": {
+        "stop": 5,
+        "atol": {"master.p_mc": 20000, "pedal.x_ped": 0.000001},
+        "expect": {
+          "initial": {"master.p_mc": 0, "pedal.x_ped": 0.00875},
+          "final": {"master.p_mc": 10340000, "pedal.x_ped": 0.00875},
+          "signals": [
+            "pedal_force.y",
+            "pedal.F_rod",
+            "booster.F_out",
+            "master.p_mc",
+            "master.V_disp",
+            "pedal.x_ped"
+          ]
+        }
+      }
+    }
+  },
+  "_links": {
+    "pedal_force": {
+      "Dyad": {"placement": {"diagram": {"x1": -70, "x2": 30, "y1": 450, "y2": 550}}}
+    },
+    "driver": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 240, "x2": 140, "y1": 450, "y2": 550, "rot": 270}}
+      }
+    },
+    "pedal": {
+      "Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 450, "y2": 550}}}
+    },
+    "booster": {
+      "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 450, "y2": 550}}}
+    },
+    "master": {
+      "Dyad": {"placement": {"diagram": {"x1": 670, "x2": 770, "y1": 450, "y2": 550}}}
+    },
+    "fixed": {
+      "Dyad": {"placement": {"diagram": {"x1": 420, "x2": 520, "y1": 750, "y2": 850}}}
+    },
+    "front_closed": {
+      "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 300, "y2": 400}}}
+    },
+    "rear_closed": {
+      "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 600, "y2": 700}}}
+    },
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id10": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [{"x": 190, "y": 330}, {"x": 310, "y": 330}, {"x": 310, "y": 499}],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id11": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 190, "y": 620}, {"x": 470, "y": 620}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id12": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 380, "y": 620}, {"x": 470, "y": 620}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id13": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 551, "y": 620}, {"x": 470, "y": 620}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id14": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [{"x": 680, "y": 549}, {"x": 680, "y": 620}, {"x": 470, "y": 620}],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id15": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 810, "y": 474}, {"x": 810, "y": 350}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id16": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 810, "y": 525}, {"x": 810, "y": 650}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
+end
+
+analysis ForceChainTransient
+  extends TransientAnalysis(stop = 5.0)
+  model = VehicleSystemsComponents.Vehicle.Brake.TestForceChain(p_vac = p_vac)
+  "Vacuum-chamber absolute pressure [Pa] (PATH)"
+  parameter p_vac::Pressure = 33e3
+relations
+end

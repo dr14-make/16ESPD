@@ -1,0 +1,14 @@
+"Zero-flow termination used to cap an unused hydraulic circuit."
+component ClosedHydraulicPort
+  "Hydraulic connector whose mass flow is constrained to zero"
+  port = HydraulicComponents.Interfaces.Port() {^port}
+relations
+  port.m_flow = 0.0
+metadata {
+  "_links": {
+    "port": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end

@@ -1,0 +1,53 @@
+"""
+Static vacuum booster with physical translational input, output, and housing connectors.
+
+The pushrod is treated as rigid, while the housing carries the force added by vacuum assist. The
+force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited run-out.
+"""
+component StaticBooster
+  "Input pushrod connection from the pedal"
+  input = Flange() {^input}
+  "Output pushrod connection to the master cylinder"
+  rod_out = Flange() {^rod_out}
+  "Booster housing reaction"
+  support = Flange() {^support}
+  "Boosted servo ratio (assumed)"
+  parameter SR::Real = 5.0
+  "Input force at booster cut-in [N] (assumed)"
+  parameter F_cut::Force = 40.0
+  "Jump-in output force [N] (assumed)"
+  parameter F_jump::Force = 500.0
+  "Effective booster diaphragm area [m^2] (PATH)"
+  parameter A_d::Area = 0.0533
+  "Vacuum-chamber absolute pressure [Pa] (PATH)"
+  parameter p_vac::Pressure = 33e3
+  "Booster return-spring preload [N] (PATH)"
+  parameter F_rs0::Force = 97.0
+  "Atmospheric absolute pressure [Pa] (standard atmosphere)"
+  parameter p_atm::Pressure = 101325.0
+  "Maximum force supplied by pressure differential after return preload [N] (derived)"
+  final parameter F_assist_max::Force = A_d * (p_atm - p_vac) - F_rs0
+  "Input-force magnitude [N]"
+  variable F_in::Force
+  "Output-force magnitude [N]"
+  variable F_out::Force
+relations
+  input.s - support.s = rod_out.s - support.s
+  F_in = -input.f
+  F_out = rod_out.f
+  F_out = ifelse(F_in < F_cut, 0.0, min(F_jump + SR * (F_in - F_cut), F_in + F_assist_max))
+  input.f + rod_out.f + support.f = 0.0
+metadata {
+  "_links": {
+    "input": {
+      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 440, "y2": 540}}}
+    },
+    "rod_out": {
+      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 440, "y2": 540}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": 950, "y2": 1050}}}
+    }
+  }
+}
+end

@@ -53,3 +53,4 @@ include("WheelAccelEstimator_test.jl")
 include("WheeledDriveline_test.jl")
 end
 include("Wheel/tests.jl")
+include("Brake/tests.jl")

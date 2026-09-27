@@ -1,0 +1,72 @@
+"""
+Quasi-static tandem master cylinder with two physical hydraulic circuit connectors.
+
+Both circuits carry the same master-cylinder pressure. Connector flow is mass flow positive into
+this component, so fluid delivered to either brake circuit increases `V_disp`. Rod travel is dead
+stroke plus displaced fluid volume divided by bore area.
+"""
+component TandemMasterCylinder
+  "Mechanical pushrod connection from the booster"
+  pushrod = Flange() {^pushrod}
+  "Master-cylinder housing reaction"
+  support = Flange() {^support}
+  "Front brake-circuit hydraulic port"
+  front = HydraulicComponents.Interfaces.Port() {^front}
+  "Rear brake-circuit hydraulic port"
+  rear = HydraulicComponents.Interfaces.Port() {^rear}
+  "Master-cylinder pressure [Pa]"
+  p_mc = RealOutput() {^p_mc}
+  "Master-cylinder pushrod travel [m]"
+  x_rod = RealOutput() {^x_rod}
+  "Master-cylinder piston area, pi*0.025^2/4 for a 25 mm bore [m^2] (PATH)"
+  parameter A_mc::Area = π * 0.025 ^ 2 / 4
+  "Master-cylinder spring preload [N] (PATH)"
+  parameter F_cs0::Force = 138.0
+  "Master-cylinder seal friction [N] (PATH)"
+  parameter F_cf::Force = 80.0
+  "Dead stroke before fluid displacement [m] (assumed; textbook range 1.5–3.5 mm)"
+  parameter s_dead::Length = 2.5e-3
+  "Displaced brake-fluid volume [m^3]"
+  variable V_disp::Volume
+  "Pushrod-force magnitude [N]"
+  variable F_rod::Force
+  "Brake-fluid density evaluated at master-cylinder pressure [kg/m^3] (derived from hydraulic medium)"
+  variable rho::Density
+relations
+  F_rod = -pushrod.f
+  pushrod.f + support.f = 0.0
+  pushrod.s - support.s = x_rod
+  p_mc = max(0.0, F_rod - F_cs0 - F_cf) / A_mc
+  front.p = p_mc
+  rear.p = p_mc
+  rho = HydraulicComponents.density(front.medium, p_mc)
+  der(V_disp) = -(front.m_flow + rear.m_flow) / rho
+  x_rod = s_dead + V_disp / A_mc
+  initial V_disp = 0.0
+metadata {
+  "_links": {
+    "pushrod": {
+      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 450, "y2": 550}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 940, "y2": 1040}}}
+    },
+    "front": {
+      "Dyad": {"placement": {"diagram": {"x1": 970, "x2": 1070, "y1": 190, "y2": 290}}}
+    },
+    "rear": {
+      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 700, "y2": 800}}}
+    },
+    "p_mc": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 220, "x2": 320, "y1": -50, "y2": 50, "rot": 270}}
+      }
+    },
+    "x_rod": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 740, "x2": 840, "y1": -50, "y2": 50, "rot": 270}}
+      }
+    }
+  }
+}
+end

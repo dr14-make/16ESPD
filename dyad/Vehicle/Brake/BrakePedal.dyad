@@ -1,0 +1,45 @@
+"""
+Ideal, massless brake-pedal lever with physical translational connectors.
+
+The pedal and pushrod displacements are measured from the fixed pivot support. The lever multiplies
+pushrod force and pedal travel by `i_p` while conserving mechanical power.
+"""
+component BrakePedal
+  "Driver-side pedal connection"
+  pedal = Flange() {^pedal}
+  "Booster pushrod connection"
+  rod = Flange() {^rod}
+  "Pedal pivot and housing reaction"
+  support = Flange() {^support}
+  "Pedal lever ratio (assumed; cited OEM boosted range 3.2–5)"
+  parameter i_p::Real = 3.5
+  "Driver pedal-force magnitude [N]"
+  variable F_ped::Force
+  "Force delivered at the pushrod [N]"
+  variable F_rod::Force
+  "Pedal travel relative to the pivot [m]"
+  variable x_ped::Length
+  "Pushrod travel relative to the pivot [m]"
+  variable x_rod::Length
+relations
+  x_ped = pedal.s - support.s
+  x_rod = rod.s - support.s
+  x_ped = i_p * x_rod
+  F_ped = -pedal.f
+  F_rod = rod.f
+  F_rod = i_p * F_ped
+  pedal.f + rod.f + support.f = 0.0
+metadata {
+  "_links": {
+    "pedal": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 440, "y2": 540}}}
+    },
+    "rod": {
+      "Dyad": {"placement": {"diagram": {"x1": 940, "x2": 1040, "y1": 450, "y2": 550}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}
+    }
+  }
+}
+end
