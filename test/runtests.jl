@@ -1,4 +1,7 @@
 
+# Snapshot paths resolve against the working directory, so pin every test entry point here.
+cd(@__DIR__)
+
 using VehicleSystemsComponents
 using Test
     
