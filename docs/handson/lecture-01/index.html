@@ -73,6 +73,7 @@
   figcaption { font-size: 0.82em; color: var(--soft); margin-top: 4px; }
 
   .shot-img { margin: 12px 0; }
+  .badge { display: inline-block; font-size: 0.72em; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: var(--accent); border-radius: 4px; padding: 0.05em 0.5em; margin-right: 0.3em; vertical-align: 0.1em; }
   .shot-img img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; }
   .shot-img figcaption { font-size: 0.88em; color: var(--soft); margin-top: 6px; }
 
@@ -241,7 +242,7 @@
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li><strong>Create the component.</strong> In the <strong>Components</strong> panel, <em>right-click</em> <code>MyCar</code> → <strong>Add Component</strong>. Type <code>Engine</code> and press <kbd>Enter</kbd>. An empty white canvas opens: the diagram editor, with a small toolbar in its top-left corner.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>Engine</code>. It opens as an empty diagram. Type the name and press <kbd>Enter</kbd>; a white canvas opens with a small toolbar in its top-left corner.</li>
 <li><strong>Place the first part.</strong> In that toolbar, click <strong>+</strong> (<strong>Add component</strong>, the fifth icon — see the second picture in <em>Where things are</em>). A search box opens above a list of libraries. Type <code>PadeDelay</code> and click the result, <code>BlockComponents › Nonlinear › PadeDelay</code>. A block with a sine-wave icon appears on the canvas.</li>
 <li><strong>Name it.</strong> Click the block once. A panel opens on the right of the canvas with the block's name at the top and a pencil ✎ beside it. Click the pencil, type <code>delay</code>, press <kbd>Enter</kbd>.</li>
 <li><strong>Set its parameters.</strong> In the same panel, under <strong>Parameters</strong>, click into the <code>n</code> field and type <code>6</code>; <code>m</code> → <code>5</code>; <code>delayTime</code> → <code>0.3</code>. Leave the rest. Close the panel with its ✕.</li>
@@ -350,12 +351,13 @@ end</code></pre></div>
     <figcaption>The test harness: <code>cmd</code> steps the torque command above the ceiling, <code>load</code> is a 1 kg·m² inertia, and <code>EngineStepTransient</code> at the bottom of the code runs it for 3 s.</figcaption>
   </figure>
   <ol class="actions" start="9">
-<li>In the <strong>Components</strong> panel, right-click <code>MyCar</code> → <strong>Add Component</strong> → <code>EngineStep</code>.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>EngineStep</code>. It opens as an empty diagram. It is the test bench: a separate model that holds your engine.</li>
 <li>Click <strong>+</strong>, open <code>MyCar</code> at the bottom of the list, click <code>Engine</code>, and rename the new block <code>engine</code>. With <strong>+</strong>, add <code>BlockComponents › Sources › Step</code> as <code>cmd</code> (<code>height = 200</code>, <code>offset = 0</code>, <code>start_time = 0.5</code>), <code>RotationalComponents › Components › Inertia</code> as <code>load</code> (<code>J = 1</code>) and <code>RotationalComponents › Components › Fixed</code> as <code>mounts</code>.</li>
 <li>Wire <code>cmd</code>'s output → <code>engine</code>'s <code>tau_cmd</code>; <code>engine</code>'s <code>spline</code> → <code>load</code>'s left circle (<code>spline_a</code>); <code>engine</code>'s <code>support</code> → <code>mounts</code>.</li>
-<li>Toggle to code (⇄): two things have no diagram form. The starting state — the three <code>initial</code> lines — and the analysis, which says what to do with the model rather than what it is. Add both from the block below, the analysis after the component's <code>end</code>. Save; <code>EngineStepTransient</code> appears in the <strong>Analyses</strong> panel. If it does not, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>, beside the terminal.</li>
+<li>Open <code>EngineStep</code>, toggle to code (⇄) and add the three <code>initial</code> lines from the block below at the end of <code>relations</code>: the starting state has no diagram form. Save.</li>
+<li><span class="badge">New analysis</span> With <code>EngineStep</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar. Dyad Studio offers the analysis types it can create: choose <strong>TransientAnalysis</strong>. It creates the analysis with <code>EngineStep</code> already assigned as its model and lists it in the <strong>Analyses</strong> panel. Name it <code>EngineStepTransient</code> — the plot command below calls it by that name; if it picked another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>3</code> s.</li>
   </ol>
-  <p class="small muted">The complete bench and its analysis. Add what your file is missing, or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">EngineStep and EngineStepTransient</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
+  <p class="small muted">The complete bench and its analysis as code. Take the <code>initial</code> lines from here; the <code>analysis</code> block is the fallback if creating it with ▷ does not work.</p><div class="code"><span class="codelabel">EngineStep and EngineStepTransient</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
   cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5)
   engine = Engine()
   "Unit inertia, so its angular acceleration reads as the delivered torque"
@@ -377,7 +379,7 @@ end</code></pre></div>
 
   <h3>E · Run and plot</h3>
   <ol class="actions" start="13">
-<li>Run <code>EngineStepTransient</code> with the ▷ beside it in the <strong>Analyses</strong> panel, then plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
+<li>Run it: press ▷ beside <code>EngineStepTransient</code> in the <strong>Analyses</strong> panel. Then plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.EngineStepTransient()
 plot(r; idxs = r."engine.limiter.y")</code></pre></div>
@@ -489,7 +491,7 @@ end</code></pre></div>
   "Wheel rolling radius"
   parameter r::Length = 0.31</code></pre></div>
 Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
-<li>Create <code>Driveline</code>. Place <code>gear</code> and <code>wheel</code> and wire <code>gear.spline_b → wheel.spline</code>.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>Driveline</code>. It opens as an empty diagram. Then: Place <code>gear</code> and <code>wheel</code> and wire <code>gear.spline_b → wheel.spline</code>.</li>
 <li>Add the four ports. Wire <code>spline → gear.spline_a</code> and <code>wheel.flange → flange</code>.</li>
 <li>Both reaction paths go out of the component: wire <code>gear.support</code> and <code>wheel.support_r</code> to <code>support_r</code>, and <code>wheel.support_t</code> to <code>support_t</code>. The car will ground them.</li>
 <li>Set <code>ratio = i</code> and <code>radius = r</code>. The force at the flange is then <code>T · i / r</code>, the formula from notebook 01.</li>
@@ -570,7 +572,7 @@ end</code></pre></div>
   "Speed at which the drag force is specified"
   parameter v_nominal::Velocity = 30</code></pre></div>
 Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
-<li>Create <code>Body</code>. Place the parts and wire the three forces — <code>flange</code>, <code>drag.flange</code>, <code>rolling.flange</code> — to <code>mass.flange_a</code>.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>Body</code>. It opens as an empty diagram. Then: Place the parts and wire the three forces — <code>flange</code>, <code>drag.flange</code>, <code>rolling.flange</code> — to <code>mass.flange_a</code>.</li>
 <li>Wire <code>drag.support</code> and <code>rolling.support</code> to <code>ground.flange</code>: drag and rolling resistance push against the road and the air, not against the car.</li>
 <li>Feed <code>rolling</code> its two signal inputs: <code>cr_const.y → rolling.cr</code> and <code>incl_const.y → rolling.inclination</code>. An unconnected input would leave the model incomplete.</li>
 <li>Set the drag parameters. <code>f_nominal</code> is negative, which makes the source a load; <code>ForceDirection = false</code> makes drag oppose motion both ways. <code>-0.5 * rho * CdA * v_nominal ^ 2</code> is ½ρ·C<sub>d</sub>A·v² at the nominal speed, written in the parameters' names.</li>
@@ -657,18 +659,19 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li>Create <code>Car</code>. Drop in your three components and wire <code>engine.spline → driveline.spline</code> and <code>driveline.flange → body.flange</code>.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>Car</code>. It opens as an empty diagram. Then: Drop in your three components and wire <code>engine.spline → driveline.spline</code> and <code>driveline.flange → body.flange</code>.</li>
 <li>Ground the reactions: <code>engine.support</code> and <code>driveline.support_r</code> to <code>rot_ground</code>, <code>driveline.support_t</code> to <code>trans_ground</code>.</li>
 <li>Measure: <code>vsensor.flange</code> on <code>body.flange</code>, then <code>vsensor.v → to_kmh.u</code>. The sensor gives m/s; the gain of 3.6 makes it km/h.</li>
 <li>Add the ports: <code>tau_cmd → engine.tau_cmd</code>, <code>to_kmh.y → v_kmh</code>.</li>
-<li>Build the test bench: in the <strong>Components</strong> panel, right-click your library → <strong>Add Component</strong>, call it <code>CarFullThrottle</code>. With <strong>+</strong>, place your <code>Car</code> (under <code>MyCar</code>) as <code>car</code> and a <code>BlockComponents › Sources › Constant</code> as <code>cmd</code> with <code>k = 150</code>. Wire <code>cmd.y → car.tau_cmd</code>.</li>
-<li>Toggle to code (⇄). Add the three <code>initial</code> lines of the complete bench below at the end of <code>relations</code>, and paste the <code>analysis</code> block after the component's <code>end</code>. Save: <code>CarFullThrottleTransient</code> appears in the <strong>Analyses</strong> panel. The car needs its position fixed at the start as well as its speed; without <code>car.body.mass.s</code> the model has no unique initial state.</li>
-<li>Run it with the ▷ beside it in the <strong>Analyses</strong> panel. Then, in the Julia REPL (<strong>Dyad: Open Julia REPL</strong> in the <strong>Actions</strong> title bar), plot the speed:
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>CarFullThrottle</code>. It opens as an empty diagram. This is the bench. With <strong>+</strong>, place your <code>Car</code> (under <code>MyCar</code>) as <code>car</code> and a <code>BlockComponents › Sources › Constant</code> as <code>cmd</code> with <code>k = 150</code>. Wire <code>cmd.y → car.tau_cmd</code>.</li>
+<li>Open <code>CarFullThrottle</code>, toggle to code (⇄) and add the three <code>initial</code> lines from the block below at the end of <code>relations</code>: the starting state has no diagram form. Save. The car needs its position fixed at the start as well as its speed; without <code>car.body.mass.s</code> the model has no unique initial state.</li>
+<li><span class="badge">New analysis</span> With <code>CarFullThrottle</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar. Dyad Studio offers the analysis types it can create: choose <strong>TransientAnalysis</strong>. It creates the analysis with <code>CarFullThrottle</code> already assigned as its model and lists it in the <strong>Analyses</strong> panel. Name it <code>CarFullThrottleTransient</code> — the plot command below calls it by that name; if it picked another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>300</code> s.</li>
+<li>Run it: press ▷ beside <code>CarFullThrottleTransient</code> in the <strong>Analyses</strong> panel. Then, in the Julia REPL (<strong>Dyad: Open Julia REPL</strong> in the <strong>Actions</strong> title bar), plot the speed:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.CarFullThrottleTransient()
 plot(r; idxs = r."car.v_kmh")</code></pre></div></li>
   </ol>
-  <p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">CarFullThrottle and CarFullThrottleTransient</span><button class="copy" type="button">Copy</button><pre><code>component CarFullThrottle
+  <p class="small muted">The complete bench and its analysis as code. Take the <code>initial</code> lines from here; the <code>analysis</code> block is the fallback if creating it with ▷ does not work.</p><div class="code"><span class="codelabel">CarFullThrottle and CarFullThrottleTransient</span><button class="copy" type="button">Copy</button><pre><code>component CarFullThrottle
   "Full throttle: the engine's 150 N·m ceiling"
   cmd = BlockComponents.Sources.Constant(k = 150)
   car = Car()
@@ -765,11 +768,12 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li>In the <strong>Components</strong> panel, right-click <code>Driveline</code> → <strong>Duplicate</strong>, and call the copy <code>WheeledDriveline</code>.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>Driveline</code> → <strong>Duplicate</strong> and name the copy <code>WheeledDriveline</code>.</li>
 <li>Delete the wire <code>gear.spline_b → wheel.spline</code>, place <code>inertia</code> between them and wire <code>gear.spline_b → inertia.spline_a</code>, <code>inertia.spline_b → wheel.spline</code>. Add the parameter <code>J_w</code> (<code>MomentOfInertia</code>, 1.0) next to the <code>i</code> and <code>r</code> the copy already has, and set <code>J = J_w</code>.</li>
-<li>Duplicate <code>Car</code> as <code>WheeledCar</code> and, in its diagram, replace its <code>driveline</code> with a <code>WheeledDriveline</code>. The ports are the same, so the wires stay.</li>
-<li>Duplicate <code>CarFullThrottle</code> as <code>WheeledCarFullThrottle</code>, and in its diagram swap <code>car</code> for a <code>WheeledCar</code>. Toggle to code: the wheel now has a state of its own, so add its <code>initial</code> line, and paste the analysis after <code>end</code>:
-<p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">WheeledCarFullThrottle and WheeledCarFullThrottleTransient</span><button class="copy" type="button">Copy</button><pre><code>component WheeledCarFullThrottle
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>Car</code> → <strong>Duplicate</strong> and name the copy <code>WheeledCar</code>. In its diagram, replace its <code>driveline</code> with a <code>WheeledDriveline</code>. The ports are the same, so the wires stay.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>CarFullThrottle</code> → <strong>Duplicate</strong> and name the copy <code>WheeledCarFullThrottle</code>. In its diagram, swap <code>car</code> for a <code>WheeledCar</code>. The wheel now has a state of its own: Open <code>WheeledCarFullThrottle</code>, toggle to code (⇄) and add the line <code>initial car.driveline.inertia.phi = 0</code> at the end of <code>relations</code>: the starting state has no diagram form. Save.</li>
+<li><span class="badge">New analysis</span> With <code>WheeledCarFullThrottle</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar. Dyad Studio offers the analysis types it can create: choose <strong>TransientAnalysis</strong>. It creates the analysis with <code>WheeledCarFullThrottle</code> already assigned as its model and lists it in the <strong>Analyses</strong> panel. Name it <code>WheeledCarFullThrottleTransient</code> — the plot command below calls it by that name; if it picked another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>300</code> s. Fallback, as code:
+<div class="code"><span class="codelabel">WheeledCarFullThrottle and WheeledCarFullThrottleTransient</span><button class="copy" type="button">Copy</button><pre><code>component WheeledCarFullThrottle
   "Full throttle: the engine's 150 N·m ceiling"
   cmd = BlockComponents.Sources.Constant(k = 150)
   car = WheeledCar()
@@ -785,7 +789,7 @@ analysis WheeledCarFullThrottleTransient
   extends TransientAnalysis(stop = 300)
   model = WheeledCarFullThrottle()
 end</code></pre></div></li>
-<li>Run <code>WheeledCarFullThrottleTransient</code> from the <strong>Analyses</strong> panel, then plot it over step 5's curve in the Julia REPL:
+<li>Run it: press ▷ beside <code>WheeledCarFullThrottleTransient</code> in the <strong>Analyses</strong> panel. Then plot it over step 5's curve in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 a = MyCar.CarFullThrottleTransient()
 b = MyCar.WheeledCarFullThrottleTransient()
@@ -904,9 +908,9 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li><strong>Add Component</strong> <code>GradeForce</code> and toggle to code (⇄): an equation has no diagram form. Start from the solution's first block — <code>extends</code> the force interface, declare the <code>grade</code> input and the two parameters. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>GradeForce</code>. It opens as an empty diagram. Toggle to code (⇄): an equation has no diagram form. Start from the solution's first block — <code>extends</code> the force interface, declare the <code>grade</code> input and the two parameters. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
 <li>Write the one equation below. <code>grade</code> is tan α, the same convention <code>RollingResistance</code> uses for its <code>inclination</code>, so one signal can drive both.</li>
-<li>In the <strong>Components</strong> panel, right-click <code>Body</code> → <strong>Duplicate</strong>, and call the copy <code>GradeBody</code>. In the diagram, delete <code>incl_const</code>, add a <code>grade</code> input port, wire it to <code>rolling.inclination</code>, place a <code>GradeForce</code> with <code>m = m</code>, <code>g = g</code> — the body's own parameters, so the car's mass is set in one place — and wire <code>grade → gradeforce.grade</code>, <code>gradeforce.flange → mass.flange_a</code>, <code>gradeforce.support → ground.flange</code>.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>Body</code> → <strong>Duplicate</strong> and name the copy <code>GradeBody</code>. In the diagram, delete <code>incl_const</code>, add a <code>grade</code> input port, wire it to <code>rolling.inclination</code>, place a <code>GradeForce</code> with <code>m = m</code>, <code>g = g</code> — the body's own parameters, so the car's mass is set in one place — and wire <code>grade → gradeforce.grade</code>, <code>gradeforce.flange → mass.flange_a</code>, <code>gradeforce.support → ground.flange</code>.</li>
   </ol>
   <div class="code"><span class="codelabel">GradeForce — complete</span><button class="copy" type="button">Copy</button><pre><code>component GradeForce
   extends TranslationalComponents.Interfaces.PartialForce
@@ -1016,9 +1020,9 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li><strong>Add Component</strong> <code>TireFrictionCurve</code> and toggle to code (⇄): an equation has no diagram form. Write it with the two ports, four parameters and two helper variables of the solution. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>TireFrictionCurve</code>. It opens as an empty diagram. Toggle to code (⇄): an equation has no diagram form. Write it with the two ports, four parameters and two helper variables of the solution. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
 <li>Write the relations below. Each segment is a cubic with zero slope at its ends, so the curve has no corners for the solver to trip on.</li>
-<li>Sweep the slip from −1 to +1 to see the curve. <strong>Add Component</strong> <code>TestTireFrictionCurve</code>, toggle to code, and replace its contents with the bench and its analysis:
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>TestTireFrictionCurve</code>. It opens as an empty diagram. It is the bench that sweeps the slip from −1 to +1. Toggle to code and replace its contents with the component below (it is short, and a ramp is easier to type than to draw); keep only the <code>component</code> part if you create the analysis from the UI:
 <div class="code"><span class="codelabel">Sweep bench and analysis</span><button class="copy" type="button">Copy</button><pre><code>component TestTireFrictionCurve
   slip = BlockComponents.Sources.Ramp(offset = -1, height = 2, duration = 2, start_time = 0)
   curve = TireFrictionCurve()
@@ -1029,8 +1033,9 @@ end
 analysis TireFrictionCurveSweep
   extends TransientAnalysis(stop = 2)
   model = TestTireFrictionCurve()
-end</code></pre></div>
-Run <code>TireFrictionCurveSweep</code> from the <strong>Analyses</strong> panel, then plot μ against κ rather than against time:
+end</code></pre></div></li>
+<li><span class="badge">New analysis</span> With <code>TestTireFrictionCurve</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar. Dyad Studio offers the analysis types it can create: choose <strong>TransientAnalysis</strong>. It creates the analysis with <code>TestTireFrictionCurve</code> already assigned as its model and lists it in the <strong>Analyses</strong> panel. Name it <code>TireFrictionCurveSweep</code> — the plot command below calls it by that name; if it picked another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>2</code> s.</li>
+<li>Run it: press ▷ beside <code>TireFrictionCurveSweep</code> in the <strong>Analyses</strong> panel. Then plot μ against κ rather than against time:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.TireFrictionCurveSweep()
 plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre></div></li>
@@ -1137,7 +1142,7 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li><strong>Add Component</strong> <code>SlipWheel1D</code> and toggle to code (⇄): an equation has no diagram form. Write it: ports, the <code>curve</code> subcomponent, three parameters and five variables, as in the solution. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipWheel1D</code>. It opens as an empty diagram. Toggle to code (⇄): an equation has no diagram form. Write it: ports, the <code>curve</code> subcomponent, three parameters and five variables, as in the solution. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
 <li>Write the relations below. Slip is the speed difference over the vehicle speed; <code>v_eps</code> keeps it finite at standstill.</li>
 <li>Mind the sign: flow is positive into a component, so a tire that pushes the car forward reports <code>flange.f = -F_x</code>.</li>
   </ol>
@@ -1282,9 +1287,12 @@ end</code></pre></div>
   "Gravitational acceleration"
   parameter g::Acceleration = 9.80665</code></pre></div>
 Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
-<li>Create <code>SlipCar</code> in the diagram editor: everything in it is a part you already have. The drive chain is <code>engine → gear → wheel_inertia → wheel</code>, and <code>wheel.flange</code> drives <code>body.flange</code> directly — the tire is now the contact, so there is no translational ground.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipCar</code>. It opens as an empty diagram. Everything in it is a part you already have. The drive chain is <code>engine → gear → wheel_inertia → wheel</code>, and <code>wheel.flange</code> drives <code>body.flange</code> directly — the tire is now the contact, so there is no translational ground.</li>
 <li>Measure both speeds in km/h: <code>vsensor</code> on the wheel flange through <code>to_kmh</code>, and <code>wsensor</code> on the wheel shaft through <code>wheel_to_kmh</code>, which multiplies by the radius as well.</li>
-<li>Build the bench: <strong>Add Component</strong> <code>SlipCarStandingStart</code>, place your <code>SlipCar</code> as <code>car</code> and three <code>BlockComponents › Sources › Constant</code>: <code>cmd</code> (<code>k = 150</code>) → <code>car.tau_cmd</code>, <code>road</code> (<code>k = 0</code>) → <code>car.grade</code>, <code>friction</code> (<code>k = 0.2</code>) → <code>car.mu_scale</code>. Toggle to code, add the <code>initial</code> lines from the complete bench below, paste the analysis after <code>end</code>, save, and run <code>SlipCarStandingStartTransient</code> from the <strong>Analyses</strong> panel.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipCarStandingStart</code>. It opens as an empty diagram. This is the bench. Place your <code>SlipCar</code> as <code>car</code> and three <code>BlockComponents › Sources › Constant</code>: <code>cmd</code> (<code>k = 150</code>) → <code>car.tau_cmd</code>, <code>road</code> (<code>k = 0</code>) → <code>car.grade</code>, <code>friction</code> (<code>k = 0.2</code>) → <code>car.mu_scale</code>.</li>
+<li>Open <code>SlipCarStandingStart</code>, toggle to code (⇄) and add the five <code>initial</code> lines from the block below at the end of <code>relations</code>: the starting state has no diagram form. Save.</li>
+<li><span class="badge">New analysis</span> With <code>SlipCarStandingStart</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar. Dyad Studio offers the analysis types it can create: choose <strong>TransientAnalysis</strong>. It creates the analysis with <code>SlipCarStandingStart</code> already assigned as its model and lists it in the <strong>Analyses</strong> panel. Name it <code>SlipCarStandingStartTransient</code> — the plot command below calls it by that name; if it picked another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>5</code> s.</li>
+<li>Run it: press ▷ beside <code>SlipCarStandingStartTransient</code> in the <strong>Analyses</strong> panel.</li>
 <li>Plot both speeds together in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.SlipCarStandingStartTransient()
@@ -1294,7 +1302,7 @@ Then the same start on a dry road. The run below overrides <code>friction.k</cod
     model = MyCar.SlipCarStandingStart(name = :SlipCarStandingStart, friction__k = 1.0))
 plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre></div></li>
   </ol>
-  <p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">SlipCarStandingStart and SlipCarStandingStartTransient</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
+  <p class="small muted">The complete bench and its analysis as code. Take the <code>initial</code> lines from here; the <code>analysis</code> block is the fallback if creating it with ▷ does not work.</p><div class="code"><span class="codelabel">SlipCarStandingStart and SlipCarStandingStartTransient</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
   "Full throttle"
   cmd = BlockComponents.Sources.Constant(k = 150)
   "Flat road"

@@ -345,7 +345,7 @@ end</code></pre>
   </section>
 
   <section>
-    <h2>The analysis is code</h2>
+    <h2>Initial state in code, analysis with ▷</h2>
     <div class="demo">
       <div class="demo-head"><span class="nb">EngineStep — complete bench and analysis</span><span class="spacer"></span></div>
       <pre><code class="language-julia" data-trim data-noescape>component EngineStep
@@ -369,12 +369,20 @@ analysis EngineStepTransient
 end</code></pre>
       <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
     </div>
-    <p class="small">Save → <code>EngineStepTransient</code> appears in <strong>Analyses</strong> → ▷.</p>
+    <ol class="small">
+      <li><strong>New component</strong> <code>EngineStep</code> (Components → right-click MyCar → Add Component), draw the bench.</li>
+      <li>⇄ to code, add the three <code>initial</code> lines. Save.</li>
+      <li><strong>New analysis:</strong> ▷ Run Analysis in the title bar → <strong>TransientAnalysis</strong> → model already assigned. Name it <code>EngineStepTransient</code>, <code>stop = 3</code>.</li>
+      <li>▷ beside it in <strong>Analyses</strong> runs it.</li>
+    </ol>
     <aside class="notes">
-      <p><strong>Say:</strong> two things have no diagram form. The starting state — where every
-      state variable begins — and the analysis, which is an instruction, not a part.</p>
-      <p><strong>They get wrong:</strong> pasting the analysis <em>inside</em> the component.
-      It goes after the component's <code>end</code>.</p>
+      <p><strong>Say:</strong> the bench is a new component of its own — say so out loud, students
+      try to draw it inside <code>Engine</code>. The starting state has no diagram form, so it is
+      three lines of code. The analysis does not need typing: ▷ in the title bar offers the analysis
+      types, TransientAnalysis creates one with this bench as its model.</p>
+      <p><strong>They get wrong:</strong> the analysis name. The plot command calls
+      <code>MyCar.EngineStepTransient()</code>; if Dyad Studio picked another name, change the word
+      after <code>analysis</code> in its code. The code block on this slide is the fallback.</p>
       <p><strong>If it does not appear in Analyses:</strong> Dyad Compile under Julia Commands.</p>
     </aside>
   </section>
@@ -551,7 +559,7 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
   </section>
 
   <section>
-    <h2>Bench, analysis, run</h2>
+    <h2>New bench, new analysis, run</h2>
     <div class="demo">
       <div class="demo-head"><span class="nb">CarFullThrottle — complete bench and analysis</span><span class="spacer"></span></div>
       <pre><code class="language-julia" data-trim data-noescape>component CarFullThrottle
@@ -572,6 +580,9 @@ end</code></pre>
       <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
     </div>
     <aside class="notes">
+      <p><strong>Same pattern as step 02:</strong> New component <code>CarFullThrottle</code> →
+      draw → three <code>initial</code> lines in code → ▷ Run Analysis → TransientAnalysis, named
+      <code>CarFullThrottleTransient</code>, <code>stop = 300</code> → ▷ in Analyses.</p>
       <p><strong>They get wrong:</strong> leaving out <code>car.body.mass.s</code>. Position
       appears in no force, so it feels optional, but without it the start is not unique and the
       model will not initialize.</p>

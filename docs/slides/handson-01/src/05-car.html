@@ -31,7 +31,7 @@
   </section>
 
   <section>
-    <h2>Bench, analysis, run</h2>
+    <h2>New bench, new analysis, run</h2>
     <div class="demo">
       <div class="demo-head"><span class="nb">CarFullThrottle — complete bench and analysis</span><span class="spacer"></span></div>
       <pre><code class="language-julia" data-trim data-noescape>component CarFullThrottle
@@ -52,6 +52,9 @@ end</code></pre>
       <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
     </div>
     <aside class="notes">
+      <p><strong>Same pattern as step 02:</strong> New component <code>CarFullThrottle</code> →
+      draw → three <code>initial</code> lines in code → ▷ Run Analysis → TransientAnalysis, named
+      <code>CarFullThrottleTransient</code>, <code>stop = 300</code> → ▷ in Analyses.</p>
       <p><strong>They get wrong:</strong> leaving out <code>car.body.mass.s</code>. Position
       appears in no force, so it feels optional, but without it the start is not unique and the
       model will not initialize.</p>
