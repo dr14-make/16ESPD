@@ -338,6 +338,10 @@ end</code></pre></div>
     <a href="img/step02-engine-step.png"><img src="img/step02-engine-step.png" alt="EngineStep test harness: a step source drives the engine into a unit inertia held by fixed mounts." loading="lazy"></a>
     <figcaption>The test harness: <code>cmd</code> steps the torque command above the ceiling, <code>load</code> is a 1 kg·m² inertia, and <code>EngineStepTransient</code> at the bottom of the code runs it for 3 s.</figcaption>
   </figure>
+  <figure class="shot-img">
+    <a href="img/step02-engine-step-plot.png"><img src="img/step02-engine-step-plot.png" alt="Plot of engine.limiter.y: zero until 0.5 s, a 0.3 s dead time with small ripples, then a rise that is clipped flat at 150 N·m from about 1.2 s." loading="lazy"></a>
+    <figcaption>The run: 200 N·m is asked for at 0.5 s. Nothing arrives for the 0.3 s dead time (the small wiggles are the Padé approximation), the lag shapes the rise, and the limiter clips it at 150 N·m.</figcaption>
+  </figure>
   <h3>Do this</h3>
   <ol class="actions">
 <li>In <code>Engine</code>, add <code>limiter</code> and <code>torque</code> and wire <code>lag.y → limiter.u → torque.tau</code>.</li>
@@ -345,7 +349,11 @@ end</code></pre></div>
 <li>Set the limiter to <code>y_max = 150</code>, <code>y_min = 0</code>: the engine cannot brake through this path.</li>
 <li>An engine with an unconnected input cannot be simulated, so build a test bench. Create a component <code>EngineStep</code>, drop in your <code>Engine</code> from your own library, and add <code>cmd</code>, <code>load</code> and <code>mounts</code>. Wire it as drawn.</li>
 <li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines highlighted in the block below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block.</li>
-<li>Run <code>EngineStepTransient</code> and plot <code>engine.limiter.y</code> and <code>engine.delay.y</code>.</li>
+<li>Run <code>EngineStepTransient</code> and plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
+<div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
+r = MyCar.EngineStepTransient()
+plot(r; idxs = r."engine.limiter.y")</code></pre></div>
+The same pattern plots several signals, <code>idxs = [r."a", r."b"]</code>, or one against another, <code>idxs = (r."x", r."y")</code>.</li>
   </ol>
   <div class="code"><span class="codelabel">New code in EngineStep</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
   …
@@ -748,6 +756,10 @@ end</code></pre></div>
     <a href="img/step05-car.png"><img src="img/step05-car.png" alt="Car diagram: torque command into engine, driveline and body, with a velocity sensor and a 3.6 gain producing speed in km/h." loading="lazy"></a>
     <figcaption>The finished <code>Car</code>. The sensor reads the body's speed in m/s and the <code>k = 3.6</code> gain turns it into km/h.</figcaption>
   </figure>
+  <figure class="shot-img">
+    <a href="img/step05-car-plot.png"><img src="img/step05-car-plot.png" alt="Plot of car.v_kmh rising from zero and leveling off at about 246 km/h after roughly 150 s." loading="lazy"></a>
+    <figcaption>The run: steep at first, then flattening as drag grows with the square of speed, settling at 246.39 km/h.</figcaption>
+  </figure>
   <h3>Do this</h3>
   <ol class="actions">
 <li>Create <code>Car</code>. Drop in your three components and wire <code>engine.spline → driveline.spline</code> and <code>driveline.flange → body.flange</code>.</li>
@@ -756,7 +768,7 @@ end</code></pre></div>
 <li>Add the ports: <code>tau_cmd → engine.tau_cmd</code>, <code>to_kmh.y → v_kmh</code>.</li>
 <li>Build the test bench <code>CarFullThrottle</code>: a <code>Constant</code> of 150 into <code>car.tau_cmd</code>.</li>
 <li>In code, add the starting state and the analysis below. The car needs its position fixed at the start as well as its speed; without <code>car.body.mass.s</code> the model has no unique initial state.</li>
-<li>Run <code>CarFullThrottleTransient</code> and plot <code>car.v_kmh</code>.</li>
+<li>Run <code>CarFullThrottleTransient</code> and plot <code>car.v_kmh</code>, picking it by name with <code>idxs</code> as in step 2.</li>
   </ol>
   <div class="code"><span class="codelabel">New code in CarFullThrottle</span><button class="copy" type="button">Copy</button><pre><code>component CarFullThrottle
   …
@@ -1177,11 +1189,15 @@ end</code></pre></div>
     <a href="img/step08-tire-curve.png"><img src="img/step08-tire-curve.png" alt="TireFrictionCurve: the diagram holds only the kappa input and mu output; the curve itself is equations in the code view." loading="lazy"></a>
     <figcaption><code>TireFrictionCurve</code> has no blocks inside: the diagram shows only its two ports, and the curve lives in the equations on the right.</figcaption>
   </figure>
+  <figure class="shot-img">
+    <a href="img/step08-tire-curve-plot.png"><img src="img/step08-tire-curve-plot.png" alt="Plot of mu against kappa: an odd-symmetric curve peaking at plus and minus 1.0 near a slip of 0.04 and falling to plus and minus 0.7 beyond 0.12." loading="lazy"></a>
+    <figcaption>The sweep plotted as μ against κ rather than against time: peak adhesion 1.0 at κ = 0.04, sliding at 0.7 beyond κ = 0.12, mirrored for braking.</figcaption>
+  </figure>
   <h3>Do this</h3>
   <ol class="actions">
 <li>Create <code>TireFrictionCurve</code> in code with the two ports, four parameters and two helper variables of the solution.</li>
 <li>Write the relations below. Each segment is a cubic with zero slope at its ends, so the curve has no corners for the solver to trip on.</li>
-<li>Build the sweep bench and the analysis <code>TireFrictionCurveSweep</code>, run it, and plot <code>curve.mu</code> against <code>curve.kappa</code>.</li>
+<li>Build the sweep bench and the analysis <code>TireFrictionCurveSweep</code>, run it, and plot <code>curve.mu</code> against <code>curve.kappa</code>: <code>idxs = (r."curve.kappa", r."curve.mu")</code>.</li>
   </ol>
   <div class="code"><span class="codelabel">Relations of TireFrictionCurve</span><button class="copy" type="button">Copy</button><pre><code><mark>  slip = abs(kappa)</mark>
 <mark>  # -0.5·x³ + 1.5·x maps [-1, 1] onto [-1, 1] with zero slope at both ends, so the curve stays</mark>
@@ -1545,12 +1561,16 @@ end</code></pre></div>
     <a href="img/step10-standing-start.png"><img src="img/step10-standing-start.png" alt="SlipCar diagram: engine, gear, wheel inertia and slip wheel drive the grade body, with separate sensors for vehicle speed and wheel surface speed." loading="lazy"></a>
     <figcaption><code>SlipCar</code>: two speed outputs, <code>v_kmh</code> from the body and <code>wheel_kmh</code> from the wheel shaft. On ice they come apart.</figcaption>
   </figure>
+  <figure class="shot-img">
+    <a href="img/step10-standing-start-plot.png"><img src="img/step10-standing-start-plot.png" alt="Plot of car.v_kmh and car.wheel_kmh: the wheel surface speed climbs to 1500 km/h in 5 s while the body barely reaches 10 km/h." loading="lazy"></a>
+    <figcaption>The run: the wheel surface (orange) is past 1500 km/h after 5 s while the car (blue) has reached 10 km/h. Past the peak of the curve, more slip gives less grip, so the wheel runs away.</figcaption>
+  </figure>
   <h3>Do this</h3>
   <ol class="actions">
 <li>Create <code>SlipCar</code> in the diagram editor: everything in it is a part you already have. The drive chain is <code>engine → gear → wheel_inertia → wheel</code>, and <code>wheel.flange</code> drives <code>body.flange</code> directly — the tire is now the contact, so there is no translational ground.</li>
 <li>Measure both speeds in km/h: <code>vsensor</code> on the wheel flange through <code>to_kmh</code>, and <code>wsensor</code> on the wheel shaft through <code>wheel_to_kmh</code>, which multiplies by the radius as well.</li>
 <li>Build the bench, add the starting state and analysis below in code, and run it.</li>
-<li>Plot <code>car.v_kmh</code> and <code>car.wheel_kmh</code> together. Then set <code>friction</code> to 1.0 and run again.</li>
+<li>Plot <code>car.v_kmh</code> and <code>car.wheel_kmh</code> together: <code>idxs = [r."car.v_kmh", r."car.wheel_kmh"]</code>. Then set <code>friction</code> to 1.0 and run again.</li>
   </ol>
   <div class="code"><span class="codelabel">New code in SlipCarStandingStart</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
   …
