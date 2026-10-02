@@ -172,6 +172,9 @@ Continuous 1 ms latch states retain the active and recovery phases without discr
   __constants = Any[]
 
   ### Components
+  # Subcomponent pressure of type VehicleSystemsComponents.Vehicle.ABSPressureIntegrator
+  pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
+  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=T_track, pressure_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -188,7 +191,6 @@ Continuous 1 ms latch states retain the active and recovery phases without discr
   isnothing(__ovr_pressure_rate__guess) || (__guesses[pressure_rate] = __ovr_pressure_rate__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, p ~ 0.0)
   push!(__initialization_eqs, active_latch ~ 0.0)
   push!(__initialization_eqs, recovering_latch ~ 0.0)
 
@@ -203,9 +205,12 @@ Continuous 1 ms latch states retain the active and recovery phases without discr
   push!(__eqs, ModelingToolkit.D_nounits(recovering_latch) ~ (recovering_target - recovering_latch) / T_latch)
   push!(__eqs, phase ~ ifelse((v_ref < v_min) | (demand <= 0.0), 2.0, ifelse((lambda_hat < -lambda_lock) | (((a_w < -a_minus) & (lambda_hat < -lambda_1))), -1.0, ifelse(a_w < -a_minus, 0.0, ifelse(recovering_latch > 0.5, 0.0, ifelse(active_latch > 0.5, 1.0, 1.0))))))
   push!(__eqs, requested_rate ~ ifelse(phase < -0.5, -k_dec, ifelse(phase < 0.5, 0.0, ifelse(phase < 1.5, ifelse(active_latch > 0.5, k_inc_slow, k_inc_fast), 0.0))))
-  push!(__eqs, pressure_rate ~ ifelse((v_ref < v_min) | (demand <= 0.0), (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), (max(demand, 0.0) - p) / T_track, ifelse((p <= 0.0) & (requested_rate < 0.0), 0.0, ifelse((p >= max(demand, 0.0)) & (requested_rate > 0.0), 0.0, requested_rate)))))
-  push!(__eqs, ModelingToolkit.D_nounits(p) ~ pressure_rate)
-  push!(__eqs, tau_cmd ~ min(max(p, 0.0), max(demand, 0.0)))
+  push!(__eqs, pressure.requested_rate ~ requested_rate)
+  push!(__eqs, pressure.active ~ ifelse((v_ref < v_min) | (demand <= 0.0), 0.0, 1.0))
+  push!(__eqs, p ~ pressure.p)
+  push!(__eqs, pressure_rate ~ pressure.pressure_rate)
+  push!(__eqs, connect(demand, pressure.demand))
+  push!(__eqs, connect(pressure.tau_cmd, tau_cmd))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

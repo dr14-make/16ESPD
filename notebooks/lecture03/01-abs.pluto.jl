@@ -105,6 +105,8 @@ begin
 
     abs_braking(mu) = braking(VehicleSystemsComponents.Vehicle.ABSBrakeTransient(
         road_mu=mu, a_ref=a_ref, k_inc_slow=k_inc_slow, stop=stop_time(mu)))
+    ideal_abs_braking(mu) = braking(VehicleSystemsComponents.Vehicle.IdealBrakeTransient(
+        road_mu=mu, stop=stop_time(mu)))
     locked_braking(mu) = braking(VehicleSystemsComponents.Vehicle.LockedBrakeTransient(
         road_mu=mu, stop=stop_time(mu)))
 end
@@ -112,9 +114,11 @@ end
 # ╔═╡ ebde0e45-07be-45cc-a8d1-5a028eb1741f
 begin
     with_abs = abs_braking(road_mu)
+    with_ideal_abs = ideal_abs_braking(road_mu)
     without_abs = locked_braking(road_mu)
 
     abs_model, abs_sol = with_abs.model, with_abs.sol
+    ideal_abs_model, ideal_abs_sol = with_ideal_abs.model, with_ideal_abs.sol
     locked_model, locked_sol = without_abs.model, without_abs.sol
 
     mu_A = abs_sol.ps[abs_model.wheel.mu_A]
@@ -142,6 +146,8 @@ begin
         xlabel="distance since brake applied [m]", ylabel="vehicle speed [km/h]",
         title="Speed over braking distance", legend=:topright,
     )
+    plot!(distance_plot, with_ideal_abs.s, 3.6 .* with_ideal_abs.v;
+        lw=3, label="ideal ABS (true slip)", color=:seagreen)
     plot!(distance_plot, without_abs.s, 3.6 .* without_abs.v;
         lw=3, ls=:dash, label="no ABS (locked)", color=:firebrick)
     let d = ideal_distance(road_mu), s = range(0, d; length=200)
@@ -149,6 +155,7 @@ begin
             lw=2, ls=:dot, color=:gray, label="ideal (peak μ)")
     end
     vline!(distance_plot, [with_abs.distance]; color=:steelblue, ls=:dot, label="")
+    vline!(distance_plot, [with_ideal_abs.distance]; color=:seagreen, ls=:dot, label="")
     vline!(distance_plot, [without_abs.distance]; color=:firebrick, ls=:dot, label="")
     distance_plot
 end
@@ -164,6 +171,7 @@ let
     | | braking distance [m] | time to stop [s] | mean deceleration [m/s²] |
     |---|---:|---:|---:|
     | ABS | $(r(with_abs.distance)) | $(round(with_abs.time; digits=2)) | $(r(V0^2 / (2 * with_abs.distance))) |
+    | ideal ABS (true slip) | $(r(with_ideal_abs.distance)) | $(round(with_ideal_abs.time; digits=2)) | $(r(V0^2 / (2 * with_ideal_abs.distance))) |
     | no ABS (locked) | $(r(without_abs.distance)) | $(round(without_abs.time; digits=2)) | $(r(V0^2 / (2 * without_abs.distance))) |
     | ideal at peak `μ_A` | $(r(ideal_distance(road_mu))) | | $(r(road_mu * mu_A * G)) |
     | locked at sliding `μ_S` | $(r(sliding_distance(road_mu))) | | $(r(road_mu * mu_S * G)) |
@@ -288,6 +296,7 @@ above it.
 begin
     sweep_mu = collect(0.2:0.1:1.0)
     sweep_abs = [abs_braking(mu).distance for mu in sweep_mu]
+    sweep_ideal_abs = [ideal_abs_braking(mu).distance for mu in sweep_mu]
     sweep_locked = [locked_braking(mu).distance for mu in sweep_mu]
 end
 
@@ -302,6 +311,8 @@ begin
     )
     plot!(sweep_plot, sweep_mu, sweep_abs;
         lw=3, marker=:circle, color=:steelblue, label="ABS")
+    plot!(sweep_plot, sweep_mu, sweep_ideal_abs;
+        lw=3, marker=:diamond, color=:seagreen, label="ideal ABS (true slip)")
     plot!(sweep_plot, sweep_mu, sweep_locked;
         lw=3, ls=:dash, marker=:square, color=:firebrick, label="no ABS (locked)")
     vline!(sweep_plot, [road_mu]; color=:black, ls=:dot, label="selected μ")
@@ -311,11 +322,11 @@ end
 # ╔═╡ 53a89ecf-62d1-4310-9051-f37ceba0e833
 let
     r(x) = round(x; digits=1)
-    rows = join(("| $(mu) | $(r(a)) | $(r(l)) | $(r(a - l)) | $(r(ideal_distance(mu))) |"
-                 for (mu, a, l) in zip(sweep_mu, sweep_abs, sweep_locked)), "\n")
+    rows = join(("| $(mu) | $(r(a)) | $(r(i)) | $(r(l)) | $(r(a - l)) | $(r(ideal_distance(mu))) |"
+                 for (mu, a, i, l) in zip(sweep_mu, sweep_abs, sweep_ideal_abs, sweep_locked)), "\n")
     Markdown.parse("""
-    | road μ | ABS [m] | no ABS [m] | ABS − no ABS [m] | ideal [m] |
-    |---:|---:|---:|---:|---:|
+    | road μ | ABS [m] | ideal ABS [m] | no ABS [m] | ABS − no ABS [m] | peak-μ bound [m] |
+    |---:|---:|---:|---:|---:|---:|
     $rows
     """)
 end
