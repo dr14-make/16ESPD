@@ -294,8 +294,10 @@ end</code></pre>
     <h2>Finish the chain, then build a bench</h2>
     <div class="cols">
       <div class="small">
+        <p>Parameters <code>theta_e</code> = 0.3 (structural), <code>tau_e</code> = 0.3,
+          <code>T_max</code> = 150 — the parts use the names.</p>
         <p><code>tau_cmd</code> → <code>delay</code> → <code>lag</code> →
-          <code>limiter</code> (y_max = 150, y_min = 0) → <code>torque</code> →
+          <code>limiter</code> (y_max = T_max, y_min = 0) → <code>torque</code> →
           <code>spline</code>; <code>torque.support</code> → <code>support</code>.</p>
         <p><strong>Bench <code>EngineStep</code>:</strong> a <code>Step</code> of 200 N·m at
           0.5 s into your <code>Engine</code>, a 1 kg·m² <code>Inertia</code> on the shaft,
@@ -307,6 +309,12 @@ end</code></pre>
       </figure>
     </div>
     <aside class="notes">
+      <p><strong>Say — name each value once:</strong> a number a part needs becomes a parameter of
+      the component, added with <strong>Add parameter</strong> in the component panel, and the
+      part refers to it by name. <code>Engine(T_max = 200)</code> then changes the ceiling in one
+      place. <code>theta_e</code> is <code>structural</code> because PadeDelay builds its
+      coefficients when the model compiles; if the panel offers no structural option, paste the
+      line in code.</p>
       <p><strong>Say:</strong> 200 is above the ceiling on purpose. The plot should show the
       limiter doing its job.</p>
       <p><strong>They get wrong:</strong> leaving <code>support</code> unconnected in the bench.
@@ -320,9 +328,17 @@ end</code></pre>
   <section>
     <h2>The analysis is code</h2>
     <div class="demo">
-      <div class="demo-head"><span class="nb">EngineStep, in code view</span><span class="spacer"></span></div>
-      <pre><code class="language-julia" data-trim data-noescape>relations
-  …
+      <div class="demo-head"><span class="nb">EngineStep — complete bench and analysis</span><span class="spacer"></span></div>
+      <pre><code class="language-julia" data-trim data-noescape>component EngineStep
+  cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5)
+  engine = Engine()
+  "Unit inertia, so its angular acceleration reads as the delivered torque"
+  load = RotationalComponents.Components.Inertia(J = 1)
+  mounts = RotationalComponents.Components.Fixed()
+relations
+  connect(cmd.y, engine.tau_cmd)
+  connect(engine.spline, load.spline_a)
+  connect(engine.support, mounts.spline)
   initial engine.lag.x = 0
   initial load.phi = 0
   initial load.w = 0
@@ -400,7 +416,7 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
     <figure class="fig shot">
       <img src="../../handson/lecture-01/img/step03-driveline.png"
            alt="Driveline: spline into an ideal gear, then an ideal rolling wheel out to the flange, with both supports brought out.">
-      <figcaption><code>gear</code> IdealGear(ratio = 4.0) → <code>wheel</code> IdealRollingWheel(radius = 0.31) ·
+      <figcaption>parameters <code>i</code> = 4.0, <code>r</code> = 0.31 · <code>gear</code> IdealGear(ratio = i) → <code>wheel</code> IdealRollingWheel(radius = r) ·
         gray circles are rotational ports, green squares translational</figcaption>
     </figure>
     <div class="readout">
@@ -454,11 +470,17 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
 
   <section>
     <h2>The one parameter that bites</h2>
-    <pre><code class="language-julia" data-trim data-noescape>drag = QuadraticSpeedDependentForce(
-    ForceDirection = false, v_nominal = 30,
-    f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2)</code></pre>
+    <pre><code class="language-julia" data-trim data-noescape>parameter m::Dyad.Mass = 1400
+parameter CdA::Area = 0.63
+parameter rho::Density = 1.2
+parameter v_nominal::Velocity = 30
+…
+drag = QuadraticSpeedDependentForce(ForceDirection = false,
+    v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
+rolling = RollingResistance(fWeight = m * g)</code></pre>
     <ul class="small">
-      <li><code>f_nominal</code> is ½ρC<sub>d</sub>A·v² at 30 m/s — type the expression.</li>
+      <li>Each value is a parameter of <code>Body</code>; the parts use the <em>names</em>.</li>
+      <li><code>f_nominal</code> is ½ρC<sub>d</sub>A·v² at the nominal speed.</li>
       <li><strong>Negative</strong> makes the source a load rather than a push.</li>
       <li><code>ForceDirection = false</code> makes it oppose motion both ways.</li>
     </ul>
@@ -470,8 +492,9 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       <p><strong>They get wrong:</strong> a positive <code>f_nominal</code>. The car then
       accelerates forever — drag pushes it. If a student's car in step 05 goes to absurd speeds,
       this sign is the first thing to check.</p>
-      <p><strong>Ask the room:</strong> why type the expression instead of 340.2? <em>(Because
-      the next person reading it sees ρ, C<sub>d</sub>A and v, not a magic number.)</em></p>
+      <p><strong>Ask the room:</strong> why parameters instead of 340.2 and 13729? <em>(The
+      next reader sees ρ, C<sub>d</sub>A and m, not magic numbers — and <code>m</code> feeds the
+      mass and the rolling resistance, so changing the car's weight changes both or neither.)</em></p>
     </aside>
   </section>
 
@@ -511,8 +534,14 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
   <section>
     <h2>Bench, analysis, run</h2>
     <div class="demo">
-      <div class="demo-head"><span class="nb">CarFullThrottle — Constant(k = 150) → car.tau_cmd, then in code view</span><span class="spacer"></span></div>
-      <pre><code class="language-julia" data-trim data-noescape>  initial car.body.mass.s = 0
+      <div class="demo-head"><span class="nb">CarFullThrottle — complete bench and analysis</span><span class="spacer"></span></div>
+      <pre><code class="language-julia" data-trim data-noescape>component CarFullThrottle
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  car = Car()
+relations
+  connect(cmd.y, car.tau_cmd)
+  initial car.body.mass.s = 0
   initial car.body.mass.v = 0
   initial car.engine.lag.x = 0
 end
@@ -588,7 +617,7 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
         <img src="../../handson/lecture-01/img/step06-wheeled-driveline.png"
              alt="WheeledDriveline: an inertia block between the gear and the rolling wheel.">
         <figcaption>Components → right-click → <strong>Duplicate</strong> ·
-          <code>inertia</code> Inertia(J = 1.0) between gear and wheel</figcaption>
+          <code>inertia</code> Inertia(J = J_w), new parameter <code>J_w</code> = 1.0</figcaption>
       </figure>
       <div class="demo">
         <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
@@ -684,7 +713,8 @@ end</code></pre>
       <img src="../../handson/lecture-01/img/step07-grade-body.png"
            alt="GradeBody: the grade input feeds both the rolling resistance inclination and the grade force.">
       <figcaption>Duplicate <code>Body</code> → <code>GradeBody</code> · delete <code>incl_const</code> ·
-        one <code>grade</code> input into <code>rolling.inclination</code> and <code>gradeforce.grade</code></figcaption>
+        one <code>grade</code> input into <code>rolling.inclination</code> and <code>gradeforce.grade</code> ·
+        <code>GradeForce(m = m, g = g)</code></figcaption>
     </figure>
     <div class="readout">
       <div class="r"><span class="v">1366 N</span><span class="k">on a 10 % climb</span></div>
@@ -835,9 +865,12 @@ flange.f = -F_x
       <img src="../../handson/lecture-01/img/step10-standing-start.png"
            alt="SlipCar: engine, gear, wheel inertia and slip wheel drive the grade body, with sensors for vehicle speed and wheel surface speed.">
       <figcaption><code>v_kmh</code> from the body · <code>wheel_kmh</code> from the wheel shaft,
-        × 0.31 × 3.6 · bench: <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2</figcaption>
+        × r × 3.6 · tire <code>radius = r</code>, <code>F_z = m * g / 2</code> · bench: <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2</figcaption>
     </figure>
     <aside class="notes">
+      <p><strong>Point at:</strong> <code>r</code> is used twice — the tire's radius and the
+      km/h gain — and <code>m</code> sets both the body's mass and the axle load. One parameter
+      each, so they cannot disagree. Typed twice, a change to one is a silent bug in the other.</p>
       <p><strong>Say:</strong> wheel surface speed is ω·r. Put on the same axis as the car's
       speed, wheelspin is simply the gap between two lines.</p>
       <p><strong>They get wrong:</strong> missing <code>initial car.wheel_inertia.w = 0</code>.

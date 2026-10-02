@@ -21,9 +21,12 @@
       <img src="../../handson/lecture-01/img/step10-standing-start.png"
            alt="SlipCar: engine, gear, wheel inertia and slip wheel drive the grade body, with sensors for vehicle speed and wheel surface speed.">
       <figcaption><code>v_kmh</code> from the body · <code>wheel_kmh</code> from the wheel shaft,
-        × 0.31 × 3.6 · bench: <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2</figcaption>
+        × r × 3.6 · tire <code>radius = r</code>, <code>F_z = m * g / 2</code> · bench: <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2</figcaption>
     </figure>
     <aside class="notes">
+      <p><strong>Point at:</strong> <code>r</code> is used twice — the tire's radius and the
+      km/h gain — and <code>m</code> sets both the body's mass and the axle load. One parameter
+      each, so they cannot disagree. Typed twice, a change to one is a silent bug in the other.</p>
       <p><strong>Say:</strong> wheel surface speed is ω·r. Put on the same axis as the car's
       speed, wheelspin is simply the gap between two lines.</p>
       <p><strong>They get wrong:</strong> missing <code>initial car.wheel_inertia.w = 0</code>.

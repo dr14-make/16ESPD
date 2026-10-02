@@ -33,8 +33,14 @@
   <section>
     <h2>Bench, analysis, run</h2>
     <div class="demo">
-      <div class="demo-head"><span class="nb">CarFullThrottle — Constant(k = 150) → car.tau_cmd, then in code view</span><span class="spacer"></span></div>
-      <pre><code class="language-julia" data-trim data-noescape>  initial car.body.mass.s = 0
+      <div class="demo-head"><span class="nb">CarFullThrottle — complete bench and analysis</span><span class="spacer"></span></div>
+      <pre><code class="language-julia" data-trim data-noescape>component CarFullThrottle
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  car = Car()
+relations
+  connect(cmd.y, car.tau_cmd)
+  initial car.body.mass.s = 0
   initial car.body.mass.v = 0
   initial car.engine.lag.x = 0
 end

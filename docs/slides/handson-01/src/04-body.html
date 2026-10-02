@@ -31,11 +31,17 @@
 
   <section>
     <h2>The one parameter that bites</h2>
-    <pre><code class="language-julia" data-trim data-noescape>drag = QuadraticSpeedDependentForce(
-    ForceDirection = false, v_nominal = 30,
-    f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2)</code></pre>
+    <pre><code class="language-julia" data-trim data-noescape>parameter m::Dyad.Mass = 1400
+parameter CdA::Area = 0.63
+parameter rho::Density = 1.2
+parameter v_nominal::Velocity = 30
+…
+drag = QuadraticSpeedDependentForce(ForceDirection = false,
+    v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
+rolling = RollingResistance(fWeight = m * g)</code></pre>
     <ul class="small">
-      <li><code>f_nominal</code> is ½ρC<sub>d</sub>A·v² at 30 m/s — type the expression.</li>
+      <li>Each value is a parameter of <code>Body</code>; the parts use the <em>names</em>.</li>
+      <li><code>f_nominal</code> is ½ρC<sub>d</sub>A·v² at the nominal speed.</li>
       <li><strong>Negative</strong> makes the source a load rather than a push.</li>
       <li><code>ForceDirection = false</code> makes it oppose motion both ways.</li>
     </ul>
@@ -47,8 +53,9 @@
       <p><strong>They get wrong:</strong> a positive <code>f_nominal</code>. The car then
       accelerates forever — drag pushes it. If a student's car in step 05 goes to absurd speeds,
       this sign is the first thing to check.</p>
-      <p><strong>Ask the room:</strong> why type the expression instead of 340.2? <em>(Because
-      the next person reading it sees ρ, C<sub>d</sub>A and v, not a magic number.)</em></p>
+      <p><strong>Ask the room:</strong> why parameters instead of 340.2 and 13729? <em>(The
+      next reader sees ρ, C<sub>d</sub>A and m, not magic numbers — and <code>m</code> feeds the
+      mass and the rolling resistance, so changing the car's weight changes both or neither.)</em></p>
     </aside>
   </section>
 

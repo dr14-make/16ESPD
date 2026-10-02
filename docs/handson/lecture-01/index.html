@@ -210,9 +210,12 @@
   <p class="goal">An empty library of your own, with the standard libraries downloaded, so that step 01 can start placing parts.</p>
   <h3>Do this</h3>
   <ol class="actions">
-<li>Open the command palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>) and run <strong>Dyad: Create Component Library</strong>. Call the library <code>MyCar</code> and pick an empty folder; VS Code opens it.</li>
-<li>Wait for the dependencies. The extension runs <code>Pkg.instantiate()</code> in the terminal by itself; the first time it downloads and precompiles the standard libraries, which takes several minutes. If you can, do this step before the session.</li>
-<li>Open the <strong>Dyad</strong> sidebar and find <code>MyCar</code> in the <strong>Components</strong> panel. It holds the example models the template ships with; leave them, they do no harm.</li>
+<li>In VS Code, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>. A text box opens at the top of the window: the command palette.</li>
+<li>Type <code>Dyad: Create Component Library</code> and press <kbd>Enter</kbd> when it is highlighted.</li>
+<li>When asked for a name, type <code>MyCar</code> and press <kbd>Enter</kbd>. When asked for a location, pick an <em>empty</em> folder. VS Code reopens in that folder.</li>
+<li>Look at the terminal at the bottom of the window. The extension runs <code>Pkg.instantiate()</code> by itself; the first time it downloads and precompiles the standard libraries, which takes several minutes. Wait until it stops printing. If you can, do this step before the session.</li>
+<li>In the <strong>Activity Bar</strong> — the column of icons on the far left — click the <strong>Dyad</strong> icon. The Dyad sidebar opens with four panels: <strong>Actions</strong>, <strong>Components</strong>, <strong>Analyses</strong>, <strong>Notebooks</strong> (arrows 1 and 2 in the map above).</li>
+<li>In <strong>Components</strong>, click the arrow next to <code>MyCar</code> to expand it. It holds the example models the template ships with; leave them, they do no harm.</li>
   </ol>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The terminal has finished instantiating without errors, and <code>MyCar</code> appears in the <strong>Components</strong> panel.</p></div>
   <p class="small muted">Names in this guide are the ones the reference models use. Keep them:
@@ -238,24 +241,31 @@
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li>In the <strong>Components</strong> panel, right-click your library → <strong>Add Component</strong>, and call it <code>Engine</code>. It opens empty in the diagram editor.</li>
-<li>Click <strong>+</strong> (<strong>Add component</strong>) in the diagram toolbar, search for <code>PadeDelay</code> (it is <code>BlockComponents › Nonlinear › PadeDelay</code>) and place it. Rename the instance to <code>delay</code>.</li>
-<li>The same way, place <code>BlockComponents › Continuous › FirstOrder</code> and name it <code>lag</code>.</li>
-<li>Drag a wire from the output port <code>y</code> of <code>delay</code> to the input port <code>u</code> of <code>lag</code>.</li>
-<li>Select <code>delay</code> and set <code>n = 6</code>, <code>m = 5</code>, <code>delayTime = 0.3</code> in its parameter panel (<strong>Edit Parameters</strong>). Select <code>lag</code> and set <code>T = 0.3</code>.</li>
-<li>Click ⇄ (<strong>Toggle Between Code and Diagram View</strong>) in the editor title bar. Every block you placed is now a line <code>name = Library.Path(parameters)</code>, and the wire is a <code>connect(…)</code> line under <code>relations</code>.</li>
-<li>Change <code>T = 0.3</code> to <code>T = 0.5</code> in the code, switch back to the diagram, and check the parameter of <code>lag</code>. Set it back to 0.3. One model, two views: whichever you edit, the other follows.</li>
+<li><strong>Create the component.</strong> In the <strong>Components</strong> panel, <em>right-click</em> <code>MyCar</code> → <strong>Add Component</strong>. Type <code>Engine</code> and press <kbd>Enter</kbd>. An empty white canvas opens: the diagram editor, with a small toolbar in its top-left corner.</li>
+<li><strong>Place the first part.</strong> In that toolbar, click <strong>+</strong> (<strong>Add component</strong>, the fifth icon — see the second picture in <em>Where things are</em>). A search box opens above a list of libraries. Type <code>PadeDelay</code> and click the result, <code>BlockComponents › Nonlinear › PadeDelay</code>. A block with a sine-wave icon appears on the canvas.</li>
+<li><strong>Name it.</strong> Click the block once. A panel opens on the right of the canvas with the block's name at the top and a pencil ✎ beside it. Click the pencil, type <code>delay</code>, press <kbd>Enter</kbd>.</li>
+<li><strong>Set its parameters.</strong> In the same panel, under <strong>Parameters</strong>, click into the <code>n</code> field and type <code>6</code>; <code>m</code> → <code>5</code>; <code>delayTime</code> → <code>0.3</code>. Leave the rest. Close the panel with its ✕.</li>
+<li><strong>Place the second part.</strong> Click <strong>+</strong> again, search <code>FirstOrder</code>, click <code>BlockComponents › Continuous › FirstOrder</code>. Click the new block, rename it <code>lag</code> with the pencil, set <code>T</code> to <code>0.3</code>.</li>
+<li><strong>Move the blocks</strong> so <code>lag</code> sits to the right of <code>delay</code>: press on a block and drag it.</li>
+<li><strong>Wire them.</strong> Each block has a small port on its right edge (the output, <code>y</code>) and one on its left edge (the input, <code>u</code>). Press on <code>delay</code>'s right-hand port, hold, drag to <code>lag</code>'s left-hand port, release. A line joins them.</li>
+<li><strong>Save</strong> with <kbd>Ctrl</kbd>+<kbd>S</kbd>.</li>
+<li><strong>Switch to code.</strong> In the editor's title bar — the row with the file's tab, top right — click ⇄ (<strong>Toggle Between Code and Diagram View</strong>, arrow 4 in the map). Every block you placed is now a line <code>name = Library.Path(parameters)</code>, and the wire is a <code>connect(delay.y, lag.u)</code> line under <code>relations</code>.</li>
+<li><strong>Round trip.</strong> In the code, change <code>T = 0.3</code> to <code>T = 0.5</code>, save, click ⇄ again, click <code>lag</code>: its panel shows 0.5. Set it back to 0.3. One model, two views — whichever you edit, the other follows.</li>
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The code view shows the two declarations and one <code>connect(delay.y, lag.u)</code>, matching the code half of the screenshot above. Keep this component open: step 2 finishes it.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
-  <p class="small muted">From <code>dyad/HandsOn/Tour.dyad</code>, metadata block omitted. Yours is called <code>Engine</code>; the reference copy is <code>Tour</code> only so it can sit next to the finished <code>Engine</code> of step 2.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>component Tour
-  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
-  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
+  <p class="small muted">From <code>dyad/HandsOn/Tour.dyad</code>, diagram annotations omitted. Yours is called <code>Engine</code>; the reference copy is <code>Tour</code> only so it can sit next to the finished <code>Engine</code> of step 2.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
+Step 1 of the hands-on: two blocks and one wire, to show that the diagram and the code are the
+same model. The delay's input is left open; step 2 finishes this into `Engine`.
+"""
+component Tour
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3)
+  lag = BlockComponents.Continuous.FirstOrder(T = 0.3)
 relations
-  connect(delay.y, lag.u) {^id1}
+  connect(delay.y, lag.u)
 end</code></pre></div>
 </details>
 </section>
@@ -264,6 +274,11 @@ end</code></pre></div>
 <section class="step" id="engine">
   <h2><span class="no">02</span> Engine <span class="budget">20 min</span></h2>
   <p class="goal">Finish the engine — torque command in, shaft torque out through a delay, a lag and a 150 N·m ceiling — and watch it answer a step.</p>
+  <h3>Parameters</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
+  <tbody><tr><td><code>theta_e</code></td><td><code>Time</code></td><td><code>0.3</code></td><td>Injection-to-torque transport delay</td></tr><tr><td><code>tau_e</code></td><td><code>Time</code></td><td><code>0.3</code></td><td>Manifold-filling first-order lag</td></tr><tr><td><code>T_max</code></td><td><code>Torque</code></td><td><code>150</code></td><td>Peak deliverable torque</td></tr></tbody>
+</table></div>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -271,9 +286,9 @@ end</code></pre></div>
 <tr><td><code>tau_cmd</code></td><td>Dyad › RealInput</td><td>port, left edge</td></tr>
 <tr><td><code>spline</code></td><td>Dyad › Spline</td><td>port, right edge — the output shaft</td></tr>
 <tr><td><code>support</code></td><td>Dyad › Spline</td><td>port, bottom edge — the engine mounts</td></tr>
-<tr><td><code>delay</code></td><td>BlockComponents › Nonlinear › PadeDelay</td><td><code>n = 6</code>, <code>m = 5</code>, <code>delayTime = 0.3</code></td></tr>
-<tr><td><code>lag</code></td><td>BlockComponents › Continuous › FirstOrder</td><td><code>T = 0.3</code></td></tr>
-<tr><td><code>limiter</code></td><td>BlockComponents › Nonlinear › Limiter</td><td><code>y_max = 150</code>, <code>y_min = 0</code></td></tr>
+<tr><td><code>delay</code></td><td>BlockComponents › Nonlinear › PadeDelay</td><td><code>n = 6</code>, <code>m = 5</code>, <code>delayTime = theta_e</code></td></tr>
+<tr><td><code>lag</code></td><td>BlockComponents › Continuous › FirstOrder</td><td><code>T = tau_e</code></td></tr>
+<tr><td><code>limiter</code></td><td>BlockComponents › Nonlinear › Limiter</td><td><code>y_max = T_max</code>, <code>y_min = 0</code></td></tr>
 <tr><td><code>torque</code></td><td>RotationalComponents › Sources › TorqueSource</td><td>—</td></tr>
   </tbody>
 </table></div><p class="small muted">Test bench <code>EngineStep</code>:</p><div class="tablewrap"><table class="parts">
@@ -296,30 +311,45 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li>In <code>Engine</code>, add <code>limiter</code> and <code>torque</code> and wire <code>lag.y → limiter.u → torque.tau</code>.</li>
-<li>Add the three ports from the table and wire them: <code>tau_cmd → delay.u</code>, <code>torque.spline → spline</code>, <code>torque.support → support</code>.</li>
-<li>Set the limiter to <code>y_max = 150</code>, <code>y_min = 0</code>: the engine cannot brake through this path.</li>
+<li>Name each value once. A number a part needs becomes a parameter of <code>Engine</code>, and the part refers to it by name — so <code>Engine(T_max = 200)</code> later changes the ceiling everywhere it is used. Click an empty spot of the canvas and use <strong>Add parameter</strong> in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above <code>relations</code>:
+<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Manifold-filling first-order lag"
+  parameter tau_e::Time = 0.3
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150</code></pre></div>
+Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
+<li>Click <code>delay</code> and change <code>delayTime</code> from <code>0.3</code> to <code>theta_e</code>; click <code>lag</code> and change <code>T</code> to <code>tau_e</code>. The fields accept names as well as numbers.</li>
+<li>With <strong>+</strong>, place <code>BlockComponents › Nonlinear › Limiter</code> (rename it <code>limiter</code>) and <code>RotationalComponents › Sources › TorqueSource</code> (rename it <code>torque</code>), to the right of <code>lag</code>. Wire <code>lag</code>'s output to <code>limiter</code>'s input, and <code>limiter</code>'s output to the <code>tau</code> port of <code>torque</code>.</li>
+<li><strong>Ports are parts too.</strong> Click <strong>+</strong> and open the <code>Dyad</code> library at the top of the list: place a <code>RealInput</code> and rename it <code>tau_cmd</code>, then two <code>Spline</code>s renamed <code>spline</code> and <code>support</code>. Drag <code>tau_cmd</code> to the left edge of the thin blue rectangle, <code>spline</code> to the right edge, <code>support</code> to the bottom: that rectangle is the component's outline, and ports on it are what others connect to. Wire <code>tau_cmd → delay.u</code>, <code>torque.spline → spline</code> (the gray circle on the right of <code>torque</code>) and <code>torque.support → support</code> (the one underneath).</li>
+<li>Set the limiter to <code>y_max = T_max</code>, <code>y_min = 0</code>: the engine cannot brake through this path. <code>theta_e</code> is a <code>structural</code> parameter because <code>PadeDelay</code> builds its coefficients from the delay when the model is compiled; if <strong>Add parameter</strong> offers no structural option, paste that line in code.</li>
 <li>An engine with an unconnected input cannot be simulated, so build a test bench. <strong>Add Component</strong> <code>EngineStep</code>, place your <code>Engine</code> (under <code>MyCar</code> in the <strong>+</strong> palette), and add <code>cmd</code>, <code>load</code> and <code>mounts</code>. Wire it as in the screenshot above.</li>
-<li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines highlighted in the block below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block. Save; it appears in the <strong>Analyses</strong> panel. If it does not, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>, beside the terminal: auto-compile on save can be switched off.</li>
+<li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines of the complete bench below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block. Save; it appears in the <strong>Analyses</strong> panel. If it does not, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>, beside the terminal: auto-compile on save can be switched off.</li>
 <li>Run <code>EngineStepTransient</code> with the ▷ beside it in the <strong>Analyses</strong> panel, then plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.EngineStepTransient()
 plot(r; idxs = r."engine.limiter.y")</code></pre></div>
 The same pattern plots several signals, <code>idxs = [r."a", r."b"]</code>, or one against another, <code>idxs = (r."x", r."y")</code>.</li>
   </ol>
-  <div class="code"><span class="codelabel">New code in EngineStep</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
-  …
+  <p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">EngineStep and EngineStepTransient</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
+  cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5)
+  engine = Engine()
+  "Unit inertia, so its angular acceleration reads as the delivered torque"
+  load = RotationalComponents.Components.Inertia(J = 1)
+  mounts = RotationalComponents.Components.Fixed()
 relations
-  …
-<mark>  initial engine.lag.x = 0</mark>
-<mark>  initial load.phi = 0</mark>
-<mark>  initial load.w = 0</mark>
-<mark>end</mark>
+  connect(cmd.y, engine.tau_cmd)
+  connect(engine.spline, load.spline_a)
+  connect(engine.support, mounts.spline)
+  initial engine.lag.x = 0
+  initial load.phi = 0
+  initial load.w = 0
+end
 
-<mark>analysis EngineStepTransient</mark>
-<mark>  extends TransientAnalysis(stop = 3)</mark>
-<mark>  model = EngineStep()</mark>
-<mark>end</mark></code></pre></div>
+analysis EngineStepTransient
+  extends TransientAnalysis(stop = 3)
+  model = EngineStep()
+end</code></pre></div>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.EngineStepTransient</code>:</p>
 <ul>
   <li><code>engine.limiter.y</code> stays at 0 through the step at 0.5 s, reads only 6.2 N·m at
@@ -331,48 +361,53 @@ relations
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Engine.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 Torque command in, shaft torque out, through a transport delay, a first-order lag and a torque
 ceiling.
-&quot;&quot;&quot;
+"""
 component Engine
-  &quot;Commanded torque&quot;
-  tau_cmd = RealInput() {^tau_cmd}
-  &quot;Output shaft&quot;
-  spline = Spline() {^spline}
-  &quot;Engine mounts&quot;
-  support = Spline() {^support}
+  "Commanded torque"
+  tau_cmd = RealInput()
+  "Output shaft"
+  spline = Spline()
+  "Engine mounts"
+  support = Spline()
   # m = n - 1 leaves the delay without direct feedthrough, so a command step cannot leak through
   # the limiter before the delay has elapsed.
-  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
-  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
-  limiter = BlockComponents.Nonlinear.Limiter(y_max = 150, y_min = 0) {^limiter}
-  torque = RotationalComponents.Sources.TorqueSource() {^torque}
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = theta_e)
+  lag = BlockComponents.Continuous.FirstOrder(T = tau_e)
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = T_max, y_min = 0)
+  torque = RotationalComponents.Sources.TorqueSource()
+  # Structural because PadeDelay builds its coefficients from the delay when it is compiled.
+  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Manifold-filling first-order lag"
+  parameter tau_e::Time = 0.3
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150
 relations
-  connect(tau_cmd, delay.u) {^id1}
-  connect(delay.y, lag.u) {^id2}
-  connect(lag.y, limiter.u) {^id3}
-  connect(limiter.y, torque.tau) {^id4}
-  connect(torque.spline, spline) {^id5}
-  connect(torque.support, support) {^id6}
+  connect(tau_cmd, delay.u)
+  connect(delay.y, lag.u)
+  connect(lag.y, limiter.u)
+  connect(limiter.y, torque.tau)
+  connect(torque.spline, spline)
+  connect(torque.support, support)
 end
 
-&quot;&quot;&quot;A torque command above the ceiling, stepped in at 0.5 s, into a 1 kg·m² flywheel.&quot;&quot;&quot;
+"""A torque command above the ceiling, stepped in at 0.5 s, into a 1 kg·m² flywheel."""
 component EngineStep
-  cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5) {^cmd}
-  engine = Engine() {^engine}
-  &quot;Unit inertia, so its angular acceleration reads as the delivered torque&quot;
-  load = RotationalComponents.Components.Inertia(J = 1) {^load}
-  mounts = RotationalComponents.Components.Fixed() {^mounts}
+  cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5)
+  engine = Engine()
+  "Unit inertia, so its angular acceleration reads as the delivered torque"
+  load = RotationalComponents.Components.Inertia(J = 1)
+  mounts = RotationalComponents.Components.Fixed()
 relations
-  connect(cmd.y, engine.tau_cmd) {^id1}
-  connect(engine.spline, load.spline_a) {^id2}
-  connect(engine.support, mounts.spline) {^id3}
+  connect(cmd.y, engine.tau_cmd)
+  connect(engine.spline, load.spline_a)
+  connect(engine.support, mounts.spline)
   initial engine.lag.x = 0
   initial load.phi = 0
   initial load.w = 0
@@ -387,6 +422,11 @@ end</code></pre></div>
 <section class="step" id="driveline">
   <h2><span class="no">03</span> Driveline <span class="budget">10 min</span></h2>
   <p class="goal">Turn engine torque into a force on the car: a 4:1 gear and a 0.31 m rolling wheel.</p>
+  <h3>Parameters</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
+  <tbody><tr><td><code>i</code></td><td><code>Real</code></td><td><code>4.0</code></td><td>Gear ratio</td></tr><tr><td><code>r</code></td><td><code>Length</code></td><td><code>0.31</code></td><td>Wheel rolling radius</td></tr></tbody>
+</table></div>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -395,8 +435,8 @@ end</code></pre></div>
 <tr><td><code>support_r</code></td><td>Dyad › Spline</td><td>port — gearbox housing</td></tr>
 <tr><td><code>flange</code></td><td>Dyad › Flange</td><td>port — to the body</td></tr>
 <tr><td><code>support_t</code></td><td>Dyad › Flange</td><td>port — the road</td></tr>
-<tr><td><code>gear</code></td><td>RotationalComponents › Components › IdealGear</td><td><code>ratio = 4.0</code></td></tr>
-<tr><td><code>wheel</code></td><td>RotationalComponents › Components › IdealRollingWheel</td><td><code>radius = 0.31</code></td></tr>
+<tr><td><code>gear</code></td><td>RotationalComponents › Components › IdealGear</td><td><code>ratio = i</code></td></tr>
+<tr><td><code>wheel</code></td><td>RotationalComponents › Components › IdealRollingWheel</td><td><code>radius = r</code></td></tr>
   </tbody>
 </table></div>
   <h3>What you are building</h3>
@@ -406,55 +446,68 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
+<li>Add the two parameters. Click an empty spot of the canvas and use <strong>Add parameter</strong> in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above <code>relations</code>:
+<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Gear ratio"
+  parameter i::Real = 4.0
+  "Wheel rolling radius"
+  parameter r::Length = 0.31</code></pre></div>
+Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
 <li>Create <code>Driveline</code>. Place <code>gear</code> and <code>wheel</code> and wire <code>gear.spline_b → wheel.spline</code>.</li>
 <li>Add the four ports. Wire <code>spline → gear.spline_a</code> and <code>wheel.flange → flange</code>.</li>
 <li>Both reaction paths go out of the component: wire <code>gear.support</code> and <code>wheel.support_r</code> to <code>support_r</code>, and <code>wheel.support_t</code> to <code>support_t</code>. The car will ground them.</li>
-<li>Set <code>ratio = 4.0</code> and <code>radius = 0.31</code>. The force at the flange is then <code>T · i / r</code>, the formula from notebook 01.</li>
+<li>Set <code>ratio = i</code> and <code>radius = r</code>. The force at the flange is then <code>T · i / r</code>, the formula from notebook 01.</li>
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>It saves without errors and has the four ports named in the table. Under 100 N·m into <code>spline</code> and 1400 kg on <code>flange</code>, the reference test <code>TestDriveline</code> accelerates the mass at 0.9217 m/s² (100 · 4 / 0.31 / 1400).</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Driveline.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;Gearbox and rolling wheel: engine shaft in, tractive force on the body out.&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""Gearbox and rolling wheel: engine shaft in, tractive force on the body out."""
 component Driveline
-  &quot;From the engine&quot;
-  spline = Spline() {^spline}
-  &quot;Gearbox housing&quot;
-  support_r = Spline() {^support_r}
-  &quot;To the body&quot;
-  flange = Flange() {^flange}
-  &quot;Road&quot;
-  support_t = Flange() {^support_t}
-  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
-  wheel = RotationalComponents.Components.IdealRollingWheel(radius = 0.31) {^wheel}
+  "From the engine"
+  spline = Spline()
+  "Gearbox housing"
+  support_r = Spline()
+  "To the body"
+  flange = Flange()
+  "Road"
+  support_t = Flange()
+  gear = RotationalComponents.Components.IdealGear(ratio = i)
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = r)
+  "Gear ratio"
+  parameter i::Real = 4.0
+  "Wheel rolling radius"
+  parameter r::Length = 0.31
 relations
-  connect(spline, gear.spline_a) {^id1}
-  connect(gear.spline_b, wheel.spline) {^id2}
-  connect(wheel.flange, flange) {^id3}
-  connect(gear.support, support_r) {^id4}
-  connect(wheel.support_r, support_r) {^id5}
-  connect(wheel.support_t, support_t) {^id6}
+  connect(spline, gear.spline_a)
+  connect(gear.spline_b, wheel.spline)
+  connect(wheel.flange, flange)
+  connect(gear.support, support_r)
+  connect(wheel.support_r, support_r)
+  connect(wheel.support_t, support_t)
 end</code></pre></div>
 </details>
 </section>
 <section class="step" id="body">
   <h2><span class="no">04</span> Body <span class="budget">15 min</span></h2>
   <p class="goal">Give the car its 1400 kg and the two forces that hold it back on a flat road: drag and rolling resistance.</p>
+  <h3>Parameters</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
+  <tbody><tr><td><code>m</code></td><td><code>Dyad.Mass</code></td><td><code>1400</code></td><td>Vehicle mass</td></tr><tr><td><code>CdA</code></td><td><code>Area</code></td><td><code>0.63</code></td><td>Aerodynamic drag area, Cd * A</td></tr><tr><td><code>rho</code></td><td><code>Density</code></td><td><code>1.2</code></td><td>Air density</td></tr><tr><td><code>f_r</code></td><td><code>Real</code></td><td><code>0.012</code></td><td>Rolling resistance coefficient</td></tr><tr><td><code>g</code></td><td><code>Acceleration</code></td><td><code>9.80665</code></td><td>Gravitational acceleration</td></tr><tr><td><code>v_nominal</code></td><td><code>Velocity</code></td><td><code>30</code></td><td>Speed at which the drag force is specified</td></tr></tbody>
+</table></div>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
   <tbody>
 <tr><td><code>flange</code></td><td>Dyad › Flange</td><td>port — tractive force in</td></tr>
-<tr><td><code>mass</code></td><td>TranslationalComponents › Components › Mass</td><td><code>m = 1400</code></td></tr>
-<tr><td><code>drag</code></td><td>TranslationalComponents › Sources › QuadraticSpeedDependentForce</td><td><code>ForceDirection = false</code>, <code>v_nominal = 30</code>, <code>f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2</code></td></tr>
-<tr><td><code>rolling</code></td><td>TranslationalComponents › Components › RollingResistance</td><td><code>fWeight = 1400 * 9.80665</code></td></tr>
-<tr><td><code>cr_const</code></td><td>BlockComponents › Sources › Constant</td><td><code>k = 0.012</code></td></tr>
+<tr><td><code>mass</code></td><td>TranslationalComponents › Components › Mass</td><td><code>m = m</code></td></tr>
+<tr><td><code>drag</code></td><td>TranslationalComponents › Sources › QuadraticSpeedDependentForce</td><td><code>ForceDirection = false</code>, <code>v_nominal = v_nominal</code>, <code>f_nominal = -0.5 * rho * CdA * v_nominal ^ 2</code></td></tr>
+<tr><td><code>rolling</code></td><td>TranslationalComponents › Components › RollingResistance</td><td><code>fWeight = m * g</code></td></tr>
+<tr><td><code>cr_const</code></td><td>BlockComponents › Sources › Constant</td><td><code>k = f_r</code></td></tr>
 <tr><td><code>incl_const</code></td><td>BlockComponents › Sources › Constant</td><td><code>k = 0</code> — flat road</td></tr>
 <tr><td><code>ground</code></td><td>TranslationalComponents › Components › Fixed</td><td>—</td></tr>
   </tbody>
@@ -466,45 +519,69 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
+<li>Add the six parameters. <code>m</code> feeds two parts and <code>rho</code>, <code>CdA</code>, <code>v_nominal</code> combine into one: naming them is what keeps those uses in step. Click an empty spot of the canvas and use <strong>Add parameter</strong> in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above <code>relations</code>:
+<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400
+  "Aerodynamic drag area, Cd * A"
+  parameter CdA::Area = 0.63
+  "Air density"
+  parameter rho::Density = 1.2
+  "Rolling resistance coefficient"
+  parameter f_r::Real = 0.012
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Speed at which the drag force is specified"
+  parameter v_nominal::Velocity = 30</code></pre></div>
+Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
 <li>Create <code>Body</code>. Place the parts and wire the three forces — <code>flange</code>, <code>drag.flange</code>, <code>rolling.flange</code> — to <code>mass.flange_a</code>.</li>
 <li>Wire <code>drag.support</code> and <code>rolling.support</code> to <code>ground.flange</code>: drag and rolling resistance push against the road and the air, not against the car.</li>
 <li>Feed <code>rolling</code> its two signal inputs: <code>cr_const.y → rolling.cr</code> and <code>incl_const.y → rolling.inclination</code>. An unconnected input would leave the model incomplete.</li>
-<li>Set the drag parameters. <code>f_nominal</code> is negative, which makes the source a load; <code>ForceDirection = false</code> makes drag oppose motion both ways. <code>-0.5 * 1.2 * 0.63 * 30 ^ 2</code> is ½ρ·CdA·v² at 30 m/s — type the expression, not the number.</li>
+<li>Set the drag parameters. <code>f_nominal</code> is negative, which makes the source a load; <code>ForceDirection = false</code> makes drag oppose motion both ways. <code>-0.5 * rho * CdA * v_nominal ^ 2</code> is ½ρ·C<sub>d</sub>A·v² at the nominal speed, written in the parameters' names.</li>
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>It saves without errors. Under a constant 500 N the reference test <code>TestBody</code> starts at 0.357 m/s² and settles at 29.78 m/s, where drag and rolling resistance add up to 500 N.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Body.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 Car body on a flat road: tractive force in at the flange, resisted by aerodynamic drag and rolling
 resistance.
-&quot;&quot;&quot;
+"""
 component Body
-  &quot;Tractive force from the driveline&quot;
-  flange = Flange() {^flange}
-  mass = TranslationalComponents.Components.Mass(m = 1400) {^mass}
+  "Tractive force from the driveline"
+  flange = Flange()
+  mass = TranslationalComponents.Components.Mass(m = m)
   # A negative nominal force makes the source a load; ForceDirection = false gives the v*|v| form,
   # so drag opposes motion in both directions.
-  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = 30, f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2) {^drag}
-  rolling = TranslationalComponents.Components.RollingResistance(fWeight = 1400 * 9.80665) {^rolling}
-  cr_const = BlockComponents.Sources.Constant(k = 0.012) {^cr_const}
-  &quot;Flat road: tan(alpha) = 0&quot;
-  incl_const = BlockComponents.Sources.Constant(k = 0) {^incl_const}
-  ground = TranslationalComponents.Components.Fixed() {^ground}
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g)
+  cr_const = BlockComponents.Sources.Constant(k = f_r)
+  "Flat road: tan(alpha) = 0"
+  incl_const = BlockComponents.Sources.Constant(k = 0)
+  ground = TranslationalComponents.Components.Fixed()
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400
+  "Aerodynamic drag area, Cd * A"
+  parameter CdA::Area = 0.63
+  "Air density"
+  parameter rho::Density = 1.2
+  "Rolling resistance coefficient"
+  parameter f_r::Real = 0.012
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Speed at which the drag force is specified"
+  parameter v_nominal::Velocity = 30
 relations
-  connect(flange, mass.flange_a) {^id1}
-  connect(drag.flange, mass.flange_a) {^id2}
-  connect(rolling.flange, mass.flange_a) {^id3}
-  connect(drag.support, ground.flange) {^id4}
-  connect(rolling.support, ground.flange) {^id5}
-  connect(cr_const.y, rolling.cr) {^id6}
-  connect(incl_const.y, rolling.inclination) {^id7}
+  connect(flange, mass.flange_a)
+  connect(drag.flange, mass.flange_a)
+  connect(rolling.flange, mass.flange_a)
+  connect(drag.support, ground.flange)
+  connect(rolling.support, ground.flange)
+  connect(cr_const.y, rolling.cr)
+  connect(incl_const.y, rolling.inclination)
 end</code></pre></div>
 </details>
 </section>
@@ -548,25 +625,27 @@ end</code></pre></div>
 <li>Measure: <code>vsensor.flange</code> on <code>body.flange</code>, then <code>vsensor.v → to_kmh.u</code>. The sensor gives m/s; the gain of 3.6 makes it km/h.</li>
 <li>Add the ports: <code>tau_cmd → engine.tau_cmd</code>, <code>to_kmh.y → v_kmh</code>.</li>
 <li>Build the test bench: in the <strong>Components</strong> panel, right-click your library → <strong>Add Component</strong>, call it <code>CarFullThrottle</code>. With <strong>+</strong>, place your <code>Car</code> (under <code>MyCar</code>) as <code>car</code> and a <code>BlockComponents › Sources › Constant</code> as <code>cmd</code> with <code>k = 150</code>. Wire <code>cmd.y → car.tau_cmd</code>.</li>
-<li>Toggle to code (⇄). Add the three <code>initial</code> lines below at the end of <code>relations</code>, and paste the <code>analysis</code> block after the component's <code>end</code>. Save: <code>CarFullThrottleTransient</code> appears in the <strong>Analyses</strong> panel. The car needs its position fixed at the start as well as its speed; without <code>car.body.mass.s</code> the model has no unique initial state.</li>
+<li>Toggle to code (⇄). Add the three <code>initial</code> lines of the complete bench below at the end of <code>relations</code>, and paste the <code>analysis</code> block after the component's <code>end</code>. Save: <code>CarFullThrottleTransient</code> appears in the <strong>Analyses</strong> panel. The car needs its position fixed at the start as well as its speed; without <code>car.body.mass.s</code> the model has no unique initial state.</li>
 <li>Run it with the ▷ beside it in the <strong>Analyses</strong> panel. Then, in the Julia REPL (<strong>Dyad: Open Julia REPL</strong> in the <strong>Actions</strong> title bar), plot the speed:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.CarFullThrottleTransient()
 plot(r; idxs = r."car.v_kmh")</code></pre></div></li>
   </ol>
-  <div class="code"><span class="codelabel">New code in CarFullThrottle</span><button class="copy" type="button">Copy</button><pre><code>component CarFullThrottle
-  …
+  <p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">CarFullThrottle and CarFullThrottleTransient</span><button class="copy" type="button">Copy</button><pre><code>component CarFullThrottle
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  car = Car()
 relations
-  …
-<mark>  initial car.body.mass.s = 0</mark>
-<mark>  initial car.body.mass.v = 0</mark>
-<mark>  initial car.engine.lag.x = 0</mark>
-<mark>end</mark>
+  connect(cmd.y, car.tau_cmd)
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+end
 
-<mark>analysis CarFullThrottleTransient</mark>
-<mark>  extends TransientAnalysis(stop = 300)</mark>
-<mark>  model = CarFullThrottle()</mark>
-<mark>end</mark></code></pre></div>
+analysis CarFullThrottleTransient
+  extends TransientAnalysis(stop = 300)
+  model = CarFullThrottle()
+end</code></pre></div>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.CarFullThrottleTransient</code>: 21.2 km/h at 5 s,
   43.6 km/h at 10 s, 100 km/h at 23.6 s, 197.5 km/h at 60 s, 99 % of the final speed at 143 s and
   <strong>246.39 km/h at 300 s</strong>. The curve is a first-order rise: steep at first, then
@@ -577,47 +656,45 @@ relations
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Car.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 Longitudinal car on a flat road: torque command in, speed in km/h out.
-&quot;&quot;&quot;
+"""
 component Car
-  &quot;Commanded engine torque&quot;
-  tau_cmd = RealInput() {^tau_cmd}
-  &quot;Vehicle speed in km/h&quot;
-  v_kmh = RealOutput() {^v_kmh}
-  engine = Engine() {^engine}
-  driveline = Driveline() {^driveline}
-  body = Body() {^body}
-  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
-  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
-  &quot;Engine mounts and gearbox housing&quot;
-  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
-  &quot;Road under the wheel&quot;
-  trans_ground = TranslationalComponents.Components.Fixed() {^trans_ground}
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  engine = Engine()
+  driveline = Driveline()
+  body = Body()
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  to_kmh = BlockComponents.Math.Gain(k = 3.6)
+  "Engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Road under the wheel"
+  trans_ground = TranslationalComponents.Components.Fixed()
 relations
-  connect(tau_cmd, engine.tau_cmd) {^id1}
-  connect(engine.spline, driveline.spline) {^id2}
-  connect(engine.support, rot_ground.spline) {^id3}
-  connect(driveline.support_r, rot_ground.spline) {^id4}
-  connect(driveline.flange, body.flange) {^id5}
-  connect(driveline.support_t, trans_ground.flange) {^id6}
-  connect(vsensor.flange, body.flange) {^id7}
-  connect(vsensor.v, to_kmh.u) {^id8}
-  connect(to_kmh.y, v_kmh) {^id9}
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, driveline.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(driveline.support_r, rot_ground.spline)
+  connect(driveline.flange, body.flange)
+  connect(driveline.support_t, trans_ground.flange)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, to_kmh.u)
+  connect(to_kmh.y, v_kmh)
 end
 
-&quot;&quot;&quot;Full throttle from rest on a flat road, run to terminal speed.&quot;&quot;&quot;
+"""Full throttle from rest on a flat road, run to terminal speed."""
 component CarFullThrottle
-  &quot;Full throttle: the engine&#x27;s 150 N·m ceiling&quot;
-  cmd = BlockComponents.Sources.Constant(k = 150) {^cmd}
-  car = Car() {^car}
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  car = Car()
 relations
-  connect(cmd.y, car.tau_cmd) {^id1}
+  connect(cmd.y, car.tau_cmd)
   initial car.body.mass.s = 0
   initial car.body.mass.v = 0
   initial car.engine.lag.x = 0
@@ -636,7 +713,7 @@ end</code></pre></div>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
   <tbody>
-<tr><td><code>inertia</code></td><td>RotationalComponents › Components › Inertia</td><td><code>J = 1.0</code></td></tr>
+<tr><td><code>inertia</code></td><td>RotationalComponents › Components › Inertia</td><td><code>J = J_w</code></td></tr>
 <tr><td><code>(the rest)</code></td><td>as in <code>Driveline</code></td><td>—</td></tr>
   </tbody>
 </table></div><p class="small muted"><code>WheeledCar</code> is <code>Car</code> with <code>driveline</code> swapped for <code>WheeledDriveline</code>; its test bench <code>WheeledCarFullThrottle</code> also needs <code>initial car.driveline.inertia.phi = 0</code>.</p>
@@ -652,13 +729,15 @@ end</code></pre></div>
   <h3>Do this</h3>
   <ol class="actions">
 <li>In the <strong>Components</strong> panel, right-click <code>Driveline</code> → <strong>Duplicate</strong>, and call the copy <code>WheeledDriveline</code>.</li>
-<li>Delete the wire <code>gear.spline_b → wheel.spline</code>, place <code>inertia</code> between them and wire <code>gear.spline_b → inertia.spline_a</code>, <code>inertia.spline_b → wheel.spline</code>. Set <code>J = 1.0</code>.</li>
+<li>Delete the wire <code>gear.spline_b → wheel.spline</code>, place <code>inertia</code> between them and wire <code>gear.spline_b → inertia.spline_a</code>, <code>inertia.spline_b → wheel.spline</code>. Add the parameter <code>J_w</code> (<code>MomentOfInertia</code>, 1.0) next to the <code>i</code> and <code>r</code> the copy already has, and set <code>J = J_w</code>.</li>
 <li>Duplicate <code>Car</code> as <code>WheeledCar</code> and, in its diagram, replace its <code>driveline</code> with a <code>WheeledDriveline</code>. The ports are the same, so the wires stay.</li>
 <li>Duplicate <code>CarFullThrottle</code> as <code>WheeledCarFullThrottle</code>, and in its diagram swap <code>car</code> for a <code>WheeledCar</code>. Toggle to code: the wheel now has a state of its own, so add its <code>initial</code> line, and paste the analysis after <code>end</code>:
-<div class="code"><span class="codelabel">New code in WheeledCarFullThrottle</span><button class="copy" type="button">Copy</button><pre><code>component WheeledCarFullThrottle
-  …
+<p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">WheeledCarFullThrottle and WheeledCarFullThrottleTransient</span><button class="copy" type="button">Copy</button><pre><code>component WheeledCarFullThrottle
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  car = WheeledCar()
 relations
-  …
+  connect(cmd.y, car.tau_cmd)
   initial car.body.mass.s = 0
   initial car.body.mass.v = 0
   initial car.engine.lag.x = 0
@@ -685,73 +764,77 @@ plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre></div></li>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/WheeledCar.dyad</code>, <code>dyad/HandsOn/WheeledDriveline.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 The driveline of step 3 with a road wheel that has inertia. The wheel still rolls without slip.
-&quot;&quot;&quot;
+"""
 component WheeledDriveline
-  &quot;From the engine&quot;
-  spline = Spline() {^spline}
-  &quot;Gearbox housing&quot;
-  support_r = Spline() {^support_r}
-  &quot;To the body&quot;
-  flange = Flange() {^flange}
-  &quot;Road&quot;
-  support_t = Flange() {^support_t}
-  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
-  &quot;Road wheel and tire, about 20 kg mostly between 0.2 and 0.3 m radius&quot;
-  inertia = RotationalComponents.Components.Inertia(J = 1.0) {^inertia}
-  wheel = RotationalComponents.Components.IdealRollingWheel(radius = 0.31) {^wheel}
+  "From the engine"
+  spline = Spline()
+  "Gearbox housing"
+  support_r = Spline()
+  "To the body"
+  flange = Flange()
+  "Road"
+  support_t = Flange()
+  gear = RotationalComponents.Components.IdealGear(ratio = i)
+  "Road wheel and tire, about 20 kg mostly between 0.2 and 0.3 m radius"
+  inertia = RotationalComponents.Components.Inertia(J = J_w)
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = r)
+  "Gear ratio"
+  parameter i::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Wheel rolling radius"
+  parameter r::Length = 0.31
 relations
-  connect(spline, gear.spline_a) {^id1}
-  connect(gear.spline_b, inertia.spline_a) {^id2}
-  connect(inertia.spline_b, wheel.spline) {^id3}
-  connect(wheel.flange, flange) {^id4}
-  connect(gear.support, support_r) {^id5}
-  connect(wheel.support_r, support_r) {^id6}
-  connect(wheel.support_t, support_t) {^id7}
+  connect(spline, gear.spline_a)
+  connect(gear.spline_b, inertia.spline_a)
+  connect(inertia.spline_b, wheel.spline)
+  connect(wheel.flange, flange)
+  connect(gear.support, support_r)
+  connect(wheel.support_r, support_r)
+  connect(wheel.support_t, support_t)
 end
 
-&quot;&quot;&quot;
+"""
 The car of step 5 with a wheel that has inertia.
-&quot;&quot;&quot;
+"""
 component WheeledCar
-  &quot;Commanded engine torque&quot;
-  tau_cmd = RealInput() {^tau_cmd}
-  &quot;Vehicle speed in km/h&quot;
-  v_kmh = RealOutput() {^v_kmh}
-  engine = Engine() {^engine}
-  driveline = WheeledDriveline() {^driveline}
-  body = Body() {^body}
-  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
-  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
-  &quot;Engine mounts and gearbox housing&quot;
-  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
-  &quot;Road under the wheel&quot;
-  trans_ground = TranslationalComponents.Components.Fixed() {^trans_ground}
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  engine = Engine()
+  driveline = WheeledDriveline()
+  body = Body()
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  to_kmh = BlockComponents.Math.Gain(k = 3.6)
+  "Engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Road under the wheel"
+  trans_ground = TranslationalComponents.Components.Fixed()
 relations
-  connect(tau_cmd, engine.tau_cmd) {^id1}
-  connect(engine.spline, driveline.spline) {^id2}
-  connect(engine.support, rot_ground.spline) {^id3}
-  connect(driveline.support_r, rot_ground.spline) {^id4}
-  connect(driveline.flange, body.flange) {^id5}
-  connect(driveline.support_t, trans_ground.flange) {^id6}
-  connect(vsensor.flange, body.flange) {^id7}
-  connect(vsensor.v, to_kmh.u) {^id8}
-  connect(to_kmh.y, v_kmh) {^id9}
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, driveline.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(driveline.support_r, rot_ground.spline)
+  connect(driveline.flange, body.flange)
+  connect(driveline.support_t, trans_ground.flange)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, to_kmh.u)
+  connect(to_kmh.y, v_kmh)
 end
 
-&quot;&quot;&quot;Full throttle from rest on a flat road, with wheel inertia.&quot;&quot;&quot;
+"""Full throttle from rest on a flat road, with wheel inertia."""
 component WheeledCarFullThrottle
-  &quot;Full throttle: the engine&#x27;s 150 N·m ceiling&quot;
-  cmd = BlockComponents.Sources.Constant(k = 150) {^cmd}
-  car = WheeledCar() {^car}
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  car = WheeledCar()
 relations
-  connect(cmd.y, car.tau_cmd) {^id1}
+  connect(cmd.y, car.tau_cmd)
   initial car.body.mass.s = 0
   initial car.body.mass.v = 0
   initial car.engine.lag.x = 0
@@ -786,9 +869,21 @@ end</code></pre></div>
   <ol class="actions">
 <li><strong>Add Component</strong> <code>GradeForce</code> and toggle to code (⇄): an equation has no diagram form. Start from the solution's first block — <code>extends</code> the force interface, declare the <code>grade</code> input and the two parameters. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
 <li>Write the one equation below. <code>grade</code> is tan α, the same convention <code>RollingResistance</code> uses for its <code>inclination</code>, so one signal can drive both.</li>
-<li>In the <strong>Components</strong> panel, right-click <code>Body</code> → <strong>Duplicate</strong>, and call the copy <code>GradeBody</code>. In the diagram, delete <code>incl_const</code>, add a <code>grade</code> input port, wire it to <code>rolling.inclination</code>, place a <code>GradeForce</code> and wire <code>grade → gradeforce.grade</code>, <code>gradeforce.flange → mass.flange_a</code>, <code>gradeforce.support → ground.flange</code>.</li>
+<li>In the <strong>Components</strong> panel, right-click <code>Body</code> → <strong>Duplicate</strong>, and call the copy <code>GradeBody</code>. In the diagram, delete <code>incl_const</code>, add a <code>grade</code> input port, wire it to <code>rolling.inclination</code>, place a <code>GradeForce</code> with <code>m = m</code>, <code>g = g</code> — the body's own parameters, so the car's mass is set in one place — and wire <code>grade → gradeforce.grade</code>, <code>gradeforce.flange → mass.flange_a</code>, <code>gradeforce.support → ground.flange</code>.</li>
   </ol>
-  <div class="code"><span class="codelabel">The equation in GradeForce</span><button class="copy" type="button">Copy</button><pre><code><mark>  f = m * g * sin(atan(grade))</mark></code></pre></div>
+  <div class="code"><span class="codelabel">GradeForce — complete</span><button class="copy" type="button">Copy</button><pre><code>component GradeForce
+  extends TranslationalComponents.Interfaces.PartialForce
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+relations
+  # A force source acts on the body with -f, so a climb (positive grade) needs positive f to
+  # hold the car back.
+  f = m * g * sin(atan(grade))
+end</code></pre></div>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The reference tests: on a 10 % climb (<code>TestGradeForce</code>)
   <code>gf.f</code> reads 1366.1 N and the free mass decelerates at 0.976 m/s². With 500 N of
   traction on a 2 % climb starting at 10 m/s (<code>TestGradeBody</code>, case
@@ -797,24 +892,22 @@ end</code></pre></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/GradeBody.dyad</code>, <code>dyad/HandsOn/GradeForce.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out, and so are the test components. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so are the test components. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 The along-slope pull of gravity on the car, from a road-gradient signal.
 
 `grade` is tan(alpha), the convention `RollingResistance` uses for its `inclination` input, so
 one signal can drive both.
-&quot;&quot;&quot;
+"""
 component GradeForce
   extends TranslationalComponents.Interfaces.PartialForce
-  &quot;Road gradient, tan(alpha)&quot;
-  grade = RealInput() {^grade}
-  &quot;Vehicle mass&quot;
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Vehicle mass"
   parameter m::Dyad.Mass = 1400
-  &quot;Gravitational acceleration&quot;
+  "Gravitational acceleration"
   parameter g::Acceleration = 9.80665
 relations
   # A force source acts on the body with -f, so a climb (positive grade) needs positive f to
@@ -822,32 +915,44 @@ relations
   f = m * g * sin(atan(grade))
 end
 
-&quot;&quot;&quot;
+"""
 The body of step 4 on a road with a gradient: one `grade` signal tilts the rolling resistance and
 drives the grade force.
-&quot;&quot;&quot;
+"""
 component GradeBody
-  &quot;Tractive force from the driveline&quot;
-  flange = Flange() {^flange}
-  &quot;Road gradient, tan(alpha)&quot;
-  grade = RealInput() {^grade}
-  mass = TranslationalComponents.Components.Mass(m = 1400) {^mass}
-  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = 30, f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2) {^drag}
-  rolling = TranslationalComponents.Components.RollingResistance(fWeight = 1400 * 9.80665) {^rolling}
-  cr_const = BlockComponents.Sources.Constant(k = 0.012) {^cr_const}
-  gradeforce = GradeForce(m = 1400) {^gradeforce}
-  ground = TranslationalComponents.Components.Fixed() {^ground}
+  "Tractive force from the driveline"
+  flange = Flange()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  mass = TranslationalComponents.Components.Mass(m = m)
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g)
+  cr_const = BlockComponents.Sources.Constant(k = f_r)
+  gradeforce = GradeForce(m = m, g = g)
+  ground = TranslationalComponents.Components.Fixed()
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400
+  "Aerodynamic drag area, Cd * A"
+  parameter CdA::Area = 0.63
+  "Air density"
+  parameter rho::Density = 1.2
+  "Rolling resistance coefficient"
+  parameter f_r::Real = 0.012
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Speed at which the drag force is specified"
+  parameter v_nominal::Velocity = 30
 relations
-  connect(flange, mass.flange_a) {^id1}
-  connect(drag.flange, mass.flange_a) {^id2}
-  connect(rolling.flange, mass.flange_a) {^id3}
-  connect(gradeforce.flange, mass.flange_a) {^id4}
-  connect(drag.support, ground.flange) {^id5}
-  connect(rolling.support, ground.flange) {^id6}
-  connect(gradeforce.support, ground.flange) {^id7}
-  connect(cr_const.y, rolling.cr) {^id8}
-  connect(grade, rolling.inclination) {^id9}
-  connect(grade, gradeforce.grade) {^id10}
+  connect(flange, mass.flange_a)
+  connect(drag.flange, mass.flange_a)
+  connect(rolling.flange, mass.flange_a)
+  connect(gradeforce.flange, mass.flange_a)
+  connect(drag.support, ground.flange)
+  connect(rolling.support, ground.flange)
+  connect(gradeforce.support, ground.flange)
+  connect(cr_const.y, rolling.cr)
+  connect(grade, rolling.inclination)
+  connect(grade, gradeforce.grade)
 end</code></pre></div>
 </details>
 </section>
@@ -893,44 +998,61 @@ Run <code>TireFrictionCurveSweep</code> from the <strong>Analyses</strong> panel
 r = MyCar.TireFrictionCurveSweep()
 plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre></div></li>
   </ol>
-  <div class="code"><span class="codelabel">Relations of TireFrictionCurve</span><button class="copy" type="button">Copy</button><pre><code><mark>  slip = abs(kappa)</mark>
-<mark>  # -0.5·x³ + 1.5·x maps [-1, 1] onto [-1, 1] with zero slope at both ends, so the curve stays</mark>
-<mark>  # continuously differentiable across the segment joins.</mark>
-<mark>  mu_abs = ifelse(slip &lt;= sAdhesion,</mark>
-<mark>    mu_A * (-0.5 * (slip / sAdhesion) ^ 3 + 1.5 * (slip / sAdhesion)),</mark>
-<mark>    ifelse(slip &gt;= sSlide, mu_S,</mark>
-<mark>      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))</mark>
-<mark>  mu = sign(kappa) * mu_abs</mark></code></pre></div>
+  <div class="code"><span class="codelabel">TireFrictionCurve — complete</span><button class="copy" type="button">Copy</button><pre><code>component TireFrictionCurve
+  "Longitudinal slip ratio, negative while braking"
+  kappa = RealInput()
+  "Friction coefficient, carrying the sign of the slip"
+  mu = RealOutput()
+  "Slip ratio at peak adhesion"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient"
+  parameter mu_S::Real = 0.7
+  "Slip magnitude"
+  variable slip::Real
+  "Friction magnitude"
+  variable mu_abs::Real
+relations
+  slip = abs(kappa)
+  # -0.5·x³ + 1.5·x maps [-1, 1] onto [-1, 1] with zero slope at both ends, so the curve stays
+  # continuously differentiable across the segment joins.
+  mu_abs = ifelse(slip &lt;= sAdhesion,
+    mu_A * (-0.5 * (slip / sAdhesion) ^ 3 + 1.5 * (slip / sAdhesion)),
+    ifelse(slip &gt;= sSlide, mu_S,
+      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))
+  mu = sign(kappa) * mu_abs
+end</code></pre></div>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The curve is point-symmetric: −0.7 for a wheel locked under braking (κ = −1), −0.85 at κ = −0.08, the peak of 1.0 at κ = 0.04, and 0.7 at κ = 1. These are the values <code>TestTireFrictionCurve</code> asserts.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/TireFrictionCurve.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 Tire friction coefficient against longitudinal slip: rises to the adhesion peak `mu_A` at
 `sAdhesion`, falls to the sliding level `mu_S` at `sSlide`, and stays there. Point-symmetric, so
 braking slip gives negative friction.
-&quot;&quot;&quot;
+"""
 component TireFrictionCurve
-  &quot;Longitudinal slip ratio, negative while braking&quot;
-  kappa = RealInput() {^kappa}
-  &quot;Friction coefficient, carrying the sign of the slip&quot;
-  mu = RealOutput() {^mu}
-  &quot;Slip ratio at peak adhesion&quot;
+  "Longitudinal slip ratio, negative while braking"
+  kappa = RealInput()
+  "Friction coefficient, carrying the sign of the slip"
+  mu = RealOutput()
+  "Slip ratio at peak adhesion"
   parameter sAdhesion::Real = 0.04
-  &quot;Slip ratio at the sliding plateau&quot;
+  "Slip ratio at the sliding plateau"
   parameter sSlide::Real = 0.12
-  &quot;Peak adhesion coefficient&quot;
+  "Peak adhesion coefficient"
   parameter mu_A::Real = 1.0
-  &quot;Sliding friction coefficient&quot;
+  "Sliding friction coefficient"
   parameter mu_S::Real = 0.7
-  &quot;Slip magnitude&quot;
+  "Slip magnitude"
   variable slip::Real
-  &quot;Friction magnitude&quot;
+  "Friction magnitude"
   variable mu_abs::Real
 relations
   slip = abs(kappa)
@@ -943,12 +1065,12 @@ relations
   mu = sign(kappa) * mu_abs
 end
 
-test component TestTireFrictionCurve
-  &quot;Slip swept from a locked wheel under braking to full wheelspin&quot;
-  slip = BlockComponents.Sources.Ramp(offset = -1, height = 2, duration = 2, start_time = 0) {^slip}
-  curve = TireFrictionCurve() {^curve}
+component TestTireFrictionCurve
+  "Slip swept from a locked wheel under braking to full wheelspin"
+  slip = BlockComponents.Sources.Ramp(offset = -1, height = 2, duration = 2, start_time = 0)
+  curve = TireFrictionCurve()
 relations
-  connect(slip.y, curve.kappa) {^id1}
+  connect(slip.y, curve.kappa)
 end
 
 analysis TireFrictionCurveSweep
@@ -982,58 +1104,82 @@ end</code></pre></div>
 <li>Write the relations below. Slip is the speed difference over the vehicle speed; <code>v_eps</code> keeps it finite at standstill.</li>
 <li>Mind the sign: flow is positive into a component, so a tire that pushes the car forward reports <code>flange.f = -F_x</code>.</li>
   </ol>
-  <div class="code"><span class="codelabel">Relations of SlipWheel1D</span><button class="copy" type="button">Copy</button><pre><code><mark>  omega = der(spline.phi)</mark>
-<mark>  v = der(flange.s)</mark>
-<mark>  # At standstill v = 0 and the slip ratio is undefined; the floor keeps it finite.</mark>
-<mark>  kappa = (omega * radius - v) / max(abs(v), v_eps)</mark>
-<mark>  curve.kappa = kappa</mark>
-<mark>  mu = mu_scale * curve.mu</mark>
-<mark>  F_x = mu * F_z</mark>
-<mark>  # Flow is positive into the component: the tire pushes the body forward with F_x, so the</mark>
-<mark>  # flange reports -F_x, and the shaft feels the matching reaction torque.</mark>
-<mark>  flange.f = -F_x</mark>
-<mark>  0 = spline.tau + radius * flange.f</mark></code></pre></div>
+  <div class="code"><span class="codelabel">SlipWheel1D — complete</span><button class="copy" type="button">Copy</button><pre><code>component SlipWheel1D
+  "Wheel shaft"
+  spline = Spline()
+  "Contact with the body"
+  flange = Flange()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  curve = TireFrictionCurve()
+  "Wheel rolling radius"
+  parameter radius::Length = 0.31
+  "Normal load on the driven axle"
+  parameter F_z::Force = 6864.655
+  "Speed below which slip is measured against v_eps instead of v"
+  parameter v_eps::Velocity = 0.5
+  "Wheel angular speed"
+  variable omega::AngularVelocity
+  "Vehicle speed"
+  variable v::Velocity
+  "Longitudinal slip ratio"
+  variable kappa::Real
+  "Friction coefficient after road scaling"
+  variable mu::Real
+  "Longitudinal tire force"
+  variable F_x::Force
+relations
+  omega = der(spline.phi)
+  v = der(flange.s)
+  # At standstill v = 0 and the slip ratio is undefined; the floor keeps it finite.
+  kappa = (omega * radius - v) / max(abs(v), v_eps)
+  curve.kappa = kappa
+  mu = mu_scale * curve.mu
+  F_x = mu * F_z
+  # Flow is positive into the component: the tire pushes the body forward with F_x, so the
+  # flange reports -F_x, and the shaft feels the matching reaction torque.
+  flange.f = -F_x
+  0 = spline.tau + radius * flange.f
+end</code></pre></div>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The reference test <code>TestSlipWheel1D</code> after 5 s: on the slippery
   road (<code>mu_scale = 0.2</code>) the slip ratio has run up to 135.4 and the mass makes only
   3.43 m/s; on the dry road the slip ratio is 0.0076 and the mass makes 6.86 m/s.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/SlipWheel1D.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 A road wheel whose tire grips through slip: the shaft and the body move at different speeds, and
 the friction curve turns the difference into traction.
 
-`F_z` is the load on the one driven axle, about half the car&#x27;s weight. `mu_scale` scales the
+`F_z` is the load on the one driven axle, about half the car's weight. `mu_scale` scales the
 curve for the road: 1 on a dry road, 0.2 on a slippery one.
-&quot;&quot;&quot;
+"""
 component SlipWheel1D
-  &quot;Wheel shaft&quot;
-  spline = Spline() {^spline}
-  &quot;Contact with the body&quot;
-  flange = Flange() {^flange}
-  &quot;Road-friction multiplier&quot;
-  mu_scale = RealInput() {^mu_scale}
-  curve = TireFrictionCurve() {^curve}
-  &quot;Wheel rolling radius&quot;
+  "Wheel shaft"
+  spline = Spline()
+  "Contact with the body"
+  flange = Flange()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  curve = TireFrictionCurve()
+  "Wheel rolling radius"
   parameter radius::Length = 0.31
-  &quot;Normal load on the driven axle&quot;
+  "Normal load on the driven axle"
   parameter F_z::Force = 6864.655
-  &quot;Speed below which slip is measured against v_eps instead of v&quot;
+  "Speed below which slip is measured against v_eps instead of v"
   parameter v_eps::Velocity = 0.5
-  &quot;Wheel angular speed&quot;
+  "Wheel angular speed"
   variable omega::AngularVelocity
-  &quot;Vehicle speed&quot;
+  "Vehicle speed"
   variable v::Velocity
-  &quot;Longitudinal slip ratio&quot;
+  "Longitudinal slip ratio"
   variable kappa::Real
-  &quot;Friction coefficient after road scaling&quot;
+  "Friction coefficient after road scaling"
   variable mu::Real
-  &quot;Longitudinal tire force&quot;
+  "Longitudinal tire force"
   variable F_x::Force
 relations
   omega = der(spline.phi)
@@ -1053,6 +1199,11 @@ end</code></pre></div>
 <section class="step" id="standing-start">
   <h2><span class="no">10</span> Standing start on a slippery road <span class="budget">10 min</span></h2>
   <p class="goal">Build the car with the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.</p>
+  <h3>Parameters</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
+  <tbody><tr><td><code>i</code></td><td><code>Real</code></td><td><code>4.0</code></td><td>Gear ratio</td></tr><tr><td><code>J_w</code></td><td><code>MomentOfInertia</code></td><td><code>1.0</code></td><td>Road wheel and tire inertia</td></tr><tr><td><code>r</code></td><td><code>Length</code></td><td><code>0.31</code></td><td>Wheel rolling radius, shared by the tire and the wheel-speed gain</td></tr><tr><td><code>m</code></td><td><code>Dyad.Mass</code></td><td><code>1400</code></td><td>Vehicle mass; the driven axle carries half of it</td></tr><tr><td><code>g</code></td><td><code>Acceleration</code></td><td><code>9.80665</code></td><td>Gravitational acceleration</td></tr></tbody>
+</table></div>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -1060,14 +1211,14 @@ end</code></pre></div>
 <tr><td><code>tau_cmd, grade, mu_scale</code></td><td>Dyad › RealInput</td><td>ports</td></tr>
 <tr><td><code>v_kmh, wheel_kmh</code></td><td>Dyad › RealOutput</td><td>ports — car speed and wheel surface speed</td></tr>
 <tr><td><code>engine</code></td><td>your <code>Engine</code></td><td>—</td></tr>
-<tr><td><code>gear</code></td><td>RotationalComponents › Components › IdealGear</td><td><code>ratio = 4.0</code></td></tr>
-<tr><td><code>wheel_inertia</code></td><td>RotationalComponents › Components › Inertia</td><td><code>J = 1.0</code></td></tr>
-<tr><td><code>wheel</code></td><td>your <code>SlipWheel1D</code></td><td>—</td></tr>
-<tr><td><code>body</code></td><td>your <code>GradeBody</code></td><td>—</td></tr>
+<tr><td><code>gear</code></td><td>RotationalComponents › Components › IdealGear</td><td><code>ratio = i</code></td></tr>
+<tr><td><code>wheel_inertia</code></td><td>RotationalComponents › Components › Inertia</td><td><code>J = J_w</code></td></tr>
+<tr><td><code>wheel</code></td><td>your <code>SlipWheel1D</code></td><td><code>radius = r</code>, <code>F_z = m * g / 2</code></td></tr>
+<tr><td><code>body</code></td><td>your <code>GradeBody</code></td><td><code>m = m</code>, <code>g = g</code></td></tr>
 <tr><td><code>vsensor</code></td><td>TranslationalComponents › Sensors › VelocitySensor</td><td>—</td></tr>
 <tr><td><code>to_kmh</code></td><td>BlockComponents › Math › Gain</td><td><code>k = 3.6</code></td></tr>
 <tr><td><code>wsensor</code></td><td>RotationalComponents › Sensors › VelocitySensor</td><td>—</td></tr>
-<tr><td><code>wheel_to_kmh</code></td><td>BlockComponents › Math › Gain</td><td><code>k = 0.31 * 3.6</code> — ω·r in km/h</td></tr>
+<tr><td><code>wheel_to_kmh</code></td><td>BlockComponents › Math › Gain</td><td><code>k = r * 3.6</code> — ω·r in km/h</td></tr>
 <tr><td><code>rot_ground</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
   </tbody>
 </table></div><p class="small muted">Bench <code>SlipCarStandingStart</code>: three <code>Constant</code> sources — <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2.</p>
@@ -1082,9 +1233,21 @@ end</code></pre></div>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
+<li>Here naming values pays off: the radius is used by the tire <em>and</em> by the wheel-speed gain, and the axle load is half the car's weight. Typed twice, they drift apart. Click an empty spot of the canvas and use <strong>Add parameter</strong> in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above <code>relations</code>:
+<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Gear ratio"
+  parameter i::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Wheel rolling radius, shared by the tire and the wheel-speed gain"
+  parameter r::Length = 0.31
+  "Vehicle mass; the driven axle carries half of it"
+  parameter m::Dyad.Mass = 1400
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665</code></pre></div>
+Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
 <li>Create <code>SlipCar</code> in the diagram editor: everything in it is a part you already have. The drive chain is <code>engine → gear → wheel_inertia → wheel</code>, and <code>wheel.flange</code> drives <code>body.flange</code> directly — the tire is now the contact, so there is no translational ground.</li>
 <li>Measure both speeds in km/h: <code>vsensor</code> on the wheel flange through <code>to_kmh</code>, and <code>wsensor</code> on the wheel shaft through <code>wheel_to_kmh</code>, which multiplies by the radius as well.</li>
-<li>Build the bench: <strong>Add Component</strong> <code>SlipCarStandingStart</code>, place your <code>SlipCar</code> as <code>car</code> and three <code>BlockComponents › Sources › Constant</code>: <code>cmd</code> (<code>k = 150</code>) → <code>car.tau_cmd</code>, <code>road</code> (<code>k = 0</code>) → <code>car.grade</code>, <code>friction</code> (<code>k = 0.2</code>) → <code>car.mu_scale</code>. Toggle to code, add the <code>initial</code> lines below, paste the analysis after <code>end</code>, save, and run <code>SlipCarStandingStartTransient</code> from the <strong>Analyses</strong> panel.</li>
+<li>Build the bench: <strong>Add Component</strong> <code>SlipCarStandingStart</code>, place your <code>SlipCar</code> as <code>car</code> and three <code>BlockComponents › Sources › Constant</code>: <code>cmd</code> (<code>k = 150</code>) → <code>car.tau_cmd</code>, <code>road</code> (<code>k = 0</code>) → <code>car.grade</code>, <code>friction</code> (<code>k = 0.2</code>) → <code>car.mu_scale</code>. Toggle to code, add the <code>initial</code> lines from the complete bench below, paste the analysis after <code>end</code>, save, and run <code>SlipCarStandingStartTransient</code> from the <strong>Analyses</strong> panel.</li>
 <li>Plot both speeds together in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.SlipCarStandingStartTransient()
@@ -1094,21 +1257,29 @@ Then the same start on a dry road. The run below overrides <code>friction.k</cod
     model = MyCar.SlipCarStandingStart(name = :SlipCarStandingStart, friction__k = 1.0))
 plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre></div></li>
   </ol>
-  <div class="code"><span class="codelabel">New code in SlipCarStandingStart</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
-  …
+  <p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">SlipCarStandingStart and SlipCarStandingStartTransient</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
+  "Full throttle"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  "Flat road"
+  road = BlockComponents.Sources.Constant(k = 0)
+  "Slippery road; 1.0 is dry"
+  friction = BlockComponents.Sources.Constant(k = 0.2)
+  car = SlipCar()
 relations
-  …
-<mark>  initial car.body.mass.s = 0</mark>
-<mark>  initial car.body.mass.v = 0</mark>
-<mark>  initial car.engine.lag.x = 0</mark>
-<mark>  initial car.wheel_inertia.phi = 0</mark>
-<mark>  initial car.wheel_inertia.w = 0</mark>
-<mark>end</mark>
+  connect(cmd.y, car.tau_cmd)
+  connect(road.y, car.grade)
+  connect(friction.y, car.mu_scale)
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+  initial car.wheel_inertia.phi = 0
+  initial car.wheel_inertia.w = 0
+end
 
-<mark>analysis SlipCarStandingStartTransient</mark>
-<mark>  extends TransientAnalysis(stop = 5)</mark>
-<mark>  model = SlipCarStandingStart()</mark>
-<mark>end</mark></code></pre></div>
+analysis SlipCarStandingStartTransient
+  extends TransientAnalysis(stop = 5)
+  model = SlipCarStandingStart()
+end</code></pre></div>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.SlipCarStandingStartTransient</code>, friction 0.2:
   after 1 s the car makes 1.94 km/h while the wheel surface is already at 159.8 km/h; after 5 s
   the car makes <strong>10.12 km/h</strong> and the wheel surface <strong>1501 km/h</strong>. The
@@ -1118,68 +1289,76 @@ relations
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/SlipCar.dyad</code>,
-    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
-    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
-    into that layout; the diagram editor writes it for you, and you can drop it if you type the
-    code by hand. In the reference library these models sit in a sub-library called
+    copied from the source, except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tags that point into that layout are dropped too; the diagram editor writes its own when you draw. In the reference library these models sit in a sub-library called
     <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>"""
 The car with a slipping wheel and a road gradient. Body speed and wheel surface speed are both
 reported in km/h, so wheelspin shows as the gap between them.
-&quot;&quot;&quot;
+"""
 component SlipCar
-  &quot;Commanded engine torque&quot;
-  tau_cmd = RealInput() {^tau_cmd}
-  &quot;Road gradient, tan(alpha)&quot;
-  grade = RealInput() {^grade}
-  &quot;Road-friction multiplier&quot;
-  mu_scale = RealInput() {^mu_scale}
-  &quot;Vehicle speed in km/h&quot;
-  v_kmh = RealOutput() {^v_kmh}
-  &quot;Wheel surface speed, omega * radius, in km/h&quot;
-  wheel_kmh = RealOutput() {^wheel_kmh}
-  engine = Engine() {^engine}
-  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
-  wheel_inertia = RotationalComponents.Components.Inertia(J = 1.0) {^wheel_inertia}
-  wheel = SlipWheel1D() {^wheel}
-  body = GradeBody() {^body}
-  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
-  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
-  wsensor = RotationalComponents.Sensors.VelocitySensor() {^wsensor}
-  wheel_to_kmh = BlockComponents.Math.Gain(k = 0.31 * 3.6) {^wheel_to_kmh}
-  &quot;Engine mounts and gearbox housing&quot;
-  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  "Wheel surface speed, omega * radius, in km/h"
+  wheel_kmh = RealOutput()
+  engine = Engine()
+  gear = RotationalComponents.Components.IdealGear(ratio = i)
+  wheel_inertia = RotationalComponents.Components.Inertia(J = J_w)
+  wheel = SlipWheel1D(radius = r, F_z = m * g / 2)
+  body = GradeBody(m = m, g = g)
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  to_kmh = BlockComponents.Math.Gain(k = 3.6)
+  wsensor = RotationalComponents.Sensors.VelocitySensor()
+  wheel_to_kmh = BlockComponents.Math.Gain(k = r * 3.6)
+  "Engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Gear ratio"
+  parameter i::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Wheel rolling radius, shared by the tire and the wheel-speed gain"
+  parameter r::Length = 0.31
+  "Vehicle mass; the driven axle carries half of it"
+  parameter m::Dyad.Mass = 1400
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
 relations
-  connect(tau_cmd, engine.tau_cmd) {^id1}
-  connect(engine.spline, gear.spline_a) {^id2}
-  connect(gear.spline_b, wheel_inertia.spline_a) {^id3}
-  connect(wheel_inertia.spline_b, wheel.spline) {^id4}
-  connect(engine.support, rot_ground.spline) {^id5}
-  connect(gear.support, rot_ground.spline) {^id6}
-  connect(wheel.flange, body.flange) {^id7}
-  connect(grade, body.grade) {^id8}
-  connect(mu_scale, wheel.mu_scale) {^id9}
-  connect(vsensor.flange, wheel.flange) {^id10}
-  connect(vsensor.v, to_kmh.u) {^id11}
-  connect(to_kmh.y, v_kmh) {^id12}
-  connect(wsensor.spline, wheel.spline) {^id13}
-  connect(wsensor.w, wheel_to_kmh.u) {^id14}
-  connect(wheel_to_kmh.y, wheel_kmh) {^id15}
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, gear.spline_a)
+  connect(gear.spline_b, wheel_inertia.spline_a)
+  connect(wheel_inertia.spline_b, wheel.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(gear.support, rot_ground.spline)
+  connect(wheel.flange, body.flange)
+  connect(grade, body.grade)
+  connect(mu_scale, wheel.mu_scale)
+  connect(vsensor.flange, wheel.flange)
+  connect(vsensor.v, to_kmh.u)
+  connect(to_kmh.y, v_kmh)
+  connect(wsensor.spline, wheel.spline)
+  connect(wsensor.w, wheel_to_kmh.u)
+  connect(wheel_to_kmh.y, wheel_kmh)
 end
 
-&quot;&quot;&quot;Full throttle from rest on a slippery flat road: the wheel spins up, the car barely moves.&quot;&quot;&quot;
+"""Full throttle from rest on a slippery flat road: the wheel spins up, the car barely moves."""
 component SlipCarStandingStart
-  &quot;Full throttle&quot;
-  cmd = BlockComponents.Sources.Constant(k = 150) {^cmd}
-  &quot;Flat road&quot;
-  road = BlockComponents.Sources.Constant(k = 0) {^road}
-  &quot;Slippery road; 1.0 is dry&quot;
-  friction = BlockComponents.Sources.Constant(k = 0.2) {^friction}
-  car = SlipCar() {^car}
+  "Full throttle"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  "Flat road"
+  road = BlockComponents.Sources.Constant(k = 0)
+  "Slippery road; 1.0 is dry"
+  friction = BlockComponents.Sources.Constant(k = 0.2)
+  car = SlipCar()
 relations
-  connect(cmd.y, car.tau_cmd) {^id1}
-  connect(road.y, car.grade) {^id2}
-  connect(friction.y, car.mu_scale) {^id3}
+  connect(cmd.y, car.tau_cmd)
+  connect(road.y, car.grade)
+  connect(friction.y, car.mu_scale)
   initial car.body.mass.s = 0
   initial car.body.mass.v = 0
   initial car.engine.lag.x = 0
