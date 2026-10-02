@@ -1,0 +1,231 @@
+"""
+Signal names, readouts and figure helpers for the lecture 2 notebooks.
+
+Include after `notebooks/lecture01/support.jl`:
+
+    include(joinpath(@__DIR__, "..", "lecture01", "support.jl"))
+    include(joinpath(@__DIR__, "support.jl"))
+    using .Lecture01Support, .Lecture02Support
+
+Like `Lecture01Support`, this module holds no pedagogy: equations and reasoning stay in the
+notebook cells.
+"""
+module Lecture02Support
+
+using Markdown
+using PlutoUI: LocalResource, ExperimentalLayout
+
+export rpm, rad_per_s,
+    limit_cycle, cycle_mean, first_time,
+    deck_figure, compare, captioned,
+    is_placeholder, figure_title, placeholder_note, check, measured,
+    LAMBDA_CYL, LAMBDA_TRIM, F_I, V_UP, LAMBDA_IN, LAMBDA_OUT, THETA_CAT, V_DOWN, TRIM_SHIFT,
+    LAMBDA_MEAS, LOOP_DELAY,
+    RAMP_LAMBDA, RAMP_V_SWITCHING, RAMP_I_PUMP, RAMP_LAMBDA_MEAS
+
+# ---------------------------------------------------------------------------------------
+# Signal names
+#
+# Paths into the `Lecture2.LambdaLoop` and `Lecture2.LambdaSensorRamp` harnesses. They are the
+# names notebook 06's model contract requests; a mismatch with the built harness surfaces as
+# `signal`'s "no signal" error listing what the harness does provide.
+# ---------------------------------------------------------------------------------------
+
+"λ in the cylinder, after the wall film and the induction delay."
+const LAMBDA_CYL = "engine.lambda_cyl"
+"The controller's fuel multiplier, the slide 57 manipulated variable."
+const LAMBDA_TRIM = "controller.lambda_trim"
+"The two-step controller's integral (ramp) state."
+const F_I = "controller.F_I"
+"Upstream switching sensor voltage [V]."
+const V_UP = "sensor_up.V"
+"λ entering the catalyst, at the upstream sensor location."
+const LAMBDA_IN = "catalyst.lambda_in"
+"λ leaving the catalyst."
+const LAMBDA_OUT = "catalyst.lambda_out"
+"Catalyst oxygen-storage fraction θ ∈ [0, 1]."
+const THETA_CAT = "catalyst.theta"
+"Downstream switching sensor voltage [V]."
+const V_DOWN = "sensor_down.V"
+"Post-cat trim output: the shift it applies to the two-step loop."
+const TRIM_SHIFT = "post_cat.shift"
+"The ECU's λ estimate from the wideband sensor."
+const LAMBDA_MEAS = "sensor_wb.lambda_meas"
+"Injection-to-upstream-sensor transport delay [s], induction plus exhaust."
+const LOOP_DELAY = "loop_delay"
+
+"λ imposed by the sensor-ramp harness."
+const RAMP_LAMBDA = "lambda_src.y"
+"Switching sensor voltage in the sensor-ramp harness [V]."
+const RAMP_V_SWITCHING = "switching.V"
+"Wideband pump current in the sensor-ramp harness [mA]."
+const RAMP_I_PUMP = "wideband.I_p"
+"Wideband λ estimate in the sensor-ramp harness."
+const RAMP_LAMBDA_MEAS = "wideband.lambda_meas"
+
+# ---------------------------------------------------------------------------------------
+# Units, for plotting and slider conversion only
+# ---------------------------------------------------------------------------------------
+
+rpm(omega) = omega * 30 / pi
+rad_per_s(n) = n * pi / 30
+
+# ---------------------------------------------------------------------------------------
+# Readouts
+# ---------------------------------------------------------------------------------------
+
+"""
+    limit_cycle(t, y; settle = 0.5) -> (; period, frequency, amplitude, mean)
+
+Period and half peak-to-peak amplitude of a settled oscillation.
+
+Only the part of the run after `settle` (a fraction of the time span) is used, so a start-up
+transient does not count. The period is the mean spacing of upward crossings of the mean,
+interpolated linearly between samples. `period` is `NaN` when fewer than two crossings exist.
+"""
+function limit_cycle(t::AbstractVector, y::AbstractVector; settle = 0.5)
+    t0 = first(t) + settle * (last(t) - first(t))
+    i0 = searchsortedfirst(t, t0)
+    ts, ys = t[i0:end], y[i0:end]
+    m = sum(ys) / length(ys)
+    ups = Float64[]
+    for i in 2:length(ys)
+        if ys[i - 1] < m <= ys[i]
+            push!(ups, ts[i - 1] + (m - ys[i - 1]) / (ys[i] - ys[i - 1]) * (ts[i] - ts[i - 1]))
+        end
+    end
+    period = length(ups) < 2 ? NaN : (last(ups) - first(ups)) / (length(ups) - 1)
+    return (; period, frequency = 1 / period, amplitude = (maximum(ys) - minimum(ys)) / 2, mean = m)
+end
+
+"""
+    cycle_mean(t, y, window) -> Vector
+
+Moving mean of `y` over the trailing `window` seconds, sampled at `t`.
+
+Averaging over one limit-cycle period removes the oscillation and leaves the slow drift that a
+disturbance or a shift causes. Trapezoidal, so a solver's uneven time steps are weighted
+correctly.
+"""
+function cycle_mean(t::AbstractVector, y::AbstractVector, window::Real)
+    area = zeros(length(t))
+    for i in 2:length(t)
+        area[i] = area[i - 1] + (y[i] + y[i - 1]) / 2 * (t[i] - t[i - 1])
+    end
+    interp(tq) = begin
+        j = clamp(searchsortedlast(t, tq), 1, length(t) - 1)
+        s = (tq - t[j]) / (t[j + 1] - t[j])
+        area[j] + s * (area[j + 1] - area[j])
+    end
+    return map(eachindex(t)) do i
+        ta = max(first(t), t[i] - window)
+        t[i] == ta ? y[i] : (area[i] - interp(ta)) / (t[i] - ta)
+    end
+end
+
+"""
+    first_time(t, cond) -> time or `nothing`
+
+The first sample time at which `cond` holds and keeps holding to the end of the run.
+"""
+function first_time(t::AbstractVector, cond::AbstractVector{Bool})
+    i = findlast(!, cond)
+    isnothing(i) && return first(t)
+    return i == length(t) ? nothing : t[i + 1]
+end
+
+# ---------------------------------------------------------------------------------------
+# Deck figures and layout
+# ---------------------------------------------------------------------------------------
+
+const ASSETS = normpath(@__DIR__, "assets")
+
+"""
+    deck_figure(name; width = 420)
+
+A figure copied from the lecture deck into `notebooks/lecture02/assets/`, for display.
+"""
+function deck_figure(name::AbstractString; width = 420)
+    path = joinpath(ASSETS, name)
+    isfile(path) || throw(ArgumentError("no deck figure `$name` in $ASSETS"))
+    return LocalResource(path, :width => width)
+end
+
+"""
+    compare(original, simulated)
+
+Deck figure on the left, regenerated figure on the right.
+"""
+compare(original, simulated) = ExperimentalLayout.hbox([original, simulated];
+    style = Dict("gap" => "1.5em", "align-items" => "center", "flex-wrap" => "wrap"))
+
+"""
+    captioned(content, caption)
+
+`content` with a caption under it. `caption` is a string of Markdown.
+"""
+captioned(content, caption::AbstractString) =
+    ExperimentalLayout.vbox([content, Markdown.parse(caption)])
+
+# ---------------------------------------------------------------------------------------
+# Placeholder handling
+#
+# A notebook drafted before its model exists runs on placeholder results. These helpers let
+# the same cells serve both: a placeholder result marks its plots and turns its checks into
+# PENDING notices, and a real analysis result passes through unchanged.
+# ---------------------------------------------------------------------------------------
+
+"""
+    is_placeholder(run) -> Bool
+
+True when `run` is a placeholder result rather than a solved analysis. Placeholder types add
+a method; everything else is real.
+"""
+is_placeholder(run) = false
+is_placeholder(runs::Union{Tuple, AbstractVector}) = any(is_placeholder, runs)
+
+"""
+    figure_title(run, title)
+
+`title`, prefixed with "PLACEHOLDER —" when `run` (or any run in a collection) is a
+placeholder.
+"""
+figure_title(run, title::AbstractString) = is_placeholder(run) ? "PLACEHOLDER — " * title : title
+
+"""
+    placeholder_note(run, replaced_by) -> String
+
+A caption suffix naming the analysis and signals that will replace a placeholder figure, or
+the empty string for a real run.
+"""
+placeholder_note(run, replaced_by::AbstractString) = is_placeholder(run) ?
+    "\n\n**PLACEHOLDER —** surrogate data from `draft_stubs.jl`, not a model result. " *
+    "Replaced by $replaced_by." : ""
+
+"""
+    check(f, needs, runs...)
+
+A check cell's body. `f()` returns `(passed::Bool, message)` where the message states the
+measured value and the band. On placeholder data it prints "PENDING: needs <needs>" and
+asserts nothing; on real data it asserts and prints "PASS: <message>".
+"""
+function check(f, needs::AbstractString, runs...)
+    if is_placeholder(runs)
+        println("PENDING: needs ", needs)
+        return Markdown.parse("**PENDING:** needs $needs")
+    end
+    passed, message = f()
+    @assert passed message
+    println("PASS: ", message)
+    return Markdown.parse("**PASS:** $message")
+end
+
+"""
+    measured(f, run; digits = 3)
+
+`f()` rounded for a results table, or "pending" when `run` is a placeholder, so a surrogate
+number never reads as a result.
+"""
+measured(f, run; digits = 3) = is_placeholder(run) ? "pending" : string(round(f(); digits))
+
+end
