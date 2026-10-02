@@ -1,0 +1,43 @@
+
+<!-- ===================== 03 — Driveline ================================================ -->
+<section data-section-title="03 — Driveline">
+
+  <section class="cover">
+    <p class="nb-no">Step 03 · 10 min</p>
+    <h2>Driveline</h2>
+    <p class="thesis">Shaft torque in, force on the car out: F = T · i / r.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#driveline">page: step 03</a> · reference <code>dyad/HandsOn/Driveline.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> two parts and four ports. This is where rotation becomes
+      translation.</p>
+      <p><strong>Timing:</strong> 10 minutes. No bench, no analysis — it is checked when the car
+      runs in step 05.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Gear, rolling wheel, four ports</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step03-driveline.png"
+           alt="Driveline: spline into an ideal gear, then an ideal rolling wheel out to the flange, with both supports brought out.">
+      <figcaption><code>gear</code> IdealGear(ratio = 4.0) → <code>wheel</code> IdealRollingWheel(radius = 0.31) ·
+        gray circles are rotational ports, green squares translational</figcaption>
+    </figure>
+    <div class="readout">
+      <div class="r"><span class="v">100 N·m</span><span class="k">into the gear</span></div>
+      <div class="r"><span class="v">1290 N</span><span class="k">at the road</span></div>
+      <div class="r"><span class="v">0.92 m/s²</span><span class="k">on 1400 kg</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the wheel block. Gray circle in, green square out — the port
+      shapes tell you the domain, and you can only wire like to like.</p>
+      <p><strong>Say:</strong> 100 N·m × 4 / 0.31 m = 1290 N; on 1400 kg that is 0.9217 m/s²,
+      which is what the reference test asserts.</p>
+      <p><strong>They get wrong:</strong> forgetting the reaction paths. The gear housing and the
+      road both push back; <code>gear.support</code> and <code>wheel.support_r</code> go to
+      <code>support_r</code>, <code>wheel.support_t</code> to <code>support_t</code>. The car
+      grounds them in step 05.</p>
+    </aside>
+  </section>
+
+</section>

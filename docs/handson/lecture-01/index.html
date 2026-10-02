@@ -122,6 +122,7 @@
 <header>
   <div class="wrap">
     <a class="back" href="../../index.html">← Vehicle Systems &amp; Components</a>
+    <a class="back" href="../../slides/handson-01/index.html" style="margin-left:1em">Tutor deck →</a>
     <h1>Lecture 1 hands-on: build the car</h1>
     <p>From a first look at Dyad Studio to a car spinning its wheel on a slippery road</p>
   </div>
@@ -643,6 +644,10 @@ end</code></pre></div>
   <figure class="shot-img">
     <a href="img/step06-wheeled-driveline.png"><img src="img/step06-wheeled-driveline.png" alt="WheeledDriveline diagram: an inertia block sits between the gear and the rolling wheel." loading="lazy"></a>
     <figcaption>The only change from step 3: <code>inertia</code> sits between <code>gear</code> and <code>wheel</code>.</figcaption>
+  </figure>
+  <figure class="shot-img">
+    <a href="img/step06-wheeled-car-plot.png"><img src="img/step06-wheeled-car-plot.png" alt="car.v_kmh for Car and WheeledCar overlaid: the dashed WheeledCar curve lies almost exactly on the Car curve, both settling at about 246 km/h." loading="lazy"></a>
+    <figcaption>The run against step 5: the dashed curve lags by a fraction of a second at launch and is otherwise on top of it. Through the rolling radius, 1 kg·m² weighs like J / r² ≈ 10 kg on a 1400 kg car.</figcaption>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">

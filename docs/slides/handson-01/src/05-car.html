@@ -1,0 +1,89 @@
+
+<!-- ===================== 05 — Car ====================================================== -->
+<section data-section-title="05 — Car">
+
+  <section class="cover">
+    <p class="nb-no">Step 05 · 20 min</p>
+    <h2>Car: full throttle to terminal speed</h2>
+    <p class="thesis">Your three components, assembled — and the same 246 km/h the notebook shows.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#car">page: step 05</a> · reference <code>dyad/HandsOn/Car.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the milestone. Everything so far was parts; this is the
+      plant every controller in the lecture was wrapped around.</p>
+      <p><strong>Timing:</strong> 20 minutes. Assembly 8, bench and analysis 5, run and plot 5.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Assemble from your own library</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step05-car.png"
+           alt="Car: torque command into engine, driveline and body, with a velocity sensor and a 3.6 gain producing speed in km/h.">
+      <figcaption>Your <code>Engine</code>, <code>Driveline</code>, <code>Body</code> from + → MyCar ·
+        <code>VelocitySensor</code> → <code>Gain(k = 3.6)</code> → <code>v_kmh</code> · two grounds</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Point at:</strong> <code>rot_ground</code> and <code>trans_ground</code>. These
+      close the reaction paths left open in steps 02 and 03.</p>
+      <p><strong>Say:</strong> the sensor gives m/s; the gain makes km/h. One conversion, at the
+      edge — the same rule the lecture model follows.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Bench, analysis, run</h2>
+    <div class="demo">
+      <div class="demo-head"><span class="nb">CarFullThrottle — Constant(k = 150) → car.tau_cmd, then in code view</span><span class="spacer"></span></div>
+      <pre><code class="language-julia" data-trim data-noescape>  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+end
+
+analysis CarFullThrottleTransient
+  extends TransientAnalysis(stop = 300)
+  model = CarFullThrottle()
+end</code></pre>
+      <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>They get wrong:</strong> leaving out <code>car.body.mass.s</code>. Position
+      appears in no force, so it feels optional, but without it the start is not unique and the
+      model will not initialize.</p>
+      <p><strong>Why 300 s:</strong> the car's own time constant is about a minute. Shorter runs
+      stop on the way up and the student thinks the terminal speed is wrong.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>246 km/h — the notebook's car</h2>
+    <div class="cols">
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.CarFullThrottleTransient()
+plot(r; idxs = r."car.v_kmh")</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step05-car-plot.png"
+             alt="car.v_kmh rising from zero and leveling off at about 246 km/h.">
+      </figure>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">23.6 s</span><span class="k">to 100 km/h</span></div>
+      <div class="r"><span class="v">143 s</span><span class="k">to 99 %</span></div>
+      <div class="r"><span class="v">246.39</span><span class="k">km/h at 300 s</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> <code>Vehicle.CarPlant</code>, the lecture's model, reads
+      246.39 km/h at 300 s too; at 800 s the two agree to 0.0001 km/h. You built the
+      notebook's car.</p>
+      <p><strong>Point at:</strong> the shape. Steep first, then flattening, because drag grows
+      with the square of speed. Tie back to notebook 01: the 246 is the same number we worked out
+      on paper from the force balance.</p>
+      <p><strong>If a number is off:</strong> drag sign (step 04), gear ratio or radius
+      (step 03), limiter ceiling (step 02) — in that order.</p>
+    </aside>
+  </section>
+
+</section>

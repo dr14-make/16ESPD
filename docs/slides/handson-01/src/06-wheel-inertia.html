@@ -1,0 +1,66 @@
+
+<!-- ===================== 06 — Wheel inertia ============================================ -->
+<section data-section-title="06 — Wheel inertia">
+
+  <section class="cover">
+    <p class="nb-no">Step 06 · 10 min</p>
+    <h2>A wheel with inertia</h2>
+    <p class="thesis">A 1 kg·m² wheel between gear and road — and how little it changes.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#wheel-inertia">page: step 06</a> · reference <code>dyad/HandsOn/WheeledDriveline.dyad</code>, <code>WheeledCar.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> the wheel now has its own state — its own speed. Today that speed
+      is still tied to the car's. In step 09 we cut that tie, and that is where ice happens.</p>
+      <p><strong>Timing:</strong> 10 minutes, mostly Duplicate and one wire.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Duplicate, insert, compare</h2>
+    <div class="cols">
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step06-wheeled-driveline.png"
+             alt="WheeledDriveline: an inertia block between the gear and the rolling wheel.">
+        <figcaption>Components → right-click → <strong>Duplicate</strong> ·
+          <code>inertia</code> Inertia(J = 1.0) between gear and wheel</figcaption>
+      </figure>
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+a = MyCar.CarFullThrottleTransient()
+b = MyCar.WheeledCarFullThrottleTransient()
+p = plot(a; idxs = a."car.v_kmh", label = "Car")
+plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Steps:</strong> Duplicate <code>Driveline</code> → <code>WheeledDriveline</code>,
+      insert the inertia. Duplicate <code>Car</code> → <code>WheeledCar</code>, swap the
+      driveline. Duplicate the bench, swap the car, add
+      <code>initial car.driveline.inertia.phi = 0</code>, paste the analysis. The page has all of
+      it as copyable code.</p>
+      <p><strong>They get wrong:</strong> forgetting the new initial line. The wheel's angle is a
+      new state and needs a start.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>J / r² ≈ 10 kg</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step06-wheeled-car-plot.png"
+           alt="Car and WheeledCar speed overlaid: the dashed WheeledCar curve lies almost exactly on the Car curve.">
+    </figure>
+    <div class="readout">
+      <div class="r"><span class="v">23.6 → 23.8 s</span><span class="k">to 100 km/h</span></div>
+      <div class="r"><span class="v">246.39</span><span class="k">km/h — unchanged</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Ask the room first:</strong> before showing the plot, how much slower will the
+      car be? Most guess a lot.</p>
+      <p><strong>Say:</strong> seen through the rolling radius, 1 kg·m² behaves like
+      J / r² = 1 / 0.31² ≈ 10 kg of extra mass on a 1400 kg car. Inertia slows the launch, not
+      the terminal speed — at constant speed nothing accelerates, so inertia does nothing.</p>
+    </aside>
+  </section>
+
+</section>

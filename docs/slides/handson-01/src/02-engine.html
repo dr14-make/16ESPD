@@ -1,0 +1,107 @@
+
+<!-- ===================== 02 — Engine =================================================== -->
+<section data-section-title="02 — Engine">
+
+  <section class="cover">
+    <p class="nb-no">Step 02 · 20 min</p>
+    <h2>Engine</h2>
+    <p class="thesis">Torque command in, shaft torque out — late, slow, and never more than 150 N·m.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#engine">page: step 02</a> · reference <code>dyad/HandsOn/Engine.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the engine from the lecture: a transport delay, a
+      first-order lag, a ceiling. The delay and the lag are what made Ziegler–Nichols and
+      Cohen–Coon possible in notebook 08 — without them the car is first order and never
+      oscillates.</p>
+      <p><strong>Timing:</strong> 20 minutes, the longest in-class step. It is the first bench,
+      the first analysis and the first plot; everything after reuses the pattern.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Finish the chain, then build a bench</h2>
+    <div class="cols">
+      <div class="small">
+        <p><code>tau_cmd</code> → <code>delay</code> → <code>lag</code> →
+          <code>limiter</code> (y_max = 150, y_min = 0) → <code>torque</code> →
+          <code>spline</code>; <code>torque.support</code> → <code>support</code>.</p>
+        <p><strong>Bench <code>EngineStep</code>:</strong> a <code>Step</code> of 200 N·m at
+          0.5 s into your <code>Engine</code>, a 1 kg·m² <code>Inertia</code> on the shaft,
+          the mounts <code>Fixed</code>.</p>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step02-engine-step.png"
+             alt="EngineStep bench: step source into the engine, inertia on its shaft, fixed mounts below, with the analysis in the code view.">
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> 200 is above the ceiling on purpose. The plot should show the
+      limiter doing its job.</p>
+      <p><strong>They get wrong:</strong> leaving <code>support</code> unconnected in the bench.
+      A torque source needs something to push against — the engine mounts. The compile error
+      talks about an unbalanced system; the fix is the <code>Fixed</code>.</p>
+      <p><strong>Why <code>y_min = 0</code>:</strong> the engine cannot brake through this
+      path. Ask the room what would happen at a negative command without it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The analysis is code</h2>
+    <div class="demo">
+      <div class="demo-head"><span class="nb">EngineStep, in code view</span><span class="spacer"></span></div>
+      <pre><code class="language-julia" data-trim data-noescape>relations
+  …
+  initial engine.lag.x = 0
+  initial load.phi = 0
+  initial load.w = 0
+end
+
+analysis EngineStepTransient
+  extends TransientAnalysis(stop = 3)
+  model = EngineStep()
+end</code></pre>
+      <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+    </div>
+    <p class="small">Save → <code>EngineStepTransient</code> appears in <strong>Analyses</strong> → ▷.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> two things have no diagram form. The starting state — where every
+      state variable begins — and the analysis, which is an instruction, not a part.</p>
+      <p><strong>They get wrong:</strong> pasting the analysis <em>inside</em> the component.
+      It goes after the component's <code>end</code>.</p>
+      <p><strong>If it does not appear in Analyses:</strong> Dyad Compile under Julia Commands.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Plot one signal, not all of them</h2>
+    <div class="cols">
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.EngineStepTransient()
+plot(r; idxs = r."engine.limiter.y")</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step02-engine-step-plot.png"
+             alt="engine.limiter.y: zero until 0.5 s, a dead time, then a rise clipped flat at 150 N·m from about 1.2 s.">
+      </figure>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">0</span><span class="k">until 0.5 s + dead time</span></div>
+      <div class="r"><span class="v">97.5</span><span class="k">N·m at 1.0 s</span></div>
+      <div class="r"><span class="v">150</span><span class="k">N·m from 1.22 s</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the default plot draws every state. The delay has six internal
+      states that swing into the thousands, and they bury the one curve you care about. Pick
+      it by name with <code>idxs</code>.</p>
+      <p><strong>Point at:</strong> the flat start. The command arrived at 0.5 s; torque starts
+      at about 0.8 s. That 0.3 s is the transport delay. The small wiggles before it are the
+      Padé approximation of a delay, not physics.</p>
+      <p><strong>Open the REPL:</strong> Actions panel title bar → Dyad: Open Julia REPL.</p>
+      <p><strong>They get wrong:</strong> <code>using MyCar</code> fails if the library was
+      named differently. Use their library's name.</p>
+    </aside>
+  </section>
+
+</section>

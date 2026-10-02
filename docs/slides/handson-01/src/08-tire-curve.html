@@ -1,0 +1,53 @@
+
+<!-- ===================== 08 — Tire curve =============================================== -->
+<section data-section-title="08 — Tire curve">
+
+  <section class="cover">
+    <p class="nb-no">Step 08 · 15 min</p>
+    <h2>Tire friction against slip</h2>
+    <p class="thesis">Grip peaks at 4 % slip and falls once the tire slides.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#tire-curve">page: step 08</a> · reference <code>dyad/HandsOn/TireFrictionCurve.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> a tire does not grip by rolling perfectly. It grips by slipping a
+      little — the tread deforms — and up to a point, more slip means more force. Past that
+      point it slides, and grip drops.</p>
+      <p><strong>Timing:</strong> 15 minutes. The relations are long; most students should paste
+      them from the page and spend the time on the plot.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>κ in, μ out</h2>
+    <div class="cols">
+      <div class="small">
+        <ul>
+          <li>Rises to <strong>μ<sub>A</sub> = 1.0</strong> at κ = 0.04 (adhesion).</li>
+          <li>Falls to <strong>μ<sub>S</sub> = 0.7</strong> beyond κ = 0.12 (sliding).</li>
+          <li>Each segment is a cubic with zero slope at its ends — no corners for the solver.</li>
+          <li>Point-symmetric: braking slip gives negative friction.</li>
+        </ul>
+        <div class="demo">
+          <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+          <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.TireFrictionCurveSweep()
+plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre>
+          <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+        </div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step08-tire-curve-plot.png"
+             alt="mu against kappa: peaks at plus and minus 1.0 near 0.04 and falls to plus and minus 0.7 beyond 0.12.">
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the sweep bench ramps κ from −1 to +1 over 2 s. Plotting against
+      time would show the same curve with a shifted axis; the tuple <code>(x, y)</code> in
+      <code>idxs</code> plots one signal against the other.</p>
+      <p><strong>Point at:</strong> the peak, then the right of it. Past the peak more slip
+      gives <em>less</em> force. Hold that thought: it is why wheelspin runs away in step 10.</p>
+      <p><strong>Tie back:</strong> notebook 10 of the lecture used the same curve shape, from
+      Dyad's multibody slip wheel.</p>
+    </aside>
+  </section>
+
+</section>

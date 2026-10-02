@@ -1,0 +1,74 @@
+
+<!-- ===================== 10 — Standing start =========================================== -->
+<section data-section-title="10 — Standing start">
+
+  <section class="cover">
+    <p class="nb-no">Step 10 · 10 min</p>
+    <h2>Standing start on a slippery road</h2>
+    <p class="thesis">Floor it on ice: the wheel spins, the car barely moves.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#standing-start">page: step 10</a> · reference <code>dyad/HandsOn/SlipCar.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything in this car is a part you already have. The new thing
+      is wiring: the tire is the contact now, so there is no translational ground — the wheel's
+      flange drives the body directly.</p>
+      <p><strong>Timing:</strong> 10 minutes.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two speeds out</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step10-standing-start.png"
+           alt="SlipCar: engine, gear, wheel inertia and slip wheel drive the grade body, with sensors for vehicle speed and wheel surface speed.">
+      <figcaption><code>v_kmh</code> from the body · <code>wheel_kmh</code> from the wheel shaft,
+        × 0.31 × 3.6 · bench: <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Say:</strong> wheel surface speed is ω·r. Put on the same axis as the car's
+      speed, wheelspin is simply the gap between two lines.</p>
+      <p><strong>They get wrong:</strong> missing <code>initial car.wheel_inertia.w = 0</code>.
+      With slip, wheel speed is no longer tied to car speed, so it needs its own start.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>1500 km/h at the tire, 10 km/h on the road</h2>
+    <div class="cols">
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.SlipCarStandingStartTransient()
+plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])
+
+dry = MyCar.SlipCarStandingStartTransient(
+    model = MyCar.SlipCarStandingStart(
+        name = :SlipCarStandingStart, friction__k = 1.0))
+plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step10-standing-start-plot.png"
+             alt="Wheel surface speed climbs to 1500 km/h in 5 s while the body barely reaches 10 km/h.">
+      </figure>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">10.1</span><span class="k">km/h car, ice, 5 s</span></div>
+      <div class="r"><span class="v">1501</span><span class="k">km/h wheel, ice, 5 s</span></div>
+      <div class="r"><span class="v">21.1 / 21.2</span><span class="k">km/h car / wheel, dry</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> past the peak of the curve, more slip gives less grip. The wheel
+      speeds up, grip falls, it speeds up more. The model has no rev limit, so the engine keeps
+      pouring 150 N·m into a wheel with nothing to push against — 1500 km/h is the model telling
+      you the truth about an assumption, not a bug.</p>
+      <p><strong>Then the dry run:</strong> <code>friction__k = 1.0</code> overrides the
+      constant without editing the model. Twice the speed of the icy car, and the two lines stay
+      together.</p>
+      <p><strong>Close:</strong> notebook 10 of the lecture is this car under cruise control on
+      an ice patch. The controller sees speed falling, commands more torque, and does exactly
+      what you just watched. That is the argument for traction control — and for the cascade
+      control of lecture 2.</p>
+    </aside>
+  </section>
+
+</section>

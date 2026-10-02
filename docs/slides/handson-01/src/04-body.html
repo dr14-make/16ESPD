@@ -1,0 +1,55 @@
+
+<!-- ===================== 04 — Body ===================================================== -->
+<section data-section-title="04 — Body">
+
+  <section class="cover">
+    <p class="nb-no">Step 04 · 15 min</p>
+    <h2>Body</h2>
+    <p class="thesis">1400 kg, and the two forces that hold it back on a flat road.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#body">page: step 04</a> · reference <code>dyad/HandsOn/Body.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the right-hand side of the force balance from notebook 01,
+      minus the slope. The slope comes back in step 07.</p>
+      <p><strong>Timing:</strong> 15 minutes, mostly spent on the drag parameters.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Mass, drag, rolling resistance</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step04-body.png"
+           alt="Body: mass, quadratic drag and rolling resistance on one flange, with two constants feeding the rolling resistance.">
+    </figure>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the two <code>Constant</code> blocks on the left. Rolling
+      resistance takes its coefficient (0.012) and the road inclination (0 — flat) as
+      <em>inputs</em>, not parameters. Unconnected, the model is incomplete.</p>
+      <p><strong>Say:</strong> drag and rolling push against the ground, not against the car —
+      their supports go to <code>ground</code>.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The one parameter that bites</h2>
+    <pre><code class="language-julia" data-trim data-noescape>drag = QuadraticSpeedDependentForce(
+    ForceDirection = false, v_nominal = 30,
+    f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2)</code></pre>
+    <ul class="small">
+      <li><code>f_nominal</code> is ½ρC<sub>d</sub>A·v² at 30 m/s — type the expression.</li>
+      <li><strong>Negative</strong> makes the source a load rather than a push.</li>
+      <li><code>ForceDirection = false</code> makes it oppose motion both ways.</li>
+    </ul>
+    <div class="readout">
+      <div class="r"><span class="v">500 N</span><span class="k">test push</span></div>
+      <div class="r"><span class="v">29.78 m/s</span><span class="k">where drag + rolling = 500 N</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>They get wrong:</strong> a positive <code>f_nominal</code>. The car then
+      accelerates forever — drag pushes it. If a student's car in step 05 goes to absurd speeds,
+      this sign is the first thing to check.</p>
+      <p><strong>Ask the room:</strong> why type the expression instead of 340.2? <em>(Because
+      the next person reading it sees ρ, C<sub>d</sub>A and v, not a magic number.)</em></p>
+    </aside>
+  </section>
+
+</section>
