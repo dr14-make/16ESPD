@@ -162,11 +162,11 @@
       <span class="label">Do this at home — it downloads a lot</span>
       <ul class="checklist">
         <li>Dyad Studio is installed in VS Code and you are signed in.</li>
-        <li>You have created a new, empty Dyad library (call it <code>MyCar</code>) with Dyad
-          Studio's new-library command.</li>
+        <li>You have created a new, empty Dyad library (call it <code>MyCar</code>) with the
+          command palette's <strong>Dyad: Create Component Library</strong>.</li>
         <li><code>Pkg.instantiate()</code> has finished in that library's environment. The first run
           downloads and precompiles the standard libraries, which can take a long time.</li>
-        <li>The library browser lists <code>BlockComponents</code>,
+        <li>In a diagram, the <strong>+</strong> (<strong>Add component</strong>) button lists <code>BlockComponents</code>,
           <code>RotationalComponents</code> and <code>TranslationalComponents</code>, and you can
           expand them.</li>
       </ul>
@@ -213,14 +213,26 @@
     <a href="img/step01-engine-two-views.png"><img src="img/step01-engine-two-views.png" alt="Tour in Dyad Studio: delay and lag wired in the diagram with the delay parameter panel open, and the same component in the code view." loading="lazy"></a>
     <figcaption>Same model, two views: each block in the diagram is one line under <code>component</code>, the wire is the one <code>connect</code> under <code>relations</code>, and the values in the parameter panel are the arguments in parentheses.</figcaption>
   </figure>
+  <h3>Where things are</h3>
+  <figure class="shot-img">
+    <a href="img/dyad-studio-map.png"><img src="img/dyad-studio-map.png" alt="Dyad Studio with four numbered arrows: the Components panel and the Analyses panel in the Dyad sidebar, and the Run Analysis and Toggle Between Code and Diagram View buttons in the editor title bar." loading="lazy"></a>
+    <figcaption><strong>1</strong> <strong>Components</strong> panel in the Dyad sidebar: right-click your library → <strong>Add Component</strong>.
+      <strong>2</strong> <strong>Analyses</strong> panel: right-click → <strong>Add Analysis</strong>; the ▷ beside an analysis runs it.
+      <strong>3</strong> ▷ <strong>Run Analysis</strong>, in the editor title bar of an open analysis.
+      <strong>4</strong> ⇄ <strong>Toggle Between Code and Diagram View</strong>. Bottom right, under <strong>Julia Commands</strong>: <strong>Dyad Compile</strong>, if saving does not compile. Ignore the plot in this picture: step 2 shows why it is unreadable.</figcaption>
+  </figure>
+  <figure class="shot-img">
+    <a href="img/dyad-studio-add-component.png"><img style="max-width:520px" src="img/dyad-studio-add-component.png" alt="The diagram toolbar's plus button opened: a search box above a tree of libraries — Dyad, RotationalComponents, BlockComponents, ElectricalComponents, ThermalComponents, TranslationalComponents, HydraulicComponents and the student's own library." loading="lazy"></a>
+    <figcaption>The <strong>+</strong> (<strong>Add component</strong>) button in the diagram toolbar: search for a part by name, or open a library and walk the path the parts table gives. <code>Dyad</code> holds the ports (<code>RealInput</code>, <code>Spline</code>, <code>Flange</code>); your own library is at the bottom. The sliders button next to it is <strong>Edit Parameters</strong>.</figcaption>
+  </figure>
   <h3>Do this</h3>
   <ol class="actions">
-<li>Create a new component in your library and call it <code>Engine</code>. It opens empty in the diagram editor.</li>
-<li>In the library browser, find <code>BlockComponents › Nonlinear › PadeDelay</code> and drag it onto the canvas. Rename the instance to <code>delay</code>.</li>
-<li>Drag in <code>BlockComponents › Continuous › FirstOrder</code> and name it <code>lag</code>.</li>
+<li>In the <strong>Components</strong> panel, right-click your library → <strong>Add Component</strong>, and call it <code>Engine</code>. It opens empty in the diagram editor.</li>
+<li>Click <strong>+</strong> (<strong>Add component</strong>) in the diagram toolbar, search for <code>PadeDelay</code> (it is <code>BlockComponents › Nonlinear › PadeDelay</code>) and place it. Rename the instance to <code>delay</code>.</li>
+<li>The same way, place <code>BlockComponents › Continuous › FirstOrder</code> and name it <code>lag</code>.</li>
 <li>Drag a wire from the output port <code>y</code> of <code>delay</code> to the input port <code>u</code> of <code>lag</code>.</li>
-<li>Select <code>delay</code> and set <code>n = 6</code>, <code>m = 5</code>, <code>delayTime = 0.3</code> in its parameters. Select <code>lag</code> and set <code>T = 0.3</code>.</li>
-<li>Switch to the code view. Every block you placed is now a line <code>name = Library.Path(parameters)</code>, and the wire is a <code>connect(…)</code> line under <code>relations</code>.</li>
+<li>Select <code>delay</code> and set <code>n = 6</code>, <code>m = 5</code>, <code>delayTime = 0.3</code> in its parameter panel (<strong>Edit Parameters</strong>). Select <code>lag</code> and set <code>T = 0.3</code>.</li>
+<li>Click ⇄ (<strong>Toggle Between Code and Diagram View</strong>) in the editor title bar. Every block you placed is now a line <code>name = Library.Path(parameters)</code>, and the wire is a <code>connect(…)</code> line under <code>relations</code>.</li>
 <li>Change <code>T = 0.3</code> to <code>T = 0.5</code> in the code, switch back to the diagram, and check the parameter of <code>lag</code>. Set it back to 0.3. One model, two views: whichever you edit, the other follows.</li>
   </ol>
   
@@ -348,8 +360,8 @@ end</code></pre></div>
 <li>Add the three ports from the table and wire them: <code>tau_cmd → delay.u</code>, <code>torque.spline → spline</code>, <code>torque.support → support</code>.</li>
 <li>Set the limiter to <code>y_max = 150</code>, <code>y_min = 0</code>: the engine cannot brake through this path.</li>
 <li>An engine with an unconnected input cannot be simulated, so build a test bench. Create a component <code>EngineStep</code>, drop in your <code>Engine</code> from your own library, and add <code>cmd</code>, <code>load</code> and <code>mounts</code>. Wire it as drawn.</li>
-<li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines highlighted in the block below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block.</li>
-<li>Run <code>EngineStepTransient</code> and plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
+<li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines highlighted in the block below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block. Save; it appears in the <strong>Analyses</strong> panel. If it does not, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>, beside the terminal: auto-compile on save can be switched off.</li>
+<li>Run <code>EngineStepTransient</code> with the ▷ beside it in the <strong>Analyses</strong> panel, then plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.EngineStepTransient()
 plot(r; idxs = r."engine.limiter.y")</code></pre></div>
@@ -912,7 +924,7 @@ end</code></pre></div>
 <li>Delete the wire <code>gear.spline_b → wheel.spline</code>, place <code>inertia</code> between them and wire <code>gear.spline_b → inertia.spline_a</code>, <code>inertia.spline_b → wheel.spline</code>. Set <code>J = 1.0</code>.</li>
 <li>Copy <code>Car</code> to <code>WheeledCar</code> and replace its <code>driveline</code> with a <code>WheeledDriveline</code>. The ports are the same, so the wires stay.</li>
 <li>Copy the test bench and analysis to <code>WheeledCarFullThrottle</code> and <code>WheeledCarFullThrottleTransient</code>, pointing at <code>WheeledCar</code>. Add <code>initial car.driveline.inertia.phi = 0</code>: the wheel now has a state of its own.</li>
-<li>Run it and plot <code>car.v_kmh</code> over step 5's curve.</li>
+<li>Run it from the <strong>Analyses</strong> panel and plot <code>car.v_kmh</code> over step 5's curve.</li>
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.WheeledCarFullThrottleTransient</code>: 43.27 km/h
