@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Build the Car in Dyad — Lecture 1 hands-on</title>
+
+<!-- The libraries are the Lecture 1 deck's vendored copies, loaded from its assets/ by relative
+     path, so both decks present from the same folder with no network. -->
+<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/reset.css">
+<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/reveal.css">
+<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/theme/white.css" id="theme">
+<link rel="stylesheet" href="../lecture-01/assets/highlight-light.css">
+<link rel="stylesheet" href="../lecture-01/assets/deck.css">
+<style>
+  .reveal .shot img { max-height: 470px; width: auto; max-width: 100%; border: 1px solid #d7dde6; border-radius: 6px; }
+  .reveal .shot.tall img { max-height: 520px; }
+  .reveal .shot figcaption { font-size: 0.5em; color: #4a5a6b; margin-top: 6px; }
+  .reveal .page-link { font-size: 0.5em; }
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- =====================================================================================
+     Horizontal index 0 is Part 1 (the extension and the library); horizontal index N is
+     step N of docs/handson/lecture-01/, so #/N lands on the same step in deck and page.
+     ===================================================================================== -->
+
+<!-- Part 1. Every slide names the page section it mirrors; the page carries the full actions and
+     the copyable code, the deck carries what to say while the room does them. -->
+
+<!-- ===================== Part 1 — Dyad Studio and the extension ======================== -->
+<section data-section-title="Part 1 — Dyad Studio">
+
+  <section class="deck-title">
+    <h1>Build the car in Dyad</h1>
+    <h1 style="font-size:1.5em; color:var(--accent); margin-top:-0.2em;">Lecture 1 hands-on</h1>
+    <p class="sub">Vehicle Systems &amp; Components</p>
+    <p class="sub small">From an empty library to a wheel spinning on a slippery road.</p>
+    <p class="hint">
+      <kbd>S</kbd> speaker view &nbsp;·&nbsp; <kbd>C</kbd> cue panel &nbsp;·&nbsp;
+      <kbd>O</kbd> overview &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> steps &nbsp;·&nbsp;
+      <kbd>↑</kbd> <kbd>↓</kbd> within a step
+    </p>
+    <aside class="notes">
+      <p><strong>Before the room fills.</strong> Deck on the projector, Dyad Studio on your
+      laptop with an empty folder ready. Press <strong>S</strong> and check the speaker window
+      opened; if the popup was blocked, <strong>C</strong> puts these notes along the bottom.</p>
+      <p><strong>Say:</strong> the lecture gave you a car in notebooks. Today you build that car
+      yourself, part by part, and by the end it reaches exactly the speed the notebook shows —
+      because it is the same model.</p>
+      <p><strong>Students follow the page, not the deck.</strong> Put the link on the board:
+      <code>docs/handson/lecture-01/</code> on the course site. Every step there has the parts
+      table, the screenshot, numbered actions and copy buttons. The deck is for you: what to
+      say, what to show, where they get stuck.</p>
+      <p><strong>Timing:</strong> about 165 minutes — Part 1 30, Part 2 135. Deep links match:
+      <code>#/5</code> here is step 05 on the page.</p>
+      <p><strong>If time runs short:</strong> cut from the back. Steps 02–06 give everyone a
+      working car; 07–10 are the slip story.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Today</h2>
+    <table>
+      <tr><th>#</th><th>Step</th><th>Min</th><th>You end with</th></tr>
+      <tr><td><a href="#/0/2">—</a></td><td>Dyad Studio and your library</td><td>20</td><td>an empty <code>MyCar</code> library</td></tr>
+      <tr><td><a href="#/1">01</a></td><td>Tour</td><td>10</td><td>two blocks, one wire, two views</td></tr>
+      <tr><td><a href="#/2">02</a></td><td>Engine</td><td>20</td><td>torque with a delay, a lag and a ceiling</td></tr>
+      <tr><td><a href="#/3">03</a></td><td>Driveline</td><td>10</td><td>gear and rolling wheel</td></tr>
+      <tr><td><a href="#/4">04</a></td><td>Body</td><td>15</td><td>mass, drag, rolling resistance</td></tr>
+      <tr><td><a href="#/5">05</a></td><td>Car</td><td>20</td><td>246 km/h flat out — the notebook's number</td></tr>
+      <tr><td><a href="#/6">06</a></td><td>Wheel inertia</td><td>10</td><td>a spinning wheel that barely matters</td></tr>
+      <tr><td><a href="#/7">07</a></td><td>Grade</td><td>10</td><td>your first equation</td></tr>
+      <tr><td><a href="#/8">08</a></td><td>Tire curve</td><td>15</td><td>grip against slip</td></tr>
+      <tr><td><a href="#/9">09</a></td><td>Slip wheel</td><td>15</td><td>a wheel that can spin</td></tr>
+      <tr><td><a href="#/10">10</a></td><td>Standing start</td><td>20</td><td>wheelspin on ice</td></tr>
+    </table>
+    <aside class="notes">
+      <p><strong>Say:</strong> one car, built bottom-up. Each step is one component, and each
+      component is tested before the next one uses it — that habit is the real lesson.</p>
+      <p><strong>Point at:</strong> step 05. That is the milestone: if your car makes 246 km/h,
+      you built the lecture's car.</p>
+      <p><strong>Say:</strong> keep the names the page gives — <code>engine</code>,
+      <code>car</code>, <code>v_kmh</code>. The checkpoints and the plot commands use them; a
+      different name means a different signal name and a command that does not find it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Three ideas before you click anything</h2>
+    <div class="cols">
+      <div>
+        <ul>
+          <li><strong>A library is a folder.</strong> <code>dyad/</code> holds your
+            <code>.dyad</code> files; <code>generated/</code> is the Julia the extension writes
+            from them — never edit it.</li>
+          <li><strong>Component = what the system is.</strong> Parts, wires, equations.</li>
+          <li><strong>Analysis = what to do with it.</strong> "Simulate this for 300 s."</li>
+          <li><strong>Diagram and code are one file.</strong> A block is a line; a wire is a
+            <code>connect</code>.</li>
+        </ul>
+      </div>
+      <div class="callout">
+        <span class="label">The rule that shapes every step</span>
+        You can only simulate a component whose inputs are all driven. So each experiment gets
+        a small <em>test bench</em> around the thing you built: a source into its input, the
+        thing itself, and an analysis on the bench.
+      </div>
+    </div>
+    <p class="page-link">Page: <a href="../../handson/lecture-01/#ui">What you are looking at</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> Dyad Studio is a VS Code extension. You draw or write models in
+      the Dyad language; it compiles them to Julia — ModelingToolkit underneath — and simulates
+      them. You will not write Julia today except to plot.</p>
+      <p><strong>Point at:</strong> the callout. Students hit this in step 02 and ask why they
+      cannot just run the engine. Plant the answer now: an engine with a dangling torque input
+      is not a complete problem — nobody said what the torque command is.</p>
+      <p><strong>They get wrong:</strong> editing files in <code>generated/</code>. Say it twice:
+      it is rewritten on every compile, edits there vanish.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Where things are</h2>
+    <figure class="fig shot tall">
+      <img src="../../handson/lecture-01/img/dyad-studio-map.png"
+           alt="Dyad Studio with four numbered arrows: the Components and Analyses panels in the Dyad sidebar, and the Run Analysis and Toggle Between Code and Diagram View buttons in the editor title bar.">
+      <figcaption><b>1</b> Components — right-click → Add Component · <b>2</b> Analyses — ▷ runs one ·
+        <b>3</b> ▷ Run Analysis · <b>4</b> ⇄ Toggle Between Code and Diagram View ·
+        bottom right: Julia Commands → Dyad Compile</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Do it live:</strong> open the Dyad sidebar (the Dyad icon in the activity bar)
+      and walk the four panels: Actions, Components, Analyses, Notebooks. Click each control on
+      the slide on your own screen as you name it.</p>
+      <p><strong>Point at:</strong> 4, the ⇄. It is the most used button today and the easiest
+      to miss.</p>
+      <p><strong>Say:</strong> saving compiles. If an analysis does not show up in the Analyses
+      panel after a save, Dyad Compile under Julia Commands forces it.</p>
+      <p><strong>Ignore:</strong> the tangled plot in this screenshot. Step 02 explains it and
+      shows the fix.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Adding a part</h2>
+    <div class="cols cols-wide-left">
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/dyad-studio-add-component.png"
+             alt="The diagram toolbar's plus button opened: a search box above a tree of libraries.">
+      </figure>
+      <div>
+        <ul class="small">
+          <li><strong>+</strong> (Add component) in the diagram toolbar.</li>
+          <li>Search by name — <code>PadeDelay</code> — or walk the path the parts table gives:
+            <code>BlockComponents › Nonlinear › PadeDelay</code>.</li>
+          <li><code>Dyad</code> holds the ports: <code>RealInput</code>, <code>Spline</code>,
+            <code>Flange</code>.</li>
+          <li>Your own library is at the bottom — that is where your <code>Engine</code> will
+            appear when the car needs it.</li>
+          <li>The sliders button: <strong>Edit Parameters</strong>.</li>
+        </ul>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> four standard libraries matter today. Blocks for signals,
+      Rotational for shafts, Translational for the car moving along the road, and Dyad for the
+      ports.</p>
+      <p><strong>Point at:</strong> the bottom entry, the student's own library. Components they
+      build show up here and are placed exactly like standard parts — that is how the car is
+      assembled in step 05.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Create your library</h2>
+    <ol>
+      <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → <strong>Dyad: Create Component
+        Library</strong> → name it <code>MyCar</code>, pick an empty folder.</li>
+      <li>Wait: the extension runs <code>Pkg.instantiate()</code> by itself. The first time it
+        downloads and precompiles the standard libraries — minutes, not seconds.</li>
+      <li>Dyad sidebar → <strong>Components</strong>: <code>MyCar</code> is there.</li>
+    </ol>
+    <div class="callout small">
+      <span class="label">Checkpoint</span>
+      The terminal finished instantiating without errors, and <code>MyCar</code> is in the
+      Components panel.
+    </div>
+    <p class="page-link">Page: <a href="../../handson/lecture-01/#library">Create your library</a></p>
+    <aside class="notes">
+      <p><strong>Timing:</strong> this is the step that eats a session. If you could not get
+      students to do it beforehand, start it first thing and talk through the three ideas and
+      the map while it downloads.</p>
+      <p><strong>They get wrong:</strong> a folder that already has files in it, or a name with
+      a space. <code>MyCar</code> exactly — the plot commands say <code>using MyCar</code>.</p>
+      <p><strong>If stuck:</strong> a red error in the terminal during instantiate is almost
+      always the network or a full disk. Pair the student with a neighbour and keep going;
+      re-run <code>Pkg.instantiate()</code> at the break.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 01 — Tour ===================================================== -->
+<section data-section-title="01 — Tour">
+
+  <section class="cover">
+    <p class="nb-no">Step 01 · 10 min</p>
+    <h2>One model, two views</h2>
+    <p class="thesis">Place two blocks, wire them, set a parameter — then see the same three facts as code.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#tour">page: step 01</a> · reference <code>dyad/HandsOn/Tour.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> the first thing you build is the front half of the engine. It is
+      small on purpose: the point is the editor, not the physics.</p>
+      <p><strong>Do it live, first, slowly:</strong> Components → right-click
+      <code>MyCar</code> → Add Component → <code>Engine</code>. Then + → <code>PadeDelay</code>,
+      rename to <code>delay</code>. Then let them do the same with <code>FirstOrder</code>.</p>
+      <p><strong>Timing:</strong> 10 minutes. Wait until most hands are done before the ⇄ slide.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What you are building</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step01-engine-two-views.png"
+           alt="Tour in Dyad Studio: delay and lag wired in the diagram with the delay parameter panel open, and the same component in the code view.">
+      <figcaption><code>delay</code> (PadeDelay: n = 6, m = 5, delayTime = 0.3) → <code>lag</code>
+        (FirstOrder: T = 0.3), one wire <code>delay.y → lag.u</code></figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the parameter panel on the left, then line 5 on the right.
+      <code>n</code>, <code>m</code>, <code>delayTime</code> appear in both — the panel is
+      editing that line.</p>
+      <p><strong>They get wrong:</strong> wiring <code>u</code> to <code>y</code> backwards, or
+      dropping the wire on the block body instead of the port square. A wire only exists if it
+      shows as a <code>connect</code> in the code.</p>
+      <p><strong>Their name is <code>Engine</code>, the screenshot says <code>Tour</code>:</strong>
+      the reference library already has a finished <code>Engine</code>, so the two-block copy
+      needed another name. Theirs stays <code>Engine</code> — step 02 finishes it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>⇄ — the same three facts</h2>
+    <pre><code class="language-julia" data-trim data-noescape>component Engine
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3)
+  lag = BlockComponents.Continuous.FirstOrder(T = 0.3)
+relations
+  connect(delay.y, lag.u)
+end</code></pre>
+    <ul>
+      <li>Every block is a line <code>name = Library.Path(parameters)</code>.</li>
+      <li>Every wire is a <code>connect</code> under <code>relations</code>.</li>
+      <li>Change <code>T = 0.3</code> to <code>0.5</code> here, toggle back: the panel shows 0.5.</li>
+    </ul>
+    <aside class="notes">
+      <p><strong>Say:</strong> nothing in the diagram is hidden from the code, and the reverse is
+      true for everything except equations, which have no picture. From step 07 on you will
+      write those in this view.</p>
+      <p><strong>Do it live:</strong> the round trip on the last bullet. It is the moment it
+      clicks for most of the room.</p>
+      <p><strong>They notice:</strong> <code>{^delay}</code> tags and a <code>metadata</code>
+      block in their file. That is where the diagram keeps positions and wire routes. Leave it
+      alone — it is the diagram's, not theirs.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 02 — Engine =================================================== -->
+<section data-section-title="02 — Engine">
+
+  <section class="cover">
+    <p class="nb-no">Step 02 · 20 min</p>
+    <h2>Engine</h2>
+    <p class="thesis">Torque command in, shaft torque out — late, slow, and never more than 150 N·m.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#engine">page: step 02</a> · reference <code>dyad/HandsOn/Engine.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the engine from the lecture: a transport delay, a
+      first-order lag, a ceiling. The delay and the lag are what made Ziegler–Nichols and
+      Cohen–Coon possible in notebook 08 — without them the car is first order and never
+      oscillates.</p>
+      <p><strong>Timing:</strong> 20 minutes, the longest in-class step. It is the first bench,
+      the first analysis and the first plot; everything after reuses the pattern.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>From two blocks to an engine</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step02-engine-finished.png" style="max-height:440px"
+           alt="The finished Engine diagram: tau_cmd, delay, lag, limiter and torque in a row, spline port on the right, support port at the bottom.">
+      <figcaption>Same <code>Engine</code> as step 01 — add 3 parameters, <code>limiter</code>, <code>torque</code>, and 3 ports on the outline</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Say:</strong> you do not start a new component. Open the <code>Engine</code> from
+      step 01 — Components → MyCar → Engine — and keep adding to it. The two blocks you have are the
+      second and third in this row.</p>
+      <p><strong>Point at:</strong> the outline rectangle and the three ports on it. A port on the
+      outline is what another component connects to; that is how the car plugs into this engine in
+      step 05.</p>
+      <p><strong>Order on the page:</strong> A open it · B parameters · C limiter, torque, ports ·
+      D bench · E run and plot. Walk the room after C — a broken engine makes D impossible.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Finish the chain, then build a bench</h2>
+    <div class="cols">
+      <div class="small">
+        <p>Parameters <code>theta_e</code> = 0.3 (structural), <code>tau_e</code> = 0.3,
+          <code>T_max</code> = 150 — the parts use the names.</p>
+        <p><code>tau_cmd</code> → <code>delay</code> → <code>lag</code> →
+          <code>limiter</code> (y_max = T_max, y_min = 0) → <code>torque</code> →
+          <code>spline</code>; <code>torque.support</code> → <code>support</code>.</p>
+        <p><strong>Bench <code>EngineStep</code>:</strong> a <code>Step</code> of 200 N·m at
+          0.5 s into your <code>Engine</code>, a 1 kg·m² <code>Inertia</code> on the shaft,
+          the mounts <code>Fixed</code>.</p>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step02-engine-step.png"
+             alt="EngineStep bench: step source into the engine, inertia on its shaft, fixed mounts below, with the analysis in the code view.">
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say — name each value once:</strong> a number a part needs becomes a parameter of
+      the component, added with <strong>Add parameter</strong> in the component panel, and the
+      part refers to it by name. <code>Engine(T_max = 200)</code> then changes the ceiling in one
+      place. <code>theta_e</code> is <code>structural</code> because PadeDelay builds its
+      coefficients when the model compiles; if the panel offers no structural option, paste the
+      line in code.</p>
+      <p><strong>Say:</strong> 200 is above the ceiling on purpose. The plot should show the
+      limiter doing its job.</p>
+      <p><strong>They get wrong:</strong> leaving <code>support</code> unconnected in the bench.
+      A torque source needs something to push against — the engine mounts. The compile error
+      talks about an unbalanced system; the fix is the <code>Fixed</code>.</p>
+      <p><strong>Why <code>y_min = 0</code>:</strong> the engine cannot brake through this
+      path. Ask the room what would happen at a negative command without it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Initial state in code, analysis with ▷</h2>
+    <div class="demo">
+      <div class="demo-head"><span class="nb">EngineStep — complete bench and analysis</span><span class="spacer"></span></div>
+      <pre><code class="language-julia" data-trim data-noescape>component EngineStep
+  cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5)
+  engine = Engine()
+  "Unit inertia, so its angular acceleration reads as the delivered torque"
+  load = RotationalComponents.Components.Inertia(J = 1)
+  mounts = RotationalComponents.Components.Fixed()
+relations
+  connect(cmd.y, engine.tau_cmd)
+  connect(engine.spline, load.spline_a)
+  connect(engine.support, mounts.spline)
+  initial engine.lag.x = 0
+  initial load.phi = 0
+  initial load.w = 0
+end
+
+analysis EngineStepTransient
+  extends TransientAnalysis(stop = 3)
+  model = EngineStep()
+end</code></pre>
+      <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+    </div>
+    <ol class="small">
+      <li><strong>New component</strong> <code>EngineStep</code> (Components → right-click MyCar → Add Component), draw the bench.</li>
+      <li>⇄ to code, add the three <code>initial</code> lines. Save.</li>
+      <li><strong>New analysis:</strong> ▷ Run Analysis in the title bar → <strong>TransientAnalysis</strong> → model already assigned. Name it <code>EngineStepTransient</code>, <code>stop = 3</code>.</li>
+      <li>▷ beside it in <strong>Analyses</strong> runs it.</li>
+    </ol>
+    <aside class="notes">
+      <p><strong>Say:</strong> the bench is a new component of its own — say so out loud, students
+      try to draw it inside <code>Engine</code>. The starting state has no diagram form, so it is
+      three lines of code. The analysis does not need typing: ▷ in the title bar offers the analysis
+      types, TransientAnalysis creates one with this bench as its model.</p>
+      <p><strong>They get wrong:</strong> the analysis name. The plot command calls
+      <code>MyCar.EngineStepTransient()</code>; if Dyad Studio picked another name, change the word
+      after <code>analysis</code> in its code. The code block on this slide is the fallback.</p>
+      <p><strong>If it does not appear in Analyses:</strong> Dyad Compile under Julia Commands.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Plot one signal, not all of them</h2>
+    <div class="cols">
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.EngineStepTransient()
+plot(r; idxs = r."engine.limiter.y")</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step02-engine-step-plot.png"
+             alt="engine.limiter.y: zero until 0.5 s, a dead time, then a rise clipped flat at 150 N·m from about 1.2 s.">
+      </figure>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">0</span><span class="k">until 0.5 s + dead time</span></div>
+      <div class="r"><span class="v">97.5</span><span class="k">N·m at 1.0 s</span></div>
+      <div class="r"><span class="v">150</span><span class="k">N·m from 1.22 s</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the default plot draws every state. The delay has six internal
+      states that swing into the thousands, and they bury the one curve you care about. Pick
+      it by name with <code>idxs</code>.</p>
+      <p><strong>Point at:</strong> the flat start. The command arrived at 0.5 s; torque starts
+      at about 0.8 s. That 0.3 s is the transport delay. The small wiggles before it are the
+      Padé approximation of a delay, not physics.</p>
+      <p><strong>Open the REPL:</strong> Actions panel title bar → Dyad: Open Julia REPL.</p>
+      <p><strong>They get wrong:</strong> <code>using MyCar</code> fails if the library was
+      named differently. Use their library's name.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 03 — Driveline ================================================ -->
+<section data-section-title="03 — Driveline">
+
+  <section class="cover">
+    <p class="nb-no">Step 03 · 10 min</p>
+    <h2>Driveline</h2>
+    <p class="thesis">Shaft torque in, force on the car out: F = T · i / r.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#driveline">page: step 03</a> · reference <code>dyad/HandsOn/Driveline.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> two parts and four ports. This is where rotation becomes
+      translation.</p>
+      <p><strong>Timing:</strong> 10 minutes. No bench, no analysis — it is checked when the car
+      runs in step 05.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Gear, rolling wheel, four ports</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step03-driveline.png"
+           alt="Driveline: spline into an ideal gear, then an ideal rolling wheel out to the flange, with both supports brought out.">
+      <figcaption>parameters <code>i</code> = 4.0, <code>r</code> = 0.31 · <code>gear</code> IdealGear(ratio = i) → <code>wheel</code> IdealRollingWheel(radius = r) ·
+        gray circles are rotational ports, green squares translational</figcaption>
+    </figure>
+    <div class="readout">
+      <div class="r"><span class="v">100 N·m</span><span class="k">into the gear</span></div>
+      <div class="r"><span class="v">1290 N</span><span class="k">at the road</span></div>
+      <div class="r"><span class="v">0.92 m/s²</span><span class="k">on 1400 kg</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the wheel block. Gray circle in, green square out — the port
+      shapes tell you the domain, and you can only wire like to like.</p>
+      <p><strong>Say:</strong> 100 N·m × 4 / 0.31 m = 1290 N; on 1400 kg that is 0.9217 m/s²,
+      which is what the reference test asserts.</p>
+      <p><strong>They get wrong:</strong> forgetting the reaction paths. The gear housing and the
+      road both push back; <code>gear.support</code> and <code>wheel.support_r</code> go to
+      <code>support_r</code>, <code>wheel.support_t</code> to <code>support_t</code>. The car
+      grounds them in step 05.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 04 — Body ===================================================== -->
+<section data-section-title="04 — Body">
+
+  <section class="cover">
+    <p class="nb-no">Step 04 · 15 min</p>
+    <h2>Body</h2>
+    <p class="thesis">1400 kg, and the two forces that hold it back on a flat road.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#body">page: step 04</a> · reference <code>dyad/HandsOn/Body.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the right-hand side of the force balance from notebook 01,
+      minus the slope. The slope comes back in step 07.</p>
+      <p><strong>Timing:</strong> 15 minutes, mostly spent on the drag parameters.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Mass, drag, rolling resistance</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step04-body.png"
+           alt="Body: mass, quadratic drag and rolling resistance on one flange, with two constants feeding the rolling resistance.">
+    </figure>
+    <aside class="notes">
+      <p><strong>Point at:</strong> the two <code>Constant</code> blocks on the left. Rolling
+      resistance takes its coefficient (0.012) and the road inclination (0 — flat) as
+      <em>inputs</em>, not parameters. Unconnected, the model is incomplete.</p>
+      <p><strong>Say:</strong> drag and rolling push against the ground, not against the car —
+      their supports go to <code>ground</code>.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The one parameter that bites</h2>
+    <pre><code class="language-julia" data-trim data-noescape>parameter m::Dyad.Mass = 1400
+parameter CdA::Area = 0.63
+parameter rho::Density = 1.2
+parameter v_nominal::Velocity = 30
+…
+drag = QuadraticSpeedDependentForce(ForceDirection = false,
+    v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2)
+rolling = RollingResistance(fWeight = m * g)</code></pre>
+    <ul class="small">
+      <li>Each value is a parameter of <code>Body</code>; the parts use the <em>names</em>.</li>
+      <li><code>f_nominal</code> is ½ρC<sub>d</sub>A·v² at the nominal speed.</li>
+      <li><strong>Negative</strong> makes the source a load rather than a push.</li>
+      <li><code>ForceDirection = false</code> makes it oppose motion both ways.</li>
+    </ul>
+    <div class="readout">
+      <div class="r"><span class="v">500 N</span><span class="k">test push</span></div>
+      <div class="r"><span class="v">29.78 m/s</span><span class="k">where drag + rolling = 500 N</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>They get wrong:</strong> a positive <code>f_nominal</code>. The car then
+      accelerates forever — drag pushes it. If a student's car in step 05 goes to absurd speeds,
+      this sign is the first thing to check.</p>
+      <p><strong>Ask the room:</strong> why parameters instead of 340.2 and 13729? <em>(The
+      next reader sees ρ, C<sub>d</sub>A and m, not magic numbers — and <code>m</code> feeds the
+      mass and the rolling resistance, so changing the car's weight changes both or neither.)</em></p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 05 — Car ====================================================== -->
+<section data-section-title="05 — Car">
+
+  <section class="cover">
+    <p class="nb-no">Step 05 · 20 min</p>
+    <h2>Car: full throttle to terminal speed</h2>
+    <p class="thesis">Your three components, assembled — and the same 246 km/h the notebook shows.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#car">page: step 05</a> · reference <code>dyad/HandsOn/Car.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the milestone. Everything so far was parts; this is the
+      plant every controller in the lecture was wrapped around.</p>
+      <p><strong>Timing:</strong> 20 minutes. Assembly 8, bench and analysis 5, run and plot 5.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Assemble from your own library</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step05-car.png"
+           alt="Car: torque command into engine, driveline and body, with a velocity sensor and a 3.6 gain producing speed in km/h.">
+      <figcaption>Your <code>Engine</code>, <code>Driveline</code>, <code>Body</code> from + → MyCar ·
+        <code>VelocitySensor</code> → <code>Gain(k = 3.6)</code> → <code>v_kmh</code> · two grounds</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Point at:</strong> <code>rot_ground</code> and <code>trans_ground</code>. These
+      close the reaction paths left open in steps 02 and 03.</p>
+      <p><strong>Say:</strong> the sensor gives m/s; the gain makes km/h. One conversion, at the
+      edge — the same rule the lecture model follows.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>New bench, new analysis, run</h2>
+    <div class="demo">
+      <div class="demo-head"><span class="nb">CarFullThrottle — complete bench and analysis</span><span class="spacer"></span></div>
+      <pre><code class="language-julia" data-trim data-noescape>component CarFullThrottle
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  car = Car()
+relations
+  connect(cmd.y, car.tau_cmd)
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+end
+
+analysis CarFullThrottleTransient
+  extends TransientAnalysis(stop = 300)
+  model = CarFullThrottle()
+end</code></pre>
+      <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Same pattern as step 02:</strong> New component <code>CarFullThrottle</code> →
+      draw → three <code>initial</code> lines in code → ▷ Run Analysis → TransientAnalysis, named
+      <code>CarFullThrottleTransient</code>, <code>stop = 300</code> → ▷ in Analyses.</p>
+      <p><strong>They get wrong:</strong> leaving out <code>car.body.mass.s</code>. Position
+      appears in no force, so it feels optional, but without it the start is not unique and the
+      model will not initialize.</p>
+      <p><strong>Why 300 s:</strong> the car's own time constant is about a minute. Shorter runs
+      stop on the way up and the student thinks the terminal speed is wrong.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>246 km/h — the notebook's car</h2>
+    <div class="cols">
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.CarFullThrottleTransient()
+plot(r; idxs = r."car.v_kmh")</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step05-car-plot.png"
+             alt="car.v_kmh rising from zero and leveling off at about 246 km/h.">
+      </figure>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">23.6 s</span><span class="k">to 100 km/h</span></div>
+      <div class="r"><span class="v">143 s</span><span class="k">to 99 %</span></div>
+      <div class="r"><span class="v">246.39</span><span class="k">km/h at 300 s</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> <code>Vehicle.CarPlant</code>, the lecture's model, reads
+      246.39 km/h at 300 s too; at 800 s the two agree to 0.0001 km/h. You built the
+      notebook's car.</p>
+      <p><strong>Point at:</strong> the shape. Steep first, then flattening, because drag grows
+      with the square of speed. Tie back to notebook 01: the 246 is the same number we worked out
+      on paper from the force balance.</p>
+      <p><strong>If a number is off:</strong> drag sign (step 04), gear ratio or radius
+      (step 03), limiter ceiling (step 02) — in that order.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 06 — Wheel inertia ============================================ -->
+<section data-section-title="06 — Wheel inertia">
+
+  <section class="cover">
+    <p class="nb-no">Step 06 · 10 min</p>
+    <h2>A wheel with inertia</h2>
+    <p class="thesis">A 1 kg·m² wheel between gear and road — and how little it changes.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#wheel-inertia">page: step 06</a> · reference <code>dyad/HandsOn/WheeledDriveline.dyad</code>, <code>WheeledCar.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> the wheel now has its own state — its own speed. Today that speed
+      is still tied to the car's. In step 09 we cut that tie, and that is where ice happens.</p>
+      <p><strong>Timing:</strong> 10 minutes, mostly Duplicate and one wire.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Duplicate, insert, compare</h2>
+    <div class="cols">
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step06-wheeled-driveline.png"
+             alt="WheeledDriveline: an inertia block between the gear and the rolling wheel.">
+        <figcaption>Components → right-click → <strong>Duplicate</strong> ·
+          <code>inertia</code> Inertia(J = J_w), new parameter <code>J_w</code> = 1.0</figcaption>
+      </figure>
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+a = MyCar.CarFullThrottleTransient()
+b = MyCar.WheeledCarFullThrottleTransient()
+p = plot(a; idxs = a."car.v_kmh", label = "Car")
+plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Steps:</strong> Duplicate <code>Driveline</code> → <code>WheeledDriveline</code>,
+      insert the inertia. Duplicate <code>Car</code> → <code>WheeledCar</code>, swap the
+      driveline. Duplicate the bench, swap the car, add
+      <code>initial car.driveline.inertia.phi = 0</code>, paste the analysis. The page has all of
+      it as copyable code.</p>
+      <p><strong>They get wrong:</strong> forgetting the new initial line. The wheel's angle is a
+      new state and needs a start.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>J / r² ≈ 10 kg</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step06-wheeled-car-plot.png"
+           alt="Car and WheeledCar speed overlaid: the dashed WheeledCar curve lies almost exactly on the Car curve.">
+    </figure>
+    <div class="readout">
+      <div class="r"><span class="v">23.6 → 23.8 s</span><span class="k">to 100 km/h</span></div>
+      <div class="r"><span class="v">246.39</span><span class="k">km/h — unchanged</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Ask the room first:</strong> before showing the plot, how much slower will the
+      car be? Most guess a lot.</p>
+      <p><strong>Say:</strong> seen through the rolling radius, 1 kg·m² behaves like
+      J / r² = 1 / 0.31² ≈ 10 kg of extra mass on a 1400 kg car. Inertia slows the launch, not
+      the terminal speed — at constant speed nothing accelerates, so inertia does nothing.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 07 — Grade ==================================================== -->
+<section data-section-title="07 — Grade">
+
+  <section class="cover">
+    <p class="nb-no">Step 07 · 10 min</p>
+    <h2>A road with a gradient</h2>
+    <p class="thesis">Your first equation: the pull of gravity along the slope.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#grade">page: step 07</a> · reference <code>dyad/HandsOn/GradeForce.dyad</code>, <code>GradeBody.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> the standard library's <code>Mass</code> takes a fixed angle. A
+      hill that starts in the middle of a run needs a force driven by a signal, and no part does
+      that — so you write one.</p>
+      <p><strong>Timing:</strong> 10 minutes. Students short on time paste the full component
+      from the page's solution panel and read the equation.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>One equation</h2>
+    <pre><code class="language-julia" data-trim data-noescape>component GradeForce
+  extends TranslationalComponents.Interfaces.PartialForce
+  grade = RealInput()
+  parameter m::Dyad.Mass = 1400
+  parameter g::Acceleration = 9.80665
+relations
+  f = m * g * sin(atan(grade))
+end</code></pre>
+    <ul class="small">
+      <li><strong>Add Component</strong>, then ⇄ — an equation has no diagram form.</li>
+      <li><code>extends PartialForce</code> brings the ports and <code>f</code>; you write only
+        what <code>f</code> is.</li>
+      <li><code>grade</code> is tan α — the same convention <code>RollingResistance</code> uses,
+        so one signal drives both.</li>
+    </ul>
+    <aside class="notes">
+      <p><strong>Say:</strong> <code>extends</code> is inheritance. The interface already has a
+      flange, a support and a force variable <code>f</code>; the component's whole job is the one
+      line in <code>relations</code>.</p>
+      <p><strong>They get wrong:</strong> the sign. The source acts on the body with −f, so a
+      climb needs positive f to hold the car back. That is why there is no minus in the
+      equation.</p>
+      <p><strong>Point at:</strong> <code>sin(atan(grade))</code>. A 10 % grade is
+      tan α = 0.10, not α = 0.10.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Give the body a grade input</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step07-grade-body.png"
+           alt="GradeBody: the grade input feeds both the rolling resistance inclination and the grade force.">
+      <figcaption>Duplicate <code>Body</code> → <code>GradeBody</code> · delete <code>incl_const</code> ·
+        one <code>grade</code> input into <code>rolling.inclination</code> and <code>gradeforce.grade</code> ·
+        <code>GradeForce(m = m, g = g)</code></figcaption>
+    </figure>
+    <div class="readout">
+      <div class="r"><span class="v">1366 N</span><span class="k">on a 10 % climb</span></div>
+      <div class="r"><span class="v">0.976 m/s²</span><span class="k">deceleration, free mass</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> 1400 × 9.81 × sin(atan 0.1) = 1366 N. Compare with the 1935 N
+      of full traction from step 03: a 10 % hill eats most of the engine. That is the windup
+      scenario of notebook 06.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 08 — Tire curve =============================================== -->
+<section data-section-title="08 — Tire curve">
+
+  <section class="cover">
+    <p class="nb-no">Step 08 · 15 min</p>
+    <h2>Tire friction against slip</h2>
+    <p class="thesis">Grip peaks at 4 % slip and falls once the tire slides.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#tire-curve">page: step 08</a> · reference <code>dyad/HandsOn/TireFrictionCurve.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> a tire does not grip by rolling perfectly. It grips by slipping a
+      little — the tread deforms — and up to a point, more slip means more force. Past that
+      point it slides, and grip drops.</p>
+      <p><strong>Timing:</strong> 15 minutes. The relations are long; students paste
+      the component from the page (New component → ⇄ → Ctrl+A → paste) and spend the time reading it and on the plot.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>κ in, μ out</h2>
+    <div class="cols">
+      <div class="small">
+        <ul>
+          <li>Rises to <strong>μ<sub>A</sub> = 1.0</strong> at κ = 0.04 (adhesion).</li>
+          <li>Falls to <strong>μ<sub>S</sub> = 0.7</strong> beyond κ = 0.12 (sliding).</li>
+          <li>Each segment is a cubic with zero slope at its ends — no corners for the solver.</li>
+          <li>Point-symmetric: braking slip gives negative friction.</li>
+        </ul>
+        <div class="demo">
+          <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+          <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.TireFrictionCurveSweep()
+plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre>
+          <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+        </div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step08-tire-curve-plot.png"
+             alt="mu against kappa: peaks at plus and minus 1.0 near 0.04 and falls to plus and minus 0.7 beyond 0.12.">
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the sweep bench ramps κ from −1 to +1 over 2 s. Plotting against
+      time would show the same curve with a shifted axis; the tuple <code>(x, y)</code> in
+      <code>idxs</code> plots one signal against the other.</p>
+      <p><strong>Point at:</strong> the peak, then the right of it. Past the peak more slip
+      gives <em>less</em> force. Hold that thought: it is why wheelspin runs away in step 10.</p>
+      <p><strong>Tie back:</strong> notebook 10 of the lecture used the same curve shape, from
+      Dyad's multibody slip wheel.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 09 — Slip wheel =============================================== -->
+<section data-section-title="09 — Slip wheel">
+
+  <section class="cover">
+    <p class="nb-no">Step 09 · 15 min</p>
+    <h2>A wheel that can slip</h2>
+    <p class="thesis">Cut the rolling constraint: wheel and car may now move at different speeds.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#slip-wheel">page: step 09</a> · reference <code>dyad/HandsOn/SlipWheel1D.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> up to now <code>IdealRollingWheel</code> forced
+      ω·r = v. That is the assumption we drop. The difference between the two speeds is slip,
+      and the curve from step 08 turns slip into force.</p>
+      <p><strong>Timing:</strong> 15 minutes. Paste, then read: the page walks through every relation. Nothing runs in this step — step 10 drives it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Slip, grip, force</h2>
+    <pre><code class="language-julia" data-trim data-noescape>kappa = (omega * radius - v) / max(abs(v), v_eps)
+curve.kappa = kappa
+mu = mu_scale * curve.mu
+F_x = mu * F_z
+flange.f = -F_x
+0 = spline.tau + radius * flange.f</code></pre>
+    <ul class="small">
+      <li><code>v_eps</code> keeps κ finite at standstill.</li>
+      <li><code>mu_scale</code> is the road: 1 dry, 0.2 slippery.</li>
+      <li>Flow is positive <em>into</em> a component: a tire pushing the car forward reports
+        <code>flange.f = -F_x</code>.</li>
+    </ul>
+    <aside class="notes">
+      <p><strong>Point at:</strong> line 1. Divide by the car's speed, so slip is relative —
+      except at a standstill, where v = 0, hence the floor.</p>
+      <p><strong>They get wrong:</strong> the sign on <code>flange.f</code>. With the wrong sign
+      the tire pulls the car backward and the car accelerates in reverse. That is the first
+      thing to check if step 10 looks strange.</p>
+      <p><strong>Point at the screenshot on the page:</strong> <code>curve</code> has no wires.
+      It is connected by the equations <code>curve.kappa = kappa</code> and
+      <code>curve.mu</code>, not by <code>connect</code>. Both are legal.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What you are building</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step09-slip-wheel.png"
+           alt="SlipWheel1D: the curve block sits between the spline and flange ports with no wires; it is connected through equations.">
+    </figure>
+    <div class="readout">
+      <div class="r"><span class="v">135</span><span class="k">slip after 5 s, μ × 0.2</span></div>
+      <div class="r"><span class="v">0.0076</span><span class="k">slip after 5 s, dry</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> same torque, two roads. On the dry road slip stays under 1 %. On
+      the slippery one it runs to 135: (ωr − v)/v = 135 means the tire surface moves 136
+      times as fast as the car. The reference test <code>TestSlipWheel1D</code> asserts both.</p>
+    </aside>
+  </section>
+
+</section>
+
+<!-- ===================== 10 — Standing start =========================================== -->
+<section data-section-title="10 — Standing start">
+
+  <section class="cover">
+    <p class="nb-no">Step 10 · 20 min</p>
+    <h2>Standing start on a slippery road</h2>
+    <p class="thesis">Floor it on ice: the wheel spins, the car barely moves.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#standing-start">page: step 10</a> · reference <code>dyad/HandsOn/SlipCar.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything in this car is a part you already have. The new thing
+      is wiring: the tire is the contact now, so there is no translational ground — the wheel's
+      flange drives the body directly.</p>
+      <p><strong>Timing:</strong> 20 minutes — 13 parts and 15 wires. The page lists the wires as
+      a numbered table; tell the room to tick them off. Create the car, then its parameters, then
+      the parts, then the wires, then a separate bench.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two speeds out</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step10-standing-start.png"
+           alt="SlipCar: engine, gear, wheel inertia and slip wheel drive the grade body, with sensors for vehicle speed and wheel surface speed.">
+      <figcaption><code>v_kmh</code> from the body · <code>wheel_kmh</code> from the wheel shaft,
+        × r × 3.6 · tire <code>radius = r</code>, <code>F_z = m * g / 2</code> · bench: <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Point at:</strong> <code>r</code> is used twice — the tire's radius and the
+      km/h gain — and <code>m</code> sets both the body's mass and the axle load. One parameter
+      each, so they cannot disagree. Typed twice, a change to one is a silent bug in the other.</p>
+      <p><strong>Say:</strong> wheel surface speed is ω·r. Put on the same axis as the car's
+      speed, wheelspin is simply the gap between two lines.</p>
+      <p><strong>They get wrong:</strong> missing <code>initial car.wheel_inertia.w = 0</code>.
+      With slip, wheel speed is no longer tied to car speed, so it needs its own start.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>1500 km/h at the tire, 10 km/h on the road</h2>
+    <div class="cols">
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.SlipCarStandingStartTransient()
+plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])
+
+dry = MyCar.SlipCarStandingStartTransient(
+    model = MyCar.SlipCarStandingStart(
+        name = :SlipCarStandingStart, friction__k = 1.0))
+plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/step10-standing-start-plot.png"
+             alt="Wheel surface speed climbs to 1500 km/h in 5 s while the body barely reaches 10 km/h.">
+      </figure>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">10.1</span><span class="k">km/h car, ice, 5 s</span></div>
+      <div class="r"><span class="v">1501</span><span class="k">km/h wheel, ice, 5 s</span></div>
+      <div class="r"><span class="v">21.1 / 21.2</span><span class="k">km/h car / wheel, dry</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> past the peak of the curve, more slip gives less grip. The wheel
+      speeds up, grip falls, it speeds up more. The model has no rev limit, so the engine keeps
+      pouring 150 N·m into a wheel with nothing to push against — 1500 km/h is the model telling
+      you the truth about an assumption, not a bug.</p>
+      <p><strong>Then the dry run:</strong> <code>friction__k = 1.0</code> overrides the
+      constant without editing the model. Twice the speed of the icy car, and the two lines stay
+      together.</p>
+      <p><strong>Close:</strong> notebook 10 of the lecture is this car under cruise control on
+      an ice patch. The controller sees speed falling, commands more torque, and does exactly
+      what you just watched. That is the argument for traction control — and for the cascade
+      control of lecture 2.</p>
+    </aside>
+  </section>
+
+</section>
+
+
+</div>
+</div>
+
+<script src="../lecture-01/assets/reveal/dist/reveal.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/notes/notes.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/highlight/highlight.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/math/math.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/zoom/zoom.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/search/search.js"></script>
+<script src="../lecture-01/assets/deck.js"></script>
+<script>
+Reveal.initialize({
+  // Deep links are part of the contract with the hands-on page: #/3 is step 03.
+  center: false,
+  hash: true,
+  slideNumber: 'c/t',
+  width: 1280,
+  height: 760,
+  margin: 0.05,
+  minScale: 0.2,
+  maxScale: 1.8,
+
+  // No slide transitions. A projector at 30 Hz makes them look broken, and a lecturer
+  // stepping back and forth through a plot wants the plot, not an animation.
+  transition: 'none',
+  backgroundTransition: 'none',
+
+  pdfMaxPagesPerSlide: 1,
+  pdfSeparateFragments: false,
+
+  // KaTeX is vendored; `local` is what stops the plugin reaching for a CDN.
+  katex: { local: '../lecture-01/assets/katex' },
+
+  plugins: [ RevealNotes, RevealHighlight, RevealMath.KaTeX, RevealZoom, RevealSearch ]
+}).then(function () {
+  initDeck(Reveal);
+});
+</script>
+</body>
+</html>
