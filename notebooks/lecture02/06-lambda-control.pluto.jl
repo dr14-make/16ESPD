@@ -61,13 +61,13 @@ begin
     library = setup()
     using Plots, PlutoUI
 
-    # draft_stubs.jl, when present, stands in for the Dyad task 5 analyses. Without it the
-    # real ones are bound here and no other cell changes.
+    # draft_stubs.jl stands in for each analysis whose Dyad task has not landed. Deleting a
+    # stub binds the real analysis here and no other cell changes.
     DRAFT_STUBS = joinpath(@__DIR__, "draft_stubs.jl")
-    analyses = isfile(DRAFT_STUBS) ? include(DRAFT_STUBS) : library.Lecture2
-    LambdaLoopTransient = analyses.LambdaLoopTransient
-    LambdaSensorRampTransient = analyses.LambdaSensorRampTransient
-    show_dyad = isfile(DRAFT_STUBS) ? analyses.show_dyad : Lecture01Support.show_dyad
+    stubs = isfile(DRAFT_STUBS) ? include(DRAFT_STUBS) : nothing
+    LambdaLoopTransient = bind_analysis(:LambdaLoopTransient, library; stubs)
+    LambdaSensorRampTransient = bind_analysis(:LambdaSensorRampTransient, library; stubs)
+    show_dyad = isnothing(stubs) ? Lecture01Support.show_dyad : stubs.show_dyad
 end
 
 # ╔═╡ c1e6bfa5-0d0d-4056-bb89-f070ab51142b

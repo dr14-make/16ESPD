@@ -1,10 +1,17 @@
 """
-Placeholder analyses for notebook 06, standing in for Dyad task 5 (`docs/lecture-02-dyad-tasks.md`
-§ "exhaust, λ sensors, catalyst, λ control").
+Placeholder analyses for the lecture 2 notebooks, standing in for the Dyad tasks of
+`docs/lecture-02-dyad-tasks.md` until they land:
 
-Delete this file when task 5 lands. The notebook's setup cell then binds
-`VehicleSystemsComponents.Lecture2.LambdaLoopTransient` and `LambdaSensorRampTransient` instead,
-every "PLACEHOLDER —" figure becomes the real one, and every PENDING check asserts.
+| Stub | Task | Notebook |
+|---|---|---|
+| `EngineDynoTransient` | 2 | 03 |
+| `TipInTestTransient` | 3 | 04 |
+| `InjectorPulseTransient` | 4 | 05 |
+| `LambdaLoopTransient`, `LambdaSensorRampTransient` | 5 | 06 |
+
+Delete a stub when its task lands, and this file when the last one has. Each notebook's setup
+cell binds the real `VehicleSystemsComponents.Lecture2` analyses for whatever this file does not
+define, every "PLACEHOLDER —" figure becomes the real one, and every PENDING check asserts.
 
 Nothing here is a model of the engine, and no number it produces is a result. Each function
 returns the shape of the real result (a time vector and the harness signals named in
@@ -13,13 +20,19 @@ returns the shape of the real result (a time vector and the harness signals name
 - the two-step loop is the exact jump/ramp waveform of an ideal relay loop with a pure delay;
 - the switching sensor is the task 5 tanh characteristic with a first-order lag;
 - the catalyst is a clamped (limited) integrator of the oxygen excess;
-- disturbances decay along hand-picked envelopes.
+- disturbances decay along hand-picked envelopes;
+- the engine is the task 1–2 steady-state equations with a first-order manifold and a pure
+  induction delay between operating points;
+- the fuel film is the x–τ filter, the injector a pickup threshold on an RL current rise.
 """
 module DraftStubs
 
 import ..Lecture01Support
 import ..Lecture02Support
-using ..Lecture02Support: rad_per_s,
+using ..Lecture02Support: rad_per_s, ENGINE, afr_map_slide44, bilinear,
+    OMEGA, P_M, MDOT_THR, MDOT_CYL, TAU_E, ETA_B, MDOT_FUEL, U_THR,
+    T_INJ, MDOT_F_CMD, LAMBDA_TGT, LAMBDA_CMD, M_FILM,
+    ACTIVATION, I_COIL, LIFT, MDOT_INJ, FUEL_MASS, V_SWITCH,
     LAMBDA_CYL, LAMBDA_TRIM, F_I, V_UP, LAMBDA_IN, LAMBDA_OUT, THETA_CAT, V_DOWN, TRIM_SHIFT,
     LAMBDA_MEAS, LOOP_DELAY,
     RAMP_LAMBDA, RAMP_V_SWITCHING, RAMP_I_PUMP, RAMP_LAMBDA_MEAS
@@ -53,7 +66,7 @@ function show_dyad(name::AbstractString)
     catch err
         err isa ArgumentError || rethrow()
         return Markdown.parse("""
-            **PLACEHOLDER —** `$name` is not built yet (Dyad task 5,
+            **PLACEHOLDER —** `$name` is not built yet (see its task in
             `docs/lecture-02-dyad-tasks.md`). This cell will show its Dyad source.
             """)
     end
@@ -98,7 +111,7 @@ function lag(u::AbstractVector, tau)
     return y
 end
 
-delayed(y::AbstractVector, d) = (n = round(Int, d / DT); [y[max(k - n, 1)] for k in eachindex(y)])
+delayed(y::AbstractVector, d; dt = DT) = (n = round(Int, d / dt); [y[max(k - n, 1)] for k in eachindex(y)])
 
 air_flow(omega, u_thr) = 2.1e-3 * (omega / rad_per_s(800)) * (1 + 4u_thr)
 
@@ -207,6 +220,216 @@ function LambdaSensorRampTransient(; lambda_start = 0.9, lambda_stop = 1.1, stop
         RAMP_LAMBDA_MEAS => lambda_meas,
     )
     return PlaceholderRun("LambdaSensorRampTransient", (; lambda_start, lambda_stop, stop), t, signals)
+end
+
+
+# ---------------------------------------------------------------------------------------
+# Engine (task 2): EngineDynoTransient
+# ---------------------------------------------------------------------------------------
+
+const GAMMA, C_D, D_THR, A_IDLE, ALPHA_0 = 1.4, 0.8, 0.05, 13e-6, deg2rad(7)
+const ETA_I, K_F, P_EXH = 0.40, 0.6, 1.05 * 101_325.0
+
+throttle_area(u) = A_IDLE + pi * D_THR^2 / 4 *
+    (1 - cos(ALPHA_0 + clamp(u, 0, 1) * (pi / 2 - ALPHA_0)) / cos(ALPHA_0))
+
+function flow_function(Pi)
+    psi(x) = sqrt(2GAMMA / (GAMMA - 1) * (x^(2 / GAMMA) - x^((GAMMA + 1) / GAMMA)))
+    Pi_cr = (2 / (GAMMA + 1))^(GAMMA / (GAMMA - 1))
+    Pi <= 0.95 && return psi(max(Pi, Pi_cr))
+    return psi(0.95) * (1 - Pi) / 0.05
+end
+
+mdot_throttle(u, p) = C_D * throttle_area(u) * ENGINE.p_a / sqrt(ENGINE.R * ENGINE.T_m) *
+    flow_function(p / ENGINE.p_a)
+eta_v(n, p) = (0.55 + 0.35 * clamp(p / ENGINE.p_a, 0, 1)) * (1 - 0.12 * ((n - 3500) / 3000)^2)
+mdot_cylinder(w, p) = eta_v(w * 30 / pi, p) * ENGINE.V_d * w / (4pi) * p / (ENGINE.R * ENGINE.T_m)
+
+function steady_pm(w, u)
+    lo, hi = 1e3, ENGINE.p_a
+    for _ in 1:60
+        mid = (lo + hi) / 2
+        mdot_throttle(u, mid) > mdot_cylinder(w, mid) ? (lo = mid) : (hi = mid)
+    end
+    return (lo + hi) / 2
+end
+
+"Local manifold time constant: storage over the net outflow's pressure sensitivity."
+function manifold_tau(w, u, p)
+    h = 1.0
+    d = (mdot_cylinder(w, p + h) - mdot_cylinder(w, p - h) -
+         mdot_throttle(u, p + h) + mdot_throttle(u, p - h)) / 2h
+    return ENGINE.V_m / (ENGINE.R * ENGINE.T_m) / d
+end
+
+function brake_torque(w, p, mdot_air)
+    fuel = mdot_air / ENGINE.AFR_s
+    n = w * 30 / pi
+    fmep = K_F * (0.97e5 + 0.15e5 * (n / 1000) + 0.05e5 * (n / 1000)^2)
+    return ETA_I * ENGINE.H_l * fuel / w - ENGINE.V_d / (4pi) * (fmep + P_EXH - p)
+end
+
+"""
+    EngineDynoTransient(; omega_set, u_thr, du_thr, t_step, sigma, stop)
+
+Placeholder for `Lecture2.EngineDynoTransient`: the engine held at `omega_set` with the throttle
+at `u_thr`, stepped by `du_thr` at `t_step`.
+"""
+function EngineDynoTransient(; omega_set = rad_per_s(800), u_thr = 0.0, du_thr = 0.0,
+        t_step = 0.5, sigma = nothing, stop = 2.0, dt = 2e-4)
+    t = collect(0.0:dt:stop)
+    w = omega_set
+    u1 = clamp(u_thr + du_thr, 0, 1)
+    p0, p1 = steady_pm(w, u_thr), steady_pm(w, u1)
+    tau = manifold_tau(w, u1, p1)
+    p = [ti < t_step ? p0 : p1 + (p0 - p1) * exp(-(ti - t_step) / tau) for ti in t]
+    u = [ti < t_step ? u_thr : u1 for ti in t]
+    mcyl = mdot_cylinder.(w, p)
+    mthr = [mdot_throttle(ui, pi_) for (ui, pi_) in zip(u, p)]
+    mcyl_late = delayed(mcyl, pi / w; dt)
+    torque = brake_torque.(w, p, mcyl_late)
+    fuel = mcyl_late ./ ENGINE.AFR_s
+    signals = Dict(
+        OMEGA => fill(w, length(t)), P_M => p, MDOT_THR => mthr, MDOT_CYL => mcyl,
+        TAU_E => torque, MDOT_FUEL => fuel, U_THR => u, LAMBDA_CYL => ones(length(t)),
+        ETA_B => torque .* w ./ (ENGINE.H_l .* fuel),
+    )
+    return PlaceholderRun("EngineDynoTransient",
+        (; omega_set, u_thr, du_thr, t_step, sigma, stop), t, signals)
+end
+
+# ---------------------------------------------------------------------------------------
+# Fuel path (task 3): TipInTestTransient
+# ---------------------------------------------------------------------------------------
+
+const EV14_DEAD = ([8.0, 12.0, 14.0, 16.0], [2.0e-3, 0.903e-3, 0.80e-3, 0.558e-3])
+const Q_INJ = ENGINE.q_static * 1e-6 / 60 * ENGINE.rho_f
+
+film_X(T) = 0.5 + (0.3 - 0.5) * clamp((T - 20) / 70, 0, 1)
+film_tau(T) = 0.6 + (0.2 - 0.6) * clamp((T - 20) / 70, 0, 1)
+warmup_factor(T) = 1.3 + (1.0 - 1.3) * clamp((T - 20) / 60, 0, 1)
+
+"Film model `x, τ`: fuel reaching the cylinder for the injected flow `u` (exact discretization)."
+function film(u, X, tau, dt)
+    a = exp(-dt / tau)
+    m = X * tau * u[1]
+    out = similar(u)
+    for k in eachindex(u)
+        out[k] = (1 - X) * u[k] + m / tau
+        m = a * m + (1 - a) * X * tau * u[k]
+    end
+    return out
+end
+
+"Inverse film compensation with estimates `Xh, tauh`: the command that cancels the estimated film."
+function compensate(des, Xh, tauh, dt)
+    a = exp(-dt / tauh)
+    m = Xh * tauh * des[1]
+    cmd = similar(des)
+    for k in eachindex(des)
+        cmd[k] = max(0.0, (des[k] - m / tauh) / (1 - Xh))
+        m = a * m + (1 - a) * Xh * tauh * cmd[k]
+    end
+    return cmd
+end
+
+"""
+    TipInTestTransient(; omega_set, u_thr, u_tip, t_tip_in, t_tip_out, T_cool, with_comp, Xh,
+        tauh, U_batt, stop)
+
+Placeholder for `Lecture2.TipInTestTransient`: the engine held at `omega_set`, fuel from
+`FuelMetering`, throttle `u_thr` stepped to `u_tip` and back.
+"""
+function TipInTestTransient(; omega_set = rad_per_s(2000), u_thr = 0.1, u_tip = 0.4,
+        t_tip_in = 1.0, t_tip_out = 3.0, T_cool = 90.0, with_comp = false, Xh = 0.3, tauh = 0.2,
+        U_batt = 14.0, stop = 5.0, dt = 1e-3)
+    t = collect(0.0:dt:stop)
+    w = omega_set
+    n = w * 30 / pi
+    u = [t_tip_in <= ti < t_tip_out ? u_tip : u_thr for ti in t]
+    p = similar(t)
+    p[1] = steady_pm(w, u[1])
+    for k in 2:length(t)
+        target = steady_pm(w, u[k])
+        p[k] = target + (p[k - 1] - target) * exp(-dt / manifold_tau(w, u[k], target))
+    end
+    mcyl = mdot_cylinder.(w, p)
+    afr = afr_map_slide44()
+    lambda_tgt = [bilinear(afr.rpm, afr.load, afr.afr, n, 100 * pk / ENGINE.p_a) / ENGINE.AFR_s for pk in p]
+    F = warmup_factor(T_cool)
+    des = mcyl ./ (ENGINE.AFR_s .* lambda_tgt) .* F
+    cmd = with_comp ? compensate(des, Xh, tauh, dt) : des
+    fuel_cyl = film(cmd, film_X(T_cool), film_tau(T_cool), dt)
+    t_dead = interp(EV14_DEAD[1], EV14_DEAD[2], U_batt)
+    t_inj = cmd .* (4pi / (w * ENGINE.n_cyl)) ./ Q_INJ .+ t_dead
+    signals = Dict(
+        OMEGA => fill(w, length(t)), P_M => p, MDOT_CYL => mcyl, U_THR => u,
+        LAMBDA_CYL => mcyl ./ (ENGINE.AFR_s .* fuel_cyl),
+        LAMBDA_TGT => lambda_tgt, LAMBDA_CMD => lambda_tgt ./ F,
+        MDOT_F_CMD => cmd, T_INJ => t_inj,
+        M_FILM => film_X(T_cool) * film_tau(T_cool) .* cmd,
+    )
+    return PlaceholderRun("TipInTestTransient",
+        (; omega_set, u_thr, u_tip, t_tip_in, t_tip_out, T_cool, with_comp, Xh, tauh, U_batt, stop),
+        t, signals)
+end
+
+# ---------------------------------------------------------------------------------------
+# Injector (task 4): InjectorPulseTransient
+# ---------------------------------------------------------------------------------------
+
+const R_COIL, TAU_OPEN, TAU_CLOSED = 12.0, 1.0e-3, 1.6e-3
+const I_PICK, I_DROP, T_MOVE = 0.5, 0.25, 0.25e-3
+const LIFT_MAX, R_OFF = 0.06e-3, 55.0
+
+"""
+    InjectorPulseTransient(; U_batt, t_pulse, t_start, stop)
+
+Placeholder for `Lecture2.InjectorPulseTransient`: one injection pulse of length `t_pulse` from
+battery voltage `U_batt` through the low-side switch.
+"""
+function InjectorPulseTransient(; U_batt = 14.0, t_pulse = 3e-3, t_start = 0.5e-3,
+        stop = t_start + t_pulse + 3e-3, dt = 2e-6)
+    t = collect(0.0:dt:stop)
+    t_end = t_start + t_pulse
+    i_inf = U_batt / R_COIL
+    # Pickup: the time the current needs to reach the force balance, then the needle's travel.
+    t_pick = I_PICK < i_inf ? -TAU_OPEN * log(1 - I_PICK / i_inf) : Inf
+    t_open = t_start + t_pick
+    smooth(x) = x <= 0 ? 0.0 : x >= 1 ? 1.0 : x^2 * (3 - 2x)
+    i = map(t) do ti
+        ti < t_start && return 0.0
+        if ti < t_end
+            tt = ti - t_start
+            i_rise = i_inf * (1 - exp(-tt / TAU_OPEN))
+            # The moving armature raises the inductance; back-EMF dents the current (the kink).
+            dent = 0.12 * i_inf * sin(pi * smooth((ti - t_open) / T_MOVE)) * (ti > t_open)
+            late = ti > t_open + T_MOVE ?
+                i_inf - (i_inf - i_inf * (1 - exp(-(t_open + T_MOVE - t_start) / TAU_OPEN))) *
+                exp(-(ti - t_open - T_MOVE) / TAU_CLOSED) : i_rise
+            return (ti > t_open + T_MOVE ? late : i_rise) - dent
+        end
+        return 0.0
+    end
+    i_end = i[searchsortedlast(t, t_end) - 1]
+    tau_off = TAU_CLOSED * R_COIL / (R_COIL + R_OFF)
+    for k in eachindex(t)
+        t[k] >= t_end && (i[k] = i_end * exp(-(t[k] - t_end) / tau_off))
+    end
+    t_drop = t_end + tau_off * log(max(i_end / I_DROP, 1.0))
+    lift = map(t) do ti
+        opened = LIFT_MAX * smooth((ti - t_open) / T_MOVE)
+        ti < t_drop ? opened : opened * (1 - smooth((ti - t_drop) / T_MOVE))
+    end
+    mdot = Q_INJ .* lift ./ LIFT_MAX
+    fuel = cumsum(mdot) .* dt
+    v_switch = [t[k] < t_start ? U_batt : t[k] < t_end ? 0.1 * i[k] : U_batt + R_OFF * i[k]
+                for k in eachindex(t)]
+    signals = Dict(
+        ACTIVATION => [t_start <= ti < t_end ? 1.0 : 0.0 for ti in t],
+        I_COIL => i, LIFT => lift, MDOT_INJ => mdot, FUEL_MASS => fuel, V_SWITCH => v_switch,
+    )
+    return PlaceholderRun("InjectorPulseTransient", (; U_batt, t_pulse, t_start, stop), t, signals)
 end
 
 end
