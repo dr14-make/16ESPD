@@ -281,8 +281,8 @@ end</code></pre></div>
     <strong>parameters</strong>, two more <strong>parts</strong> (a limiter and a torque source), and three
     <strong>ports</strong> so other components can plug into it. Then a small test bench drives it.</p>
   <figure class="shot-img">
-    <a href="img/step02-engine-finished.png"><img src="img/step02-engine-finished.png" style="max-width:560px" alt="The finished Engine diagram: tau_cmd input on the left, then delay, lag, limiter and torque blocks in a row, the spline port on the right and the support port at the bottom." loading="lazy"></a>
-    <figcaption>The finished <code>Engine</code>: <code>tau_cmd</code> → <code>delay</code> → <code>lag</code> → <code>limiter</code> → <code>torque</code> → <code>spline</code>, with <code>torque</code>'s support down to <code>support</code>. The two blocks you already have are the second and third.</figcaption>
+    <a href="img/step02-engine-finished.png"><img src="img/step02-engine-finished.png" style="max-width:560px" alt="The finished Engine diagram: tau_cmd input on the left, then delay, lag, limiter and torque blocks in a row, the spline port on the right and the support port at the bottom; the Engine panel at top right lists the parameters theta_e, tau_e and T_max above an Add parameter button." loading="lazy"></a>
+    <figcaption>The finished <code>Engine</code>: <code>tau_cmd</code> → <code>delay</code> → <code>lag</code> → <code>limiter</code> → <code>torque</code> → <code>spline</code>, with <code>torque</code>'s support down to <code>support</code>. The two blocks you already have are the second and third. Top right is <code>Engine</code>'s own panel — click an empty spot of the canvas to open it — with the three parameters of stage B and the <strong>Add parameter</strong> button.</figcaption>
   </figure>
 
   <h3>A · Open your Engine</h3>
@@ -479,7 +479,7 @@ end</code></pre></div>
   <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step03-driveline.png"><img src="img/step03-driveline.png" alt="Driveline diagram: spline into an ideal gear, then an ideal rolling wheel out to the flange, with both supports brought out." loading="lazy"></a>
-    <figcaption>The finished <code>Driveline</code>. Rotational ports are gray circles and translational ports are green squares: the rolling wheel is where one becomes the other.</figcaption>
+    <figcaption>The finished <code>Driveline</code>, its panel listing the parameters <code>i</code> and <code>r</code> that the parts use. Rotational ports are gray circles and translational ports are green squares: the rolling wheel is where one becomes the other.</figcaption>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
