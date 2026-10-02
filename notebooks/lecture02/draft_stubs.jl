@@ -31,7 +31,7 @@ import ..Lecture01Support
 import ..Lecture02Support
 using ..Lecture02Support: rad_per_s, ENGINE, afr_map_slide44, bilinear,
     OMEGA, P_M, MDOT_THR, MDOT_CYL, TAU_E, ETA_B, MDOT_FUEL, U_THR,
-    T_INJ, MDOT_F_CMD, LAMBDA_TGT, LAMBDA_CMD, M_FILM,
+    T_INJ, MDOT_F_CMD, LAMBDA_TGT, M_FILM,
     ACTIVATION, I_COIL, LIFT, MDOT_INJ, FUEL_MASS, V_SWITCH,
     LAMBDA_CYL, LAMBDA_TRIM, F_I, V_UP, LAMBDA_IN, LAMBDA_OUT, THETA_CAT, V_DOWN, TRIM_SHIFT,
     LAMBDA_MEAS, LOOP_DELAY,
@@ -101,8 +101,8 @@ end
 switching_voltage(lambda; bias = 0.0) =
     V_LEAN + (V_RICH - V_LEAN) / 2 * (1 + tanh((1 + bias - lambda) / W_SWITCH))
 
-function lag(u::AbstractVector, tau)
-    a = exp(-DT / tau)
+function lag(u::AbstractVector, tau; dt = DT)
+    a = exp(-dt / tau)
     y = similar(u)
     y[1] = u[1]
     for k in 2:length(u)
@@ -334,19 +334,22 @@ function compensate(des, Xh, tauh, dt)
 end
 
 """
-    TipInTestTransient(; omega_set, u_thr, u_tip, t_tip_in, t_tip_out, T_cool, with_comp, Xh,
-        tauh, U_batt, stop)
+    TipInTestTransient(; omega_set, u_thr, u_tip, t_tip_in, t_tip_out, T_cool, with_air_model,
+        with_comp, Xh, tauh, U_batt, stop)
 
 Placeholder for `Lecture2.TipInTestTransient`: the engine held at `omega_set`, fuel from
-`FuelMetering`, throttle `u_thr` stepped to `u_tip` and back.
+`FuelMetering` reading the air-mass sensor (the throttle air flow), optionally through a
+manifold model that estimates the cylinder air, throttle `u_thr` stepped to `u_tip` and back.
 """
-function TipInTestTransient(; omega_set = rad_per_s(2000), u_thr = 0.1, u_tip = 0.4,
-        t_tip_in = 1.0, t_tip_out = 3.0, T_cool = 90.0, with_comp = false, Xh = 0.3, tauh = 0.2,
+function TipInTestTransient(; omega_set = rad_per_s(2000), u_thr = 0.05, u_tip = 0.15,
+        t_tip_in = 1.0, t_tip_out = 3.0, T_cool = 90.0, with_air_model = false, with_comp = false,
+        Xh = 0.3, tauh = 0.2,
         U_batt = 14.0, stop = 5.0, dt = 1e-3)
     t = collect(0.0:dt:stop)
     w = omega_set
     n = w * 30 / pi
-    u = [t_tip_in <= ti < t_tip_out ? u_tip : u_thr for ti in t]
+    # The throttle plate follows its command with a 50 ms lag, as an electronic throttle does.
+    u = lag([t_tip_in <= ti < t_tip_out ? u_tip : u_thr for ti in t], 0.05; dt)
     p = similar(t)
     p[1] = steady_pm(w, u[1])
     for k in 2:length(t)
@@ -354,23 +357,27 @@ function TipInTestTransient(; omega_set = rad_per_s(2000), u_thr = 0.1, u_tip = 
         p[k] = target + (p[k - 1] - target) * exp(-dt / manifold_tau(w, u[k], target))
     end
     mcyl = mdot_cylinder.(w, p)
+    mthr = [mdot_throttle(ui, pk) for (ui, pk) in zip(u, p)]
     afr = afr_map_slide44()
     lambda_tgt = [bilinear(afr.rpm, afr.load, afr.afr, n, 100 * pk / ENGINE.p_a) / ENGINE.AFR_s for pk in p]
     F = warmup_factor(T_cool)
-    des = mcyl ./ (ENGINE.AFR_s .* lambda_tgt) .* F
+    # An exact manifold model recovers the cylinder air from the sensor reading.
+    air = with_air_model ? mcyl : mthr
+    des = air ./ (ENGINE.AFR_s .* lambda_tgt) .* F
     cmd = with_comp ? compensate(des, Xh, tauh, dt) : des
     fuel_cyl = film(cmd, film_X(T_cool), film_tau(T_cool), dt)
     t_dead = interp(EV14_DEAD[1], EV14_DEAD[2], U_batt)
     t_inj = cmd .* (4pi / (w * ENGINE.n_cyl)) ./ Q_INJ .+ t_dead
     signals = Dict(
-        OMEGA => fill(w, length(t)), P_M => p, MDOT_CYL => mcyl, U_THR => u,
+        OMEGA => fill(w, length(t)), P_M => p, MDOT_CYL => mcyl, MDOT_THR => mthr, U_THR => u,
         LAMBDA_CYL => mcyl ./ (ENGINE.AFR_s .* fuel_cyl),
-        LAMBDA_TGT => lambda_tgt, LAMBDA_CMD => lambda_tgt ./ F,
+        LAMBDA_TGT => lambda_tgt,
         MDOT_F_CMD => cmd, T_INJ => t_inj,
         M_FILM => film_X(T_cool) * film_tau(T_cool) .* cmd,
     )
     return PlaceholderRun("TipInTestTransient",
-        (; omega_set, u_thr, u_tip, t_tip_in, t_tip_out, T_cool, with_comp, Xh, tauh, U_batt, stop),
+        (; omega_set, u_thr, u_tip, t_tip_in, t_tip_out, T_cool, with_air_model, with_comp, Xh, tauh,
+            U_batt, stop),
         t, signals)
 end
 
@@ -380,7 +387,7 @@ end
 
 const R_COIL, TAU_OPEN, TAU_CLOSED = 12.0, 1.0e-3, 1.6e-3
 const I_PICK, I_DROP, T_MOVE = 0.5, 0.25, 0.25e-3
-const LIFT_MAX, R_OFF = 0.06e-3, 55.0
+const LIFT_MAX, R_OFF = 0.05e-3, 55.0
 
 """
     InjectorPulseTransient(; U_batt, t_pulse, t_start, stop)

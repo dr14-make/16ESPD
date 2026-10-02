@@ -16,7 +16,7 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ 155c6716-b6be-446a-9540-7c88b84e13ed
+# ╔═╡ 7d05873f-0b3d-4515-9525-709c3634a134
 md"""
 # Lecture 2 · 04 — How much fuel
 
@@ -40,7 +40,7 @@ by `Vehicle.ECU.FuelMetering` instead of the dyno's ideal metering, with the wal
 (`Vehicle.Engine.WallWetting`) between the injector and the cylinder.
 """
 
-# ╔═╡ 7d05873f-0b3d-4515-9525-709c3634a134
+# ╔═╡ 155c6716-b6be-446a-9540-7c88b84e13ed
 begin
     import Pkg
     Pkg.activate(joinpath(@__DIR__, "..", ".."))
@@ -81,7 +81,7 @@ t_\text{inj} = \frac{4\pi}{\omega\,n_\text{cyl}}\,\frac{\dot m_{f,\text{cmd}}}{q
 
 | Factor | What it does | Source |
 |---|---|---|
-| `ṁ_air / AFR_s` | the base: fuel for a stoichiometric charge | sensors; `AFR_s = 14.7` (deck) |
+| `ṁ_air / AFR_s` | the base: fuel for a stoichiometric charge | air-mass sensor, optionally through a manifold model (section 6); `AFR_s = 14.7` (deck) |
 | `1/λ_tgt` | the target mixture from the speed × load map | slide 44, transcribed |
 | `F_cool` | warm-up enrichment, 1.3 at 20 °C falling to 1.0 at 80 °C | *(assumed)* |
 | `λ_trim` | the λ controller's correction (notebook 06); 1 here | – |
@@ -89,10 +89,10 @@ t_\text{inj} = \frac{4\pi}{\omega\,n_\text{cyl}}\,\frac{\dot m_{f,\text{cmd}}}{q
 | `q_inj` | the injector's static flow, 146 cm³/min at 3 bar | Bosch EV14 datasheet |
 | `t_dead` | the time the injector needs to open, added on top | EV14 table, retailer data, *not verified at Bosch* |
 
-Load is the manifold pressure as a fraction of ambient. `ṁ_air` is the air flow into the
-cylinders; a production ECU estimates it from its air-mass and manifold-pressure sensors, and
-this model hands it the cylinder air flow directly so that the film, not the sensor, is what
-this notebook studies.
+Load is the manifold pressure as a fraction of ambient. `ṁ_air` is what the hot-film air-mass
+sensor reports (slide 37): the air flowing through the throttle. In steady running that equals
+the air entering the cylinders. During a transient it does not, as notebook 03 showed, and that
+difference will matter in section 5.
 """
 
 # ╔═╡ 18e73f8f-ddf9-43df-8b7f-9f142e484935
@@ -113,6 +113,10 @@ At part load the map asks for 14.7, stoichiometric, which is where the catalyst 
 
 Both cost fuel and both put the catalyst out of its window, which is why they are confined to
 corners of the map a driver rarely visits.
+
+Take the numbers as an illustration. The table comes from the tuning video linked on the slide,
+not from a manufacturer's calibration, and production engines built for current emission limits
+enrich far less, staying close to λ = 1 over most of the full-load line.
 """
 
 # ╔═╡ 604d25ee-7602-4a54-9c11-ea587524abdc
@@ -219,80 +223,99 @@ show_dyad("WallWetting")
 md"""
 ## 5 · Tip-in without compensation
 
-The experiment: hold the engine at 2000 rpm with the throttle at 10 %, open it to 40 % at
-`t = 1 s` (a tip-in), and close it back at `t = 3 s` (a tip-out). The error is measured against
-the λ the metering intends, its map target divided by the warm-up enrichment, so that a planned
-enrichment does not count as an error:
+The experiment: hold the engine at 2000 rpm with the throttle at 5 %, open it to 15 % at
+`t = 1 s` (a tip-in), and close it back at `t = 3 s` (a tip-out). That takes the load from
+about a third to about three quarters, inside the part of the map where the target stays at
+14.7, so the target does not move and only the error does. The error is measured against the
+run's own steady λ just before the tip-in, so that a cold engine's planned enrichment does not
+count as an error:
 
 ```math
-e(t) = \frac{\lambda_\text{cyl}(t)}{\lambda_\text{cmd}(t)} - 1
+e(t) = \frac{\lambda_\text{cyl}(t)}{\lambda_\text{cyl}(t_\text{tip}^-)} - 1
 ```
 
-positive when the cylinder runs leaner than intended. Without compensation the formula meters
-the right fuel, the film steals part of the increase, and the cylinder runs lean. At tip-out the
-film gives the fuel back, and it runs rich.
+positive when the cylinder runs leaner than before. Two effects act at once, in opposite
+directions:
+
+- **The sensor reads the air too early.** The throttle air flow jumps the moment the plate
+  opens, but the cylinders receive the extra air only as the manifold fills (notebook 03). For
+  that moment the formula meters fuel for air that has not arrived yet: **rich**.
+- **The film steals fuel.** Part of the extra fuel lands on the port wall instead of entering
+  the cylinder: **lean**.
+
+Which wins depends on the manifold's time constant against the film's. At tip-out both effects
+reverse.
 """
 
 # ╔═╡ 89749897-ab52-48d7-8ff3-a63321994e9d
 md"estimate error in `X̂` [%] $(@bind xh_error Slider(-50:10:50; default = 0, show_value = true))"
 
 # ╔═╡ 3ca1716c-f079-4bed-b720-c3205e5d31ec
+md"estimate error in `τ̂` [%] $(@bind tauh_error Slider(-50:10:50; default = 0, show_value = true))"
+
+# ╔═╡ 30f49316-adc3-4798-80c0-b485d1798a7e
 begin
-    TIP = (omega_set = rad_per_s(2000), u_thr = 0.1, u_tip = 0.4, t_tip_in = 1.0, t_tip_out = 3.0, stop = 5.0)
+    TIP = (omega_set = rad_per_s(2000), u_thr = 0.05, u_tip = 0.15, t_tip_in = 1.0, t_tip_out = 3.0, stop = 5.0)
     WARM, COLD = 90.0, 20.0
     # The warm film's own parameters, from the WallWetting defaults (assumed).
     FILM_WARM = (X = 0.3, tau = 0.2)
     tip(; kwargs...) = TipInTestTransient(; TIP..., kwargs...)
     warm_open = tip(T_cool = WARM)
     cold_open = tip(T_cool = COLD)
-    warm_exact = tip(T_cool = WARM, with_comp = true, Xh = FILM_WARM.X, tauh = FILM_WARM.tau)
-    warm_off30 = tip(T_cool = WARM, with_comp = true, Xh = 0.7FILM_WARM.X, tauh = 0.7FILM_WARM.tau)
-    warm_live = tip(T_cool = WARM, with_comp = true, Xh = (1 + xh_error / 100) * FILM_WARM.X,
+    warm_film = tip(T_cool = WARM, with_comp = true, Xh = FILM_WARM.X, tauh = FILM_WARM.tau)
+    warm_both = tip(T_cool = WARM, with_air_model = true, with_comp = true, Xh = FILM_WARM.X,
         tauh = FILM_WARM.tau)
-    "Relative λ error against the metering's intent."
+    warm_off30 = tip(T_cool = WARM, with_air_model = true, with_comp = true, Xh = 0.7FILM_WARM.X,
+        tauh = 0.7FILM_WARM.tau)
+    warm_live = tip(T_cool = WARM, with_air_model = true, with_comp = true,
+        Xh = (1 + xh_error / 100) * FILM_WARM.X, tauh = (1 + tauh_error / 100) * FILM_WARM.tau)
+    "λ error relative to the run's own steady λ just before the tip-in."
     function lambda_error(r)
         t, λ = signal(r, LAMBDA_CYL)
-        _, λc = signal(r, LAMBDA_CMD)
-        return (t, λ ./ λc .- 1)
-    end
-    function lean_excursion(r)
-        t, e = lambda_error(r)
-        return maximum(e[TIP.t_tip_in .<= t .< TIP.t_tip_out])
+        λ0 = λ[searchsortedlast(t, TIP.t_tip_in) - 1]
+        return (t, λ ./ λ0 .- 1)
     end
     worst_error(r) = maximum(abs, last(lambda_error(r)))
 end
 
-# ╔═╡ 30f49316-adc3-4798-80c0-b485d1798a7e
+# ╔═╡ cc2d7860-d429-4f8d-98ad-ed3dd1016711
 let
     t, u = signal(warm_open, U_THR)
     _, p_m = signal(warm_open, P_M)
+    _, m_thr = signal(warm_open, MDOT_THR)
+    _, m_cyl = signal(warm_open, MDOT_CYL)
     _, λ = signal(warm_open, LAMBDA_CYL)
-    _, λc = signal(warm_open, LAMBDA_CMD)
     p1 = plot(t, 100 .* u; lw = 2.5, color = :black, label = "throttle [%]", ylabel = "",
         legend = :right, title = figure_title(warm_open, "Tip-in and tip-out, warm, no compensation"))
     plot!(p1, t, kpa.(p_m); lw = 2.5, color = :gray, label = "p_m [kPa]")
-    p2 = plot(t, λ; lw = 3, color = :steelblue, label = "λ in the cylinder", ylabel = "λ",
+    p2 = plot(t, 1000 .* m_thr; lw = 2.5, color = :darkorange, label = "air-mass sensor",
+        ylabel = "air [g/s]", legend = :right)
+    plot!(p2, t, 1000 .* m_cyl; lw = 2.5, color = :steelblue, label = "into the cylinders")
+    p3 = plot(t, λ; lw = 3, color = :steelblue, label = "λ in the cylinder", ylabel = "λ",
         xlabel = "time [s]", legend = :topright)
-    plot!(p2, t, λc; lw = 2, ls = :dash, color = :black, label = "λ the metering intends")
-    captioned(plot(p1, p2; layout = (2, 1), size = (620, 460), link = :x), """
-        The map target itself moves at the tip-in, because 40 % throttle at 2000 rpm is high load
-        and the map asks for a rich mixture there.
+    captioned(plot(p1, p2, p3; layout = (3, 1), size = (620, 620), link = :x), """
+        The sensor's air flow leads the cylinders' air at every throttle change; the film then
+        delays the fuel. λ shows the sum of the two.
         """ * placeholder_note(warm_open,
-            "`TipInTestTransient`, signals `$U_THR`, `$P_M`, `$LAMBDA_CYL`, `$LAMBDA_CMD`"))
-end
-
-# ╔═╡ cc2d7860-d429-4f8d-98ad-ed3dd1016711
-check("`TipInTestTransient` warm, without compensation, signals `$LAMBDA_CYL` and `$LAMBDA_CMD`", warm_open) do
-    e = lean_excursion(warm_open)
-    (e >= 0.05, "lean excursion at tip-in $(round(100e; digits = 1)) %; expected at least 5 %")
+            "`TipInTestTransient`, signals `$U_THR`, `$P_M`, `$MDOT_THR`, `$MDOT_CYL`, `$LAMBDA_CYL`"))
 end
 
 # ╔═╡ 1fe46b56-5771-4580-a565-91be0f7058ff
-md"""
-## 6 · Inverting the film
+check("`TipInTestTransient` warm, without compensation, signal `$LAMBDA_CYL`", warm_open) do
+    e = worst_error(warm_open)
+    (e >= 0.05, "worst λ error over tip-in and tip-out $(round(100e; digits = 1)) %, either " *
+        "direction; expected at least 5 %")
+end
 
-The fix is to invert the film: run a copy of the x–τ model inside the ECU, with estimates `X̂`
-and `τ̂`, and inject what the film will take on top of what the cylinder needs:
+# ╔═╡ 40f06c8d-8fb4-4f0b-ae7a-c9ceac130159
+md"""
+## 6 · Inverting the plant, twice
+
+Feed-forward has to invert every piece of plant between its sensor and the cylinder, and here
+there are two.
+
+**The film.** Run a copy of the x–τ model inside the ECU, with estimates `X̂` and `τ̂`, and inject
+what the film will take on top of what the cylinder needs:
 
 ```math
 \dot m_{f,\text{cmd}} = \frac{\dot m_{f,\text{des}} - \hat m_\text{film}/\hat\tau}{1 - \hat X},
@@ -300,40 +323,56 @@ and `τ̂`, and inject what the film will take on top of what the cylinder needs
 \dot{\hat m}_\text{film} = \hat X\,\dot m_{f,\text{cmd}} - \frac{\hat m_\text{film}}{\hat\tau}
 ```
 
-With exact estimates the two films cancel and the cylinder receives exactly the desired fuel.
-With wrong estimates part of the excursion survives. The slider sets the error in `X̂`; the
-dashed curve keeps both estimates 30 % low. Finding `X` and `τ_f` across temperature and load,
-on a real engine, is a large part of a calibration engineer's work.
+**The manifold.** Run a copy of notebook 03's manifold equation, driven by the sensor reading, to
+estimate the air that actually reaches the cylinders, and meter fuel for that instead:
+
+```math
+\dot{\hat p}_m = \frac{R\,T_m}{V_m}\left(\dot m_\text{air,meas} - \hat{\dot m}_\text{cyl}\right),
+\qquad
+\hat{\dot m}_\text{cyl} = \eta_v\,V_d\,\frac{\omega}{4\pi}\,\frac{\hat p_m}{R\,T_m}
+```
+
+Production ECUs carry both, under names like *air-charge model* and *wall-film compensation*.
+
+The plot below adds them one at a time. With the film compensation alone, the tip-in gets
+**worse**: uncompensated, the sensor's rich error and the film's lean error partly cancelled, and
+removing only the lean one leaves the rich one standing. With both inversions the cylinder gets
+the fuel it needs. With wrong film estimates part of the error comes back, and the two estimates
+fail differently: a wrong `X̂` changes the size of the leftover spike, a wrong `τ̂` its shape and
+how long it lasts. The sliders set each error, with both inversions on; the dashed curve keeps
+both estimates 30 % low. Finding `X` and `τ_f` across temperature and load, on a real engine, is
+a large part of a calibration engineer's work.
 """
 
-# ╔═╡ 40f06c8d-8fb4-4f0b-ae7a-c9ceac130159
+# ╔═╡ 8c9c0dfb-575c-479b-933e-28637cc78087
 let
     p = plot(; xlabel = "time [s]", ylabel = "λ error e [%]", legend = :topright,
-        title = figure_title((warm_open, warm_exact, warm_off30, warm_live),
+        title = figure_title((warm_open, warm_film, warm_both, warm_off30, warm_live),
             "λ error at tip-in and tip-out, warm"))
     for (r, label, style) in ((warm_open, "no compensation", (color = :firebrick, lw = 2.5)),
-            (warm_off30, "estimates 30 % low", (color = :darkorange, lw = 2.5, ls = :dash)),
-            (warm_live, "X̂ error $(xh_error) % (slider)", (color = :purple, lw = 2)),
-            (warm_exact, "exact estimates", (color = :seagreen, lw = 3)))
+            (warm_film, "film only", (color = :black, lw = 2, ls = :dot)),
+            (warm_off30, "both, film estimates 30 % low", (color = :darkorange, lw = 2.5, ls = :dash)),
+            (warm_live, "both, X̂ $(xh_error) %, τ̂ $(tauh_error) % (sliders)", (color = :purple, lw = 2)),
+            (warm_both, "both, exact", (color = :seagreen, lw = 3)))
         t, e = lambda_error(r)
         plot!(p, t, 100 .* e; label, style...)
     end
     hspan!(p, [-1, 1]; color = :seagreen, alpha = 0.12, label = "±1 %")
-    captioned(p, "" * placeholder_note((warm_open, warm_exact, warm_off30, warm_live),
-        "`TipInTestTransient` with `with_comp`, `Xh`, `tauh`, signals `$LAMBDA_CYL` and `$LAMBDA_CMD`"))
-end
-
-# ╔═╡ 8c9c0dfb-575c-479b-933e-28637cc78087
-check("`TipInTestTransient` warm, with compensation, signals `$LAMBDA_CYL` and `$LAMBDA_CMD`",
-      warm_exact, warm_off30, warm_open) do
-    exact, off30, open = worst_error(warm_exact), worst_error(warm_off30), worst_error(warm_open)
-    (exact < 0.01 && exact < off30 < open,
-        "worst λ error $(round(100exact; digits = 2)) % with exact estimates (below 1 %), " *
-        "$(round(100off30; digits = 1)) % with estimates 30 % low, " *
-        "$(round(100open; digits = 1)) % uncompensated (must lie between)")
+    captioned(p, "\"Both\" is the manifold model and the film compensation together." *
+        placeholder_note((warm_open, warm_film, warm_both, warm_off30, warm_live),
+        "`TipInTestTransient` with `with_air_model`, `with_comp`, `Xh`, `tauh`, signal `$LAMBDA_CYL`"))
 end
 
 # ╔═╡ e8b07dda-e228-49f5-86bc-492997169288
+check("`TipInTestTransient` warm, film only and both inversions, signal `$LAMBDA_CYL`",
+      warm_both, warm_film) do
+    both, film = worst_error(warm_both), worst_error(warm_film)
+    (both < 0.01 && both < film,
+        "worst λ error $(round(100both; digits = 2)) % with both inversions exact (below 1 %), " *
+        "$(round(100film; digits = 1)) % with the film compensation alone (must be larger)")
+end
+
+# ╔═╡ 48f37ad2-18af-452c-b798-2e47333f6764
 md"""
 ## 7 · Cold engine
 
@@ -344,7 +383,7 @@ excursion is larger. Warm-up enrichment (`F_cool`) shifts the whole mixture rich
 engine from stumbling, but does nothing for the transient: only the film compensation does.
 """
 
-# ╔═╡ 48f37ad2-18af-452c-b798-2e47333f6764
+# ╔═╡ d938698a-2d12-4f5f-8d54-1adbb5c21bb8
 let
     p = plot(; xlabel = "time [s]", ylabel = "λ error e [%]", legend = :topright,
         title = figure_title((warm_open, cold_open), "Tip-in without compensation, cold and warm"))
@@ -353,18 +392,18 @@ let
         plot!(p, t, 100 .* e; lw = 2.5, label, color)
     end
     captioned(p, "" * placeholder_note((warm_open, cold_open),
-        "`TipInTestTransient` with `T_cool`, signals `$LAMBDA_CYL` and `$LAMBDA_CMD`"))
-end
-
-# ╔═╡ d938698a-2d12-4f5f-8d54-1adbb5c21bb8
-check("`TipInTestTransient` cold and warm, without compensation, signals `$LAMBDA_CYL` and `$LAMBDA_CMD`",
-      cold_open, warm_open) do
-    cold, warm = lean_excursion(cold_open), lean_excursion(warm_open)
-    (cold > warm, "lean excursion cold $(round(100cold; digits = 1)) %, warm " *
-        "$(round(100warm; digits = 1)) %; cold must be larger")
+        "`TipInTestTransient` with `T_cool`, signal `$LAMBDA_CYL`"))
 end
 
 # ╔═╡ b750db65-c6d4-4120-980b-56ee86022769
+check("`TipInTestTransient` cold and warm, without compensation, signal `$LAMBDA_CYL`",
+      cold_open, warm_open) do
+    cold, warm = worst_error(cold_open), worst_error(warm_open)
+    (cold > warm, "worst λ error cold $(round(100cold; digits = 1)) %, warm " *
+        "$(round(100warm; digits = 1)) %; cold must be larger")
+end
+
+# ╔═╡ bd4b4fe5-2a81-4cae-bfbe-9b36f3388a2a
 md"""
 ### Acceleration enrichment, deceleration enleanment
 
@@ -375,7 +414,7 @@ ECU's injected mixture is richer than the cylinder's; on a tip-out it injects le
 describe what the injector does. The purpose is that the cylinder sees neither.
 """
 
-# ╔═╡ bd4b4fe5-2a81-4cae-bfbe-9b36f3388a2a
+# ╔═╡ 9f1bc987-1e1e-4309-8bdf-3e17e5cbe2ae
 md"""
 ## Honest numbers
 
@@ -386,14 +425,15 @@ ratio 14.7 (deck); the injector's static flow (Bosch EV14 datasheet).
 own datasheet.
 
 **Assumed.** The film parameters `X` and `τ_f` and their temperature dependence; the warm-up
-enrichment curve; the tip-in scenario. Each fixes the size of an excursion; none changes its
+enrichment curve; the tip-in scenario, with throttle openings chosen to keep the load inside
+the stoichiometric part of the map. Each fixes the size of an excursion; none changes its
 shape or the direction it goes.
 
 The 5 % and 1 % bands in the check cells are the task's acceptance criteria, not measurements of
 a real engine.
 """
 
-# ╔═╡ 9f1bc987-1e1e-4309-8bdf-3e17e5cbe2ae
+# ╔═╡ 22833249-3c73-430a-b19d-661799ddcefe
 md"""
 ## What this bought us
 
@@ -401,16 +441,17 @@ md"""
   inversion of the plant: air in, fuel out, at the λ the map asks for.
 - The map is stoichiometric where the catalyst needs it and rich only at full load and high
   speed, for power and for component protection.
-- The fuel film is plant dynamics the feed-forward must invert as well. Done exactly, it removes
-  the tip-in excursion; done approximately, it removes part of it. What it cannot remove is left
-  to a feedback loop.
+- Feed-forward has to invert every piece of plant between the sensor and the cylinder: here the
+  manifold filling and the fuel film. Inverting only one can make things worse, because their
+  errors partly cancel. Inverting both, exactly, removes the tip-in error; inverting them
+  approximately leaves part of it, and that part is left to a feedback loop.
 - The dead time is a property of the injector, not of the fuel: it depends on the battery.
 
 **Next: 05 — Inside an injector.** The formula's last term, `t_dead(U_batt)`, came from a table.
 The next notebook opens the injector and finds where that table comes from.
 """
 
-# ╔═╡ 22833249-3c73-430a-b19d-661799ddcefe
+# ╔═╡ 28590e83-2d80-47af-a7b5-b200eb34239d
 details("Model contract: what this notebook needs from the Dyad side", md"""
 Everything below is requested from Dyad task 3 (`docs/lecture-02-dyad-tasks.md`). Names in
 **bold** are not in that spec yet.
@@ -420,21 +461,23 @@ Everything below is requested from Dyad task 3 (`docs/lecture-02-dyad-tasks.md`)
 | Knob | Unit | Default | Values used here | Slider |
 |---|---|---|---|---|
 | **`omega_set`** | rad/s | 209.4 (2000 rpm) | 800–6000 rpm | – |
-| **`u_thr`** (before the tip-in) | – | 0.1 | 0–1 | – |
-| **`u_tip`** (after the tip-in) | – | 0.4 | 0.4 | – |
+| **`u_thr`** (before the tip-in) | – | 0.05 | 0–1 | – |
+| **`u_tip`** (after the tip-in) | – | 0.15 | 0.15 | – |
 | **`t_tip_in`**, **`t_tip_out`** | s | 1.0, 3.0 | 1, 3; 1000 and 2000 for steady runs | – |
 | `T_cool` | °C | 90 | 20, 90 | – |
+| **`with_air_model`** (structural; manifold model in `FuelMetering`) | Bool | false | false, true | – |
 | `with_comp` (structural) | Bool | false | false, true | – |
 | `Xh` | – | 0.3 | 0.3, 0.21, 0.3 × (1 + error) | error −50:10:50 % |
-| `tauh` | s | 0.2 | 0.2, 0.14 | – |
+| `tauh` | s | 0.2 | 0.2, 0.14, 0.2 × (1 + error) | error −50:10:50 % |
 | **`U_batt`** | V | 14 | 8–16 | – |
 | `stop` | s | 5.0 | 5.0; 0.5 for steady runs | – |
 
 | Signal read | Path | Unit |
 |---|---|---|
 | λ in the cylinder | `engine.lambda_cyl` | – |
-| λ the metering intends (target ÷ enrichment ÷ trim) | **`metering.lambda_cmd`** | – |
 | map target | **`metering.lambda_tgt`** | – |
+| air-mass sensor reading (throttle air flow), the metering's `mdot_air_meas` | `engine.mdot_thr` | kg/s |
+| cylinder air flow | `engine.mdot_cyl` | kg/s |
 | pulse width | `metering.t_inj` | s |
 | manifold pressure | `engine.p_m` | Pa |
 | throttle command | **`throttle.y`** | – |
@@ -444,14 +487,21 @@ Everything below is requested from Dyad task 3 (`docs/lecture-02-dyad-tasks.md`)
 | Check | Runs | Signals | Expected |
 |---|---|---|---|
 | map reproduction | 11 speeds × 9 throttles, warm, 14 V, steady | `metering.lambda_tgt`, `engine.p_m` | within 0.05 AFR of the transcribed map at the run's speed and load |
-| uncompensated tip-in | 2000 rpm, 10 → 40 %, warm | `engine.lambda_cyl`, `metering.lambda_cmd` | lean excursion ≥ 5 % |
-| compensated tip-in | same, `with_comp`, exact and 30 % low estimates | same | exact: worst error < 1 %; 30 % low lies between exact and uncompensated |
-| cold vs warm | same, uncompensated, 20 and 90 °C | same | cold excursion larger |
+| uncompensated tip-in | 2000 rpm, throttle 5 → 15 %, warm | `engine.lambda_cyl` (relative to its value just before the tip-in) | worst error, either direction, ≥ 5 % |
+| compensated tip-in | same, film only (`with_comp`) and both (`with_air_model` + `with_comp`), exact estimates | same | both: worst error below 1 %; film only: larger than both |
+| cold vs warm | same, uncompensated, 20 and 90 °C | same | cold worst error larger |
+
+`FuelMetering` reads the throttle air flow as `mdot_air_meas` (the air-mass sensor). With
+**`with_air_model`** it passes that reading through a copy of the manifold equation (the
+`IntakeManifold` and `CylinderAirflow` equations of task 1) and meters fuel for the estimated
+cylinder air; this is an addition to task 3. The harness
+should move the throttle plate with a short lag or ramp (an electronic throttle takes tens of
+milliseconds); an ideal step makes the air-mass reading, and so the fuel, jump without limit.
 """)
 
 # ╔═╡ Cell order:
-# ╟─155c6716-b6be-446a-9540-7c88b84e13ed
-# ╠═7d05873f-0b3d-4515-9525-709c3634a134
+# ╟─7d05873f-0b3d-4515-9525-709c3634a134
+# ╠═155c6716-b6be-446a-9540-7c88b84e13ed
 # ╟─88d04085-0de4-4de6-a096-7cf99e7dc116
 # ╠═18e73f8f-ddf9-43df-8b7f-9f142e484935
 # ╟─b7e4c116-9161-4af4-a73b-0937df41f4a1
@@ -467,13 +517,14 @@ Everything below is requested from Dyad task 3 (`docs/lecture-02-dyad-tasks.md`)
 # ╠═3ca1716c-f079-4bed-b720-c3205e5d31ec
 # ╠═30f49316-adc3-4798-80c0-b485d1798a7e
 # ╠═cc2d7860-d429-4f8d-98ad-ed3dd1016711
-# ╟─1fe46b56-5771-4580-a565-91be0f7058ff
-# ╠═40f06c8d-8fb4-4f0b-ae7a-c9ceac130159
+# ╠═1fe46b56-5771-4580-a565-91be0f7058ff
+# ╟─40f06c8d-8fb4-4f0b-ae7a-c9ceac130159
 # ╠═8c9c0dfb-575c-479b-933e-28637cc78087
-# ╟─e8b07dda-e228-49f5-86bc-492997169288
-# ╠═48f37ad2-18af-452c-b798-2e47333f6764
+# ╠═e8b07dda-e228-49f5-86bc-492997169288
+# ╟─48f37ad2-18af-452c-b798-2e47333f6764
 # ╠═d938698a-2d12-4f5f-8d54-1adbb5c21bb8
-# ╟─b750db65-c6d4-4120-980b-56ee86022769
+# ╠═b750db65-c6d4-4120-980b-56ee86022769
 # ╟─bd4b4fe5-2a81-4cae-bfbe-9b36f3388a2a
 # ╟─9f1bc987-1e1e-4309-8bdf-3e17e5cbe2ae
 # ╟─22833249-3c73-430a-b19d-661799ddcefe
+# ╟─28590e83-2d80-47af-a7b5-b200eb34239d

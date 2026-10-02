@@ -16,20 +16,6 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ 5316326f-6f92-4171-ab34-9d07bb1b47a1
-md"""
-# Lecture 2 · 05 — Inside an injector
-
-> **A pulse width is a command, not a quantity of fuel. The injector's electromagnetics and
-> mechanics decide what actually flows.**
-
-Notebook 04 ended with a formula that turns fuel into milliseconds, plus a dead time read from a
-table. This notebook opens the injector and finds the table inside it.
-
-**Model.** `Lecture2.InjectorPulseTransient` drives one `Vehicle.Engine.FuelInjector` from a
-battery through a low-side switch for one pulse, with the fuel rail 3 bar above the manifold.
-"""
-
 # ╔═╡ 60e4623c-a261-43fd-a3ad-0d51af35b770
 begin
     import Pkg
@@ -49,6 +35,20 @@ begin
     InjectorPulseTransient = bind_analysis(:InjectorPulseTransient, library; stubs)
     show_dyad = isnothing(stubs) ? Lecture01Support.show_dyad : stubs.show_dyad
 end
+
+# ╔═╡ 5316326f-6f92-4171-ab34-9d07bb1b47a1
+md"""
+# Lecture 2 · 05 — Inside an injector
+
+> **A pulse width is a command, not a quantity of fuel. The injector's electromagnetics and
+> mechanics decide what actually flows.**
+
+Notebook 04 ended with a formula that turns fuel into milliseconds, plus a dead time read from a
+table. This notebook opens the injector and finds the table inside it.
+
+**Model.** `Lecture2.InjectorPulseTransient` drives one `Vehicle.Engine.FuelInjector` from a
+battery through a low-side switch for one pulse, with the fuel rail 3 bar above the manifold.
+"""
 
 # ╔═╡ 7da36eb8-fa97-4c18-9544-dd82a1b7ae3a
 md"""
@@ -96,7 +96,8 @@ spray-orifice area, driven by the rail pressure:
 ```
 
 The coil resistance is 12 Ω and the static flow 146 cm³/min at 3 bar (Bosch EV14 datasheet). The
-needle travel stops at 0.06 mm, close to slide 43's 0.05 mm. The inductance curve, the needle
+needle travel stops at 0.05 mm, slide 43's figure, and the orifice is sized so that full lift
+gives the datasheet flow. The inductance curve, the needle
 mass and the spring are *(assumed)*: no manufacturer publishes them, and they are set so the
 opening dead time lands in the expected band.
 """
@@ -247,18 +248,41 @@ let
 end
 
 # ╔═╡ 68955cb3-5329-4289-8ff7-24dff2c3c635
-check("`InjectorPulseTransient` swept over `t_pulse` at 14 V and 8 V, signal `$FUEL_MASS`",
+check("`InjectorPulseTransient` swept over `t_pulse` at 14 V and 8 V, signals `$FUEL_MASS` and `$LIFT`",
       sweep_14, sweep_8) do
     long = PULSES .>= LINEAR_FROM
     m = fuel_per_pulse.(sweep_14[long])
     residual = maximum(abs.(fit_14.slope .* PULSES[long] .+ fit_14.intercept .- m) ./ m)
-    (0.6e-3 <= fit_14.t_dead <= 1.0e-3 && 1.5e-3 <= fit_8.t_dead <= 2.5e-3 && residual < 0.02,
-        "dead time $(round(1000fit_14.t_dead; digits = 3)) ms at 14 V (0.6–1.0), " *
-        "$(round(1000fit_8.t_dead; digits = 3)) ms at 8 V (1.5–2.5); straight line within " *
-        "$(round(100residual; digits = 2)) % above 2 ms (proposed band 2 %)")
+    opening_14 = pickup_dropout(last(sweep_14)).t_on
+    opening_8 = pickup_dropout(last(sweep_8)).t_on
+    (0.6e-3 <= fit_14.t_dead <= 1.0e-3 && 1.5e-3 <= fit_8.t_dead <= 2.5e-3 && residual < 0.02 &&
+     opening_14 > fit_14.t_dead && opening_8 > fit_8.t_dead,
+        "offset $(round(1000fit_14.t_dead; digits = 3)) ms at 14 V (0.6–1.0), " *
+        "$(round(1000fit_8.t_dead; digits = 3)) ms at 8 V (1.5–2.5); opening delay " *
+        "$(round(1000opening_14; digits = 3)) and $(round(1000opening_8; digits = 3)) ms (must " *
+        "exceed the offset); straight line within $(round(100residual; digits = 2)) % above 2 ms " *
+        "(proposed band 2 %)")
 end
 
 # ╔═╡ 4fad9943-2ca1-44d4-80ba-d8e7f69c9bd1
+md"""
+### Two dead times
+
+"Dead time" names two different numbers, and they are easy to confuse.
+
+- The **opening delay** is the pickup time `t_on` of slide 45: from the start of the pulse until
+  the needle is fully open. It is what the eye sees on the traces.
+- The **offset** is where the straight line above meets zero fuel. It is what the ECU adds to
+  every pulse (notebook 04), and what the EV14 table lists.
+
+They differ because the needle is also late to close. After the pulse ends it needs the dropout
+time `t_off` to return to its seat, and fuel keeps flowing meanwhile. That late fuel pays back
+part of the fuel lost while opening, so the offset is shorter than the opening delay. The
+expected band, 0.6–1.0 ms at 14 V from the EV14 table, belongs to the offset; the opening delay
+is only checked to be the longer of the two.
+"""
+
+# ╔═╡ 9a61b176-7e18-4a1e-b871-3e26f3dd6a72
 md"""
 ## 4 · Why the battery matters
 
@@ -271,12 +295,14 @@ t_\text{pick} = -\frac{L}{R}\,\ln\!\left(1 - \frac{i_\text{pick}\,R}{U_\text{bat
 ```
 
 which grows without bound as `U_batt` falls toward `i_pick R`: a weak battery cannot open the
-injector at all. The coil and the spring are the same at every voltage; only the end point of the
+injector at all. Near the bottom of the slider's range, 8 V, the injector is close to that limit,
+which is why the dead time climbs so steeply there; a car cranking on a weak battery lives in
+this corner. The slider stops at 8 V because that is where the EV14 table ends. The coil and the spring are the same at every voltage; only the end point of the
 current rise moves. That is why notebook 04's formula carries a battery-voltage correction, and
 why the correction is a curve rather than a constant.
 """
 
-# ╔═╡ 9a61b176-7e18-4a1e-b871-3e26f3dd6a72
+# ╔═╡ 4eaab806-1c5d-4760-a76c-8487898925df
 begin
     BATTERY = [8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]
     battery_sweeps = [pulse_sweep(U) for U in BATTERY]
@@ -284,22 +310,25 @@ begin
     EV14_DEAD_TIME = (U = [8.0, 12.0, 14.0, 16.0], t = [2.000, 0.903, 0.800, 0.558])
 end
 
-# ╔═╡ 4eaab806-1c5d-4760-a76c-8487898925df
+# ╔═╡ 767e17d8-c4c2-4783-b59e-3f871aa8569b
 let
+    battery_opening = [pickup_dropout(last(s)).t_on for s in battery_sweeps]
     p = plot(BATTERY, 1000 .* battery_dead; lw = 3, marker = :circle, color = :steelblue,
-        label = "model: intercept of the fuel line", xlabel = "battery voltage [V]",
+        label = "model: offset (intercept of the fuel line)", xlabel = "battery voltage [V]",
         ylabel = "dead time [ms]", legend = :topright,
         title = figure_title(battery_sweeps, "Dead time against battery voltage"))
+    plot!(p, BATTERY, 1000 .* battery_opening; lw = 2, ls = :dash, marker = :circle, color = :gray,
+        label = "model: opening delay t_on")
     scatter!(p, EV14_DEAD_TIME.U, EV14_DEAD_TIME.t; marker = :diamond, ms = 8, color = :darkorange,
         label = "EV14 table (retailer data, not verified at Bosch)")
     plot!(p, [13.5, 14.5], [0.6, 0.6]; fillrange = 1.0, color = :seagreen, alpha = 0.2, lw = 0,
         label = "expected bands")
     plot!(p, [7.5, 8.5], [1.5, 1.5]; fillrange = 2.5, color = :seagreen, alpha = 0.2, lw = 0, label = "")
-    captioned(p, "" * placeholder_note(battery_sweeps,
-        "`InjectorPulseTransient` swept over `t_pulse` and `U_batt`, signal `$FUEL_MASS`"))
+    captioned(p, "The bands apply to the offset." * placeholder_note(battery_sweeps,
+        "`InjectorPulseTransient` swept over `t_pulse` and `U_batt`, signals `$FUEL_MASS` and `$LIFT`"))
 end
 
-# ╔═╡ 767e17d8-c4c2-4783-b59e-3f871aa8569b
+# ╔═╡ 25ed2a9b-1588-4bac-92b2-3a23115670c8
 md"""
 ## 5 · Static flow
 
@@ -308,18 +337,18 @@ smallest EV14. It is the slope of the straight line above, and it is also what f
 needle sits on its stop during a long pulse.
 """
 
-# ╔═╡ 25ed2a9b-1588-4bac-92b2-3a23115670c8
+# ╔═╡ 928faeb1-a41a-47b4-9eba-a2a3861e68b3
 check("`InjectorPulseTransient` at 14 V, signals `$MDOT_INJ` and `$LIFT`", nominal) do
     _, mdot = signal(nominal, MDOT_INJ)
     _, x = signal(nominal, LIFT)
     q = maximum(mdot) / ENGINE.rho_f * 60e6
     x_max = maximum(x)
-    (abs(q / ENGINE.q_static - 1) <= 0.05 && abs(x_max / 0.06e-3 - 1) <= 0.02,
+    (abs(q / ENGINE.q_static - 1) <= 0.05 && abs(x_max / 0.05e-3 - 1) <= 0.02,
         "static flow $(round(q; digits = 1)) cm³/min, band 146 ± 5 %; maximum lift " *
-        "$(round(1000x_max; digits = 4)) mm against the 0.06 mm stop (within 2 %)")
+        "$(round(1000x_max; digits = 4)) mm against the 0.05 mm stop (within 2 %)")
 end
 
-# ╔═╡ 928faeb1-a41a-47b4-9eba-a2a3861e68b3
+# ╔═╡ 7441e392-71c0-4735-bfc5-6337e7e9a8f3
 md"""
 ## 6 · Switching off: the flyback
 
@@ -330,9 +359,10 @@ break down. Injector drivers clamp the voltage with a Zener diode, and the clamp
 trade-off: a higher clamp dissipates the stored energy faster and closes the needle sooner, at
 the price of more stress on the driver. The model has no ideal diode; its switch-off resistance
 is chosen so that the voltage clamps near 60–80 V *(assumed, the range of a real driver's Zener)*.
+That range is a design choice, so the notebook shows it and does not check it.
 """
 
-# ╔═╡ 7441e392-71c0-4735-bfc5-6337e7e9a8f3
+# ╔═╡ 635f8119-c558-4167-9bf9-10def058aa42
 let
     t, v = signal(live, V_SWITCH)
     _, i = signal(live, I_COIL)
@@ -345,12 +375,6 @@ let
         xlabel = "time [ms]", xlims = window)
     captioned(plot(p1, p2; layout = (2, 1), size = (620, 460), link = :x), "" *
         placeholder_note(live, "`InjectorPulseTransient` signals `$V_SWITCH` and `$I_COIL`"))
-end
-
-# ╔═╡ 635f8119-c558-4167-9bf9-10def058aa42
-check("`InjectorPulseTransient` at 14 V, signal `$V_SWITCH`", nominal) do
-    peak = maximum(last(signal(nominal, V_SWITCH)))
-    (60 <= peak <= 80, "flyback peak $(round(peak; digits = 1)) V; design band 60–80 V (assumed clamp)")
 end
 
 # ╔═╡ 2fc120b8-1c13-450f-ad24-f39afb98dcb7
@@ -368,7 +392,8 @@ data and is not in Bosch's own datasheet. The bands for the dead time are built 
 diameter, and the switch-off resistance. No manufacturer publishes them. They are set so the
 dead time lands in its band, so the dead time this notebook reproduces is a calibration target,
 not a prediction. What the model does predict is the shape: the kink, the ballistic region, and
-the dead time's rise as the battery weakens.
+the dead time's rise as the battery weakens, and the difference between the opening delay and
+the offset.
 """
 
 # ╔═╡ 342e64d9-d669-4613-96e8-2d1953c5a285
@@ -378,7 +403,8 @@ md"""
 - An injector opens late because the coil current needs time to reach the force that beats the
   spring. That time is the dead time, and it depends on the battery voltage.
 - Above about 2 ms the fuel per pulse is a straight line offset by the dead time, which is
-  exactly the form notebook 04's formula assumes. Below it the needle never settles, and the
+  exactly the form notebook 04's formula assumes. That offset is shorter than the opening delay,
+  because the needle also closes late. Below it the needle never settles, and the
   formula stops being true.
 - The current trace carries a signature of the needle's motion, and the switch-off needs a clamp
   to survive the coil's stored energy.
@@ -414,9 +440,10 @@ Everything below is requested from Dyad task 4 (`docs/lecture-02-dyad-tasks.md`)
 
 | Check | Runs | Signals | Expected |
 |---|---|---|---|
-| dead time and linearity | `t_pulse` 0.5–8 ms at 14 V and 8 V | `fuel_mass.y` | intercept of the fit over ≥ 2 ms: 0.6–1.0 ms at 14 V, 1.5–2.5 ms at 8 V; fit within 2 % above 2 ms |
-| static flow and stop | 3 ms at 14 V | `injector.mdot_f`, `injector.lift` | 146 cm³/min ± 5 %; maximum lift within 2 % of 0.06 mm |
-| flyback | 3 ms at 14 V | `switch.v` | peak 60–80 V |
+| dead time and linearity | `t_pulse` 0.5–8 ms at 14 V and 8 V | `fuel_mass.y`, `injector.lift` | offset (intercept of the fit over ≥ 2 ms): 0.6–1.0 ms at 14 V, 1.5–2.5 ms at 8 V; opening delay longer than the offset; fit within 2 % above 2 ms |
+| static flow and stop | 3 ms at 14 V | `injector.mdot_f`, `injector.lift` | 146 cm³/min ± 5 %; maximum lift within 2 % of 0.05 mm (slide 43; the spec says 0.06) |
+
+The flyback plot reads `switch.v` and has no check: its 60–80 V clamp is a design choice.
 """)
 
 # ╔═╡ Cell order:
@@ -436,12 +463,12 @@ Everything below is requested from Dyad task 4 (`docs/lecture-02-dyad-tasks.md`)
 # ╠═055e9a18-a622-4b70-918d-48f9782f1c9d
 # ╠═68955cb3-5329-4289-8ff7-24dff2c3c635
 # ╟─4fad9943-2ca1-44d4-80ba-d8e7f69c9bd1
-# ╠═9a61b176-7e18-4a1e-b871-3e26f3dd6a72
+# ╟─9a61b176-7e18-4a1e-b871-3e26f3dd6a72
 # ╠═4eaab806-1c5d-4760-a76c-8487898925df
-# ╟─767e17d8-c4c2-4783-b59e-3f871aa8569b
-# ╠═25ed2a9b-1588-4bac-92b2-3a23115670c8
-# ╟─928faeb1-a41a-47b4-9eba-a2a3861e68b3
-# ╠═7441e392-71c0-4735-bfc5-6337e7e9a8f3
+# ╠═767e17d8-c4c2-4783-b59e-3f871aa8569b
+# ╟─25ed2a9b-1588-4bac-92b2-3a23115670c8
+# ╠═928faeb1-a41a-47b4-9eba-a2a3861e68b3
+# ╟─7441e392-71c0-4735-bfc5-6337e7e9a8f3
 # ╠═635f8119-c558-4167-9bf9-10def058aa42
 # ╟─2fc120b8-1c13-450f-ad24-f39afb98dcb7
 # ╟─342e64d9-d669-4613-96e8-2d1953c5a285

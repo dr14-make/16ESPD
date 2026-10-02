@@ -25,7 +25,7 @@ export ENGINE, rpm, rad_per_s, kpa,
     LAMBDA_MEAS, LOOP_DELAY,
     RAMP_LAMBDA, RAMP_V_SWITCHING, RAMP_I_PUMP, RAMP_LAMBDA_MEAS,
     OMEGA, P_M, MDOT_THR, MDOT_CYL, TAU_E, ETA_B, MDOT_FUEL, U_THR,
-    T_INJ, MDOT_F_CMD, LAMBDA_TGT, LAMBDA_CMD, M_FILM,
+    T_INJ, MDOT_F_CMD, LAMBDA_TGT, M_FILM,
     ACTIVATION, I_COIL, LIFT, MDOT_INJ, FUEL_MASS, V_SWITCH
 
 # ---------------------------------------------------------------------------------------
@@ -97,8 +97,6 @@ const T_INJ = "metering.t_inj"
 const MDOT_F_CMD = "metering.mdot_f_cmd"
 "λ target read from the slide 44 map."
 const LAMBDA_TGT = "metering.lambda_tgt"
-"λ the metering intends, target divided by warm-up enrichment and trim."
-const LAMBDA_CMD = "metering.lambda_cmd"
 "Fuel mass held in the port-wall film [kg]."
 const M_FILM = "engine.film.m_film"
 
