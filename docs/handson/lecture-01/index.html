@@ -210,8 +210,8 @@
       three facts: two parts with their parameters, one wire.</figcaption></figure>
   </div>
   <figure class="shot-img">
-    <a href="img/step01-engine-two-views.png"><img src="img/step01-engine-two-views.png" alt="Engine in Dyad Studio: the diagram view on the left and the code view on the right are the same component." loading="lazy"></a>
-    <figcaption>Same model, two views: each block in the diagram is one line under <code>component Engine</code>, and each wire is one <code>connect</code> under <code>relations</code>.</figcaption>
+    <a href="img/step01-engine-two-views.png"><img src="img/step01-engine-two-views.png" alt="Tour in Dyad Studio: delay and lag wired in the diagram with the delay parameter panel open, and the same component in the code view." loading="lazy"></a>
+    <figcaption>Same model, two views: each block in the diagram is one line under <code>component</code>, the wire is the one <code>connect</code> under <code>relations</code>, and the values in the parameter panel are the arguments in parentheses.</figcaption>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
@@ -226,12 +226,14 @@
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The code view shows the two declarations and one <code>connect(delay.y, lag.u)</code>, matching the box on the right above. Keep this component open: step 2 finishes it.</p></div>
   <details class="solution">
-  <summary>Stuck? The lines you should see</summary>
-  <p class="small muted">Excerpt of <code>dyad/HandsOn/Engine.dyad</code>, verbatim. The full
-    component is the solution to step 2.</p>
-  <div class="code"><button class="copy" type="button">Copy</button><pre><code>  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/Tour.dyad</code>, metadata block omitted. Yours is called <code>Engine</code>; the reference copy is <code>Tour</code> only so it can sit next to the finished <code>Engine</code> of step 2.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>component Tour
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
   lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
-  connect(delay.y, lag.u) {^id2}</code></pre></div>
+relations
+  connect(delay.y, lag.u) {^id1}
+end</code></pre></div>
 </details>
 </section>
 <section class="step" id="engine">

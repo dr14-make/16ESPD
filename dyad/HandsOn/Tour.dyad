@@ -1,0 +1,21 @@
+"""
+Step 1 of the hands-on: two blocks and one wire, to show that the diagram and the code are the
+same model. The delay's input is left open; step 2 finishes this into `Engine`.
+"""
+component Tour
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
+  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
+relations
+  connect(delay.y, lag.u) {^id1}
+metadata {
+  "_links": {
+    "delay": {
+      "Dyad": {"placement": {"diagram": {"x1": 250, "x2": 450, "y1": 400, "y2": 600}}}
+    },
+    "lag": {
+      "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 750, "y1": 400, "y2": 600}}}
+    },
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
+end
