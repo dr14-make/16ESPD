@@ -7,8 +7,8 @@
 
 <!-- Self-contained by design, like the rest of the site: no stylesheet, script or font is loaded
      from anywhere, so the page opens from a memory stick with no network.
-     Each diagram is drawn from the placement metadata of its model in dyad/HandsOn, and each
-     solution panel is that model's source; a change to a model must be carried over here. -->
+     Each screenshot shows a model in dyad/HandsOn and each solution panel is that model's source;
+     a change to a model must be carried over to both. -->
 <style>
   :root {
     --ink: #16202c; --soft: #4a5a6b; --rule: #d7dde6; --accent: #1f5fa8;
@@ -44,10 +44,13 @@
 
   nav.toc ol { padding-left: 1.4em; margin: 0; }
   nav.toc li { margin: 2px 0; }
+  nav.toc ul.toc-plain { list-style: none; padding-left: 1.4em; margin: 0; }
+  nav.toc h2 + ul, nav.toc h2 + ol { margin-top: 4px; }
+  nav.toc h2 { font-size: 1.05em; margin: 14px 0 4px; }
+  kbd { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.85em; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 0.35em; background: #fff; }
   .budget { font-size: 0.62em; letter-spacing: 0.06em; border: 1px solid currentColor;
             border-radius: 999px; padding: 0.1em 0.6em; white-space: nowrap; color: var(--accent);
             vertical-align: middle; font-weight: 400; }
-  .budget.home { color: var(--soft); }
 
   .step { background: #fff; border: 1px solid var(--rule); border-radius: 8px;
           padding: 4px 22px 18px; margin: 28px 0; }
@@ -68,11 +71,6 @@
 
   figure { margin: 10px 0; }
   figcaption { font-size: 0.82em; color: var(--soft); margin-top: 4px; }
-  svg.diagram { width: 100%; height: auto; max-height: 560px; background: #fff;
-                border: 1px solid var(--rule); border-radius: 6px; display: block; }
-  .twoviews { display: grid; grid-template-columns: 1fr; gap: 6px; }
-  .twoviews > * { min-width: 0; }
-  .twoviews svg.diagram { max-width: 520px; }
 
   .shot-img { margin: 12px 0; }
   .shot-img img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; }
@@ -125,58 +123,101 @@
   <div class="wrap">
     <a class="back" href="../../index.html">← Vehicle Systems &amp; Components</a>
     <h1>Lecture 1 hands-on: build the car</h1>
-    <p>From an empty Dyad library to the car the notebooks drive — 90 minutes in Dyad Studio</p>
+    <p>From a first look at Dyad Studio to a car spinning its wheel on a slippery road</p>
   </div>
 </header>
 
 <div class="wrap">
 
-  <p>You build the longitudinal car of notebook 01 from standard-library parts, one component at
-    a time, mostly in the diagram editor. At the end of step 5 your car reaches the same terminal
-    speed as the course model <code>Vehicle.CarPlant</code>. Step 6 gives its wheel inertia. Steps
-    7–10 are for home or for anyone who finishes early: they need equations, and end with the car
-    spinning its wheel on a slippery road.</p>
+  <p><strong>Part 1</strong> introduces Dyad Studio: what the extension adds to VS Code, where
+    its controls are, and how a diagram and its code are one model. <strong>Part 2</strong> builds
+    the longitudinal car of notebook 01 from standard-library parts, one component per step, mostly
+    in the diagram editor. At the end of step 5 your car reaches the same terminal speed as the
+    course model <code>Vehicle.CarPlant</code>; step 6 gives its wheel inertia; steps 7–10 add
+    equations of your own and end with the car spinning its wheel on a slippery road.</p>
   <p class="small muted">Every component here exists in the course repository under
     <code>dyad/HandsOn/</code>, and every number in a checkpoint was read off a run of it.
-    The budgets add up to 85 minutes, which leaves 5 minutes of slack in a 90-minute session.</p>
+    The budgets add up to 155 minutes: 30 for Part 1 and 125 for Part 2.</p>
 
   <nav class="toc">
-    <h2>Steps</h2>
+    <h2>Part 1 — Dyad Studio and the extension</h2>
+    <ul class="toc-plain">
+<li><a href="#ui">What you are looking at</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#library">Create your library</a> <span class="muted small">— 10 min</span></li>
+    </ul>
     <ol>
 <li><a href="#tour">Tour: one model, two views</a> <span class="muted small">— 10 min</span></li>
+    </ol>
+    <h2>Part 2 — Build the car</h2>
+    <ol start="2">
 <li><a href="#engine">Engine</a> <span class="muted small">— 20 min</span></li>
 <li><a href="#driveline">Driveline</a> <span class="muted small">— 10 min</span></li>
 <li><a href="#body">Body</a> <span class="muted small">— 15 min</span></li>
 <li><a href="#car">Car: full throttle to terminal speed</a> <span class="muted small">— 20 min</span></li>
 <li><a href="#wheel-inertia">A wheel with inertia</a> <span class="muted small">— 10 min</span></li>
-<li><a href="#grade">A road with a gradient</a> <span class="muted small">— take-home</span></li>
-<li><a href="#tire-curve">Tire friction against slip</a> <span class="muted small">— take-home</span></li>
-<li><a href="#slip-wheel">A wheel that can slip</a> <span class="muted small">— take-home</span></li>
-<li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— take-home</span></li>
+<li><a href="#grade">A road with a gradient</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#tire-curve">Tire friction against slip</a> <span class="muted small">— 15 min</span></li>
+<li><a href="#slip-wheel">A wheel that can slip</a> <span class="muted small">— 15 min</span></li>
+<li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— 10 min</span></li>
     </ol>
   </nav>
 
-  <section id="before-class">
-    <h2>Before class</h2>
-    <div class="note">
-      <span class="label">Do this at home — it downloads a lot</span>
-      <ul class="checklist">
-        <li>Dyad Studio is installed in VS Code and you are signed in.</li>
-        <li>You have created a new, empty Dyad library (call it <code>MyCar</code>) with the
-          command palette's <strong>Dyad: Create Component Library</strong>.</li>
-        <li><code>Pkg.instantiate()</code> has finished in that library's environment. The first run
-          downloads and precompiles the standard libraries, which can take a long time.</li>
-        <li>In a diagram, the <strong>+</strong> (<strong>Add component</strong>) button lists <code>BlockComponents</code>,
-          <code>RotationalComponents</code> and <code>TranslationalComponents</code>, and you can
-          expand them.</li>
-      </ul>
-    </div>
-    <p class="small muted">Names in this guide are the ones the reference models use. Keep them:
-      the checkpoints name signals such as <code>car.v_kmh</code>, and a different instance name
-      means a different signal name.</p>
-  </section>
+  <div class="divider"><h2>Part 1 — Dyad Studio and the extension</h2><p class="muted">What the tool is, where its controls are · 30 min</p></div>
 
-  <div class="divider"><h2>In class</h2><p class="muted">Steps 1–6 · diagram editor first</p></div>
+<section class="step" id="ui">
+  <h2>What you are looking at <span class="budget">10 min</span></h2>
+  <p class="goal">Dyad Studio is a VS Code extension: you draw or write models in the Dyad language, and it compiles them to Julia and simulates them.</p>
+  <h3>Three ideas</h3>
+  <ul>
+    <li><strong>A library is a folder.</strong> Your models live as <code>.dyad</code> files under
+      <code>dyad/</code>. The extension compiles them into Julia under <code>generated/</code> — never
+      edit that folder by hand; it is rewritten on every compile. The folder is also a Julia package,
+      so <code>using MyCar</code> loads your models in a Julia REPL.</li>
+    <li><strong>A component is a model; an analysis is an experiment on one.</strong> A component
+      says what the system is — parts, wires, equations. An analysis says what to do with it — for
+      example simulate for 300 s. You can only simulate a component whose inputs are all driven, so
+      every experiment gets a small test bench component around the thing you built.</li>
+    <li><strong>Diagram and code are the same file.</strong> Every block you place is a line of code,
+      every wire a <code>connect</code>. Step 01 shows it.</li>
+  </ul>
+  <h3>Where things are</h3>
+  <figure class="shot-img">
+    <a href="img/dyad-studio-map.png"><img src="img/dyad-studio-map.png" alt="Dyad Studio with four numbered arrows: the Components panel and the Analyses panel in the Dyad sidebar, and the Run Analysis and Toggle Between Code and Diagram View buttons in the editor title bar." loading="lazy"></a>
+    <figcaption><strong>1</strong> <strong>Components</strong> panel in the Dyad sidebar: right-click your library → <strong>Add Component</strong>.
+      <strong>2</strong> <strong>Analyses</strong> panel: right-click → <strong>Add Analysis</strong>; the ▷ beside an analysis runs it.
+      <strong>3</strong> ▷ <strong>Run Analysis</strong>, in the editor title bar of an open analysis.
+      <strong>4</strong> ⇄ <strong>Toggle Between Code and Diagram View</strong>. Bottom right, under <strong>Julia Commands</strong>: <strong>Dyad Compile</strong>, if saving does not compile. Ignore the plot in this picture: step 2 shows why it is unreadable and what to do instead.</figcaption>
+  </figure>
+  <figure class="shot-img">
+    <a href="img/dyad-studio-add-component.png"><img style="max-width:520px" src="img/dyad-studio-add-component.png" alt="The diagram toolbar's plus button opened: a search box above a tree of libraries — Dyad, RotationalComponents, BlockComponents, ElectricalComponents, ThermalComponents, TranslationalComponents, HydraulicComponents and the student's own library." loading="lazy"></a>
+    <figcaption>The <strong>+</strong> (<strong>Add component</strong>) button in the diagram toolbar: search for a part by name, or open a library and walk the path the parts table gives. <code>Dyad</code> holds the ports (<code>RealInput</code>, <code>Spline</code>, <code>Flange</code>); your own library is at the bottom. The sliders button next to it is <strong>Edit Parameters</strong>.</figcaption>
+  </figure>
+  <ul>
+    <li>The <strong>Dyad</strong> sidebar (the Dyad icon in the activity bar) holds four panels:
+      <strong>Actions</strong>, <strong>Components</strong>, <strong>Analyses</strong> and
+      <strong>Notebooks</strong>. The <strong>Actions</strong> title bar has <strong>Dyad: Open Julia
+      REPL</strong>, which you need for plotting.</li>
+    <li>Saving a <code>.dyad</code> file compiles it. If the <strong>Analyses</strong> panel does not
+      pick up a change, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>,
+      beside the terminal.</li>
+    <li>Results of a run appear in a <strong>Julia Plots</strong> pane.</li>
+  </ul>
+</section>
+
+<section class="step" id="library">
+  <h2>Create your library <span class="budget">10 min</span></h2>
+  <p class="goal">An empty library of your own, with the standard libraries downloaded, so that step 01 can start placing parts.</p>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Open the command palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>) and run <strong>Dyad: Create Component Library</strong>. Call the library <code>MyCar</code> and pick an empty folder; VS Code opens it.</li>
+<li>Wait for the dependencies. The extension runs <code>Pkg.instantiate()</code> in the terminal by itself; the first time it downloads and precompiles the standard libraries, which takes several minutes. If you can, do this step before the session.</li>
+<li>Open the <strong>Dyad</strong> sidebar and find <code>MyCar</code> in the <strong>Components</strong> panel. It holds the example models the template ships with; leave them, they do no harm.</li>
+  </ol>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The terminal has finished instantiating without errors, and <code>MyCar</code> appears in the <strong>Components</strong> panel.</p></div>
+  <p class="small muted">Names in this guide are the ones the reference models use. Keep them:
+    the checkpoints name signals such as <code>car.v_kmh</code>, and a different instance name
+    means a different signal name.</p>
+</section>
 
 <section class="step" id="tour">
   <h2><span class="no">01</span> Tour: one model, two views <span class="budget">10 min</span></h2>
@@ -189,41 +230,10 @@
 <tr><td><code>lag</code></td><td>BlockComponents › Continuous › FirstOrder</td><td><code>T = 0.3</code></td></tr>
   </tbody>
 </table></div>
-  <h3>Target diagram</h3>
-  <div class="twoviews">
-    <figure class="diagram-fig"><svg class="diagram" viewBox="50 420 410 200" role="img" aria-label="delay wired to lag" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="210,500 300,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="110" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="160" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">PadeDelay</text>
-    <rect x="201" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="300" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="350" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">FirstOrder</text>
-    <rect x="291" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <text x="160" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">delay</text>
-    <text x="222" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="350" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">lag</text>
-    <text x="288" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
-  </svg><figcaption>Diagram view</figcaption></figure>
-    <figure class="diagram-fig"><div class="code"><pre><code>  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
-  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
-  connect(delay.y, lag.u) {^id2}</code></pre></div><figcaption>Code view — the same
-      three facts: two parts with their parameters, one wire.</figcaption></figure>
-  </div>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step01-engine-two-views.png"><img src="img/step01-engine-two-views.png" alt="Tour in Dyad Studio: delay and lag wired in the diagram with the delay parameter panel open, and the same component in the code view." loading="lazy"></a>
     <figcaption>Same model, two views: each block in the diagram is one line under <code>component</code>, the wire is the one <code>connect</code> under <code>relations</code>, and the values in the parameter panel are the arguments in parentheses.</figcaption>
-  </figure>
-  <h3>Where things are</h3>
-  <figure class="shot-img">
-    <a href="img/dyad-studio-map.png"><img src="img/dyad-studio-map.png" alt="Dyad Studio with four numbered arrows: the Components panel and the Analyses panel in the Dyad sidebar, and the Run Analysis and Toggle Between Code and Diagram View buttons in the editor title bar." loading="lazy"></a>
-    <figcaption><strong>1</strong> <strong>Components</strong> panel in the Dyad sidebar: right-click your library → <strong>Add Component</strong>.
-      <strong>2</strong> <strong>Analyses</strong> panel: right-click → <strong>Add Analysis</strong>; the ▷ beside an analysis runs it.
-      <strong>3</strong> ▷ <strong>Run Analysis</strong>, in the editor title bar of an open analysis.
-      <strong>4</strong> ⇄ <strong>Toggle Between Code and Diagram View</strong>. Bottom right, under <strong>Julia Commands</strong>: <strong>Dyad Compile</strong>, if saving does not compile. Ignore the plot in this picture: step 2 shows why it is unreadable.</figcaption>
-  </figure>
-  <figure class="shot-img">
-    <a href="img/dyad-studio-add-component.png"><img style="max-width:520px" src="img/dyad-studio-add-component.png" alt="The diagram toolbar's plus button opened: a search box above a tree of libraries — Dyad, RotationalComponents, BlockComponents, ElectricalComponents, ThermalComponents, TranslationalComponents, HydraulicComponents and the student's own library." loading="lazy"></a>
-    <figcaption>The <strong>+</strong> (<strong>Add component</strong>) button in the diagram toolbar: search for a part by name, or open a library and walk the path the parts table gives. <code>Dyad</code> holds the ports (<code>RealInput</code>, <code>Spline</code>, <code>Flange</code>); your own library is at the bottom. The sliders button next to it is <strong>Edit Parameters</strong>.</figcaption>
   </figure>
   <h3>Do this</h3>
   <ol class="actions">
@@ -236,7 +246,7 @@
 <li>Change <code>T = 0.3</code> to <code>T = 0.5</code> in the code, switch back to the diagram, and check the parameter of <code>lag</code>. Set it back to 0.3. One model, two views: whichever you edit, the other follows.</li>
   </ol>
   
-  <div class="checkpoint"><span class="label">Checkpoint</span><p>The code view shows the two declarations and one <code>connect(delay.y, lag.u)</code>, matching the box on the right above. Keep this component open: step 2 finishes it.</p></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The code view shows the two declarations and one <code>connect(delay.y, lag.u)</code>, matching the code half of the screenshot above. Keep this component open: step 2 finishes it.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Tour.dyad</code>, metadata block omitted. Yours is called <code>Engine</code>; the reference copy is <code>Tour</code> only so it can sit next to the finished <code>Engine</code> of step 2.</p>
@@ -248,6 +258,8 @@ relations
 end</code></pre></div>
 </details>
 </section>
+<div class="divider"><h2>Part 2 — Build the car</h2><p class="muted">Steps 2–10 · one component per step · 125 min</p></div>
+
 <section class="step" id="engine">
   <h2><span class="no">02</span> Engine <span class="budget">20 min</span></h2>
   <p class="goal">Finish the engine — torque command in, shaft torque out through a delay, a lag and a 150 N·m ceiling — and watch it answer a step.</p>
@@ -272,80 +284,7 @@ end</code></pre></div>
 <tr><td><code>mounts</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
   </tbody>
 </table></div>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-90 420 1170 660" role="img" aria-label="Diagram of Engine" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="-10,500 110,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="210,500 300,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="400,500 490,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="590,500 680,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="780,500 1000,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="730,550 730,1000 500,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="110" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="160" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">PadeDelay</text>
-    <rect x="101" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="201" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="300" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="350" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">FirstOrder</text>
-    <rect x="291" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="391" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="490" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="540" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Limiter</text>
-    <rect x="481" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="581" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="680" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="730" y="496.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Torque</text>
-    <text x="730" y="515.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Source</text>
-    <rect x="771" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="721" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="671" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <polygon points="-32,476 14,500 -32,524" fill="#1f5fa8"/>
-    <rect x="978" y="478" width="44" height="44" fill="#4a5a6b"/>
-    <rect x="478" y="978" width="44" height="44" fill="#4a5a6b"/>
-    <text x="160" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">delay</text>
-    <text x="98" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
-    <text x="222" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="350" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">lag</text>
-    <text x="288" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
-    <text x="412" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="540" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">limiter</text>
-    <text x="478" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
-    <text x="602" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="730" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">torque</text>
-    <text x="792" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="742" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="668" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau</text>
-    <text x="-10" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">tau_cmd</text>
-    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">spline</text>
-    <text x="500" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">support</text>
-  </svg><figcaption>Engine</figcaption></figure><figure class="diagram-fig"><svg class="diagram" viewBox="40 420 720 450" role="img" aria-label="Diagram of EngineStep" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="200,500 349,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="450,500 600,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="400,550 400,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="100" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="150" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Step</text>
-    <rect x="191" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="350" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="400" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Engine</text>
-    <rect x="441" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="391" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="340" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="600" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="650" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
-    <rect x="591" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="350" y="700" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="400" y="755.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
-    <rect x="391" y="691" width="18" height="18" fill="#4a5a6b"/>
-    <text x="150" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cmd</text>
-    <text x="212" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="400" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">engine</text>
-    <text x="462" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="412" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="337" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
-    <text x="650" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">load</text>
-    <text x="588" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
-    <text x="400" y="830" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mounts</text>
-    <text x="412" y="688" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-  </svg><figcaption>EngineStep, the test bench</figcaption></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step02-engine-step.png"><img src="img/step02-engine-step.png" alt="EngineStep test harness: a step source drives the engine into a unit inertia held by fixed mounts." loading="lazy"></a>
     <figcaption>The test harness: <code>cmd</code> steps the torque command above the ceiling, <code>load</code> is a 1 kg·m² inertia, and <code>EngineStepTransient</code> at the bottom of the code runs it for 3 s.</figcaption>
@@ -359,7 +298,7 @@ end</code></pre></div>
 <li>In <code>Engine</code>, add <code>limiter</code> and <code>torque</code> and wire <code>lag.y → limiter.u → torque.tau</code>.</li>
 <li>Add the three ports from the table and wire them: <code>tau_cmd → delay.u</code>, <code>torque.spline → spline</code>, <code>torque.support → support</code>.</li>
 <li>Set the limiter to <code>y_max = 150</code>, <code>y_min = 0</code>: the engine cannot brake through this path.</li>
-<li>An engine with an unconnected input cannot be simulated, so build a test bench. Create a component <code>EngineStep</code>, drop in your <code>Engine</code> from your own library, and add <code>cmd</code>, <code>load</code> and <code>mounts</code>. Wire it as drawn.</li>
+<li>An engine with an unconnected input cannot be simulated, so build a test bench. Create a component <code>EngineStep</code>, drop in your <code>Engine</code> from your own library, and add <code>cmd</code>, <code>load</code> and <code>mounts</code>. Wire it as in the screenshot above.</li>
 <li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines highlighted in the block below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block. Save; it appears in the <strong>Analyses</strong> panel. If it does not, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>, beside the terminal: auto-compile on save can be switched off.</li>
 <li>Run <code>EngineStepTransient</code> with the ▷ beside it in the <strong>Analyses</strong> panel, then plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
@@ -459,44 +398,7 @@ end</code></pre></div>
 <tr><td><code>wheel</code></td><td>RotationalComponents › Components › IdealRollingWheel</td><td><code>radius = 0.31</code></td></tr>
   </tbody>
 </table></div>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-70 420 1150 660" role="img" aria-label="Diagram of Driveline" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="10,500 330,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="430,500 520,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="620,500 1000,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="380,550 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="535,550 535,590 380,590 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="605,550 605,1000 610,1000" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="330" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="380" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">IdealGear</text>
-    <rect x="321" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="421" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="371" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="520" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="570" y="497.2" text-anchor="middle" font-size="14" fill="#4a5a6b">Ideal</text>
-    <text x="570" y="512.6" text-anchor="middle" font-size="14" fill="#4a5a6b">RollingWheel</text>
-    <rect x="611" y="491" width="18" height="18" fill="#256b42"/>
-    <rect x="511" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="526" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="596" y="541" width="18" height="18" fill="#256b42"/>
-    <rect x="-12" y="478" width="44" height="44" fill="#4a5a6b"/>
-    <rect x="358" y="978" width="44" height="44" fill="#4a5a6b"/>
-    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
-    <rect x="588" y="978" width="44" height="44" fill="#256b42"/>
-    <text x="380" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gear</text>
-    <text x="318" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
-    <text x="442" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
-    <text x="392" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="570" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
-    <text x="632" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="508" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="523" y="576" text-anchor="end" font-size="15" fill="#4a5a6b">support_r</text>
-    <text x="617" y="576" text-anchor="start" font-size="15" fill="#256b42">support_t</text>
-    <text x="10" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">spline</text>
-    <text x="380" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">support_r</text>
-    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
-    <text x="610" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">support_t</text>
-  </svg></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step03-driveline.png"><img src="img/step03-driveline.png" alt="Driveline diagram: spline into an ideal gear, then an ideal rolling wheel out to the flange, with both supports brought out." loading="lazy"></a>
     <figcaption>The finished <code>Driveline</code>. Rotational ports are gray circles and translational ports are green squares: the rolling wheel is where one becomes the other.</figcaption>
@@ -556,62 +458,7 @@ end</code></pre></div>
 <tr><td><code>ground</code></td><td>TranslationalComponents › Components › Fixed</td><td>—</td></tr>
   </tbody>
 </table></div>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-80 -10 1160 1170" role="img" aria-label="Diagram of Body" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="1000,500 410,500 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="450,600 410,600 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="250,300 390,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="390,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <circle cx="390" cy="300" r="9" fill="#256b42"/>
-    <polyline points="500,650 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="200,350 200,720 500,720" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="500,720 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <circle cx="500" cy="720" r="9" fill="#256b42"/>
-    <polyline points="120,70 140,70 140,270 150,270" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="80,500 115,500 115,325 150,325" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="660" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="710" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Mass</text>
-    <rect x="651" y="291" width="18" height="18" fill="#256b42"/>
-    <rect x="450" y="550" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="500" y="597.6" text-anchor="middle" font-size="12" fill="#4a5a6b">QuadraticSpeed</text>
-    <text x="500" y="610.8" text-anchor="middle" font-size="12" fill="#4a5a6b">DependentForce</text>
-    <rect x="441" y="591" width="18" height="18" fill="#256b42"/>
-    <rect x="491" y="641" width="18" height="18" fill="#256b42"/>
-    <rect x="150" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="200" y="296.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Rolling</text>
-    <text x="200" y="315.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Resistance</text>
-    <rect x="141" y="261" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="241" y="291" width="18" height="18" fill="#256b42"/>
-    <rect x="141" y="316" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="191" y="341" width="18" height="18" fill="#256b42"/>
-    <rect x="20" y="20" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="70" y="75.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="111" y="61" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="-20" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="30" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="71" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="450" y="990" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="500" y="1045.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
-    <rect x="491" y="981" width="18" height="18" fill="#256b42"/>
-    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
-    <text x="710" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mass</text>
-    <text x="648" y="288" text-anchor="end" font-size="15" fill="#256b42">flange_a</text>
-    <text x="500" y="538" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">drag</text>
-    <text x="438" y="588" text-anchor="end" font-size="15" fill="#256b42">flange</text>
-    <text x="512" y="676" text-anchor="start" font-size="15" fill="#256b42">support</text>
-    <text x="200" y="238" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rolling</text>
-    <text x="138" y="258" text-anchor="end" font-size="15" fill="#1f5fa8">cr</text>
-    <text x="262" y="326" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="138" y="313" text-anchor="end" font-size="15" fill="#1f5fa8">inclination</text>
-    <text x="212" y="376" text-anchor="start" font-size="15" fill="#256b42">support</text>
-    <text x="70" y="150" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cr_const</text>
-    <text x="132" y="96" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="30" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">incl_const</text>
-    <text x="92" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="500" y="1120" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">ground</text>
-    <text x="512" y="978" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
-  </svg></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step04-body.png"><img src="img/step04-body.png" alt="Body diagram: mass, quadratic drag and rolling resistance on one flange, with constants feeding the rolling coefficient and inclination." loading="lazy"></a>
     <figcaption>The finished <code>Body</code>. Both <code>Constant</code> blocks feed <code>rolling</code>: one is the rolling coefficient, the other the flat-road inclination.</figcaption>
@@ -684,86 +531,7 @@ end</code></pre></div>
 <tr><td><code>car</code></td><td>your <code>Car</code></td><td>—</td></tr>
   </tbody>
 </table></div>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-80 220 1160 750" role="img" aria-label="Diagram of Car" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="0,500 119,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="220,500 321,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="170,550 170,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="358,550 358,650 170,650 170,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="420,500 480,500 480,400 700,400 700,500 660,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="381,550 381,800" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="560,300 480,300 480,400 480,400" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="480,400 700,400 700,500 660,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <circle cx="480" cy="400" r="9" fill="#256b42"/>
-    <polyline points="660,300 760,300" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="860,300 900,300 900,500 1000,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="120" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="170" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Engine</text>
-    <rect x="211" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="161" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="110" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="320" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="370" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Driveline</text>
-    <rect x="411" y="491" width="18" height="18" fill="#256b42"/>
-    <rect x="312" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="349" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="372" y="541" width="18" height="18" fill="#256b42"/>
-    <rect x="560" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="610" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Body</text>
-    <rect x="651" y="491" width="18" height="18" fill="#256b42"/>
-    <rect x="560" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="610" y="296.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Velocity</text>
-    <text x="610" y="315.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Sensor</text>
-    <rect x="551" y="291" width="18" height="18" fill="#256b42"/>
-    <rect x="651" y="291" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="760" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="810" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Gain</text>
-    <rect x="751" y="291" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="851" y="291" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="120" y="700" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="170" y="755.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
-    <rect x="161" y="691" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="331" y="800" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="381" y="855.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
-    <rect x="372" y="791" width="18" height="18" fill="#256b42"/>
-    <polygon points="-22,476 24,500 -22,524" fill="#1f5fa8"/>
-    <polygon points="978,476 1024,500 978,524" fill="#1f5fa8"/>
-    <text x="170" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">engine</text>
-    <text x="232" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="182" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="107" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
-    <text x="370" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">driveline</text>
-    <text x="432" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="309" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="346" y="576" text-anchor="end" font-size="15" fill="#4a5a6b">support_r</text>
-    <text x="393" y="576" text-anchor="start" font-size="15" fill="#256b42">support_t</text>
-    <text x="610" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">body</text>
-    <text x="672" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="610" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">vsensor</text>
-    <text x="548" y="288" text-anchor="end" font-size="15" fill="#256b42">flange</text>
-    <text x="672" y="326" text-anchor="start" font-size="15" fill="#1f5fa8">v</text>
-    <text x="810" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">to_kmh</text>
-    <text x="748" y="288" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
-    <text x="872" y="326" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="170" y="830" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rot_ground</text>
-    <text x="182" y="688" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="381" y="930" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">trans_ground</text>
-    <text x="393" y="788" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="0" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">tau_cmd</text>
-    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">v_kmh</text>
-  </svg></figure><figure class="diagram-fig"><svg class="diagram" viewBox="90 420 520 200" role="img" aria-label="Diagram of CarFullThrottle" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="250,500 450,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="150" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="200" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="241" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="450" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="500" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Car</text>
-    <rect x="441" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <text x="200" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cmd</text>
-    <text x="262" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="500" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">car</text>
-    <text x="438" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
-  </svg><figcaption>CarFullThrottle, the test bench</figcaption></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step05-car.png"><img src="img/step05-car.png" alt="Car diagram: torque command into engine, driveline and body, with a velocity sensor and a 3.6 gain producing speed in km/h." loading="lazy"></a>
     <figcaption>The finished <code>Car</code>. The sensor reads the body's speed in m/s and the <code>k = 3.6</code> gain turns it into km/h.</figcaption>
@@ -868,52 +636,7 @@ end</code></pre></div>
 <tr><td><code>(the rest)</code></td><td>as in <code>Driveline</code></td><td>—</td></tr>
   </tbody>
 </table></div><p class="small muted"><code>WheeledCar</code> is <code>Car</code> with <code>driveline</code> swapped for <code>WheeledDriveline</code>; its test bench <code>WheeledCarFullThrottle</code> also needs <code>initial car.driveline.inertia.phi = 0</code>.</p>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-70 420 1150 660" role="img" aria-label="Diagram of WheeledDriveline" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="10,500 200,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="300,500 380,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="480,500 560,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="660,500 1000,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="250,550 250,900 380,900 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="575,550 575,650 380,650 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="645,550 645,800 610,800 610,1000" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="200" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="250" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">IdealGear</text>
-    <rect x="191" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="291" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="241" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="380" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="430" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
-    <rect x="371" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="471" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="560" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="610" y="497.2" text-anchor="middle" font-size="14" fill="#4a5a6b">Ideal</text>
-    <text x="610" y="512.6" text-anchor="middle" font-size="14" fill="#4a5a6b">RollingWheel</text>
-    <rect x="651" y="491" width="18" height="18" fill="#256b42"/>
-    <rect x="551" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="566" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="636" y="541" width="18" height="18" fill="#256b42"/>
-    <rect x="-12" y="478" width="44" height="44" fill="#4a5a6b"/>
-    <rect x="358" y="978" width="44" height="44" fill="#4a5a6b"/>
-    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
-    <rect x="588" y="978" width="44" height="44" fill="#256b42"/>
-    <text x="250" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gear</text>
-    <text x="188" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
-    <text x="312" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
-    <text x="262" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="430" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">inertia</text>
-    <text x="368" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
-    <text x="492" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
-    <text x="610" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
-    <text x="672" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="548" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="563" y="576" text-anchor="end" font-size="15" fill="#4a5a6b">support_r</text>
-    <text x="657" y="576" text-anchor="start" font-size="15" fill="#256b42">support_t</text>
-    <text x="10" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">spline</text>
-    <text x="380" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">support_r</text>
-    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
-    <text x="610" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">support_t</text>
-  </svg></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step06-wheeled-driveline.png"><img src="img/step06-wheeled-driveline.png" alt="WheeledDriveline diagram: an inertia block sits between the gear and the rolling wheel." loading="lazy"></a>
     <figcaption>The only change from step 3: <code>inertia</code> sits between <code>gear</code> and <code>wheel</code>.</figcaption>
@@ -1015,11 +738,8 @@ end</code></pre></div>
 </details>
 </section>
 
-  <div class="divider" id="take-home"><h2>Take-home</h2><p class="muted">Steps 7–10 · equations
-    in code, then one more car</p></div>
-
 <section class="step" id="grade">
-  <h2><span class="no">07</span> A road with a gradient <span class="budget home">take-home</span></h2>
+  <h2><span class="no">07</span> A road with a gradient <span class="budget">10 min</span></h2>
   <p class="goal">Write your first component with an equation — the along-slope pull of gravity — and give the body a <code>grade</code> input.</p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
@@ -1030,73 +750,7 @@ end</code></pre></div>
 <tr><td><code>m, g</code></td><td>parameters</td><td><code>m = 1400</code>, <code>g = 9.80665</code></td></tr>
   </tbody>
 </table></div><p class="small muted"><code>GradeBody</code> is <code>Body</code> with <code>incl_const</code> replaced by a <code>grade</code> input port that feeds both <code>rolling.inclination</code> and a <code>GradeForce(m = 1400)</code>.</p>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-80 -10 1160 1170" role="img" aria-label="Diagram of GradeBody" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="1000,500 410,500 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="450,600 410,600 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="250,300 390,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="390,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <circle cx="390" cy="300" r="9" fill="#256b42"/>
-    <polyline points="220,880 300,880 300,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="300,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <circle cx="300" cy="300" r="9" fill="#256b42"/>
-    <polyline points="500,650 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="200,350 200,720 500,720" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="500,720 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <circle cx="500" cy="720" r="9" fill="#256b42"/>
-    <polyline points="170,930 170,960 500,960 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="120,70 140,70 140,270 150,270" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="0,500 90,500 90,325 150,325" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="0,500 90,500 90,880 121,880" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="660" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="710" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Mass</text>
-    <rect x="651" y="291" width="18" height="18" fill="#256b42"/>
-    <rect x="450" y="550" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="500" y="597.6" text-anchor="middle" font-size="12" fill="#4a5a6b">QuadraticSpeed</text>
-    <text x="500" y="610.8" text-anchor="middle" font-size="12" fill="#4a5a6b">DependentForce</text>
-    <rect x="441" y="591" width="18" height="18" fill="#256b42"/>
-    <rect x="491" y="641" width="18" height="18" fill="#256b42"/>
-    <rect x="150" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="200" y="296.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Rolling</text>
-    <text x="200" y="315.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Resistance</text>
-    <rect x="141" y="261" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="241" y="291" width="18" height="18" fill="#256b42"/>
-    <rect x="141" y="316" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="191" y="341" width="18" height="18" fill="#256b42"/>
-    <rect x="20" y="20" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="70" y="75.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="111" y="61" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="120" y="830" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="170" y="885.95" text-anchor="middle" font-size="17" fill="#4a5a6b">GradeForce</text>
-    <rect x="211" y="871" width="18" height="18" fill="#256b42"/>
-    <rect x="112" y="871" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="161" y="921" width="18" height="18" fill="#256b42"/>
-    <rect x="450" y="990" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="500" y="1045.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
-    <rect x="491" y="981" width="18" height="18" fill="#256b42"/>
-    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
-    <polygon points="-22,476 24,500 -22,524" fill="#1f5fa8"/>
-    <text x="710" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mass</text>
-    <text x="648" y="288" text-anchor="end" font-size="15" fill="#256b42">flange_a</text>
-    <text x="500" y="538" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">drag</text>
-    <text x="438" y="588" text-anchor="end" font-size="15" fill="#256b42">flange</text>
-    <text x="512" y="676" text-anchor="start" font-size="15" fill="#256b42">support</text>
-    <text x="200" y="238" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rolling</text>
-    <text x="138" y="258" text-anchor="end" font-size="15" fill="#1f5fa8">cr</text>
-    <text x="262" y="326" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="138" y="313" text-anchor="end" font-size="15" fill="#1f5fa8">inclination</text>
-    <text x="212" y="376" text-anchor="start" font-size="15" fill="#256b42">support</text>
-    <text x="70" y="150" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cr_const</text>
-    <text x="132" y="96" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="170" y="818" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gradeforce</text>
-    <text x="232" y="906" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="109" y="868" text-anchor="end" font-size="15" fill="#1f5fa8">grade</text>
-    <text x="182" y="956" text-anchor="start" font-size="15" fill="#256b42">support</text>
-    <text x="500" y="1120" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">ground</text>
-    <text x="512" y="978" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
-    <text x="0" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">grade</text>
-  </svg></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step07-grade-body.png"><img src="img/step07-grade-body.png" alt="GradeBody diagram: the grade input feeds both the rolling resistance inclination and the grade force." loading="lazy"></a>
     <figcaption><code>GradeBody</code>: one <code>grade</code> input now drives both <code>rolling.inclination</code> and <code>gradeforce.grade</code>, replacing the flat-road constant.</figcaption>
@@ -1171,7 +825,7 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="tire-curve">
-  <h2><span class="no">08</span> Tire friction against slip <span class="budget home">take-home</span></h2>
+  <h2><span class="no">08</span> Tire friction against slip <span class="budget">15 min</span></h2>
   <p class="goal">Write the curve that says how much grip a tire gives at a given slip: a peak of 1.0 at 4 % slip, falling to 0.7 once the tire slides.</p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
@@ -1182,21 +836,7 @@ end</code></pre></div>
 <tr><td><code>sAdhesion, sSlide, mu_A, mu_S</code></td><td>parameters</td><td>0.04, 0.12, 1.0, 0.7</td></tr>
   </tbody>
 </table></div><p class="small muted">Sweep bench <code>TestTireFrictionCurve</code>: a <code>BlockComponents › Sources › Ramp</code> (<code>offset = -1</code>, <code>height = 2</code>, <code>duration = 2</code>) into <code>curve.kappa</code>.</p>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="140 420 520 200" role="img" aria-label="Diagram of TestTireFrictionCurve" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="300,500 500,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="200" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="250" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Ramp</text>
-    <rect x="291" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="500" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="550" y="497.4" text-anchor="middle" font-size="13" fill="#4a5a6b">Tire</text>
-    <text x="550" y="511.7" text-anchor="middle" font-size="13" fill="#4a5a6b">FrictionCurve</text>
-    <rect x="491" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <text x="250" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">slip</text>
-    <text x="312" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="550" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">curve</text>
-    <text x="488" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">kappa</text>
-  </svg><figcaption>The sweep bench</figcaption></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step08-tire-curve.png"><img src="img/step08-tire-curve.png" alt="TireFrictionCurve: the diagram holds only the kappa input and mu output; the curve itself is equations in the code view." loading="lazy"></a>
     <figcaption><code>TireFrictionCurve</code> has no blocks inside: the diagram shows only its two ports, and the curve lives in the equations on the right.</figcaption>
@@ -1276,7 +916,7 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="slip-wheel">
-  <h2><span class="no">09</span> A wheel that can slip <span class="budget home">take-home</span></h2>
+  <h2><span class="no">09</span> A wheel that can slip <span class="budget">15 min</span></h2>
   <p class="goal">Replace the rolling constraint with a tire: the wheel and the car may now move at different speeds, and the friction curve turns the difference into force.</p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
@@ -1289,54 +929,7 @@ end</code></pre></div>
 <tr><td><code>radius, F_z, v_eps</code></td><td>parameters</td><td>0.31 m, 6864.655 N (half the car's weight), 0.5 m/s</td></tr>
   </tbody>
 </table></div><p class="small muted">Bench <code>TestSlipWheel1D</code>: 600 N·m (full torque after the gear) through a 1 kg·m² inertia into the wheel, a 1400 kg mass on its flange.</p>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-10 170 820 700" role="img" aria-label="Diagram of TestSlipWheel1D" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="150,500 250,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="100,550 100,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="350,500 450,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="550,500 650,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="450,250 501,250 501,450" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="50" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="100" y="496.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <text x="100" y="515.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Torque</text>
-    <rect x="141" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="91" y="541" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="250" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="300" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
-    <rect x="241" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="341" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="450" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="500" y="496.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Slip</text>
-    <text x="500" y="515.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Wheel1D</text>
-    <rect x="541" y="491" width="18" height="18" fill="#256b42"/>
-    <rect x="492" y="441" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="441" y="491" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="650" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="700" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Mass</text>
-    <rect x="641" y="491" width="18" height="18" fill="#256b42"/>
-    <rect x="350" y="200" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="400" y="255.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="441" y="241" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="50" y="700" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="100" y="755.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
-    <rect x="91" y="691" width="18" height="18" fill="#4a5a6b"/>
-    <text x="100" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">torque</text>
-    <text x="162" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="112" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="300" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">inertia</text>
-    <text x="238" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
-    <text x="362" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
-    <text x="500" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
-    <text x="562" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="513" y="438" text-anchor="start" font-size="15" fill="#1f5fa8">mu_scale</text>
-    <text x="438" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="700" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mass</text>
-    <text x="638" y="488" text-anchor="end" font-size="15" fill="#256b42">flange_a</text>
-    <text x="400" y="330" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mu_src</text>
-    <text x="462" y="276" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="100" y="830" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">fixed_r</text>
-    <text x="112" y="688" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-  </svg><figcaption>The test bench</figcaption></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step09-slip-wheel.png"><img src="img/step09-slip-wheel.png" alt="SlipWheel1D diagram: the curve block sits between the spline and flange ports with no wires; it is connected through equations." loading="lazy"></a>
     <figcaption>No wires to <code>curve</code>, on purpose: it is connected by the equations <code>curve.kappa = kappa</code> and <code>mu = mu_scale * curve.mu</code>, not by <code>connect</code>.</figcaption>
@@ -1416,7 +1009,7 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="standing-start">
-  <h2><span class="no">10</span> Standing start on a slippery road <span class="budget home">take-home</span></h2>
+  <h2><span class="no">10</span> Standing start on a slippery road <span class="budget">10 min</span></h2>
   <p class="goal">Build the car with the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.</p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
@@ -1436,139 +1029,7 @@ end</code></pre></div>
 <tr><td><code>rot_ground</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
   </tbody>
 </table></div><p class="small muted">Bench <code>SlipCarStandingStart</code>: three <code>Constant</code> sources — <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2.</p>
-  <h3>Target diagram</h3>
-  <figure class="diagram-fig"><svg class="diagram" viewBox="-90 20 1180 930" role="img" aria-label="Diagram of SlipCar" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="-10,850 35,850 35,480 69,480" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="170,480 230,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="330,480 390,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="490,480 550,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="120,530 120,650" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="280,530 280,600 120,600 120,650" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="650,480 890,480 890,360 860,360" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="-10,70 720,70 720,360 760,360" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="-10,220 601,220 601,430" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="700,650 675,650 675,480 650,480" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="800,650 830,650" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="930,650 1010,650" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="390,830 360,830 360,570 520,570 520,480 550,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="490,830 550,830" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="650,830 1010,830" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="70" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="120" y="485.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Engine</text>
-    <rect x="161" y="471" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="111" y="521" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="60" y="471" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="230" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="280" y="485.95" text-anchor="middle" font-size="17" fill="#4a5a6b">IdealGear</text>
-    <rect x="221" y="471" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="321" y="471" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="271" y="521" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="390" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="440" y="485.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
-    <rect x="381" y="471" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="481" y="471" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="550" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="600" y="476.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Slip</text>
-    <text x="600" y="495.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Wheel1D</text>
-    <rect x="641" y="471" width="18" height="18" fill="#256b42"/>
-    <rect x="592" y="421" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="541" y="471" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="760" y="310" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="810" y="365.95" text-anchor="middle" font-size="17" fill="#4a5a6b">GradeBody</text>
-    <rect x="851" y="351" width="18" height="18" fill="#256b42"/>
-    <rect x="751" y="351" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="700" y="600" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="750" y="646.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Velocity</text>
-    <text x="750" y="665.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Sensor</text>
-    <rect x="691" y="641" width="18" height="18" fill="#256b42"/>
-    <rect x="791" y="641" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="830" y="600" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="880" y="655.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Gain</text>
-    <rect x="821" y="641" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="921" y="641" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="390" y="780" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="440" y="826.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Velocity</text>
-    <text x="440" y="845.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Sensor</text>
-    <rect x="381" y="821" width="18" height="18" fill="#4a5a6b"/>
-    <rect x="481" y="821" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="550" y="780" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="600" y="835.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Gain</text>
-    <rect x="541" y="821" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="641" y="821" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="70" y="650" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="120" y="705.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
-    <rect x="111" y="641" width="18" height="18" fill="#4a5a6b"/>
-    <polygon points="-32,826 14,850 -32,874" fill="#1f5fa8"/>
-    <polygon points="-32,46 14,70 -32,94" fill="#1f5fa8"/>
-    <polygon points="-32,196 14,220 -32,244" fill="#1f5fa8"/>
-    <polygon points="988,626 1034,650 988,674" fill="#1f5fa8"/>
-    <polygon points="988,806 1034,830 988,854" fill="#1f5fa8"/>
-    <text x="120" y="418" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">engine</text>
-    <text x="182" y="506" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="132" y="556" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="57" y="468" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
-    <text x="280" y="418" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gear</text>
-    <text x="218" y="468" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
-    <text x="342" y="506" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
-    <text x="292" y="556" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
-    <text x="440" y="560" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel_inertia</text>
-    <text x="378" y="468" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
-    <text x="502" y="506" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
-    <text x="600" y="560" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
-    <text x="662" y="506" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="613" y="418" text-anchor="start" font-size="15" fill="#1f5fa8">mu_scale</text>
-    <text x="538" y="468" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="810" y="440" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">body</text>
-    <text x="872" y="386" text-anchor="start" font-size="15" fill="#256b42">flange</text>
-    <text x="748" y="348" text-anchor="end" font-size="15" fill="#1f5fa8">grade</text>
-    <text x="750" y="730" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">vsensor</text>
-    <text x="688" y="638" text-anchor="end" font-size="15" fill="#256b42">flange</text>
-    <text x="812" y="676" text-anchor="start" font-size="15" fill="#1f5fa8">v</text>
-    <text x="880" y="730" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">to_kmh</text>
-    <text x="818" y="638" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
-    <text x="942" y="676" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="440" y="910" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wsensor</text>
-    <text x="378" y="818" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="502" y="856" text-anchor="start" font-size="15" fill="#1f5fa8">w</text>
-    <text x="600" y="910" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel_to_kmh</text>
-    <text x="538" y="818" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
-    <text x="662" y="856" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="120" y="780" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rot_ground</text>
-    <text x="132" y="638" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
-    <text x="-10" y="902" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">tau_cmd</text>
-    <text x="-10" y="122" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">grade</text>
-    <text x="-10" y="272" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">mu_scale</text>
-    <text x="1010" y="702" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">v_kmh</text>
-    <text x="1010" y="882" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">wheel_kmh</text>
-  </svg></figure><figure class="diagram-fig"><svg class="diagram" viewBox="90 220 520 600" role="img" aria-label="Diagram of SlipCarStandingStart" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
-    <polyline points="250,700 400,700 400,535 449,535" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="250,300 300,300 300,457 449,457" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <polyline points="250,500 350,500 350,472 449,472" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
-    <rect x="150" y="650" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="200" y="705.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="241" y="691" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="150" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="200" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="241" y="291" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="150" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="200" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
-    <rect x="241" y="491" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="450" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
-    <text x="500" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">SlipCar</text>
-    <rect x="440" y="448" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="440" y="463" width="18" height="18" fill="#1f5fa8"/>
-    <rect x="440" y="526" width="18" height="18" fill="#1f5fa8"/>
-    <text x="200" y="780" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cmd</text>
-    <text x="262" y="726" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="200" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">road</text>
-    <text x="262" y="326" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="200" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">friction</text>
-    <text x="262" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
-    <text x="500" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">car</text>
-    <text x="437" y="445" text-anchor="end" font-size="15" fill="#1f5fa8">grade</text>
-    <text x="437" y="460" text-anchor="end" font-size="15" fill="#1f5fa8">mu_scale</text>
-    <text x="437" y="523" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
-  </svg><figcaption>SlipCarStandingStart, the test bench</figcaption></figure>
+  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step10-standing-start.png"><img src="img/step10-standing-start.png" alt="SlipCar diagram: engine, gear, wheel inertia and slip wheel drive the grade body, with separate sensors for vehicle speed and wheel surface speed." loading="lazy"></a>
     <figcaption><code>SlipCar</code>: two speed outputs, <code>v_kmh</code> from the body and <code>wheel_kmh</code> from the wheel shaft. On ice they come apart.</figcaption>

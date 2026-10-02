@@ -11,6 +11,17 @@ Success: every student leaves with a car that simulates and reaches the same ter
 `Vehicle.CarPlant` in notebook 01, and has seen once that a Dyad diagram and Dyad code are the
 same model.
 
+## Revision — all in class, screenshots only
+
+Supersedes the session length, the take-home split and the pictures below:
+
+- The whole guide runs in class: about 155 minutes in two parts.
+- **Part 1, Dyad Studio and the extension** (30 min): what the extension is and where its
+  controls are, creating the library, and step 01, the two-block tour.
+- **Part 2, Build the car** (125 min): steps 02–10, one component per step, slip wheel included.
+- Each step's picture is a Dyad Studio screenshot of its `HandsOn` model; the hand-drawn SVG
+  diagrams are gone. Checkpoint plots are rendered from the reference analyses.
+
 ## Decisions
 
 | Decision | Choice | Why |
