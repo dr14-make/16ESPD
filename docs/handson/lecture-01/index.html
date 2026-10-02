@@ -1,0 +1,1689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 1 hands-on — build the car</title>
+
+<!-- Self-contained by design, like the rest of the site: no stylesheet, script or font is loaded
+     from anywhere, so the page opens from a memory stick with no network.
+     Each diagram is drawn from the placement metadata of its model in dyad/HandsOn, and each
+     solution panel is that model's source; a change to a model must be carried over here. -->
+<style>
+  :root {
+    --ink: #16202c; --soft: #4a5a6b; --rule: #d7dde6; --accent: #1f5fa8;
+    --accent-bg: #eaf1fa; --ok: #256b42; --warn: #a75d00; --bg: #fbfcfd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
+
+  header { border-bottom: 1px solid var(--rule); background: #fff; margin-bottom: 36px; }
+  header .wrap { padding-top: 40px; padding-bottom: 28px; }
+  h1 { font-size: 2em; margin: 0 0 4px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--soft); }
+  header .back { font-size: 0.88em; display: inline-block; margin-bottom: 10px; }
+
+  h2 { font-size: 1.25em; margin: 36px 0 10px; }
+  h3 { font-size: 1em; margin: 18px 0 6px; }
+  p { margin: 0 0 12px; }
+  a { color: var(--accent); }
+  code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9em;
+         background: #eef1f5; padding: 0.1em 0.35em; border-radius: 3px;
+         overflow-wrap: anywhere; }
+  .muted { color: var(--soft); }
+  .small { font-size: 0.88em; }
+
+  .note { background: #fff; border-left: 4px solid var(--warn); padding: 12px 16px;
+          border-radius: 0 6px 6px 0; }
+  .label { font-size: 0.75em; letter-spacing: 0.1em; text-transform: uppercase;
+           color: var(--soft); display: block; margin-bottom: 4px; }
+
+  nav.toc ol { padding-left: 1.4em; margin: 0; }
+  nav.toc li { margin: 2px 0; }
+  .budget { font-size: 0.62em; letter-spacing: 0.06em; border: 1px solid currentColor;
+            border-radius: 999px; padding: 0.1em 0.6em; white-space: nowrap; color: var(--accent);
+            vertical-align: middle; font-weight: 400; }
+  .budget.home { color: var(--soft); }
+
+  .step { background: #fff; border: 1px solid var(--rule); border-radius: 8px;
+          padding: 4px 22px 18px; margin: 28px 0; }
+  .step h2 { margin-top: 18px; }
+  .step h2 .no { color: var(--soft); font-variant-numeric: tabular-nums; margin-right: 4px; }
+  .goal { font-size: 1.05em; }
+
+  .divider { margin: 56px 0 8px; padding-top: 18px; border-top: 3px solid var(--ink); }
+  .divider h2 { margin: 0 0 6px; font-size: 1.5em; }
+
+  .tablewrap { max-width: 100%; }
+  table.parts { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+  table.parts th, table.parts td { text-align: left; vertical-align: top; padding: 6px 8px;
+                                   border-bottom: 1px solid var(--rule); }
+  table.parts th { font-size: 0.8em; letter-spacing: 0.06em; text-transform: uppercase;
+                   color: var(--soft); font-weight: 600; }
+  table.parts td:first-child { white-space: nowrap; }
+
+  figure { margin: 10px 0; }
+  figcaption { font-size: 0.82em; color: var(--soft); margin-top: 4px; }
+  svg.diagram { width: 100%; height: auto; max-height: 560px; background: #fff;
+                border: 1px solid var(--rule); border-radius: 6px; display: block; }
+  .twoviews { display: grid; grid-template-columns: 1fr; gap: 6px; }
+  .twoviews > * { min-width: 0; }
+  .twoviews svg.diagram { max-width: 520px; }
+
+  .shot { border: 2px dashed var(--warn); border-radius: 8px; padding: 14px 16px; margin: 12px 0;
+          background: repeating-linear-gradient(135deg, #fff, #fff 12px, #fdf6ee 12px, #fdf6ee 24px); }
+  .shot p { margin: 0; font-size: 0.92em; }
+  .shot .label { color: var(--warn); }
+
+  ol.actions { padding-left: 1.4em; }
+  ol.actions li { margin: 6px 0; }
+
+  .code { position: relative; margin: 10px 0; }
+  .codelabel { display: block; font-size: 0.75em; letter-spacing: 0.1em; text-transform: uppercase;
+               color: var(--soft); margin-bottom: 4px; }
+  .code pre { margin: 0; background: #f4f6f9; border: 1px solid var(--rule); border-radius: 6px;
+              padding: 12px 14px; overflow-x: auto; font-size: 0.82em; line-height: 1.45; }
+  .code pre code { background: none; padding: 0; font-size: 1em; overflow-wrap: normal; }
+  .code mark { background: #fff1c2; color: inherit; }
+  button.copy { position: absolute; right: 8px; top: 0; font: inherit; font-size: 0.75em;
+                border: 1px solid var(--rule); background: #fff; border-radius: 4px;
+                padding: 2px 8px; cursor: pointer; color: var(--accent); }
+  .codelabel + button.copy { top: 0; }
+  .code > button.copy:first-child { top: 8px; }
+
+  .checkpoint { background: #f1f8f3; border-left: 4px solid var(--ok); padding: 12px 16px;
+                border-radius: 0 6px 6px 0; margin: 14px 0; }
+  .checkpoint .label { color: var(--ok); }
+  .checkpoint p:last-child, .checkpoint ul:last-child { margin-bottom: 0; }
+  .checkpoint ul { padding-left: 1.2em; margin: 0 0 8px; }
+
+  details.solution { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px;
+                     margin-top: 12px; }
+  details.solution summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  details.solution[open] summary { margin-bottom: 8px; }
+
+  ul.checklist { list-style: none; padding: 0; }
+  ul.checklist li { padding-left: 1.6em; position: relative; margin: 6px 0; }
+  ul.checklist li::before { content: "☐"; position: absolute; left: 0; color: var(--soft); }
+
+  @media (max-width: 720px) {
+    .step { padding: 2px 12px 14px; }
+    table.parts { table-layout: fixed; }
+    table.parts th, table.parts td { overflow-wrap: anywhere; padding: 6px 4px; }
+    table.parts td:first-child { white-space: normal; }
+  }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule);
+           color: var(--soft); font-size: 0.88em; }
+</style>
+</head>
+
+<body>
+<header>
+  <div class="wrap">
+    <a class="back" href="../../index.html">← Vehicle Systems &amp; Components</a>
+    <h1>Lecture 1 hands-on: build the car</h1>
+    <p>From an empty Dyad library to the car the notebooks drive — 90 minutes in Dyad Studio</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <p>You build the longitudinal car of notebook 01 from standard-library parts, one component at
+    a time, mostly in the diagram editor. At the end of step 5 your car reaches the same terminal
+    speed as the course model <code>Vehicle.CarPlant</code>. Step 6 gives its wheel inertia. Steps
+    7–10 are for home or for anyone who finishes early: they need equations, and end with the car
+    spinning its wheel on a slippery road.</p>
+  <p class="small muted">Every component here exists in the course repository under
+    <code>dyad/HandsOn/</code>, and every number in a checkpoint was read off a run of it.
+    The budgets add up to 85 minutes, which leaves 5 minutes of slack in a 90-minute session.</p>
+
+  <nav class="toc">
+    <h2>Steps</h2>
+    <ol>
+<li><a href="#tour">Tour: one model, two views</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#engine">Engine</a> <span class="muted small">— 20 min</span></li>
+<li><a href="#driveline">Driveline</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#body">Body</a> <span class="muted small">— 15 min</span></li>
+<li><a href="#car">Car: full throttle to terminal speed</a> <span class="muted small">— 20 min</span></li>
+<li><a href="#wheel-inertia">A wheel with inertia</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#grade">A road with a gradient</a> <span class="muted small">— take-home</span></li>
+<li><a href="#tire-curve">Tire friction against slip</a> <span class="muted small">— take-home</span></li>
+<li><a href="#slip-wheel">A wheel that can slip</a> <span class="muted small">— take-home</span></li>
+<li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— take-home</span></li>
+    </ol>
+  </nav>
+
+  <section id="before-class">
+    <h2>Before class</h2>
+    <div class="note">
+      <span class="label">Do this at home — it downloads a lot</span>
+      <ul class="checklist">
+        <li>Dyad Studio is installed in VS Code and you are signed in.</li>
+        <li>You have created a new, empty Dyad library (call it <code>MyCar</code>) with Dyad
+          Studio's new-library command.</li>
+        <li><code>Pkg.instantiate()</code> has finished in that library's environment. The first run
+          downloads and precompiles the standard libraries, which can take a long time.</li>
+        <li>The library browser lists <code>BlockComponents</code>,
+          <code>RotationalComponents</code> and <code>TranslationalComponents</code>, and you can
+          expand them.</li>
+      </ul>
+    </div>
+    <p class="small muted">Names in this guide are the ones the reference models use. Keep them:
+      the checkpoints name signals such as <code>car.v_kmh</code>, and a different instance name
+      means a different signal name.</p>
+  </section>
+
+  <div class="divider"><h2>In class</h2><p class="muted">Steps 1–6 · diagram editor first</p></div>
+
+<section class="step" id="tour">
+  <h2><span class="no">01</span> Tour: one model, two views <span class="budget">10 min</span></h2>
+  <p class="goal">Place two blocks, wire them, set a parameter, and see that the diagram and the code are the same model.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>delay</code></td><td>BlockComponents › Nonlinear › PadeDelay</td><td><code>n = 6</code>, <code>m = 5</code>, <code>delayTime = 0.3</code></td></tr>
+<tr><td><code>lag</code></td><td>BlockComponents › Continuous › FirstOrder</td><td><code>T = 0.3</code></td></tr>
+  </tbody>
+</table></div>
+  <h3>Target diagram</h3>
+  <div class="twoviews">
+    <figure class="diagram-fig"><svg class="diagram" viewBox="50 420 410 200" role="img" aria-label="delay wired to lag" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="210,500 300,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="110" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="160" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">PadeDelay</text>
+    <rect x="201" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="300" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="350" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">FirstOrder</text>
+    <rect x="291" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <text x="160" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">delay</text>
+    <text x="222" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="350" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">lag</text>
+    <text x="288" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
+  </svg><figcaption>Diagram view</figcaption></figure>
+    <figure class="diagram-fig"><div class="code"><pre><code>  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
+  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
+  connect(delay.y, lag.u) {^id2}</code></pre></div><figcaption>Code view — the same
+      three facts: two parts with their parameters, one wire.</figcaption></figure>
+  </div>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.Engine">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.Engine</code> in Dyad Studio and capture the diagram view and the code view of the same component side by side. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create a new component in your library and call it <code>Engine</code>. It opens empty in the diagram editor.</li>
+<li>In the library browser, find <code>BlockComponents › Nonlinear › PadeDelay</code> and drag it onto the canvas. Rename the instance to <code>delay</code>.</li>
+<li>Drag in <code>BlockComponents › Continuous › FirstOrder</code> and name it <code>lag</code>.</li>
+<li>Drag a wire from the output port <code>y</code> of <code>delay</code> to the input port <code>u</code> of <code>lag</code>.</li>
+<li>Select <code>delay</code> and set <code>n = 6</code>, <code>m = 5</code>, <code>delayTime = 0.3</code> in its parameters. Select <code>lag</code> and set <code>T = 0.3</code>.</li>
+<li>Switch to the code view. Every block you placed is now a line <code>name = Library.Path(parameters)</code>, and the wire is a <code>connect(…)</code> line under <code>relations</code>.</li>
+<li>Change <code>T = 0.3</code> to <code>T = 0.5</code> in the code, switch back to the diagram, and check the parameter of <code>lag</code>. Set it back to 0.3. One model, two views: whichever you edit, the other follows.</li>
+  </ol>
+  
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The code view shows the two declarations and one <code>connect(delay.y, lag.u)</code>, matching the box on the right above. Keep this component open: step 2 finishes it.</p></div>
+  <details class="solution">
+  <summary>Stuck? The lines you should see</summary>
+  <p class="small muted">Excerpt of <code>dyad/HandsOn/Engine.dyad</code>, verbatim. The full
+    component is the solution to step 2.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
+  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
+  connect(delay.y, lag.u) {^id2}</code></pre></div>
+</details>
+</section>
+<section class="step" id="engine">
+  <h2><span class="no">02</span> Engine <span class="budget">20 min</span></h2>
+  <p class="goal">Finish the engine — torque command in, shaft torque out through a delay, a lag and a 150 N·m ceiling — and watch it answer a step.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>tau_cmd</code></td><td>Dyad › RealInput</td><td>port, left edge</td></tr>
+<tr><td><code>spline</code></td><td>Dyad › Spline</td><td>port, right edge — the output shaft</td></tr>
+<tr><td><code>support</code></td><td>Dyad › Spline</td><td>port, bottom edge — the engine mounts</td></tr>
+<tr><td><code>delay</code></td><td>BlockComponents › Nonlinear › PadeDelay</td><td><code>n = 6</code>, <code>m = 5</code>, <code>delayTime = 0.3</code></td></tr>
+<tr><td><code>lag</code></td><td>BlockComponents › Continuous › FirstOrder</td><td><code>T = 0.3</code></td></tr>
+<tr><td><code>limiter</code></td><td>BlockComponents › Nonlinear › Limiter</td><td><code>y_max = 150</code>, <code>y_min = 0</code></td></tr>
+<tr><td><code>torque</code></td><td>RotationalComponents › Sources › TorqueSource</td><td>—</td></tr>
+  </tbody>
+</table></div><p class="small muted">Test bench <code>EngineStep</code>:</p><div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>cmd</code></td><td>BlockComponents › Sources › Step</td><td><code>height = 200</code>, <code>offset = 0</code>, <code>start_time = 0.5</code></td></tr>
+<tr><td><code>engine</code></td><td>your <code>Engine</code></td><td>—</td></tr>
+<tr><td><code>load</code></td><td>RotationalComponents › Components › Inertia</td><td><code>J = 1</code></td></tr>
+<tr><td><code>mounts</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
+  </tbody>
+</table></div>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-90 420 1170 660" role="img" aria-label="Diagram of Engine" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="-10,500 110,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="210,500 300,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="400,500 490,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="590,500 680,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="780,500 1000,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="730,550 730,1000 500,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="110" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="160" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">PadeDelay</text>
+    <rect x="101" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="201" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="300" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="350" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">FirstOrder</text>
+    <rect x="291" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="391" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="490" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="540" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Limiter</text>
+    <rect x="481" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="581" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="680" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="730" y="496.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Torque</text>
+    <text x="730" y="515.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Source</text>
+    <rect x="771" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="721" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="671" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <polygon points="-32,476 14,500 -32,524" fill="#1f5fa8"/>
+    <rect x="978" y="478" width="44" height="44" fill="#4a5a6b"/>
+    <rect x="478" y="978" width="44" height="44" fill="#4a5a6b"/>
+    <text x="160" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">delay</text>
+    <text x="98" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
+    <text x="222" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="350" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">lag</text>
+    <text x="288" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
+    <text x="412" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="540" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">limiter</text>
+    <text x="478" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
+    <text x="602" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="730" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">torque</text>
+    <text x="792" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="742" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="668" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau</text>
+    <text x="-10" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">tau_cmd</text>
+    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">spline</text>
+    <text x="500" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">support</text>
+  </svg><figcaption>Engine</figcaption></figure><figure class="diagram-fig"><svg class="diagram" viewBox="40 420 720 450" role="img" aria-label="Diagram of EngineStep" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="200,500 349,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="450,500 600,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="400,550 400,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="100" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="150" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Step</text>
+    <rect x="191" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="350" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="400" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Engine</text>
+    <rect x="441" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="391" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="340" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="600" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="650" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
+    <rect x="591" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="350" y="700" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="400" y="755.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
+    <rect x="391" y="691" width="18" height="18" fill="#4a5a6b"/>
+    <text x="150" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cmd</text>
+    <text x="212" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="400" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">engine</text>
+    <text x="462" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="412" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="337" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
+    <text x="650" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">load</text>
+    <text x="588" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
+    <text x="400" y="830" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mounts</text>
+    <text x="412" y="688" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+  </svg><figcaption>EngineStep, the test bench</figcaption></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.EngineStep">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.EngineStep</code> in Dyad Studio and capture the diagram and the plot of <code>engine.limiter.y</code> from <code>EngineStepTransient</code>. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>In <code>Engine</code>, add <code>limiter</code> and <code>torque</code> and wire <code>lag.y → limiter.u → torque.tau</code>.</li>
+<li>Add the three ports from the table and wire them: <code>tau_cmd → delay.u</code>, <code>torque.spline → spline</code>, <code>torque.support → support</code>.</li>
+<li>Set the limiter to <code>y_max = 150</code>, <code>y_min = 0</code>: the engine cannot brake through this path.</li>
+<li>An engine with an unconnected input cannot be simulated, so build a test bench. Create a component <code>EngineStep</code>, drop in your <code>Engine</code> from your own library, and add <code>cmd</code>, <code>load</code> and <code>mounts</code>. Wire it as drawn.</li>
+<li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines highlighted in the block below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block.</li>
+<li>Run <code>EngineStepTransient</code> and plot <code>engine.limiter.y</code> and <code>engine.delay.y</code>.</li>
+  </ol>
+  <div class="code"><span class="codelabel">New code in EngineStep</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
+  …
+relations
+  …
+<mark>  initial engine.lag.x = 0</mark>
+<mark>  initial load.phi = 0</mark>
+<mark>  initial load.w = 0</mark>
+<mark>end</mark>
+
+<mark>analysis EngineStepTransient</mark>
+<mark>  extends TransientAnalysis(stop = 3)</mark>
+<mark>  model = EngineStep()</mark>
+<mark>end</mark></code></pre></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.EngineStepTransient</code>:</p>
+<ul>
+  <li><code>engine.limiter.y</code> stays at 0 through the step at 0.5 s, reads only 6.2 N·m at
+    0.8 s, 97.5 N·m at 1.0 s, clips at <strong>150 N·m at 1.22 s</strong> and stays there.</li>
+  <li><code>engine.delay.y</code> reads 208.1 at 0.9 s before settling at 200: the Padé
+    approximation of the delay overshoots. The limiter hides it.</li>
+  <li><code>load.w</code> ends at 306.0 rad/s at 3 s.</li>
+</ul></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/Engine.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+Torque command in, shaft torque out, through a transport delay, a first-order lag and a torque
+ceiling.
+&quot;&quot;&quot;
+component Engine
+  &quot;Commanded torque&quot;
+  tau_cmd = RealInput() {^tau_cmd}
+  &quot;Output shaft&quot;
+  spline = Spline() {^spline}
+  &quot;Engine mounts&quot;
+  support = Spline() {^support}
+  # m = n - 1 leaves the delay without direct feedthrough, so a command step cannot leak through
+  # the limiter before the delay has elapsed.
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
+  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = 150, y_min = 0) {^limiter}
+  torque = RotationalComponents.Sources.TorqueSource() {^torque}
+relations
+  connect(tau_cmd, delay.u) {^id1}
+  connect(delay.y, lag.u) {^id2}
+  connect(lag.y, limiter.u) {^id3}
+  connect(limiter.y, torque.tau) {^id4}
+  connect(torque.spline, spline) {^id5}
+  connect(torque.support, support) {^id6}
+end
+
+&quot;&quot;&quot;A torque command above the ceiling, stepped in at 0.5 s, into a 1 kg·m² flywheel.&quot;&quot;&quot;
+component EngineStep
+  cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5) {^cmd}
+  engine = Engine() {^engine}
+  &quot;Unit inertia, so its angular acceleration reads as the delivered torque&quot;
+  load = RotationalComponents.Components.Inertia(J = 1) {^load}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+relations
+  connect(cmd.y, engine.tau_cmd) {^id1}
+  connect(engine.spline, load.spline_a) {^id2}
+  connect(engine.support, mounts.spline) {^id3}
+  initial engine.lag.x = 0
+  initial load.phi = 0
+  initial load.w = 0
+end
+
+analysis EngineStepTransient
+  extends TransientAnalysis(stop = 3)
+  model = EngineStep()
+end</code></pre></div>
+</details>
+</section>
+<section class="step" id="driveline">
+  <h2><span class="no">03</span> Driveline <span class="budget">10 min</span></h2>
+  <p class="goal">Turn engine torque into a force on the car: a 4:1 gear and a 0.31 m rolling wheel.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>spline</code></td><td>Dyad › Spline</td><td>port — from the engine</td></tr>
+<tr><td><code>support_r</code></td><td>Dyad › Spline</td><td>port — gearbox housing</td></tr>
+<tr><td><code>flange</code></td><td>Dyad › Flange</td><td>port — to the body</td></tr>
+<tr><td><code>support_t</code></td><td>Dyad › Flange</td><td>port — the road</td></tr>
+<tr><td><code>gear</code></td><td>RotationalComponents › Components › IdealGear</td><td><code>ratio = 4.0</code></td></tr>
+<tr><td><code>wheel</code></td><td>RotationalComponents › Components › IdealRollingWheel</td><td><code>radius = 0.31</code></td></tr>
+  </tbody>
+</table></div>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-70 420 1150 660" role="img" aria-label="Diagram of Driveline" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="10,500 330,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="430,500 520,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="620,500 1000,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="380,550 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="535,550 535,590 380,590 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="605,550 605,1000 610,1000" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="330" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="380" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">IdealGear</text>
+    <rect x="321" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="421" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="371" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="520" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="570" y="497.2" text-anchor="middle" font-size="14" fill="#4a5a6b">Ideal</text>
+    <text x="570" y="512.6" text-anchor="middle" font-size="14" fill="#4a5a6b">RollingWheel</text>
+    <rect x="611" y="491" width="18" height="18" fill="#256b42"/>
+    <rect x="511" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="526" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="596" y="541" width="18" height="18" fill="#256b42"/>
+    <rect x="-12" y="478" width="44" height="44" fill="#4a5a6b"/>
+    <rect x="358" y="978" width="44" height="44" fill="#4a5a6b"/>
+    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
+    <rect x="588" y="978" width="44" height="44" fill="#256b42"/>
+    <text x="380" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gear</text>
+    <text x="318" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
+    <text x="442" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
+    <text x="392" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="570" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
+    <text x="632" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="508" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="523" y="576" text-anchor="end" font-size="15" fill="#4a5a6b">support_r</text>
+    <text x="617" y="576" text-anchor="start" font-size="15" fill="#256b42">support_t</text>
+    <text x="10" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">spline</text>
+    <text x="380" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">support_r</text>
+    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
+    <text x="610" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">support_t</text>
+  </svg></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.Driveline">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.Driveline</code> in Dyad Studio and capture the diagram. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create <code>Driveline</code>. Place <code>gear</code> and <code>wheel</code> and wire <code>gear.spline_b → wheel.spline</code>.</li>
+<li>Add the four ports. Wire <code>spline → gear.spline_a</code> and <code>wheel.flange → flange</code>.</li>
+<li>Both reaction paths go out of the component: wire <code>gear.support</code> and <code>wheel.support_r</code> to <code>support_r</code>, and <code>wheel.support_t</code> to <code>support_t</code>. The car will ground them.</li>
+<li>Set <code>ratio = 4.0</code> and <code>radius = 0.31</code>. The force at the flange is then <code>T · i / r</code>, the formula from notebook 01.</li>
+  </ol>
+  
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>It saves without errors and has the four ports named in the table. Under 100 N·m into <code>spline</code> and 1400 kg on <code>flange</code>, the reference test <code>TestDriveline</code> accelerates the mass at 0.9217 m/s² (100 · 4 / 0.31 / 1400).</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/Driveline.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;Gearbox and rolling wheel: engine shaft in, tractive force on the body out.&quot;&quot;&quot;
+component Driveline
+  &quot;From the engine&quot;
+  spline = Spline() {^spline}
+  &quot;Gearbox housing&quot;
+  support_r = Spline() {^support_r}
+  &quot;To the body&quot;
+  flange = Flange() {^flange}
+  &quot;Road&quot;
+  support_t = Flange() {^support_t}
+  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = 0.31) {^wheel}
+relations
+  connect(spline, gear.spline_a) {^id1}
+  connect(gear.spline_b, wheel.spline) {^id2}
+  connect(wheel.flange, flange) {^id3}
+  connect(gear.support, support_r) {^id4}
+  connect(wheel.support_r, support_r) {^id5}
+  connect(wheel.support_t, support_t) {^id6}
+end</code></pre></div>
+</details>
+</section>
+<section class="step" id="body">
+  <h2><span class="no">04</span> Body <span class="budget">15 min</span></h2>
+  <p class="goal">Give the car its 1400 kg and the two forces that hold it back on a flat road: drag and rolling resistance.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>flange</code></td><td>Dyad › Flange</td><td>port — tractive force in</td></tr>
+<tr><td><code>mass</code></td><td>TranslationalComponents › Components › Mass</td><td><code>m = 1400</code></td></tr>
+<tr><td><code>drag</code></td><td>TranslationalComponents › Sources › QuadraticSpeedDependentForce</td><td><code>ForceDirection = false</code>, <code>v_nominal = 30</code>, <code>f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2</code></td></tr>
+<tr><td><code>rolling</code></td><td>TranslationalComponents › Components › RollingResistance</td><td><code>fWeight = 1400 * 9.80665</code></td></tr>
+<tr><td><code>cr_const</code></td><td>BlockComponents › Sources › Constant</td><td><code>k = 0.012</code></td></tr>
+<tr><td><code>incl_const</code></td><td>BlockComponents › Sources › Constant</td><td><code>k = 0</code> — flat road</td></tr>
+<tr><td><code>ground</code></td><td>TranslationalComponents › Components › Fixed</td><td>—</td></tr>
+  </tbody>
+</table></div>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-80 -10 1160 1170" role="img" aria-label="Diagram of Body" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="1000,500 410,500 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="450,600 410,600 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="250,300 390,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="390,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="390" cy="300" r="9" fill="#256b42"/>
+    <polyline points="500,650 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="200,350 200,720 500,720" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="500,720 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="500" cy="720" r="9" fill="#256b42"/>
+    <polyline points="120,70 140,70 140,270 150,270" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="80,500 115,500 115,325 150,325" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="660" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="710" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Mass</text>
+    <rect x="651" y="291" width="18" height="18" fill="#256b42"/>
+    <rect x="450" y="550" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="500" y="597.6" text-anchor="middle" font-size="12" fill="#4a5a6b">QuadraticSpeed</text>
+    <text x="500" y="610.8" text-anchor="middle" font-size="12" fill="#4a5a6b">DependentForce</text>
+    <rect x="441" y="591" width="18" height="18" fill="#256b42"/>
+    <rect x="491" y="641" width="18" height="18" fill="#256b42"/>
+    <rect x="150" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="200" y="296.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Rolling</text>
+    <text x="200" y="315.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Resistance</text>
+    <rect x="141" y="261" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="241" y="291" width="18" height="18" fill="#256b42"/>
+    <rect x="141" y="316" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="191" y="341" width="18" height="18" fill="#256b42"/>
+    <rect x="20" y="20" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="70" y="75.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="111" y="61" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="-20" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="30" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="71" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="450" y="990" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="500" y="1045.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
+    <rect x="491" y="981" width="18" height="18" fill="#256b42"/>
+    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
+    <text x="710" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mass</text>
+    <text x="648" y="288" text-anchor="end" font-size="15" fill="#256b42">flange_a</text>
+    <text x="500" y="538" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">drag</text>
+    <text x="438" y="588" text-anchor="end" font-size="15" fill="#256b42">flange</text>
+    <text x="512" y="676" text-anchor="start" font-size="15" fill="#256b42">support</text>
+    <text x="200" y="238" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rolling</text>
+    <text x="138" y="258" text-anchor="end" font-size="15" fill="#1f5fa8">cr</text>
+    <text x="262" y="326" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="138" y="313" text-anchor="end" font-size="15" fill="#1f5fa8">inclination</text>
+    <text x="212" y="376" text-anchor="start" font-size="15" fill="#256b42">support</text>
+    <text x="70" y="150" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cr_const</text>
+    <text x="132" y="96" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="30" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">incl_const</text>
+    <text x="92" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="500" y="1120" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">ground</text>
+    <text x="512" y="978" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
+  </svg></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.Body">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.Body</code> in Dyad Studio and capture the diagram. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create <code>Body</code>. Place the parts and wire the three forces — <code>flange</code>, <code>drag.flange</code>, <code>rolling.flange</code> — to <code>mass.flange_a</code>.</li>
+<li>Wire <code>drag.support</code> and <code>rolling.support</code> to <code>ground.flange</code>: drag and rolling resistance push against the road and the air, not against the car.</li>
+<li>Feed <code>rolling</code> its two signal inputs: <code>cr_const.y → rolling.cr</code> and <code>incl_const.y → rolling.inclination</code>. An unconnected input would leave the model incomplete.</li>
+<li>Set the drag parameters. <code>f_nominal</code> is negative, which makes the source a load; <code>ForceDirection = false</code> makes drag oppose motion both ways. <code>-0.5 * 1.2 * 0.63 * 30 ^ 2</code> is ½ρ·CdA·v² at 30 m/s — type the expression, not the number.</li>
+  </ol>
+  
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>It saves without errors. Under a constant 500 N the reference test <code>TestBody</code> starts at 0.357 m/s² and settles at 29.78 m/s, where drag and rolling resistance add up to 500 N.</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/Body.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+Car body on a flat road: tractive force in at the flange, resisted by aerodynamic drag and rolling
+resistance.
+&quot;&quot;&quot;
+component Body
+  &quot;Tractive force from the driveline&quot;
+  flange = Flange() {^flange}
+  mass = TranslationalComponents.Components.Mass(m = 1400) {^mass}
+  # A negative nominal force makes the source a load; ForceDirection = false gives the v*|v| form,
+  # so drag opposes motion in both directions.
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = 30, f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2) {^drag}
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = 1400 * 9.80665) {^rolling}
+  cr_const = BlockComponents.Sources.Constant(k = 0.012) {^cr_const}
+  &quot;Flat road: tan(alpha) = 0&quot;
+  incl_const = BlockComponents.Sources.Constant(k = 0) {^incl_const}
+  ground = TranslationalComponents.Components.Fixed() {^ground}
+relations
+  connect(flange, mass.flange_a) {^id1}
+  connect(drag.flange, mass.flange_a) {^id2}
+  connect(rolling.flange, mass.flange_a) {^id3}
+  connect(drag.support, ground.flange) {^id4}
+  connect(rolling.support, ground.flange) {^id5}
+  connect(cr_const.y, rolling.cr) {^id6}
+  connect(incl_const.y, rolling.inclination) {^id7}
+end</code></pre></div>
+</details>
+</section>
+<section class="step" id="car">
+  <h2><span class="no">05</span> Car: full throttle to terminal speed <span class="budget">20 min</span></h2>
+  <p class="goal">Assemble engine, driveline and body into the car of notebook 01 and drive it flat out from rest until it stops getting faster.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>tau_cmd</code></td><td>Dyad › RealInput</td><td>port</td></tr>
+<tr><td><code>v_kmh</code></td><td>Dyad › RealOutput</td><td>port</td></tr>
+<tr><td><code>engine</code></td><td>your <code>Engine</code></td><td>—</td></tr>
+<tr><td><code>driveline</code></td><td>your <code>Driveline</code></td><td>—</td></tr>
+<tr><td><code>body</code></td><td>your <code>Body</code></td><td>—</td></tr>
+<tr><td><code>vsensor</code></td><td>TranslationalComponents › Sensors › VelocitySensor</td><td>—</td></tr>
+<tr><td><code>to_kmh</code></td><td>BlockComponents › Math › Gain</td><td><code>k = 3.6</code></td></tr>
+<tr><td><code>rot_ground</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
+<tr><td><code>trans_ground</code></td><td>TranslationalComponents › Components › Fixed</td><td>—</td></tr>
+  </tbody>
+</table></div><p class="small muted">Test bench <code>CarFullThrottle</code>:</p><div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>cmd</code></td><td>BlockComponents › Sources › Constant</td><td><code>k = 150</code> — the torque ceiling</td></tr>
+<tr><td><code>car</code></td><td>your <code>Car</code></td><td>—</td></tr>
+  </tbody>
+</table></div>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-80 220 1160 750" role="img" aria-label="Diagram of Car" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="0,500 119,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="220,500 321,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="170,550 170,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="358,550 358,650 170,650 170,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="420,500 480,500 480,400 700,400 700,500 660,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="381,550 381,800" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="560,300 480,300 480,400 480,400" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="480,400 700,400 700,500 660,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="480" cy="400" r="9" fill="#256b42"/>
+    <polyline points="660,300 760,300" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="860,300 900,300 900,500 1000,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="120" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="170" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Engine</text>
+    <rect x="211" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="161" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="110" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="320" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="370" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Driveline</text>
+    <rect x="411" y="491" width="18" height="18" fill="#256b42"/>
+    <rect x="312" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="349" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="372" y="541" width="18" height="18" fill="#256b42"/>
+    <rect x="560" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="610" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Body</text>
+    <rect x="651" y="491" width="18" height="18" fill="#256b42"/>
+    <rect x="560" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="610" y="296.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Velocity</text>
+    <text x="610" y="315.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Sensor</text>
+    <rect x="551" y="291" width="18" height="18" fill="#256b42"/>
+    <rect x="651" y="291" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="760" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="810" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Gain</text>
+    <rect x="751" y="291" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="851" y="291" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="120" y="700" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="170" y="755.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
+    <rect x="161" y="691" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="331" y="800" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="381" y="855.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
+    <rect x="372" y="791" width="18" height="18" fill="#256b42"/>
+    <polygon points="-22,476 24,500 -22,524" fill="#1f5fa8"/>
+    <polygon points="978,476 1024,500 978,524" fill="#1f5fa8"/>
+    <text x="170" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">engine</text>
+    <text x="232" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="182" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="107" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
+    <text x="370" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">driveline</text>
+    <text x="432" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="309" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="346" y="576" text-anchor="end" font-size="15" fill="#4a5a6b">support_r</text>
+    <text x="393" y="576" text-anchor="start" font-size="15" fill="#256b42">support_t</text>
+    <text x="610" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">body</text>
+    <text x="672" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="610" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">vsensor</text>
+    <text x="548" y="288" text-anchor="end" font-size="15" fill="#256b42">flange</text>
+    <text x="672" y="326" text-anchor="start" font-size="15" fill="#1f5fa8">v</text>
+    <text x="810" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">to_kmh</text>
+    <text x="748" y="288" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
+    <text x="872" y="326" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="170" y="830" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rot_ground</text>
+    <text x="182" y="688" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="381" y="930" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">trans_ground</text>
+    <text x="393" y="788" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="0" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">tau_cmd</text>
+    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">v_kmh</text>
+  </svg></figure><figure class="diagram-fig"><svg class="diagram" viewBox="90 420 520 200" role="img" aria-label="Diagram of CarFullThrottle" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="250,500 450,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="150" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="200" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="241" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="450" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="500" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Car</text>
+    <rect x="441" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <text x="200" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cmd</text>
+    <text x="262" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="500" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">car</text>
+    <text x="438" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
+  </svg><figcaption>CarFullThrottle, the test bench</figcaption></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.CarFullThrottle">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.CarFullThrottle</code> in Dyad Studio and capture the diagram of <code>Car</code> and the plot of <code>car.v_kmh</code> from <code>CarFullThrottleTransient</code>. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create <code>Car</code>. Drop in your three components and wire <code>engine.spline → driveline.spline</code> and <code>driveline.flange → body.flange</code>.</li>
+<li>Ground the reactions: <code>engine.support</code> and <code>driveline.support_r</code> to <code>rot_ground</code>, <code>driveline.support_t</code> to <code>trans_ground</code>.</li>
+<li>Measure: <code>vsensor.flange</code> on <code>body.flange</code>, then <code>vsensor.v → to_kmh.u</code>. The sensor gives m/s; the gain of 3.6 makes it km/h.</li>
+<li>Add the ports: <code>tau_cmd → engine.tau_cmd</code>, <code>to_kmh.y → v_kmh</code>.</li>
+<li>Build the test bench <code>CarFullThrottle</code>: a <code>Constant</code> of 150 into <code>car.tau_cmd</code>.</li>
+<li>In code, add the starting state and the analysis below. The car needs its position fixed at the start as well as its speed; without <code>car.body.mass.s</code> the model has no unique initial state.</li>
+<li>Run <code>CarFullThrottleTransient</code> and plot <code>car.v_kmh</code>.</li>
+  </ol>
+  <div class="code"><span class="codelabel">New code in CarFullThrottle</span><button class="copy" type="button">Copy</button><pre><code>component CarFullThrottle
+  …
+relations
+  …
+<mark>  initial car.body.mass.s = 0</mark>
+<mark>  initial car.body.mass.v = 0</mark>
+<mark>  initial car.engine.lag.x = 0</mark>
+<mark>end</mark>
+
+<mark>analysis CarFullThrottleTransient</mark>
+<mark>  extends TransientAnalysis(stop = 300)</mark>
+<mark>  model = CarFullThrottle()</mark>
+<mark>end</mark></code></pre></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.CarFullThrottleTransient</code>: 21.2 km/h at 5 s,
+  43.6 km/h at 10 s, 100 km/h at 23.6 s, 197.5 km/h at 60 s, 99 % of the final speed at 143 s and
+  <strong>246.39 km/h at 300 s</strong>. The curve is a first-order rise: steep at first, then
+  flattening as drag grows with the square of speed.</p>
+<p>Same check against the course model: <code>Vehicle.CarPlant</code> at full torque reads
+  246.39 km/h at 300 s, and the two agree to 0.0001 km/h at 800 s (246.3957 km/h). Your car is
+  the notebook's car.</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/Car.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+Longitudinal car on a flat road: torque command in, speed in km/h out.
+&quot;&quot;&quot;
+component Car
+  &quot;Commanded engine torque&quot;
+  tau_cmd = RealInput() {^tau_cmd}
+  &quot;Vehicle speed in km/h&quot;
+  v_kmh = RealOutput() {^v_kmh}
+  engine = Engine() {^engine}
+  driveline = Driveline() {^driveline}
+  body = Body() {^body}
+  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
+  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
+  &quot;Engine mounts and gearbox housing&quot;
+  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  &quot;Road under the wheel&quot;
+  trans_ground = TranslationalComponents.Components.Fixed() {^trans_ground}
+relations
+  connect(tau_cmd, engine.tau_cmd) {^id1}
+  connect(engine.spline, driveline.spline) {^id2}
+  connect(engine.support, rot_ground.spline) {^id3}
+  connect(driveline.support_r, rot_ground.spline) {^id4}
+  connect(driveline.flange, body.flange) {^id5}
+  connect(driveline.support_t, trans_ground.flange) {^id6}
+  connect(vsensor.flange, body.flange) {^id7}
+  connect(vsensor.v, to_kmh.u) {^id8}
+  connect(to_kmh.y, v_kmh) {^id9}
+end
+
+&quot;&quot;&quot;Full throttle from rest on a flat road, run to terminal speed.&quot;&quot;&quot;
+component CarFullThrottle
+  &quot;Full throttle: the engine&#x27;s 150 N·m ceiling&quot;
+  cmd = BlockComponents.Sources.Constant(k = 150) {^cmd}
+  car = Car() {^car}
+relations
+  connect(cmd.y, car.tau_cmd) {^id1}
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+end
+
+analysis CarFullThrottleTransient
+  extends TransientAnalysis(stop = 300)
+  model = CarFullThrottle()
+end</code></pre></div>
+</details>
+</section>
+<section class="step" id="wheel-inertia">
+  <h2><span class="no">06</span> A wheel with inertia <span class="budget">10 min</span></h2>
+  <p class="goal">Put a 1 kg·m² road wheel between the gear and the rolling contact, and see how little it changes.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>inertia</code></td><td>RotationalComponents › Components › Inertia</td><td><code>J = 1.0</code></td></tr>
+<tr><td><code>(the rest)</code></td><td>as in <code>Driveline</code></td><td>—</td></tr>
+  </tbody>
+</table></div><p class="small muted"><code>WheeledCar</code> is <code>Car</code> with <code>driveline</code> swapped for <code>WheeledDriveline</code>; its test bench <code>WheeledCarFullThrottle</code> also needs <code>initial car.driveline.inertia.phi = 0</code>.</p>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-70 420 1150 660" role="img" aria-label="Diagram of WheeledDriveline" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="10,500 200,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="300,500 380,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="480,500 560,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="660,500 1000,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="250,550 250,900 380,900 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="575,550 575,650 380,650 380,1000" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="645,550 645,800 610,800 610,1000" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="200" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="250" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">IdealGear</text>
+    <rect x="191" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="291" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="241" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="380" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="430" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
+    <rect x="371" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="471" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="560" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="610" y="497.2" text-anchor="middle" font-size="14" fill="#4a5a6b">Ideal</text>
+    <text x="610" y="512.6" text-anchor="middle" font-size="14" fill="#4a5a6b">RollingWheel</text>
+    <rect x="651" y="491" width="18" height="18" fill="#256b42"/>
+    <rect x="551" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="566" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="636" y="541" width="18" height="18" fill="#256b42"/>
+    <rect x="-12" y="478" width="44" height="44" fill="#4a5a6b"/>
+    <rect x="358" y="978" width="44" height="44" fill="#4a5a6b"/>
+    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
+    <rect x="588" y="978" width="44" height="44" fill="#256b42"/>
+    <text x="250" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gear</text>
+    <text x="188" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
+    <text x="312" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
+    <text x="262" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="430" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">inertia</text>
+    <text x="368" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
+    <text x="492" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
+    <text x="610" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
+    <text x="672" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="548" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="563" y="576" text-anchor="end" font-size="15" fill="#4a5a6b">support_r</text>
+    <text x="657" y="576" text-anchor="start" font-size="15" fill="#256b42">support_t</text>
+    <text x="10" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">spline</text>
+    <text x="380" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#4a5a6b">support_r</text>
+    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
+    <text x="610" y="1052" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">support_t</text>
+  </svg></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.WheeledDriveline">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.WheeledDriveline</code> in Dyad Studio and capture the diagram. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Copy <code>Driveline</code> to a new component <code>WheeledDriveline</code>.</li>
+<li>Delete the wire <code>gear.spline_b → wheel.spline</code>, place <code>inertia</code> between them and wire <code>gear.spline_b → inertia.spline_a</code>, <code>inertia.spline_b → wheel.spline</code>. Set <code>J = 1.0</code>.</li>
+<li>Copy <code>Car</code> to <code>WheeledCar</code> and replace its <code>driveline</code> with a <code>WheeledDriveline</code>. The ports are the same, so the wires stay.</li>
+<li>Copy the test bench and analysis to <code>WheeledCarFullThrottle</code> and <code>WheeledCarFullThrottleTransient</code>, pointing at <code>WheeledCar</code>. Add <code>initial car.driveline.inertia.phi = 0</code>: the wheel now has a state of its own.</li>
+<li>Run it and plot <code>car.v_kmh</code> over step 5's curve.</li>
+  </ol>
+  
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.WheeledCarFullThrottleTransient</code>: 43.27 km/h
+  at 10 s against 43.59 km/h without the wheel inertia, 100 km/h at 23.8 s against 23.6 s, and the
+  same 246.39 km/h at 300 s. The two curves are almost on top of each other: through the rolling
+  radius, 1 kg·m² weighs like J / r² ≈ 10 kg on a 1400 kg car. Inertia slows the launch, not the
+  terminal speed.</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/WheeledCar.dyad</code>, <code>dyad/HandsOn/WheeledDriveline.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+The driveline of step 3 with a road wheel that has inertia. The wheel still rolls without slip.
+&quot;&quot;&quot;
+component WheeledDriveline
+  &quot;From the engine&quot;
+  spline = Spline() {^spline}
+  &quot;Gearbox housing&quot;
+  support_r = Spline() {^support_r}
+  &quot;To the body&quot;
+  flange = Flange() {^flange}
+  &quot;Road&quot;
+  support_t = Flange() {^support_t}
+  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
+  &quot;Road wheel and tire, about 20 kg mostly between 0.2 and 0.3 m radius&quot;
+  inertia = RotationalComponents.Components.Inertia(J = 1.0) {^inertia}
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = 0.31) {^wheel}
+relations
+  connect(spline, gear.spline_a) {^id1}
+  connect(gear.spline_b, inertia.spline_a) {^id2}
+  connect(inertia.spline_b, wheel.spline) {^id3}
+  connect(wheel.flange, flange) {^id4}
+  connect(gear.support, support_r) {^id5}
+  connect(wheel.support_r, support_r) {^id6}
+  connect(wheel.support_t, support_t) {^id7}
+end
+
+&quot;&quot;&quot;
+The car of step 5 with a wheel that has inertia.
+&quot;&quot;&quot;
+component WheeledCar
+  &quot;Commanded engine torque&quot;
+  tau_cmd = RealInput() {^tau_cmd}
+  &quot;Vehicle speed in km/h&quot;
+  v_kmh = RealOutput() {^v_kmh}
+  engine = Engine() {^engine}
+  driveline = WheeledDriveline() {^driveline}
+  body = Body() {^body}
+  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
+  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
+  &quot;Engine mounts and gearbox housing&quot;
+  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  &quot;Road under the wheel&quot;
+  trans_ground = TranslationalComponents.Components.Fixed() {^trans_ground}
+relations
+  connect(tau_cmd, engine.tau_cmd) {^id1}
+  connect(engine.spline, driveline.spline) {^id2}
+  connect(engine.support, rot_ground.spline) {^id3}
+  connect(driveline.support_r, rot_ground.spline) {^id4}
+  connect(driveline.flange, body.flange) {^id5}
+  connect(driveline.support_t, trans_ground.flange) {^id6}
+  connect(vsensor.flange, body.flange) {^id7}
+  connect(vsensor.v, to_kmh.u) {^id8}
+  connect(to_kmh.y, v_kmh) {^id9}
+end
+
+&quot;&quot;&quot;Full throttle from rest on a flat road, with wheel inertia.&quot;&quot;&quot;
+component WheeledCarFullThrottle
+  &quot;Full throttle: the engine&#x27;s 150 N·m ceiling&quot;
+  cmd = BlockComponents.Sources.Constant(k = 150) {^cmd}
+  car = WheeledCar() {^car}
+relations
+  connect(cmd.y, car.tau_cmd) {^id1}
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+  initial car.driveline.inertia.phi = 0
+end
+
+analysis WheeledCarFullThrottleTransient
+  extends TransientAnalysis(stop = 300)
+  model = WheeledCarFullThrottle()
+end</code></pre></div>
+</details>
+</section>
+
+  <div class="divider" id="take-home"><h2>Take-home</h2><p class="muted">Steps 7–10 · equations
+    in code, then one more car</p></div>
+
+<section class="step" id="grade">
+  <h2><span class="no">07</span> A road with a gradient <span class="budget home">take-home</span></h2>
+  <p class="goal">Write your first component with an equation — the along-slope pull of gravity — and give the body a <code>grade</code> input.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>(extends)</code></td><td>TranslationalComponents › Interfaces › PartialForce</td><td>gives <code>flange</code>, <code>support</code> and the force <code>f</code></td></tr>
+<tr><td><code>grade</code></td><td>Dyad › RealInput</td><td>port — tan α</td></tr>
+<tr><td><code>m, g</code></td><td>parameters</td><td><code>m = 1400</code>, <code>g = 9.80665</code></td></tr>
+  </tbody>
+</table></div><p class="small muted"><code>GradeBody</code> is <code>Body</code> with <code>incl_const</code> replaced by a <code>grade</code> input port that feeds both <code>rolling.inclination</code> and a <code>GradeForce(m = 1400)</code>.</p>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-80 -10 1160 1170" role="img" aria-label="Diagram of GradeBody" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="1000,500 410,500 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="450,600 410,600 410,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="250,300 390,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="390,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="390" cy="300" r="9" fill="#256b42"/>
+    <polyline points="220,880 300,880 300,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="300,300 660,300" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="300" cy="300" r="9" fill="#256b42"/>
+    <polyline points="500,650 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="200,350 200,720 500,720" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="500,720 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="500" cy="720" r="9" fill="#256b42"/>
+    <polyline points="170,930 170,960 500,960 500,990" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="120,70 140,70 140,270 150,270" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="0,500 90,500 90,325 150,325" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="0,500 90,500 90,880 121,880" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="660" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="710" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Mass</text>
+    <rect x="651" y="291" width="18" height="18" fill="#256b42"/>
+    <rect x="450" y="550" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="500" y="597.6" text-anchor="middle" font-size="12" fill="#4a5a6b">QuadraticSpeed</text>
+    <text x="500" y="610.8" text-anchor="middle" font-size="12" fill="#4a5a6b">DependentForce</text>
+    <rect x="441" y="591" width="18" height="18" fill="#256b42"/>
+    <rect x="491" y="641" width="18" height="18" fill="#256b42"/>
+    <rect x="150" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="200" y="296.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Rolling</text>
+    <text x="200" y="315.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Resistance</text>
+    <rect x="141" y="261" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="241" y="291" width="18" height="18" fill="#256b42"/>
+    <rect x="141" y="316" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="191" y="341" width="18" height="18" fill="#256b42"/>
+    <rect x="20" y="20" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="70" y="75.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="111" y="61" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="120" y="830" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="170" y="885.95" text-anchor="middle" font-size="17" fill="#4a5a6b">GradeForce</text>
+    <rect x="211" y="871" width="18" height="18" fill="#256b42"/>
+    <rect x="112" y="871" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="161" y="921" width="18" height="18" fill="#256b42"/>
+    <rect x="450" y="990" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="500" y="1045.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
+    <rect x="491" y="981" width="18" height="18" fill="#256b42"/>
+    <rect x="978" y="478" width="44" height="44" fill="#256b42"/>
+    <polygon points="-22,476 24,500 -22,524" fill="#1f5fa8"/>
+    <text x="710" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mass</text>
+    <text x="648" y="288" text-anchor="end" font-size="15" fill="#256b42">flange_a</text>
+    <text x="500" y="538" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">drag</text>
+    <text x="438" y="588" text-anchor="end" font-size="15" fill="#256b42">flange</text>
+    <text x="512" y="676" text-anchor="start" font-size="15" fill="#256b42">support</text>
+    <text x="200" y="238" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rolling</text>
+    <text x="138" y="258" text-anchor="end" font-size="15" fill="#1f5fa8">cr</text>
+    <text x="262" y="326" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="138" y="313" text-anchor="end" font-size="15" fill="#1f5fa8">inclination</text>
+    <text x="212" y="376" text-anchor="start" font-size="15" fill="#256b42">support</text>
+    <text x="70" y="150" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cr_const</text>
+    <text x="132" y="96" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="170" y="818" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gradeforce</text>
+    <text x="232" y="906" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="109" y="868" text-anchor="end" font-size="15" fill="#1f5fa8">grade</text>
+    <text x="182" y="956" text-anchor="start" font-size="15" fill="#256b42">support</text>
+    <text x="500" y="1120" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">ground</text>
+    <text x="512" y="978" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="1000" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#256b42">flange</text>
+    <text x="0" y="552" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">grade</text>
+  </svg></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.GradeBody">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.GradeBody</code> in Dyad Studio and capture the diagram. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create <code>GradeForce</code> in code: an equation has no diagram form. Start from the solution's first block — <code>extends</code> the force interface, declare the <code>grade</code> input and the two parameters.</li>
+<li>Write the one equation below. <code>grade</code> is tan α, the same convention <code>RollingResistance</code> uses for its <code>inclination</code>, so one signal can drive both.</li>
+<li>Copy <code>Body</code> to <code>GradeBody</code>. In the diagram, delete <code>incl_const</code>, add a <code>grade</code> input port, wire it to <code>rolling.inclination</code>, place a <code>GradeForce</code> and wire <code>grade → gradeforce.grade</code>, <code>gradeforce.flange → mass.flange_a</code>, <code>gradeforce.support → ground.flange</code>.</li>
+  </ol>
+  <div class="code"><span class="codelabel">The equation in GradeForce</span><button class="copy" type="button">Copy</button><pre><code><mark>  f = m * g * sin(atan(grade))</mark></code></pre></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The reference tests: on a 10 % climb (<code>TestGradeForce</code>)
+  <code>gf.f</code> reads 1366.1 N and the free mass decelerates at 0.976 m/s². With 500 N of
+  traction on a 2 % climb starting at 10 m/s (<code>TestGradeBody</code>, case
+  <code>climb</code>) the body barely accelerates: 0.0164 m/s² at the start, 10.16 m/s after
+  10 s.</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/GradeBody.dyad</code>, <code>dyad/HandsOn/GradeForce.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so are the test components. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+The along-slope pull of gravity on the car, from a road-gradient signal.
+
+`grade` is tan(alpha), the convention `RollingResistance` uses for its `inclination` input, so
+one signal can drive both.
+&quot;&quot;&quot;
+component GradeForce
+  extends TranslationalComponents.Interfaces.PartialForce
+  &quot;Road gradient, tan(alpha)&quot;
+  grade = RealInput() {^grade}
+  &quot;Vehicle mass&quot;
+  parameter m::Dyad.Mass = 1400
+  &quot;Gravitational acceleration&quot;
+  parameter g::Acceleration = 9.80665
+relations
+  # A force source acts on the body with -f, so a climb (positive grade) needs positive f to
+  # hold the car back.
+  f = m * g * sin(atan(grade))
+end
+
+&quot;&quot;&quot;
+The body of step 4 on a road with a gradient: one `grade` signal tilts the rolling resistance and
+drives the grade force.
+&quot;&quot;&quot;
+component GradeBody
+  &quot;Tractive force from the driveline&quot;
+  flange = Flange() {^flange}
+  &quot;Road gradient, tan(alpha)&quot;
+  grade = RealInput() {^grade}
+  mass = TranslationalComponents.Components.Mass(m = 1400) {^mass}
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = 30, f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2) {^drag}
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = 1400 * 9.80665) {^rolling}
+  cr_const = BlockComponents.Sources.Constant(k = 0.012) {^cr_const}
+  gradeforce = GradeForce(m = 1400) {^gradeforce}
+  ground = TranslationalComponents.Components.Fixed() {^ground}
+relations
+  connect(flange, mass.flange_a) {^id1}
+  connect(drag.flange, mass.flange_a) {^id2}
+  connect(rolling.flange, mass.flange_a) {^id3}
+  connect(gradeforce.flange, mass.flange_a) {^id4}
+  connect(drag.support, ground.flange) {^id5}
+  connect(rolling.support, ground.flange) {^id6}
+  connect(gradeforce.support, ground.flange) {^id7}
+  connect(cr_const.y, rolling.cr) {^id8}
+  connect(grade, rolling.inclination) {^id9}
+  connect(grade, gradeforce.grade) {^id10}
+end</code></pre></div>
+</details>
+</section>
+<section class="step" id="tire-curve">
+  <h2><span class="no">08</span> Tire friction against slip <span class="budget home">take-home</span></h2>
+  <p class="goal">Write the curve that says how much grip a tire gives at a given slip: a peak of 1.0 at 4 % slip, falling to 0.7 once the tire slides.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>kappa</code></td><td>Dyad › RealInput</td><td>port — slip ratio</td></tr>
+<tr><td><code>mu</code></td><td>Dyad › RealOutput</td><td>port — friction coefficient</td></tr>
+<tr><td><code>sAdhesion, sSlide, mu_A, mu_S</code></td><td>parameters</td><td>0.04, 0.12, 1.0, 0.7</td></tr>
+  </tbody>
+</table></div><p class="small muted">Sweep bench <code>TestTireFrictionCurve</code>: a <code>BlockComponents › Sources › Ramp</code> (<code>offset = -1</code>, <code>height = 2</code>, <code>duration = 2</code>) into <code>curve.kappa</code>.</p>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="140 420 520 200" role="img" aria-label="Diagram of TestTireFrictionCurve" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="300,500 500,500" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="200" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="250" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Ramp</text>
+    <rect x="291" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="500" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="550" y="497.4" text-anchor="middle" font-size="13" fill="#4a5a6b">Tire</text>
+    <text x="550" y="511.7" text-anchor="middle" font-size="13" fill="#4a5a6b">FrictionCurve</text>
+    <rect x="491" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <text x="250" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">slip</text>
+    <text x="312" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="550" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">curve</text>
+    <text x="488" y="488" text-anchor="end" font-size="15" fill="#1f5fa8">kappa</text>
+  </svg><figcaption>The sweep bench</figcaption></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.TestTireFrictionCurve">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.TestTireFrictionCurve</code> in Dyad Studio and capture a plot of <code>curve.mu</code> against <code>curve.kappa</code> from <code>TireFrictionCurveSweep</code>. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create <code>TireFrictionCurve</code> in code with the two ports, four parameters and two helper variables of the solution.</li>
+<li>Write the relations below. Each segment is a cubic with zero slope at its ends, so the curve has no corners for the solver to trip on.</li>
+<li>Build the sweep bench and the analysis <code>TireFrictionCurveSweep</code>, run it, and plot <code>curve.mu</code> against <code>curve.kappa</code>.</li>
+  </ol>
+  <div class="code"><span class="codelabel">Relations of TireFrictionCurve</span><button class="copy" type="button">Copy</button><pre><code><mark>  slip = abs(kappa)</mark>
+<mark>  # -0.5·x³ + 1.5·x maps [-1, 1] onto [-1, 1] with zero slope at both ends, so the curve stays</mark>
+<mark>  # continuously differentiable across the segment joins.</mark>
+<mark>  mu_abs = ifelse(slip &lt;= sAdhesion,</mark>
+<mark>    mu_A * (-0.5 * (slip / sAdhesion) ^ 3 + 1.5 * (slip / sAdhesion)),</mark>
+<mark>    ifelse(slip &gt;= sSlide, mu_S,</mark>
+<mark>      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))</mark>
+<mark>  mu = sign(kappa) * mu_abs</mark></code></pre></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The curve is point-symmetric: −0.7 for a wheel locked under braking (κ = −1), −0.85 at κ = −0.08, the peak of 1.0 at κ = 0.04, and 0.7 at κ = 1. These are the values <code>TestTireFrictionCurve</code> asserts.</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/TireFrictionCurve.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+Tire friction coefficient against longitudinal slip: rises to the adhesion peak `mu_A` at
+`sAdhesion`, falls to the sliding level `mu_S` at `sSlide`, and stays there. Point-symmetric, so
+braking slip gives negative friction.
+&quot;&quot;&quot;
+component TireFrictionCurve
+  &quot;Longitudinal slip ratio, negative while braking&quot;
+  kappa = RealInput() {^kappa}
+  &quot;Friction coefficient, carrying the sign of the slip&quot;
+  mu = RealOutput() {^mu}
+  &quot;Slip ratio at peak adhesion&quot;
+  parameter sAdhesion::Real = 0.04
+  &quot;Slip ratio at the sliding plateau&quot;
+  parameter sSlide::Real = 0.12
+  &quot;Peak adhesion coefficient&quot;
+  parameter mu_A::Real = 1.0
+  &quot;Sliding friction coefficient&quot;
+  parameter mu_S::Real = 0.7
+  &quot;Slip magnitude&quot;
+  variable slip::Real
+  &quot;Friction magnitude&quot;
+  variable mu_abs::Real
+relations
+  slip = abs(kappa)
+  # -0.5·x³ + 1.5·x maps [-1, 1] onto [-1, 1] with zero slope at both ends, so the curve stays
+  # continuously differentiable across the segment joins.
+  mu_abs = ifelse(slip &lt;= sAdhesion,
+    mu_A * (-0.5 * (slip / sAdhesion) ^ 3 + 1.5 * (slip / sAdhesion)),
+    ifelse(slip &gt;= sSlide, mu_S,
+      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))
+  mu = sign(kappa) * mu_abs
+end
+
+test component TestTireFrictionCurve
+  &quot;Slip swept from a locked wheel under braking to full wheelspin&quot;
+  slip = BlockComponents.Sources.Ramp(offset = -1, height = 2, duration = 2, start_time = 0) {^slip}
+  curve = TireFrictionCurve() {^curve}
+relations
+  connect(slip.y, curve.kappa) {^id1}
+end
+
+analysis TireFrictionCurveSweep
+  extends TransientAnalysis(stop = 2)
+  model = TestTireFrictionCurve()
+end</code></pre></div>
+</details>
+</section>
+<section class="step" id="slip-wheel">
+  <h2><span class="no">09</span> A wheel that can slip <span class="budget home">take-home</span></h2>
+  <p class="goal">Replace the rolling constraint with a tire: the wheel and the car may now move at different speeds, and the friction curve turns the difference into force.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>spline</code></td><td>Dyad › Spline</td><td>port — wheel shaft</td></tr>
+<tr><td><code>flange</code></td><td>Dyad › Flange</td><td>port — contact with the body</td></tr>
+<tr><td><code>mu_scale</code></td><td>Dyad › RealInput</td><td>port — 1 dry, 0.2 slippery</td></tr>
+<tr><td><code>curve</code></td><td>your <code>TireFrictionCurve</code></td><td>—</td></tr>
+<tr><td><code>radius, F_z, v_eps</code></td><td>parameters</td><td>0.31 m, 6864.655 N (half the car's weight), 0.5 m/s</td></tr>
+  </tbody>
+</table></div><p class="small muted">Bench <code>TestSlipWheel1D</code>: 600 N·m (full torque after the gear) through a 1 kg·m² inertia into the wheel, a 1400 kg mass on its flange.</p>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-10 170 820 700" role="img" aria-label="Diagram of TestSlipWheel1D" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="150,500 250,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="100,550 100,700" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="350,500 450,500" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="550,500 650,500" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="450,250 501,250 501,450" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="50" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="100" y="496.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <text x="100" y="515.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Torque</text>
+    <rect x="141" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="91" y="541" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="250" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="300" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
+    <rect x="241" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="341" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="450" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="500" y="496.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Slip</text>
+    <text x="500" y="515.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Wheel1D</text>
+    <rect x="541" y="491" width="18" height="18" fill="#256b42"/>
+    <rect x="492" y="441" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="441" y="491" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="650" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="700" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Mass</text>
+    <rect x="641" y="491" width="18" height="18" fill="#256b42"/>
+    <rect x="350" y="200" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="400" y="255.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="441" y="241" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="50" y="700" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="100" y="755.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
+    <rect x="91" y="691" width="18" height="18" fill="#4a5a6b"/>
+    <text x="100" y="438" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">torque</text>
+    <text x="162" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="112" y="576" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="300" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">inertia</text>
+    <text x="238" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
+    <text x="362" y="526" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
+    <text x="500" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
+    <text x="562" y="526" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="513" y="438" text-anchor="start" font-size="15" fill="#1f5fa8">mu_scale</text>
+    <text x="438" y="488" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="700" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mass</text>
+    <text x="638" y="488" text-anchor="end" font-size="15" fill="#256b42">flange_a</text>
+    <text x="400" y="330" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">mu_src</text>
+    <text x="462" y="276" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="100" y="830" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">fixed_r</text>
+    <text x="112" y="688" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+  </svg><figcaption>The test bench</figcaption></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.TestSlipWheel1D">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.TestSlipWheel1D</code> in Dyad Studio and capture the diagram. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create <code>SlipWheel1D</code> in code: ports, the <code>curve</code> subcomponent, three parameters and five variables, as in the solution.</li>
+<li>Write the relations below. Slip is the speed difference over the vehicle speed; <code>v_eps</code> keeps it finite at standstill.</li>
+<li>Mind the sign: flow is positive into a component, so a tire that pushes the car forward reports <code>flange.f = -F_x</code>.</li>
+  </ol>
+  <div class="code"><span class="codelabel">Relations of SlipWheel1D</span><button class="copy" type="button">Copy</button><pre><code><mark>  omega = der(spline.phi)</mark>
+<mark>  v = der(flange.s)</mark>
+<mark>  # At standstill v = 0 and the slip ratio is undefined; the floor keeps it finite.</mark>
+<mark>  kappa = (omega * radius - v) / max(abs(v), v_eps)</mark>
+<mark>  curve.kappa = kappa</mark>
+<mark>  mu = mu_scale * curve.mu</mark>
+<mark>  F_x = mu * F_z</mark>
+<mark>  # Flow is positive into the component: the tire pushes the body forward with F_x, so the</mark>
+<mark>  # flange reports -F_x, and the shaft feels the matching reaction torque.</mark>
+<mark>  flange.f = -F_x</mark>
+<mark>  0 = spline.tau + radius * flange.f</mark></code></pre></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The reference test <code>TestSlipWheel1D</code> after 5 s: on the slippery
+  road (<code>mu_scale = 0.2</code>) the slip ratio has run up to 135.4 and the mass makes only
+  3.43 m/s; on the dry road the slip ratio is 0.0076 and the mass makes 6.86 m/s.</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/SlipWheel1D.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out, and so is the test component. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+A road wheel whose tire grips through slip: the shaft and the body move at different speeds, and
+the friction curve turns the difference into traction.
+
+`F_z` is the load on the one driven axle, about half the car&#x27;s weight. `mu_scale` scales the
+curve for the road: 1 on a dry road, 0.2 on a slippery one.
+&quot;&quot;&quot;
+component SlipWheel1D
+  &quot;Wheel shaft&quot;
+  spline = Spline() {^spline}
+  &quot;Contact with the body&quot;
+  flange = Flange() {^flange}
+  &quot;Road-friction multiplier&quot;
+  mu_scale = RealInput() {^mu_scale}
+  curve = TireFrictionCurve() {^curve}
+  &quot;Wheel rolling radius&quot;
+  parameter radius::Length = 0.31
+  &quot;Normal load on the driven axle&quot;
+  parameter F_z::Force = 6864.655
+  &quot;Speed below which slip is measured against v_eps instead of v&quot;
+  parameter v_eps::Velocity = 0.5
+  &quot;Wheel angular speed&quot;
+  variable omega::AngularVelocity
+  &quot;Vehicle speed&quot;
+  variable v::Velocity
+  &quot;Longitudinal slip ratio&quot;
+  variable kappa::Real
+  &quot;Friction coefficient after road scaling&quot;
+  variable mu::Real
+  &quot;Longitudinal tire force&quot;
+  variable F_x::Force
+relations
+  omega = der(spline.phi)
+  v = der(flange.s)
+  # At standstill v = 0 and the slip ratio is undefined; the floor keeps it finite.
+  kappa = (omega * radius - v) / max(abs(v), v_eps)
+  curve.kappa = kappa
+  mu = mu_scale * curve.mu
+  F_x = mu * F_z
+  # Flow is positive into the component: the tire pushes the body forward with F_x, so the
+  # flange reports -F_x, and the shaft feels the matching reaction torque.
+  flange.f = -F_x
+  0 = spline.tau + radius * flange.f
+end</code></pre></div>
+</details>
+</section>
+<section class="step" id="standing-start">
+  <h2><span class="no">10</span> Standing start on a slippery road <span class="budget home">take-home</span></h2>
+  <p class="goal">Build the car with the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.</p>
+  <h3>Parts</h3>
+  <div class="tablewrap"><table class="parts">
+  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
+  <tbody>
+<tr><td><code>tau_cmd, grade, mu_scale</code></td><td>Dyad › RealInput</td><td>ports</td></tr>
+<tr><td><code>v_kmh, wheel_kmh</code></td><td>Dyad › RealOutput</td><td>ports — car speed and wheel surface speed</td></tr>
+<tr><td><code>engine</code></td><td>your <code>Engine</code></td><td>—</td></tr>
+<tr><td><code>gear</code></td><td>RotationalComponents › Components › IdealGear</td><td><code>ratio = 4.0</code></td></tr>
+<tr><td><code>wheel_inertia</code></td><td>RotationalComponents › Components › Inertia</td><td><code>J = 1.0</code></td></tr>
+<tr><td><code>wheel</code></td><td>your <code>SlipWheel1D</code></td><td>—</td></tr>
+<tr><td><code>body</code></td><td>your <code>GradeBody</code></td><td>—</td></tr>
+<tr><td><code>vsensor</code></td><td>TranslationalComponents › Sensors › VelocitySensor</td><td>—</td></tr>
+<tr><td><code>to_kmh</code></td><td>BlockComponents › Math › Gain</td><td><code>k = 3.6</code></td></tr>
+<tr><td><code>wsensor</code></td><td>RotationalComponents › Sensors › VelocitySensor</td><td>—</td></tr>
+<tr><td><code>wheel_to_kmh</code></td><td>BlockComponents › Math › Gain</td><td><code>k = 0.31 * 3.6</code> — ω·r in km/h</td></tr>
+<tr><td><code>rot_ground</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
+  </tbody>
+</table></div><p class="small muted">Bench <code>SlipCarStandingStart</code>: three <code>Constant</code> sources — <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2.</p>
+  <h3>Target diagram</h3>
+  <figure class="diagram-fig"><svg class="diagram" viewBox="-90 20 1180 930" role="img" aria-label="Diagram of SlipCar" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="-10,850 35,850 35,480 69,480" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="170,480 230,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="330,480 390,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="490,480 550,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="120,530 120,650" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="280,530 280,600 120,600 120,650" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="650,480 890,480 890,360 860,360" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="-10,70 720,70 720,360 760,360" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="-10,220 601,220 601,430" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="700,650 675,650 675,480 650,480" fill="none" stroke="#256b42" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="800,650 830,650" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="930,650 1010,650" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="390,830 360,830 360,570 520,570 520,480 550,480" fill="none" stroke="#4a5a6b" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="490,830 550,830" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="650,830 1010,830" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="70" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="120" y="485.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Engine</text>
+    <rect x="161" y="471" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="111" y="521" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="60" y="471" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="230" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="280" y="485.95" text-anchor="middle" font-size="17" fill="#4a5a6b">IdealGear</text>
+    <rect x="221" y="471" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="321" y="471" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="271" y="521" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="390" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="440" y="485.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Inertia</text>
+    <rect x="381" y="471" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="481" y="471" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="550" y="430" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="600" y="476.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Slip</text>
+    <text x="600" y="495.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Wheel1D</text>
+    <rect x="641" y="471" width="18" height="18" fill="#256b42"/>
+    <rect x="592" y="421" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="541" y="471" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="760" y="310" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="810" y="365.95" text-anchor="middle" font-size="17" fill="#4a5a6b">GradeBody</text>
+    <rect x="851" y="351" width="18" height="18" fill="#256b42"/>
+    <rect x="751" y="351" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="700" y="600" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="750" y="646.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Velocity</text>
+    <text x="750" y="665.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Sensor</text>
+    <rect x="691" y="641" width="18" height="18" fill="#256b42"/>
+    <rect x="791" y="641" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="830" y="600" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="880" y="655.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Gain</text>
+    <rect x="821" y="641" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="921" y="641" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="390" y="780" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="440" y="826.6" text-anchor="middle" font-size="17" fill="#4a5a6b">Velocity</text>
+    <text x="440" y="845.3" text-anchor="middle" font-size="17" fill="#4a5a6b">Sensor</text>
+    <rect x="381" y="821" width="18" height="18" fill="#4a5a6b"/>
+    <rect x="481" y="821" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="550" y="780" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="600" y="835.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Gain</text>
+    <rect x="541" y="821" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="641" y="821" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="70" y="650" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="120" y="705.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Fixed</text>
+    <rect x="111" y="641" width="18" height="18" fill="#4a5a6b"/>
+    <polygon points="-32,826 14,850 -32,874" fill="#1f5fa8"/>
+    <polygon points="-32,46 14,70 -32,94" fill="#1f5fa8"/>
+    <polygon points="-32,196 14,220 -32,244" fill="#1f5fa8"/>
+    <polygon points="988,626 1034,650 988,674" fill="#1f5fa8"/>
+    <polygon points="988,806 1034,830 988,854" fill="#1f5fa8"/>
+    <text x="120" y="418" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">engine</text>
+    <text x="182" y="506" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="132" y="556" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="57" y="468" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
+    <text x="280" y="418" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">gear</text>
+    <text x="218" y="468" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
+    <text x="342" y="506" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
+    <text x="292" y="556" text-anchor="start" font-size="15" fill="#4a5a6b">support</text>
+    <text x="440" y="560" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel_inertia</text>
+    <text x="378" y="468" text-anchor="end" font-size="15" fill="#4a5a6b">spline_a</text>
+    <text x="502" y="506" text-anchor="start" font-size="15" fill="#4a5a6b">spline_b</text>
+    <text x="600" y="560" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel</text>
+    <text x="662" y="506" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="613" y="418" text-anchor="start" font-size="15" fill="#1f5fa8">mu_scale</text>
+    <text x="538" y="468" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="810" y="440" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">body</text>
+    <text x="872" y="386" text-anchor="start" font-size="15" fill="#256b42">flange</text>
+    <text x="748" y="348" text-anchor="end" font-size="15" fill="#1f5fa8">grade</text>
+    <text x="750" y="730" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">vsensor</text>
+    <text x="688" y="638" text-anchor="end" font-size="15" fill="#256b42">flange</text>
+    <text x="812" y="676" text-anchor="start" font-size="15" fill="#1f5fa8">v</text>
+    <text x="880" y="730" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">to_kmh</text>
+    <text x="818" y="638" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
+    <text x="942" y="676" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="440" y="910" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wsensor</text>
+    <text x="378" y="818" text-anchor="end" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="502" y="856" text-anchor="start" font-size="15" fill="#1f5fa8">w</text>
+    <text x="600" y="910" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">wheel_to_kmh</text>
+    <text x="538" y="818" text-anchor="end" font-size="15" fill="#1f5fa8">u</text>
+    <text x="662" y="856" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="120" y="780" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">rot_ground</text>
+    <text x="132" y="638" text-anchor="start" font-size="15" fill="#4a5a6b">spline</text>
+    <text x="-10" y="902" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">tau_cmd</text>
+    <text x="-10" y="122" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">grade</text>
+    <text x="-10" y="272" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">mu_scale</text>
+    <text x="1010" y="702" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">v_kmh</text>
+    <text x="1010" y="882" text-anchor="middle" font-size="20" font-style="italic" fill="#1f5fa8">wheel_kmh</text>
+  </svg></figure><figure class="diagram-fig"><svg class="diagram" viewBox="90 220 520 600" role="img" aria-label="Diagram of SlipCarStandingStart" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+    <polyline points="250,700 400,700 400,535 449,535" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="250,300 300,300 300,457 449,457" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="250,500 350,500 350,472 449,472" fill="none" stroke="#1f5fa8" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="150" y="650" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="200" y="705.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="241" y="691" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="150" y="250" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="200" y="305.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="241" y="291" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="150" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="200" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">Constant</text>
+    <rect x="241" y="491" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="450" y="450" width="100" height="100" rx="10" fill="#fff" stroke="#16202c" stroke-width="3"/>
+    <text x="500" y="505.95" text-anchor="middle" font-size="17" fill="#4a5a6b">SlipCar</text>
+    <rect x="440" y="448" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="440" y="463" width="18" height="18" fill="#1f5fa8"/>
+    <rect x="440" y="526" width="18" height="18" fill="#1f5fa8"/>
+    <text x="200" y="780" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">cmd</text>
+    <text x="262" y="726" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="200" y="380" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">road</text>
+    <text x="262" y="326" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="200" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">friction</text>
+    <text x="262" y="526" text-anchor="start" font-size="15" fill="#1f5fa8">y</text>
+    <text x="500" y="580" text-anchor="middle" font-size="22" font-weight="600" fill="#16202c">car</text>
+    <text x="437" y="445" text-anchor="end" font-size="15" fill="#1f5fa8">grade</text>
+    <text x="437" y="460" text-anchor="end" font-size="15" fill="#1f5fa8">mu_scale</text>
+    <text x="437" y="523" text-anchor="end" font-size="15" fill="#1f5fa8">tau_cmd</text>
+  </svg><figcaption>SlipCarStandingStart, the test bench</figcaption></figure>
+  <div class="shot" role="img" aria-label="Screenshot placeholder: HandsOn.SlipCarStandingStart">
+  <span class="label">Screenshot slot</span>
+  <p>Open <code>HandsOn.SlipCarStandingStart</code> in Dyad Studio and capture the diagram of <code>SlipCar</code> and the plot of <code>car.v_kmh</code> and <code>car.wheel_kmh</code> from <code>SlipCarStandingStartTransient</code>. Replace this box with
+    an <code>&lt;img&gt;</code>.</p>
+</div>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>Create <code>SlipCar</code> in the diagram editor: everything in it is a part you already have. The drive chain is <code>engine → gear → wheel_inertia → wheel</code>, and <code>wheel.flange</code> drives <code>body.flange</code> directly — the tire is now the contact, so there is no translational ground.</li>
+<li>Measure both speeds in km/h: <code>vsensor</code> on the wheel flange through <code>to_kmh</code>, and <code>wsensor</code> on the wheel shaft through <code>wheel_to_kmh</code>, which multiplies by the radius as well.</li>
+<li>Build the bench, add the starting state and analysis below in code, and run it.</li>
+<li>Plot <code>car.v_kmh</code> and <code>car.wheel_kmh</code> together. Then set <code>friction</code> to 1.0 and run again.</li>
+  </ol>
+  <div class="code"><span class="codelabel">New code in SlipCarStandingStart</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
+  …
+relations
+  …
+<mark>  initial car.body.mass.s = 0</mark>
+<mark>  initial car.body.mass.v = 0</mark>
+<mark>  initial car.engine.lag.x = 0</mark>
+<mark>  initial car.wheel_inertia.phi = 0</mark>
+<mark>  initial car.wheel_inertia.w = 0</mark>
+<mark>end</mark>
+
+<mark>analysis SlipCarStandingStartTransient</mark>
+<mark>  extends TransientAnalysis(stop = 5)</mark>
+<mark>  model = SlipCarStandingStart()</mark>
+<mark>end</mark></code></pre></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.SlipCarStandingStartTransient</code>, friction 0.2:
+  after 1 s the car makes 1.94 km/h while the wheel surface is already at 159.8 km/h; after 5 s
+  the car makes <strong>10.12 km/h</strong> and the wheel surface <strong>1501 km/h</strong>. The
+  model has no rev limit, so the engine keeps delivering 150 N·m into a wheel that has nothing to
+  push against. On the dry road (friction 1.0) the two speeds stay together: 21.08 km/h for the car,
+  21.24 km/h at the wheel surface after 5 s.</p></div>
+  <details class="solution">
+  <summary>Stuck? The full model</summary>
+  <p class="small muted">From <code>dyad/HandsOn/SlipCar.dyad</code>,
+    copied verbatim except that each <code>metadata { … }</code> block — diagram layout and
+    test cases — is left out. The <code>{^…}</code> tag at the end of a line points
+    into that layout; the diagram editor writes it for you, and you can drop it if you type the
+    code by hand. In the reference library these models sit in a sub-library called
+    <code>HandsOn</code>; in yours they sit at the top level, and the code is the same.</p>
+  <div class="code"><button class="copy" type="button">Copy</button><pre><code>&quot;&quot;&quot;
+The car with a slipping wheel and a road gradient. Body speed and wheel surface speed are both
+reported in km/h, so wheelspin shows as the gap between them.
+&quot;&quot;&quot;
+component SlipCar
+  &quot;Commanded engine torque&quot;
+  tau_cmd = RealInput() {^tau_cmd}
+  &quot;Road gradient, tan(alpha)&quot;
+  grade = RealInput() {^grade}
+  &quot;Road-friction multiplier&quot;
+  mu_scale = RealInput() {^mu_scale}
+  &quot;Vehicle speed in km/h&quot;
+  v_kmh = RealOutput() {^v_kmh}
+  &quot;Wheel surface speed, omega * radius, in km/h&quot;
+  wheel_kmh = RealOutput() {^wheel_kmh}
+  engine = Engine() {^engine}
+  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
+  wheel_inertia = RotationalComponents.Components.Inertia(J = 1.0) {^wheel_inertia}
+  wheel = SlipWheel1D() {^wheel}
+  body = GradeBody() {^body}
+  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
+  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
+  wsensor = RotationalComponents.Sensors.VelocitySensor() {^wsensor}
+  wheel_to_kmh = BlockComponents.Math.Gain(k = 0.31 * 3.6) {^wheel_to_kmh}
+  &quot;Engine mounts and gearbox housing&quot;
+  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+relations
+  connect(tau_cmd, engine.tau_cmd) {^id1}
+  connect(engine.spline, gear.spline_a) {^id2}
+  connect(gear.spline_b, wheel_inertia.spline_a) {^id3}
+  connect(wheel_inertia.spline_b, wheel.spline) {^id4}
+  connect(engine.support, rot_ground.spline) {^id5}
+  connect(gear.support, rot_ground.spline) {^id6}
+  connect(wheel.flange, body.flange) {^id7}
+  connect(grade, body.grade) {^id8}
+  connect(mu_scale, wheel.mu_scale) {^id9}
+  connect(vsensor.flange, wheel.flange) {^id10}
+  connect(vsensor.v, to_kmh.u) {^id11}
+  connect(to_kmh.y, v_kmh) {^id12}
+  connect(wsensor.spline, wheel.spline) {^id13}
+  connect(wsensor.w, wheel_to_kmh.u) {^id14}
+  connect(wheel_to_kmh.y, wheel_kmh) {^id15}
+end
+
+&quot;&quot;&quot;Full throttle from rest on a slippery flat road: the wheel spins up, the car barely moves.&quot;&quot;&quot;
+component SlipCarStandingStart
+  &quot;Full throttle&quot;
+  cmd = BlockComponents.Sources.Constant(k = 150) {^cmd}
+  &quot;Flat road&quot;
+  road = BlockComponents.Sources.Constant(k = 0) {^road}
+  &quot;Slippery road; 1.0 is dry&quot;
+  friction = BlockComponents.Sources.Constant(k = 0.2) {^friction}
+  car = SlipCar() {^car}
+relations
+  connect(cmd.y, car.tau_cmd) {^id1}
+  connect(road.y, car.grade) {^id2}
+  connect(friction.y, car.mu_scale) {^id3}
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+  initial car.wheel_inertia.phi = 0
+  initial car.wheel_inertia.w = 0
+end
+
+analysis SlipCarStandingStartTransient
+  extends TransientAnalysis(stop = 5)
+  model = SlipCarStandingStart()
+end</code></pre></div>
+</details>
+</section>
+
+  <footer>
+    Reference models: <code>dyad/HandsOn/</code> in the course repository. Design notes:
+    <code>docs/superpowers/specs/2026-10-02-lecture-01-handson-design.md</code>.
+  </footer>
+</div>
+<script>
+  // Copy the code block next to the button; falls back to selecting the text where the
+  // clipboard API is unavailable, as it is on some file:// pages.
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var code = btn.parentElement.querySelector("pre code");
+      var text = code.innerText;
+      function done(label) { btn.textContent = label; setTimeout(function () { btn.textContent = "Copy"; }, 1500); }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { done("Copied"); }, function () { select(); });
+      } else { select(); }
+      function select() {
+        var range = document.createRange(); range.selectNodeContents(code);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        done("Selected — press Ctrl+C");
+      }
+    });
+  });
+</script>
+</body>
+</html>
