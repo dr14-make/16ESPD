@@ -1,0 +1,68 @@
+
+<!-- ===================== 07 — Grade ==================================================== -->
+<section data-section-title="07 — Grade">
+
+  <section class="cover">
+    <p class="nb-no">Step 07 · 10 min</p>
+    <h2>A road with a gradient</h2>
+    <p class="thesis">Your first equation: the pull of gravity along the slope.</p>
+    <p class="meta"><a href="../../handson/lecture-01/#grade">page: step 07</a> · reference <code>dyad/HandsOn/GradeForce.dyad</code>, <code>GradeBody.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> the standard library's <code>Mass</code> takes a fixed angle. A
+      hill that starts in the middle of a run needs a force driven by a signal, and no part does
+      that — so you write one.</p>
+      <p><strong>Timing:</strong> 10 minutes. Students short on time paste the full component
+      from the page's solution panel and read the equation.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>One equation</h2>
+    <pre><code class="language-julia" data-trim data-noescape>component GradeForce
+  extends TranslationalComponents.Interfaces.PartialForce
+  grade = RealInput()
+  parameter m::Dyad.Mass = 1400
+  parameter g::Acceleration = 9.80665
+relations
+  f = m * g * sin(atan(grade))
+end</code></pre>
+    <ul class="small">
+      <li><strong>Add Component</strong>, then ⇄ — an equation has no diagram form.</li>
+      <li><code>extends PartialForce</code> brings the ports and <code>f</code>; you write only
+        what <code>f</code> is.</li>
+      <li><code>grade</code> is tan α — the same convention <code>RollingResistance</code> uses,
+        so one signal drives both.</li>
+    </ul>
+    <aside class="notes">
+      <p><strong>Say:</strong> <code>extends</code> is inheritance. The interface already has a
+      flange, a support and a force variable <code>f</code>; the component's whole job is the one
+      line in <code>relations</code>.</p>
+      <p><strong>They get wrong:</strong> the sign. The source acts on the body with −f, so a
+      climb needs positive f to hold the car back. That is why there is no minus in the
+      equation.</p>
+      <p><strong>Point at:</strong> <code>sin(atan(grade))</code>. A 10 % grade is
+      tan α = 0.10, not α = 0.10.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Give the body a grade input</h2>
+    <figure class="fig shot">
+      <img src="../../handson/lecture-01/img/step07-grade-body.png"
+           alt="GradeBody: the grade input feeds both the rolling resistance inclination and the grade force.">
+      <figcaption>Duplicate <code>Body</code> → <code>GradeBody</code> · delete <code>incl_const</code> ·
+        one <code>grade</code> input into <code>rolling.inclination</code> and <code>gradeforce.grade</code> ·
+        <code>GradeForce(m = m, g = g)</code></figcaption>
+    </figure>
+    <div class="readout">
+      <div class="r"><span class="v">1366 N</span><span class="k">on a 10 % climb</span></div>
+      <div class="r"><span class="v">0.976 m/s²</span><span class="k">deceleration, free mass</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> 1400 × 9.81 × sin(atan 0.1) = 1366 N. Compare with the 1935 N
+      of full traction from step 03: a 10 % hill eats most of the engine. That is the windup
+      scenario of notebook 06.</p>
+    </aside>
+  </section>
+
+</section>

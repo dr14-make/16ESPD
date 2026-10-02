@@ -1,0 +1,176 @@
+
+<!-- Part 1. Every slide names the page section it mirrors; the page carries the full actions and
+     the copyable code, the deck carries what to say while the room does them. -->
+
+<!-- ===================== Part 1 — Dyad Studio and the extension ======================== -->
+<section data-section-title="Part 1 — Dyad Studio">
+
+  <section class="deck-title">
+    <h1>Build the car in Dyad</h1>
+    <h1 style="font-size:1.5em; color:var(--accent); margin-top:-0.2em;">Lecture 1 hands-on</h1>
+    <p class="sub">Vehicle Systems &amp; Components</p>
+    <p class="sub small">From an empty library to a wheel spinning on a slippery road.</p>
+    <p class="hint">
+      <kbd>S</kbd> speaker view &nbsp;·&nbsp; <kbd>C</kbd> cue panel &nbsp;·&nbsp;
+      <kbd>O</kbd> overview &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> steps &nbsp;·&nbsp;
+      <kbd>↑</kbd> <kbd>↓</kbd> within a step
+    </p>
+    <aside class="notes">
+      <p><strong>Before the room fills.</strong> Deck on the projector, Dyad Studio on your
+      laptop with an empty folder ready. Press <strong>S</strong> and check the speaker window
+      opened; if the popup was blocked, <strong>C</strong> puts these notes along the bottom.</p>
+      <p><strong>Say:</strong> the lecture gave you a car in notebooks. Today you build that car
+      yourself, part by part, and by the end it reaches exactly the speed the notebook shows —
+      because it is the same model.</p>
+      <p><strong>Students follow the page, not the deck.</strong> Put the link on the board:
+      <code>docs/handson/lecture-01/</code> on the course site. Every step there has the parts
+      table, the screenshot, numbered actions and copy buttons. The deck is for you: what to
+      say, what to show, where they get stuck.</p>
+      <p><strong>Timing:</strong> about 165 minutes — Part 1 30, Part 2 135. Deep links match:
+      <code>#/5</code> here is step 05 on the page.</p>
+      <p><strong>If time runs short:</strong> cut from the back. Steps 02–06 give everyone a
+      working car; 07–10 are the slip story.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Today</h2>
+    <table>
+      <tr><th>#</th><th>Step</th><th>Min</th><th>You end with</th></tr>
+      <tr><td><a href="#/0/2">—</a></td><td>Dyad Studio and your library</td><td>20</td><td>an empty <code>MyCar</code> library</td></tr>
+      <tr><td><a href="#/1">01</a></td><td>Tour</td><td>10</td><td>two blocks, one wire, two views</td></tr>
+      <tr><td><a href="#/2">02</a></td><td>Engine</td><td>20</td><td>torque with a delay, a lag and a ceiling</td></tr>
+      <tr><td><a href="#/3">03</a></td><td>Driveline</td><td>10</td><td>gear and rolling wheel</td></tr>
+      <tr><td><a href="#/4">04</a></td><td>Body</td><td>15</td><td>mass, drag, rolling resistance</td></tr>
+      <tr><td><a href="#/5">05</a></td><td>Car</td><td>20</td><td>246 km/h flat out — the notebook's number</td></tr>
+      <tr><td><a href="#/6">06</a></td><td>Wheel inertia</td><td>10</td><td>a spinning wheel that barely matters</td></tr>
+      <tr><td><a href="#/7">07</a></td><td>Grade</td><td>10</td><td>your first equation</td></tr>
+      <tr><td><a href="#/8">08</a></td><td>Tire curve</td><td>15</td><td>grip against slip</td></tr>
+      <tr><td><a href="#/9">09</a></td><td>Slip wheel</td><td>15</td><td>a wheel that can spin</td></tr>
+      <tr><td><a href="#/10">10</a></td><td>Standing start</td><td>20</td><td>wheelspin on ice</td></tr>
+    </table>
+    <aside class="notes">
+      <p><strong>Say:</strong> one car, built bottom-up. Each step is one component, and each
+      component is tested before the next one uses it — that habit is the real lesson.</p>
+      <p><strong>Point at:</strong> step 05. That is the milestone: if your car makes 246 km/h,
+      you built the lecture's car.</p>
+      <p><strong>Say:</strong> keep the names the page gives — <code>engine</code>,
+      <code>car</code>, <code>v_kmh</code>. The checkpoints and the plot commands use them; a
+      different name means a different signal name and a command that does not find it.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Three ideas before you click anything</h2>
+    <div class="cols">
+      <div>
+        <ul>
+          <li><strong>A library is a folder.</strong> <code>dyad/</code> holds your
+            <code>.dyad</code> files; <code>generated/</code> is the Julia the extension writes
+            from them — never edit it.</li>
+          <li><strong>Component = what the system is.</strong> Parts, wires, equations.</li>
+          <li><strong>Analysis = what to do with it.</strong> "Simulate this for 300 s."</li>
+          <li><strong>Diagram and code are one file.</strong> A block is a line; a wire is a
+            <code>connect</code>.</li>
+        </ul>
+      </div>
+      <div class="callout">
+        <span class="label">The rule that shapes every step</span>
+        You can only simulate a component whose inputs are all driven. So each experiment gets
+        a small <em>test bench</em> around the thing you built: a source into its input, the
+        thing itself, and an analysis on the bench.
+      </div>
+    </div>
+    <p class="page-link">Page: <a href="../../handson/lecture-01/#ui">What you are looking at</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> Dyad Studio is a VS Code extension. You draw or write models in
+      the Dyad language; it compiles them to Julia — ModelingToolkit underneath — and simulates
+      them. You will not write Julia today except to plot.</p>
+      <p><strong>Point at:</strong> the callout. Students hit this in step 02 and ask why they
+      cannot just run the engine. Plant the answer now: an engine with a dangling torque input
+      is not a complete problem — nobody said what the torque command is.</p>
+      <p><strong>They get wrong:</strong> editing files in <code>generated/</code>. Say it twice:
+      it is rewritten on every compile, edits there vanish.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Where things are</h2>
+    <figure class="fig shot tall">
+      <img src="../../handson/lecture-01/img/dyad-studio-map.png"
+           alt="Dyad Studio with four numbered arrows: the Components and Analyses panels in the Dyad sidebar, and the Run Analysis and Toggle Between Code and Diagram View buttons in the editor title bar.">
+      <figcaption><b>1</b> Components — right-click → Add Component · <b>2</b> Analyses — ▷ runs one ·
+        <b>3</b> ▷ Run Analysis · <b>4</b> ⇄ Toggle Between Code and Diagram View ·
+        bottom right: Julia Commands → Dyad Compile</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Do it live:</strong> open the Dyad sidebar (the Dyad icon in the activity bar)
+      and walk the four panels: Actions, Components, Analyses, Notebooks. Click each control on
+      the slide on your own screen as you name it.</p>
+      <p><strong>Point at:</strong> 4, the ⇄. It is the most used button today and the easiest
+      to miss.</p>
+      <p><strong>Say:</strong> saving compiles. If an analysis does not show up in the Analyses
+      panel after a save, Dyad Compile under Julia Commands forces it.</p>
+      <p><strong>Ignore:</strong> the tangled plot in this screenshot. Step 02 explains it and
+      shows the fix.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Adding a part</h2>
+    <div class="cols cols-wide-left">
+      <figure class="fig shot">
+        <img src="../../handson/lecture-01/img/dyad-studio-add-component.png"
+             alt="The diagram toolbar's plus button opened: a search box above a tree of libraries.">
+      </figure>
+      <div>
+        <ul class="small">
+          <li><strong>+</strong> (Add component) in the diagram toolbar.</li>
+          <li>Search by name — <code>PadeDelay</code> — or walk the path the parts table gives:
+            <code>BlockComponents › Nonlinear › PadeDelay</code>.</li>
+          <li><code>Dyad</code> holds the ports: <code>RealInput</code>, <code>Spline</code>,
+            <code>Flange</code>.</li>
+          <li>Your own library is at the bottom — that is where your <code>Engine</code> will
+            appear when the car needs it.</li>
+          <li>The sliders button: <strong>Edit Parameters</strong>.</li>
+        </ul>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> four standard libraries matter today. Blocks for signals,
+      Rotational for shafts, Translational for the car moving along the road, and Dyad for the
+      ports.</p>
+      <p><strong>Point at:</strong> the bottom entry, the student's own library. Components they
+      build show up here and are placed exactly like standard parts — that is how the car is
+      assembled in step 05.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Create your library</h2>
+    <ol>
+      <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → <strong>Dyad: Create Component
+        Library</strong> → name it <code>MyCar</code>, pick an empty folder.</li>
+      <li>Wait: the extension runs <code>Pkg.instantiate()</code> by itself. The first time it
+        downloads and precompiles the standard libraries — minutes, not seconds.</li>
+      <li>Dyad sidebar → <strong>Components</strong>: <code>MyCar</code> is there.</li>
+    </ol>
+    <div class="callout small">
+      <span class="label">Checkpoint</span>
+      The terminal finished instantiating without errors, and <code>MyCar</code> is in the
+      Components panel.
+    </div>
+    <p class="page-link">Page: <a href="../../handson/lecture-01/#library">Create your library</a></p>
+    <aside class="notes">
+      <p><strong>Timing:</strong> this is the step that eats a session. If you could not get
+      students to do it beforehand, start it first thing and talk through the three ideas and
+      the map while it downloads.</p>
+      <p><strong>They get wrong:</strong> a folder that already has files in it, or a name with
+      a space. <code>MyCar</code> exactly — the plot commands say <code>using MyCar</code>.</p>
+      <p><strong>If stuck:</strong> a red error in the terminal during instantiate is almost
+      always the network or a full disk. Pair the student with a neighbour and keep going;
+      re-run <code>Pkg.instantiate()</code> at the break.</p>
+    </aside>
+  </section>
+
+</section>
