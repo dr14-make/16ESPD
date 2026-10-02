@@ -57,7 +57,7 @@
       <code>docs/handson/lecture-01/</code> on the course site. Every step there has the parts
       table, the screenshot, numbered actions and copy buttons. The deck is for you: what to
       say, what to show, where they get stuck.</p>
-      <p><strong>Timing:</strong> about 155 minutes — Part 1 30, Part 2 125. Deep links match:
+      <p><strong>Timing:</strong> about 165 minutes — Part 1 30, Part 2 135. Deep links match:
       <code>#/5</code> here is step 05 on the page.</p>
       <p><strong>If time runs short:</strong> cut from the back. Steps 02–06 give everyone a
       working car; 07–10 are the slip story.</p>
@@ -78,7 +78,7 @@
       <tr><td><a href="#/7">07</a></td><td>Grade</td><td>10</td><td>your first equation</td></tr>
       <tr><td><a href="#/8">08</a></td><td>Tire curve</td><td>15</td><td>grip against slip</td></tr>
       <tr><td><a href="#/9">09</a></td><td>Slip wheel</td><td>15</td><td>a wheel that can spin</td></tr>
-      <tr><td><a href="#/10">10</a></td><td>Standing start</td><td>10</td><td>wheelspin on ice</td></tr>
+      <tr><td><a href="#/10">10</a></td><td>Standing start</td><td>20</td><td>wheelspin on ice</td></tr>
     </table>
     <aside class="notes">
       <p><strong>Say:</strong> one car, built bottom-up. Each step is one component, and each
@@ -771,8 +771,8 @@ end</code></pre>
       <p><strong>Say:</strong> a tire does not grip by rolling perfectly. It grips by slipping a
       little — the tread deforms — and up to a point, more slip means more force. Past that
       point it slides, and grip drops.</p>
-      <p><strong>Timing:</strong> 15 minutes. The relations are long; most students should paste
-      them from the page and spend the time on the plot.</p>
+      <p><strong>Timing:</strong> 15 minutes. The relations are long; students paste
+      the component from the page (New component → ⇄ → Ctrl+A → paste) and spend the time reading it and on the plot.</p>
     </aside>
   </section>
 
@@ -824,7 +824,7 @@ plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre>
       <p><strong>Say:</strong> up to now <code>IdealRollingWheel</code> forced
       ω·r = v. That is the assumption we drop. The difference between the two speeds is slip,
       and the curve from step 08 turns slip into force.</p>
-      <p><strong>Timing:</strong> 15 minutes. Same advice: paste, then read.</p>
+      <p><strong>Timing:</strong> 15 minutes. Paste, then read: the page walks through every relation. Nothing runs in this step — step 10 drives it.</p>
     </aside>
   </section>
 
@@ -877,7 +877,7 @@ flange.f = -F_x
 <section data-section-title="10 — Standing start">
 
   <section class="cover">
-    <p class="nb-no">Step 10 · 10 min</p>
+    <p class="nb-no">Step 10 · 20 min</p>
     <h2>Standing start on a slippery road</h2>
     <p class="thesis">Floor it on ice: the wheel spins, the car barely moves.</p>
     <p class="meta"><a href="../../handson/lecture-01/#standing-start">page: step 10</a> · reference <code>dyad/HandsOn/SlipCar.dyad</code></p>
@@ -885,7 +885,9 @@ flange.f = -F_x
       <p><strong>Say:</strong> everything in this car is a part you already have. The new thing
       is wiring: the tire is the contact now, so there is no translational ground — the wheel's
       flange drives the body directly.</p>
-      <p><strong>Timing:</strong> 10 minutes.</p>
+      <p><strong>Timing:</strong> 20 minutes — 13 parts and 15 wires. The page lists the wires as
+      a numbered table; tell the room to tick them off. Create the car, then its parameters, then
+      the parts, then the wires, then a separate bench.</p>
     </aside>
   </section>
 

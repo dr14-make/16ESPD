@@ -139,7 +139,7 @@
     equations of your own and end with the car spinning its wheel on a slippery road.</p>
   <p class="small muted">Every component here exists in the course repository under
     <code>dyad/HandsOn/</code>, and every number in a checkpoint was read off a run of it.
-    The budgets add up to 155 minutes: 30 for Part 1 and 125 for Part 2.</p>
+    The budgets add up to 165 minutes: 30 for Part 1 and 135 for Part 2.</p>
 
   <nav class="toc">
     <h2>Part 1 — Dyad Studio and the extension</h2>
@@ -160,7 +160,7 @@
 <li><a href="#grade">A road with a gradient</a> <span class="muted small">— 10 min</span></li>
 <li><a href="#tire-curve">Tire friction against slip</a> <span class="muted small">— 15 min</span></li>
 <li><a href="#slip-wheel">A wheel that can slip</a> <span class="muted small">— 15 min</span></li>
-<li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— 20 min</span></li>
     </ol>
   </nav>
 
@@ -270,7 +270,7 @@ relations
 end</code></pre></div>
 </details>
 </section>
-<div class="divider"><h2>Part 2 — Build the car</h2><p class="muted">Steps 2–10 · one component per step · 125 min</p></div>
+<div class="divider"><h2>Part 2 — Build the car</h2><p class="muted">Steps 2–10 · one component per step · 135 min</p></div>
 
 <section class="step" id="engine">
   <h2><span class="no">02</span> Engine <span class="budget">20 min</span></h2>
@@ -999,17 +999,12 @@ end</code></pre></div>
 </section>
 <section class="step" id="tire-curve">
   <h2><span class="no">08</span> Tire friction against slip <span class="budget">15 min</span></h2>
-  <p class="goal">Write the curve that says how much grip a tire gives at a given slip: a peak of 1.0 at 4 % slip, falling to 0.7 once the tire slides.</p>
-  <h3>Parts</h3>
-  <div class="tablewrap"><table class="parts">
-  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
-  <tbody>
-<tr><td><code>kappa</code></td><td>Dyad › RealInput</td><td>port — slip ratio</td></tr>
-<tr><td><code>mu</code></td><td>Dyad › RealOutput</td><td>port — friction coefficient</td></tr>
-<tr><td><code>sAdhesion, sSlide, mu_A, mu_S</code></td><td>parameters</td><td>0.04, 0.12, 1.0, 0.7</td></tr>
-  </tbody>
-</table></div><p class="small muted">Sweep bench <code>TestTireFrictionCurve</code>: a <code>BlockComponents › Sources › Ramp</code> (<code>offset = -1</code>, <code>height = 2</code>, <code>duration = 2</code>) into <code>curve.kappa</code>.</p>
-  <h3>What you are building</h3>
+  <p class="goal">A component made of equations instead of parts: slip ratio κ in, friction coefficient μ out — a peak of 1.0 at 4 % slip, falling to 0.7 once the tire slides.</p>
+
+  <h3>Where you are, where you are going</h3>
+  <p>Everything so far was drawn. This component has nothing to draw: it is a formula. You paste it,
+    read it line by line, then put it on a small bench that sweeps the slip from −1 to +1 so you can
+    see the curve. Step 09 uses it inside the slipping wheel.</p>
   <figure class="shot-img">
     <a href="img/step08-tire-curve.png"><img src="img/step08-tire-curve.png" alt="TireFrictionCurve: the diagram holds only the kappa input and mu output; the curve itself is equations in the code view." loading="lazy"></a>
     <figcaption><code>TireFrictionCurve</code> has no blocks inside: the diagram shows only its two ports, and the curve lives in the equations on the right.</figcaption>
@@ -1018,29 +1013,18 @@ end</code></pre></div>
     <a href="img/step08-tire-curve-plot.png"><img src="img/step08-tire-curve-plot.png" alt="Plot of mu against kappa: an odd-symmetric curve peaking at plus and minus 1.0 near a slip of 0.04 and falling to plus and minus 0.7 beyond 0.12." loading="lazy"></a>
     <figcaption>The sweep plotted as μ against κ rather than against time: peak adhesion 1.0 at κ = 0.04, sliding at 0.7 beyond κ = 0.12, mirrored for braking.</figcaption>
   </figure>
-  <h3>Do this</h3>
-  <ol class="actions">
-<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>TireFrictionCurve</code>. It opens as an empty diagram. Toggle to code (⇄): an equation has no diagram form. Write it with the two ports, four parameters and two helper variables of the solution. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
-<li>Write the relations below. Each segment is a cubic with zero slope at its ends, so the curve has no corners for the solver to trip on.</li>
-<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>TestTireFrictionCurve</code>. It opens as an empty diagram. It is the bench that sweeps the slip from −1 to +1. Toggle to code and replace its contents with the component below (it is short, and a ramp is easier to type than to draw); keep only the <code>component</code> part if you create the analysis from the UI:
-<div class="code"><span class="codelabel">Sweep bench and analysis</span><button class="copy" type="button">Copy</button><pre><code>component TestTireFrictionCurve
-  slip = BlockComponents.Sources.Ramp(offset = -1, height = 2, duration = 2, start_time = 0)
-  curve = TireFrictionCurve()
-relations
-  connect(slip.y, curve.kappa)
-end
 
-analysis TireFrictionCurveSweep
-  extends TransientAnalysis(stop = 2)
-  model = TestTireFrictionCurve()
-end</code></pre></div></li>
-<li><span class="badge">New analysis</span> With <code>TestTireFrictionCurve</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar. Dyad Studio offers the analysis types it can create: choose <strong>TransientAnalysis</strong>. It creates the analysis with <code>TestTireFrictionCurve</code> already assigned as its model and lists it in the <strong>Analyses</strong> panel. Name it <code>TireFrictionCurveSweep</code> — the plot command below calls it by that name; if it picked another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>2</code> s.</li>
-<li>Run it: press ▷ beside <code>TireFrictionCurveSweep</code> in the <strong>Analyses</strong> panel. Then plot μ against κ rather than against time:
-<div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
-r = MyCar.TireFrictionCurveSweep()
-plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre></div></li>
+  <h3>A · Create it and paste the code</h3>
+  <ol class="actions">
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>TireFrictionCurve</code>.</li>
+<li>Toggle to code (⇄). The new file holds an empty <code>component TireFrictionCurve</code> … <code>end</code>. Select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, then click <strong>Copy</strong> on the block below and paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>. Save with <kbd>Ctrl</kbd>+<kbd>S</kbd>.</li>
   </ol>
-  <div class="code"><span class="codelabel">TireFrictionCurve — complete</span><button class="copy" type="button">Copy</button><pre><code>component TireFrictionCurve
+  <div class="code"><span class="codelabel">TireFrictionCurve</span><button class="copy" type="button">Copy</button><pre><code>"""
+Tire friction coefficient against longitudinal slip: rises to the adhesion peak `mu_A` at
+`sAdhesion`, falls to the sliding level `mu_S` at `sSlide`, and stays there. Point-symmetric, so
+braking slip gives negative friction.
+"""
+component TireFrictionCurve
   "Longitudinal slip ratio, negative while braking"
   kappa = RealInput()
   "Friction coefficient, carrying the sign of the slip"
@@ -1067,7 +1051,45 @@ relations
       (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))
   mu = sign(kappa) * mu_abs
 end</code></pre></div>
+  <ol class="actions" start="3">
+<li>Look at the <strong>Problems</strong> tab under the editor: nothing should be listed for this file. A red squiggle means the paste was incomplete — select all and paste again.</li>
+  </ol>
+
+  <h3>B · Read what you pasted</h3>
+  <ul>
+    <li><code>kappa = RealInput()</code>, <code>mu = RealOutput()</code> — the two ports: slip in, friction out.</li>
+    <li>Four <code>parameter</code>s describe the curve: the peak <code>mu_A = 1.0</code> at <code>sAdhesion = 0.04</code>, the sliding level <code>mu_S = 0.7</code> from <code>sSlide = 0.12</code> on.</li>
+    <li>Two <code>variable</code>s are helpers the equations use: <code>slip</code> and <code>mu_abs</code>.</li>
+    <li><code>slip = abs(kappa)</code> — the curve is built for positive slip, then mirrored.</li>
+    <li><code>mu_abs = ifelse(…)</code> — three pieces: rising to the peak, falling from peak to sliding, flat after. Each piece is a cubic with zero slope at its ends, so the curve has no corners for the solver to trip on.</li>
+    <li><code>mu = sign(kappa) * mu_abs</code> — negative slip (braking) gives negative friction.</li>
+  </ul>
+
+  <h3>C · Sweep it and plot the curve</h3>
+  <ol class="actions" start="4">
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>TestTireFrictionCurve</code>. It is the bench: a ramp that moves κ from −1 to +1 in 2 s, into your curve.</li>
+<li>Toggle to code (⇄). The new file holds an empty <code>component TestTireFrictionCurve</code> … <code>end</code>. Select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, then click <strong>Copy</strong> on the block below and paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>. Save with <kbd>Ctrl</kbd>+<kbd>S</kbd>.</li>
+  </ol>
+  <div class="code"><span class="codelabel">TestTireFrictionCurve</span><button class="copy" type="button">Copy</button><pre><code>component TestTireFrictionCurve
+  "Slip swept from a locked wheel under braking to full wheelspin"
+  slip = BlockComponents.Sources.Ramp(offset = -1, height = 2, duration = 2, start_time = 0)
+  curve = TireFrictionCurve()
+relations
+  connect(slip.y, curve.kappa)
+end</code></pre></div>
+  <ol class="actions" start="6">
+<li><span class="badge">New analysis</span> With <code>TestTireFrictionCurve</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar and choose <strong>TransientAnalysis</strong>. It is created with <code>TestTireFrictionCurve</code> as its model and appears in the <strong>Analyses</strong> panel. Name it <code>TireFrictionCurveSweep</code> — the plot command calls it by that name; if it got another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>2</code> s.</li>
+<li>Run it: press ▷ beside <code>TireFrictionCurveSweep</code> in the <strong>Analyses</strong> panel. Then, in the Julia REPL, plot μ against κ rather than against time — the pair in parentheses means “first against second”:
+<div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
+r = MyCar.TireFrictionCurveSweep()
+plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre></div></li>
+  </ol>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The curve is point-symmetric: −0.7 for a wheel locked under braking (κ = −1), −0.85 at κ = −0.08, the peak of 1.0 at κ = 0.04, and 0.7 at κ = 1. These are the values <code>TestTireFrictionCurve</code> asserts.</p></div>
+
+  <h3>D · Try it</h3>
+  <p>In <code>TireFrictionCurve</code>, change <code>mu_A = 1.0</code> to <code>1.2</code>, save, run
+    <code>TireFrictionCurveSweep</code> again and re-plot: the peak rises and nothing else moves. Set it
+    back to 1.0 before step 09.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/TireFrictionCurve.dyad</code>,
@@ -1123,30 +1145,32 @@ end</code></pre></div>
 </section>
 <section class="step" id="slip-wheel">
   <h2><span class="no">09</span> A wheel that can slip <span class="budget">15 min</span></h2>
-  <p class="goal">Replace the rolling constraint with a tire: the wheel and the car may now move at different speeds, and the friction curve turns the difference into force.</p>
-  <h3>Parts</h3>
-  <div class="tablewrap"><table class="parts">
-  <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
-  <tbody>
-<tr><td><code>spline</code></td><td>Dyad › Spline</td><td>port — wheel shaft</td></tr>
-<tr><td><code>flange</code></td><td>Dyad › Flange</td><td>port — contact with the body</td></tr>
-<tr><td><code>mu_scale</code></td><td>Dyad › RealInput</td><td>port — 1 dry, 0.2 slippery</td></tr>
-<tr><td><code>curve</code></td><td>your <code>TireFrictionCurve</code></td><td>—</td></tr>
-<tr><td><code>radius, F_z, v_eps</code></td><td>parameters</td><td>0.31 m, 6864.655 N (half the car's weight), 0.5 m/s</td></tr>
-  </tbody>
-</table></div><p class="small muted">Bench <code>TestSlipWheel1D</code>: 600 N·m (full torque after the gear) through a 1 kg·m² inertia into the wheel, a 1400 kg mass on its flange.</p>
-  <h3>What you are building</h3>
+  <p class="goal">A tire instead of a rolling constraint: the wheel and the car may now move at different speeds, and your friction curve turns the difference into force.</p>
+
+  <h3>Where you are, where you are going</h3>
+  <p>In the car so far, <code>IdealRollingWheel</code> locked wheel and road together: ω·r = v, always.
+    <code>SlipWheel1D</code> takes its place. It has the same two connections — a shaft
+    (<code>spline</code>) from the gear and a contact (<code>flange</code>) with the body — plus an input
+    <code>mu_scale</code> for how slippery the road is. Inside it are equations and your
+    <code>TireFrictionCurve</code> from step 08. Nothing runs in this step; step 10 puts it in a car.</p>
   <figure class="shot-img">
     <a href="img/step09-slip-wheel.png"><img src="img/step09-slip-wheel.png" alt="SlipWheel1D diagram: the curve block sits between the spline and flange ports with no wires; it is connected through equations." loading="lazy"></a>
     <figcaption>No wires to <code>curve</code>, on purpose: it is connected by the equations <code>curve.kappa = kappa</code> and <code>mu = mu_scale * curve.mu</code>, not by <code>connect</code>.</figcaption>
   </figure>
-  <h3>Do this</h3>
+
+  <h3>A · Create it and paste the code</h3>
   <ol class="actions">
-<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipWheel1D</code>. It opens as an empty diagram. Toggle to code (⇄): an equation has no diagram form. Write it: ports, the <code>curve</code> subcomponent, three parameters and five variables, as in the solution. Short on time? Copy the whole component from <strong>Stuck? The full model</strong> below, paste it over the new file's contents, and read the relations against the next point.</li>
-<li>Write the relations below. Slip is the speed difference over the vehicle speed; <code>v_eps</code> keeps it finite at standstill.</li>
-<li>Mind the sign: flow is positive into a component, so a tire that pushes the car forward reports <code>flange.f = -F_x</code>.</li>
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipWheel1D</code>.</li>
+<li>Toggle to code (⇄). The new file holds an empty <code>component SlipWheel1D</code> … <code>end</code>. Select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, then click <strong>Copy</strong> on the block below and paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>. Save with <kbd>Ctrl</kbd>+<kbd>S</kbd>. It uses <code>TireFrictionCurve()</code>, so step 08 must be saved in the same library.</li>
   </ol>
-  <div class="code"><span class="codelabel">SlipWheel1D — complete</span><button class="copy" type="button">Copy</button><pre><code>component SlipWheel1D
+  <div class="code"><span class="codelabel">SlipWheel1D</span><button class="copy" type="button">Copy</button><pre><code>"""
+A road wheel whose tire grips through slip: the shaft and the body move at different speeds, and
+the friction curve turns the difference into traction.
+
+`F_z` is the load on the one driven axle, about half the car's weight. `mu_scale` scales the
+curve for the road: 1 on a dry road, 0.2 on a slippery one.
+"""
+component SlipWheel1D
   "Wheel shaft"
   spline = Spline()
   "Contact with the body"
@@ -1183,9 +1207,26 @@ relations
   flange.f = -F_x
   0 = spline.tau + radius * flange.f
 end</code></pre></div>
-  <div class="checkpoint"><span class="label">Checkpoint</span><p>The reference test <code>TestSlipWheel1D</code> after 5 s: on the slippery
-  road (<code>mu_scale = 0.2</code>) the slip ratio has run up to 135.4 and the mass makes only
-  3.43 m/s; on the dry road the slip ratio is 0.0076 and the mass makes 6.86 m/s.</p></div>
+  <ol class="actions" start="3">
+<li>Look at the <strong>Problems</strong> tab under the editor: nothing should be listed for this file. A red squiggle means the paste was incomplete — select all and paste again.</li>
+<li>Toggle back to the diagram (⇄). You see three ports and the <code>curve</code> block — with no wires to it. That is correct: <code>curve</code> is connected by the equations <code>curve.kappa = kappa</code> and <code>mu = mu_scale * curve.mu</code>, not by <code>connect</code>. Both are legal.</li>
+  </ol>
+
+  <h3>B · Read the relations</h3>
+  <ul>
+    <li><code>omega = der(spline.phi)</code>, <code>v = der(flange.s)</code> — wheel angular speed and car speed, from the two ports.</li>
+    <li><code>kappa = (omega * radius - v) / max(abs(v), v_eps)</code> — slip: how much faster the tire surface moves than the car, relative to the car. <code>v_eps</code> keeps it finite at standstill, where v = 0.</li>
+    <li><code>curve.kappa = kappa</code>, <code>mu = mu_scale * curve.mu</code> — look up the friction, scale it for the road.</li>
+    <li><code>F_x = mu * F_z</code> — friction times the load on the driven axle, half the car's weight.</li>
+    <li><code>flange.f = -F_x</code> — flow is positive <em>into</em> a component, so a tire pushing the car forward reports −F<sub>x</sub>. Get this sign wrong and the car drives backward.</li>
+    <li><code>0 = spline.tau + radius * flange.f</code> — the same force acts back on the shaft as a torque.</li>
+  </ul>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The file saves with nothing in
+    <strong>Problems</strong>, and the diagram shows <code>spline</code>, <code>flange</code>,
+    <code>mu_scale</code> and the unwired <code>curve</code>. In the reference library the test
+    <code>TestSlipWheel1D</code> drives it with full torque for 5 s: on a slippery road
+    (<code>mu_scale = 0.2</code>) the slip runs up to 135 and the car makes 3.43 m/s; on a dry road
+    the slip stays at 0.0076 and the car makes 6.86 m/s. Step 10 shows you the same thing in your own car.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/SlipWheel1D.dyad</code>,
@@ -1239,15 +1280,46 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="standing-start">
-  <h2><span class="no">10</span> Standing start on a slippery road <span class="budget">10 min</span></h2>
-  <p class="goal">Build the car with the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.</p>
-  <h3>Parameters</h3>
-  <div class="tablewrap"><table class="parts">
+  <h2><span class="no">10</span> Standing start on a slippery road <span class="budget">20 min</span></h2>
+  <p class="goal">Build a car around the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.</p>
+
+  <h3>Where you are, where you are going</h3>
+  <p>This is a new car, not an edit of <code>Car</code>. The slipping wheel replaces the rolling wheel
+    that sat inside <code>Driveline</code>, so the gear and the wheel inertia are placed directly, and
+    the body is the <code>GradeBody</code> of step 07. Two speeds come out: the car's, and the tire
+    surface's. On ice they come apart.</p>
+  <figure class="shot-img">
+    <a href="img/step10-standing-start.png"><img src="img/step10-standing-start.png" alt="SlipCar diagram: engine, gear, wheel inertia and slip wheel drive the grade body, with separate sensors for vehicle speed and wheel surface speed." loading="lazy"></a>
+    <figcaption><code>SlipCar</code>: two speed outputs, <code>v_kmh</code> from the body and <code>wheel_kmh</code> from the wheel shaft. On ice they come apart.</figcaption>
+  </figure>
+
+  <h3>A · Create the car and its parameters</h3>
+  <ol class="actions">
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipCar</code>.</li>
+<li>Click an empty spot of the canvas and add the five parameters with <strong>Add parameter</strong> — or toggle to code (⇄), paste these lines above <code>relations</code>, and toggle back. <code>r</code> is used twice (tire and km/h gain) and <code>m</code> sets both the body and the axle load: one name each, so they cannot disagree.
+<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Gear ratio"
+  parameter i::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Wheel rolling radius, shared by the tire and the wheel-speed gain"
+  parameter r::Length = 0.31
+  "Vehicle mass; the driven axle carries half of it"
+  parameter m::Dyad.Mass = 1400
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665</code></pre></div></li>
+  </ol>
+<div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
   <tbody><tr><td><code>i</code></td><td><code>Real</code></td><td><code>4.0</code></td><td>Gear ratio</td></tr><tr><td><code>J_w</code></td><td><code>MomentOfInertia</code></td><td><code>1.0</code></td><td>Road wheel and tire inertia</td></tr><tr><td><code>r</code></td><td><code>Length</code></td><td><code>0.31</code></td><td>Wheel rolling radius, shared by the tire and the wheel-speed gain</td></tr><tr><td><code>m</code></td><td><code>Dyad.Mass</code></td><td><code>1400</code></td><td>Vehicle mass; the driven axle carries half of it</td></tr><tr><td><code>g</code></td><td><code>Acceleration</code></td><td><code>9.80665</code></td><td>Gravitational acceleration</td></tr></tbody>
 </table></div>
-  <h3>Parts</h3>
-  <div class="tablewrap"><table class="parts">
+
+  <h3>B · Place the parts</h3>
+  <p>With <strong>+</strong>, place every row of this table, rename it, and type the values in its
+    panel. <em>Your</em> components (<code>Engine</code>, <code>SlipWheel1D</code>,
+    <code>GradeBody</code>) are under <code>MyCar</code> at the bottom of the <strong>+</strong> list;
+    the five ports are under <code>Dyad</code>. Put the inputs on the left edge of the outline and the
+    two outputs on the right edge.</p>
+<div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
   <tbody>
 <tr><td><code>tau_cmd, grade, mu_scale</code></td><td>Dyad › RealInput</td><td>ports</td></tr>
@@ -1263,46 +1335,55 @@ end</code></pre></div>
 <tr><td><code>wheel_to_kmh</code></td><td>BlockComponents › Math › Gain</td><td><code>k = r * 3.6</code> — ω·r in km/h</td></tr>
 <tr><td><code>rot_ground</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
   </tbody>
-</table></div><p class="small muted">Bench <code>SlipCarStandingStart</code>: three <code>Constant</code> sources — <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2.</p>
-  <h3>What you are building</h3>
-  <figure class="shot-img">
-    <a href="img/step10-standing-start.png"><img src="img/step10-standing-start.png" alt="SlipCar diagram: engine, gear, wheel inertia and slip wheel drive the grade body, with separate sensors for vehicle speed and wheel surface speed." loading="lazy"></a>
-    <figcaption><code>SlipCar</code>: two speed outputs, <code>v_kmh</code> from the body and <code>wheel_kmh</code> from the wheel shaft. On ice they come apart.</figcaption>
-  </figure>
-  <figure class="shot-img">
-    <a href="img/step10-standing-start-plot.png"><img src="img/step10-standing-start-plot.png" alt="Plot of car.v_kmh and car.wheel_kmh: the wheel surface speed climbs to 1500 km/h in 5 s while the body barely reaches 10 km/h." loading="lazy"></a>
-    <figcaption>The run: the wheel surface (orange) is past 1500 km/h after 5 s while the car (blue) has reached 10 km/h. Past the peak of the curve, more slip gives less grip, so the wheel runs away.</figcaption>
-  </figure>
-  <h3>Do this</h3>
-  <ol class="actions">
-<li>Here naming values pays off: the radius is used by the tire <em>and</em> by the wheel-speed gain, and the axle load is half the car's weight. Typed twice, they drift apart. Click an empty spot of the canvas and use <strong>Add parameter</strong> in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above <code>relations</code>:
-<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Gear ratio"
-  parameter i::Real = 4.0
-  "Road wheel and tire inertia"
-  parameter J_w::MomentOfInertia = 1.0
-  "Wheel rolling radius, shared by the tire and the wheel-speed gain"
-  parameter r::Length = 0.31
-  "Vehicle mass; the driven axle carries half of it"
-  parameter m::Dyad.Mass = 1400
-  "Gravitational acceleration"
-  parameter g::Acceleration = 9.80665</code></pre></div>
-Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
-<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipCar</code>. It opens as an empty diagram. Everything in it is a part you already have. The drive chain is <code>engine → gear → wheel_inertia → wheel</code>, and <code>wheel.flange</code> drives <code>body.flange</code> directly — the tire is now the contact, so there is no translational ground.</li>
-<li>Measure both speeds in km/h: <code>vsensor</code> on the wheel flange through <code>to_kmh</code>, and <code>wsensor</code> on the wheel shaft through <code>wheel_to_kmh</code>, which multiplies by the radius as well.</li>
-<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipCarStandingStart</code>. It opens as an empty diagram. This is the bench. Place your <code>SlipCar</code> as <code>car</code> and three <code>BlockComponents › Sources › Constant</code>: <code>cmd</code> (<code>k = 150</code>) → <code>car.tau_cmd</code>, <code>road</code> (<code>k = 0</code>) → <code>car.grade</code>, <code>friction</code> (<code>k = 0.2</code>) → <code>car.mu_scale</code>.</li>
-<li>Open <code>SlipCarStandingStart</code>, toggle to code (⇄) and add the five <code>initial</code> lines from the block below at the end of <code>relations</code>: the starting state has no diagram form. Save.</li>
-<li><span class="badge">New analysis</span> With <code>SlipCarStandingStart</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar. Dyad Studio offers the analysis types it can create: choose <strong>TransientAnalysis</strong>. It creates the analysis with <code>SlipCarStandingStart</code> already assigned as its model and lists it in the <strong>Analyses</strong> panel. Name it <code>SlipCarStandingStartTransient</code> — the plot command below calls it by that name; if it picked another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>5</code> s.</li>
-<li>Run it: press ▷ beside <code>SlipCarStandingStartTransient</code> in the <strong>Analyses</strong> panel.</li>
-<li>Plot both speeds together in the Julia REPL:
+</table></div>
+
+  <h3>C · Wire it</h3>
+  <p>Fifteen wires. Tick them off as you go; the screenshot above shows where they run.</p>
+<div class="tablewrap"><table class="parts">
+  <thead><tr><th>#</th><th>From</th><th>To</th></tr></thead>
+  <tbody><tr><td>1</td><td><code>tau_cmd</code></td><td><code>engine.tau_cmd</code></td></tr><tr><td>2</td><td><code>engine.spline</code></td><td><code>gear.spline_a</code></td></tr><tr><td>3</td><td><code>gear.spline_b</code></td><td><code>wheel_inertia.spline_a</code></td></tr><tr><td>4</td><td><code>wheel_inertia.spline_b</code></td><td><code>wheel.spline</code></td></tr><tr><td>5</td><td><code>engine.support</code></td><td><code>rot_ground</code></td></tr><tr><td>6</td><td><code>gear.support</code></td><td><code>rot_ground</code></td></tr><tr><td>7</td><td><code>wheel.flange</code></td><td><code>body.flange</code></td></tr><tr><td>8</td><td><code>grade</code></td><td><code>body.grade</code></td></tr><tr><td>9</td><td><code>mu_scale</code></td><td><code>wheel.mu_scale</code></td></tr><tr><td>10</td><td><code>vsensor.flange</code></td><td><code>wheel.flange</code></td></tr><tr><td>11</td><td><code>vsensor.v</code></td><td><code>to_kmh.u</code></td></tr><tr><td>12</td><td><code>to_kmh.y</code></td><td><code>v_kmh</code></td></tr><tr><td>13</td><td><code>wsensor.spline</code></td><td><code>wheel.spline</code></td></tr><tr><td>14</td><td><code>wsensor.w</code></td><td><code>wheel_to_kmh.u</code></td></tr><tr><td>15</td><td><code>wheel_to_kmh.y</code></td><td><code>wheel_kmh</code></td></tr></tbody>
+</table></div>
+  <ol class="actions" start="3">
+<li>Save. Look at the <strong>Problems</strong> tab under the editor: nothing should be listed for <code>SlipCar</code>. If something is, compare your wires with the table.</li>
+  </ol>
+
+  <h3>D · The bench</h3>
+  <ol class="actions" start="4">
+<li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>SlipCarStandingStart</code>. It is the bench.</li>
+<li>With <strong>+</strong>, place your <code>SlipCar</code> as <code>car</code> and three <code>BlockComponents › Sources › Constant</code>: <code>cmd</code> with <code>k = 150</code> (full throttle), <code>road</code> with <code>k = 0</code> (flat), <code>friction</code> with <code>k = 0.2</code> (slippery). Wire them:
+<div class="tablewrap"><table class="parts"><thead><tr><th>From</th><th>To</th></tr></thead><tbody><tr><td><code>cmd.y</code></td><td><code>car.tau_cmd</code></td></tr><tr><td><code>road.y</code></td><td><code>car.grade</code></td></tr><tr><td><code>friction.y</code></td><td><code>car.mu_scale</code></td></tr></tbody></table></div></li>
+<li>Toggle to code (⇄) and add the starting state at the end of <code>relations</code> — five lines, because wheel speed is now a state of its own. Save.
+<div class="code"><span class="codelabel">Starting state</span><button class="copy" type="button">Copy</button><pre><code>  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+  initial car.wheel_inertia.phi = 0
+  initial car.wheel_inertia.w = 0</code></pre></div></li>
+  </ol>
+
+  <h3>E · Run and plot</h3>
+  <ol class="actions" start="7">
+<li><span class="badge">New analysis</span> With <code>SlipCarStandingStart</code> open, press ▷ (<strong>Run Analysis</strong>) in the editor title bar and choose <strong>TransientAnalysis</strong>. It is created with <code>SlipCarStandingStart</code> as its model and appears in the <strong>Analyses</strong> panel. Name it <code>SlipCarStandingStartTransient</code> — the plot command calls it by that name; if it got another name, change the word after <code>analysis</code> in its code — and set <code>stop</code> to <code>5</code> s.</li>
+<li>Run it: press ▷ beside <code>SlipCarStandingStartTransient</code> in the <strong>Analyses</strong> panel. Then plot both speeds together in the Julia REPL:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
 r = MyCar.SlipCarStandingStartTransient()
-plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])</code></pre></div>
-Then the same start on a dry road. The run below overrides <code>friction.k</code> without editing the model; changing <code>k</code> to 1.0 in the diagram and running again does the same:
+plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])</code></pre></div></li>
+<li>Same start on a dry road: in the bench, set <code>friction</code>'s <code>k</code> to <code>1.0</code>, save, run again and re-plot. Or, without touching the model:
 <div class="code"><button class="copy" type="button">Copy</button><pre><code>dry = MyCar.SlipCarStandingStartTransient(
     model = MyCar.SlipCarStandingStart(name = :SlipCarStandingStart, friction__k = 1.0))
 plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre></div></li>
   </ol>
-  <p class="small muted">The complete bench and its analysis as code. Take the <code>initial</code> lines from here; the <code>analysis</code> block is the fallback if creating it with ▷ does not work.</p><div class="code"><span class="codelabel">SlipCarStandingStart and SlipCarStandingStartTransient</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
+  <figure class="shot-img">
+    <a href="img/step10-standing-start-plot.png"><img src="img/step10-standing-start-plot.png" alt="Plot of car.v_kmh and car.wheel_kmh: the wheel surface speed climbs to 1500 km/h in 5 s while the body barely reaches 10 km/h." loading="lazy"></a>
+    <figcaption>The run: the wheel surface (orange) is past 1500 km/h after 5 s while the car (blue) has reached 10 km/h. Past the peak of the curve, more slip gives less grip, so the wheel runs away.</figcaption>
+  </figure>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.SlipCarStandingStartTransient</code>, friction 0.2:
+  after 1 s the car makes 1.94 km/h while the wheel surface is already at 159.8 km/h; after 5 s
+  the car makes <strong>10.12 km/h</strong> and the wheel surface <strong>1501 km/h</strong>. The
+  model has no rev limit, so the engine keeps delivering 150 N·m into a wheel that has nothing to
+  push against. On the dry road (friction 1.0) the two speeds stay together: 21.08 km/h for the car,
+  21.24 km/h at the wheel surface after 5 s.</p></div>
+  <p class="small muted">The complete bench and its analysis as code, if anything above went wrong:</p>
+  <div class="code"><span class="codelabel">SlipCarStandingStart and SlipCarStandingStartTransient</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
   "Full throttle"
   cmd = BlockComponents.Sources.Constant(k = 150)
   "Flat road"
@@ -1325,12 +1406,6 @@ analysis SlipCarStandingStartTransient
   extends TransientAnalysis(stop = 5)
   model = SlipCarStandingStart()
 end</code></pre></div>
-  <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.SlipCarStandingStartTransient</code>, friction 0.2:
-  after 1 s the car makes 1.94 km/h while the wheel surface is already at 159.8 km/h; after 5 s
-  the car makes <strong>10.12 km/h</strong> and the wheel surface <strong>1501 km/h</strong>. The
-  model has no rev limit, so the engine keeps delivering 150 N·m into a wheel that has nothing to
-  push against. On the dry road (friction 1.0) the two speeds stay together: 21.08 km/h for the car,
-  21.24 km/h at the wheel surface after 5 s.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/SlipCar.dyad</code>,
