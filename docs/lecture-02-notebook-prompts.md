@@ -39,6 +39,47 @@ Paste this preamble above every prompt.
 
 ---
 
+## D-NN — Content-first draft (before the models exist)
+
+Use this to fix a notebook's teaching content before its Dyad task lands. Replace `<NN>` and
+`<name>` with the notebook from `docs/lecture-02-notebooks.md`. Paste the preamble above it; the
+"done means" line in the preamble still applies.
+
+> Build a **content-complete draft** of notebook `<NN>` as
+> `notebooks/lecture02/<NN>-<name>.pluto.jl`, following its section in
+> `docs/lecture-02-notebooks.md`. The Dyad models it needs do not exist yet. The purpose of this
+> draft is for the lecturer to review the teaching content (story, explanations, equations, figure
+> choices, slider choices) before any model is built. The plots are placeholders.
+>
+> 1. **Final-form content.** Write every markdown cell as it will ship: thesis, explanations,
+>    typeset equations, slide citations, the honest-numbers caveats, and "What this bought us".
+>    Copy the deck figures the notebook shows into `notebooks/lecture02/assets/` and display them.
+> 2. **Placeholders behind one seam.** Every cell that will run a model calls a function in
+>    `notebooks/lecture02/draft_stubs.jl` named after the real analysis (e.g.
+>    `LambdaLoopTransient(; omega_set, k_jump)`). Each stub returns data shaped like the real
+>    result: a time vector and named signals, using the signal names from
+>    `docs/lecture-02-dyad-tasks.md`. Generate it from a closed-form surrogate that shows the right
+>    qualitative shape (a first-order step, a relay sawtooth, a tanh characteristic), not random
+>    numbers. Swapping in the real model must mean deleting the stub and nothing else in the
+>    notebook.
+> 3. **Mark every placeholder.** Each placeholder plot carries the title prefix
+>    "PLACEHOLDER —" and a caption naming the analysis and signal that will replace it. No
+>    surrogate number appears in prose as a result. Where the text needs a number, quote the band
+>    from the plan's reality-anchor table and say it is the expected band.
+> 4. **Check cells written but pending.** Write each check cell with its real assertion and band,
+>    guarded so that on stub data it prints `PENDING: needs <analysis>` instead of asserting.
+> 5. **Model contract.** End the notebook with a collapsed cell listing everything it needs from
+>    the Dyad side: each analysis, the knobs it forwards (names, units, defaults, slider ranges),
+>    the signals read, and the numbers each check expects. Compare that list with
+>    `docs/lecture-02-dyad-tasks.md` and fix nothing there; report the mismatches instead.
+>
+> Report: the cell outline (one line per cell); the model contract; every mismatch with the Dyad
+> spec (a missing knob, a signal not specified, a band that disagrees); and up to five content
+> questions for the lecturer (where the deck and the spec disagree, or where the story has a
+> gap). Do not build any Dyad component.
+
+---
+
 ## N00 — Shared support module and assets
 
 Create `notebooks/lecture02/support.jl` (module `Lecture02Support`) as specified in
