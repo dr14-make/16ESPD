@@ -10,10 +10,16 @@ component WheeledDriveline
   flange = Flange() {^flange}
   "Road"
   support_t = Flange() {^support_t}
-  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
+  gear = RotationalComponents.Components.IdealGear(ratio = i) {^gear}
   "Road wheel and tire, about 20 kg mostly between 0.2 and 0.3 m radius"
-  inertia = RotationalComponents.Components.Inertia(J = 1.0) {^inertia}
-  wheel = RotationalComponents.Components.IdealRollingWheel(radius = 0.31) {^wheel}
+  inertia = RotationalComponents.Components.Inertia(J = J_w) {^inertia}
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = r) {^wheel}
+  "Gear ratio"
+  parameter i::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Wheel rolling radius"
+  parameter r::Length = 0.31
 relations
   connect(spline, gear.spline_a) {^id1}
   connect(gear.spline_b, inertia.spline_a) {^id2}

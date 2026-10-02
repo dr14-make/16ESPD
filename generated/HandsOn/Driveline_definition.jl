@@ -5,9 +5,16 @@
 
 
 @doc Markdown.doc"""
-   Driveline(; name)
+   Driveline(; name, i, r)
 
 Gearbox and rolling wheel: engine shaft in, tractive force on the body out.
+
+## Parameters:
+
+| Name         | Description                         | Units  |   Default value |
+| ------------ | ----------------------------------- | ------ | --------------- |
+| `i`         | Gear ratio                         | --  |   4.0 |
+| `r`         | Wheel rolling radius                         | m  |   0.31 |
 
 ## Connectors
 
@@ -16,7 +23,7 @@ Gearbox and rolling wheel: engine shaft in, tractive force on the body out.
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `support_t` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
 """
-@component function Driveline(; name = nothing, kwargs...)
+@component function Driveline(; name = nothing, i=Float64(4.0), r=0.31, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,6 +54,12 @@ Gearbox and rolling wheel: engine shaft in, tractive force on the body out.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__i = i
+  append!(__params, @parameters (i::Real), [description = "Gear ratio"])
+  __initial_conditions[i] = __local__i
+  __local__r = r
+  append!(__params, @parameters (r::Real), [description = "Wheel rolling radius"])
+  __initial_conditions[r] = __local__r
 
   ### Final Parameters (assignments)
 
@@ -66,10 +79,10 @@ Gearbox and rolling wheel: engine shaft in, tractive force on the body out.
   push!(__systems, @named support_t = __Dyad__Flange())
   # Subcomponent gear of type RotationalComponents.Components.IdealGear
   gear_overrides = __pop_subcomponent_overrides!(__overrides, "gear")
-  push!(__systems, @named gear = RotationalComponents.Components.IdealGear(; ratio=Float64(4.0), gear_overrides...))
+  push!(__systems, @named gear = RotationalComponents.Components.IdealGear(; ratio=i, gear_overrides...))
   # Subcomponent wheel of type RotationalComponents.Components.IdealRollingWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = RotationalComponents.Components.IdealRollingWheel(; radius=0.31, wheel_overrides...))
+  push!(__systems, @named wheel = RotationalComponents.Components.IdealRollingWheel(; radius=r, wheel_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

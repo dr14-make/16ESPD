@@ -5,17 +5,28 @@
 
 
 @doc Markdown.doc"""
-   GradeBody(; name)
+   GradeBody(; name, m, CdA, rho, f_r, g, v_nominal)
 
 The body of step 4 on a road with a gradient: one `grade` signal tilts the rolling resistance and
 drives the grade force.
+
+## Parameters:
+
+| Name         | Description                         | Units  |   Default value |
+| ------------ | ----------------------------------- | ------ | --------------- |
+| `m`         | Vehicle mass                         | kg  |   1400 |
+| `CdA`         | Aerodynamic drag area, Cd * A                         | m2  |   0.63 |
+| `rho`         | Air density                         | kg/m3  |   1.2 |
+| `f_r`         | Rolling resistance coefficient                         | --  |   0.012 |
+| `g`         | Gravitational acceleration                         | m/s2  |   9.80665 |
+| `v_nominal`         | Speed at which the drag force is specified                         | m/s  |   30 |
 
 ## Connectors
 
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function GradeBody(; name = nothing, kwargs...)
+@component function GradeBody(; name = nothing, m=Float64(1400), CdA=0.63, rho=1.2, f_r=0.012, g=9.80665, v_nominal=Float64(30), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -46,6 +57,24 @@ drives the grade force.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__m = m
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  __initial_conditions[m] = __local__m
+  __local__CdA = CdA
+  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area, Cd * A"])
+  __initial_conditions[CdA] = __local__CdA
+  __local__rho = rho
+  append!(__params, @parameters (rho::Real), [description = "Air density", bounds = (0, Inf)])
+  __initial_conditions[rho] = __local__rho
+  __local__f_r = f_r
+  append!(__params, @parameters (f_r::Real), [description = "Rolling resistance coefficient"])
+  __initial_conditions[f_r] = __local__f_r
+  __local__g = g
+  append!(__params, @parameters (g::Real), [description = "Gravitational acceleration"])
+  __initial_conditions[g] = __local__g
+  __local__v_nominal = v_nominal
+  append!(__params, @parameters (v_nominal::Real), [description = "Speed at which the drag force is specified"])
+  __initial_conditions[v_nominal] = __local__v_nominal
 
   ### Final Parameters (assignments)
 
@@ -63,19 +92,19 @@ drives the grade force.
   push!(__systems, @named flange = __Dyad__Flange())
   # Subcomponent mass of type TranslationalComponents.Components.Mass
   mass_overrides = __pop_subcomponent_overrides!(__overrides, "mass")
-  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=Float64(1400), mass_overrides...))
+  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=m, mass_overrides...))
   # Subcomponent drag of type TranslationalComponents.Sources.QuadraticSpeedDependentForce
   drag_overrides = __pop_subcomponent_overrides!(__overrides, "drag")
-  push!(__systems, @named drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(; ForceDirection=false, v_nominal=Float64(30), f_nominal=-0.5 * 1.2 * 0.63 * 30 ^ 2, drag_overrides...))
+  push!(__systems, @named drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(; ForceDirection=false, v_nominal=v_nominal, f_nominal=-0.5 * rho * CdA * v_nominal ^ 2, drag_overrides...))
   # Subcomponent rolling of type TranslationalComponents.Components.RollingResistance
   rolling_overrides = __pop_subcomponent_overrides!(__overrides, "rolling")
-  push!(__systems, @named rolling = TranslationalComponents.Components.RollingResistance(; fWeight=1400 * 9.80665, rolling_overrides...))
+  push!(__systems, @named rolling = TranslationalComponents.Components.RollingResistance(; fWeight=m * g, rolling_overrides...))
   # Subcomponent cr_const of type BlockComponents.Sources.Constant
   cr_const_overrides = __pop_subcomponent_overrides!(__overrides, "cr_const")
-  push!(__systems, @named cr_const = BlockComponents.Sources.Constant(; k=0.012, cr_const_overrides...))
+  push!(__systems, @named cr_const = BlockComponents.Sources.Constant(; k=f_r, cr_const_overrides...))
   # Subcomponent gradeforce of type VehicleSystemsComponents.HandsOn.GradeForce
   gradeforce_overrides = __pop_subcomponent_overrides!(__overrides, "gradeforce")
-  push!(__systems, @named gradeforce = VehicleSystemsComponents.HandsOn.GradeForce(; m=Float64(1400), gradeforce_overrides...))
+  push!(__systems, @named gradeforce = VehicleSystemsComponents.HandsOn.GradeForce(; m=m, g=g, gradeforce_overrides...))
   # Subcomponent ground of type TranslationalComponents.Components.Fixed
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = TranslationalComponents.Components.Fixed(; ground_overrides...))

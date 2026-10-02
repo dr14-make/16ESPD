@@ -8,8 +8,12 @@ component Driveline
   flange = Flange() {^flange}
   "Road"
   support_t = Flange() {^support_t}
-  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
-  wheel = RotationalComponents.Components.IdealRollingWheel(radius = 0.31) {^wheel}
+  gear = RotationalComponents.Components.IdealGear(ratio = i) {^gear}
+  wheel = RotationalComponents.Components.IdealRollingWheel(radius = r) {^wheel}
+  "Gear ratio"
+  parameter i::Real = 4.0
+  "Wheel rolling radius"
+  parameter r::Length = 0.31
 relations
   connect(spline, gear.spline_a) {^id1}
   connect(gear.spline_b, wheel.spline) {^id2}

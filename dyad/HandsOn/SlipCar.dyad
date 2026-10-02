@@ -14,16 +14,26 @@ component SlipCar
   "Wheel surface speed, omega * radius, in km/h"
   wheel_kmh = RealOutput() {^wheel_kmh}
   engine = Engine() {^engine}
-  gear = RotationalComponents.Components.IdealGear(ratio = 4.0) {^gear}
-  wheel_inertia = RotationalComponents.Components.Inertia(J = 1.0) {^wheel_inertia}
-  wheel = SlipWheel1D() {^wheel}
-  body = GradeBody() {^body}
+  gear = RotationalComponents.Components.IdealGear(ratio = i) {^gear}
+  wheel_inertia = RotationalComponents.Components.Inertia(J = J_w) {^wheel_inertia}
+  wheel = SlipWheel1D(radius = r, F_z = m * g / 2) {^wheel}
+  body = GradeBody(m = m, g = g) {^body}
   vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
   to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
   wsensor = RotationalComponents.Sensors.VelocitySensor() {^wsensor}
-  wheel_to_kmh = BlockComponents.Math.Gain(k = 0.31 * 3.6) {^wheel_to_kmh}
+  wheel_to_kmh = BlockComponents.Math.Gain(k = r * 3.6) {^wheel_to_kmh}
   "Engine mounts and gearbox housing"
   rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  "Gear ratio"
+  parameter i::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Wheel rolling radius, shared by the tire and the wheel-speed gain"
+  parameter r::Length = 0.31
+  "Vehicle mass; the driven axle carries half of it"
+  parameter m::Dyad.Mass = 1400
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
 relations
   connect(tau_cmd, engine.tau_cmd) {^id1}
   connect(engine.spline, gear.spline_a) {^id2}

@@ -11,10 +11,17 @@ component Engine
   support = Spline() {^support}
   # m = n - 1 leaves the delay without direct feedthrough, so a command step cannot leak through
   # the limiter before the delay has elapsed.
-  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = 0.3) {^delay}
-  lag = BlockComponents.Continuous.FirstOrder(T = 0.3) {^lag}
-  limiter = BlockComponents.Nonlinear.Limiter(y_max = 150, y_min = 0) {^limiter}
+  delay = BlockComponents.Nonlinear.PadeDelay(n = 6, m = 5, delayTime = theta_e) {^delay}
+  lag = BlockComponents.Continuous.FirstOrder(T = tau_e) {^lag}
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = T_max, y_min = 0) {^limiter}
   torque = RotationalComponents.Sources.TorqueSource() {^torque}
+  # Structural because PadeDelay builds its coefficients from the delay when it is compiled.
+  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Manifold-filling first-order lag"
+  parameter tau_e::Time = 0.3
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150
 relations
   connect(tau_cmd, delay.u) {^id1}
   connect(delay.y, lag.u) {^id2}

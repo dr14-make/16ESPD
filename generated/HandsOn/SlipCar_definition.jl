@@ -5,10 +5,20 @@
 
 
 @doc Markdown.doc"""
-   SlipCar(; name)
+   SlipCar(; name, i, J_w, r, m, g)
 
 The car with a slipping wheel and a road gradient. Body speed and wheel surface speed are both
 reported in km/h, so wheelspin shows as the gap between them.
+
+## Parameters:
+
+| Name         | Description                         | Units  |   Default value |
+| ------------ | ----------------------------------- | ------ | --------------- |
+| `i`         | Gear ratio                         | --  |   4.0 |
+| `J_w`         | Road wheel and tire inertia                         | kg.m2  |   1.0 |
+| `r`         | Wheel rolling radius, shared by the tire and the wheel-speed gain                         | m  |   0.31 |
+| `m`         | Vehicle mass; the driven axle carries half of it                         | kg  |   1400 |
+| `g`         | Gravitational acceleration                         | m/s2  |   9.80665 |
 
 ## Connectors
 
@@ -18,7 +28,7 @@ reported in km/h, so wheelspin shows as the gap between them.
  * `v_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `wheel_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function SlipCar(; name = nothing, kwargs...)
+@component function SlipCar(; name = nothing, i=Float64(4.0), J_w=Float64(1.0), r=0.31, m=Float64(1400), g=9.80665, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -49,6 +59,21 @@ reported in km/h, so wheelspin shows as the gap between them.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__i = i
+  append!(__params, @parameters (i::Real), [description = "Gear ratio"])
+  __initial_conditions[i] = __local__i
+  __local__J_w = J_w
+  append!(__params, @parameters (J_w::Real), [description = "Road wheel and tire inertia"])
+  __initial_conditions[J_w] = __local__J_w
+  __local__r = r
+  append!(__params, @parameters (r::Real), [description = "Wheel rolling radius, shared by the tire and the wheel-speed gain"])
+  __initial_conditions[r] = __local__r
+  __local__m = m
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass; the driven axle carries half of it", bounds = (0, Inf)])
+  __initial_conditions[m] = __local__m
+  __local__g = g
+  append!(__params, @parameters (g::Real), [description = "Gravitational acceleration"])
+  __initial_conditions[g] = __local__g
 
   ### Final Parameters (assignments)
 
@@ -72,16 +97,16 @@ reported in km/h, so wheelspin shows as the gap between them.
   push!(__systems, @named engine = VehicleSystemsComponents.HandsOn.Engine(; engine_overrides...))
   # Subcomponent gear of type RotationalComponents.Components.IdealGear
   gear_overrides = __pop_subcomponent_overrides!(__overrides, "gear")
-  push!(__systems, @named gear = RotationalComponents.Components.IdealGear(; ratio=Float64(4.0), gear_overrides...))
+  push!(__systems, @named gear = RotationalComponents.Components.IdealGear(; ratio=i, gear_overrides...))
   # Subcomponent wheel_inertia of type RotationalComponents.Components.Inertia
   wheel_inertia_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_inertia")
-  push!(__systems, @named wheel_inertia = RotationalComponents.Components.Inertia(; J=Float64(1.0), wheel_inertia_overrides...))
+  push!(__systems, @named wheel_inertia = RotationalComponents.Components.Inertia(; J=J_w, wheel_inertia_overrides...))
   # Subcomponent wheel of type VehicleSystemsComponents.HandsOn.SlipWheel1D
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.HandsOn.SlipWheel1D(; wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.HandsOn.SlipWheel1D(; radius=r, F_z=m * g / 2, wheel_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.GradeBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.GradeBody(; body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.GradeBody(; m=m, g=g, body_overrides...))
   # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
   vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
   push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
@@ -93,7 +118,7 @@ reported in km/h, so wheelspin shows as the gap between them.
   push!(__systems, @named wsensor = RotationalComponents.Sensors.VelocitySensor(; wsensor_overrides...))
   # Subcomponent wheel_to_kmh of type BlockComponents.Math.Gain
   wheel_to_kmh_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_to_kmh")
-  push!(__systems, @named wheel_to_kmh = BlockComponents.Math.Gain(; k=0.31 * 3.6, wheel_to_kmh_overrides...))
+  push!(__systems, @named wheel_to_kmh = BlockComponents.Math.Gain(; k=r * 3.6, wheel_to_kmh_overrides...))
   # Subcomponent rot_ground of type RotationalComponents.Components.Fixed
   rot_ground_overrides = __pop_subcomponent_overrides!(__overrides, "rot_ground")
   push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; rot_ground_overrides...))

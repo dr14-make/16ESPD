@@ -5,15 +5,27 @@ resistance.
 component Body
   "Tractive force from the driveline"
   flange = Flange() {^flange}
-  mass = TranslationalComponents.Components.Mass(m = 1400) {^mass}
+  mass = TranslationalComponents.Components.Mass(m = m) {^mass}
   # A negative nominal force makes the source a load; ForceDirection = false gives the v*|v| form,
   # so drag opposes motion in both directions.
-  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = 30, f_nominal = -0.5 * 1.2 * 0.63 * 30 ^ 2) {^drag}
-  rolling = TranslationalComponents.Components.RollingResistance(fWeight = 1400 * 9.80665) {^rolling}
-  cr_const = BlockComponents.Sources.Constant(k = 0.012) {^cr_const}
+  drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(ForceDirection = false, v_nominal = v_nominal, f_nominal = -0.5 * rho * CdA * v_nominal ^ 2) {^drag}
+  rolling = TranslationalComponents.Components.RollingResistance(fWeight = m * g) {^rolling}
+  cr_const = BlockComponents.Sources.Constant(k = f_r) {^cr_const}
   "Flat road: tan(alpha) = 0"
   incl_const = BlockComponents.Sources.Constant(k = 0) {^incl_const}
   ground = TranslationalComponents.Components.Fixed() {^ground}
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400
+  "Aerodynamic drag area, Cd * A"
+  parameter CdA::Area = 0.63
+  "Air density"
+  parameter rho::Density = 1.2
+  "Rolling resistance coefficient"
+  parameter f_r::Real = 0.012
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Speed at which the drag force is specified"
+  parameter v_nominal::Velocity = 30
 relations
   connect(flange, mass.flange_a) {^id1}
   connect(drag.flange, mass.flange_a) {^id2}

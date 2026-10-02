@@ -5,10 +5,18 @@
 
 
 @doc Markdown.doc"""
-   Engine(; name)
+   Engine(; name, theta_e, tau_e, T_max)
 
 Torque command in, shaft torque out, through a transport delay, a first-order lag and a torque
 ceiling.
+
+## Parameters:
+
+| Name         | Description                         | Units  |   Default value |
+| ------------ | ----------------------------------- | ------ | --------------- |
+| `theta_e`         | Injection-to-torque transport delay                         | s  |   0.3 |
+| `tau_e`         | Manifold-filling first-order lag                         | s  |   0.3 |
+| `T_max`         | Peak deliverable torque                         | N.m  |   150 |
 
 ## Connectors
 
@@ -16,7 +24,7 @@ ceiling.
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
 """
-@component function Engine(; name = nothing, kwargs...)
+@component function Engine(; name = nothing, theta_e=0.3, tau_e=0.3, T_max=Float64(150), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,6 +55,12 @@ ceiling.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__tau_e = tau_e
+  append!(__params, @parameters (tau_e::Real), [description = "Manifold-filling first-order lag"])
+  __initial_conditions[tau_e] = __local__tau_e
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Real), [description = "Peak deliverable torque"])
+  __initial_conditions[T_max] = __local__T_max
 
   ### Final Parameters (assignments)
 
@@ -65,13 +79,13 @@ ceiling.
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent delay of type BlockComponents.Nonlinear.PadeDelay
   delay_overrides = __pop_subcomponent_overrides!(__overrides, "delay")
-  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; n=6, m=5, delayTime=0.3, delay_overrides...))
+  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; n=6, m=5, delayTime=theta_e, delay_overrides...))
   # Subcomponent lag of type BlockComponents.Continuous.FirstOrder
   lag_overrides = __pop_subcomponent_overrides!(__overrides, "lag")
-  push!(__systems, @named lag = BlockComponents.Continuous.FirstOrder(; T=0.3, lag_overrides...))
+  push!(__systems, @named lag = BlockComponents.Continuous.FirstOrder(; T=tau_e, lag_overrides...))
   # Subcomponent limiter of type BlockComponents.Nonlinear.Limiter
   limiter_overrides = __pop_subcomponent_overrides!(__overrides, "limiter")
-  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=Float64(150), y_min=Float64(0), limiter_overrides...))
+  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=T_max, y_min=Float64(0), limiter_overrides...))
   # Subcomponent torque of type RotationalComponents.Sources.TorqueSource
   torque_overrides = __pop_subcomponent_overrides!(__overrides, "torque")
   push!(__systems, @named torque = RotationalComponents.Sources.TorqueSource(; torque_overrides...))
