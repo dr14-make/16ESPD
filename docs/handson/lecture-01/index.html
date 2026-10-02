@@ -274,13 +274,43 @@ end</code></pre></div>
 <section class="step" id="engine">
   <h2><span class="no">02</span> Engine <span class="budget">20 min</span></h2>
   <p class="goal">Finish the engine — torque command in, shaft torque out through a delay, a lag and a 150 N·m ceiling — and watch it answer a step.</p>
-  <h3>Parameters</h3>
-  <div class="tablewrap"><table class="parts">
+
+  <h3>Where you are, where you are going</h3>
+  <p>Step 01 left you a component called <code>Engine</code> holding two blocks, <code>delay → lag</code>.
+    This step turns it into the engine below by adding four things to that same component: three
+    <strong>parameters</strong>, two more <strong>parts</strong> (a limiter and a torque source), and three
+    <strong>ports</strong> so other components can plug into it. Then a small test bench drives it.</p>
+  <figure class="shot-img">
+    <a href="img/step02-engine-finished.png"><img src="img/step02-engine-finished.png" style="max-width:560px" alt="The finished Engine diagram: tau_cmd input on the left, then delay, lag, limiter and torque blocks in a row, the spline port on the right and the support port at the bottom." loading="lazy"></a>
+    <figcaption>The finished <code>Engine</code>: <code>tau_cmd</code> → <code>delay</code> → <code>lag</code> → <code>limiter</code> → <code>torque</code> → <code>spline</code>, with <code>torque</code>'s support down to <code>support</code>. The two blocks you already have are the second and third.</figcaption>
+  </figure>
+
+  <h3>A · Open your Engine</h3>
+  <ol class="actions">
+<li>In the <strong>Components</strong> panel, expand <code>MyCar</code> and click <code>Engine</code>. It opens with <code>delay</code> and <code>lag</code> wired together. If it opens as code, click ⇄ to get the diagram.</li>
+  </ol>
+
+  <h3>B · Name the values</h3>
+  <p>A number a part needs becomes a parameter of <code>Engine</code>, and the part refers to it by name —
+    so <code>Engine(T_max = 200)</code> later changes the ceiling in one place.</p>
+<div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
   <tbody><tr><td><code>theta_e</code></td><td><code>Time</code></td><td><code>0.3</code></td><td>Injection-to-torque transport delay</td></tr><tr><td><code>tau_e</code></td><td><code>Time</code></td><td><code>0.3</code></td><td>Manifold-filling first-order lag</td></tr><tr><td><code>T_max</code></td><td><code>Torque</code></td><td><code>150</code></td><td>Peak deliverable torque</td></tr></tbody>
 </table></div>
-  <h3>Parts</h3>
-  <div class="tablewrap"><table class="parts">
+  <ol class="actions" start="2">
+<li>Click an empty spot of the canvas. The panel on the right now shows <code>Engine</code> itself, with an <strong>Add parameter</strong> button. Add one parameter per row of the table — or toggle to code (⇄) and paste these lines just above <code>relations</code>:
+<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Manifold-filling first-order lag"
+  parameter tau_e::Time = 0.3
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150</code></pre></div>
+<code>theta_e</code> is <code>structural</code> because <code>PadeDelay</code> builds its coefficients from the delay when the model is compiled; if <strong>Add parameter</strong> offers no structural option, use the pasted line.</li>
+<li>Click <code>delay</code> and change <code>delayTime</code> from <code>0.3</code> to <code>theta_e</code>. Click <code>lag</code> and change <code>T</code> to <code>tau_e</code>. The fields accept names as well as numbers.</li>
+  </ol>
+
+  <h3>C · Complete the chain and add the ports</h3>
+<div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
   <tbody>
 <tr><td><code>tau_cmd</code></td><td>Dyad › RealInput</td><td>port, left edge</td></tr>
@@ -291,7 +321,22 @@ end</code></pre></div>
 <tr><td><code>limiter</code></td><td>BlockComponents › Nonlinear › Limiter</td><td><code>y_max = T_max</code>, <code>y_min = 0</code></td></tr>
 <tr><td><code>torque</code></td><td>RotationalComponents › Sources › TorqueSource</td><td>—</td></tr>
   </tbody>
-</table></div><p class="small muted">Test bench <code>EngineStep</code>:</p><div class="tablewrap"><table class="parts">
+</table></div>
+  <ol class="actions" start="4">
+<li>Click <strong>+</strong>, search <code>Limiter</code>, click <code>BlockComponents › Nonlinear › Limiter</code>, rename it <code>limiter</code> and drag it to the right of <code>lag</code>. In its panel set <code>y_max</code> to <code>T_max</code> and <code>y_min</code> to <code>0</code> — the engine cannot brake through this path.</li>
+<li>Click <strong>+</strong>, search <code>TorqueSource</code>, click <code>RotationalComponents › Sources › TorqueSource</code>, rename it <code>torque</code> and drag it to the right of <code>limiter</code>.</li>
+<li>Wire <code>lag</code>'s output (right edge) to <code>limiter</code>'s input (left edge), and <code>limiter</code>'s output to <code>torque</code>'s <code>tau</code> input.</li>
+<li><strong>Ports are parts too.</strong> Click <strong>+</strong> and open <code>Dyad</code>, the first library in the list. Place a <code>RealInput</code> and rename it <code>tau_cmd</code>; place two <code>Spline</code>s and rename them <code>spline</code> and <code>support</code>. Drag <code>tau_cmd</code> onto the left edge of the thin blue rectangle, <code>spline</code> onto the right edge, <code>support</code> onto the bottom edge: that rectangle is the component's outline, and ports on it are what other components connect to.</li>
+<li>Wire the ports: <code>tau_cmd</code> → <code>delay</code>'s input; <code>torque</code>'s right-hand gray circle (<code>spline</code>) → the <code>spline</code> port; <code>torque</code>'s bottom gray circle (<code>support</code>) → the <code>support</code> port. Save with <kbd>Ctrl</kbd>+<kbd>S</kbd>.</li>
+  </ol>
+  <p class="small muted">Your diagram should now match the picture at the top of this step, and the
+    <strong>Problems</strong> tab under the editor should show nothing for <code>Engine</code>.</p>
+
+  <h3>D · A test bench</h3>
+  <p>An engine with an unconnected input cannot be simulated — nobody has said what the torque command
+    is. So it gets a bench: a source for the command, a load on the shaft, and something for the
+    mounts to push against.</p>
+<div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
   <tbody>
 <tr><td><code>cmd</code></td><td>BlockComponents › Sources › Step</td><td><code>height = 200</code>, <code>offset = 0</code>, <code>start_time = 0.5</code></td></tr>
@@ -300,38 +345,17 @@ end</code></pre></div>
 <tr><td><code>mounts</code></td><td>RotationalComponents › Components › Fixed</td><td>—</td></tr>
   </tbody>
 </table></div>
-  <h3>What you are building</h3>
   <figure class="shot-img">
     <a href="img/step02-engine-step.png"><img src="img/step02-engine-step.png" alt="EngineStep test harness: a step source drives the engine into a unit inertia held by fixed mounts." loading="lazy"></a>
     <figcaption>The test harness: <code>cmd</code> steps the torque command above the ceiling, <code>load</code> is a 1 kg·m² inertia, and <code>EngineStepTransient</code> at the bottom of the code runs it for 3 s.</figcaption>
   </figure>
-  <figure class="shot-img">
-    <a href="img/step02-engine-step-plot.png"><img src="img/step02-engine-step-plot.png" alt="Plot of engine.limiter.y: zero until 0.5 s, a 0.3 s dead time with small ripples, then a rise that is clipped flat at 150 N·m from about 1.2 s." loading="lazy"></a>
-    <figcaption>The run: 200 N·m is asked for at 0.5 s. Nothing arrives for the 0.3 s dead time (the small wiggles are the Padé approximation), the lag shapes the rise, and the limiter clips it at 150 N·m.</figcaption>
-  </figure>
-  <h3>Do this</h3>
-  <ol class="actions">
-<li>Name each value once. A number a part needs becomes a parameter of <code>Engine</code>, and the part refers to it by name — so <code>Engine(T_max = 200)</code> later changes the ceiling everywhere it is used. Click an empty spot of the canvas and use <strong>Add parameter</strong> in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above <code>relations</code>:
-<div class="code"><span class="codelabel">Parameters</span><button class="copy" type="button">Copy</button><pre><code>  "Injection-to-torque transport delay"
-  structural parameter theta_e::Time = 0.3
-  "Manifold-filling first-order lag"
-  parameter tau_e::Time = 0.3
-  "Peak deliverable torque"
-  parameter T_max::Torque = 150</code></pre></div>
-Then give the parts the <em>names</em>, not the numbers — the parts table shows which.</li>
-<li>Click <code>delay</code> and change <code>delayTime</code> from <code>0.3</code> to <code>theta_e</code>; click <code>lag</code> and change <code>T</code> to <code>tau_e</code>. The fields accept names as well as numbers.</li>
-<li>With <strong>+</strong>, place <code>BlockComponents › Nonlinear › Limiter</code> (rename it <code>limiter</code>) and <code>RotationalComponents › Sources › TorqueSource</code> (rename it <code>torque</code>), to the right of <code>lag</code>. Wire <code>lag</code>'s output to <code>limiter</code>'s input, and <code>limiter</code>'s output to the <code>tau</code> port of <code>torque</code>.</li>
-<li><strong>Ports are parts too.</strong> Click <strong>+</strong> and open the <code>Dyad</code> library at the top of the list: place a <code>RealInput</code> and rename it <code>tau_cmd</code>, then two <code>Spline</code>s renamed <code>spline</code> and <code>support</code>. Drag <code>tau_cmd</code> to the left edge of the thin blue rectangle, <code>spline</code> to the right edge, <code>support</code> to the bottom: that rectangle is the component's outline, and ports on it are what others connect to. Wire <code>tau_cmd → delay.u</code>, <code>torque.spline → spline</code> (the gray circle on the right of <code>torque</code>) and <code>torque.support → support</code> (the one underneath).</li>
-<li>Set the limiter to <code>y_max = T_max</code>, <code>y_min = 0</code>: the engine cannot brake through this path. <code>theta_e</code> is a <code>structural</code> parameter because <code>PadeDelay</code> builds its coefficients from the delay when the model is compiled; if <strong>Add parameter</strong> offers no structural option, paste that line in code.</li>
-<li>An engine with an unconnected input cannot be simulated, so build a test bench. <strong>Add Component</strong> <code>EngineStep</code>, place your <code>Engine</code> (under <code>MyCar</code> in the <strong>+</strong> palette), and add <code>cmd</code>, <code>load</code> and <code>mounts</code>. Wire it as in the screenshot above.</li>
-<li>Switch to code now, because two things have no diagram form. First, the starting state: below <code>relations</code>, add the three <code>initial</code> lines of the complete bench below. Second, the analysis: it says what to do with a model, not what the model is, so it is written as code. Add the <code>analysis</code> block. Save; it appears in the <strong>Analyses</strong> panel. If it does not, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>, beside the terminal: auto-compile on save can be switched off.</li>
-<li>Run <code>EngineStepTransient</code> with the ▷ beside it in the <strong>Analyses</strong> panel, then plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
-<div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
-r = MyCar.EngineStepTransient()
-plot(r; idxs = r."engine.limiter.y")</code></pre></div>
-The same pattern plots several signals, <code>idxs = [r."a", r."b"]</code>, or one against another, <code>idxs = (r."x", r."y")</code>.</li>
+  <ol class="actions" start="9">
+<li>In the <strong>Components</strong> panel, right-click <code>MyCar</code> → <strong>Add Component</strong> → <code>EngineStep</code>.</li>
+<li>Click <strong>+</strong>, open <code>MyCar</code> at the bottom of the list, click <code>Engine</code>, and rename the new block <code>engine</code>. With <strong>+</strong>, add <code>BlockComponents › Sources › Step</code> as <code>cmd</code> (<code>height = 200</code>, <code>offset = 0</code>, <code>start_time = 0.5</code>), <code>RotationalComponents › Components › Inertia</code> as <code>load</code> (<code>J = 1</code>) and <code>RotationalComponents › Components › Fixed</code> as <code>mounts</code>.</li>
+<li>Wire <code>cmd</code>'s output → <code>engine</code>'s <code>tau_cmd</code>; <code>engine</code>'s <code>spline</code> → <code>load</code>'s left circle (<code>spline_a</code>); <code>engine</code>'s <code>support</code> → <code>mounts</code>.</li>
+<li>Toggle to code (⇄): two things have no diagram form. The starting state — the three <code>initial</code> lines — and the analysis, which says what to do with the model rather than what it is. Add both from the block below, the analysis after the component's <code>end</code>. Save; <code>EngineStepTransient</code> appears in the <strong>Analyses</strong> panel. If it does not, click <strong>Dyad Compile</strong> under <strong>Julia Commands</strong>, beside the terminal.</li>
   </ol>
-  <p class="small muted">The complete bench and its analysis. Add what your file is missing — the <code>initial</code> lines and the <code>analysis</code> — or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">EngineStep and EngineStepTransient</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
+  <p class="small muted">The complete bench and its analysis. Add what your file is missing, or replace the whole file with this (the diagram then lays itself out afresh).</p><div class="code"><span class="codelabel">EngineStep and EngineStepTransient</span><button class="copy" type="button">Copy</button><pre><code>component EngineStep
   cmd = BlockComponents.Sources.Step(height = 200, offset = 0, start_time = 0.5)
   engine = Engine()
   "Unit inertia, so its angular acceleration reads as the delivered torque"
@@ -350,6 +374,19 @@ analysis EngineStepTransient
   extends TransientAnalysis(stop = 3)
   model = EngineStep()
 end</code></pre></div>
+
+  <h3>E · Run and plot</h3>
+  <ol class="actions" start="13">
+<li>Run <code>EngineStepTransient</code> with the ▷ beside it in the <strong>Analyses</strong> panel, then plot <code>engine.limiter.y</code>. A plain <code>plot</code> of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
+<div class="code"><button class="copy" type="button">Copy</button><pre><code>using MyCar, Plots
+r = MyCar.EngineStepTransient()
+plot(r; idxs = r."engine.limiter.y")</code></pre></div>
+The same pattern plots several signals, <code>idxs = [r."a", r."b"]</code>, or one against another, <code>idxs = (r."x", r."y")</code>.</li>
+  </ol>
+  <figure class="shot-img">
+    <a href="img/step02-engine-step-plot.png"><img src="img/step02-engine-step-plot.png" alt="Plot of engine.limiter.y: zero until 0.5 s, a 0.3 s dead time with small ripples, then a rise that is clipped flat at 150 N·m from about 1.2 s." loading="lazy"></a>
+    <figcaption>The run: 200 N·m is asked for at 0.5 s. Nothing arrives for the 0.3 s dead time (the small wiggles are the Padé approximation), the lag shapes the rise, and the limiter clips it at 150 N·m.</figcaption>
+  </figure>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>Measured on <code>HandsOn.EngineStepTransient</code>:</p>
 <ul>
   <li><code>engine.limiter.y</code> stays at 0 through the step at 0.5 s, reads only 6.2 N·m at
