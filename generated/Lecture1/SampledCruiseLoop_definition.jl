@@ -5,14 +5,13 @@
 
 
 @doc Markdown.doc"""
-   SampledCruiseLoop(; name, theta_e, with_I, with_D, Ts, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, m0, xi0, xd0)
+   SampledCruiseLoop(; name, theta_e, with_I, with_D, Ts, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, m0)
 
-Cruise loop with a half-sample delay in the feedback path.
+Cruise loop with a discrete PID controller and explicit sample-and-hold interfaces.
 
-Identical to `CruiseLoop` except the speed measurement reaches the controller through a
-`HalfSampleDelay`. Increasing `Ts` adds phase lag and drives the loop toward instability, which
-is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop` (`plant`,
-`controller`) so a harness reads the same signal paths.
+The reference and vehicle speed are sampled at period `Ts`. The discrete controller executes on
+the same periodic clock, and a zero-order hold applies its output to the continuous vehicle plant.
+Subcomponent names match `CruiseLoop` (`plant`, `controller`) so a harness reads similar paths.
 
 ## Parameters:
 
@@ -21,7 +20,7 @@ is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop`
 | `theta_e`         | Powertrain transport delay                         | s  |   0.3 |
 | `with_I`         | Whether to include integral action                         | --  |   true |
 | `with_D`         | Whether to include derivative action                         | --  |   true |
-| `Ts`         | Sample period; the feedback is delayed by half of it                         | s  |   0.1 |
+| `Ts`         | Controller sample period                         | s  |   0.1 |
 | `k`         | Controller gain in N.m per km/h                         | --  |   56.0 |
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
@@ -35,15 +34,13 @@ is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop`
 | `m`         |                          | kg  |   1400.0 |
 | `CdA`         |                          | m2  |   0.63 |
 | `m0`         | Initial measured speed in km/h, the settled cruise the loop starts from                         | --  |   90.0 |
-| `xi0`         |                          | --  |   0.0 |
-| `xd0`         | Initial derivative-filter state, seeded from the initial measurement                         | --  |   (wd - 1) * m0 |
 
 ## Connectors
 
  * `setpoint` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function SampledCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, Ts=0.1, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
+@component function SampledCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, Ts=0.1, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, m0=Float64(90.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -113,12 +110,6 @@ is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop`
   __local__m0 = m0
   append!(__params, @parameters (m0::Real), [description = "Initial measured speed in km/h, the settled cruise the loop starts from"])
   __initial_conditions[m0] = __local__m0
-  __local__xi0 = xi0
-  append!(__params, @parameters (xi0::Real))
-  __initial_conditions[xi0] = __local__xi0
-  __local__xd0 = xd0
-  append!(__params, @parameters (xd0::Real), [description = "Initial derivative-filter state, seeded from the initial measurement"])
-  __initial_conditions[xd0] = __local__xd0
 
   ### Final Parameters (assignments)
 
@@ -137,15 +128,21 @@ is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop`
   # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
   push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
-  # Subcomponent controller of type BlockComponents.Continuous.LimPID
+  # Subcomponent clock of type DiscreteComponents.PeriodicClock
+  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=Ts, clock_overrides...))
+  # Subcomponent setpoint_sampler of type DiscreteComponents.Sampler
+  setpoint_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "setpoint_sampler")
+  push!(__systems, @named setpoint_sampler = DiscreteComponents.Sampler(; initial_condition=m0, setpoint_sampler_overrides...))
+  # Subcomponent measurement_sampler of type DiscreteComponents.Sampler
+  measurement_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "measurement_sampler")
+  push!(__systems, @named measurement_sampler = DiscreteComponents.Sampler(; initial_condition=m0, measurement_sampler_overrides...))
+  # Subcomponent controller of type DiscreteComponents.DiscretePIDStandard
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wp=wp, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
-  # Subcomponent sampler of type VehicleSystemsComponents.Lecture1.HalfSampleDelay
-  sampler_overrides = __pop_subcomponent_overrides!(__overrides, "sampler")
-  push!(__systems, @named sampler = VehicleSystemsComponents.Lecture1.HalfSampleDelay(; Ts=Ts, sampler_overrides...))
-  # Subcomponent zero_ff of type BlockComponents.Sources.Constant
-  zero_ff_overrides = __pop_subcomponent_overrides!(__overrides, "zero_ff")
-  push!(__systems, @named zero_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_ff_overrides...))
+  push!(__systems, @named controller = DiscreteComponents.DiscretePIDStandard(; with_I=with_I, with_D=with_D, with_ff=false, Ts=Ts, K=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wp=wp, wd=wd, controller_overrides...))
+  # Subcomponent hold of type DiscreteComponents.ZeroOrderHold
+  hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
+  push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; initial_condition=Float64(0.0), hold_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -158,11 +155,12 @@ is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop`
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(setpoint, controller.u_s))
-  push!(__eqs, connect(plant.v_kmh, sampler.u))
-  push!(__eqs, connect(sampler.y, controller.u_m))
-  push!(__eqs, connect(zero_ff.y, controller.u_ff))
-  push!(__eqs, connect(controller.y, plant.tau_cmd))
+  push!(__eqs, connect(setpoint, setpoint_sampler.u))
+  push!(__eqs, connect(plant.v_kmh, measurement_sampler.u))
+  push!(__eqs, connect(setpoint_sampler.y, controller.u_s, clock.y))
+  push!(__eqs, connect(measurement_sampler.y, controller.u_m))
+  push!(__eqs, connect(controller.y, hold.u))
+  push!(__eqs, connect(hold.y, plant.tau_cmd))
   push!(__eqs, connect(grade, plant.grade))
 
   # Return completely constructed System

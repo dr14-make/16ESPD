@@ -42,15 +42,14 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"t_step"::Float64 = 0.0
   # Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
   # 
-  # Mirrors `CruiseLoopStep` but through the sampled loop, so notebook 09 can sweep `Ts` and watch
-  # the step response ring and then diverge as the half-sample phase lag eats the stability margin.
+  # Mirrors `CruiseLoopStep` using a sampled discrete controller, so notebook 09 can sweep `Ts`
+  # and observe the effects of controller discretization and sample-and-hold delay.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.SampledCruiseStep(; name=:SampledCruiseStep)
 end
 
 function DyadInterface.run_analysis(spec::SampledCruiseTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  push!(overrides, no_namespace_model.Ts => spec.var"Ts")
   push!(overrides, no_namespace_model.k => spec.var"k")
   push!(overrides, no_namespace_model.Ti => spec.var"Ti")
   push!(overrides, no_namespace_model.Td => spec.var"Td")

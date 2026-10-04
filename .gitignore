@@ -7,3 +7,9 @@
 /agent_resources/
 /.migration-backups/
 /materials/DyadAgentResources
+.playwright-mcp/console-2026-10-04T20-29-34-720Z.log
+.playwright-mcp/page-2026-10-04T20-29-35-026Z.yml
+.playwright-mcp/page-2026-10-04T20-29-51-274Z.yml
+.playwright-mcp/page-2026-10-04T20-30-42-525Z.yml
+.playwright-mcp/page-2026-10-04T20-31-01-825Z.yml
+.playwright-mcp/page-2026-10-04T20-31-18-488Z.yml

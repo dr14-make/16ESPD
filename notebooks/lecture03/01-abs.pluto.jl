@@ -79,8 +79,9 @@ begin
     V_STOP = 0.5
     G = 9.80665
 
-    # The locked wheel is the slowest stop; simulate it with a margin so every run comes to rest.
-    stop_time(mu) = BRAKE_TIME + 1.5 * V0 / (0.7 * mu * G) + 1.0
+    # Simulate the slowest possible stop with a margin so every run comes to rest. That is the
+    # locked wheel, unless `a_ref` is below it: the ABS then lets the car slow at only about `a_ref`.
+    stop_time(mu, a_max=Inf) = BRAKE_TIME + 1.5 * V0 / min(0.7 * mu * G, a_max) + 1.0
 
     """
     Distance and time from brake application until the vehicle speed first falls below
@@ -102,7 +103,7 @@ begin
     end
 
     abs_braking(mu) = braking(VehicleSystemsComponents.Vehicle.ABSBrakeTransient(
-        road_mu=mu, a_ref=a_ref, stop=stop_time(mu)))
+        road_mu=mu, a_ref=a_ref, stop=stop_time(mu, a_ref)))
     ideal_abs_braking(mu) = braking(VehicleSystemsComponents.Vehicle.IdealBrakeTransient(
         road_mu=mu, stop=stop_time(mu)))
     locked_braking(mu) = braking(VehicleSystemsComponents.Vehicle.LockedBrakeTransient(
@@ -264,9 +265,10 @@ friction_plot = let
     near_peak = count(k -> 0.02 <= -k <= 0.08, abs_kappa) / length(abs_kappa)
     sliding = count(k -> -k >= 0.12, abs_kappa) / length(abs_kappa)
 
+    r(x) = round(x; digits=2)
     p = plot(
         curve_kappa[order], curve_mu;
-        lw=2, color=:gray, label="tire curve (μ_A = $(road_mu * mu_A), μ_S = $(road_mu * mu_S))",
+        lw=2, color=:gray, label="tire curve (μ_A = $(r(road_mu * mu_A)), μ_S = $(r(road_mu * mu_S)))",
         xlabel="longitudinal slip κ", ylabel="friction coefficient μ",
         title="ABS: $(round(Int, 100near_peak)) % of the stop near the peak, $(round(Int, 100sliding)) % sliding",
         xlims=(-0.3, 0.005), legend=:bottomleft,
@@ -347,11 +349,11 @@ md"""
   speed. It shows what the logic can do with perfect sensing.
 - **This ABS (wheel speed only).** On a dry road it stops about 11 % shorter than the locked
   wheel, which is what real cars achieve (10–13 %). On slippery roads the gain shrinks, and in
-  the sweep below it turns into a small loss at `μ = 0.3`. The cause is the speed estimate: a
+  the sweep above it turns into a small loss at `μ = 0.3`. The cause is the speed estimate: a
   fixed `a_ref` is far more deceleration than a slippery road allows, so the estimated vehicle
   speed falls faster than the car really slows down. Move the `a_ref` slider to see it: at
-  10 m/s² the ABS also loses on a wet road (`μ = 0.5`). Real ABS computers learn the road's
-  deceleration instead of assuming it.
+  10 m/s² the ABS also loses at `μ = 0.2` and on a wet road (`μ = 0.5`). Real ABS computers
+  learn the road's deceleration instead of assuming it.
 - **Why ABS still matters when the gain is small:** a rolling wheel can steer, a locked one
   cannot.
 

@@ -9,8 +9,8 @@
 
 Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
 
-Mirrors `CruiseLoopStep` but through the sampled loop, so notebook 09 can sweep `Ts` and watch
-the step response ring and then diverge as the half-sample phase lag eats the stability margin.
+Mirrors `CruiseLoopStep` using a sampled discrete controller, so notebook 09 can sweep `Ts`
+and observe the effects of controller discretization and sample-and-hold delay.
 
 ## Parameters:
 

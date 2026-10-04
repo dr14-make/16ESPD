@@ -125,7 +125,7 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
 
     Base.invokelatest(install_plotting, backend)
 
-    imports = :(using ModelingToolkit, OrdinaryDiffEqDefault, Plots)
+    imports = :(using ModelingToolkit, OrdinaryDiffEqDefault, DyadInterface, Plots)
     Core.eval(@__MODULE__, imports)
     Core.eval(Main, imports)
     Base.invokelatest(select_backend, backend)

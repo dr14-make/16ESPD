@@ -1,58 +1,9 @@
 """
-Half-sample transport delay standing in for a zero-order-hold sampler.
+Cruise loop with a discrete PID controller and explicit sample-and-hold interfaces.
 
-Dyad ships no sampled blocks, so notebook 09 reproduces the *effect* of sampling rather than a
-real sampler. Holding a measurement for one sample period costs the loop, on average, half a
-sample period of phase — and phase lag is exactly what erodes stability margin as the sample
-rate drops. A pure transport delay of `Ts/2` in the feedback path injects that same phase lag,
-so the loop goes unstable as `Ts` grows for the same reason a real digital loop does.
-
-This is a surrogate and produces no staircase: the signal it passes is continuous and merely
-delayed, not held piecewise-constant. It reproduces the destabilizing phase lag, not the
-sample-and-hold waveform. `delayTime` is baked in at construction, so `Ts` is structural.
-"""
-component HalfSampleDelay
-  extends BlockComponents.Interfaces.SISO
-  "Sample period; the feedback is delayed by half of it"
-  structural parameter Ts::Time = 0.1
-  "Padé order of the delay approximation"
-  structural parameter n::Integer = 3
-  delay = BlockComponents.Nonlinear.PadeDelay(n = n, delayTime = Ts / 2)
-relations
-  connect(u, delay.u)
-  connect(delay.y, y)
-end
-
-test component TestHalfSampleDelay
-  "Constant input: a delayed constant is the same constant once the delay has filled"
-  src = BlockComponents.Sources.Constant(k = 5.0)
-  d = VehicleSystemsComponents.Lecture1.HalfSampleDelay(Ts = 0.1)
-relations
-  connect(src.y, d.u)
-metadata {
-  "Dyad": {
-    "tests": {
-      "constant_passthrough": {
-        "stop": 5,
-        "atol": {"d.y": 0.001},
-        "expect": {
-          "initial": {"d.y": 5.0},
-          "final": {"d.y": 5.0},
-          "signals": ["d.y"]
-        }
-      }
-    }
-  }
-}
-end
-
-"""
-Cruise loop with a half-sample delay in the feedback path.
-
-Identical to `CruiseLoop` except the speed measurement reaches the controller through a
-`HalfSampleDelay`. Increasing `Ts` adds phase lag and drives the loop toward instability, which
-is the mechanism notebook 09 demonstrates. Subcomponent names match `CruiseLoop` (`plant`,
-`controller`) so a harness reads the same signal paths.
+The reference and vehicle speed are sampled at period `Ts`. The discrete controller executes on
+the same periodic clock, and a zero-order hold applies its output to the continuous vehicle plant.
+Subcomponent names match `CruiseLoop` (`plant`, `controller`) so a harness reads similar paths.
 """
 component SampledCruiseLoop
   "Vehicle-speed setpoint in km/h"
@@ -65,7 +16,7 @@ component SampledCruiseLoop
   structural parameter with_I::Boolean = true
   "Whether to include derivative action"
   structural parameter with_D::Boolean = true
-  "Sample period; the feedback is delayed by half of it"
+  "Controller sample period"
   structural parameter Ts::Time = 0.1
   "Controller gain in N.m per km/h"
   parameter k::Real = 56.0
@@ -82,14 +33,16 @@ component SampledCruiseLoop
   parameter CdA::Area = 0.63
   "Initial measured speed in km/h, the settled cruise the loop starts from"
   parameter m0::Real = 90.0
-  parameter xi0::Real = 0.0
-  "Initial derivative-filter state, seeded from the initial measurement"
-  parameter xd0::Real = (wd - 1) * m0
   plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA)
-  controller = BlockComponents.Continuous.LimPID(
+  clock = DiscreteComponents.PeriodicClock(dt = Ts)
+  setpoint_sampler = DiscreteComponents.Sampler(initial_condition = m0)
+  measurement_sampler = DiscreteComponents.Sampler(initial_condition = m0)
+  controller = DiscreteComponents.DiscretePIDStandard(
     with_I = with_I,
     with_D = with_D,
-    k = k,
+    with_ff = false,
+    Ts = Ts,
+    K = k,
     Ti = Ti,
     Td = Td,
     Nd = Nd,
@@ -97,26 +50,23 @@ component SampledCruiseLoop
     y_max = y_max,
     y_min = y_min,
     wp = wp,
-    wd = wd,
-    xi0 = xi0,
-    xd0 = xd0)
-  sampler = VehicleSystemsComponents.Lecture1.HalfSampleDelay(Ts = Ts)
-  "No separate feedforward path in this feedback loop"
-  zero_ff = BlockComponents.Sources.Constant(k = 0.0)
+    wd = wd)
+  hold = DiscreteComponents.ZeroOrderHold(initial_condition = 0.0)
 relations
-  connect(setpoint, controller.u_s)
-  connect(plant.v_kmh, sampler.u)
-  connect(sampler.y, controller.u_m)
-  connect(zero_ff.y, controller.u_ff)
-  connect(controller.y, plant.tau_cmd)
+  connect(setpoint, setpoint_sampler.u)
+  connect(plant.v_kmh, measurement_sampler.u)
+  connect(setpoint_sampler.y, controller.u_s, clock.y)
+  connect(measurement_sampler.y, controller.u_m)
+  connect(controller.y, hold.u)
+  connect(hold.y, plant.tau_cmd)
   connect(grade, plant.grade)
 end
 
 """
 Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
 
-Mirrors `CruiseLoopStep` but through the sampled loop, so notebook 09 can sweep `Ts` and watch
-the step response ring and then diverge as the half-sample phase lag eats the stability margin.
+Mirrors `CruiseLoopStep` using a sampled discrete controller, so notebook 09 can sweep `Ts`
+and observe the effects of controller discretization and sample-and-hold delay.
 """
 component SampledCruiseStep
   structural parameter theta_e::Time = 0.3
@@ -180,10 +130,8 @@ metadata {
 end
 
 analysis SampledCruiseTransient
-  # `Ts` is structural (PadeDelay bakes its delayTime at construction), so it cannot be
-  # forwarded through the analysis's runtime overrides — this harness runs at the component's
-  # default Ts. To sweep the sample period, notebook 09 constructs `SampledCruiseStep` directly
-  # with different `Ts` values (mtkcompile + solve) rather than through this analysis.
+  # `Ts` is structural because it defines the discrete clock. To sweep the sample period,
+  # construct `SampledCruiseStep` with different `Ts` values before compilation.
   extends TransientAnalysis(stop = 100)
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
@@ -201,7 +149,6 @@ analysis SampledCruiseTransient
   parameter tau0::Torque = 31.078
   parameter t_step::Time = 0.0
   model = VehicleSystemsComponents.Lecture1.SampledCruiseStep(
-    Ts = Ts,
     k = k,
     Ti = Ti,
     Td = Td,

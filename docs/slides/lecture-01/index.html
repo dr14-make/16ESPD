@@ -4047,9 +4047,8 @@ V_START, SETPOINT, UNLIMITED = 90.0, 110.0, 1.0e6
 K_ZN, TI_ZN, TD_ZN = 67.39, 1.087, 0.272
 KU, PU = 114.56, 2.175          # N.m per km/h, s
 
-# `Ts` is structural — the Pade delay bakes its delay time in at
-# construction — so this is one compiled model per sample time,
-# not `sweep` over one of them.
+# `Ts` is structural: it defines the periodic clock and the
+# discrete controller sample time. Build one model per rate.
 sampled(Ts; k = K_ZN, Ti = TI_ZN, Td = TD_ZN) =
     Scenarios.SampledCruiseStep(; name = :SampledCruiseStep, Ts = Ts,
         with_I = true, with_D = true, wd = 0.0, k = k, Ti = Ti, Td = Td,
@@ -4074,14 +4073,13 @@ runs = [Ts =&gt; solve(p) for (Ts, p) in problems]</code></pre>
       </div>
       <figure class="fig">
         <img src="assets/figures/09-sample-time-family.svg"
-             alt="Four step responses at increasing sample time: the fastest is indistinguishable from continuous, the next overshoots, the next rings for a long time, and the slowest diverges.">
-        <figcaption>One controller, one car, one gain set. The only difference is how often the
-          loop looks.</figcaption>
+             alt="Four step responses at increasing sample time: peak speed and persistent ringing increase as the controller update rate slows.">
+        <figcaption>One car and one standard-form gain set. Only the sample and update rate changes.</figcaption>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Point at</strong> the fastest run and say: that is the continuous design. It
-      is indistinguishable from what we drew in section 08.</p>
+      <p><strong>Point at</strong> the fastest run and say: this sampled controller is close to
+      the continuous-time reference from section 08.</p>
       <p><strong>Then walk out along the family</strong> and name each failure as it appears:
       overshoot, ringing, divergence.</p>
       <p><strong>Say:</strong> nothing was re-tuned. Nobody touched a gain. The controller that
@@ -4102,39 +4100,38 @@ runs = [Ts =&gt; solve(p) for (Ts, p) in problems]</code></pre>
 
   <section>
     <h2>What you are looking at</h2>
-    <div class="callout warn">
-      <span class="label">Be straight with the room about this</span>
-      Dyad ships no sampled blocks, so the sampling in this notebook is modelled as a
-      <strong>half-sample transport delay</strong> in the feedback path, not as a real clocked
-      partition. A zero-order hold costs the loop about half a sample of phase, and that is
-      exactly what this reproduces.
+    <div class="callout">
+      <span class="label">A genuine sampled-data loop</span>
+      A periodic clock samples the reference and speed, a
+      <strong>DiscretePIDStandard</strong> updates once per tick, and a zero-order hold keeps its
+      torque command constant until the next tick.
     </div>
-    <ul class="small">
-      <li><strong>What is faithful:</strong> the destabilizing mechanism, and therefore every
-        trend in the previous plot.</li>
-      <li><strong>What is missing:</strong> the staircase. A real held command is piecewise
-        constant; ours is smooth.</li>
-    </ul>
-    <!-- HANDOVER Risk 3: if the clocked-partition stretch landed, this slide becomes the
-         staircase plot instead, and the surrogate stays only as the explanation of why the
-         phase is lost. Replace the callout, not the section. -->
-    <aside class="notes">
-      <p><strong>Say this plainly and do not bury it.</strong> A demonstration that is really a
-      surrogate is fine; a surrogate presented as the real thing is not. Students who later
-      build a real discrete controller need to know which part of today's plot they should
-      expect to see and which part they should not.</p>
-      <p><strong>If the real clocked partition was built</strong> and the notebook shows a
-      genuine staircase command, say so, show it, and point at the flat treads: that is the
-      controller not thinking. Then keep the phase explanation anyway — it is the reason the
-      staircase hurts.</p>
-      <p><strong>Ask the room:</strong> why would half a sample of delay be enough to destroy a
-      loop that was fine? <em>(Because phase margin is a finite budget. Next slide.)</em></p>
-          <p><strong>Terms, if anyone asks</strong></p>
-      <ul>
-        <li><strong>Surrogate</strong> — a stand-in that reproduces the mechanism without being the real thing. Ours is a half-sample transport delay.</li>
-        <li><strong>Clocked partition</strong> — a genuinely sampled section of a model, with its own clock. Dyad ships no sampled blocks, so we do not have one.</li>
-        <li><strong>What is faithful</strong> — the phase loss, and therefore every trend in the previous plot. <strong>What is missing</strong> — the staircase.</li>
+    <div class="cols">
+      <ul class="small">
+        <li><strong>Sampler:</strong> continuous signals become clocked values.</li>
+        <li><strong>Discrete PID:</strong> integral and derivative terms use discrete update equations.</li>
+        <li><strong>Zero-order hold:</strong> the continuous car receives a staircase command.</li>
       </ul>
+      <figure class="fig">
+        <img src="assets/figures/09-held-command.svg"
+             alt="A staircase torque command held between one-second controller updates, with continuous vehicle speed overlaid.">
+        <figcaption>The command changes only at ticks; the car moves continuously between them.</figcaption>
+      </figure>
+    </div>
+    <div class="model solo">
+      <span class="label">Open in Dyad</span>
+      <code>dyad/Lecture1/Sampler.dyad</code>
+      <span class="show">show — <b>clock → samplers → discrete PID → hold</b>.</span>
+    </div>
+    <aside class="notes">
+      <p><strong>Point at the signal chain.</strong> The car remains continuous. Only sensing,
+      control computation and command updates occur on the clock.</p>
+      <p><strong>Say:</strong> the car can move between ticks, but the applied torque cannot
+      change until the next controller update. That held command is where the staircase comes
+      from.</p>
+      <p><strong>Ask the room:</strong> why can this still be approximated as half a sample of
+      delay near crossover? <em>(Because a zero-order hold delays the average command. Next
+      slide.)</em></p>
     </aside>
   </section>
 
@@ -4191,18 +4188,12 @@ runs = [Ts =&gt; solve(p) for (Ts, p) in problems]</code></pre>
             <span class="nb">09-discretization.ipynb</span>
             <span class="cell">cell <b>The fixes</b></span>
           </div>
-          <pre><code class="language-julia" data-trim data-noescape># Ziegler-Nichols again, on the measurement made *through* the
-# sampler: Ku_slow = 49.82, Pu_slow = 4.294 s from section 5.
-k2, Ti2, Td2 = ziegler_nichols(Ku_slow, Pu_slow)
-
-# Fix one — sample faster, gains untouched. `Ts` is structural,
-# so this is the only new compile in the cell.
+          <pre><code class="language-julia" data-trim data-noescape># Fix one — sample faster, standard-form settings untouched.
 faster = solve_at(0.05)
 
-# Fix two — re-tune for the rate you have. The Ts = 1 s problem
-# was kept, so this is a `remake`, not another compile.
-retuned_slow = rerun(last(last(problems)),
-                     "k" =&gt; k2, "Ti" =&gt; Ti2, "Td" =&gt; Td2)</code></pre>
+# Fix two — reduce closed-loop bandwidth for the available rate.
+# This conservative discrete tuning is verified at Ts = 1 s.
+retuned_slow = solve_at(1.0; k = 20.0, Ti = 3.0, Td = 0.5)</code></pre>
           <div class="demo-foot">
             <button class="copy">copy</button>
             <span class="spacer"></span>
@@ -4231,8 +4222,9 @@ retuned_slow = rerun(last(last(problems)),
       why the conversion method matters.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
-        <li><strong>Ku_slow, Pu_slow</strong> — the ultimate gain and period measured <em>at the slow sample rate</em>: 49.82 N·m per km/h and 4.294 s, against 114.56 and 2.175 continuously. The sampler cost 56.5 % of the ultimate gain.</li>
-        <li><strong>Re-tuning buys stability, not performance</strong> — the slow loop stays a slow loop. The gap to the continuous design is what the cheap processor cost.</li>
+        <li><strong>Faster sampling</strong> — reduces measurement-to-actuation delay without changing the standard-form settings.</li>
+        <li><strong>Conservative re-tuning</strong> — reduces bandwidth so the one-second update rate consumes less phase margin.</li>
+        <li><strong>Re-tuning buys stability, not the original bandwidth</strong> — the slow loop remains slower.</li>
       </ul>
     </aside>
   </section>
@@ -4251,10 +4243,10 @@ retuned_slow = rerun(last(last(problems)),
       plant. We work where the tools are good and then we check the approximation, rather than
       working where it is hard and being right from the start. The checking is not optional; it
       is the price of the shortcut.</p>
-      <p><strong>Say:</strong> the gains also change when you convert. The continuous
-      k, T<sub>i</sub>, T<sub>d</sub> and the discrete ones are not the same numbers even for
-      equivalent controllers, and there are several conversion methods that disagree. Mention
-      it; do not go down that road today.</p>
+      <p><strong>Say:</strong> this notebook keeps the standard-form k, T<sub>i</sub> and
+      T<sub>d</sub> values, then implements the integral with forward Euler and the filtered
+      derivative with backward Euler. Other conversion methods produce different discrete
+      coefficients; verification at the deployed rate is still required.</p>
     </aside>
   </section>
 
