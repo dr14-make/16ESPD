@@ -1,5 +1,12 @@
 "Ideal continuous benchmark using true slip and vehicle speed."
 component ABSIdealBrakeTest
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time) {^demand}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  controller = VehicleSystemsComponents.Vehicle.ABSIdealController() {^controller}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w, F_z = m * 9.80665, tau_max = brake_demand, w0 = w0) {^wheel}
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m) {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
   parameter v0::Velocity = 25.0
   parameter brake_demand::Torque = 6000.0
   parameter brake_time::Time = 0.5
@@ -8,32 +15,111 @@ component ABSIdealBrakeTest
   parameter radius::Length = 0.31
   parameter J_w::MomentOfInertia = 4.0
   parameter w0::AngularVelocity = 0.2
-  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
-  road = BlockComponents.Sources.Constant(k = road_mu)
-  flat = BlockComponents.Sources.Constant(k = 0.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSIdealController()
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
-    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
-  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
-  fixed = RotationalComponents.Components.Fixed()
 relations
-  connect(demand.y, controller.demand)
-  connect(wheel.kappa, controller.kappa)
+  connect(demand.y, controller.demand) {^id8}
+  connect(wheel.kappa, controller.kappa) {^id9}
   controller.v = body.mass.v
-  connect(controller.tau_cmd, wheel.tau_cmd)
-  connect(wheel.support, fixed.spline)
-  connect(wheel.flange, body.flange)
-  connect(road.y, wheel.mu_scale)
-  connect(flat.y, body.grade)
+  connect(controller.tau_cmd, wheel.tau_cmd) {^id10}
+  connect(wheel.support, fixed.spline) {^id11}
+  connect(wheel.flange, body.flange) {^id12}
+  connect(road.y, wheel.mu_scale) {^id13}
+  connect(flat.y, body.grade) {^id14}
   initial wheel.brake.tau_actual = 0.0
   initial wheel.inertia.phi = 0.0
   initial wheel.inertia.w = v0 / radius
   initial body.mass.s = 0.0
   initial body.mass.v = v0
+metadata {
+  "_links": {
+    "demand": {
+      "Dyad": {"placement": {"diagram": {"x1": 152, "x2": 252, "y1": 640, "y2": 740}}}
+    },
+    "road": {
+      "Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 380, "y2": 480}}}
+    },
+    "flat": {
+      "Dyad": {"placement": {"diagram": {"x1": 152, "x2": 252, "y1": 70, "y2": 170}}}
+    },
+    "controller": {
+      "Dyad": {"placement": {"diagram": {"x1": 287, "x2": 387, "y1": 615, "y2": 715}}}
+    },
+    "wheel": {
+      "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 275, "y2": 375}}}
+    },
+    "body": {
+      "Dyad": {"placement": {"diagram": {"x1": 287, "x2": 387, "y1": 70, "y2": 170}}}
+    },
+    "fixed": {
+      "Dyad": {"placement": {"diagram": {"x1": 287, "x2": 387, "y1": 495, "y2": 595}}}
+    },
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 140, "y": 282},
+              {"x": 140, "y": 590},
+              {"x": 272, "y": 590},
+              {"x": 272, "y": 640}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id10": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 412, "y": 665},
+              {"x": 412, "y": 20},
+              {"x": 272, "y": 20},
+              {"x": 272, "y": 220},
+              {"x": 208, "y": 220}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id11": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 208, "y": 440}, {"x": 337, "y": 440}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id12": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 402, "y": 325}, {"x": 402, "y": 120}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 235, "y": 430}], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end
 
 "Ideal-sensing sampled pressure-memory ABS harness."
 component ABSIdealModulatorBrakeTest
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time) {^demand}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  clock = DiscreteComponents.PeriodicClock(dt = 0.005) {^clock}
+  slip_sampler = DiscreteComponents.Sampler() {^slip_sampler}
+  speed_sampler = DiscreteComponents.Sampler() {^speed_sampler}
+  demand_sampler = DiscreteComponents.Sampler() {^demand_sampler}
+  controller = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt, alpha_rel = alpha_rel, beta_reapply = beta_reapply, T_p = T_p, k_inc_slow = k_inc_slow) {^controller}
+  hold = DiscreteComponents.ZeroOrderHold() {^hold}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w, F_z = m * 9.80665, tau_max = brake_demand, w0 = w0) {^wheel}
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m) {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
   parameter v0::Velocity = 25.0
   parameter brake_demand::Torque = 6000.0
   parameter brake_time::Time = 0.5
@@ -47,43 +133,137 @@ component ABSIdealModulatorBrakeTest
   parameter beta_reapply::Real = 0.85
   parameter T_p::Time = 0.03
   parameter k_inc_slow::Real = 8000.0
-  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
-  road = BlockComponents.Sources.Constant(k = road_mu)
-  flat = BlockComponents.Sources.Constant(k = 0.0)
-  clock = DiscreteComponents.PeriodicClock(dt = 0.005)
-  slip_sampler = DiscreteComponents.Sampler()
-  speed_sampler = DiscreteComponents.Sampler()
-  demand_sampler = DiscreteComponents.Sampler()
-  controller = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt,
-    alpha_rel = alpha_rel, beta_reapply = beta_reapply, T_p = T_p,
-    k_inc_slow = k_inc_slow)
-  hold = DiscreteComponents.ZeroOrderHold()
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
-    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
-  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
-  fixed = RotationalComponents.Components.Fixed()
 relations
-  connect(wheel.kappa, slip_sampler.u)
+  connect(wheel.kappa, slip_sampler.u) {^id13}
   speed_sampler.u = body.mass.v
-  connect(demand.y, demand_sampler.u)
-  connect(slip_sampler.y, controller.lambda, clock.y)
-  connect(speed_sampler.y, controller.v_ref)
-  connect(demand_sampler.y, controller.demand)
-  connect(controller.tau_cmd, hold.u)
-  connect(hold.y, wheel.tau_cmd)
-  connect(wheel.support, fixed.spline)
-  connect(wheel.flange, body.flange)
-  connect(road.y, wheel.mu_scale)
-  connect(flat.y, body.grade)
+  connect(demand.y, demand_sampler.u) {^id14}
+  connect(slip_sampler.y, controller.lambda, clock.y) {^id15}
+  connect(speed_sampler.y, controller.v_ref) {^id16}
+  connect(demand_sampler.y, controller.demand) {^id17}
+  connect(controller.tau_cmd, hold.u) {^id18}
+  connect(hold.y, wheel.tau_cmd) {^id19}
+  connect(wheel.support, fixed.spline) {^id20}
+  connect(wheel.flange, body.flange) {^id21}
+  connect(road.y, wheel.mu_scale) {^id22}
+  connect(flat.y, body.grade) {^id23}
   initial wheel.brake.tau_actual = 0.0
   initial wheel.inertia.phi = 0.0
   initial wheel.inertia.w = v0 / radius
   initial body.mass.s = 0.0
   initial body.mass.v = v0
+metadata {
+  "_links": {
+    "demand": {
+      "Dyad": {"placement": {"diagram": {"x1": 152, "x2": 252, "y1": 290, "y2": 390}}}
+    },
+    "road": {
+      "Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 685, "y2": 785}}}
+    },
+    "flat": {
+      "Dyad": {"placement": {"diagram": {"x1": 152, "x2": 252, "y1": 795, "y2": 895}}}
+    },
+    "clock": {
+      "Dyad": {"placement": {"diagram": {"x1": 547, "x2": 647, "y1": 20, "y2": 120}}}
+    },
+    "slip_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 286, "x2": 386, "y1": 50, "y2": 150}}}
+    },
+    "speed_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 286, "x2": 386, "y1": 170, "y2": 270}}}
+    },
+    "demand_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 286, "x2": 386, "y1": 290, "y2": 390}}}
+    },
+    "controller": {
+      "Dyad": {"placement": {"diagram": {"x1": 417, "x2": 517, "y1": 170, "y2": 270}}}
+    },
+    "hold": {
+      "Dyad": {"placement": {"diagram": {"x1": 546, "x2": 646, "y1": 140, "y2": 240}}}
+    },
+    "wheel": {
+      "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 495, "y2": 595}}}
+    },
+    "body": {
+      "Dyad": {"placement": {"diagram": {"x1": 287, "x2": 387, "y1": 595, "y2": 695}}}
+    },
+    "fixed": {
+      "Dyad": {"placement": {"diagram": {"x1": 287, "x2": 387, "y1": 770, "y2": 870}}}
+    },
+    "id13": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 140, "y": 502}, {"x": 140, "y": 100}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id15": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [{"x": 402, "y": 195}], "E": 2},
+          {"S": -1, "M": [{"x": 402, "y": 70}], "E": 3}
+        ],
+        "junctions": [{"x": 402, "y": 100}],
+        "path": {}
+      }
+    },
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id17": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 402, "y": 340}, {"x": 402, "y": 245}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id19": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [{"x": 662, "y": 190}, {"x": 662, "y": 440}, {"x": 208, "y": 440}],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id20": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 208, "y": 745}, {"x": 337, "y": 745}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id21": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 402, "y": 545}, {"x": 402, "y": 645}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 235, "y": 735}], "E": 2}], "path": {}}},
+    "id23": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 272, "y": 845}, {"x": 272, "y": 645}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
 end
 
 "Wheel-speed-only sampled ABS braking harness."
 component ABSBrakeTest
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time) {^demand}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  clock = DiscreteComponents.PeriodicClock(dt = 0.005) {^clock}
+  speed_sampler = DiscreteComponents.Sampler() {^speed_sampler}
+  demand_sampler = DiscreteComponents.Sampler() {^demand_sampler}
+  controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(dt = dt, radius = radius, a_ref = a_ref, omega0 = wheel_w0, v_ref0 = v0, k_inc_slow = k_inc_slow) {^controller}
+  hold = DiscreteComponents.ZeroOrderHold() {^hold}
+  wsensor = RotationalComponents.Sensors.VelocitySensor() {^wsensor}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w, F_z = m * 9.80665, tau_max = brake_demand, w0 = w0) {^wheel}
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m) {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
   parameter v0::Velocity = 25.0
   parameter brake_demand::Torque = 6000.0
   parameter brake_time::Time = 0.5
@@ -96,41 +276,107 @@ component ABSBrakeTest
   parameter a_ref::Acceleration = 8.0
   parameter k_inc_slow::Real = 8000.0
   parameter wheel_w0::AngularVelocity = v0 / radius
-  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
-  road = BlockComponents.Sources.Constant(k = road_mu)
-  flat = BlockComponents.Sources.Constant(k = 0.0)
-  clock = DiscreteComponents.PeriodicClock(dt = 0.005)
-  speed_sampler = DiscreteComponents.Sampler()
-  demand_sampler = DiscreteComponents.Sampler()
-  controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(dt = dt, radius = radius,
-    a_ref = a_ref, omega0 = wheel_w0, v_ref0 = v0, k_inc_slow = k_inc_slow)
-  hold = DiscreteComponents.ZeroOrderHold()
-  wsensor = RotationalComponents.Sensors.VelocitySensor()
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
-    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
-  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
-  fixed = RotationalComponents.Components.Fixed()
 relations
-  connect(wsensor.spline, wheel.spline)
-  connect(wsensor.w, speed_sampler.u)
-  connect(demand.y, demand_sampler.u)
-  connect(speed_sampler.y, controller.omega, clock.y)
-  connect(demand_sampler.y, controller.demand)
-  connect(controller.tau_cmd, hold.u)
-  connect(hold.y, wheel.tau_cmd)
-  connect(wheel.support, fixed.spline)
-  connect(wheel.flange, body.flange)
-  connect(road.y, wheel.mu_scale)
-  connect(flat.y, body.grade)
+  connect(wsensor.spline, wheel.spline) {^id13}
+  connect(wsensor.w, speed_sampler.u) {^id14}
+  connect(demand.y, demand_sampler.u) {^id15}
+  connect(speed_sampler.y, controller.omega, clock.y) {^id16}
+  connect(demand_sampler.y, controller.demand) {^id17}
+  connect(controller.tau_cmd, hold.u) {^id18}
+  connect(hold.y, wheel.tau_cmd) {^id19}
+  connect(wheel.support, fixed.spline) {^id20}
+  connect(wheel.flange, body.flange) {^id21}
+  connect(road.y, wheel.mu_scale) {^id22}
+  connect(flat.y, body.grade) {^id23}
   initial wheel.brake.tau_actual = 0.0
   initial wheel.inertia.phi = 0.0
   initial wheel.inertia.w = wheel_w0
   initial body.mass.s = 0.0
   initial body.mass.v = v0
+metadata {
+  "_links": {
+    "demand": {
+      "Dyad": {"placement": {"diagram": {"x1": 30, "x2": 130, "y1": 190, "y2": 290}}}
+    },
+    "road": {
+      "Dyad": {"placement": {"diagram": {"x1": 420, "x2": 520, "y1": 395, "y2": 495}}}
+    },
+    "flat": {
+      "Dyad": {"placement": {"diagram": {"x1": 552, "x2": 652, "y1": 40, "y2": 140}}}
+    },
+    "clock": {
+      "Dyad": {"placement": {"diagram": {"x1": 425, "x2": 525, "y1": 20, "y2": 120}}}
+    },
+    "speed_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 164, "x2": 264, "y1": 70, "y2": 170}}}
+    },
+    "demand_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 164, "x2": 264, "y1": 190, "y2": 290}}}
+    },
+    "controller": {
+      "Dyad": {"placement": {"diagram": {"x1": 295, "x2": 395, "y1": 173.3, "y2": 273.3}}}
+    },
+    "hold": {
+      "Dyad": {"placement": {"diagram": {"x1": 424, "x2": 524, "y1": 140, "y2": 240}}}
+    },
+    "wsensor": {"Dyad": {"placement": {"diagram": {"x1": 35, "x2": 135, "y1": 70, "y2": 170}}}},
+    "wheel": {
+      "Dyad": {"placement": {"diagram": {"x1": 558, "x2": 658, "y1": 290, "y2": 390}}}
+    },
+    "body": {
+      "Dyad": {"placement": {"diagram": {"x1": 687, "x2": 787, "y1": 40, "y2": 140}}}
+    },
+    "fixed": {
+      "Dyad": {"placement": {"diagram": {"x1": 687, "x2": 787, "y1": 510, "y2": 610}}}
+    },
+    "id13": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 20, "y": 120}, {"x": 20, "y": 340}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id16": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [{"x": 280, "y": 206.60000000000002}], "E": 2},
+          {"S": -1, "M": [{"x": 280, "y": 70}], "E": 3}
+        ],
+        "junctions": [{"x": 280, "y": 120}],
+        "path": {}
+      }
+    },
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 608, "y": 190}], "E": 2}], "path": {}}},
+    "id20": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 608, "y": 455}, {"x": 737, "y": 455}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id21": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 802, "y": 340}, {"x": 802, "y": 90}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 635, "y": 445}], "E": 2}], "path": {}}},
+    "id23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end
 
 "Locked-wheel baseline with unmodulated driver demand."
 component LockedBrakeTest
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time) {^demand}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w, F_z = m * 9.80665, tau_max = brake_demand, w0 = w0) {^wheel}
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m) {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
   parameter v0::Velocity = 25.0
   parameter brake_demand::Torque = 6000.0
   parameter brake_time::Time = 0.5
@@ -139,56 +385,85 @@ component LockedBrakeTest
   parameter radius::Length = 0.31
   parameter J_w::MomentOfInertia = 4.0
   parameter w0::AngularVelocity = 0.2
-  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
-  road = BlockComponents.Sources.Constant(k = road_mu)
-  flat = BlockComponents.Sources.Constant(k = 0.0)
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
-    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
-  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
-  fixed = RotationalComponents.Components.Fixed()
 relations
-  connect(demand.y, wheel.tau_cmd)
-  connect(wheel.support, fixed.spline)
-  connect(wheel.flange, body.flange)
-  connect(road.y, wheel.mu_scale)
-  connect(flat.y, body.grade)
+  connect(demand.y, wheel.tau_cmd) {^id7}
+  connect(wheel.support, fixed.spline) {^id8}
+  connect(wheel.flange, body.flange) {^id9}
+  connect(road.y, wheel.mu_scale) {^id10}
+  connect(flat.y, body.grade) {^id11}
   initial wheel.brake.tau_actual = 0.0
   initial wheel.inertia.phi = 0.0
   initial wheel.inertia.w = v0 / radius
   initial body.mass.s = 0.0
   initial body.mass.v = v0
+metadata {
+  "_links": {
+    "demand": {
+      "Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 120, "y2": 220}}}
+    },
+    "road": {
+      "Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 330, "y2": 430}}}
+    },
+    "flat": {
+      "Dyad": {"placement": {"diagram": {"x1": 152, "x2": 252, "y1": 20, "y2": 120}}}
+    },
+    "wheel": {
+      "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 225, "y2": 325}}}
+    },
+    "body": {
+      "Dyad": {"placement": {"diagram": {"x1": 287, "x2": 387, "y1": 20, "y2": 120}}}
+    },
+    "fixed": {
+      "Dyad": {"placement": {"diagram": {"x1": 287, "x2": 387, "y1": 445, "y2": 545}}}
+    },
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 208, "y": 170}], "E": 2}], "path": {}}},
+    "id8": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 208, "y": 390}, {"x": 337, "y": 390}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id9": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 402, "y": 275}, {"x": 402, "y": 70}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 235, "y": 380}], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end
 
 analysis IdealModulatorBrakeTransient
   extends TransientAnalysis(stop = 6.0)
-  parameter road_mu::Real = 1.0
   model = ABSIdealModulatorBrakeTest(road_mu = road_mu)
+  parameter road_mu::Real = 1.0
 relations
 end
 
 analysis IdealBrakeTransient
   extends TransientAnalysis(stop = 6.0)
+  model = ABSIdealBrakeTest(road_mu = road_mu, brake_demand = brake_demand)
   parameter road_mu::Real = 1.0
   parameter brake_demand::Torque = 6000.0
-  model = ABSIdealBrakeTest(road_mu = road_mu, brake_demand = brake_demand)
 relations
 end
 
 analysis ABSBrakeTransient
   extends TransientAnalysis(stop = 6.0)
+  model = ABSBrakeTest(road_mu = road_mu, brake_demand = brake_demand, a_ref = a_ref, k_inc_slow = k_inc_slow)
   parameter road_mu::Real = 1.0
   parameter brake_demand::Torque = 6000.0
   parameter a_ref::Acceleration = 8.0
   parameter k_inc_slow::Real = 8000.0
-  model = ABSBrakeTest(road_mu = road_mu, brake_demand = brake_demand, a_ref = a_ref,
-    k_inc_slow = k_inc_slow)
 relations
 end
 
 analysis LockedBrakeTransient
   extends TransientAnalysis(stop = 6.0)
-  parameter road_mu::Real = 1.0
   model = LockedBrakeTest(road_mu = road_mu)
+  parameter road_mu::Real = 1.0
 relations
 end
 

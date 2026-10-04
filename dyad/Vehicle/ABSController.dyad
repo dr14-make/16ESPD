@@ -1,9 +1,9 @@
-"""Shared continuous clipped brake-pressure integrator retained for the continuous ideal benchmark."""
+"Shared continuous clipped brake-pressure integrator retained for the continuous ideal benchmark."
 component ABSPressureIntegrator
-  demand = RealInput()
-  requested_rate = RealInput()
-  active = RealInput()
-  tau_cmd = RealOutput()
+  demand = RealInput() {^demand}
+  requested_rate = RealInput() {^requested_rate}
+  active = RealInput() {^active}
+  tau_cmd = RealOutput() {^tau_cmd}
   parameter T_track::Time(min = eps(Float64)) = 0.01
   variable p::Torque
   variable pressure_rate::Real
@@ -12,15 +12,23 @@ relations
   pressure_rate = ifelse(active < 0.5, (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), min((max(demand, 0.0) - p) / T_track, requested_rate), ifelse(p <= 0.0 and requested_rate < 0.0, 0.0, ifelse(p >= max(demand, 0.0) and requested_rate > 0.0, 0.0, requested_rate))))
   der(p) = pressure_rate
   tau_cmd = min(max(p, 0.0), max(demand, 0.0))
+metadata {
+  "_links": {
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}}}},
+    "requested_rate": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "active": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}}}},
+    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  }
+}
 end
 
 "Ideal continuous ABS benchmark using true tire slip and true vehicle speed."
 component ABSIdealController
-  kappa = RealInput()
-  v = RealInput()
-  demand = RealInput()
-  tau_cmd = RealOutput()
-  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = T_track)
+  kappa = RealInput() {^kappa}
+  v = RealInput() {^v}
+  demand = RealInput() {^demand}
+  tau_cmd = RealOutput() {^tau_cmd}
+  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = T_track) {^pressure}
   parameter lambda_target::Real = 0.04
   parameter T_p::Time(min = eps(Float64)) = 0.03
   parameter T_f::Time(min = eps(Float64)) = 0.003
@@ -38,10 +46,51 @@ relations
   kappa_dot = (kappa - kappa_filtered) / T_f
   kappa_pred = kappa + T_p * kappa_dot
   rate = ifelse(kappa_pred < -lambda_target, -k_dec, k_inc)
-  connect(demand, pressure.demand)
+  connect(demand, pressure.demand) {^id6}
   pressure.requested_rate = rate
   pressure.active = ifelse(v > v_min, 1.0, 0.0)
-  connect(pressure.tau_cmd, tau_cmd)
+  connect(pressure.tau_cmd, tau_cmd) {^id7}
+metadata {
+  "_links": {
+    "kappa": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300},
+          "diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}
+        }
+      }
+    },
+    "v": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+          "diagram": {"x1": 140, "x2": 240, "y1": 20, "y2": 120}
+        }
+      }
+    },
+    "demand": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800},
+          "diagram": {"x1": 20, "x2": 120, "y1": 140, "y2": 240}
+        }
+      }
+    },
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 270, "x2": 370, "y1": 165, "y2": 265}
+        }
+      }
+    },
+    "pressure": {
+      "Dyad": {"placement": {"diagram": {"x1": 145, "x2": 245, "y1": 165, "y2": 265}}}
+    },
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end
 
 """
@@ -50,13 +99,13 @@ Clocked ABS pressure-memory state machine.
 Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on `clk`.
 """
 component ABSModulatorDiscrete@[input clk extends Discrete]
-  lambda = RealInput@[clk]()
-  v_ref = RealInput@[clk]()
-  demand = RealInput@[clk]()
-  tau_cmd = RealOutput@[clk]()
-  phase_out = RealOutput@[clk]()
-  tau_lock_out = RealOutput@[clk]()
-  lambda_dot_out = RealOutput@[clk]()
+  lambda = RealInput@[clk]() {^lambda}
+  v_ref = RealInput@[clk]() {^v_ref}
+  demand = RealInput@[clk]() {^demand}
+  tau_cmd = RealOutput@[clk]() {^tau_cmd}
+  phase_out = RealOutput@[clk]() {^phase_out}
+  tau_lock_out = RealOutput@[clk]() {^tau_lock_out}
+  lambda_dot_out = RealOutput@[clk]() {^lambda_dot_out}
   parameter dt::Time(min = eps(Float64)) = 0.005
   parameter T_p::Time(min = 0.0) = 0.03
   parameter lambda_1::Real = 0.04
@@ -90,49 +139,42 @@ relations
   initial released@(clk-1) = 0.0
   initial fast_reapply@(clk-1) = 0.0
   initial lambda@(clk-1) = 0.0
-
   lambda_dot@clk = (lambda@clk - lambda@(clk-1)) / dt
   lambda_pred@clk = lambda@clk + T_p * lambda_dot@clk
   release_now@clk = ifelse(lambda_pred@clk < -lambda_1 or lambda@clk < -lambda_lock, 1.0, 0.0)
-
-  phase@clk = ifelse(v_ref@clk < v_min or demand@clk <= 0.0, 2.0,
-    ifelse(phase@(clk-1) < -0.5,
-      ifelse(p@(clk-1) <= alpha_rel * tau_lock@(clk-1), 0.0, -1.0),
-      ifelse(phase@(clk-1) < 0.5,
-        ifelse(lambda_pred@clk > -l_rec, 1.0,
-          ifelse(hold_count@(clk-1) * dt >= T_hold_max, -1.0, 0.0)),
-        ifelse(release_now@clk > 0.5, -1.0, 1.0))))
-
-  tau_lock@clk = ifelse(phase@clk < -0.5 and phase@(clk-1) >= -0.5,
-    p@(clk-1), tau_lock@(clk-1))
+  phase@clk = ifelse(v_ref@clk < v_min or demand@clk <= 0.0, 2.0, ifelse(phase@(clk-1) < -0.5, ifelse(p@(clk-1) <= alpha_rel * tau_lock@(clk-1), 0.0, -1.0), ifelse(phase@(clk-1) < 0.5, ifelse(lambda_pred@clk > -l_rec, 1.0, ifelse(hold_count@(clk-1) * dt >= T_hold_max, -1.0, 0.0)), ifelse(release_now@clk > 0.5, -1.0, 1.0))))
+  tau_lock@clk = ifelse(phase@clk < -0.5 and phase@(clk-1) >= -0.5, p@(clk-1), tau_lock@(clk-1))
   released@clk = ifelse(phase@clk < -0.5, 1.0, released@(clk-1))
-  hold_count@clk = ifelse(phase@clk > -0.5 and phase@clk < 0.5,
-    hold_count@(clk-1) + 1.0, 0.0)
-  fast_reapply@clk = ifelse(phase@clk < 0.5, 0.0,
-    ifelse(phase@(clk-1) < 0.5 and phase@clk > 0.5, 1.0,
-      ifelse(fast_reapply@(clk-1) > 0.5 and p@(clk-1) < beta_reapply * tau_lock@(clk-1), 1.0, 0.0)))
-
+  hold_count@clk = ifelse(phase@clk > -0.5 and phase@clk < 0.5, hold_count@(clk-1) + 1.0, 0.0)
+  fast_reapply@clk = ifelse(phase@clk < 0.5, 0.0, ifelse(phase@(clk-1) < 0.5 and phase@clk > 0.5, 1.0, ifelse(fast_reapply@(clk-1) > 0.5 and p@(clk-1) < beta_reapply * tau_lock@(clk-1), 1.0, 0.0)))
   dec_rate@clk = ifelse(released@(clk-1) > 0.5, 15.0 * tau_lock@(clk-1), k_dec)
   fast_rate@clk = ifelse(released@(clk-1) > 0.5, 15.0 * tau_lock@(clk-1), k_inc_fast)
   slow_rate@clk = ifelse(released@(clk-1) > 0.5, 1.5 * tau_lock@(clk-1), k_inc_slow)
-  rate@clk = ifelse(phase@clk < -0.5, -dec_rate@clk,
-    ifelse(phase@clk < 0.5, 0.0,
-      ifelse(released@(clk-1) < 0.5 or fast_reapply@clk > 0.5, fast_rate@clk, slow_rate@clk)))
-  p@clk = ifelse(phase@clk > 1.5, max(demand@clk, 0.0),
-    min(max(p@(clk-1) + rate@clk * dt, 0.0), max(demand@clk, 0.0)))
-
+  rate@clk = ifelse(phase@clk < -0.5, -dec_rate@clk, ifelse(phase@clk < 0.5, 0.0, ifelse(released@(clk-1) < 0.5 or fast_reapply@clk > 0.5, fast_rate@clk, slow_rate@clk)))
+  p@clk = ifelse(phase@clk > 1.5, max(demand@clk, 0.0), min(max(p@(clk-1) + rate@clk * dt, 0.0), max(demand@clk, 0.0)))
   tau_cmd = p
   phase_out = phase
   tau_lock_out = tau_lock
   lambda_dot_out = lambda_dot
+metadata {
+  "_links": {
+    "lambda": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}}}},
+    "v_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}}}},
+    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 150, "y2": 250}}}},
+    "phase_out": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 350, "y2": 450}}}},
+    "tau_lock_out": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 550, "y2": 650}}}},
+    "lambda_dot_out": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 750, "y2": 850}}}}
+  }
+}
 end
 
 "Clocked wheel-only reference-speed and slip estimator."
 component ABSWheelOnlyEstimatorDiscrete@[input clk extends Discrete]
-  omega = RealInput@[clk]()
-  lambda = RealOutput@[clk]()
-  v_ref_out = RealOutput@[clk]()
-  a_w_out = RealOutput@[clk]()
+  omega = RealInput@[clk]() {^omega}
+  lambda = RealOutput@[clk]() {^lambda}
+  v_ref_out = RealOutput@[clk]() {^v_ref_out}
+  a_w_out = RealOutput@[clk]() {^a_w_out}
   parameter dt::Time(min = eps(Float64)) = 0.005
   parameter radius::Length = 0.31
   parameter a_ref::Acceleration = 10.0
@@ -152,28 +194,31 @@ relations
   a_w@clk = (omega@clk - omega@(clk-1)) * radius / dt
   a_hat@clk = a_hat@(clk-1)
   a_ref_effective@clk = min(max(1.2 * a_hat@clk, 1.0), 12.0)
-  v_ref@clk = ifelse(v_w@clk > v_ref@(clk-1), v_w@clk,
-    max(v_ref@(clk-1) - a_ref_effective@clk * dt, v_w@clk))
+  v_ref@clk = ifelse(v_w@clk > v_ref@(clk-1), v_w@clk, max(v_ref@(clk-1) - a_ref_effective@clk * dt, v_w@clk))
   lambda@clk = (v_w@clk - v_ref@clk) / max(v_ref@clk, v_eps)
   v_ref_out = v_ref
   a_w_out = a_w
+metadata {
+  "_links": {
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "lambda": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}},
+    "v_ref_out": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "a_w_out": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
+  }
+}
 end
 
 "Wheel-speed-only sampled ABS controller."
 component ABSControllerWheelOnly@[input clk extends Discrete]
-  omega = RealInput@[clk]()
-  demand = RealInput@[clk]()
-  tau_cmd = RealOutput@[clk]()
-  phase_out = RealOutput@[clk]()
-  lambda_hat_out = RealOutput@[clk]()
-  v_ref_out = RealOutput@[clk]()
-  a_w_out = RealOutput@[clk]()
-  estimator = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(dt = dt,
-    radius = radius, a_ref = a_ref, v_ref0 = v_ref0, omega0 = omega0, v_eps = v_eps)
-  modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt, T_p = T_p,
-    lambda_1 = lambda_1, lambda_lock = lambda_lock, alpha_rel = alpha_rel,
-    beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max,
-    k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min)
+  omega = RealInput@[clk]() {^omega}
+  demand = RealInput@[clk]() {^demand}
+  tau_cmd = RealOutput@[clk]() {^tau_cmd}
+  phase_out = RealOutput@[clk]() {^phase_out}
+  lambda_hat_out = RealOutput@[clk]() {^lambda_hat_out}
+  v_ref_out = RealOutput@[clk]() {^v_ref_out}
+  a_w_out = RealOutput@[clk]() {^a_w_out}
+  estimator = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(dt = dt, radius = radius, a_ref = a_ref, v_ref0 = v_ref0, omega0 = omega0, v_eps = v_eps) {^estimator}
+  modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt, T_p = T_p, lambda_1 = lambda_1, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^modulator}
   parameter dt::Time(min = eps(Float64)) = 0.005
   parameter radius::Length = 0.31
   parameter a_ref::Acceleration = 10.0
@@ -192,15 +237,130 @@ component ABSControllerWheelOnly@[input clk extends Discrete]
   parameter k_inc_slow::Real = 8000.0
   parameter v_min::Velocity = 1.5
 relations
-  connect(omega, estimator.omega)
-  connect(estimator.lambda, modulator.lambda)
-  connect(estimator.v_ref_out, modulator.v_ref)
-  connect(demand, modulator.demand)
-  connect(modulator.tau_cmd, tau_cmd)
-  phase_out = modulator.phase_out
-  lambda_hat_out = estimator.lambda
-  v_ref_out = estimator.v_ref_out
-  a_w_out = estimator.a_w_out
+  connect(omega, estimator.omega) {^id10}
+  connect(estimator.lambda, modulator.lambda) {^id11}
+  connect(estimator.v_ref_out, modulator.v_ref) {^id12}
+  connect(demand, modulator.demand) {^id13}
+  connect(modulator.tau_cmd, tau_cmd) {^id14}
+  connect(modulator.phase_out, phase_out) {^id15}
+  connect(estimator.lambda, lambda_hat_out) {^id16}
+  connect(estimator.v_ref_out, v_ref_out) {^id17}
+  connect(estimator.a_w_out, a_w_out) {^id18}
+metadata {
+  "_links": {
+    "omega": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 283, "y2": 383},
+          "diagram": {"x1": -60, "x2": 40, "y1": 220, "y2": 320}
+        }
+      }
+    },
+    "demand": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 617, "y2": 717},
+          "diagram": {"x1": -50, "x2": 50, "y1": 690, "y2": 790}
+        }
+      }
+    },
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 117, "y2": 217},
+          "diagram": {"x1": 970, "x2": 1070, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "phase_out": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 283, "y2": 383},
+          "diagram": {"x1": 970, "x2": 1070, "y1": 640, "y2": 740}
+        }
+      }
+    },
+    "lambda_hat_out": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 970, "x2": 1070, "y1": 80, "y2": 180}
+        }
+      }
+    },
+    "v_ref_out": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 617, "y2": 717},
+          "diagram": {"x1": 970, "x2": 1070, "y1": 270, "y2": 370}
+        }
+      }
+    },
+    "a_w_out": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 783, "y2": 883},
+          "diagram": {"x1": 980, "x2": 1080, "y1": 820, "y2": 920}
+        }
+      }
+    },
+    "estimator": {
+      "Dyad": {"placement": {"diagram": {"x1": 140, "x2": 240, "y1": 220, "y2": 320}}}
+    },
+    "modulator": {
+      "Dyad": {"placement": {"diagram": {"x1": 490, "x2": 590, "y1": 480, "y2": 580}}}
+    },
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [{"x": 330, "y": 245}, {"x": 330, "y": 250}], "E": -1},
+          {"S": -1, "M": [{"x": 360, "y": 505}], "E": 2}
+        ],
+        "junctions": [{"x": 360, "y": 250}],
+        "path": {}
+      }
+    },
+    "id12": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 280, "y": 270}, {"x": 280, "y": 530}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id13": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 270, "y": 740}, {"x": 270, "y": 555}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id15": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 700, "y": 520}, {"x": 700, "y": 690}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id16": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 300, "y": 245}, {"x": 300, "y": 130}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id17": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 300, "y": 270}], "E": -1}, {"S": -1, "M": [], "E": 2}],
+        "junctions": [{"x": 300, "y": 320}],
+        "path": {}
+      }
+    },
+    "id18": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 260, "y": 295}, {"x": 260, "y": 870}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
 end
 
 "Default sampled wheel-only ABS controller."

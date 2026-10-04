@@ -32,28 +32,21 @@ component TireFrictionCurve
 relations
   slip = abs(kappa)
   # -0.5·x³ + 1.5·x maps [-1, 1] onto [-1, 1] with zero slope at both ends.
-  mu_abs = ifelse(slip <= sAdhesion,
-    mu_A * (-0.5 * (slip / sAdhesion) ^ 3 + 1.5 * (slip / sAdhesion)),
-    ifelse(slip >= sSlide, mu_S,
-      (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))
+  mu_abs = ifelse(slip <= sAdhesion, mu_A * (-0.5 * (slip / sAdhesion) ^ 3 + 1.5 * (slip / sAdhesion)), ifelse(slip >= sSlide, mu_S, (mu_A + mu_S) / 2 + (mu_S - mu_A) / 2 * (-0.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)) ^ 3 + 1.5 * ((slip - (sAdhesion + sSlide) / 2) * 2 / (sSlide - sAdhesion)))))
   mu = sign(kappa) * mu_abs
 metadata {
   "_links": {
-    "kappa": {
-      "Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
-    },
-    "mu": {
-      "Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
-    }
+    "kappa": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "mu": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
   }
 }
 end
 
 test component TestTireFrictionCurve
-  slip = BlockComponents.Sources.Constant(k = -0.04)
-  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve()
+  slip = BlockComponents.Sources.Constant(k = -0.04) {^slip}
+  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve() {^curve}
 relations
-  connect(slip.y, curve.kappa)
+  connect(slip.y, curve.kappa) {^id3}
 metadata {
   "Dyad": {
     "tests": {
@@ -67,7 +60,7 @@ metadata {
         "stop": 1,
         "params": {"slip.k": -0.04},
         "atol": {"curve.mu": 1e-9},
-        "expect": {"final": {"curve.mu": -1.0}}
+        "expect": {"final": {"curve.mu": -1}}
       },
       "braking_transition_midpoint": {
         "stop": 1,
@@ -91,9 +84,18 @@ metadata {
         "stop": 1,
         "params": {"slip.k": 0.04},
         "atol": {"curve.mu": 1e-9},
-        "expect": {"final": {"curve.mu": 1.0}}
+        "expect": {"final": {"curve.mu": 1}}
       }
     }
+  },
+  "_links": {
+    "slip": {
+      "Dyad": {"placement": {"diagram": {"x1": 320, "x2": 420, "y1": 450, "y2": 550}}}
+    },
+    "curve": {
+      "Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 450, "y2": 550}}}
+    },
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end
@@ -104,10 +106,19 @@ analysis TireFrictionCurveSweep
 relations
 end
 
-"""Slip swept from a locked wheel under braking to full wheelspin, to plot `curve.mu` against `curve.kappa`."""
+"Slip swept from a locked wheel under braking to full wheelspin, to plot `curve.mu` against `curve.kappa`."
 test component TestTireFrictionCurveSweep
-  slip = BlockComponents.Sources.Ramp(offset = -1.0, height = 2.0, duration = 2.0, start_time = 0.0)
-  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve()
+  slip = BlockComponents.Sources.Ramp(offset = -1.0, height = 2.0, duration = 2.0, start_time = 0.0) {^slip}
+  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve() {^curve}
 relations
-  connect(slip.y, curve.kappa)
+  connect(slip.y, curve.kappa) {^id3}
+metadata {
+  "_links": {
+    "slip": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
+    "curve": {
+      "Dyad": {"placement": {"diagram": {"x1": 155, "x2": 255, "y1": 20, "y2": 120}}}
+    },
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end

@@ -20,8 +20,7 @@ component SlipWheel1D
   "Road-friction multiplier"
   mu_scale = RealInput() {^mu_scale}
   "Friction coefficient against slip, for the reference road"
-  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(sAdhesion = sAdhesion,
-    sSlide = sSlide, mu_A = mu_A, mu_S = mu_S)
+  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {^curve}
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   "Normal load carried by the driven axle"
@@ -60,15 +59,16 @@ relations
 metadata {
   "_links": {
     "spline": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 440, "y2": 540}}}
     },
     "flange": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 450, "y2": 550}}}
     },
     "mu_scale": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 460, "x2": 560, "y1": -50, "y2": 50, "rot": 90}}
-      }
+      "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": -50, "y2": 50}}}
+    },
+    "curve": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
     }
   }
 }
