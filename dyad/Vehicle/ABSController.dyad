@@ -1,512 +1,210 @@
-"""
-Wheel-speed-based brake modulator for forward braking.
-
-The controller uses only measured wheel angular velocity. A first-order filtered differentiator
-estimates wheel angular acceleration; rapid wheel deceleration indicates incipient lock and causes
-brake release. As the wheel recovers, the controller reapplies the driver's demand. Saturation
-keeps the request between zero and the driver demand. Hydraulic dynamics are represented by the
-downstream brake actuator.
-
-The modulation state is reduced during excessive wheel deceleration and increased again when wheel
-deceleration returns below the threshold. With wheel speed as the sole measurement, vehicle
-standstill cannot be distinguished from a locked wheel, so no wheel-speed dropout is applied inside
-this controller.
-"""
-component LegacyABSController
-  "Measured wheel angular velocity"
-  omega = RealInput() {^omega}
-  "Driver-requested brake torque"
-  demand = RealInput() {^demand}
-  "Modulated brake-torque request"
-  tau_cmd = RealOutput() {^tau_cmd}
-  "Wheel-deceleration magnitude at which brake release begins"
-  parameter decel_threshold::Real = 50.0
-  "Rate at which excessive deceleration releases the brake"
-  parameter release_rate::Real = 0.1
-  "Rate at which wheel deceleration below the threshold reapplies the brake"
-  parameter apply_rate::Real = 0.01
-  "Differentiator filter time constant"
-  parameter T_filter::Time(min = eps(Float64)) = 0.01
-  "Initial filtered wheel speed"
-  parameter omega0::AngularVelocity = 0.0
-  "Low-pass state used by the filtered differentiator"
-  variable omega_filtered::AngularVelocity
-  "Estimated wheel angular acceleration"
-  variable alpha_est::Real
-  "Acceleration-based brake modulation, one is full demand"
-  variable modulation::Real
-relations
-  initial omega_filtered = omega0
-  initial modulation = 1.0
-  der(omega_filtered) = (omega - omega_filtered) / T_filter
-  alpha_est = (omega - omega_filtered) / T_filter
-  der(modulation) = ifelse(modulation <= 0.0, max(apply_rate * (alpha_est + decel_threshold), 0.0), ifelse(modulation >= 1.0, min(release_rate * (alpha_est + decel_threshold), 0.0), ifelse(alpha_est + decel_threshold < 0.0, release_rate * (alpha_est + decel_threshold), apply_rate * (alpha_est + decel_threshold))))
-  tau_cmd = max(demand, 0.0) * min(max(modulation, 0.0), 1.0)
-metadata {
-  "_links": {
-    "omega": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
-    },
-    "demand": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 190, "y2": 290}}}
-    },
-    "tau_cmd": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
-    }
-  }
-}
-end
-
-test component TestABSController
-  "Wheel speed ramps down rapidly to represent incipient lock"
-  speed = BlockComponents.Sources.Ramp(offset = 80.0, height = -60.0, duration = 0.3, start_time = 0.1)
-  demand = BlockComponents.Sources.Constant(k = 1000.0)
-  controller = VehicleSystemsComponents.Vehicle.LegacyABSController(decel_threshold = 80.0, release_rate = 0.01, apply_rate = 0.01, omega0 = 80.0)
-relations
-  connect(speed.y, controller.omega)
-  connect(demand.y, controller.demand)
-end
-
-analysis ABSControllerTransient
-  extends TransientAnalysis(stop = 0.5)
-  model = TestABSController()
-relations
-end
-
-test component TestABSControllerRecovery
-  "Wheel speed falls rapidly and then recovers"
-  speed_down = BlockComponents.Sources.Ramp(offset = 80.0, height = -40.0, duration = 0.2, start_time = 0.1)
-  speed_up = BlockComponents.Sources.Ramp(offset = 0.0, height = 30.0, duration = 0.2, start_time = 0.4)
-  speed = BlockComponents.Math.Add()
-  demand = BlockComponents.Sources.Constant(k = 1000.0)
-  controller = VehicleSystemsComponents.Vehicle.LegacyABSController(decel_threshold = 80.0, release_rate = 0.02, apply_rate = 0.02, omega0 = 80.0)
-relations
-  connect(speed_down.y, speed.u1)
-  connect(speed_up.y, speed.u2)
-  connect(speed.y, controller.omega)
-  connect(demand.y, controller.demand)
-end
-
-analysis ABSControllerRecoveryTransient
-  extends TransientAnalysis(stop = 0.8)
-  model = TestABSControllerRecovery()
-relations
-end
-
-"Filtered wheel-surface acceleration estimator from measured angular velocity."
-component WheelAccelEstimator
-  omega = RealInput() {^omega}
-  a_w = RealOutput() {^a_w}
-  parameter radius::Length = 0.31
-  parameter T_filter::Time(min = eps(Float64)) = 0.005
-  parameter omega0::AngularVelocity = 0.0
-  variable omega_filtered::AngularVelocity
-relations
-  initial omega_filtered = omega0
-  der(omega_filtered) = (omega - omega_filtered) / T_filter
-  a_w = radius * (omega - omega_filtered) / T_filter
-metadata {
-  "_links": {
-    "omega": {
-      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 450, "y2": 550}}}
-    },
-    "a_w": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
-    }
-  }
-}
-end
-
-test component TestWheelAccelEstimator
-  speed = BlockComponents.Sources.Ramp(offset = 80.0, height = -40.0, duration = 0.2, start_time = 0.1)
-  estimator = VehicleSystemsComponents.Vehicle.WheelAccelEstimator(radius = 0.31, T_filter = 0.005, omega0 = 80.0)
-relations
-  connect(speed.y, estimator.omega)
-end
-
-analysis WheelAccelEstimatorTransient
-  extends TransientAnalysis(stop = 0.4)
-  model = TestWheelAccelEstimator()
-relations
-end
-
-"""
-Vehicle reference-speed estimator using wheel speed alone.
-
-When the wheel runs below the estimate, the estimate falls only at `a_ref`, allowing a rapid wheel
-lock to appear as estimated slip. With one wheel this underestimates slip if `a_ref` is too large
-for the available road friction.
-"""
-component ReferenceSpeedWheelOnly
-  omega = RealInput() {^omega}
-  v_ref = RealOutput() {^v_ref}
-  parameter radius::Length = 0.31
-  parameter a_ref::Acceleration = 10.0
-  parameter T_up::Time(min = eps(Float64)) = 0.01
-  parameter v_ref0::Velocity = 0.0
-  variable v_w::Velocity
-relations
-  initial v_ref = v_ref0
-  v_w = omega * radius
-  der(v_ref) = ifelse(v_w > v_ref, (v_w - v_ref) / T_up, ifelse(v_ref > 0.0, -a_ref, 0.0))
-metadata {
-  "_links": {
-    "omega": {
-      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 460, "y2": 560}}}
-    },
-    "v_ref": {
-      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 450, "y2": 550}}}
-    }
-  }
-}
-end
-
-test component TestReferenceSpeedWheelOnly
-  "Wheel surface speed collapses from 25 m/s to zero in 0.1 s"
-  speed = BlockComponents.Sources.Ramp(offset = 25.0 / 0.31, height = -25.0 / 0.31, duration = 0.1, start_time = 0.1)
-  estimator = VehicleSystemsComponents.Vehicle.ReferenceSpeedWheelOnly(radius = 0.31, a_ref = 10.0, v_ref0 = 25.0)
-relations
-  connect(speed.y, estimator.omega)
-end
-
-analysis ReferenceSpeedWheelOnlyTransient
-  extends TransientAnalysis(stop = 0.5)
-  model = TestReferenceSpeedWheelOnly()
-relations
-end
-
-"""
-Shared clipped brake-pressure integrator.
-
-When `active` is positive, `requested_rate` is integrated subject to the driver-demand bounds.
-Otherwise the pressure tracks the nonnegative demand with time constant `T_track`.
-"""
+"""Shared continuous clipped brake-pressure integrator retained for the continuous ideal benchmark."""
 component ABSPressureIntegrator
-  demand = RealInput() {^demand}
-  requested_rate = RealInput() {^requested_rate}
-  active = RealInput() {^active}
-  tau_cmd = RealOutput() {^tau_cmd}
+  demand = RealInput()
+  requested_rate = RealInput()
+  active = RealInput()
+  tau_cmd = RealOutput()
   parameter T_track::Time(min = eps(Float64)) = 0.01
   variable p::Torque
   variable pressure_rate::Real
 relations
   initial p = 0.0
-  pressure_rate = ifelse(active < 0.5, (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), (max(demand, 0.0) - p) / T_track, ifelse(p <= 0.0 and requested_rate < 0.0, 0.0, ifelse(p >= max(demand, 0.0) and requested_rate > 0.0, 0.0, requested_rate))))
+  pressure_rate = ifelse(active < 0.5, (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), min((max(demand, 0.0) - p) / T_track, requested_rate), ifelse(p <= 0.0 and requested_rate < 0.0, 0.0, ifelse(p >= max(demand, 0.0) and requested_rate > 0.0, 0.0, requested_rate))))
   der(p) = pressure_rate
   tau_cmd = min(max(p, 0.0), max(demand, 0.0))
-metadata {
-  "_links": {
-    "demand": {
-      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 450, "y2": 550}}}
-    },
-    "requested_rate": {
-      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 150, "y2": 250}}}
-    },
-    "active": {
-      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 780, "y2": 880}}}
-    },
-    "tau_cmd": {
-      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 450, "y2": 550}}}
-    }
-  }
-}
 end
 
-"Ideal ABS benchmark using true tire slip and true vehicle speed."
+"Ideal continuous ABS benchmark using true tire slip and true vehicle speed."
 component ABSIdealController
   kappa = RealInput()
   v = RealInput()
   demand = RealInput()
   tau_cmd = RealOutput()
   pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = T_track)
-  parameter lambda_target::Real = 0.05
+  parameter lambda_target::Real = 0.04
+  parameter T_p::Time(min = eps(Float64)) = 0.03
+  parameter T_f::Time(min = eps(Float64)) = 0.003
   parameter k_inc::Real = 20000.0
   parameter k_dec::Real = 40000.0
   parameter v_min::Velocity = 1.5
   parameter T_track::Time(min = eps(Float64)) = 0.01
+  variable kappa_filtered::Real
+  variable kappa_dot::Real
+  variable kappa_pred::Real
   variable rate::Real
-  variable active::Real
-  variable p::Torque
 relations
-  rate = ifelse(kappa < -lambda_target, -k_dec, k_inc)
-  active = ifelse(v > v_min, 1.0, 0.0)
+  initial kappa_filtered = 0.0
+  der(kappa_filtered) = (kappa - kappa_filtered) / T_f
+  kappa_dot = (kappa - kappa_filtered) / T_f
+  kappa_pred = kappa + T_p * kappa_dot
+  rate = ifelse(kappa_pred < -lambda_target, -k_dec, k_inc)
   connect(demand, pressure.demand)
   pressure.requested_rate = rate
-  pressure.active = active
+  pressure.active = ifelse(v > v_min, 1.0, 0.0)
   connect(pressure.tau_cmd, tau_cmd)
-  p = pressure.p
-end
-
-test component TestABSIdealController
-  "Slip rises through the release threshold and then recovers"
-  slip_down = BlockComponents.Sources.Ramp(offset = 0.0, height = -0.10, duration = 0.1, start_time = 0.15)
-  slip_up = BlockComponents.Sources.Ramp(offset = 0.0, height = 0.10, duration = 0.1, start_time = 0.35)
-  slip = BlockComponents.Math.Add()
-  speed = BlockComponents.Sources.Constant(k = 25.0)
-  demand = BlockComponents.Sources.Step(height = 6000.0, offset = 0.0, start_time = 0.05)
-  controller = VehicleSystemsComponents.Vehicle.ABSIdealController()
-relations
-  connect(slip_down.y, slip.u1)
-  connect(slip_up.y, slip.u2)
-  connect(slip.y, controller.kappa)
-  connect(speed.y, controller.v)
-  connect(demand.y, controller.demand)
-end
-
-analysis ABSIdealControllerTransient
-  extends TransientAnalysis(stop = 0.6)
-  model = TestABSIdealController()
-relations
-end
-
-test component TestABSIdealPassThrough
-  slip = BlockComponents.Sources.Constant(k = 0.0)
-  speed = BlockComponents.Sources.Constant(k = 25.0)
-  demand = BlockComponents.Sources.Step(height = 2000.0, offset = 0.0, start_time = 0.05)
-  controller = VehicleSystemsComponents.Vehicle.ABSIdealController()
-relations
-  connect(slip.y, controller.kappa)
-  connect(speed.y, controller.v)
-  connect(demand.y, controller.demand)
-end
-
-analysis ABSIdealPassThroughTransient
-  extends TransientAnalysis(stop = 0.3)
-  model = TestABSIdealPassThrough()
-relations
 end
 
 """
-ABS increase/hold/decrease valve logic with an integrated brake-torque request.
+Clocked ABS pressure-memory state machine.
 
-`phase` is -1 while releasing, 0 while holding, 1 while applying, and 2 while ABS is off.
-Continuous 1 ms latch states retain the active and recovery phases without discrete events.
+Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on `clk`.
 """
-component ABSModulator
-  a_w = RealInput() {^a_w}
-  v_ref = RealInput() {^v_ref}
-  omega = RealInput() {^omega}
-  demand = RealInput() {^demand}
-  tau_cmd = RealOutput() {^tau_cmd}
-  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = T_track) {^pressure}
-  parameter radius::Length = 0.31
-  parameter a_minus::Acceleration = 16.0
-  parameter a_plus::Acceleration = 5.0
-  parameter lambda_1::Real = 0.06
+component ABSModulatorDiscrete@[input clk extends Discrete]
+  lambda = RealInput@[clk]()
+  v_ref = RealInput@[clk]()
+  demand = RealInput@[clk]()
+  tau_cmd = RealOutput@[clk]()
+  phase_out = RealOutput@[clk]()
+  tau_lock_out = RealOutput@[clk]()
+  lambda_dot_out = RealOutput@[clk]()
+  parameter dt::Time(min = eps(Float64)) = 0.005
+  parameter T_p::Time(min = 0.0) = 0.03
+  parameter lambda_1::Real = 0.04
   parameter lambda_lock::Real = 0.20
-  parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 40000.0
+  parameter alpha_rel::Real = 0.6
+  parameter beta_reapply::Real = 0.85
+  parameter l_rec::Real = 0.03
+  parameter T_hold_max::Time(min = eps(Float64)) = 0.06
+  parameter k_dec::Real = 80000.0
+  parameter k_inc_fast::Real = 80000.0
   parameter k_inc_slow::Real = 8000.0
   parameter v_min::Velocity = 1.5
-  parameter v_eps::Velocity(min = eps(Float64)) = 0.5
-  parameter T_track::Time(min = eps(Float64)) = 0.01
-  parameter T_latch::Time(min = eps(Float64)) = 0.001
-  variable lambda_hat::Real
-  variable phase::Real
   variable p::Torque
-  variable active_latch::Real
-  variable recovering_latch::Real
-  variable active_target::Real
-  variable recovering_target::Real
-  variable requested_rate::Real
-  variable pressure_rate::Real
+  variable phase::Real
+  variable tau_lock::Torque
+  variable hold_count::Real
+  variable released::Real
+  variable fast_reapply::Real
+  variable lambda_dot::Real
+  variable lambda_pred::Real
+  variable release_now::Real
+  variable rate::Real
+  variable dec_rate::Real
+  variable fast_rate::Real
+  variable slow_rate::Real
 relations
-  initial active_latch = 0.0
-  initial recovering_latch = 0.0
-  lambda_hat = (omega * radius - v_ref) / max(v_ref, v_eps)
-  active_target = ifelse(v_ref < v_min or demand <= 0.0, 0.0, ifelse(lambda_hat < -lambda_lock or (a_w < -a_minus and lambda_hat < -lambda_1), 1.0, ifelse(active_latch > 0.5, 1.0, 0.0)))
-  recovering_target = ifelse(v_ref < v_min or demand <= 0.0, 0.0, ifelse(lambda_hat < -lambda_lock or (a_w < -a_minus and lambda_hat < -lambda_1), 1.0, ifelse(recovering_latch > 0.5 and lambda_hat > -lambda_1 and a_w < a_plus, 0.0, ifelse(recovering_latch > 0.5, 1.0, 0.0))))
-  der(active_latch) = (active_target - active_latch) / T_latch
-  der(recovering_latch) = (recovering_target - recovering_latch) / T_latch
-  phase = ifelse(v_ref < v_min or demand <= 0.0, 2.0, ifelse(lambda_hat < -lambda_lock or (a_w < -a_minus and lambda_hat < -lambda_1), -1.0, ifelse(a_w < -a_minus, 0.0, ifelse(recovering_latch > 0.5, 0.0, ifelse(active_latch > 0.5, 1.0, 1.0)))))
-  requested_rate = ifelse(phase < -0.5, -k_dec, ifelse(phase < 0.5, 0.0, ifelse(phase < 1.5, ifelse(active_latch > 0.5, k_inc_slow, k_inc_fast), 0.0)))
-  connect(demand, pressure.demand) {^id7}
-  pressure.requested_rate = requested_rate
-  pressure.active = ifelse(v_ref < v_min or demand <= 0.0, 0.0, 1.0)
-  connect(pressure.tau_cmd, tau_cmd) {^id8}
-  p = pressure.p
-  pressure_rate = pressure.pressure_rate
-metadata {
-  "_links": {
-    "a_w": {"Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 70, "y2": 170}}}},
-    "v_ref": {
-      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 660, "y2": 760}}}
-    },
-    "omega": {
-      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 860, "y2": 960}}}
-    },
-    "demand": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 320, "y2": 420}}}
-    },
-    "tau_cmd": {
-      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 450, "y2": 550}}}
-    },
-    "pressure": {
-      "Dyad": {"placement": {"diagram": {"x1": 420, "x2": 520, "y1": 450, "y2": 550}}}
-    },
-    "id7": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 110, "y": 370}, {"x": 110, "y": 500}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  }
-}
+  initial p@(clk-1) = 0.0
+  initial phase@(clk-1) = 2.0
+  initial tau_lock@(clk-1) = 0.0
+  initial hold_count@(clk-1) = 0.0
+  initial released@(clk-1) = 0.0
+  initial fast_reapply@(clk-1) = 0.0
+  initial lambda@(clk-1) = 0.0
+
+  lambda_dot@clk = (lambda@clk - lambda@(clk-1)) / dt
+  lambda_pred@clk = lambda@clk + T_p * lambda_dot@clk
+  release_now@clk = ifelse(lambda_pred@clk < -lambda_1 or lambda@clk < -lambda_lock, 1.0, 0.0)
+
+  phase@clk = ifelse(v_ref@clk < v_min or demand@clk <= 0.0, 2.0,
+    ifelse(phase@(clk-1) < -0.5,
+      ifelse(p@(clk-1) <= alpha_rel * tau_lock@(clk-1), 0.0, -1.0),
+      ifelse(phase@(clk-1) < 0.5,
+        ifelse(lambda_pred@clk > -l_rec, 1.0,
+          ifelse(hold_count@(clk-1) * dt >= T_hold_max, -1.0, 0.0)),
+        ifelse(release_now@clk > 0.5, -1.0, 1.0))))
+
+  tau_lock@clk = ifelse(phase@clk < -0.5 and phase@(clk-1) >= -0.5,
+    p@(clk-1), tau_lock@(clk-1))
+  released@clk = ifelse(phase@clk < -0.5, 1.0, released@(clk-1))
+  hold_count@clk = ifelse(phase@clk > -0.5 and phase@clk < 0.5,
+    hold_count@(clk-1) + 1.0, 0.0)
+  fast_reapply@clk = ifelse(phase@clk < 0.5, 0.0,
+    ifelse(phase@(clk-1) < 0.5 and phase@clk > 0.5, 1.0,
+      ifelse(fast_reapply@(clk-1) > 0.5 and p@(clk-1) < beta_reapply * tau_lock@(clk-1), 1.0, 0.0)))
+
+  dec_rate@clk = ifelse(released@(clk-1) > 0.5, 15.0 * tau_lock@(clk-1), k_dec)
+  fast_rate@clk = ifelse(released@(clk-1) > 0.5, 15.0 * tau_lock@(clk-1), k_inc_fast)
+  slow_rate@clk = ifelse(released@(clk-1) > 0.5, 1.5 * tau_lock@(clk-1), k_inc_slow)
+  rate@clk = ifelse(phase@clk < -0.5, -dec_rate@clk,
+    ifelse(phase@clk < 0.5, 0.0,
+      ifelse(released@(clk-1) < 0.5 or fast_reapply@clk > 0.5, fast_rate@clk, slow_rate@clk)))
+  p@clk = ifelse(phase@clk > 1.5, max(demand@clk, 0.0),
+    min(max(p@(clk-1) + rate@clk * dt, 0.0), max(demand@clk, 0.0)))
+
+  tau_cmd = p
+  phase_out = phase
+  tau_lock_out = tau_lock
+  lambda_dot_out = lambda_dot
 end
 
-test component TestABSModulatorLocked
-  "Already-locked wheel: zero wheel acceleration but large estimated slip"
-  wheel_speed = BlockComponents.Sources.Constant(k = 0.0)
-  wheel_accel = BlockComponents.Sources.Constant(k = 0.0)
-  reference_speed = BlockComponents.Sources.Constant(k = 25.0)
-  demand = BlockComponents.Sources.Constant(k = 6000.0)
-  modulator = VehicleSystemsComponents.Vehicle.ABSModulator()
-relations
-  connect(wheel_speed.y, modulator.omega)
-  connect(wheel_accel.y, modulator.a_w)
-  connect(reference_speed.y, modulator.v_ref)
-  connect(demand.y, modulator.demand)
-end
-
-analysis ABSModulatorLockedTransient
-  extends TransientAnalysis(stop = 0.1)
-  model = TestABSModulatorLocked()
-relations
-end
-
-"Wheel-speed-only ABS controller with reference-speed and wheel-acceleration estimators."
-component ABSControllerWheelOnly
-  omega = RealInput() {^omega}
-  demand = RealInput() {^demand}
-  tau_cmd = RealOutput() {^tau_cmd}
-  accel = VehicleSystemsComponents.Vehicle.WheelAccelEstimator(radius = radius, T_filter = T_filter, omega0 = omega0) {^accel}
-  reference = VehicleSystemsComponents.Vehicle.ReferenceSpeedWheelOnly(radius = radius, a_ref = a_ref, T_up = T_up, v_ref0 = v_ref0) {^reference}
-  modulator = VehicleSystemsComponents.Vehicle.ABSModulator(radius = radius, a_minus = a_minus, a_plus = a_plus, lambda_1 = lambda_1, lambda_lock = lambda_lock, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min, v_eps = v_eps, T_track = T_track) {^modulator}
+"Clocked wheel-only reference-speed and slip estimator."
+component ABSWheelOnlyEstimatorDiscrete@[input clk extends Discrete]
+  omega = RealInput@[clk]()
+  lambda = RealOutput@[clk]()
+  v_ref_out = RealOutput@[clk]()
+  a_w_out = RealOutput@[clk]()
+  parameter dt::Time(min = eps(Float64)) = 0.005
   parameter radius::Length = 0.31
   parameter a_ref::Acceleration = 10.0
-  parameter T_filter::Time(min = eps(Float64)) = 0.005
-  parameter T_up::Time(min = eps(Float64)) = 0.01
+  parameter v_ref0::Velocity = 25.0
+  parameter omega0::AngularVelocity = v_ref0 / radius
+  parameter v_eps::Velocity(min = eps(Float64)) = 0.5
+  variable v_ref::Velocity
+  variable v_w::Velocity
+  variable a_w::Acceleration
+  variable a_hat::Acceleration
+  variable a_ref_effective::Acceleration
+relations
+  initial omega@(clk-1) = omega0
+  initial v_ref@(clk-1) = v_ref0
+  initial a_hat@(clk-1) = a_ref / 1.2
+  v_w@clk = omega@clk * radius
+  a_w@clk = (omega@clk - omega@(clk-1)) * radius / dt
+  a_hat@clk = a_hat@(clk-1)
+  a_ref_effective@clk = min(max(1.2 * a_hat@clk, 1.0), 12.0)
+  v_ref@clk = ifelse(v_w@clk > v_ref@(clk-1), v_w@clk,
+    max(v_ref@(clk-1) - a_ref_effective@clk * dt, v_w@clk))
+  lambda@clk = (v_w@clk - v_ref@clk) / max(v_ref@clk, v_eps)
+  v_ref_out = v_ref
+  a_w_out = a_w
+end
+
+"Wheel-speed-only sampled ABS controller."
+component ABSControllerWheelOnly@[input clk extends Discrete]
+  omega = RealInput@[clk]()
+  demand = RealInput@[clk]()
+  tau_cmd = RealOutput@[clk]()
+  phase_out = RealOutput@[clk]()
+  lambda_hat_out = RealOutput@[clk]()
+  v_ref_out = RealOutput@[clk]()
+  a_w_out = RealOutput@[clk]()
+  estimator = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(dt = dt,
+    radius = radius, a_ref = a_ref, v_ref0 = v_ref0, omega0 = omega0, v_eps = v_eps)
+  modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt, T_p = T_p,
+    lambda_1 = lambda_1, lambda_lock = lambda_lock, alpha_rel = alpha_rel,
+    beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max,
+    k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min)
+  parameter dt::Time(min = eps(Float64)) = 0.005
+  parameter radius::Length = 0.31
+  parameter a_ref::Acceleration = 10.0
   parameter omega0::AngularVelocity = 0.0
   parameter v_ref0::Velocity = 0.0
-  parameter a_minus::Acceleration = 16.0
-  parameter a_plus::Acceleration = 5.0
-  parameter lambda_1::Real = 0.06
+  parameter v_eps::Velocity(min = eps(Float64)) = 0.5
+  parameter T_p::Time(min = 0.0) = 0.03
+  parameter lambda_1::Real = 0.04
   parameter lambda_lock::Real = 0.20
-  parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 40000.0
+  parameter alpha_rel::Real = 0.6
+  parameter beta_reapply::Real = 0.85
+  parameter l_rec::Real = 0.03
+  parameter T_hold_max::Time(min = eps(Float64)) = 0.06
+  parameter k_dec::Real = 80000.0
+  parameter k_inc_fast::Real = 80000.0
   parameter k_inc_slow::Real = 8000.0
   parameter v_min::Velocity = 1.5
-  parameter v_eps::Velocity(min = eps(Float64)) = 0.5
-  parameter T_track::Time(min = eps(Float64)) = 0.01
-  variable a_w::Acceleration
-  variable v_ref::Velocity
-  variable lambda_hat::Real
-  variable phase::Real
-  variable p::Torque
 relations
-  connect(omega, accel.omega) {^id7}
-  connect(omega, reference.omega) {^id8}
-  connect(omega, modulator.omega) {^id9}
-  connect(accel.a_w, modulator.a_w) {^id10}
-  connect(reference.v_ref, modulator.v_ref) {^id11}
-  connect(demand, modulator.demand) {^id12}
-  connect(modulator.tau_cmd, tau_cmd) {^id13}
-  a_w = accel.a_w
-  v_ref = reference.v_ref
-  lambda_hat = modulator.lambda_hat
-  phase = modulator.phase
-  p = modulator.p
-metadata {
-  "_links": {
-    "omega": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 720, "y2": 820}}}
-    },
-    "demand": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 180, "y2": 280}}}
-    },
-    "tau_cmd": {
-      "Dyad": {"placement": {"diagram": {"x1": 970, "x2": 1070, "y1": 450, "y2": 550}}}
-    },
-    "accel": {
-      "Dyad": {"placement": {"diagram": {"x1": 154, "x2": 254, "y1": 70, "y2": 170}}}
-    },
-    "reference": {
-      "Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 530, "y2": 630}}}
-    },
-    "modulator": {
-      "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 450, "y2": 550}}}
-    },
-    "id7": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 80, "y": 770}, {"x": 80, "y": 120}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id8": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 80, "y": 770}, {"x": 80, "y": 581}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id9": {
-      "Dyad": {
-        "edges": [
-          {
-            "S": 1,
-            "M": [
-              {"x": 80, "y": 770},
-              {"x": 80, "y": 690},
-              {"x": 461, "y": 690},
-              {"x": 461, "y": 541}
-            ],
-            "E": 2
-          }
-        ],
-        "path": {}
-      }
-    },
-    "id10": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 270, "y": 120}, {"x": 270, "y": 462}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id11": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 270, "y": 580}, {"x": 270, "y": 521}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id12": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 249.5, "y": 230}, {"x": 249.5, "y": 487}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
-  }
-}
+  connect(omega, estimator.omega)
+  connect(estimator.lambda, modulator.lambda)
+  connect(estimator.v_ref_out, modulator.v_ref)
+  connect(demand, modulator.demand)
+  connect(modulator.tau_cmd, tau_cmd)
+  phase_out = modulator.phase_out
+  lambda_hat_out = estimator.lambda
+  v_ref_out = estimator.v_ref_out
+  a_w_out = estimator.a_w_out
 end
 
-test component TestABSControllerWheelOnly
-  "Rapid wheel-speed collapse under full brake demand"
-  speed = BlockComponents.Sources.Ramp(offset = 25.0 / 0.31, height = -25.0 / 0.31, duration = 0.1, start_time = 0.1)
-  demand = BlockComponents.Sources.Step(height = 6000.0, offset = 0.0, start_time = 0.05)
-  controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(omega0 = 25.0 / 0.31, v_ref0 = 25.0)
-relations
-  connect(speed.y, controller.omega)
-  connect(demand.y, controller.demand)
-end
-
-analysis ABSControllerWheelOnlyTransient
-  extends TransientAnalysis(stop = 0.5)
-  model = TestABSControllerWheelOnly()
-relations
-end
-
-"Default ABS controller: wheel-speed-only estimator and valve modulator."
-component ABSController
+"Default sampled wheel-only ABS controller."
+component ABSController@[input clk extends Discrete]
   extends VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly
 relations
 end

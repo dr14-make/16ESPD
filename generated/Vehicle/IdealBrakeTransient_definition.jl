@@ -27,7 +27,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"log_file"::String = ""
   var"road_mu"::Float64 = 1.0
   var"brake_demand"::Float64 = 6000.0
-  # Braking benchmark with true slip and vehicle speed supplied to the ideal ABS controller.
+  # Ideal continuous benchmark using true slip and vehicle speed.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.ABSIdealBrakeTest(; name=:ABSIdealBrakeTest)
 end
 

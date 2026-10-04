@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   ABSIdealBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0)
+   ABSIdealModulatorBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0, dt, alpha_rel, beta_reapply, T_p, k_inc_slow)
 
-Ideal continuous benchmark using true slip and vehicle speed.
+Ideal-sensing sampled pressure-memory ABS harness.
 
 ## Parameters:
 
@@ -21,13 +21,18 @@ Ideal continuous benchmark using true slip and vehicle speed.
 | `radius`         |                          | m  |   0.31 |
 | `J_w`         |                          | kg.m2  |   4.0 |
 | `w0`         |                          | rad/s  |   0.2 |
+| `dt`         |                          | s  |   0.005 |
+| `alpha_rel`         |                          | --  |   0.6 |
+| `beta_reapply`         |                          | --  |   0.85 |
+| `T_p`         |                          | s  |   0.03 |
+| `k_inc_slow`         |                          | --  |   8000.0 |
 """
-@component function ABSIdealBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, kwargs...)
+@component function ABSIdealModulatorBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, dt=0.005, alpha_rel=0.6, beta_reapply=0.85, T_p=0.03, k_inc_slow=Float64(8000.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = ABSIdealBrakeTest()
+    @named model = ABSIdealModulatorBrakeTest()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -77,6 +82,21 @@ Ideal continuous benchmark using true slip and vehicle speed.
   __local__w0 = w0
   append!(__params, @parameters (w0::Real))
   __initial_conditions[w0] = __local__w0
+  __local__dt = dt
+  append!(__params, @parameters (dt::Real))
+  __initial_conditions[dt] = __local__dt
+  __local__alpha_rel = alpha_rel
+  append!(__params, @parameters (alpha_rel::Real))
+  __initial_conditions[alpha_rel] = __local__alpha_rel
+  __local__beta_reapply = beta_reapply
+  append!(__params, @parameters (beta_reapply::Real))
+  __initial_conditions[beta_reapply] = __local__beta_reapply
+  __local__T_p = T_p
+  append!(__params, @parameters (T_p::Real))
+  __initial_conditions[T_p] = __local__T_p
+  __local__k_inc_slow = k_inc_slow
+  append!(__params, @parameters (k_inc_slow::Real))
+  __initial_conditions[k_inc_slow] = __local__k_inc_slow
 
   ### Final Parameters (assignments)
 
@@ -99,9 +119,24 @@ Ideal continuous benchmark using true slip and vehicle speed.
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), flat_overrides...))
-  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSIdealController
+  # Subcomponent clock of type DiscreteComponents.PeriodicClock
+  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, clock_overrides...))
+  # Subcomponent slip_sampler of type DiscreteComponents.Sampler
+  slip_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "slip_sampler")
+  push!(__systems, @named slip_sampler = DiscreteComponents.Sampler(; slip_sampler_overrides...))
+  # Subcomponent speed_sampler of type DiscreteComponents.Sampler
+  speed_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sampler")
+  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; speed_sampler_overrides...))
+  # Subcomponent demand_sampler of type DiscreteComponents.Sampler
+  demand_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "demand_sampler")
+  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; demand_sampler_overrides...))
+  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSIdealController(; controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(; dt=dt, alpha_rel=alpha_rel, beta_reapply=beta_reapply, T_p=T_p, k_inc_slow=k_inc_slow, controller_overrides...))
+  # Subcomponent hold of type DiscreteComponents.ZeroOrderHold
+  hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
+  push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; hold_overrides...))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
   push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, wheel_overrides...))
@@ -128,10 +163,14 @@ Ideal continuous benchmark using true slip and vehicle speed.
   __assertions = []
 
   ### Equations
-  push!(__eqs, controller.v ~ body.mass.v)
-  push!(__eqs, connect(demand.y, controller.demand))
-  push!(__eqs, connect(wheel.kappa, controller.kappa))
-  push!(__eqs, connect(controller.tau_cmd, wheel.tau_cmd))
+  push!(__eqs, speed_sampler.u ~ body.mass.v)
+  push!(__eqs, connect(wheel.kappa, slip_sampler.u))
+  push!(__eqs, connect(demand.y, demand_sampler.u))
+  push!(__eqs, connect(slip_sampler.y, controller.lambda, clock.y))
+  push!(__eqs, connect(speed_sampler.y, controller.v_ref))
+  push!(__eqs, connect(demand_sampler.y, controller.demand))
+  push!(__eqs, connect(controller.tau_cmd, hold.u))
+  push!(__eqs, connect(hold.y, wheel.tau_cmd))
   push!(__eqs, connect(wheel.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange))
   push!(__eqs, connect(road.y, wheel.mu_scale))
@@ -140,4 +179,4 @@ Ideal continuous benchmark using true slip and vehicle speed.
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export ABSIdealBrakeTest
+export ABSIdealModulatorBrakeTest

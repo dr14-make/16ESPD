@@ -5,48 +5,43 @@
 
 
 @doc Markdown.doc"""
-   ABSController(; name, radius, a_ref, T_filter, T_up, omega0, v_ref0, a_minus, a_plus, lambda_1, lambda_lock, k_dec, k_inc_fast, k_inc_slow, v_min, v_eps, T_track)
+   ABSController(; name, dt, radius, a_ref, omega0, v_ref0, v_eps, T_p, lambda_1, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min)
 
-Default ABS controller: wheel-speed-only estimator and valve modulator.
+Default sampled wheel-only ABS controller.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `dt`         |                          | s  |   0.005 |
 | `radius`         |                          | m  |   0.31 |
 | `a_ref`         |                          | m/s2  |   10.0 |
-| `T_filter`         |                          | s  |   0.005 |
-| `T_up`         |                          | s  |   0.01 |
 | `omega0`         |                          | rad/s  |   0.0 |
 | `v_ref0`         |                          | m/s  |   0.0 |
-| `a_minus`         |                          | m/s2  |   16.0 |
-| `a_plus`         |                          | m/s2  |   5.0 |
-| `lambda_1`         |                          | --  |   0.06 |
+| `v_eps`         |                          | m/s  |   0.5 |
+| `T_p`         |                          | s  |   0.03 |
+| `lambda_1`         |                          | --  |   0.04 |
 | `lambda_lock`         |                          | --  |   0.20 |
-| `k_dec`         |                          | --  |   40000.0 |
-| `k_inc_fast`         |                          | --  |   40000.0 |
+| `alpha_rel`         |                          | --  |   0.6 |
+| `beta_reapply`         |                          | --  |   0.85 |
+| `l_rec`         |                          | --  |   0.03 |
+| `T_hold_max`         |                          | s  |   0.06 |
+| `k_dec`         |                          | --  |   80000.0 |
+| `k_inc_fast`         |                          | --  |   80000.0 |
 | `k_inc_slow`         |                          | --  |   8000.0 |
 | `v_min`         |                          | m/s  |   1.5 |
-| `v_eps`         |                          | m/s  |   0.5 |
-| `T_track`         |                          | s  |   0.01 |
 
 ## Connectors
 
  * `omega` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `demand` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `a_w`         |                          | m/s2  |
-| `v_ref`         |                          | m/s  |
-| `lambda_hat`         |                          | --  |
-| `phase`         |                          | --  |
-| `p`         |                          | N.m  |
+ * `phase_out` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `lambda_hat_out` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `v_ref_out` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `a_w_out` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function ABSController(; name = nothing, radius=0.31, a_ref=Float64(10.0), T_filter=0.005, T_up=0.01, omega0=Float64(0.0), v_ref0=Float64(0.0), a_minus=Float64(16.0), a_plus=Float64(5.0), lambda_1=0.06, lambda_lock=0.2, k_dec=Float64(40000.0), k_inc_fast=Float64(40000.0), k_inc_slow=Float64(8000.0), v_min=1.5, v_eps=0.5, T_track=0.01, kwargs...)
+@component function ABSController(; name = nothing, dt=0.005, radius=0.31, a_ref=Float64(10.0), omega0=Float64(0.0), v_ref0=Float64(0.0), v_eps=0.5, T_p=0.03, lambda_1=0.04, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(80000.0), k_inc_fast=Float64(80000.0), k_inc_slow=Float64(8000.0), v_min=1.5, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -77,36 +72,45 @@ Default ABS controller: wheel-speed-only estimator and valve modulator.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__dt = dt
+  append!(__params, @parameters (dt::Real), [bounds = (eps(Float64), Inf)])
+  __initial_conditions[dt] = __local__dt
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
   __initial_conditions[radius] = __local__radius
   __local__a_ref = a_ref
   append!(__params, @parameters (a_ref::Real))
   __initial_conditions[a_ref] = __local__a_ref
-  __local__T_filter = T_filter
-  append!(__params, @parameters (T_filter::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_filter] = __local__T_filter
-  __local__T_up = T_up
-  append!(__params, @parameters (T_up::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_up] = __local__T_up
   __local__omega0 = omega0
   append!(__params, @parameters (omega0::Real))
   __initial_conditions[omega0] = __local__omega0
   __local__v_ref0 = v_ref0
   append!(__params, @parameters (v_ref0::Real))
   __initial_conditions[v_ref0] = __local__v_ref0
-  __local__a_minus = a_minus
-  append!(__params, @parameters (a_minus::Real))
-  __initial_conditions[a_minus] = __local__a_minus
-  __local__a_plus = a_plus
-  append!(__params, @parameters (a_plus::Real))
-  __initial_conditions[a_plus] = __local__a_plus
+  __local__v_eps = v_eps
+  append!(__params, @parameters (v_eps::Real), [bounds = (eps(Float64), Inf)])
+  __initial_conditions[v_eps] = __local__v_eps
+  __local__T_p = T_p
+  append!(__params, @parameters (T_p::Real), [bounds = (0.0, Inf)])
+  __initial_conditions[T_p] = __local__T_p
   __local__lambda_1 = lambda_1
   append!(__params, @parameters (lambda_1::Real))
   __initial_conditions[lambda_1] = __local__lambda_1
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
   __initial_conditions[lambda_lock] = __local__lambda_lock
+  __local__alpha_rel = alpha_rel
+  append!(__params, @parameters (alpha_rel::Real))
+  __initial_conditions[alpha_rel] = __local__alpha_rel
+  __local__beta_reapply = beta_reapply
+  append!(__params, @parameters (beta_reapply::Real))
+  __initial_conditions[beta_reapply] = __local__beta_reapply
+  __local__l_rec = l_rec
+  append!(__params, @parameters (l_rec::Real))
+  __initial_conditions[l_rec] = __local__l_rec
+  __local__T_hold_max = T_hold_max
+  append!(__params, @parameters (T_hold_max::Real), [bounds = (eps(Float64), Inf)])
+  __initial_conditions[T_hold_max] = __local__T_hold_max
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
   __initial_conditions[k_dec] = __local__k_dec
@@ -119,12 +123,6 @@ Default ABS controller: wheel-speed-only estimator and valve modulator.
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
   __initial_conditions[v_min] = __local__v_min
-  __local__v_eps = v_eps
-  append!(__params, @parameters (v_eps::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[v_eps] = __local__v_eps
-  __local__T_track = T_track
-  append!(__params, @parameters (T_track::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_track] = __local__T_track
 
   ### Final Parameters (assignments)
 
@@ -132,54 +130,30 @@ Default ABS controller: wheel-speed-only estimator and valve modulator.
   append!(__vars, @variables (omega(t)::Real), [input = true])
   append!(__vars, @variables (demand(t)::Real), [input = true])
   append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
+  append!(__vars, @variables (phase_out(t)::Real), [output = true])
+  append!(__vars, @variables (lambda_hat_out(t)::Real), [output = true])
+  append!(__vars, @variables (v_ref_out(t)::Real), [output = true])
+  append!(__vars, @variables (a_w_out(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (a_w(t)::Real))
-  append!(__vars, @variables (v_ref(t)::Real))
-  append!(__vars, @variables (lambda_hat(t)::Real))
-  append!(__vars, @variables (phase(t)::Real))
-  append!(__vars, @variables (p(t)::Real))
 
   ### Variables (assignments)
-  __ovr_a_w = pop!(__overrides, "a_w", nothing); isnothing(__ovr_a_w) || push!(__eqs, a_w ~ __ovr_a_w)
-  __ovr_a_w__initial = pop!(__overrides, "a_w__initial", nothing); isnothing(__ovr_a_w__initial) || (__initial_conditions[a_w] = __ovr_a_w__initial)
-  __ovr_a_w__guess = pop!(__overrides, "a_w__guess", nothing)
-  __ovr_v_ref = pop!(__overrides, "v_ref", nothing); isnothing(__ovr_v_ref) || push!(__eqs, v_ref ~ __ovr_v_ref)
-  __ovr_v_ref__initial = pop!(__overrides, "v_ref__initial", nothing); isnothing(__ovr_v_ref__initial) || (__initial_conditions[v_ref] = __ovr_v_ref__initial)
-  __ovr_v_ref__guess = pop!(__overrides, "v_ref__guess", nothing)
-  __ovr_lambda_hat = pop!(__overrides, "lambda_hat", nothing); isnothing(__ovr_lambda_hat) || push!(__eqs, lambda_hat ~ __ovr_lambda_hat)
-  __ovr_lambda_hat__initial = pop!(__overrides, "lambda_hat__initial", nothing); isnothing(__ovr_lambda_hat__initial) || (__initial_conditions[lambda_hat] = __ovr_lambda_hat__initial)
-  __ovr_lambda_hat__guess = pop!(__overrides, "lambda_hat__guess", nothing)
-  __ovr_phase = pop!(__overrides, "phase", nothing); isnothing(__ovr_phase) || push!(__eqs, phase ~ __ovr_phase)
-  __ovr_phase__initial = pop!(__overrides, "phase__initial", nothing); isnothing(__ovr_phase__initial) || (__initial_conditions[phase] = __ovr_phase__initial)
-  __ovr_phase__guess = pop!(__overrides, "phase__guess", nothing)
-  __ovr_p = pop!(__overrides, "p", nothing); isnothing(__ovr_p) || push!(__eqs, p ~ __ovr_p)
-  __ovr_p__initial = pop!(__overrides, "p__initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
-  __ovr_p__guess = pop!(__overrides, "p__guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
-  # Subcomponent accel of type VehicleSystemsComponents.Vehicle.WheelAccelEstimator
-  accel_overrides = __pop_subcomponent_overrides!(__overrides, "accel")
-  push!(__systems, @named accel = VehicleSystemsComponents.Vehicle.WheelAccelEstimator(; radius=radius, T_filter=T_filter, omega0=omega0, accel_overrides...))
-  # Subcomponent reference of type VehicleSystemsComponents.Vehicle.ReferenceSpeedWheelOnly
-  reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.ReferenceSpeedWheelOnly(; radius=radius, a_ref=a_ref, T_up=T_up, v_ref0=v_ref0, reference_overrides...))
-  # Subcomponent modulator of type VehicleSystemsComponents.Vehicle.ABSModulator
+  # Subcomponent estimator of type VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete
+  estimator_overrides = __pop_subcomponent_overrides!(__overrides, "estimator")
+  push!(__systems, @named estimator = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(; dt=dt, radius=radius, a_ref=a_ref, v_ref0=v_ref0, omega0=omega0, v_eps=v_eps, estimator_overrides...))
+  # Subcomponent modulator of type VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete
   modulator_overrides = __pop_subcomponent_overrides!(__overrides, "modulator")
-  push!(__systems, @named modulator = VehicleSystemsComponents.Vehicle.ABSModulator(; radius=radius, a_minus=a_minus, a_plus=a_plus, lambda_1=lambda_1, lambda_lock=lambda_lock, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, v_eps=v_eps, T_track=T_track, modulator_overrides...))
+  push!(__systems, @named modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(; dt=dt, T_p=T_p, lambda_1=lambda_1, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, modulator_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
 
   ### Guesses
-  isnothing(__ovr_a_w__guess) || (__guesses[a_w] = __ovr_a_w__guess)
-  isnothing(__ovr_v_ref__guess) || (__guesses[v_ref] = __ovr_v_ref__guess)
-  isnothing(__ovr_lambda_hat__guess) || (__guesses[lambda_hat] = __ovr_lambda_hat__guess)
-  isnothing(__ovr_phase__guess) || (__guesses[phase] = __ovr_phase__guess)
-  isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
 
   ### Initialization Equations
 
@@ -187,18 +161,15 @@ Default ABS controller: wheel-speed-only estimator and valve modulator.
   __assertions = []
 
   ### Equations
-  push!(__eqs, a_w ~ accel.a_w)
-  push!(__eqs, v_ref ~ reference.v_ref)
-  push!(__eqs, lambda_hat ~ modulator.lambda_hat)
-  push!(__eqs, phase ~ modulator.phase)
-  push!(__eqs, p ~ modulator.p)
-  push!(__eqs, connect(omega, accel.omega))
-  push!(__eqs, connect(omega, reference.omega))
-  push!(__eqs, connect(omega, modulator.omega))
-  push!(__eqs, connect(accel.a_w, modulator.a_w))
-  push!(__eqs, connect(reference.v_ref, modulator.v_ref))
+  push!(__eqs, connect(omega, estimator.omega))
+  push!(__eqs, connect(estimator.lambda, modulator.lambda))
+  push!(__eqs, connect(estimator.v_ref_out, modulator.v_ref))
   push!(__eqs, connect(demand, modulator.demand))
   push!(__eqs, connect(modulator.tau_cmd, tau_cmd))
+  push!(__eqs, connect(modulator.phase_out, phase_out))
+  push!(__eqs, connect(estimator.lambda, lambda_hat_out))
+  push!(__eqs, connect(estimator.v_ref_out, v_ref_out))
+  push!(__eqs, connect(estimator.a_w_out, a_w_out))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct ABSControllerRecoveryTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :ABSControllerRecoveryTransient
+@kwdef mutable struct IdealModulatorBrakeTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :IdealModulatorBrakeTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 0.8
+  var"stop"::Float64 = 6.0
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -25,18 +25,20 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.TestABSControllerRecovery(; name=:TestABSControllerRecovery)
+  var"road_mu"::Float64 = 1.0
+  # Ideal-sensing sampled pressure-memory ABS harness.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.ABSIdealModulatorBrakeTest(; name=:ABSIdealModulatorBrakeTest)
 end
 
-function DyadInterface.run_analysis(spec::ABSControllerRecoveryTransientSpec)
+function DyadInterface.run_analysis(spec::IdealModulatorBrakeTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  
+  push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )
   run_analysis(base_spec)
 end
 
-ABSControllerRecoveryTransient(;kwargs...) = run_analysis(ABSControllerRecoveryTransientSpec(;kwargs...))
-export ABSControllerRecoveryTransient, ABSControllerRecoveryTransientSpec
+IdealModulatorBrakeTransient(;kwargs...) = run_analysis(IdealModulatorBrakeTransientSpec(;kwargs...))
+export IdealModulatorBrakeTransient, IdealModulatorBrakeTransientSpec

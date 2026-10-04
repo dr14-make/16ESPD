@@ -16,6 +16,7 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 import BlockComponents
+import DiscreteComponents
 import DyadData
 import DyadInterface
 import ElectricalComponents

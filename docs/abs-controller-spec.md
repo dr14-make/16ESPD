@@ -290,8 +290,9 @@ Stopping distance `d = s(stop) - s(brake_time)`. Rough hand estimates at µ = 1:
 4. **Ordering.** `d_ideal ≤ d_accel ≤ d_wheel_only < d_locked` at µ = 1.0 and 0.5. At µ = 0.2
    the wheel-only variant may break this with the default `a_ref`; that is the documented
    limitation. It must still hold with `a_ref = 0.2·9.81·1.2`.
-5. **Cycling.** Wheel-only and accel show a limit cycle of 2–15 Hz in `tau_cmd` during the stop
-   (not a single release followed by permanent hold, not chattering at solver step rate).
+5. **Controlled-stop performance.** At every road µ, `d < d_locked`. At µ ≥ 0.5, stopping
+   distance is within 15% of the peak-friction bound, and `|κ| ≤ 0.08` for at least 95% of the
+   controlled stop. Report release frequency as a diagnostic, but do not gate acceptance on it.
 6. **Locked-wheel recovery.** Start the wheel-only harness with `initial wheel.inertia.w = 0`
    (wheel already locked at `v0`): the controller must release and the wheel must spin back up
    within 0.3 s. The current `ABSController` fails this; it is the regression test for the

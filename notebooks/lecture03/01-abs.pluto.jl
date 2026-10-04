@@ -63,16 +63,14 @@ md"""
 
 # ╔═╡ 724f33cb-97c6-4673-9d87-8917eb9d5cda
 md"""
-**ABS tuning.** `a_ref` is the fastest deceleration the controller believes the car can reach.
-It uses that value to extrapolate vehicle speed while the wheel slips. `k_inc_slow` is the rate
-at which pressure is rebuilt after each release.
+**ABS tuning.** The controller only measures wheel speed, so it has to estimate how fast the car
+is going. While the wheel slips, it assumes the car slows down at most at `a_ref`. Set `a_ref`
+much higher than the road allows (about `μ·g`) and the estimate falls too fast: the controller
+under-reads the slip, releases too late, and the stop gets longer.
 """
 
 # ╔═╡ 816bf90c-eeba-40d9-a9b2-b01ca6afcf2b
-md"`a_ref` [m/s²] $(@bind a_ref Slider(2.0:1.0:14.0; default=10.0, show_value=true))"
-
-# ╔═╡ c4806dd3-f4c9-48ee-94b5-48e8c68ea863
-md"`k_inc_slow` [N·m/s] $(@bind k_inc_slow Slider(2000.0:2000.0:40000.0; default=8000.0, show_value=true))"
+md"`a_ref` [m/s²] $(@bind a_ref Slider(2.0:1.0:14.0; default=8.0, show_value=true))"
 
 # ╔═╡ 8fc92403-b541-46ba-9277-fdd5dab80847
 begin
@@ -104,7 +102,7 @@ begin
     end
 
     abs_braking(mu) = braking(VehicleSystemsComponents.Vehicle.ABSBrakeTransient(
-        road_mu=mu, a_ref=a_ref, k_inc_slow=k_inc_slow, stop=stop_time(mu)))
+        road_mu=mu, a_ref=a_ref, stop=stop_time(mu)))
     ideal_abs_braking(mu) = braking(VehicleSystemsComponents.Vehicle.IdealBrakeTransient(
         road_mu=mu, stop=stop_time(mu)))
     locked_braking(mu) = braking(VehicleSystemsComponents.Vehicle.LockedBrakeTransient(
@@ -337,21 +335,25 @@ md"""
 
 - **Locked wheel.** A locked wheel slides at `μ_S = 0.7`, so its stop is close to the
   "sliding" bound. It is also the stop in which the driver cannot steer.
-- **Ideal ABS.** An ideal ABS would hold slip at the adhesion peak `κ ≈ -0.04` and approach the
-  "ideal" bound, about 30 % shorter than the locked stop on this tire.
-- **This ABS.** The wheel-speed-only controller cycles slowly, at roughly 1.3 releases per
-  second. The wheel reaches `κ ≈ -0.3`, deep in the sliding region, before the release starts.
-  Each release then drops the torque to a few hundred N·m, far below the tire limit, and
-  `k_inc_slow` spends most of the cycle rebuilding it. The mean brake torque is about half of
-  what the tire could carry, so the ABS stop is **longer** than the locked one on every road
-  surface. It still prevents lock, and so keeps the car steerable, but it does not shorten the
-  stop.
-- The two sliders move the result only a few metres. Raising `k_inc_slow` to its maximum
-  shortens the dry stop from about 56 m to 52 m, still behind the locked wheel's 44 m. The loss
-  lies in how late and how deep each release is. Closing the gap to the ideal curve is a
-  controller-tuning task (release thresholds `lambda_1`, `lambda_lock`, `a_minus` and release
-  rate `k_dec`), not something the notebook can fix.
-- The actuator has a 30 ms hydraulic time constant, so commanded torque is not applied instantly.
+- **Peak-μ bound.** Holding the tire exactly at its adhesion peak `κ ≈ -0.04` for the whole
+  stop gives the "ideal" curve, about 27 % shorter than the locked stop on this tire. No
+  controller reaches it, because the brake needs time to respond.
+- **How this ABS works.** Like a real ABS computer, the controller runs every 5 ms. It releases
+  the brake when the *predicted* slip, the slip 30 ms ahead, passes the peak. That lead covers
+  the 30 ms the brake hydraulics take to respond. It remembers the torque at which the wheel
+  started to lock, releases only to 60 % of it, then quickly reapplies to 85 % and creeps up from
+  there. Most of the stop is spent just below the peak.
+- **Ideal ABS (true slip)** runs the same kind of logic but reads the true slip and vehicle
+  speed. It shows what the logic can do with perfect sensing.
+- **This ABS (wheel speed only).** On a dry road it stops about 11 % shorter than the locked
+  wheel, which is what real cars achieve (10–13 %). On slippery roads the gain shrinks, and in
+  the sweep below it turns into a small loss at `μ = 0.3`. The cause is the speed estimate: a
+  fixed `a_ref` is far more deceleration than a slippery road allows, so the estimated vehicle
+  speed falls faster than the car really slows down. Move the `a_ref` slider to see it: at
+  10 m/s² the ABS also loses on a wet road (`μ = 0.5`). Real ABS computers learn the road's
+  deceleration instead of assuming it.
+- **Why ABS still matters when the gain is small:** a rolling wheel can steer, a locked one
+  cannot.
 
 ### Current scope
 
@@ -367,7 +369,6 @@ dynamics, axle geometry, and independent braking at four wheels.
 # ╠═4a25ea4b-5258-43df-9e06-94a99607359f
 # ╟─724f33cb-97c6-4673-9d87-8917eb9d5cda
 # ╟─816bf90c-eeba-40d9-a9b2-b01ca6afcf2b
-# ╟─c4806dd3-f4c9-48ee-94b5-48e8c68ea863
 # ╠═8fc92403-b541-46ba-9277-fdd5dab80847
 # ╠═ebde0e45-07be-45cc-a8d1-5a028eb1741f
 # ╟─f05016c5-aa2e-4c7b-8bf3-750021471d22

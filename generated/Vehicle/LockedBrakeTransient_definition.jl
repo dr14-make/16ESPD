@@ -26,25 +26,14 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
   var"road_mu"::Float64 = 1.0
-  # Single-wheel-equivalent straight-line ABS braking test.
-  # 
-  # The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
-  # when `abs_enabled` is one, or directly to the wheel's brake when it is zero.
-  # 
-  # The whole vehicle is lumped onto one equivalent `BrakedWheel`: `F_z` is the full vehicle weight
-  # and `J_w` is the four road wheels together, so `brake_demand` is the total of all four brakes.
-  # This is what makes the deceleration representative of a real stop.
-  # 
-  # Load transfer is not modelled, so `F_z` is static. A real stop moves load forward and the axles
-  # reach their friction limits at different times; this lumped model reports the average.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.ABSBrakeTest(; name=:ABSBrakeTest)
+  # Locked-wheel baseline with unmodulated driver demand.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.LockedBrakeTest(; name=:LockedBrakeTest)
 end
 
 function DyadInterface.run_analysis(spec::LockedBrakeTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
-  push!(overrides, no_namespace_model.abs_enabled => 0.0)
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

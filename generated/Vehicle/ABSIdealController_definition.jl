@@ -5,15 +5,17 @@
 
 
 @doc Markdown.doc"""
-   ABSIdealController(; name, lambda_target, k_inc, k_dec, v_min, T_track)
+   ABSIdealController(; name, lambda_target, T_p, T_f, k_inc, k_dec, v_min, T_track)
 
-Ideal ABS benchmark using true tire slip and true vehicle speed.
+Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `lambda_target`         |                          | --  |   0.05 |
+| `lambda_target`         |                          | --  |   0.04 |
+| `T_p`         |                          | s  |   0.03 |
+| `T_f`         |                          | s  |   0.003 |
 | `k_inc`         |                          | --  |   20000.0 |
 | `k_dec`         |                          | --  |   40000.0 |
 | `v_min`         |                          | m/s  |   1.5 |
@@ -30,11 +32,12 @@ Ideal ABS benchmark using true tire slip and true vehicle speed.
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
+| `kappa_filtered`         |                          | --  |
+| `kappa_dot`         |                          | --  |
+| `kappa_pred`         |                          | --  |
 | `rate`         |                          | --  |
-| `active`         |                          | --  |
-| `p`         |                          | N.m  |
 """
-@component function ABSIdealController(; name = nothing, lambda_target=0.05, k_inc=Float64(20000.0), k_dec=Float64(40000.0), v_min=1.5, T_track=0.01, kwargs...)
+@component function ABSIdealController(; name = nothing, lambda_target=0.04, T_p=0.03, T_f=0.003, k_inc=Float64(20000.0), k_dec=Float64(40000.0), v_min=1.5, T_track=0.01, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -68,6 +71,12 @@ Ideal ABS benchmark using true tire slip and true vehicle speed.
   __local__lambda_target = lambda_target
   append!(__params, @parameters (lambda_target::Real))
   __initial_conditions[lambda_target] = __local__lambda_target
+  __local__T_p = T_p
+  append!(__params, @parameters (T_p::Real), [bounds = (eps(Float64), Inf)])
+  __initial_conditions[T_p] = __local__T_p
+  __local__T_f = T_f
+  append!(__params, @parameters (T_f::Real), [bounds = (eps(Float64), Inf)])
+  __initial_conditions[T_f] = __local__T_f
   __local__k_inc = k_inc
   append!(__params, @parameters (k_inc::Real))
   __initial_conditions[k_inc] = __local__k_inc
@@ -90,20 +99,24 @@ Ideal ABS benchmark using true tire slip and true vehicle speed.
   append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
 
   ### Variables (declarations)
+  append!(__vars, @variables (kappa_filtered(t)::Real))
+  append!(__vars, @variables (kappa_dot(t)::Real))
+  append!(__vars, @variables (kappa_pred(t)::Real))
   append!(__vars, @variables (rate(t)::Real))
-  append!(__vars, @variables (active(t)::Real))
-  append!(__vars, @variables (p(t)::Real))
 
   ### Variables (assignments)
+  __ovr_kappa_filtered = pop!(__overrides, "kappa_filtered", nothing); isnothing(__ovr_kappa_filtered) || push!(__eqs, kappa_filtered ~ __ovr_kappa_filtered)
+  __ovr_kappa_filtered__initial = pop!(__overrides, "kappa_filtered__initial", nothing); isnothing(__ovr_kappa_filtered__initial) || (__initial_conditions[kappa_filtered] = __ovr_kappa_filtered__initial)
+  __ovr_kappa_filtered__guess = pop!(__overrides, "kappa_filtered__guess", nothing)
+  __ovr_kappa_dot = pop!(__overrides, "kappa_dot", nothing); isnothing(__ovr_kappa_dot) || push!(__eqs, kappa_dot ~ __ovr_kappa_dot)
+  __ovr_kappa_dot__initial = pop!(__overrides, "kappa_dot__initial", nothing); isnothing(__ovr_kappa_dot__initial) || (__initial_conditions[kappa_dot] = __ovr_kappa_dot__initial)
+  __ovr_kappa_dot__guess = pop!(__overrides, "kappa_dot__guess", nothing)
+  __ovr_kappa_pred = pop!(__overrides, "kappa_pred", nothing); isnothing(__ovr_kappa_pred) || push!(__eqs, kappa_pred ~ __ovr_kappa_pred)
+  __ovr_kappa_pred__initial = pop!(__overrides, "kappa_pred__initial", nothing); isnothing(__ovr_kappa_pred__initial) || (__initial_conditions[kappa_pred] = __ovr_kappa_pred__initial)
+  __ovr_kappa_pred__guess = pop!(__overrides, "kappa_pred__guess", nothing)
   __ovr_rate = pop!(__overrides, "rate", nothing); isnothing(__ovr_rate) || push!(__eqs, rate ~ __ovr_rate)
   __ovr_rate__initial = pop!(__overrides, "rate__initial", nothing); isnothing(__ovr_rate__initial) || (__initial_conditions[rate] = __ovr_rate__initial)
   __ovr_rate__guess = pop!(__overrides, "rate__guess", nothing)
-  __ovr_active = pop!(__overrides, "active", nothing); isnothing(__ovr_active) || push!(__eqs, active ~ __ovr_active)
-  __ovr_active__initial = pop!(__overrides, "active__initial", nothing); isnothing(__ovr_active__initial) || (__initial_conditions[active] = __ovr_active__initial)
-  __ovr_active__guess = pop!(__overrides, "active__guess", nothing)
-  __ovr_p = pop!(__overrides, "p", nothing); isnothing(__ovr_p) || push!(__eqs, p ~ __ovr_p)
-  __ovr_p__initial = pop!(__overrides, "p__initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
-  __ovr_p__guess = pop!(__overrides, "p__guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -117,21 +130,24 @@ Ideal ABS benchmark using true tire slip and true vehicle speed.
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
 
   ### Guesses
+  isnothing(__ovr_kappa_filtered__guess) || (__guesses[kappa_filtered] = __ovr_kappa_filtered__guess)
+  isnothing(__ovr_kappa_dot__guess) || (__guesses[kappa_dot] = __ovr_kappa_dot__guess)
+  isnothing(__ovr_kappa_pred__guess) || (__guesses[kappa_pred] = __ovr_kappa_pred__guess)
   isnothing(__ovr_rate__guess) || (__guesses[rate] = __ovr_rate__guess)
-  isnothing(__ovr_active__guess) || (__guesses[active] = __ovr_active__guess)
-  isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
 
   ### Initialization Equations
+  push!(__initialization_eqs, kappa_filtered ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, rate ~ ifelse(kappa < -lambda_target, -k_dec, k_inc))
-  push!(__eqs, active ~ ifelse(v > v_min, 1.0, 0.0))
+  push!(__eqs, ModelingToolkit.D_nounits(kappa_filtered) ~ (kappa - kappa_filtered) / T_f)
+  push!(__eqs, kappa_dot ~ (kappa - kappa_filtered) / T_f)
+  push!(__eqs, kappa_pred ~ kappa + T_p * kappa_dot)
+  push!(__eqs, rate ~ ifelse(kappa_pred < -lambda_target, -k_dec, k_inc))
   push!(__eqs, pressure.requested_rate ~ rate)
-  push!(__eqs, pressure.active ~ active)
-  push!(__eqs, p ~ pressure.p)
+  push!(__eqs, pressure.active ~ ifelse(v > v_min, 1.0, 0.0))
   push!(__eqs, connect(demand, pressure.demand))
   push!(__eqs, connect(pressure.tau_cmd, tau_cmd))
 

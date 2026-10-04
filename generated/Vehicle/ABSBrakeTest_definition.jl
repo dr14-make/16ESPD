@@ -5,39 +5,28 @@
 
 
 @doc Markdown.doc"""
-   ABSBrakeTest(; name, v0, brake_demand, brake_time, abs_enabled, road_mu, m, radius, J_w, w0, T_meas, a_ref, k_inc_slow, wheel_w0)
+   ABSBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0, dt, a_ref, k_inc_slow, wheel_w0)
 
-Single-wheel-equivalent straight-line ABS braking test.
-
-The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
-when `abs_enabled` is one, or directly to the wheel's brake when it is zero.
-
-The whole vehicle is lumped onto one equivalent `BrakedWheel`: `F_z` is the full vehicle weight
-and `J_w` is the four road wheels together, so `brake_demand` is the total of all four brakes.
-This is what makes the deceleration representative of a real stop.
-
-Load transfer is not modelled, so `F_z` is static. A real stop moves load forward and the axles
-reach their friction limits at different times; this lumped model reports the average.
+Wheel-speed-only sampled ABS braking harness.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `v0`         | Initial vehicle speed                         | m/s  |   25.0 |
-| `brake_demand`         | Driver brake demand, total across all four brakes                         | N.m  |   6000.0 |
-| `brake_time`         | Brake application time                         | s  |   0.5 |
-| `abs_enabled`         | One enables ABS; zero bypasses modulation                         | --  |   1.0 |
-| `road_mu`         | Road-friction multiplier                         | --  |   1.0 |
-| `m`         | Vehicle mass                         | kg  |   1400.0 |
-| `radius`         | Wheel radius                         | m  |   0.31 |
-| `J_w`         | Lumped inertia of the four road wheels                         | kg.m2  |   4.0 |
-| `w0`         | Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep                         | rad/s  |   0.2 |
-| `T_meas`         | Wheel-speed differentiator filter time constant                         | s  |   0.005 |
-| `a_ref`         | Maximum fall rate of the wheel-only vehicle-speed estimate                         | m/s2  |   10.0 |
-| `k_inc_slow`         | ABS pressure increase rate after its first release cycle                         | --  |   8000.0 |
-| `wheel_w0`         | Initial wheel angular speed; set to zero for the locked-wheel recovery test                         | rad/s  |   v0 / radius |
+| `v0`         |                          | m/s  |   25.0 |
+| `brake_demand`         |                          | N.m  |   6000.0 |
+| `brake_time`         |                          | s  |   0.5 |
+| `road_mu`         |                          | --  |   1.0 |
+| `m`         |                          | kg  |   1400.0 |
+| `radius`         |                          | m  |   0.31 |
+| `J_w`         |                          | kg.m2  |   4.0 |
+| `w0`         |                          | rad/s  |   0.2 |
+| `dt`         |                          | s  |   0.005 |
+| `a_ref`         |                          | m/s2  |   8.0 |
+| `k_inc_slow`         |                          | --  |   8000.0 |
+| `wheel_w0`         |                          | rad/s  |   v0 / radius |
 """
-@component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, abs_enabled=Float64(1.0), road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, T_meas=0.005, a_ref=Float64(10.0), k_inc_slow=Float64(8000.0), wheel_w0=v0 / radius, kwargs...)
+@component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, dt=0.005, a_ref=Float64(8.0), k_inc_slow=Float64(8000.0), wheel_w0=v0 / radius, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -69,43 +58,40 @@ reach their friction limits at different times; this lumped model reports the av
 
   ### Symbolic Parameters
   __local__v0 = v0
-  append!(__params, @parameters (v0::Real), [description = "Initial vehicle speed"])
+  append!(__params, @parameters (v0::Real))
   __initial_conditions[v0] = __local__v0
   __local__brake_demand = brake_demand
-  append!(__params, @parameters (brake_demand::Real), [description = "Driver brake demand, total across all four brakes"])
+  append!(__params, @parameters (brake_demand::Real))
   __initial_conditions[brake_demand] = __local__brake_demand
   __local__brake_time = brake_time
-  append!(__params, @parameters (brake_time::Real), [description = "Brake application time"])
+  append!(__params, @parameters (brake_time::Real))
   __initial_conditions[brake_time] = __local__brake_time
-  __local__abs_enabled = abs_enabled
-  append!(__params, @parameters (abs_enabled::Real), [description = "One enables ABS; zero bypasses modulation"])
-  __initial_conditions[abs_enabled] = __local__abs_enabled
   __local__road_mu = road_mu
-  append!(__params, @parameters (road_mu::Real), [description = "Road-friction multiplier"])
+  append!(__params, @parameters (road_mu::Real))
   __initial_conditions[road_mu] = __local__road_mu
   __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  append!(__params, @parameters (m::Real), [bounds = (0, Inf)])
   __initial_conditions[m] = __local__m
   __local__radius = radius
-  append!(__params, @parameters (radius::Real), [description = "Wheel radius"])
+  append!(__params, @parameters (radius::Real))
   __initial_conditions[radius] = __local__radius
   __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real), [description = "Lumped inertia of the four road wheels"])
+  append!(__params, @parameters (J_w::Real))
   __initial_conditions[J_w] = __local__J_w
   __local__w0 = w0
-  append!(__params, @parameters (w0::Real), [description = "Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep"])
+  append!(__params, @parameters (w0::Real))
   __initial_conditions[w0] = __local__w0
-  __local__T_meas = T_meas
-  append!(__params, @parameters (T_meas::Real), [description = "Wheel-speed differentiator filter time constant"])
-  __initial_conditions[T_meas] = __local__T_meas
+  __local__dt = dt
+  append!(__params, @parameters (dt::Real))
+  __initial_conditions[dt] = __local__dt
   __local__a_ref = a_ref
-  append!(__params, @parameters (a_ref::Real), [description = "Maximum fall rate of the wheel-only vehicle-speed estimate"])
+  append!(__params, @parameters (a_ref::Real))
   __initial_conditions[a_ref] = __local__a_ref
   __local__k_inc_slow = k_inc_slow
-  append!(__params, @parameters (k_inc_slow::Real), [description = "ABS pressure increase rate after its first release cycle"])
+  append!(__params, @parameters (k_inc_slow::Real))
   __initial_conditions[k_inc_slow] = __local__k_inc_slow
   __local__wheel_w0 = wheel_w0
-  append!(__params, @parameters (wheel_w0::Real), [description = "Initial wheel angular speed; set to zero for the locked-wheel recovery test"])
+  append!(__params, @parameters (wheel_w0::Real))
   __initial_conditions[wheel_w0] = __local__wheel_w0
 
   ### Final Parameters (assignments)
@@ -129,9 +115,21 @@ reach their friction limits at different times; this lumped model reports the av
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), flat_overrides...))
+  # Subcomponent clock of type DiscreteComponents.PeriodicClock
+  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, clock_overrides...))
+  # Subcomponent speed_sampler of type DiscreteComponents.Sampler
+  speed_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sampler")
+  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; speed_sampler_overrides...))
+  # Subcomponent demand_sampler of type DiscreteComponents.Sampler
+  demand_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "demand_sampler")
+  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; demand_sampler_overrides...))
   # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(; radius=radius, a_ref=a_ref, T_filter=T_meas, omega0=wheel_w0, v_ref0=v0, k_inc_slow=k_inc_slow, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(; dt=dt, radius=radius, a_ref=a_ref, omega0=wheel_w0, v_ref0=v0, k_inc_slow=k_inc_slow, controller_overrides...))
+  # Subcomponent hold of type DiscreteComponents.ZeroOrderHold
+  hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
+  push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; hold_overrides...))
   # Subcomponent wsensor of type RotationalComponents.Sensors.VelocitySensor
   wsensor_overrides = __pop_subcomponent_overrides!(__overrides, "wsensor")
   push!(__systems, @named wsensor = RotationalComponents.Sensors.VelocitySensor(; wsensor_overrides...))
@@ -161,10 +159,13 @@ reach their friction limits at different times; this lumped model reports the av
   __assertions = []
 
   ### Equations
-  push!(__eqs, wheel.tau_cmd ~ demand.y * (1.0 - abs_enabled) + controller.tau_cmd * abs_enabled)
-  push!(__eqs, connect(demand.y, controller.demand))
   push!(__eqs, connect(wsensor.spline, wheel.spline))
-  push!(__eqs, connect(wsensor.w, controller.omega))
+  push!(__eqs, connect(wsensor.w, speed_sampler.u))
+  push!(__eqs, connect(demand.y, demand_sampler.u))
+  push!(__eqs, connect(speed_sampler.y, controller.omega, clock.y))
+  push!(__eqs, connect(demand_sampler.y, controller.demand))
+  push!(__eqs, connect(controller.tau_cmd, hold.u))
+  push!(__eqs, connect(hold.y, wheel.tau_cmd))
   push!(__eqs, connect(wheel.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange))
   push!(__eqs, connect(road.y, wheel.mu_scale))

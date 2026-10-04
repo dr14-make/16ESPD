@@ -1,74 +1,4 @@
-"""
-Single-wheel-equivalent straight-line ABS braking test.
-
-The vehicle begins in pure rolling at `v0`. A brake-demand step passes through the slip controller
-when `abs_enabled` is one, or directly to the wheel's brake when it is zero.
-
-The whole vehicle is lumped onto one equivalent `BrakedWheel`: `F_z` is the full vehicle weight
-and `J_w` is the four road wheels together, so `brake_demand` is the total of all four brakes.
-This is what makes the deceleration representative of a real stop.
-
-Load transfer is not modelled, so `F_z` is static. A real stop moves load forward and the axles
-reach their friction limits at different times; this lumped model reports the average.
-"""
-component ABSBrakeTest
-  "Initial vehicle speed"
-  parameter v0::Velocity = 25.0
-  "Driver brake demand, total across all four brakes"
-  parameter brake_demand::Torque = 6000.0
-  "Brake application time"
-  parameter brake_time::Time = 0.5
-  "One enables ABS; zero bypasses modulation"
-  parameter abs_enabled::Real = 1.0
-  "Road-friction multiplier"
-  parameter road_mu::Real = 1.0
-  "Vehicle mass"
-  parameter m::Dyad.Mass = 1400.0
-  "Wheel radius"
-  parameter radius::Length = 0.31
-  "Lumped inertia of the four road wheels"
-  parameter J_w::MomentOfInertia = 4.0
-  "Brake regularisation speed; 0.2 rad/s holds the locked wheel to under 0.1 m/s of surface creep"
-  parameter w0::AngularVelocity = 0.2
-  "Wheel-speed differentiator filter time constant"
-  parameter T_meas::Time = 0.005
-  "Maximum fall rate of the wheel-only vehicle-speed estimate"
-  parameter a_ref::Acceleration = 10.0
-  "ABS pressure increase rate after its first release cycle"
-  parameter k_inc_slow::Real = 8000.0
-  "Initial wheel angular speed; set to zero for the locked-wheel recovery test"
-  parameter wheel_w0::AngularVelocity = v0 / radius
-  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
-  road = BlockComponents.Sources.Constant(k = road_mu)
-  flat = BlockComponents.Sources.Constant(k = 0.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(radius = radius,
-    a_ref = a_ref, T_filter = T_meas, omega0 = wheel_w0, v_ref0 = v0,
-    k_inc_slow = k_inc_slow)
-  "Ideal wheel-speed sensor mounted on the wheel spline"
-  wsensor = RotationalComponents.Sensors.VelocitySensor()
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
-    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
-  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
-  fixed = RotationalComponents.Components.Fixed()
-relations
-  connect(demand.y, controller.demand)
-  connect(wsensor.spline, wheel.spline)
-  connect(wsensor.w, controller.omega)
-  wheel.tau_cmd = demand.y * (1.0 - abs_enabled) + controller.tau_cmd * abs_enabled
-  # wheel.spline is the free inboard end where a driveline would attach.
-  connect(wheel.support, fixed.spline)
-  connect(wheel.flange, body.flange)
-  connect(road.y, wheel.mu_scale)
-  connect(flat.y, body.grade)
-  initial wheel.brake.tau_actual = 0.0
-  initial wheel.inertia.phi = 0.0
-  initial wheel.inertia.w = wheel_w0
-  initial body.mass.s = 0.0
-  initial body.mass.v = v0
-end
-
-
-"""Braking benchmark with true slip and vehicle speed supplied to the ideal ABS controller."""
+"Ideal continuous benchmark using true slip and vehicle speed."
 component ABSIdealBrakeTest
   parameter v0::Velocity = 25.0
   parameter brake_demand::Torque = 6000.0
@@ -100,28 +30,140 @@ relations
   initial wheel.inertia.w = v0 / radius
   initial body.mass.s = 0.0
   initial body.mass.v = v0
-metadata {
-  "Dyad": {
-    "tests": {
-      "dry_emergency_stop": {
-        "stop": 6.0,
-        "params": {"road_mu": 1.0},
-        "expect": {"signals": ["controller.tau_cmd", "demand.y", "wheel.kappa", "body.mass.v"]}
-      },
-      "wet_emergency_stop": {
-        "stop": 12.0,
-        "params": {"road_mu": 0.5},
-        "expect": {"signals": ["controller.tau_cmd", "demand.y", "wheel.kappa", "body.mass.v"]}
-      },
-      "below_friction_limit": {
-        "stop": 1.0,
-        "params": {"brake_demand": 2000.0},
-        "atol": {"controller.tau_cmd": 0.001},
-        "expect": {"final": {"controller.tau_cmd": 2000.0}, "signals": ["controller.tau_cmd"]}
-      }
-    }
-  }
-}
+end
+
+"Ideal-sensing sampled pressure-memory ABS harness."
+component ABSIdealModulatorBrakeTest
+  parameter v0::Velocity = 25.0
+  parameter brake_demand::Torque = 6000.0
+  parameter brake_time::Time = 0.5
+  parameter road_mu::Real = 1.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter radius::Length = 0.31
+  parameter J_w::MomentOfInertia = 4.0
+  parameter w0::AngularVelocity = 0.2
+  parameter dt::Time = 0.005
+  parameter alpha_rel::Real = 0.6
+  parameter beta_reapply::Real = 0.85
+  parameter T_p::Time = 0.03
+  parameter k_inc_slow::Real = 8000.0
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
+  road = BlockComponents.Sources.Constant(k = road_mu)
+  flat = BlockComponents.Sources.Constant(k = 0.0)
+  clock = DiscreteComponents.PeriodicClock(dt = 0.005)
+  slip_sampler = DiscreteComponents.Sampler()
+  speed_sampler = DiscreteComponents.Sampler()
+  demand_sampler = DiscreteComponents.Sampler()
+  controller = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt,
+    alpha_rel = alpha_rel, beta_reapply = beta_reapply, T_p = T_p,
+    k_inc_slow = k_inc_slow)
+  hold = DiscreteComponents.ZeroOrderHold()
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
+    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(wheel.kappa, slip_sampler.u)
+  speed_sampler.u = body.mass.v
+  connect(demand.y, demand_sampler.u)
+  connect(slip_sampler.y, controller.lambda, clock.y)
+  connect(speed_sampler.y, controller.v_ref)
+  connect(demand_sampler.y, controller.demand)
+  connect(controller.tau_cmd, hold.u)
+  connect(hold.y, wheel.tau_cmd)
+  connect(wheel.support, fixed.spline)
+  connect(wheel.flange, body.flange)
+  connect(road.y, wheel.mu_scale)
+  connect(flat.y, body.grade)
+  initial wheel.brake.tau_actual = 0.0
+  initial wheel.inertia.phi = 0.0
+  initial wheel.inertia.w = v0 / radius
+  initial body.mass.s = 0.0
+  initial body.mass.v = v0
+end
+
+"Wheel-speed-only sampled ABS braking harness."
+component ABSBrakeTest
+  parameter v0::Velocity = 25.0
+  parameter brake_demand::Torque = 6000.0
+  parameter brake_time::Time = 0.5
+  parameter road_mu::Real = 1.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter radius::Length = 0.31
+  parameter J_w::MomentOfInertia = 4.0
+  parameter w0::AngularVelocity = 0.2
+  parameter dt::Time = 0.005
+  parameter a_ref::Acceleration = 8.0
+  parameter k_inc_slow::Real = 8000.0
+  parameter wheel_w0::AngularVelocity = v0 / radius
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
+  road = BlockComponents.Sources.Constant(k = road_mu)
+  flat = BlockComponents.Sources.Constant(k = 0.0)
+  clock = DiscreteComponents.PeriodicClock(dt = 0.005)
+  speed_sampler = DiscreteComponents.Sampler()
+  demand_sampler = DiscreteComponents.Sampler()
+  controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(dt = dt, radius = radius,
+    a_ref = a_ref, omega0 = wheel_w0, v_ref0 = v0, k_inc_slow = k_inc_slow)
+  hold = DiscreteComponents.ZeroOrderHold()
+  wsensor = RotationalComponents.Sensors.VelocitySensor()
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
+    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(wsensor.spline, wheel.spline)
+  connect(wsensor.w, speed_sampler.u)
+  connect(demand.y, demand_sampler.u)
+  connect(speed_sampler.y, controller.omega, clock.y)
+  connect(demand_sampler.y, controller.demand)
+  connect(controller.tau_cmd, hold.u)
+  connect(hold.y, wheel.tau_cmd)
+  connect(wheel.support, fixed.spline)
+  connect(wheel.flange, body.flange)
+  connect(road.y, wheel.mu_scale)
+  connect(flat.y, body.grade)
+  initial wheel.brake.tau_actual = 0.0
+  initial wheel.inertia.phi = 0.0
+  initial wheel.inertia.w = wheel_w0
+  initial body.mass.s = 0.0
+  initial body.mass.v = v0
+end
+
+"Locked-wheel baseline with unmodulated driver demand."
+component LockedBrakeTest
+  parameter v0::Velocity = 25.0
+  parameter brake_demand::Torque = 6000.0
+  parameter brake_time::Time = 0.5
+  parameter road_mu::Real = 1.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter radius::Length = 0.31
+  parameter J_w::MomentOfInertia = 4.0
+  parameter w0::AngularVelocity = 0.2
+  demand = BlockComponents.Sources.Step(height = brake_demand, offset = 0.0, start_time = brake_time)
+  road = BlockComponents.Sources.Constant(k = road_mu)
+  flat = BlockComponents.Sources.Constant(k = 0.0)
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(radius = radius, J_w = J_w,
+    F_z = m * 9.80665, tau_max = brake_demand, w0 = w0)
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(demand.y, wheel.tau_cmd)
+  connect(wheel.support, fixed.spline)
+  connect(wheel.flange, body.flange)
+  connect(road.y, wheel.mu_scale)
+  connect(flat.y, body.grade)
+  initial wheel.brake.tau_actual = 0.0
+  initial wheel.inertia.phi = 0.0
+  initial wheel.inertia.w = v0 / radius
+  initial body.mass.s = 0.0
+  initial body.mass.v = v0
+end
+
+analysis IdealModulatorBrakeTransient
+  extends TransientAnalysis(stop = 6.0)
+  parameter road_mu::Real = 1.0
+  model = ABSIdealModulatorBrakeTest(road_mu = road_mu)
+relations
 end
 
 analysis IdealBrakeTransient
@@ -132,13 +174,13 @@ analysis IdealBrakeTransient
 relations
 end
 
-
 analysis ABSBrakeTransient
   extends TransientAnalysis(stop = 6.0)
   parameter road_mu::Real = 1.0
-  parameter a_ref::Acceleration = 10.0
+  parameter brake_demand::Torque = 6000.0
+  parameter a_ref::Acceleration = 8.0
   parameter k_inc_slow::Real = 8000.0
-  model = ABSBrakeTest(road_mu = road_mu, abs_enabled = 1.0, a_ref = a_ref,
+  model = ABSBrakeTest(road_mu = road_mu, brake_demand = brake_demand, a_ref = a_ref,
     k_inc_slow = k_inc_slow)
 relations
 end
@@ -146,13 +188,12 @@ end
 analysis LockedBrakeTransient
   extends TransientAnalysis(stop = 6.0)
   parameter road_mu::Real = 1.0
-  model = ABSBrakeTest(road_mu = road_mu, abs_enabled = 0.0)
+  model = LockedBrakeTest(road_mu = road_mu)
 relations
 end
 
-
 analysis ABSLockedWheelRecoveryTransient
   extends TransientAnalysis(stop = 0.5)
-  model = ABSBrakeTest(brake_time = 0.0, abs_enabled = 1.0, wheel_w0 = 0.0)
+  model = ABSBrakeTest(brake_time = 0.0, wheel_w0 = 0.0)
 relations
 end

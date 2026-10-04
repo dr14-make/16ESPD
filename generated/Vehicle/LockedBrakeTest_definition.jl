@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   ABSIdealBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0)
+   LockedBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0)
 
-Ideal continuous benchmark using true slip and vehicle speed.
+Locked-wheel baseline with unmodulated driver demand.
 
 ## Parameters:
 
@@ -22,12 +22,12 @@ Ideal continuous benchmark using true slip and vehicle speed.
 | `J_w`         |                          | kg.m2  |   4.0 |
 | `w0`         |                          | rad/s  |   0.2 |
 """
-@component function ABSIdealBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, kwargs...)
+@component function LockedBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = ABSIdealBrakeTest()
+    @named model = LockedBrakeTest()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -99,9 +99,6 @@ Ideal continuous benchmark using true slip and vehicle speed.
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), flat_overrides...))
-  # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSIdealController
-  controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSIdealController(; controller_overrides...))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
   push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, wheel_overrides...))
@@ -128,10 +125,7 @@ Ideal continuous benchmark using true slip and vehicle speed.
   __assertions = []
 
   ### Equations
-  push!(__eqs, controller.v ~ body.mass.v)
-  push!(__eqs, connect(demand.y, controller.demand))
-  push!(__eqs, connect(wheel.kappa, controller.kappa))
-  push!(__eqs, connect(controller.tau_cmd, wheel.tau_cmd))
+  push!(__eqs, connect(demand.y, wheel.tau_cmd))
   push!(__eqs, connect(wheel.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange))
   push!(__eqs, connect(road.y, wheel.mu_scale))
@@ -140,4 +134,4 @@ Ideal continuous benchmark using true slip and vehicle speed.
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export ABSIdealBrakeTest
+export LockedBrakeTest

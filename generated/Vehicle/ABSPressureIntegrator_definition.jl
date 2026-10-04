@@ -7,10 +7,7 @@
 @doc Markdown.doc"""
    ABSPressureIntegrator(; name, T_track)
 
-Shared clipped brake-pressure integrator.
-
-When `active` is positive, `requested_rate` is integrated subject to the driver-demand bounds.
-Otherwise the pressure tracks the nonnegative demand with time constant `T_track`.
+Shared continuous clipped brake-pressure integrator retained for the continuous ideal benchmark.
 
 ## Parameters:
 
@@ -106,7 +103,7 @@ Otherwise the pressure tracks the nonnegative demand with time constant `T_track
   __assertions = []
 
   ### Equations
-  push!(__eqs, pressure_rate ~ ifelse(active < 0.5, (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), (max(demand, 0.0) - p) / T_track, ifelse((p <= 0.0) & (requested_rate < 0.0), 0.0, ifelse((p >= max(demand, 0.0)) & (requested_rate > 0.0), 0.0, requested_rate)))))
+  push!(__eqs, pressure_rate ~ ifelse(active < 0.5, (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), min((max(demand, 0.0) - p) / T_track, requested_rate), ifelse((p <= 0.0) & (requested_rate < 0.0), 0.0, ifelse((p >= max(demand, 0.0)) & (requested_rate > 0.0), 0.0, requested_rate)))))
   push!(__eqs, ModelingToolkit.D_nounits(p) ~ pressure_rate)
   push!(__eqs, tau_cmd ~ min(max(p, 0.0), max(demand, 0.0)))
 
