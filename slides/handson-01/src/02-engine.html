@@ -267,6 +267,13 @@
         <p><strong>Bench <code>EngineStep</code>:</strong> a <code>Step</code> of 200 N·m at
           0.5 s into your <code>Engine</code>, a 1 kg·m² <code>Inertia</code> on the shaft,
           the mounts <code>Fixed</code>.</p>
+        <div class="callout">
+          <span class="label">Why an Inertia?</span>
+          An <strong>inertia</strong> is a spinning mass: it resists changes in rotation,
+          <em>T = J · dω/dt</em>. The engine's torque must act on something — on a bare shaft
+          it has nowhere to go and the model cannot be solved. With <em>J</em> = 1 kg·m², the
+          shaft's angular acceleration in rad/s² equals the delivered torque in N·m.
+        </div>
       </div>
       <figure class="fig shot">
         <img src="../handson/lecture-01/img/step02-engine-step.png"
