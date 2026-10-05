@@ -354,7 +354,11 @@ or a bare solution.
 """
 function signal(sol, path::Union{AbstractString, Symbol})
     s = solution_of(sol)
-    return (collect(s.t), collect(s[resolve(s, path)]))
+    y = s[resolve(s, path)]
+    # A discrete (clocked) variable comes back as its own timeseries, sampled once per tick
+    # rather than at the solver's steps.
+    hasproperty(y, :t) && return (collect(y.t), collect(y.u))
+    return (collect(s.t), collect(y))
 end
 
 # ---------------------------------------------------------------------------------------
@@ -690,6 +694,9 @@ function save_figure(plt, name::AbstractString)
     mkpath(dir)
     path = joinpath(dir, file)
     Plots.savefig(plt, path)
+    # GR can leave a zero-byte file behind without throwing, and an empty SVG renders as a
+    # blank slide that nothing else flags.
+    filesize(path) > 0 || error("`$file` was written empty; re-run the cell before committing it.")
     return path
 end
 
