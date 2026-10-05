@@ -1,0 +1,203 @@
+
+<!-- ===================== 10 — Standing start =========================================== -->
+<section data-section-title="10 — Standing start">
+
+  <section class="cover">
+    <p class="nb-no">Step 10 · 23 min</p>
+    <h2>Standing start on a slippery road</h2>
+    <p class="thesis">Floor it on ice: the wheel spins, the car barely moves.</p>
+    <p class="meta"><a href="../handson/lecture-01/#standing-start">page: step 10</a> · reference <code>dyad/HandsOn/SlipCar.dyad</code></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> everything in this car is a part you already have. The new thing
+      is wiring: the tire is the contact now, so there is no translational ground — the wheel's
+      flange drives the body directly.</p>
+      <p><strong>Timing:</strong> 23 minutes — 3 for the "two limits" slide, then 20: 13 parts and 15 wires. The page lists the wires as
+      a numbered table; tell the room to tick them off. Create the car, then its parameters, then
+      the parts, then the wires, then a separate bench.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two limits: the engine's and the tire's</h2>
+    <div class="cols">
+      <div>
+        <p class="small">The driven wheels carry half the car: F<sub>z</sub> = 1400 × 9.81 / 2 =
+        6865 N. The most the tire can push is μ<sub>peak</sub> × F<sub>z</sub>:</p>
+        <table>
+          <tr><th>limit</th><th class="num">N at the road</th></tr>
+          <tr><td>engine, flat out (step 03)</td><td class="num">1935</td></tr>
+          <tr><td>tire, dry: 1.0 × 6865</td><td class="num">6865</td></tr>
+          <tr><td>tire, snow: 0.2 × 6865</td><td class="num">1373</td></tr>
+          <tr><td>tire, ice: 0.05 × 6865</td><td class="num">343</td></tr>
+        </table>
+        <p class="small"><strong>Dry:</strong> the engine runs out first; the tire stays left of its
+        peak. <strong>Snow:</strong> the tire runs out first; the engine keeps pushing and drives
+        the wheel <strong>past the peak</strong>.</p>
+      </div>
+      <div>
+        <h4>Step 10, predicted — full power from a stop</h4>
+        <div class="readout">
+          <div class="r"><span class="v">21</span><span class="k">km/h after 5 s, dry — wheel and car together</span></div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">10</span><span class="k">km/h car, snow</span></div>
+          <div class="r"><span class="v">1500</span><span class="k">km/h tire surface, snow</span></div>
+        </div>
+        <div class="callout danger small">
+          <span class="label">Why it runs away</span>
+          More slip → less grip → less holding the wheel back → it spins faster → more slip.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the push to the road has to get through two things in a row: the
+      engine and the tire. Whichever has the lower limit decides. You can tell which, from this
+      table, before simulating anything.</p>
+      <p><strong>Derivation, step by step</strong></p>
+      <ol>
+        <li><strong>Load on the driven wheels:</strong> the car weighs 1400 × 9.81 = 13 734 N. Our
+          model drives one axle and puts half the weight on it: 6865 N. (Real cars are not
+          exactly 50/50 — it is a modeling choice.)</li>
+        <li><strong>Tire limit:</strong> peak μ × load. Dry 1.0 × 6865 = 6865 N. Snow
+          0.2 × 6865 = 1373 N. Ice 0.05 × 6865 = 343 N.</li>
+        <li><strong>Compare with 1935 N</strong>, the engine at full torque. Dry: the tire could
+          take 3.5 × more, so the engine is the limit. Snow: 1373 &lt; 1935, so the tire is the
+          limit and the extra torque spins the wheel.</li>
+        <li><strong>On the curve:</strong> 1935 / 6865 = 0.28. The red dashed line on the last
+          slide is at μ = 0.28 — under the whole dry curve, over the whole snow curve. On the dry
+          road it needs only κ ≈ 0.0075 — step 09's check reads 0.0076 under the same 1935 N.</li>
+      </ol>
+      <p><strong>Why it runs away:</strong> once past the peak, extra slip lowers the grip. Less
+      grip means less force holding the wheel back, so the engine spins it faster, which is more
+      slip. A loop that feeds itself — nobody built it; it is what the tire does.</p>
+      <p><strong>On the 1500 km/h:</strong> the model has no rev limiter, so nothing stops the
+      wheel. That number is the model telling the truth about what we left out, not a bug. Say it
+      now so nobody tries to "fix" it when it appears on their plot.</p>
+      <p><strong>Flag forward:</strong> the next lecture ends here. A cruise control on ice sees
+      the speed drop and asks for more torque — and does exactly what this table predicts. That is
+      why real cruise control switches off when traction control steps in.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two speeds out</h2>
+    <figure class="fig shot">
+      <img src="../handson/lecture-01/img/step10-standing-start.png"
+           alt="SlipCar: engine, gear, wheel inertia and slip wheel drive the grade body, with sensors for vehicle speed and wheel surface speed.">
+      <figcaption><code>v_kmh</code> from the body · <code>wheel_kmh</code> from the wheel shaft,
+        × r × 3.6 · tire <code>radius = r</code>, <code>F_z = m * g / 2</code> · bench: <code>cmd</code> 150, <code>road</code> 0, <code>friction</code> 0.2</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Point at:</strong> <code>r</code> is used twice — the tire's radius and the
+      km/h gain — and <code>m</code> sets both the body's mass and the axle load. One parameter
+      each, so they cannot disagree. Typed twice, a change to one is a silent bug in the other.</p>
+      <p><strong>Say:</strong> wheel surface speed is ω·r. Put on the same axis as the car's
+      speed, wheelspin is simply the gap between two lines.</p>
+      <p><strong>They get wrong:</strong> missing <code>initial car.wheel_inertia.w = 0</code>.
+      With slip, wheel speed is no longer tied to car speed, so it needs its own start.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>1500 km/h at the tire, 10 km/h on the road</h2>
+    <div class="cols">
+      <div class="demo">
+        <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
+        <pre><code class="language-julia" data-trim data-noescape>using MyCar, Plots
+r = MyCar.SlipCarStandingStartTransient()
+plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])
+
+dry = MyCar.SlipCarStandingStartTransient(
+    model = MyCar.SlipCarStandingStart(
+        name = :SlipCarStandingStart, friction__k = 1.0))
+plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
+        <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
+      </div>
+      <figure class="fig shot">
+        <img src="../handson/lecture-01/img/step10-standing-start-plot.png"
+             alt="Wheel surface speed climbs to 1500 km/h in 5 s while the body barely reaches 10 km/h.">
+      </figure>
+    </div>
+    <div class="readout">
+      <div class="r"><span class="v">10.1</span><span class="k">km/h car, ice, 5 s</span></div>
+      <div class="r"><span class="v">1501</span><span class="k">km/h wheel, ice, 5 s</span></div>
+      <div class="r"><span class="v">21.1 / 21.2</span><span class="k">km/h car / wheel, dry</span></div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> past the peak of the curve, more slip gives less grip. The wheel
+      speeds up, grip falls, it speeds up more. The model has no rev limit, so the engine keeps
+      pouring 150 N·m into a wheel with nothing to push against — 1500 km/h is the model telling
+      you the truth about an assumption, not a bug.</p>
+      <p><strong>Then the dry run:</strong> <code>friction__k = 1.0</code> overrides the
+      constant without editing the model. Twice the speed of the icy car, and the two lines stay
+      together.</p>
+      <p><strong>Close:</strong> this is the "two limits" table from the start of this step
+      come true: on snow the tire saturates before the engine. The PID lecture ends with this car
+      under cruise control on an ice patch. The controller sees speed falling, commands more
+      torque, and does exactly what you just watched. That is the argument for traction
+      control — and for the cascade control of lecture 2.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Every number you predicted, and hit</h2>
+    <table class="small">
+      <tr><th>Step</th><th>You build</th><th>Your run should show</th><th>Worked out in</th></tr>
+      <tr><td>02</td><td>Engine</td><td>0 until 0.8 s · 97 N·m at 1.0 s · 150 N·m from 1.22 s</td><td><a href="#/2">step 02</a></td></tr>
+      <tr><td>03</td><td>Driveline</td><td>100 N·m → 1290 N → 0.92 m/s² on 1400 kg</td><td><a href="#/3">step 03</a></td></tr>
+      <tr><td>04</td><td>Body</td><td>500 N push settles at 29.78 m/s</td><td><a href="#/4">step 04</a></td></tr>
+      <tr><td>05</td><td>Car</td><td><strong>246.39 km/h</strong> at 300 s · 100 km/h at 23.6 s</td><td><a href="#/5">step 05</a></td></tr>
+      <tr><td>06</td><td>Wheel inertia</td><td>23.8 s to 100 km/h · terminal speed unchanged</td><td><a href="#/6">step 06</a></td></tr>
+      <tr><td>07</td><td>Grade</td><td>1366 N on a 10 % climb</td><td><a href="#/7">step 07</a></td></tr>
+      <tr><td>08</td><td>Tire curve</td><td>μ = 1.0 at κ = 0.04, 0.7 beyond 0.12</td><td><a href="#/8">step 08</a></td></tr>
+      <tr><td>09–10</td><td>Slip wheel, car</td><td>snow: car 10 km/h, wheel 1500 km/h · dry: 21 km/h together</td><td><a href="#/10">step 10</a></td></tr>
+    </table>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the session on one slide. Every number in the middle
+      column was worked out on paper at the start of its step. Where a run agreed, the model was
+      right. Where it did not, something in the model was wrong — not the arithmetic.</p>
+      <p><strong>Where each number comes from</strong>, so you can answer "why that number?":</p>
+      <ul>
+        <li><strong>02</strong> — 0.5 s request + 0.3 s delay = 0.8 s; 200·(1 − e<sup>−0.2/0.3</sup>) = 97; 0.8 + 0.3·ln 4 = 1.22 s. Step 02.</li>
+        <li><strong>03</strong> — 100 × 4 / 0.31 = 1290 N; ÷ 1400 kg = 0.92 m/s². Step 03.</li>
+        <li><strong>04</strong> — 500 = 0.378·v² + 165 → v = 29.78 m/s. Step 04.</li>
+        <li><strong>05</strong> — 1935 − 165 = 1770 = 0.378·v² → 68.4 m/s = 246 km/h. The times (23.6 s, 143 s) are read off the reference simulation. Step 05.</li>
+        <li><strong>06</strong> — wheel adds J/r² = 10 kg, 0.7 % → 23.6 × 1.007 = 23.8 s. Step 06.</li>
+        <li><strong>07</strong> — 1400 × 9.81 × sin(arctan 0.1) = 1366 N. Step 07.</li>
+        <li><strong>08</strong> — the curve's own parameters. Step 08.</li>
+        <li><strong>09–10</strong> — snow limit 1373 N &lt; engine 1935 N, so the wheel must spin; the 10 and 1500 km/h are read off the reference simulation. Step 10.</li>
+      </ul>
+      <p><strong>Point at:</strong> step 05, the milestone. Two independent routes — the equation
+      on paper, and the model you built — and one number.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>What you built, and what comes next</h2>
+    <div class="cols">
+      <div>
+        <ul>
+          <li>A car, from an empty library: engine → gear and wheel → body → speedometer.</li>
+          <li>Every block stands for one term of the physics, explained before you placed it.</li>
+          <li>Every number it produced, you predicted first.</li>
+          <li>And a tire with a peak — the reason the car crawls on snow.</li>
+        </ul>
+      </div>
+      <div class="callout">
+        <span class="label">Next: Lecture 1 — Introduction and PID</span>
+        <a href="../lecture-01/index.html">The lecture</a> takes this car and builds the cruise
+        control from the first slide — P, PI, PID, the 10 % hill the engine cannot climb, tuning
+        from a step test, and what that cruise control does on ice.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> go back to the first question of the day — how does cruise control
+      hold 90 km/h? You now have the car it has to drive, and you know how that car answers: late,
+      slowly, pushed back by air that grows with the square of speed, and on snow, not at all.
+      Next lecture, we close the loop.</p>
+      <p><strong>Say:</strong> keep your <code>MyCar</code> library. The lecture's slides link back
+      to the slides here whenever they use a piece of this physics.</p>
+    </aside>
+  </section>
+
+</section>

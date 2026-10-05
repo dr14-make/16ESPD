@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Vehicle Systems — Introduction</title>
+
+<!-- The libraries are the Lecture 1 deck's vendored copies, loaded from its assets/ by relative
+     path, so every deck presents from the same folder with no network. -->
+<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/reset.css">
+<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/reveal.css">
+<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/theme/white.css" id="theme">
+<link rel="stylesheet" href="../lecture-01/assets/highlight-light.css">
+<link rel="stylesheet" href="../lecture-01/assets/deck.css">
+<style>
+  .reveal .photo { max-height: 420px; width: auto; max-width: 100%; }
+  .reveal .books { display: flex; gap: 24px; align-items: flex-end; }
+  .reveal .books img { height: 230px; width: auto; border: 1px solid #d7dde6; }
+  .reveal table.schedule td, .reveal table.schedule th { padding: 4px 12px; }
+  .reveal .kind { font-size: 0.75em; letter-spacing: 0.06em; text-transform: uppercase; color: #4a5a6b; }
+</style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+
+<!-- Content source: docs/materials/Introduction/1. Introduction.pptx -->
+
+<section data-section-title="Introduction">
+
+  <section class="deck-title">
+    <h1>Vehicle Systems</h1>
+    <h1 style="font-size:1.5em; color:var(--accent); margin-top:-0.2em;">Introduction</h1>
+    <p class="sub">Vehicle Systems &amp; Components</p>
+    <p class="sub small">Ing. Dmitry Rozhdestvenskiy, Ph.D.</p>
+    <p class="hint">
+      <kbd>S</kbd> speaker view &nbsp;·&nbsp; <kbd>C</kbd> cue panel &nbsp;·&nbsp;
+      <kbd>O</kbd> overview &nbsp;·&nbsp; <kbd>←</kbd> <kbd>→</kbd> sections &nbsp;·&nbsp;
+      <kbd>↑</kbd> <kbd>↓</kbd> within a section
+    </p>
+    <aside class="notes">
+      <p><strong>Before the room fills.</strong> Deck on the projector. Press <strong>S</strong>
+      for the speaker view; if the popup is blocked, <strong>C</strong> shows these notes along
+      the bottom.</p>
+      <p><strong>Timing:</strong> about 20 minutes: who we are, how to pass, what the course
+      covers, the tool, the schedule, the books.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Lecturers</h2>
+    <div class="cols">
+      <div>
+        <h3>Doc. Ing. Petr Bouchner, Ph.D.</h3>
+        <ul class="small">
+          <li>Email: <a href="mailto:bouchner@lss.fd.cvut.cz">bouchner@lss.fd.cvut.cz</a></li>
+          <li>Room: A-348 (building Horská 3)</li>
+          <li>Office hours: by email arrangement</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Ing. Dmitry Rozhdestvenskiy, Ph.D.</h3>
+        <ul class="small">
+          <li>Email: <a href="mailto:rozhddmi@fd.cvut.cz">rozhddmi@fd.cvut.cz</a></li>
+          <li>Room: A-346 (building Horská 3)</li>
+          <li>Mondays only</li>
+        </ul>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> two of us. Email first for anything; office hours are by
+      arrangement. Dmitry is in on Mondays only, so plan questions for the practicals.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Who is in the room</h2>
+    <p class="lede">In a sentence each, as we go round:</p>
+    <ul>
+      <li>Where are you from?</li>
+      <li>What is your background?</li>
+      <li>What are you interested in — a master's thesis topic, if you have one?</li>
+      <li>What do you want to get out of this subject?</li>
+    </ul>
+    <aside class="notes">
+      <p><strong>Say:</strong> nobody needs to stand up or prepare anything — one sentence each
+      from your seat. It helps us pitch the examples: a room full of mechanical engineers and a
+      room full of programmers need different first weeks.</p>
+      <p><strong>Listen for:</strong> who has used Julia, MATLAB/Simulink or Modelica before, and
+      who has a thesis touching vehicle control. Both tell you who will need help in the first
+      Dyad practical, and who could be pushed further.</p>
+    </aside>
+  </section>
+
+</section>
+
+
+<section data-section-title="How you pass">
+
+  <section>
+    <h2>How you pass</h2>
+    <div class="cols">
+      <div>
+        <h3>1 · Take part in class</h3>
+        <p class="small">Attendance is not compulsory. But <strong>active attendance and
+        participation</strong> — questions, answers, work in the practicals — earn
+        <strong>points that count toward the exam</strong>.</p>
+        <h3>2 · Practice — build a vehicle simulation</h3>
+        <ul class="small">
+          <li>Everyone works <strong>on their own</strong>.</li>
+          <li>Your work lives in your own <strong>GitHub</strong> repository.</li>
+          <li>Each task is delivered as a <strong>pull request</strong>.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>3 · Final exam</h3>
+        <ul class="small">
+          <li>Multiple-choice test, about <strong>30 questions</strong>.</li>
+          <li>An oral exam if you are not satisfied with the result.</li>
+        </ul>
+        <div class="callout small">
+          <span class="label">No presentation</span>
+          There is no student presentation in this course. Your participation, your practical
+          work and the test are the assessment.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> three parts. Take part, build the simulation, pass the test.</p>
+      <p><strong>On attendance:</strong> nobody takes a register. But being there and joining in
+      — asking, answering, working through the practical in the room — earns points that go
+      toward your exam result. It pays to come, and to talk.</p>
+      <p><strong>On the practice:</strong> it is individual work. Each student has their own
+      GitHub repository and hands in each task as a pull request. That is how software is built in
+      industry, and it makes every piece of work visible and reviewable. If someone has never
+      opened a pull request, the first practical covers it.</p>
+      <p><strong>On the exam:</strong> about 30 multiple-choice questions. If the result does not
+      satisfy you, you can ask for an oral exam on top.</p>
+    </aside>
+  </section>
+
+</section>
+
+
+<section data-section-title="What the course covers">
+
+  <section>
+    <h2>Subject goals</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <p class="small">The course gives you a working knowledge of:</p>
+        <ul class="small">
+          <li>the basics of control engineering and control theory;</li>
+          <li>the dynamic behavior of a vehicle — and of the driver as a controller;</li>
+          <li>the car's communication bus;</li>
+          <li>electric cars and their components: DC machines, asynchronous and synchronous motors
+            — principles, construction, basic properties and operation;</li>
+          <li>hybrid drive systems;</li>
+          <li>the car's control, safety, communication and comfort electronics.</li>
+        </ul>
+      </div>
+      <figure class="fig">
+        <img class="photo" src="img/vehicle-systems.jpg"
+             alt="An exploded view of an SUV: body, engine, seats, chassis, wheels and exhaust shown apart.">
+      </figure>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> a car today is a set of systems that talk to each other — engine,
+      brakes, steering, batteries, comfort — and most of them are controlled by software. This
+      course goes through those systems one at a time: what each does, the physics behind it,
+      and how it is controlled.</p>
+      <p><strong>Point at:</strong> the driver as a controller. The driver is part of the loop
+      too: they watch the speed and press the pedal. Many systems in the course either help the
+      driver (cruise control, ABS) or replace them.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>How a lecture and a practical work</h2>
+    <div class="cols">
+      <div>
+        <h3>A typical lecture</h3>
+        <ol class="small">
+          <li>Introduction — purpose and functions of the system.</li>
+          <li>The physics behind it.</li>
+          <li>Its main components.</li>
+          <li>Its algorithms and control strategy.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>A typical practical</h3>
+        <ol class="small">
+          <li>A short reminder of the theory.</li>
+          <li>Building the model — guided, step by step.</li>
+          <li>"Playing" with the model to reach the task's goal.</li>
+          <li>A short report at home, about half a page to one page.</li>
+        </ol>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> lectures go from "what is it for" down to "how is it
+      controlled". Practicals turn that into a model you build and experiment with. The report is
+      short on purpose: what you tried, what you saw, what it means.</p>
+    </aside>
+  </section>
+
+</section>
+
+
+<section data-section-title="The tool: Dyad">
+
+  <section>
+    <h2>The tool: Dyad</h2>
+    <div class="cols">
+      <div>
+        <p class="small">All modeling in this course is done in <strong>Dyad</strong>, by
+        JuliaHub: you draw or write a model of a physical system, and it simulates it. Together
+        we build <strong>one library of vehicle components</strong> and test different vehicle
+        systems on it.</p>
+        <p class="small">Focus: the car's <strong>1D (longitudinal) motion</strong>.</p>
+        <h4>Components</h4>
+        <p class="small">engine · electric motor · wheels · transmission · brakes · driver</p>
+        <h4>Systems we simulate on them</h4>
+        <p class="small">ABS, ESP and TCS · electric drive and its control · hybrid
+        architecture · adaptive cruise control</p>
+      </div>
+      <div>
+        <div class="callout small">
+          <span class="label">One tool for every practical</span>
+          The engine, the safety systems, the electric motor and the hybrid drive — every model
+          in the course is built in Dyad, in the same library.
+        </div>
+        <p class="small">Documentation:
+          <a href="https://help.juliahub.com/dyad/dev/">help.juliahub.com/dyad/dev</a></p>
+        <p class="small">First practical: <a href="../handson/lecture-01/index.html">build
+          the car in Dyad</a>.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> one tool, all semester. Dyad is a modeling language and a VS Code
+      extension: you place components like engine, gear and wheel, connect them, and simulate.
+      Underneath it is Julia, but you will mostly draw and write models, not program.</p>
+      <p><strong>Say:</strong> we stay in one dimension — the car moving forward and back. That
+      is enough for the engine, the drivetrain, braking, traction and cruise control, and it keeps the
+      models small enough to understand completely.</p>
+      <p><strong>Practical:</strong> ask students to install Dyad Studio before the first
+      practical — the first install downloads and compiles the libraries and takes minutes. The
+      hands-on page lists the steps.</p>
+    </aside>
+  </section>
+
+</section>
+
+
+<section data-section-title="Schedule">
+
+  <section>
+    <h2>Schedule</h2>
+    <table class="schedule small">
+      <tr><th>#</th><th>Lecture</th><th>Practical</th></tr>
+      <tr><td>1</td><td>Introduction</td><td></td></tr>
+      <tr><td>2</td><td><a href="../lecture-01/index.html">PID controllers and vehicle dynamics</a></td><td></td></tr>
+      <tr><td>3</td><td></td><td><a href="../handson/lecture-01/index.html">Introduction to Dyad: build the car</a></td></tr>
+      <tr><td>4</td><td>Internal combustion engines</td><td></td></tr>
+      <tr><td>5</td><td></td><td>Engine modeling</td></tr>
+      <tr><td>6</td><td>Hybrid and electric vehicles</td><td></td></tr>
+      <tr><td>7</td><td></td><td>An electric motor and its control</td></tr>
+      <tr><td>8</td><td></td><td>Developing the hybrid architecture</td></tr>
+      <tr><td>9</td><td>Active and passive safety systems</td><td></td></tr>
+      <tr><td>10</td><td></td><td>Simulation of ABS, ESP and TCS</td></tr>
+      <tr><td>11</td><td>Driver comfort and assistance systems</td><td></td></tr>
+      <tr><td>12</td><td></td><td>In-class work on the assignment</td></tr>
+      <tr><td>13</td><td>Fuel cells</td><td></td></tr>
+      <tr><td>14</td><td>Autonomous vehicles</td><td></td></tr>
+      <tr><td></td><td>First exam date</td><td></td></tr>
+    </table>
+    <aside class="notes">
+      <p><strong>Say:</strong> lectures and practicals alternate, and every practical builds on
+      the lecture before it — in Dyad, in your own repository, in the same vehicle library.</p>
+      <p><strong>Walk the flow:</strong> first you build the car (3). Then its powertrain, one
+      kind at a time: the combustion engine (4–5), then the electric motor with its controller and
+      a hybrid drive that combines the two (6–8). With the drive done, the safety systems that act
+      on it (9–10): ABS stops the wheels locking when braking, TCS stops them spinning when
+      accelerating, ESP keeps the car from sliding sideways. Comfort and assistance systems, fuel
+      cells and autonomy close the course.</p>
+      <p><strong>Abbreviations:</strong> ABS — anti-lock braking system. ESP — electronic
+      stability program. TCS — traction control system.</p>
+      <p><strong>Dates:</strong> the source deck left the date column empty. Fill in the
+      semester's dates before presenting, or say them out loud.</p>
+    </aside>
+  </section>
+
+</section>
+
+
+<section data-section-title="Literature">
+
+  <section>
+    <h2>Recommended literature</h2>
+    <div class="cols cols-wide-left">
+      <ul class="small">
+        <li>J. Larminie, J. Lowry: <em>Electric Vehicle Technology Explained</em>.</li>
+        <li>B. C. Kuo: <em>Digital Control Systems</em>.</li>
+        <li><em>Bosch Automotive Handbook</em>, 9th edition, Robert Bosch,
+          ISBN 978-0-7680-8152-7.</li>
+        <li>I. Husain: <em>Electric and Hybrid Vehicles: Design Fundamentals</em>.</li>
+      </ul>
+      <div class="books">
+        <img src="img/book-larminie.jpg" alt="Cover of Electric Vehicle Technology Explained by Larminie and Lowry.">
+        <img src="img/book-bosch.jpg" alt="Cover of the Bosch Automotive Handbook.">
+        <img src="img/book-husain.jpg" alt="Cover of Electric and Hybrid Vehicles: Design Fundamentals by Iqbal Husain.">
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> none of these is required reading. The Bosch handbook is the one to
+      keep on your desk; Larminie and Husain cover the electric and hybrid lectures; Kuo is for
+      digital control.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>That's all for now — see you next week</h2>
+    <figure class="fig">
+      <img class="photo" src="img/see-you.gif"
+           alt="A child in a toy jeep accelerating so hard that the front wheels lift off the ground.">
+      <figcaption>Next: PID controllers and vehicle dynamics.</figcaption>
+    </figure>
+    <aside class="notes">
+      <p><strong>Say:</strong> next week, control: how a car holds a speed, and why the one in
+      the picture needs some. Install Dyad Studio before the first practical.</p>
+    </aside>
+  </section>
+
+</section>
+
+
+</div>
+</div>
+
+<script src="../lecture-01/assets/reveal/dist/reveal.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/notes/notes.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/highlight/highlight.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/math/math.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/zoom/zoom.js"></script>
+<script src="../lecture-01/assets/reveal/plugin/search/search.js"></script>
+<script src="../lecture-01/assets/deck.js"></script>
+<script>
+Reveal.initialize({
+  center: false,
+  hash: true,
+  slideNumber: 'c/t',
+  width: 1280,
+  height: 760,
+  margin: 0.05,
+  minScale: 0.2,
+  maxScale: 1.8,
+
+  // No slide transitions. A projector at 30 Hz makes them look broken, and a lecturer
+  // stepping back and forth through a plot wants the plot, not an animation.
+  transition: 'none',
+  backgroundTransition: 'none',
+
+  pdfMaxPagesPerSlide: 1,
+  pdfSeparateFragments: false,
+
+  // KaTeX is vendored; `local` is what stops the plugin reaching for a CDN.
+  katex: { local: '../lecture-01/assets/katex' },
+
+  plugins: [ RevealNotes, RevealHighlight, RevealMath.KaTeX, RevealZoom, RevealSearch ]
+}).then(function () {
+  initDeck(Reveal);
+});
+</script>
+</body>
+</html>
