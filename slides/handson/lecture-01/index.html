@@ -151,13 +151,13 @@
     equations of your own and end with the car spinning its wheel on a slippery road.</p>
   <p class="small muted">Every component here exists in the course repository under
     <code>dyad/HandsOn/</code>, and every number in a checkpoint was read off a run of it.
-    The budgets, theory included, add up to about 220 minutes: 43 for Part 1, 171 for Part 2 and 5 to hand in — plan a break after step 05.</p>
+    The budgets, theory included, add up to about 225 minutes: 48 for Part 1, 171 for Part 2 and 5 to hand in — plan a break after step 05.</p>
 
   <nav class="toc">
     <h2>Part 1 — Dyad Studio and the extension</h2>
     <ul class="toc-plain">
 <li><a href="#ui">What you are looking at</a> <span class="muted small">— 15 min</span></li>
-<li><a href="#library">Create your library</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#library">Create your library</a> <span class="muted small">— 15 min</span></li>
 <li><a href="#github">Put your library on GitHub</a> <span class="muted small">— 5 min</span></li>
     </ul>
     <ol>
@@ -223,8 +223,8 @@
 </section>
 
 <section class="step" id="library">
-  <h2>Create your library <span class="budget">10 min</span></h2>
-  <p class="goal">An empty library of your own, with the standard libraries downloaded, so that step 01 can start placing parts.</p>
+  <h2>Create your library <span class="budget">15 min</span></h2>
+  <p class="goal">An empty library of your own, with the three component libraries the car needs added and downloaded, so that step 01 can start placing parts.</p>
   <h3>Do this</h3>
   <ol class="actions">
 <li>In VS Code, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>. A text box opens at the top of the window: the command palette.</li>
@@ -233,8 +233,9 @@
 <li>Look at the terminal at the bottom of the window. The extension runs <code>Pkg.instantiate()</code> by itself; the first time it downloads and precompiles the standard libraries, which takes several minutes. Wait until it stops printing. If you can, do this step before the session.</li>
 <li>In the <strong>Activity Bar</strong> — the column of icons on the far left — click the <strong>Dyad</strong> icon. The Dyad sidebar opens with four panels: <strong>Actions</strong>, <strong>Components</strong>, <strong>Analyses</strong>, <strong>Notebooks</strong> (arrows 1 and 2 in the map above).</li>
 <li>In <strong>Components</strong>, click the arrow next to <code>MyCar</code> to expand it. It holds the example models the template ships with; leave them, they do no harm.</li>
+<li><strong>Add the three standard libraries the car is built from.</strong> A new library contains none of them. In the Dyad sidebar's <strong>Actions</strong> panel, click <strong>Import Library</strong>, pick <code>BlockComponents</code>, and when asked for the folder to install into, choose your <code>MyCar</code> folder. Repeat for <code>RotationalComponents</code> and <code>TranslationalComponents</code>. Each one is added to <code>Project.toml</code> and downloaded; wait for the terminal to finish.</li>
   </ol>
-  <div class="checkpoint"><span class="label">Checkpoint</span><p>The terminal has finished instantiating without errors, and <code>MyCar</code> appears in the <strong>Components</strong> panel.</p></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The terminal has finished without errors, <code>MyCar</code> appears in the <strong>Components</strong> panel, and <code>Project.toml</code> lists <code>BlockComponents</code>, <code>RotationalComponents</code> and <code>TranslationalComponents</code> under <code>[deps]</code>.</p></div>
   <p class="small muted">Names in this guide are the ones the reference models use. Keep them:
     the checkpoints name signals such as <code>car.v_kmh</code>, and a different instance name
     means a different signal name.</p>

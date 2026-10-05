@@ -62,7 +62,7 @@
       <code>slides/handson/lecture-01/</code> on the course site. Every step there has the parts
       table, the screenshot, numbered actions and copy buttons. The deck is for you: what to
       explain, what to show, where they get stuck.</p>
-      <p><strong>Timing:</strong> about 220 minutes — Part 1 43, Part 2 171, hand-in 5 — so plan a long
+      <p><strong>Timing:</strong> about 225 minutes — Part 1 48, Part 2 171, hand-in 5 — so plan a long
       afternoon with a break after step 05, or two sittings split there. Deep links match:
       <code>#/5</code> here is step 05 on the page.</p>
       <p><strong>If time runs short:</strong> cut from the back. Steps 02–06 give everyone a
@@ -173,7 +173,7 @@
     <h2>Today</h2>
     <table>
       <tr><th>#</th><th>Step</th><th>Min</th><th>You end with</th></tr>
-      <tr><td><a href="#/0/5">—</a></td><td>Why, what, and your library</td><td>25</td><td>an empty <code>MyCar</code> library</td></tr>
+      <tr><td><a href="#/0/5">—</a></td><td>Why, what, your library, GitHub</td><td>35</td><td>an empty <code>MyCar</code> library on a branch</td></tr>
       <tr><td><a href="#/1">01</a></td><td>Tour, and two kinds of wire</td><td>13</td><td>two blocks, one wire, two views</td></tr>
       <tr><td><a href="#/2">02</a></td><td>Engine</td><td>27</td><td>torque with a delay, a lag and a ceiling</td></tr>
       <tr><td><a href="#/3">03</a></td><td>Driveline</td><td>13</td><td>gear and rolling wheel</td></tr>
@@ -449,19 +449,27 @@
       <li>Wait: the extension runs <code>Pkg.instantiate()</code> by itself. The first time it
         downloads and precompiles the standard libraries — minutes, not seconds.</li>
       <li>Dyad sidebar → <strong>Components</strong>: <code>MyCar</code> is there.</li>
+      <li><strong>Actions → Import Library</strong>, three times, into the <code>MyCar</code>
+        folder: <code>BlockComponents</code>, <code>RotationalComponents</code>,
+        <code>TranslationalComponents</code>. A new library has none of them.</li>
     </ol>
     <div class="callout small">
       <span class="label">Checkpoint</span>
-      The terminal finished instantiating without errors, and <code>MyCar</code> is in the
-      Components panel.
+      The terminal finished without errors, <code>MyCar</code> is in the Components panel,
+      and <code>Project.toml</code> lists the three libraries.
     </div>
     <p class="page-link">Page: <a href="../handson/lecture-01/#library">Create your library</a></p>
     <aside class="notes">
       <p><strong>Timing:</strong> this is the step that eats a session. If you could not get
       students to do it beforehand, start it first thing and talk through the three ideas and
       the map while it downloads.</p>
-      <p><strong>They get wrong:</strong> a folder that already has files in it, or a name with
-      a space. <code>MyCar</code> exactly — the plot commands say <code>using MyCar</code>.</p>
+      <p><strong>Say:</strong> A new library starts almost empty. The engine, gear, wheel and
+      mass we use today live in three standard libraries, so add them now: Import Library,
+      three times, into your MyCar folder.</p>
+      <p><strong>They get wrong:</strong> skipping the imports. Step 01's search for
+      <code>FirstOrder</code> then finds nothing, or code that names
+      <code>RotationalComponents</code> fails to compile. Also: a folder that already has
+      files in it, or a name with a space. <code>MyCar</code> exactly — the plot commands say <code>using MyCar</code>.</p>
       <p><strong>If stuck:</strong> a red error in the terminal during instantiate is almost
       always the network or a full disk. Pair the student with a neighbour and keep going;
       re-run <code>Pkg.instantiate()</code> at the break.</p>
