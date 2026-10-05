@@ -92,29 +92,34 @@
     <h2>Air drag, and why it grows with speed squared</h2>
     <div class="cols">
       <div>
-        <p class="small">Every second the car shoves aside a tube of air: its front area
-        <em>A</em>, its length the distance driven, <em>v</em>.</p>
-        <ul class="small">
-          <li>Twice as fast → <strong>twice as much air</strong> each second…</li>
-          <li>…and each bit of air is hit <strong>twice as hard</strong>.</li>
-          <li>So drag goes up <strong>4 ×</strong>. That is v².</li>
-        </ul>
+        <p class="small">Speed enters <strong>twice</strong>:</p>
+        <ol class="small">
+          <li><strong>How much air.</strong> Each second the car's front (area <em>A</em>)
+            moves <em>v</em> meters forward and pushes away the air in front of it. Twice as
+            fast → twice as much air per second.</li>
+          <li><strong>How hard.</strong> Each kilogram of that air is pushed to roughly the car's
+            speed <em>v</em>. Twice as fast → each kilogram pushed twice as hard.</li>
+        </ol>
+        <p class="small">$$ F \;\sim\; \underbrace{\rho A v}_{\text{kg of air per second}}\cdot\underbrace{v}_{\text{speed given to it}} \;=\; \rho A v^2 $$</p>
+        <div class="callout small">
+          <span class="label">Why it matters for control</span>
+          Because of the square, the car behaves differently at different speeds. A controller
+          tuned at 90 km/h is tuned for 90 km/h.
+        </div>
+      </div>
+      <div>
+        <p class="small">2 × 2 = <strong>4 × the drag</strong> at twice the speed. The measured
+          shape factor <em>C<sub>d</sub></em> and the ½ account for air that flows around the
+          car instead of being carried along:</p>
         <p>$$ F_{\text{drag}} = \tfrac12\,\rho\,C_dA\,v^2 = 0.378\cdot v^2 $$</p>
         <p class="small muted">ρ = 1.2 kg/m³ air density. C<sub>d</sub>A = 0.63 m², the car's
         frontal area times a shape factor. ½·1.2·0.63 = 0.378.</p>
-      </div>
-      <div>
         <table class="small">
           <tr><th>speed</th><th class="num">m/s</th><th class="num">drag</th></tr>
           <tr><td>30 km/h</td><td class="num">8.3</td><td class="num">26 N</td></tr>
           <tr><td>90 km/h</td><td class="num">25.0</td><td class="num">236 N</td></tr>
           <tr><td>130 km/h</td><td class="num">36.1</td><td class="num">493 N</td></tr>
         </table>
-        <div class="callout small">
-          <span class="label">Why it matters for control</span>
-          Because of the square, the car behaves differently at different speeds. A controller
-          tuned at 90 km/h is tuned for 90 km/h.
-        </div>
       </div>
     </div>
     <aside class="notes">
