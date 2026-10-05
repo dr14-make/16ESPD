@@ -151,13 +151,14 @@
     equations of your own and end with the car spinning its wheel on a slippery road.</p>
   <p class="small muted">Every component here exists in the course repository under
     <code>dyad/HandsOn/</code>, and every number in a checkpoint was read off a run of it.
-    The budgets, theory included, add up to about 210 minutes: 38 for Part 1 and 171 for Part 2 — plan a break after step 05.</p>
+    The budgets, theory included, add up to about 220 minutes: 43 for Part 1, 171 for Part 2 and 5 to hand in — plan a break after step 05.</p>
 
   <nav class="toc">
     <h2>Part 1 — Dyad Studio and the extension</h2>
     <ul class="toc-plain">
 <li><a href="#ui">What you are looking at</a> <span class="muted small">— 15 min</span></li>
 <li><a href="#library">Create your library</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#github">Put your library on GitHub</a> <span class="muted small">— 5 min</span></li>
     </ul>
     <ol>
 <li><a href="#tour">Tour: one model, two views</a> <span class="muted small">— 13 min</span></li>
@@ -174,6 +175,9 @@
 <li><a href="#slip-wheel">A wheel that can slip</a> <span class="muted small">— 15 min</span></li>
 <li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— 23 min</span></li>
     </ol>
+    <ul class="toc-plain">
+<li><a href="#hand-in">Hand in: open a pull request</a> <span class="muted small">— 5 min</span></li>
+    </ul>
   </nav>
 
   <div class="divider"><h2>Part 1 — Dyad Studio and the extension</h2><p class="muted">Why we build the car, what the tool is, where its controls are · 38 min</p></div>
@@ -236,6 +240,19 @@
     means a different signal name.</p>
 </section>
 
+<section class="step" id="github">
+  <h2>Put your library on GitHub <span class="budget">5 min</span></h2>
+  <p class="goal">Your library in your own GitHub repository, and a branch <code>handson-01</code> that today's work goes on.</p>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>In the <strong>Activity Bar</strong>, click the <strong>Source Control</strong> icon (three dots joined by lines), or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>.</li>
+<li>Click <strong>Publish to GitHub</strong>. Sign in to GitHub if VS Code asks. Keep the name <code>MyCar</code>, choose a <strong>public</strong> or <strong>private</strong> repository, and keep the files VS Code offers ticked. VS Code makes the first commit, creates the repository and uploads it. This is your <code>main</code> branch: the empty library.</li>
+<li>At the bottom left of the window, in the status bar, click the branch name <code>main</code> → <strong>Create new branch…</strong> → type <code>handson-01</code> → <kbd>Enter</kbd>. Everything you build today goes on this branch.</li>
+  </ol>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>Your repository opens on github.com with the library's files, and the status bar in VS Code shows <code>handson-01</code>.</p></div>
+  <div class="note"><span class="label">When to commit</span><p>After every checkpoint from step 01 on, save your progress: in <strong>Source Control</strong>, type the message given under the checkpoint (for example <code>Step 02: engine</code>), click <strong>Commit</strong>, then <strong>Sync Changes</strong> to upload it (the first time it says <strong>Publish Branch</strong>). If VS Code asks whether to stage all changes, answer <strong>Yes</strong>. One commit per step: if something breaks later, you can always go back to the last step that worked.</p></div>
+</section>
+
 <section class="step" id="tour">
   <h2><span class="no">01</span> Tour: one model, two views <span class="budget">13 min</span></h2>
   <p class="goal">Place two blocks, wire them, set a parameter, and see that the diagram and the code are the same model.</p>
@@ -268,6 +285,7 @@
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The code view shows the two declarations and one <code>connect(delay.y, lag.u)</code>, matching the code half of the screenshot above. Keep this component open: step 2 finishes it.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 01: tour</code> → <strong>Commit</strong> → <strong>Publish Branch</strong> (from now on, <strong>Sync Changes</strong>).</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Tour.dyad</code>, diagram annotations omitted. Yours is called <code>Engine</code>; the reference copy is <code>Tour</code> only so it can sit next to the finished <code>Engine</code> of step 2.</p>
@@ -411,6 +429,7 @@ The same pattern plots several signals, <code>idxs = [r."a", r."b"]</code>, or o
     approximation of the delay overshoots. The limiter hides it.</li>
   <li><code>load.w</code> ends at 306.0 rad/s at 3 s.</li>
 </ul></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 02: engine</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Engine.dyad</code>,
@@ -513,6 +532,7 @@ Then give the parts the <em>names</em>, not the numbers — the parts table show
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>It saves without errors and has the four ports named in the table. Under 100 N·m into <code>spline</code> and 1400 kg on <code>flange</code>, the reference test <code>TestDriveline</code> accelerates the mass at 0.9217 m/s² (100 · 4 / 0.31 / 1400).</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 03: driveline</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Driveline.dyad</code>,
@@ -595,6 +615,7 @@ Then give the parts the <em>names</em>, not the numbers — the parts table show
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>It saves without errors. Under a constant 500 N the reference test <code>TestBody</code> starts at 0.357 m/s² and settles at 29.78 m/s, where drag and rolling resistance add up to 500 N.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 04: body</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Body.dyad</code>,
@@ -710,6 +731,7 @@ end</code></pre></div>
 <p>Same check against the course model: <code>Vehicle.CarPlant</code> at full torque reads
   246.39 km/h at 300 s, and the two agree to 0.0001 km/h at 800 s (246.3957 km/h). Your car is
   the car Lecture 1 controls.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 05: car</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Car.dyad</code>,
@@ -820,6 +842,7 @@ plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre></div></li>
   same 246.39 km/h at 300 s. The two curves are almost on top of each other: through the rolling
   radius, 1 kg·m² weighs like J / r² ≈ 10 kg on a 1400 kg car. Inertia slows the launch, not the
   terminal speed.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 06: wheel inertia</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/WheeledCar.dyad</code>, <code>dyad/HandsOn/WheeledDriveline.dyad</code>,
@@ -949,6 +972,7 @@ end</code></pre></div>
   traction on a 2 % climb starting at 10 m/s (<code>TestGradeBody</code>, case
   <code>climb</code>) the body barely accelerates: 0.0164 m/s² at the start, 10.16 m/s after
   10 s.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 07: grade</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/GradeBody.dyad</code>, <code>dyad/HandsOn/GradeForce.dyad</code>,
@@ -1105,6 +1129,7 @@ r = MyCar.TireFrictionCurveSweep()
 plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre></div></li>
   </ol>
   <div class="checkpoint"><span class="label">Checkpoint</span><p>The curve is point-symmetric: −0.7 for a wheel locked under braking (κ = −1), −0.85 at κ = −0.08, the peak of 1.0 at κ = 0.04, and 0.7 at κ = 1. These are the values <code>TestTireFrictionCurve</code> asserts.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 08: tire curve</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
 
   <h3>D · Try it</h3>
   <p>In <code>TireFrictionCurve</code>, change <code>mu_A = 1.0</code> to <code>1.2</code>, save, run
@@ -1248,6 +1273,7 @@ end</code></pre></div>
     <code>TestSlipWheel1D</code> drives it with full torque for 5 s: on a slippery road
     (<code>mu_scale = 0.2</code>) the slip runs up to 135 and the car makes 3.43 m/s; on a dry road
     the slip stays at 0.0076 and the car makes 6.86 m/s. Step 10 shows you the same thing in your own car.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 09: slip wheel</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/SlipWheel1D.dyad</code>,
@@ -1404,6 +1430,7 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre></div></li>
   model has no rev limit, so the engine keeps delivering 150 N·m into a wheel that has nothing to
   push against. On the dry road (friction 1.0) the two speeds stay together: 21.08 km/h for the car,
   21.24 km/h at the wheel surface after 5 s.</p></div>
+  <p class="small commit">Commit: <strong>Source Control</strong> → message <code>Step 10: standing start</code> → <strong>Commit</strong> → <strong>Sync Changes</strong>.</p>
   <p class="small muted">The complete bench and its analysis as code, if anything above went wrong:</p>
   <div class="code"><span class="codelabel">SlipCarStandingStart and SlipCarStandingStartTransient</span><button class="copy" type="button">Copy</button><pre><code>component SlipCarStandingStart
   "Full throttle"
@@ -1514,6 +1541,21 @@ analysis SlipCarStandingStartTransient
 end</code></pre></div>
 </details>
 </section>
+
+<section class="step" id="hand-in">
+  <h2>Hand in: open a pull request <span class="budget">5 min</span></h2>
+  <p class="goal">A pull request that asks to merge <code>handson-01</code> into <code>main</code>: your work, ready to be reviewed.</p>
+  <h3>Do this</h3>
+  <ol class="actions">
+<li>In <strong>Source Control</strong>, check there is nothing left to commit and that <strong>Sync Changes</strong> shows no pending uploads.</li>
+<li>Open your <code>MyCar</code> repository on github.com. A yellow bar says <code>handson-01</code> had recent pushes: click <strong>Compare &amp; pull request</strong>. (No bar? <strong>Pull requests</strong> → <strong>New pull request</strong>, base <code>main</code>, compare <code>handson-01</code>.)</li>
+<li>Title: <code>Lecture 1 hands-on</code>. In the description, write which steps you finished, the checkpoint numbers you got, and anything that did not match.</li>
+<li>Click <strong>Create pull request</strong>. Do <em>not</em> merge it: it is reviewed first, and review comments appear on it.</li>
+  </ol>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The pull request is open on github.com and its <strong>Commits</strong> tab lists your step commits, one per step.</p></div>
+  <p class="small muted">To answer a review comment, change the model, commit and sync again on the same branch: the new commit appears in the same pull request.</p>
+</section>
+
 
   <footer>
     Reference models: <code>dyad/HandsOn/</code> in the course repository. Design notes:

@@ -62,7 +62,7 @@
       <code>slides/handson/lecture-01/</code> on the course site. Every step there has the parts
       table, the screenshot, numbered actions and copy buttons. The deck is for you: what to
       explain, what to show, where they get stuck.</p>
-      <p><strong>Timing:</strong> about 210 minutes — Part 1 38, Part 2 171 — so plan a long
+      <p><strong>Timing:</strong> about 220 minutes — Part 1 43, Part 2 171, hand-in 5 — so plan a long
       afternoon with a break after step 05, or two sittings split there. Deep links match:
       <code>#/5</code> here is step 05 on the page.</p>
       <p><strong>If time runs short:</strong> cut from the back. Steps 02–06 give everyone a
@@ -465,6 +465,47 @@
       <p><strong>If stuck:</strong> a red error in the terminal during instantiate is almost
       always the network or a full disk. Pair the student with a neighbour and keep going;
       re-run <code>Pkg.instantiate()</code> at the break.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Put it on GitHub, start a branch</h2>
+    <div class="cols cols-wide-left">
+      <div>
+        <ol class="small">
+          <li><strong>Source Control</strong> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>G</kbd>) →
+            <strong>Publish to GitHub</strong> → name <code>MyCar</code>, keep the files
+            ticked. That is <code>main</code>: the empty library.</li>
+          <li>Status bar, bottom left: <code>main</code> → <strong>Create new branch…</strong> →
+            <code>handson-01</code>. All of today goes on it.</li>
+          <li>After <strong>every checkpoint</strong>: message <code>Step 02: engine</code> →
+            <strong>Commit</strong> → <strong>Sync Changes</strong>.</li>
+          <li>At the end: a <strong>pull request</strong> from <code>handson-01</code> into
+            <code>main</code>.</li>
+        </ol>
+      </div>
+      <div class="callout small">
+        <span class="label">Why a branch</span>
+        <code>main</code> stays the clean starting point; the branch holds today's work, and the
+        pull request shows it as one reviewable change, commit by commit.
+      </div>
+    </div>
+    <p class="page-link">Page: <a href="../handson/lecture-01/#github">Put your library on GitHub</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> Before we build anything, put the empty library on GitHub. That
+      is your starting point, called main. Then make a branch called handson-01: everything you
+      build today goes there. Each time you reach a checkpoint, commit with the step's name and
+      sync. At the end you open a pull request, and that is how you hand the work in.</p>
+      <p><strong>They get wrong:</strong> committing on <code>main</code> because the branch was
+      never created — check the status bar of a few screens. If it happened and nothing was
+      synced yet, create the branch now: the commits come along with it. If the steps were
+      already synced to <code>main</code> on GitHub, the pull request will show nothing new;
+      sort that out with the student after the session.</p>
+      <p><strong>If stuck:</strong> no <strong>Publish to GitHub</strong> button means VS Code is
+      not signed in to GitHub: Accounts icon, bottom left → Sign in with GitHub. Git missing
+      altogether: the intro deck's install list.</p>
+      <p><strong>Timing:</strong> 5 minutes, and it runs in parallel with the library download
+      if students publish as soon as the folder exists.</p>
     </aside>
   </section>
 
@@ -2592,6 +2633,33 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
       snow, not at all. Next lecture, we close the loop.</p>
       <p><strong>Say:</strong> Keep your MyCar library. The lecture's slides link back to the
       slides here whenever they use a piece of this physics.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Hand in: a pull request</h2>
+    <ol class="small">
+      <li>Source Control: nothing left to commit, nothing waiting to sync.</li>
+      <li>github.com → your <code>MyCar</code> → <strong>Compare &amp; pull request</strong>
+        (or Pull requests → New: base <code>main</code>, compare <code>handson-01</code>).</li>
+      <li>Title <code>Lecture 1 hands-on</code>. Description: steps finished, the checkpoint
+        numbers you got, anything that did not match.</li>
+      <li><strong>Create pull request</strong> — and do <em>not</em> merge it.</li>
+    </ol>
+    <div class="callout small">
+      <span class="label">Checkpoint</span>
+      The pull request's <strong>Commits</strong> tab shows one commit per step.
+    </div>
+    <p class="page-link">Page: <a href="../handson/lecture-01/#hand-in">Hand in</a></p>
+    <aside class="notes">
+      <p><strong>Say:</strong> Your last step is to hand in. Open a pull request from your
+      branch into main, describe what you did and what numbers you got, and leave it open. It
+      gets reviewed there. If you get a comment, fix the model, commit and sync again on the
+      same branch, and the fix shows up in the same pull request.</p>
+      <p><strong>They get wrong:</strong> merging their own pull request. If it happened, it is
+      not lost — the commits are on <code>main</code> — but the pull request is gone, so the
+      review has nothing to comment on. Note who it was and sort it out with them after the
+      session.</p>
     </aside>
   </section>
 
