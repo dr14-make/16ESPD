@@ -8,9 +8,9 @@
     <p class="thesis">Cut the rolling constraint: wheel and car may now move at different speeds.</p>
     <p class="meta"><a href="../handson/lecture-01/#slip-wheel">page: step 09</a> · reference <code>dyad/HandsOn/SlipWheel1D.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> up to now <code>IdealRollingWheel</code> forced
-      ω·r = v. That is the assumption we drop. The difference between the two speeds is slip,
-      and the curve from step 08 turns slip into force.</p>
+      <p><strong>Say:</strong> Up to now, the ideal rolling wheel forced the wheel's spin times
+      its radius to equal the car's speed. That is the assumption we drop. The difference
+      between the two speeds is slip, and the curve from step 8 turns slip into force.</p>
       <p><strong>Timing:</strong> 15 minutes. Paste, then read: the page walks through every relation. Nothing runs in this step — step 10 drives it.</p>
     </aside>
   </section>
@@ -52,9 +52,10 @@ flange.f = -F_x
       <div class="r"><span class="v">0.0076</span><span class="k">slip after 5 s, dry</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> same torque, two roads. On the dry road slip stays under 1 %. On
-      the slippery one it runs to 135: (ωr − v)/v = 135 means the tire surface moves 136
-      times as fast as the car. The reference test <code>TestSlipWheel1D</code> asserts both.</p>
+      <p><strong>Say:</strong> Same torque, two roads. On the dry road, slip stays under 1
+      percent. On the slippery road it runs up to 135. A slip of 135 means the tire surface
+      speed, minus the car's speed, is 135 times the car's speed. So the tire surface moves 136
+      times as fast as the car. The reference test for the slip wheel checks both cases.</p>
     </aside>
   </section>
 

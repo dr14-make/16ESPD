@@ -8,9 +8,9 @@
     <p class="thesis">Floor it on ice: the wheel spins, the car barely moves.</p>
     <p class="meta"><a href="../handson/lecture-01/#standing-start">page: step 10</a> · reference <code>dyad/HandsOn/SlipCar.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> everything in this car is a part you already have. The new thing
-      is wiring: the tire is the contact now, so there is no translational ground — the wheel's
-      flange drives the body directly.</p>
+      <p><strong>Say:</strong> Everything in this car is a part you already have. The new thing
+      is the wiring. The tire is now the contact with the road, so there is no translational
+      ground block. The wheel's flange drives the body directly.</p>
       <p><strong>Timing:</strong> 23 minutes — 3 for the "two limits" slide, then 20: 13 parts and 15 wires. The page lists the wires as
       a numbered table; tell the room to tick them off. Create the car, then its parameters, then
       the parts, then the wires, then a separate bench.</p>
@@ -50,9 +50,9 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> the push to the road has to get through two things in a row: the
-      engine and the tire. Whichever has the lower limit decides. You can tell which, from this
-      table, before simulating anything.</p>
+      <p><strong>Say:</strong> The push to the road has to get through two things in a row: the
+      engine and the tire. Whichever has the lower limit decides. You can tell which one it is
+      from this table, before simulating anything.</p>
       <p><strong>Derivation, step by step</strong></p>
       <ol>
         <li><strong>Load on the driven wheels:</strong> the car weighs 1400 × 9.81 = 13 734 N. Our
@@ -91,8 +91,9 @@
       <p><strong>Point at:</strong> <code>r</code> is used twice — the tire's radius and the
       km/h gain — and <code>m</code> sets both the body's mass and the axle load. One parameter
       each, so they cannot disagree. Typed twice, a change to one is a silent bug in the other.</p>
-      <p><strong>Say:</strong> wheel surface speed is ω·r. Put on the same axis as the car's
-      speed, wheelspin is simply the gap between two lines.</p>
+      <p><strong>Say:</strong> The wheel's surface speed is its spin times its radius. Put that
+      on the same axis as the car's speed, and wheelspin is simply the gap between the two
+      lines.</p>
       <p><strong>They get wrong:</strong> missing <code>initial car.wheel_inertia.w = 0</code>.
       With slip, wheel speed is no longer tied to car speed, so it needs its own start.</p>
     </aside>
@@ -124,10 +125,11 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
       <div class="r"><span class="v">21.1 / 21.2</span><span class="k">km/h car / wheel, dry</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> past the peak of the curve, more slip gives less grip. The wheel
-      speeds up, grip falls, it speeds up more. The model has no rev limit, so the engine keeps
-      pouring 150 N·m into a wheel with nothing to push against — 1500 km/h is the model telling
-      you the truth about an assumption, not a bug.</p>
+      <p><strong>Say:</strong> Past the peak of the curve, more slip gives less grip. The wheel
+      speeds up, grip falls, and it speeds up more. The model has no rev limit, so the engine
+      keeps pouring 150 newton-meters into a wheel with nothing to push against. The 1500
+      kilometers per hour is the model telling you the truth about an assumption. It is not a
+      bug.</p>
       <p><strong>Then the dry run:</strong> <code>friction__k = 1.0</code> overrides the
       constant without editing the model. Twice the speed of the icy car, and the two lines stay
       together.</p>
@@ -153,9 +155,9 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
       <tr><td>09–10</td><td>Slip wheel, car</td><td>snow: car 10 km/h, wheel 1500 km/h · dry: 21 km/h together</td><td><a href="#/10">step 10</a></td></tr>
     </table>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the session on one slide. Every number in the middle
+      <p><strong>Say:</strong> This is the session on one slide. Every number in the middle
       column was worked out on paper at the start of its step. Where a run agreed, the model was
-      right. Where it did not, something in the model was wrong — not the arithmetic.</p>
+      right. Where it did not, something in the model was wrong, not the arithmetic.</p>
       <p><strong>Where each number comes from</strong>, so you can answer "why that number?":</p>
       <ul>
         <li><strong>02</strong> — 0.5 s request + 0.3 s delay = 0.8 s; 200·(1 − e<sup>−0.2/0.3</sup>) = 97; 0.8 + 0.3·ln 4 = 1.22 s. Step 02.</li>
@@ -191,12 +193,12 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> go back to the first question of the day — how does cruise control
-      hold 90 km/h? You now have the car it has to drive, and you know how that car answers: late,
-      slowly, pushed back by air that grows with the square of speed, and on snow, not at all.
-      Next lecture, we close the loop.</p>
-      <p><strong>Say:</strong> keep your <code>MyCar</code> library. The lecture's slides link back
-      to the slides here whenever they use a piece of this physics.</p>
+      <p><strong>Say:</strong> Go back to the first question of the day: how does cruise control
+      hold 90 kilometers per hour? You now have the car it has to drive, and you know how that
+      car answers: late, slowly, pushed back by air that grows with the square of speed, and on
+      snow, not at all. Next lecture, we close the loop.</p>
+      <p><strong>Say:</strong> Keep your MyCar library. The lecture's slides link back to the
+      slides here whenever they use a piece of this physics.</p>
     </aside>
   </section>
 

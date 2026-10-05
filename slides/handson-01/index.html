@@ -93,14 +93,15 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> start with something everyone has seen. Cruise control. You press a
-      button and the car holds 90 km/h uphill, downhill, with three people in the back. Nobody
-      programmed "if hill then more throttle". It measures, compares, and corrects — over and
-      over. That loop is control, and the next lecture is all about it.</p>
-      <p><strong>Say:</strong> but think about a new driver in an unfamiliar car. They press too
-      hard, the car jumps, they let go, it slows, they press again. They do not know the car yet.
-      A controller has the same problem — it has to be designed for <em>this</em> car. So today
-      we learn the car.</p>
+      <p><strong>Say:</strong> Let us start with something everyone has seen: cruise control.
+      You press a button and the car holds 90 kilometers per hour uphill, downhill, and with
+      three people in the back. Nobody programmed "if hill, then more throttle". It measures,
+      compares and corrects, over and over. That loop is control, and the next lecture is all
+      about it.</p>
+      <p><strong>Say:</strong> But think about a new driver in an unfamiliar car. They press too
+      hard and the car jumps, they let go and it slows, then they press again. They do not know
+      the car yet. A controller has the same problem: it has to be designed for <em>this</em>
+      car. So today we learn the car.</p>
       <p><strong>Ask the room:</strong> you press the pedal down hard. Does the car reach full
       speed instantly? <em>(No — first a short pause, then it builds up, and the faster it goes
       the slower it gains speed. By the end of today they will be able to say exactly how long
@@ -152,12 +153,12 @@
       <div class="r"><span class="v">10 km/h</span><span class="k">on snow, wheel spinning — same engine</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the whole day on one slide. Four parts in a row. The pedal
-      asks for engine torque. The engine makes it — a bit late, a bit slowly. The gear and the
-      wheel turn that torque into a push on the road. The body is the car's mass, with air and
-      tires holding it back. A speedometer reads the speed.</p>
-      <p><strong>Say:</strong> each box is one step today, and you build them in that order. At
-      step 05 the boxes are joined and your car drives. Then we make the tire more realistic, and
+      <p><strong>Say:</strong> This is the whole day on one slide: four parts in a row. The
+      pedal asks for engine torque. The engine makes it, a bit late and a bit slowly. The gear
+      and the wheel turn that torque into a push on the road. The body is the car's mass, with
+      air and tires holding it back. A speedometer reads the speed.</p>
+      <p><strong>Say:</strong> Each box is one step today, and you build them in that order. At
+      step 5 the boxes are joined and your car drives. Then we make the tire more realistic, and
       on snow the wheel spins while the car crawls.</p>
       <p><strong>Point at:</strong> the two numbers. Say: before you build each part, we work out
       on paper what it must do. Then your model has to agree. If it does, you built it right. That
@@ -185,15 +186,16 @@
       <tr><td><a href="#/10">10</a></td><td>Standing start</td><td>23</td><td>wheelspin on ice</td></tr>
     </table>
     <aside class="notes">
-      <p><strong>Say:</strong> one car, built bottom-up. Each step is one component, and each
-      component is tested before the next one uses it — that habit is the real lesson.</p>
+      <p><strong>Say:</strong> We build one car, from the bottom up. Each step is one component,
+      and each component is tested before the next one uses it. That habit is the real
+      lesson.</p>
       <p><strong>Point at:</strong> step 05. That is the milestone: if your car makes 246 km/h,
       the equations and the model agree, and you have built the car the PID lecture uses.</p>
       <p><strong>Point at:</strong> the last column. Each of those is a number we predict at the
       start of the step and check at its end. The last slide of step 10 collects them all.</p>
-      <p><strong>Say:</strong> keep the names the page gives — <code>engine</code>,
-      <code>car</code>, <code>v_kmh</code>. The checkpoints and the plot commands use them; a
-      different name means a different signal name and a command that does not find it.</p>
+      <p><strong>Say:</strong> Keep the names the page gives you, like engine, car, and v
+      underscore kmh. The checkpoints and the plot commands use those names. A different name
+      means a different signal name, and then the command does not find it.</p>
     </aside>
   </section>
 
@@ -231,10 +233,11 @@
       </svg>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> four words, and you can describe a car, a heater, a drone or a
-      pharmacy's stock level. Walk the picture: we push the pedal (input). The road and the
-      weather push back without asking (disturbance). The car carries its speed from one moment to
-      the next (state). The speedometer tells us about it (output).</p>
+      <p><strong>Say:</strong> With four words you can describe a car, a heater, a drone or a
+      pharmacy's stock level. Look at the picture. We push the pedal: that is the input. The
+      road and the weather push back without asking: that is the disturbance. The car carries
+      its speed from one moment to the next: that is the state. The speedometer tells us about
+      it: that is the output.</p>
       <p><strong>Why "state" means "remembers":</strong> if you know the speed right now and what
       the pedal and the road will do next, you can predict the speed a second from now. You do not
       need the car's history. That is what a state is — the minimum you need to know.</p>
@@ -271,8 +274,8 @@
     <p class="page-link">Page: <a href="../handson/lecture-01/#ui">What you are looking at</a></p>
     <aside class="notes">
       <p><strong>Say:</strong> Dyad Studio is a VS Code extension. You draw or write models in
-      the Dyad language; it compiles them to Julia — ModelingToolkit underneath — and simulates
-      them. You will not write Julia today except to plot.</p>
+      the Dyad language. It compiles them to Julia, with ModelingToolkit underneath, and
+      simulates them. You will not write any Julia today, except to plot.</p>
       <p><strong>Point at:</strong> the callout. Students hit this in step 02 and ask why they
       cannot just run the engine. Plant the answer now: an engine with a dangling torque input
       is not a complete problem — nobody said what the torque command is.</p>
@@ -322,13 +325,14 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> in a block diagram, every wire is an arrow — someone has to decide
-      that speed causes force and not the other way round. Physics does not work like that: a
+      <p><strong>Say:</strong> In a block diagram, every wire is an arrow. Someone has to decide
+      that speed causes force, and not the other way around. Physics does not work like that. A
       damper is just a relation between force and speed. If you push it, it moves; if you move
-      it, it pushes back. Same law, two directions.</p>
-      <p><strong>Say:</strong> in Dyad you write the law once, <code>F = d*v</code>, and bolt parts
-      together. Dyad decides the direction for each model you build. That is why the engine,
-      driveline and body today connect with plain lines, not arrows.</p>
+      it, it pushes back. It is the same law in two directions.</p>
+      <p><strong>Say:</strong> In Dyad you write the law once, force equals the damping constant
+      times speed, and you bolt parts together. Dyad decides the direction for each model you
+      build. That is why the engine, the driveline and the body connect with plain lines today,
+      not arrows.</p>
       <p><strong>Point at:</strong> the joint rule. It is the whole of what a mechanical
       connection means: same speed on both sides, and forces balance. The tour step shows it
       again as the "two kinds of wire".</p>
@@ -367,9 +371,9 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> pressing ▷ runs a small compiler. Dyad turns your diagram into
-      equations, checks the count, simplifies, and hands the result to a numerical solver.
-      Underneath it is Julia's ModelingToolkit, but you never see it.</p>
+      <p><strong>Say:</strong> Pressing the run button starts a small compiler. Dyad turns your
+      diagram into equations, checks how many there are, simplifies them, and hands the result
+      to a numerical solver. Underneath it is Julia's ModelingToolkit, but you never see it.</p>
       <p><strong>Walk the example:</strong> the drive force <em>F</em> comes from the engine
       through the wheel joint, so it is not an unknown of the body alone. Three unknowns, three
       equations — balanced. Substitute the first two into the third and the body is one
@@ -399,8 +403,9 @@
       the slide on your own screen as you name it.</p>
       <p><strong>Point at:</strong> 4, the ⇄. It is the most used button today and the easiest
       to miss.</p>
-      <p><strong>Say:</strong> saving compiles. If an analysis does not show up in the Analyses
-      panel after a save, Dyad Compile under Julia Commands forces it.</p>
+      <p><strong>Say:</strong> Saving compiles your model. If an analysis does not show up in
+      the Analyses panel after you save, use Dyad Compile, under Julia Commands, to force
+      it.</p>
       <p><strong>Ignore:</strong> the tangled plot in this screenshot. Step 02 explains it and
       shows the fix.</p>
     </aside>
@@ -427,7 +432,7 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> four standard libraries matter today. Blocks for signals,
+      <p><strong>Say:</strong> Four standard libraries matter today: Blocks for signals,
       Rotational for shafts, Translational for the car moving along the road, and Dyad for the
       ports.</p>
       <p><strong>Point at:</strong> the bottom entry, the student's own library. Components they
@@ -474,8 +479,8 @@
     <p class="thesis">Place two blocks, wire them, set a parameter — then see the same three facts as code.</p>
     <p class="meta"><a href="../handson/lecture-01/#tour">page: step 01</a> · reference <code>dyad/HandsOn/Tour.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> the first thing you build is the front half of the engine. It is
-      small on purpose: the point is the editor, not the physics.</p>
+      <p><strong>Say:</strong> The first thing you build is the front half of the engine. It is
+      small on purpose, because the point is the editor, not the physics.</p>
       <p><strong>Do it live, first, slowly:</strong> Components → right-click
       <code>MyCar</code> → Add Component → <code>Engine</code>. Then + → <code>PadeDelay</code>,
       rename to <code>delay</code>. Then let them do the same with <code>FirstOrder</code>.</p>
@@ -518,9 +523,9 @@ end</code></pre>
       <li>Change <code>T = 0.3</code> to <code>0.5</code> here, toggle back: the panel shows 0.5.</li>
     </ul>
     <aside class="notes">
-      <p><strong>Say:</strong> nothing in the diagram is hidden from the code, and the reverse is
-      true for everything except equations, which have no picture. From step 07 on you will
-      write those in this view.</p>
+      <p><strong>Say:</strong> Nothing in the diagram is hidden from the code. The reverse is
+      also true, for everything except equations, which have no picture. From step 7 on, you
+      will write those equations in this view.</p>
       <p><strong>Do it live:</strong> the round trip on the last bullet. It is the moment it
       clicks for most of the room.</p>
       <p><strong>They notice:</strong> <code>{^delay}</code> tags and a <code>metadata</code>
@@ -571,10 +576,10 @@ end</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> a signal wire is like a message: "the driver wants 40 newton-metres".
-      It goes one way. A mechanical joint is like a bolt. The wheel does not "send" a force to the
-      car body; they are fastened together, they move together, and whatever the wheel pushes, the
-      body is pushed by.</p>
+      <p><strong>Say:</strong> A signal wire is like a message: "the driver wants 40
+      newton-meters". It goes one way. A mechanical joint is like a bolt. The wheel does not
+      "send" a force to the car body. They are fastened together and they move together, and
+      whatever the wheel pushes, the body is pushed by.</p>
       <p><strong>Why it matters:</strong> because a joint has no direction, you never have to decide
       "who drives whom". You draw the car the way it is put together, and Dyad works out the
       equations. That is why Dyad can join a body onto a driveline with one wire.</p>
@@ -605,10 +610,11 @@ end</code></pre>
     <p class="thesis">Torque command in, shaft torque out — late, slow, and never more than 150 N·m.</p>
     <p class="meta"><a href="../handson/lecture-01/#engine">page: step 02</a> · reference <code>dyad/HandsOn/Engine.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the first box of the chain: a transport
-      delay, a first-order lag, a ceiling. The delay and the lag are what will make
-      Ziegler–Nichols and Cohen–Coon possible in the PID lecture's tuning section — without
-      them the car is first order and never oscillates.</p>
+      <p><strong>Say:</strong> This is the first box of the chain: a transport delay, a
+      first-order lag, and a ceiling.</p>
+      <p><strong>Tutor:</strong> the delay and the lag are what will make Ziegler–Nichols and
+      Cohen–Coon possible in the PID lecture's tuning section — without them the car is first
+      order and never oscillates.</p>
       <p><strong>First and higher order — explain it here if the room asks:</strong></p>
       <ul>
         <li><strong>Order = number of states</strong>: how many first-order differential
@@ -680,10 +686,11 @@ end</code></pre>
       </svg>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the plot students will make themselves in step 02. Read it
-      left to right. At 0.5 s we ask for 200 N·m — more than the engine can give, on purpose. For
-      0.3 s, nothing: that flat piece is the delay. Then a curve: that is the lag. At 150 N·m the
-      curve is cut flat: that is the limiter.</p>
+      <p><strong>Say:</strong> You will make this plot yourselves in step 2. Read it from left
+      to right. At half a second we ask for 200 newton-meters, which is more than the engine can
+      give, on purpose. For 0.3 seconds, nothing happens: that flat piece is the delay. Then
+      comes a curve: that is the lag. At 150 newton-meters the curve is cut flat: that is the
+      limiter.</p>
       <p><strong>Where the numbers come from physically:</strong></p>
       <ul>
         <li><strong>Delay 0.3 s</strong> — the whole chain from pedal to combustion: the engine
@@ -731,10 +738,10 @@ end</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> imagine filling a bath from a tap that gets weaker as the bath
-      fills. Far from the target, fast. Close to the target, slow. You get close quickly, but you
-      never quite arrive. That curve is the exponential, and it shows up everywhere in this
-      course.</p>
+      <p><strong>Say:</strong> Imagine filling a bathtub from a faucet that gets weaker as the
+      tub fills. Far from the target, it fills fast. Close to the target, it fills slowly. You
+      get close quickly, but you never quite arrive. That curve is the exponential, and it shows
+      up everywhere in this course.</p>
       <p><strong>Derivation, step by step</strong> (if a student asks; otherwise just the
       words):</p>
       <ol>
@@ -787,9 +794,9 @@ end</code></pre>
           1 − e<sup>−t′/0.3</sup> = 0.75, so e<sup>−t′/0.3</sup> = 0.25. Take logs:
           t′/0.3 = ln 4 = 1.386, t′ = 0.416 s. Add the 0.8 s start: <strong>1.22 s</strong>.</li>
       </ol>
-      <p><strong>Say:</strong> three numbers, worked out before anyone has opened Dyad. This
-      In ten minutes they read the same three numbers off their own plot. If they match, the engine
-      is built right.</p>
+      <p><strong>Say:</strong> We worked out these three numbers before anyone opened Dyad. In
+      ten minutes you will read the same three numbers off your own plot. If they match, your
+      engine is built right.</p>
       <p><strong>Ask the room:</strong> why ask for 200 when the engine can only give 150?
       <em>(To see the limiter work. A test should exercise every block it is testing.)</em></p>
     </aside>
@@ -803,9 +810,9 @@ end</code></pre>
       <figcaption>Same <code>Engine</code> as step 01 — add 3 parameters, <code>limiter</code>, <code>torque</code>, and 3 ports on the outline</figcaption>
     </figure>
     <aside class="notes">
-      <p><strong>Say:</strong> you do not start a new component. Open the <code>Engine</code> from
-      step 01 — Components → MyCar → Engine — and keep adding to it. The two blocks you have are the
-      second and third in this row.</p>
+      <p><strong>Say:</strong> You do not start a new component. Open the Engine from step 1,
+      under Components, then MyCar, then Engine, and keep adding to it. The two blocks you
+      already have are the second and third in this row.</p>
       <p><strong>Point at:</strong> the outline rectangle and the three ports on it. A port on the
       outline is what another component connects to; that is how the car plugs into this engine in
       step 05.</p>
@@ -839,10 +846,10 @@ end</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> hold a power drill by the battery and pull the trigger. The bit
-      spins one way and the drill tries to spin the other way in your hand. Your hand is the
-      <code>Fixed</code> block. Remove your hand and the drill spins instead of the bit doing any
-      work. A model with a loose support has the same problem, and Dyad refuses to run it.</p>
+      <p><strong>Say:</strong> Hold a power drill by the battery and pull the trigger. The bit
+      spins one way, and the drill tries to spin the other way in your hand. Your hand is the
+      Fixed block. Take your hand away, and the drill spins instead of the bit doing any work. A
+      model with a loose support has the same problem, and Dyad refuses to run it.</p>
       <p><strong>The sign rule, slowly:</strong> Dyad counts force as positive when it flows
       <em>into</em> a block. The tire pushes the car forward, so the car pushes the tire
       backward — the force flowing into the tire is backward, so it is negative. Step 09 writes
@@ -878,14 +885,14 @@ end</code></pre>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Say — name each value once:</strong> a number a part needs becomes a parameter of
-      the component, added with <strong>Add parameter</strong> in the component panel, and the
-      part refers to it by name. <code>Engine(T_max = 200)</code> then changes the ceiling in one
-      place. <code>theta_e</code> is <code>structural</code> because PadeDelay builds its
-      coefficients when the model compiles; if the panel offers no structural option, paste the
-      line in code.</p>
-      <p><strong>Say:</strong> 200 is above the ceiling on purpose. The plot should show the
-      limiter doing its job.</p>
+      <p><strong>Say — name each value once:</strong> A number that a part needs becomes a
+      parameter of the component. You add it with <strong>Add parameter</strong> in the
+      component panel, and the part refers to it by name. Then setting T max to 200 on the
+      Engine changes the ceiling in one place. The delay time, theta e, is a structural
+      parameter, because the Padé delay block builds its coefficients when the model compiles.
+      If the panel offers no structural option, paste that line into the code.</p>
+      <p><strong>Say:</strong> The value 200 is above the ceiling on purpose. The plot should
+      show the limiter doing its job.</p>
       <p><strong>They get wrong:</strong> leaving <code>support</code> unconnected in the bench.
       A torque source needs something to push against — the engine mounts. The compile error
       talks about an unbalanced system; the fix is the <code>Fixed</code>.</p>
@@ -935,10 +942,12 @@ end</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> the bench is a new component of its own — say so out loud, students
-      try to draw it inside <code>Engine</code>. The starting state has no diagram form, so it is
-      three lines of code. The analysis does not need typing: ▷ in the title bar offers the analysis
-      types, TransientAnalysis creates one with this bench as its model.</p>
+      <p><strong>Say:</strong> The bench is a new component of its own, not part of the Engine.
+      The starting state has no diagram form, so it is three lines of code. You do not need to
+      type the analysis: the run button in the title bar offers the analysis types, and
+      Transient Analysis creates one with this bench as its model.</p>
+      <p><strong>Tutor:</strong> say the "new component of its own" part out loud — students try
+      to draw the bench inside <code>Engine</code>.</p>
       <p><strong>They get wrong:</strong> the analysis name. The plot command calls
       <code>MyCar.EngineStepTransient()</code>; if Dyad Studio picked another name, change the word
       after <code>analysis</code> in its code. The code block on this slide is the fallback.</p>
@@ -967,9 +976,9 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       <div class="r"><span class="v">150</span><span class="k">N·m from 1.22 s</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> the default plot draws every state. The delay has six internal
+      <p><strong>Say:</strong> The default plot draws every state. The delay has six internal
       states that swing into the thousands, and they bury the one curve you care about. Pick
-      it by name with <code>idxs</code>.</p>
+      that curve by name with the idxs argument.</p>
       <p><strong>Point at:</strong> the flat start. The command arrived at 0.5 s; torque starts
       at about 0.8 s. That 0.3 s is the transport delay. The small wiggles before it are the
       Padé approximation of a delay, not physics — the next slide explains them.</p>
@@ -1006,8 +1015,8 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> the delay is the only block that is not exactly what it says. It is
-      an approximation. That is fine, as long as you know it, and the wiggles are how you see
+      <p><strong>Say:</strong> The delay is the only block that is not exactly what it says. It
+      is an approximation. That is fine, as long as you know it, and the wiggles are how you see
       it.</p>
       <p><strong>For a student who wants the math:</strong> a delay of θ has the transfer function
       e<sup>−sθ</sup>. A Padé approximation replaces it by a ratio of polynomials. The simplest
@@ -1041,10 +1050,10 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> both lags are physically real, but that is not the main reason
+      <p><strong>Say:</strong> Both lags are physically real, but that is not the main reason
       they are here. They are here because the question is control. Pushing a door that opens
-      instantly is easy; pushing one that answers half a second late makes you overshoot. That
-      lateness is what makes control interesting — and difficult.</p>
+      instantly is easy. Pushing one that answers half a second late makes you overshoot. That
+      lateness is what makes control interesting, and difficult.</p>
       <p><strong>For the tutor — the precise reasons</strong> (from the lecture plan):</p>
       <ul>
         <li>Without the lags, the car is <em>first order</em>: one state, speed. A first-order
@@ -1069,8 +1078,8 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
     <p class="thesis">Shaft torque in, force on the car out: F = T · i / r.</p>
     <p class="meta"><a href="../handson/lecture-01/#driveline">page: step 03</a> · reference <code>dyad/HandsOn/Driveline.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> two parts and four ports. This is where rotation becomes
-      translation.</p>
+      <p><strong>Say:</strong> This step has two parts and four ports. This is where rotation
+      becomes straight-line motion.</p>
       <p><strong>Timing:</strong> 13 minutes: 3 for the formula, 10 building. No bench, no analysis — it is checked when the car
       runs in step 05.</p>
     </aside>
@@ -1105,11 +1114,11 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> two steps, both things everyone has felt. A bicycle in a low gear:
-      you pedal fast, the wheel turns slowly, and climbing is easy — the gear trades speed for
-      force. And a spanner: the longer the handle, the less force you need for the same twist.
-      The wheel is a spanner the other way round: the twist at the axle becomes a force at the rim,
-      and a bigger wheel means less force.</p>
+      <p><strong>Say:</strong> Here are two steps, and everyone has felt both. First, a bicycle
+      in a low gear: you pedal fast, the wheel turns slowly, and climbing is easy. The gear
+      trades speed for force. Second, a wrench: the longer the handle, the less force you need
+      for the same twist. The wheel is a wrench the other way around: the twist at the axle
+      becomes a force at the rim, and a bigger wheel means less force.</p>
       <p><strong>Derivation, step by step</strong></p>
       <ol>
         <li>Gear: torque × i, speed ÷ i. An ideal gear loses no energy, so power in = power out:
@@ -1143,8 +1152,9 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
     <aside class="notes">
       <p><strong>Point at:</strong> the wheel block. Gray circle in, green square out — the port
       shapes tell you the domain, and you can only wire like to like.</p>
-      <p><strong>Say:</strong> 100 N·m × 4 / 0.31 m = 1290 N; on 1400 kg that is 0.9217 m/s²,
-      which is what the reference test asserts.</p>
+      <p><strong>Say:</strong> A torque of 100 newton-meters, times a gear ratio of 4, divided
+      by a wheel radius of 0.31 meters, gives 1290 newtons. On a 1400-kilogram car that is
+      0.9217 meters per second squared, which is what the reference test checks.</p>
       <p><strong>They get wrong:</strong> forgetting the reaction paths. The gear housing and the
       road both push back; <code>gear.support</code> and <code>wheel.support_r</code> go to
       <code>support_r</code>, <code>wheel.support_t</code> to <code>support_t</code>. The car
@@ -1163,8 +1173,8 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
     <p class="thesis">1400 kg, and the two forces that hold it back on a flat road.</p>
     <p class="meta"><a href="../handson/lecture-01/#body">page: step 04</a> · reference <code>dyad/HandsOn/Body.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the right-hand side of the force balance in the
-      car, step 04, minus the slope. The slope comes back in step 07.</p>
+      <p><strong>Say:</strong> This step, step 4, builds the right-hand side of the car's force
+      balance, minus the slope. The slope comes back in step 7.</p>
       <p><strong>Timing:</strong> 21 minutes: 6 for the three force slides, 15 building — mostly the drag parameters.</p>
     </aside>
   </section>
@@ -1221,7 +1231,9 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       <text class="lbl" x="40" y="400">O_z = m·dv/dt is whatever is left over. O_aux, the electrical loads, is not modeled here. Slope drawn steeper than 10 % for legibility.</text>
     </svg>
     <aside class="notes">
-      <p><strong>Say:</strong> four arrows. Point at each and give it one sentence:</p>
+      <p><strong>Say:</strong> There are four arrows on this picture. Here is what each one
+      means.</p>
+      <p><strong>Point at:</strong> each arrow in turn and give it one sentence:</p>
       <ul>
         <li><strong>Green — the push from the wheels.</strong> Step 03's F = T·i/r. The only one
           we control.</li>
@@ -1232,8 +1244,8 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
         <li><strong>Blue — the slope.</strong> Part of the car's own weight pulls it back down the
           hill.</li>
       </ul>
-      <p><strong>Say:</strong> anything left over after those four is what speeds the car up. The
-      next slides take them one at a time, then add them up.</p>
+      <p><strong>Say:</strong> Anything left over after those four is what speeds the car up.
+      The next slides take them one at a time, and then add them up.</p>
       <p><strong>Tie back to the course deck:</strong> the engine-energy slides call these
       O<sub>V</sub> (air), O<sub>f</sub> (rolling), O<sub>s</sub> (slope), O<sub>z</sub>
       (acceleration). O<sub>aux</sub>, electrical loads, we leave out — say so, because leaving
@@ -1271,8 +1283,9 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> put your hand out of a car window at 30 km/h, then at 120. Not four
-      times the push — sixteen times. That is the square.</p>
+      <p><strong>Say:</strong> Put your hand out of a car window at 30 kilometers per hour, then
+      at 120. You do not feel four times the push. You feel sixteen times the push. That is the
+      square.</p>
       <p><strong>Derivation, step by step</strong> (the intuition is enough for the room; this is
       for a student who asks):</p>
       <ol>
@@ -1315,9 +1328,9 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> f<sub>r</sub> = 0.012 means the tires cost 1.2 % of the car's
-      weight as a backward force. 1400 kg weighs 1400 × 9.81 = 13 734 N; 1.2 % of that is
-      165 N.</p>
+      <p><strong>Say:</strong> The rolling resistance coefficient is 0.012. That means the tires
+      cost 1.2 percent of the car's weight as a backward force. A 1400-kilogram car weighs 1400
+      times 9.81, which is 13,734 newtons. And 1.2 percent of that is 165 newtons.</p>
       <p><strong>Why the drag part wants "one point":</strong> the library's drag block only knows
       "force grows with speed squared". It needs one point to fix the size: at 30 m/s, the force
       is ½·1.2·0.63·30² = 0.378 × 900 = 340.2 N. Any speed would do; 30 m/s is just a round number.
@@ -1339,8 +1352,8 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       <p><strong>Point at:</strong> the two <code>Constant</code> blocks on the left. Rolling
       resistance takes its coefficient (0.012) and the road inclination (0 — flat) as
       <em>inputs</em>, not parameters. Unconnected, the model is incomplete.</p>
-      <p><strong>Say:</strong> drag and rolling push against the ground, not against the car —
-      their supports go to <code>ground</code>.</p>
+      <p><strong>Say:</strong> Drag and rolling resistance push against the ground, not against
+      the car, so their supports connect to the ground block.</p>
     </aside>
   </section>
 
@@ -1385,8 +1398,8 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
     <p class="thesis">Your three components, assembled — and the 246 km/h you computed on paper.</p>
     <p class="meta"><a href="../handson/lecture-01/#car">page: step 05</a> · reference <code>dyad/HandsOn/Car.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the milestone. Everything so far was parts; this is the
-      plant every controller in the PID lecture will be wrapped around.</p>
+      <p><strong>Say:</strong> This is the milestone. Everything so far was parts. This is the
+      plant that every controller in the PID lecture will be wrapped around.</p>
       <p><strong>Timing:</strong> 27 minutes: 7 of theory (force balance, nine numbers, top speed, how long), then assembly 8, bench and analysis 5, run and plot 5, and the "246 is wrong" slide after the plot.</p>
     </aside>
   </section>
@@ -1412,15 +1425,15 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the whole car in one line. Everything we said in the last
-      four slides, added up. The left side is mass times acceleration; the right side is the push
-      minus everything that holds the car back.</p>
+      <p><strong>Say:</strong> This is the whole car in one line: everything we said in the last
+      four slides, added up. The left side is mass times acceleration. The right side is the
+      push, minus everything that holds the car back.</p>
       <p><strong>Point at:</strong> the T on the right. It is not the pedal request; it is what
       step 02's engine actually delivers — late, slow, limited.</p>
       <p><strong>Point at:</strong> the v². Because of it, the car is not "linear": doubling the
       push does not double the speed. That will matter in the next lecture's step test.</p>
-      <p><strong>Say:</strong> step 04 builds the right side on a flat road — mass, air, tires.
-      Step 07 adds the slope.</p>
+      <p><strong>Say:</strong> Step 4 builds the right side on a flat road: mass, air and tires.
+      Step 7 adds the slope.</p>
       <p><strong>Symbols, once more:</strong> m = 1400 kg; v speed in m/s; T engine torque;
       i = 4; r = 0.31 m; ρ = 1.2 kg/m³; C<sub>d</sub>A = 0.63 m²; f<sub>r</sub> = 0.012;
       g = 9.81 m/s²; α road angle.</p>
@@ -1459,8 +1472,8 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the entire car. Nine numbers. You have now met every one of
-      them: three in the engine, two in the gear and wheel, four in the body.</p>
+      <p><strong>Say:</strong> This is the entire car: nine numbers. You have now met every one
+      of them: three in the engine, two in the gear and wheel, and four in the body.</p>
       <p><strong>Ask the room:</strong> which of these nine will make the car hardest to control?
       <em>(Let two or three guesses land. The answer is the bottom two — the delay and the lag
       from step 02.)</em></p>
@@ -1509,10 +1522,10 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
       <p><strong>The cruise torques, step by step:</strong> 90 km/h = 25 m/s; air 0.378 × 625 =
       236 N; plus 165 = 401 N needed at the road. Torque = 401 × 0.31 / 4 = 31.1 N·m. 110 km/h =
       30.56 m/s; 30.56² = 934; × 0.378 = 353 N; plus 165 = 518 N; × 0.31 / 4 = 40.1 N·m.</p>
-      <p><strong>Say:</strong> notice what we did: we set the "speeding up" part to zero and
-      solved. That gives the <em>steady state</em> — where the car ends up — without saying anything
-      about how it gets there. The next lecture's controller will find 31.1 N·m by itself,
-      without being told.</p>
+      <p><strong>Say:</strong> Notice what we did. We set the "speeding up" part to zero and
+      solved. That gives the <em>steady state</em>, where the car ends up, without saying
+      anything about how it gets there. The next lecture's controller will find 31.1
+      newton-meters by itself, without being told.</p>
       <p><strong>Ask the room, before the next slide:</strong> 246 km/h from a 150 N·m engine. Does
       anyone believe that? <em>(Let the doubt sit — the next slide answers it.)</em></p>
     </aside>
@@ -1547,9 +1560,9 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> two and a half minutes of flat-out driving to get within one per
-      cent of top speed. Drag is weak at low speed, so there is not much pulling the car toward its
-      final speed — it gets there slowly.</p>
+      <p><strong>Say:</strong> It takes two and a half minutes of flat-out driving to get within
+      one percent of top speed. Drag is weak at low speed, so there is not much pulling the car
+      toward its final speed, and it gets there slowly.</p>
       <p><strong>Derivation, step by step</strong> (compare with the lag slide in step 02):</p>
       <ol>
         <li>Suppose the car is near speed v and goes Δv faster. Drag grows from 0.378·v² to about
@@ -1582,8 +1595,9 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
     <aside class="notes">
       <p><strong>Point at:</strong> <code>rot_ground</code> and <code>trans_ground</code>. These
       close the reaction paths left open in steps 02 and 03.</p>
-      <p><strong>Say:</strong> the sensor gives m/s; the gain makes km/h. One conversion, at the
-      edge — the same rule the lecture model follows.</p>
+      <p><strong>Say:</strong> The sensor gives meters per second, and the gain turns that into
+      kilometers per hour. There is one conversion, at the edge of the model, which is the same
+      rule the lecture model follows.</p>
     </aside>
   </section>
 
@@ -1641,9 +1655,9 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
       <div class="r"><span class="v">246.39</span><span class="k">km/h at 300 s</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> <code>Vehicle.CarPlant</code>, the course model the PID lecture
-      runs, reads 246.39 km/h at 300 s too; at 800 s the two agree to 0.0001 km/h. You built the
-      lecture's car.</p>
+      <p><strong>Say:</strong> The course model that the PID lecture runs, called CarPlant, also
+      reads 246.39 kilometers per hour at 300 seconds. At 800 seconds the two agree to within
+      0.0001 kilometers per hour. You built the lecture's car.</p>
       <p><strong>Point at:</strong> the shape. Steep first, then flattening, because drag grows
       with the square of speed. Tie back to the start of this step: the 246 is the number we
       worked out on paper from the force balance, and 23.6 s to 100 km/h was predicted there
@@ -1708,9 +1722,10 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> every model has a range where you can trust it. Ours is fine up to
-      about 130 km/h and fiction above. Your car just hit 246 km/h exactly as we
-      predicted — and it will still be fiction. Both are true. That is the point of this slide.</p>
+      <p><strong>Say:</strong> Every model has a range where you can trust it. Ours is fine up
+      to about 130 kilometers per hour, and fiction above that. Your car just hit 246 kilometers
+      per hour, exactly as we predicted, and it is still fiction. Both are true. That is the
+      point of this slide.</p>
       <p><strong>Point at the plot in this order:</strong> the blue line (our engine: 150 N·m
       whatever the revs — the limiter's ceiling is a constant); the red curve (a real engine:
       same peak, but only in the middle); the shaded band (90–130 km/h, where the two agree); the
@@ -1737,8 +1752,9 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
     <p class="thesis">A 1 kg·m² wheel between gear and road — and how little it changes.</p>
     <p class="meta"><a href="../handson/lecture-01/#wheel-inertia">page: step 06</a> · reference <code>dyad/HandsOn/WheeledDriveline.dyad</code>, <code>WheeledCar.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> the wheel now has its own state — its own speed. Today that speed
-      is still tied to the car's. In step 09 we cut that tie, and that is where ice happens.</p>
+      <p><strong>Say:</strong> The wheel now has its own state: its own speed. Today that speed
+      is still tied to the car's speed. In step 9 we cut that tie, and that is where ice
+      happens.</p>
       <p><strong>Timing:</strong> 12 minutes: 2 for the hidden mass, 10 for Duplicate and one wire.</p>
     </aside>
   </section>
@@ -1770,8 +1786,8 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> a bicycle with heavy wheels feels sluggish when you start, but rolls
-      along fine once it is moving. Same here.</p>
+      <p><strong>Say:</strong> A bicycle with heavy wheels feels sluggish when you start, but
+      rolls along fine once it is moving. It is the same here.</p>
       <p><strong>Derivation, step by step</strong></p>
       <ol>
         <li>Moving energy of the car: ½·m·v².</li>
@@ -1835,9 +1851,11 @@ plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre>
     <aside class="notes">
       <p><strong>Ask the room first:</strong> before showing the plot, how much slower will the
       car be? Most guess a lot.</p>
-      <p><strong>Say:</strong> seen through the rolling radius, 1 kg·m² behaves like
-      J / r² = 1 / 0.31² ≈ 10 kg of extra mass on a 1400 kg car. Inertia slows the launch, not
-      the terminal speed — at constant speed nothing accelerates, so inertia does nothing.</p>
+      <p><strong>Say:</strong> Seen through the rolling radius, a wheel inertia of 1
+      kilogram-meter squared behaves like about 10 kilograms of extra mass on a 1400-kilogram
+      car. That is the inertia divided by the radius squared: 1 divided by 0.31 squared. Inertia
+      slows the launch, not the top speed. At constant speed nothing accelerates, so inertia
+      does nothing.</p>
     </aside>
   </section>
 
@@ -1852,9 +1870,9 @@ plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre>
     <p class="thesis">Your first equation: the pull of gravity along the slope.</p>
     <p class="meta"><a href="../handson/lecture-01/#grade">page: step 07</a> · reference <code>dyad/HandsOn/GradeForce.dyad</code>, <code>GradeBody.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> the standard library's <code>Mass</code> takes a fixed angle. A
-      hill that starts in the middle of a run needs a force driven by a signal, and no part does
-      that — so you write one.</p>
+      <p><strong>Say:</strong> The standard library's Mass block takes a fixed angle. A hill
+      that starts in the middle of a run needs a force driven by a signal, and no part does
+      that, so you write one.</p>
       <p><strong>Timing:</strong> 13 minutes: 3 for the slope slide, 10 building. Students short on time paste the full component
       from the page's solution panel and read the equation.</p>
     </aside>
@@ -1890,7 +1908,7 @@ plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> on a flat road the weight presses straight into the road and does
+      <p><strong>Say:</strong> On a flat road the weight presses straight into the road and does
       not slow the car. Tilt the road, and part of the weight now points backward along it. The
       steeper the hill, the bigger that part.</p>
       <p><strong>Derivation, step by step</strong> (draw the triangle on the board):</p>
@@ -1931,9 +1949,9 @@ end</code></pre>
         so one signal drives both.</li>
     </ul>
     <aside class="notes">
-      <p><strong>Say:</strong> <code>extends</code> is inheritance. The interface already has a
-      flange, a support and a force variable <code>f</code>; the component's whole job is the one
-      line in <code>relations</code>.</p>
+      <p><strong>Say:</strong> The keyword extends means inheritance. The interface already has
+      a flange, a support and a force variable called f. The component's whole job is the one
+      line in its relations section.</p>
       <p><strong>They get wrong:</strong> the sign. The source acts on the body with −f, so a
       climb needs positive f to hold the car back. That is why there is no minus in the
       equation.</p>
@@ -1952,9 +1970,11 @@ end</code></pre>
         <code>GradeForce(m = m, g = g)</code></figcaption>
     </figure>
     <aside class="notes">
-      <p><strong>Say:</strong> 1400 × 9.81 × sin(atan 0.1) = 1366 N. Compare with the 1935 N
-      of full traction from step 03: a 10 % hill eats most of the engine. At 130 km/h it eats all
-      of it — the windup scenario of the PID lecture.</p>
+      <p><strong>Say:</strong> On a 10 percent hill, the backward pull is 1400 times 9.81 times
+      the sine of the angle whose tangent is 0.1. That is 1366 newtons. Compare that with the
+      1935 newtons of full traction from step 3: a 10 percent hill eats most of the engine. At
+      130 kilometers per hour it eats all of it. That is the windup scenario of the PID
+      lecture.</p>
     </aside>
   </section>
 
@@ -1969,8 +1989,8 @@ end</code></pre>
     <p class="thesis">Grip peaks at 4 % slip and falls once the tire slides.</p>
     <p class="meta"><a href="../handson/lecture-01/#tire-curve">page: step 08</a> · reference <code>dyad/HandsOn/TireFrictionCurve.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> a tire does not grip by rolling perfectly. It grips by slipping a
-      little — the tread deforms — and up to a point, more slip means more force. Past that
+      <p><strong>Say:</strong> A tire does not grip by rolling perfectly. It grips by slipping a
+      little, as the tread deforms, and up to a point, more slip means more force. Past that
       point it slides, and grip drops.</p>
       <p><strong>Timing:</strong> 20 minutes: 5 for the two slip slides, 15 building. The relations are long; students paste
       the component from the page (New component → ⇄ → Ctrl+A → paste) and spend the time reading it and on the plot.</p>
@@ -1993,8 +2013,8 @@ end</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> an assumption does not announce itself. This one is even in the
-      part's name, "ideal rolling", and on a dry road it costs nothing, so nobody notices it until
+      <p><strong>Say:</strong> An assumption does not announce itself. This one is even in the
+      part's name, "ideal rolling". On a dry road it costs nothing, so nobody notices it until
       it fails.</p>
       <p><strong>Ask the room:</strong> what else have we quietly assumed? <em>(Straight road.
       Constant mass. An engine that gives 150 N·m at any revs — that one we flagged in step 05.
@@ -2043,12 +2063,13 @@ end</code></pre>
       </svg>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> a tire does not grip by rolling perfectly. To push the car, the
+      <p><strong>Say:</strong> A tire does not grip by rolling perfectly. To push the car, the
       rubber has to stretch, so the tread moves slightly faster than the road under it. A little
-      slip, a little grip. More slip, more grip — up to about 4 %.</p>
-      <p><strong>Say:</strong> past that, the rubber stops stretching and starts sliding. And
-      sliding grips worse than sticking — think of pushing a heavy box: hard to get it moving,
-      easier once it slides. So past the peak, more slip gives <em>less</em> grip.</p>
+      slip gives a little grip. More slip gives more grip, up to about 4 percent.</p>
+      <p><strong>Say:</strong> Past that, the rubber stops stretching and starts sliding. And
+      sliding grips worse than sticking. Think of pushing a heavy box: it is hard to get it
+      moving, and easier once it slides. So past the peak, more slip gives <em>less</em>
+      grip.</p>
       <p><strong>Walk the curve:</strong> rising part — normal driving, everything is designed for
       it. Peak at κ = 0.04, μ = 1.0 — the most this tire can ever push. Past it, falling to
       μ = 0.7 when fully sliding. The orange curve is the same tire on packed snow: everything
@@ -2094,9 +2115,10 @@ plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> the sweep bench ramps κ from −1 to +1 over 2 s. Plotting against
-      time would show the same curve with a shifted axis; the tuple <code>(x, y)</code> in
-      <code>idxs</code> plots one signal against the other.</p>
+      <p><strong>Say:</strong> The sweep bench ramps the slip, kappa, from minus 1 to plus 1
+      over 2 seconds. Plotting against time would show the same curve with a shifted axis.
+      Giving the idxs argument a pair of signals, x and y, plots one signal against the
+      other.</p>
       <p><strong>Point at:</strong> the peak, then the right of it. Past the peak more slip
       gives <em>less</em> force. Hold that thought: it is why wheelspin runs away in step 10.</p>
       <p><strong>Tie back:</strong> the slip slide at the start of this step drew this exact curve, with the
@@ -2116,9 +2138,9 @@ plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre>
     <p class="thesis">Cut the rolling constraint: wheel and car may now move at different speeds.</p>
     <p class="meta"><a href="../handson/lecture-01/#slip-wheel">page: step 09</a> · reference <code>dyad/HandsOn/SlipWheel1D.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> up to now <code>IdealRollingWheel</code> forced
-      ω·r = v. That is the assumption we drop. The difference between the two speeds is slip,
-      and the curve from step 08 turns slip into force.</p>
+      <p><strong>Say:</strong> Up to now, the ideal rolling wheel forced the wheel's spin times
+      its radius to equal the car's speed. That is the assumption we drop. The difference
+      between the two speeds is slip, and the curve from step 8 turns slip into force.</p>
       <p><strong>Timing:</strong> 15 minutes. Paste, then read: the page walks through every relation. Nothing runs in this step — step 10 drives it.</p>
     </aside>
   </section>
@@ -2160,9 +2182,10 @@ flange.f = -F_x
       <div class="r"><span class="v">0.0076</span><span class="k">slip after 5 s, dry</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> same torque, two roads. On the dry road slip stays under 1 %. On
-      the slippery one it runs to 135: (ωr − v)/v = 135 means the tire surface moves 136
-      times as fast as the car. The reference test <code>TestSlipWheel1D</code> asserts both.</p>
+      <p><strong>Say:</strong> Same torque, two roads. On the dry road, slip stays under 1
+      percent. On the slippery road it runs up to 135. A slip of 135 means the tire surface
+      speed, minus the car's speed, is 135 times the car's speed. So the tire surface moves 136
+      times as fast as the car. The reference test for the slip wheel checks both cases.</p>
     </aside>
   </section>
 
@@ -2177,9 +2200,9 @@ flange.f = -F_x
     <p class="thesis">Floor it on ice: the wheel spins, the car barely moves.</p>
     <p class="meta"><a href="../handson/lecture-01/#standing-start">page: step 10</a> · reference <code>dyad/HandsOn/SlipCar.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> everything in this car is a part you already have. The new thing
-      is wiring: the tire is the contact now, so there is no translational ground — the wheel's
-      flange drives the body directly.</p>
+      <p><strong>Say:</strong> Everything in this car is a part you already have. The new thing
+      is the wiring. The tire is now the contact with the road, so there is no translational
+      ground block. The wheel's flange drives the body directly.</p>
       <p><strong>Timing:</strong> 23 minutes — 3 for the "two limits" slide, then 20: 13 parts and 15 wires. The page lists the wires as
       a numbered table; tell the room to tick them off. Create the car, then its parameters, then
       the parts, then the wires, then a separate bench.</p>
@@ -2219,9 +2242,9 @@ flange.f = -F_x
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> the push to the road has to get through two things in a row: the
-      engine and the tire. Whichever has the lower limit decides. You can tell which, from this
-      table, before simulating anything.</p>
+      <p><strong>Say:</strong> The push to the road has to get through two things in a row: the
+      engine and the tire. Whichever has the lower limit decides. You can tell which one it is
+      from this table, before simulating anything.</p>
       <p><strong>Derivation, step by step</strong></p>
       <ol>
         <li><strong>Load on the driven wheels:</strong> the car weighs 1400 × 9.81 = 13 734 N. Our
@@ -2260,8 +2283,9 @@ flange.f = -F_x
       <p><strong>Point at:</strong> <code>r</code> is used twice — the tire's radius and the
       km/h gain — and <code>m</code> sets both the body's mass and the axle load. One parameter
       each, so they cannot disagree. Typed twice, a change to one is a silent bug in the other.</p>
-      <p><strong>Say:</strong> wheel surface speed is ω·r. Put on the same axis as the car's
-      speed, wheelspin is simply the gap between two lines.</p>
+      <p><strong>Say:</strong> The wheel's surface speed is its spin times its radius. Put that
+      on the same axis as the car's speed, and wheelspin is simply the gap between the two
+      lines.</p>
       <p><strong>They get wrong:</strong> missing <code>initial car.wheel_inertia.w = 0</code>.
       With slip, wheel speed is no longer tied to car speed, so it needs its own start.</p>
     </aside>
@@ -2293,10 +2317,11 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
       <div class="r"><span class="v">21.1 / 21.2</span><span class="k">km/h car / wheel, dry</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> past the peak of the curve, more slip gives less grip. The wheel
-      speeds up, grip falls, it speeds up more. The model has no rev limit, so the engine keeps
-      pouring 150 N·m into a wheel with nothing to push against — 1500 km/h is the model telling
-      you the truth about an assumption, not a bug.</p>
+      <p><strong>Say:</strong> Past the peak of the curve, more slip gives less grip. The wheel
+      speeds up, grip falls, and it speeds up more. The model has no rev limit, so the engine
+      keeps pouring 150 newton-meters into a wheel with nothing to push against. The 1500
+      kilometers per hour is the model telling you the truth about an assumption. It is not a
+      bug.</p>
       <p><strong>Then the dry run:</strong> <code>friction__k = 1.0</code> overrides the
       constant without editing the model. Twice the speed of the icy car, and the two lines stay
       together.</p>
@@ -2322,9 +2347,9 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
       <tr><td>09–10</td><td>Slip wheel, car</td><td>snow: car 10 km/h, wheel 1500 km/h · dry: 21 km/h together</td><td><a href="#/10">step 10</a></td></tr>
     </table>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the session on one slide. Every number in the middle
+      <p><strong>Say:</strong> This is the session on one slide. Every number in the middle
       column was worked out on paper at the start of its step. Where a run agreed, the model was
-      right. Where it did not, something in the model was wrong — not the arithmetic.</p>
+      right. Where it did not, something in the model was wrong, not the arithmetic.</p>
       <p><strong>Where each number comes from</strong>, so you can answer "why that number?":</p>
       <ul>
         <li><strong>02</strong> — 0.5 s request + 0.3 s delay = 0.8 s; 200·(1 − e<sup>−0.2/0.3</sup>) = 97; 0.8 + 0.3·ln 4 = 1.22 s. Step 02.</li>
@@ -2360,12 +2385,12 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> go back to the first question of the day — how does cruise control
-      hold 90 km/h? You now have the car it has to drive, and you know how that car answers: late,
-      slowly, pushed back by air that grows with the square of speed, and on snow, not at all.
-      Next lecture, we close the loop.</p>
-      <p><strong>Say:</strong> keep your <code>MyCar</code> library. The lecture's slides link back
-      to the slides here whenever they use a piece of this physics.</p>
+      <p><strong>Say:</strong> Go back to the first question of the day: how does cruise control
+      hold 90 kilometers per hour? You now have the car it has to drive, and you know how that
+      car answers: late, slowly, pushed back by air that grows with the square of speed, and on
+      snow, not at all. Next lecture, we close the loop.</p>
+      <p><strong>Say:</strong> Keep your MyCar library. The lecture's slides link back to the
+      slides here whenever they use a piece of this physics.</p>
     </aside>
   </section>
 

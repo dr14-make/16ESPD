@@ -8,8 +8,8 @@
     <p class="thesis">Grip peaks at 4 % slip and falls once the tire slides.</p>
     <p class="meta"><a href="../handson/lecture-01/#tire-curve">page: step 08</a> · reference <code>dyad/HandsOn/TireFrictionCurve.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> a tire does not grip by rolling perfectly. It grips by slipping a
-      little — the tread deforms — and up to a point, more slip means more force. Past that
+      <p><strong>Say:</strong> A tire does not grip by rolling perfectly. It grips by slipping a
+      little, as the tread deforms, and up to a point, more slip means more force. Past that
       point it slides, and grip drops.</p>
       <p><strong>Timing:</strong> 20 minutes: 5 for the two slip slides, 15 building. The relations are long; students paste
       the component from the page (New component → ⇄ → Ctrl+A → paste) and spend the time reading it and on the plot.</p>
@@ -32,8 +32,8 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> an assumption does not announce itself. This one is even in the
-      part's name, "ideal rolling", and on a dry road it costs nothing, so nobody notices it until
+      <p><strong>Say:</strong> An assumption does not announce itself. This one is even in the
+      part's name, "ideal rolling". On a dry road it costs nothing, so nobody notices it until
       it fails.</p>
       <p><strong>Ask the room:</strong> what else have we quietly assumed? <em>(Straight road.
       Constant mass. An engine that gives 150 N·m at any revs — that one we flagged in step 05.
@@ -82,12 +82,13 @@
       </svg>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> a tire does not grip by rolling perfectly. To push the car, the
+      <p><strong>Say:</strong> A tire does not grip by rolling perfectly. To push the car, the
       rubber has to stretch, so the tread moves slightly faster than the road under it. A little
-      slip, a little grip. More slip, more grip — up to about 4 %.</p>
-      <p><strong>Say:</strong> past that, the rubber stops stretching and starts sliding. And
-      sliding grips worse than sticking — think of pushing a heavy box: hard to get it moving,
-      easier once it slides. So past the peak, more slip gives <em>less</em> grip.</p>
+      slip gives a little grip. More slip gives more grip, up to about 4 percent.</p>
+      <p><strong>Say:</strong> Past that, the rubber stops stretching and starts sliding. And
+      sliding grips worse than sticking. Think of pushing a heavy box: it is hard to get it
+      moving, and easier once it slides. So past the peak, more slip gives <em>less</em>
+      grip.</p>
       <p><strong>Walk the curve:</strong> rising part — normal driving, everything is designed for
       it. Peak at κ = 0.04, μ = 1.0 — the most this tire can ever push. Past it, falling to
       μ = 0.7 when fully sliding. The orange curve is the same tire on packed snow: everything
@@ -133,9 +134,10 @@ plot(r; idxs = (r."curve.kappa", r."curve.mu"))</code></pre>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> the sweep bench ramps κ from −1 to +1 over 2 s. Plotting against
-      time would show the same curve with a shifted axis; the tuple <code>(x, y)</code> in
-      <code>idxs</code> plots one signal against the other.</p>
+      <p><strong>Say:</strong> The sweep bench ramps the slip, kappa, from minus 1 to plus 1
+      over 2 seconds. Plotting against time would show the same curve with a shifted axis.
+      Giving the idxs argument a pair of signals, x and y, plots one signal against the
+      other.</p>
       <p><strong>Point at:</strong> the peak, then the right of it. Past the peak more slip
       gives <em>less</em> force. Hold that thought: it is why wheelspin runs away in step 10.</p>
       <p><strong>Tie back:</strong> the slip slide at the start of this step drew this exact curve, with the

@@ -8,8 +8,8 @@
     <p class="thesis">1400 kg, and the two forces that hold it back on a flat road.</p>
     <p class="meta"><a href="../handson/lecture-01/#body">page: step 04</a> · reference <code>dyad/HandsOn/Body.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the right-hand side of the force balance in the
-      car, step 04, minus the slope. The slope comes back in step 07.</p>
+      <p><strong>Say:</strong> This step, step 4, builds the right-hand side of the car's force
+      balance, minus the slope. The slope comes back in step 7.</p>
       <p><strong>Timing:</strong> 21 minutes: 6 for the three force slides, 15 building — mostly the drag parameters.</p>
     </aside>
   </section>
@@ -66,7 +66,9 @@
       <text class="lbl" x="40" y="400">O_z = m·dv/dt is whatever is left over. O_aux, the electrical loads, is not modeled here. Slope drawn steeper than 10 % for legibility.</text>
     </svg>
     <aside class="notes">
-      <p><strong>Say:</strong> four arrows. Point at each and give it one sentence:</p>
+      <p><strong>Say:</strong> There are four arrows on this picture. Here is what each one
+      means.</p>
+      <p><strong>Point at:</strong> each arrow in turn and give it one sentence:</p>
       <ul>
         <li><strong>Green — the push from the wheels.</strong> Step 03's F = T·i/r. The only one
           we control.</li>
@@ -77,8 +79,8 @@
         <li><strong>Blue — the slope.</strong> Part of the car's own weight pulls it back down the
           hill.</li>
       </ul>
-      <p><strong>Say:</strong> anything left over after those four is what speeds the car up. The
-      next slides take them one at a time, then add them up.</p>
+      <p><strong>Say:</strong> Anything left over after those four is what speeds the car up.
+      The next slides take them one at a time, and then add them up.</p>
       <p><strong>Tie back to the course deck:</strong> the engine-energy slides call these
       O<sub>V</sub> (air), O<sub>f</sub> (rolling), O<sub>s</sub> (slope), O<sub>z</sub>
       (acceleration). O<sub>aux</sub>, electrical loads, we leave out — say so, because leaving
@@ -116,8 +118,9 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> put your hand out of a car window at 30 km/h, then at 120. Not four
-      times the push — sixteen times. That is the square.</p>
+      <p><strong>Say:</strong> Put your hand out of a car window at 30 kilometers per hour, then
+      at 120. You do not feel four times the push. You feel sixteen times the push. That is the
+      square.</p>
       <p><strong>Derivation, step by step</strong> (the intuition is enough for the room; this is
       for a student who asks):</p>
       <ol>
@@ -160,9 +163,9 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> f<sub>r</sub> = 0.012 means the tires cost 1.2 % of the car's
-      weight as a backward force. 1400 kg weighs 1400 × 9.81 = 13 734 N; 1.2 % of that is
-      165 N.</p>
+      <p><strong>Say:</strong> The rolling resistance coefficient is 0.012. That means the tires
+      cost 1.2 percent of the car's weight as a backward force. A 1400-kilogram car weighs 1400
+      times 9.81, which is 13,734 newtons. And 1.2 percent of that is 165 newtons.</p>
       <p><strong>Why the drag part wants "one point":</strong> the library's drag block only knows
       "force grows with speed squared". It needs one point to fix the size: at 30 m/s, the force
       is ½·1.2·0.63·30² = 0.378 × 900 = 340.2 N. Any speed would do; 30 m/s is just a round number.
@@ -184,8 +187,8 @@
       <p><strong>Point at:</strong> the two <code>Constant</code> blocks on the left. Rolling
       resistance takes its coefficient (0.012) and the road inclination (0 — flat) as
       <em>inputs</em>, not parameters. Unconnected, the model is incomplete.</p>
-      <p><strong>Say:</strong> drag and rolling push against the ground, not against the car —
-      their supports go to <code>ground</code>.</p>
+      <p><strong>Say:</strong> Drag and rolling resistance push against the ground, not against
+      the car, so their supports connect to the ground block.</p>
     </aside>
   </section>
 

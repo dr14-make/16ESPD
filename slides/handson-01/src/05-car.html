@@ -8,8 +8,8 @@
     <p class="thesis">Your three components, assembled — and the 246 km/h you computed on paper.</p>
     <p class="meta"><a href="../handson/lecture-01/#car">page: step 05</a> · reference <code>dyad/HandsOn/Car.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the milestone. Everything so far was parts; this is the
-      plant every controller in the PID lecture will be wrapped around.</p>
+      <p><strong>Say:</strong> This is the milestone. Everything so far was parts. This is the
+      plant that every controller in the PID lecture will be wrapped around.</p>
       <p><strong>Timing:</strong> 27 minutes: 7 of theory (force balance, nine numbers, top speed, how long), then assembly 8, bench and analysis 5, run and plot 5, and the "246 is wrong" slide after the plot.</p>
     </aside>
   </section>
@@ -35,15 +35,15 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the whole car in one line. Everything we said in the last
-      four slides, added up. The left side is mass times acceleration; the right side is the push
-      minus everything that holds the car back.</p>
+      <p><strong>Say:</strong> This is the whole car in one line: everything we said in the last
+      four slides, added up. The left side is mass times acceleration. The right side is the
+      push, minus everything that holds the car back.</p>
       <p><strong>Point at:</strong> the T on the right. It is not the pedal request; it is what
       step 02's engine actually delivers — late, slow, limited.</p>
       <p><strong>Point at:</strong> the v². Because of it, the car is not "linear": doubling the
       push does not double the speed. That will matter in the next lecture's step test.</p>
-      <p><strong>Say:</strong> step 04 builds the right side on a flat road — mass, air, tires.
-      Step 07 adds the slope.</p>
+      <p><strong>Say:</strong> Step 4 builds the right side on a flat road: mass, air and tires.
+      Step 7 adds the slope.</p>
       <p><strong>Symbols, once more:</strong> m = 1400 kg; v speed in m/s; T engine torque;
       i = 4; r = 0.31 m; ρ = 1.2 kg/m³; C<sub>d</sub>A = 0.63 m²; f<sub>r</sub> = 0.012;
       g = 9.81 m/s²; α road angle.</p>
@@ -82,8 +82,8 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the entire car. Nine numbers. You have now met every one of
-      them: three in the engine, two in the gear and wheel, four in the body.</p>
+      <p><strong>Say:</strong> This is the entire car: nine numbers. You have now met every one
+      of them: three in the engine, two in the gear and wheel, and four in the body.</p>
       <p><strong>Ask the room:</strong> which of these nine will make the car hardest to control?
       <em>(Let two or three guesses land. The answer is the bottom two — the delay and the lag
       from step 02.)</em></p>
@@ -132,10 +132,10 @@
       <p><strong>The cruise torques, step by step:</strong> 90 km/h = 25 m/s; air 0.378 × 625 =
       236 N; plus 165 = 401 N needed at the road. Torque = 401 × 0.31 / 4 = 31.1 N·m. 110 km/h =
       30.56 m/s; 30.56² = 934; × 0.378 = 353 N; plus 165 = 518 N; × 0.31 / 4 = 40.1 N·m.</p>
-      <p><strong>Say:</strong> notice what we did: we set the "speeding up" part to zero and
-      solved. That gives the <em>steady state</em> — where the car ends up — without saying anything
-      about how it gets there. The next lecture's controller will find 31.1 N·m by itself,
-      without being told.</p>
+      <p><strong>Say:</strong> Notice what we did. We set the "speeding up" part to zero and
+      solved. That gives the <em>steady state</em>, where the car ends up, without saying
+      anything about how it gets there. The next lecture's controller will find 31.1
+      newton-meters by itself, without being told.</p>
       <p><strong>Ask the room, before the next slide:</strong> 246 km/h from a 150 N·m engine. Does
       anyone believe that? <em>(Let the doubt sit — the next slide answers it.)</em></p>
     </aside>
@@ -170,9 +170,9 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> two and a half minutes of flat-out driving to get within one per
-      cent of top speed. Drag is weak at low speed, so there is not much pulling the car toward its
-      final speed — it gets there slowly.</p>
+      <p><strong>Say:</strong> It takes two and a half minutes of flat-out driving to get within
+      one percent of top speed. Drag is weak at low speed, so there is not much pulling the car
+      toward its final speed, and it gets there slowly.</p>
       <p><strong>Derivation, step by step</strong> (compare with the lag slide in step 02):</p>
       <ol>
         <li>Suppose the car is near speed v and goes Δv faster. Drag grows from 0.378·v² to about
@@ -205,8 +205,9 @@
     <aside class="notes">
       <p><strong>Point at:</strong> <code>rot_ground</code> and <code>trans_ground</code>. These
       close the reaction paths left open in steps 02 and 03.</p>
-      <p><strong>Say:</strong> the sensor gives m/s; the gain makes km/h. One conversion, at the
-      edge — the same rule the lecture model follows.</p>
+      <p><strong>Say:</strong> The sensor gives meters per second, and the gain turns that into
+      kilometers per hour. There is one conversion, at the edge of the model, which is the same
+      rule the lecture model follows.</p>
     </aside>
   </section>
 
@@ -264,9 +265,9 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
       <div class="r"><span class="v">246.39</span><span class="k">km/h at 300 s</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> <code>Vehicle.CarPlant</code>, the course model the PID lecture
-      runs, reads 246.39 km/h at 300 s too; at 800 s the two agree to 0.0001 km/h. You built the
-      lecture's car.</p>
+      <p><strong>Say:</strong> The course model that the PID lecture runs, called CarPlant, also
+      reads 246.39 kilometers per hour at 300 seconds. At 800 seconds the two agree to within
+      0.0001 kilometers per hour. You built the lecture's car.</p>
       <p><strong>Point at:</strong> the shape. Steep first, then flattening, because drag grows
       with the square of speed. Tie back to the start of this step: the 246 is the number we
       worked out on paper from the force balance, and 23.6 s to 100 km/h was predicted there
@@ -331,9 +332,10 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> every model has a range where you can trust it. Ours is fine up to
-      about 130 km/h and fiction above. Your car just hit 246 km/h exactly as we
-      predicted — and it will still be fiction. Both are true. That is the point of this slide.</p>
+      <p><strong>Say:</strong> Every model has a range where you can trust it. Ours is fine up
+      to about 130 kilometers per hour, and fiction above that. Your car just hit 246 kilometers
+      per hour, exactly as we predicted, and it is still fiction. Both are true. That is the
+      point of this slide.</p>
       <p><strong>Point at the plot in this order:</strong> the blue line (our engine: 150 N·m
       whatever the revs — the limiter's ceiling is a constant); the red curve (a real engine:
       same peak, but only in the middle); the shaded band (90–130 km/h, where the two agree); the

@@ -8,9 +8,9 @@
     <p class="thesis">Your first equation: the pull of gravity along the slope.</p>
     <p class="meta"><a href="../handson/lecture-01/#grade">page: step 07</a> · reference <code>dyad/HandsOn/GradeForce.dyad</code>, <code>GradeBody.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> the standard library's <code>Mass</code> takes a fixed angle. A
-      hill that starts in the middle of a run needs a force driven by a signal, and no part does
-      that — so you write one.</p>
+      <p><strong>Say:</strong> The standard library's Mass block takes a fixed angle. A hill
+      that starts in the middle of a run needs a force driven by a signal, and no part does
+      that, so you write one.</p>
       <p><strong>Timing:</strong> 13 minutes: 3 for the slope slide, 10 building. Students short on time paste the full component
       from the page's solution panel and read the equation.</p>
     </aside>
@@ -46,7 +46,7 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> on a flat road the weight presses straight into the road and does
+      <p><strong>Say:</strong> On a flat road the weight presses straight into the road and does
       not slow the car. Tilt the road, and part of the weight now points backward along it. The
       steeper the hill, the bigger that part.</p>
       <p><strong>Derivation, step by step</strong> (draw the triangle on the board):</p>
@@ -87,9 +87,9 @@ end</code></pre>
         so one signal drives both.</li>
     </ul>
     <aside class="notes">
-      <p><strong>Say:</strong> <code>extends</code> is inheritance. The interface already has a
-      flange, a support and a force variable <code>f</code>; the component's whole job is the one
-      line in <code>relations</code>.</p>
+      <p><strong>Say:</strong> The keyword extends means inheritance. The interface already has
+      a flange, a support and a force variable called f. The component's whole job is the one
+      line in its relations section.</p>
       <p><strong>They get wrong:</strong> the sign. The source acts on the body with −f, so a
       climb needs positive f to hold the car back. That is why there is no minus in the
       equation.</p>
@@ -108,9 +108,11 @@ end</code></pre>
         <code>GradeForce(m = m, g = g)</code></figcaption>
     </figure>
     <aside class="notes">
-      <p><strong>Say:</strong> 1400 × 9.81 × sin(atan 0.1) = 1366 N. Compare with the 1935 N
-      of full traction from step 03: a 10 % hill eats most of the engine. At 130 km/h it eats all
-      of it — the windup scenario of the PID lecture.</p>
+      <p><strong>Say:</strong> On a 10 percent hill, the backward pull is 1400 times 9.81 times
+      the sine of the angle whose tangent is 0.1. That is 1366 newtons. Compare that with the
+      1935 newtons of full traction from step 3: a 10 percent hill eats most of the engine. At
+      130 kilometers per hour it eats all of it. That is the windup scenario of the PID
+      lecture.</p>
     </aside>
   </section>
 

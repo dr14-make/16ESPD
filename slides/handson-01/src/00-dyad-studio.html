@@ -62,14 +62,15 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> start with something everyone has seen. Cruise control. You press a
-      button and the car holds 90 km/h uphill, downhill, with three people in the back. Nobody
-      programmed "if hill then more throttle". It measures, compares, and corrects — over and
-      over. That loop is control, and the next lecture is all about it.</p>
-      <p><strong>Say:</strong> but think about a new driver in an unfamiliar car. They press too
-      hard, the car jumps, they let go, it slows, they press again. They do not know the car yet.
-      A controller has the same problem — it has to be designed for <em>this</em> car. So today
-      we learn the car.</p>
+      <p><strong>Say:</strong> Let us start with something everyone has seen: cruise control.
+      You press a button and the car holds 90 kilometers per hour uphill, downhill, and with
+      three people in the back. Nobody programmed "if hill, then more throttle". It measures,
+      compares and corrects, over and over. That loop is control, and the next lecture is all
+      about it.</p>
+      <p><strong>Say:</strong> But think about a new driver in an unfamiliar car. They press too
+      hard and the car jumps, they let go and it slows, then they press again. They do not know
+      the car yet. A controller has the same problem: it has to be designed for <em>this</em>
+      car. So today we learn the car.</p>
       <p><strong>Ask the room:</strong> you press the pedal down hard. Does the car reach full
       speed instantly? <em>(No — first a short pause, then it builds up, and the faster it goes
       the slower it gains speed. By the end of today they will be able to say exactly how long
@@ -121,12 +122,12 @@
       <div class="r"><span class="v">10 km/h</span><span class="k">on snow, wheel spinning — same engine</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is the whole day on one slide. Four parts in a row. The pedal
-      asks for engine torque. The engine makes it — a bit late, a bit slowly. The gear and the
-      wheel turn that torque into a push on the road. The body is the car's mass, with air and
-      tires holding it back. A speedometer reads the speed.</p>
-      <p><strong>Say:</strong> each box is one step today, and you build them in that order. At
-      step 05 the boxes are joined and your car drives. Then we make the tire more realistic, and
+      <p><strong>Say:</strong> This is the whole day on one slide: four parts in a row. The
+      pedal asks for engine torque. The engine makes it, a bit late and a bit slowly. The gear
+      and the wheel turn that torque into a push on the road. The body is the car's mass, with
+      air and tires holding it back. A speedometer reads the speed.</p>
+      <p><strong>Say:</strong> Each box is one step today, and you build them in that order. At
+      step 5 the boxes are joined and your car drives. Then we make the tire more realistic, and
       on snow the wheel spins while the car crawls.</p>
       <p><strong>Point at:</strong> the two numbers. Say: before you build each part, we work out
       on paper what it must do. Then your model has to agree. If it does, you built it right. That
@@ -154,15 +155,16 @@
       <tr><td><a href="#/10">10</a></td><td>Standing start</td><td>23</td><td>wheelspin on ice</td></tr>
     </table>
     <aside class="notes">
-      <p><strong>Say:</strong> one car, built bottom-up. Each step is one component, and each
-      component is tested before the next one uses it — that habit is the real lesson.</p>
+      <p><strong>Say:</strong> We build one car, from the bottom up. Each step is one component,
+      and each component is tested before the next one uses it. That habit is the real
+      lesson.</p>
       <p><strong>Point at:</strong> step 05. That is the milestone: if your car makes 246 km/h,
       the equations and the model agree, and you have built the car the PID lecture uses.</p>
       <p><strong>Point at:</strong> the last column. Each of those is a number we predict at the
       start of the step and check at its end. The last slide of step 10 collects them all.</p>
-      <p><strong>Say:</strong> keep the names the page gives — <code>engine</code>,
-      <code>car</code>, <code>v_kmh</code>. The checkpoints and the plot commands use them; a
-      different name means a different signal name and a command that does not find it.</p>
+      <p><strong>Say:</strong> Keep the names the page gives you, like engine, car, and v
+      underscore kmh. The checkpoints and the plot commands use those names. A different name
+      means a different signal name, and then the command does not find it.</p>
     </aside>
   </section>
 
@@ -200,10 +202,11 @@
       </svg>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> four words, and you can describe a car, a heater, a drone or a
-      pharmacy's stock level. Walk the picture: we push the pedal (input). The road and the
-      weather push back without asking (disturbance). The car carries its speed from one moment to
-      the next (state). The speedometer tells us about it (output).</p>
+      <p><strong>Say:</strong> With four words you can describe a car, a heater, a drone or a
+      pharmacy's stock level. Look at the picture. We push the pedal: that is the input. The
+      road and the weather push back without asking: that is the disturbance. The car carries
+      its speed from one moment to the next: that is the state. The speedometer tells us about
+      it: that is the output.</p>
       <p><strong>Why "state" means "remembers":</strong> if you know the speed right now and what
       the pedal and the road will do next, you can predict the speed a second from now. You do not
       need the car's history. That is what a state is — the minimum you need to know.</p>
@@ -240,8 +243,8 @@
     <p class="page-link">Page: <a href="../handson/lecture-01/#ui">What you are looking at</a></p>
     <aside class="notes">
       <p><strong>Say:</strong> Dyad Studio is a VS Code extension. You draw or write models in
-      the Dyad language; it compiles them to Julia — ModelingToolkit underneath — and simulates
-      them. You will not write Julia today except to plot.</p>
+      the Dyad language. It compiles them to Julia, with ModelingToolkit underneath, and
+      simulates them. You will not write any Julia today, except to plot.</p>
       <p><strong>Point at:</strong> the callout. Students hit this in step 02 and ask why they
       cannot just run the engine. Plant the answer now: an engine with a dangling torque input
       is not a complete problem — nobody said what the torque command is.</p>
@@ -291,13 +294,14 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> in a block diagram, every wire is an arrow — someone has to decide
-      that speed causes force and not the other way round. Physics does not work like that: a
+      <p><strong>Say:</strong> In a block diagram, every wire is an arrow. Someone has to decide
+      that speed causes force, and not the other way around. Physics does not work like that. A
       damper is just a relation between force and speed. If you push it, it moves; if you move
-      it, it pushes back. Same law, two directions.</p>
-      <p><strong>Say:</strong> in Dyad you write the law once, <code>F = d*v</code>, and bolt parts
-      together. Dyad decides the direction for each model you build. That is why the engine,
-      driveline and body today connect with plain lines, not arrows.</p>
+      it, it pushes back. It is the same law in two directions.</p>
+      <p><strong>Say:</strong> In Dyad you write the law once, force equals the damping constant
+      times speed, and you bolt parts together. Dyad decides the direction for each model you
+      build. That is why the engine, the driveline and the body connect with plain lines today,
+      not arrows.</p>
       <p><strong>Point at:</strong> the joint rule. It is the whole of what a mechanical
       connection means: same speed on both sides, and forces balance. The tour step shows it
       again as the "two kinds of wire".</p>
@@ -336,9 +340,9 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> pressing ▷ runs a small compiler. Dyad turns your diagram into
-      equations, checks the count, simplifies, and hands the result to a numerical solver.
-      Underneath it is Julia's ModelingToolkit, but you never see it.</p>
+      <p><strong>Say:</strong> Pressing the run button starts a small compiler. Dyad turns your
+      diagram into equations, checks how many there are, simplifies them, and hands the result
+      to a numerical solver. Underneath it is Julia's ModelingToolkit, but you never see it.</p>
       <p><strong>Walk the example:</strong> the drive force <em>F</em> comes from the engine
       through the wheel joint, so it is not an unknown of the body alone. Three unknowns, three
       equations — balanced. Substitute the first two into the third and the body is one
@@ -368,8 +372,9 @@
       the slide on your own screen as you name it.</p>
       <p><strong>Point at:</strong> 4, the ⇄. It is the most used button today and the easiest
       to miss.</p>
-      <p><strong>Say:</strong> saving compiles. If an analysis does not show up in the Analyses
-      panel after a save, Dyad Compile under Julia Commands forces it.</p>
+      <p><strong>Say:</strong> Saving compiles your model. If an analysis does not show up in
+      the Analyses panel after you save, use Dyad Compile, under Julia Commands, to force
+      it.</p>
       <p><strong>Ignore:</strong> the tangled plot in this screenshot. Step 02 explains it and
       shows the fix.</p>
     </aside>
@@ -396,7 +401,7 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> four standard libraries matter today. Blocks for signals,
+      <p><strong>Say:</strong> Four standard libraries matter today: Blocks for signals,
       Rotational for shafts, Translational for the car moving along the road, and Dyad for the
       ports.</p>
       <p><strong>Point at:</strong> the bottom entry, the student's own library. Components they

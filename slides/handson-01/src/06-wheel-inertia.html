@@ -8,8 +8,9 @@
     <p class="thesis">A 1 kg·m² wheel between gear and road — and how little it changes.</p>
     <p class="meta"><a href="../handson/lecture-01/#wheel-inertia">page: step 06</a> · reference <code>dyad/HandsOn/WheeledDriveline.dyad</code>, <code>WheeledCar.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> the wheel now has its own state — its own speed. Today that speed
-      is still tied to the car's. In step 09 we cut that tie, and that is where ice happens.</p>
+      <p><strong>Say:</strong> The wheel now has its own state: its own speed. Today that speed
+      is still tied to the car's speed. In step 9 we cut that tie, and that is where ice
+      happens.</p>
       <p><strong>Timing:</strong> 12 minutes: 2 for the hidden mass, 10 for Duplicate and one wire.</p>
     </aside>
   </section>
@@ -41,8 +42,8 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> a bicycle with heavy wheels feels sluggish when you start, but rolls
-      along fine once it is moving. Same here.</p>
+      <p><strong>Say:</strong> A bicycle with heavy wheels feels sluggish when you start, but
+      rolls along fine once it is moving. It is the same here.</p>
       <p><strong>Derivation, step by step</strong></p>
       <ol>
         <li>Moving energy of the car: ½·m·v².</li>
@@ -106,9 +107,11 @@ plot!(p, b; idxs = b."car.v_kmh", label = "WheeledCar")</code></pre>
     <aside class="notes">
       <p><strong>Ask the room first:</strong> before showing the plot, how much slower will the
       car be? Most guess a lot.</p>
-      <p><strong>Say:</strong> seen through the rolling radius, 1 kg·m² behaves like
-      J / r² = 1 / 0.31² ≈ 10 kg of extra mass on a 1400 kg car. Inertia slows the launch, not
-      the terminal speed — at constant speed nothing accelerates, so inertia does nothing.</p>
+      <p><strong>Say:</strong> Seen through the rolling radius, a wheel inertia of 1
+      kilogram-meter squared behaves like about 10 kilograms of extra mass on a 1400-kilogram
+      car. That is the inertia divided by the radius squared: 1 divided by 0.31 squared. Inertia
+      slows the launch, not the top speed. At constant speed nothing accelerates, so inertia
+      does nothing.</p>
     </aside>
   </section>
 

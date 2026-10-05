@@ -8,8 +8,8 @@
     <p class="thesis">Shaft torque in, force on the car out: F = T · i / r.</p>
     <p class="meta"><a href="../handson/lecture-01/#driveline">page: step 03</a> · reference <code>dyad/HandsOn/Driveline.dyad</code></p>
     <aside class="notes">
-      <p><strong>Say:</strong> two parts and four ports. This is where rotation becomes
-      translation.</p>
+      <p><strong>Say:</strong> This step has two parts and four ports. This is where rotation
+      becomes straight-line motion.</p>
       <p><strong>Timing:</strong> 13 minutes: 3 for the formula, 10 building. No bench, no analysis — it is checked when the car
       runs in step 05.</p>
     </aside>
@@ -44,11 +44,11 @@
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> two steps, both things everyone has felt. A bicycle in a low gear:
-      you pedal fast, the wheel turns slowly, and climbing is easy — the gear trades speed for
-      force. And a spanner: the longer the handle, the less force you need for the same twist.
-      The wheel is a spanner the other way round: the twist at the axle becomes a force at the rim,
-      and a bigger wheel means less force.</p>
+      <p><strong>Say:</strong> Here are two steps, and everyone has felt both. First, a bicycle
+      in a low gear: you pedal fast, the wheel turns slowly, and climbing is easy. The gear
+      trades speed for force. Second, a wrench: the longer the handle, the less force you need
+      for the same twist. The wheel is a wrench the other way around: the twist at the axle
+      becomes a force at the rim, and a bigger wheel means less force.</p>
       <p><strong>Derivation, step by step</strong></p>
       <ol>
         <li>Gear: torque × i, speed ÷ i. An ideal gear loses no energy, so power in = power out:
@@ -82,8 +82,9 @@
     <aside class="notes">
       <p><strong>Point at:</strong> the wheel block. Gray circle in, green square out — the port
       shapes tell you the domain, and you can only wire like to like.</p>
-      <p><strong>Say:</strong> 100 N·m × 4 / 0.31 m = 1290 N; on 1400 kg that is 0.9217 m/s²,
-      which is what the reference test asserts.</p>
+      <p><strong>Say:</strong> A torque of 100 newton-meters, times a gear ratio of 4, divided
+      by a wheel radius of 0.31 meters, gives 1290 newtons. On a 1400-kilogram car that is
+      0.9217 meters per second squared, which is what the reference test checks.</p>
       <p><strong>They get wrong:</strong> forgetting the reaction paths. The gear housing and the
       road both push back; <code>gear.support</code> and <code>wheel.support_r</code> go to
       <code>support_r</code>, <code>wheel.support_t</code> to <code>support_t</code>. The car
