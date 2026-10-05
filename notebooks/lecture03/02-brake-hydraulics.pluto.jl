@@ -43,7 +43,7 @@ calipers and the car itself are not built yet, so this notebook stops at master-
 pressure. The last sections say what arrives next.
 
 The physics and the sources behind every parameter are in
-`reports/Passenger car brake system modeling.md`, cited below as *the report*.
+`docs/reports/Passenger car brake system modeling.md`, cited below as *the report*.
 """
 
 
@@ -496,7 +496,7 @@ let
     |:---|:---|---:|:---|:---|
     $(join(rows, "\n"))
     | notebook | caliper gain | $(K_TORQUE) N·m/bar | computed from assumed caliper sizes (report) | 57/38 mm pistons, pad μ 0.40, radii 0.12/0.11 m |
-    | notebook | `CAR.m`, `CAR.r` | $(CAR.m) kg, $(CAR.r) m | the L0 vehicle parameter set (`docs/HANDOVER.md`) | `CAR` in `notebooks/lecture01/support.jl` |
+    | notebook | `CAR.m`, `CAR.r` | $(CAR.m) kg, $(CAR.r) m | the L0 vehicle parameter set | `CAR` in `notebooks/lecture01/support.jl` |
     | notebook | pedal-force ceiling | $(round(Int, F_FOOT_MAX)) N | cited (FMVSS 135) | |
     """)
 end

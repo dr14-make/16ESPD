@@ -1,5 +1,5 @@
 """
-The three heuristic PID tuning tables of `materials/ControlTheory/tuning_methods.pdf`
+The three heuristic PID tuning tables of `docs/materials/ControlTheory/tuning_methods.pdf`
 ("Standard PID Tuning Methods", tbco 2/17/2012), transcribed. Page and table references in the
 docstrings below point at that document.
 

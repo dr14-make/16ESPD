@@ -1,6 +1,6 @@
 # The tables themselves live next to the notebook that applies them, so notebook 08 and this
 # suite run the same transcription. Every expected value below was computed by hand from
-# materials/ControlTheory/tuning_methods.pdf, so a mis-copied coefficient fails here rather
+# docs/materials/ControlTheory/tuning_methods.pdf, so a mis-copied coefficient fails here rather
 # than silently in front of a lecture hall.
 
 include("../notebooks/lecture01/tuning_tables.jl")
@@ -49,7 +49,7 @@ using .TuningTables
         # Ku = 34, Pu = 8  ->  k = 34/1.7 = 20, Ti = 8/2 = 4, Td = 8/8 = 1
         @test all(ziegler_nichols(34.0, 8.0) .≈ (20.0, 4.0, 1.0))
 
-        # Ku = 420, Pu = 2.2 (the theta_e = 0.3 s operating point of HANDOVER's Risk 1)
+        # Ku = 420, Pu = 2.2 (the theta_e = 0.3 s operating point)
         #   k = 420/1.7 = 4200/17,  Ti = 2.2/2 = 1.1,  Td = 2.2/8 = 0.275
         k, Ti, Td = ziegler_nichols(420.0, 2.2)
         @test k ≈ 4200 / 17
