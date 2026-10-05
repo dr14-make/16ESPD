@@ -234,8 +234,11 @@
 <li>In the <strong>Activity Bar</strong> — the column of icons on the far left — click the <strong>Dyad</strong> icon. The Dyad sidebar opens with four panels: <strong>Actions</strong>, <strong>Components</strong>, <strong>Analyses</strong>, <strong>Notebooks</strong> (arrows 1 and 2 in the map above).</li>
 <li>In <strong>Components</strong>, click the arrow next to <code>MyCar</code> to expand it. It holds the example models the template ships with; leave them, they do no harm.</li>
 <li><strong>Add the three standard libraries the car is built from.</strong> A new library contains none of them. In the Dyad sidebar's <strong>Actions</strong> panel, click <strong>Import Library</strong>, pick <code>BlockComponents</code>, and when asked for the folder to install into, choose your <code>MyCar</code> folder. Repeat for <code>RotationalComponents</code> and <code>TranslationalComponents</code>. Each one is added to <code>Project.toml</code> and downloaded; wait for the terminal to finish.</li>
+<li><strong>Add Plots</strong>, which the plotting steps use. In the <strong>Actions</strong> panel's title bar, click <strong>Dyad: Open Julia REPL</strong>, then run:
+<div class="code"><button class="copy" type="button">Copy</button><pre><code>using Pkg; Pkg.add("Plots")</code></pre></div>
+The first download and precompile takes a few minutes; let it run while you go on.</li>
   </ol>
-  <div class="checkpoint"><span class="label">Checkpoint</span><p>The terminal has finished without errors, <code>MyCar</code> appears in the <strong>Components</strong> panel, and <code>Project.toml</code> lists <code>BlockComponents</code>, <code>RotationalComponents</code> and <code>TranslationalComponents</code> under <code>[deps]</code>.</p></div>
+  <div class="checkpoint"><span class="label">Checkpoint</span><p>The terminal has finished without errors, <code>MyCar</code> appears in the <strong>Components</strong> panel, and <code>Project.toml</code> lists <code>BlockComponents</code>, <code>RotationalComponents</code>, <code>TranslationalComponents</code> and <code>Plots</code> under <code>[deps]</code>.</p></div>
   <p class="small muted">Names in this guide are the ones the reference models use. Keep them:
     the checkpoints name signals such as <code>car.v_kmh</code>, and a different instance name
     means a different signal name.</p>

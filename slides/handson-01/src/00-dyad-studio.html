@@ -412,7 +412,7 @@
 
   <section>
     <h2>Create your library</h2>
-    <ol>
+    <ol class="small">
       <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → <strong>Dyad: Create Component
         Library</strong> → name it <code>MyCar</code>, pick an empty folder.</li>
       <li>Wait: the extension runs <code>Pkg.instantiate()</code> by itself. The first time it
@@ -421,11 +421,13 @@
       <li><strong>Actions → Import Library</strong>, three times, into the <code>MyCar</code>
         folder: <code>BlockComponents</code>, <code>RotationalComponents</code>,
         <code>TranslationalComponents</code>. A new library has none of them.</li>
+      <li><strong>Dyad: Open Julia REPL</strong> → <code>using Pkg; Pkg.add("Plots")</code>
+        — needed for every plot today.</li>
     </ol>
     <div class="callout small">
       <span class="label">Checkpoint</span>
       The terminal finished without errors, <code>MyCar</code> is in the Components panel,
-      and <code>Project.toml</code> lists the three libraries.
+      and <code>Project.toml</code> lists the three libraries and <code>Plots</code>.
     </div>
     <p class="page-link">Page: <a href="../handson/lecture-01/#library">Create your library</a></p>
     <aside class="notes">
@@ -434,7 +436,8 @@
       the map while it downloads.</p>
       <p><strong>Say:</strong> A new library starts almost empty. The engine, gear, wheel and
       mass we use today live in three standard libraries, so add them now: Import Library,
-      three times, into your MyCar folder.</p>
+      three times, into your MyCar folder. Then add Plots from the Julia REPL, so you can plot
+      your results.</p>
       <p><strong>They get wrong:</strong> skipping the imports. Step 01's search for
       <code>FirstOrder</code> then finds nothing, or code that names
       <code>RotationalComponents</code> fails to compile. Also: a folder that already has
