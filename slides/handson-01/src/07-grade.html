@@ -20,29 +20,55 @@
     <h2>The slope: part of the weight pulls back</h2>
     <div class="cols">
       <div>
-        <p class="small">On a hill, the weight m·g still points straight down. Split it in
-        two:</p>
-        <ul class="small">
-          <li><strong>along the road:</strong> m·g·sin α — pulls the car back;</li>
-          <li><strong>into the road:</strong> m·g·cos α — presses the tires down.</li>
-        </ul>
-        <p class="small">A road sign says <strong>10 %</strong>: up 10 m for every 100 m across.
-        That is tan α = 0.10, so α = 5.7° and sin α = 0.0995.</p>
-        <p class="small">$$ F_{\text{slope}} = m\,g\,\sin(\arctan 0.10) = 13\,734 \times 0.0995 = 1366\ \text{N} $$</p>
+        <svg class="diagram" viewBox="0 0 480 345" role="img"
+             aria-label="A car on a road tilted by angle alpha. Its weight m g points straight down and splits into m g sine alpha along the road, pointing downhill, and m g cosine alpha into the road. A right triangle under the road shows rise over run, which is tangent alpha.">
+          <defs>
+            <marker id="g-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+            <marker id="g-ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+            <marker id="g-ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+          </defs>
+          <path class="wire-soft" d="M30 320 H450 V78"/>
+          <path class="wire" d="M30 320 L450 78" stroke-width="3"/>
+          <path class="wire" d="M85 320 A55 55 0 0 0 77.6 292.5"/>
+          <text class="f-lbl" x="92" y="312">α</text>
+          <text class="lbl" x="250" y="340">run</text>
+          <text class="lbl" x="458" y="210">rise</text>
+          <polygon class="box" points="183.7,178.2 270.3,128.2 289.3,161.1 202.7,211.1"/>
+          <circle cx="222.3" cy="200.9" r="7" fill="#16202c"/>
+          <circle cx="270.7" cy="172.9" r="7" fill="#16202c"/>
+          <path class="arrow" d="M236 169 V286" marker-end="url(#g-ar)"/>
+          <text class="f-lbl" x="246" y="306">m·g</text>
+          <path class="wire-soft" d="M184 199 L236 289 M288 259 L236 289"/>
+          <path class="arrow-warn" d="M236 169 L187 197" marker-end="url(#g-ar-w)"/>
+          <text class="f-lbl-warn" x="96" y="212">m·g·sin α</text>
+          <path class="arrow-acc" d="M236 169 L286 256" marker-end="url(#g-ar-a)"/>
+          <text class="f-lbl-acc" x="300" y="286">m·g·cos α</text>
+        </svg>
+        <p class="small muted" style="margin-top:0">Angle exaggerated (30°); a 10 % hill is
+          only 5.7°.</p>
       </div>
       <div>
+        <ul class="small">
+          <li><span style="color:var(--warn)"><strong>along the road:</strong> m·g·sin α</span>
+            — pulls the car back;</li>
+          <li><span style="color:var(--accent)"><strong>into the road:</strong> m·g·cos α</span>
+            — presses the tires down.</li>
+        </ul>
+        <p class="small"><strong>What "10 %" means.</strong> A road sign gives
+          <em>rise ÷ run</em>: 10 m up for every 100 m across. Rise ÷ run is
+          <strong>tan α</strong>, so tan α = 0.10 → α = 5.7°, sin α = 0.0995.</p>
+        <p class="small">$$ F_{\text{slope}} = m\,g\,\sin(\arctan 0.10) = 1366\ \text{N} $$</p>
         <div class="callout warn small">
           <span class="label">Compare with the engine</span>
-          Engine, flat out: 1935 N. A 10 % hill alone takes 1366 N of it. At 130 km/h add drag
-          493 N and rolling 164 N:
-          <br><br>
-          1366 + 493 + 164 = <strong>2023 N &gt; 1935 N</strong>.
-          <br><br>
-          The car cannot hold 130 km/h up this hill. The next lecture's "windup" section is
-          exactly this hill.
+          Flat out: 1935 N. At 130 km/h up 10 %: 1366 + 493 drag + 164 rolling =
+          <strong>2023 N &gt; 1935 N</strong>. The car cannot hold 130 km/h here — the next
+          lecture's "windup" section is this hill.
         </div>
-        <p class="small">No library part turns a slope signal into a force, so step 07 is your
-        first equation: one line.</p>
+        <p class="small">No library part turns a slope into a force: step 07 is your first
+          equation.</p>
       </div>
     </div>
     <aside class="notes">
