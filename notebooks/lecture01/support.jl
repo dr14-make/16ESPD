@@ -23,6 +23,7 @@ module Lecture01Support
 
 using Pkg
 using Markdown
+using TOML
 
 export setup, CAR,
     sweep, Sweep, rerun,
@@ -39,13 +40,13 @@ export setup, CAR,
 """
     CAR
 
-The L0 vehicle parameter set, as tabulated in `docs/HANDOVER.md`.
+The L0 vehicle parameter set.
 
 Primitive quantities only. Everything derived from them — drag coefficient, rolling force,
 tractive force limit, terminal speed, cruise torque — is arithmetic the notebooks perform in
 front of the reader.
 
-`theta_e` is the value the Dyad models ship (HANDOVER Risk 1), so read it from here rather
+`theta_e` is the value the Dyad models ship, so read it from here rather
 than writing it into a cell.
 
 | Field | Meaning | Unit |
@@ -115,13 +116,8 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
     # reached through `invokelatest`, which compiles it in the current world.
     Base.invokelatest(prepare_environment, package_path)
     check_distribution()
+    check_dyad_release(package_path)
     pkg = Base.invokelatest(load_package, package_path)
-
-    # `strategy = :include` loads the module without binding it anywhere, so anything that
-    # looks the package up by name — `list_analyses`, and the notebook's own cells — needs
-    # the binding made by hand.
-    pkg_sym = Symbol(nameof(pkg))
-    isdefined(Main, pkg_sym) || Core.eval(Main, :($pkg_sym = $pkg))
 
     Base.invokelatest(install_plotting, backend)
 
@@ -135,7 +131,7 @@ function setup(; package_path::AbstractString = normpath(@__DIR__, "..", ".."),
 end
 
 prepare_environment(package_path) = DyadOrchestrator.prepare_environment(package_path)
-load_package(package_path) = DyadOrchestrator.load_package(package_path; strategy = :include)
+load_package(package_path) = DyadOrchestrator.load_package(package_path; strategy = :using)
 
 """
     check_distribution()
@@ -168,6 +164,42 @@ function check_distribution()
 
         In VS Code: use the kernel picker at the top right of the notebook and choose the
         Julia 1.12.7 kernel rather than 1.12.6.
+        """)
+end
+
+"""
+    check_dyad_release(package_path)
+
+Fail before loading the library if this Julia is a different Dyad release from the one that
+compiled `generated/`.
+
+Each Dyad release ships `DyadInterface` inside the Julia distribution, so the version pinned in
+`Manifest.toml` is not what loads — the distribution's own copy is. Two releases report the same
+`VERSION` (`1.12.7-dyad`), so a notebook kernel picker shows them as the same Julia, and an older
+release passes [`check_distribution`](@ref) because its packages are installed. It then fails
+deep inside `generated/` on the first name the newer compiler emits, such as
+`DyadInterface.SpecializationLevel`.
+"""
+function check_dyad_release(package_path::AbstractString)
+    manifest = TOML.parsefile(joinpath(package_path, "Manifest.toml"))
+    pinned = VersionNumber(only(manifest["deps"]["DyadInterface"])["version"])
+    entry = Base.locate_package(Base.identify_package("DyadInterface"))
+    installed = VersionNumber(TOML.parsefile(joinpath(dirname(dirname(entry)), "Project.toml"))["version"])
+    installed == pinned && return nothing
+
+    error("""
+        This Julia is the wrong Dyad release for this project: it ships DyadInterface \
+        $(installed), and generated/ was compiled against $(pinned).
+
+            running Julia $(VERSION)
+            from $(Sys.BINDIR)
+
+        Every Dyad channel reports Julia $(VERSION), so the kernel picker cannot tell them \
+        apart by name. Use the `dyad-3.4.0` juliaup channel — the one `.vscode/settings.json` \
+        names in `julia.executablePath`, whose path contains `dyad-3x4x0`.
+
+        In VS Code: open the kernel picker at the top right of the notebook, choose the Julia \
+        1.12.7 kernel whose path contains `dyad-3x4x0`, and restart the kernel.
         """)
 end
 
@@ -610,7 +642,7 @@ The reveal.js deck that consumes these figures. Its `index.html` is the authorit
 figure names: each slot is an `<img src="assets/figures/...">` that renders as a hatched
 placeholder until the file exists.
 """
-const DECK_DIR = normpath(@__DIR__, "..", "..", "docs", "slides", "lecture-01")
+const DECK_DIR = normpath(@__DIR__, "..", "..", "slides", "lecture-01")
 
 const _DECK_FIGURES = Ref{Union{Nothing, Set{String}}}(nothing)
 
@@ -752,7 +784,7 @@ end
     fopdt_fit(t, y, A, t0) -> (K, tau, theta)
 
 Read the three FOPTD parameters off an open-loop step response, by the construction in
-`materials/ControlTheory/tuning_methods.pdf` (p.1, Step 2):
+`docs/materials/ControlTheory/tuning_methods.pdf` (p.1, Step 2):
 
     t2 = time at half the total output change B
     t3 = time at (1 - 1/e) of it
