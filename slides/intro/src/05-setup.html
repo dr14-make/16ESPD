@@ -1,0 +1,152 @@
+<section data-section-title="Before the first practical">
+
+  <section>
+    <h2>Install before the first practical</h2>
+    <table class="small">
+      <tr><th>Tool</th><th>What it is for</th><th>Get it</th></tr>
+      <tr><td><strong>Visual Studio Code</strong></td><td>the editor every practical runs in</td>
+        <td><a href="https://code.visualstudio.com/download">code.visualstudio.com/download</a></td></tr>
+      <tr><td><strong>Dyad Studio</strong> extension</td><td>models and simulation; installs Julia
+        with it</td>
+        <td>VS Code → Extensions → search <code>Dyad</code>, or the
+        <a href="https://marketplace.visualstudio.com/items?itemName=JuliaComputing.dyad-studio">Marketplace</a></td></tr>
+      <tr><td><strong>JuliaHub</strong> account</td><td>sign-in that unlocks Dyad's libraries</td>
+        <td><a href="https://juliahub.com">juliahub.com</a></td></tr>
+      <tr><td><strong>Git</strong></td><td>version control for your work</td>
+        <td><a href="https://git-scm.com/downloads">git-scm.com/downloads</a></td></tr>
+      <tr><td><strong>GitHub</strong> account</td><td>hosts your repository; you hand in through it</td>
+        <td><a href="https://github.com/signup">github.com/signup</a></td></tr>
+    </table>
+    <div class="callout small">
+      <span class="label">Do it at home</span>
+      After installing the extension, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>, run
+      <strong>Walkthrough → Installing Dyad</strong> and sign in to JuliaHub. The first start
+      downloads and compiles libraries and takes several minutes.
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> five things, all free. Install them before the first practical,
+      not in it — the first Dyad start alone takes minutes, and thirty laptops downloading at
+      once on the room's Wi-Fi is slow.</p>
+      <p><strong>Alternative:</strong> JuliaHub also ships Dyad Studio as a standalone app, with
+      VS Code built in (help.juliahub.com/dyad/dev/installation.html). Either works. ARM Windows,
+      ARM Linux and Intel Macs have no official build and need the manual Julia route on that
+      page.</p>
+      <p><strong>Requirements:</strong> at least 4 CPU cores and 8 GB of RAM.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Create a GitHub account</h2>
+    <div class="cols">
+      <div>
+        <ol class="small">
+          <li>Go to <a href="https://github.com/signup">github.com/signup</a>; enter an email,
+            a password and a <strong>username</strong>. The username appears on all your
+            work, so keep it professional.</li>
+          <li>Confirm the email GitHub sends you.</li>
+          <li>Turn on <strong>two-factor authentication</strong> when GitHub asks — an
+            authenticator app on your phone is enough.</li>
+          <li>Optional: with your university email, apply for the free
+            <a href="https://education.github.com/pack">Student Developer Pack</a>.</li>
+        </ol>
+      </div>
+      <div>
+        <h4>Then tell Git who you are</h4>
+        <p class="small">Once, in a terminal, with the same email as on GitHub:</p>
+        <pre><code class="language-bash" data-trim>
+git config --global user.name  "Jana Novakova"
+git config --global user.email "jana@example.com"
+        </code></pre>
+        <p class="small">In VS Code, click the <strong>Accounts</strong> icon (bottom left) →
+          <strong>Sign in with GitHub</strong>, so it can push for you.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the email in <code>git config</code> is what links each commit to
+      your GitHub account. If it does not match, your commits show up without your name.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>How Git works</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <ul class="small">
+          <li><strong>Repository</strong> — a folder whose history Git keeps.</li>
+          <li><strong>Commit</strong> — a saved snapshot of the files, with a message saying
+            what changed. You can always go back to one.</li>
+          <li><strong>Branch</strong> — a line of commits. <code>main</code> is the accepted
+            version; you work on your own branch.</li>
+          <li><strong>Remote</strong> — the copy on GitHub. <em>Push</em> uploads your commits,
+            <em>pull</em> downloads others'.</li>
+        </ul>
+      </div>
+      <svg viewBox="0 0 560 360" role="img" aria-label="Files in your folder are staged with git add, saved as a commit with git commit, uploaded to GitHub with git push, and downloaded back with git pull." style="width:100%;font-family:inherit">
+        <defs>
+          <marker id="git-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#1f5fa8"></path>
+          </marker>
+        </defs>
+        <rect x="10" y="20" width="160" height="70" rx="8" fill="#f3f6fa" stroke="#9aa9bb"></rect>
+        <text x="90" y="52" text-anchor="middle" font-size="20" fill="#1b2533">Your folder</text>
+        <text x="90" y="76" text-anchor="middle" font-size="15" fill="#4a5a6b">files you edit</text>
+        <rect x="10" y="150" width="160" height="70" rx="8" fill="#f3f6fa" stroke="#9aa9bb"></rect>
+        <text x="90" y="182" text-anchor="middle" font-size="20" fill="#1b2533">Staged</text>
+        <text x="90" y="206" text-anchor="middle" font-size="15" fill="#4a5a6b">ready to commit</text>
+        <rect x="10" y="280" width="160" height="70" rx="8" fill="#f3f6fa" stroke="#9aa9bb"></rect>
+        <text x="90" y="312" text-anchor="middle" font-size="20" fill="#1b2533">Local history</text>
+        <text x="90" y="336" text-anchor="middle" font-size="15" fill="#4a5a6b">your commits</text>
+        <rect x="380" y="150" width="170" height="70" rx="8" fill="#e8f0fa" stroke="#1f5fa8"></rect>
+        <text x="465" y="182" text-anchor="middle" font-size="20" fill="#1b2533">GitHub</text>
+        <text x="465" y="206" text-anchor="middle" font-size="15" fill="#4a5a6b">the remote</text>
+        <line x1="90" y1="92" x2="90" y2="146" stroke="#1f5fa8" stroke-width="2.5" marker-end="url(#git-arrow)"></line>
+        <text x="102" y="125" font-size="16" fill="#1f5fa8" font-family="monospace">git add</text>
+        <line x1="90" y1="222" x2="90" y2="276" stroke="#1f5fa8" stroke-width="2.5" marker-end="url(#git-arrow)"></line>
+        <text x="102" y="255" font-size="16" fill="#1f5fa8" font-family="monospace">git commit</text>
+        <path d="M172,315 C300,315 380,290 440,224" fill="none" stroke="#1f5fa8" stroke-width="2.5" marker-end="url(#git-arrow)"></path>
+        <text x="290" y="348" font-size="16" fill="#1f5fa8" font-family="monospace">git push</text>
+        <path d="M465,148 C430,60 300,55 174,55" fill="none" stroke="#1f5fa8" stroke-width="2.5" marker-end="url(#git-arrow)"></path>
+        <text x="300" y="50" font-size="16" fill="#1f5fa8" font-family="monospace">git pull</text>
+      </svg>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> Git is a save system with memory. Every commit is a snapshot you
+      can return to, so you can try something risky in a model and undo it.</p>
+      <p><strong>Walk the picture:</strong> you edit files; <code>git add</code> picks which
+      changes go into the next snapshot; <code>git commit</code> saves it on your machine;
+      <code>git push</code> sends it to GitHub. <code>git pull</code> brings changes from GitHub
+      back — anything changed there since your last pull.</p>
+      <p><strong>Say:</strong> nothing reaches GitHub until you push. A commit on your laptop
+      only is not handed in.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Handing in a task</h2>
+    <table class="small">
+      <tr><th>Step</th><th>Command</th><th>In VS Code</th></tr>
+      <tr><td>Get your repository (once)</td><td><code>git clone &lt;url&gt;</code></td>
+        <td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → <strong>Git: Clone</strong></td></tr>
+      <tr><td>Start a task on its own branch</td><td><code>git switch -c task-1</code></td>
+        <td>branch name in the status bar → <strong>Create new branch</strong></td></tr>
+      <tr><td>Save progress, often</td><td><code>git add dyad/Car.dyad</code><br>
+        <code>git commit -m "Add the car body"</code></td>
+        <td><strong>Source Control</strong> panel: <strong>+</strong> to stage, message,
+        <strong>Commit</strong></td></tr>
+      <tr><td>Upload</td><td><code>git push</code></td>
+        <td><strong>Publish Branch</strong> / <strong>Sync Changes</strong></td></tr>
+      <tr><td>Hand in</td><td colspan="2">on GitHub: <strong>Compare &amp; pull request</strong>
+        → describe what you did → <strong>Create pull request</strong></td></tr>
+    </table>
+    <p class="small">A <strong>pull request</strong> asks for your branch to be merged into
+      <code>main</code>. It is where your work is reviewed and commented on.</p>
+    <aside class="notes">
+      <p><strong>Say:</strong> one branch per task, one pull request per task. Commit in small
+      steps with a message that says what you did — "Add the car body", not "update".</p>
+      <p><strong>Say:</strong> you can push more commits to the same branch after opening the
+      pull request; they appear in it. That is how you answer review comments.</p>
+      <p><strong>Practical:</strong> the first practical goes through this once, end to end.</p>
+    </aside>
+  </section>
+
+</section>
