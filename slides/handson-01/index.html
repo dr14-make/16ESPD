@@ -2005,6 +2005,62 @@ end</code></pre>
   </section>
 
   <section>
+    <h2>extends: reuse, then flatten to see it all</h2>
+    <div class="cols">
+      <div>
+        <p class="small"><code>extends X</code> copies everything <code>X</code> declares —
+          ports, variables, equations — into your component. Each level adds a little:</p>
+        <ol class="small">
+          <li><code>PartialElementaryOneFlangeAndSupport2</code>: ports <code>flange</code>,
+            <code>support</code>; <em>s = flange.s − support.s</em>;
+            <em>support.f = −flange.f</em> (the push-back).</li>
+          <li><code>PartialForce</code>: a variable <code>f</code>, with
+            <em>f = flange.f</em>. Its one gap: what <code>f</code> is.</li>
+          <li><code>GradeForce</code>, yours: fills the gap with one equation.</li>
+        </ol>
+        <p class="small">Same idea in every analysis: <code>extends TransientAnalysis(stop = 300)</code>
+          inherits the solver set-up; you only set what differs.</p>
+      </div>
+      <div>
+        <div class="demo">
+          <div class="demo-head"><span class="nb">GradeForce, flattened</span><span class="spacer"></span></div>
+          <pre><code class="language-julia" data-trim data-noescape>component GradeForce
+  flange = Flange()       # from …Support2
+  support = Flange()      # from …Support2
+  grade = RealInput()
+  variable s::Length      # from …Support2
+  variable f::Dyad.Force  # from PartialForce
+  parameter m::Dyad.Mass = 1400
+  parameter g::Acceleration = 9.80665
+relations
+  s = flange.s - support.s      # …Support2
+  support.f = -flange.f         # …Support2
+  f = flange.f                  # PartialForce
+  f = m * g * sin(atan(grade))  # yours
+end</code></pre>
+        </div>
+        <p class="small">In the code view, click <strong>Flatten Component</strong> above the
+          <code>component</code> line to see this for any model.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> The word extends means: start from that model and add to it.
+      You do not copy the ports and the push-back equation by hand. You inherit them. Every
+      force source in the library is built the same way, and each one only says what its force
+      is.</p>
+      <p><strong>Say:</strong> If you ever wonder what a component really contains, flatten it.
+      The flat view lists every port, variable and equation, including the inherited ones. That
+      is the list Dyad counts when it checks that equations match unknowns.</p>
+      <p><strong>Point at:</strong> the comments on the right. Three of the four equations are
+      inherited; the student writes one.</p>
+      <p><strong>Tutor:</strong> the listing on the slide is written by hand from the library
+      sources to show the content; Dyad Studio's flat view can format it differently, for
+      example with the inherited names fully qualified. Flatten <code>GradeForce</code> once
+      live so the room sees the real thing.</p>
+    </aside>
+  </section>
+
+  <section>
     <h2>Give the body a grade input</h2>
     <figure class="fig shot">
       <img src="../handson/lecture-01/img/step07-grade-body.png"
