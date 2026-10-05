@@ -12,6 +12,26 @@
       delay, a first-order lag, a ceiling. The delay and the lag are what will make
       Ziegler–Nichols and Cohen–Coon possible in the PID lecture's tuning section — without
       them the car is first order and never oscillates.</p>
+      <p><strong>First and higher order — explain it here if the room asks:</strong></p>
+      <ul>
+        <li><strong>Order = number of states</strong>: how many first-order differential
+          equations are left once Dyad has simplified the model (the ▷ slide in Part 1). Rule
+          of thumb: one per independent store of energy or memory — an inertia, a spring, a
+          heated mass, a filter.</li>
+        <li><strong>First order</strong>: one state, τ·dy/dt + y = K·u. The step response rises
+          smoothly toward its final value, 63 % after one τ, and <em>never overshoots or
+          oscillates</em>. Examples: the engine's lag on its own; the car's speed against drag,
+          with τ of about a minute; a cup of tea cooling.</li>
+        <li><strong>Second order</strong>: two states, e.g. position and speed of a mass on a
+          spring — a car's suspension. It can overshoot and oscillate, depending on its damping.
+          Two first-order lags in a row are also second order, but without oscillation on their
+          own.</li>
+        <li><strong>Higher order</strong>: more states, usually a chain of lags. The step response
+          starts flat and S-shaped instead of rising at once, and under feedback the loop
+          <em>can</em> oscillate — which is exactly what the PID lecture needs. A pure delay is,
+          strictly, infinite order; the Padé block later in this step replaces it with 6 states,
+          so this engine alone is already 7th order.</li>
+      </ul>
       <p><strong>Timing:</strong> 27 minutes: 7 of theory up front (the next three slides), then 20 building — the longest step. It is the first bench,
       the first analysis and the first plot; everything after reuses the pattern.</p>
     </aside>
