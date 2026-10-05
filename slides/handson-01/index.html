@@ -919,12 +919,21 @@ analysis EngineStepTransient
 end</code></pre>
       <div class="demo-foot"><button class="copy">copy</button><span class="spacer"></span></div>
     </div>
-    <ol class="small">
-      <li><strong>New component</strong> <code>EngineStep</code> (Components → right-click MyCar → Add Component), draw the bench.</li>
-      <li>⇄ to code, add the three <code>initial</code> lines. Save.</li>
-      <li><strong>New analysis:</strong> ▷ Run Analysis in the title bar → <strong>TransientAnalysis</strong> → model already assigned. Name it <code>EngineStepTransient</code>, <code>stop = 3</code>.</li>
-      <li>▷ beside it in <strong>Analyses</strong> runs it.</li>
-    </ol>
+    <div class="cols cols-wide-left">
+      <ol class="small">
+        <li><strong>New component</strong> <code>EngineStep</code> (Components → right-click MyCar → Add Component), draw the bench.</li>
+        <li>⇄ to code, add the three <code>initial</code> lines. Save.</li>
+        <li><strong>New analysis:</strong> ▷ Run Analysis in the title bar → <strong>TransientAnalysis</strong> → model already assigned. Name it <code>EngineStepTransient</code>, <code>stop = 3</code>.</li>
+        <li>▷ beside it in <strong>Analyses</strong> runs it.</li>
+      </ol>
+      <div class="callout small">
+        <span class="label">Why initial conditions?</span>
+        The solver steps forward from a known start, so every state needs a value at
+        <em>t</em> = 0: here the lag's output and the shaft's angle and speed. All zero = no
+        torque, not turning. Change them and the same model starts elsewhere, e.g. a car
+        already at 90 km/h.
+      </div>
+    </div>
     <aside class="notes">
       <p><strong>Say:</strong> the bench is a new component of its own — say so out loud, students
       try to draw it inside <code>Engine</code>. The starting state has no diagram form, so it is
