@@ -2203,6 +2203,70 @@ end</code></pre>
   </section>
 
   <section>
+    <h2>How the curve is built: three pieces</h2>
+    <div class="cols">
+      <div class="small">
+        <p>One building block, an S-shaped cubic:</p>
+        <p>$$ h(x) = 1.5\,x - 0.5\,x^3 $$</p>
+        <p>It goes from −1 to 1 as <em>x</em> goes from −1 to 1, and its slope,
+          1.5 − 1.5<em>x</em>², is <strong>zero at both ends</strong>. So pieces built from it
+          join without corners.</p>
+        <ol>
+          <li><strong>Rise</strong>, 0 → 0.04: μ = μ<sub>A</sub>·h(κ / 0.04). Flat top exactly
+            at the peak, μ<sub>A</sub> = 1.0.</li>
+          <li><strong>Fall</strong>, 0.04 → 0.12: the same h, stretched to that range, taking μ
+            from 1.0 down to μ<sub>S</sub> = 0.7. Halfway, κ = 0.08: μ = 0.85.</li>
+          <li><strong>Slide</strong>, beyond 0.12: μ = 0.7, constant.</li>
+        </ol>
+        <p>Braking: μ = sign(κ) · μ(|κ|), so the curve is mirrored.</p>
+      </div>
+      <svg class="diagram" viewBox="0 0 600 330" role="img"
+           aria-label="The dry tire curve split into three pieces: a rising S-curve from slip 0 to 0.04 reaching 1.0, a falling S-curve from 0.04 to 0.12 down to 0.7, and a flat line at 0.7 beyond 0.12.">
+        <rect x="80" y="30" width="64" height="250" fill="#e8f0fa"/>
+        <rect x="144" y="30" width="128" height="250" fill="#fdf2e3"/>
+        <path class="wire" d="M80 30 V280 H560"/>
+        <text class="lbl" x="50" y="85">1.0</text>
+        <text class="lbl" x="50" y="145">0.7</text>
+        <text class="lbl" x="66" y="285">0</text>
+        <text class="lbl" x="130" y="300">0.04</text>
+        <text class="lbl" x="258" y="300">0.12</text>
+        <text class="lbl" x="400" y="320">slip ratio κ</text>
+        <text class="lbl" x="10" y="22">μ</text>
+        <polyline points="80.0,280.0 83.2,265.0 86.4,250.1 89.6,235.3 92.8,220.8 96.0,206.6 99.2,192.7 102.4,179.3 105.6,166.4 108.8,154.1 112.0,142.5 115.2,131.6 118.4,121.6 121.6,112.5 124.8,104.3 128.0,97.2 131.2,91.2 134.4,86.4 137.6,82.9 140.8,80.7 144.0,80.0 149.3,80.3 154.7,81.2 160.0,82.6 165.3,84.4 170.7,86.7 176.0,89.4 181.3,92.3 186.7,95.6 192.0,99.0 197.3,102.6 202.7,106.3 208.0,110.0 213.3,113.7 218.7,117.4 224.0,121.0 229.3,124.4 234.7,127.7 240.0,130.6 245.3,133.3 250.7,135.6 256.0,137.4 261.3,138.8 266.7,139.7 272.0,140.0 560.0,140.0" fill="none" stroke="#1f5fa8" stroke-width="3"/>
+        <text class="f-lbl-acc" x="94" y="268">① rise</text>
+        <text class="f-lbl-warn" x="170" y="230">② fall</text>
+        <text class="f-lbl" x="380" y="125">③ slide, μ = 0.7</text>
+        <circle cx="144" cy="80" r="5" fill="#16202c"/>
+        <circle cx="272" cy="140" r="5" fill="#16202c"/>
+        <text class="lbl" x="150" y="70">flat join</text>
+        <text class="lbl" x="278" y="130">flat join</text>
+      </svg>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> Real tire curves come from measurements. Here we draw the shape
+      with four numbers: where the peak is and how high, and where full sliding starts and how
+      high. Between those points we need smooth curves.</p>
+      <p><strong>Say:</strong> The trick is one small cubic that rises from minus one to one and
+      is perfectly flat at both ends. We use it once for the rise and once, stretched and turned
+      upside down, for the fall. Because every piece arrives flat, the pieces meet without a
+      corner.</p>
+      <p><strong>Why no corners:</strong> at a corner the slope jumps. The solver chooses its
+      step size from how fast things change, so a jump forces tiny steps or a failed step. A
+      straight-line curve would look almost the same and simulate worse.</p>
+      <p><strong>The fall, in detail</strong> (if asked): map κ in [0.04, 0.12] to
+        x = (κ − 0.08) · 2 / 0.08, which runs from −1 to 1. Then
+        μ = (μ<sub>A</sub> + μ<sub>S</sub>)/2 + (μ<sub>S</sub> − μ<sub>A</sub>)/2 · h(x)
+        = 0.85 − 0.15·h(x): 1.0 at x = −1, 0.85 at x = 0, 0.7 at x = 1. The reference test
+        checks the midpoint, 0.85.</p>
+      <p><strong>A number to check on the rise:</strong> κ = 0.02 is x = 0.5,
+        h = 0.75 − 0.0625 = 0.6875, so μ ≈ 0.69 at half the peak slip.</p>
+      <p><strong>Beyond the course:</strong> production tire models, such as Pacejka's "Magic
+        Formula", fit many more parameters to test-rig data. The shape is the same: rise, peak,
+        fall to sliding.</p>
+    </aside>
+  </section>
+
+  <section>
     <h2>κ in, μ out</h2>
     <div class="cols">
       <div class="small">
