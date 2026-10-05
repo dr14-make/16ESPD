@@ -1553,8 +1553,12 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
         faster, drag grows a little and pulls it back. How fast it pulls back sets its
         <strong>time constant</strong>:</p>
         <p>$$ \tau_{\text{car}} = \frac{m}{\text{extra drag per extra m/s}} = \frac{m}{2 \cdot 0.378 \cdot v} $$</p>
-        <p class="small">At 100 km/h (27.8 m/s): 2 × 0.378 × 27.8 = 21 N per m/s →
-        1400 / 21 = <strong>67 s</strong>.</p>
+        <p class="small"><strong>Extra drag per extra m/s</strong> at 100 km/h (27.8 m/s): drag
+        is 0.378 × 27.8² = 292 N; 1 m/s faster it is 0.378 × 28.8² = 313 N — about
+        <strong>21 N more</strong>. In general the slope of v² is 2v, so it is
+        2 × 0.378 × v = 21 N per m/s.</p>
+        <p class="small">Those 21 N per m/s pull a too-fast car back, like the lag closing its
+        gap: τ = 1400 / 21 = <strong>67 s</strong>.</p>
         <p class="small">That is 200 times slower than the engine's 0.3 s. The car itself is the
         slow part.</p>
       </div>
