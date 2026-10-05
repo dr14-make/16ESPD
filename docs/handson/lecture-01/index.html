@@ -131,43 +131,55 @@
 
 <div class="wrap">
 
+  <p><strong>Why we build it.</strong> A cruise control has to know how the car reacts before it
+    can drive it: how late the engine answers, how hard the air pushes back, when the wheels spin.
+    So before the next lecture designs a controller, you build the car. <strong>What you
+    build:</strong> a pedal command into an engine, through a gear and wheel, pushing a car body,
+    read by a speedometer — then a tire that can slip. By the end your car reaches 246 km/h flat
+    out on a dry road, and barely 10 km/h on snow with its wheel spinning.</p>
+  <p><strong>How each step works.</strong> It starts with the physics it needs — your tutor
+    explains it from the <a href="../../slides/handson-01/index.html">tutor deck</a>, and the
+    <em>Theory</em> link under each step's goal opens those slides. Then you build, and the
+    checkpoint is a number you predicted first. <strong>After this session:</strong>
+    <a href="../../slides/lecture-01/index.html">Lecture 1</a> puts this car under P, PI and PID
+    control.</p>
   <p><strong>Part 1</strong> introduces Dyad Studio: what the extension adds to VS Code, where
     its controls are, and how a diagram and its code are one model. <strong>Part 2</strong> builds
-    the longitudinal car of notebook 01 from standard-library parts, one component per step, mostly
-    in the diagram editor. At the end of step 5 your car reaches the same terminal speed as the
+    the car out of standard-library parts, one component per
+    step, mostly in the diagram editor. At the end of step 5 your car reaches the same terminal speed as the
     course model <code>Vehicle.CarPlant</code>; step 6 gives its wheel inertia; steps 7–10 add
     equations of your own and end with the car spinning its wheel on a slippery road.</p>
   <p class="small muted">Every component here exists in the course repository under
     <code>dyad/HandsOn/</code>, and every number in a checkpoint was read off a run of it.
-    The budgets add up to 165 minutes: 30 for Part 1 and 135 for Part 2.</p>
+    The budgets, theory included, add up to about 210 minutes: 38 for Part 1 and 171 for Part 2 — plan a break after step 05.</p>
 
   <nav class="toc">
     <h2>Part 1 — Dyad Studio and the extension</h2>
     <ul class="toc-plain">
-<li><a href="#ui">What you are looking at</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#ui">What you are looking at</a> <span class="muted small">— 15 min</span></li>
 <li><a href="#library">Create your library</a> <span class="muted small">— 10 min</span></li>
     </ul>
     <ol>
-<li><a href="#tour">Tour: one model, two views</a> <span class="muted small">— 10 min</span></li>
+<li><a href="#tour">Tour: one model, two views</a> <span class="muted small">— 13 min</span></li>
     </ol>
     <h2>Part 2 — Build the car</h2>
     <ol start="2">
-<li><a href="#engine">Engine</a> <span class="muted small">— 20 min</span></li>
-<li><a href="#driveline">Driveline</a> <span class="muted small">— 10 min</span></li>
-<li><a href="#body">Body</a> <span class="muted small">— 15 min</span></li>
-<li><a href="#car">Car: full throttle to terminal speed</a> <span class="muted small">— 20 min</span></li>
-<li><a href="#wheel-inertia">A wheel with inertia</a> <span class="muted small">— 10 min</span></li>
-<li><a href="#grade">A road with a gradient</a> <span class="muted small">— 10 min</span></li>
-<li><a href="#tire-curve">Tire friction against slip</a> <span class="muted small">— 15 min</span></li>
+<li><a href="#engine">Engine</a> <span class="muted small">— 27 min</span></li>
+<li><a href="#driveline">Driveline</a> <span class="muted small">— 13 min</span></li>
+<li><a href="#body">Body</a> <span class="muted small">— 21 min</span></li>
+<li><a href="#car">Car: full throttle to terminal speed</a> <span class="muted small">— 27 min</span></li>
+<li><a href="#wheel-inertia">A wheel with inertia</a> <span class="muted small">— 12 min</span></li>
+<li><a href="#grade">A road with a gradient</a> <span class="muted small">— 13 min</span></li>
+<li><a href="#tire-curve">Tire friction against slip</a> <span class="muted small">— 20 min</span></li>
 <li><a href="#slip-wheel">A wheel that can slip</a> <span class="muted small">— 15 min</span></li>
-<li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— 20 min</span></li>
+<li><a href="#standing-start">Standing start on a slippery road</a> <span class="muted small">— 23 min</span></li>
     </ol>
   </nav>
 
-  <div class="divider"><h2>Part 1 — Dyad Studio and the extension</h2><p class="muted">What the tool is, where its controls are · 30 min</p></div>
+  <div class="divider"><h2>Part 1 — Dyad Studio and the extension</h2><p class="muted">Why we build the car, what the tool is, where its controls are · 38 min</p></div>
 
 <section class="step" id="ui">
-  <h2>What you are looking at <span class="budget">10 min</span></h2>
+  <h2>What you are looking at <span class="budget">15 min</span></h2>
   <p class="goal">Dyad Studio is a VS Code extension: you draw or write models in the Dyad language, and it compiles them to Julia and simulates them.</p>
   <h3>Three ideas</h3>
   <ul>
@@ -225,8 +237,9 @@
 </section>
 
 <section class="step" id="tour">
-  <h2><span class="no">01</span> Tour: one model, two views <span class="budget">10 min</span></h2>
+  <h2><span class="no">01</span> Tour: one model, two views <span class="budget">13 min</span></h2>
   <p class="goal">Place two blocks, wire them, set a parameter, and see that the diagram and the code are the same model.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/1/3">tutor slides — Two kinds of wire</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -270,11 +283,12 @@ relations
 end</code></pre></div>
 </details>
 </section>
-<div class="divider"><h2>Part 2 — Build the car</h2><p class="muted">Steps 2–10 · one component per step · 135 min</p></div>
+<div class="divider"><h2>Part 2 — Build the car</h2><p class="muted">Steps 2–10 · theory, then one component per step · 171 min</p></div>
 
 <section class="step" id="engine">
-  <h2><span class="no">02</span> Engine <span class="budget">20 min</span></h2>
+  <h2><span class="no">02</span> Engine <span class="budget">27 min</span></h2>
   <p class="goal">Finish the engine — torque command in, shaft torque out through a delay, a lag and a 150 N·m ceiling — and watch it answer a step.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/2/1">tutor slides — what happens when you press the pedal, the lag, and the step-02 numbers</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>Step 01 left you a component called <code>Engine</code> holding two blocks, <code>delay → lag</code>.
@@ -459,8 +473,9 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="driveline">
-  <h2><span class="no">03</span> Driveline <span class="budget">10 min</span></h2>
+  <h2><span class="no">03</span> Driveline <span class="budget">13 min</span></h2>
   <p class="goal">Turn engine torque into a force on the car: a 4:1 gear and a 0.31 m rolling wheel.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/3/1">tutor slides — from a twist to a push, F = T · i / r</a></p>
   <h3>Parameters</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
@@ -494,7 +509,7 @@ Then give the parts the <em>names</em>, not the numbers — the parts table show
 <li><span class="badge">New component</span> In the <strong>Components</strong> tree, right-click <code>MyCar</code> → <strong>Add Component</strong> and name it <code>Driveline</code>. It opens as an empty diagram. Then: Place <code>gear</code> and <code>wheel</code> and wire <code>gear.spline_b → wheel.spline</code>.</li>
 <li>Add the four ports. Wire <code>spline → gear.spline_a</code> and <code>wheel.flange → flange</code>.</li>
 <li>Both reaction paths go out of the component: wire <code>gear.support</code> and <code>wheel.support_r</code> to <code>support_r</code>, and <code>wheel.support_t</code> to <code>support_t</code>. The car will ground them.</li>
-<li>Set <code>ratio = i</code> and <code>radius = r</code>. The force at the flange is then <code>T · i / r</code>, the formula from notebook 01.</li>
+<li>Set <code>ratio = i</code> and <code>radius = r</code>. The force at the flange is then <code>T · i / r</code>, the formula from the theory slide at the start of this step.</li>
   </ol>
   
   <div class="checkpoint"><span class="label">Checkpoint</span><p>It saves without errors and has the four ports named in the table. Under 100 N·m into <code>spline</code> and 1400 kg on <code>flange</code>, the reference test <code>TestDriveline</code> accelerates the mass at 0.9217 m/s² (100 · 4 / 0.31 / 1400).</p></div>
@@ -531,8 +546,9 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="body">
-  <h2><span class="no">04</span> Body <span class="budget">15 min</span></h2>
+  <h2><span class="no">04</span> Body <span class="budget">21 min</span></h2>
   <p class="goal">Give the car its 1400 kg and the two forces that hold it back on a flat road: drag and rolling resistance.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/4/1">tutor slides — the forces on the car, air drag, rolling resistance</a></p>
   <h3>Parameters</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
@@ -625,8 +641,9 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="car">
-  <h2><span class="no">05</span> Car: full throttle to terminal speed <span class="budget">20 min</span></h2>
-  <p class="goal">Assemble engine, driveline and body into the car of notebook 01 and drive it flat out from rest until it stops getting faster.</p>
+  <h2><span class="no">05</span> Car: full throttle to terminal speed <span class="budget">27 min</span></h2>
+  <p class="goal">Assemble engine, driveline and body into the car and drive it flat out from rest until it stops getting faster — at the 246 km/h worked out on paper at the start of this step.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/5/1">tutor slides — the force balance, top speed on paper, how long it takes</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -692,7 +709,7 @@ end</code></pre></div>
   flattening as drag grows with the square of speed.</p>
 <p>Same check against the course model: <code>Vehicle.CarPlant</code> at full torque reads
   246.39 km/h at 300 s, and the two agree to 0.0001 km/h at 800 s (246.3957 km/h). Your car is
-  the notebook's car.</p></div>
+  the car Lecture 1 controls.</p></div>
   <details class="solution">
   <summary>Stuck? The full model</summary>
   <p class="small muted">From <code>dyad/HandsOn/Car.dyad</code>,
@@ -747,8 +764,9 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="wheel-inertia">
-  <h2><span class="no">06</span> A wheel with inertia <span class="budget">10 min</span></h2>
+  <h2><span class="no">06</span> A wheel with inertia <span class="budget">12 min</span></h2>
   <p class="goal">Put a 1 kg·m² road wheel between the gear and the rolling contact, and see how little it changes.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/6/1">tutor slides — the wheel's hidden mass</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -890,8 +908,9 @@ end</code></pre></div>
 </section>
 
 <section class="step" id="grade">
-  <h2><span class="no">07</span> A road with a gradient <span class="budget">10 min</span></h2>
+  <h2><span class="no">07</span> A road with a gradient <span class="budget">13 min</span></h2>
   <p class="goal">Write your first component with an equation — the along-slope pull of gravity — and give the body a <code>grade</code> input.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/7/1">tutor slides — the slope</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -998,8 +1017,9 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="tire-curve">
-  <h2><span class="no">08</span> Tire friction against slip <span class="budget">15 min</span></h2>
+  <h2><span class="no">08</span> Tire friction against slip <span class="budget">20 min</span></h2>
   <p class="goal">A component made of equations instead of parts: slip ratio κ in, friction coefficient μ out — a peak of 1.0 at 4 % slip, falling to 0.7 once the tire slides.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/8/1">tutor slides — slip, and how grip depends on it</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>Everything so far was drawn. This component has nothing to draw: it is a formula. You paste it,
@@ -1146,6 +1166,7 @@ end</code></pre></div>
 <section class="step" id="slip-wheel">
   <h2><span class="no">09</span> A wheel that can slip <span class="budget">15 min</span></h2>
   <p class="goal">A tire instead of a rolling constraint: the wheel and the car may now move at different speeds, and your friction curve turns the difference into force.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/8/2">tutor slides — slip, and how grip depends on it (step 08)</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>In the car so far, <code>IdealRollingWheel</code> locked wheel and road together: ω·r = v, always.
@@ -1280,8 +1301,9 @@ end</code></pre></div>
 </details>
 </section>
 <section class="step" id="standing-start">
-  <h2><span class="no">10</span> Standing start on a slippery road <span class="budget">20 min</span></h2>
+  <h2><span class="no">10</span> Standing start on a slippery road <span class="budget">23 min</span></h2>
   <p class="goal">Build a car around the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.</p>
+  <p class="small muted">Theory: <a href="../../slides/handson-01/index.html#/10/1">tutor slides — two limits: the engine's and the tire's</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>This is a new car, not an edit of <code>Car</code>. The slipping wheel replaces the rolling wheel

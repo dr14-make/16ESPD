@@ -22,6 +22,12 @@ Supersedes the session length, the take-home split and the pictures below:
 - Each step's picture is a Dyad Studio screenshot of its `HandsOn` model; the hand-drawn SVG
   diagrams are gone. Checkpoint plots are rendered from the reference analyses.
 
+## Revision — the hands-on comes before the PID lecture
+
+Supersedes "Out of scope: changes to the deck" below. The hands-on now precedes the PID lecture,
+opens with why and what, and teaches each step's physics at that step. See
+`2026-10-04-lecture-01-handson-first-design.md`.
+
 ## Decisions
 
 | Decision | Choice | Why |

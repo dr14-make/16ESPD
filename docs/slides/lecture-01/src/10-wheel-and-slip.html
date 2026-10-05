@@ -10,11 +10,12 @@
     <p class="meta"><code>notebooks/lecture01/10-wheel-and-slip.ipynb</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> everything so far assumed the tire does whatever the driveline
-      asks. We are going to remove that assumption, and it costs us more than anything else we
-      have removed today.</p>
-      <p><strong>Timing:</strong> 12 minutes if you have them. This is the section students
-      remember, and it is the one that motivates lecture 2 — so if you can only show one beat,
-      show the ice patch.</p>
+      asks. Students already removed that assumption in the hands-on — steps 09 and 10 — and
+      watched a wheel spin on snow with nobody controlling it. This section puts a controller
+      on that car.</p>
+      <p><strong>Timing:</strong> 10 minutes if you have them. Beats one and two are recaps of
+      the hands-on, steps 08 and 10 — take them fast. Beat three is new and is
+      the section students remember; if you can only show one beat, show the ice patch.</p>
           <p><strong>Cut order:</strong> first to go. Everything here is upside; the lecture stands without it.</p>
     </aside>
   </section>
@@ -50,8 +51,10 @@ t1, y1 = signal(l1, SPEED_L1)
         </div>
       </div>
       <div>
-        <p class="small">A rotating wheel is extra inertia the engine has to accelerate, so the
-        plant is slightly heavier than it was. The gains should survive.</p>
+        <p class="small">A rotating wheel is extra inertia the engine has to accelerate —
+        J/r² ≈ 10 kg on 1400. The plant is slightly heavier than it was, so the gains should
+        survive.</p>
+        <p class="small muted">↩ Hands-on step 06: <a href="../handson-01/index.html#/6/1">the wheel's hidden mass</a></p>
         <div class="callout small">
           <span class="label">If the response shifted</span>
           Say by how much. "The gains still work" is a claim, and a rise time is the evidence
@@ -60,8 +63,9 @@ t1, y1 = signal(l1, SPEED_L1)
       </div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> this is a fidelity increase that changes nothing important, and
-      that is worth showing on its own. Not every added detail matters. Knowing which ones do is
+      <p><strong>Say:</strong> students saw open-loop in step 06 that the wheel barely moves the
+      launch. Now the closed-loop question: do the gains of section 05 still hold? This is a
+      fidelity increase that changes nothing important, and that is worth showing on its own. Not every added detail matters. Knowing which ones do is
       the modeling skill.</p>
       <p><strong>Read out</strong> the rise time and overshoot and compare with section 05.</p>
           <p><strong>Readout — every symbol on this slide</strong></p>
@@ -71,25 +75,6 @@ t1, y1 = signal(l1, SPEED_L1)
         <li><strong>rise_time</strong> — 10 % to 90 % of the commanded step, seconds. <strong>overshoot</strong> — peak past the setpoint, per cent.</li>
         <li><strong>Ideal rolling</strong> — wheel speed times radius <em>is</em> road speed, by definition. No sliding, ever.</li>
       </ul>
-    </aside>
-  </section>
-
-  <section>
-    <h2>What ideal rolling assumes</h2>
-    <p class="lede">That the contact patch never slides.</p>
-    <p class="small">Every plot in this lecture up to this slide has quietly assumed it. Wheel
-    speed times radius <em>is</em> road speed, by definition, with no way for them to disagree.</p>
-    <div class="callout warn">
-      <span class="label">On a dry road that is nearly true</span>
-      A driven tire at cruise slips by a per cent or two, and nothing in our story depended on
-      the difference. On ice it is not true at all, and the difference is the whole story.
-    </div>
-    <aside class="notes">
-      <p><strong>Say:</strong> assumptions do not announce themselves. This one has been in
-      every model today and nobody noticed, because on a dry road it costs nothing.</p>
-      <p><strong>Ask the room:</strong> what else have we quietly assumed? <em>(That the road is
-      straight. That the mass is constant. That the engine makes peak torque at every speed —
-      that one we did flag, in section 01. Good answers are worth thirty seconds.)</em></p>
     </aside>
   </section>
 
@@ -123,6 +108,7 @@ end</code></pre>
             <a href="../../../notebooks/lecture01/10-wheel-and-slip.ipynb">open notebook</a>
           </div>
         </div>
+        <p class="small muted">↩ Hands-on step 10: <a href="../handson-01/index.html#/10/3">the same standing start, open loop</a></p>
         <p class="small">Under closed loop the error stays large, so the integrator winds up —
         against a limit <strong>that is not in the engine at all</strong>.</p>
       </div>
@@ -134,13 +120,17 @@ end</code></pre>
       </figure>
     </div>
     <aside class="notes">
+      <p><strong>Say:</strong> this is the standing start from hands-on step 10, on the course
+      model. Same numbers: 12 843 rpm at the wheel is the 1500 km/h of tread speed they
+      plotted. Do not re-explain it; ask someone who finished step 10 what happened.</p>
       <p><strong>Point at</strong> the force panel, bottom right — it has the whole argument in
       one step. For the first four tenths of a second both surfaces carry every newton the engine
       asks for. Then the snow hits 1 373 N, everything it has, and falls off a cliff to 961 N,
       where it stays. <strong>More wheel speed bought less force.</strong></p>
       <p><strong>Say:</strong> the engine delivered everything it was asked for. The driveline
       turned. The wheel spun to 12 843 rpm. And the car got to 10 km/h.</p>
-      <p><strong>Say:</strong> and now connect it to section 06. The integrator sees a large,
+      <p><strong>Say:</strong> and now the new part, which the hands-on could not show: connect
+      it to section 06. The integrator sees a large,
       persistent error and winds up, exactly as it did on the hill. But this time the limit is
       not the engine's torque ceiling — the engine is nowhere near it. The limit is in the
       contact patch, and no amount of torque gets past it.</p>
@@ -163,6 +153,7 @@ end</code></pre>
     <h2>Beat two: the curve</h2>
     <div class="cols cols-wide-right">
       <div>
+        <p class="small muted">↩ Hands-on step 08: <a href="../handson-01/index.html#/8/2">slip, and how grip depends on it</a></p>
         <p>$$ \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
              \qquad F_x \;=\; \mu(\kappa)\,F_z $$</p>
         <div class="demo">
@@ -201,17 +192,16 @@ peak_kappa = kappas[argmax(dry_curve)]</code></pre>
       </figure>
     </div>
     <aside class="notes">
-      <p><strong>Point at</strong> the rising part first: more slip, more force. That is the
-      region everything is designed for, and it behaves the way intuition expects.</p>
-      <p><strong>Then point at the peak</strong> — that is the most force this tire can make on
-      this surface, full stop. It is an actuator limit, the same kind of thing as the engine's
-      150 N·m, and it moves with the weather.</p>
-      <p><strong>Then point past the peak</strong> and say slowly: here, <em>more slip gives
-      less force</em>.</p>
+      <p><strong>Recap, fast:</strong> this is the curve from hands-on
+      step 08 — rising to the adhesion peak at κ = 0.04, falling to sliding. Point at the rising
+      part (more slip, more force), the peak (an actuator limit that moves with the weather),
+      and past it.</p>
+      <p><strong>The new thing on this plot:</strong> the wheelspin run's operating points. They
+      all sit on the falling side. That is where the car spent beat one.</p>
       <p><strong>Ask the room:</strong> what happens to a wheel that ends up on the right-hand
-      side of that peak? <em>(Less force, so less resistance to the engine's torque, so it
-      accelerates, so more slip, so even less force. Let them build the loop themselves — it is
-      the next slide and they can derive it.)</em></p>
+      side of that peak? <em>(They met the answer in hands-on step 10: less force, so less
+      resistance to the engine's torque, so more slip, so even less force. Let them say it — the
+      next slide is what it means for a controller.)</em></p>
           <p><strong>Readout — every symbol on this slide</strong></p>
       <ul>
         <li><strong>κ (kappa)</strong> — the <em>slip ratio</em>, dimensionless: (ω·r − v) / max(|v|, ε). Zero means pure rolling; positive means the wheel is turning faster than the car is moving.</li>
@@ -243,6 +233,8 @@ peak_kappa = kappas[argmax(dry_curve)]</code></pre>
       </div>
     </div>
     <aside class="notes">
+      <p><strong>Say:</strong> the loop on the left is a recap. The box on the right is the new
+      part: this is what that loop means for the tuning you did in section 08.</p>
       <p><strong>Say:</strong> and notice this is the same car. The plant did not get replaced;
       it moved into a region where it has a different character. That is what "nonlinear" means
       in practice — not a curved graph, but different rules in different places.</p>
@@ -459,7 +451,7 @@ capped = rerun(blind, "y_max" =&gt; ICE_CEILING; saveat = 0.05)</code></pre>
       these slides is reproducible, and the plots are committed so they can read them without
       installing anything.</p>
       <p><strong>Next lecture:</strong> the engine torque map, which fixes the 246 km/h lie
-      from section 01 — and cascade control, which fixes the ice patch.</p>
+      from hands-on step 05 — and cascade control, which fixes the ice patch.</p>
     </aside>
   </section>
 

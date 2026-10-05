@@ -4,6 +4,26 @@ One car, three fidelity levels, ten notebooks. Every control idea is introduced 
 the *controller*, never as a change of subject: the plant stays the same vehicle throughout, so
 students carry one mental model from open-loop coasting to cruise control on black ice.
 
+## Sequence
+
+Lecture 1 runs as two sessions on the one car, in this order:
+
+| # | Session | Material | Min |
+|---|---|---|---|
+| 1 | Hands-on: understand the car, then build it in Dyad | `docs/handson/lecture-01/`, tutor deck `docs/slides/handson-01/` | ~210 |
+| 2 | Introduction and PID | `docs/slides/lecture-01/`, the ten notebooks | 90 |
+
+The plant's physics is taught once, in the hands-on, at the step that needs it: the session
+opens with why a controller needs a model and what is being built, and each step opens with its
+theory slides — the engine's delay, lag and ceiling at step 02, F = T·i/r at 03, the forces at
+04, the force balance and top speed at 05, the wheel's inertia at 06, the slope at 07, slip and
+the friction curve at 08, the engine-vs-tire limits at 10 — then builds the part and checks a
+number predicted on paper. The PID deck does not repeat any of it: its slides carry a
+"↩ Hands-on step NN" link to the exact slide wherever they rely on that physics. Its front matter
+recaps the built car in one slide, section 01 keeps only the full-throttle run, the step test
+and K, τ, θ, and section 10 treats wheelspin and the friction curve as recaps before the ice
+patch. The notebooks are unchanged.
+
 ## Source material
 
 | Source | Used in |
@@ -110,6 +130,10 @@ than nearly fires.
 | 10 | Wheel and slip | cruise control meets black ice | 3 |
 
 ### 01 — The car
+
+The force balance, terminal speed and the engine lags are taught in the hands-on; the PID deck's
+section 01 presents only the full-throttle run, the step test and the K, τ, θ fit. The notebook
+keeps all of it.
 
 Build L0 from first principles: force balance, terminal speed. Open-loop constant throttle to
 terminal speed; then a torque step, with the transport delay and lag visible on the torque

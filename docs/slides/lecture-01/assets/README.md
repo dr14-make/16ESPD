@@ -18,9 +18,13 @@ that runs reveal.js 5), and reveal's League Gothic face.
 
 ## Figures
 
-Nine of the deck's thirty-one figures are in — all of sections 03, 04 and 05. Every other
-slot renders as a hatched placeholder naming the plot that belongs there and the call that
-fills it. Filling it is the whole hand-off: no markup changes.
+All thirty-two of the deck's figures are in. A slot whose file is missing renders as a hatched
+placeholder naming the plot that belongs there and the call that fills it, so filling a slot is
+the whole hand-off: no markup changes. `python3 build.py --figures` reconciles the slots, the
+files and the notebooks that write them.
+
+The hands-on deck (`../handson-01/`) loads reveal.js, KaTeX and `deck.css` from this directory
+by relative path. Its diagrams are inline SVG and it has no figure slots.
 
 Naming: `<notebook number>-<slug>.svg`, matching the `<img src>` already in the deck.
 

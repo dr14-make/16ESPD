@@ -142,6 +142,7 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
           <div class="r"><span class="v">40.1</span><span class="k">N·m computed</span></div>
           <div class="r"><span class="v">40.1</span><span class="k">N·m discovered</span></div>
         </div>
+        <p class="small muted">↩ Hands-on step 05: <a href="../handson-01/index.html#/5/3">where 40.1 N·m comes from</a></p>
         <div class="model">
           <span class="label">Open in Dyad</span>
           <code>dyad/Lecture1/CruiseLoop.dyad</code>
@@ -157,7 +158,7 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
     <aside class="notes">
       <p><strong>This is the slide.</strong> Slow down.</p>
       <p><strong>Point at:</strong> the dashed line first. Say where it came from: we solved
-      the force balance at 110 km/h with a pencil, back in section 01, and got 40 newton-metres.</p>
+      the force balance at 110 km/h with a pencil, back in hands-on step 05, and got 40 newton-metres.</p>
       <p><strong>Then point at:</strong> the curve arriving at it. Say: nobody gave the
       controller the mass. Or the drag area. Or the gear ratio. It has never seen the model.
       It has seen one number — how far off it was — and by accumulating that it has
@@ -177,7 +178,7 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
       <ul>
         <li><strong>integrator.y</strong> — the integrator's own state, <em>before</em> the gain k is applied. Multiply by k to get newton-metres.</li>
         <li><strong>k·I = 40.119 N·m</strong> — where it settles.</li>
-        <li><strong>T_cruise(110) = 40.119 N·m</strong> — the same number, computed from the force balance with a pencil in section 01.</li>
+        <li><strong>T_cruise(110) = 40.119 N·m</strong> — the same number, computed from the force balance with a pencil in hands-on step 05.</li>
         <li><strong>The dashed line</strong> — that hand-computed value, drawn on so the coincidence is visible rather than asserted.</li>
         <li><strong>stop = 90 s</strong> — a longer window than the step needs, because the last hundredths of a newton-metre take most of a minute.</li>
       </ul>

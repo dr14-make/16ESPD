@@ -3,14 +3,63 @@
 <section data-section-title="06 — Wheel inertia">
 
   <section class="cover">
-    <p class="nb-no">Step 06 · 10 min</p>
+    <p class="nb-no">Step 06 · 12 min</p>
     <h2>A wheel with inertia</h2>
     <p class="thesis">A 1 kg·m² wheel between gear and road — and how little it changes.</p>
     <p class="meta"><a href="../../handson/lecture-01/#wheel-inertia">page: step 06</a> · reference <code>dyad/HandsOn/WheeledDriveline.dyad</code>, <code>WheeledCar.dyad</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> the wheel now has its own state — its own speed. Today that speed
       is still tied to the car's. In step 09 we cut that tie, and that is where ice happens.</p>
-      <p><strong>Timing:</strong> 10 minutes, mostly Duplicate and one wire.</p>
+      <p><strong>Timing:</strong> 12 minutes: 2 for the hidden mass, 10 for Duplicate and one wire.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The wheel's hidden mass</h2>
+    <div class="cols">
+      <div>
+        <p class="small">To speed up the car, the engine must also spin up the wheels. That costs
+        energy, as if the car were a little heavier.</p>
+        <p class="small">Energy of a spinning wheel, with ω = v / r:</p>
+        <p class="small">$$ \tfrac12 J\omega^2 \;=\; \tfrac12 J\frac{v^2}{r^2}
+              \;=\; \tfrac12\,\underbrace{\Big(\frac{J}{r^2}\Big)}_{\text{extra mass}}\,v^2 $$</p>
+        <p class="small">That is exactly the energy of a mass <strong>J/r²</strong> moving at
+        speed v.</p>
+      </div>
+      <div>
+        <h4>Step 06: a wheel with J = 1 kg·m²</h4>
+        <p class="small">1 / 0.31² = 1 / 0.096 ≈ <strong>10 kg</strong> extra on a 1400 kg car:
+        0.7 % heavier.</p>
+        <div class="readout">
+          <div class="r"><span class="v">23.6 → 23.8</span><span class="k">s to 100 km/h</span></div>
+        </div>
+        <div class="callout small">
+          <span class="label">Starting, not top speed</span>
+          At a steady speed nothing speeds up, so the extra mass does nothing. The top speed does
+          not change.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> a bicycle with heavy wheels feels sluggish when you start, but rolls
+      along fine once it is moving. Same here.</p>
+      <p><strong>Derivation, step by step</strong></p>
+      <ol>
+        <li>Moving energy of the car: ½·m·v².</li>
+        <li>Spinning energy of a wheel: ½·J·ω², where J (kg·m²) is how hard it is to spin up.</li>
+        <li>The wheel rolls, so ω = v / r. Substitute: ½·J·v²/r² = ½·(J/r²)·v².</li>
+        <li>Total energy = ½·(m + J/r²)·v². The engine has to supply it, so the car behaves as if
+          its mass were m + J/r².</li>
+      </ol>
+      <p><strong>The numbers:</strong> J/r² = 1 / 0.0961 = 10.4 kg. 10.4 / 1400 = 0.74 %. Time to
+      100 km/h scales with mass, so 23.6 s × 1.0074 = 23.8 s — step 06's checkpoint.</p>
+      <p><strong>If someone asks about the engine's own flywheel:</strong> parts on the engine
+      side spin i times faster, so they count i² = 16 times more: J<sub>e</sub>·i²/r². Our model
+      leaves them out.</p>
+      <p><strong>Ask the room first,</strong> before showing the numbers: how much slower will the
+      car be? Most guess a lot. <em>(0.2 s out of 23.6. Not every added detail matters — knowing
+      which ones do is the skill. But the wheel now has its own speed, and in step 08 that is what
+      lets it spin.)</em></p>
     </aside>
   </section>
 

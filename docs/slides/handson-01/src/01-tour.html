@@ -3,7 +3,7 @@
 <section data-section-title="01 — Tour">
 
   <section class="cover">
-    <p class="nb-no">Step 01 · 10 min</p>
+    <p class="nb-no">Step 01 · 13 min</p>
     <h2>One model, two views</h2>
     <p class="thesis">Place two blocks, wire them, set a parameter — then see the same three facts as code.</p>
     <p class="meta"><a href="../../handson/lecture-01/#tour">page: step 01</a> · reference <code>dyad/HandsOn/Tour.dyad</code></p>
@@ -13,7 +13,7 @@
       <p><strong>Do it live, first, slowly:</strong> Components → right-click
       <code>MyCar</code> → Add Component → <code>Engine</code>. Then + → <code>PadeDelay</code>,
       rename to <code>delay</code>. Then let them do the same with <code>FirstOrder</code>.</p>
-      <p><strong>Timing:</strong> 10 minutes. Wait until most hands are done before the ⇄ slide.</p>
+      <p><strong>Timing:</strong> 13 minutes: 10 building, then 3 on "two kinds of wire" at the end. Wait until most hands are done before the ⇄ slide.</p>
     </aside>
   </section>
 
@@ -60,6 +60,71 @@ end</code></pre>
       <p><strong>They notice:</strong> <code>{^delay}</code> tags and a <code>metadata</code>
       block in their file. That is where the diagram keeps positions and wire routes. Leave it
       alone — it is the diagram's, not theirs.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Two kinds of wire</h2>
+    <div class="cols">
+      <div>
+        <h3>A signal: a number</h3>
+        <p class="small">It goes one way, like an arrow. One block works out a number; the next
+        block reads it.</p>
+        <svg class="diagram" viewBox="0 0 440 100" role="img"
+             aria-label="Two blocks joined by an arrow: the first block's number is read by the second.">
+          <defs>
+            <marker id="c-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+          </defs>
+          <rect class="box" x="10" y="30" width="130" height="50" rx="4"/>
+          <text x="75" y="61" text-anchor="middle" font-size="16">pedal</text>
+          <rect class="box" x="300" y="30" width="130" height="50" rx="4"/>
+          <text x="365" y="61" text-anchor="middle" font-size="16">engine</text>
+          <path class="arrow" d="M140 55 H296" marker-end="url(#c-ar)"/>
+          <text class="lbl" x="170" y="45">"give me 40 N·m"</text>
+        </svg>
+        <p class="small muted">Examples today: the torque you ask for, the km/h on the
+        speedometer, how slippery the road is.</p>
+      </div>
+      <div>
+        <h3>A mechanical joint: physics</h3>
+        <p class="small">No arrow. Two parts bolted together. Dyad then knows two facts:</p>
+        <ul class="small">
+          <li>they <strong>move together</strong> — same position, same speed;</li>
+          <li>they <strong>push each other equally</strong> — the forces add up to zero.</li>
+        </ul>
+        <svg class="diagram" viewBox="0 0 440 100" role="img"
+             aria-label="Two blocks joined by a plain line with no arrowhead: they move together and push on each other equally.">
+          <rect class="box" x="10" y="30" width="130" height="50" rx="4"/>
+          <text x="75" y="61" text-anchor="middle" font-size="16">wheel</text>
+          <rect class="box" x="300" y="30" width="130" height="50" rx="4"/>
+          <text x="365" y="61" text-anchor="middle" font-size="16">car body</text>
+          <path class="wire" d="M140 55 H300" stroke-width="3"/>
+          <text class="lbl" x="150" y="45">same speed · forces balance</text>
+        </svg>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> a signal wire is like a message: "the driver wants 40 newton-metres".
+      It goes one way. A mechanical joint is like a bolt. The wheel does not "send" a force to the
+      car body; they are fastened together, they move together, and whatever the wheel pushes, the
+      body is pushed by.</p>
+      <p><strong>Why it matters:</strong> because a joint has no direction, you never have to decide
+      "who drives whom". You draw the car the way it is put together, and Dyad works out the
+      equations. That is why Dyad can join a body onto a driveline with one wire.</p>
+      <p><strong>The technical words, if a student asks:</strong></p>
+      <ul>
+        <li>Every mechanical port carries two numbers. A sliding port (<code>Flange</code>) carries
+          position <em>s</em> and force <em>f</em>. A turning port (<code>Spline</code>) carries
+          angle <em>φ</em> and torque <em>τ</em>.</li>
+        <li>The one that is <em>equal</em> at both ends (position, angle) is called the
+          <em>potential</em>. The one that <em>sums to zero</em> (force, torque) is the
+          <em>flow</em>. Same idea as voltage and current in a circuit.</li>
+        <li>This way of modeling is called <em>acausal</em>: equations, not assignments.</li>
+      </ul>
+      <p><strong>In Dyad Studio:</strong> the port shape tells you the kind. Gray circles are
+      turning (rotational), green squares are sliding (translational). You can only wire like to
+      like.</p>
     </aside>
   </section>
 

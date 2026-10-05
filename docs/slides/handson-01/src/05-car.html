@@ -3,14 +3,194 @@
 <section data-section-title="05 — Car">
 
   <section class="cover">
-    <p class="nb-no">Step 05 · 20 min</p>
+    <p class="nb-no">Step 05 · 27 min</p>
     <h2>Car: full throttle to terminal speed</h2>
-    <p class="thesis">Your three components, assembled — and the same 246 km/h the notebook shows.</p>
+    <p class="thesis">Your three components, assembled — and the 246 km/h you computed on paper.</p>
     <p class="meta"><a href="../../handson/lecture-01/#car">page: step 05</a> · reference <code>dyad/HandsOn/Car.dyad</code></p>
     <aside class="notes">
       <p><strong>Say:</strong> this is the milestone. Everything so far was parts; this is the
-      plant every controller in the lecture was wrapped around.</p>
-      <p><strong>Timing:</strong> 20 minutes. Assembly 8, bench and analysis 5, run and plot 5.</p>
+      plant every controller in the PID lecture will be wrapped around.</p>
+      <p><strong>Timing:</strong> 27 minutes: 7 of theory (force balance, nine numbers, top speed, how long), then assembly 8, bench and analysis 5, run and plot 5, and the "246 is wrong" slide after the plot.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Adding it all up: the force balance</h2>
+    <p class="small">Newton's second law: mass × acceleration = sum of all forces.</p>
+    <p>$$ \underbrace{m\,\frac{dv}{dt}}_{\text{speeding up}} \;=\;
+      \underbrace{\frac{T\,i}{r}}_{\text{push}}
+      \;-\; \underbrace{\tfrac{1}{2}\rho\,C_dA\,v^2}_{\text{air}}
+      \;-\; \underbrace{f_r\,m\,g\cos\alpha}_{\text{tires}}
+      \;-\; \underbrace{m\,g\sin\alpha}_{\text{slope}} $$</p>
+    <div class="cols">
+      <div class="small">
+        <p>Read it as a budget: the push comes in, the three resistances take their share, and
+        <strong>what is left speeds the car up</strong>. If nothing is left, the speed is
+        steady.</p>
+      </div>
+      <div class="callout small">
+        <span class="label">In Dyad you do not type this</span>
+        You join the parts on one mechanical joint, and the rule from step 01 — forces add up to
+        zero — writes this equation for you.
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the whole car in one line. Everything we said in the last
+      four slides, added up. The left side is mass times acceleration; the right side is the push
+      minus everything that holds the car back.</p>
+      <p><strong>Point at:</strong> the T on the right. It is not the pedal request; it is what
+      step 02's engine actually delivers — late, slow, limited.</p>
+      <p><strong>Point at:</strong> the v². Because of it, the car is not "linear": doubling the
+      push does not double the speed. That will matter in the next lecture's step test.</p>
+      <p><strong>Say:</strong> step 04 builds the right side on a flat road — mass, air, tires.
+      Step 07 adds the slope.</p>
+      <p><strong>Symbols, once more:</strong> m = 1400 kg; v speed in m/s; T engine torque;
+      i = 4; r = 0.31 m; ρ = 1.2 kg/m³; C<sub>d</sub>A = 0.63 m²; f<sub>r</sub> = 0.012;
+      g = 9.81 m/s²; α road angle.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>The car, in nine numbers</h2>
+    <div class="cols">
+      <div>
+        <table>
+          <tr><th>What</th><th></th><th></th></tr>
+          <tr><td>mass <em>m</em></td><td class="num">1400</td><td>kg</td></tr>
+          <tr><td>drag area <em>C<sub>d</sub>A</em></td><td class="num">0.63</td><td>m²</td></tr>
+          <tr><td>air density <em>ρ</em></td><td class="num">1.2</td><td>kg/m³</td></tr>
+          <tr><td>rolling coefficient <em>f<sub>r</sub></em></td><td class="num">0.012</td><td>—</td></tr>
+          <tr><td>wheel radius <em>r</em></td><td class="num">0.31</td><td>m</td></tr>
+          <tr><td>gear ratio <em>i</em></td><td class="num">4.0</td><td>—</td></tr>
+          <tr><td>max engine torque <em>T</em><sub>max</sub></td><td class="num">150</td><td>N·m</td></tr>
+          <tr><td>engine lag <em>τ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
+          <tr><td>engine delay <em>θ<sub>e</sub></em></td><td class="num">0.3</td><td>s</td></tr>
+        </table>
+      </div>
+      <div>
+        <h4>Where you type each one</h4>
+        <ul class="small">
+          <li><code>Engine</code> — T<sub>max</sub>, τ<sub>e</sub>, θ<sub>e</sub> (step 02)</li>
+          <li><code>Driveline</code> — i, r (step 03)</li>
+          <li><code>Body</code> — m, C<sub>d</sub>A, ρ, f<sub>r</sub> (step 04)</li>
+        </ul>
+        <div class="callout small">
+          <span class="label">Nothing is chosen to make a point</span>
+          Every number in the hands-on and in the next lecture comes from these nine, by
+          arithmetic you can check.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> this is the entire car. Nine numbers. You have now met every one of
+      them: three in the engine, two in the gear and wheel, four in the body.</p>
+      <p><strong>Ask the room:</strong> which of these nine will make the car hardest to control?
+      <em>(Let two or three guesses land. The answer is the bottom two — the delay and the lag
+      from step 02.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>Top speed: when the push runs out</h2>
+    <div class="cols">
+      <div>
+        <p class="small">At top speed the car no longer speeds up: <em>dv/dt = 0</em>. The force
+        balance (flat road) becomes <strong>push = air + tires</strong>:</p>
+        <ol class="small">
+          <li>Most push: 150 × 4 / 0.31 = <strong>1935 N</strong></li>
+          <li>Tires take: <strong>165 N</strong>. Left for the air: 1935 − 165 = 1770 N</li>
+          <li>Air: 0.378 · v² = 1770 → v² = 4683</li>
+          <li>v = √4683 = 68.4 m/s × 3.6 = <strong>246 km/h</strong></li>
+        </ol>
+      </div>
+      <div>
+        <h4>The same idea, at cruise</h4>
+        <p class="small">To hold a speed, push = air + tires. Then turn the push back into engine
+        torque: T = F · r / i.</p>
+        <table class="small">
+          <tr><th>hold</th><th class="num">air</th><th class="num">+ tires</th><th class="num">= push</th><th class="num">torque</th></tr>
+          <tr><td>90 km/h</td><td class="num">236</td><td class="num">165</td><td class="num">401 N</td><td class="num"><strong>31.1 N·m</strong></td></tr>
+          <tr><td>110 km/h</td><td class="num">353</td><td class="num">165</td><td class="num">518 N</td><td class="num"><strong>40.1 N·m</strong></td></tr>
+        </table>
+        <p class="small muted">The next lecture opens with these two: they are its first
+        experiment, and the answer its controller has to find on its own.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Do it on the board.</strong> This is the most important calculation of the day,
+      so go slowly.</p>
+      <ol>
+        <li><strong>Why dv/dt = 0:</strong> "top speed" means the car has stopped getting faster.
+          So the left side of the force balance is zero, and the forces must cancel.</li>
+        <li><strong>The push:</strong> full torque through step 03's formula, 150 × 4 / 0.31 =
+          1935 N.</li>
+        <li><strong>Subtract the tires:</strong> 165 N, the same at every speed. 1935 − 165 =
+          1770 N left for the air.</li>
+        <li><strong>Solve for v:</strong> 0.378·v² = 1770, so v² = 1770 / 0.378 = 4683, and
+          v = 68.4 m/s. Times 3.6 = 246 km/h.</li>
+      </ol>
+      <p><strong>The cruise torques, step by step:</strong> 90 km/h = 25 m/s; air 0.378 × 625 =
+      236 N; plus 165 = 401 N needed at the road. Torque = 401 × 0.31 / 4 = 31.1 N·m. 110 km/h =
+      30.56 m/s; 30.56² = 934; × 0.378 = 353 N; plus 165 = 518 N; × 0.31 / 4 = 40.1 N·m.</p>
+      <p><strong>Say:</strong> notice what we did: we set the "speeding up" part to zero and
+      solved. That gives the <em>steady state</em> — where the car ends up — without saying anything
+      about how it gets there. The next lecture's controller will find 31.1 N·m by itself,
+      without being told.</p>
+      <p><strong>Ask the room, before the next slide:</strong> 246 km/h from a 150 N·m engine. Does
+      anyone believe that? <em>(Let the doubt sit — the next slide answers it.)</em></p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>How long does it take to get there?</h2>
+    <div class="cols">
+      <div>
+        <p class="small">Near any speed, the car behaves like step 02's lag: if it goes a little
+        faster, drag grows a little and pulls it back. How fast it pulls back sets its
+        <strong>time constant</strong>:</p>
+        <p>$$ \tau_{\text{car}} = \frac{m}{\text{extra drag per extra m/s}} = \frac{m}{2 \cdot 0.378 \cdot v} $$</p>
+        <p class="small">At 100 km/h (27.8 m/s): 2 × 0.378 × 27.8 = 21 N per m/s →
+        1400 / 21 = <strong>67 s</strong>.</p>
+        <p class="small">That is 200 times slower than the engine's 0.3 s. The car itself is the
+        slow part.</p>
+      </div>
+      <div>
+        <h4>Step 05, predicted</h4>
+        <div class="readout">
+          <div class="r"><span class="v">23.6 s</span><span class="k">to 100 km/h</span></div>
+          <div class="r"><span class="v">143 s</span><span class="k">to 99 %</span></div>
+        </div>
+        <div class="readout">
+          <div class="r"><span class="v">246.39</span><span class="k">km/h at 300 s</span></div>
+        </div>
+        <div class="callout small">
+          <span class="label">So run for 300 s</span>
+          Stop sooner and the car is still on its way up — and you will think 246 is wrong.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> two and a half minutes of flat-out driving to get within one per
+      cent of top speed. Drag is weak at low speed, so there is not much pulling the car toward its
+      final speed — it gets there slowly.</p>
+      <p><strong>Derivation, step by step</strong> (compare with the lag slide in step 02):</p>
+      <ol>
+        <li>Suppose the car is near speed v and goes Δv faster. Drag grows from 0.378·v² to about
+          0.378·v² + 2·0.378·v·Δv (the slope of v² is 2v).</li>
+        <li>That extra drag, 2·0.378·v·Δv, slows the car: m·dΔv/dt = −2·0.378·v·Δv.</li>
+        <li>That is exactly the lag equation from step 02, τ·dΔv/dt = −Δv, with
+          τ = m / (2·0.378·v).</li>
+        <li>At 27.8 m/s: 2 × 0.378 × 27.8 = 21.0; 1400 / 21.0 = 66.7 s. At 90 km/h it is 74 s, at
+          110 km/h 61 s — the car is quicker to settle at high speed, because drag is
+          stronger there.</li>
+      </ol>
+      <p><strong>Where 23.6 s, 143 s and 246.39 come from:</strong> these are read off a simulation
+      of this same force balance (the reference model <code>HandsOn.CarFullThrottle</code>); there
+      is no neat hand formula because τ changes with speed. They are the numbers students compare
+      against.</p>
+      <p><strong>Flag forward:</strong> in the next lecture a controller moves this car 20 km/h in
+      a few seconds. The engine is no stronger. Feedback changes how fast the car responds — keep
+      the 67 s in mind for that moment.</p>
     </aside>
   </section>
 
@@ -64,7 +244,7 @@ end</code></pre>
   </section>
 
   <section>
-    <h2>246 km/h — the notebook's car</h2>
+    <h2>246 km/h — the car on paper</h2>
     <div class="cols">
       <div class="demo">
         <div class="demo-head"><span class="nb">Julia REPL</span><span class="spacer"></span></div>
@@ -84,14 +264,88 @@ plot(r; idxs = r."car.v_kmh")</code></pre>
       <div class="r"><span class="v">246.39</span><span class="k">km/h at 300 s</span></div>
     </div>
     <aside class="notes">
-      <p><strong>Say:</strong> <code>Vehicle.CarPlant</code>, the lecture's model, reads
-      246.39 km/h at 300 s too; at 800 s the two agree to 0.0001 km/h. You built the
-      notebook's car.</p>
+      <p><strong>Say:</strong> <code>Vehicle.CarPlant</code>, the course model the PID lecture
+      runs, reads 246.39 km/h at 300 s too; at 800 s the two agree to 0.0001 km/h. You built the
+      lecture's car.</p>
       <p><strong>Point at:</strong> the shape. Steep first, then flattening, because drag grows
-      with the square of speed. Tie back to notebook 01: the 246 is the same number we worked out
-      on paper from the force balance.</p>
+      with the square of speed. Tie back to the start of this step: the 246 is the number we
+      worked out on paper from the force balance, and 23.6 s to 100 km/h was predicted there
+      too.</p>
       <p><strong>If a number is off:</strong> drag sign (step 04), gear ratio or radius
       (step 03), limiter ceiling (step 02) — in that order.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>246 km/h is wrong — and that is fine</h2>
+    <div class="cols cols-wide-right">
+      <div>
+        <div class="callout warn small">
+          <span class="label">What our engine gets wrong</span>
+          It gives 150 N·m at every engine speed. A real engine only gives its best in the middle
+          of its rev range, and less at very low and very high revs.
+        </div>
+        <ul class="small">
+          <li>At 246 km/h the engine would spin at <strong>8400 rpm</strong> (step 03). A real one
+            gives much less there, so the real top speed is lower.</li>
+          <li>Between 90 and 130 km/h — where the next lecture drives — the two agree. There the
+            model is good.</li>
+          <li>Fixing the top end means a torque curve: lecture 2.</li>
+        </ul>
+      </div>
+      <div>
+      <svg class="diagram" viewBox="0 0 600 330" role="img"
+           aria-label="Engine torque against crankshaft speed. A flat line at 150 newton-metres across the whole range is our model; a curve that rises, plateaus and falls away is the shape of a real engine. The band where the PID lecture operates is shaded, and the crankshaft speed implied by 246 km/h is marked well past the real curve's peak.">
+        <defs>
+          <marker id="m-tm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+        </defs>
+
+        <rect x="235.4" y="30" width="69.9" height="250" fill="#eaf1fa"/>
+        <text class="lbl" x="214" y="300">90–130 km/h</text>
+        <text class="lbl" x="206" y="316">where Lecture 1 lives</text>
+
+        <path class="wire" d="M78 30 V280 H548"/>
+        <text class="lbl" x="30" y="63">150</text>
+        <text class="lbl" x="44" y="284">0</text>
+        <text class="lbl" x="6" y="22">torque [N·m]</text>
+        <text class="lbl" x="78" y="318">crank speed [rpm]</text>
+
+        <path class="ghost" d="M78 59.4 H548"/>
+        <path class="arrow-acc" d="M78 59.4 H548" stroke-width="4"/>
+        <text class="f-lbl-acc" x="86" y="50">our model — 150 N·m, at every speed</text>
+
+        <polyline points="124.0,213.8 129.1,212.5 134.2,208.7 139.3,202.5 144.4,194.1 149.5,183.7 154.6,171.8 159.7,158.8 164.8,145.1 170.0,131.1 175.1,117.4 180.2,104.3 185.3,92.4 190.4,82.1 195.5,73.7 200.6,67.5 205.7,63.6 210.8,62.4 215.9,61.9 221.0,61.4 226.2,61.0 231.3,60.6 236.4,60.3 241.5,60.0 246.6,59.7 251.7,59.6 256.8,59.4 261.9,59.4 267.0,59.4 272.1,59.6 277.2,59.7 282.3,60.0 287.5,60.3 292.6,60.6 297.7,61.0 302.8,61.4 307.9,61.9 313.0,62.4 318.1,62.5 323.2,62.8 328.3,63.3 333.4,64.0 338.5,64.9 343.7,66.1 348.8,67.4 353.9,68.9 359.0,70.6 364.1,72.4 369.2,74.4 374.3,76.6 379.4,78.9 384.5,81.3 389.6,83.8 394.7,86.4 399.8,89.1 405.0,91.9 410.1,94.8 415.2,97.7 420.3,100.6 425.4,103.5 430.5,106.5 435.6,109.4 440.7,112.3 445.8,115.1 450.9,117.9 456.0,120.6 461.2,123.3 466.3,125.8 471.4,128.2 476.5,130.5 481.6,132.6 486.7,134.6 491.8,136.5 496.9,138.2 502.0,139.7 507.1,141.0 512.2,142.1 517.3,143.0 522.5,143.8 527.6,144.3 532.7,144.6 537.8,144.7 542.9,144.7 548.0,144.7" fill="none" stroke="#a81f16" stroke-width="3"/>
+        <text class="f-lbl-dngr" x="300" y="112">a real engine</text>
+
+        <path class="ghost" d="M508.8 59.4 V141.4"/>
+        <circle cx="508.8" cy="59.4" r="5" fill="#1f5fa8"/>
+        <circle cx="508.8" cy="141.4" r="5" fill="#a81f16"/>
+        <path class="arrow" d="M508.8 250 V152" marker-end="url(#m-tm-ar)"/>
+        <text class="lbl-strong" x="452" y="300">246 km/h</text>
+        <text class="lbl" x="456" y="316">= 8400 rpm</text>
+        <text class="f-lbl-dngr" x="514" y="176">≈ 95</text>
+      </svg>
+        <p class="small muted">Red: the usual <em>shape</em> of a petrol engine, drawn for
+          comparison — not measured. Blue: exactly what our engine block computes.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> every model has a range where you can trust it. Ours is fine up to
+      about 130 km/h and fiction above. Your car just hit 246 km/h exactly as we
+      predicted — and it will still be fiction. Both are true. That is the point of this slide.</p>
+      <p><strong>Point at the plot in this order:</strong> the blue line (our engine: 150 N·m
+      whatever the revs — the limiter's ceiling is a constant); the red curve (a real engine:
+      same peak, but only in the middle); the shaded band (90–130 km/h, where the two agree); the
+      mark at 8400 rpm (our 246 km/h, where a real engine is down to about 95 N·m).</p>
+      <p><strong>The rpm numbers, step by step</strong> (step 03's formula, engine rpm =
+      v / r × i × 60 / 2π): 90 km/h = 25 m/s → 25 / 0.31 × 4 × 9.55 = 3080 rpm. 130 km/h →
+      4450 rpm. 246 km/h = 68.4 m/s → 8430 rpm.</p>
+      <p><strong>They get wrong:</strong> treating a simulation result as a measurement. A model
+      only knows what you told it.</p>
+      <p><strong>Ask the room:</strong> what would you add to get a believable top speed?
+      <em>(Make the maximum torque depend on engine speed — a torque curve. That is where
+      lecture 2 starts.)</em></p>
     </aside>
   </section>
 
