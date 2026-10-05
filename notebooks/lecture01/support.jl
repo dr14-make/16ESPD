@@ -354,10 +354,11 @@ or a bare solution.
 """
 function signal(sol, path::Union{AbstractString, Symbol})
     s = solution_of(sol)
-    y = s[resolve(s, path)]
-    # A discrete (clocked) variable comes back as its own timeseries, sampled once per tick
-    # rather than at the solver's steps.
-    hasproperty(y, :t) && return (collect(y.t), collect(y.u))
+    sym = resolve(s, path)
+    y = s[sym]
+    # A discrete (clocked) variable holds one value per clock tick, not one per solver step;
+    # evaluating it at the solver's times gives the held value there.
+    length(y) == length(s.t) || (y = s(s.t; idxs = sym).u)
     return (collect(s.t), collect(y))
 end
 
