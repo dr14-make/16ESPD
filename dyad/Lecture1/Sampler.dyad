@@ -7,9 +7,15 @@ Subcomponent names match `CruiseLoop` (`plant`, `controller`) so a harness reads
 """
 component SampledCruiseLoop
   "Vehicle-speed setpoint in km/h"
-  setpoint = RealInput()
+  setpoint = RealInput() {^setpoint}
   "Road gradient, tan(alpha)"
-  grade = RealInput()
+  grade = RealInput() {^grade}
+  plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA) {^plant}
+  clock = DiscreteComponents.PeriodicClock(dt = Ts) {^clock}
+  setpoint_sampler = DiscreteComponents.Sampler(initial_condition = m0) {^setpoint_sampler}
+  measurement_sampler = DiscreteComponents.Sampler(initial_condition = m0) {^measurement_sampler}
+  controller = DiscreteComponents.DiscretePIDStandard(with_I = with_I, with_D = with_D, with_ff = false, Ts = Ts, K = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, y_max = y_max, y_min = y_min, wp = wp, wd = wd) {^controller}
+  hold = DiscreteComponents.ZeroOrderHold(initial_condition = 0.0) {^hold}
   "Powertrain transport delay"
   structural parameter theta_e::Time = 0.3
   "Whether to include integral action"
@@ -33,33 +39,95 @@ component SampledCruiseLoop
   parameter CdA::Area = 0.63
   "Initial measured speed in km/h, the settled cruise the loop starts from"
   parameter m0::Real = 90.0
-  plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA)
-  clock = DiscreteComponents.PeriodicClock(dt = Ts)
-  setpoint_sampler = DiscreteComponents.Sampler(initial_condition = m0)
-  measurement_sampler = DiscreteComponents.Sampler(initial_condition = m0)
-  controller = DiscreteComponents.DiscretePIDStandard(
-    with_I = with_I,
-    with_D = with_D,
-    with_ff = false,
-    Ts = Ts,
-    K = k,
-    Ti = Ti,
-    Td = Td,
-    Nd = Nd,
-    Ni = Ni,
-    y_max = y_max,
-    y_min = y_min,
-    wp = wp,
-    wd = wd)
-  hold = DiscreteComponents.ZeroOrderHold(initial_condition = 0.0)
 relations
-  connect(setpoint, setpoint_sampler.u)
-  connect(plant.v_kmh, measurement_sampler.u)
-  connect(setpoint_sampler.y, controller.u_s, clock.y)
-  connect(measurement_sampler.y, controller.u_m)
-  connect(controller.y, hold.u)
-  connect(hold.y, plant.tau_cmd)
-  connect(grade, plant.grade)
+  connect(setpoint, setpoint_sampler.u) {^id9}
+  connect(plant.v_kmh, measurement_sampler.u) {^id10}
+  connect(setpoint_sampler.y, controller.u_s, clock.y) {^id11}
+  connect(measurement_sampler.y, controller.u_m) {^id12}
+  connect(controller.y, hold.u) {^id13}
+  connect(hold.y, plant.tau_cmd) {^id14}
+  connect(grade, plant.grade) {^id15}
+metadata {
+  "_links": {
+    "setpoint": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}}}
+    },
+    "grade": {
+      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 120, "y2": 220}}}
+    },
+    "plant": {
+      "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 160, "y2": 260}}}
+    },
+    "clock": {
+      "Dyad": {"placement": {"diagram": {"x1": 415, "x2": 515, "y1": 20, "y2": 120}}}
+    },
+    "setpoint_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 80, "x2": 180, "y1": 230, "y2": 330}}}
+    },
+    "measurement_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 680, "x2": 780, "y1": 190, "y2": 290}}}
+    },
+    "controller": {
+      "Dyad": {"placement": {"diagram": {"x1": 290, "x2": 390, "y1": 340, "y2": 440}}}
+    },
+    "hold": {
+      "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 340, "y2": 440}}}
+    },
+    "id9": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 40, "y": 750}, {"x": 40, "y": 280}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id10": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 663, "y": 241}, {"x": 663, "y": 240}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id11": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [{"x": 267.5, "y": 280}, {"x": 267.5, "y": 362}], "E": 2},
+          {"S": -1, "M": [{"x": 230, "y": 70}], "E": 3}
+        ],
+        "junctions": [{"x": 230, "y": 280}],
+        "path": {}
+      }
+    },
+    "id12": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 793, "y": 240},
+              {"x": 793, "y": 680},
+              {"x": 260, "y": 680},
+              {"x": 260, "y": 414}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 540, "y": 390}, {"x": 540, "y": 245}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id15": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 504.5, "y": 170}, {"x": 504.5, "y": 182}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
 end
 
 """
@@ -69,6 +137,9 @@ Mirrors `CruiseLoopStep` using a sampled discrete controller, so notebook 09 can
 and observe the effects of controller discretization and sample-and-hold delay.
 """
 component SampledCruiseStep
+  loop = VehicleSystemsComponents.Lecture1.SampledCruiseLoop(theta_e = theta_e, with_I = with_I, with_D = with_D, Ts = Ts, k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd, m0 = v_lo)
+  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step)
+  road = BlockComponents.Sources.Constant(k = 0.0)
   structural parameter theta_e::Time = 0.3
   structural parameter with_I::Boolean = false
   structural parameter with_D::Boolean = false
@@ -88,24 +159,6 @@ component SampledCruiseStep
   parameter v0::Velocity = 25.0
   parameter tau0::Torque = 31.078
   parameter t_step::Time = 0.0
-  loop = VehicleSystemsComponents.Lecture1.SampledCruiseLoop(
-    theta_e = theta_e,
-    with_I = with_I,
-    with_D = with_D,
-    Ts = Ts,
-    k = k,
-    Ti = Ti,
-    Td = Td,
-    Nd = Nd,
-    Ni = Ni,
-    T_max = T_max,
-    y_max = y_max,
-    y_min = y_min,
-    wp = wp,
-    wd = wd,
-    m0 = v_lo)
-  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step)
-  road = BlockComponents.Sources.Constant(k = 0.0)
 relations
   connect(demand.y, loop.setpoint)
   connect(road.y, loop.grade)
@@ -119,7 +172,7 @@ metadata {
         "stop": 100,
         "atol": {"loop.plant.v_kmh": 0.1},
         "expect": {
-          "initial": {"loop.plant.v_kmh": 90.0},
+          "initial": {"loop.plant.v_kmh": 90},
           "final": {"loop.plant.v_kmh": 109.3},
           "signals": ["loop.plant.v_kmh", "loop.controller.y", "demand.y"]
         }
@@ -133,6 +186,7 @@ analysis SampledCruiseTransient
   # `Ts` is structural because it defines the discrete clock. To sweep the sample period,
   # construct `SampledCruiseStep` with different `Ts` values before compilation.
   extends TransientAnalysis(stop = 100)
+  model = VehicleSystemsComponents.Lecture1.SampledCruiseStep(k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd, v_lo = v_lo, v_hi = v_hi, v0 = v0, tau0 = tau0, t_step = t_step)
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
@@ -148,21 +202,5 @@ analysis SampledCruiseTransient
   parameter v0::Velocity = 25.0
   parameter tau0::Torque = 31.078
   parameter t_step::Time = 0.0
-  model = VehicleSystemsComponents.Lecture1.SampledCruiseStep(
-    k = k,
-    Ti = Ti,
-    Td = Td,
-    Nd = Nd,
-    Ni = Ni,
-    T_max = T_max,
-    y_max = y_max,
-    y_min = y_min,
-    wp = wp,
-    wd = wd,
-    v_lo = v_lo,
-    v_hi = v_hi,
-    v0 = v0,
-    tau0 = tau0,
-    t_step = t_step)
 relations
 end
