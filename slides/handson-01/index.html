@@ -2220,27 +2220,36 @@ end</code></pre>
         </ol>
         <p>Braking: μ = sign(κ) · μ(|κ|), so the curve is mirrored.</p>
       </div>
-      <svg class="diagram" viewBox="0 0 600 330" role="img"
-           aria-label="The dry tire curve split into three pieces: a rising S-curve from slip 0 to 0.04 reaching 1.0, a falling S-curve from 0.04 to 0.12 down to 0.7, and a flat line at 0.7 beyond 0.12.">
-        <rect x="80" y="30" width="64" height="250" fill="#e8f0fa"/>
-        <rect x="144" y="30" width="128" height="250" fill="#fdf2e3"/>
-        <path class="wire" d="M80 30 V280 H560"/>
-        <text class="lbl" x="50" y="85">1.0</text>
-        <text class="lbl" x="50" y="145">0.7</text>
-        <text class="lbl" x="66" y="285">0</text>
-        <text class="lbl" x="130" y="300">0.04</text>
-        <text class="lbl" x="258" y="300">0.12</text>
-        <text class="lbl" x="400" y="320">slip ratio κ</text>
-        <text class="lbl" x="10" y="22">μ</text>
-        <polyline points="80.0,280.0 83.2,265.0 86.4,250.1 89.6,235.3 92.8,220.8 96.0,206.6 99.2,192.7 102.4,179.3 105.6,166.4 108.8,154.1 112.0,142.5 115.2,131.6 118.4,121.6 121.6,112.5 124.8,104.3 128.0,97.2 131.2,91.2 134.4,86.4 137.6,82.9 140.8,80.7 144.0,80.0 149.3,80.3 154.7,81.2 160.0,82.6 165.3,84.4 170.7,86.7 176.0,89.4 181.3,92.3 186.7,95.6 192.0,99.0 197.3,102.6 202.7,106.3 208.0,110.0 213.3,113.7 218.7,117.4 224.0,121.0 229.3,124.4 234.7,127.7 240.0,130.6 245.3,133.3 250.7,135.6 256.0,137.4 261.3,138.8 266.7,139.7 272.0,140.0 560.0,140.0" fill="none" stroke="#1f5fa8" stroke-width="3"/>
-        <text class="f-lbl-acc" x="94" y="268">① rise</text>
-        <text class="f-lbl-warn" x="170" y="230">② fall</text>
-        <text class="f-lbl" x="380" y="125">③ slide, μ = 0.7</text>
-        <circle cx="144" cy="80" r="5" fill="#16202c"/>
-        <circle cx="272" cy="140" r="5" fill="#16202c"/>
-        <text class="lbl" x="150" y="70">flat join</text>
-        <text class="lbl" x="278" y="130">flat join</text>
-      </svg>
+      <div>
+        <svg class="diagram" viewBox="0 0 600 330" role="img"
+             aria-label="The dry tire curve split into three pieces: a rising S-curve from slip 0 to 0.04 reaching 1.0, a falling S-curve from 0.04 to 0.12 down to 0.7, and a flat line at 0.7 beyond 0.12.">
+          <rect x="80" y="30" width="64" height="250" fill="#e8f0fa"/>
+          <rect x="144" y="30" width="128" height="250" fill="#fdf2e3"/>
+          <path class="wire" d="M80 30 V280 H560"/>
+          <text class="lbl" x="50" y="85">1.0</text>
+          <text class="lbl" x="50" y="145">0.7</text>
+          <text class="lbl" x="66" y="285">0</text>
+          <text class="lbl" x="130" y="300">0.04</text>
+          <text class="lbl" x="258" y="300">0.12</text>
+          <text class="lbl" x="400" y="320">slip ratio κ</text>
+          <text class="lbl" x="10" y="22">μ</text>
+          <polyline points="80.0,280.0 83.2,265.0 86.4,250.1 89.6,235.3 92.8,220.8 96.0,206.6 99.2,192.7 102.4,179.3 105.6,166.4 108.8,154.1 112.0,142.5 115.2,131.6 118.4,121.6 121.6,112.5 124.8,104.3 128.0,97.2 131.2,91.2 134.4,86.4 137.6,82.9 140.8,80.7 144.0,80.0 149.3,80.3 154.7,81.2 160.0,82.6 165.3,84.4 170.7,86.7 176.0,89.4 181.3,92.3 186.7,95.6 192.0,99.0 197.3,102.6 202.7,106.3 208.0,110.0 213.3,113.7 218.7,117.4 224.0,121.0 229.3,124.4 234.7,127.7 240.0,130.6 245.3,133.3 250.7,135.6 256.0,137.4 261.3,138.8 266.7,139.7 272.0,140.0 560.0,140.0" fill="none" stroke="#1f5fa8" stroke-width="3"/>
+          <text class="f-lbl-acc" x="94" y="268">① rise</text>
+          <text class="f-lbl-warn" x="170" y="230">② fall</text>
+          <text class="f-lbl" x="380" y="125">③ slide, μ = 0.7</text>
+          <circle cx="144" cy="80" r="5" fill="#16202c"/>
+          <circle cx="272" cy="140" r="5" fill="#16202c"/>
+          <text class="lbl" x="150" y="70">flat join</text>
+          <text class="lbl" x="278" y="130">flat join</text>
+        </svg>
+        <div class="callout" style="font-size:0.6em">
+          <span class="label">Ours is one of several tire models</span>
+          <strong>Linear</strong>, μ = C·κ: small slip only, no peak.<br>
+          <strong>Ours</strong>: smooth pieces through four points.<br>
+          <strong>Pacejka's Magic Formula</strong>: the industry standard, fitted to test-rig data.<br>
+          <strong>Brush / dynamic</strong>: elastic tread bristles, or friction with its own state.
+        </div>
+      </div>
     </div>
     <aside class="notes">
       <p><strong>Say:</strong> Real tire curves come from measurements. Here we draw the shape
@@ -2260,9 +2269,26 @@ end</code></pre>
         checks the midpoint, 0.85.</p>
       <p><strong>A number to check on the rise:</strong> κ = 0.02 is x = 0.5,
         h = 0.75 − 0.0625 = 0.6875, so μ ≈ 0.69 at half the peak slip.</p>
-      <p><strong>Beyond the course:</strong> production tire models, such as Pacejka's "Magic
-        Formula", fit many more parameters to test-rig data. The shape is the same: rise, peak,
-        fall to sliding.</p>
+      <p><strong>Say:</strong> This is not the only way to model a tire. It is the simplest
+      one that still has a peak and a slide, which is all today's question needs. Industry uses
+      fitted models with many more parameters, but the shape is the same: rise, peak, fall to
+      sliding.</p>
+      <p><strong>Other tire models, for a student who asks:</strong></p>
+      <ul>
+        <li><em>Linear</em>: μ = C·κ with a stiffness C. Fine for small slip, but it has no peak,
+          so it can never show wheelspin running away.</li>
+        <li><em>Piecewise smooth</em> (ours): a few points joined by smooth curves. Easy to
+          read and tune; not fitted to a real tire.</li>
+        <li><em>Pacejka's Magic Formula</em>:
+          F = D·sin(C·arctan(Bκ − E·(Bκ − arctan Bκ))). B, C, D and E (and, in full versions,
+          dozens more, for load, camber and combined slip) are fitted to test-rig measurements.
+          The standard in vehicle-dynamics software.</li>
+        <li><em>Physical "brush" models</em>: the tread as rows of elastic bristles that stick,
+          then slide. Derives the curve from rubber stiffness and contact length.</li>
+        <li><em>Dynamic friction models</em> (e.g. LuGre): friction with its own internal state,
+          for transient effects such as relaxation length — the tire needs some rolling distance
+          before the force builds up.</li>
+      </ul>
     </aside>
   </section>
 
