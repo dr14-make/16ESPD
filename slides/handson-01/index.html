@@ -947,48 +947,6 @@ end</code></pre>
   </section>
 
   <section>
-    <h2>A delay the computer can handle</h2>
-    <div class="cols">
-      <div>
-        <p class="small">A true delay must remember the whole last 0.3 s of the pedal, to replay
-        it later. A simulator cannot store that; it only tracks a handful of numbers that change
-        smoothly.</p>
-        <p class="small">So Dyad uses a stand-in, <code>PadeDelay</code>: six of those numbers,
-        tuned so that together they behave almost exactly like a 0.3 s delay.</p>
-      </div>
-      <div>
-        <div class="callout small">
-          <span class="label">Two things you will see in step 02</span>
-          Tiny wiggles in the torque before 0.8 s. They come from the stand-in, not from the
-          engine.
-          <br><br>
-          <code>theta_e</code>, the delay, is a <strong>structural</strong> parameter: change it
-          and Dyad rebuilds the model.
-        </div>
-        <div class="callout warn small">
-          <span class="label">And one to avoid</span>
-          Plotting "everything" draws the six helper numbers too — they swing into the thousands
-          and hide the torque. Plot one signal by name.
-        </div>
-      </div>
-    </div>
-    <aside class="notes">
-      <p><strong>Say:</strong> the delay is the only block that is not exactly what it says. It is
-      an approximation. That is fine, as long as you know it, and the wiggles are how you see
-      it.</p>
-      <p><strong>For a student who wants the math:</strong> a delay of θ has the transfer function
-      e<sup>−sθ</sup>. A Padé approximation replaces it by a ratio of polynomials. The simplest
-      one is (1 − sθ/2)/(1 + sθ/2). <code>PadeDelay(n = 6, m = 5)</code> uses a 6th-order
-      denominator and a 5th-order numerator; they match e<sup>−sθ</sup> to order 11. Because the
-      numerator is lower order, a sudden step cannot pass straight through before the delay has
-      elapsed.</p>
-      <p><strong>Why structural:</strong> the block computes its internal coefficients from the
-      delay when the model is compiled, so a new delay value means a new model, not just a new
-      number.</p>
-    </aside>
-  </section>
-
-  <section>
     <h2>Plot one signal, not all of them</h2>
     <div class="cols">
       <div class="demo">
@@ -1014,10 +972,52 @@ plot(r; idxs = r."engine.limiter.y")</code></pre>
       it by name with <code>idxs</code>.</p>
       <p><strong>Point at:</strong> the flat start. The command arrived at 0.5 s; torque starts
       at about 0.8 s. That 0.3 s is the transport delay. The small wiggles before it are the
-      Padé approximation of a delay, not physics.</p>
+      Padé approximation of a delay, not physics — the next slide explains them.</p>
       <p><strong>Open the REPL:</strong> Actions panel title bar → Dyad: Open Julia REPL.</p>
       <p><strong>They get wrong:</strong> <code>using MyCar</code> fails if the library was
       named differently. Use their library's name.</p>
+    </aside>
+  </section>
+
+  <section>
+    <h2>A delay the computer can handle</h2>
+    <div class="cols">
+      <div>
+        <p class="small">A true delay must remember the whole last 0.3 s of the pedal, to replay
+        it later. A simulator cannot store that; it only tracks a handful of numbers that change
+        smoothly.</p>
+        <p class="small">So Dyad uses a stand-in, <code>PadeDelay</code>: six of those numbers,
+        tuned so that together they behave almost exactly like a 0.3 s delay.</p>
+      </div>
+      <div>
+        <div class="callout small">
+          <span class="label">The wiggles you just saw</span>
+          The tiny wiggles in the torque before 0.8 s come from the stand-in, not from the
+          engine.
+          <br><br>
+          <code>theta_e</code>, the delay, is a <strong>structural</strong> parameter: change it
+          and Dyad rebuilds the model.
+        </div>
+        <div class="callout warn small">
+          <span class="label">Why "plot everything" failed</span>
+          The default plot draws these six helper numbers too — they swing into the thousands
+          and hide the torque. That is why you plot one signal by name.
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <p><strong>Say:</strong> the delay is the only block that is not exactly what it says. It is
+      an approximation. That is fine, as long as you know it, and the wiggles are how you see
+      it.</p>
+      <p><strong>For a student who wants the math:</strong> a delay of θ has the transfer function
+      e<sup>−sθ</sup>. A Padé approximation replaces it by a ratio of polynomials. The simplest
+      one is (1 − sθ/2)/(1 + sθ/2). <code>PadeDelay(n = 6, m = 5)</code> uses a 6th-order
+      denominator and a 5th-order numerator; they match e<sup>−sθ</sup> to order 11. Because the
+      numerator is lower order, a sudden step cannot pass straight through before the delay has
+      elapsed.</p>
+      <p><strong>Why structural:</strong> the block computes its internal coefficients from the
+      delay when the model is compiled, so a new delay value means a new model, not just a new
+      number.</p>
     </aside>
   </section>
 
