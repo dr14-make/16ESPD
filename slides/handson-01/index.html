@@ -710,6 +710,9 @@ end</code></pre>
         <p class="small">In words: <em>the torque moves toward the request, and the bigger the
         gap, the faster it moves.</em> As an equation:</p>
         <p>$$ \tau_e\,\frac{dT}{dt} \;=\; T_{\text{req}} - T $$</p>
+        <p class="small"><strong>τₑ = 0.3 s</strong> — the engine's time constant
+          (<code>tau_e</code>): how long the intake manifold takes to fill. Not the same as the
+          0.3 s delay θₑ before it.</p>
         <p class="small">A gap that shrinks in proportion to itself shrinks <em>exponentially</em>:</p>
         <p>$$ T(t) \;=\; T_{\text{req}}\,\big(1 - e^{-t/\tau_e}\big) $$</p>
       </div>
