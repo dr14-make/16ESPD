@@ -209,7 +209,10 @@ drag = QuadraticSpeedDependentForce(ForceDirection = false,
 rolling = RollingResistance(fWeight = m * g)</code></pre>
     <ul class="small">
       <li>Each value is a parameter of <code>Body</code>; the parts use the <em>names</em>.</li>
-      <li><code>f_nominal</code> is ½ρC<sub>d</sub>A·v² at the nominal speed.</li>
+      <li>The block knows drag as <strong>one point</strong> on its curve — force
+        <code>f_nominal</code> at speed <code>v_nominal</code> — and scales by
+        (v / v<sub>nominal</sub>)². With <code>f_nominal</code> = ½ρC<sub>d</sub>A·v<sub>nominal</sub>²,
+        v<sub>nominal</sub> cancels: any value gives the same drag; 30 m/s is just a reference.</li>
       <li><strong>Negative</strong> makes the source a load rather than a push.</li>
       <li><code>ForceDirection = false</code> makes it oppose motion both ways.</li>
     </ul>
@@ -218,6 +221,12 @@ rolling = RollingResistance(fWeight = m * g)</code></pre>
       <div class="r"><span class="v">29.78 m/s</span><span class="k">where drag + rolling = 500 N</span></div>
     </div>
     <aside class="notes">
+      <p><strong>Why a nominal point:</strong> <code>QuadraticSpeedDependentForce</code> is a
+      generic quadratic load — fans, pumps, drag — meant to be filled in from a datasheet value
+      such as "this many newtons at that speed". Its equation is
+      f = −f<sub>nominal</sub>·v·|v| / v<sub>nominal</sub>². Substituting
+      f<sub>nominal</sub> = −½ρC<sub>d</sub>A·v<sub>nominal</sub>² gives ½ρC<sub>d</sub>A·v·|v|,
+      with v<sub>nominal</sub> gone. It only must not be zero, because the block divides by it.</p>
       <p><strong>They get wrong:</strong> a positive <code>f_nominal</code>. The car then
       accelerates forever — drag pushes it. If a student's car in step 05 goes to absurd speeds,
       this sign is the first thing to check.</p>
