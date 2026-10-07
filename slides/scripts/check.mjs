@@ -1,5 +1,5 @@
 // The workspace check CI runs before publishing: every deck's cues name glossary kinds, every
-// image a deck references exists, and every deck builds.
+// image it references exists, no link to a page beside it turns into a slide route, and it builds.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { cueProblems, glossaryKinds } from "./cues.mjs"
@@ -15,6 +15,12 @@ for (const deck of decks()) {
     for (const p of cueProblems(markdown, kinds)) failures.push(`${where(p.line)}: ${p.message}`)
     for (const image of missingImages(markdown, file, deck)) {
       failures.push(`${where(image.line)}: image ${image.src} resolves to nothing`)
+    }
+    for (const link of pageLinks(markdown)) {
+      failures.push(
+        `${where(link.line)}: [..](${link.href}) becomes a link to a slide of this deck; ` +
+          `write <a href="${link.href}"> to leave the deck`,
+      )
     }
   }
 }
@@ -41,6 +47,18 @@ function markdownFiles(dir) {
     if (e.isDirectory()) return e.name === "public" ? [] : markdownFiles(join(dir, e.name))
     return e.name.endsWith(".md") ? [join(dir, e.name)] : []
   })
+}
+
+/**
+ * Slidev renders a Markdown link whose target starts with `.` or `/` as a route inside the deck,
+ * so a link to a page beside the deck has to be written as an `<a>` element.
+ */
+function pageLinks(markdown) {
+  const links = []
+  for (const match of markdown.matchAll(/(?<!!)\[[^\]]*\]\(\s*<?([./][^)\s>]*)/g)) {
+    links.push({ href: match[1], line: markdown.slice(0, match.index).split("\n").length })
+  }
+  return links
 }
 
 /** Absolute paths are served from the deck's `public/`; relative ones from the Markdown file. */
