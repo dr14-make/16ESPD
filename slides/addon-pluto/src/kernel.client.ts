@@ -7,8 +7,8 @@ import type { Worker } from "@plutojl/rainbow"
 import { BondQueue } from "./bond.queue.js"
 import { bondWriter } from "./bond.writer.js"
 import type { BondWriter } from "./bond.writer.js"
-import type { CardContent, Session } from "./deck.interface.js"
-import { isCellDependency, isCellOutput, isNotebookState } from "./pluto.interface.js"
+import type { CardContent, Session } from "./session.interface.js"
+import { isCellDependency, isCellInput, isCellOutput, isNotebookState } from "./pluto.interface.js"
 import type { NotebookState } from "./pluto.interface.js"
 
 function isRecordLike(value: unknown): value is Record<string, unknown> {
@@ -122,6 +122,12 @@ export class Kernel {
       published: { ...published },
       cellId,
     }
+  }
+
+  /** The code `cellId` holds, or `""` for a cell the notebook does not have. */
+  code(cellId: string): string {
+    const input = this.#state()?.cell_inputs[cellId]
+    return isCellInput(input) ? input.code : ""
   }
 
   /** Payloads sent by `published_to_js`, which travel outside the cell body. */

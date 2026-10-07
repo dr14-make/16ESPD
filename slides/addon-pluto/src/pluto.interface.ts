@@ -14,6 +14,11 @@ export interface CellOutput {
   readonly last_run_timestamp: number
 }
 
+/** What a cell holds, as the notebook file has it. */
+export interface CellInput {
+  readonly code: string
+}
+
 export interface CellDependency {
   /** Keys are the variables this cell defines. */
   readonly downstream_cells_map: Readonly<Record<string, readonly string[]>>
@@ -24,8 +29,9 @@ export interface CellDependency {
 export interface NotebookState {
   readonly process_status: string
   // Held as `unknown` because that is all the shape check establishes: a notebook carries a cell
-  // per notebook rather than per card, and these are read on every diff. `isCellOutput` and
-  // `isCellDependency` narrow what the deck actually takes out of them.
+  // per notebook rather than per card, and these are read on every diff. `isCellOutput`,
+  // `isCellInput` and `isCellDependency` narrow what the deck actually takes out of them.
+  readonly cell_inputs: Readonly<Record<string, unknown>>
   readonly cell_results: Readonly<Record<string, unknown>>
   readonly cell_dependencies: Readonly<Record<string, unknown>>
   readonly published_objects: Readonly<Record<string, unknown>>
@@ -41,13 +47,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
-/**
- * Whether a cell's output is one a card can be painted from.
- *
- * `last_run_timestamp` is the sole repaint key for every card and the settle key for every bond,
- * and `mime` decides how the body is rendered. Checked here rather than over the whole of
- * `cell_results`, which is read on every notebook diff and holds a cell the deck never places.
- */
 export function isCellDependency(value: unknown): value is CellDependency {
   return (
     isRecord(value) &&
@@ -56,12 +55,23 @@ export function isCellDependency(value: unknown): value is CellDependency {
   )
 }
 
+/**
+ * Whether a cell's output is one a card can be painted from.
+ *
+ * `last_run_timestamp` is the sole repaint key for every card and the settle key for every bond,
+ * and `mime` decides how the body is rendered. Checked here rather than over the whole of
+ * `cell_results`, which is read on every notebook diff and holds a cell the deck never places.
+ */
 export function isCellOutput(value: unknown): value is CellOutput {
   return (
     isRecord(value) &&
     typeof value.mime === "string" &&
     typeof value.last_run_timestamp === "number"
   )
+}
+
+export function isCellInput(value: unknown): value is CellInput {
+  return isRecord(value) && typeof value.code === "string"
 }
 
 /**
@@ -76,6 +86,7 @@ export function isNotebookState(value: unknown): value is NotebookState {
   return (
     isRecord(value) &&
     typeof value.process_status === "string" &&
+    isRecord(value.cell_inputs) &&
     isRecord(value.cell_results) &&
     isRecord(value.cell_dependencies) &&
     isRecord(value.published_objects) &&

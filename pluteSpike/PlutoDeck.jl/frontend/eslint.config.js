@@ -84,17 +84,6 @@ export default tseslint.config(
     },
   },
   {
-    // `render.painter.ts` draws through Preact, not Lit: Rainbow exports htm's `html`, whose
-    // `<${Component}>` is the tag-name binding the Lit rules exist to reject. The rules cannot
-    // tell the two tags apart, and the deck is not porting that renderer — see DESIGN.md
-    // § Cards render through Pluto's own renderer.
-    files: ["src/render.painter.ts"],
-    rules: {
-      "lit/binding-positions": "off",
-      "lit/no-invalid-html": "off",
-    },
-  },
-  {
     // `node:test` returns a promise per case and its own runner awaits them.
     files: ["src/**/*.test.ts"],
     rules: { "@typescript-eslint/no-floating-promises": "off" },

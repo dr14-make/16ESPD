@@ -11,7 +11,7 @@ import { customElement, property, state } from "lit/decorators.js"
 import { cardContentContext, painterContext } from "./deck.context.js"
 import type { CardContents } from "./deck.context.js"
 import { LightDomElement } from "./light-dom.element.js"
-import type { Painter } from "./render.painter.js"
+import type { Painter } from "../../../../slides/addon-pluto/src/render.painter.js"
 
 /**
  * One card of a deck.

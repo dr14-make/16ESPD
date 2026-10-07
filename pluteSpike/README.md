@@ -5,8 +5,8 @@ values and whose readouts were Pluto cell outputs, driven over [`@plutojl/rainbo
 a Node bridge.
 
 **Its code is gone.** Every technique it proved is in the package now — the kernel client in
-`PlutoDeck.jl/frontend/src/kernel.client.ts`, the renderer in `render.painter.ts`, the repaint
-rule in `deck-card.component.ts`, and opening a notebook in place in `src/session.jl`. The
+`slides/addon-pluto/src/kernel.client.ts`, the renderer in `render.painter.ts`, the repaint
+rule in `PlutoDeck.jl/frontend/src/deck-card.component.ts`, and opening a notebook in place in `src/session.jl`. The
 browser shim it also proved is the one technique that did *not* move: see the last finding
 below.
 The spike's own `frontend/`, `bridge/` and `start.sh` were kept only as reference

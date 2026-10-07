@@ -10,6 +10,8 @@ import * as esbuild from "esbuild"
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const SOURCE = join(HERE, "src")
+/** The kernel, renderer and vendored modules, which the `pluto` Slidev addon owns. */
+const ADDON_SOURCE = join(HERE, "..", "..", "..", "slides", "addon-pluto", "src")
 const OUT = join(HERE, "..", "frontend-dist")
 
 /**
@@ -176,7 +178,7 @@ const options = {
     join(SOURCE, "deck.entry.ts"),
     join(SOURCE, "speaker.entry.ts"),
     // Reached by no import of the deck's own, only by the import map `index.html` carries.
-    ...Object.values(VENDORED_IMPORTS).map((file) => join(SOURCE, file)),
+    ...Object.values(VENDORED_IMPORTS).map((file) => join(ADDON_SOURCE, file)),
     join(SOURCE, "deck.css"),
   ],
   outdir: OUT,

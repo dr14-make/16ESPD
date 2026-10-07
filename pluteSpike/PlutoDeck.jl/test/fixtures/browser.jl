@@ -20,8 +20,8 @@ end
 using PlutoPlotly
 
 # ╔═╡ a1000000-0000-4000-8000-000000000012
-# ╠═╡ card = "probe"
-probe = HTML("<script>window.__preambleRan = { at: performance.now(), slideCardsLive: document.querySelectorAll('.slide .card[data-source=live]').length }</script>")
+# ╠═╡ card = "amplitude"
+@bind amplitude html"<input type=range min=1 max=3 step=1 value=2>"
 
 # ╔═╡ a1000000-0000-4000-8000-000000000002
 # ╠═╡ card = "frequency"
@@ -33,7 +33,7 @@ cycles = ismissing(freq) ? 1 : Int(freq)
 # ╔═╡ a1000000-0000-4000-8000-000000000004
 # ╠═╡ card = "wave"
 let t = range(0, 1; length=201)
-    plot(scatter(; x=collect(t), y=sin.(2π .* cycles .* t)),
+    plot(scatter(; x=collect(t), y=Int(amplitude) .* sin.(2π .* cycles .* t)),
          Layout(template = plot_template))
 end
 

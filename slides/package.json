@@ -7,18 +7,30 @@
     "dev": "slidev --open false",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
-    "test": "node --test scripts/*.test.mjs"
+    "test": "node --test scripts/*.test.mjs addon-pluto/src/*.test.ts",
+    "typecheck": "tsc -p addon-pluto"
   },
   "devDependencies": {
     "@slidev/cli": "53.0.0",
     "@slidev/parser": "^53.0.0",
     "@slidev/theme-default": "0.25.0",
+    "@types/lodash-es": "4.17.12",
+    "@types/node": "22.20.4",
     "playwright-chromium": "^1.56.0",
+    "rolldown": "1.2.12",
+    "typescript": "5.9.3",
     "vue": "^3.5.0"
   },
   "slidev": {
     "addons": [
       "./addon-course"
     ]
+  },
+  "dependencies": {
+    "@plutojl/rainbow": "0.6.21",
+    "interactjs": "1.10.19",
+    "lodash-es": "4.18.1",
+    "mathjax": "3.2.2",
+    "plotly.js-dist-min": "2.34.0"
   }
 }
