@@ -21,9 +21,8 @@ pluto:
 </Grid>
 ```
 
-`name` is the card a notebook cell declares in its metadata. `present` refuses a deck that
-places a name no cell declares, naming the card and the line; a name typed while the deck is
-running shows that in red on its card instead. `Grid` and `Card` come from
+`name` is the card a notebook cell declares in its metadata. A name no cell declares shows that
+in red on its card. `Grid` and `Card` come from
 `addon-course` and place any block, not only live cards: a `Card` spans `w` columns and `h` rows
 from column `x` and row `y` of a `Grid` (12 × 12 unless `cols` and `rows` say otherwise). A `Card`
 that does not fit its `Grid`, or sits outside one, shows that in red instead of its content. A live

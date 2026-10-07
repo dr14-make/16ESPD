@@ -29,8 +29,7 @@ The deck `present` serves the session and the card index for, in a directory of 
 
 Pluto rewrites every notebook it opens, so a fixture is copied out of the repository before a
 kernel is pointed at it. The slides `slidev dev` serves are the Slidev fixture's; this deck only
-names the copy and places no card, so the fixture's unknown card reaches the browser past
-`present`.
+names the copy.
 """
 browser_workspace() = deck_file("---\npluto:\n  notebook: browser.jl\n---\n";
     beside=Dict("browser.jl" => read(BROWSER_NOTEBOOK, String)))

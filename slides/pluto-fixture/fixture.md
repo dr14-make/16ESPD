@@ -64,8 +64,7 @@ preload: false
 
 ## A card the notebook does not declare
 
-`present` refuses this deck by that name; the browser suite serves it anyway, to see what a card
-added during a rehearsal shows.
+What a card shows when its name is mistyped.
 
 <Grid>
   <Card :x="0" :y="0" :w="4" :h="2"><PlutoCard name="not-in-the-notebook" /></Card>

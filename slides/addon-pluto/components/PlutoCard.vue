@@ -18,8 +18,7 @@ let unmounted = false
 onMounted(async () => {
   const { kernel, painter, cards } = await usePluto()
   const cellId = cards[props.name]
-  // `present` refuses a deck naming an unknown card, but a name typed during a rehearsal reaches
-  // the page through hot reload without a restart, so the card says what is wrong with it.
+  // A mistyped name is caught nowhere else, so the card says so where the lecturer is looking.
   if (cellId === undefined) {
     source.value = "unknown"
     return

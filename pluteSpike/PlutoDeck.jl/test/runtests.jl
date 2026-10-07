@@ -6,7 +6,7 @@ const FIXTURES = joinpath(@__DIR__, "fixtures")
 const THREE_CARDS = joinpath(FIXTURES, "three-cards.jl")
 const DUPLICATE_CARDS = joinpath(FIXTURES, "duplicate-cards.jl")
 const RUNNABLE = joinpath(FIXTURES, "runnable.jl")
-const LECTURE_DECK = joinpath(FIXTURES, "lecture", "slides.md")
+const LECTURE_DECK = joinpath(FIXTURES, "lecture.md")
 
 "The Slidev workspace, and the fixture deck in it that the browser suite drives."
 const SLIDES = normpath(joinpath(@__DIR__, "..", "..", "..", "slides"))

@@ -1,6 +1,6 @@
 ---
 pluto:
-  notebook: ../three-cards.jl
+  notebook: three-cards.jl
 ---
 
 ## Speed
