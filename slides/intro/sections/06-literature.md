@@ -1,0 +1,5 @@
+---
+routeAlias: literature
+---
+
+# Literature

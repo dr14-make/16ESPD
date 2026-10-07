@@ -1,0 +1,18 @@
+{
+  "name": "course-decks",
+  "private": true,
+  "description": "Every course deck, built with Slidev. One folder per deck, one Markdown file per section.",
+  "type": "module",
+  "scripts": {
+    "dev": "slidev --open false",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test scripts/*.test.mjs"
+  },
+  "devDependencies": {
+    "@slidev/cli": "53.0.0",
+    "@slidev/theme-default": "0.25.0",
+    "playwright-chromium": "^1.56.0",
+    "vue": "^3.5.0"
+  }
+}
