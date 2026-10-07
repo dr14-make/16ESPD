@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0003
+---
+
 # One Lit component library replaces reveal.js and PlutoDeck's own shell
 
 Static decks, hands-on guides, the landing page and PlutoDeck's live decks all compose the same

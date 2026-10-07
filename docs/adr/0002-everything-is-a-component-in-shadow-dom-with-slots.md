@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0003
+---
+
 # Everything on a page is a component, rendered in shadow DOM with slotted content
 
 Every piece of a slide or guide is a `deck-*` element — blocks, layouts, block-level text and

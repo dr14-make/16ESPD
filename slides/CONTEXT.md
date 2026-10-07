@@ -16,16 +16,16 @@ A deck whose content is all written by hand and that opens from a file with noth
 A deck that also shows live cards, and so needs a running notebook behind it.
 
 **Section**:
-One horizontal stop of a deck, opened by a cover slide; the unit an author edits and a deep link
-points at.
+A run of consecutive slides in a deck, opened by a cover slide; the unit an author edits and a
+deep link points at, by name rather than by position.
 _Avoid_: chapter, part
 
 **Slide**:
 One screen within a section.
 
 **Speaker notes**:
-Everything the lecturer has for one slide, made of cues; never shown to the room, partly
-printed in the handout.
+Everything the lecturer has for one slide, made of cues; for the lecturer alone, never shown
+to the room or printed.
 _Avoid_: comments
 
 **Cue**:
@@ -33,14 +33,10 @@ One typed item of speaker notes — say, ask the room, readout, point at, timing
 they get wrong, terms, in the model, derivation, flag forward, why.
 _Avoid_: note, tip
 
-**Audience**:
-Who a cue is for — the lecturer only, or everyone; set by the cue's kind unless the cue says
-otherwise. Decides what the handout prints.
-
-**Speaker view**:
+**Presenter mode**:
 The lecturer's own screen during a deck: the current slide's speaker notes, the next slide and
 the clock.
-_Avoid_: tutor's screen, presenter mode, speaker page
+_Avoid_: speaker view, tutor's screen, speaker page
 
 **Block**:
 One reusable piece a slide or a guide is composed from — a callout, a figure, a demo card, a
@@ -74,5 +70,6 @@ The course's front page, listing each lecture's decks, sections and guides.
 _Avoid_: index, home page
 
 **Handout**:
-The printable reading version of a deck, taken away after the lecture.
+The printable reading version of a deck, taken away after the lecture: its slides, without
+speaker notes.
 _Avoid_: hands-on guide, PDF export
