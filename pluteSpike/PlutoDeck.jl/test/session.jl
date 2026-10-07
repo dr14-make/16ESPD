@@ -72,13 +72,6 @@ end
 
         server = serve(deck, session; port=0, listenany=true)
 
-        @testset "the deck serves its own pages on its own port" begin
-            response = HTTP.get("$(server.url)/")
-
-            @test response.status == 200
-            @test occursin("PlutoDeck", String(response.body))
-        end
-
         @testset "/api/session points the browser straight at Pluto" begin
             body = JSON.parse(String(HTTP.get("$(server.url)/api/session").body))
 

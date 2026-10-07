@@ -1,5 +1,9 @@
 # PlutoDeck — implementation tracing
 
+> **Historical.** This describes PlutoDeck before [ADR 0003](../../docs/adr/0003-decks-are-slidev.md): its Lit frontend,
+> `deck.json` and notes files are gone, and the live-card code is the `pluto` addon in
+> `slides/addon-pluto/`. Read that addon's README to present a live deck.
+
 If you are here to start building, read `START-HERE.md` first — it names the first slice and
 the rules that are not yours to relax.
 

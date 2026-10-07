@@ -4,7 +4,6 @@ using UUIDs: UUID
 
 import HTTP
 import JSON
-import MIMEs
 import Pluto
 import YAML
 

@@ -2,6 +2,11 @@
 
 A Julia package that turns a Pluto notebook into a slide deck.
 
+> **Since [ADR 0003](../docs/adr/0003-decks-are-slidev.md), PlutoDeck.jl is the Julia side
+> only:** it opens or attaches to a Pluto session and answers `/api/session` and `/api/deck` for
+> a Slidev deck. The frontend this document describes now lives in the `pluto` addon,
+> `slides/addon-pluto/`. Decisions marked superseded below are kept for their reasoning.
+
 Cells opt in by declaring a `card` name. A hand-authored `deck.json` arranges those cards onto
 slides using gridstack layouts. The package serves a prebuilt TypeScript frontend that renders
 each card with Pluto's own renderer, so plots stay interactive and `@bind` widgets defined in
@@ -22,35 +27,24 @@ working spike the decisions were tested against, including the gotchas that shap
 PlutoDeck.jl/
 ├── Project.toml
 ├── src/
-│   ├── PlutoDeck.jl      present(deck_path), CLI entry
-│   ├── session.jl        start Pluto, open the notebook with execution_allowed=true
-│   ├── deck.jl           load deck.json, validate card references against the notebook
+│   ├── PlutoDeck.jl      present(deck_path)
+│   ├── session.jl        start or attach to Pluto, open the notebook with execution_allowed=true
+│   ├── deck.jl           read `pluto.notebook` from the Slidev deck's headmatter
 │   ├── cards.jl          read the `card` key out of cell metadata
-│   └── server.jl         HTTP.jl: serve frontend_directory(), /api/session, /api/deck
-├── frontend/             TypeScript source, its npm manifest, and the esbuild build
-├── frontend-dist/        the bundle esbuild writes: committed, and what is always served
+│   └── server.jl         HTTP.jl: /api/session, /api/deck
 └── test/
 ```
 
-The course repository holds only its own material:
-
-```
-VehicleSystemsComponents/
-├── notebooks/lecture01/lecture-01.jl     cells carry `card = "..."`
-└── decks/lecture-01.deck.json
-```
-
-The package knows nothing about any particular course, and a course repository knows nothing
-about TypeScript. The entire contract between them is the `card` keys and the deck schema.
-
-`frontend_directory()` names one directory rather than choosing between two, because a browser
-cannot run TypeScript and the bundle is therefore the only servable form. Editing the frontend is
-a rebuild-and-refresh loop — `mise run deck` rebuilds on every save, in about 200 ms — and
-presenting never touches Node.
+The course repository holds only its own material: a notebook whose cells carry
+`card = "..."`, and a Slidev deck under `slides/` that names it and places its cards.
 
 ## Decisions
 
 ### A Julia package serving a prebuilt TypeScript bundle
+
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** PlutoDeck.jl serves no
+> frontend. A live deck is a Slidev deck presented with `slidev dev`, which proxies `/api/session`
+> and `/api/deck` to `present`; the live-card code is the `pluto` addon in `slides/addon-pluto/`.
 
 The audience is students and lecturers who already have Julia installed for the course.
 Requiring a Node runtime to present is a second toolchain to install, to version, and to fail
@@ -70,6 +64,9 @@ directly on Pluto's port. That is fine: Pluto answers `Access-Control-Allow-Orig
 accepts websockets from any origin. The benefit is the absence of Node, nothing more.
 
 ### The built bundle is committed
+
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** It describes the Lit
+> frontend, which is deleted.
 
 `frontend-dist/` is in the tree, and it is what `frontend_directory()` serves in a checkout and
 in an installed package alike.
@@ -100,6 +97,10 @@ PlutoPlotly does for its offline Plotly bundle, is the step past that, and nothi
 it.
 
 ### The deck is a separate JSON file
+
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** A live deck is a Slidev deck
+> that names its notebook in its headmatter (`pluto.notebook`), and its speaker notes are Slidev
+> notes. `deck.json` and the per-slide notes files are gone.
 
 Pluto owns the notebook file and rewrites it on every cell edit; it canonicalizes a notebook the
 moment it opens one. Storing the deck inside that file puts the deck editor in a write race with
@@ -139,6 +140,9 @@ resolves to, and never appear in a file a person edits.
 
 ### The layout schema is gridstack-shaped, and hand-authored first
 
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** It describes the Lit
+> frontend, which is deleted.
+
 GridStack 13.3.0 is MIT, has no runtime dependencies, and ships its own type definitions.
 
 Its value is drag-and-drop authoring, which belongs in a visual editor that writes `deck.json`
@@ -175,6 +179,10 @@ Bundled and minified, the deck entry is 2.1 MB of that; the speaker page shares 
 
 ### The chrome is Lit; a card's own output is light DOM, and that is not a preference
 
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** The chrome is Slidev's,
+> written in Vue. The light-DOM rule still holds for a live card: `PlutoCard.vue` renders into the
+> document, and `browser.jl` still asserts it.
+
 The deck chrome, the navigation, the cue overlay and the speaker page are Lit components with
 shadow roots of their own. What those four have in common is that they hold no cards.
 
@@ -196,6 +204,9 @@ bindings inside it.
 
 ### Shared state travels through `@lit/context`
 
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** It describes the Lit
+> frontend, which is deleted.
+
 The kernel client, the loaded deck, the current slide index and the kernel status were
 module-level `let` bindings in `deck.js`, reached by closure. Every one of them is read by
 something that is not the module that owns it — the chrome reads the status, the nav and the cue
@@ -211,6 +222,9 @@ card name, and the kernel stays inside `<deck-app>`. A card consuming a kernel w
 pull, and the state machine only stays a state machine while it cannot.
 
 ### The bundler is what replaced the browser shim
+
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** It describes the Lit
+> frontend, which is deleted.
 
 `@plutojl/rainbow` publishes an ESM build meant to be handed to a bundler rather than to a page.
 The root bundle embeds immer, which reads `process.env.NODE_ENV` as a bare global six times, so
@@ -264,6 +278,9 @@ travels. The name is a contract with every notebook that opts in, which is why i
 here rather than left to each deck.
 
 ### Speaker cues are the deck's, and reach the lecturer without a popup
+
+> **Superseded by [ADR 0003](../docs/adr/0003-decks-are-slidev.md).** It describes the Lit
+> frontend, which is deleted.
 
 A cue — timing, what to say, what to do when a demo misbehaves — cannot live in the notebook at
 all, and not as a matter of taste. The card contract is that a cell carrying a `card` key is

@@ -6,10 +6,8 @@
 #
 # Julia comes from juliaup on the `dyad-3.4.0` channel, matching .vscode/settings.json.
 
-# Node 22.18 is where `node --test` discovers and type-strips `*.test.ts` with no flag. Below
-# it the runner matches no files, reports zero tests and exits 0 — so `frontend-check` would go
-# green on a machine where the unit suite has never run. Julia is selected per task instead,
-# with `+dyad-3.4.0`, matching .vscode/settings.json.
+# Node 22.18 is where `node --test` type-strips the `slides/` workspace's `*.test.ts` with no
+# flag. Julia is selected per task instead, with `+dyad-3.4.0`, matching .vscode/settings.json.
 [tools]
 node = "22"
 
@@ -17,26 +15,6 @@ node = "22"
 PLUTODECK_PROJECT = "pluteSpike/PlutoDeck.jl"
 PLUTODECK_DECK = "slides/lecture-01-live/slides.md"
 PLUTODECK_PORT = "8099"
-
-[tasks.frontend-install]
-description = "Install the frontend's build-time dependencies. Needed only to edit the frontend"
-dir = "pluteSpike/PlutoDeck.jl/frontend"
-run = "npm ci"
-
-[tasks.frontend-build]
-description = "Build the frontend bundle into frontend-dist/, which is what a deck serves"
-dir = "pluteSpike/PlutoDeck.jl/frontend"
-run = "npm run build"
-
-[tasks.frontend-check]
-description = "Typecheck, lint and unit-test the frontend"
-dir = "pluteSpike/PlutoDeck.jl/frontend"
-run = ["npm run typecheck", "npm run lint", "npm test"]
-
-[tasks.frontend-watch]
-description = "Rebuild the bundle on every save"
-dir = "pluteSpike/PlutoDeck.jl/frontend"
-run = "npm run dev"
 
 [tasks.deck]
 description = "Start a live deck's kernel; then `npx slidev <deck>/slides.md` in slides/. DECK=<path> PORT=<n> to override"

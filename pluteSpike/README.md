@@ -6,9 +6,9 @@ a Node bridge.
 
 **Its code is gone.** Every technique it proved is in the package now — the kernel client in
 `slides/addon-pluto/src/kernel.client.ts`, the renderer in `render.painter.ts`, the repaint
-rule in `PlutoDeck.jl/frontend/src/deck-card.component.ts`, and opening a notebook in place in `src/session.jl`. The
-browser shim it also proved is the one technique that did *not* move: see the last finding
-below.
+rule in `slides/addon-pluto/components/PlutoCard.vue`, and opening a notebook in place in
+`PlutoDeck.jl/src/session.jl`. The browser shim it also proved is the one technique that did
+*not* move: see the last finding below.
 The spike's own `frontend/`, `bridge/` and `start.sh` were kept only as reference
 implementations, and a reference implementation nobody reads is a second copy that drifts. Read
 them in the history if you need them; `PlutoDeck.jl` is what runs.
@@ -71,13 +71,12 @@ harness cannot catch that, because Node defines `process` itself — only a real
 
 The finding stands; the remedy changed. The spike answered it with
 `frontend/vendor/browser-shim.js`, which had to stay the first import in whichever module
-reached Rainbow — an ordering nothing enforced. Issue 007 gave the package the bundler this
-build was always asking for, and esbuild's `define` substitutes the value at build time, so the
-shim is gone rather than relocated. `global` turned out never to have needed one: every reference
-in either bundle is the browserify `typeof global !== "undefined"` probe, which does not throw on
-an undeclared name, and `dist/ui/ui.esm.js` assigns `window.process` itself, in a `try`. What
-still holds, and holds harder now, is that only a real browser can tell you — so `browser.jl`
-imports the built bundle into a page whose module graph is empty and asserts that it resolves.
+reached Rainbow — an ordering nothing enforced. A bundler is what this build was always asking
+for: Vite's dependency optimizer defines `process.env.NODE_ENV` for every Slidev deck, so the
+shim is gone rather than relocated. `global` never needed one: every reference in either bundle
+is the browserify `typeof global !== "undefined"` probe, which does not throw on an undeclared
+name, and `dist/ui/ui.esm.js` assigns `window.process` itself, in a `try`. What still holds is
+that only a real browser can tell you, which is why live cards are tested in `browser.jl`.
 
 **The Node integration has undeclared dependencies.** `@plutojl/rainbow/node-polyfill`
 imports `ws` and `jsdom` without listing them. Only relevant off-browser.

@@ -1,5 +1,9 @@
 # Start here — brief for the first implementing agent
 
+> **Historical.** This describes PlutoDeck before [ADR 0003](../../docs/adr/0003-decks-are-slidev.md): its Lit frontend,
+> `deck.json` and notes files are gone, and the live-card code is the `pluto` addon in
+> `slides/addon-pluto/`. Read that addon's README to present a live deck.
+
 You are picking up a designed, specified, partly de-risked project. Nothing of the package
 exists yet. This file tells you what to build first and which rules are not yours to relax.
 
