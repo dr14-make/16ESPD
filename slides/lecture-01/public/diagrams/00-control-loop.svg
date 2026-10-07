@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 300" width="980" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-warn { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .f-lbl { font-size: 16px; font-weight: 600; fill: #16202c; }
+    .f-lbl-warn { font-size: 16px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="ar-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+  <text class="f-lbl" x="14" y="92">r</text>
+  <text class="lbl" x="6" y="114">reference</text>
+  <path class="arrow" d="M34 120 H86" marker-end="url(#ar-ink)"/>
+  <circle class="box" cx="104" cy="120" r="18"/>
+  <text x="96" y="114" font-size="14">+</text>
+  <text x="94" y="142" font-size="14">−</text>
+  <path class="arrow" d="M122 120 H186" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="146" y="108">e</text>
+  <rect class="box" x="186" y="92" width="170" height="58" rx="4"/>
+  <text x="271" y="127" text-anchor="middle" font-size="19">controller</text>
+  <path class="arrow" d="M356 120 H470" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="398" y="108">u</text>
+  <text class="lbl" x="372" y="146">what we choose</text>
+  <rect class="box-accent" x="470" y="92" width="180" height="58" rx="4"/>
+  <text x="560" y="127" text-anchor="middle" font-size="19">system</text>
+  <path class="arrow-warn" d="M560 34 V86" marker-end="url(#ar-warn)"/>
+  <text class="f-lbl-warn" x="572" y="40">d</text>
+  <text class="lbl" x="592" y="60">disturbances — wind, hills, bumps</text>
+  <path class="arrow" d="M650 120 H760" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="694" y="108">x</text>
+  <text class="lbl" x="668" y="146">the true state</text>
+  <rect class="box" x="760" y="92" width="150" height="58" rx="4"/>
+  <text x="835" y="127" text-anchor="middle" font-size="19">sensor</text>
+  <path class="arrow" d="M910 120 H950 V232 H104 V138" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="500" y="222">y — a noisy measurement, not the truth</text>
+</svg>

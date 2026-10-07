@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 150" width="460" height="150">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .lbl-strong { font-size: 14px; fill: #16202c; font-weight: 600; }
+  </style>
+  <path class="wire" d="M8 60 H38"/><text class="lbl-strong" x="14" y="50">r</text>
+  <circle class="box" cx="52" cy="60" r="14"/>
+  <text x="46" y="55" font-size="12">+</text><text x="44" y="78" font-size="12">−</text>
+  <path class="wire" d="M66 60 H96"/><text class="lbl" x="72" y="50">e</text>
+  <rect class="box" x="96" y="34" width="110" height="52" rx="4"/>
+  <text x="151" y="65" text-anchor="middle" font-size="16">controller</text>
+  <path class="wire" d="M206 60 H250"/>
+  <rect class="box-accent" x="250" y="34" width="110" height="52" rx="4"/>
+  <text x="305" y="65" text-anchor="middle" font-size="16">car</text>
+  <path class="wire" d="M360 60 H450"/><text class="lbl-strong" x="420" y="50">y</text>
+  <path class="wire" d="M305 126 V86"/><text class="lbl" x="293" y="143">d</text>
+  <path class="wire" d="M400 60 V20 H52 V46"/>
+</svg>

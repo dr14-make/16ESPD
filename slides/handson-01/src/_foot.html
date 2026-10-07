@@ -3,13 +3,13 @@
 </div>
 </div>
 
-<script src="../lecture-01/assets/reveal/dist/reveal.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/notes/notes.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/highlight/highlight.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/math/math.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/zoom/zoom.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/search/search.js"></script>
-<script src="../lecture-01/assets/deck.js"></script>
+<script src="assets/reveal/dist/reveal.js"></script>
+<script src="assets/reveal/plugin/notes/notes.js"></script>
+<script src="assets/reveal/plugin/highlight/highlight.js"></script>
+<script src="assets/reveal/plugin/math/math.js"></script>
+<script src="assets/reveal/plugin/zoom/zoom.js"></script>
+<script src="assets/reveal/plugin/search/search.js"></script>
+<script src="assets/deck.js"></script>
 <script>
 Reveal.initialize({
   // Deep links are part of the contract with the hands-on page: #/3 is step 03.
@@ -31,7 +31,7 @@ Reveal.initialize({
   pdfSeparateFragments: false,
 
   // KaTeX is vendored; `local` is what stops the plugin reaching for a CDN.
-  katex: { local: '../lecture-01/assets/katex' },
+  katex: { local: 'assets/katex' },
 
   plugins: [ RevealNotes, RevealHighlight, RevealMath.KaTeX, RevealZoom, RevealSearch ]
 }).then(function () {

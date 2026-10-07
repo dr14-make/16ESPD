@@ -1,0 +1,6 @@
+/* Notebook plots are exported landscape at a fixed size; capped by height so a plot beside a
+   code block still fits the slide. */
+.slidev-layout img {
+  max-height: 22rem;
+  margin: 0 auto;
+}
