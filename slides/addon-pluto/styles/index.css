@@ -17,6 +17,16 @@
   border-style: dashed;
 }
 
+.course-card:has(> .pluto-card[data-unknown]) {
+  border: 2px solid #d33;
+  color: #d33;
+}
+
+.pluto-card-unknown {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+}
+
 .pluto-card-waiting {
   margin: 0;
   opacity: 0.6;

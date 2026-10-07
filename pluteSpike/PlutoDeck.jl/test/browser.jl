@@ -31,13 +31,15 @@ const SHUTDOWN_TIMEOUT = 60.0
 The deck `present` serves the session and the card index for, in a directory of its own.
 
 Pluto rewrites every notebook it opens, so a fixture is copied out of the repository before a
-kernel is pointed at it. The slides are the Slidev fixture's; this file only names the notebook.
+kernel is pointed at it. The slides `slidev dev` serves are the Slidev fixture's; this deck only
+names the copy, and places no card, so the fixture's deliberately unknown one gets past `present`
+to the browser.
 """
 function browser_workspace()
     workspace = mktempdir()
     cp(BROWSER_NOTEBOOK, joinpath(workspace, "browser.jl"))
-    path = joinpath(workspace, "browser.deck.json")
-    write(path, """{ "notebook": "browser.jl", "slides": [] }""")
+    path = joinpath(workspace, "slides.md")
+    write(path, "---\npluto:\n  notebook: browser.jl\n---\n")
     return path
 end
 
@@ -628,6 +630,17 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
 
                     await(browser, view, """$paper === "rgb(17,17,17)" """;
                         what="the plot to repaint against the dark template")
+                end
+
+                @testset "a card the notebook does not declare says so by name" begin
+                    # After every test that reads the second slide, since this pages away from it.
+                    evaluate(browser, view, "location.hash = '#/5'")
+                    unknown = """document.querySelector('.slidev-page [data-card="not-in-the-notebook"]')"""
+                    await(browser, view, "$unknown?.dataset.unknown !== undefined";
+                        what="the unknown card to report itself")
+
+                    @test evaluate(browser, view, "$unknown.textContent.trim()") ==
+                        "the notebook declares no card \"not-in-the-notebook\""
                 end
 
                 @testset "no card is showing a Julia error" begin

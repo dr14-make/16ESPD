@@ -6,7 +6,7 @@ const FIXTURES = joinpath(@__DIR__, "fixtures")
 const THREE_CARDS = joinpath(FIXTURES, "three-cards.jl")
 const DUPLICATE_CARDS = joinpath(FIXTURES, "duplicate-cards.jl")
 const RUNNABLE = joinpath(FIXTURES, "runnable.jl")
-const LECTURE_DECK = joinpath(FIXTURES, "lecture.deck.json")
+const LECTURE_DECK = joinpath(FIXTURES, "lecture.md")
 
 @testset "PlutoDeck" begin
     include("cards.jl")

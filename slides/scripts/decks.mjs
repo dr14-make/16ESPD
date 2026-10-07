@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process"
-import { existsSync, readdirSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
+import { parseSync } from "@slidev/parser/core"
 
 export const WORKSPACE = dirname(dirname(fileURLToPath(import.meta.url)))
 export const DIST = join(WORKSPACE, "dist")
@@ -12,6 +13,15 @@ export function decks() {
     .filter((e) => e.isDirectory() && existsSync(join(WORKSPACE, e.name, "slides.md")))
     .map((e) => e.name)
     .sort()
+}
+
+/**
+ * A live deck names its notebook in its headmatter and is presented against a running kernel.
+ * Built without one, every card would stay a placeholder, so it is checked but not published.
+ */
+export function isLive(deck) {
+  const file = join(WORKSPACE, deck, "slides.md")
+  return parseSync(readFileSync(file, "utf8"), file).slides[0]?.frontmatter?.pluto?.notebook !== undefined
 }
 
 /** The published URL of a deck is `/16ESPD/<deck>/`, which links already given out rely on. */

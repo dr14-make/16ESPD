@@ -9,21 +9,20 @@ using PlutoDeck: SessionStartError, edit_url, in_temp_dir, load_deck, notebook_i
 function workspace_deck()
     workspace = mktempdir()
     cp(RUNNABLE, joinpath(workspace, "runnable.jl"))
-    write(joinpath(workspace, "runnable.deck.json"), """
-    {
-      "notebook": "runnable.jl",
-      "slides": [
-        {
-          "cards": [
-            { "card": "frequency", "x": 0, "y": 0, "w": 4, "h": 2 },
-            { "card": "samples", "x": 4, "y": 0, "w": 8, "h": 4 }
-          ]
-        },
-        { "cards": [{ "card": "readout", "x": 0, "y": 0, "w": 12, "h": 2 }] }
-      ]
-    }
+    write(joinpath(workspace, "slides.md"), """
+    ---
+    pluto:
+      notebook: runnable.jl
+    ---
+
+    <PlutoCard name="frequency" />
+    <PlutoCard name="samples" />
+
+    ---
+
+    <PlutoCard name="readout" />
     """)
-    return load_deck(joinpath(workspace, "runnable.deck.json"))
+    return load_deck(joinpath(workspace, "slides.md"))
 end
 
 """
@@ -95,7 +94,6 @@ end
             body = JSON.parse(String(HTTP.get("$(server.url)/api/deck").body))
 
             @test body["notebook"] == deck.notebook_path
-            @test length(body["slides"]) == 2
             @test keys(body["cards"]) == Set(["frequency", "samples", "readout"])
         end
     finally

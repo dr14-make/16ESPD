@@ -1,10 +1,10 @@
 // The workspace check CI runs before publishing: every deck's cues name glossary kinds, every
-// image it references exists, and it builds into dist/<deck>/.
+// image it references exists, and every deck but a live one builds into dist/<deck>/.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { extractImagesUsage, parseSync } from "@slidev/parser/core"
 import { cueProblems, glossaryKinds } from "./cues.mjs"
-import { build, decks, WORKSPACE } from "./decks.mjs"
+import { build, decks, isLive, WORKSPACE } from "./decks.mjs"
 
 const kinds = glossaryKinds(readFileSync(join(WORKSPACE, "CONTEXT.md"), "utf8"))
 const all = decks()
@@ -24,7 +24,7 @@ for (const deck of all) {
 }
 
 if (failures.length === 0) {
-  for (const deck of all) {
+  for (const deck of all.filter((d) => !isLive(d))) {
     try {
       build(deck)
     } catch (error) {
