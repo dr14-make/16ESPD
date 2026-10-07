@@ -24,8 +24,11 @@ export interface CardIndex {
   readonly cards: Readonly<Record<string, string>>
 }
 
-/** Where a card's content came from. A card starts at `placeholder` and moves to whatever first supplies it. */
-export type CardSource = "placeholder" | "live"
+/**
+ * Where a card's content came from. A card starts at `placeholder` and moves to whatever first
+ * supplies it, or to `unknown` when the notebook declares no card of its name.
+ */
+export type CardSource = "placeholder" | "live" | "unknown"
 
 /**
  * What a cell is currently showing.
@@ -34,7 +37,7 @@ export type CardSource = "placeholder" | "live"
  * output it has already painted. `published` is every payload the body may reach for.
  */
 export interface CardContent {
-  readonly source: Exclude<CardSource, "placeholder">
+  readonly source: Exclude<CardSource, "placeholder" | "unknown">
   readonly stamp: number
   readonly mime: string
   readonly body: unknown

@@ -17,10 +17,14 @@
   border-style: dashed;
 }
 
+.pluto-card-unknown,
 .pluto-card-waiting {
   margin: 0;
-  opacity: 0.6;
   font-family: ui-monospace, monospace;
+}
+
+.pluto-card-waiting {
+  opacity: 0.6;
 }
 
 .pluto-card-body,

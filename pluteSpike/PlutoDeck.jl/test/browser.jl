@@ -14,9 +14,6 @@ using PlutoDeck: present
 
 const BROWSER_NOTEBOOK = joinpath(FIXTURES, "browser.jl")
 
-"The Slidev workspace, and the fixture deck in it that this suite drives."
-const SLIDES = normpath(joinpath(@__DIR__, "..", "..", "..", "slides"))
-const FIXTURE_DECK = joinpath("pluto-fixture", "fixture.md")
 
 "How long `present` may take to serve its first page, in seconds. A cold kernel is most of it."
 const PRESENT_TIMEOUT = 300.0
@@ -31,15 +28,11 @@ const SHUTDOWN_TIMEOUT = 60.0
 The deck `present` serves the session and the card index for, in a directory of its own.
 
 Pluto rewrites every notebook it opens, so a fixture is copied out of the repository before a
-kernel is pointed at it. The slides are the Slidev fixture's; this file only names the notebook.
+kernel is pointed at it. The slides `slidev dev` serves are the Slidev fixture's; this deck only
+names the copy.
 """
-function browser_workspace()
-    workspace = mktempdir()
-    cp(BROWSER_NOTEBOOK, joinpath(workspace, "browser.jl"))
-    path = joinpath(workspace, "browser.deck.json")
-    write(path, """{ "notebook": "browser.jl", "slides": [] }""")
-    return path
-end
+browser_workspace() = deck_file("---\npluto:\n  notebook: browser.jl\n---\n";
+    beside=Dict("browser.jl" => read(BROWSER_NOTEBOOK, String)))
 
 """
     free_port() -> Int
@@ -628,6 +621,17 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
 
                     await(browser, view, """$paper === "rgb(17,17,17)" """;
                         what="the plot to repaint against the dark template")
+                end
+
+                @testset "a card the notebook does not declare says so by name" begin
+                    # After every test that reads the second slide, since this pages away from it.
+                    evaluate(browser, view, "location.hash = '#/5'")
+                    unknown = """document.querySelector('.slidev-page [data-card="not-in-the-notebook"]')"""
+                    await(browser, view, "$unknown?.dataset.source === 'unknown'";
+                        what="the unknown card to report itself")
+
+                    @test evaluate(browser, view, "$unknown.textContent.trim()") ==
+                        "the notebook declares no card \"not-in-the-notebook\""
                 end
 
                 @testset "no card is showing a Julia error" begin

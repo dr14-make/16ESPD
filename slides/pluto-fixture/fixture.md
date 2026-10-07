@@ -11,6 +11,10 @@ fonts:
 favicon: "data:,"
 addons:
   - ./addon-pluto
+# The browser suite presents a copy, since Pluto rewrites the notebook it opens; this names the
+# notebook the fixture's cards are checked against.
+pluto:
+  notebook: ../../pluteSpike/PlutoDeck.jl/test/fixtures/browser.jl
 ---
 
 # Live cards
@@ -52,4 +56,16 @@ Never mounted until it is visited, which is what the bond layer is for.
 
 <Grid>
   <Card :x="0" :y="0" :w="4" :h="2"><PlutoCard name="amplitude" /></Card>
+</Grid>
+
+---
+preload: false
+---
+
+## A card the notebook does not declare
+
+What a card shows when its name is mistyped.
+
+<Grid>
+  <Card :x="0" :y="0" :w="4" :h="2"><PlutoCard name="not-in-the-notebook" /></Card>
 </Grid>

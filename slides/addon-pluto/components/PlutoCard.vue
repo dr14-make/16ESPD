@@ -18,8 +18,10 @@ let unmounted = false
 onMounted(async () => {
   const { kernel, painter, cards } = await usePluto()
   const cellId = cards[props.name]
+  // A mistyped name is caught nowhere else, so the card says so where the lecturer is looking.
   if (cellId === undefined) {
-    throw new Error(`the notebook declares no card "${props.name}"`)
+    source.value = "unknown"
+    return
   }
 
   // Repainting rebuilds every script in the card against whatever payload it reads, which for a
@@ -59,8 +61,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="pluto-card" :data-card="name" :data-source="source">
-    <p v-if="source === 'placeholder'" class="pluto-card-waiting">{{ name }}</p>
+  <div class="pluto-card" :data-card="name" :data-source="source" :data-fault="source === 'unknown' || undefined">
+    <p v-if="source === 'unknown'" class="pluto-card-unknown">the notebook declares no card "{{ name }}"</p>
+    <p v-else-if="source === 'placeholder'" class="pluto-card-waiting">{{ name }}</p>
     <div ref="host" class="pluto-card-body" />
   </div>
 </template>

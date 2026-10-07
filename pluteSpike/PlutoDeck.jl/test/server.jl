@@ -52,7 +52,7 @@ request(handler, target) = handler(HTTP.Request("GET", target))
     # Plotly and the modules a plot script imports, under the same contract.
     pages = [
         joinpath(frontend_directory(), "index.html"),
-        normpath(joinpath(PlutoDeck.PACKAGE_ROOT, "..", "..", "slides", "addon-pluto", "index.html")),
+        joinpath(SLIDES, "addon-pluto", "index.html"),
     ]
 
     @testset "the bundle's Plotly is the version a plot cell will ask for: $(basename(dirname(path)))" for path in pages
@@ -138,71 +138,14 @@ request(handler, target) = handler(HTTP.Request("GET", target))
         @test occursin(body["secret"], body["editUrl"])
     end
 
-    @testset "/api/deck carries the validated deck, cards resolved to cells" begin
+    @testset "/api/deck carries the deck's notebook and every card it declares" begin
         response = request(handler, "/api/deck")
         body = JSON.parse(String(response.body))
 
         @test response.status == 200
         @test body["notebook"] == THREE_CARDS
-        @test body["preamble"] == []
-        @test length(body["slides"]) == 2
-        @test body["slides"][1]["cards"][1] ==
-            Dict("card" => "target-speed", "x" => 0, "y" => 0, "w" => 4, "h" => 2, "snapshot" => nothing)
         @test body["cards"]["metrics"] == "a1000000-0000-4000-8000-000000000004"
-    end
-
-    @testset "/api/deck carries a slide's cues as markdown, and says so when it has none" begin
-        path = deck_file("""
-            { "notebook": "NOTEBOOK",
-              "slides": [
-                { "notes": "notes/proportional.md",
-                  "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] },
-                { "cards": [{ "card": "speed-plot", "x": 0, "y": 0, "w": 4, "h": 3 }] }
-              ] }
-            """; beside=Dict("notes/proportional.md" => "hold **Kp** at 2"))
-        serving = PlutoDeck._handler(frontend_directory(), load_deck(path), fake_session())
-        slides = JSON.parse(String(request(serving, "/api/deck").body))["slides"]
-
-        @test slides[1]["notes"]["markdown"] == "hold **Kp** at 2"
-        @test slides[1]["notes"]["path"] == joinpath(dirname(path), "notes", "proportional.md")
-        @test slides[2]["notes"] === nothing
-    end
-
-    @testset "a cue rewritten five minutes before a lecture costs a refresh, not a restart" begin
-        path = deck_file("""
-            { "notebook": "NOTEBOOK",
-              "slides": [{ "notes": "notes/cue.md",
-                           "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
-            """; beside=Dict("notes/cue.md" => "the first wording"))
-        deck = load_deck(path)
-        serving = PlutoDeck._handler(frontend_directory(), deck, fake_session())
-        cue(handling) = JSON.parse(String(request(handling, "/api/deck").body))["slides"][1]["notes"]
-
-        @test cue(serving)["markdown"] == "the first wording"
-
-        # The same loaded deck, the same server: only the file on disk changed, which is the
-        # whole point of holding the path rather than the text.
-        write(only(deck.slides).notes, "the second wording")
-
-        @test cue(serving)["markdown"] == "the second wording"
-    end
-
-    @testset "cues that have gone missing since load are reported, not served as empty" begin
-        path = deck_file("""
-            { "notebook": "NOTEBOOK",
-              "slides": [{ "notes": "notes/cue.md",
-                           "cards": [{ "card": "metrics", "x": 0, "y": 0, "w": 4, "h": 3 }] }] }
-            """; beside=Dict("notes/cue.md" => "still here"))
-        deck = load_deck(path)
-        serving = PlutoDeck._handler(frontend_directory(), deck, fake_session())
-        rm(only(deck.slides).notes)
-
-        response = request(serving, "/api/deck")
-        notes = JSON.parse(String(response.body))["slides"][1]["notes"]
-
-        @test response.status == 200
-        @test !haskey(notes, "markdown")
-        @test occursin("cue.md", notes["error"])
+        @test Set(keys(body)) == Set(["path", "notebook", "cards"])
     end
 
     @testset "an absent file is the only 404" begin

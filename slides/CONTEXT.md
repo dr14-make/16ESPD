@@ -24,14 +24,9 @@ _Avoid_: chapter, part
 One screen within a section.
 
 **Speaker notes**:
-Everything the lecturer has for one slide, made of cues; for the lecturer alone, never shown
+Everything the lecturer has for one slide, written freely; for the lecturer alone, never shown
 to the room or printed.
 _Avoid_: comments
-
-**Cue**:
-One typed item of speaker notes — say, ask the room, readout, point at, timing, cut order,
-they get wrong, terms, in the model, derivation, flag forward, why.
-_Avoid_: note, tip
 
 **Presenter mode**:
 The lecturer's own screen during a deck: the current slide's speaker notes, the next slide and

@@ -1,12 +1,16 @@
 # `pluto` — live cards in a Slidev deck
 
 A deck that names this addon in its headmatter can place cells of a running Pluto notebook on
-its slides. Static decks do not name it, so they carry none of its libraries.
+its slides. Static decks do not name it, so they carry none of its libraries. A live deck also
+names its notebook, relative to the deck file, as `pluto.notebook`; that is what makes it live,
+so the workspace checks its images but never builds or publishes it.
 
 ```md
 ---
 addons:
   - ./addon-pluto
+pluto:
+  notebook: ../../pluteSpike/backend/notebook.jl
 ---
 
 ## Proportional
@@ -17,7 +21,8 @@ addons:
 </Grid>
 ```
 
-`name` is the card a notebook cell declares in its metadata. `Grid` and `Card` come from
+`name` is the card a notebook cell declares in its metadata. A name no cell declares shows that
+in red on its card. `Grid` and `Card` come from
 `addon-course` and place any block, not only live cards: a `Card` spans `w` columns and `h` rows
 from column `x` and row `y` of a `Grid` (12 × 12 unless `cols` and `rows` say otherwise). A `Card`
 that does not fit its `Grid`, or sits outside one, shows that in red instead of its content. A live
@@ -25,14 +30,19 @@ card fills its `Card`, and shows its name in a dashed box until the kernel is li
 
 ## Running against a kernel
 
-PlutoDeck.jl starts the notebook and answers `/api/session` and `/api/deck`; `slidev dev`
+PlutoDeck.jl starts the deck's notebook and answers `/api/session` and `/api/deck`; `slidev dev`
 proxies `/api` to it, on port 8099 unless `PLUTODECK_URL` says otherwise. The browser opens its
-own websocket to Pluto.
+own websocket to Pluto. To present the lecture-01 live deck from the repository root, after
+`npm ci` in `slides/`, run these in two terminals:
 
 ```sh
-julia --project=pluteSpike/PlutoDeck.jl -e 'using PlutoDeck; present("path/to.deck.json")'
-cd slides && npx slidev <deck>/slides.md
+julia --project=pluteSpike/PlutoDeck.jl -e 'using Pkg; Pkg.instantiate(); using PlutoDeck; present("slides/lecture-01-live/slides.md")'
+cd slides && npx slidev lecture-01-live/slides.md
 ```
+
+The kernel is ready about 30 s after the first command prints its URLs. Edits to the slides
+hot-reload without restarting it. Pluto saves the notebook it opens, so presenting leaves
+`notebook.jl` modified.
 
 ## What it does for a deck
 

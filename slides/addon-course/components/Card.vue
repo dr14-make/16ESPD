@@ -46,7 +46,9 @@ const placement = {
   font-size: 0.8rem;
 }
 
-.course-card[data-misplaced] {
+/* A block that cannot show what it was asked to marks itself `data-fault`, and its box reads as
+   one that does not fit. */
+.course-card:is([data-misplaced], :has(> [data-fault])) {
   border: 2px solid #d33;
   color: #d33;
 }

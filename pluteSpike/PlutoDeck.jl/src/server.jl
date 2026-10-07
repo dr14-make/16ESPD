@@ -97,50 +97,15 @@ _session_json(session::Session) = Dict{String,Any}(
 )
 
 """
-The validated deck, with every card resolved to the cell that publishes it.
+The deck's notebook, with every card it declares resolved to the cell that publishes it.
 
-`cards` covers the whole notebook rather than only the placed cards, so a frontend can tell a
+`cards` covers the whole notebook rather than only the placed cards, so a live card can tell a
 card that is missing from this deck from one that no cell declares.
 """
 _deck_json(deck::Deck) = Dict{String,Any}(
     "path" => deck.path,
     "notebook" => deck.notebook_path,
-    "preamble" => deck.preamble,
-    "slides" => [_slide_json(slide) for slide in deck.slides],
     "cards" => Dict(name => string(cell_id) for (name, cell_id) in deck.cards),
-)
-
-_slide_json(slide::Slide) = Dict{String,Any}(
-    "title" => slide.title,
-    "notes" => _notes_json(slide.notes),
-    "cards" => _card_json.(slide.cards),
-)
-
-"""
-A slide's speaker cues, read now rather than when the deck was loaded.
-
-Carrying either `markdown` or `error`, never both: a cue file that has gone missing since load
-is a fault the lecturer has to see, and an empty panel says nothing went wrong.
-"""
-_notes_json(::Nothing) = nothing
-
-function _notes_json(path::String)
-    text = try
-        read(path, String)
-    catch err
-        err isa InterruptException && rethrow()
-        return Dict{String,Any}("path" => path, "error" => sprint(showerror, err))
-    end
-    return Dict{String,Any}("path" => path, "markdown" => text)
-end
-
-_card_json(placement::CardPlacement) = Dict{String,Any}(
-    "card" => placement.name,
-    "x" => placement.x,
-    "y" => placement.y,
-    "w" => placement.w,
-    "h" => placement.h,
-    "snapshot" => placement.snapshot,
 )
 
 function _asset_response(root::AbstractString, path::AbstractString)
