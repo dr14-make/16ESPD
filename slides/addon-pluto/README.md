@@ -12,15 +12,15 @@ addons:
 ## Proportional
 
 <Grid>
-  <PlutoCard name="gain-p" :x="0" :y="0" :w="3" :h="3" />
-  <PlutoCard name="speed-plot" :x="3" :y="0" :w="9" :h="12" />
+  <Card :x="0" :y="0" :w="3" :h="3"><PlutoCard name="gain-p" /></Card>
+  <Card :x="3" :y="0" :w="9" :h="12"><PlutoCard name="speed-plot" /></Card>
 </Grid>
 ```
 
-`name` is the card a notebook cell declares in its metadata; `x`, `y`, `w` and `h` place it on
-the slide's `Grid`, which `addon-course` gives every deck (12 × 12 unless `cols` and `rows` say
-otherwise). Without them a card is a block in the slide's own flow. A card shows its name in a
-dashed box until the kernel is live.
+`name` is the card a notebook cell declares in its metadata. `Grid` and `Card` come from
+`addon-course` and place any block, not only live cards: a `Card` spans `w` columns and `h` rows
+from column `x` and row `y` of a `Grid` (12 × 12 unless `cols` and `rows` say otherwise). A live
+card fills its `Card`, and shows its name in a dashed box until the kernel is live.
 
 ## Running against a kernel
 

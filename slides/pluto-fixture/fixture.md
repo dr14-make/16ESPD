@@ -23,10 +23,10 @@ has no cards.
 ## A wave you can drive
 
 <Grid>
-  <PlutoCard name="frequency" :x="0" :y="0" :w="4" :h="2" />
-  <PlutoCard name="readout" :x="4" :y="0" :w="4" :h="2" />
-  <PlutoCard name="wave" :x="0" :y="2" :w="8" :h="8" />
-  <PlutoCard name="formula" :x="8" :y="0" :w="4" :h="5" />
+  <Card :x="0" :y="0" :w="4" :h="2"><PlutoCard name="frequency" /></Card>
+  <Card :x="4" :y="0" :w="4" :h="2"><PlutoCard name="readout" /></Card>
+  <Card :x="0" :y="2" :w="8" :h="8"><PlutoCard name="wave" /></Card>
+  <Card :x="8" :y="0" :w="4" :h="5"><PlutoCard name="formula" /></Card>
 </Grid>
 
 ---
@@ -34,11 +34,11 @@ has no cards.
 ## The same wave again
 
 <Grid>
-  <PlutoCard name="wave" :x="0" :y="0" :w="8" :h="8" />
-  <PlutoCard name="constant" :x="8" :y="0" :w="4" :h="2" />
-  <PlutoCard name="plain" :x="8" :y="2" :w="4" :h="2" />
-  <PlutoCard name="formula-live" :x="8" :y="4" :w="4" :h="3" />
-  <PlutoCard name="frequency" :x="0" :y="8" :w="4" :h="2" />
+  <Card :x="0" :y="0" :w="8" :h="8"><PlutoCard name="wave" /></Card>
+  <Card :x="8" :y="0" :w="4" :h="2"><PlutoCard name="constant" /></Card>
+  <Card :x="8" :y="2" :w="4" :h="2"><PlutoCard name="plain" /></Card>
+  <Card :x="8" :y="4" :w="4" :h="3"><PlutoCard name="formula-live" /></Card>
+  <Card :x="0" :y="8" :w="4" :h="2"><PlutoCard name="frequency" /></Card>
 </Grid>
 
 ---
@@ -50,5 +50,5 @@ preload: false
 Never mounted until it is visited, which is what the bond layer is for.
 
 <Grid>
-  <PlutoCard name="amplitude" :x="0" :y="0" :w="4" :h="2" />
+  <Card :x="0" :y="0" :w="4" :h="2"><PlutoCard name="amplitude" /></Card>
 </Grid>

@@ -1,23 +1,20 @@
-/* A live card's box, and the rules that reach its rendered output. A card renders Pluto's output
-   in light DOM and without Pluto's own stylesheet, so these are document rules: the renderer
+/* A live card, and the rules that reach its rendered output. A card renders Pluto's output in
+   light DOM and without Pluto's own stylesheet, so these are document rules: the renderer
    resolves a payload through `closest("pluto-cell")`, which does not cross a shadow boundary,
    and neither would a stylesheet. */
 
+/* Fills the box it is placed in, so a plot can be told that box's height. */
 .pluto-card {
-  border: 1px solid #8884;
-  border-radius: 6px;
-  padding: 0.6rem;
-  /* Grid items default to min-height:auto, which lets content push a card past its span. */
-  min-inline-size: 0;
-  min-block-size: 0;
-  overflow: auto;
-  font-size: 0.8rem;
+  block-size: 100%;
 }
 
 .pluto-card[data-source="placeholder"] {
-  border-style: dashed;
   display: grid;
   place-items: center;
+}
+
+.course-card:has(> .pluto-card[data-source="placeholder"]) {
+  border-style: dashed;
 }
 
 .pluto-card-waiting {

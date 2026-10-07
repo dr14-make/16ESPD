@@ -6,16 +6,11 @@ import { loadPlotly, needsPlotly } from "../src/plotly.loader"
 import { usePluto } from "../src/pluto.session"
 import type { CardSource } from "../src/session.interface"
 
-/** The card name the notebook declares, and its place on the slide's `Grid`. */
-const props = defineProps<{ name: string; x?: number; y?: number; w?: number; h?: number }>()
+/** The card name the notebook declares. Placed on a slide by the `Card` it sits in. */
+const props = defineProps<{ name: string }>()
 
 const host = ref<HTMLElement>()
 const source = ref<CardSource>("placeholder")
-
-const placement =
-  props.x === undefined || props.y === undefined || props.w === undefined || props.h === undefined
-    ? {}
-    : { gridColumn: `${props.x + 1} / span ${props.w}`, gridRow: `${props.y + 1} / span ${props.h}` }
 
 let stop: (() => void) | null = null
 let unmounted = false
@@ -64,7 +59,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="pluto-card" :data-card="name" :data-source="source" :style="placement">
+  <div class="pluto-card" :data-card="name" :data-source="source">
     <p v-if="source === 'placeholder'" class="pluto-card-waiting">{{ name }}</p>
     <div ref="host" class="pluto-card-body" />
   </div>
