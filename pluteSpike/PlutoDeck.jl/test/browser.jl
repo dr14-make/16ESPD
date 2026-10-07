@@ -39,7 +39,9 @@ function browser_workspace()
     # The plot is placed on both slides on purpose, and it is the second placement every
     # assertion about it reads. One cell rendered twice is the case that breaks a payload the
     # two draws share, and the second copy is also painted while its slide is hidden, which is
-    # what tells `visibility: hidden` apart from `display: none`.
+    # what tells `visibility: hidden` apart from `display: none`. The slider is placed on both
+    # for the same reason: a widget's cell does not re-run when its own bond moves, so the copy
+    # nobody touched is the one that can be left showing a value the kernel no longer has.
     write(joinpath(workspace, "browser.deck.json"), """
     {
       "notebook": "browser.jl",
@@ -60,7 +62,8 @@ function browser_workspace()
             { "card": "wave", "x": 0, "y": 0, "w": 8, "h": 6 },
             { "card": "constant", "x": 8, "y": 0, "w": 4, "h": 2 },
             { "card": "plain", "x": 8, "y": 2, "w": 4, "h": 2 },
-            { "card": "formula-live", "x": 8, "y": 4, "w": 4, "h": 2 }
+            { "card": "formula-live", "x": 8, "y": 4, "w": 4, "h": 2 },
+            { "card": "frequency", "x": 0, "y": 6, "w": 4, "h": 2 }
           ]
         }
       ]
@@ -246,6 +249,30 @@ const WATCH_DATA_URLS = """
 """
 
 """
+Record every bond write this page sends to Pluto, before anything can send one.
+
+A write is an `update_notebook` message carrying a `bonds` patch, and the websocket is the only
+place a write the kernel receives can be told apart from one a widget merely attempted: Rainbow
+drops a write that changes nothing before it reaches the wire. The message is MessagePack, whose
+strings are their own bytes, so reading the frame as text is enough to find the names in it.
+"""
+const WATCH_BOND_WRITES = """
+;(() => {
+  window.__bondWrites = []
+  const send = WebSocket.prototype.send
+  WebSocket.prototype.send = function (data) {
+    const bytes = data instanceof ArrayBuffer ? new Uint8Array(data)
+      : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+      : null
+    const text = typeof data === "string" ? data
+      : bytes === null ? "" : new TextDecoder("latin1").decode(bytes)
+    if (text.includes("update_notebook") && text.includes("bonds")) window.__bondWrites.push(text)
+    return send.call(this, data)
+  }
+})()
+"""
+
+"""
 Count every DOM change inside each card from here on.
 
 A card that repaints when an unrelated cell re-runs is not a correctness bug but a performance
@@ -377,7 +404,8 @@ const MOVE_THE_SLIDER = """
             # any library come off a CDN would fail here and pass everywhere else.
             with_browser(; arguments=[NO_NETWORK]) do browser
                 view = page(browser)
-                navigate(browser, view, url; before=RECORD_CARD_SOURCES * WATCH_DATA_URLS)
+                navigate(browser, view, url;
+                    before=RECORD_CARD_SOURCES * WATCH_DATA_URLS * WATCH_BOND_WRITES)
 
                 @testset "the deck is served over HTTP, not loaded from disk" begin
                     @test evaluate(browser, view, "location.protocol") == "http:"
@@ -387,9 +415,9 @@ const MOVE_THE_SLIDER = """
                 @testset "every card shows its cell's live output" begin
                     # `every` over no cards is true, so the count comes first: an assertion that
                     # passes against an empty DOM is how a page that never rendered looks healthy.
-                    # Nine cards: eight placements over seven cells, the plot being placed on
-                    # both slides, plus the preamble card, which is on no slide at all.
-                    @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 9
+                    # Ten cards: nine placements over seven cells, the plot and the slider each
+                    # being placed on both slides, plus the preamble card, which is on no slide.
+                    @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 10
                     await(browser, view,
                         """[...document.querySelectorAll(".card")].every((c) => c.dataset.source === "live")""";
                         what="every card to go live")
@@ -765,6 +793,37 @@ const MOVE_THE_SLIDER = """
                     @test evaluate(browser, view,
                         "$live.querySelectorAll('mjx-container').length") == 1
                     @test !occursin("\$", evaluate(browser, view, "$live.textContent"))
+                end
+
+                @testset "every copy of a widget follows its bond, and only one write is sent" begin
+                    # The slider is placed on both slides. Moving the copy on the slide that is
+                    # showing must bring the copy on the hidden one to the kernel's value, or
+                    # the lecturer pages forward to a slider that disagrees with the plot.
+                    copies = """[...document.querySelectorAll('[data-card="frequency"] bond input')]"""
+                    @test evaluate(browser, view, "$copies.length") == 2
+
+                    freq_writes = """window.__bondWrites.filter((w) => w.includes("freq")).length"""
+                    before = evaluate(browser, view, freq_writes)
+
+                    @test evaluate(browser, view, """
+                        (() => {
+                          const input = $copies[0]
+                          input.value = "5"
+                          input.dispatchEvent(new Event("input", { bubbles: true }))
+                          return input.value
+                        })()
+                        """) == "5"
+                    await(browser, view,
+                        """document.querySelector('[data-card="readout"]').textContent.includes("cycles 5")""";
+                        what="the readout to follow the slider")
+                    # A copy that followed by re-sending the value would write after the run
+                    # settles, not during it, so the count is read once the queue has had time
+                    # to collect, write and settle a second write.
+                    sleep(2)
+
+                    @test JSON.parse(evaluate(browser, view,
+                        "JSON.stringify($copies.map((input) => input.value))")) == ["5", "5"]
+                    @test evaluate(browser, view, freq_writes) - before == 1
                 end
 
                 @testset "a Julia-rendered plot follows the deck into dark mode" begin

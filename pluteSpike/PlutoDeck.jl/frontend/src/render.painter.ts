@@ -18,6 +18,7 @@ import {
 } from "@plutojl/rainbow/ui"
 import type { CardContent } from "./deck.interface.js"
 import type { Kernel } from "./kernel.client.js"
+import type { NotebookState } from "./pluto.interface.js"
 import { clearMath, typesetMath } from "./math.typesetter.js"
 import { isolate } from "./published.helper.js"
 
@@ -68,6 +69,11 @@ interface PublishingCell extends HTMLElement {
  *
  * A payload is isolated on the way out: Pluto publishes one object per cell, and a deck renders
  * a cell once per slide it is placed on. See `published.helper.ts`.
+ *
+ * Every widget this painter drew is brought to the kernel's bond value whenever the bonds
+ * change, not only when its card repaints. A widget's cell does not re-run when its own bond
+ * moves, so a card placed on several slides would otherwise leave every copy but the one that
+ * was moved at the value it was painted with.
  */
 export function createPainter(kernel: Kernel): Painter {
   // The effect that executes a card's scripts lists `pluto_actions` among its dependencies, so
@@ -80,6 +86,47 @@ export function createPainter(kernel: Kernel): Painter {
     set_doc_query: ignored,
     focus_on_neighbor: ignored,
   }
+
+  const draw = (cell: HTMLElement, content: CardContent, bonds: NotebookState["bonds"]): void => {
+    render(
+      html`<${PlutoActionsContext.Provider} value=${actions}>
+        <${PlutoBondsContext.Provider} value=${bonds}>
+          <${PlutoJSInitializingContext.Provider} value=${RUNNING_SCRIPTS}>
+            <${OutputBody}
+              mime=${content.mime}
+              body=${content.body}
+              cell_id=${content.cellId}
+              last_run_timestamp=${content.stamp}
+              persist_js_state=${false}
+              sanitize_html=${false}
+            />
+          <//>
+        <//>
+      <//>`,
+      cell,
+    )
+  }
+
+  // Redrawn with the same body, stamp and actions, `RawHTMLContainer` re-runs only its effect
+  // keyed on the bonds, which sets each bound element's value without dispatching an event — so
+  // a copy follows the bond without writing it back. The notebook state is immutable and keeps
+  // `bonds` the same object until a patch touches it, which is what makes identity the test.
+  const drawn = new Map<HTMLElement, CardContent>()
+  let shownBonds = kernel.bonds()
+  kernel.onChange(() => {
+    const bonds = kernel.bonds()
+    if (bonds === shownBonds) {
+      return
+    }
+    shownBonds = bonds
+    for (const [cell, content] of drawn) {
+      if (!cell.isConnected) {
+        drawn.delete(cell)
+      } else if (cell.querySelector("bond") !== null) {
+        draw(cell, content, bonds)
+      }
+    }
+  })
 
   return function paint(host: Element, content: CardContent): void {
     // `execute_scripttags` resolves a script's published objects through
@@ -116,23 +163,8 @@ export function createPainter(kernel: Kernel): Painter {
     // once the old output is detached it can no longer be reached to be forgotten.
     clearMath(cell)
 
-    render(
-      html`<${PlutoActionsContext.Provider} value=${actions}>
-        <${PlutoBondsContext.Provider} value=${kernel.bonds()}>
-          <${PlutoJSInitializingContext.Provider} value=${RUNNING_SCRIPTS}>
-            <${OutputBody}
-              mime=${content.mime}
-              body=${content.body}
-              cell_id=${content.cellId}
-              last_run_timestamp=${content.stamp}
-              persist_js_state=${false}
-              sanitize_html=${false}
-            />
-          <//>
-        <//>
-      <//>`,
-      cell,
-    )
+    drawn.set(cell, content)
+    draw(cell, content, kernel.bonds())
 
     // `RawHTMLContainer` sets the cell's HTML in a layout effect, which Preact flushes before
     // `render` returns, so the `.tex` elements the kernel wrote are in the document by here.
