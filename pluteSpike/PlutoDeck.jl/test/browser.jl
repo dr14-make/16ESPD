@@ -261,11 +261,8 @@ const WATCH_BOND_WRITES = """
   window.__bondWrites = []
   const send = WebSocket.prototype.send
   WebSocket.prototype.send = function (data) {
-    const bytes = data instanceof ArrayBuffer ? new Uint8Array(data)
-      : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
-      : null
     const text = typeof data === "string" ? data
-      : bytes === null ? "" : new TextDecoder("latin1").decode(bytes)
+      : data instanceof Blob ? "" : new TextDecoder("latin1").decode(data)
     if (text.includes("update_notebook") && text.includes("bonds")) window.__bondWrites.push(text)
     return send.call(this, data)
   }
@@ -380,11 +377,14 @@ const PLANT_WIDGETS = """
 })()
 """
 
-"Move the frequency slider the way a hand would, through the event Pluto's bond listener waits on."
-const MOVE_THE_SLIDER = """
+"""
+Move the first copy of the frequency slider to `value` the way a hand would, through the event
+Pluto's bond listener waits on, and return the value the slider settled on.
+"""
+move_the_slider(value) = """
 (() => {
   const input = document.querySelector('[data-card="frequency"] bond input')
-  input.value = "4"
+  input.value = "$value"
   input.dispatchEvent(new Event("input", { bubbles: true }))
   return input.value
 })()
@@ -756,7 +756,7 @@ const MOVE_THE_SLIDER = """
                     @test evaluate(browser, view, COUNT_CARD_MUTATIONS) === true
                     @test evaluate(browser, view,
                         """!!document.querySelector('[data-card="frequency"] bond input[type=range]')""") === true
-                    @test evaluate(browser, view, MOVE_THE_SLIDER) == "4"
+                    @test evaluate(browser, view, move_the_slider(4)) == "4"
 
                     await(browser, view,
                         """document.querySelector('[data-card="readout"]').textContent.includes("cycles 4")""";
@@ -805,14 +805,7 @@ const MOVE_THE_SLIDER = """
                     freq_writes = """window.__bondWrites.filter((w) => w.includes("freq")).length"""
                     before = evaluate(browser, view, freq_writes)
 
-                    @test evaluate(browser, view, """
-                        (() => {
-                          const input = $copies[0]
-                          input.value = "5"
-                          input.dispatchEvent(new Event("input", { bubbles: true }))
-                          return input.value
-                        })()
-                        """) == "5"
+                    @test evaluate(browser, view, move_the_slider(5)) == "5"
                     await(browser, view,
                         """document.querySelector('[data-card="readout"]').textContent.includes("cycles 5")""";
                         what="the readout to follow the slider")

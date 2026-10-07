@@ -120,10 +120,10 @@ export function createPainter(kernel: Kernel): Painter {
     }
     shownBonds = bonds
     for (const [cell, content] of drawn) {
-      if (!cell.isConnected) {
-        drawn.delete(cell)
-      } else if (cell.querySelector("bond") !== null) {
+      if (cell.isConnected) {
         draw(cell, content, bonds)
+      } else {
+        drawn.delete(cell)
       }
     }
   })
@@ -163,8 +163,14 @@ export function createPainter(kernel: Kernel): Painter {
     // once the old output is detached it can no longer be reached to be forgotten.
     clearMath(cell)
 
-    drawn.set(cell, content)
     draw(cell, content, kernel.bonds())
+    // Only a cell with a bound element has anything to bring to a new bond value, and a plot
+    // card's content holds its whole published payload.
+    if (cell.querySelector("bond") === null) {
+      drawn.delete(cell)
+    } else {
+      drawn.set(cell, content)
+    }
 
     // `RawHTMLContainer` sets the cell's HTML in a layout effect, which Preact flushes before
     // `render` returns, so the `.tex` elements the kernel wrote are in the document by here.
