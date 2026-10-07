@@ -14,9 +14,6 @@ using PlutoDeck: present
 
 const BROWSER_NOTEBOOK = joinpath(FIXTURES, "browser.jl")
 
-"The Slidev workspace, and the fixture deck in it that this suite drives."
-const SLIDES = normpath(joinpath(@__DIR__, "..", "..", "..", "slides"))
-const FIXTURE_DECK = joinpath("pluto-fixture", "fixture.md")
 
 "How long `present` may take to serve its first page, in seconds. A cold kernel is most of it."
 const PRESENT_TIMEOUT = 300.0
@@ -32,16 +29,11 @@ The deck `present` serves the session and the card index for, in a directory of 
 
 Pluto rewrites every notebook it opens, so a fixture is copied out of the repository before a
 kernel is pointed at it. The slides `slidev dev` serves are the Slidev fixture's; this deck only
-names the copy, and places no card, so the fixture's deliberately unknown one gets past `present`
-to the browser.
+names the copy and places no card, so the fixture's unknown card reaches the browser past
+`present`.
 """
-function browser_workspace()
-    workspace = mktempdir()
-    cp(BROWSER_NOTEBOOK, joinpath(workspace, "browser.jl"))
-    path = joinpath(workspace, "slides.md")
-    write(path, "---\npluto:\n  notebook: browser.jl\n---\n")
-    return path
-end
+browser_workspace() = deck_file("---\npluto:\n  notebook: browser.jl\n---\n";
+    beside=Dict("browser.jl" => read(BROWSER_NOTEBOOK, String)))
 
 """
     free_port() -> Int
@@ -636,7 +628,7 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                     # After every test that reads the second slide, since this pages away from it.
                     evaluate(browser, view, "location.hash = '#/5'")
                     unknown = """document.querySelector('.slidev-page [data-card="not-in-the-notebook"]')"""
-                    await(browser, view, "$unknown?.dataset.unknown !== undefined";
+                    await(browser, view, "$unknown?.dataset.source === 'unknown'";
                         what="the unknown card to report itself")
 
                     @test evaluate(browser, view, "$unknown.textContent.trim()") ==

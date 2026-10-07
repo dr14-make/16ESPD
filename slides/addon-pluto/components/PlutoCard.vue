@@ -11,7 +11,6 @@ const props = defineProps<{ name: string }>()
 
 const host = ref<HTMLElement>()
 const source = ref<CardSource>("placeholder")
-const unknown = ref(false)
 
 let stop: (() => void) | null = null
 let unmounted = false
@@ -22,7 +21,7 @@ onMounted(async () => {
   // `present` refuses a deck naming an unknown card, but a name typed during a rehearsal reaches
   // the page through hot reload without a restart, so the card says what is wrong with it.
   if (cellId === undefined) {
-    unknown.value = true
+    source.value = "unknown"
     return
   }
 
@@ -63,8 +62,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="pluto-card" :data-card="name" :data-source="source" :data-unknown="unknown || undefined">
-    <p v-if="unknown" class="pluto-card-unknown">the notebook declares no card "{{ name }}"</p>
+  <div class="pluto-card" :data-card="name" :data-source="source" :data-fault="source === 'unknown' || undefined">
+    <p v-if="source === 'unknown'" class="pluto-card-unknown">the notebook declares no card "{{ name }}"</p>
     <p v-else-if="source === 'placeholder'" class="pluto-card-waiting">{{ name }}</p>
     <div ref="host" class="pluto-card-body" />
   </div>

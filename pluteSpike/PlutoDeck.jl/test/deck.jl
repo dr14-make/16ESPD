@@ -1,21 +1,5 @@
 using PlutoDeck: DeckLoadError, Deck, DuplicateCardsError, cards, load_deck
 
-"""
-A Slidev deck in its own directory, so a relative notebook reference resolves from somewhere
-real. `NOTEBOOK` in `body` and in every file `beside` it stands for `notebook`.
-"""
-function deck_file(body::AbstractString; notebook::AbstractString=THREE_CARDS,
-        beside::Dict{String,String}=Dict{String,String}())
-    directory = mktempdir()
-    for (name, contents) in beside
-        mkpath(joinpath(directory, dirname(name)))
-        write(joinpath(directory, name), replace(contents, "NOTEBOOK" => notebook))
-    end
-    path = joinpath(directory, "slides.md")
-    write(path, replace(body, "NOTEBOOK" => notebook))
-    return path
-end
-
 const ONE_CARD = """
 ---
 pluto:
@@ -29,8 +13,6 @@ pluto:
 </Grid>
 """
 
-"The Slidev fixture deck the browser suite drives."
-const SLIDEV_FIXTURE = normpath(joinpath(@__DIR__, "..", "..", "..", "slides", "pluto-fixture", "fixture.md"))
 
 @testset "deck" begin
     @testset "a deck's headmatter names its notebook, resolved against the deck file" begin
@@ -47,26 +29,22 @@ const SLIDEV_FIXTURE = normpath(joinpath(@__DIR__, "..", "..", "..", "slides", "
     end
 
     @testset "a card the notebook does not publish names itself, its file and its line" begin
-        unknown = joinpath(FIXTURES, "unknown-card.md")
+        unknown = joinpath(FIXTURES, "unknown-card", "slides.md")
 
         @test_throws DeckLoadError load_deck(unknown)
-        @test_throws ["unknown-card.md:13", "\"metrcis\"", "three-cards.jl"] load_deck(unknown)
+        @test_throws ["slides.md:13", "\"metrcis\"", "three-cards.jl"] load_deck(unknown)
         @test_throws "That notebook publishes: \"metrics\", \"speed-plot\", \"target-speed\"" load_deck(unknown)
 
         err = try load_deck(unknown) catch err; err end
         @test occursin("1 problem found", sprint(showerror, err))
     end
 
-    @testset "a card in a section the deck imports is checked where it is written" begin
+    @testset "a card in any section of the deck's folder is checked where it is written" begin
         path = deck_file("""
             ---
             pluto:
               notebook: NOTEBOOK
             src: ./sections/first.md
-            ---
-
-            ---
-            src: sections/second.md
             ---
             """; beside=Dict(
                 "sections/first.md" => """
@@ -77,25 +55,11 @@ const SLIDEV_FIXTURE = normpath(joinpath(@__DIR__, "..", "..", "..", "slides", "
                 "sections/second.md" => """
                     # Second
 
-                    <Card :x="0" :y="0" :w="4" :h="3"><PlutoCard   name='speed-plt' /></Card>
+                    <Card :x="0" :y="0" :w="4" :h="3"><PlutoCard
+                      name='speed-plt' /></Card>
                     """))
 
         @test_throws ["sections/second.md:3", "\"speed-plt\""] load_deck(path)
-    end
-
-    @testset "a section the deck imports that is not there is a fault of the deck" begin
-        path = deck_file("""
-            ---
-            pluto:
-              notebook: NOTEBOOK
-            ---
-
-            ---
-            src: ./sections/gone.md
-            ---
-            """)
-
-        @test_throws ["slides.md:7", "\"src\": no such file", "gone.md"] load_deck(path)
     end
 
     @testset "a bound name is left to the browser: only a literal can be checked at load" begin
@@ -122,10 +86,10 @@ const SLIDEV_FIXTURE = normpath(joinpath(@__DIR__, "..", "..", "..", "slides", "
         @test_throws DuplicateCardsError load_deck(deck_file(ONE_CARD; notebook=DUPLICATE_CARDS))
     end
 
-    @testset "the Slidev fixture deck fails on exactly the card it misnames on purpose" begin
+    @testset "the Slidev fixture deck fails on exactly its one unknown card" begin
         # The fixture carries one unknown name so the browser suite can show what a card does with
         # one; anything else unresolved there is a fixture that has drifted from its notebook.
-        err = try load_deck(SLIDEV_FIXTURE) catch err; err end
+        err = try load_deck(joinpath(SLIDES, FIXTURE_DECK)) catch err; err end
 
         @test err isa DeckLoadError
         @test length(err.problems) == 1

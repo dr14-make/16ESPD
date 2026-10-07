@@ -52,7 +52,7 @@ request(handler, target) = handler(HTTP.Request("GET", target))
     # Plotly and the modules a plot script imports, under the same contract.
     pages = [
         joinpath(frontend_directory(), "index.html"),
-        normpath(joinpath(PlutoDeck.PACKAGE_ROOT, "..", "..", "slides", "addon-pluto", "index.html")),
+        joinpath(SLIDES, "addon-pluto", "index.html"),
     ]
 
     @testset "the bundle's Plotly is the version a plot cell will ask for: $(basename(dirname(path)))" for path in pages

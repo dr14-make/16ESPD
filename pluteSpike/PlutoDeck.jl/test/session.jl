@@ -7,22 +7,20 @@ using PlutoDeck: SessionStartError, edit_url, in_temp_dir, load_deck, notebook_i
 
 "A notebook and a deck of its own, outside the repository, since Pluto rewrites what it opens."
 function workspace_deck()
-    workspace = mktempdir()
-    cp(RUNNABLE, joinpath(workspace, "runnable.jl"))
-    write(joinpath(workspace, "slides.md"), """
-    ---
-    pluto:
-      notebook: runnable.jl
-    ---
+    path = deck_file("""
+        ---
+        pluto:
+          notebook: runnable.jl
+        ---
 
-    <PlutoCard name="frequency" />
-    <PlutoCard name="samples" />
+        <PlutoCard name="frequency" />
+        <PlutoCard name="samples" />
 
-    ---
+        ---
 
-    <PlutoCard name="readout" />
-    """)
-    return load_deck(joinpath(workspace, "slides.md"))
+        <PlutoCard name="readout" />
+        """; beside=Dict("runnable.jl" => read(RUNNABLE, String)))
+    return load_deck(path)
 end
 
 """

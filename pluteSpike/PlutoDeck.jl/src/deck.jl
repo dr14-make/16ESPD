@@ -41,17 +41,20 @@ function Base.showerror(io::IO, err::DeckLoadError)
     print(io, length(err.problems), " problem", length(err.problems) == 1 ? "" : "s", " found.")
 end
 
-"A card placed by a literal name. `:name=\"…\"` binds an expression, which only the browser can resolve."
+"""
+A card placed by a literal name, its attributes free to wrap across lines. `:name=\"…\"` binds an
+expression, which only the browser can resolve.
+"""
 const PLACED_CARD = r"<PlutoCard\b[^>]*?(?<![:\w-])name=([\"'])(.*?)\1"
-
-"A section a slide's frontmatter imports, as Slidev's `src:` names it, without any `#` slide range."
-const IMPORTED_SECTION = r"^src:\s*([\"']?)([^\"'#\s]+)[^\"'\s]*\1\s*$"
 
 """
     load_deck(path) -> Deck
 
-Load a Slidev deck, read its notebook from the headmatter and resolve every card it places,
-in the deck file and in every section it imports, against that notebook.
+Load a Slidev deck, read its notebook from the headmatter and resolve every card placed in any
+Markdown file of the deck's folder against that notebook.
+
+Slidev resolves a deck's `src:` imports itself, and every section it can reach lives in the
+deck's folder.
 
 Every fault is collected before anything is thrown, so one load reports everything that is
 wrong with a hand-authored deck rather than one fault per attempt.
@@ -62,14 +65,13 @@ function load_deck(path::AbstractString)::Deck
 
     problems = String[]
     notebook_path = _headmatter_notebook(problems, deck_path)
-    placed = _placed_cards(problems, deck_path)
 
     # Card names cannot be resolved without the notebook, and reporting every placement as
     # unresolved when the notebook path is simply wrong buries the one fault that matters.
     (isempty(problems) && notebook_path !== nothing) || throw(DeckLoadError(deck_path, problems))
 
     published = cards(notebook_path)
-    hints = _resolve_cards!(problems, placed, published, notebook_path)
+    hints = _resolve_cards!(problems, _placed_cards(dirname(deck_path)), published, notebook_path)
     isempty(problems) || throw(DeckLoadError(deck_path, problems, hints))
 
     return Deck(deck_path, notebook_path, published)
@@ -103,34 +105,23 @@ function _headmatter_notebook(problems::Vector{String}, deck_path::String)
         return nothing
     end
 
-    resolved = isabspath(reference) ? String(reference) :
-        normpath(joinpath(dirname(deck_path), reference))
+    resolved = normpath(joinpath(dirname(deck_path), reference))
     isfile(resolved) || push!(problems, "the deck's headmatter: \"pluto.notebook\": no such file: $resolved")
     return resolved
 end
 
-"""
-Every card placed by a literal name in `file` and in the sections it imports, each with the
-`file:line` it is written at, relative to the deck.
-"""
-function _placed_cards(problems::Vector{String}, deck_path::String)
+"Every card placed by a literal name in a Markdown file under `folder`, with the `file:line` it is written at."
+function _placed_cards(folder::String)
     placed = Pair{String,String}[]
-    seen = Set{String}()
-    pending = [deck_path]
-    while !isempty(pending)
-        file = pop!(pending)
-        file in seen && continue
-        push!(seen, file)
-        for (number, line) in enumerate(readlines(file))
-            where = "$(relpath(file, dirname(deck_path))):$number"
-            for found in eachmatch(PLACED_CARD, line)
-                push!(placed, found[2] => where)
+    for (root, directories, files) in walkdir(folder)
+        filter!(!in(("public", "node_modules")), directories)
+        for file in filter(endswith(".md"), files)
+            path = joinpath(root, file)
+            text = read(path, String)
+            for found in eachmatch(PLACED_CARD, text)
+                line = count(==('\n'), SubString(text, 1, found.offset)) + 1
+                push!(placed, found[2] => "$(relpath(path, folder)):$line")
             end
-            section = match(IMPORTED_SECTION, line)
-            section === nothing && continue
-            imported = normpath(joinpath(dirname(file), section[2]))
-            isfile(imported) ? push!(pending, imported) :
-                push!(problems, "$where: \"src\": no such file: $imported")
         end
     end
     return placed

@@ -15,7 +15,6 @@ node = "22"
 
 [env]
 PLUTODECK_PROJECT = "pluteSpike/PlutoDeck.jl"
-PLUTODECK_FRONTEND = "pluteSpike/PlutoDeck.jl/frontend"
 PLUTODECK_DECK = "slides/lecture-01-live/slides.md"
 PLUTODECK_PORT = "8099"
 
@@ -35,7 +34,7 @@ dir = "pluteSpike/PlutoDeck.jl/frontend"
 run = ["npm run typecheck", "npm run lint", "npm test"]
 
 [tasks.frontend-watch]
-description = "Rebuild the bundle on every save. `deck` runs this for you; use it for a second window"
+description = "Rebuild the bundle on every save"
 dir = "pluteSpike/PlutoDeck.jl/frontend"
 run = "npm run dev"
 
@@ -54,7 +53,6 @@ run = '''
 julia +dyad-3.4.0 --project="$PLUTODECK_PROJECT" -e '
     using PlutoDeck: load_deck, list_cards
     deck = load_deck(ARGS[1])
-    println(length(deck.cards), " cards · ", deck.notebook_path)
     list_cards(stdout, deck.notebook_path)
 ' "${DECK:-$PLUTODECK_DECK}"
 '''

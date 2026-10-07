@@ -4,7 +4,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { extractImagesUsage, parseSync } from "@slidev/parser/core"
 import { cueProblems, glossaryKinds } from "./cues.mjs"
-import { build, decks, isLive, WORKSPACE } from "./decks.mjs"
+import { build, decks, staticDecks, WORKSPACE } from "./decks.mjs"
 
 const kinds = glossaryKinds(readFileSync(join(WORKSPACE, "CONTEXT.md"), "utf8"))
 const all = decks()
@@ -24,7 +24,7 @@ for (const deck of all) {
 }
 
 if (failures.length === 0) {
-  for (const deck of all.filter((d) => !isLive(d))) {
+  for (const deck of staticDecks()) {
     try {
       build(deck)
     } catch (error) {
