@@ -13,6 +13,8 @@
 /** The element PlutoPlotly draws a plot into and measures. */
 const CONTAINER = "plutoplotly-container"
 
+// Only ever called through `.call` with the element being measured as its receiver.
+// eslint-disable-next-line @typescript-eslint/unbound-method
 const measured = Element.prototype.getBoundingClientRect
 
 export function sizePlotsToTheirCards(): void {
