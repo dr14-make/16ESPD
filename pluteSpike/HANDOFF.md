@@ -1,5 +1,9 @@
 # Handover — PlutoDeck
 
+> **Historical.** This describes PlutoDeck before [ADR 0003](../docs/adr/0003-decks-are-slidev.md): its Lit frontend,
+> `deck.json` and notes files are gone, and the live-card code is the `pluto` addon in
+> `slides/addon-pluto/`. Read that addon's README to present a live deck.
+
 Everything needed to pick this up cold. Read this file first, then the three it points to.
 
 | Document | Holds |

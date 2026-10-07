@@ -90,7 +90,7 @@ export class Kernel {
   /** What a cell is currently showing, or `null` while it has nothing whole to show. */
   content(cellId: string): CardContent | null {
     const output = this.#output(cellId)
-    if (output === null || output.body === undefined || output.body === null) {
+    if (output?.body === undefined || output.body === null) {
       return null
     }
 
