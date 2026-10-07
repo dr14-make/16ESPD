@@ -4,32 +4,69 @@ on:
   push:
     branches: [main]
     paths: ["slides/**", ".github/workflows/pages.yml"]
+  pull_request:
+    paths: ["slides/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: slides
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: slides/package-lock.json
+      - run: npm ci
+      # `slidev export` drives Chromium to print each deck's handout PDF.
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - run: npm run check
+      - run: npm run build
+      # Slidev decks are published from their build; everything else under slides/ (the landing
+      # page, the hands-on guide, decks not yet on Slidev) is published as committed.
+      - name: Assemble the site
+        run: |
+          mkdir -p ../_site
+          for entry in *; do
+            case "$entry" in
+              node_modules|dist|scripts|package.json|package-lock.json|vite.config.ts|CONTEXT.md) continue ;;
+            esac
+            if [ -f "$entry/slides.md" ]; then continue; fi
+            cp -R "$entry" ../_site/
+          done
+          cp -R dist/. ../_site/
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
   deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: slides
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
