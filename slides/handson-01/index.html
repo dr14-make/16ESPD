@@ -6,13 +6,12 @@
 
 <title>Build the Car in Dyad — Lecture 1 hands-on</title>
 
-<!-- The libraries are the Lecture 1 deck's vendored copies, loaded from its assets/ by relative
-     path, so both decks present from the same folder with no network. -->
-<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/reset.css">
-<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/reveal.css">
-<link rel="stylesheet" href="../lecture-01/assets/reveal/dist/theme/white.css" id="theme">
-<link rel="stylesheet" href="../lecture-01/assets/highlight-light.css">
-<link rel="stylesheet" href="../lecture-01/assets/deck.css">
+<!-- Every library is vendored under assets/, so the deck presents with no network. -->
+<link rel="stylesheet" href="assets/reveal/dist/reset.css">
+<link rel="stylesheet" href="assets/reveal/dist/reveal.css">
+<link rel="stylesheet" href="assets/reveal/dist/theme/white.css" id="theme">
+<link rel="stylesheet" href="assets/highlight-light.css">
+<link rel="stylesheet" href="assets/deck.css">
 <style>
   .reveal .shot img { max-height: 470px; width: auto; max-width: 100%; border: 1px solid #d7dde6; border-radius: 6px; }
   .reveal .shot.tall img { max-height: 520px; }
@@ -2680,13 +2679,13 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])</code></pre>
 </div>
 </div>
 
-<script src="../lecture-01/assets/reveal/dist/reveal.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/notes/notes.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/highlight/highlight.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/math/math.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/zoom/zoom.js"></script>
-<script src="../lecture-01/assets/reveal/plugin/search/search.js"></script>
-<script src="../lecture-01/assets/deck.js"></script>
+<script src="assets/reveal/dist/reveal.js"></script>
+<script src="assets/reveal/plugin/notes/notes.js"></script>
+<script src="assets/reveal/plugin/highlight/highlight.js"></script>
+<script src="assets/reveal/plugin/math/math.js"></script>
+<script src="assets/reveal/plugin/zoom/zoom.js"></script>
+<script src="assets/reveal/plugin/search/search.js"></script>
+<script src="assets/deck.js"></script>
 <script>
 Reveal.initialize({
   // Deep links are part of the contract with the hands-on page: #/3 is step 03.
@@ -2708,7 +2707,7 @@ Reveal.initialize({
   pdfSeparateFragments: false,
 
   // KaTeX is vendored; `local` is what stops the plugin reaching for a CDN.
-  katex: { local: '../lecture-01/assets/katex' },
+  katex: { local: 'assets/katex' },
 
   plugins: [ RevealNotes, RevealHighlight, RevealMath.KaTeX, RevealZoom, RevealSearch ]
 }).then(function () {

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 150" width="460" height="150">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .lbl-strong { font-size: 14px; fill: #16202c; font-weight: 600; }
+  </style>
+  <path class="wire" d="M8 60 H60"/><text class="lbl-strong" x="14" y="50">r</text>
+  <rect class="box" x="60" y="34" width="120" height="52" rx="4"/>
+  <text x="120" y="65" text-anchor="middle" font-size="16">controller</text>
+  <path class="wire" d="M180 60 H240"/><text class="lbl" x="198" y="50">u</text>
+  <rect class="box-accent" x="240" y="34" width="120" height="52" rx="4"/>
+  <text x="300" y="65" text-anchor="middle" font-size="16">car</text>
+  <path class="wire" d="M360 60 H450"/><text class="lbl-strong" x="420" y="50">y</text>
+  <path class="wire" d="M300 120 V86"/>
+  <text class="lbl" x="288" y="138">d</text>
+</svg>

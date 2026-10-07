@@ -4,7 +4,7 @@ import { cpSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { DIST, decks, exportHandout, staticDecks, WORKSPACE } from "./decks.mjs"
 
-const COMMITTED = ["index.html", "handson", "handson-01", "lecture-01"]
+const COMMITTED = ["index.html", "handson", "handson-01"]
 
 const all = decks()
 for (const deck of staticDecks()) {
