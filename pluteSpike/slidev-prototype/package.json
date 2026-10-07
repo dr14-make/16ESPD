@@ -1,0 +1,17 @@
+{
+  "name": "slidev-prototype",
+  "private": true,
+  "description": "PROTOTYPE, throwaway: one PlutoDeck slide in Slidev. See README.md.",
+  "type": "module",
+  "scripts": {
+    "vendor": "node vendor.mjs",
+    "dev": "npm run vendor && slidev --open false",
+    "build": "npm run vendor && slidev build",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@slidev/cli": "53.0.0",
+    "@slidev/theme-default": "latest",
+    "vue": "^3.5.0"
+  }
+}
