@@ -7,11 +7,18 @@
 // what makes them checked, and `isNotebookState` is where an upgrade that changes the shape
 // stops being a card that renders nothing.
 
+import { isRecord } from "./session.interface.js"
+
 /** What a cell is showing, as PlutoRunner wrote it. */
 export interface CellOutput {
   readonly body: unknown
   readonly mime: string
   readonly last_run_timestamp: number
+}
+
+/** What a cell holds, as the notebook file has it. */
+export interface CellInput {
+  readonly code: string
 }
 
 export interface CellDependency {
@@ -24,8 +31,9 @@ export interface CellDependency {
 export interface NotebookState {
   readonly process_status: string
   // Held as `unknown` because that is all the shape check establishes: a notebook carries a cell
-  // per notebook rather than per card, and these are read on every diff. `isCellOutput` and
-  // `isCellDependency` narrow what the deck actually takes out of them.
+  // per notebook rather than per card, and these are read on every diff. `isCellOutput`,
+  // `isCellInput` and `isCellDependency` narrow what the deck actually takes out of them.
+  readonly cell_inputs: Readonly<Record<string, unknown>>
   readonly cell_results: Readonly<Record<string, unknown>>
   readonly cell_dependencies: Readonly<Record<string, unknown>>
   readonly published_objects: Readonly<Record<string, unknown>>
@@ -37,8 +45,12 @@ export interface MutableNotebookState {
   bonds: Record<string, { value: unknown }>
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null
+export function isCellDependency(value: unknown): value is CellDependency {
+  return (
+    isRecord(value) &&
+    isRecord(value.downstream_cells_map) &&
+    isRecord(value.upstream_cells_map)
+  )
 }
 
 /**
@@ -48,20 +60,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * and `mime` decides how the body is rendered. Checked here rather than over the whole of
  * `cell_results`, which is read on every notebook diff and holds a cell the deck never places.
  */
-export function isCellDependency(value: unknown): value is CellDependency {
-  return (
-    isRecord(value) &&
-    isRecord(value.downstream_cells_map) &&
-    isRecord(value.upstream_cells_map)
-  )
-}
-
 export function isCellOutput(value: unknown): value is CellOutput {
   return (
     isRecord(value) &&
     typeof value.mime === "string" &&
     typeof value.last_run_timestamp === "number"
   )
+}
+
+export function isCellInput(value: unknown): value is CellInput {
+  return isRecord(value) && typeof value.code === "string"
 }
 
 /**
@@ -76,6 +84,7 @@ export function isNotebookState(value: unknown): value is NotebookState {
   return (
     isRecord(value) &&
     typeof value.process_status === "string" &&
+    isRecord(value.cell_inputs) &&
     isRecord(value.cell_results) &&
     isRecord(value.cell_dependencies) &&
     isRecord(value.published_objects) &&

@@ -5,7 +5,7 @@
 // for PlutoUI widgets and for most @bind elements. `OutputBody` re-creates script nodes so
 // they run, resolves `published_to_js` payloads, and wires bound elements back to the kernel.
 //
-// Rainbow draws through Preact, and this is the one place the deck meets it: a Lit component
+// Rainbow draws through Preact, and this is the one place the deck meets it: a card component
 // owns a card's box and hands this function a plain element to paint into.
 
 import {
@@ -16,7 +16,7 @@ import {
   html,
   render,
 } from "@plutojl/rainbow/ui"
-import type { CardContent } from "./deck.interface.js"
+import type { CardContent } from "./session.interface.js"
 import type { Kernel } from "./kernel.client.js"
 import type { NotebookState } from "./pluto.interface.js"
 import { clearMath, typesetMath } from "./math.typesetter.js"

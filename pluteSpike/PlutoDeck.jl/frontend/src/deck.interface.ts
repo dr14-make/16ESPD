@@ -1,13 +1,13 @@
-// The shapes `/api/session` and `/api/deck` publish, as `server.jl` writes them.
+// The shape `/api/deck` publishes, as `server.jl` writes it, beyond the card index a live card
+// reads. The session and the card content belong to the `pluto` addon, which the deck renders
+// its cards through.
 
-/** What the browser needs to reach Pluto: the deck does not proxy it, so the page connects itself. */
-export interface Session {
-  readonly plutoUrl: string
-  readonly secret: string
-  // Snake case because it is the wire field Pluto's own client expects, unlike its neighbours here.
-  readonly notebook_id: string
-  readonly editUrl: string
-}
+export type { CardContent, Session } from "../../../../slides/addon-pluto/src/session.interface.js"
+export {
+  THEME_BOND,
+  fetchJson,
+  isSession,
+} from "../../../../slides/addon-pluto/src/session.interface.js"
 
 /** A slide's speaker cues as they were read, carrying either the text or the failure to read it. */
 export interface CueText {
@@ -52,39 +52,11 @@ export interface Deck {
   readonly cards: Readonly<Record<string, string>>
 }
 
-/** Where a card's content came from. A card starts at `placeholder` and moves to whatever first supplies it. */
-export type CardSource = "placeholder" | "live"
-
-/**
- * What a cell is currently showing.
- *
- * `stamp` is the cell's own `last_run_timestamp`, which is what tells a card whether this is
- * output it has already painted. `published` is every payload the body may reach for.
- */
-export interface CardContent {
-  readonly source: Exclude<CardSource, "placeholder">
-  readonly stamp: number
-  readonly mime: string
-  readonly body: unknown
-  readonly published: Readonly<Record<string, unknown>>
-  readonly cellId: string
-}
-
-export const fileName = (path: string): string => path.split("/").pop() ?? path
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
 }
 
-export function isSession(value: unknown): value is Session {
-  return (
-    isRecord(value) &&
-    typeof value.plutoUrl === "string" &&
-    typeof value.secret === "string" &&
-    typeof value.notebook_id === "string" &&
-    typeof value.editUrl === "string"
-  )
-}
+export const fileName = (path: string): string => path.split("/").pop() ?? path
 
 /**
  * Whether `value` is a deck the frontend knows how to render.
@@ -146,25 +118,4 @@ function isPlacement(value: unknown): value is CardPlacement {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string")
-}
-
-/**
- * Read one of the deck server's two endpoints, refusing a body that is not what it should be.
- *
- * A shape the frontend cannot read otherwise surfaces as cards that never leave `placeholder`,
- * which reads in a lecture hall exactly like a kernel that has not started.
- */
-export async function fetchJson<T>(
-  url: string,
-  isValid: (value: unknown) => value is T,
-): Promise<T> {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`${url} answered ${String(response.status)}`)
-  }
-  const body: unknown = await response.json()
-  if (!isValid(body)) {
-    throw new Error(`${url} answered a body this deck cannot read`)
-  }
-  return body
 }

@@ -1,7 +1,9 @@
 {
   "name": "slidev-addon-course",
   "private": true,
-  "description": "Settings every course deck shares, applied to each deck through the workspace's slidev.addons.",
+  "description": "Settings and blocks every course deck shares, applied to each deck through the workspace's slidev.addons.",
   "type": "module",
-  "engines": { "slidev": ">=53.0.0" }
+  "engines": {
+    "slidev": ">=53.0.0"
+  }
 }

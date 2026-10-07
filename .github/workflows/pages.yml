@@ -34,6 +34,7 @@ jobs:
           cache-dependency-path: slides/package-lock.json
       - run: npm ci
       - run: npm test
+      - run: npm run typecheck
       - run: npm run check
       # `slidev export` drives Chromium to print each deck's handout PDF.
       - run: npx playwright install --with-deps chromium

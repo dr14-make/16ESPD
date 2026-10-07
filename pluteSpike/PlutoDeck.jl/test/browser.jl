@@ -1,4 +1,5 @@
-# The deck, driven in real headless Chrome against a real kernel `present` brought up.
+# Live cards, driven in real headless Chrome: a Slidev deck naming the `pluto` addon, served by
+# `slidev dev`, against a real kernel `present` brought up.
 #
 # Everything here is asserted through the DOM the browser actually built, over HTTP, because the
 # two bugs that cost this project the most were invisible to anything less: a missing `process`
@@ -7,128 +8,38 @@
 
 include("devtools.jl")
 
-import Pluto
 import Sockets
 
-using PlutoDeck: Session, frontend_directory, load_deck, present, serve
+using PlutoDeck: present
 
 const BROWSER_NOTEBOOK = joinpath(FIXTURES, "browser.jl")
+
+"The Slidev workspace, and the fixture deck in it that this suite drives."
+const SLIDES = normpath(joinpath(@__DIR__, "..", "..", "..", "slides"))
+const FIXTURE_DECK = joinpath("pluto-fixture", "fixture.md")
 
 "How long `present` may take to serve its first page, in seconds. A cold kernel is most of it."
 const PRESENT_TIMEOUT = 300.0
 
+"How long `slidev dev` may take to answer, in seconds."
+const SLIDEV_TIMEOUT = 60.0
+
 "How long `present` may take to bring its kernel down after the interrupt, in seconds."
 const SHUTDOWN_TIMEOUT = 60.0
 
-"How long the page may take to report the websocket it cannot open, in seconds."
-const OFFLINE_REPORT_TIMEOUT = 30.0
-
 """
-The deck the browser drives, in a directory of its own.
+The deck `present` serves the session and the card index for, in a directory of its own.
 
 Pluto rewrites every notebook it opens, so a fixture is copied out of the repository before a
-kernel is pointed at it.
+kernel is pointed at it. The slides are the Slidev fixture's; this file only names the notebook.
 """
 function browser_workspace()
     workspace = mktempdir()
     cp(BROWSER_NOTEBOOK, joinpath(workspace, "browser.jl"))
-    # Every construct the reveal.js deck's own notes use, so that what renders here is what a
-    # lecturer already writes. Long enough to overflow the panel, which is the normal case.
-    mkpath(joinpath(workspace, "notes"))
-    write(joinpath(workspace, "notes", "wave.md"), CUE_MARKDOWN)
-    # The plot is placed on both slides on purpose, and it is the second placement every
-    # assertion about it reads. One cell rendered twice is the case that breaks a payload the
-    # two draws share, and the second copy is also painted while its slide is hidden, which is
-    # what tells `visibility: hidden` apart from `display: none`. The slider is placed on both
-    # for the same reason: a widget's cell does not re-run when its own bond moves, so the copy
-    # nobody touched is the one that can be left showing a value the kernel no longer has.
-    write(joinpath(workspace, "browser.deck.json"), """
-    {
-      "notebook": "browser.jl",
-      "preamble": ["probe"],
-      "slides": [
-        {
-          "title": "A wave you can drive",
-          "notes": "notes/wave.md",
-          "cards": [
-            { "card": "frequency", "x": 0, "y": 0, "w": 4, "h": 2 },
-            { "card": "readout", "x": 4, "y": 0, "w": 4, "h": 2 },
-            { "card": "wave", "x": 0, "y": 2, "w": 8, "h": 6 },
-            { "card": "formula", "x": 8, "y": 0, "w": 4, "h": 4 }
-          ]
-        },
-        {
-          "cards": [
-            { "card": "wave", "x": 0, "y": 0, "w": 8, "h": 6 },
-            { "card": "constant", "x": 8, "y": 0, "w": 4, "h": 2 },
-            { "card": "plain", "x": 8, "y": 2, "w": 4, "h": 2 },
-            { "card": "formula-live", "x": 8, "y": 4, "w": 4, "h": 2 },
-            { "card": "frequency", "x": 0, "y": 6, "w": 4, "h": 2 }
-          ]
-        }
-      ]
-    }
-    """)
-    return load_deck(joinpath(workspace, "browser.deck.json"))
+    path = joinpath(workspace, "browser.deck.json")
+    write(path, """{ "notebook": "browser.jl", "slides": [] }""")
+    return path
 end
-
-"""
-The cues the browser reads, carrying the markdown a cue is actually written in.
-
-`CUE_SENTENCE` is asserted against the rendered panel, and against everywhere it must not
-appear: a cue is for the lecturer, and the room is looking at the same screen.
-"""
-const CUE_SENTENCE = "nothing here is precomputed"
-
-const CUE_MARKDOWN = """
-**Beat:** the wave, and the slider that drives it. ~4 minutes.
-
-Open on *one* cycle and say what the axis is before touching anything. Then drag `freq` and
-let the room watch the period halve. Drag [the slider](https://example.invalid/cue) rather
-than typing a number — the point is that the kernel re-runs while they watch.
-
-- start at one cycle
-  - read the axis out loud
-  - ask what four cycles will look like *before* dragging
-- drag to four
-  - the readout card follows, and so does the plot
-- if the plot does not move, the kernel is still warming; keep talking
-
-The sentence to land is that **$CUE_SENTENCE**: drag the slider and the whole notebook re-runs
-between one frame and the next. That is the difference between this and a slide with a picture
-of a plot on it.
-
-The plant behind the wave is
-
-\$\$ G(s) \\;=\\; \\frac{K e^{-\\theta s}}{\\tau s + 1} \$\$
-
-so \$\\tau\$ is what the slider is really changing. A ticket costs \$5 and a coffee \$3,
-which is prose and not a formula.
-
-**If a student asks** why the plot is interactive at all, it is Plotly, and the modebar is
-theirs to use — zoom is not a trap.
-
-**If the kernel dies** mid-lecture, these cues keep rendering, because the browser parsed
-them. That is the whole reason they are not a notebook cell.
-"""
-
-"""
-    kernel_less_session(notebook_path) -> Session
-
-A session naming a Pluto server that is not there.
-
-The deck the overlay is designed for: cues are worth most in the minutes before a kernel exists
-or after one has been killed, and only an unreachable Pluto proves they survive it. The URL
-names a port nothing is listening on, so the websocket is refused rather than answered by
-something else.
-"""
-kernel_less_session(notebook_path::AbstractString) = Session(
-    Pluto.ServerSession(),
-    Pluto.RunningPlutoServer(nothing, @task nothing),
-    Pluto.Notebook(Pluto.Cell[], notebook_path),
-    "http://localhost:$(free_port())",
-    "no-secret",
-)
 
 """
     free_port() -> Int
@@ -146,12 +57,24 @@ function free_port()
     return port
 end
 
-"Whether the deck is answering on `url` yet."
+"Whether something is answering on `url` yet."
 function serving(url::AbstractString)
     try
         return HTTP.get(url; retry=false, status_exception=false, connect_timeout=1).status == 200
     catch
         return false
+    end
+end
+
+"Wait for `url` to answer, failing with `process`'s output if it exits or takes too long."
+function await_serving(url::AbstractString, process::Base.Process, log::AbstractString, timeout::Real)
+    deadline = time() + timeout
+    while !serving(url)
+        Base.process_running(process) ||
+            error("the process exited before it served $url:\n", read(log, String))
+        time() > deadline &&
+            error("nothing served $url within $(timeout)s:\n", read(log, String))
+        sleep(0.2)
     end
 end
 
@@ -168,8 +91,7 @@ of the last two is a shutdown that did not finish.
 
 In a process of its own, because blocking until interrupted is the whole of `present`'s
 contract: one call brings up the kernel, the server and the pages, and Ctrl-C takes all three
-down again. Composing `start_session` and `serve` by hand covers everything about it except
-that composition.
+down again.
 """
 function with_present(body, deck_path::AbstractString)
     port = free_port()
@@ -182,14 +104,7 @@ function with_present(body, deck_path::AbstractString)
 
     stopped = ""
     try
-        deadline = time() + PRESENT_TIMEOUT
-        while !serving("$url/api/deck")
-            Base.process_running(process) ||
-                error("present exited before it served $url:\n", read(log, String))
-            time() > deadline &&
-                error("present did not serve $url within $(PRESENT_TIMEOUT)s:\n", read(log, String))
-            sleep(0.2)
-        end
+        await_serving("$url/api/deck", process, log, PRESENT_TIMEOUT)
         body(url)
     finally
         kill(process, Base.SIGINT)
@@ -198,10 +113,9 @@ function with_present(body, deck_path::AbstractString)
         wait(process)
         stopped = killed ? "kill" :
             process.exitcode == 0 ? "interrupt" : "exit $(process.exitcode)"
-        # A shutdown that did not finish reads as `exit 1` and nothing else, and what threw is
-        # in the process's own output — which every other path here already reports. It goes in
-        # the message rather than beside it, because a trace passed as a log value is shown
-        # middle-elided and the elided middle is the part that names what threw.
+        # What threw is in the process's own output, and it goes in the message rather than
+        # beside it: a trace passed as a log value is shown middle-elided, and the elided middle
+        # is the part that names what threw.
         stopped == "interrupt" ||
             @warn "present did not stop cleanly ($stopped), and said:\n" * read(log, String)
     end
@@ -209,25 +123,54 @@ function with_present(body, deck_path::AbstractString)
 end
 
 """
-Record every `data-source` a card passes through, from before the deck's own scripts run.
+    with_slidev(body, api_url)
+
+Run `body(url)` against `slidev dev` serving the fixture deck, its `/api` proxied to `api_url`,
+and stop it however `body` ends.
+"""
+function with_slidev(body, api_url::AbstractString)
+    port = free_port()
+    url = "http://localhost:$port"
+    log = tempname()
+    slidev = joinpath(SLIDES, "node_modules", ".bin", "slidev")
+    command = setenv(`$slidev $FIXTURE_DECK --port $port --open false`,
+        merge(ENV, Dict("PLUTODECK_URL" => api_url)); dir=SLIDES)
+    process = run(pipeline(command; stdout=log, stderr=log); wait=false)
+    try
+        await_serving(url, process, log, SLIDEV_TIMEOUT)
+        body(url)
+    finally
+        kill(process)
+        wait(process)
+    end
+end
+
+"""
+Record every `data-source` each card passes through, from before the deck's own scripts run.
 
 By the time the harness can evaluate anything the deck has long since replaced its placeholders,
-so the transition has to be recorded as it happens rather than looked for afterwards.
+so the transition has to be recorded as it happens. A card is created already carrying its
+first source, so its insertion is recorded as well as every change after it.
 """
 const RECORD_CARD_SOURCES = """
-window.__sources = {}
-new MutationObserver((records) => {
-  for (const record of records) {
-    const name = record.target.dataset?.card
-    if (name === undefined) continue
-    const seen = (window.__sources[name] ??= [])
-    const source = record.target.dataset.source
+;(() => {
+  const record = (card) => {
+    const seen = (card.__sources ??= [])
+    const source = card.dataset.source
     // A repaint rewrites `live` over `live`, which is a mutation and not a transition.
     if (seen[seen.length - 1] !== source) seen.push(source)
   }
-}).observe(document, {
-  subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ["data-source"],
-})
+  new MutationObserver((records) => {
+    for (const r of records) {
+      if (r.type === "attributes") record(r.target)
+      for (const node of r.addedNodes) {
+        if (!(node instanceof Element)) continue
+        if (node.matches("[data-card]")) record(node)
+        node.querySelectorAll("[data-card]").forEach(record)
+      }
+    }
+  }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-source"] })
+})()
 """
 
 """
@@ -270,7 +213,7 @@ const WATCH_BOND_WRITES = """
 """
 
 """
-Count every DOM change inside each card from here on.
+Count every DOM change inside each card on a slide from here on.
 
 A card that repaints when an unrelated cell re-runs is not a correctness bug but a performance
 one — repainting rebuilds the card's scripts against whatever payload they read — so it shows up
@@ -279,9 +222,9 @@ as work done, not as a wrong value.
 const COUNT_CARD_MUTATIONS = """
 (() => {
   window.__mutations = {}
-  for (const card of document.querySelectorAll(".card")) {
+  for (const card of document.querySelectorAll(".slidev-page .pluto-card")) {
     const name = card.dataset.card
-    window.__mutations[name] = 0
+    window.__mutations[name] ??= 0
     new MutationObserver((records) => { window.__mutations[name] += records.length })
       .observe(card, { childList: true, subtree: true, characterData: true })
   }
@@ -289,122 +232,67 @@ const COUNT_CARD_MUTATIONS = """
 })()
 """
 
-"Which slide is showing, counting from zero, or -1 if none is."
-const CURRENT_SLIDE =
-    """[...document.querySelectorAll(".slide")].findIndex((s) => s.dataset.current === "true")"""
+"Every card on the page, on a slide or in the bond layer."
+const CARDS = """[...document.querySelectorAll(".pluto-card")]"""
 
-"The position the chrome reports, which is what a keyboard move announces."
-const SLIDE_POSITION = element("deck-nav >>> .position") * ".textContent"
+"The cards in the bond layer, which no slide shows."
+const LAYER_CARDS = """[...document.querySelectorAll(".pluto-bond-layer .pluto-card")]"""
 
-"""
-The plot card on the slide that is hidden when the deck first paints.
+"The card whose cell carries math, in both the shapes PlutoRunner marks up."
+const FORMULA_CARD = """document.querySelector('.slidev-page [data-card="formula"]')"""
 
-The deck places the plot cell on both slides, so a bare selector matches the copy on the slide
-that is showing — which is the one that would still be drawn if a shared payload were broken.
-"""
-const HIDDEN_PLOT = """document.querySelectorAll('[data-card="wave"]')[1]"""
+"Every copy of the frequency slider, on slides and in the bond layer alike."
+const FREQUENCY_COPIES = """[...document.querySelectorAll('[data-card="frequency"] bond input')]"""
 
-"""
-The card whose cell carries math, in both the shapes PlutoRunner marks up.
+"Whether every copy of the frequency slider shows `value`."
+copies_show(value) = FREQUENCY_COPIES * """.every((i) => i.value === "$value")"""
 
-Drawn math is asserted rather than present math: the markup arrives whether or not anything
-typesets it, so a `.tex` element proves only that the kernel wrote what it always writes.
-"""
-const FORMULA_CARD = """document.querySelector('[data-card="formula"]')"""
+"Whether the readout shows `cycles` cycles."
+readout_shows(cycles) =
+    """document.querySelector('[data-card="readout"]').textContent.includes("cycles $cycles")"""
 
-"Whether the cue panel is showing. `open` is the whole of the overlay's state."
-const CUES_SHOWING = """document.querySelector("cue-overlay").hasAttribute("open")"""
+"The slide that is showing. Slidev keeps the slides around it mounted with `display: none`."
+const SHOWING_SLIDE = """.slidev-page:not([style*="display: none"])"""
 
-"The overlay itself, which is the element that scrolls its own overflow."
-const CUE_PANEL = """document.querySelector("cue-overlay")"""
-
-"What the cue panel is reading out, as a lecturer sees it."
-const CUE_BODY = element("cue-overlay >>> .cue-body")
-const CUE_TEXT = CUE_BODY * ".textContent"
-
-"The speaker page renders the same cues through the same renderer, in a root of its own."
-const SPEAKER_CUE_BODY = element("speaker-page >>> .cue-body")
-const SPEAKER_CUE_TEXT = SPEAKER_CUE_BODY * ".textContent"
+"How many bond writes this page has sent that name the frequency."
+const FREQUENCY_WRITES = """window.__bondWrites.filter((w) => w.includes("freq")).length"""
 
 """
-The speaker window's own chrome: which slide it believes the deck is on, and whether it still
-believes anything at all.
-
-`SPEAKER_READY` is the statement the module sets after it has subscribed, because a page's
-`load` fires while its module is still evaluating and the harness would otherwise assert
-against a document that is listening to nothing.
-"""
-const SPEAKER_STATE = element("speaker-page >>> .state") * ".textContent"
-const SPEAKER_POSITION = element("speaker-page >>> .position") * ".textContent"
-const SPEAKER_SLIDE = element("speaker-page >>> h1") * ".textContent"
-const SPEAKER_READY = """'deck' in document.body.dataset"""
-
-"""
-Silence a deck window without closing it.
-
-A window that is closed or reloaded says so on `pagehide`, so only a deck that stops talking
-without saying anything — crashed, killed, or a laptop that went to sleep — is left to the
-staleness timer, and that is the case a handshake alone cannot see.
-"""
-const MUTE_DECK = """
-(() => {
-  BroadcastChannel.prototype.postMessage = () => {}
-  return true
-})()
-"""
-
-"How long to allow for a silence to be called stale: `STALE_MS` and then some."
-const LOST_TIMEOUT = 30.0
-
-"""
-Put a select, a textarea and a contenteditable on the slide that is showing.
-
-The deck's own cards carry a range input and nothing else, so the widgets a notebook may hand
-a slide — `PlutoUI.Select`, `PlutoUI.TextField`, any cell returning editable HTML — have to be
-planted to be pressed against. Each one is somewhere a lecturer types, and every key the deck
-listens to is a character one of them is owed.
-"""
-const PLANT_WIDGETS = """
-(() => {
-  const host = document.createElement("div")
-  host.id = "planted-widgets"
-  host.innerHTML = `
-    <select id="planted-select"><option>one</option><option>two</option></select>
-    <textarea id="planted-textarea"></textarea>
-    <div id="planted-contenteditable" contenteditable="true">a cue in progress</div>`
-  document.querySelector('.slide[data-current="true"]').append(host)
-  return true
-})()
-"""
-
-"""
-Move the first copy of the frequency slider to `value` the way a hand would, through the event
-Pluto's bond listener waits on, and return the value the slider settled on.
+Move the copy of the frequency slider on the slide that is showing to `value` the way a hand
+would, through the event Pluto's bond listener waits on, and return the value it settled on.
 """
 move_the_slider(value) = """
 (() => {
-  const input = document.querySelector('[data-card="frequency"] bond input')
+  const input = document.querySelector('$SHOWING_SLIDE [data-card="frequency"] bond input')
   input.value = "$value"
   input.dispatchEvent(new Event("input", { bubbles: true }))
   return input.value
 })()
 """
 
+"""
+The twoslash client Slidev bundles patches a FloatingVue that no deck installs, and logs that it
+failed to: the one console error a page logs before any deck code has run.
+"""
+const SLIDEV_NOISE = r"Failed to patch FloatingVue"
+
 @testset "browser" begin
     if chrome_binary() === nothing
-        @warn "no Chrome on PATH; the deck goes unverified in the only place it can be verified"
-        @test_skip "the deck renders against a live kernel in a real browser"
+        @warn "no Chrome on PATH; live cards go unverified in the only place they can be verified"
+        @test_skip "live cards render against a live kernel in a real browser"
+    elseif !isfile(joinpath(SLIDES, "node_modules", ".bin", "slidev"))
+        @warn "the Slidev workspace is not installed; run `npm ci` in $SLIDES"
+        @test_skip "live cards render in a Slidev deck"
     else
-        deck = browser_workspace()
-
-        presented = with_present(deck.path) do url
+        presented = with_present(browser_workspace()) do api
+            with_slidev(api) do url
             # Every assertion below is made on a browser that can reach nothing but this
-            # machine, so "the plot draws" and "the plot redraws from a bond" are statements
-            # about a lecture hall with no wifi rather than about this desk. A deck that let
-            # any library come off a CDN would fail here and pass everywhere else.
+            # machine, so "the plot draws" is a statement about a lecture hall with no wifi
+            # rather than about this desk. A deck that let any library come off a CDN would fail
+            # here and pass everywhere else.
             with_browser(; arguments=[NO_NETWORK]) do browser
                 view = page(browser)
-                navigate(browser, view, url;
+                navigate(browser, view, "$url/#/2";
                     before=RECORD_CARD_SOURCES * WATCH_DATA_URLS * WATCH_BOND_WRITES)
 
                 @testset "the deck is served over HTTP, not loaded from disk" begin
@@ -415,56 +303,50 @@ move_the_slider(value) = """
                 @testset "every card shows its cell's live output" begin
                     # `every` over no cards is true, so the count comes first: an assertion that
                     # passes against an empty DOM is how a page that never rendered looks healthy.
-                    # Ten cards: nine placements over seven cells, the plot and the slider each
-                    # being placed on both slides, plus the preamble card, which is on no slide.
-                    @test evaluate(browser, view, """document.querySelectorAll(".card").length""") == 10
-                    await(browser, view,
-                        """[...document.querySelectorAll(".card")].every((c) => c.dataset.source === "live")""";
+                    # Eleven: four cards on the second slide, five on the third, and the two
+                    # inputs in the bond layer. The fourth slide opts out of preloading.
+                    await(browser, view, "$CARDS.length === 11"; what="every card to mount")
+                    await(browser, view, """$CARDS.every((c) => c.dataset.source === "live")""";
                         what="every card to go live")
+                    @test evaluate(browser, view, "document.body.dataset.kernel") == "ready"
 
                     @test evaluate(browser, view,
-                        """document.querySelector('[data-card="readout"]').textContent.trim()""") == "cycles 1"
+                        """document.querySelector('.slidev-page [data-card="readout"]').textContent.trim()""") ==
+                        "cycles 1"
                 end
 
                 @testset "a card is a placeholder before it is live" begin
-                    sources = JSON.parse(evaluate(browser, view, "JSON.stringify(window.__sources)"))
+                    sources = JSON.parse(evaluate(browser, view,
+                        "JSON.stringify($CARDS.map((c) => c.__sources ?? []))"))
 
-                    @test sort(collect(keys(sources))) ==
-                        ["constant", "formula", "formula-live", "frequency", "plain", "probe",
-                         "readout", "wave"]
-                    @test all(transitions == ["placeholder", "live"]
-                              for transitions in values(sources))
+                    @test length(sources) == 11
+                    @test all(==(["placeholder", "live"]), sources)
                 end
 
-                @testset "a preamble card's script runs before any slide card is painted" begin
-                    # What `preamble` is for: a card whose output is a side effect the slides
-                    # depend on. `#publish` publishes and paints that group first and awaits
-                    # `whenScriptsSettled`, and nothing but a browser can check that it does.
-                    # The probe card records what the deck had painted at the moment it ran.
-                    ran = JSON.parse(evaluate(browser, view, "JSON.stringify(window.__preambleRan ?? null)"))
-
-                    @test ran !== nothing
-                    @test ran["slideCardsLive"] == 0
-
-                    # And it reaches no slide: the room sees the side effect, never the card.
+                @testset "every input reports its value with no slide visited" begin
+                    # The plot reads `amplitude` with no fallback for `missing`, and the only
+                    # slide carrying that input opts out of preloading, so the plot draws on
+                    # this slide only if the bond layer reported the input's value.
                     @test evaluate(browser, view,
-                        """document.querySelectorAll('.slide [data-card="probe"]').length""") == 0
-                    @test evaluate(browser, view,
-                        """!!document.querySelector('.preamble [data-card="probe"]')""") === true
+                        """document.querySelectorAll('.slidev-page [data-card="amplitude"]').length""") == 0
+                    @test JSON.parse(evaluate(browser, view,
+                        "JSON.stringify($LAYER_CARDS.map((c) => c.dataset.card).sort())")) ==
+                        ["amplitude", "frequency"]
+                    await(browser, view,
+                        """document.querySelector('.slidev-page [data-card="wave"] path.js-line')""";
+                        what="the plot to draw from an input on an unvisited slide")
                 end
 
                 @testset "nothing between a card's output and the document is a shadow root" begin
-                    # Two separate mechanisms break the moment one appears, both of them
-                    # silently. Pluto's renderer resolves a `published_to_js` payload through
+                    # Pluto's renderer resolves a `published_to_js` payload through
                     # `root_node.closest("pluto-cell")`, and `closest` does not cross a shadow
-                    # boundary; `deck.css` reaches a card's output from the document, and a
-                    # document stylesheet does not either. A card would report `live` and draw
-                    # nothing, with a clean console. `LightDomElement` is what holds the rule and
-                    # this is what says so out loud.
+                    # boundary; the addon's stylesheet reaches a card's output from the
+                    # document, and a document stylesheet does not either. A card would report
+                    # `live` and draw nothing, with a clean console.
                     @test evaluate(browser, view, """
                         (() => {
                           const shadowed = []
-                          for (const card of document.querySelectorAll(".card")) {
+                          for (const card of $CARDS) {
                             for (let node = card; node !== null; node = node.parentElement) {
                               if (node.shadowRoot !== null) shadowed.push(node.tagName.toLowerCase())
                             }
@@ -473,17 +355,8 @@ move_the_slider(value) = """
                         })()
                         """) == "[]"
 
-                    # The chrome is the other half of the same rule: it holds no cards, so it is
-                    # free to encapsulate, and it does.
                     @test evaluate(browser, view, """
-                        ["deck-chrome", "deck-nav", "cue-overlay"]
-                          .every((tag) => document.querySelector(tag).shadowRoot !== null)
-                        """) === true
-
-                    # A card's output has the ancestor `execute_scripttags` looks for, reachable
-                    # by the call it actually makes.
-                    @test evaluate(browser, view, """
-                        [...document.querySelectorAll(".card-body pluto-cell")]
+                        [...document.querySelectorAll(".pluto-card-body pluto-cell")]
                           .every((cell) => cell.closest("pluto-cell") === cell)
                         """) === true
                 end
@@ -492,19 +365,49 @@ move_the_slider(value) = """
                     # PlutoPlotly ships the plot data through `published_to_js`, so a plot on
                     # screen is proof that a card reaches `notebook.published_objects` through
                     # its <pluto-cell> ancestor.
-                    #
-                    # Awaited rather than read: a card whose payload has not arrived yet holds
-                    # its placeholder rather than painting a body it cannot resolve, so a plot
-                    # appears some runs after every card first reports `live`.
                     await(browser, view,
                         """document.querySelectorAll('[data-card="wave"] .js-plotly-plot').length === 2""";
                         what="both copies of the plot to draw")
                     @test evaluate(browser, view,
-                        """!!document.querySelector('[data-card="wave"] .js-plotly-plot')""") === true
-                    @test evaluate(browser, view,
                         """!!document.querySelector('[data-card="wave"] .modebar')""") === true
+                end
+
+                @testset "a plot placed on two slides draws its lines on both" begin
+                    # One cell, two cards, and one payload Pluto published for that cell. A draw
+                    # that writes to what it was given breaks the next one after the traces are
+                    # attached, so the card arrives holding its data with nothing drawn.
+                    drawn = JSON.parse(evaluate(browser, view, """
+                        JSON.stringify([...document.querySelectorAll('[data-card="wave"]')]
+                          .map((card) => card.querySelectorAll("path.js-line").length))
+                        """))
+
+                    @test length(drawn) == 2
+                    @test all(>(0), drawn)
+                end
+
+                @testset "a figure is as wide and as tall as its card on a scaled slide" begin
+                    # Slidev scales a slide to the window with a transform, and a plot sized off
+                    # its transformed rectangle is drawn at that scale inside its card. Layout
+                    # sizes on both sides, so the ratio is free of the scale.
+                    filled = """
+                        (() => {
+                          const card = document.querySelector('$SHOWING_SLIDE [data-card="wave"]')
+                          const plot = card.querySelector(".js-plotly-plot")
+                          const body = card.querySelector(".pluto-card-body")
+                          return [plot.offsetWidth / body.offsetWidth, plot.offsetHeight / body.offsetHeight]
+                        })()
+                        """
                     @test evaluate(browser, view,
-                        """document.querySelectorAll('[data-card="wave"] svg').length""") > 0
+                        "getComputedStyle(document.querySelector('#slide-content')).transform") != "none"
+                    @test all(ratio -> 0.98 <= ratio <= 1.02, evaluate(browser, view, filled))
+
+                    # The copy on the next slide was painted while hidden, at no size at all.
+                    press(browser, view, "ArrowRight")
+                    await(browser, view, """location.hash === "#/3" """; what="the deck to page forward")
+                    await(browser, view, "$filled.every((ratio) => ratio > 0.98 && ratio < 1.02)";
+                        what="the plot painted while hidden to fill its card once shown")
+                    press(browser, view, "ArrowLeft")
+                    await(browser, view, """location.hash === "#/2" """; what="the deck to page back")
                 end
 
                 @testset "Plotly is served by the deck, never imported out of a string" begin
@@ -512,30 +415,25 @@ move_the_slider(value) = """
                     # notebook state instead it arrives as a *string*, and PlutoPlotly invents
                     # a URL for it — `data:text/javascript` plus 4.76 MB of base64, which
                     # Chrome answers with gigabytes. See issue 027.
-                    source = evaluate(browser, view,
-                        """document.head.querySelector('link[rel="plotly-source"]').href""")
-                    @test startswith(source, url)
-                    @test occursin(r"/plotly-[0-9A-Z]{8}\.js$", source)
+                    @test evaluate(browser, view,
+                        """document.head.querySelector('link[rel="plotly-source"]').href""") ==
+                        "$url/pluto/plotly.min.js"
 
                     # Appended by the loader rather than written into the page, so this is also
-                    # what says a card asked for the library rather than the page shipping it
-                    # to every deck.
+                    # what says a card asked for the library.
                     @test evaluate(browser, view, """
                         [...document.querySelectorAll("script[src]")]
-                          .filter((s) => s.src.includes("plotly-")).length
+                          .filter((s) => s.src.endsWith("/pluto/plotly.min.js")).length
                         """) == 1
 
-                    # No data URL was built for anything, by anyone, at any point in the load.
                     @test JSON.parse(evaluate(browser, view,
                         "JSON.stringify(window.__dataUrls.filter((r) => r.type.includes('javascript')))")) == []
                 end
 
-                @testset "a plot draws with the version the deck bundled, not one off a CDN" begin
+                @testset "a plot draws with the version the deck serves, not one off a CDN" begin
                     # A plot cell reads `window.plutoplotly_imports[<version>]` and falls
-                    # through to esm.sh for any other key. The fall-through is silent, works at
-                    # a desk, and fails in the room — so what is asserted is that the key the
-                    # deck published is the one a drawn plot used. With the network cut, a plot
-                    # that fell through draws nothing at all.
+                    # through to esm.sh for any other key. With the network cut, a plot that
+                    # fell through draws nothing at all.
                     version = evaluate(browser, view,
                         """document.head.querySelector('link[rel="plotly-source"]').dataset.version""")
                     @test evaluate(browser, view,
@@ -548,13 +446,22 @@ move_the_slider(value) = """
                     @testset "the renderer is a browser tab, not a memory incident" begin
                         # Read from the process rather than from `performance.memory`: the
                         # bytes a `data:` import retains are Blink strings, which no JS-heap
-                        # reading sees. See issue 027 and `renderer_rss`.
+                        # reading sees. See issue 027 and `renderer_rss`. The bound allows for
+                        # Slidev and Vite's dev client.
                         resident = renderer_rss(browser)
                         @test !isempty(resident)
-                        @test maximum(resident) < 500 * 1024
+                        @test maximum(resident) < 800 * 1024
                     end
                 else
                     @test_skip "the renderer's resident size is read from /proc"
+                end
+
+                @testset "a card past the grid's edge says where it is instead of what it holds" begin
+                    misplaced = """[...document.querySelectorAll(".course-card[data-misplaced]")]"""
+                    @test evaluate(browser, view, "$misplaced.length") == 1
+                    text = evaluate(browser, view, "$misplaced[0].textContent")
+                    @test occursin("x=10 y=10 w=4 h=2 does not fit a 12 × 12 Grid", text)
+                    @test !occursin("past the grid's edge", text)
                 end
 
                 @testset "a plain-text body renders as text, not as markup" begin
@@ -565,9 +472,9 @@ move_the_slider(value) = """
                 end
 
                 @testset "a card's math is drawn, not left as the dollars the cell was written in" begin
-                    # The markup is the kernel's own and needs no parsing here: PlutoRunner
-                    # overrides Julia's Markdown HTML writer, so `Markdown.html` wrote the
-                    # display paragraph and `Markdown.htmlinline` the two inline spans.
+                    # The markup is the kernel's own: PlutoRunner overrides Julia's Markdown
+                    # HTML writer, so `Markdown.html` wrote the display paragraph and
+                    # `Markdown.htmlinline` the two inline spans.
                     @test evaluate(browser, view, "$FORMULA_CARD.querySelectorAll('p.tex').length") == 1
                     @test evaluate(browser, view, "$FORMULA_CARD.querySelectorAll('span.tex').length") == 2
 
@@ -575,191 +482,58 @@ move_the_slider(value) = """
                         "$FORMULA_CARD.querySelectorAll('mjx-container svg').length === 3";
                         what="every formula on the card to be typeset")
 
-                    # Which delimiter it was still decides how it is set, which is the whole of
-                    # what distinguishes an equation on its own line from one in a sentence.
                     @test evaluate(browser, view,
                         "$FORMULA_CARD.querySelectorAll('mjx-container[display=true]').length") == 1
+                    # Slidev's reset makes an SVG a block, which breaks the sentence at each
+                    # inline formula.
+                    @test evaluate(browser, view, """
+                        [...$FORMULA_CARD.querySelectorAll('span.tex svg')]
+                          .every((svg) => getComputedStyle(svg).display === "inline")
+                        """) === true
 
                     # SVG output is glyph paths and says nothing to a screen reader. What one
-                    # reads is the assistive MathML beside each container, which the
-                    # `startup.ready` override must go on letting MathJax build.
+                    # reads is the assistive MathML beside each container.
                     @test evaluate(browser, view,
                         "$FORMULA_CARD.querySelectorAll('mjx-assistive-mml math').length") == 3
 
-                    # Drawn rather than merely marked up: MathJax consumes the delimiters and
-                    # the macros, so what is left is glyphs.
                     text = evaluate(browser, view, "$FORMULA_CARD.textContent")
                     @test !occursin("\$", text)
                     @test !occursin("frac", text)
                 end
 
                 @testset "MathJax is served by the deck, never fetched from a network" begin
-                    # Stated three times in the reveal deck this one replaces, and it holds
-                    # here: a lecture hall's network is not the lecturer's to rely on, and
-                    # Pluto's own build loads this file from jsdelivr.
-                    source = evaluate(browser, view,
-                        """document.head.querySelector('link[rel="mathjax-source"]').href""")
-                    @test startswith(source, url)
-                    # The name `server.jl` answers `immutable` for; a build that stopped
-                    # hashing it would have every refresh of every deck re-fetch the build.
-                    @test occursin(r"/tex-svg-full-[0-9A-Z]{8}\.js$", source)
-
-                    # Appended by the typesetter rather than written into the page, so this is
-                    # also what says the link was read rather than merely emitted.
+                    @test evaluate(browser, view,
+                        """document.head.querySelector('link[rel="mathjax-source"]').href""") ==
+                        "$url/pluto/tex-svg-full.js"
                     @test evaluate(browser, view, """
                         [...document.querySelectorAll("script[src]")]
-                          .filter((s) => s.src.includes("tex-svg-full")).length
+                          .filter((s) => s.src.endsWith("/pluto/tex-svg-full.js")).length
                         """) == 1
                     @test evaluate(browser, view, """
                         [...document.querySelectorAll("script[src]")]
                           .every((s) => s.src.startsWith(location.origin))
                         """) === true
-                    # The deck's own entry, MathJax and Plotly, and nothing else.
-                    # `tex-svg-full` carries every component the deck asks for, so MathJax's
-                    # loader never runs — and a component it did fetch would resolve against the
-                    # script's own directory and so be same-origin, which an origin check cannot
-                    # see and a count can.
-                    @test evaluate(browser, view,
-                        """document.querySelectorAll("script[src]").length""") == 3
-                end
-
-                @testset "a slide is headed by the deck's title for it, or numbered" begin
-                    headings = JSON.parse(evaluate(browser, view,
-                        """JSON.stringify([...document.querySelectorAll(".slide h2")].map((h) => h.textContent))"""))
-
-                    @test headings == ["A wave you can drive", "Slide 2"]
-                    @test evaluate(browser, view,
-                        """document.querySelectorAll('.slide[data-titled="true"]').length""") == 1
-                end
-
-                @testset "the deck pages through its slides by pointer" begin
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
-                    @test evaluate(browser, view, SLIDE_POSITION) == "1 / 2"
-                    @test evaluate(browser, view,
-                        element("deck-nav >>> button.previous") * ".disabled") === true
-
-                    click(browser, view, "deck-nav >>> button.next")
-
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
-                    @test evaluate(browser, view, SLIDE_POSITION) == "2 / 2"
-                    @test evaluate(browser, view,
-                        element("deck-nav >>> button.next") * ".disabled") === true
-
-                    click(browser, view, "deck-nav >>> button.previous")
-
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
-                end
-
-                @testset "the deck pages through its slides by keyboard" begin
-                    press(browser, view, "ArrowRight")
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
-
-                    press(browser, view, "ArrowLeft")
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
-
-                    press(browser, view, "PageDown")
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
-
-                    press(browser, view, "PageUp")
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
-                end
-
-                @testset "the deck stops at its ends rather than wrapping round" begin
-                    press(browser, view, "ArrowLeft")
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
-
-                    press(browser, view, "PageDown")
-                    press(browser, view, "ArrowRight")
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
-
-                    press(browser, view, "PageUp")
                 end
 
                 @testset "an arrow key inside a widget drives the widget, not the deck" begin
                     # A range input is driven with the keys the deck navigates by, so a lecturer
                     # nudging a gain one step must not be thrown onto the next slide for it.
-                    slider = """document.querySelector('[data-card="frequency"] bond input')"""
-                    focus(browser, view, """[data-card="frequency"] bond input""")
+                    slider = """document.querySelector('.slidev-page [data-card="frequency"] bond input')"""
+                    focus(browser, view, """.slidev-page [data-card="frequency"] bond input""")
                     before = evaluate(browser, view, "$slider.value")
 
                     press(browser, view, "ArrowRight")
 
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
+                    @test evaluate(browser, view, "location.hash") == "#/2"
                     @test evaluate(browser, view, "$slider.value") != before
-                end
-
-                @testset "a slide that is not showing keeps its cards' geometry" begin
-                    # `display: none` would collapse these to zero width, and a Plotly card
-                    # painted at zero width draws a graph that size — which is why the plot
-                    # read here is the copy on the slide that is hidden when it first paints.
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
-                    @test evaluate(browser, view, """
-                        getComputedStyle($HIDDEN_PLOT.closest(".slide")).visibility
-                        """) == "hidden"
-
-                    @test evaluate(browser, view, "$HIDDEN_PLOT.offsetWidth") > 200
-                    @test evaluate(browser, view, """
-                        Math.round($HIDDEN_PLOT.querySelector(".js-plotly-plot")
-                          .getBoundingClientRect().width)
-                        """) > 200
-                end
-
-                @testset "a plot placed on two slides draws its lines on both" begin
-                    # One cell, two cards, and one payload Pluto published for that cell. A draw
-                    # that writes to what it was given breaks the next one *after* the traces
-                    # are attached, so the card arrives holding its data with nothing drawn —
-                    # which is a plot that rendered by every other measure this suite takes.
-                    drawn = JSON.parse(evaluate(browser, view, """
-                        JSON.stringify([...document.querySelectorAll('[data-card="wave"]')]
-                          .map((card) => card.querySelectorAll("path.js-line").length))
-                        """))
-
-                    @test length(drawn) == 2
-                    @test all(>(0), drawn)
-                end
-
-                @testset "a figure is as tall as the card the deck gave it" begin
-                    # `h` is a hint until something tells the figure how tall its box is: a
-                    # Plotly graph given no height draws itself 400 px whatever it sits in.
-                    # `deck.css` gives the chain under a figure card an explicit height, and
-                    # this is the only assertion that notices it stop matching — a 400 px plot
-                    # still draws its lines, still reports `live`, and still answers every
-                    # other selector in this suite.
-                    #
-                    # Against the body rather than the card, which also carries the padding and
-                    # the border, so the ratio does not move with either.
-                    filled = JSON.parse(evaluate(browser, view, """
-                        JSON.stringify([...document.querySelectorAll('[data-card="wave"]')]
-                          .map((card) => card.querySelector(".js-plotly-plot").getBoundingClientRect().height
-                                       / card.querySelector(".card-body").getBoundingClientRect().height))
-                        """))
-
-                    @test length(filled) == 2
-                    @test all(ratio -> 0.98 <= ratio <= 1.02, filled)
-                end
-
-                @testset "the chrome carries one global kernel state" begin
-                    await(browser, view, """document.body.dataset.kernel === "ready" """;
-                        what="the chrome to report the kernel ready")
-                    @test evaluate(browser, view,
-                        element("deck-chrome >>> .status") * ".textContent") == "kernel ready"
-
-                    # The chrome colors itself off the same state rather than off a second
-                    # reading of the kernel. The states a live kernel never passes through are
-                    # pinned in `frontend/src/kernel.status.test.ts`: taking the kernel down to
-                    # see "offline" would end this run.
-                    @test evaluate(browser, view,
-                        element("deck-chrome") * """.dataset.kernel""") == "ready"
+                    evaluate(browser, view, "document.activeElement.blur()")
                 end
 
                 @testset "a Julia-defined widget writes its value back to the kernel" begin
                     @test evaluate(browser, view, COUNT_CARD_MUTATIONS) === true
-                    @test evaluate(browser, view,
-                        """!!document.querySelector('[data-card="frequency"] bond input[type=range]')""") === true
                     @test evaluate(browser, view, move_the_slider(4)) == "4"
 
-                    await(browser, view,
-                        """document.querySelector('[data-card="readout"]').textContent.includes("cycles 4")""";
+                    await(browser, view, readout_shows(4);
                         what="the readout to follow the slider")
                 end
 
@@ -771,43 +545,31 @@ move_the_slider(value) = """
                     @test mutations["formula-live"] > 0
                     @test mutations["constant"] == 0
                     @test mutations["plain"] == 0
-                    @test mutations["probe"] == 0
-                    # Typesetting rewrites a card, and the pass over this one was awaited
-                    # before these observers existed: what this adds is that no second pass
-                    # follows it, so the formula is drawn once and then left alone.
                     @test mutations["formula"] == 0
                 end
 
                 @testset "a formula on a card that re-ran is still drawn" begin
-                    # The slider moved in the testset above, so this card has repainted at
-                    # least once. A repaint replaces what MathJax drew, and MathJax finds its
-                    # own output by `contains` — so the pass that follows has to draw the new
-                    # body rather than leave the card holding the delimiters it was given.
-                    live = """document.querySelectorAll('[data-card="formula-live"]')[0]"""
+                    # A repaint replaces what MathJax drew, and MathJax finds its own output by
+                    # `contains` — so the pass that follows has to draw the new body rather than
+                    # leave the card holding the delimiters it was given.
+                    live = """document.querySelector('[data-card="formula-live"]')"""
                     await(browser, view, "$live.textContent.includes(\"cycles 4\")";
                         what="the live formula card to follow the slider")
                     await(browser, view,
                         "$live.querySelectorAll('mjx-container svg defs path[d]').length > 0";
                         what="the repainted formula to be drawn again")
-
-                    @test evaluate(browser, view,
-                        "$live.querySelectorAll('mjx-container').length") == 1
                     @test !occursin("\$", evaluate(browser, view, "$live.textContent"))
                 end
 
                 @testset "every copy of a widget follows its bond, and only one write is sent" begin
-                    # The slider is placed on both slides. Moving the copy on the slide that is
-                    # showing must bring the copy on the hidden one to the kernel's value, or
+                    # The slider sits on two slides and in the bond layer. Moving the copy on
+                    # the slide that is showing must bring the others to the kernel's value, or
                     # the lecturer pages forward to a slider that disagrees with the plot.
-                    copies = """[...document.querySelectorAll('[data-card="frequency"] bond input')]"""
-                    @test evaluate(browser, view, "$copies.length") == 2
-
-                    freq_writes = """window.__bondWrites.filter((w) => w.includes("freq")).length"""
-                    before = evaluate(browser, view, freq_writes)
+                    @test evaluate(browser, view, "$FREQUENCY_COPIES.length") == 3
+                    before = evaluate(browser, view, FREQUENCY_WRITES)
 
                     @test evaluate(browser, view, move_the_slider(5)) == "5"
-                    await(browser, view,
-                        """document.querySelector('[data-card="readout"]').textContent.includes("cycles 5")""";
+                    await(browser, view, readout_shows(5);
                         what="the readout to follow the slider")
                     # A copy that followed by re-sending the value would write after the run
                     # settles, not during it, so the count is read once the queue has had time
@@ -815,21 +577,49 @@ move_the_slider(value) = """
                     sleep(2)
 
                     @test JSON.parse(evaluate(browser, view,
-                        "JSON.stringify($copies.map((input) => input.value))")) == ["5", "5"]
-                    @test evaluate(browser, view, freq_writes) - before == 1
+                        "JSON.stringify($FREQUENCY_COPIES.map((input) => input.value))")) == ["5", "5", "5"]
+                    @test evaluate(browser, view, FREQUENCY_WRITES) - before == 1
+                end
+
+                @testset "presenter mode renders live cards, and opening it writes no bonds" begin
+                    # Opened beside a room already running, which is what the guarantee covers.
+                    # A window opened on its own reports its inputs, as some window must.
+                    presenter = page(browser)
+                    navigate(browser, presenter, "$url/#/presenter/2"; before=WATCH_BOND_WRITES)
+
+                    await(browser, presenter,
+                        """document.querySelectorAll('.pluto-card').length > 0 &&
+                           [...document.querySelectorAll('.pluto-card')].every((c) => c.dataset.source === "live")""";
+                        what="the presenter's cards to go live")
+                    @test evaluate(browser, presenter,
+                        """document.querySelectorAll('[data-card="wave"] path.js-line').length""") > 0
+                    @test evaluate(browser, presenter, copies_show(5)) === true
+
+                    # Long enough for the bond layer's widgets to have reported, had they been
+                    # going to write.
+                    sleep(3)
+                    @test evaluate(browser, presenter, "window.__bondWrites.length") == 0
+
+                    @testset "a widget moved in one window moves its copies in the other" begin
+                        @test evaluate(browser, view, move_the_slider(3)) == "3"
+                        await(browser, presenter,
+                            copies_show(3);
+                            what="the presenter's sliders to follow the audience window's")
+                        @test evaluate(browser, presenter, "window.__bondWrites.length") == 0
+                    end
+
+                    @test filter(!contains(SLIDEV_NOISE), problems(browser, presenter)) == String[]
+
+                    # A page in a background tab gets no animation frames, which Plotly draws on.
+                    command(browser, "Page.bringToFront"; session=view)
                 end
 
                 @testset "a Julia-rendered plot follows the deck into dark mode" begin
-                    # The one thing no stylesheet can reach: a plot's paper is in the payload
-                    # the kernel sent. The deck writes `deck_theme`, the notebook picks its
-                    # template off it, and the card repaints — so this asserts the whole pipe,
-                    # from a media query in the browser to a color chosen in Julia.
-                    # Read off the template the kernel sent rather than off a pixel: it is the
-                    # payload that has to change, and a rendered color would also pass if the
-                    # deck had reached in and repainted the figure itself.
-                    # Optional all the way down: a repainting card holds no plot for a moment,
-                    # and a poll that throws there is a harness bug, not a deck one.
-                    paper = """document.querySelector('[data-card="wave"] .js-plotly-plot')
+                    # The one thing no stylesheet can reach: a plot's paper is in the payload the
+                    # kernel sent. The deck writes `deck_theme`, the notebook picks its template
+                    # off it, and the card repaints — so this asserts the whole pipe, from a
+                    # media query in the browser to a color chosen in Julia.
+                    paper = """document.querySelector('.slidev-page [data-card="wave"] .js-plotly-plot')
                                  ?.layout?.template?.layout?.paper_bgcolor"""
                     @test evaluate(browser, view, paper) == "white"
 
@@ -838,476 +628,25 @@ move_the_slider(value) = """
 
                     await(browser, view, """$paper === "rgb(17,17,17)" """;
                         what="the plot to repaint against the dark template")
-
-                    # Both placements repaint, against one payload: the case 017 broke.
-                    drawn = JSON.parse(evaluate(browser, view, """
-                        JSON.stringify([...document.querySelectorAll('[data-card="wave"]')]
-                          .map((card) => card.querySelectorAll("path.js-line").length))
-                        """))
-                    @test all(>(0), drawn)
                 end
 
                 @testset "no card is showing a Julia error" begin
                     # A cell that threw renders as `<jlerror>`, reports `live` like any other
-                    # card, and logs nothing — so neither `data-source` nor the console says
-                    # anything is wrong, and the deck looks healthy showing six error boxes.
-                    @test evaluate(browser, view,
-                        """document.querySelectorAll(".card jlerror").length""") == 0
+                    # card, and logs nothing.
+                    @test evaluate(browser, view, """document.querySelectorAll(".pluto-card jlerror").length""") == 0
                 end
 
-                @testset "a key puts the slide's cues over it, and takes them away again" begin
-                    @test evaluate(browser, view, CUES_SHOWING) === false
-                    # A key nothing names is a key nobody presses, so the chrome carries it
-                    # the way it carries the buttons that move the deck.
-                    @test occursin("(C)", evaluate(browser, view,
-                        element("deck-nav >>> button.cues") * ".textContent"))
-
-                    # The cue key follows the rule the arrow keys already do: a lecturer typing
-                    # in a widget is typing, not opening a panel over the slide.
-                    focus(browser, view, """[data-card="frequency"] bond input""")
-                    press(browser, view, "c")
-                    @test evaluate(browser, view, CUES_SHOWING) === false
-
-                    evaluate(browser, view, "document.activeElement.blur()")
-                    press(browser, view, "c")
-                    @test evaluate(browser, view, CUES_SHOWING) === true
-                    @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
-                    @test evaluate(browser, view,
-                        element("deck-nav >>> button.cues") * """.getAttribute("aria-pressed")""") == "true"
-
-                    press(browser, view, "c")
-                    @test evaluate(browser, view, CUES_SHOWING) === false
+                @testset "the deck reports no console error of its own" begin
+                    @test filter(!contains(SLIDEV_NOISE), problems(browser, view)) == String[]
                 end
-
-                @testset "a key inside any other widget drives that widget, not the deck" begin
-                    # A panel thrown over the slide mid-sentence lands on the room, not on
-                    # the lecturer who typed.
-                    @test evaluate(browser, view, PLANT_WIDGETS) === true
-
-                    @testset "$selector" for selector in
-                            ("#planted-select", "#planted-textarea", "#planted-contenteditable")
-                        focus(browser, view, selector)
-
-                        press(browser, view, "c")
-                        @test evaluate(browser, view, CUES_SHOWING) === false
-
-                        press(browser, view, "ArrowRight")
-                        @test evaluate(browser, view, CURRENT_SLIDE) == 0
-                    end
-
-                    evaluate(browser, view, """document.getElementById("planted-widgets").remove()""")
-                end
-
-                @testset "a cue renders as markdown, not as the text a lecturer typed" begin
-                    press(browser, view, "c")
-                    cue = CUE_BODY
-
-                    @test evaluate(browser, view, "$cue.querySelectorAll('strong').length") > 0
-                    @test evaluate(browser, view, "$cue.querySelectorAll('em').length") > 0
-                    @test evaluate(browser, view, "$cue.querySelector('code').textContent") == "freq"
-                    @test evaluate(browser, view, "$cue.querySelector('a').getAttribute('href')") ==
-                        "https://example.invalid/cue"
-                    # The nested list is the construct a hand-written parser renders flat, with
-                    # no error, in front of a room — which is why one is vendored.
-                    @test evaluate(browser, view, "$cue.querySelectorAll('ul ul > li').length") == 3
-                    @test !occursin("**", evaluate(browser, view, CUE_TEXT))
-                end
-
-                @testset "a cue's math is drawn through the markup a card's is" begin
-                    # `marked` has no math, so the cue renderer emits what the kernel emits.
-                    # One convention and one typeset pass, rather than a second of each.
-                    @test evaluate(browser, view, "$CUE_BODY.querySelectorAll('p.tex').length") == 1
-                    @test evaluate(browser, view, "$CUE_BODY.querySelectorAll('span.tex').length") == 1
-
-                    await(browser, view, "$CUE_BODY.querySelectorAll('mjx-container svg').length === 2";
-                        what="the cue's formulas to be typeset")
-                    @test evaluate(browser, view,
-                        "$CUE_BODY.querySelectorAll('mjx-container[display=true]').length") == 1
-
-                    # The assertion a suite written against markup cannot make. MathJax writes
-                    # one stylesheet into `document.head`, and a document stylesheet does not
-                    # cross a shadow boundary — so without the deck adopting it, the MathML a
-                    # screen reader reads is laid out as visible text beside the glyphs, and
-                    # every inline formula in a cue is about twice its proper width.
-                    @test evaluate(browser, view, """
-                        getComputedStyle($CUE_BODY.querySelector("mjx-assistive-mml")).position
-                        """) == "absolute"
-                    # The assertion a width could not make, and the one this went wrong on: a
-                    # formula's glyphs must be inside its own subtree. A global font cache puts
-                    # them in one `<svg>` in the document and reaches them by `<use href="#…">`,
-                    # which does not cross a shadow boundary — leaving a correctly sized box
-                    # with nothing painted in it, on every formula in every cue.
-                    @test evaluate(browser, view, """
-                        [...$CUE_BODY.querySelectorAll("mjx-container svg")]
-                          .every((svg) => svg.querySelectorAll("defs path[d]").length > 0)
-                        """) === true
-                    @test evaluate(browser, view, """
-                        [...$CUE_BODY.querySelectorAll("mjx-container svg use")]
-                          .every((u) => u.getRootNode().querySelector(
-                            u.getAttribute("xlink:href") ?? u.getAttribute("href")) !== null)
-                        """) === true
-
-                    # Measured rather than inferred: the container is as wide as its glyphs.
-                    @test evaluate(browser, view, """
-                        (() => {
-                          const c = $CUE_BODY.querySelector('span.tex mjx-container')
-                          return c.getBoundingClientRect().width <=
-                                 c.querySelector("svg").getBoundingClientRect().width + 1
-                        })()
-                        """) === true
-
-                    text = evaluate(browser, view, CUE_TEXT)
-                    @test !occursin("frac", text)
-                    # A price is prose. The delimiter rule refuses a closing `\$` that follows
-                    # whitespace, which is the whole of what keeps this sentence readable.
-                    @test occursin("costs \$5 and a coffee \$3", text)
-                end
-
-                @testset "the panel scrolls its own overflow rather than the page" begin
-                    # Several hundred words is the normal length of a cue, and the panel is
-                    # fixed over a slide whose geometry must not move to make room for it.
-                    @test evaluate(browser, view,
-                        """getComputedStyle($CUE_PANEL).position""") == "fixed"
-                    @test evaluate(browser, view, """
-                        (() => {
-                          const panel = $CUE_PANEL
-                          return panel.scrollHeight > panel.clientHeight
-                        })()
-                        """) === true
-                end
-
-                @testset "paging with the cues open moves them to the new slide" begin
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 0
-
-                    press(browser, view, "ArrowRight")
-
-                    @test evaluate(browser, view, CURRENT_SLIDE) == 1
-                    @test evaluate(browser, view, CUES_SHOWING) === true
-                    # Slide 2 names no cues, and an empty panel is indistinguishable from a
-                    # panel that failed to render.
-                    @test !occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
-                    @test evaluate(browser, view,
-                        "!!" * element("cue-overlay >>> .cue-body .cue-absent")) === true
-
-                    press(browser, view, "ArrowLeft")
-                    @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
-
-                    press(browser, view, "c")
-                end
-
-                @testset "cue text never reaches a slide, nor the cards the deck publishes" begin
-                    # The room is looking at the same screen the lecturer is: a cue that leaks
-                    # onto a slide, or into a card, is the one failure worse than no cues.
-                    @test !occursin(CUE_SENTENCE,
-                        evaluate(browser, view, """document.querySelector("main.slides").textContent"""))
-                    @test evaluate(browser, view, """
-                        (async () => {
-                          const deck = await fetch("/api/deck").then((r) => r.json())
-                          return JSON.stringify(deck.cards).includes($(repr(CUE_SENTENCE)))
-                        })()
-                        """) === false
-                end
-
-                @testset "the cues render with no kernel to reach at all" begin
-                    # The case the design is built around, and the only one a live kernel
-                    # cannot stage: Pluto has to be somewhere the websocket cannot reach. A
-                    # second server over the same deck, so what is under test is the page
-                    # rather than a second `present` — and a page of its own, because this one
-                    # logs a refusal every few seconds and the deck's own console must stay
-                    # asserted to be silent.
-                    offline_deck = serve(deck, kernel_less_session(deck.notebook_path); listenany=true)
-                    try
-                        offline = page(browser)
-                        navigate(browser, offline, offline_deck.url)
-                        # The load event fires while the deck's module is still running, so
-                        # what is waited for is the statement after the key listener is bound.
-                        await(browser, offline, """'kernel' in document.body.dataset""";
-                            what="the deck to finish wiring itself up")
-
-                        # Every card labelled rather than blank is what says the deck built
-                        # itself whole, rather than stopping where the kernel should have been.
-                        @test evaluate(browser, offline, """
-                            [...document.querySelectorAll(".card")]
-                              .every((card) => card.dataset.source === "placeholder")
-                            """) === true
-                        # Labelled with its own name rather than blank: the chrome carries the
-                        # one explanation, and a card says which card it is still waiting for.
-                        @test evaluate(browser, offline, """
-                            [...document.querySelectorAll(".card")]
-                              .every((card) => card.textContent.trim() === card.dataset.card)
-                            """) === true
-
-                        press(browser, offline, "c")
-                        @test evaluate(browser, offline, CUES_SHOWING) === true
-                        @test occursin(CUE_SENTENCE, evaluate(browser, offline, CUE_TEXT))
-
-                        # The window the cues exist for. Nothing about drawing a formula wants
-                        # a kernel — the parser and MathJax are both in the bundle — so a cue
-                        # that showed its dollars until Pluto came up would be showing them for
-                        # the whole of the wait the cues are there to cover.
-                        await(browser, offline,
-                            "$CUE_BODY.querySelectorAll('mjx-container svg').length === 2";
-                            what="the cue's formulas to be typeset with no kernel to reach")
-                        @test !occursin("frac", evaluate(browser, offline, CUE_TEXT))
-
-                        press(browser, offline, "ArrowRight")
-                        @test evaluate(browser, offline, CURRENT_SLIDE) == 1
-                        @test evaluate(browser, offline,
-                            "!!" * element("cue-overlay >>> .cue-body .cue-absent")) === true
-
-                        press(browser, offline, "ArrowLeft")
-                        @test occursin(CUE_SENTENCE, evaluate(browser, offline, CUE_TEXT))
-
-                        # Pluto's client retries its websocket forever, so `connect` never
-                        # returns and the chrome stays on "connecting": the console is the only
-                        # place the refusal shows, and it is what says the kernel really was
-                        # out of reach rather than quietly reached after all.
-                        @test timedwait(OFFLINE_REPORT_TIMEOUT) do
-                            any(contains("WebSocket connection to"), problems(browser, offline))
-                        end === :ok
-                    finally
-                        close(offline_deck)
-                    end
-                end
-
-                # Opened once and carried through the testsets below: what a reload of the
-                # deck must not cost is this page, so it cannot be rebuilt between assertions.
-                # The link is read rather than clicked — a new tab is a target the harness has
-                # not attached to, and the href and the target are assertable on their own.
-                speaker = page(browser)
-                navigate(browser, speaker, "$url/speaker.html")
-                await(browser, speaker, SPEAKER_READY;
-                    what="the speaker window to subscribe to the deck")
-
-                @testset "the chrome offers the speaker window as a link, not as a key" begin
-                    # `window.open` from a key handler is the call browsers block, and the
-                    # whole reason the on-slide overlay exists. A link is the viewer's click.
-                    @test evaluate(browser, view,
-                        element("deck-chrome >>> .speaker-link") * ".href") == "$url/speaker.html"
-                    @test evaluate(browser, view,
-                        element("deck-chrome >>> .speaker-link") * ".target") == "_blank"
-                end
-
-                @testset "the speaker window carries the cues and none of the deck" begin
-                    await(browser, speaker, """document.body.dataset.deck === "live" """;
-                        what="the speaker window to hear the deck it was opened from")
-
-                    @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
-                    @test evaluate(browser, speaker, SPEAKER_SLIDE) == "A wave you can drive"
-                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
-                    # Markdown, from the same renderer the overlay uses rather than a second
-                    # one: a nested list is what a hand-written parser flattens silently.
-                    @test evaluate(browser, speaker,
-                        elements("speaker-page >>> .cue-body ul ul > li") * ".length") == 3
-
-                    # Typeset inside a shadow root, which is why the pass names the container
-                    # it just rendered: neither `querySelectorAll` from the document nor a
-                    # document-wide MathJax sweep crosses that boundary, and both would leave
-                    # this page showing the dollars while the overlay showed the formula.
-                    await(browser, speaker,
-                        "$SPEAKER_CUE_BODY.querySelectorAll('mjx-container svg').length === 2";
-                        what="the speaker window's formulas to be typeset")
-                    @test !occursin("frac", evaluate(browser, speaker, SPEAKER_CUE_TEXT))
-
-                    # No cards, no kernel, no Rainbow bundle: that is what keeps this a second
-                    # page rather than a second renderer, and what lets it outlive a kernel.
-                    @test evaluate(browser, speaker, """document.querySelectorAll(".card").length""") == 0
-                    @test evaluate(browser, speaker,
-                        """!("kernel" in document.body.dataset)""") === true
-                end
-
-                @testset "paging the deck moves the speaker window with it" begin
-                    press(browser, view, "ArrowRight")
-
-                    await(browser, speaker, """$SPEAKER_POSITION === "2 / 2" """;
-                        what="the speaker window to follow the deck to slide 2")
-                    # Slide 2 names no cues, and an empty page is indistinguishable from one
-                    # that failed to render.
-                    @test evaluate(browser, speaker,
-                        "!!" * element("speaker-page >>> .cue-body .cue-absent")) === true
-                    @test !occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
-                    @test evaluate(browser, speaker, SPEAKER_SLIDE) == "Slide 2"
-
-                    press(browser, view, "ArrowLeft")
-                    await(browser, speaker, """$SPEAKER_POSITION === "1 / 2" """;
-                        what="the speaker window to follow the deck back")
-                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
-                end
-
-                @testset "the overlay still works while the speaker window is open" begin
-                    # The second window is the comfortable path, not a replacement: a lecturer
-                    # who finds the hall mirrors its projector falls back to the overlay.
-                    press(browser, view, "c")
-                    @test evaluate(browser, view, CUES_SHOWING) === true
-                    @test occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
-                    @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
-
-                    press(browser, view, "c")
-                    @test evaluate(browser, view, CUES_SHOWING) === false
-                end
-
-                @testset "a deck that has gone quiet is reported, not left looking live" begin
-                    # `BroadcastChannel` has no presence and no disconnect event, so a slide
-                    # number that was true once sits there looking live — in front of a room,
-                    # against a deck that was closed a minute ago.
-                    @test evaluate(browser, view, MUTE_DECK) === true
-
-                    await(browser, speaker, """document.body.dataset.deck === "lost" """;
-                        what="the speaker window to call its slide number stale",
-                        timeout=LOST_TIMEOUT)
-
-                    @test occursin("gone", evaluate(browser, speaker, SPEAKER_STATE))
-                    # The cues stay: the lecturer is still talking to that slide, and it is the
-                    # chrome's job to say that nothing is confirming it any more.
-                    @test occursin(CUE_SENTENCE, evaluate(browser, speaker, SPEAKER_CUE_TEXT))
-                    @test evaluate(browser, speaker, SPEAKER_POSITION) == "1 / 2"
-                end
-
-                @testset "a reloaded deck re-establishes the link, speaker window untouched" begin
-                    # Planted on the page rather than counted from outside: what has to survive
-                    # is this document, and a reload of it would take the mark with it.
-                    @test evaluate(browser, speaker,
-                        """(() => { window.speakerGeneration = "first"; return true })()""") === true
-
-                    navigate(browser, view, url)
-                    await(browser, view, """document.body.dataset.kernel === "ready" """;
-                        what="the reloaded deck to find the kernel still running")
-
-                    await(browser, speaker, """document.body.dataset.deck === "live" """;
-                        what="the speaker window to hear the reloaded deck",
-                        timeout=LOST_TIMEOUT)
-
-                    press(browser, view, "ArrowRight")
-                    await(browser, speaker, """$SPEAKER_POSITION === "2 / 2" """;
-                        what="the reloaded deck to drive the speaker window")
-                    press(browser, view, "ArrowLeft")
-
-                    @test evaluate(browser, speaker, "window.speakerGeneration") == "first"
-                    # One deck, reloaded, is not two decks: a window says so on its way out, so
-                    # the page it was driving does not spend a staleness window blaming it.
-                    @test !occursin("deck windows", evaluate(browser, speaker, SPEAKER_STATE))
-                end
-
-                @testset "two decks driving one speaker window are visible, not interleaved" begin
-                    # Sent on the wire rather than by opening a second deck: what the follower
-                    # has to handle is a second `source` on the channel, and a second live deck
-                    # would also write the theme bond and re-run the notebook under every
-                    # assertion that follows. The channel name is position.js's, so a rename
-                    # fails here rather than going quiet.
-                    @test evaluate(browser, view, """
-                        (() => {
-                          new BroadcastChannel("plutodeck-position").postMessage({
-                            type: "at", deck: $(repr(deck.path)), source: "a-second-deck", index: 1,
-                          })
-                          return true
-                        })()
-                        """) === true
-
-                    await(browser, speaker, """$SPEAKER_STATE.includes("2 deck windows")""";
-                        what="the speaker window to report both decks")
-                    # The slide number is not asserted here on purpose: two decks that
-                    # disagree are two heartbeats overwriting each other, and that flipping is
-                    # what the warning exists to make visible rather than to hide.
-
-                    # The warning has to clear itself, or the lecturer closes a window and the
-                    # page goes on telling them to close a window.
-                    await(browser, speaker, """!$SPEAKER_STATE.includes("deck windows")""";
-                        what="the second deck to age out of the speaker window",
-                        timeout=LOST_TIMEOUT)
-                    await(browser, speaker, """$SPEAKER_POSITION === "1 / 2" """;
-                        what="the remaining deck to put the speaker window back on its slide")
-                end
-
-                @testset "opened with nothing driving it, the speaker window says so" begin
-                    # A cold open is the case a handshake cannot answer, and slide one's cues
-                    # shown as though they were live is the lie the whole design refuses. The
-                    # server is kernel-less as well, because this page must never need one.
-                    #
-                    # On a port of its own, and that is not a detail: `listenany` starts from
-                    # the default port and would take back the one the offline deck above was
-                    # served on. That deck's page is still open and still announcing itself —
-                    # a page outlives the server that sent it — so this page would pair with it
-                    # over a shared origin and be anything but cold.
-                    lonely = serve(deck, kernel_less_session(deck.notebook_path);
-                        port=free_port(), listenany=true)
-                    try
-                        cold = page(browser)
-                        navigate(browser, cold, "$(lonely.url)/speaker.html")
-                        await(browser, cold, SPEAKER_READY;
-                            what="the speaker window to subscribe with no deck to hear")
-
-                        @test evaluate(browser, cold, """document.body.dataset.deck""") == "waiting"
-                        @test evaluate(browser, cold, SPEAKER_POSITION) == "—"
-                        @test !occursin(CUE_SENTENCE, evaluate(browser, cold, SPEAKER_CUE_TEXT))
-                        @test occursin("No deck window", evaluate(browser, cold, SPEAKER_STATE))
-
-                        @test problems(browser, cold) == String[]
-                    finally
-                        close(lonely)
-                    end
-                end
-
-                @testset "a cue rewritten before a lecture costs a refresh, not a restart" begin
-                    # `test/server.jl` asserts the payload changes; what is asserted here is
-                    # that a browser refresh is the whole of the lecturer's side of it. Waiting
-                    # for "ready" is both the guard against pressing a key at a half-built page
-                    # and the assertion that the refresh reached the kernel already running.
-                    write(first(deck.slides).notes, "the **rewritten** cue, minutes before the room fills")
-
-                    navigate(browser, view, url)
-                    await(browser, view, """document.body.dataset.kernel === "ready" """;
-                        what="the refreshed deck to find the kernel still running")
-                    press(browser, view, "c")
-
-                    @test evaluate(browser, view, CUES_SHOWING) === true
-                    @test occursin("the rewritten cue", evaluate(browser, view, CUE_TEXT))
-                    @test !occursin(CUE_SENTENCE, evaluate(browser, view, CUE_TEXT))
-                end
-
-                @testset "a cue file deleted under a running deck is reported, not blank" begin
-                    rm(first(deck.slides).notes)
-
-                    navigate(browser, view, url)
-                    await(browser, view, """document.body.dataset.kernel === "ready" """;
-                        what="the refreshed deck to find the kernel still running")
-                    press(browser, view, "c")
-                    absence = evaluate(browser, view,
-                        element("cue-overlay >>> .cue-body .cue-absent") * """?.textContent ?? "" """)
-
-                    @test evaluate(browser, view, CUES_SHOWING) === true
-                    # The path and the reason, because the lecturer is the only one who can put
-                    # the file back and a blank panel tells them nothing to do it with.
-                    @test occursin(joinpath("notes", "wave.md"), absence)
-                    @test occursin("could not be read", absence)
-                end
-
-                @testset "the deck reports no console error at all" begin
-                    @test problems(browser, view) == String[]
-                end
-
-                @testset "the bundle imports into a page that defines nothing for it" begin
-                    # The 404 page is a document on the deck's own origin whose module graph is
-                    # empty, so nothing has run ahead of the import and no shim can be hiding the
-                    # failure. Why the import would fail unbundled is in `frontend/build.mjs`,
-                    # where the substitution that prevents it lives.
-                    bare = page(browser)
-                    navigate(browser, bare, "$url/not-a-page")
-
-                    entry = only(filter(startswith("deck.entry-"), readdir(frontend_directory())))
-                    imported = evaluate(browser, bare, """
-                        import("/$entry").then(() => "imported", (error) => String(error))
-                        """)
-
-                    @test imported == "imported"
-                end
+            end
             end
         end
 
         @testset "an interrupt is the whole of stopping a deck" begin
             # The lifecycle `present` prints as its last line, and the only one a lecturer has.
-            # Anything else here says the shutdown it runs on the way out did not finish, and
-            # what that shutdown closes is a two-gigabyte worker. That the worker itself is
-            # gone is asserted in `session.jl`, from the process that owns it.
+            # What the shutdown closes is a two-gigabyte worker; that it is gone is asserted in
+            # `session.jl`, from the process that owns it.
             @test presented == "interrupt"
         end
     end

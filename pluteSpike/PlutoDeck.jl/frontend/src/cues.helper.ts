@@ -9,7 +9,7 @@ import { Marked } from "marked"
 import { hasCueText } from "./deck.interface.js"
 import type { SlideNotes } from "./deck.interface.js"
 import { texMarkup } from "./math.markup.js"
-import { clearMath, typesetMath } from "./math.typesetter.js"
+import { clearMath, typesetMath } from "../../../../slides/addon-pluto/src/math.typesetter.js"
 
 /**
  * The parser, carrying the math a cue may hold.

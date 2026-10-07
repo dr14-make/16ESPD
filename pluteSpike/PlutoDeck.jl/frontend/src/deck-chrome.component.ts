@@ -8,7 +8,7 @@ import { customElement, state } from "lit/decorators.js"
 import { deckContext, editUrlContext, kernelStatusContext } from "./deck.context.js"
 import { fileName } from "./deck.interface.js"
 import type { Deck } from "./deck.interface.js"
-import type { KernelStatus } from "./kernel.status.js"
+import type { KernelStatus } from "../../../../slides/addon-pluto/src/kernel.status.js"
 
 @customElement("deck-chrome")
 export class DeckChrome extends LitElement {

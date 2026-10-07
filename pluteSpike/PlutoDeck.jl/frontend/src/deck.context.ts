@@ -6,8 +6,8 @@
 
 import { createContext } from "@lit/context"
 import type { CardContent, Deck } from "./deck.interface.js"
-import type { KernelStatus } from "./kernel.status.js"
-import type { Painter } from "./render.painter.js"
+import type { KernelStatus } from "../../../../slides/addon-pluto/src/kernel.status.js"
+import type { Painter } from "../../../../slides/addon-pluto/src/render.painter.js"
 
 export const deckContext = createContext<Deck | null>(Symbol.for("plutodeck.deck"))
 
