@@ -37,11 +37,8 @@ export function vendor(): Plugin {
   // Built once per process, however many requests or builds ask.
   const contents = new Map<string, Promise<string | Uint8Array>>()
   const content = (name: string, load: () => Promise<string | Uint8Array>) => {
-    let loaded = contents.get(name)
-    if (loaded === undefined) {
-      loaded = load()
-      contents.set(name, loaded)
-    }
+    const loaded = contents.get(name) ?? load()
+    contents.set(name, loaded)
     return loaded
   }
 
@@ -49,10 +46,9 @@ export function vendor(): Plugin {
     name: "pluto-vendor",
     configureServer(server) {
       server.middlewares.use(async (request, response, next) => {
+        const prefix = `${server.config.base}${DIRECTORY}/`
         const path = request.url?.split("?")[0] ?? ""
-        const name = path.startsWith(`${server.config.base}${DIRECTORY}/`)
-          ? path.slice(server.config.base.length + DIRECTORY.length + 1)
-          : ""
+        const name = path.startsWith(prefix) ? path.slice(prefix.length) : ""
         const load = FILES[name]
         if (load === undefined) {
           next()
@@ -67,8 +63,12 @@ export function vendor(): Plugin {
       })
     },
     async generateBundle() {
-      for (const [name, load] of Object.entries(FILES)) {
-        this.emitFile({ type: "asset", fileName: `${DIRECTORY}/${name}`, source: await content(name, load) })
+      const files = Object.entries(FILES).map(async ([name, load]) => ({
+        fileName: `${DIRECTORY}/${name}`,
+        source: await content(name, load),
+      }))
+      for (const file of await Promise.all(files)) {
+        this.emitFile({ type: "asset", ...file })
       }
     },
   }

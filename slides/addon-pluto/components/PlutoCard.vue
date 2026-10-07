@@ -32,8 +32,12 @@ onMounted(async () => {
   // so a card repaints only when its own cell's `last_run_timestamp` moves.
   let stamp: number | null = null
   const repaint = async (): Promise<void> => {
+    const next = kernel.stamp(cellId)
+    if (next === null || next === stamp || host.value === undefined) {
+      return
+    }
     const content = kernel.content(cellId)
-    if (content === null || content.stamp === stamp || host.value === undefined) {
+    if (content === null) {
       return
     }
     stamp = content.stamp

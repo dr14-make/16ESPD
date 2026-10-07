@@ -7,6 +7,8 @@
 // what makes them checked, and `isNotebookState` is where an upgrade that changes the shape
 // stops being a card that renders nothing.
 
+import { isRecord } from "./session.interface.js"
+
 /** What a cell is showing, as PlutoRunner wrote it. */
 export interface CellOutput {
   readonly body: unknown
@@ -41,10 +43,6 @@ export interface NotebookState {
 /** The notebook as a bond write sees it, which is the one place the deck mutates the state. */
 export interface MutableNotebookState {
   bonds: Record<string, { value: unknown }>
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null
 }
 
 export function isCellDependency(value: unknown): value is CellDependency {

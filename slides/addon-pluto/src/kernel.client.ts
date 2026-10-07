@@ -9,11 +9,8 @@ import { bondWriter } from "./bond.writer.js"
 import type { BondWriter } from "./bond.writer.js"
 import type { CardContent, Session } from "./session.interface.js"
 import { isCellDependency, isCellInput, isCellOutput, isNotebookState } from "./pluto.interface.js"
-import type { NotebookState } from "./pluto.interface.js"
-
-function isRecordLike(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null
-}
+import type { CellOutput, NotebookState } from "./pluto.interface.js"
+import { isRecord } from "./session.interface.js"
 
 /** How a cell body reaches for a `published_to_js` payload, as PlutoRunner writes it. */
 const PUBLISHED_REFERENCE = /getPublishedObject\("([^"]+)"\)/g
@@ -92,14 +89,12 @@ export class Kernel {
 
   /** What a cell is currently showing, or `null` while it has nothing whole to show. */
   content(cellId: string): CardContent | null {
-    const state = this.#state()
-    const result = state?.cell_results[cellId]
-    const output: unknown = isRecordLike(result) ? result.output : undefined
-    if (!isCellOutput(output) || output.body === undefined || output.body === null) {
+    const output = this.#output(cellId)
+    if (output === null || output.body === undefined || output.body === null) {
       return null
     }
 
-    const published = state?.published_objects ?? {}
+    const published = this.#state()?.published_objects ?? {}
     // A body and the payloads it reaches for arrive in separate patches, and the body can be
     // first. A card painted in that window resolves `getPublishedObject` to `undefined`, and
     // the script it was handed throws — leaving a card that reports `live`, logs to a console
@@ -122,6 +117,21 @@ export class Kernel {
       published: { ...published },
       cellId,
     }
+  }
+
+  /**
+   * The `last_run_timestamp` of what `cellId` shows, or `null` while it shows nothing.
+   *
+   * What a card compares on every notebook diff, before it asks for the content itself.
+   */
+  stamp(cellId: string): number | null {
+    return this.#output(cellId)?.last_run_timestamp ?? null
+  }
+
+  #output(cellId: string): CellOutput | null {
+    const result = this.#state()?.cell_results[cellId]
+    const output: unknown = isRecord(result) ? result.output : undefined
+    return isCellOutput(output) ? output : null
   }
 
   /** The code `cellId` holds, or `""` for a cell the notebook does not have. */

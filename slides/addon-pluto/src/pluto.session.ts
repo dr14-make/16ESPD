@@ -1,28 +1,18 @@
 // One kernel connection per browser window, shared by every live card in it.
 //
 // Slidev runs each window — the audience view, presenter mode — as an app of its own, so each
-// opens its own websocket to Pluto. Nothing here renders: `render.painter.ts` owns Pluto's
-// renderer and `kernel.client.ts` owns the connection.
+// opens its own websocket to Pluto.
 
-import { shallowRef } from "vue"
+import { shallowRef, watch } from "vue"
+import type { Ref } from "vue"
 import { connect } from "./kernel.client.js"
 import type { Kernel } from "./kernel.client.js"
 import { kernelStatus } from "./kernel.status.js"
+import type { KernelReport } from "./kernel.status.js"
 import { sizePlotsToTheirCards } from "./plot.size.js"
 import { createPainter } from "./render.painter.js"
 import type { Painter } from "./render.painter.js"
-import { fetchJson, isCardIndex, isSession } from "./session.interface.js"
-
-/**
- * The bond a notebook declares to be told which color scheme the deck is being shown in.
- *
- * A contract with every notebook that opts in, so renaming it is a migration across all of
- * them. A notebook that declares no bond of this name is left alone.
- */
-const THEME_BOND = "deck_theme"
-
-/** Where Slidev's presenter mode lives, under `routerMode: hash`. */
-const PRESENTER = "#/presenter"
+import { THEME_BOND, fetchJson, isCardIndex, isSession } from "./session.interface.js"
 
 /** How a cell that renders an input reads, which is what earns its card a place in the bond layer. */
 const BIND = "@bind"
@@ -36,18 +26,33 @@ export interface Pluto {
   readonly bindCards: readonly string[]
 }
 
+/** What Slidev says about the window the session runs in. */
+export interface View {
+  readonly isDark: Readonly<Ref<boolean>>
+  readonly isPresenter: Readonly<Ref<boolean>>
+}
+
 /** The session once it is up, for the bond layer to render from. */
 export const live = shallowRef<Pluto | null>(null)
 
-let started: Promise<Pluto> | null = null
+let begin: ((session: Promise<Pluto>) => void) | null = null
+const started = new Promise<Pluto>((resolve) => {
+  begin = resolve
+})
 
-/** The window's session, started by whichever caller asks first. */
-export function usePluto(): Promise<Pluto> {
-  started ??= start()
+/** Start the window's session; the bond layer calls this once, as the deck opens. */
+export function startPluto(view: View): Promise<Pluto> {
+  begin?.(start(view))
+  begin = null
   return started
 }
 
-async function start(): Promise<Pluto> {
+/** The window's session, once it has started. */
+export function usePluto(): Promise<Pluto> {
+  return started
+}
+
+async function start(view: View): Promise<Pluto> {
   showStatus({})
   sizePlotsToTheirCards()
   let kernel: Kernel
@@ -81,14 +86,12 @@ async function start(): Promise<Pluto> {
     // The room's view decides how plots are colored. Presenter mode never writes, so two windows
     // in different schemes cannot overwrite each other and opening it sets off no notebook run.
     const publish = async (): Promise<void> => {
-      const scheme = isDark() ? "dark" : "light"
-      if (!location.hash.startsWith(PRESENTER) && kernel.bonds()[THEME_BOND]?.value !== scheme) {
+      const scheme = view.isDark.value ? "dark" : "light"
+      if (!view.isPresenter.value && kernel.bonds()[THEME_BOND]?.value !== scheme) {
         await kernel.setBond(THEME_BOND, scheme)
       }
     }
-    new MutationObserver(() => void publish()).observe(document.documentElement, {
-      attributeFilter: ["class"],
-    })
+    watch([view.isDark, view.isPresenter], () => void publish())
     await publish()
   }
 
@@ -96,23 +99,18 @@ async function start(): Promise<Pluto> {
     kernel,
     painter: createPainter(kernel),
     cards,
-    bindCards: Object.keys(cards).filter((name) => kernel.code(cards[name] ?? "").includes(BIND)),
+    bindCards: Object.entries(cards)
+      .filter(([, cellId]) => kernel.code(cellId).includes(BIND))
+      .map(([name]) => name),
   }
   live.value = pluto
   return pluto
 }
 
-/** Whether Slidev is showing the deck dark, which it says with a class on the root element. */
-function isDark(): boolean {
-  return document.documentElement.classList.contains("dark")
-}
-
-/**
- * Put the window's kernel state where the browser suite waits on it.
- *
- * A module script delays `load` until it has started, not finished, so the page announces when
- * it has bound its listeners rather than leaving the suite to guess.
- */
-function showStatus(report: Parameters<typeof kernelStatus>[0]): void {
-  document.body.dataset.kernel = kernelStatus(report).state
+/** Put the window's kernel state on the page, where the browser suite reads it. */
+function showStatus(report: KernelReport): void {
+  const { state } = kernelStatus(report)
+  if (document.body.dataset.kernel !== state) {
+    document.body.dataset.kernel = state
+  }
 }

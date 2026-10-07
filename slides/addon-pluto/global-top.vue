@@ -4,12 +4,16 @@
 // only the slides around the current one, so an input placed on a later slide would leave its
 // bond `missing` and every cell downstream of it waiting.
 import { onMounted } from "vue"
+import { useDarkMode, useNav } from "@slidev/client"
 import PlutoCard from "./components/PlutoCard.vue"
-import { live, usePluto } from "./src/pluto.session"
+import { live, startPluto } from "./src/pluto.session"
+
+const { isDark } = useDarkMode()
+const { isPresenter } = useNav()
 
 // Started as the deck opens, so the inputs report on the cover slide too.
 onMounted(() => {
-  usePluto().catch((error: unknown) => console.error("[pluto]", error))
+  startPluto({ isDark, isPresenter }).catch((error: unknown) => console.error("[pluto]", error))
 })
 </script>
 

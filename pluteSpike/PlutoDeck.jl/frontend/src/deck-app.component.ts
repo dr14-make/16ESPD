@@ -17,7 +17,7 @@ import {
   slideIndexContext,
 } from "./deck.context.js"
 import type { CardContents } from "./deck.context.js"
-import { fetchJson, isDeck, isSession } from "./deck.interface.js"
+import { THEME_BOND, fetchJson, isDeck, isSession } from "./deck.interface.js"
 import type { CardContent, Deck, Session } from "./deck.interface.js"
 import type { DeckMoveEvent } from "./deck-nav.component.js"
 import { connect } from "../../../../slides/addon-pluto/src/kernel.client.js"
@@ -34,14 +34,6 @@ import "./cue-overlay.component.js"
 import "./deck-chrome.component.js"
 import "./deck-nav.component.js"
 import "./deck-slide.component.js"
-
-/**
- * The bond a notebook declares to be told which color scheme the deck is being shown in.
- *
- * A contract with every notebook that opts in, so renaming it is a migration across all of
- * them. A notebook that declares no bond of this name is left alone.
- */
-const THEME_BOND = "deck_theme"
 
 /** The key that puts the current slide's speaker cues over it, and takes them away again. */
 const CUE_KEY = "c"

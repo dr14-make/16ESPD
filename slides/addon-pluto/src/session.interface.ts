@@ -1,5 +1,6 @@
-// The shapes `/api/session` and `/api/deck` publish, as PlutoDeck.jl's `server.jl` writes them,
-// in as much depth as a live card reads them.
+// The contracts a live deck keeps with what serves it: the shapes `/api/session` and `/api/deck`
+// publish, as PlutoDeck.jl's `server.jl` writes them, and the bond a notebook is told the color
+// scheme through.
 
 /** What the browser needs to reach Pluto: the deck does not proxy it, so the page connects itself. */
 export interface Session {
@@ -9,6 +10,14 @@ export interface Session {
   readonly notebook_id: string
   readonly editUrl: string
 }
+
+/**
+ * The bond a notebook declares to be told which color scheme the deck is being shown in.
+ *
+ * A contract with every notebook that opts in, so renaming it is a migration across all of
+ * them. A notebook that declares no bond of this name is left alone.
+ */
+export const THEME_BOND = "deck_theme"
 
 /** Every card the notebook declares, keyed to the cell that publishes it. */
 export interface CardIndex {

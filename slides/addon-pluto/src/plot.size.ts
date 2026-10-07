@@ -18,11 +18,7 @@ const measured = Element.prototype.getBoundingClientRect
 export function sizePlotsToTheirCards(): void {
   Element.prototype.getBoundingClientRect = function (this: Element): DOMRect {
     const rect = measured.call(this)
-    if (
-      this instanceof HTMLElement &&
-      this.classList.contains(CONTAINER) &&
-      this.closest(".pluto-card-body") !== null
-    ) {
+    if (this.classList.contains(CONTAINER) && this instanceof HTMLElement) {
       return new DOMRect(rect.x, rect.y, this.offsetWidth, this.offsetHeight)
     }
     return rect

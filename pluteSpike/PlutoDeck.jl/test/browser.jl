@@ -244,6 +244,16 @@ const FORMULA_CARD = """document.querySelector('.slidev-page [data-card="formula
 "Every copy of the frequency slider, on slides and in the bond layer alike."
 const FREQUENCY_COPIES = """[...document.querySelectorAll('[data-card="frequency"] bond input')]"""
 
+"Whether every copy of the frequency slider shows `value`."
+copies_show(value) = FREQUENCY_COPIES * """.every((i) => i.value === "$value")"""
+
+"Whether the readout shows `cycles` cycles."
+readout_shows(cycles) =
+    """document.querySelector('[data-card="readout"]').textContent.includes("cycles $cycles")"""
+
+"The slide that is showing. Slidev keeps the slides around it mounted with `display: none`."
+const SHOWING_SLIDE = """.slidev-page:not([style*="display: none"])"""
+
 "How many bond writes this page has sent that name the frequency."
 const FREQUENCY_WRITES = """window.__bondWrites.filter((w) => w.includes("freq")).length"""
 
@@ -253,7 +263,7 @@ would, through the event Pluto's bond listener waits on, and return the value it
 """
 move_the_slider(value) = """
 (() => {
-  const input = document.querySelector('.slidev-page:not([style*="display: none"]) [data-card="frequency"] bond input')
+  const input = document.querySelector('$SHOWING_SLIDE [data-card="frequency"] bond input')
   input.value = "$value"
   input.dispatchEvent(new Event("input", { bubbles: true }))
   return input.value
@@ -298,6 +308,7 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                     await(browser, view, "$CARDS.length === 11"; what="every card to mount")
                     await(browser, view, """$CARDS.every((c) => c.dataset.source === "live")""";
                         what="every card to go live")
+                    @test evaluate(browser, view, "document.body.dataset.kernel") == "ready"
 
                     @test evaluate(browser, view,
                         """document.querySelector('.slidev-page [data-card="readout"]').textContent.trim()""") ==
@@ -380,7 +391,7 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                     # sizes on both sides, so the ratio is free of the scale.
                     filled = """
                         (() => {
-                          const card = document.querySelector('.slidev-page:not([style*="display: none"]) [data-card="wave"]')
+                          const card = document.querySelector('$SHOWING_SLIDE [data-card="wave"]')
                           const plot = card.querySelector(".js-plotly-plot")
                           const body = card.querySelector(".pluto-card-body")
                           return [plot.offsetWidth / body.offsetWidth, plot.offsetHeight / body.offsetHeight]
@@ -514,8 +525,7 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                     @test evaluate(browser, view, COUNT_CARD_MUTATIONS) === true
                     @test evaluate(browser, view, move_the_slider(4)) == "4"
 
-                    await(browser, view,
-                        """document.querySelector('[data-card="readout"]').textContent.includes("cycles 4")""";
+                    await(browser, view, readout_shows(4);
                         what="the readout to follow the slider")
                 end
 
@@ -551,8 +561,7 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                     before = evaluate(browser, view, FREQUENCY_WRITES)
 
                     @test evaluate(browser, view, move_the_slider(5)) == "5"
-                    await(browser, view,
-                        """document.querySelector('[data-card="readout"]').textContent.includes("cycles 5")""";
+                    await(browser, view, readout_shows(5);
                         what="the readout to follow the slider")
                     # A copy that followed by re-sending the value would write after the run
                     # settles, not during it, so the count is read once the queue has had time
@@ -565,6 +574,8 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                 end
 
                 @testset "presenter mode renders live cards, and opening it writes no bonds" begin
+                    # Opened beside a room already running, which is what the guarantee covers.
+                    # A window opened on its own reports its inputs, as some window must.
                     presenter = page(browser)
                     navigate(browser, presenter, "$url/#/presenter/2"; before=WATCH_BOND_WRITES)
 
@@ -574,7 +585,7 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                         what="the presenter's cards to go live")
                     @test evaluate(browser, presenter,
                         """document.querySelectorAll('[data-card="wave"] path.js-line').length""") > 0
-                    @test evaluate(browser, presenter, FREQUENCY_COPIES * """.every((i) => i.value === "5")""") === true
+                    @test evaluate(browser, presenter, copies_show(5)) === true
 
                     # Long enough for the bond layer's widgets to have reported, had they been
                     # going to write.
@@ -584,7 +595,7 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                     @testset "a widget moved in one window moves its copies in the other" begin
                         @test evaluate(browser, view, move_the_slider(3)) == "3"
                         await(browser, presenter,
-                            FREQUENCY_COPIES * """.every((i) => i.value === "3")""";
+                            copies_show(3);
                             what="the presenter's sliders to follow the audience window's")
                         @test evaluate(browser, presenter, "window.__bondWrites.length") == 0
                     end

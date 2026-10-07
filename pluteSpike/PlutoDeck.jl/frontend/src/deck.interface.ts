@@ -2,14 +2,12 @@
 // reads. The session and the card content belong to the `pluto` addon, which the deck renders
 // its cards through.
 
-import { isRecord } from "../../../../slides/addon-pluto/src/session.interface.js"
-
-export type {
-  CardContent,
-  CardSource,
-  Session,
+export type { CardContent, Session } from "../../../../slides/addon-pluto/src/session.interface.js"
+export {
+  THEME_BOND,
+  fetchJson,
+  isSession,
 } from "../../../../slides/addon-pluto/src/session.interface.js"
-export { fetchJson, isSession } from "../../../../slides/addon-pluto/src/session.interface.js"
 
 /** A slide's speaker cues as they were read, carrying either the text or the failure to read it. */
 export interface CueText {
@@ -52,6 +50,10 @@ export interface Deck {
   readonly slides: readonly Slide[]
   /** Every card the notebook declares, not only the placed ones, keyed to the cell that publishes it. */
   readonly cards: Readonly<Record<string, string>>
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
 }
 
 export const fileName = (path: string): string => path.split("/").pop() ?? path
