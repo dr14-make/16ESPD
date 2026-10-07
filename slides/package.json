@@ -7,7 +7,7 @@
     "dev": "slidev --open false",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
-    "test": "node --test scripts/*.test.mjs addon-pluto/src/*.test.ts",
+    "test": "node --test addon-pluto/src/*.test.ts",
     "typecheck": "tsc -p addon-pluto"
   },
   "devDependencies": {

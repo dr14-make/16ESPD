@@ -3,7 +3,7 @@
 A deck that names this addon in its headmatter can place cells of a running Pluto notebook on
 its slides. Static decks do not name it, so they carry none of its libraries. A live deck also
 names its notebook, relative to the deck file, as `pluto.notebook`; that is what makes it live,
-so the workspace checks its cues but never builds or publishes it.
+so the workspace checks its images but never builds or publishes it.
 
 ```md
 ---
