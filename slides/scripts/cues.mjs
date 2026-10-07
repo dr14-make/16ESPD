@@ -1,3 +1,5 @@
+import { parseSync } from "@slidev/parser/core"
+
 /**
  * The cue-kind check. A cue is a speaker-notes paragraph opening with a bold lead-in that names
  * a cue kind from the course-material glossary, written `**Kind:**`. Bold lead-ins that are
@@ -15,20 +17,16 @@ export function glossaryKinds(contextMd) {
   return list.replace(/\.\s*$/, "").split(",").map((k) => k.trim().toLowerCase()).filter(Boolean)
 }
 
-/** Every bold lead-in opening a paragraph inside an HTML comment, which is where Slidev notes live. */
+/** Every bold lead-in opening a paragraph of a slide's speaker notes, read as Slidev reads them. */
 export function leadIns(markdown) {
+  const lines = markdown.split("\n")
   const found = []
-  for (const comment of markdown.matchAll(/<!--([\s\S]*?)-->/g)) {
-    const before = markdown.slice(0, comment.index)
-    const firstLine = before.split("\n").length
-    let offset = 0
-    for (const paragraph of comment[1].split(/\n\s*\n/)) {
+  for (const slide of parseSync(markdown, "slides.md").slides) {
+    for (const paragraph of (slide.note ?? "").split(/\n\s*\n/)) {
       const lead = paragraph.trimStart().match(/^\*\*(.+?)\*\*/)
-      if (lead) {
-        const line = firstLine + comment[1].slice(0, offset).split("\n").length - 1
-        found.push({ lead: lead[1], line: line + leadingNewlines(paragraph) })
-      }
-      offset += paragraph.length + 2
+      if (!lead) continue
+      const at = lines.findIndex((l, i) => i >= slide.start && l.trimStart().startsWith(lead[0]))
+      found.push({ lead: lead[1], line: at + 1 })
     }
   }
   return found
@@ -54,16 +52,11 @@ export function cueProblems(markdown, kinds) {
 function nearestKind(lead, kinds) {
   const words = lead.toLowerCase().match(/[a-z']+/g) ?? []
   for (const kind of kinds) {
+    const target = kind.replaceAll(" ", "")
     const size = kind.split(" ").length
     const tolerance = kind.length <= 4 ? 0 : kind.length <= 8 ? 1 : 2
     for (const n of [size, size + 1]) {
-      if (words.length < n) continue
-      const head = words.slice(0, n)
-      for (const candidate of [head.join(" "), head.join("")]) {
-        for (const target of [kind, kind.replaceAll(" ", "")]) {
-          if (distance(candidate, target) <= tolerance) return kind
-        }
-      }
+      if (words.length >= n && distance(words.slice(0, n).join(""), target) <= tolerance) return kind
     }
   }
   return undefined
@@ -71,10 +64,6 @@ function nearestKind(lead, kinds) {
 
 function capitalize(kind) {
   return kind[0].toUpperCase() + kind.slice(1)
-}
-
-function leadingNewlines(text) {
-  return text.length - text.replace(/^\n+/, "").length
 }
 
 function distance(a, b) {

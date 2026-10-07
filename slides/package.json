@@ -11,8 +11,14 @@
   },
   "devDependencies": {
     "@slidev/cli": "53.0.0",
+    "@slidev/parser": "^53.0.0",
     "@slidev/theme-default": "0.25.0",
     "playwright-chromium": "^1.56.0",
     "vue": "^3.5.0"
+  },
+  "slidev": {
+    "addons": [
+      "./addon-course"
+    ]
   }
 }

@@ -9,8 +9,8 @@ routeAlias: schedule
 | # | Lecture | Practical |
 |---|---------|-----------|
 | 1 | Introduction | |
-| 2 | <a href="../lecture-01/index.html">PID controllers and vehicle dynamics</a> | |
-| 3 | | <a href="../handson/lecture-01/index.html">Introduction to Dyad: build the car</a> |
+| 2 | [PID controllers and vehicle dynamics](../lecture-01/index.html) | |
+| 3 | | [Introduction to Dyad: build the car](../handson/lecture-01/index.html) |
 | 4 | Internal combustion engines | |
 | 5 | | Engine modeling |
 | 6 | Hybrid and electric vehicles | |

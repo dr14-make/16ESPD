@@ -29,7 +29,7 @@ ABS, ESP and TCS · electric drive and its control · hybrid architecture · ada
 
 Documentation: [help.juliahub.com/dyad/dev](https://help.juliahub.com/dyad/dev/)
 
-First practical: <a href="../handson/lecture-01/index.html">build the car in Dyad</a>.
+First practical: [build the car in Dyad](../handson/lecture-01/index.html).
 
 </div>
 </div>
