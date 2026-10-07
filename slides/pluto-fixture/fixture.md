@@ -39,6 +39,7 @@ has no cards.
   <Card :x="8" :y="2" :w="4" :h="2"><PlutoCard name="plain" /></Card>
   <Card :x="8" :y="4" :w="4" :h="3"><PlutoCard name="formula-live" /></Card>
   <Card :x="0" :y="8" :w="4" :h="2"><PlutoCard name="frequency" /></Card>
+  <Card :x="10" :y="10" :w="4" :h="2">past the grid's edge</Card>
 </Grid>
 
 ---

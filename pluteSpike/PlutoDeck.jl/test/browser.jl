@@ -456,6 +456,14 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                     @test_skip "the renderer's resident size is read from /proc"
                 end
 
+                @testset "a card past the grid's edge says where it is instead of what it holds" begin
+                    misplaced = """[...document.querySelectorAll(".course-card[data-misplaced]")]"""
+                    @test evaluate(browser, view, "$misplaced.length") == 1
+                    text = evaluate(browser, view, "$misplaced[0].textContent")
+                    @test occursin("x=10 y=10 w=4 h=2 does not fit a 12 × 12 Grid", text)
+                    @test !occursin("past the grid's edge", text)
+                end
+
                 @testset "a plain-text body renders as text, not as markup" begin
                     plain = """document.querySelector('[data-card="plain"]')"""
 

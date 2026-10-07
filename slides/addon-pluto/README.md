@@ -19,7 +19,8 @@ addons:
 
 `name` is the card a notebook cell declares in its metadata. `Grid` and `Card` come from
 `addon-course` and place any block, not only live cards: a `Card` spans `w` columns and `h` rows
-from column `x` and row `y` of a `Grid` (12 × 12 unless `cols` and `rows` say otherwise). A live
+from column `x` and row `y` of a `Grid` (12 × 12 unless `cols` and `rows` say otherwise). A `Card`
+that does not fit its `Grid`, or sits outside one, shows that in red instead of its content. A live
 card fills its `Card`, and shows its name in a dashed box until the kernel is live.
 
 ## Running against a kernel
