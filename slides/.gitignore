@@ -1,3 +1,5 @@
 node_modules/
 dist/
 site/.vitepress/cache/
+decks/handson-01/public/img/
+site/public/handson/lecture-01/img/

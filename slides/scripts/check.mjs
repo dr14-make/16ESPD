@@ -1,9 +1,11 @@
-// The workspace check CI runs before publishing: every image a deck references exists, the site
-// builds into dist/ with no dead link, and every deck builds into dist/<deck>/.
+// The workspace check CI runs before publishing: with the shared images copied into place, every
+// image a deck references exists, the site builds into dist/ with no dead link, and every deck
+// builds into dist/<deck>/.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { extractImagesUsage, parseSync } from "@slidev/parser/core"
 import { build, buildSite, DECKS, decks, WORKSPACE } from "./decks.mjs"
+import "./images.mjs"
 
 const all = decks()
 const failures = []
