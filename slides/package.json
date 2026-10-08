@@ -4,8 +4,8 @@
   "description": "Every course deck, built with Slidev. One folder per deck, one Markdown file per section.",
   "type": "module",
   "scripts": {
-    "dev": "slidev --open false",
-    "site": "vitepress dev site",
+    "dev": "node scripts/images.mjs && slidev --open false",
+    "site": "node scripts/images.mjs && vitepress dev site",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs"
   },

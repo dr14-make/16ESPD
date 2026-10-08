@@ -19,5 +19,6 @@ solutions mapped onto its built-in `tip`, `warning` and `details` containers.
   link.
 - A link from the site into a deck carries `target="_self"`, so that the browser loads the deck's
   page instead of VitePress's router. VitePress does not dead-link check such links.
-- A guide's screenshots stay in its tutor deck's `public/img/`. The site's `public/` reaches them
-  through a symlink, and the build copies the files themselves, at the URLs they had before.
+- An image both a deck and the site publish lives once under `slides/images/`. Each tool serves
+  only its own `public/`, so `scripts/images.mjs` copies it into both before every build and dev
+  server. The copies are gitignored, and the screenshots keep the URLs they had before.
