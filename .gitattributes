@@ -4,7 +4,3 @@
 /docs/src/types/** linguist-generated
 /test/snapshots/** linguist-generated
 Manifest*.toml linguist-generated
-/pluteSpike/**/frontend/vendor/** linguist-vendored
-
-# The committed bundle is build output: esbuild rewrites every file on every frontend edit.
-/pluteSpike/PlutoDeck.jl/frontend-dist/** linguist-generated

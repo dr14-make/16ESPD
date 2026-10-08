@@ -10,4 +10,4 @@ The five default triage labels, each named after its role. See `docs/agents/tria
 
 ### Domain docs
 
-Multi-context: `CONTEXT-MAP.md` points to the course-material and PlutoDeck glossaries. See `docs/agents/domain.md`.
+`CONTEXT-MAP.md` points to the course-material glossary. See `docs/agents/domain.md`.

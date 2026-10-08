@@ -643,27 +643,26 @@ end
 """
     DECK_DIR
 
-The reveal.js deck that consumes these figures. Its `index.html` is the authoritative list of
-figure names: each slot is an `<img src="assets/figures/...">` that renders as a hatched
-placeholder until the file exists.
+The Slidev deck that consumes these figures. Its Markdown is the authoritative list of figure
+names: each slot is a `![...](/figures/...)` image served from the deck's `public/figures/`.
 """
-const DECK_DIR = normpath(@__DIR__, "..", "..", "slides", "lecture-01")
+const DECK_DIR = normpath(@__DIR__, "..", "..", "slides", "decks", "lecture-01")
 
 const _DECK_FIGURES = Ref{Union{Nothing, Set{String}}}(nothing)
 
 """
     deck_figures() -> Set{String}
 
-Every figure file the deck references, read out of its markup. Empty when the deck is absent,
-which disables the name check in [`save_figure`](@ref) rather than failing on its absence.
+Every figure file the deck references, read out of its Markdown sections. Empty when the deck is
+absent, which disables the name check in [`save_figure`](@ref) rather than failing on its absence.
 """
 function deck_figures()
     cached = _DECK_FIGURES[]
     isnothing(cached) || return cached
-    index = joinpath(DECK_DIR, "index.html")
-    names = isfile(index) ?
-        Set{String}(m.captures[1] for m in eachmatch(r"assets/figures/([\w\-.]+)", read(index, String))) :
-        Set{String}()
+    sections = joinpath(DECK_DIR, "sections")
+    files = isdir(sections) ? filter(endswith(".md"), readdir(sections; join = true)) : String[]
+    names = Set{String}(
+        m.captures[1] for f in files for m in eachmatch(r"/figures/([\w\-.]+)", read(f, String)))
     _DECK_FIGURES[] = names
     return names
 end
@@ -674,8 +673,7 @@ end
 Write `plt` into the deck's figure directory and return the path.
 
 `name` is the deck's own slug — `save_figure(plt, "03-gain-family")` — and `.svg` is appended
-when no extension is given. SVG stays sharp on a projector and in the deck's `?print-pdf`
-handout.
+when no extension is given. SVG stays sharp on a projector and in the deck's PDF handout.
 
 The name is checked against the slots the deck actually references, because a typo is
 otherwise silent in both directions: the notebook writes a file nothing loads, and the slide
@@ -691,7 +689,7 @@ function save_figure(plt, name::AbstractString)
         hint = isempty(near) ? "" : "\nDid you mean: " * join(first(near, 5), ", ")
         throw(ArgumentError("`$file` is not a figure slot in the deck; nothing would load it.$hint"))
     end
-    dir = joinpath(DECK_DIR, "assets", "figures")
+    dir = joinpath(DECK_DIR, "public", "figures")
     mkpath(dir)
     path = joinpath(dir, file)
     Plots.savefig(plt, path)

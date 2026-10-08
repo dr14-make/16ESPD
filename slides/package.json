@@ -1,0 +1,26 @@
+{
+  "name": "course-decks",
+  "private": true,
+  "description": "Every course deck, built with Slidev. One folder per deck, one Markdown file per section.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/images.mjs && slidev --open false",
+    "site": "node scripts/images.mjs && vitepress dev site",
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "devDependencies": {
+    "@slidev/cli": "53.0.0",
+    "@slidev/parser": "^53.0.0",
+    "@slidev/theme-default": "0.25.0",
+    "playwright-chromium": "^1.56.0",
+    "slidev-addon-course": "file:addons/course",
+    "vitepress": "1.6.4",
+    "vue": "^3.5.0"
+  },
+  "slidev": {
+    "addons": [
+      "course"
+    ]
+  }
+}

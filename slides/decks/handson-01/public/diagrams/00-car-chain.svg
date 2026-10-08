@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="1000" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .ghost { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .lbl-strong { font-size: 14px; fill: #16202c; font-weight: 600; }
+    .f-lbl-acc { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="w-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+  <text class="f-lbl-acc" x="0" y="96">pedal</text>
+  <text class="lbl" x="0" y="116">N·m asked for</text>
+  <path class="arrow" d="M70 125 H110" marker-end="url(#w-ar)"/>
+
+  <rect class="box" x="110" y="90" width="170" height="70" rx="4"/>
+  <text x="195" y="122" text-anchor="middle" font-size="19">engine</text>
+  <text x="195" y="145" text-anchor="middle" font-size="13" fill="#4a5a6b">step 02</text>
+  <path class="wire" d="M280 125 H330" stroke-width="3"/>
+  <text class="lbl" x="284" y="112">shaft</text>
+
+  <rect class="box" x="330" y="90" width="190" height="70" rx="4"/>
+  <text x="425" y="122" text-anchor="middle" font-size="19">gear + wheel</text>
+  <text x="425" y="145" text-anchor="middle" font-size="13" fill="#4a5a6b">steps 03, 06</text>
+  <path class="wire" d="M520 125 H570" stroke-width="3"/>
+  <text class="lbl" x="524" y="112">push</text>
+
+  <rect class="box" x="570" y="90" width="170" height="70" rx="4"/>
+  <text x="655" y="122" text-anchor="middle" font-size="19">body</text>
+  <text x="655" y="145" text-anchor="middle" font-size="13" fill="#4a5a6b">steps 04, 07</text>
+  <path class="arrow" d="M740 125 H800" marker-end="url(#w-ar)"/>
+
+  <rect class="box-accent" x="800" y="90" width="150" height="70" rx="4"/>
+  <text x="875" y="122" text-anchor="middle" font-size="19">speedometer</text>
+  <text x="875" y="145" text-anchor="middle" font-size="13" fill="#4a5a6b">km/h</text>
+
+  <path class="ghost" d="M110 185 H740"/>
+  <text class="lbl-strong" x="300" y="210">together: the car — step 05</text>
+  <text class="lbl" x="110" y="250">then the tire learns to slip, and the wheel can spin on snow — steps 08, 09, 10</text>
+</svg>

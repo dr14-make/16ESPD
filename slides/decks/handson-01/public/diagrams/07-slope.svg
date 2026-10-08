@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 345" width="480" height="345">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .wire-soft { stroke: #4a5a6b; stroke-width: 2; fill: none; stroke-dasharray: 5 4; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-acc { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .arrow-warn { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .f-lbl { font-size: 16px; font-weight: 600; fill: #16202c; }
+    .f-lbl-acc { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+    .f-lbl-warn { font-size: 16px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="g-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="g-ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="g-ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+  </defs>
+  <path class="wire-soft" d="M30 320 H450 V78"/>
+  <path class="wire" d="M30 320 L450 78" stroke-width="3"/>
+  <path class="wire" d="M85 320 A55 55 0 0 0 77.6 292.5"/>
+  <text class="f-lbl" x="92" y="312">α</text>
+  <text class="lbl" x="250" y="340">run</text>
+  <text class="lbl" x="458" y="210">rise</text>
+  <polygon class="box" points="183.7,178.2 270.3,128.2 289.3,161.1 202.7,211.1"/>
+  <circle cx="222.3" cy="200.9" r="7" fill="#16202c"/>
+  <circle cx="270.7" cy="172.9" r="7" fill="#16202c"/>
+  <path class="arrow" d="M236 169 V286" marker-end="url(#g-ar)"/>
+  <text class="f-lbl" x="246" y="306">m·g</text>
+  <path class="wire-soft" d="M184 199 L236 289 M288 259 L236 289"/>
+  <path class="arrow-warn" d="M236 169 L187 197" marker-end="url(#g-ar-w)"/>
+  <text class="f-lbl-warn" x="96" y="212">m·g·sin α</text>
+  <path class="arrow-acc" d="M236 169 L286 256" marker-end="url(#g-ar-a)"/>
+  <text class="f-lbl-acc" x="300" y="286">m·g·cos α</text>
+</svg>

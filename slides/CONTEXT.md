@@ -24,14 +24,9 @@ _Avoid_: chapter, part
 One screen within a section.
 
 **Speaker notes**:
-Everything the lecturer has for one slide, made of cues; for the lecturer alone, never shown
+Everything the lecturer has for one slide, written freely; for the lecturer alone, never shown
 to the room or printed.
 _Avoid_: comments
-
-**Cue**:
-One typed item of speaker notes — say, ask the room, readout, point at, timing, cut order,
-they get wrong, terms, in the model, derivation, flag forward, why.
-_Avoid_: note, tip
 
 **Presenter mode**:
 The lecturer's own screen during a deck: the current slide's speaker notes, the next slide and
@@ -55,6 +50,11 @@ _Avoid_: chart, graph, image
 A hand-drawn illustration — a block chain or a sketched curve — explaining an idea rather than
 showing a simulation result.
 _Avoid_: figure, sketch
+
+**Screenshot**:
+A capture of Dyad Studio showing what a step builds or plots; the same image appears in the
+hands-on guide and in the hands-on deck.
+_Avoid_: figure, image
 
 **Hands-on guide**:
 The page a student follows at their own machine to build a model step by step.
