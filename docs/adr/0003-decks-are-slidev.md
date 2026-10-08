@@ -1,3 +1,7 @@
+---
+status: amended by ADR-0004
+---
+
 # Decks are Slidev; the Lit shell is not built
 
 Every deck — static, live and hands-on — is a Slidev deck written in Markdown, built from one
