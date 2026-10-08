@@ -20,3 +20,6 @@ The hands-on guide and the landing page stay plain HTML.
 - Slidev mounts only the slides around the current one, so a live deck renders every bound
   widget once, hidden, to make it report its value; PlutoDeck could rely on mounting every slide.
 - Presenter mode renders live cards in a second window, which holds its own connection to Pluto.
+- No live deck is in the repo: the live-card addon, the lecture-01 live deck and PlutoDeck.jl
+  were removed, so every deck is static and published. Live decks return as a migration of their
+  own, starting from the code at f3ef6bb.

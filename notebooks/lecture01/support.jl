@@ -646,7 +646,7 @@ end
 The Slidev deck that consumes these figures. Its Markdown is the authoritative list of figure
 names: each slot is a `![...](/figures/...)` image served from the deck's `public/figures/`.
 """
-const DECK_DIR = normpath(@__DIR__, "..", "..", "slides", "lecture-01")
+const DECK_DIR = normpath(@__DIR__, "..", "..", "slides", "decks", "lecture-01")
 
 const _DECK_FIGURES = Ref{Union{Nothing, Set{String}}}(nothing)
 
