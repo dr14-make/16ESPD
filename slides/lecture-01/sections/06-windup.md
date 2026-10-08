@@ -43,7 +43,7 @@ A linear model has none of these: ask it for a million newton-metres and it will
 > The car will lose, and head for about **118 km/h** — a 120 s climb gets it to **119.05**,
 > still falling.
 
-*↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/7/1)*
+*↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/slope)*
 
 <!--
 **Say:** the numbers in the red box are not chosen to make a point. They come out of the

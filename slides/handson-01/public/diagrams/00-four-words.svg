@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 260" width="460" height="260">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-warn { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .f-lbl { font-size: 16px; font-weight: 600; fill: #16202c; }
+    .f-lbl-acc { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+    .f-lbl-warn { font-size: 16px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="s-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="s-ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+  <rect class="box-accent" x="140" y="100" width="180" height="90" rx="6"/>
+  <text x="230" y="140" text-anchor="middle" font-size="20">car</text>
+  <text x="230" y="166" text-anchor="middle" font-size="14" fill="#4a5a6b">state x: speed</text>
+  <path class="arrow" d="M20 145 H136" marker-end="url(#s-ar)"/>
+  <text class="f-lbl-acc" x="20" y="132">u: pedal</text>
+  <path class="arrow-warn" d="M230 30 V96" marker-end="url(#s-ar-w)"/>
+  <text class="f-lbl-warn" x="244" y="46">d: hills, wind</text>
+  <path class="arrow" d="M320 145 H440" marker-end="url(#s-ar)"/>
+  <text class="f-lbl" x="330" y="132">y: km/h</text>
+</svg>

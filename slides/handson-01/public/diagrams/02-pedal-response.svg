@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" width="720" height="320">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .lbl-strong { font-size: 14px; fill: #16202c; font-weight: 600; }
+    .ghost { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+    .f-lbl-acc { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+    .f-lbl-warn { font-size: 16px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <path class="wire" d="M80 40 V260 H690"/>
+  <text class="lbl" x="6" y="30">torque [N·m]</text>
+  <text class="lbl" x="44" y="64">200</text>
+  <text class="lbl" x="44" y="114">150</text>
+  <text class="lbl" x="66" y="264">0</text>
+  <text class="lbl" x="268" y="284">0.5</text>
+  <text class="lbl" x="388" y="284">0.8</text>
+  <text class="lbl" x="468" y="284">1.0</text>
+  <text class="lbl" x="550" y="284">1.22</text>
+  <text class="lbl" x="620" y="306">time [s]</text>
+
+  <path d="M80 260 H280 V60 H680" fill="none" stroke="#a75d00" stroke-width="2" stroke-dasharray="8 6"/>
+  <text class="f-lbl-warn" x="520" y="52">requested: 200</text>
+
+  <path class="ghost" d="M80 110 H690"/>
+  <polyline points="80,260 400.0,260 408.0,247.1 416.0,235.0 424.0,223.7 432.0,213.2 440.0,203.3 448.0,194.1 456.0,185.4 464.0,177.3 472.0,169.8 480.0,162.7 488.0,156.1 496.0,149.9 504.0,144.1 512.0,138.6 520.0,133.6 528.0,128.8 536.0,124.4 544.0,120.2 552.0,116.4 560.0,112.7 568.0,110.0 680.0,110.0"
+            fill="none" stroke="#1f5fa8" stroke-width="4"/>
+  <text class="f-lbl-acc" x="580" y="100">delivered</text>
+
+  <path class="ghost" d="M280 260 V60"/>
+  <path class="ghost" d="M400 260 V110"/>
+  <text class="lbl-strong" x="290" y="240">1 late</text>
+  <text class="lbl-strong" x="440" y="225">2 slow</text>
+  <text class="lbl-strong" x="590" y="135">3 limited</text>
+  <circle cx="480" cy="162.7" r="5" fill="#1f5fa8"/>
+  <text class="lbl" x="488" y="180">97 N·m</text>
+</svg>

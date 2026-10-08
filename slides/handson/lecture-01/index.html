@@ -260,7 +260,7 @@ The first download and precompile takes a few minutes; let it run while you go o
 <section class="step" id="tour">
   <h2><span class="no">01</span> Tour: one model, two views <span class="budget">13 min</span></h2>
   <p class="goal">Place two blocks, wire them, set a parameter, and see that the diagram and the code are the same model.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/1/3">tutor slides — Two kinds of wire</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/two-kinds-of-wire">tutor slides — Two kinds of wire</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -310,7 +310,7 @@ end</code></pre></div>
 <section class="step" id="engine">
   <h2><span class="no">02</span> Engine <span class="budget">27 min</span></h2>
   <p class="goal">Finish the engine — torque command in, shaft torque out through a delay, a lag and a 150 N·m ceiling — and watch it answer a step.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/2/1">tutor slides — what happens when you press the pedal, the lag, and the step-02 numbers</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/pedal">tutor slides — what happens when you press the pedal, the lag, and the step-02 numbers</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>Step 01 left you a component called <code>Engine</code> holding two blocks, <code>delay → lag</code>.
@@ -498,7 +498,7 @@ end</code></pre></div>
 <section class="step" id="driveline">
   <h2><span class="no">03</span> Driveline <span class="budget">13 min</span></h2>
   <p class="goal">Turn engine torque into a force on the car: a 4:1 gear and a 0.31 m rolling wheel.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/3/1">tutor slides — from a twist to a push, F = T · i / r</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/twist-to-push">tutor slides — from a twist to a push, F = T · i / r</a></p>
   <h3>Parameters</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
@@ -572,7 +572,7 @@ end</code></pre></div>
 <section class="step" id="body">
   <h2><span class="no">04</span> Body <span class="budget">21 min</span></h2>
   <p class="goal">Give the car its 1400 kg and the two forces that hold it back on a flat road: drag and rolling resistance.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/4/1">tutor slides — the forces on the car, air drag, rolling resistance</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/four-forces">tutor slides — the forces on the car, air drag, rolling resistance</a></p>
   <h3>Parameters</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Type</th><th>Value</th><th>Meaning</th></tr></thead>
@@ -668,7 +668,7 @@ end</code></pre></div>
 <section class="step" id="car">
   <h2><span class="no">05</span> Car: full throttle to terminal speed <span class="budget">27 min</span></h2>
   <p class="goal">Assemble engine, driveline and body into the car and drive it flat out from rest until it stops getting faster — at the 246 km/h worked out on paper at the start of this step.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/5/1">tutor slides — the force balance, top speed on paper, how long it takes</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/force-balance">tutor slides — the force balance, top speed on paper, how long it takes</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -792,7 +792,7 @@ end</code></pre></div>
 <section class="step" id="wheel-inertia">
   <h2><span class="no">06</span> A wheel with inertia <span class="budget">12 min</span></h2>
   <p class="goal">Put a 1 kg·m² road wheel between the gear and the rolling contact, and see how little it changes.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/6/1">tutor slides — the wheel's hidden mass</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/hidden-mass">tutor slides — the wheel's hidden mass</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -937,7 +937,7 @@ end</code></pre></div>
 <section class="step" id="grade">
   <h2><span class="no">07</span> A road with a gradient <span class="budget">13 min</span></h2>
   <p class="goal">Write your first component with an equation — the along-slope pull of gravity — and give the body a <code>grade</code> input.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/7/1">tutor slides — the slope</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/slope">tutor slides — the slope</a></p>
   <h3>Parts</h3>
   <div class="tablewrap"><table class="parts">
   <thead><tr><th>Name</th><th>Library path</th><th>Set</th></tr></thead>
@@ -1047,7 +1047,7 @@ end</code></pre></div>
 <section class="step" id="tire-curve">
   <h2><span class="no">08</span> Tire friction against slip <span class="budget">20 min</span></h2>
   <p class="goal">A component made of equations instead of parts: slip ratio κ in, friction coefficient μ out — a peak of 1.0 at 4 % slip, falling to 0.7 once the tire slides.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/8/1">tutor slides — slip, and how grip depends on it</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/no-slip">tutor slides — slip, and how grip depends on it</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>Everything so far was drawn. This component has nothing to draw: it is a formula. You paste it,
@@ -1195,7 +1195,7 @@ end</code></pre></div>
 <section class="step" id="slip-wheel">
   <h2><span class="no">09</span> A wheel that can slip <span class="budget">15 min</span></h2>
   <p class="goal">A tire instead of a rolling constraint: the wheel and the car may now move at different speeds, and your friction curve turns the difference into force.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/8/2">tutor slides — slip, and how grip depends on it (step 08)</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/slip-and-grip">tutor slides — slip, and how grip depends on it (step 08)</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>In the car so far, <code>IdealRollingWheel</code> locked wheel and road together: ω·r = v, always.
@@ -1333,7 +1333,7 @@ end</code></pre></div>
 <section class="step" id="standing-start">
   <h2><span class="no">10</span> Standing start on a slippery road <span class="budget">23 min</span></h2>
   <p class="goal">Build a car around the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.</p>
-  <p class="small muted">Theory: <a href="../../handson-01/index.html#/10/1">tutor slides — two limits: the engine's and the tire's</a></p>
+  <p class="small muted">Theory: <a href="../../handson-01/index.html#/two-limits">tutor slides — two limits: the engine's and the tire's</a></p>
 
   <h3>Where you are, where you are going</h3>
   <p>This is a new car, not an edit of <code>Car</code>. The slipping wheel replaces the rolling wheel

@@ -157,7 +157,7 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
 - **40.1** N·m computed
 - **40.1** N·m discovered
 
-*↩ Hands-on step 05: [where 40.1 N·m comes from](../handson-01/index.html#/5/3)*
+*↩ Hands-on step 05: [where 40.1 N·m comes from](../handson-01/index.html#/top-speed)*
 
 **Open in Dyad** `dyad/Lecture1/CruiseLoop.dyad`
 
