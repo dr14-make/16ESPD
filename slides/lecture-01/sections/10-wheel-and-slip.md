@@ -56,7 +56,7 @@ A rotating wheel is extra inertia the engine has to accelerate —
 J/r² ≈ 10 kg on 1400. The plant is slightly heavier than it was, so the gains should
 survive.
 
-*↩ Hands-on step 06: [the wheel's hidden mass](../handson-01/index.html#/6/1)*
+*↩ Hands-on step 06: [the wheel's hidden mass](../handson-01/index.html#/hidden-mass)*
 
 > **If the response shifted**
 >
@@ -111,7 +111,7 @@ end
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/10-wheel-and-slip.ipynb)
 
-*↩ Hands-on step 10: [the same standing start, open loop](../handson-01/index.html#/10/3)*
+*↩ Hands-on step 10: [the same standing start, open loop](../handson-01/index.html#/wheelspin)*
 
 Under closed loop the error stays large, so the integrator winds up —
 against a limit **that is not in the engine at all**.
@@ -169,7 +169,7 @@ way of seeing. That is the uncomfortable point of this whole section.)*
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
 
-*↩ Hands-on step 08: [slip, and how grip depends on it](../handson-01/index.html#/8/2)*
+*↩ Hands-on step 08: [slip, and how grip depends on it](../handson-01/index.html#/slip-and-grip)*
 
 $$
 \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}

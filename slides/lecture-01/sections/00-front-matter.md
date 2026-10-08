@@ -154,7 +154,7 @@ Same parts, same parameters. `CarPlant` adds a `grade` input, and names the 3.6 
 > The torque arrives late, slow and capped. Drag is quadratic. The tire has a peak.
 > Every one of those comes back today as a control problem.
 
-↩ [What we built in the hands-on](../handson-01/index.html#/0/2) ·
+↩ [What we built in the hands-on](../handson-01/index.html#/what-we-build) ·
 [hands-on page](../handson/lecture-01/index.html)
 
 </div>
@@ -282,7 +282,7 @@ diagram says something the plot cannot.
 
 > **Every one of these was derived on paper**
 >
-> In [hands-on step 05](../handson-01/index.html#/5/3), and checked by every student's model.
+> In [hands-on step 05](../handson-01/index.html#/top-speed), and checked by every student's model.
 > The hill in notebook 06 defeats the engine because 2024 N &gt; 1935 N, and you can check
 > that.
 

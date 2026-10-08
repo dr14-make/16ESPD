@@ -1,0 +1,5 @@
+/* Screenshots of the Dyad editor are tall; capped so the caption under one still fits the slide. */
+.slidev-layout img {
+  max-height: 470px;
+  margin: 0 auto;
+}

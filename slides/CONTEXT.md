@@ -51,6 +51,11 @@ A hand-drawn illustration — a block chain or a sketched curve — explaining a
 showing a simulation result.
 _Avoid_: figure, sketch
 
+**Screenshot**:
+A capture of Dyad Studio showing what a step builds or plots; the same image appears in the
+hands-on guide and in the hands-on deck.
+_Avoid_: figure, image
+
 **Hands-on guide**:
 The page a student follows at their own machine to build a model step by step.
 _Avoid_: handout, worksheet, hands-on page

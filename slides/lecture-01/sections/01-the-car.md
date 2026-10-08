@@ -49,7 +49,7 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
 > 300 seconds, and the last stretch barely moves. The car's own time constant is about
 > **67 s**.
 
-*↩ Hands-on step 05: [why it takes so long — the car's time constant](../handson-01/index.html#/5/4)*
+*↩ Hands-on step 05: [why it takes so long — the car's time constant](../handson-01/index.html#/time-constant)*
 
 </div>
 <div>
@@ -113,7 +113,7 @@ plot_torque(step_test;
 
 **Open in Dyad** `dyad/Lecture1/CarStepTest.dyad`
 
-*↩ Hands-on step 02: [why the engine is late and slow](../handson-01/index.html#/2/1)*
+*↩ Hands-on step 02: [why the engine is late and slow](../handson-01/index.html#/pedal)*
 
 1. Wait until the process is at rest.
 2. Put the controller in manual.
