@@ -21,13 +21,14 @@
     "eslint": "9.39.5",
     "playwright-chromium": "^1.56.0",
     "rolldown": "1.2.12",
+    "slidev-addon-course": "file:addons/course",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.1",
     "vue": "^3.5.0"
   },
   "slidev": {
     "addons": [
-      "./addon-course"
+      "course"
     ]
   },
   "dependencies": {

@@ -1,16 +1,12 @@
 // Exports every deck's handout into the build `check` made, then assembles the published site in
-// dist/: the built decks plus the pages under slides/ still published as committed.
+// dist/: the built decks, the landing page, and each guide under guides/ at the same path in dist/.
 import { cpSync, existsSync } from "node:fs"
 import { join } from "node:path"
-import { DIST, decks, exportHandout, staticDecks, WORKSPACE } from "./decks.mjs"
+import { DIST, decks, exportHandout, WORKSPACE } from "./decks.mjs"
 
-const COMMITTED = ["index.html", "handson"]
-
-const all = decks()
-for (const deck of staticDecks()) {
+for (const deck of decks()) {
   if (!existsSync(join(DIST, deck, "index.html"))) throw new Error(`${deck} is not built: run check first`)
   exportHandout(deck)
 }
-for (const entry of COMMITTED.filter((e) => !all.includes(e))) {
-  cpSync(join(WORKSPACE, entry), join(DIST, entry), { recursive: true })
-}
+cpSync(join(WORKSPACE, "index.html"), join(DIST, "index.html"))
+cpSync(join(WORKSPACE, "guides"), DIST, { recursive: true })

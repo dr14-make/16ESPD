@@ -1,15 +1,15 @@
 // The workspace check CI runs before publishing: every image a deck references exists, and every
-// deck but a live one builds into dist/<deck>/.
+// deck builds into dist/<deck>/.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { extractImagesUsage, parseSync } from "@slidev/parser/core"
-import { build, decks, staticDecks, WORKSPACE } from "./decks.mjs"
+import { build, DECKS, decks, WORKSPACE } from "./decks.mjs"
 
 const all = decks()
 const failures = []
 
 for (const deck of all) {
-  for (const file of markdownFiles(join(WORKSPACE, deck))) {
+  for (const file of markdownFiles(join(DECKS, deck))) {
     const markdown = readFileSync(file, "utf8")
     const where = (line) => `${relative(WORKSPACE, file)}:${line}`
     for (const slide of parseSync(markdown, file).slides) {
@@ -21,7 +21,7 @@ for (const deck of all) {
 }
 
 if (failures.length === 0) {
-  for (const deck of staticDecks()) {
+  for (const deck of all) {
     try {
       build(deck)
     } catch (error) {
@@ -47,6 +47,6 @@ function markdownFiles(dir) {
 /** Absolute paths are served from the deck's `public/`; relative ones from the Markdown file. */
 function resolves(src, file, deck) {
   if (/^(https?:|data:)/.test(src)) return true
-  const path = src.startsWith("/") ? join(WORKSPACE, deck, "public", src) : join(dirname(file), src)
+  const path = src.startsWith("/") ? join(DECKS, deck, "public", src) : join(dirname(file), src)
   return existsSync(decodeURI(path))
 }

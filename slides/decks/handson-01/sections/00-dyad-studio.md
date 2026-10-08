@@ -36,7 +36,7 @@ formula has a *Derivation* list in these notes with the numbers plugged in, so y
 do it on the board without preparing.
 
 **Students follow the page, not the deck.** Put the link on the board:
-`slides/handson/lecture-01/` on the course site. Every step there has the parts
+`handson/lecture-01/` on the course site. Every step there has the parts
 table, the screenshot, numbered actions and copy buttons. The deck is for you: what to
 explain, what to show, where they get stuck.
 

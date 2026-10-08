@@ -25,7 +25,7 @@ presenter mode from the nav bar, bottom left
 next slide and a timer in the same tab, no popup to block.
 
 **Where this sits:** second of two sessions on one car. In the hands-on
-(`slides/handson-01/`) students learned each part's physics and built it. This deck does not
+(`slides/decks/handson-01/`) students learned each part's physics and built it. This deck does not
 repeat that physics: wherever a slide relies on it, a grey *↩ Hands-on step NN* line links to
 the exact slide. If a group skipped the hands-on, show its slides on the forces (step 04's
 "Four forces on the car") and top speed (step 05, "Adding it all up" to "Top speed") first —
