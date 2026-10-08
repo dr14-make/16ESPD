@@ -1,9 +1,9 @@
-// The workspace check CI runs before publishing: every image a deck references exists, and every
-// deck builds into dist/<deck>/.
+// The workspace check CI runs before publishing: every image a deck references exists, the site
+// builds into dist/ with no dead link, and every deck builds into dist/<deck>/.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { extractImagesUsage, parseSync } from "@slidev/parser/core"
-import { build, DECKS, decks, WORKSPACE } from "./decks.mjs"
+import { build, buildSite, DECKS, decks, WORKSPACE } from "./decks.mjs"
 
 const all = decks()
 const failures = []
@@ -17,6 +17,14 @@ for (const deck of all) {
         if (!resolves(src, file, deck)) failures.push(`${where(slide.start + 1)}: image ${src} resolves to nothing`)
       }
     }
+  }
+}
+
+if (failures.length === 0) {
+  try {
+    buildSite()
+  } catch (error) {
+    failures.push(`site: ${error.message}`)
   }
 }
 
@@ -35,7 +43,7 @@ if (failures.length > 0) {
   console.error(`\ncheck failed: ${failures.length} problem(s)`)
   process.exit(1)
 }
-console.log(`check passed: ${all.join(", ")}`)
+console.log(`check passed: site, ${all.join(", ")}`)
 
 function markdownFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "slidev --open false",
+    "site": "vitepress dev site",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs"
   },
@@ -14,6 +15,7 @@
     "@slidev/theme-default": "0.25.0",
     "playwright-chromium": "^1.56.0",
     "slidev-addon-course": "file:addons/course",
+    "vitepress": "1.6.4",
     "vue": "^3.5.0"
   },
   "slidev": {
