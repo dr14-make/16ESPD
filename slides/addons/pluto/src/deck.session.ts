@@ -4,11 +4,17 @@
 // By its real extension, because Node's test runner loads this module as written.
 import { isRecord } from "./pluto.interface.ts"
 
-/** The Pluto server a deck's notebook runs in, and the notebook, by its absolute path. */
+/** The Pluto server a deck's notebook runs in, and the notebook, by its path as Pluto lists it. */
 export interface KernelAddress {
   readonly plutoUrl: string
-  readonly secret: string
+  /** `null` for a server started without one. */
+  readonly secret: string | null
   readonly notebook: string
+  /**
+   * Whether the dev server started this kernel. Only then may the page restart a notebook whose
+   * process is gone: an attached server's notebooks belong to whoever runs it.
+   */
+  readonly owned: boolean
 }
 
 /**
@@ -23,8 +29,9 @@ export function isKernelAddress(value: unknown): value is KernelAddress {
   return (
     isRecord(value) &&
     typeof value.plutoUrl === "string" &&
-    typeof value.secret === "string" &&
-    typeof value.notebook === "string"
+    (typeof value.secret === "string" || value.secret === null) &&
+    typeof value.notebook === "string" &&
+    typeof value.owned === "boolean"
   )
 }
 

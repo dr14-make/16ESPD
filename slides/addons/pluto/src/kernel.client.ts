@@ -28,7 +28,8 @@ const PUBLISHED_REFERENCE = /getPublishedObject\("([^"]+)"\)/g
  * page the browser visits run Julia on this machine.
  */
 export async function connect(address: KernelAddress): Promise<Kernel> {
-  const host = new Host(`${address.plutoUrl}/?secret=${encodeURIComponent(address.secret)}`)
+  const query = address.secret === null ? "" : `?secret=${encodeURIComponent(address.secret)}`
+  const host = new Host(`${address.plutoUrl}/${query}`)
   const notebookId = notebookIdAt(await host.workers(), address.notebook)
   if (notebookId === null) {
     throw new Error(`${address.plutoUrl} is not running ${address.notebook}`)
@@ -51,9 +52,10 @@ export async function connect(address: KernelAddress): Promise<Kernel> {
   // this address, so a notebook with no process is one whose kernel died afterwards, and
   // restarting is the only way back. Every window shares that one kernel, so no other status
   // restarts it: Pluto moves on from `starting` and `waiting_to_restart` by itself, and
-  // `waiting_for_permission` is the notebook owner's to grant.
+  // `waiting_for_permission` is the notebook owner's to grant. A kernel the deck attached to is
+  // its server's owner's to restart too, so the deck shows it offline instead.
   const state: unknown = worker.getState()
-  if (isNotebookState(state) && state.process_status === "no_process") {
+  if (address.owned && isNotebookState(state) && state.process_status === "no_process") {
     await worker.restart()
   }
 

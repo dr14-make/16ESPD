@@ -52,6 +52,30 @@ runs. Edits to the slides hot-reload without restarting it, but a deck that name
 needs slidev restarted (`r`). Pluto saves the notebook it opens, so presenting can leave the
 notebook file modified.
 
+## Attach to a running Pluto
+
+While authoring, the notebook is usually open already in a Pluto server of its own, such as the
+one the VS Code Pluto extension starts on port 1234. `PLUTO_URL` points the deck at that server
+instead of starting one:
+
+```sh
+PLUTO_URL=http://localhost:1234 mise run present slides/decks/<deck>/slides.md
+```
+
+A server with a secret takes it as `PLUTO_SECRET`, or in the URL as Pluto prints it
+(`http://localhost:1234/?secret=…`). The dev server then starts no Julia and never stops the
+server it attached to. Its terminal says whether that server has the deck's notebook open,
+compared by path with symlinks resolved, and the page gets the same reason when it does not: open
+the notebook there and reload the deck. The deck does not restart an attached notebook whose
+kernel has died; it shows the kernel offline and leaves that to whoever runs the server.
+
+A server without a secret, which is how the extension starts Pluto, runs Julia for any web page
+open in the browser, because Pluto accepts websockets from any origin. The dev server warns about
+it and attaches anyway. Use it for authoring, and not on a machine you browse untrusted sites with.
+
+Pluto runs a notebook's worker on the server's own Julia, so for a Dyad notebook the attached
+server has to run on the `dyad-3.4.0` channel.
+
 ## What it does for a deck
 
 - **One kernel session per window.** The audience window and presenter mode each connect.
@@ -70,7 +94,9 @@ notebook file modified.
 
 The live suite in `test/live.test.ts` drives `slides/decks/pluto-fixture/` in headless Chromium,
 through Playwright, against a real kernel: it starts `slidev dev` itself, cuts the network, and
-checks that stopping slidev leaves no Julia process behind. It needs Julia, as above, so it stays
+checks that stopping slidev leaves no Julia process behind. A second deck attaches to a Pluto
+server without a secret that the suite starts, and checks that stopping slidev leaves that server
+running. It needs Julia, as above, so it stays
 out of `npm test` and CI. From the repository root:
 
 ```sh

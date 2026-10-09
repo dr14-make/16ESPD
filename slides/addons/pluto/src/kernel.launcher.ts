@@ -25,6 +25,8 @@ const PING_MS = 500
 const FATAL_SIGNALS = ["SIGINT", "SIGHUP"] as const
 
 export interface Supervised {
+  /** The process's id, once it has started. */
+  readonly pid: number | undefined
   /** Resolves once the process has exited, or failed to start. */
   readonly exited: Promise<void>
   /** Close its stdin, then kill whatever of its tree is left after the grace period. */
@@ -92,6 +94,7 @@ export function supervise(
   void exited.then(release)
 
   return {
+    pid: child.pid,
     exited,
     async stop() {
       if (stopping) {

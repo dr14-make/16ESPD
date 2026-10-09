@@ -20,8 +20,11 @@ test("a notebook Pluto is not running is not found", () => {
 })
 
 test("a session is either a kernel's address or the reason there is none", () => {
-  assert.ok(isDeckSession({ kernel: { plutoUrl: "http://localhost:1234", secret: "s", notebook: "/n.jl" } }))
+  const kernel = { plutoUrl: "http://localhost:1234", secret: "s", notebook: "/n.jl", owned: true }
+  assert.ok(isDeckSession({ kernel }))
+  assert.ok(isDeckSession({ kernel: { ...kernel, secret: null, owned: false } }))
   assert.ok(isDeckSession({ problem: "a built deck has no kernel" }))
   assert.ok(!isDeckSession({ kernel: { plutoUrl: "http://localhost:1234", secret: "s" } }))
+  assert.ok(!isDeckSession({ kernel: { ...kernel, owned: undefined } }))
   assert.ok(!isDeckSession(null))
 })

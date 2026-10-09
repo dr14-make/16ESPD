@@ -3,7 +3,7 @@
 node = "22"
 
 [tasks.present]
-description = "Serve a deck with slidev dev; a live deck's notebook starts in Pluto with it"
+description = "Serve a deck with slidev dev, against a Pluto it starts or the running one PLUTO_URL names"
 usage = 'arg "<deck>" help="The deck file, e.g. slides/decks/lecture-01/slides.md"'
 dir = "{{config_root}}/slides"
 # Raw, so that Slidev reads its shortcut keys and Ctrl-C from the terminal itself.

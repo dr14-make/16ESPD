@@ -1,5 +1,5 @@
-// Starts the Pluto server behind a live deck with `slidev dev`, and hands the page where it is as
-// the module `virtual:pluto-session`.
+// Hands the page the Pluto server behind a live deck with `slidev dev`, as the module
+// `virtual:pluto-session`: one it starts, or one already running that `PLUTO_URL` names.
 //
 // The secret is reachable only through Vite, whose host check refuses a request naming any host
 // but this machine: a page on another site that rebinds its own name to 127.0.0.1 is refused.
@@ -7,11 +7,12 @@
 import { realpath } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import type { Plugin } from "vite"
-import type { DeckSession, KernelAddress } from "./deck.session.js"
+import type { DeckSession } from "./deck.session.js"
 // By their real extension, because Node, through Slidev's loader and the test runner alike, loads
 // these modules as written.
+import { attachPluto, kernelChoice } from "./kernel.attach.ts"
+import type { KernelChoice, KernelSource } from "./kernel.attach.ts"
 import { launchPluto } from "./kernel.launcher.ts"
-import type { PlutoServer } from "./kernel.launcher.ts"
 import { isRecord } from "./pluto.interface.ts"
 
 const ID = "virtual:pluto-session"
@@ -47,12 +48,11 @@ export async function deckNotebook(source: DeckSource): Promise<string | { probl
 }
 
 /**
- * The page's session, given the kernel this dev server started (`null` when it started none, or
- * Julia exited before Pluto answered).
+ * The page's session, given the kernel source this dev server set up (`null` when it set up none).
  */
 export async function deckSession(
   source: DeckSource,
-  running: KernelAddress | null,
+  kernel: KernelSource | null,
 ): Promise<DeckSession> {
   if (!source.live) {
     return { problem: "a built deck has no kernel" }
@@ -61,15 +61,66 @@ export async function deckSession(
   if (typeof notebook !== "string") {
     return notebook
   }
-  // The kernel starts with the dev server, so a notebook named since then has none.
-  if (running?.notebook !== notebook) {
+  if (kernel === null) {
     return { problem: `no kernel runs ${notebook}; restart slidev to start one` }
   }
-  return { kernel: { plutoUrl: running.plutoUrl, secret: running.secret, notebook } }
+  const located = await kernel.locate(notebook)
+  return "problem" in located ? located : { kernel: located }
 }
 
-export function sessionPlugin(source: DeckSource, launch = launchPluto): Plugin {
-  let running: (KernelAddress & Pick<PlutoServer, "ready" | "stop">) | null = null
+/**
+ * Start the deck's own Pluto with `notebook` open, or attach to the server `choice` names.
+ *
+ * A server the deck starts runs only the notebook named when it started, so a deck that names
+ * another one since is told to restart.
+ */
+export async function kernelSource(
+  choice: KernelChoice,
+  notebook: string,
+  log: (line: string) => void,
+  launch = launchPluto,
+): Promise<KernelSource> {
+  switch (choice.mode) {
+    case "invalid":
+      log(choice.problem)
+      return {
+        locate: () => Promise.resolve({ problem: choice.problem }),
+        stop: () => Promise.resolve(),
+      }
+    case "attach": {
+      log(`attaching to the Pluto server at ${choice.plutoUrl}; this dev server will not stop it`)
+      if (choice.secret === null) {
+        log(
+          "warning: that server has no secret, so any web page open in this browser can run Julia on it",
+        )
+      }
+      const attached = attachPluto(choice)
+      void attached.locate(notebook).then((located) => {
+        log("problem" in located ? located.problem : `${choice.plutoUrl} has ${notebook} open`)
+      })
+      return attached
+    }
+    case "launch": {
+      const server = await launch([notebook], log)
+      return {
+        async locate(named) {
+          if (named !== notebook || !(await server.ready)) {
+            return { problem: `no kernel runs ${named}; restart slidev to start one` }
+          }
+          return { plutoUrl: server.plutoUrl, secret: server.secret, notebook, owned: true }
+        },
+        stop: () => server.stop(),
+      }
+    }
+  }
+}
+
+export function sessionPlugin(
+  source: DeckSource,
+  launch = launchPluto,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): Plugin {
+  let kernel: KernelSource | null = null
 
   return {
     name: "pluto-session",
@@ -81,7 +132,7 @@ export function sessionPlugin(source: DeckSource, launch = launchPluto): Plugin 
       if (id !== RESOLVED_ID) {
         return undefined
       }
-      const session = await deckSession(source, (await running?.ready) ? running : null)
+      const session = await deckSession(source, kernel)
       return `export default ${JSON.stringify(session)}`
     },
     async configureServer() {
@@ -94,19 +145,12 @@ export function sessionPlugin(source: DeckSource, launch = launchPluto): Plugin 
       }
       // Slidev starts Vite with its log level at `warn`, which would hide Pluto starting.
       const log = (line: string) => process.stdout.write(`[pluto] ${line}\n`)
-      const server = await launch([notebook], log)
-      running = {
-        plutoUrl: server.plutoUrl,
-        secret: server.secret,
-        notebook,
-        ready: server.ready,
-        stop: () => server.stop(),
-      }
+      kernel = await kernelSource(kernelChoice(env), notebook, log, launch)
     },
     // Vite closes a dev server's plugins with it, which is also how Slidev restarts one.
     async closeBundle() {
-      const stopping = running
-      running = null
+      const stopping = kernel
+      kernel = null
       await stopping?.stop()
     },
   }

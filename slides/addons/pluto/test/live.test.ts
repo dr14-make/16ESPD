@@ -16,10 +16,25 @@ import { after, before, describe, it } from "node:test"
 import { setTimeout as sleep } from "node:timers/promises"
 import { chromium } from "playwright-chromium"
 import type { Browser, BrowserContext, Page } from "playwright-chromium"
+import { supervise } from "../src/kernel.launcher.ts"
 
 const SLIDES = resolve(import.meta.dirname, "../../..")
 const FIXTURE = join(SLIDES, "decks/pluto-fixture/fixture.md")
 const NOTEBOOK = join(SLIDES, "decks/pluto-fixture/browser.jl")
+const KERNEL = join(SLIDES, "addons/pluto/kernel")
+
+/**
+ * A Pluto server the way an editor extension starts one for authoring: no secret, and nothing to
+ * do with any deck. It exits when its stdin closes, which is how `supervise` stops it.
+ */
+const PLUTO_WITHOUT_SECRET = `
+  import Pkg; Pkg.instantiate(); import Pluto
+  port, notebook = ARGS
+  @async (read(stdin); exit())
+  Pluto.run(; host="127.0.0.1", port=parse(Int, port), notebook=[notebook],
+    launch_browser=false, dismiss_update_notification=true,
+    require_secret_for_access=false, require_secret_for_open_links=false)
+`
 
 /** Julia starting Pluto, and Pluto starting the notebook's worker, from cold. */
 const KERNEL_TIMEOUT = 300_000
@@ -94,8 +109,8 @@ interface Process {
   exited: Promise<string>
 }
 
-function start(command: string, args: string[], cwd: string): Process {
-  const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "pipe"] })
+function start(command: string, args: string[], cwd: string, env = process.env): Process {
+  const child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] })
   let output = ""
   const collect = (chunk: Buffer) => (output += chunk.toString())
   child.stdout.on("data", collect)
@@ -704,6 +719,102 @@ describe("a live deck in a real browser", () => {
       assert.ok(julia.length >= 2, `the kernel ran as ${julia.join(", ")}`)
       assert.notEqual(stopped, "kill", "slidev outlived an interrupt")
       await until("every Julia process to exit", () => !julia.some(alive), 10_000)
+    })
+  })
+})
+
+describe("a live deck attached to a running Pluto server", () => {
+  const { deck, notebook } = workspace()
+  let pluto: ReturnType<typeof supervise> | undefined
+  let plutoOutput = ""
+  let plutoUrl: string
+  let slidev: Process | undefined
+  let browser: Browser | undefined
+  let page: Page
+  /** The attached server and its notebook's worker, which the deck must leave running. */
+  let attached: number[] = []
+
+  before(async () => {
+    const plutoPort = await freePort()
+    plutoUrl = `http://127.0.0.1:${plutoPort}`
+    const args = ["--startup-file=no", `--project=${KERNEL}`, "-e", PLUTO_WITHOUT_SECRET]
+    pluto = supervise(process.env.JULIA ?? "julia", [...args, String(plutoPort), notebook], (l) => {
+      plutoOutput += `${l}\n`
+    })
+    let plutoExited = false
+    void pluto.exited.then(() => (plutoExited = true))
+    // Pluto opens its notebooks before it listens, so a list that answers names this one.
+    const listing = async () => {
+      if (plutoExited) {
+        throw new Error(`Pluto exited, and said:\n${plutoOutput}`)
+      }
+      return fetch(`${plutoUrl}/notebooklist`).then((r) => r.ok, () => false)
+    }
+    await until("Pluto to list its notebooks", listing, KERNEL_TIMEOUT)
+
+    const port = await freePort()
+    const url = `http://localhost:${port}`
+    const env = { ...process.env, PLUTO_URL: plutoUrl, PLUTO_SECRET: "" }
+    const slidevArgs = [deck, "--port", String(port), "--open", "false"]
+    slidev = start(join(SLIDES, "node_modules/.bin/slidev"), slidevArgs, SLIDES, env)
+    const serving = () => fetch(url).then((r) => r.ok, () => false)
+    await until(`slidev to serve ${url}`, serving, SLIDEV_TIMEOUT, slidev)
+
+    browser = await chromium.launch({ channel: "chromium", args: [NO_NETWORK] })
+    page = await (await browser.newContext()).newPage()
+    await page.goto(`${url}/#/2`, { timeout: NAVIGATION_TIMEOUT })
+    const kernelUp = () => page.evaluate(() => document.body.dataset.kernel === "ready")
+    await until("the attached kernel to come up", kernelUp, KERNEL_TIMEOUT, slidev)
+    attached = pluto.pid === undefined ? [] : juliaProcesses(pluto.pid)
+  })
+
+  after(async () => {
+    await browser?.close()
+    if (slidev !== undefined) {
+      await stop(slidev, "SIGTERM", SHUTDOWN_TIMEOUT)
+    }
+    await pluto?.stop()
+    for (const pid of attached.filter(alive)) {
+      process.kill(pid, "SIGKILL")
+    }
+    rmSync(dirname(deck), { recursive: true, force: true })
+    rmSync(dirname(notebook), { recursive: true, force: true })
+  })
+
+  it("starts no Julia of its own", () => {
+    assert.ok(slidev?.child.pid !== undefined)
+    assert.deepEqual(juliaProcesses(slidev.child.pid), [])
+  })
+
+  it("warns in the terminal that the server has no secret", () => {
+    assert.match(slidev?.output() ?? "", /\[pluto\] warning: .*no secret/)
+  })
+
+  it("shows every card's live output", async () => {
+    const cards = page.locator(".pluto-card")
+    await until("every card to mount", async () => (await cards.count()) === 11)
+    await until("every card to go live", () => allLive(page))
+  })
+
+  describe("stopping", () => {
+    let stopped: string
+
+    before(async () => {
+      await browser?.close()
+      stopped =
+        slidev === undefined ? "never started" : await stop(slidev, "SIGINT", SHUTDOWN_TIMEOUT)
+    })
+
+    it("leaves the attached server running", async () => {
+      assert.notEqual(stopped, "kill", "slidev outlived an interrupt")
+      assert.ok(attached.length >= 2, `the attached kernel ran as ${attached.join(", ")}`)
+      assert.deepEqual(attached.filter((pid) => !alive(pid)), [])
+      assert.ok((await fetch(`${plutoUrl}/ping`)).ok)
+    })
+
+    it("lets whoever started the server stop it", async () => {
+      await pluto?.stop()
+      await until("the attached server to exit", () => !attached.some(alive), 10_000)
     })
   })
 })
