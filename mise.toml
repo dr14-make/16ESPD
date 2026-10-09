@@ -1,3 +1,19 @@
 # The slides/ workspace builds on the Node major the Pages workflow uses.
 [tools]
 node = "22"
+
+[tasks.present]
+description = "Serve a deck with slidev dev, against a Pluto it starts or the running one PLUTO_URL names"
+usage = 'arg "<deck>" help="The deck file, e.g. slides/decks/lecture-01/slides.md"'
+dir = "{{config_root}}/slides"
+# Raw, so that Slidev reads its shortcut keys and Ctrl-C from the terminal itself.
+raw = true
+run = '''
+deck="$(cd "$MISE_ORIGINAL_CWD" && realpath "$usage_deck")"
+node scripts/images.mjs && npx slidev "$deck"
+'''
+
+[tasks."test:live"]
+description = "Drive the live-card fixture deck in headless Chromium against a real kernel"
+dir = "{{config_root}}/slides"
+run = "npm run test:live"
