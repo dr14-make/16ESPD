@@ -1,5 +1,5 @@
 ---
-status: amended by ADR-0004
+status: amended by ADR-0004 and ADR-0005
 ---
 
 # Decks are Slidev; the Lit shell is not built

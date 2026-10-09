@@ -13,7 +13,8 @@ _Avoid_: presentation, slideshow
 A deck whose content is all written by hand and that opens from a file with nothing running.
 
 **Live deck**:
-A deck that also shows live cards, and so needs a running notebook behind it.
+A deck that also shows live cards. It responds with a running notebook behind it, and shows its
+snapshots without one.
 
 **Section**:
 A run of consecutive slides in a deck, opened by a cover slide; the unit an author edits and a
@@ -39,8 +40,14 @@ readout — the same in a static deck and in a live one.
 _Avoid_: widget, element
 
 **Live card**:
-A block whose content is a published notebook cell, drawn from a running notebook.
+A block whose content is a published notebook cell: drawn from the running notebook once its
+kernel is live, and from the notebook's snapshot until then.
 _Avoid_: demo card (that is a block quoting a notebook's code, not running it)
+
+**Snapshot**:
+A saved run of a notebook, committed beside it, holding every cell's output and input values;
+what a live card shows when no kernel is live.
+_Avoid_: cache, export
 
 **Figure**:
 A plot produced by running a notebook, filling a named slot on a slide; never drawn by hand.
