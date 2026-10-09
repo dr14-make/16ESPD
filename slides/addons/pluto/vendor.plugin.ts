@@ -34,11 +34,21 @@ const FILES: Readonly<Record<string, () => Promise<string | Uint8Array>>> = {
 }
 
 export function vendor(): Plugin {
-  // Built once per process, however many requests or builds ask.
+  // Built once per process, however many requests or builds ask. A failed load is forgotten, so
+  // the next request tries again instead of replaying the failure.
   const contents = new Map<string, Promise<string | Uint8Array>>()
   const content = (name: string, load: () => Promise<string | Uint8Array>) => {
-    const loaded = contents.get(name) ?? load()
+    const cached = contents.get(name)
+    if (cached !== undefined) {
+      return cached
+    }
+    const loaded = load()
     contents.set(name, loaded)
+    loaded.catch(() => {
+      if (contents.get(name) === loaded) {
+        contents.delete(name)
+      }
+    })
     return loaded
   }
 

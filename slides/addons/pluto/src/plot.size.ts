@@ -13,16 +13,26 @@
 /** The element PlutoPlotly draws a plot into and measures. */
 const CONTAINER = "plutoplotly-container"
 
-// Only ever called through `.call` with the element being measured as its receiver.
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const measured = Element.prototype.getBoundingClientRect
+/**
+ * Marks the replacement, under a key every evaluation of this module shares, so that a second
+ * call or a hot reload finds it installed rather than wrapping it again.
+ */
+const INSTALLED = Symbol.for("slidev-addon-pluto.sizePlotsToTheirCards")
 
 export function sizePlotsToTheirCards(): void {
-  Element.prototype.getBoundingClientRect = function (this: Element): DOMRect {
+  // Only ever called through `.call` with the element being measured as its receiver.
+  // eslint-disable-next-line @typescript-eslint/unbound-method
+  const measured = Element.prototype.getBoundingClientRect
+  if (Reflect.get(measured, INSTALLED) === true) {
+    return
+  }
+  const sized = function (this: Element): DOMRect {
     const rect = measured.call(this)
     if (this.classList.contains(CONTAINER) && this instanceof HTMLElement) {
       return new DOMRect(rect.x, rect.y, this.offsetWidth, this.offsetHeight)
     }
     return rect
   }
+  Reflect.set(sized, INSTALLED, true)
+  Element.prototype.getBoundingClientRect = sized
 }
