@@ -10,12 +10,12 @@ include("devtools.jl")
 
 import Sockets
 
-using PlutoDeck: present
+using PlutoDeck: load_deck, session_file
 
 const BROWSER_NOTEBOOK = joinpath(FIXTURES, "browser.jl")
 
 
-"How long `present` may take to serve its first page, in seconds. A cold kernel is most of it."
+"How long `present` may take to write its session file. A cold kernel is most of it."
 const PRESENT_TIMEOUT = 300.0
 
 "How long `slidev dev` may take to answer, in seconds."
@@ -25,23 +25,36 @@ const SLIDEV_TIMEOUT = 60.0
 const SHUTDOWN_TIMEOUT = 60.0
 
 """
-The deck `present` serves the session and the card index for, in a directory of its own.
+    browser_workspace() -> String
 
-Pluto rewrites every notebook it opens, so a fixture is copied out of the repository before a
-kernel is pointed at it. The slides `slidev dev` serves are the Slidev fixture's; this deck only
-names the copy.
+The Slidev fixture deck, naming a copy of its notebook, inside the Slidev workspace.
+
+Pluto rewrites every notebook it opens, so the notebook is copied out of the repository before a
+kernel is pointed at it, and the deck names the copy by its absolute path. The deck sits in a
+directory of its own beside the fixture, where Slidev resolves the workspace's addons, and the
+session file `present` writes beside it is that run's alone.
 """
-browser_workspace() = deck_file("---\npluto:\n  notebook: browser.jl\n---\n";
-    beside=Dict("browser.jl" => read(BROWSER_NOTEBOOK, String)))
+function browser_workspace()
+    notebook = joinpath(mktempdir(), "browser.jl")
+    cp(BROWSER_NOTEBOOK, notebook)
+    fixture = joinpath(SLIDES, FIXTURE_DECK)
+    named = r"^  notebook: .*$"m
+    source = read(fixture, String)
+    occursin(named, source) || error("$fixture names no notebook to point at the copy")
+    directory = mktempdir(dirname(fixture); prefix=".browser-")
+    deck = joinpath(directory, basename(fixture))
+    write(deck, replace(source, named => "  notebook: $notebook"; count=1))
+    return deck
+end
 
 """
     free_port() -> Int
 
 A port nothing is listening on.
 
-`present` takes its port as given, so that a port in use is an error rather than a deck quietly
-served somewhere else. Nothing can hold one open for it, so the gap between letting go here and
-`present` binding there is a race — lost, it fails the run rather than hiding.
+`slidev dev` takes its port as given, so that a port in use is an error rather than a deck
+quietly served somewhere else. Nothing can hold one open for it, so the gap between letting go
+here and the server binding there is a race — lost, it fails the run rather than hiding.
 """
 function free_port()
     socket = Sockets.listen(Sockets.localhost, 0)
@@ -74,7 +87,7 @@ end
 """
     with_present(body, deck_path) -> String
 
-Run `body(url)` against a deck `present` is serving, and stop it the way its own last line
+Run `body()` once `present` has the deck's kernel ready, and stop it the way its own last line
 says to, however `body` ends.
 
 Returns how `present` stopped rather than anything `body` produced, which asserts through
@@ -83,22 +96,28 @@ when it ended on its own terms but not cleanly, and `"kill"` when it had to be k
 of the last two is a shutdown that did not finish.
 
 In a process of its own, because blocking until interrupted is the whole of `present`'s
-contract: one call brings up the kernel, the server and the pages, and Ctrl-C takes all three
-down again.
+contract: one call brings up the kernel and writes the session file, and Ctrl-C takes both down
+again.
 """
 function with_present(body, deck_path::AbstractString)
-    port = free_port()
-    url = "http://localhost:$port"
     log = tempname()
     process = run(pipeline(`$(Base.julia_cmd()) --startup-file=no
             --project=$(Base.active_project())
-            -e "using PlutoDeck; present(ARGS[1]; port = parse(Int, ARGS[2]))"
-            $deck_path $port`; stdout=log, stderr=log); wait=false)
+            -e "using PlutoDeck; present(ARGS[1])"
+            $deck_path`; stdout=log, stderr=log); wait=false)
+    file = session_file(load_deck(deck_path))
 
     stopped = ""
     try
-        await_serving("$url/api/deck", process, log, PRESENT_TIMEOUT)
-        body(url)
+        deadline = time() + PRESENT_TIMEOUT
+        while !isfile(file)
+            Base.process_running(process) ||
+                error("present exited before it wrote $file:\n", read(log, String))
+            time() > deadline &&
+                error("present wrote no $file within $(PRESENT_TIMEOUT)s:\n", read(log, String))
+            sleep(0.2)
+        end
+        body()
     finally
         kill(process, Base.SIGINT)
         killed = timedwait(() -> !Base.process_running(process), SHUTDOWN_TIMEOUT) !== :ok
@@ -112,22 +131,24 @@ function with_present(body, deck_path::AbstractString)
         stopped == "interrupt" ||
             @warn "present did not stop cleanly ($stopped), and said:\n" * read(log, String)
     end
+    @testset "stopping a deck takes its session file with it" begin
+        @test !isfile(file)
+    end
     return stopped
 end
 
 """
-    with_slidev(body, api_url)
+    with_slidev(body, deck_path)
 
-Run `body(url)` against `slidev dev` serving the fixture deck, its `/api` proxied to `api_url`,
-and stop it however `body` ends.
+Run `body(url)` against `slidev dev` serving the deck at `deck_path`, and stop it however `body`
+ends.
 """
-function with_slidev(body, api_url::AbstractString)
+function with_slidev(body, deck_path::AbstractString)
     port = free_port()
     url = "http://localhost:$port"
     log = tempname()
     slidev = joinpath(SLIDES, "node_modules", ".bin", "slidev")
-    command = setenv(`$slidev $FIXTURE_DECK --port $port --open false`,
-        merge(ENV, Dict("PLUTODECK_URL" => api_url)); dir=SLIDES)
+    command = setenv(`$slidev $deck_path --port $port --open false`; dir=SLIDES)
     process = run(pipeline(command; stdout=log, stderr=log); wait=false)
     try
         await_serving(url, process, log, SLIDEV_TIMEOUT)
@@ -277,8 +298,10 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
         @warn "the Slidev workspace is not installed; run `npm ci` in $SLIDES"
         @test_skip "live cards render in a Slidev deck"
     else
-        presented = with_present(browser_workspace()) do api
-            with_slidev(api) do url
+        deck = browser_workspace()
+        presented = try
+            with_present(deck) do
+            with_slidev(deck) do url
             # Every assertion below is made on a browser that can reach nothing but this
             # machine, so "the plot draws" is a statement about a lecture hall with no wifi
             # rather than about this desk. A deck that let any library come off a CDN would fail
@@ -645,6 +668,9 @@ const SLIDEV_NOISE = r"Failed to patch FloatingVue"
                 end
             end
             end
+            end
+        finally
+            rm(dirname(deck); recursive=true, force=true)
         end
 
         @testset "an interrupt is the whole of stopping a deck" begin

@@ -1,27 +1,7 @@
-import HTTP
 import JSON
 import PlutoPlotly
 
-using PlutoDeck: Session, load_deck
-
-"""
-A `Session` with nothing running behind it.
-
-Every route this file exercises reads the session as data, so a server and a kernel would
-only buy thirty seconds of start-up per assertion. `test/session.jl` drives the same routes
-against a real one.
-"""
-fake_session() = Session(
-    Pluto.ServerSession(),
-    Pluto.RunningPlutoServer(nothing, @task nothing),
-    Pluto.Notebook([cell("x = 1")], THREE_CARDS),
-    "http://localhost:1234",
-    "s3cr3t42",
-)
-
-request(handler, target) = handler(HTTP.Request("GET", target))
-
-@testset "server" begin
+@testset "addon" begin
     # The head the `pluto` Slidev addon puts on every live deck.
     page = read(joinpath(SLIDES, "addons", "pluto", "index.html"), String)
 
@@ -58,34 +38,5 @@ request(handler, target) = handler(HTTP.Request("GET", target))
         @test !isempty(imported)
         @test declared !== nothing
         @test imported ⊆ keys(JSON.parse(declared[1])["imports"])
-    end
-
-    handler = PlutoDeck._handler(load_deck(LECTURE_DECK), fake_session())
-
-    @testset "/api/session carries what the browser needs to reach Pluto" begin
-        response = request(handler, "/api/session")
-        body = JSON.parse(String(response.body))
-
-        @test response.status == 200
-        @test HTTP.header(response, "Content-Type") == "application/json; charset=utf-8"
-        @test body["plutoUrl"] == "http://localhost:1234"
-        @test body["secret"] == "s3cr3t42"
-        @test occursin(body["notebook_id"], body["editUrl"])
-        @test occursin(body["secret"], body["editUrl"])
-    end
-
-    @testset "/api/deck carries the deck's notebook and every card it declares" begin
-        response = request(handler, "/api/deck")
-        body = JSON.parse(String(response.body))
-
-        @test response.status == 200
-        @test body["notebook"] == THREE_CARDS
-        @test body["cards"]["metrics"] == "a1000000-0000-4000-8000-000000000004"
-        @test Set(keys(body)) == Set(["path", "notebook", "cards"])
-    end
-
-    @testset "any other path is a 404" begin
-        @test request(handler, "/").status == 404
-        @test request(handler, "/api/other").status == 404
     end
 end

@@ -2,8 +2,11 @@ import HTTP
 import JSON
 import Pluto
 
-using PlutoDeck: SessionStartError, edit_url, in_temp_dir, load_deck, notebook_id, serve,
-    shutdown!, start_session
+using PlutoDeck: SessionStartError, edit_url, in_temp_dir, load_deck, shutdown!, start_session,
+    write_session_file
+
+"The cell of `runnable.jl` that reads the `freq` bond."
+const SAMPLES_CELL = Base.UUID("a1000000-0000-4000-8000-000000000003")
 
 "A notebook and a deck of its own, outside the repository, since Pluto rewrites what it opens."
 function workspace_deck()
@@ -52,7 +55,6 @@ end
     session = start_session(deck.notebook_path; io=nothing)
     workspace = Pluto.WorkspaceManager.get_workspace((session.pluto, session.notebook);
         allow_creation=false)
-    server = nothing
 
     try
         @testset "the kernel reaches ready with every cell terminal" begin
@@ -67,28 +69,23 @@ end
         end
 
         @testset "a bond change re-runs the cell that reads it" begin
-            @test bond_round_trip(session, :freq, 4, deck.cards["samples"])
+            @test bond_round_trip(session, :freq, 4, SAMPLES_CELL)
         end
 
-        server = serve(deck, session; port=0, listenany=true)
+        @testset "the session file points the browser straight at Pluto, for its owner alone" begin
+            file = write_session_file(deck, session)
 
-        @testset "/api/session points the browser straight at Pluto" begin
-            body = JSON.parse(String(HTTP.get("$(server.url)/api/session").body))
-
-            @test body["plutoUrl"] == session.url
-            @test body["notebook_id"] == string(notebook_id(session))
-            @test body["editUrl"] == edit_url(session)
-            @test HTTP.get(body["editUrl"]).status == 200
+            @test dirname(file) == dirname(deck.path)
+            @test JSON.parse(read(file, String)) ==
+                Dict("plutoUrl" => session.url, "secret" => session.secret)
+            @test filemode(file) & 0o777 == 0o600
+            @test !isfile(file * ".partial")
         end
 
-        @testset "/api/deck carries the deck the session is running" begin
-            body = JSON.parse(String(HTTP.get("$(server.url)/api/deck").body))
-
-            @test body["notebook"] == deck.notebook_path
-            @test keys(body["cards"]) == Set(["frequency", "samples", "readout"])
+        @testset "the editor link opens the notebook" begin
+            @test HTTP.get(edit_url(session)).status == 200
         end
     finally
-        server === nothing || close(server)
         shutdown!(session)
     end
 

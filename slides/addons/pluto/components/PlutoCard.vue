@@ -4,25 +4,31 @@
 import { onMounted, onUnmounted, ref } from "vue"
 import { loadPlotly, needsPlotly } from "../src/plotly.loader"
 import { usePluto } from "../src/pluto.session"
-import type { CardSource } from "../src/session.interface"
+import { lookUpCard } from "../src/card.index"
+import type { CardSource } from "../src/card.index"
 
 /** The card name the notebook declares. Placed on a slide by the `Card` it sits in. */
 const props = defineProps<{ name: string }>()
 
 const host = ref<HTMLElement>()
 const source = ref<CardSource>("placeholder")
+/** How many cells declare this card's name, once that is more than one. */
+const claimants = ref(0)
 
 let stop: (() => void) | null = null
 let unmounted = false
 
 onMounted(async () => {
   const { kernel, painter, cards } = await usePluto()
-  const cellId = cards[props.name]
-  // A mistyped name is caught nowhere else, so the card says so where the lecturer is looking.
-  if (cellId === undefined) {
-    source.value = "unknown"
+  const found = lookUpCard(cards, props.name)
+  // A mistyped or doubly declared name is caught nowhere else, so the card says so where the
+  // lecturer is looking.
+  if ("fault" in found) {
+    source.value = found.fault
+    claimants.value = found.fault === "duplicate" ? found.cellIds.length : 0
     return
   }
+  const { cellId } = found
 
   // Repainting rebuilds every script in the card against whatever payload it reads, which for a
   // plot is a multi-megabyte published object. A diff arrives for every cell many times per run,
@@ -61,8 +67,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="pluto-card" :data-card="name" :data-source="source" :data-fault="source === 'unknown' || undefined">
-    <p v-if="source === 'unknown'" class="pluto-card-unknown">the notebook declares no card "{{ name }}"</p>
+  <div class="pluto-card" :data-card="name" :data-source="source" :data-fault="source === 'unknown' || source === 'duplicate' || undefined">
+    <p v-if="source === 'unknown'" class="pluto-card-fault">the notebook declares no card "{{ name }}"</p>
+    <p v-else-if="source === 'duplicate'" class="pluto-card-fault">{{ claimants }} cells of the notebook declare card "{{ name }}"</p>
     <p v-else-if="source === 'placeholder'" class="pluto-card-waiting">{{ name }}</p>
     <div ref="host" class="pluto-card-body" />
   </div>

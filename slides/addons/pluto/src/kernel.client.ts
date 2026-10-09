@@ -5,26 +5,37 @@ import type { Worker } from "@plutojl/rainbow"
 import { BondQueue } from "./bond.queue.js"
 import { bondWriter } from "./bond.writer.js"
 import type { BondWriter } from "./bond.writer.js"
-import type { CardContent, Session } from "./session.interface.js"
-import { isCellDependency, isCellInput, isCellOutput, isNotebookState } from "./pluto.interface.js"
+import type { CardContent } from "./card.index.js"
+import { notebookIdAt } from "./deck.session.js"
+import type { KernelAddress } from "./deck.session.js"
+import {
+  isCellDependency,
+  isCellInput,
+  isCellOutput,
+  isNotebookState,
+  isRecord,
+} from "./pluto.interface.js"
 import type { CellOutput, NotebookState } from "./pluto.interface.js"
-import { isRecord } from "./session.interface.js"
 
 /** How a cell body reaches for a `published_to_js` payload, as PlutoRunner writes it. */
 const PUBLISHED_REFERENCE = /getPublishedObject\("([^"]+)"\)/g
 
 /**
- * Connect to the Pluto server `session` describes and attach to its notebook.
+ * Connect to the Pluto server `address` names and attach to the notebook running from its path.
  *
- * Attaches by notebook id rather than creating a worker: `createWorker` builds its upload URL
- * by concatenation and never forwards the secret, and a server without a secret lets any page
- * the browser visits run Julia on this machine.
+ * Attaches to a running notebook rather than creating a worker: `createWorker` builds its upload
+ * URL by concatenation and never forwards the secret, and a server without a secret lets any
+ * page the browser visits run Julia on this machine.
  */
-export async function connect(session: Session): Promise<Kernel> {
-  const host = new Host(`${session.plutoUrl}/?secret=${session.secret}`)
-  const worker = host.worker(session.notebook_id)
+export async function connect(address: KernelAddress): Promise<Kernel> {
+  const host = new Host(`${address.plutoUrl}/?secret=${encodeURIComponent(address.secret)}`)
+  const notebookId = notebookIdAt(await host.workers(), address.notebook)
+  if (notebookId === null) {
+    throw new Error(`${address.plutoUrl} is not running ${address.notebook}`)
+  }
+  const worker = host.worker(notebookId)
   if (!(await worker.connect())) {
-    throw new Error(`no websocket to ${session.plutoUrl}`)
+    throw new Error(`no websocket to ${address.plutoUrl}`)
   }
 
   // A deck that cannot batch writes a bond per reactive run, and every run but the last sees

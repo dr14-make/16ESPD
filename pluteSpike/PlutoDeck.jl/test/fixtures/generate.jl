@@ -95,5 +95,3 @@ browser_cells() = [
 write_fixture("three-cards.jl", three_carded_cells())
 write_fixture("runnable.jl", runnable_cells())
 write_fixture("browser.jl", browser_cells())
-write_fixture("duplicate-cards.jl",
-    push!(three_carded_cells(), carded(5, "metrics", "md\"a second cell claiming the same card\"")))

@@ -11,8 +11,8 @@ fonts:
 favicon: "data:,"
 addons:
   - pluto
-# The browser suite presents a copy, since Pluto rewrites the notebook it opens; this names the
-# notebook the fixture's cards are checked against.
+# The browser suite presents a copy of this deck naming a copy of the notebook, since Pluto
+# rewrites the notebook it opens; this names the notebook the fixture's cards are checked against.
 pluto:
   notebook: ../../../pluteSpike/PlutoDeck.jl/test/fixtures/browser.jl
 ---

@@ -16,7 +16,7 @@ import {
   html,
   render,
 } from "@plutojl/rainbow/ui"
-import type { CardContent } from "./session.interface.js"
+import type { CardContent } from "./card.index.js"
 import type { Kernel } from "./kernel.client.js"
 import type { NotebookState } from "./pluto.interface.js"
 import { clearMath, typesetMath } from "./math.typesetter.js"

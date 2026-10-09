@@ -21,7 +21,8 @@ pluto:
 </Grid>
 ```
 
-`name` is the card a notebook cell declares in its metadata. A name no cell declares shows that
+`name` is the card a notebook cell declares in its metadata. The deck reads those declarations
+from the running notebook, so a name no cell declares, or one that two cells declare, shows that
 in red on its card. `Grid` and `Card` come from the course addon (`slides/addons/course/`) and
 place any block, not only live cards: a `Card` spans `w` columns and `h` rows from column `x` and
 row `y` of a `Grid` (12 × 12 unless `cols` and `rows` say otherwise). A `Card`
@@ -30,19 +31,22 @@ card fills its `Card`, and shows its name in a dashed box until the kernel is li
 
 ## Running against a kernel
 
-PlutoDeck.jl starts the deck's notebook and answers `/api/session` and `/api/deck`; `slidev dev`
-proxies `/api` to it, on port 8099 unless `PLUTODECK_URL` says otherwise. The browser opens its
-own websocket to Pluto. To present a live deck from the repository root, after `npm ci` in
-`slides/`, run these in two terminals:
+PlutoDeck.jl starts the deck's notebook, waits until every cell has run, and writes Pluto's URL
+and secret to `.pluto-session.json` beside the deck, removing it when stopped. `slidev dev` hands
+them to the page as the module `virtual:pluto-session` (`setup/vite-plugins.ts`). Vite refuses a
+request addressed to any host but this machine, so another site cannot read them by rebinding its
+name to 127.0.0.1, and a build never carries them. The browser then opens its own websocket to
+Pluto and finds the notebook among the ones Pluto is running by its path. To present a live deck
+from the repository root, after `npm ci` in `slides/`, run these in two terminals, in either order:
 
 ```sh
 julia --project=pluteSpike/PlutoDeck.jl -e 'using Pkg; Pkg.instantiate(); using PlutoDeck; present("slides/decks/<deck>/slides.md")'
 cd slides && npx slidev decks/<deck>/slides.md
 ```
 
-The kernel is ready about 30 s after the first command prints its URLs. Edits to the slides
-hot-reload without restarting it. Pluto saves the notebook it opens, so presenting can leave
-the notebook file modified.
+The kernel is ready about 30 s after the first command starts, and an open deck reloads onto it
+when the session file appears. Edits to the slides hot-reload without restarting it. Pluto saves
+the notebook it opens, so presenting can leave the notebook file modified.
 
 ## What it does for a deck
 

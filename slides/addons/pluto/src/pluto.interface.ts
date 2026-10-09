@@ -7,7 +7,17 @@
 // what makes them checked, and `isNotebookState` is where an upgrade that changes the shape
 // stops being a card that renders nothing.
 
-import { isRecord } from "./session.interface.js"
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+/**
+ * The bond a notebook declares to be told which color scheme the deck is being shown in.
+ *
+ * A contract with every notebook that opts in, so renaming it is a migration across all of
+ * them. A notebook that declares no bond of this name is left alone.
+ */
+export const THEME_BOND = "deck_theme"
 
 /** What a cell is showing, as PlutoRunner wrote it. */
 export interface CellOutput {
@@ -19,6 +29,8 @@ export interface CellOutput {
 /** What a cell holds, as the notebook file has it. */
 export interface CellInput {
   readonly code: string
+  /** The cell's own metadata, where a cell declares the card it publishes as `card`. */
+  readonly metadata?: unknown
 }
 
 export interface CellDependency {

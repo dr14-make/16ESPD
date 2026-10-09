@@ -12,7 +12,11 @@ import type { KernelReport } from "./kernel.status.js"
 import { sizePlotsToTheirCards } from "./plot.size.js"
 import { createPainter } from "./render.painter.js"
 import type { Painter } from "./render.painter.js"
-import { THEME_BOND, fetchJson, isCardIndex, isSession } from "./session.interface.js"
+import { cardIndex } from "./card.index.js"
+import type { CardIndex } from "./card.index.js"
+import { isDeckSession } from "./deck.session.js"
+import { THEME_BOND } from "./pluto.interface.js"
+import deckSession from "virtual:pluto-session"
 
 /** How a cell that renders an input reads, which is what earns its card a place in the bond layer. */
 const BIND = "@bind"
@@ -21,7 +25,7 @@ export interface Pluto {
   readonly kernel: Kernel
   readonly painter: Painter
   /** Every card the notebook declares, keyed to the cell that publishes it. */
-  readonly cards: Readonly<Record<string, string>>
+  readonly cards: CardIndex
   /** The cards whose cell renders an input, which the bond layer keeps mounted. */
   readonly bindCards: readonly string[]
 }
@@ -55,23 +59,26 @@ export function usePluto(): Promise<Pluto> {
 async function start(view: View): Promise<Pluto> {
   showStatus({})
   sizePlotsToTheirCards()
-  let kernel: Kernel
-  let cards: Readonly<Record<string, string>>
-  try {
-    const [session, index] = await Promise.all([
-      fetchJson("/api/session", isSession),
-      fetchJson("/api/deck", isCardIndex),
-    ])
-    cards = index.cards
-    kernel = await connect(session)
-  } catch (error) {
-    showStatus({ failure: `the kernel could not be reached: ${String(error)}` })
-    throw error
+  if (!isDeckSession(deckSession)) {
+    return fail("the deck's dev server handed it a session this addon cannot read")
   }
+  if ("problem" in deckSession) {
+    return fail(deckSession.problem)
+  }
+  let kernel: Kernel
+  try {
+    kernel = await connect(deckSession.kernel)
+  } catch (error) {
+    return fail(`the kernel could not be reached: ${String(error)}`)
+  }
+
+  // Read once: Pluto's editor cannot set a cell's `card` key, so it does not change under a
+  // running deck.
+  const cards = cardIndex(kernel.notebook()?.cell_inputs ?? {})
 
   // Downstream cells finish after the cell they depend on, so a run is only settled once every
   // cell a card reads has come to rest — not only the one a bond feeds.
-  kernel.watch(Object.values(cards))
+  kernel.watch(Object.values(cards.cards))
 
   let connected = true
   kernel.onConnectionChange((connection) => {
@@ -99,12 +106,17 @@ async function start(view: View): Promise<Pluto> {
     kernel,
     painter: createPainter(kernel),
     cards,
-    bindCards: Object.entries(cards)
+    bindCards: Object.entries(cards.cards)
       .filter(([, cellId]) => kernel.code(cellId).includes(BIND))
       .map(([name]) => name),
   }
   live.value = pluto
   return pluto
+}
+
+function fail(failure: string): never {
+  showStatus({ failure })
+  throw new Error(failure)
 }
 
 /** Put the window's kernel state on the page, where the browser suite reads it. */

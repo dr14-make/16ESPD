@@ -17,7 +17,7 @@
   border-style: dashed;
 }
 
-.pluto-card-unknown,
+.pluto-card-fault,
 .pluto-card-waiting {
   margin: 0;
   font-family: ui-monospace, monospace;

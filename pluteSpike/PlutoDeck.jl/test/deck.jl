@@ -1,4 +1,4 @@
-using PlutoDeck: DeckLoadError, Deck, DuplicateCardsError, cards, load_deck
+using PlutoDeck: DeckLoadError, Deck, load_deck
 
 const ONE_CARD = """
 ---
@@ -15,20 +15,23 @@ pluto:
 
         @test deck isa Deck
         @test deck.path == LECTURE_DECK
-        @test deck.notebook_path == THREE_CARDS
-        @test deck.cards == cards(THREE_CARDS)
+        @test deck.notebook_path == realpath(THREE_CARDS)
     end
 
     @testset "an absolute notebook reference is taken as given" begin
-        @test load_deck(deck_file(ONE_CARD)).notebook_path == THREE_CARDS
+        @test load_deck(deck_file(ONE_CARD)).notebook_path == realpath(THREE_CARDS)
     end
 
     @testset "the Slidev fixture deck names the browser suite's notebook" begin
-        @test load_deck(joinpath(SLIDES, FIXTURE_DECK)).notebook_path == joinpath(FIXTURES, "browser.jl")
+        @test load_deck(joinpath(SLIDES, FIXTURE_DECK)).notebook_path ==
+            realpath(joinpath(FIXTURES, "browser.jl"))
     end
 
-    @testset "a notebook that declares a name twice is refused by name" begin
-        @test_throws DuplicateCardsError load_deck(deck_file(ONE_CARD; notebook=DUPLICATE_CARDS))
+    @testset "a notebook reached through a symlink is named by the file Pluto opens" begin
+        linked = joinpath(mktempdir(), "fixtures")
+        symlink(FIXTURES, linked)
+        @test load_deck(deck_file(ONE_CARD; notebook=joinpath(linked, "three-cards.jl"))).notebook_path ==
+            realpath(THREE_CARDS)
     end
 
     @testset "a deck that names no notebook it can open says so" begin

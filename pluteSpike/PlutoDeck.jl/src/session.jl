@@ -26,8 +26,7 @@ A running Pluto server with one notebook open in it. One kernel per running inst
 deck, the Pluto editor and every browser attached to either share this one notebook and its
 one set of bonds.
 
-`url` is the origin the browser talks to directly — the deck does not proxy Pluto — and
-`secret` is what authenticates it there.
+`url` is the origin the browser talks to directly, and `secret` is what authenticates it there.
 """
 struct Session
     pluto::Pluto.ServerSession
@@ -79,6 +78,8 @@ function start_session(notebook_path::AbstractString;
         io::Union{IO,Nothing}=stdout)
     path = abspath(String(notebook_path))
     isfile(path) || throw(SessionStartError("no such notebook: $path"))
+    # The page finds this notebook by comparing Pluto's path for it with its own, resolved alike.
+    path = realpath(path)
 
     pluto = Pluto.ServerSession()
     pluto.options.server.port = port

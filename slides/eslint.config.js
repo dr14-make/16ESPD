@@ -15,7 +15,7 @@ export default tseslint.config(
     },
     rules: {
       // A cast asserts what the compiler could not check, and the addon's inputs are a websocket
-      // and two JSON endpoints — exactly where an assertion is a runtime error in waiting.
+      // and a session file — exactly where an assertion is a runtime error in waiting.
       "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
       "@typescript-eslint/consistent-type-imports": [
         "error",

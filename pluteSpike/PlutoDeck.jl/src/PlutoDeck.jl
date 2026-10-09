@@ -1,7 +1,5 @@
 module PlutoDeck
 
-using UUIDs: UUID
-
 import HTTP
 import JSON
 import Pluto
@@ -9,45 +7,42 @@ import YAML
 
 export present
 
-include("cards.jl")
-include("deck.jl")
 include("session.jl")
-include("server.jl")
+include("deck.jl")
 
 """
-    present(deck_path; port, pluto_port, host)
+    present(deck_path; pluto_port, host, io)
 
-Serve the live deck at `deck_path`, a Slidev deck naming its notebook in its headmatter: start
-a Pluto session for that notebook, open it in place with execution allowed, and answer
-`/api/session` and `/api/deck` for `slidev dev` to proxy. Blocks until interrupted, then
-takes the kernel down with it.
+Run the live deck at `deck_path`, a Slidev deck naming its notebook in its headmatter: start a
+Pluto server, open that notebook in place with execution allowed, and wait until every cell has
+run. Then write Pluto's URL and secret to the deck's session file, which `slidev dev` hands the
+page, and block until interrupted, taking the kernel and the session file down with it.
 
-The deck and Pluto are two ports of one Julia process. The browser talks to both: the deck
-for its own pages, Pluto directly for the websocket that carries cell output and bonds.
+The browser talks to Pluto directly, over Pluto's own websocket, and finds the notebook among
+the ones Pluto is running by its path.
 
 A notebook that declares a bond named `deck_theme` is told which color scheme the deck is
 being shown in, as `"light"` or `"dark"`, which is how a Julia-rendered plot follows the deck
 into dark mode.
 """
 function present(deck_path::AbstractString;
-        port::Integer=DECK_PORT_DEFAULT,
         pluto_port::Union{Nothing,Integer}=nothing,
         host::AbstractString=HOST_DEFAULT,
         io::Union{IO,Nothing}=stdout)
     deck = load_deck(deck_path)
     _report(io, "PlutoDeck · ", deck.path)
-    _report(io, "  ", length(deck.cards), " cards · ", deck.notebook_path)
+    _report(io, "  notebook ", deck.notebook_path)
 
     session = start_session(deck.notebook_path; port=pluto_port, host, io)
     try
-        server = serve(deck, session; port, host)
+        file = write_session_file(deck, session)
         try
-            _report(io, "  deck    ", server.url)
-            _report(io, "  editor  ", edit_url(session))
+            _report(io, "  editor   ", edit_url(session))
+            _report(io, "  session  ", file)
             _report(io, "Press Ctrl-C to stop.")
-            _block_until_interrupted(server, io)
+            _block_until_interrupted(session, io)
         finally
-            close(server)
+            rm(file; force=true)
         end
     finally
         _report(io, "Stopping the kernel…")
@@ -56,10 +51,10 @@ function present(deck_path::AbstractString;
     return nothing
 end
 
-"Hold the main task so an interrupt lands here rather than inside the server's task."
-function _block_until_interrupted(server::DeckServer, io::Union{IO,Nothing})
+"Hold the main task so an interrupt lands here rather than inside Pluto's server task."
+function _block_until_interrupted(session::Session, io::Union{IO,Nothing})
     try
-        while isopen(server)
+        while isopen(session.server.http_server)
             sleep(0.1)
         end
     catch err
