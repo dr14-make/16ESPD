@@ -35,10 +35,16 @@ export interface BondQueueDriver {
   isIdle(): boolean
 }
 
+interface Waiter {
+  resolve(): void
+  reject(error: unknown): void
+}
+
 export class BondQueue {
   readonly #driver: BondQueueDriver
   readonly #pending = new Map<string, unknown>()
-  #flush: Promise<void> | null = null
+  #waiting: Waiter[] = []
+  #draining = false
 
   constructor(driver: BondQueueDriver) {
     this.#driver = driver
@@ -49,15 +55,21 @@ export class BondQueue {
    *
    * Resolving late is what paces a dragged slider: Pluto's bond listener awaits this before it
    * sends the next value, so the notebook runs once per settled value instead of once per
-   * input event.
+   * input event. Rejects with the write's error when the batch carrying this value failed.
    */
   set(name: string, value: unknown): Promise<void> {
     this.#pending.set(name, value)
-    this.#flush ??= this.#drain()
-    return this.#flush
+    const done = new Promise<void>((resolve, reject) => {
+      this.#waiting.push({ resolve, reject })
+    })
+    if (!this.#draining) {
+      void this.#drain()
+    }
+    return done
   }
 
   async #drain(): Promise<void> {
+    this.#draining = true
     try {
       while (this.#pending.size > 0) {
         // Each widget reports its own value as its card's scripts finish, so writing the first
@@ -65,13 +77,26 @@ export class BondQueue {
         // other bond still `missing`. A short collecting window turns the burst into one run.
         await new Promise((resolve) => setTimeout(resolve, BATCH_MS))
         const batch = [...this.#pending]
+        const waiting = this.#waiting
         this.#pending.clear()
-        const before = this.#driver.stamps()
-        await this.#driver.write(batch)
-        await this.#settle(before)
+        this.#waiting = []
+        // A failed batch fails only its own callers: values set while it was being written are
+        // still owed to the kernel, and nothing else would ever send them.
+        try {
+          const before = this.#driver.stamps()
+          await this.#driver.write(batch)
+          await this.#settle(before)
+          for (const waiter of waiting) {
+            waiter.resolve()
+          }
+        } catch (error) {
+          for (const waiter of waiting) {
+            waiter.reject(error)
+          }
+        }
       }
     } finally {
-      this.#flush = null
+      this.#draining = false
     }
   }
 

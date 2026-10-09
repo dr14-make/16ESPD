@@ -105,3 +105,27 @@ test("idle is not believed while the server is still reporting a run", async () 
   assert.ok(idle, "the run had to be reported finished before the write resolved")
   assert.ok(settled[0] !== undefined && settled[0] >= 150)
 })
+
+test("a value set while a write is failing is still written", async () => {
+  const written: unknown[][] = []
+  let stamp = 0
+  let setDuringFailure: Promise<void> | undefined
+  const queue = new BondQueue({
+    write: (pairs) => {
+      written.push(pairs.map(([, value]) => value))
+      if (written.length === 1) {
+        setDuringFailure = queue.set("freq", 2)
+        return Promise.reject(new Error("socket closed"))
+      }
+      stamp += 1
+      return Promise.resolve()
+    },
+    stamps: () => new Map([["watched-cell", stamp]]),
+    isIdle: () => true,
+  })
+
+  await assert.rejects(queue.set("freq", 1), /socket closed/)
+  await setDuringFailure
+
+  assert.deepEqual(written, [[1], [2]])
+})

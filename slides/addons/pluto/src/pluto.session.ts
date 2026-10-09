@@ -92,10 +92,12 @@ async function start(view: View): Promise<Pluto> {
   if (kernel.declares(THEME_BOND)) {
     // The room's view decides how plots are colored. Presenter mode never writes, so two windows
     // in different schemes cannot overwrite each other and opening it sets off no notebook run.
+    // A failed write leaves the notebook's scheme as it was, which colors plots and breaks
+    // nothing. The next change writes again, and a dropped websocket shows in the kernel status.
     const publish = async (): Promise<void> => {
       const scheme = view.isDark.value ? "dark" : "light"
       if (!view.isPresenter.value && kernel.bonds()[THEME_BOND]?.value !== scheme) {
-        await kernel.setBond(THEME_BOND, scheme)
+        await kernel.setBond(THEME_BOND, scheme).catch(() => undefined)
       }
     }
     watch([view.isDark, view.isPresenter], () => void publish())
