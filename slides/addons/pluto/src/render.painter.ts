@@ -31,12 +31,6 @@ import { isolate } from "./published.helper.js"
  */
 const RUNNING_SCRIPTS = new Set<Element>()
 
-/** How often a card's scripts are re-checked for having finished, in milliseconds. */
-const SCRIPT_POLL_MS = 20
-
-/** How long a card's scripts may run before the deck stops waiting for them. */
-const SCRIPT_TIMEOUT_MS = 20_000
-
 /**
  * The payloads each card's recent renders were handed, newest first.
  *
@@ -176,24 +170,4 @@ export function createPainter(kernel: Kernel): Painter {
     // `render` returns, so the `.tex` elements the kernel wrote are in the document by here.
     void typesetMath(cell)
   }
-}
-
-/**
- * Resolve once no card's scripts are still running.
- *
- * A preamble card's whole purpose is a side effect its scripts perform, and a card that
- * depends on that effect and is rendered before it finishes draws nothing.
- */
-export function whenScriptsSettled(): Promise<void> {
-  const deadline = Date.now() + SCRIPT_TIMEOUT_MS
-  return new Promise((resolve) => {
-    const tick = (): void => {
-      if (RUNNING_SCRIPTS.size === 0 || Date.now() > deadline) {
-        resolve()
-        return
-      }
-      setTimeout(tick, SCRIPT_POLL_MS)
-    }
-    setTimeout(tick, SCRIPT_POLL_MS)
-  })
 }

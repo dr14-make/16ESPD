@@ -8,12 +8,6 @@
 /** The link each page's HTML carries, naming the MathJax build the bundle put beside it. */
 const SOURCE_REL = "mathjax-source"
 
-/** The one `<style>` MathJax writes, into `document.head`, and grows as it meets new constructs. */
-const STYLE_ID = "MJX-SVG-styles"
-
-/** That stylesheet as one constructed sheet, which every shadow root adopts the same copy of. */
-let shared: CSSStyleSheet | null = null
-
 interface MathJaxStartup {
   typeset: boolean
 }
@@ -46,14 +40,10 @@ let loading: Promise<void> | null = null
 /**
  * Typeset the math in `container`, once MathJax is there to do it.
  *
- * Awaited rather than skipped when the script has not landed: the cues are read in the minutes
- * before a kernel exists, so a formula passed over for arriving early would show its delimiters
- * for the whole of the window the cues cover.
+ * Awaited rather than skipped when the script has not landed, so a formula that arrives before
+ * MathJax is drawn rather than left showing its delimiters.
  *
- * `container` rather than the document, because the cue overlay and the speaker page are Lit
- * components and `querySelectorAll` does not cross a shadow boundary.
- *
- * A deck whose notebook and cues hold no math never asks, so it never fetches the build.
+ * A deck whose notebook holds no math never asks, so it never fetches the build.
  */
 export async function typesetMath(container: Element): Promise<void> {
   const math = container.querySelectorAll(".tex")
@@ -73,7 +63,6 @@ export async function typesetMath(container: Element): Promise<void> {
     // renderer failing rather than the formula being wrong. The delimiters stay on the slide,
     // which is a failure a lecturer can see and read past rather than a blank card.
   }
-  shareStyles(container)
 }
 
 /**
@@ -86,33 +75,6 @@ export async function typesetMath(container: Element): Promise<void> {
  */
 export function clearMath(container: Element): void {
   window.MathJax?.typesetClear?.([container])
-}
-
-/**
- * Give the shadow root `container` sits in MathJax's own stylesheet.
- *
- * A document stylesheet does not cross a shadow boundary, and the rule that matters most is the
- * one hiding `mjx-assistive-mml` — `position: absolute` under a 1px clip. Without it the
- * MathML a screen reader reads is laid out as visible text beside the glyphs, which on a cue
- * measures as a formula twice its proper width with the drawn glyphs pushed off the baseline.
- *
- * Re-copied after every pass rather than adopted once, because MathJax extends that stylesheet
- * as it meets constructs it has not drawn before.
- */
-function shareStyles(container: Element): void {
-  const root = container.getRootNode()
-  const source = document.getElementById(STYLE_ID)
-  if (!(root instanceof ShadowRoot) || source === null) {
-    return
-  }
-
-  // One sheet for every root, so a pass that grows it reaches the cues that adopted it earlier
-  // rather than leaving each root holding whatever the stylesheet said when it first drew.
-  shared ??= new CSSStyleSheet()
-  shared.replaceSync(source.textContent)
-  if (!root.adoptedStyleSheets.includes(shared)) {
-    root.adoptedStyleSheets = [...root.adoptedStyleSheets, shared]
-  }
 }
 
 /**
@@ -133,9 +95,8 @@ function load(): Promise<void> {
     // nothing to skip or force. Nothing in the tree carries `no-MαθJax` either.
     options: { ignoreHtmlClass: "no-MαθJax", processHtmlClass: "tex" },
     startup: {
-      // Every pass names the container it just painted, so a document-wide sweep would reach no
-      // cue behind a shadow root and would be the one pass able to find a `$` in prose that no
-      // `.tex` element wraps.
+      // Every pass names the container it just painted, and a document-wide sweep would be the
+      // one pass able to find a `$` in prose that no `.tex` element wraps.
       typeset: false,
     },
     tex: {
@@ -144,10 +105,9 @@ function load(): Promise<void> {
         ["\\(", "\\)"],
       ],
     },
-    // `local` where Pluto has `global`: a global cache puts every glyph in one `<svg>` in the
-    // document and has each formula reach it through `<use href="#…">`, and that reference does
-    // not cross a shadow boundary — so a cue draws a correctly sized box containing nothing.
-    // Local caching repeats the paths inside each formula's own `<defs>`. Still no font files.
+    // `local` where Pluto has `global`: each formula carries its glyph paths in its own `<defs>`
+    // rather than reaching one document-wide `<svg>` through `<use href="#…">`, so a formula's
+    // own subtree is all it needs to draw. Still no font files.
     svg: { fontCache: "local" },
   }
 
