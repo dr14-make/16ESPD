@@ -27,7 +27,7 @@ for its own pages, Pluto directly for the websocket that carries cell output and
 
 A notebook that declares a bond named `deck_theme` is told which color scheme the deck is
 being shown in, as `"light"` or `"dark"`, which is how a Julia-rendered plot follows the deck
-into dark mode. See `DESIGN.md`.
+into dark mode.
 """
 function present(deck_path::AbstractString;
         port::Integer=DECK_PORT_DEFAULT,

@@ -1,8 +1,7 @@
-// Drawing the LaTeX that reaches a card or a cue.
+// Drawing the LaTeX that reaches a card.
 //
 // The markup is Pluto's: `.tex` elements carrying their own `$` delimiters, written by the
-// kernel for a card and by `math.markup.ts` for a cue, so one pass covers both. See DESIGN.md
-// § Math is Pluto's markup.
+// kernel.
 //
 // MathJax draws to SVG, so every glyph is a path and there are no font files to serve.
 

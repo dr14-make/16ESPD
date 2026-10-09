@@ -1,6 +1,4 @@
 // The deck's one connection to Pluto: cell output out, bond values in.
-//
-// Every rule encoded here was a silent failure in the spike first. See pluteSpike/README.md.
 
 import { Host } from "@plutojl/rainbow"
 import type { Worker } from "@plutojl/rainbow"

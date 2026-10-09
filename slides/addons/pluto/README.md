@@ -10,7 +10,7 @@ publishes a live deck like any other; with no kernel behind it, each card shows 
 addons:
   - pluto
 pluto:
-  notebook: ../../../notebooks/lecture01/<notebook>.jl
+  notebook: ../../../pluteSpike/PlutoDeck.jl/test/fixtures/browser.jl
 ---
 
 ## Proportional

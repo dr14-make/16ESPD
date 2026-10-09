@@ -1,7 +1,7 @@
 // Writing bond values so that a burst becomes one reactive run.
 //
-// Two rules, both of which were a silent failure in the spike first: what a burst of bond
-// changes becomes, and when a reactive run counts as over.
+// Two rules, each of which fails silently when broken: what a burst of bond changes becomes,
+// and when a reactive run counts as over.
 
 /** How long bond changes are collected before they are written, in milliseconds. */
 const BATCH_MS = 20
