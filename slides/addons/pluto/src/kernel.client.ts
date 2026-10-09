@@ -45,14 +45,50 @@ export async function connect(address: KernelAddress): Promise<Kernel> {
     throw new Error("this @plutojl/rainbow Worker cannot write bonds as one notebook update")
   }
 
-  // `present` blocks until the kernel is ready, so a deck that finds it otherwise has a kernel
-  // that died or parked afterwards, and restarting is the only way back.
-  const kernel = new Kernel(worker, writeBonds)
-  if (kernel.status !== "ready") {
+  await firstState(worker, address.plutoUrl)
+
+  // `present` blocks until the kernel is ready, so a notebook with no process is one whose
+  // kernel died afterwards, and restarting is the only way back. Every window shares that one
+  // kernel, so no other status restarts it: Pluto moves on from `starting` and
+  // `waiting_to_restart` by itself, and `waiting_for_permission` is the notebook owner's to grant.
+  const state: unknown = worker.getState()
+  if (isNotebookState(state) && state.process_status === "no_process") {
     await worker.restart()
   }
 
-  return kernel
+  return new Kernel(worker, writeBonds)
+}
+
+/** How long a connected worker may take to deliver the notebook's state. */
+const FIRST_STATE_MS = 10_000
+
+/**
+ * Resolve once the server's notebook state has replaced the placeholder rainbow starts from.
+ *
+ * The placeholder reports `starting` and holds no cells, and the server's state is applied in a
+ * patch queue `connect()` does not wait for. Pluto's own state always names the notebook's path.
+ */
+function firstState(worker: Worker, plutoUrl: string): Promise<void> {
+  const arrived = (): boolean => {
+    const state: unknown = worker.getState()
+    return isRecord(state) && typeof state.path === "string" && state.path !== ""
+  }
+  if (arrived()) {
+    return Promise.resolve()
+  }
+  return new Promise((resolve, reject) => {
+    const stop = worker.onUpdate(() => {
+      if (arrived()) {
+        clearTimeout(timer)
+        stop()
+        resolve()
+      }
+    })
+    const timer = setTimeout(() => {
+      stop()
+      reject(new Error(`${plutoUrl} sent no notebook state`))
+    }, FIRST_STATE_MS)
+  })
 }
 
 /**
