@@ -55,7 +55,7 @@ export function vendor(): Plugin {
   return {
     name: "pluto-vendor",
     configureServer(server) {
-      server.middlewares.use(async (request, response, next) => {
+      server.middlewares.use((request, response, next) => {
         const prefix = `${server.config.base}${DIRECTORY}/`
         const path = request.url?.split("?")[0] ?? ""
         const name = path.startsWith(prefix) ? path.slice(prefix.length) : ""
@@ -64,12 +64,13 @@ export function vendor(): Plugin {
           next()
           return
         }
-        try {
-          response.setHeader("Content-Type", "text/javascript")
-          response.end(await content(name, load))
-        } catch (error) {
-          next(error)
-        }
+        response.setHeader("Content-Type", "text/javascript")
+        content(name, load).then(
+          (body) => response.end(body),
+          (error: unknown) => {
+            next(error)
+          },
+        )
       })
     },
     async generateBundle() {

@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint"
 export default tseslint.config(
   { ignores: ["**/node_modules/", "dist/", "**/.slidev/"] },
   {
-    files: ["addons/pluto/{src,test}/**/*.ts"],
+    files: ["addons/pluto/**/*.ts"],
     extends: [
       js.configs.recommended,
       tseslint.configs.strictTypeChecked,
@@ -15,7 +15,7 @@ export default tseslint.config(
     },
     rules: {
       // A cast asserts what the compiler could not check, and the addon's inputs are a websocket
-      // and a session file — exactly where an assertion is a runtime error in waiting.
+      // and a deck's headmatter — exactly where an assertion is a runtime error in waiting.
       "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
       "@typescript-eslint/consistent-type-imports": [
         "error",
