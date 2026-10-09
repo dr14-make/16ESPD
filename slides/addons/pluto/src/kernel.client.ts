@@ -101,6 +101,7 @@ export class Kernel {
   readonly #worker: Worker
   #watched: readonly string[] = []
   readonly #bonds: BondQueue
+  readonly #scanned = new Map<string, { readonly body: string; readonly ids: readonly string[] }>()
 
   constructor(worker: Worker, writeBonds: BondWriter) {
     this.#worker = worker
@@ -134,24 +135,10 @@ export class Kernel {
 
   /** What a cell is currently showing, or `null` while it has nothing whole to show. */
   content(cellId: string): CardContent | null {
-    const output = this.#output(cellId)
-    if (output?.body === undefined || output.body === null) {
+    const output = this.#wholeOutput(cellId)
+    if (output === null) {
       return null
     }
-
-    const published = this.#state()?.published_objects ?? {}
-    // A body and the payloads it reaches for arrive in separate patches, and the body can be
-    // first. A card painted in that window resolves `getPublishedObject` to `undefined`, and
-    // the script it was handed throws — leaving a card that reports `live`, logs to a console
-    // nobody is reading, and shows an empty box. Output only half here is not output.
-    if (typeof output.body === "string") {
-      for (const [, id] of output.body.matchAll(PUBLISHED_REFERENCE)) {
-        if (id === undefined || !(id in published)) {
-          return null
-        }
-      }
-    }
-
     return {
       source: "live",
       stamp: output.last_run_timestamp,
@@ -159,9 +146,45 @@ export class Kernel {
       body: output.body,
       // Taken with the body rather than read when a script asks, because a re-run landing in
       // between replaces `published_objects` whole and takes this body's ids with it.
-      published: { ...published },
+      published: { ...this.#state()?.published_objects },
       cellId,
     }
+  }
+
+  /**
+   * A cell's output, or `null` while it has no body or the payloads its body reaches for.
+   *
+   * A body and those payloads arrive in separate patches, and the body can be first. A card
+   * painted in that window resolves `getPublishedObject` to `undefined`, and the script it was
+   * handed throws — leaving a card that reports `live`, logs to a console nobody is reading, and
+   * shows an empty box. Output only half here is not output.
+   */
+  #wholeOutput(cellId: string): CellOutput | null {
+    const output = this.#output(cellId)
+    if (output?.body === undefined || output.body === null) {
+      return null
+    }
+    const published = this.#state()?.published_objects ?? {}
+    for (const id of this.#references(cellId, output.body)) {
+      if (!(id in published)) {
+        return null
+      }
+    }
+    return output
+  }
+
+  /** The payload ids a cell body reaches for, scanned once per body rather than once per poll. */
+  #references(cellId: string, body: unknown): readonly string[] {
+    if (typeof body !== "string") {
+      return []
+    }
+    const scanned = this.#scanned.get(cellId)
+    if (scanned?.body === body) {
+      return scanned.ids
+    }
+    const ids = Array.from(body.matchAll(PUBLISHED_REFERENCE), ([, id]) => id ?? "")
+    this.#scanned.set(cellId, { body, ids })
+    return ids
   }
 
   /**
@@ -238,6 +261,8 @@ export class Kernel {
   }
 
   #stamps(): ReadonlyMap<string, number> {
-    return new Map(this.#watched.map((cellId) => [cellId, this.content(cellId)?.stamp ?? 0]))
+    return new Map(
+      this.#watched.map((cellId) => [cellId, this.#wholeOutput(cellId)?.last_run_timestamp ?? 0]),
+    )
   }
 }
