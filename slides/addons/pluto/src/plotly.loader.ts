@@ -44,8 +44,7 @@ export function needsPlotly(body: unknown): boolean {
  * asserts a drawn graph rather than a loaded script, so the failure is caught where it shows.
  *
  * The version the link declares is the key, because a plot cell asks for one version by name
- * and falls through to the network for any other. PlutoDeck.jl's `test/addon.jl` asserts the two
- * agree.
+ * and falls through to the network for any other. The live suite asserts the two agree.
  */
 export function loadPlotly(): Promise<void> {
   loading ??= load()

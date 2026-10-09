@@ -3,7 +3,7 @@ dist/
 site/.vitepress/cache/
 decks/handson-01/public/img/
 site/public/handson/lecture-01/img/
-# Pluto's URL and secret, which PlutoDeck's `present` writes beside a live deck.
-.pluto-session.json
+# Resolved on first use by the Julia that starts Pluto for a live deck.
+addons/pluto/kernel/Manifest.toml
 # The deck copies the pluto addon's live suite presents, left behind only by a run cut short.
 decks/pluto-fixture/.browser-*/

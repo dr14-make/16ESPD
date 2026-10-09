@@ -47,10 +47,11 @@ export async function connect(address: KernelAddress): Promise<Kernel> {
 
   await firstState(worker, address.plutoUrl)
 
-  // `present` blocks until the kernel is ready, so a notebook with no process is one whose
-  // kernel died afterwards, and restarting is the only way back. Every window shares that one
-  // kernel, so no other status restarts it: Pluto moves on from `starting` and
-  // `waiting_to_restart` by itself, and `waiting_for_permission` is the notebook owner's to grant.
+  // Pluto opens the notebook, `starting`, before it answers the dev server that hands the page
+  // this address, so a notebook with no process is one whose kernel died afterwards, and
+  // restarting is the only way back. Every window shares that one kernel, so no other status
+  // restarts it: Pluto moves on from `starting` and `waiting_to_restart` by itself, and
+  // `waiting_for_permission` is the notebook owner's to grant.
   const state: unknown = worker.getState()
   if (isNotebookState(state) && state.process_status === "no_process") {
     await worker.restart()

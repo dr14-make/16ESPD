@@ -14,12 +14,12 @@ addons:
 # The live suite presents a copy of this deck naming a copy of the notebook, since Pluto
 # rewrites the notebook it opens; this names the notebook the fixture's cards are checked against.
 pluto:
-  notebook: ../../../pluteSpike/PlutoDeck.jl/test/fixtures/browser.jl
+  notebook: browser.jl
 ---
 
 # Live cards
 
-The deck the pluto addon's live suite drives, against PlutoDeck.jl's `test/fixtures/browser.jl`.
+The deck the pluto addon's live suite drives, against `browser.jl` beside it.
 This cover has no cards.
 
 ---

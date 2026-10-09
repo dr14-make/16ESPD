@@ -16,7 +16,6 @@ import { cardIndex } from "./card.index.js"
 import type { CardIndex } from "./card.index.js"
 import { isDeckSession } from "./deck.session.js"
 import { THEME_BOND } from "./pluto.interface.js"
-import deckSession from "virtual:pluto-session"
 
 /** How a cell that renders an input reads, which is what earns its card a place in the bond layer. */
 const BIND = "@bind"
@@ -59,6 +58,9 @@ export function usePluto(): Promise<Pluto> {
 async function start(view: View): Promise<Pluto> {
   showStatus({})
   sizePlotsToTheirCards()
+  // Imported here, because the dev server answers it only once Pluto does, and the deck around
+  // the cards renders meanwhile.
+  const { default: deckSession } = await import("virtual:pluto-session")
   if (!isDeckSession(deckSession)) {
     return fail("the deck's dev server handed it a session this addon cannot read")
   }

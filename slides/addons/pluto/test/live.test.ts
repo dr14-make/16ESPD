@@ -1,14 +1,14 @@
-// Live cards, driven in real headless Chromium: the fixture deck served by `slidev dev`, against a
-// real kernel PlutoDeck's `present` brought up. Run with `npm run test:live`; it needs Julia with
-// PlutoDeck.jl instantiated, so it stays out of `npm test` and CI.
+// Live cards, driven in real headless Chromium: the fixture deck served by `slidev dev`, against
+// the real kernel it starts. Run with `npm run test:live`; it needs Julia, so it stays out of
+// `npm test` and CI.
 //
 // Everything is asserted through the DOM a real browser built, over HTTP: a missing `process` shim
 // that Node supplies for free, and a static handler never exercised because the page was loaded
 // from disk, were both invisible to anything less.
 import assert from "node:assert/strict"
-import { spawn } from "node:child_process"
+import { execFileSync, spawn } from "node:child_process"
 import type { ChildProcess } from "node:child_process"
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { createServer } from "node:net"
 import { tmpdir } from "node:os"
 import { basename, dirname, join, resolve } from "node:path"
@@ -18,12 +18,11 @@ import { chromium } from "playwright-chromium"
 import type { Browser, BrowserContext, Page } from "playwright-chromium"
 
 const SLIDES = resolve(import.meta.dirname, "../../..")
-const PLUTO_DECK = resolve(SLIDES, "../pluteSpike/PlutoDeck.jl")
 const FIXTURE = join(SLIDES, "decks/pluto-fixture/fixture.md")
-const NOTEBOOK = join(PLUTO_DECK, "test/fixtures/browser.jl")
+const NOTEBOOK = join(SLIDES, "decks/pluto-fixture/browser.jl")
 
-/** A cold kernel is most of the time `present` takes to write its session file. */
-const PRESENT_TIMEOUT = 300_000
+/** Julia starting Pluto, and Pluto starting the notebook's worker, from cold. */
+const KERNEL_TIMEOUT = 300_000
 const SLIDEV_TIMEOUT = 60_000
 const SHUTDOWN_TIMEOUT = 60_000
 /** A module script delays `load` until it has evaluated, and the deck's awaits its kernel. */
@@ -159,8 +158,7 @@ async function freePort(): Promise<number> {
 /**
  * The fixture deck, naming a copy of its notebook, in a directory of its own beside the fixture.
  * Pluto rewrites the notebook it opens, so the kernel gets a copy; the deck stays inside the
- * workspace so Slidev resolves its addons, and the session file `present` writes beside it is
- * this run's alone.
+ * workspace so Slidev resolves its addons.
  */
 function workspace(): { deck: string; notebook: string } {
   const notebook = join(mkdtempSync(join(tmpdir(), "pluto-live-")), "browser.jl")
@@ -171,6 +169,30 @@ function workspace(): { deck: string; notebook: string } {
   const deck = join(mkdtempSync(join(dirname(FIXTURE), ".browser-")), basename(FIXTURE))
   writeFileSync(deck, source.replace(named, `  notebook: ${notebook}`))
   return { deck, notebook }
+}
+
+/** Every Julia process descended from `root`: the server and each notebook's worker. */
+function juliaProcesses(root: number): number[] {
+  const table = execFileSync("ps", ["-A", "-o", "pid=,ppid=,comm="], { encoding: "utf8" })
+  const rows = table
+    .split("\n")
+    .map((line) => line.trim().split(/\s+/))
+    .map(([pid, ppid, command]) => ({ pid: Number(pid), ppid: Number(ppid), command }))
+  const tree = [root]
+  for (const pid of tree) {
+    tree.push(...rows.filter((row) => row.ppid === pid).map((row) => row.pid))
+  }
+  return rows.filter((row) => tree.includes(row.pid) && row.command === "julia").map((r) => r.pid)
+}
+
+/** Whether `pid` has not exited; a zombie has, and only awaits its reaping. */
+function alive(pid: number): boolean {
+  try {
+    const state = execFileSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8" })
+    return !state.trim().startsWith("Z")
+  } catch {
+    return false
+  }
 }
 
 /** Every console error, uncaught exception and browser log error `page` produces. */
@@ -204,6 +226,23 @@ function watchBondWrites(page: Page): string[] {
     }),
   )
   return writes
+}
+
+/**
+ * Every Plotly version a plot cell the kernel sent `page` asks for, read off the websocket, since
+ * a painted card keeps no copy of the script that drew it.
+ */
+function watchPlotlyVersionsAsked(page: Page): Set<string> {
+  const asked = new Set<string>()
+  page.on("websocket", (socket) =>
+    socket.on("framereceived", ({ payload }) => {
+      const text = typeof payload === "string" ? payload : payload.toString("latin1")
+      for (const [, version] of text.matchAll(/plutoplotly_imports\?\.\['([^']+)'\]/g)) {
+        asked.add(version ?? "")
+      }
+    }),
+  )
+  return asked
 }
 
 /**
@@ -263,7 +302,6 @@ const frequencyWrites = (writes: string[]) => writes.filter((w) => w.includes("f
 
 describe("a live deck in a real browser", () => {
   const { deck, notebook } = workspace()
-  let present: Process | undefined
   let slidev: Process | undefined
   let browser: Browser | undefined
   let context: BrowserContext
@@ -271,19 +309,12 @@ describe("a live deck in a real browser", () => {
   let url: string
   let viewProblems: string[]
   let viewWrites: string[]
+  let viewPlotlyAsked: Set<string>
   let mutations: Awaited<ReturnType<typeof countCardMutations>>
-  const sessionFile = join(dirname(deck), ".pluto-session.json")
+  /** Every Julia process this run started, once its kernel is up. */
+  let julia: number[] = []
 
   before(async () => {
-    present = start(
-      process.env.JULIA ?? "julia",
-      ["--startup-file=no", `--project=${PLUTO_DECK}`, "-e", "using PlutoDeck; present(ARGS[1])"]
-        .concat(deck),
-      SLIDES,
-    )
-    const written = () => existsSync(sessionFile)
-    await until(`present to write ${sessionFile}`, written, PRESENT_TIMEOUT, present)
-
     const port = await freePort()
     url = `http://localhost:${port}`
     const args = [deck, "--port", String(port), "--open", "false"]
@@ -299,8 +330,13 @@ describe("a live deck in a real browser", () => {
     view = await context.newPage()
     viewProblems = watchProblems(view)
     viewWrites = watchBondWrites(view)
+    viewPlotlyAsked = watchPlotlyVersionsAsked(view)
     await view.addInitScript(RECORD_CARD_SOURCES + ";" + WATCH_DATA_URLS)
     await view.goto(`${url}/#/2`, { timeout: NAVIGATION_TIMEOUT })
+
+    const kernelUp = () => view.evaluate(() => document.body.dataset.kernel === "ready")
+    await until("slidev to bring the kernel up", kernelUp, KERNEL_TIMEOUT, slidev)
+    julia = slidev.child.pid === undefined ? [] : juliaProcesses(slidev.child.pid)
   })
 
   after(async () => {
@@ -308,8 +344,9 @@ describe("a live deck in a real browser", () => {
     if (slidev !== undefined) {
       await stop(slidev, "SIGTERM", SHUTDOWN_TIMEOUT)
     }
-    if (present !== undefined) {
-      await stop(present, "SIGINT", SHUTDOWN_TIMEOUT)
+    // Only a run that failed to stop its kernel leaves one here for the next run to trip over.
+    for (const pid of julia.filter(alive)) {
+      process.kill(pid, "SIGKILL")
     }
     rmSync(dirname(deck), { recursive: true, force: true })
     rmSync(dirname(notebook), { recursive: true, force: true })
@@ -447,6 +484,10 @@ describe("a live deck in a real browser", () => {
     const version = await source.evaluate((l: HTMLElement) => l.dataset.version)
     const imports = await view.evaluate<string[]>("Object.keys(window.plutoplotly_imports ?? {})")
     assert.deepEqual(imports, [version])
+    // The key a plot cell asks for is the one PlutoPlotly picked in Julia, so a bumped PlutoPlotly
+    // has to move `plotly.js-dist-min` and the link's `data-version` with it.
+    assert.ok(viewPlotlyAsked.size > 0)
+    assert.deepEqual([...viewPlotlyAsked], [version])
   })
 
   it(
@@ -653,21 +694,16 @@ describe("a live deck in a real browser", () => {
 
     before(async () => {
       await browser?.close()
-      if (slidev !== undefined) {
-        await stop(slidev, "SIGTERM", SHUTDOWN_TIMEOUT)
-      }
+      // What a terminal sends slidev on Ctrl-C when its stdin is not a terminal.
       stopped =
-        present === undefined ? "never started" : await stop(present, "SIGINT", SHUTDOWN_TIMEOUT)
+        slidev === undefined ? "never started" : await stop(slidev, "SIGINT", SHUTDOWN_TIMEOUT)
     })
 
-    it("needs nothing but an interrupt", () => {
-      // The lifecycle `present` prints as its last line, and the only one a lecturer has.
-      const said = present?.output() ?? ""
-      assert.equal(stopped, "interrupt", `present stopped by ${stopped}, and said:\n${said}`)
-    })
-
-    it("takes the deck's session file with it", () => {
-      assert.ok(!existsSync(sessionFile))
+    it("leaves no Julia process behind", async () => {
+      // The Pluto server and the notebook's worker, at least.
+      assert.ok(julia.length >= 2, `the kernel ran as ${julia.join(", ")}`)
+      assert.notEqual(stopped, "kill", "slidev outlived an interrupt")
+      await until("every Julia process to exit", () => !julia.some(alive), 10_000)
     })
   })
 })
