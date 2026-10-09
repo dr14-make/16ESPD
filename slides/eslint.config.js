@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint"
 export default tseslint.config(
   { ignores: ["**/node_modules/", "dist/", "**/.slidev/"] },
   {
-    files: ["addons/pluto/src/**/*.ts"],
+    files: ["addons/pluto/{src,test}/**/*.ts"],
     extends: [
       js.configs.recommended,
       tseslint.configs.strictTypeChecked,
@@ -34,7 +34,7 @@ export default tseslint.config(
   },
   {
     // `node:test` returns a promise per case and its own runner awaits them.
-    files: ["addons/pluto/src/**/*.test.ts"],
+    files: ["addons/pluto/{src,test}/**/*.test.ts"],
     rules: { "@typescript-eslint/no-floating-promises": "off" },
   },
 )

@@ -8,8 +8,9 @@
     "site": "node scripts/images.mjs && vitepress dev site",
     "build": "node scripts/build.mjs",
     "check": "node scripts/check.mjs",
-    "lint": "eslint addons/pluto/src",
+    "lint": "eslint addons/pluto/src addons/pluto/test",
     "test": "node --test addons/pluto/src/*.test.ts",
+    "test:live": "node --test addons/pluto/test/live.test.ts",
     "typecheck": "tsc -p addons/pluto"
   },
   "devDependencies": {

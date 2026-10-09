@@ -19,8 +19,8 @@ import PlutoPlotly
     @testset "every library a plot script imports by URL is one the deck serves" begin
         # PlutoPlotly's scripts import lodash and interact.js from a CDN by absolute URL, with a
         # top-level await, so a specifier the import map does not name is a plot card that draws
-        # nothing in a room with no wifi. The browser suite covers it too, but only where Chrome
-        # is installed and only after a cold kernel; this costs nothing and always runs.
+        # nothing in a room with no wifi. The addon's live suite covers it too, but only after a
+        # cold kernel; this costs nothing and always runs.
         #
         # Read out of the installed PlutoPlotly rather than written down, so a release that
         # moves a URL fails here naming the one that drifted.

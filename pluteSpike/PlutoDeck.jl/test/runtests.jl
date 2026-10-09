@@ -7,7 +7,7 @@ const THREE_CARDS = joinpath(FIXTURES, "three-cards.jl")
 const RUNNABLE = joinpath(FIXTURES, "runnable.jl")
 const LECTURE_DECK = joinpath(FIXTURES, "lecture.md")
 
-"The Slidev workspace, and the fixture deck in it that the browser suite drives."
+"The Slidev workspace, and the fixture deck in it that its live suite drives."
 const SLIDES = normpath(joinpath(@__DIR__, "..", "..", "..", "slides"))
 const FIXTURE_DECK = joinpath("decks", "pluto-fixture", "fixture.md")
 
@@ -31,5 +31,4 @@ end
     include("addon.jl")
     include("deck.jl")
     include("session.jl")
-    include("browser.jl")
 end

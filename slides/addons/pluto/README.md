@@ -64,12 +64,17 @@ the notebook it opens, so presenting can leave the notebook file modified.
 - **Dark mode reaches the plots** of a notebook that declares a `deck_theme` bond. Only the
   audience window writes it.
 
-The browser suite in `pluteSpike/PlutoDeck.jl/test/browser.jl` drives `slides/decks/pluto-fixture/`
-against a real kernel:
+The live suite in `test/live.test.ts` drives `slides/decks/pluto-fixture/` in headless Chromium,
+through Playwright, against a real kernel: it starts `present` and `slidev dev` itself, cuts the
+network, and stops both however the run ends. It needs Julia, with PlutoDeck.jl instantiated as
+above (set `JULIA` to use another binary), so it stays out of `npm test` and CI. From `slides/`:
 
 ```sh
-julia --project=pluteSpike/PlutoDeck.jl -e 'using Pkg; Pkg.test()'
+npx playwright install chromium   # once, if Playwright's Chromium is missing
+npm run test:live
 ```
 
-The unit tests in `src/` run with the workspace's `npm test`, its types with `npm run typecheck`,
-and its lint with `npm run lint`.
+The unit tests in `src/` run with the workspace's `npm test`, and the types and lint of `src/` and
+`test/` with `npm run typecheck` and `npm run lint`. PlutoDeck.jl's own tests, which check the
+launcher and that the addon's Plotly and import map match the installed PlutoPlotly, run with
+`julia --project=pluteSpike/PlutoDeck.jl -e 'using Pkg; Pkg.test()'`.

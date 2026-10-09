@@ -22,7 +22,7 @@ pluto:
         @test load_deck(deck_file(ONE_CARD)).notebook_path == realpath(THREE_CARDS)
     end
 
-    @testset "the Slidev fixture deck names the browser suite's notebook" begin
+    @testset "the Slidev fixture deck names the live suite's notebook" begin
         @test load_deck(joinpath(SLIDES, FIXTURE_DECK)).notebook_path ==
             realpath(joinpath(FIXTURES, "browser.jl"))
     end

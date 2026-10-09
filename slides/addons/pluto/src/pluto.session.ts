@@ -119,7 +119,7 @@ function fail(failure: string): never {
   throw new Error(failure)
 }
 
-/** Put the window's kernel state on the page, where the browser suite reads it. */
+/** Put the window's kernel state on the page, where the live suite reads it. */
 function showStatus(report: KernelReport): void {
   const { state } = kernelStatus(report)
   if (document.body.dataset.kernel !== state) {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { kernelStatus } from "./kernel.status.ts"
 
-// The states a live kernel does not pass through, which the browser suite cannot reach without
+// The states a live kernel does not pass through, which the live suite cannot reach without
 // taking the kernel down and ending its own run.
 test("every kernel state the chrome can be in maps to one of four", () => {
   assert.equal(kernelStatus({ process: null }).state, "connecting")

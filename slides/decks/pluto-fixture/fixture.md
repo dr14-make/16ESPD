@@ -4,14 +4,14 @@ title: Live cards — browser fixture
 # `fixture.md` rather than `slides.md`, so the workspace does not build and publish it as a deck.
 routerMode: hash
 transition: none
-# The browser suite cuts the network, so anything Slidev fetches off a CDN by default — a stylesheet
+# The addon's live suite cuts the network, so anything Slidev fetches off a CDN by default — a stylesheet
 # off Google Fonts, its favicon — would be a console error.
 fonts:
   provider: none
 favicon: "data:,"
 addons:
   - pluto
-# The browser suite presents a copy of this deck naming a copy of the notebook, since Pluto
+# The live suite presents a copy of this deck naming a copy of the notebook, since Pluto
 # rewrites the notebook it opens; this names the notebook the fixture's cards are checked against.
 pluto:
   notebook: ../../../pluteSpike/PlutoDeck.jl/test/fixtures/browser.jl
@@ -19,8 +19,8 @@ pluto:
 
 # Live cards
 
-The deck the PlutoDeck.jl browser suite drives, against `test/fixtures/browser.jl`. This cover
-has no cards.
+The deck the pluto addon's live suite drives, against PlutoDeck.jl's `test/fixtures/browser.jl`.
+This cover has no cards.
 
 ---
 
