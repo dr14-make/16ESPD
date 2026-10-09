@@ -13,7 +13,10 @@ work offline, but it costs a run for every combination of inputs and more toolin
 
 Lecture 1 is the first to move. Each section's Jupyter notebook gets a Pluto twin. A twin runs the
 real Dyad models, not a surrogate, and it activates the repo's project rather than using Pluto's
-built-in package manager.
+built-in package manager. Its plots are interactive PlutoPlotly figures, not Plots.jl images:
+the addon's offline Plotly loader, card sizing and dark mode were built for PlutoPlotly, and its
+plot data travels as published objects, so a snapshot carries it. Plots.jl's own Plotly backend
+loads plotly.js from a CDN, which a lecture hall without a network cannot reach.
 
 ## Consequences
 
@@ -34,4 +37,6 @@ built-in package manager.
   until it is ready. A slider move then takes tens of milliseconds, most of it drawing the plot.
   Sliders bind only tunable parameters, because a structural change builds a new model, which
   takes seconds.
+- The shared plot helpers gain PlutoPlotly versions beside the Plots.jl ones, which the Jupyter
+  notebooks keep using until they are deleted.
 - `save_figure` and the deck's SVG figures retire once every section shows live cards.
