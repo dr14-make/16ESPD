@@ -9,7 +9,9 @@ Julia keep working.
 
 The presentation layer owns layout and nothing else. Every piece of content — plots, widgets,
 readouts, prose — is authored in Julia, in a notebook that remains a normal Pluto notebook you
-can open and edit in Pluto.
+can open and edit in Pluto. Slide titles are the one exception, for the reason § Open records.
+Speaker cues are not a second one: a cue is never shown to the room, so it is not content the
+presentation layer owns, and § Speaker cues says where it lives instead.
 
 This document records what was decided and why. `README.md` in this directory covers the
 working spike the decisions were tested against, including the gotchas that shaped them.
@@ -173,6 +175,80 @@ reactive run already repaints every card downstream, so the scheme travels the p
 travels. The name is a contract with every notebook that opts in, which is why it is fixed
 here rather than left to each deck.
 
+### Speaker cues are the deck's, and reach the lecturer without a popup
+
+A cue — timing, what to say, what to do when a demo misbehaves — cannot live in the notebook at
+all, and not as a matter of taste. The card contract is that a cell carrying a `card` key is
+published and a cell without one cannot reach a slide. A cue is the opposite of published: in
+the notebook it is either visible to every student who opens the file, or it is scratch work no
+deck can read.
+
+Cues are a slide-level key with no geometry, because they are not placed anywhere:
+
+```json
+{ "title": "Proportional", "notes": "notes/proportional.md", "cards": [ … ] }
+```
+
+Giving them `x, y, w, h` would add four numbers the loader then has to remember to ignore.
+
+The text is a `.md` file beside the deck, never inline in `deck.json`. JSON's `\n` does reach
+markdown as a real newline — the parser unescapes it — so that is an authoring cost rather than
+a rendering one: a three-hundred-word cue inline is one enormous line, with no spellcheck, whose
+every typo fix reads in a diff as the whole paragraph changing. One file per deck with the
+slides marked off inside it fails differently: any marker based on position re-attaches every
+note when a slide moves, which is what ruled out addressing cards by index.
+
+The loader resolves a relative path against the deck file and refuses a deck naming a file that
+is not there, which is what `"notebook"` already does, and enforces no layout beyond that. A
+folder per deck is convention, carried by the example deck, and it is what keeps two decks'
+wording from colliding:
+
+```
+decks/
+├── lecture-01.deck.json
+├── lecture-01/notes/proportional.md
+├── lecture-01-revision.deck.json
+└── lecture-01-revision/notes/proportional.md
+```
+
+Paths are checked once, at load; the text is read per request, so `/api/deck` reflects an edit
+on the next browser refresh with the kernel untouched. Baking it into the loaded `Deck` would
+make fixing one word cost a thirty-second kernel restart, and wording that expensive to look at
+gets written blind.
+
+The browser renders the markdown, with a parser vendored into `frontend/vendor/` beside the two
+Rainbow bundles already there. Julia's `Markdown` stdlib needs a live kernel, and a cue is worth
+most when the kernel is slow to start or has been killed — exactly the case a round-trip would
+fail. A hand-written subset was the tempting middle, and the gridstack decision above rejected a
+2.1 MB dependency for ten lines of CSS on what looks like the same reasoning. It does not
+transfer: `{x, y, w, h}` is a closed problem a CSS grid implements exactly, while markdown has
+no bottom, and a subset fails by rendering a nested list flat, with no error, in front of a
+room. Against the 3.7 MB of `rainbow-ui.esm.js` already served by hand, a parser is a rounding
+error.
+
+Cues reach the lecturer through an on-slide overlay bound to a key, which is what the reveal.js
+deck in `docs/slides/lecture-01/` already does, for a reason recorded in its `deck.js`: a second
+window can be blocked, so "the guidance is never stranded". That constraint holds here and is
+stronger than it looks. A laptop plugged into a projector mirrors by default, and mirrored, a
+second window shows the cues to the room exactly as the overlay does. An extended display is
+arranged in a quiet office and forgotten in a strange lecture hall, so the overlay is the path
+that works without preparation rather than the degraded one.
+
+A cue-only speaker window follows it, separately. It renders no cards — no kernel, no Rainbow
+bundle, no bonds, only the cue text and which slide it belongs to — so it is a second page
+rather than a second renderer. Reveal's `S` is blocked because a keypress calls `window.open`
+from code; a link in the deck chrome is a click the viewer made and is not, and the two windows
+are same-origin and share a slide number over `BroadcastChannel` with no handshake.
+
+**Guidance prose on the slide is deferred, not rejected.** A sentence like "drag Kp until it
+oscillates" could be authored in the deck as well, and for a while this design said it should
+be. It is not built, because a notebook `md` cell carrying a `card` key already renders both in
+Pluto and on the slide from a single source, which is one fewer thing to keep in step. Two cases
+would bring it back: wording that must differ between the lecture, the revision deck and the
+student-facing cut over one notebook — the argument that moved slide titles — and a sentence
+that has to be readable in the twenty seconds before a kernel exists, which a notebook cell
+never is. Neither is pressing, and the machinery cues need is most of what it would take.
+
 ### One kernel per running instance; never a multi-tenant server
 
 Measured on a developer laptop, with a notebook that loads no packages whatsoever:
@@ -237,6 +313,24 @@ with Pluto.
 
 **A Node runtime at presentation time.** The spike needs both Julia and Node running, and that
 is its most fragile part.
+
+**Cue text inline in `deck.json`.** Not for `\n`, which JSON unescapes into a real newline, but
+for the diff: one enormous line, no spellcheck, and a one-word fix that reads as the whole
+paragraph changing.
+
+**One cue file per deck, with the slides marked off inside it.** Any marker based on position
+re-attaches every note when a slide moves, which is the failure that ruled out addressing cards
+by index.
+
+**Rendering cues through Julia's `Markdown` stdlib.** It needs a live kernel, and a cue earns
+its keep when the kernel is slow to start or has died.
+
+**A hand-written markdown subset.** Its failure mode is silent — a nested list rendered flat,
+with no error, in front of a room. The gridstack reasoning does not carry over, because
+`{x, y, w, h}` is a closed problem and markdown is not.
+
+**Speaker cues in the notebook.** The card contract publishes any cell carrying a `card` key, so
+a cue there is either shown to every student or unreachable by the deck.
 
 ## Open
 
