@@ -153,8 +153,10 @@ runs = [Ts => solve(p) for (Ts, p) in problems]
 </div>
 
 <!--
-**Point at** the fastest run and say: this sampled controller is close to the continuous-time
-reference from section 08.
+**Point at** the fastest run and say: this is the best the sampled controller does here. Do not
+claim it matches section 08's continuous run: even the fastest run overshoots far more, probably
+because this demo leaves its discrete derivative unseeded. The lesson is the trend across the
+family.
 
 **Then walk out along the family** and name each failure as it appears: overshoot, ringing,
 divergence.

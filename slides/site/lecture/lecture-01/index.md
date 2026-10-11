@@ -693,7 +693,7 @@ Lecture deck: [discretization](../../lecture-01/index.html#/discretization){targ
 
 Demo only: watch, nothing to build. The lecturer runs `SampledCruiseLoop`, the same loop around `GradeCar` with the controller replaced by the library's `DiscreteComponents.DiscretePIDStandard`: a periodic clock, a sampler on the setpoint and one on the measured speed, the discrete PID, and a zero-order hold in front of the car.
 
-The controller runs the Ziegler-Nichols PID gains of step 8 — `k = 67.41`, `Ti = 1.092`, `Td = 0.273`, `wd = 0` — with every limit lifted, on the 90 → 110 km/h step. Only the sample time `Ts` changes: 0.01, 0.1, 0.4 and 1 s. At 0.01 s the loop is close to the continuous one; as `Ts` grows the response overshoots, then rings, then does not come back. Two fixes follow: sample faster (`Ts = 0.05` s, gains untouched), or re-tune for the slow rate (`k = 20`, `Ti = 3`, `Td = 0.5` at `Ts = 1` s), which is stable but slower. `Ts` is structural, so each sample time is a recompile.
+The controller runs the Ziegler-Nichols PID gains of step 8 — `k = 67.41`, `Ti = 1.092`, `Td = 0.273`, `wd = 0` — with every limit lifted, on the 90 → 110 km/h step. Only the sample time `Ts` changes: 0.01, 0.1, 0.4 and 1 s. As `Ts` grows, the response overshoots more, then rings, then does not come back. Two fixes follow: sample faster (`Ts = 0.05` s, gains untouched), or re-tune for the slow rate (`k = 20`, `Ti = 3`, `Td = 0.5` at `Ts = 1` s), which is stable but slower. `Ts` is structural, so each sample time is a recompile.
 
 [![SampledCruiseLoop: clock, the two samplers, DiscretePIDStandard, the zero-order hold and the plant.](/lecture/lecture-01/img/step09-sampler.png)](/lecture/lecture-01/img/step09-sampler.png)
 
