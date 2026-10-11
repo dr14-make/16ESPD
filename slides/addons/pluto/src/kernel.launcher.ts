@@ -18,9 +18,6 @@ const KERNEL = fileURLToPath(new URL("../kernel/", import.meta.url))
 /** How long Julia gets to stop its workers once told to, before everything is killed. */
 const GRACE_MS = 5_000
 
-/** How often to ask a starting Pluto whether it answers yet. */
-const PING_MS = 500
-
 /** Signals that end Node without an `exit` event unless something listens for them. */
 const FATAL_SIGNALS = ["SIGINT", "SIGHUP"] as const
 
@@ -146,11 +143,8 @@ function kill(pids: readonly number[], signal: NodeJS.Signals): void {
 export interface PlutoServer {
   readonly plutoUrl: string
   readonly secret: string
-  /**
-   * Whether Pluto answered before Julia exited. It opens its notebooks before it listens, so an
-   * answer means they are listed.
-   */
-  readonly ready: Promise<boolean>
+  /** Resolves once Julia has exited, or failed to start. */
+  readonly exited: Promise<void>
   stop(): Promise<void>
 }
 
@@ -176,28 +170,15 @@ export async function launchPluto(
   ]
   const server = supervise(process.env.JULIA ?? "julia", args, log)
   return {
-    plutoUrl: `http://localhost:${port}`,
+    plutoUrl: `http://127.0.0.1:${port}`,
     secret,
-    ready: answers(`http://127.0.0.1:${port}/ping`, server.exited),
+    exited: server.exited,
     stop: () => server.stop(),
   }
 }
 
-/** Ask `url` until it answers, or until `exited` settles. */
-async function answers(url: string, exited: Promise<void>): Promise<boolean> {
-  const gone = exited.then(() => false)
-  for (;;) {
-    if (await fetch(url).then((response) => response.ok, () => false)) {
-      return true
-    }
-    if (!(await Promise.race([gone, sleep(PING_MS, true)]))) {
-      return false
-    }
-  }
-}
-
-/** A port nothing listens on yet. Pluto may lose it to another process before it binds. */
-async function freePort(): Promise<number> {
+/** A port nothing listens on yet. Whatever binds it may lose it to another process first. */
+export async function freePort(): Promise<number> {
   const server = createServer().listen(0, "127.0.0.1")
   await new Promise((done) => server.once("listening", done))
   const address = server.address()

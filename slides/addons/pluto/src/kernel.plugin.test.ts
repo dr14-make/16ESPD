@@ -3,18 +3,17 @@ import { mkdtemp, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
+import { fakePluto } from "../test/helpers.ts"
 import type { KernelAddress } from "./kernel.address.ts"
 import type { KernelSource } from "./kernel.attach.ts"
 import type { PlutoServer } from "./kernel.launcher.ts"
 import { kernelSource, lookUpKernel } from "./kernel.plugin.ts"
 
-/** A kernel source that runs exactly the notebook at `address.notebook`. */
-function serving(address: KernelAddress): KernelSource {
+/** A kernel source that runs exactly the notebook at `path`, at `address`. */
+function serving(path: string, address: KernelAddress): KernelSource {
   return {
     locate: (notebook) =>
-      Promise.resolve(
-        notebook === address.notebook ? address : { problem: `no kernel runs ${notebook}` },
-      ),
+      Promise.resolve(notebook === path ? address : { problem: `no kernel runs ${notebook}` }),
     stop: () => Promise.resolve(),
   }
 }
@@ -22,12 +21,7 @@ function serving(address: KernelAddress): KernelSource {
 async function deck() {
   const directory = await mkdtemp(join(tmpdir(), "pluto-kernel-"))
   await writeFile(join(directory, "notebook.jl"), "")
-  const address = {
-    plutoUrl: "http://localhost:1234",
-    secret: "s3cr3t42",
-    notebook: join(directory, "notebook.jl"),
-    owned: true,
-  }
+  const address = { plutoUrl: "http://localhost:1234", secret: "s3cr3t42", notebookId: "1" }
   return {
     directory,
     source: (headmatter: unknown) => ({
@@ -36,7 +30,7 @@ async function deck() {
       live: true,
     }),
     address,
-    running: serving(address),
+    running: serving(join(directory, "notebook.jl"), address),
   }
 }
 
@@ -50,7 +44,7 @@ test("the page is told the kernel and the notebook, resolved against the deck", 
 })
 
 test("a notebook reached through a symlink is named by the file Pluto opens", async () => {
-  const { directory, source, running } = await deck()
+  const { directory, source, address, running } = await deck()
   await symlink(directory, `${directory}-link`)
 
   const found = await lookUpKernel(
@@ -58,8 +52,7 @@ test("a notebook reached through a symlink is named by the file Pluto opens", as
     running,
   )
 
-  assert.ok("notebook" in found)
-  assert.equal(found.notebook, join(directory, "notebook.jl"))
+  assert.deepEqual(found, address)
 })
 
 test("without a kernel for its notebook, or a notebook, the page is told why", async () => {
@@ -79,42 +72,63 @@ test("without a kernel for its notebook, or a notebook, the page is told why", a
   }
 })
 
-/** A launcher that records what it was asked to start, standing in for Julia. */
-function fakeLauncher() {
+/**
+ * A launcher that records what it was asked to start, standing in for Julia with a Pluto that
+ * lists those notebooks, or with a Julia that exits without listing anything when `dies`.
+ */
+function fakeLauncher(dies = false) {
   const launched: string[][] = []
+  const servers: { close(): Promise<unknown> }[] = []
   let stopped = 0
-  const launch = (notebooks: readonly string[]): Promise<PlutoServer> => {
+  const launch = async (notebooks: readonly string[]): Promise<PlutoServer> => {
     launched.push([...notebooks])
-    return Promise.resolve({
-      plutoUrl: "http://localhost:4321",
+    const pluto = await fakePluto(dies ? [] : notebooks)
+    servers.push(pluto)
+    return {
+      plutoUrl: pluto.plutoUrl,
       secret: "own",
-      ready: Promise.resolve(true),
+      exited: dies ? Promise.resolve() : new Promise(() => undefined),
       stop: () => {
         stopped++
         return Promise.resolve()
       },
-    })
+    }
   }
-  return { launch, launched, stopped: () => stopped }
+  const close = () => Promise.all(servers.map((server) => server.close()))
+  return { launch, launched, stopped: () => stopped, close }
 }
 
-test("without PLUTO_URL, the deck starts its own kernel and may restart it", async () => {
-  const { launch, launched, stopped } = fakeLauncher()
+test("without PLUTO_URL, the deck starts its own kernel and attaches to it", async () => {
+  const { launch, launched, stopped, close } = fakeLauncher()
   const lines: string[] = []
 
-  const kernel = await kernelSource({ mode: "launch" }, "/deck/nb.jl", (l) => lines.push(l), launch)
+  try {
+    const kernel = await kernelSource({ mode: "launch" }, "/deck/nb.jl", (l) => lines.push(l), launch)
 
-  assert.deepEqual(launched, [["/deck/nb.jl"]])
-  assert.deepEqual(await kernel.locate("/deck/nb.jl"), {
-    plutoUrl: "http://localhost:4321",
-    secret: "own",
-    notebook: "/deck/nb.jl",
-    owned: true,
-  })
-  const other = await kernel.locate("/deck/other.jl")
-  assert.ok("problem" in other && other.problem.includes("restart slidev"))
-  await kernel.stop()
-  assert.equal(stopped(), 1)
+    assert.deepEqual(launched, [["/deck/nb.jl"]])
+    const located = await kernel.locate("/deck/nb.jl")
+    assert.ok("notebookId" in located)
+    assert.deepEqual(located, { plutoUrl: located.plutoUrl, secret: "own", notebookId: "id0" })
+    const other = await kernel.locate("/deck/other.jl")
+    assert.ok("problem" in other && other.problem.includes("restart slidev"))
+    await kernel.stop()
+    assert.equal(stopped(), 1)
+  } finally {
+    await close()
+  }
+})
+
+test("a kernel whose Julia exits before opening the notebook says to restart", async () => {
+  const { launch, close } = fakeLauncher(true)
+
+  try {
+    const kernel = await kernelSource({ mode: "launch" }, "/deck/nb.jl", () => undefined, launch)
+
+    const located = await kernel.locate("/deck/nb.jl")
+    assert.ok("problem" in located && located.problem.includes("restart slidev"))
+  } finally {
+    await close()
+  }
 })
 
 test("with PLUTO_URL, the deck starts no kernel and warns of a server with no secret", async () => {

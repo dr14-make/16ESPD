@@ -2,6 +2,7 @@
 // that `PLUTO_URL` names, such as the server an editor extension keeps for authoring.
 
 import { realpath } from "node:fs/promises"
+import { secretQuery } from "./kernel.address.ts"
 import type { KernelLookup } from "./kernel.address.ts"
 
 /** How long an attached server gets to list its notebooks before the deck says it is not there. */
@@ -60,13 +61,17 @@ export function kernelChoice(env: Readonly<Record<string, string | undefined>>):
   }
 }
 
+/** `path` with its symlinks resolved, or as given when there is nothing there to resolve. */
+export function resolvedPath(path: string): Promise<string> {
+  return realpath(path).catch(() => path)
+}
+
 /**
  * The Pluto server at `target`, which the dev server neither started nor stops.
  *
  * Asked again on every page load, so a notebook opened in the server after the deck started is
  * found on the next reload. Pluto lists a notebook by the path it was opened from, which may run
- * through a symlink, so both sides are resolved before they are compared, and the page is handed
- * the path as Pluto lists it, which is what it matches against.
+ * through a symlink, so both sides are resolved before they are compared.
  */
 export function attachPluto(target: AttachTarget): KernelSource {
   return {
@@ -75,9 +80,9 @@ export function attachPluto(target: AttachTarget): KernelSource {
       if ("problem" in listed) {
         return listed
       }
-      for (const path of listed.paths) {
-        if ((await realpath(path).catch(() => path)) === notebook) {
-          return { plutoUrl: target.plutoUrl, secret: target.secret, notebook: path, owned: false }
+      for (const [notebookId, path] of listed.entries) {
+        if ((await resolvedPath(path)) === notebook) {
+          return { plutoUrl: target.plutoUrl, secret: target.secret, notebookId }
         }
       }
       return {
@@ -88,13 +93,15 @@ export function attachPluto(target: AttachTarget): KernelSource {
   }
 }
 
+/** The notebooks the server at `target` runs, as id and path, or why it said nothing. */
 async function notebookList(
   target: AttachTarget,
-): Promise<{ readonly paths: readonly string[] } | { readonly problem: string }> {
-  const query = target.secret === null ? "" : `?secret=${encodeURIComponent(target.secret)}`
+): Promise<
+  { readonly entries: readonly (readonly [string, string])[] } | { readonly problem: string }
+> {
   let response: Response
   try {
-    response = await fetch(`${target.plutoUrl}/notebooklist${query}`, {
+    response = await fetch(`${target.plutoUrl}/notebooklist${secretQuery(target.secret)}`, {
       signal: AbortSignal.timeout(LIST_TIMEOUT_MS),
     })
   } catch {
@@ -105,20 +112,20 @@ async function notebookList(
       problem: `the Pluto server at ${target.plutoUrl} refused the deck; set PLUTO_SECRET to its secret`,
     }
   }
-  const paths = response.ok ? stringMapValues(new Uint8Array(await response.arrayBuffer())) : null
-  if (paths === null) {
+  const entries = response.ok ? stringMapEntries(new Uint8Array(await response.arrayBuffer())) : null
+  if (entries === null) {
     return { problem: `${target.plutoUrl} answered, but not with a Pluto notebook list` }
   }
-  return { paths }
+  return { entries }
 }
 
 /**
- * The values of a MessagePack map from strings to strings, or `null` for anything else.
+ * The entries of a MessagePack map from strings to strings, or `null` for anything else.
  *
  * Pluto's `/notebooklist` is exactly that map, notebook id to path; this reads that one shape and
  * nothing more.
  */
-export function stringMapValues(bytes: Uint8Array): string[] | null {
+export function stringMapEntries(bytes: Uint8Array): [string, string][] | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   let at = 0
   const take = (size: number): number | null => {
@@ -168,14 +175,14 @@ export function stringMapValues(bytes: Uint8Array): string[] | null {
   if (entries === null) {
     return null
   }
-  const values: string[] = []
+  const pairs: [string, string][] = []
   for (let i = 0; i < entries; i++) {
     const key = string()
     const value = string()
     if (key === null || value === null) {
       return null
     }
-    values.push(value)
+    pairs.push([key, value])
   }
-  return at === bytes.length ? values : null
+  return at === bytes.length ? pairs : null
 }

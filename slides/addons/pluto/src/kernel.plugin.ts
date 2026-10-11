@@ -6,17 +6,20 @@
 // but this machine: a page on another site that rebinds its own name to 127.0.0.1 is refused.
 // `slidev --remote` and `--tunnel` widen the hosts Vite allows, so this holds for a local server.
 
-import { realpath } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
+import { setTimeout as sleep } from "node:timers/promises"
 import type { Plugin } from "vite"
 // By their real extension, because Node, through Slidev's loader and the test runner alike, loads
 // these modules as written.
 import { KERNEL_ENDPOINT } from "./kernel.address.ts"
-import type { KernelLookup } from "./kernel.address.ts"
-import { attachPluto, kernelChoice } from "./kernel.attach.ts"
+import type { KernelAddress, KernelLookup } from "./kernel.address.ts"
+import { attachPluto, kernelChoice, resolvedPath } from "./kernel.attach.ts"
 import type { KernelChoice, KernelSource } from "./kernel.attach.ts"
 import { launchPluto } from "./kernel.launcher.ts"
 import { isRecord } from "./pluto.interface.ts"
+
+/** How often to ask a starting Pluto whether it has opened the deck's notebook yet. */
+const OPENED_POLL_MS = 500
 
 /** What the plugin needs to know about the deck Slidev is serving. */
 export interface DeckSource {
@@ -31,8 +34,8 @@ export interface DeckSource {
 /**
  * The notebook the deck's headmatter names, or why it names none.
  *
- * Resolved against the deck file and through symlinks, because the page finds its notebook among
- * the ones Pluto runs by comparing paths, and Pluto is handed this one.
+ * Resolved against the deck file and through symlinks, because the notebook is found among the
+ * ones Pluto runs by comparing paths, and a Pluto the deck starts is handed this one.
  */
 export async function deckNotebook(source: DeckSource): Promise<string | { problem: string }> {
   const headmatter = source.headmatter()
@@ -43,8 +46,12 @@ export async function deckNotebook(source: DeckSource): Promise<string | { probl
       problem: "the headmatter names no notebook; a live deck carries pluto: { notebook: path }",
     }
   }
-  const named = resolve(dirname(source.entry), reference)
-  return realpath(named).catch(() => named)
+  return resolvedPath(resolve(dirname(source.entry), reference))
+}
+
+/** Why the page has no kernel when the one this dev server could start is not running `notebook`. */
+function noKernel(notebook: string): { readonly problem: string } {
+  return { problem: `no kernel runs ${notebook}; restart slidev to start one` }
 }
 
 /**
@@ -60,16 +67,17 @@ export async function lookUpKernel(
     return notebook
   }
   if (kernel === null) {
-    return { problem: `no kernel runs ${notebook}; restart slidev to start one` }
+    return noKernel(notebook)
   }
   return kernel.locate(notebook)
 }
 
 /**
- * Start the deck's own Pluto with `notebook` open, or attach to the server `choice` names.
+ * Start the deck's own Pluto with `notebook` open and attach to it, or attach to the server
+ * `choice` names.
  *
  * A server the deck starts runs only the notebook named when it started, so a deck that names
- * another one since is told to restart.
+ * another one since, or whose Julia exited before it opened the notebook, is told to restart.
  */
 export async function kernelSource(
   choice: KernelChoice,
@@ -99,15 +107,30 @@ export async function kernelSource(
     }
     case "launch": {
       const server = await launch([notebook], log)
+      const opened = untilOpened(attachPluto(server), notebook, server.exited)
       return {
-        async locate(named) {
-          if (named !== notebook || !(await server.ready)) {
-            return { problem: `no kernel runs ${named}; restart slidev to start one` }
-          }
-          return { plutoUrl: server.plutoUrl, secret: server.secret, notebook, owned: true }
-        },
+        locate: async (named) =>
+          named === notebook ? ((await opened) ?? noKernel(named)) : noKernel(named),
         stop: () => server.stop(),
       }
+    }
+  }
+}
+
+/** Where `source` runs `notebook`, asked until it does, or `null` once `exited` settles first. */
+async function untilOpened(
+  source: KernelSource,
+  notebook: string,
+  exited: Promise<void>,
+): Promise<KernelAddress | null> {
+  const gone = exited.then(() => false)
+  for (;;) {
+    const located = await source.locate(notebook)
+    if (!("problem" in located)) {
+      return located
+    }
+    if (!(await Promise.race([gone, sleep(OPENED_POLL_MS, true)]))) {
+      return null
     }
   }
 }

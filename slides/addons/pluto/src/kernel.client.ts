@@ -6,7 +6,7 @@ import { BondQueue } from "./bond.queue.js"
 import { bondWriter } from "./bond.writer.js"
 import type { BondWriter } from "./bond.writer.js"
 import type { CardContent } from "./card.index.js"
-import { notebookIdAt } from "./kernel.address.js"
+import { secretQuery } from "./kernel.address.js"
 import type { KernelAddress } from "./kernel.address.js"
 import {
   isCellDependency,
@@ -21,20 +21,15 @@ import type { CellOutput, NotebookState } from "./pluto.interface.js"
 const PUBLISHED_REFERENCE = /getPublishedObject\("([^"]+)"\)/g
 
 /**
- * Connect to the Pluto server `address` names and attach to the notebook running from its path.
+ * Connect to the Pluto server `address` names and attach to the notebook it runs as `notebookId`.
  *
  * Attaches to a running notebook rather than creating a worker: `createWorker` builds its upload
  * URL by concatenation and never forwards the secret, and a server without a secret lets any
  * page the browser visits run Julia on this machine.
  */
 export async function connect(address: KernelAddress): Promise<Kernel> {
-  const query = address.secret === null ? "" : `?secret=${encodeURIComponent(address.secret)}`
-  const host = new Host(`${address.plutoUrl}/${query}`)
-  const notebookId = notebookIdAt(await host.workers(), address.notebook)
-  if (notebookId === null) {
-    throw new Error(`${address.plutoUrl} is not running ${address.notebook}`)
-  }
-  const worker = host.worker(notebookId)
+  const host = new Host(`${address.plutoUrl}/${secretQuery(address.secret)}`)
+  const worker = host.worker(address.notebookId)
   if (!(await worker.connect())) {
     throw new Error(`no websocket to ${address.plutoUrl}`)
   }
@@ -47,17 +42,6 @@ export async function connect(address: KernelAddress): Promise<Kernel> {
   }
 
   await firstState(worker, address.plutoUrl)
-
-  // Pluto opens the notebook, `starting`, before it answers the dev server that hands the page
-  // this address, so a notebook with no process is one whose kernel died afterwards, and
-  // restarting is the only way back. Every window shares that one kernel, so no other status
-  // restarts it: Pluto moves on from `starting` and `waiting_to_restart` by itself, and
-  // `waiting_for_permission` is the notebook owner's to grant. A kernel the deck attached to is
-  // its server's owner's to restart too, so the deck shows it offline instead.
-  const state: unknown = worker.getState()
-  if (address.owned && isNotebookState(state) && state.process_status === "no_process") {
-    await worker.restart()
-  }
 
   return new Kernel(worker, writeBonds)
 }

@@ -1,19 +1,8 @@
 import assert from "node:assert/strict"
-import { execFileSync } from "node:child_process"
 import { test } from "node:test"
 import { setTimeout as sleep } from "node:timers/promises"
+import { alive } from "../test/helpers.ts"
 import { supervise } from "./kernel.launcher.ts"
-
-/** Whether `pid` is a process that has not exited; a zombie has, and only awaits its reaping. */
-function alive(pid: number): boolean {
-  try {
-    return !execFileSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8" })
-      .trim()
-      .startsWith("Z")
-  } catch {
-    return false
-  }
-}
 
 // A child that ignores its stdin and starts a grandchild in a session of its own, the way Pluto
 // starts a notebook's worker.

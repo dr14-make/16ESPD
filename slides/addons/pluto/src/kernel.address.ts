@@ -1,5 +1,4 @@
-// What the deck's dev server hands the page about its kernel, and how the page finds its notebook
-// among the ones Pluto is running.
+// What the deck's dev server hands the page about its kernel.
 
 // By its real extension, because Node's test runner loads this module as written.
 import { isRecord } from "./pluto.interface.ts"
@@ -7,24 +6,18 @@ import { isRecord } from "./pluto.interface.ts"
 /** Where, under the deck's base, `slidev dev` answers with a `KernelLookup` (`kernel.plugin.ts`). */
 export const KERNEL_ENDPOINT = "@pluto/kernel"
 
-/** The Pluto server a deck's notebook runs in, and the notebook, by its path as Pluto lists it. */
+/** The Pluto server a deck's notebook runs in, and the id it runs that notebook under. */
 export interface KernelAddress {
   readonly plutoUrl: string
   /** `null` for a server started without one. */
   readonly secret: string | null
-  readonly notebook: string
-  /**
-   * Whether the dev server started this kernel. Only then may the page restart a notebook whose
-   * process is gone: an attached server's notebooks belong to whoever runs it.
-   */
-  readonly owned: boolean
+  readonly notebookId: string
 }
 
 /**
  * Either where the kernel is, or why the page has none.
  *
- * Only `slidev dev` answers it, so a built deck holds neither the secret nor a path on this
- * machine.
+ * Only `slidev dev` answers it, so a built deck carries none of it.
  */
 export type KernelLookup = KernelAddress | { readonly problem: string }
 
@@ -33,8 +26,7 @@ function isKernelAddress(value: unknown): value is KernelAddress {
     isRecord(value) &&
     typeof value.plutoUrl === "string" &&
     (typeof value.secret === "string" || value.secret === null) &&
-    typeof value.notebook === "string" &&
-    typeof value.owned === "boolean"
+    typeof value.notebookId === "string"
   )
 }
 
@@ -42,21 +34,7 @@ export function isKernelLookup(value: unknown): value is KernelLookup {
   return isKernelAddress(value) || (isRecord(value) && typeof value.problem === "string")
 }
 
-/**
- * The id of the notebook running from `path`, out of what `Host.workers()` resolves to.
- *
- * Taken as `unknown`: @plutojl/rainbow 0.6.21 types the result as `Worker[]`, but it hands back
- * Pluto's own `notebook_list` entries, `{ notebook_id, path, … }`, and an empty list whenever
- * the request fails.
- */
-export function notebookIdAt(listed: unknown, path: string): string | null {
-  if (!Array.isArray(listed)) {
-    return null
-  }
-  for (const entry of listed) {
-    if (isRecord(entry) && entry.path === path && typeof entry.notebook_id === "string") {
-      return entry.notebook_id
-    }
-  }
-  return null
+/** The query a request to a Pluto server with `secret` carries, from `?` on; `""` for none. */
+export function secretQuery(secret: string | null): string {
+  return secret === null ? "" : `?secret=${encodeURIComponent(secret)}`
 }

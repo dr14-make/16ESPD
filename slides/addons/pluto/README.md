@@ -37,11 +37,10 @@ server's terminal, prefixed `[pluto]`. On every load the page asks the dev serve
 secret at `<base>@pluto/kernel` (`src/kernel.plugin.ts`), which answers once Pluto does. Vite
 refuses a request addressed to any host but this machine, so another site cannot read them by
 rebinding its name to 127.0.0.1, and a build never carries them; `slidev --remote` and `--tunnel`
-widen the hosts Vite accepts, so that guarantee holds only for a local dev server. The browser then
-opens its own
-websocket to Pluto and finds the notebook among the ones Pluto is running by its path. Stopping
-the dev server stops Julia and every worker it started. To present a deck from the repository
-root, after `npm ci` in `slides/`:
+widen the hosts Vite accepts, so that guarantee holds only for a local dev server. The dev server
+finds the notebook among the ones Pluto runs by its path and hands the page its id, and the browser
+opens its own websocket to Pluto. Stopping the dev server stops Julia and every worker it started.
+To present a deck from the repository root, after `npm ci` in `slides/`:
 
 ```sh
 mise run present slides/decks/<deck>/slides.md
@@ -51,8 +50,9 @@ Julia is `julia` on the path, or the binary `JULIA` names, and juliaup's `JULIAU
 another channel; Pluto's workers run on the same Julia. The first start resolves Pluto 1.0.4 into
 `kernel/`. The kernel is ready about 30 s after the deck starts, and each card fills in as its cell
 runs. Edits to the slides hot-reload without restarting it, but a deck that names another notebook
-needs slidev restarted (`r`). Pluto saves the notebook it opens, so presenting can leave the
-notebook file modified.
+needs slidev restarted (`r`). The deck never restarts a notebook whose kernel has died: it shows the
+kernel offline, and restarting slidev starts a fresh Pluto. Pluto saves the notebook it opens, so
+presenting can leave the notebook file modified.
 
 ## Attach to a running Pluto
 
@@ -68,8 +68,8 @@ A server with a secret takes it as `PLUTO_SECRET`, or in the URL as Pluto prints
 (`http://localhost:1234/?secret=…`). The dev server then starts no Julia and never stops the
 server it attached to. Its terminal says whether that server has the deck's notebook open,
 compared by path with symlinks resolved, and the page gets the same reason when it does not: open
-the notebook there and reload the deck. The deck does not restart an attached notebook whose
-kernel has died; it shows the kernel offline and leaves that to whoever runs the server.
+the notebook there and reload the deck. A kernel that has died there shows offline too, and
+restarting it is for whoever runs the server.
 
 A server without a secret, which is how the extension starts Pluto, runs Julia for any web page
 open in the browser, because Pluto accepts websockets from any origin. The dev server warns about
