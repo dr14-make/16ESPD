@@ -10,7 +10,7 @@ dir = "{{config_root}}/slides"
 raw = true
 run = '''
 deck="$(cd "$MISE_ORIGINAL_CWD" && realpath "$usage_deck")"
-node scripts/images.mjs && npx slidev "$deck"
+npm run dev -- "$deck"
 '''
 
 [tasks."test:live"]
