@@ -117,8 +117,8 @@ V_START, SETPOINT, UNLIMITED = 90.0, 110.0, 1.0e6
 
 # Notebook 08's gains and the measurement they came from, restated
 # rather than imported: this notebook is its own kernel.
-K_ZN, TI_ZN, TD_ZN = 67.39, 1.087, 0.272
-KU, PU = 114.56, 2.175          # N.m per km/h, s
+K_ZN, TI_ZN, TD_ZN = 67.41, 1.092, 0.273
+KU, PU = 114.59, 2.185          # N.m per km/h, s
 
 # `Ts` is structural: it defines the periodic clock and the
 # discrete controller sample time. Build one model per rate.
