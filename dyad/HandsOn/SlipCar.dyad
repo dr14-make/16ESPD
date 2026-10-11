@@ -13,17 +13,22 @@ component SlipCar
   v_kmh = RealOutput() {^v_kmh}
   "Wheel surface speed, omega * radius, in km/h"
   wheel_kmh = RealOutput() {^wheel_kmh}
-  engine = Engine() {^engine}
+  engine = Engine(theta_e = theta_e, T_max = T_max) {^engine}
   gear = RotationalComponents.Components.IdealGear(ratio = i) {^gear}
   wheel_inertia = RotationalComponents.Components.Inertia(J = J_w) {^wheel_inertia}
   wheel = SlipWheel1D(radius = r, F_z = m * g / 2) {^wheel}
-  body = GradeBody(m = m, g = g) {^body}
+  body = GradeBody(m = m, CdA = CdA, g = g) {^body}
   vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
   to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
   wsensor = RotationalComponents.Sensors.VelocitySensor() {^wsensor}
   wheel_to_kmh = BlockComponents.Math.Gain(k = r * 3.6) {^wheel_to_kmh}
   "Engine mounts and gearbox housing"
   rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150
+
   "Gear ratio"
   parameter i::Real = 4.0
   "Road wheel and tire inertia"
@@ -32,6 +37,8 @@ component SlipCar
   parameter r::Length = 0.31
   "Vehicle mass; the driven axle carries half of it"
   parameter m::Dyad.Mass = 1400
+  "Aerodynamic drag area, Cd * A"
+  parameter CdA::Area = 0.63
   "Gravitational acceleration"
   parameter g::Acceleration = 9.80665
 relations

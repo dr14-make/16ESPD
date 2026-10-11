@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SlipCar(; name, i, J_w, r, m, g)
+   SlipCar(; name, theta_e, T_max, i, J_w, r, m, CdA, g)
 
 The car with a slipping wheel and a road gradient. Body speed and wheel surface speed are both
 reported in km/h, so wheelspin shows as the gap between them.
@@ -14,10 +14,13 @@ reported in km/h, so wheelspin shows as the gap between them.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `theta_e`         | Injection-to-torque transport delay                         | s  |   0.3 |
+| `T_max`         | Peak deliverable torque                         | N.m  |   150 |
 | `i`         | Gear ratio                         | --  |   4.0 |
 | `J_w`         | Road wheel and tire inertia                         | kg.m2  |   1.0 |
 | `r`         | Wheel rolling radius, shared by the tire and the wheel-speed gain                         | m  |   0.31 |
 | `m`         | Vehicle mass; the driven axle carries half of it                         | kg  |   1400 |
+| `CdA`         | Aerodynamic drag area, Cd * A                         | m2  |   0.63 |
 | `g`         | Gravitational acceleration                         | m/s2  |   9.80665 |
 
 ## Connectors
@@ -28,7 +31,7 @@ reported in km/h, so wheelspin shows as the gap between them.
  * `v_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `wheel_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function SlipCar(; name = nothing, i=Float64(4.0), J_w=Float64(1.0), r=0.31, m=Float64(1400), g=9.80665, kwargs...)
+@component function SlipCar(; name = nothing, theta_e=0.3, T_max=Float64(150), i=Float64(4.0), J_w=Float64(1.0), r=0.31, m=Float64(1400), CdA=0.63, g=9.80665, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -59,6 +62,9 @@ reported in km/h, so wheelspin shows as the gap between them.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Real), [description = "Peak deliverable torque"])
+  __initial_conditions[T_max] = __local__T_max
   __local__i = i
   append!(__params, @parameters (i::Real), [description = "Gear ratio"])
   __initial_conditions[i] = __local__i
@@ -71,6 +77,9 @@ reported in km/h, so wheelspin shows as the gap between them.
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass; the driven axle carries half of it", bounds = (0, Inf)])
   __initial_conditions[m] = __local__m
+  __local__CdA = CdA
+  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area, Cd * A"])
+  __initial_conditions[CdA] = __local__CdA
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration"])
   __initial_conditions[g] = __local__g
@@ -94,7 +103,7 @@ reported in km/h, so wheelspin shows as the gap between them.
   ### Components
   # Subcomponent engine of type VehicleSystemsComponents.HandsOn.Engine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn.Engine(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn.Engine(; theta_e=theta_e, T_max=T_max, engine_overrides...))
   # Subcomponent gear of type RotationalComponents.Components.IdealGear
   gear_overrides = __pop_subcomponent_overrides!(__overrides, "gear")
   push!(__systems, @named gear = RotationalComponents.Components.IdealGear(; ratio=i, gear_overrides...))
@@ -106,7 +115,7 @@ reported in km/h, so wheelspin shows as the gap between them.
   push!(__systems, @named wheel = VehicleSystemsComponents.HandsOn.SlipWheel1D(; radius=r, F_z=m * g / 2, wheel_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.GradeBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.GradeBody(; m=m, g=g, body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.GradeBody(; m=m, CdA=CdA, g=g, body_overrides...))
   # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
   vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
   push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
