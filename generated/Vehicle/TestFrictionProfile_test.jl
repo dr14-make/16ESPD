@@ -21,3 +21,20 @@ __dyad_run_test_case!(
   expected_final=Tuple[(m -> m.sink.y, "sink.y", 1, 1e-9, 1e-5)],
   signals=Tuple[(m -> m.sink.y, "sink.y", 1e-9, 1e-5)],
 )
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Vehicle.TestFrictionProfile,
+  "mid_patch for VehicleSystemsComponents.Vehicle.TestFrictionProfile";
+  case_name="mid_patch",
+  component_stem="TestFrictionProfile",
+  module_path=String["Vehicle"],
+  start=0e+0,
+  stop=7.5e-1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(;),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.sink.y, "sink.y", 1, 1e-9, 1e-5)],
+  expected_final=Tuple[(m -> m.sink.y, "sink.y", 0.2, 1e-9, 1e-5)],
+  signals=Tuple[(m -> m.sink.y, "sink.y", 1e-9, 1e-5)],
+)
