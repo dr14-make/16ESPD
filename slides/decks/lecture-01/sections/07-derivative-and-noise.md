@@ -144,7 +144,7 @@ kick came from the setpoint, the chatter comes from the sensor, and `wd` only re
 first. That is why every notebook since 05 runs `wd = 0`.
 
 **Later, at "Filter it":** `controller.Nd` = 100, 20, 5, 2, re-run each. The notebook's swing
-in the 20–30 s window falls from 1760 N·m at `Nd = 100` to 315 at `Nd = 2`.
+in the 20–30 s window falls from 1751 N·m at `Nd = 100` to 316 at `Nd = 2`.
 
 **Catch-up:** `NoisyCruiseLoop` is the reference loop with `noise` in place;
 `NoisyCruiseStep` is its bench and `NoisyCruiseTransient` runs it. Its defaults are not the
@@ -243,7 +243,7 @@ extrema(u[cruise])              # the damage, in N.m
 </div>
 
 <!--
-**Read out** the range from `extrema`: the command swings across 1760 N·m, twelve times the
+**Read out** the range from `extrema`: the command swings across 1751 N·m, twelve times the
 150 N·m the engine can deliver and forty times the 40 N·m the car actually needs to hold this
 speed.
 
@@ -303,7 +303,7 @@ end
 
 ![Commanded torque at four derivative filter coefficients: the chatter shrinks steadily as the cutoff comes down until the command is smooth.](/figures/07-nd-family.svg)
 
-*The same loop at four cutoffs. The chatter subsides — from 1760 N·m to 315, with the engine's 150 N·m limit still inside the band.*
+*The same loop at four cutoffs. The chatter subsides — from 1751 N·m to 316, with the engine's 150 N·m limit still inside the band.*
 
 </div>
 </div>
@@ -319,7 +319,7 @@ what it does and why it is there.
 
 **Say:** and notice the filter does not remove the noise. It attenuates it, so that after the
 derivative amplifies what is left, the result is smaller. On this car that is not the same as
-small enough: the command falls from 1760 N·m to 315, and 315 is still twice what the engine
+small enough: the command falls from 1751 N·m to 316, and 316 is still twice what the engine
 can deliver.
 
 **Readout — every symbol on this slide**

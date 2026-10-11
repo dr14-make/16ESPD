@@ -209,6 +209,8 @@ K = 25.0                   # N.m per km/h
 UNLIMITED = 1.0e6          # N.m — both torque ceilings lifted
 
 closed = [name => Scenarios.CruiseLoopTransient(
+              model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                               with_I = false, with_D = false),
               k = K, v_lo = 90.0, v_hi = 90.0,
               grade = w.grade, m = w.m, CdA = w.CdA,
               T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)

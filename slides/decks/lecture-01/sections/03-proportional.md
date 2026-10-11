@@ -153,6 +153,8 @@ SPEED = "loop.plant.v_kmh"
 UNLIMITED = 1.0e6            # N.m, the ceiling lifted away
 
 single = Scenarios.CruiseLoopTransient(
+    model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                     with_I = false, with_D = false),
     k = 14.0, T_max = UNLIMITED, y_max = UNLIMITED, stop = 30.0)
 
 plt = plot_speed(single; sig = SPEED, setpoint = 110, label = "k = 14")
@@ -220,6 +222,8 @@ GAINS = [14.0, 56.0, 220.0, 890.0]
 
 family = sweep(
     Scenarios.CruiseLoopTransient(
+        model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                         with_I = false, with_D = false),
         k = 14.0, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0),
     "k", GAINS)
 

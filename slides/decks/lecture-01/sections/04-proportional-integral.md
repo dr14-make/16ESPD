@@ -153,6 +153,8 @@ SPEED = "loop.plant.v_kmh"
 GAIN, T_I, UNLIMITED = 56.0, 10.0, 1.0e6
 
 p_only = Scenarios.CruiseLoopTransient(
+    model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                     with_I = false, with_D = false),
     k = GAIN, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
 
 pi_loop = Scenarios.CruiseLoopTransient(
@@ -263,9 +265,9 @@ get newton-meters. Their own second axis from the build shows the same curve, un
 
 - **integrator.y** — the integrator's own state, *before* the gain k is applied. Multiply by
   k to get newton-meters.
-- **k·I = 40.119 N·m** — where it settles.
-- **T_cruise(110) = 40.119 N·m** — the same number, computed from the force balance with a
-  pencil in hands-on step 05.
+- **k·I = 40.122 N·m** — where it settles at the end of the run.
+- **T_cruise(110) = 40.119 N·m** — the same number to within 0.003 N·m, computed from the
+  force balance with a pencil in hands-on step 05.
 - **The dashed line** — that hand-computed value, drawn on so the coincidence is visible
   rather than asserted.
 - **stop = 90 s** — a longer window than the step needs, because the last hundredths of a

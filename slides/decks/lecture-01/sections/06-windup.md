@@ -41,7 +41,7 @@ A linear model has none of these: ask it for a million newton-meters and it will
 >
 > The engine can deliver **1935 N**.
 >
-> The car will lose, and head for about **118 km/h** — a 120 s climb gets it to **119.05**,
+> The car will lose, and head for about **118 km/h** — a 120 s climb gets it to **119.10**,
 > still falling.
 
 *↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/slope)*
@@ -69,7 +69,7 @@ matters too — this engine cannot brake, so downhill it has no answer at all.
 - **2023 N** — the tractive force a 10 % climb at 130 km/h demands. **1935 N** — what the
   engine can deliver. Four percent short.
 - **118 km/h** — the asymptote this climb heads for. Say *heads for*, not *settles at*: the
-  climb is 120 s long and the car is at 119.05 km/h and still falling when the road flattens.
+  climb is 120 s long and the car is at 119.10 km/h and still falling when the road flattens.
 - **y_min = 0** — the limiter's lower bound. This engine cannot produce negative torque, so
   it cannot brake.
 -->
@@ -207,12 +207,12 @@ delivers); `controller.integrator.y` on its own axis.
 
 **What the plot must show before moving on:**
 
-- the speed sagging from 130 after t = 30 s, heading for about 118, 119.05 at the crest;
+- the speed sagging from 130 after t = 30 s, heading for about 118, 119.10 at the crest;
 - `controller.y` and the delivered torque flat on 150 through the climb;
 - `controller.gain.y` and the integrator still climbing, far above anything the engine can
   give;
-- after t = 150 s, the overshoot — the notebook's no-anti-windup run peaks 49.80 km/h over
-  the setpoint and takes 68.3 s to recover.
+- after t = 150 s, the overshoot — the notebook's no-anti-windup run peaks 49.47 km/h over
+  the setpoint and takes 66.7 s to recover.
 
 This is the students' controller with a limiter and no anti-windup: the "none" row of the
 three-way table. If their overshoot is a few km/h rather than tens, the integrator is not
@@ -502,10 +502,10 @@ gets the error as before. Nested `ifelse` because the equation has no boolean `a
 
 **What the plot must show before moving on:**
 
-- the same sag to 119.05 km/h on the climb — clamping adds no torque;
+- the same sag on the climb, to 119.04 km/h against 119.10 — clamping adds no torque;
 - `controller.integrator.y` going flat once the limiter saturates, instead of climbing;
-- after t = 150 s: 0.17 km/h over the setpoint and back within 3.5 s, against 49.80 km/h
-  and 68.3 s without it.
+- after t = 150 s: 0.17 km/h over the setpoint and back within 3.5 s, against 49.47 km/h
+  and 66.7 s without it.
 
 **They get wrong:** leaving the old wire in place. Then `integrator.u` is defined twice,
 once by the connection and once by the equation, and Dyad reports one equation too many.
@@ -613,7 +613,7 @@ runs = ["none"             => Scenarios.ClampingCruiseClimbTransient(; y_max = 1
 
 | Variant | Over setpoint | Recovery |
 |---|---|---|
-| none | +49.80 km/h | 68.3 s |
+| none | +49.47 km/h | 66.7 s |
 | clamping | +0.17 km/h | 3.5 s |
 | back-calculation | +1.11 km/h | 13.6 s |
 
@@ -650,7 +650,7 @@ of its own. The real answer is: whichever one your framework already implements 
   built-in at `Ni = 0.9`. **"clamping"** — conditional integration, a different controller and
   so a different analysis.
 - **Peak overshoot** — the single number that separates them.
-- **What none of them fixes** — all three sag to the same 119.05 km/h on the climb.
+- **What none of them fixes** — all three sag to about 119 km/h on the climb.
   Anti-windup does not add performance; it stops you being punished for asking.
 -->
 

@@ -292,6 +292,7 @@ controller(; with_I, with_D) = Scenarios.CruiseLoopStep(;
     name = :CruiseLoopStep, with_I = with_I, with_D = with_D)
 
 p_only  = Scenarios.CruiseLoopTransient(
+    model = controller(with_I = false, with_D = false),
     k = GAIN, T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
 pi_loop = Scenarios.CruiseLoopTransient(
     model = controller(with_I = true, with_D = false),

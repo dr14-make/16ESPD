@@ -137,7 +137,7 @@ not re-explain it; ask someone who finished step 10 what happened.
 
 **Point at** the force panel, bottom right — it has the whole argument in one step. For the
 first four tenths of a second both surfaces carry every newton the engine asks for. Then the
-snow hits 1 373 N, everything it has, and falls off a cliff to 961 N, where it stays. **More
+snow hits 1 371 N, everything it has, and falls off a cliff to 961 N, where it stays. **More
 wheel speed bought less force.**
 
 **Say:** the engine delivered everything it was asked for. The driveline turned. The tread
@@ -386,10 +386,8 @@ needs resetting:
 **What the plot must show before moving on:** before t = 4 s the two speeds lie on top of
 each other at 90. On the ice the wheel speed tears away upwards — the reference run reaches
 about 3400 km/h of tread speed — while `plant.v_kmh` sags only 3.10 km/h; the slip ratio
-goes to 38. After t = 12 s the car surges to 111.88 km/h. If the wheel speed stays on the
+goes to 38. After t = 12 s the car surges to 111.86 km/h. If the wheel speed stays on the
 car's, `friction.y` is not reaching `plant.mu_scale`.
-
-TODO(numbers): re-check after notebook 10 re-runs on CruiseController
 
 **They get wrong:** forgetting the wheel's initial speed. Without
 `initial plant.wheel_inertia.w`, the wheel starts at rest under a car doing 90 km/h — a
@@ -454,13 +452,11 @@ spins the driven wheel — and destroys the traction it was trying to use.**
 The system as a whole does the wrong thing, and it does it faster the better the controller is
 tuned.
 
-TODO(numbers): re-check after notebook 10 re-runs on CruiseController
-
 **The numbers, if you want them on the board:** the speed sags **3.10 km/h** across the eight
 seconds — less than a gentle hill would cost, which is the trap. Meanwhile the tread goes to
-about **3400 km/h** (29 101 rpm) and the slip ratio to **38**; the tire crossed its adhesion peak **0.08 s** into
-the patch and never came back. When the ice ends the car surges to **111.88 km/h**, nearly 22
-km/h over the setpoint, and takes **20.4 s** to come back inside half a km/h of 90.
+about **3400 km/h** and the slip ratio to **38**; the tire crossed its adhesion peak **0.08 s** into
+the patch and never came back. When the ice ends the car surges to **111.86 km/h**, nearly 22
+km/h over the setpoint, and takes **20.7 s** to come back inside half a km/h of 90.
 
 **If someone asks where the surge comes from:** the wheel is a flywheel holding **4.64 MJ** at
 its peak, against **0.44 MJ** for the whole car at 90 km/h. When grip returns, that energy has
@@ -505,15 +501,15 @@ capped = rerun(blind, "y_max" => ICE_CEILING; saveat = 0.05)
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/10-wheel-and-slip.ipynb)
 
 The car still loses speed on the ice — physics is physics. It loses
-**less** of it: 1.99 km/h against 3.10, while being asked for a fifth as
-much torque. And it does not lose the wheel — about 216 km/h of tread against 3400.
+**less** of it: 2.01 km/h against 3.10, while being asked for a fifth as
+much torque. And it does not lose the wheel — about 219 km/h of tread against 3400.
 
 </div>
 <div>
 
 ![The same ice patch run overlaid with a friction-aware torque limit: the wheel stays near vehicle speed and the slip ratio stays on the near side of the peak, while speed dips and recovers.](/figures/10-ice-patch-limited.svg)
 
-*Against the blind run. The capped car commands a fifth of the torque and loses **less** speed doing it — 1.99 km/h against 3.10.*
+*Against the blind run. The capped car commands a fifth of the torque and loses **less** speed doing it — 2.01 km/h against 3.10.*
 
 </div>
 </div>
@@ -522,7 +518,7 @@ much torque. And it does not lose the wheel — about 216 km/h of tread against 
 **Say:** and be precise about what the fix bought. The car still slows down. It has to — there
 is less friction available and no controller can conjure grip. What the limit prevented was
 the controller *making it worse*. Averaged over the eight seconds the capped tire put *more*
-force on the road — 275 N against 242 — while being asked for a fifth as much torque. More
+force on the road — 276 N against 242 — while being asked for a fifth as much torque. More
 command, less force. That is the whole of traction control in one line.
 
 **Do not oversell it.** The cap did not hold the tire at its peak: the capped run still ends

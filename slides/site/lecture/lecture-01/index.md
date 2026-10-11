@@ -513,7 +513,7 @@ Your library cannot see the course library's `GradeProfile`; the pulse is what t
 
 ::: tip Expected result
 
-The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.05 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
+The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.10 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
 
 Compare with the course model `CruiseClimb`, which closes the loop with the library's `LimPID` and its back-calculation anti-windup; it is back at **130 km/h** at 400 s.
 
@@ -634,9 +634,7 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
 
 ::: tip Expected result
 
-At `wd = 1` the car still makes the step — `plant.v_kmh` climbs from 90 towards 110 km/h, and the noisy `noise.y` wiggles a few tenths of a km/h around it — but `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows: in the 20–30 s window the swing of `controller.y` falls from about **1760 N·m** at `Nd = 100` to **315 N·m** at `Nd = 2` — still twice what the engine can deliver.
-
-<!-- TODO(numbers): fill from the re-run notebook 07 -->
+At `wd = 1` the car still makes the step — `plant.v_kmh` climbs from 90 towards 110 km/h, and the noisy `noise.y` wiggles a few tenths of a km/h around it — but `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows: in the 20–30 s window the swing of `controller.y` falls from about **1751 N·m** at `Nd = 100` to **316 N·m** at `Nd = 2` — still twice what the engine can deliver.
 
 Reference: `NoisyCruiseLoop`, bench `NoisyCruiseStep`. To reproduce this step, run `NoisyCruiseTransient` with `Td = 0.5`, `wd` per run (1, then 0; its `xd0` follows `wd` by itself), `T_max = 1e6`, `y_max = 1e6`, `y_min = -1e6` and `stop = 40`.
 
@@ -663,7 +661,7 @@ New component `TuningCruiseStep`, a duplicate of `CruiseLoopStep` with:
 
 | Name | Library path | Set |
 | --- | --- | --- |
-| `controller` | your `CruiseController` | `k = 67.39`, `Ti = 1.087`, `Td = 0.272` — the Ziegler-Nichols gains; `y_max = 1e6`, `y_min = -1e6` — limits lifted; `Nd = 10`, `wd = 0`, `xd0 = -90` stay |
+| `controller` | your `CruiseController` | `k = 67.41`, `Ti = 1.092`, `Td = 0.273` — the Ziegler-Nichols gains; `y_max = 1e6`, `y_min = -1e6` — limits lifted; `Nd = 10`, `wd = 0`, `xd0 = -90` stay |
 | `plant` | your `GradeCar` | `T_max = 1e6` — limit lifted |
 
 #### Do this
@@ -695,7 +693,7 @@ Lecture deck: [discretization](../../lecture-01/index.html#/discretization){targ
 
 Demo only: watch, nothing to build. The lecturer runs `SampledCruiseLoop`, the same loop around `GradeCar` with the controller replaced by the library's `DiscreteComponents.DiscretePIDStandard`: a periodic clock, a sampler on the setpoint and one on the measured speed, the discrete PID, and a zero-order hold in front of the car.
 
-The controller runs the Ziegler-Nichols PID gains of step 8 — `k = 67.39`, `Ti = 1.087`, `Td = 0.272`, `wd = 0` — with every limit lifted, on the 90 → 110 km/h step. Only the sample time `Ts` changes: 0.01, 0.1, 0.4 and 1 s. At 0.01 s the loop is close to the continuous one; as `Ts` grows the response overshoots, then rings, then does not come back. Two fixes follow: sample faster (`Ts = 0.05` s, gains untouched), or re-tune for the slow rate (`k = 20`, `Ti = 3`, `Td = 0.5` at `Ts = 1` s), which is stable but slower. `Ts` is structural, so each sample time is a recompile.
+The controller runs the Ziegler-Nichols PID gains of step 8 — `k = 67.41`, `Ti = 1.092`, `Td = 0.273`, `wd = 0` — with every limit lifted, on the 90 → 110 km/h step. Only the sample time `Ts` changes: 0.01, 0.1, 0.4 and 1 s. At 0.01 s the loop is close to the continuous one; as `Ts` grows the response overshoots, then rings, then does not come back. Two fixes follow: sample faster (`Ts = 0.05` s, gains untouched), or re-tune for the slow rate (`k = 20`, `Ti = 3`, `Td = 0.5` at `Ts = 1` s), which is stable but slower. `Ts` is structural, so each sample time is a recompile.
 
 [![SampledCruiseLoop: clock, the two samplers, DiscretePIDStandard, the zero-order hold and the plant.](/lecture/lecture-01/img/step09-sampler.png)](/lecture/lecture-01/img/step09-sampler.png)
 
@@ -748,8 +746,6 @@ The pulse outputs `amplitude` on the patch and `offset` outside it, so the grip 
 ::: tip Expected result
 
 Before 4 s `plant.v_kmh` and `plant.wheel_kmh` lie on top of each other at **90 km/h**. Across the patch the two speeds come apart: `plant.wheel_kmh` tears away far above the car's speed — the gap is the wheel spinning — while `plant.v_kmh` sags by only about **3 km/h** and the slip ratio `plant.wheel.kappa` runs far past the 0.04 adhesion peak, to about **38**. The tread reaches about **3400 km/h**. The controller only sees the car's speed, so it answers the lost grip with more torque. When the grip returns at 12 s the car surges to about **112 km/h** before settling back.
-
-<!-- TODO(numbers): re-check after notebook 10 re-runs on CruiseController -->
 
 Reference: `SlipCruiseLoop`, bench `SlipCruiseIcePatch`. To reproduce this step, run `SlipCruiseTransient` with `Td = 0.5`, `wd = 0`, `patch_start = 4`, `patch_duration = 8` and `stop = 45`.
 

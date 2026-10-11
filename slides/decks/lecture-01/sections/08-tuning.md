@@ -128,7 +128,7 @@ with a lag and a transport delay in front of it.
 plant with almost no dead time relative to its time constant will take almost any gain you
 throw at it; a plant that is mostly dead time will not.
 
-**Read out** our car's ratio: θ = 1.88 s against τ = 63 s, so θ/τ ≈ 0.030 — the easy end of
+**Read out** our car's ratio: θ = 1.82 s against τ = 63 s, so θ/τ ≈ 0.029 — the easy end of
 the table, and comfortably inside where these rules were fitted.
 
 **And flag the consequence now,** because it explains a plot several slides from here:
@@ -145,9 +145,9 @@ exactly what sampling adds in section 09 — same ratio, made worse by our own s
 - **K** — steady-state gain. Output change per unit input change, once settled. Ours: 2.21
   km/h per N·m.
 - **τ** — time constant, seconds. Time to cover 63 % of the change. Ours: 63 s.
-- **θ** — dead time, seconds. How long nothing happens first. Ours: 1.878 s as fitted.
+- **θ** — dead time, seconds. How long nothing happens first. Ours: 1.816 s as fitted.
 - **e<sup>−θs</sup>** — how a pure delay is written in the Laplace domain.
-- **r = θ/τ** — the ratio every table keys on. Ours is about 0.030: the easy end.
+- **r = θ/τ** — the ratio every table keys on. Ours is about 0.029: the easy end.
 - **FOPTD** — first order plus dead time. Also written FOPDT; same thing.
 -->
 
@@ -344,11 +344,13 @@ dead time — and that shape is enough for a starting point.
 <div>
 
 ```julia [08-tuning.ipynb · cell Ziegler-Nichols]
-# `CruiseLoopStep` leaves both switches off, so the plain
-# analysis is already the P-only loop this step needs.
 DELTA = 0.1     # km/h — the smallest poke that measures cleanly
 
+# P-only, both structural switches off: the pure proportional
+# loop that Ziegler-Nichols step 2 asks for.
 probe = Scenarios.CruiseLoopTransient(
+    model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                     with_I = false, with_D = false),
     k = 100.0, v_lo = V_START, v_hi = V_START + DELTA,
     T_max = UNLIMITED, y_max = UNLIMITED, stop = 30.0)
 
@@ -368,7 +370,7 @@ Ku = below.k + (1 - below.osc.ratio) * (above.k - below.k) /
                (above.osc.ratio - below.osc.ratio)
 Pu = oscillation(rerun(probe, "k" => Ku)).period
 
-k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)  # 114.56, 2.175 s
+k_zn, Ti_zn, Td_zn = ziegler_nichols(Ku, Pu)  # 114.59, 2.185 s
 ```
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/08-tuning.ipynb)
@@ -524,7 +526,7 @@ not a law of nature. If their requirements are not yours, their table is not you
 **Readout — every symbol on this slide**
 
 - **K<sub>u</sub>/2.2** — against Ziegler-Nichols' K<sub>u</sub>/1.7. Three quarters of the
-  gain: 52.07 against 67.39 N·m per km/h.
+  gain: 52.09 against 67.41 N·m per km/h.
 - **2.2·P<sub>u</sub>** — the integral time is *multiplied* by the ultimate period where ZN
   divides it. That is a factor of 4.4 slower.
 - **P<sub>u</sub>/6.3** — the derivative time.
@@ -770,7 +772,7 @@ measured directly.
    duplicates it again.
 2. In the copy, lift every limit, as the notebook does: `controller.y_max = 1e6`,
    `controller.y_min = -1e6`, `plant.T_max = 1e6`.
-3. Set the Ziegler-Nichols gains: `controller.k = 67.39`, `Ti = 1.087`, `Td = 0.272`
+3. Set the Ziegler-Nichols gains: `controller.k = 67.41`, `Ti = 1.092`, `Td = 0.273`
    (`Nd = 10`, `wd = 0`, `xd0 = -90` stay).
 4. **▷ Run Analysis** → TransientAnalysis of `TuningCruiseStep`, name it
    `TuningCruiseTransient`, `stop = 60`. Run — the 90 → 110 km/h step. This is the baseline.
@@ -800,63 +802,75 @@ the gains above and the limits lifted.
 <div>
 
 ```julia [08-tuning.ipynb · cell The saturation trap]
-# push the gains until the response looks superb
-hot = tuned(8 * k_zn, Ti_zn / 2, Td_zn)
+# the real engine back: `T_max` is the plant's ceiling,
+# `y_max` the controller's own clamp, both 150 N.m
+limited = [name => tuned(k, Ti, Td, "T_max" => CAR.T_max,
+                                    "y_max" => CAR.T_max)
+           for (name, (k, Ti, Td)) in gains]
 
-plot_speed(hot; sig = SPEED, setpoint = 110)   # looks perfect
-plot_torque(hot; commanded = "loop.controller.y",
-            delivered = "loop.plant.engine.limiter.y")
+# left: what each unlimited tuning asks the engine for
+for (name, (k, Ti, Td)) in gains
+    plot!(ask, signal(tuned(k, Ti, Td), COMMAND)...; label = name)
+end
+hline!(ask, [CAR.T_max])          # what the engine has
+# right: the speed each one gets with the limit in place
+for (name, sol) in limited
+    plot!(got, signal(sol, SPEED)...; label = name)
+end
 ```
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/08-tuning.ipynb)
 
 **Open in Dyad** `dyad/Lecture1/CruiseLoop.dyad`
 
-> **The second plot**
+> **Always plot the actuator command**
 >
-> The commanded torque at the instant of the step is far outside anything the engine can
-> deliver — and the speed plot gave you no hint at all.
+> Every tuning asks for far more than the engine has — and the speed plot gave you no hint at
+> all. With the limit back, the three tables land on nearly one curve: the engine sets the
+> response, not the tuning.
 
 </div>
 <div>
 
-![Two panels: a near-perfect speed response above, and below it the commanded torque spiking far above the engine's 150 newton-meter limit line.](/figures/08-saturation-trap.svg)
+![Two panels: on the left, the commanded torque of the three tunings spiking far above the engine's 150 newton-meter limit line; on the right, the same three tunings with the limit in place, rising together on nearly one curve.](/figures/08-saturation-trap.svg)
 
-*Above: the response you were hoping for. Below: what it costs, against the torque limit drawn on.*
+*Left: what each tuning asks the engine for, against the 150 N·m limit. Right: what the car does with the engine it has.*
 
 </div>
 </div>
 
 <!--
-**Show the speed plot first and say nothing about torque.** Let them admire it. Ask whether
-anyone would sign this off.
-
-**Then show the torque plot.** Read out the peak and compare it to 150.
+**Show the left panel first and cover the right.** Remind them of the three speed responses on
+the "All three" slide, and ask whether anyone would sign one off. Then read out the peaks against
+150: Cohen-Coon 422 N·m, Ziegler-Nichols 1356, Tyreus-Luyben 1042.
 
 **Say:** a linear model will happily accept a controller your hardware cannot execute, and it
 will not warn you. There is no error, no exception, no red line. The simulation is internally
 consistent and completely useless.
 
-**Then re-run with the limiter active** and watch the beautiful response disappear. Point out
-that the anti-windup from section 06 is now doing real work — and that without it this same
-design would also wind up.
+**Then uncover the right panel:** the same three, with the limit back. The half-second arrival
+is gone — rise 4.8, 4.23 and 4.25 s against 2.43, 0.53 and 0.81 s unlimited — and the three
+curves nearly coincide. For the first seconds all three ask for more than 150 N·m, so all three
+get exactly 150 and the car accelerates the same way. The choice between tables, which looked
+like the whole question on that slide, barely shows. Overshoot is 5.5, 3.8 and 0.0 %: point
+out that the clamping anti-windup from section 06 is doing real work here — without it the
+integrator would wind up during those seconds at the limit and return it as overshoot.
 
 **Say the rule:** always plot the actuator command. Every time. It is one extra line in the
 notebook and it is the difference between a design and a drawing.
 
 **In the model:** The notebooks lift **`T_max` and `y_max`** to run this, and so does the
-students' `TuningCruiseStep`. On it, set `controller.k = 539.1`, `Ti = 0.5435` (8 × and ½ the
+students' `TuningCruiseStep`. On it, set `controller.k = 539.3`, `Ti = 0.546` (8 × and ½ the
 Ziegler-Nichols values) and run `TuningCruiseTransient`; then put the limits back —
 `plant.T_max = 150`, `controller.y_max = 150`, `controller.y_min = 0` — and re-run: the
-beautiful response is the first thing to go. `CruiseLoopStep` is never touched.
+fast arrival is the first thing to go, as in the right panel. `CruiseLoopStep` is never touched.
 
 **Readout — every symbol on this slide**
 
-- **8·k_zn, T<sub>i</sub>/2** — gains pushed well past the table, to make the response look
-  superb.
-- **The upper plot** — speed. Looks perfect.
-- **The lower plot** — commanded torque, with the 150 N·m limit drawn on. Read the peak out
-  loud.
+- **The left panel** — commanded torque for the three tunings with the limit lifted, and the
+  150 N·m the engine has drawn on. Read the peaks out loud.
+- **The right panel** — speed for the same three with `T_max` and `y_max` back at 150 N·m.
+  Nearly one curve: the engine sets the response.
 - **The rule** — always plot the actuator command. One extra line, and it is the difference
   between a design and a drawing.
 -->

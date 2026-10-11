@@ -481,11 +481,11 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)
 
 - **K** = 2.21 km/h per N·m
 - **τ** = 63.0 s
-- **θ** = 1.88 s
+- **θ** = 1.82 s
 
 > **θ is not the engine's delay**
 >
-> It is five times larger. Drag is quadratic, so the car's time constant changes across the
+> It is about six times larger. Drag is quadratic, so the car's time constant changes across the
 > step, and θ is the only parameter that can absorb that. The fit measures bend, not delay.
 
 </div>
@@ -508,7 +508,7 @@ equations of motion. If somebody handed you this car as a sealed box you could s
 here.
 
 **Do not skip the amber box, and do not let it embarrass you.** A student who knows the
-engine's delay is 0.3 s will see 1.88 s and conclude the fit is broken. It is not. FOPTD has
+engine's delay is 0.3 s will see 1.82 s and conclude the fit is broken. It is not. FOPTD has
 three parameters and our car is not FOPTD — it is a *quadratic* drag law, so its time
 constant is different at every speed. The fit spends θ on the mismatch because θ is the only
 parameter left.
@@ -517,7 +517,7 @@ parameter left.
 is really quadratic; you get a curve and three numbers. Notebook 08 tunes from these three
 exactly as they stand, and the controller works — which is the more interesting result.
 
-**Point at:** the ratio θ/τ — about 0.030 here. That is the number every tuning rule in
+**Point at:** the ratio θ/τ — about 0.029 here. That is the number every tuning rule in
 notebook 08 keys on, and it puts this car at the easy end of the range.
 
 **Honest framing, if asked:** quote the tangent gain and time constant at each end of the
@@ -534,7 +534,7 @@ eyeball.
   once settled.
 - **τ = 63.0 s** — time constant: how long it takes to get there, dominated by the vehicle,
   not the engine.
-- **θ = 1.878 s** — dead time as the fit reports it. *Not* the engine's 0.3 s delay — see the
+- **θ = 1.816 s** — dead time as the fit reports it. *Not* the engine's 0.3 s delay — see the
   amber box.
 - **FOPTD** — first order plus dead time, the three-parameter shape these numbers describe.
 - **Tangent gain / time constant** — the local values computed from the force balance at each
