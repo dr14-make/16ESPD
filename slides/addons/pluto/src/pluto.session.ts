@@ -8,9 +8,8 @@ import { shallowRef, watch } from "vue"
 import type { Ref } from "vue"
 import { connect } from "./kernel.client.js"
 import type { Kernel } from "./kernel.client.js"
-import { kernelStatus } from "./kernel.status.js"
+import { kernelState } from "./kernel.status.js"
 import type { KernelReport } from "./kernel.status.js"
-import { sizePlotsToTheirCards } from "./plot.size.js"
 import { createPainter } from "./render.painter.js"
 import type { Painter } from "./render.painter.js"
 import { cardIndex } from "./card.index.js"
@@ -58,7 +57,6 @@ export function usePluto(): Promise<Pluto> {
 
 async function start(view: View): Promise<Pluto> {
   showStatus({})
-  sizePlotsToTheirCards()
   let found: unknown
   try {
     found = await askForKernel()
@@ -154,7 +152,7 @@ function fail(failure: string): never {
 
 /** Put the window's kernel state on the page, where the live suite reads it. */
 function showStatus(report: KernelReport): void {
-  const { state } = kernelStatus(report)
+  const state = kernelState(report)
   if (document.body.dataset.kernel !== state) {
     document.body.dataset.kernel = state
   }

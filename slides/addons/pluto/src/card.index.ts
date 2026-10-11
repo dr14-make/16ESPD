@@ -8,7 +8,7 @@
 import { isRecord } from "./pluto.interface.ts"
 
 /** The cell metadata key a cell publishes itself to a deck under. */
-export const CARD_METADATA_KEY = "card"
+const CARD_METADATA_KEY = "card"
 
 /**
  * Where a card's content came from. A card starts at `placeholder` and moves to whatever first
@@ -40,7 +40,7 @@ export interface CardIndex {
   readonly duplicates: Readonly<Record<string, readonly string[]>>
 }
 
-export type CardLookup =
+type CardLookup =
   | { readonly cellId: string }
   | { readonly fault: "unknown" }
   | { readonly fault: "duplicate"; readonly cellIds: readonly string[] }

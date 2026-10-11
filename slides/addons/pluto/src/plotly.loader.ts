@@ -10,6 +10,8 @@
 // Copied rather than bundled, for the reason MathJax is: the distribution is a classic script
 // assigning `window.Plotly`, not a module.
 
+import { sizePlotsToTheirCards } from "./plot.size.js"
+
 /** The link each page's HTML carries, naming the Plotly build the bundle put beside it. */
 const SOURCE_REL = "plotly-source"
 
@@ -38,7 +40,8 @@ export function needsPlotly(body: unknown): boolean {
 }
 
 /**
- * Load Plotly out of the bundle and publish it at the global, resolving either way.
+ * Load Plotly out of the bundle and publish it at the global, resolving either way, and size
+ * every plot to its card from then on (`plot.size.ts`).
  *
  * A rejection would be a plot card that draws nothing however it were reported, and the suite
  * asserts a drawn graph rather than a loaded script, so the failure is caught where it shows.
@@ -47,7 +50,10 @@ export function needsPlotly(body: unknown): boolean {
  * and falls through to the network for any other. The live suite asserts the two agree.
  */
 export function loadPlotly(): Promise<void> {
-  loading ??= load()
+  if (loading === null) {
+    sizePlotsToTheirCards()
+    loading = load()
+  }
   return loading
 }
 

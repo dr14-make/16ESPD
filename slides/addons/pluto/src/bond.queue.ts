@@ -19,7 +19,7 @@ const NO_RUN_MS = 800
 const SETTLE_TIMEOUT_MS = 30_000
 
 /** What the queue needs of the notebook it is writing to. */
-export interface BondQueueDriver {
+interface BondQueueDriver {
   /**
    * Write the whole batch as one notebook update.
    *

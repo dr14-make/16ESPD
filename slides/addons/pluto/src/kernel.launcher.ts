@@ -21,7 +21,7 @@ const GRACE_MS = 5_000
 /** Signals that end Node without an `exit` event unless something listens for them. */
 const FATAL_SIGNALS = ["SIGINT", "SIGHUP"] as const
 
-export interface Supervised {
+interface Supervised {
   /** The process's id, once it has started. */
   readonly pid: number | undefined
   /** Resolves once the process has exited, or failed to start. */

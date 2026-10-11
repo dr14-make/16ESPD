@@ -126,14 +126,18 @@ export class Kernel {
     if (output === null) {
       return null
     }
+    const published = this.#state()?.published_objects ?? {}
     return {
       source: "live",
       stamp: output.last_run_timestamp,
       mime: output.mime,
       body: output.body,
       // Taken with the body rather than read when a script asks, because a re-run landing in
-      // between replaces `published_objects` whole and takes this body's ids with it.
-      published: { ...this.#state()?.published_objects },
+      // between replaces `published_objects` whole and takes this body's ids with it. Only this
+      // body's, so a card does not hold on to other cards' plot payloads.
+      published: Object.fromEntries(
+        this.#references(cellId, output.body).map((id) => [id, published[id]]),
+      ),
       cellId,
     }
   }
@@ -230,8 +234,8 @@ export class Kernel {
    * Downstream cells finish after the cell they depend on, so settling against the cell a bond
    * feeds hands back the previous run's output for everything below it.
    */
-  watch(cellIds: readonly (string | undefined)[]): void {
-    this.#watched = [...new Set(cellIds)].filter((id): id is string => id !== undefined)
+  watch(cellIds: readonly string[]): void {
+    this.#watched = [...new Set(cellIds)]
   }
 
   onChange(fn: (event: unknown) => void): () => void {
