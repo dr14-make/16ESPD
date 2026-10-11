@@ -1,0 +1,7 @@
+{
+  "name": "slidev-addon-pluto",
+  "private": true,
+  "description": "Live cards: a Slidev deck that names this addon renders cells of a running Pluto notebook. Its dependencies are the workspace's.",
+  "type": "module",
+  "engines": { "slidev": ">=53.0.0" }
+}

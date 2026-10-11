@@ -28,12 +28,12 @@ loads plotly.js from a CDN, which a lecture hall without a network cannot reach.
 - The deck build keeps building every deck. The filter at f3ef6bb that skipped decks with a
   notebook does not come back.
 - A deck can draw on several notebooks, one per section, so a `PlutoCard` names its notebook as
-  well as its card, and PlutoDeck runs one kernel per notebook.
+  well as its card, and `slidev dev` runs one kernel per notebook.
 - The Dyad stack runs only on the `dyad-3.4.0` Julia channel with packages from the Dyad depot,
   which Pluto's package manager cannot install. The repo's `Manifest.toml` is the only pin, so a
   notebook is reproducible from a checkout of the repo, not on its own.
 - A notebook's first result takes about 30 s after its kernel starts, almost all of it the first
-  model compile. PlutoDeck starts every notebook when it launches, and the snapshot covers each one
+  model compile. `slidev dev` starts every notebook when it starts, and the snapshot covers each one
   until it is ready. A slider move then takes tens of milliseconds, most of it drawing the plot.
   Sliders bind only tunable parameters, because a structural change builds a new model, which
   takes seconds.

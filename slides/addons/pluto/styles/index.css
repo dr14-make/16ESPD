@@ -1,0 +1,79 @@
+/* A live card, and the rules that reach its rendered output. A card renders Pluto's output in
+   light DOM and without Pluto's own stylesheet, so these are document rules: the renderer
+   resolves a payload through `closest("pluto-cell")`, which does not cross a shadow boundary,
+   and neither would a stylesheet. */
+
+/* Fills the box it is placed in, so a plot can be told that box's height. */
+.pluto-card {
+  block-size: 100%;
+}
+
+.pluto-card[data-source="placeholder"] {
+  display: grid;
+  place-items: center;
+}
+
+.course-card:has(> .pluto-card[data-source="placeholder"]) {
+  border-style: dashed;
+}
+
+.pluto-card-fault,
+.pluto-card-waiting {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+}
+
+.pluto-card-waiting {
+  opacity: 0.6;
+}
+
+.pluto-card-body,
+.pluto-card-body pluto-cell {
+  display: block;
+  min-inline-size: 0;
+}
+
+/* A plot given no height draws itself 400 px whatever box it sits in, so a figure is told how
+   tall its card is. Scoped to what Plotly rendered: the same rule over prose or a table would
+   stretch the paragraph or distribute the rows. */
+.pluto-card-body:has(.js-plotly-plot),
+.pluto-card-body:has(.js-plotly-plot) > pluto-cell,
+.pluto-card-body:has(.js-plotly-plot) > pluto-cell > * {
+  block-size: 100%;
+}
+
+/* Not `> :first-child`, which reaches only Pluto's own wrapper: a markdown cell's paragraph
+   sits one level further in and keeps margins enough to turn a two-row widget card into a
+   scroll-box. */
+.pluto-card-body :first-child {
+  margin-block-start: 0;
+}
+
+.pluto-card-body :last-child {
+  margin-block-end: 0;
+}
+
+/* Slidev's reset makes every SVG a block, which would break a sentence at each inline formula
+   MathJax draws. */
+.pluto-card-body mjx-container > svg {
+  display: inline;
+}
+
+.pluto-card-body table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.pluto-card-body th,
+.pluto-card-body td {
+  padding: 0.2rem 0.4rem;
+  border-block-end: 1px solid #8884;
+  text-align: start;
+}
+
+/* Readouts are numbers against a label, and a column of numbers only scans if it is aligned
+   and does not reflow as the digits change. */
+.pluto-card-body td {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

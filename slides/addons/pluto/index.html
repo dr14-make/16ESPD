@@ -1,0 +1,19 @@
+<head>
+  <!-- Every URL here starts at the deck's base, where `vendor.plugin.ts` serves `pluto/`: a
+       relative one resolves against the route, which history routing puts deeper than the base.
+       `vite-ignore` keeps a build from taking the links for assets of its own to bundle. -->
+  <!-- Fetched only by a deck that has math to draw. -->
+  <link rel="mathjax-source" href="%BASE_URL%pluto/tex-svg-full.js" vite-ignore>
+  <!-- Fetched only by a deck that has a plot to draw. `data-version` is the key a plot cell asks
+       for: a deck serving any other version is one whose plots all go to the network. -->
+  <link rel="plotly-source" href="%BASE_URL%pluto/plotly.min.js" data-version="2.34.0" vite-ignore>
+  <!-- What a plot cell imports off the internet, served from the deck instead. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "https://cdn.jsdelivr.net/npm/lodash-es@4.17.21/+esm": "%BASE_URL%pluto/lodash.js",
+        "https://esm.sh/interactjs@1.10.19": "%BASE_URL%pluto/interact.js"
+      }
+    }
+  </script>
+</head>
