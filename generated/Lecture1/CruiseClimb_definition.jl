@@ -138,7 +138,7 @@ to clamp the controller under the physical ceiling, as notebook 06's closing sec
   ### Components
   # Subcomponent loop of type VehicleSystemsComponents.Lecture1.CruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m0=v_set, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wd=wd, m0=v_set, loop_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=v_set, demand_overrides...))

@@ -108,11 +108,9 @@ component CruiseClimb
     Ti = Ti,
     Td = Td,
     Nd = Nd,
-    Ni = Ni,
     T_max = T_max,
     y_max = y_max,
     y_min = y_min,
-    wp = wp,
     wd = wd,
     m0 = v_set)
   demand = BlockComponents.Sources.Constant(k = v_set)
