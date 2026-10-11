@@ -120,7 +120,7 @@ expectation.
    - Tests `backcalc` and `clamping` keep their values.
 4. **`NoisyCruiseLoop`**: `GradeCar` plus `CruiseController`. Drop `Ni`, `wp` and `zero_ff` as
    in task 3. The `filtered_derivative` test keeps its values.
-5. **`Sampler.dyad`** (`SampledCruiseLoop`): `plant = HandsOn.GradeCar(...)`. The
+5. **`SampledCruiseLoop.dyad`** (`SampledCruiseLoop`): `plant = HandsOn.GradeCar(...)`. The
    `DiscretePIDStandard` controller stays; section 09 is a demo of the library's discrete
    controller.
 6. **`SlipCruiseLoop`**: `plant = HandsOn.SlipCar(theta_e, T_max, m, CdA)` plus

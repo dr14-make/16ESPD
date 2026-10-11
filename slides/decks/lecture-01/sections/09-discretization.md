@@ -221,7 +221,7 @@ controller update. That held command is where the staircase comes from.
 
 *Demo only · `SampledCruiseLoop` · clock → samplers → `DiscretePIDStandard` → hold → `plant`*
 
-**Open in Dyad** `dyad/Lecture1/Sampler.dyad`
+**Open in Dyad** `dyad/Lecture1/SampledCruiseLoop.dyad`
 
 <!--
 **Demo, not a build.** Open `SampledCruiseLoop` in the lecturer's Studio; students do not
