@@ -92,3 +92,41 @@ The recap reuses the hands-on images `step05-car.png`, `step07-grade-body.png` a
 | ---- | ----- | -------------------- |
 | `step10-slip-loop.png` | `SlipCruiseIcePatch` | The loop with `plant` as `SlipCar`, `demand` as `Constant(k = 90)`, and the `friction` pulse wired to `plant.mu_scale`. |
 | `step10-ice-patch-plot.png` | `SlipCruiseTransient` | `plant.v_kmh` against `plant.wheel_kmh` across the ice patch from 4 to 12 s, `stop = 45`: wheelspin is the gap between them. |
+
+## Where each state lives
+
+Each build step has its own subpackage, `dyad/Lecture1/StepNN/`, holding the student's
+components exactly as they stand at the end of that step, under the guide's names. Open the
+component below in Studio for the diagram, or run the analysis for the plot. Blocks keep their
+coordinates from step to step, so successive shots of one component line up. The same
+subpackages are the catch-up checkpoints for every step.
+
+| File | Component | Analysis |
+| ---- | --------- | -------- |
+| `step01-step-test.png` | `Lecture1.Step01.CarStepTest` | — |
+| `step01-step-test-plot.png` | — | `Lecture1.Step01.CarStepTestTransient` |
+| `step01-gradecar.png` | `Lecture1.Step01.GradeCar` | — |
+| `step02-loop.png` | `Lecture1.Step02.CruiseLoopStep` | — |
+| `step02-controller-shell.png` | `Lecture1.Step02.CruiseController` | — |
+| `step03-gain.png` | `Lecture1.Step03.CruiseController` | — |
+| `step03-p-plot.png` | — | `Lecture1.Step03.CruiseLoopTransient` |
+| `step04-integrator.png` | `Lecture1.Step04.CruiseController` | — |
+| `step04-pi-plot.png` | — | `Lecture1.Step04.CruiseLoopTransient` |
+| `step05-derivative.png` | `Lecture1.Step05.CruiseController` | — |
+| `step05-pid-plot.png` | — | `Lecture1.Step05.CruiseLoopTransient` |
+| `step06-tmax.png` | `Lecture1.Step06a.GradeCar` | — |
+| `step06-limiter.png` | `Lecture1.Step06b.CruiseController` | `Lecture1.Step06b.CruiseLoopTransient` for the re-run |
+| `step06-climb.png` | `Lecture1.Step06c.CruiseClimb` | — |
+| `step06-windup-plot.png` | — | `Lecture1.Step06c.CruiseClimbTransient` |
+| `step06-clamping-code.png` | `Lecture1.Step06d.CruiseController`, code view | — |
+| `step06-clamping-plot.png` | — | `Lecture1.Step06d.CruiseClimbTransient` |
+| `step07-noise-loop.png` | `Lecture1.Step07.NoisyCruiseStep` | — |
+| `step07-noisy-plot.png` | — | `Lecture1.Step07.NoisyCruiseTransient`, with `controller` set to `wd = 1`, `xd0 = 0` |
+| `step07-wd0-plot.png` | — | `Lecture1.Step07.NoisyCruiseTransient` as shipped (`wd = 0`, `xd0 = -90`) |
+| `step08-params.png` | `Lecture1.Step08.GradeCar` | — |
+| `step09-sampler.png` | `Lecture1.SampledCruiseLoop`, the reference | — |
+| `step10-slip-loop.png` | `Lecture1.Step10.SlipCruiseIcePatch` | — |
+| `step10-ice-patch-plot.png` | — | `Lecture1.Step10.SlipCruiseTransient` |
+
+`Step02.CruiseLoopTransient` exists, as it does for the students, but does not run: in step 2
+`controller.y` has nothing driving it.
