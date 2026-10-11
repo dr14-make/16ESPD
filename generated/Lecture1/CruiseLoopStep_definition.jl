@@ -18,8 +18,8 @@ command zero torque at zero error.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `theta_e`         |                          | s  |   0.3 |
-| `with_I`         |                          | --  |   true |
-| `with_D`         |                          | --  |   true |
+| `with_I`         |                          | --  |   false |
+| `with_D`         |                          | --  |   false |
 | `k`         |                          | --  |   56.0 |
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
@@ -37,7 +37,7 @@ command zero torque at zero error.
 | `tau0`         |                          | N.m  |   31.078 |
 | `t_step`         |                          | s  |   0.0 |
 """
-@component function CruiseLoopStep(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, grade=Float64(0.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
+@component function CruiseLoopStep(; name = nothing, theta_e=0.3, with_I=false, with_D=false, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, grade=Float64(0.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

@@ -71,8 +71,8 @@ command zero torque at zero error.
 """
 component CruiseLoopStep
   structural parameter theta_e::Time = 0.3
-  structural parameter with_I::Boolean = true
-  structural parameter with_D::Boolean = true
+  structural parameter with_I::Boolean = false
+  structural parameter with_D::Boolean = false
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
