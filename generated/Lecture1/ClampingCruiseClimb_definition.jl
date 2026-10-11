@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   ClampingCruiseClimb(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wp, wd, v_set, v0, tau0, gradient, start_time, duration)
+   ClampingCruiseClimb(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, v_set, v0, tau0, gradient, start_time, duration)
 
-The clamping counterpart of `CruiseClimb`: same scenario, closed with `ClampingCruiseLoop`.
+The clamping counterpart of `CruiseClimb`: same scenario, closed with `CruiseLoop`.
 
 Signal paths match `CruiseClimb` — `loop.plant.v_kmh`, `loop.controller.y`,
 `loop.plant.engine.limiter.y`, `loop.controller.integrator.y` — so notebook 06 reads all three
@@ -27,7 +27,6 @@ anti-windup cases the same way, swapping only the analysis.
 | `T_max`         |                          | N.m  |   150.0 |
 | `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
-| `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
 | `v_set`         | Cruise setpoint in km/h                         | --  |   130.0 |
 | `v0`         | Initial speed (36.1111 m/s = 130 km/h)                         | m/s  |   36.111111111111114 |
@@ -36,7 +35,7 @@ anti-windup cases the same way, swapping only the analysis.
 | `start_time`         | Time at which the climb begins                         | s  |   30.0 |
 | `duration`         | Climb duration; the road returns to flat afterwards                         | s  |   120.0 |
 """
-@component function ClampingCruiseClimb(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), v_set=Float64(130.0), v0=36.111111111111114, tau0=50.9693, gradient=0.1, start_time=Float64(30.0), duration=Float64(120.0), y_max=T_max, kwargs...)
+@component function ClampingCruiseClimb(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), v_set=Float64(130.0), v0=36.111111111111114, tau0=50.9693, gradient=0.1, start_time=Float64(30.0), duration=Float64(120.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -88,9 +87,6 @@ anti-windup cases the same way, swapping only the analysis.
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
   __initial_conditions[y_min] = __local__y_min
-  __local__wp = wp
-  append!(__params, @parameters (wp::Real))
-  __initial_conditions[wp] = __local__wp
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
@@ -125,9 +121,9 @@ anti-windup cases the same way, swapping only the analysis.
   __constants = Any[]
 
   ### Components
-  # Subcomponent loop of type VehicleSystemsComponents.Lecture1.ClampingCruiseLoop
+  # Subcomponent loop of type VehicleSystemsComponents.Lecture1.CruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.ClampingCruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m0=v_set, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wd=wd, m0=v_set, loop_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=v_set, demand_overrides...))

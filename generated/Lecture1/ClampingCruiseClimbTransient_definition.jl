@@ -32,13 +32,12 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"T_max"::Float64 = 150.0
   var"y_max"::Float64 = T_max
   var"y_min"::Float64 = 0.0
-  var"wp"::Float64 = 1.0
   var"wd"::Float64 = 1.0
   var"v_set"::Float64 = 130.0
   var"gradient"::Float64 = 0.1
   var"start_time"::Float64 = 30.0
   var"duration"::Float64 = 120.0
-  # The clamping counterpart of `CruiseClimb`: same scenario, closed with `ClampingCruiseLoop`.
+  # The clamping counterpart of `CruiseClimb`: same scenario, closed with `CruiseLoop`.
   # 
   # Signal paths match `CruiseClimb` — `loop.plant.v_kmh`, `loop.controller.y`,
   # `loop.plant.engine.limiter.y`, `loop.controller.integrator.y` — so notebook 06 reads all three
@@ -56,7 +55,6 @@ function DyadInterface.run_analysis(spec::ClampingCruiseClimbTransientSpec)
   push!(overrides, no_namespace_model.T_max => spec.var"T_max")
   push!(overrides, no_namespace_model.y_max => spec.var"y_max")
   push!(overrides, no_namespace_model.y_min => spec.var"y_min")
-  push!(overrides, no_namespace_model.wp => spec.var"wp")
   push!(overrides, no_namespace_model.wd => spec.var"wd")
   push!(overrides, no_namespace_model.v_set => spec.var"v_set")
   push!(overrides, no_namespace_model.gradient => spec.var"gradient")

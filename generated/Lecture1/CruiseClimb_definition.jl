@@ -9,7 +9,7 @@
 
 Windup scenario: cruise at 130 km/h, meet a finite 10% climb, then watch the road flatten.
 
-Drives `CruiseLoop`'s (back-calculation) controller with a constant setpoint and a `GradeProfile`
+Drives `BackCalcCruiseLoop`'s controller with a constant setpoint and a `GradeProfile`
 that switches on a climb at `start_time` and off again after `duration`. The climb needs more
 tractive force than the engine can supply, so it saturates and the car falls back to about
 118 km/h. The lesson is the recovery after the climb ends: an integrator that accumulated
@@ -136,9 +136,9 @@ to clamp the controller under the physical ceiling, as notebook 06's closing sec
   __constants = Any[]
 
   ### Components
-  # Subcomponent loop of type VehicleSystemsComponents.Lecture1.CruiseLoop
+  # Subcomponent loop of type VehicleSystemsComponents.Lecture1.BackCalcCruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wd=wd, m0=v_set, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.BackCalcCruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m0=v_set, loop_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=v_set, demand_overrides...))

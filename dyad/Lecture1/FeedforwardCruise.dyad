@@ -12,7 +12,7 @@ The lag state is preloaded with `tau_ff` and the speed with `v0`, so the nominal
 already settled instead of spending the vehicle's ~60 s time constant getting there.
 """
 component FeedforwardCruise
-  plant = VehicleSystemsComponents.Vehicle.CarPlant(m = m, CdA = CdA) {^plant}
+  plant = VehicleSystemsComponents.HandsOn.GradeCar(m = m, CdA = CdA) {^plant}
   "Fixed feedforward torque command"
   cmd = BlockComponents.Sources.Constant(k = tau_ff) {^cmd}
   "Constant road gradient"

@@ -19,16 +19,16 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 90, 0.1, 1e-5),
-    (m -> m.loop.plant.kappa, "loop.plant.kappa", 0, 0.05, 1e-5),
+    (m -> m.loop.plant.wheel.kappa, "loop.plant.wheel.kappa", 0, 0.05, 1e-5),
   ],
   expected_final=Tuple[
     (m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 89.99954, 0.1, 1e-5),
-    (m -> m.loop.plant.kappa, "loop.plant.kappa", 0.0015586, 0.05, 1e-5),
+    (m -> m.loop.plant.wheel.kappa, "loop.plant.wheel.kappa", 0.0015586, 0.05, 1e-5),
   ],
   signals=Tuple[
     (m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 0.1, 1e-5),
-    (m -> m.loop.plant.wheel_rpm, "loop.plant.wheel_rpm", 1e-5, 1e-5),
-    (m -> m.loop.plant.kappa, "loop.plant.kappa", 0.05, 1e-5),
+    (m -> m.loop.plant.wheel_kmh, "loop.plant.wheel_kmh", 1e-5, 1e-5),
+    (m -> m.loop.plant.wheel.kappa, "loop.plant.wheel.kappa", 0.05, 1e-5),
     (m -> m.loop.controller.y, "loop.controller.y", 1e-5, 1e-5),
     (m -> m.friction.y, "friction.y", 1e-5, 1e-5),
   ],

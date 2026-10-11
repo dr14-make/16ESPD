@@ -16,9 +16,9 @@ end
 
 
 @testset "`VehicleSystemsComponents.Lecture1`" begin
+include("BackCalcCruiseLoop_test.jl")
 include("CarStepTest_test.jl")
 include("ClampingCruiseClimb_test.jl")
-include("ClampingCruiseLoop_test.jl")
 include("CruiseClimb_test.jl")
 include("CruiseController_test.jl")
 include("CruiseLoopStep_test.jl")

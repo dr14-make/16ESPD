@@ -84,15 +84,12 @@ since the vehicle's own time constant is about 60 s.
   __constants = Any[]
 
   ### Components
-  # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
+  # Subcomponent plant of type VehicleSystemsComponents.HandsOn.Car
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.Car(; plant_overrides...))
   # Subcomponent cmd of type BlockComponents.Sources.Step
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
   push!(__systems, @named cmd = BlockComponents.Sources.Step(; offset=tau_lo, height=tau_hi - tau_lo, start_time=t_step, cmd_overrides...))
-  # Subcomponent road of type BlockComponents.Sources.Constant
-  road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0.0), road_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -109,7 +106,6 @@ since the vehicle's own time constant is about 60 s.
 
   ### Equations
   push!(__eqs, connect(cmd.y, plant.tau_cmd))
-  push!(__eqs, connect(road.y, plant.grade))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   WheeledCruiseStep(; name, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wd, J_w, v_lo, v_hi, v0, tau0, t_step)
+   WheeledCruiseStep(; name, k, Ti, Td, Nd, T_max, y_max, y_min, wd, J_w, v_lo, v_hi, v0, tau0, t_step)
 
-PID setpoint step around the L1 no-slip wheeled plant.
+PID setpoint step around the hands-on no-slip wheeled car.
 
 ## Parameters:
 
@@ -17,7 +17,6 @@ PID setpoint step around the L1 no-slip wheeled plant.
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.5 |
 | `Nd`         |                          | --  |   10.0 |
-| `Ni`         |                          | --  |   0.9 |
 | `T_max`         |                          | N.m  |   1e6 |
 | `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
@@ -29,7 +28,7 @@ PID setpoint step around the L1 no-slip wheeled plant.
 | `tau0`         |                          | N.m  |   31.078 |
 | `t_step`         |                          | s  |   0.0 |
 """
-@component function WheeledCruiseStep(; name = nothing, k=Float64(56.0), Ti=Float64(10.0), Td=0.5, Nd=Float64(10.0), Ni=0.9, T_max=Float64(1000000.0), y_min=Float64(0.0), wd=Float64(0.0), J_w=Float64(1.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
+@component function WheeledCruiseStep(; name = nothing, k=Float64(56.0), Ti=Float64(10.0), Td=0.5, Nd=Float64(10.0), T_max=Float64(1000000.0), y_min=Float64(0.0), wd=Float64(0.0), J_w=Float64(1.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -72,9 +71,6 @@ PID setpoint step around the L1 no-slip wheeled plant.
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
   __initial_conditions[Nd] = __local__Nd
-  __local__Ni = Ni
-  append!(__params, @parameters (Ni::Real))
-  __initial_conditions[Ni] = __local__Ni
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
   __initial_conditions[T_max] = __local__T_max
@@ -118,21 +114,15 @@ PID setpoint step around the L1 no-slip wheeled plant.
   __constants = Any[]
 
   ### Components
-  # Subcomponent plant of type VehicleSystemsComponents.Lecture1.WheeledCarPlant
+  # Subcomponent plant of type VehicleSystemsComponents.HandsOn.WheeledCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Lecture1.WheeledCarPlant(; T_max=T_max, J_w=J_w, plant_overrides...))
-  # Subcomponent controller of type BlockComponents.Continuous.LimPID
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.WheeledCar(; T_max=T_max, J_w=J_w, plant_overrides...))
+  # Subcomponent controller of type VehicleSystemsComponents.Lecture1.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; with_I=true, with_D=true, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wd=wd, xi0=Float64(0.0), xd0=(wd - 1) * v_lo, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.CruiseController(; with_I=true, with_D=true, k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=y_max, y_min=y_min, wd=wd, xi0=Float64(0.0), xd0=(wd - 1) * v_lo, controller_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=v_lo, height=v_hi - v_lo, start_time=t_step, demand_overrides...))
-  # Subcomponent road of type BlockComponents.Sources.Constant
-  road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0.0), road_overrides...))
-  # Subcomponent zero_ff of type BlockComponents.Sources.Constant
-  zero_ff_overrides = __pop_subcomponent_overrides!(__overrides, "zero_ff")
-  push!(__systems, @named zero_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_ff_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -151,9 +141,7 @@ PID setpoint step around the L1 no-slip wheeled plant.
   ### Equations
   push!(__eqs, connect(demand.y, controller.u_s))
   push!(__eqs, connect(plant.v_kmh, controller.u_m))
-  push!(__eqs, connect(zero_ff.y, controller.u_ff))
   push!(__eqs, connect(controller.y, plant.tau_cmd))
-  push!(__eqs, connect(road.y, plant.grade))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

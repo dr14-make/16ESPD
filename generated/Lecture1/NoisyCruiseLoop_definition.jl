@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   NoisyCruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, amplitude, m0, xi0, xd0)
+   NoisyCruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, m, CdA, amplitude, m0, xi0, xd0)
 
 Cruise-control loop with deterministic noise in the speed-measurement path.
 
@@ -23,11 +23,9 @@ the controller. The loop signals and noise amplitude are in km/h.
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
-| `Ni`         |                          | --  |   0.9 |
 | `T_max`         |                          | N.m  |   150.0 |
 | `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
-| `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
 | `m`         |                          | kg  |   1400.0 |
 | `CdA`         |                          | m2  |   0.63 |
@@ -41,7 +39,7 @@ the controller. The loop signals and noise amplitude are in km/h.
  * `setpoint` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function NoisyCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, amplitude=0.2, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
+@component function NoisyCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, amplitude=0.2, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -84,9 +82,6 @@ the controller. The loop signals and noise amplitude are in km/h.
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
   __initial_conditions[Nd] = __local__Nd
-  __local__Ni = Ni
-  append!(__params, @parameters (Ni::Real))
-  __initial_conditions[Ni] = __local__Ni
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
   __initial_conditions[T_max] = __local__T_max
@@ -96,9 +91,6 @@ the controller. The loop signals and noise amplitude are in km/h.
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
   __initial_conditions[y_min] = __local__y_min
-  __local__wp = wp
-  append!(__params, @parameters (wp::Real))
-  __initial_conditions[wp] = __local__wp
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
@@ -135,18 +127,15 @@ the controller. The loop signals and noise amplitude are in km/h.
   __constants = Any[]
 
   ### Components
-  # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
+  # Subcomponent plant of type VehicleSystemsComponents.HandsOn.GradeCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
-  # Subcomponent controller of type BlockComponents.Continuous.LimPID
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.GradeCar(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
+  # Subcomponent controller of type VehicleSystemsComponents.Lecture1.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wp=wp, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.CruiseController(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=y_max, y_min=y_min, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
   # Subcomponent noise of type VehicleSystemsComponents.Lecture1.MeasurementNoise
   noise_overrides = __pop_subcomponent_overrides!(__overrides, "noise")
   push!(__systems, @named noise = VehicleSystemsComponents.Lecture1.MeasurementNoise(; amplitude=amplitude, noise_overrides...))
-  # Subcomponent zero_ff of type BlockComponents.Sources.Constant
-  zero_ff_overrides = __pop_subcomponent_overrides!(__overrides, "zero_ff")
-  push!(__systems, @named zero_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_ff_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -162,7 +151,6 @@ the controller. The loop signals and noise amplitude are in km/h.
   push!(__eqs, connect(setpoint, controller.u_s))
   push!(__eqs, connect(plant.v_kmh, noise.u))
   push!(__eqs, connect(noise.y, controller.u_m))
-  push!(__eqs, connect(zero_ff.y, controller.u_ff))
   push!(__eqs, connect(controller.y, plant.tau_cmd))
   push!(__eqs, connect(grade, plant.grade))
 

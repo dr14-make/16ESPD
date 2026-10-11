@@ -202,11 +202,11 @@ component.
 end
 
 
+include("BackCalcCruiseLoop_definition.jl")
 include("CarStepTestTransient_definition.jl")
 include("CarStepTest_definition.jl")
 include("ClampingCruiseClimbTransient_definition.jl")
 include("ClampingCruiseClimb_definition.jl")
-include("ClampingCruiseLoop_definition.jl")
 include("CruiseClimbTransient_definition.jl")
 include("CruiseClimb_definition.jl")
 include("CruiseController_definition.jl")

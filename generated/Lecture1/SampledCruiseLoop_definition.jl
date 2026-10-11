@@ -125,9 +125,9 @@ Subcomponent names match `CruiseLoop` (`plant`, `controller`) so a harness reads
   __constants = Any[]
 
   ### Components
-  # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
+  # Subcomponent plant of type VehicleSystemsComponents.HandsOn.GradeCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.GradeCar(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
   # Subcomponent clock of type DiscreteComponents.PeriodicClock
   clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
   push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=Ts, clock_overrides...))

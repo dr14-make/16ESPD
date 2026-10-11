@@ -9,9 +9,9 @@
 
 Open-loop wide-open-throttle run: full torque from rest on flat road.
 
-A `CarPlant` cannot be a `TransientAnalysis` model on its own — its `tau_cmd` and `grade`
-inputs would be unconnected. This harness drives both from constant sources and carries the
-initial conditions, so notebook 01 can run it to terminal speed and read the transient.
+A `Car` cannot be a `TransientAnalysis` model on its own because its `tau_cmd` input would be
+unconnected. This harness drives it from a constant source and carries the initial conditions,
+so notebook 01 can run it to terminal speed and read the transient.
 The command is well above the torque ceiling so the engine clamps at its limit throughout.
 """
 @component function WideOpenThrottle(; name = nothing, kwargs...)
@@ -58,15 +58,12 @@ The command is well above the torque ceiling so the engine clamps at its limit t
   __constants = Any[]
 
   ### Components
-  # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
+  # Subcomponent plant of type VehicleSystemsComponents.HandsOn.Car
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.Car(; plant_overrides...))
   # Subcomponent cmd of type BlockComponents.Sources.Constant
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
   push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=Float64(300.0), cmd_overrides...))
-  # Subcomponent road of type BlockComponents.Sources.Constant
-  road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0.0), road_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -83,7 +80,6 @@ The command is well above the torque ceiling so the engine clamps at its limit t
 
   ### Equations
   push!(__eqs, connect(cmd.y, plant.tau_cmd))
-  push!(__eqs, connect(road.y, plant.grade))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
