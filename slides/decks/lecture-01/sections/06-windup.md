@@ -219,8 +219,9 @@ three-way table. If their overshoot is a few km/h rather than tens, the integrat
 wired from `error` — check that before going on.
 
 **Catch-up:** the reference `Lecture1.CruiseClimb` has the same name, but its loop is the
-back-calculation comparison (`LimPID`); set `Ni = 1e6` on it to reproduce the no-anti-windup
-run.
+back-calculation comparison (`LimPID`). The no-anti-windup run is
+`Lecture1.ClampingCruiseClimbTransient` with `y_max = 1e6`, `y_min = -1e6`: limits the command
+never reaches, so the clamp never acts.
 -->
 
 ---
@@ -238,10 +239,10 @@ COMMAND   = "loop.controller.gain.y"        # before the limiter
 DELIVERED = "loop.plant.engine.limiter.y"   # on the crankshaft
 INTEGRAL  = "loop.controller.integrator.y"
 
-# `Ni` is the back-calculation tracking factor; a large value makes the
-# correction negligible, which is the no-anti-windup case.
-no_aw = Scenarios.CruiseClimbTransient(
-    k = 56.0, Ti = 10.0, Td = 0.5, Ni = 1.0e6,
+# Clamping acts only when the command reaches a limit; limits it never
+# reaches give the controller with no anti-windup at all.
+no_aw = Scenarios.ClampingCruiseClimbTransient(
+    k = 56.0, Ti = 10.0, Td = 0.5, y_max = 1.0e6, y_min = -1.0e6,
     v_set = 130.0, gradient = 0.10,
     start_time = 30.0, duration = 120.0, stop = 400.0)
 
@@ -297,8 +298,9 @@ the duration is finite, and the flattening is where the damage shows.
   torque** — what the engine gives; it is flat on the limit.
 - **The integrator state** — plotted separately, because it is the thing actually going wrong
   and it is invisible in the speed trace.
-- **Ni = 1.0e6** — `LimPID`'s back-calculation factor set so large that its correction is
-  negligible: no anti-windup, deliberately, so the failure is visible.
+- **y_max = 1.0e6, y_min = -1.0e6** — controller limits the command never reaches, so the
+  clamp never acts: no anti-windup, deliberately, so the failure is visible. The engine still
+  stops at 150 N·m.
 -->
 
 ---
@@ -594,12 +596,12 @@ of the last slide in this section.
 <div>
 
 ```julia [06-windup.ipynb · cell Three-way comparison]
-# Three schemes, three calls: `Ni` switches back-calculation on and off,
-# and clamping is a different controller, so a different analysis.
+# Three schemes, two controllers: clamping with unreachable limits is no
+# anti-windup at all; back-calculation is the library's LimPID.
 CLIMB = (k = 56.0, Ti = 10.0, Td = 0.5, v_set = 130.0, gradient = 0.10,
          start_time = 30.0, duration = 120.0, stop = 400.0)
 
-runs = ["none"             => Scenarios.CruiseClimbTransient(; Ni = 1.0e6, CLIMB...),
+runs = ["none"             => Scenarios.ClampingCruiseClimbTransient(; y_max = 1.0e6, y_min = -1.0e6, CLIMB...),
         "back-calculation" => Scenarios.CruiseClimbTransient(; Ni = 0.9, CLIMB...),
         "clamping"         => Scenarios.ClampingCruiseClimbTransient(; CLIMB...)]
 
@@ -644,7 +646,7 @@ of its own. The real answer is: whichever one your framework already implements 
 
 **Readout — every symbol on this slide**
 
-- **"none"** — `LimPID` with `Ni = 1e6`: no protection. **"back-calculation"** — `LimPID`'s
+- **"none"** — the clamping controller with limits it never reaches: no protection. **"back-calculation"** — `LimPID`'s
   built-in at `Ni = 0.9`. **"clamping"** — conditional integration, a different controller and
   so a different analysis.
 - **Peak overshoot** — the single number that separates them.
