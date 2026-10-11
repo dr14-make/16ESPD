@@ -9,8 +9,8 @@ routeAlias: schedule
 | # | Lecture | Practical |
 |---|---------|-----------|
 | 1 | Introduction | |
-| 2 | [PID controllers and vehicle dynamics](../lecture-01/index.html) | |
-| 3 | | [Introduction to Dyad: build the car](../handson/lecture-01/index.html) |
+| 2 | | [Introduction to Dyad: build the car](../handson/lecture-01/index.html) |
+| 3 | [PID controllers and vehicle dynamics](../lecture-01/index.html) | |
 | 4 | Internal combustion engines | |
 | 5 | | Engine modeling |
 | 6 | Hybrid and electric vehicles | |
@@ -27,9 +27,9 @@ routeAlias: schedule
 </div>
 
 <!--
-**Say:** lectures and practicals alternate, and every practical builds on the lecture before it — in Dyad, in your own repository, in the same vehicle library.
+**Say:** lectures and practicals alternate, and each one builds on the one before it — in Dyad, in your own repository, in the same vehicle library. The course opens the other way round: you build the car in the first practical (2), and the first lecture (3) recaps it and puts a cruise controller on it, block by block, on your own screen.
 
-**Walk the flow:** first you build the car (3). Then its powertrain, one kind at a time: the combustion engine (4–5), then the electric motor with its controller and a hybrid drive that combines the two (6–8), and fuel cells as the next source of electric power (9). With the drive done, the safety systems that act on it (10–11): ABS stops the wheels locking when braking, TCS stops them spinning when accelerating, ESP keeps the car from sliding sideways. Comfort and assistance systems (12) and autonomy (14) close the course. The autonomy practical leaves Dyad: in the CARLA simulator you work with the car's camera and sensors in a virtual city.
+**Walk the flow:** first you build the car and control it (2–3). Then its powertrain, one kind at a time: the combustion engine (4–5), then the electric motor with its controller and a hybrid drive that combines the two (6–8), and fuel cells as the next source of electric power (9). With the drive done, the safety systems that act on it (10–11): ABS stops the wheels locking when braking, TCS stops them spinning when accelerating, ESP keeps the car from sliding sideways. Comfort and assistance systems (12) and autonomy (14) close the course. The autonomy practical leaves Dyad: in the CARLA simulator you work with the car's camera and sensors in a virtual city.
 
 **Abbreviations:** ABS — anti-lock braking system. ESP — electronic stability program. TCS — traction control system.
 
