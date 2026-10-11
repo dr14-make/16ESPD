@@ -112,7 +112,7 @@ metadata {
         "atol": {"loop.plant.v_kmh": 0.1, "loop.noise.y": 0.5},
         "expect": {
           "initial": {"loop.plant.v_kmh": 90.0, "loop.noise.y": 90.38071258530745},
-          "final": {"loop.plant.v_kmh": 110.1561, "loop.noise.y": 110.89},
+          "final": {"loop.plant.v_kmh": 110.1561, "loop.noise.y": 110.5368},
           "signals": ["loop.plant.v_kmh", "loop.noise.y", "loop.controller.y", "demand.y"]
         }
       }

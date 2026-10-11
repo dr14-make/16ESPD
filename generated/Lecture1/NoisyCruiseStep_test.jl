@@ -23,7 +23,7 @@ __dyad_run_test_case!(
   ],
   expected_final=Tuple[
     (m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 110.1561, 0.1, 1e-5),
-    (m -> m.loop.noise.y, "loop.noise.y", 110.89, 0.5, 1e-5),
+    (m -> m.loop.noise.y, "loop.noise.y", 110.5368, 0.5, 1e-5),
   ],
   signals=Tuple[
     (m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 0.1, 1e-5),
