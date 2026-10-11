@@ -9,7 +9,7 @@
 
 Cruise-control loop around the car, closed with the clamping controller.
 
-Identical to `CruiseLoop` except the controller is `ClampingPID` (conditional-integration
+Identical to `CruiseLoop` except the controller is `CruiseController` (conditional-integration
 anti-windup) rather than `LimPID` (back-calculation). The subcomponent names match `CruiseLoop`
 — `plant`, `controller`, and `controller.integrator` — so a harness can read the same signal
 paths regardless of which anti-windup scheme is in the loop.
@@ -132,12 +132,9 @@ paths regardless of which anti-windup scheme is in the loop.
   # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
   push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
-  # Subcomponent controller of type VehicleSystemsComponents.Lecture1.ClampingPID
+  # Subcomponent controller of type VehicleSystemsComponents.Lecture1.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.ClampingPID(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=y_max, y_min=y_min, wp=wp, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
-  # Subcomponent zero_ff of type BlockComponents.Sources.Constant
-  zero_ff_overrides = __pop_subcomponent_overrides!(__overrides, "zero_ff")
-  push!(__systems, @named zero_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_ff_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.CruiseController(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=y_max, y_min=y_min, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -152,7 +149,6 @@ paths regardless of which anti-windup scheme is in the loop.
   ### Equations
   push!(__eqs, connect(setpoint, controller.u_s))
   push!(__eqs, connect(plant.v_kmh, controller.u_m))
-  push!(__eqs, connect(zero_ff.y, controller.u_ff))
   push!(__eqs, connect(controller.y, plant.tau_cmd))
   push!(__eqs, connect(grade, plant.grade))
 

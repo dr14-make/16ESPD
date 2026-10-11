@@ -5,29 +5,22 @@
 
 
 @doc Markdown.doc"""
-   ClampingPID(; name, with_I, with_D, k, Ti, Td, y_max, y_min, wp, wd, Nd, k_ff, xi0, xd0)
+   CruiseController(; name, with_I, with_D, k, Ti, Td, y_max, y_min, wd, Nd, xi0, xd0)
 
-PID controller with output limiting and clamping (conditional-integration) anti-windup.
+PID cruise controller with output limiting and clamping anti-windup.
 
-A drop-in for `BlockComponents.Continuous.LimPID` in every respect except the anti-windup
-scheme. `LimPID` unwinds the integrator by back-calculation — feeding the saturation error back
-through `1/(k*Ni)`. This block instead *freezes* the integrator while it would only make things
-worse, and lets it run otherwise. Notebook 06 compares the two.
+The proportional branch acts on the control error, the optional integral branch supplies
+steady-state correction, and the optional filtered derivative branch acts on the weighted
+setpoint and measurement.
 
-The freeze needs both conditions to hold:
+The integrator freezes only when both conditions hold:
 
-1. the output is saturated (`y` at a limit), and
-2. the error carries the same sign as the output, so integrating further pushes the command
-   deeper into the limit.
+1. the output is saturated at a limit, and
+2. the control error has the same sign as that limit, so integrating further would push the
+   command deeper into saturation.
 
-The second condition is what makes the freeze one-directional. Freezing on saturation alone
-would trap the integrator when the disturbance ends and the loop needs it to come back down;
-requiring same-sign lets the integrator unwind the instant the error reverses. There is no
-tracking time constant to tune — the price of that simplicity is that nothing pulls the
-integrator back before release, so it starts unwinding from wherever the freeze caught it.
-
-The structure mirrors `LimPID` (P, filtered D, setpoint weighting, feed-forward, limiter) so
-the only behavioral difference on screen is the anti-windup itself.
+The same-sign condition lets the integrator unwind as soon as the error reverses rather than
+trapping it at the value reached during saturation.
 
 ## Parameters:
 
@@ -40,10 +33,8 @@ the only behavioral difference on screen is the anti-windup itself.
 | `Td`         | Time constant of the derivative block (only active if `with_D = true`)                         | s  |   0.1 |
 | `y_max`         | Maximum output                         | --  |   1e300 |
 | `y_min`         | Minimum output                         | --  |   -y_max |
-| `wp`         | Set-point weight for proportional block                         | --  |   1 |
 | `wd`         | Set-point weight for derivative block (only active if `with_D = true`)                         | --  |   1 |
 | `Nd`         | Maximum derivative gain (only active if `with_D = true`)                         | --  |   10 |
-| `k_ff`         | Gain of the feed-forward input                         | --  |   1 |
 | `xi0`         | Initial value for integrator state (only active if `with_I = true`)                         | --  |   0 |
 | `xd0`         | Initial value for derivative-filter state (only active if `with_D = true`)                         | --  |   0 |
 
@@ -52,7 +43,6 @@ the only behavioral difference on screen is the anti-windup itself.
  * `u_s` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `u_m` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `u_ff` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
 ## Variables
 
@@ -60,12 +50,12 @@ the only behavioral difference on screen is the anti-windup itself.
 | ------------ | ----------------------------------- | ------ |
 | `control_error`         |                          | --  |
 """
-@component function ClampingPID(; name = nothing, with_I=true, with_D=true, k=Float64(1), Ti=0.5, Td=0.1, y_max=Float64(1e+300), wp=Float64(1), wd=Float64(1), Nd=Float64(10), k_ff=Float64(1), xi0=Float64(0), xd0=Float64(0), y_min=-y_max, kwargs...)
+@component function CruiseController(; name = nothing, with_I=true, with_D=true, k=Float64(1), Ti=0.5, Td=0.1, y_max=Float64(1e+300), wd=Float64(1), Nd=Float64(10), xi0=Float64(0), xd0=Float64(0), y_min=-y_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = ClampingPID()
+    @named model = CruiseController()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -106,18 +96,12 @@ the only behavioral difference on screen is the anti-windup itself.
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real), [description = "Minimum output"])
   __initial_conditions[y_min] = __local__y_min
-  __local__wp = wp
-  append!(__params, @parameters (wp::Real), [description = "Set-point weight for proportional block"])
-  __initial_conditions[wp] = __local__wp
   __local__wd = wd
   append!(__params, @parameters (wd::Real), [description = "Set-point weight for derivative block (only active if `with_D = true`)"])
   __initial_conditions[wd] = __local__wd
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real), [description = "Maximum derivative gain (only active if `with_D = true`)"])
   __initial_conditions[Nd] = __local__Nd
-  __local__k_ff = k_ff
-  append!(__params, @parameters (k_ff::Real), [description = "Gain of the feed-forward input"])
-  __initial_conditions[k_ff] = __local__k_ff
   __local__xi0 = xi0
   append!(__params, @parameters (xi0::Real), [description = "Initial value for integrator state (only active if `with_I = true`)"])
   __initial_conditions[xi0] = __local__xi0
@@ -131,7 +115,6 @@ the only behavioral difference on screen is the anti-windup itself.
   append!(__vars, @variables (u_s(t)::Real), [input = true])
   append!(__vars, @variables (u_m(t)::Real), [input = true])
   append!(__vars, @variables (y(t)::Real), [output = true])
-  append!(__vars, @variables (u_ff(t)::Real), [input = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (control_error(t)::Real))
@@ -145,17 +128,14 @@ the only behavioral difference on screen is the anti-windup itself.
   __constants = Any[]
 
   ### Components
-  # Subcomponent add_p of type BlockComponents.Math.Add
-  add_p_overrides = __pop_subcomponent_overrides!(__overrides, "add_p")
-  push!(__systems, @named add_p = BlockComponents.Math.Add(; k1=wp, k2=Float64(-1), add_p_overrides...))
+  # Subcomponent error of type BlockComponents.Math.Add
+  error_overrides = __pop_subcomponent_overrides!(__overrides, "error")
+  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), error_overrides...))
   # Subcomponent add_d of type BlockComponents.Math.Add
   add_d_overrides = __pop_subcomponent_overrides!(__overrides, "add_d")
   if with_D
     push!(__systems, @named add_d = BlockComponents.Math.Add(; k1=wd, k2=Float64(-1), add_d_overrides...))
   end
-  # Subcomponent proportional of type BlockComponents.Math.Gain
-  proportional_overrides = __pop_subcomponent_overrides!(__overrides, "proportional")
-  push!(__systems, @named proportional = BlockComponents.Math.Gain(; k=Float64(1), proportional_overrides...))
   # Subcomponent derivative of type BlockComponents.Continuous.Derivative
   derivative_overrides = __pop_subcomponent_overrides!(__overrides, "derivative")
   if with_D
@@ -179,12 +159,9 @@ the only behavioral difference on screen is the anti-windup itself.
   # Subcomponent add_pid of type BlockComponents.Math.Add3
   add_pid_overrides = __pop_subcomponent_overrides!(__overrides, "add_pid")
   push!(__systems, @named add_pid = BlockComponents.Math.Add3(; k1=Float64(1), k2=Float64(1), k3=Float64(1), add_pid_overrides...))
-  # Subcomponent gain_pid of type BlockComponents.Math.Gain
-  gain_pid_overrides = __pop_subcomponent_overrides!(__overrides, "gain_pid")
-  push!(__systems, @named gain_pid = BlockComponents.Math.Gain(; k=k, gain_pid_overrides...))
-  # Subcomponent add_ff of type BlockComponents.Math.Add
-  add_ff_overrides = __pop_subcomponent_overrides!(__overrides, "add_ff")
-  push!(__systems, @named add_ff = BlockComponents.Math.Add(; k1=Float64(1), k2=k_ff, add_ff_overrides...))
+  # Subcomponent gain of type BlockComponents.Math.Gain
+  gain_overrides = __pop_subcomponent_overrides!(__overrides, "gain")
+  push!(__systems, @named gain = BlockComponents.Math.Gain(; k=k, gain_overrides...))
   # Subcomponent limiter of type BlockComponents.Nonlinear.Limiter
   limiter_overrides = __pop_subcomponent_overrides!(__overrides, "limiter")
   push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=y_max, y_min=y_min, limiter_overrides...))
@@ -201,23 +178,20 @@ the only behavioral difference on screen is the anti-windup itself.
   __assertions = []
 
   ### Equations
-  push!(__eqs, control_error ~ u_s - u_m)
-  push!(__eqs, connect(add_p.y, proportional.u))
-  push!(__eqs, connect(proportional.y, add_pid.u1))
-  push!(__eqs, connect(add_pid.y, gain_pid.u))
-  push!(__eqs, connect(gain_pid.y, add_ff.u1))
-  push!(__eqs, connect(add_ff.y, limiter.u))
+  push!(__eqs, control_error ~ error.y)
+  push!(__eqs, connect(u_s, error.u1))
+  push!(__eqs, connect(u_m, error.u2))
+  push!(__eqs, connect(error.y, add_pid.u1))
+  push!(__eqs, connect(add_pid.y, gain.u))
+  push!(__eqs, connect(gain.y, limiter.u))
   push!(__eqs, connect(limiter.y, y))
-  push!(__eqs, connect(add_ff.u2, u_ff))
-  push!(__eqs, connect(add_p.u1, u_s))
-  push!(__eqs, connect(u_m, add_p.u2))
 
   ### Control Structures
   if with_D
+    push!(__eqs, connect(u_s, add_d.u1))
+    push!(__eqs, connect(u_m, add_d.u2))
     push!(__eqs, connect(add_d.y, derivative.u))
     push!(__eqs, connect(derivative.y, add_pid.u2))
-    push!(__eqs, connect(add_d.u1, u_s))
-    push!(__eqs, connect(add_d.u2, u_m))
   else
     push!(__eqs, connect(zero_d.y, add_pid.u2))
   end
@@ -231,4 +205,4 @@ the only behavioral difference on screen is the anti-windup itself.
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export ClampingPID
+export CruiseController

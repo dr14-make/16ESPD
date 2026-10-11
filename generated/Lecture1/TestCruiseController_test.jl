@@ -5,10 +5,10 @@
 
 
 __dyad_run_test_case!(
-  VehicleSystemsComponents.Lecture1.TestClampingPID,
-  "clamp_freeze for VehicleSystemsComponents.Lecture1.TestClampingPID";
+  VehicleSystemsComponents.Lecture1.TestCruiseController,
+  "clamp_freeze for VehicleSystemsComponents.Lecture1.TestCruiseController";
   case_name="clamp_freeze",
-  component_stem="TestClampingPID",
+  component_stem="TestCruiseController",
   module_path=String["Lecture1"],
   start=0e+0,
   stop=5e+0,

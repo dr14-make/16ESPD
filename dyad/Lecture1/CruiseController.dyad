@@ -1,0 +1,126 @@
+"""
+PID cruise controller with output limiting and clamping anti-windup.
+
+The proportional branch acts on the control error, the optional integral branch supplies
+steady-state correction, and the optional filtered derivative branch acts on the weighted
+setpoint and measurement.
+
+The integrator freezes only when both conditions hold:
+
+1. the output is saturated at a limit, and
+2. the control error has the same sign as that limit, so integrating further would push the
+   command deeper into saturation.
+
+The same-sign condition lets the integrator unwind as soon as the error reverses rather than
+trapping it at the value reached during saturation.
+"""
+component CruiseController
+  extends BlockComponents.Interfaces.SingleVariableController
+  error = BlockComponents.Math.Add(k1 = 1, k2 = -1) {^error}
+  add_d = BlockComponents.Math.Add(k1 = wd, k2 = -1) if with_D {^add_d}
+  derivative = BlockComponents.Continuous.Derivative(k = Td, T = max(Td / Nd, 1e-14), x0 = xd0) if with_D {^derivative}
+  integrator = BlockComponents.Continuous.Integrator(k = 1 / Ti, x0 = xi0) if with_I {^integrator}
+  "Zero contribution of the structurally removed derivative part"
+  zero_d = BlockComponents.Sources.Constant(k = 0) if !with_D {^zero_d}
+  "Zero contribution of the structurally removed integral part"
+  zero_i = BlockComponents.Sources.Constant(k = 0) if !with_I {^zero_i}
+  add_pid = BlockComponents.Math.Add3(k1 = 1, k2 = 1, k3 = 1) {^add_pid}
+  gain = BlockComponents.Math.Gain(k = k) {^gain}
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = y_max, y_min = y_min) {^limiter}
+  variable control_error::Real
+  "Whether or not to include the integral part"
+  structural parameter with_I::Boolean = true
+  "Whether or not to include the derivative part"
+  structural parameter with_D::Boolean = true
+  "Gain of controller"
+  parameter k::Real = 1
+  "Time constant of the integrator block (only active if `with_I = true`)"
+  parameter Ti::Time = 0.5
+  "Time constant of the derivative block (only active if `with_D = true`)"
+  parameter Td::Time = 0.1
+  "Maximum output"
+  parameter y_max::Real = 1e300
+  "Minimum output"
+  parameter y_min::Real = -y_max
+  "Set-point weight for derivative block (only active if `with_D = true`)"
+  parameter wd::Real = 1
+  "Maximum derivative gain (only active if `with_D = true`)"
+  parameter Nd::Real = 10
+  "Initial value for integrator state (only active if `with_I = true`)"
+  parameter xi0::Real = 0
+  "Initial value for derivative-filter state (only active if `with_D = true`)"
+  parameter xd0::Real = 0
+relations
+  connect(u_s, error.u1) {^id_us_error}
+  connect(u_m, error.u2) {^id_um_error}
+  connect(error.y, add_pid.u1) {^id_error_pid}
+  connect(add_pid.y, gain.u) {^id_pid_gain}
+  connect(gain.y, limiter.u) {^id_gain_limiter}
+  connect(limiter.y, y) {^id_limiter_y}
+  control_error = error.y
+  if with_D
+    connect(u_s, add_d.u1) {^id_us_d}
+    connect(u_m, add_d.u2) {^id_um_d}
+    connect(add_d.y, derivative.u) {^id_add_d_derivative}
+    connect(derivative.y, add_pid.u2) {^id_derivative_pid}
+  else
+    connect(zero_d.y, add_pid.u2) {^id_zero_d_pid}
+  end
+  if with_I
+    # Freeze only when integration would push the command farther into the active output limit.
+    integrator.u = ifelse(limiter.y >= y_max,
+                     ifelse(control_error >= 0, 0.0, control_error),
+                     ifelse(limiter.y <= y_min,
+                       ifelse(control_error <= 0, 0.0, control_error),
+                       control_error))
+    connect(integrator.y, add_pid.u3) {^id_integrator_pid}
+  else
+    connect(zero_i.y, add_pid.u3) {^id_zero_i_pid}
+  end
+metadata {
+  "_links": {
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "integrator": {"Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 300, "y2": 400}}}},
+    "zero_i": {"Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 300, "y2": 400}}}},
+    "add_d": {"Dyad": {"placement": {"diagram": {"x1": 210, "x2": 310, "y1": 650, "y2": 750}}}},
+    "derivative": {"Dyad": {"placement": {"diagram": {"x1": 360, "x2": 460, "y1": 650, "y2": 750}}}},
+    "zero_d": {"Dyad": {"placement": {"diagram": {"x1": 360, "x2": 460, "y1": 650, "y2": 750}}}},
+    "add_pid": {"Dyad": {"placement": {"diagram": {"x1": 520, "x2": 620, "y1": 450, "y2": 550}}}},
+    "gain": {"Dyad": {"placement": {"diagram": {"x1": 680, "x2": 780, "y1": 450, "y2": 550}}}},
+    "limiter": {"Dyad": {"placement": {"diagram": {"x1": 840, "x2": 940, "y1": 450, "y2": 550}}}}
+  }
+}
+end
+
+test component TestCruiseController
+  "Constant setpoint above the measurement: a fixed positive error"
+  sp = BlockComponents.Sources.Constant(k = 3.0)
+  "Constant measurement"
+  meas = BlockComponents.Sources.Constant(k = 0.0)
+  # PI with a low ceiling: the proportional term alone (3) is below y_max = 5, so the loop
+  # starts unsaturated and the integrator ramps. It saturates when P + I reaches 5, at I = 2,
+  # after which the error is still positive and the output is at the limit, so clamping freezes
+  # the integrator there rather than letting it wind up without bound.
+  ctrl = VehicleSystemsComponents.Lecture1.CruiseController(with_I = true, with_D = false, k = 1.0, Ti = 1.0, y_max = 5.0, y_min = -5.0)
+relations
+  connect(sp.y, ctrl.u_s)
+  connect(meas.y, ctrl.u_m)
+metadata {
+  "Dyad": {
+    "tests": {
+      "clamp_freeze": {
+        "stop": 5,
+        # The integrator freezes at the analytic value 2.0 (where P + I first reaches y_max).
+        # A default-tolerance solve overshoots the ifelse threshold by ~0.17 once, then holds
+        # flat; the tolerance covers that one-time step-through of the discontinuity.
+        "atol": {"ctrl.y": 0.01, "ctrl.integrator.y": 0.25},
+        "expect": {
+          "initial": {"ctrl.y": 3.0, "ctrl.integrator.y": 0.0},
+          "final": {"ctrl.y": 5.0, "ctrl.integrator.y": 2.0},
+          "signals": ["ctrl.y", "ctrl.integrator.y"]
+        }
+      }
+    }
+  }
+}
+end

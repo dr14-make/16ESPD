@@ -5,14 +5,14 @@
 
 
 @doc Markdown.doc"""
-   TestClampingPID(; name)
+   TestCruiseController(; name)
 """
-@component function TestClampingPID(; name = nothing, kwargs...)
+@component function TestCruiseController(; name = nothing, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = TestClampingPID()
+    @named model = TestCruiseController()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -57,12 +57,9 @@
   # Subcomponent meas of type BlockComponents.Sources.Constant
   meas_overrides = __pop_subcomponent_overrides!(__overrides, "meas")
   push!(__systems, @named meas = BlockComponents.Sources.Constant(; k=Float64(0.0), meas_overrides...))
-  # Subcomponent ff of type BlockComponents.Sources.Constant
-  ff_overrides = __pop_subcomponent_overrides!(__overrides, "ff")
-  push!(__systems, @named ff = BlockComponents.Sources.Constant(; k=Float64(0.0), ff_overrides...))
-  # Subcomponent ctrl of type VehicleSystemsComponents.Lecture1.ClampingPID
+  # Subcomponent ctrl of type VehicleSystemsComponents.Lecture1.CruiseController
   ctrl_overrides = __pop_subcomponent_overrides!(__overrides, "ctrl")
-  push!(__systems, @named ctrl = VehicleSystemsComponents.Lecture1.ClampingPID(; with_I=true, with_D=false, k=Float64(1.0), Ti=Float64(1.0), y_max=Float64(5.0), y_min=-5.0, ctrl_overrides...))
+  push!(__systems, @named ctrl = VehicleSystemsComponents.Lecture1.CruiseController(; with_I=true, with_D=false, k=Float64(1.0), Ti=Float64(1.0), y_max=Float64(5.0), y_min=-5.0, ctrl_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -77,9 +74,8 @@
   ### Equations
   push!(__eqs, connect(sp.y, ctrl.u_s))
   push!(__eqs, connect(meas.y, ctrl.u_m))
-  push!(__eqs, connect(ff.y, ctrl.u_ff))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export TestClampingPID
+export TestCruiseController
