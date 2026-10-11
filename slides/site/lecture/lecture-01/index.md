@@ -493,15 +493,20 @@ New component `NoisyCruiseStep`, a duplicate of `CruiseLoopStep` with:
 | Name | Library path | Set |
 | --- | --- | --- |
 | `noise` | your `MeasurementNoise` | `amplitude = 0.2` |
+| `controller` | your `CruiseController` | `y_max = 1e6`, `y_min = -1e6` — limits lifted |
+| `plant` | your `GradeCar` | `T_max = 1e6` — limit lifted |
+
+Every limit is lifted, as in the lecture notebook, so the limiter does not clip the chatter and hide it.
 
 #### Do this
 
 1. <Badge type="tip" text="New component" /> Add a component `MeasurementNoise`, toggle to code (⇄) and paste the block above over its contents.
 2. Right-click `CruiseLoopStep` → **Duplicate** and name it `NoisyCruiseStep`.
 3. Delete the wire `plant.v_kmh → controller.u_m`. Place `noise` and wire `plant.v_kmh → noise.u`, `noise.y → controller.u_m`.
-4. Click `controller` and set `wd = 1` and `xd0 = 0` — the seed `(wd − 1) · 90` that goes with `wd = 1`. Create a TransientAnalysis `NoisyCruiseTransient` with `stop = 100` s. Run it and plot `controller.y`, then `plant.v_kmh` with `noise.y`.
-5. Set `wd = 0` and `xd0 = -90` back — the step-5 values. Run again, same axes.
-6. Keep `wd = 0` and change `Nd`: run once at `Nd = 100` — the filter almost gone — and compare with `Nd = 10`.
+4. Click `controller` and set `y_max = 1e6`, `y_min = -1e6`; click `plant` and set `T_max = 1e6`.
+5. Click `controller` and set `wd = 1` and `xd0 = 0` — the seed `(wd − 1) · 90` that goes with `wd = 1`. Create a TransientAnalysis `NoisyCruiseTransient` with `stop = 40` s. Run it and plot `controller.y`, then `plant.v_kmh` with `noise.y`.
+6. Set `wd = 0` and `xd0 = -90` back — the step-5 values. Run again, same axes.
+7. Keep `wd = 0` and change `Nd`: run once at `Nd = 100` — the filter almost gone — and compare with `Nd = 10`.
 
 [![NoisyCruiseStep: the noise block inserted between plant.v_kmh and controller.u_m.](/lecture/lecture-01/img/step07-noise-loop.png)](/lecture/lecture-01/img/step07-noise-loop.png)
 
@@ -511,7 +516,9 @@ New component `NoisyCruiseStep`, a duplicate of `CruiseLoopStep` with:
 
 ::: tip Expected result
 
-At `wd = 1` the car still makes the step — `plant.v_kmh` goes from 90 to **110.51 km/h** at 100 s, and the noisy `noise.y` reads 110.89 — but `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows.
+At `wd = 1` the car still makes the step — `plant.v_kmh` climbs from 90 towards 110 km/h, and the noisy `noise.y` wiggles a few tenths of a km/h around it — but `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows.
+
+<!-- TODO(numbers): fill from the re-run notebook 07 -->
 
 Reference: `NoisyCruiseLoop`, bench `NoisyCruiseStep`.
 
@@ -556,7 +563,7 @@ Lecture deck: [wheel and slip](../../lecture-01/index.html#/wheel-and-slip){targ
 
 ### 10 · Cruise control on ice {#step-10}
 
-Put your controller on the `SlipCar` of hands-on [step 10](../../handson/lecture-01/#standing-start) and drive it across two seconds of ice.
+Put your controller on the `SlipCar` of hands-on [step 10](../../handson/lecture-01/#standing-start) and drive it across eight seconds of ice.
 
 #### Parts
 
@@ -567,9 +574,9 @@ New component `SlipCruiseIcePatch`, a duplicate of `CruiseLoopStep` with:
 | `demand` | BlockComponents › Sources › Constant | `k = 90` — replaces the step |
 | `controller` | your `CruiseController` | `xi0 = 31.078 / 56` — the integrator starts at the holding torque; `wd = 0`, `xd0 = -90` stay |
 | `plant` | your `SlipCar` | replaces `GradeCar` |
-| `friction` | BlockComponents › Sources › Pulse | `amplitude = -0.95`, `offset = 1.0`, `start_time = 10`, `duty_cycle = 1.0`, `period = 2` |
+| `friction` | BlockComponents › Sources › Pulse | `amplitude = -0.95`, `offset = 1.0`, `start_time = 4`, `duty_cycle = 1.0`, `period = 8` |
 
-The pulse adds `amplitude` to `offset` on the patch, so the grip drops from 1.0 to 0.05 for 2 s. Your library cannot see the course library's `FrictionProfile`; the pulse is what the reference uses inside it, with `low = 0.05`.
+The pulse adds `amplitude` to `offset` on the patch, so the grip drops from 1.0 to 0.05 for 8 s, from 4 s to 12 s. Your library cannot see the course library's `FrictionProfile`; the pulse is what the reference uses inside it, with `low = 0.05`.
 
 #### Do this
 
@@ -590,7 +597,7 @@ The pulse adds `amplitude` to `offset` on the patch, so the grip drops from 1.0 
 
    :::
 
-5. Create a TransientAnalysis `SlipCruiseTransient` with `stop = 30` s. Run it and plot `plant.v_kmh` against `plant.wheel_kmh`.
+5. Create a TransientAnalysis `SlipCruiseTransient` with `stop = 45` s. Run it and plot `plant.v_kmh` against `plant.wheel_kmh`.
 
 [![The loop with plant as SlipCar and the friction profile on mu_scale.](/lecture/lecture-01/img/step10-slip-loop.png)](/lecture/lecture-01/img/step10-slip-loop.png)
 
@@ -598,7 +605,9 @@ The pulse adds `amplitude` to `offset` on the patch, so the grip drops from 1.0 
 
 ::: tip Expected result
 
-`plant.v_kmh` starts at **90 km/h** and is back at **89.9995 km/h** at 30 s, with the slip ratio `plant.wheel.kappa` down to 0.0016. Across the patch the two speeds come apart: the gap between `plant.wheel_kmh` and `plant.v_kmh` is the wheel spinning. The controller only sees the car's speed, so it answers the lost grip with more torque.
+Before 4 s `plant.v_kmh` and `plant.wheel_kmh` lie on top of each other at **90 km/h**. Across the patch the two speeds come apart: `plant.wheel_kmh` tears away far above the car's speed — the gap is the wheel spinning — while `plant.v_kmh` sags only a little and the slip ratio `plant.wheel.kappa` runs past the adhesion peak. The controller only sees the car's speed, so it answers the lost grip with more torque. When the grip returns at 12 s the car surges above 90 km/h before settling back.
+
+<!-- TODO(numbers): fill from the re-run notebook 10 -->
 
 Reference: `SlipCruiseLoop`, bench `SlipCruiseIcePatch`.
 

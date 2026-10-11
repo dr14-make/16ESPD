@@ -103,9 +103,9 @@ routeAlias: step-7
 </div>
 </div>
 
-*`CruiseLoopStep` · new component `MeasurementNoise` (paste from the page) → `noise` between
-`plant.v_kmh` and `controller.u_m` · run at `wd = 1`, `xd0 = 0`, then back to `wd = 0`, `xd0 = -90` ·
-later: vary `Nd`*
+*Duplicate `CruiseLoopStep` → `NoisyCruiseStep` · new component `MeasurementNoise` (paste from
+the page) → `noise` between `plant.v_kmh` and `controller.u_m` · limits lifted · run at
+`wd = 1`, `xd0 = 0`, then back to `wd = 0`, `xd0 = -90` · later: vary `Nd`*
 
 [page: step 7](../lecture/lecture-01/#step-7) · reference `NoisyCruiseLoop` in `dyad/Lecture1/NoisyCruiseLoop.dyad`
 
@@ -113,9 +113,11 @@ later: vary `Nd`*
 **Say:** every speed we have fed the controller so far was the true one, to fifteen digits.
 No car has that sensor. Put a realistic one in and look at the command.
 
-**Build, in the students' `CruiseLoopStep` (not `Climb`):**
+**Build — a new harness in `MyCar`, beside `CruiseLoopStep` and `CruiseClimb`:**
 
-1. Delete the wire `plant.v_kmh → controller.u_m`.
+1. Duplicate `CruiseLoopStep`. Name the copy **`NoisyCruiseStep`**, the reference bench's
+   name; `CruiseLoopStep` stays clean. In the copy, delete the wire
+   `plant.v_kmh → controller.u_m`.
 2. Add a component `MeasurementNoise`, toggle to code (⇄) and paste the block from the guide
    page's step 7 over its contents — `MyCar` cannot see the course library, and this is the
    code of what the reference uses. Place it as **`noise`** with `amplitude = 0.2` (km/h, per
@@ -127,7 +129,7 @@ No car has that sensor. Put a realistic one in and look at the command.
    `wd = 1`. Lift every limit, as the notebook does, so the chatter is not clipped:
    `controller.y_max = 1e6`, `controller.y_min = -1e6`, `plant.T_max = 1e6` — the parameter
    from step 6a earning its keep.
-5. `CruiseLoopTransient`, `stop = 40`. Run. Plot `controller.y`, and `plant.v_kmh` against
+5. **▷ Run Analysis** → TransientAnalysis, name it `NoisyCruiseTransient`, `stop = 40`. Run. Plot `controller.y`, and `plant.v_kmh` against
    `noise.y`.
 
 **What the plot must show (`wd = 1`):** a tall spike in `controller.y` at the setpoint step —
@@ -145,7 +147,7 @@ first. That is why every notebook since 05 runs `wd = 0`.
 in the 20–30 s window falls from 1760 N·m at `Nd = 100` to 315 at `Nd = 2`.
 
 **Catch-up:** `NoisyCruiseLoop` is the reference loop with `noise` in place;
-`NoisyCruiseTransient` runs it.
+`NoisyCruiseStep` is its bench and `NoisyCruiseTransient` runs it.
 -->
 
 ---
@@ -395,7 +397,8 @@ your toolchain may well be implemented the second way.
 that lies. Before the plant itself changes character in section 10, we owe an answer to a
 question nobody has asked yet: where did k = 56 come from?
 
-**Before moving on:** students take `noise` out again — rewire `plant.v_kmh →
-controller.u_m` — and set `controller.Nd = 10`. Leave the limits lifted: section 08 runs
-without them until the trap.
+**Before moving on:** students go back to `CruiseLoopStep`, which never had the noise;
+`NoisyCruiseStep` stays as it is. Section 08 runs without limits until the trap, so lift them
+on `CruiseLoopStep` the same way: `controller.y_max = 1e6`, `controller.y_min = -1e6`,
+`plant.T_max = 1e6`.
 -->

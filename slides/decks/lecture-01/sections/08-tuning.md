@@ -761,7 +761,7 @@ measured directly.
 3. Select `engine`: `theta_e = theta_e`.
 4. Nothing to wire.
 
-**Robustness re-runs, on the students' `CruiseLoopStep`** (noise out, limits still lifted from 07:
+**Robustness re-runs, on the students' `CruiseLoopStep`** (limits lifted at the end of 07:
 `controller.y_max = 1e6`, `y_min = -1e6`, `plant.T_max = 1e6`):
 
 1. Set the Ziegler-Nichols gains: `controller.k = 67.39`, `Ti = 1.087`, `Td = 0.272`

@@ -342,9 +342,9 @@ routeAlias: step-10
 </div>
 </div>
 
-*`CruiseLoopStep` · `plant`: `GradeCar` → `SlipCar` · `friction` Pulse(amplitude = −0.95, offset = 1.0,
-start_time = 4, duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 / 56` ·
-cruise at 90 km/h*
+*Duplicate `CruiseLoopStep` → `SlipCruiseIcePatch` · `plant`: `GradeCar` → `SlipCar` · `demand` →
+`Constant(k = 90)` · `friction` Pulse(amplitude = −0.95, offset = 1.0, start_time = 4,
+duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 / 56`*
 
 [page: step 10](../lecture/lecture-01/#step-10) · reference `SlipCruiseLoop` in `dyad/Lecture1/SlipCruiseLoop.dyad`
 
@@ -352,10 +352,12 @@ cruise at 90 km/h*
 **Say:** the same controller, the same gains, the same loop. Only the car changes — to the
 one whose tire can let go.
 
-**Build, in the students' `CruiseLoopStep`** (noise out, limits back from section 08's trap:
-`controller.y_max = 150`, `y_min = 0`, gains back to `k = 56`, `Ti = 10`, `Td = 0.5`):
+**Build — a new harness in `MyCar`,** duplicated from `CruiseLoopStep` as it stands after
+section 08's trap (limits back: `controller.y_max = 150`, `y_min = 0`; gains back to `k = 56`,
+`Ti = 10`, `Td = 0.5`):
 
-1. Select `plant`. Change its type from `MyCar.GradeCar` to `MyCar.SlipCar` (or delete it and
+1. Duplicate `CruiseLoopStep`. Name the copy **`SlipCruiseIcePatch`**, the reference bench's
+   name; `CruiseLoopStep` stays on `GradeCar`. In the copy, select `plant`. Change its type from `MyCar.GradeCar` to `MyCar.SlipCar` (or delete it and
    drag `SlipCar` in, named **`plant`**). Clear any parameter overrides `SlipCar` does not
    have.
 2. Re-wire if the swap dropped them: `controller.y → plant.tau_cmd`,
@@ -365,7 +367,8 @@ one whose tire can let go.
    `friction.y → plant.mu_scale`. The pulse adds `amplitude` to `offset` on the patch, so the
    grip drops from 1.0 to 0.05 for 8 s. `MyCar` cannot see the course library; this pulse is
    what the reference uses, wrapped in its `FrictionProfile` with `low = 0.05`.
-4. `demand`: hold 90 km/h (`height = 0`). `road` stays the constant 0.
+4. Replace `demand` with `BlockComponents.Sources.Constant`, `k = 90`, named `demand`. Wire
+   `demand.y → controller.u_s`. `road` stays the constant 0.
 5. The integrator must start at the holding torque, or the car slows before it reaches the
    ice. `CruiseController` has had `xi0` on `integrator.x0` since step 4; in the loop set
    `controller.xi0 = 31.078 / 56`: 31.078 N·m divided back through the gain, the reference's
@@ -374,23 +377,25 @@ one whose tire can let go.
    speed: `initial plant.body.mass.s = 0`, `initial plant.body.mass.v = 25`,
    `initial plant.engine.lag.x = 31.078`, `initial plant.wheel_inertia.phi = 0`,
    `initial plant.wheel_inertia.w = 25 / 0.31` (rolling, at 90 km/h).
-7. `CruiseLoopTransient`, `stop = 45`. Run.
+7. **▷ Run Analysis** → TransientAnalysis, name it `SlipCruiseTransient`, `stop = 45`. Run.
 
 **Plot:** `plant.v_kmh` and `plant.wheel_kmh` on one axes; `plant.wheel.kappa` and
 `controller.y` below.
 
 **What the plot must show before moving on:** before t = 4 s the two speeds lie on top of
-each other at 90. On the ice the wheel speed tears away upwards — the reference run reaches
-about 3400 km/h of tread speed — while `plant.v_kmh` sags only 3.10 km/h; the slip ratio
-goes to 38. After t = 12 s the car surges to 111.88 km/h. If the wheel speed stays on the
-car's, `friction.y` is not reaching `plant.mu_scale`.
+each other at 90. On the ice the wheel speed tears away upwards, far above the car's, while
+`plant.v_kmh` sags only a little; the slip ratio runs past the adhesion peak. After t = 12 s,
+when the grip returns, the car surges above the setpoint before settling back. If the wheel
+speed stays on the car's, `friction.y` is not reaching `plant.mu_scale`.
+
+TODO(numbers): fill from the re-run notebook 10
 
 **They get wrong:** forgetting the wheel's initial speed. Without
 `initial plant.wheel_inertia.w`, the wheel starts at rest under a car doing 90 km/h — a
 violent slip at t = 0 that has nothing to do with the ice.
 
 **Catch-up:** `SlipCruiseLoop` is the reference loop on `HandsOn.SlipCar` with the reference
-controller; `SlipCruiseTransient` is this run.
+controller; `SlipCruiseIcePatch` is its bench and `SlipCruiseTransient` is this run.
 -->
 
 ---
@@ -425,7 +430,7 @@ spins the driven wheel — and destroys the traction it was trying to use.**
 </div>
 <div>
 
-![Four panels across a shaded eight-second low-friction patch: vehicle speed sagging by three km/h and then surging past the setpoint, wheel surface speed climbing to about 3400 km/h, slip ratio past the adhesion peak to 38, and commanded torque rising to the engine's limit.](/figures/10-ice-patch.svg)
+![Four panels across a shaded eight-second low-friction patch: vehicle speed sagging a little and then surging past the setpoint, wheel surface speed climbing far above the car's, slip ratio running past the adhesion peak, and commanded torque rising.](/figures/10-ice-patch.svg)
 
 *Speed, wheel speed, slip ratio and commanded torque, with the eight seconds of ice shaded. Only the first panel has a sensor on it.*
 
@@ -446,15 +451,19 @@ spins the driven wheel — and destroys the traction it was trying to use.**
 The system as a whole does the wrong thing, and it does it faster the better the controller is
 tuned.
 
-**The numbers, if you want them on the board:** the speed sags **3.10 km/h** across the eight
-seconds — less than a gentle hill would cost, which is the trap. Meanwhile the tread goes to
-about **3400 km/h** (29 101 rpm) and the slip ratio to **38**; the tire crossed its adhesion peak **0.08 s** into
-the patch and never came back. When the ice ends the car surges to **111.88 km/h**, nearly 22
-km/h over the setpoint, and takes **20.4 s** to come back inside half a km/h of 90.
+**The numbers, if you want them on the board:** the speed sags only a little across the eight
+seconds — less than a gentle hill would cost, which is the trap. Meanwhile the tread speed and
+the slip ratio run far past anything a rolling wheel does; the tire crosses its adhesion peak
+early in the patch and does not come back. When the ice ends the car surges well over the
+setpoint and takes a long time to come back to 90.
 
-**If someone asks where the surge comes from:** the wheel is a flywheel holding **4.64 MJ** at
-its peak, against **0.44 MJ** for the whole car at 90 km/h. When grip returns, that energy has
-somewhere to go.
+TODO(numbers): fill from the re-run notebook 10
+
+**If someone asks where the surge comes from:** the spinning wheel is a flywheel; compare
+its kinetic energy at the peak with the **0.44 MJ** the whole car carries at 90 km/h. When
+grip returns, that energy has somewhere to go.
+
+TODO(numbers): fill from the re-run notebook 10
 
 **Say:** and in a real car the driver feels this as the back stepping out on a motorway at 90
 km/h, caused by a system they switched on for comfort.
@@ -495,15 +504,17 @@ capped = rerun(blind, "y_max" => ICE_CEILING; saveat = 0.05)
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/10-wheel-and-slip.ipynb)
 
 The car still loses speed on the ice — physics is physics. It loses
-**less** of it: 1.99 km/h against 3.10, while being asked for a fifth as
-much torque. And it does not lose the wheel — about 216 km/h of tread against 3400.
+**less** of it, while being asked for far less torque. And it does not lose
+the wheel: the tread stays far closer to the car's speed than in the blind run.
+
+<!-- TODO(numbers): fill from the re-run notebook 10 -->
 
 </div>
 <div>
 
 ![The same ice patch run overlaid with a friction-aware torque limit: the wheel stays near vehicle speed and the slip ratio stays on the near side of the peak, while speed dips and recovers.](/figures/10-ice-patch-limited.svg)
 
-*Against the blind run. The capped car commands a fifth of the torque and loses **less** speed doing it — 1.99 km/h against 3.10.*
+*Against the blind run. The capped car commands far less torque and loses **less** speed doing it.*
 
 </div>
 </div>
@@ -512,19 +523,25 @@ much torque. And it does not lose the wheel — about 216 km/h of tread against 
 **Say:** and be precise about what the fix bought. The car still slows down. It has to — there
 is less friction available and no controller can conjure grip. What the limit prevented was
 the controller *making it worse*. Averaged over the eight seconds the capped tire put *more*
-force on the road — 275 N against 242 — while being asked for a fifth as much torque. More
-command, less force. That is the whole of traction control in one line.
+force on the road while being asked for far less torque. More command, less force. That is
+the whole of traction control in one line.
+
+TODO(numbers): fill from the re-run notebook 10
 
 **Do not oversell it.** The cap did not hold the tire at its peak: the capped run still ends
-the patch at a slip ratio of 1.5, nowhere near 0.04. A constant ceiling cannot track a peak —
+the patch at a slip ratio well past the 0.04 peak. A constant ceiling cannot track a peak —
 it can only stop the command running away from the surface, and that turns out to be most of
 the benefit.
 
+TODO(numbers): fill from the re-run notebook 10
+
 **The honest caveat:** `y_max` is a constant, so the cap is on for the whole run, including
 the dry road either side. 26.6 N.m is less than the 31.1 that holds 90 km/h, so the capped car
-reaches the ice at 89.47 km/h and drifts down afterwards. Watch the green trace past t = 12 s.
-A fixed cap is the right idea with the wrong information — which is exactly why lecture 2
-needs a loop around slip.
+reaches the ice already below 90 km/h and drifts down afterwards. Watch the green trace past
+t = 12 s. A fixed cap is the right idea with the wrong information — which is exactly why
+lecture 2 needs a loop around slip.
+
+TODO(numbers): fill from the re-run notebook 10
 
 **Say:** that is a general shape worth naming. When an actuator's limit depends on conditions
 the controller cannot see, somebody has to tell it. That is not tuning. That is architecture.

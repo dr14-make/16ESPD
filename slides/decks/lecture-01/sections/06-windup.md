@@ -169,7 +169,7 @@ routeAlias: step-6c
 </div>
 </div>
 
-*Duplicate `CruiseLoopStep` → `Climb` · `demand` → `Constant(k = 130)` ·
+*Duplicate `CruiseLoopStep` → `CruiseClimb` · `demand` → `Constant(k = 130)` ·
 `road` → `Pulse(amplitude = 0.10, offset = 0, start_time = 30, duty_cycle = 1.0, period = 120)` ·
 `controller.xd0 = -130` · start at 130 km/h*
 
@@ -181,8 +181,9 @@ Drive up it. Nothing in the controller changes — only the road.
 
 **Build — a new harness in `MyCar`, beside `CruiseLoopStep`:**
 
-1. Duplicate `CruiseLoopStep` (section 02). Name the copy **`Climb`**. The four instances
-   keep their names: `demand`, `controller`, `plant`, `road`.
+1. Duplicate `CruiseLoopStep` (section 02). Name the copy **`CruiseClimb`**, the reference
+   harness's name. `CruiseLoopStep` itself stays as it is, a checkpoint to come back to. The
+   four instances keep their names: `demand`, `controller`, `plant`, `road`.
 2. Replace `demand` with `BlockComponents.Sources.Constant`, `k = 130`. Wire
    `demand.y → controller.u_s`.
 3. Replace `road` with BlockComponents › Sources › Pulse with `amplitude = 0.10`,
@@ -198,7 +199,7 @@ Drive up it. Nothing in the controller changes — only the road.
    `initial plant.body.mass.s = 0`, `initial plant.body.mass.v = 36.111111111111114`
    (130 km/h in m/s), `initial plant.engine.lag.x = 50.9693` (the holding torque at
    130 km/h on the flat).
-6. **▷ Run Analysis** → TransientAnalysis, name it `ClimbTransient`, `stop = 400`. Run it.
+6. **▷ Run Analysis** → TransientAnalysis, name it `CruiseClimbTransient`, `stop = 400`. Run it.
 
 **Plot, on one axes or stacked:** `plant.v_kmh`; `controller.gain.y` (the command, before
 the limiter); `controller.y` (after it); `plant.engine.limiter.y` (what the engine
@@ -217,8 +218,9 @@ This is the students' controller with a limiter and no anti-windup: the "none" r
 three-way table. If their overshoot is a few km/h rather than tens, the integrator is not
 wired from `error` — check that before going on.
 
-**Catch-up:** `CruiseClimb` is the reference harness, but its loop is the back-calculation
-comparison (`LimPID`); set `Ni = 1e6` on it to reproduce the no-anti-windup run.
+**Catch-up:** the reference `Lecture1.CruiseClimb` has the same name, but its loop is the
+back-calculation comparison (`LimPID`); set `Ni = 1e6` on it to reproduce the no-anti-windup
+run.
 -->
 
 ---
@@ -461,7 +463,7 @@ routeAlias: step-6d
 </div>
 
 *Your `CruiseController` · delete `error.y → integrator.u` · in code:
-`integrator.u = ifelse(...)` on `limiter.y` and `error.y` · re-run `Climb`*
+`integrator.u = ifelse(...)` on `limiter.y` and `error.y` · re-run `CruiseClimb`*
 
 [page: step 6d](../lecture/lecture-01/#step-6d) · reference `ClampingCruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
 
@@ -493,7 +495,7 @@ gets the error as before. Nested `ifelse` because the equation has no boolean `a
 4. Back to the diagram: `integrator` has no wire into it, and that is correct. It is still
    wired `integrator.y → add_pid.u3`.
 
-**Re-run `Climb`,** same plot as 6c, same axes.
+**Re-run `CruiseClimbTransient`,** same plot as 6c, same axes.
 
 **What the plot must show before moving on:**
 
@@ -566,11 +568,11 @@ with T<sub>t</sub> = N<sub>i</sub>·T<sub>i</sub> = 9 s it settles high and stil
 surplus to unwind. That is a library default left alone, not a verdict on the method — and it
 is why the lecture demonstrates clamping, which has no parameter to leave wrong.)*
 
-**In the model:** `LimPID` appears in this lecture only here, as the comparison. Open
-`CruiseClimb` next to the students' `Climb`: same plant, same road, same gains; the only
-difference is the controller block. Point at **`Ni`**, the back-calculation parameter, and
-**`y_max` defaulting to `T_max`** — the controller's own ceiling, the subject of the last
-slide in this section.
+**In the model:** `LimPID` appears in this lecture only here, as the comparison. Open the
+reference `CruiseClimb` next to the students' `MyCar.CruiseClimb`: same plant, same road, same
+gains; the only difference is the controller block. Point at **`Ni`**, the back-calculation
+parameter, and **`y_max` defaulting to `T_max`** — the controller's own ceiling, the subject
+of the last slide in this section.
 
 **Readout — every symbol on this slide**
 
@@ -688,7 +690,7 @@ of its own. The real answer is: whichever one your framework already implements 
 and on this car it is a bad trade. Read the *peak after* column downwards: below the ceiling
 and at it are both safe, and above it the damage grows with the gap.
 
-**In your model, if the room wants to see it:** on `Climb`, set `controller.y_max = 140`
+**In your model, if the room wants to see it:** on `CruiseClimb`, set `controller.y_max = 140`
 and re-run, then `300`. The lowest speed on the climb and the peak after it move the way the
 first and fourth rows say.
 
