@@ -131,6 +131,12 @@ expectation.
    plus `CruiseController`. Move this component and its analysis into a new
    `dyad/Lecture1/WheeledCruiseStep.dyad`.
 
+The updated notebooks pass these analysis parameters, so they must survive the refactor:
+`ClampingCruiseClimbTransient`: `y_max`, `y_min`; `CruiseClimbTransient`: `Ni`;
+`WheeledCruiseTransient`: `k`, `Ti`, `Td`, `wd`, `T_max`, `y_max`; `SlipCruiseTransient`: `k`,
+`Ti`, `Td`, `v_set`, `mu_low`, `patch_start`, `patch_duration`, `y_max`. `SlipCruiseIcePatch`
+seeds `wheel_inertia.w` from `loop.plant.radius`; `SlipCar` calls that parameter `r`.
+
 **Done when** every Lecture 1 test passes with unchanged expectations, and nothing under
 `dyad/Lecture1/` except `BackCalcCruiseLoop`, `WheeledCarPlant` and `SlipCarPlant` references
 `Vehicle.CarPlant` or `LimPID`. Report every test with its final values.

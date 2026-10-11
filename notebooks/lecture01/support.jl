@@ -12,8 +12,8 @@ them stay visible in the notebook cells; what lives here is the environment boot
 plant parameter set, the sweep machinery, and the plot and readout conventions that would
 otherwise be copied into ten notebooks.
 
-There are no unit conversion helpers. The model emits km/h through `Vehicle.ToKmPerHour`, so
-a notebook never converts a plotted signal after the fact.
+There are no unit conversion helpers. The model emits km/h through the `to_kmh` gain inside the
+hands-on car, so a notebook never converts a plotted signal after the fact.
 
 Only `Pkg` is loaded when this file is included: the modeling packages live in the project
 environment that [`setup`](@ref) resolves, so they are pulled in from inside it and every
@@ -80,8 +80,8 @@ const CAR = (
 
 Default signal paths, relative to the root of a scenario analysis.
 
-A `TransientAnalysis` runs a harness, not the plant — `Vehicle.CarPlant` has unconnected
-`RealInput` ports and cannot be simulated on its own — so the root of every solution is the
+A `TransientAnalysis` runs a harness, not the plant — `HandsOn.Car` has an unconnected
+`RealInput` port and cannot be simulated on its own — so the root of every solution is the
 harness and the plant is a subcomponent of it. These defaults assume the harness names its
 plant `plant` and its torque source `cmd`; any scenario that departs from that passes its own
 path to the `sig`, `commanded` or `delivered` keyword.
