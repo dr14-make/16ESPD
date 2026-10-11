@@ -574,9 +574,9 @@ New component `SlipCruiseIcePatch`, a duplicate of `CruiseLoopStep` with:
 | `demand` | BlockComponents › Sources › Constant | `k = 90` — replaces the step |
 | `controller` | your `CruiseController` | `xi0 = 31.078 / 56` — the integrator starts at the holding torque; `wd = 0`, `xd0 = -90` stay |
 | `plant` | your `SlipCar` | replaces `GradeCar` |
-| `friction` | BlockComponents › Sources › Pulse | `amplitude = -0.95`, `offset = 1.0`, `start_time = 4`, `duty_cycle = 1.0`, `period = 8` |
+| `friction` | BlockComponents › Sources › Pulse | `amplitude = 0.05`, `offset = 1.0`, `start_time = 4`, `duty_cycle = 1.0`, `period = 8` |
 
-The pulse adds `amplitude` to `offset` on the patch, so the grip drops from 1.0 to 0.05 for 8 s, from 4 s to 12 s. Your library cannot see the course library's `FrictionProfile`; the pulse is what the reference uses inside it, with `low = 0.05`.
+The pulse outputs `amplitude` on the patch and `offset` outside it, so the grip drops from 1.0 to 0.05 for 8 s, from 4 s to 12 s. Your library cannot see the course library's `FrictionProfile`; the pulse is what the reference uses inside it, with `low = 0.05`.
 
 #### Do this
 
@@ -605,9 +605,7 @@ The pulse adds `amplitude` to `offset` on the patch, so the grip drops from 1.0 
 
 ::: tip Expected result
 
-Before 4 s `plant.v_kmh` and `plant.wheel_kmh` lie on top of each other at **90 km/h**. Across the patch the two speeds come apart: `plant.wheel_kmh` tears away far above the car's speed — the gap is the wheel spinning — while `plant.v_kmh` sags only a little and the slip ratio `plant.wheel.kappa` runs past the adhesion peak. The controller only sees the car's speed, so it answers the lost grip with more torque. When the grip returns at 12 s the car surges above 90 km/h before settling back.
-
-<!-- TODO(numbers): fill from the re-run notebook 10 -->
+Before 4 s `plant.v_kmh` and `plant.wheel_kmh` lie on top of each other at **90 km/h**. Across the patch the two speeds come apart: `plant.wheel_kmh` tears away far above the car's speed — the gap is the wheel spinning — while `plant.v_kmh` sags by only about **3 km/h** and the slip ratio `plant.wheel.kappa` runs far past the 0.04 adhesion peak, to about **38**. The tread reaches about **3400 km/h**. The controller only sees the car's speed, so it answers the lost grip with more torque. When the grip returns at 12 s the car surges to about **112 km/h** before settling back.
 
 Reference: `SlipCruiseLoop`, bench `SlipCruiseIcePatch`.
 
