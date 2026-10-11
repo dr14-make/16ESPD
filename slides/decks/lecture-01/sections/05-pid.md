@@ -97,7 +97,7 @@ routeAlias: build-derivative
 </div>
 <div>
 
-![loop.plant.v_kmh and loop.controller.y for the PID loop.](/img/lecture-01/step05-pid-plot.png)
+![plant.v_kmh and controller.y for the PID loop.](/img/lecture-01/step05-pid-plot.png)
 
 </div>
 </div>
@@ -390,7 +390,7 @@ integral. The other two are at zero. Make them say it out loud.)*
 
 - **error.y, integrator.y, derivative.y** — each path's own output inside `CruiseController`,
   before the shared gain. The proportional path is the error itself.
-- **× k** — every trace is multiplied by the gain so all four are in newton-metres and can
+- **× k** — every trace is multiplied by the gain so all four are in newton-meters and can
   share an axis.
 - **controller.y** — the sum, which is what the engine is actually asked for.
 - **Zero at both ends** — the derivative before the step and after settling, because the error
@@ -434,7 +434,7 @@ for another monotonically; the derivative has an optimum, and past it the cure i
 the disease.
 
 **Point at:** the raggedness in the largest-*T<sub>d</sub>* curve. Say: and this is on a
-perfectly clean measurement. Put one per cent of speedometer noise on the signal and that
+perfectly clean measurement. Put one percent of speedometer noise on the signal and that
 curve becomes unusable — section 07.
 
 **Ask the room:** in a car, what does an aggressive derivative feel like to a passenger?

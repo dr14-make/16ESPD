@@ -97,7 +97,7 @@ routeAlias: build-gain
 </div>
 <div>
 
-![loop.plant.v_kmh settling at about 109.3 km/h against demand.y at 110: the steady-state error.](/img/lecture-01/step03-p-plot.png)
+![plant.v_kmh settling at about 109.3 km/h against demand.y at 110: the steady-state error.](/img/lecture-01/step03-p-plot.png)
 
 </div>
 </div>

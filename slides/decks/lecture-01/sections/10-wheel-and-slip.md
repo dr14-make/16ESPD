@@ -82,7 +82,7 @@ students' own swap comes with the slipping wheel.
   **L0** was everything up to section 09; **L2** adds slip.
 - **Wheel inertia J<sub>w</sub>** — rotational inertia the engine must also accelerate, kg·m².
 - **rise_time** — 10 % to 90 % of the commanded step, seconds. **overshoot** — peak past the
-  setpoint, per cent.
+  setpoint, percent.
 - **Ideal rolling** — wheel speed times radius *is* road speed, by definition. No sliding,
   ever.
 -->
@@ -353,8 +353,9 @@ duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 /
 one whose tire can let go.
 
 **Build — a new harness in `MyCar`,** duplicated from `CruiseLoopStep` as it stands after
-section 08's trap (limits back: `controller.y_max = 150`, `y_min = 0`; gains back to `k = 56`,
-`Ti = 10`, `Td = 0.5`):
+step 6: `k = 56`, `Ti = 10`, `Td = 0.5`, `Nd = 10`, `wd = 0`, `xd0 = -90`, and the 6b limits
+`controller.y_max = 150`, `y_min = 0`. Sections 07 and 08 worked on duplicates, so nothing
+needs resetting:
 
 1. Duplicate `CruiseLoopStep`. Name the copy **`SlipCruiseIcePatch`**, the reference bench's
    name; `CruiseLoopStep` stays on `GradeCar`. In the copy, select `plant`. Change its type from `MyCar.GradeCar` to `MyCar.SlipCar` (or delete it and
@@ -388,12 +389,16 @@ about 3400 km/h of tread speed — while `plant.v_kmh` sags only 3.10 km/h; the 
 goes to 38. After t = 12 s the car surges to 111.88 km/h. If the wheel speed stays on the
 car's, `friction.y` is not reaching `plant.mu_scale`.
 
+TODO(numbers): re-check after notebook 10 re-runs on CruiseController
+
 **They get wrong:** forgetting the wheel's initial speed. Without
 `initial plant.wheel_inertia.w`, the wheel starts at rest under a car doing 90 km/h — a
 violent slip at t = 0 that has nothing to do with the ice.
 
 **Catch-up:** `SlipCruiseLoop` is the reference loop on `HandsOn.SlipCar` with the reference
-controller; `SlipCruiseIcePatch` is its bench and `SlipCruiseTransient` is this run.
+controller; `SlipCruiseIcePatch` is its bench and `SlipCruiseTransient` runs it. Its defaults
+are not this run: set `Td = 0.5`, `wd = 0`, `patch_start = 4`, `patch_duration = 8` and
+`stop = 45` to reproduce the step.
 -->
 
 ---
@@ -448,6 +453,8 @@ spins the driven wheel — and destroys the traction it was trying to use.**
 **Say:** nothing in that chain is a bug. Every step is the controller doing its job correctly.
 The system as a whole does the wrong thing, and it does it faster the better the controller is
 tuned.
+
+TODO(numbers): re-check after notebook 10 re-runs on CruiseController
 
 **The numbers, if you want them on the board:** the speed sags **3.10 km/h** across the eight
 seconds — less than a gentle hill would cost, which is the trap. Meanwhile the tread goes to

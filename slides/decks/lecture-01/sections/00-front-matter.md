@@ -27,7 +27,7 @@ hands-on package with `Car` and `GradeBody` in it — you build on it live, exac
 
 **Where this sits:** second of two sessions on one car. In the hands-on
 (`slides/decks/handson-01/`) students learned each part's physics and built it. This deck does not
-repeat that physics: wherever a slide relies on it, a grey *↩ Hands-on step NN* line links to
+repeat that physics: wherever a slide relies on it, a gray *↩ Hands-on step NN* line links to
 the exact slide. Section 01 opens with a recap of what they built; if a group skipped the
 hands-on, they start from the reference `HandsOn.Car` and follow the recap.
 
@@ -49,9 +49,9 @@ the projector to Studio, build it, run it, switch back.
 
 **Catch-up.** Students who fall behind follow the guide page, which has every step with its
 blocks, parameters, wires and expected plot. Two checkpoints let anyone rejoin with a working
-model: **P** at the end of section 03 and **PID** at the end of section 05. Both are the
-reference `CruiseLoop`, with `with_I = false, with_D = false` and with the defaults
-respectively.
+model: **P** at the end of section 03 and **PID** at the end of section 05. The guide page has
+both as code to paste; the reference is `CruiseLoop`, with `with_I = false, with_D = false` for
+P, and with `with_I = true, with_D = true`, `Td = 0.5`, `wd = 0` for PID.
 
 **Driving the deck.** **→** or **Space** next slide, **←** previous. **O** overview of
 everything, **G** jump to a slide number, **F** fullscreen. Presenter mode, opened from the
@@ -59,7 +59,7 @@ nav bar (bottom left, on hover), is this window: these notes, the next slide and
 
 **Three windows.** Deck on the projector, Dyad Studio for the build, Jupyter for the notebook
 figures. Every demo slide names the notebook file and the cell heading and carries the code,
-with a copy button, so you never hunt through a notebook with your back to the room. A grey
+with a copy button, so you never hunt through a notebook with your back to the room. A gray
 strip means there is a Dyad model worth having open for that beat.
 
 **Handout:** `handout.pdf`, published next to the deck — one slide per page, these notes
@@ -133,7 +133,7 @@ else is either chosen by somebody else or done to you.)*
 - **e** — the *error*, r minus the measurement. Same units as r. Zero means we are where we
   asked to be.
 - **u** — the *control input*, also called the actuating signal or plant input. What the
-  controller chooses. Here, newton-metres of commanded engine torque.
+  controller chooses. Here, newton-meters of commanded engine torque.
 - **d** — the *disturbances*. Inputs we do not choose and cannot command: the hill, the wind,
   the luggage.
 - **x** — the *state*. What the system is actually doing, and what it remembers. Here, road
@@ -200,7 +200,7 @@ sequence is a scenario — Lecture1. The pressure is the car — HandsOn.)*
 **On `Vehicle/`:** the course library for lectures 2 and 3. It carries the same parts block
 for block, and today's notebooks no longer use it.
 
-**Practical:** when a slide carries a grey "open in Dyad" strip, that is the reference model to
+**Practical:** when a slide carries a gray "open in Dyad" strip, that is the reference model to
 have on the second screen for that beat. The students' own diagram is the one on the projector
 during a build.
 
@@ -253,7 +253,7 @@ during a build.
 > **Every one of these was derived on paper**
 >
 > In [hands-on step 05](../handson-01/index.html#/top-speed), and checked by every student's model.
-> The hill in notebook 06 defeats the engine because 2024 N &gt; 1935 N, and you can check
+> The hill in notebook 06 defeats the engine because 2023 N &gt; 1935 N, and you can check
 > that.
 
 </div>
@@ -271,7 +271,7 @@ section 06 breaks.
 test is where they show up on a plot.)*
 
 **On the transport delay:** 0.3 s is the whole powertrain torque-response path — ECU,
-fuelling, combustion, driveline compliance — not injection alone. If someone objects that
+fueling, combustion, driveline compliance — not injection alone. If someone objects that
 injection is faster than that, they are right, and the model lumps more than injection into
 this one number.
 
@@ -281,7 +281,7 @@ this one number.
 - **C<sub>d</sub>A** = 0.63 m² — drag area: the drag coefficient times the frontal area, kept
   as one number because only the product matters.
 - **ρ** = 1.2 kg/m³ — air density at sea level.
-- **f_r** = 0.012 — rolling resistance coefficient, dimensionless. Tyre losses as a fraction
+- **f_r** = 0.012 — rolling resistance coefficient, dimensionless. Tire losses as a fraction
   of the normal load.
 - **r** = 0.31 m — wheel rolling radius.
 - **i** = 4.0 — total gear ratio, dimensionless. Engine turns four times per wheel turn.
@@ -308,7 +308,7 @@ and means the same thing:
 
 **k** is in **N·m per km/h**.
 
-*"Five newton-metres for every km/h I am off." That is a sentence an engineer can
+*"Five newton-meters for every km/h I am off." That is a sentence an engineer can
 sanity-check; **k = 220** in mixed units is not.*
 
 </div>
@@ -340,7 +340,7 @@ someone will say it.)*
 
 **Readout — every symbol on this slide**
 
-- **k** — the controller gain, N·m per km/h. "This many newton-metres for every km/h I am
+- **k** — the controller gain, N·m per km/h. "This many newton-meters for every km/h I am
   off."
 - **km/h** — the unit of the setpoint, the measurement and therefore the error.
 - **SI inside** — the plant computes in m/s, N, kg. One block, `to_kmh`, converts, and it

@@ -107,7 +107,7 @@ plot_speed(nominal; setpoint = 90)
 > **It works**
 >
 > No sensor. No error signal. No controller worth the name — and the car sits on 90 km/h. On a
-> flat, dry road, with the car we modelled, feedforward is exactly right.
+> flat, dry road, with the car we modeled, feedforward is exactly right.
 
 </div>
 </div>
@@ -175,7 +175,7 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")
 **Read out** the three wrong speeds.
 
 **Say:** and now the important part — *nothing in the controller went wrong*. It computed
-31.1 newton-metres, it commanded 31.1, it delivered 31.1. It is still correct. The world
+31.1 newton-meters, it commanded 31.1, it delivered 31.1. It is still correct. The world
 moved.
 
 **Say:** and there is no error signal anywhere in this architecture, so nothing in the system

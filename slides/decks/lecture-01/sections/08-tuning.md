@@ -17,7 +17,7 @@ answer, and it is also the practical task from the course slides — the one you
 to perform.
 
 **Timing:** 18 minutes: 12 for the step test and the three tables, 4 for step 8 and the
-robustness re-runs on the students' loop, 2 for the trap. This section has the most cells of
+robustness re-runs on the students' `TuningCruiseStep`, 2 for the trap. This section has the most cells of
 any in the lecture; run them in order and let the tables do the talking.
 -->
 
@@ -71,7 +71,7 @@ oscillates.)*
 **Terms, if anyone asks**
 
 - **Well behaved** — stable open loop, near enough linear, minimum phase, manageable delay. No
-  strict definition; it is a judgement.
+  strict definition; it is a judgment.
 - **Minimum phase** — no zero in the right half plane. In plain terms: the output does not
   first move the *wrong* way when you push it.
 - **Open-loop stable** — left alone, disturbances die out. Our car coasts to a stop; a
@@ -314,7 +314,7 @@ plot_speed(pid; sig = SPEED, setpoint = 110)
 from our car and it knows nothing about it. What it knows is the *shape* — first order plus
 dead time — and that shape is enough for a starting point.
 
-**Read out** the three gains, with units on the first one: newton-metres per km/h.
+**Read out** the three gains, with units on the first one: newton-meters per km/h.
 
 **Point at** the response and ask whether it looks like something you would ship.
 *(Cohen-Coon is usually quick and usually oscillatory. It is a starting point, not an answer
@@ -396,7 +396,7 @@ measurement. Everything either side of it is how you find it.
 
 **Read out** K<sub>u</sub> and P<sub>u</sub> from the executed notebook — I have deliberately
 not printed them on the slide, because they move with the engine's transport delay. Say the
-units for K<sub>u</sub>: newton-metres per km/h.
+units for K<sub>u</sub>: newton-meters per km/h.
 
 **Ask the room:** we are deliberately making a car oscillate. Would you do this on a real
 vehicle? *(This is the setup for the slide after next — let them answer before you agree.)*
@@ -678,7 +678,7 @@ willing to do to the equipment.
 
 **Ask the room:** you have a customer's machine, in their factory, running their product.
 Which row? *(Cohen-Coon, or relay autotune if you can install one. Certainly not
-Ziegler-Nichols — and that is a professional judgement, not a technical one.)*
+Ziegler-Nichols — and that is a professional judgment, not a technical one.)*
 
 **Say:** and the honest summary of all five — they get you into the right decade. The last
 factor of two is always yours.
@@ -711,7 +711,7 @@ the stable region.*
 <!--
 **Say:** this is the answer to the question I asked you two slides ago. The method is not
 wrong; it is dangerous, and knowing which of your tools are dangerous is most of professional
-judgement.
+judgment.
 
 **Say:** and there is a middle route that we have just used without remarking on it — run
 Ziegler-Nichols on a *model*, then take the gains to the hardware. You get the measurement
@@ -741,7 +741,8 @@ routeAlias: step-8
 ![GradeCar's parameter panel with the vehicle mass m and the transport delay theta_e exposed beside T_max.](/img/lecture-01/step08-params.png)
 
 *Your `GradeCar` · add `parameter m::Dyad.Mass = 1400` and
-`structural parameter theta_e::Time = 0.3` · `body`: `m = m` · `engine`: `theta_e = theta_e`*
+`structural parameter theta_e::Time = 0.3` · `body`: `m = m` · `engine`: `theta_e = theta_e` ·
+duplicate `CruiseLoopStep` → `TuningCruiseStep` · limits lifted · Ziegler-Nichols gains · vary `m`, `theta_e`*
 
 [page: step 8](../lecture/lecture-01/#step-8) · reference `dyad/HandsOn/GradeCar.dyad`
 
@@ -761,14 +762,20 @@ measured directly.
 3. Select `engine`: `theta_e = theta_e`.
 4. Nothing to wire.
 
-**Robustness re-runs, on the students' `CruiseLoopStep`** (limits lifted at the end of 07:
-`controller.y_max = 1e6`, `y_min = -1e6`, `plant.T_max = 1e6`):
+**Robustness re-runs — a new harness in `MyCar`, beside `CruiseLoopStep`, `CruiseClimb` and
+`NoisyCruiseStep`:**
 
-1. Set the Ziegler-Nichols gains: `controller.k = 67.39`, `Ti = 1.087`, `Td = 0.272`
-   (`wd = 0`, `xd0 = -90` stay at their defaults). Run `CruiseLoopTransient`, the
-   90 → 110 km/h step. This is the baseline.
-2. `plant.m = 1600` — section 02's 200 kg payload. Re-run.
-3. Back to `m = 1400`; `plant.theta_e = 0.6`, twice the shipped delay. Re-run — this one
+1. Duplicate `CruiseLoopStep`. Name the copy **`TuningCruiseStep`**. `CruiseLoopStep` stays
+   at its step-6 state — `k = 56`, `Ti = 10`, `Td = 0.5`, limits 150 / 0 — because section 10
+   duplicates it again.
+2. In the copy, lift every limit, as the notebook does: `controller.y_max = 1e6`,
+   `controller.y_min = -1e6`, `plant.T_max = 1e6`.
+3. Set the Ziegler-Nichols gains: `controller.k = 67.39`, `Ti = 1.087`, `Td = 0.272`
+   (`Nd = 10`, `wd = 0`, `xd0 = -90` stay).
+4. **▷ Run Analysis** → TransientAnalysis of `TuningCruiseStep`, name it
+   `TuningCruiseTransient`, `stop = 60`. Run — the 90 → 110 km/h step. This is the baseline.
+5. `plant.m = 1600` — section 02's 200 kg payload. Re-run.
+6. Back to `m = 1400`; `plant.theta_e = 0.6`, twice the shipped delay. Re-run — this one
    recompiles, because `theta_e` is structural.
 
 **What the plot must show before moving on:** `plant.v_kmh` for all three on one axes. The
@@ -777,9 +784,12 @@ doubled delay rings much harder: the Ziegler-Nichols gain was computed from a K<
 measured at 0.3 s, and K<sub>u</sub> falls as the delay grows, so the margin the table left
 is gone. That is "the model is least trustworthy near the stability boundary" in one plot.
 
-**Then put both back:** `m = 1400`, `theta_e = 0.3`.
+**Then put both back** on `TuningCruiseStep`: `m = 1400`, `theta_e = 0.3`. The trap slide
+runs on it next.
 
-**Catch-up:** `HandsOn.GradeCar` carries `m` and `theta_e`, with the same defaults.
+**Catch-up:** `HandsOn.GradeCar` carries `m` and `theta_e`, with the same defaults. The
+reference runs are notebook 08's `tuned` cell: `CruiseLoopTransient` with both switches on,
+the gains above and the limits lifted.
 -->
 
 ---
@@ -810,7 +820,7 @@ plot_torque(hot; commanded = "loop.controller.y",
 </div>
 <div>
 
-![Two panels: a near-perfect speed response above, and below it the commanded torque spiking far above the engine's 150 newton-metre limit line.](/figures/08-saturation-trap.svg)
+![Two panels: a near-perfect speed response above, and below it the commanded torque spiking far above the engine's 150 newton-meter limit line.](/figures/08-saturation-trap.svg)
 
 *Above: the response you were hoping for. Below: what it costs, against the torque limit drawn on.*
 
@@ -834,9 +844,11 @@ design would also wind up.
 **Say the rule:** always plot the actuator command. Every time. It is one extra line in the
 notebook and it is the difference between a design and a drawing.
 
-**In the model:** The notebooks lift **`T_max` and `y_max`** to run this, and so has the
-students' loop since step 7. Put them back — `plant.T_max = 150`, `controller.y_max = 150`,
-`controller.y_min = 0` — and re-run: the beautiful response is the first thing to go.
+**In the model:** The notebooks lift **`T_max` and `y_max`** to run this, and so does the
+students' `TuningCruiseStep`. On it, set `controller.k = 539.1`, `Ti = 0.5435` (8 × and ½ the
+Ziegler-Nichols values) and run `TuningCruiseTransient`; then put the limits back —
+`plant.T_max = 150`, `controller.y_max = 150`, `controller.y_min = 0` — and re-run: the
+beautiful response is the first thing to go. `CruiseLoopStep` is never touched.
 
 **Readout — every symbol on this slide**
 
@@ -854,7 +866,7 @@ students' loop since step 7. Put them back — `plant.T_max = 150`, `controller.
 ## What this bought us
 
 - A gain set from one step test, with no model of the car in the calculation.
-- Three tables, three answers, and the judgement to choose between them.
+- Three tables, three answers, and the judgment to choose between them.
 - One rule that outlives all three: **plot the actuator command.**
 
 ### Next: the same controller, running on a computer that only looks occasionally. <Link to="discretization">→ 09, discretization</Link>

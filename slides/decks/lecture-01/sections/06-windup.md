@@ -31,13 +31,13 @@ the three-way comparison and the two limits. Four build steps: two inside `Grade
 - The **process** — the thing being pushed. Our car.
 
 Real actuators have backlash, rate limits and **saturation**.
-A linear model has none of these: ask it for a million newton-metres and it will agree.
+A linear model has none of these: ask it for a million newton-meters and it will agree.
 
 **Open in Dyad** `dyad/HandsOn/Engine.dyad` — the `limiter` after the lag
 
 > **The hill we are about to drive up**
 >
-> 130 km/h on a sustained 10 % climb needs **2024 N** at the road.
+> 130 km/h on a sustained 10 % climb needs **2023 N** at the road.
 >
 > The engine can deliver **1935 N**.
 >
@@ -51,7 +51,7 @@ A linear model has none of these: ask it for a million newton-metres and it will
 force balance from hands-on step 05, with the parameters on the front slide. You can compute
 them; that is the whole point of having built the car first.
 
-**Say:** and notice how close it is — 2024 against 1935. Five per cent short. This is not a
+**Say:** and notice how close it is — 2023 against 1935. Four percent short. This is not a
 cartoon overload; it is the ordinary case of a fully loaded car on a long climb.
 
 **Ask the room:** what does the controller see when the engine is pinned at its limit?
@@ -66,8 +66,8 @@ matters too — this engine cannot brake, so downhill it has no answer at all.
 - **Actuator** — the thing that supplies the force or energy. Our engine.
 - **Process** — the thing being pushed. Our car.
 - **Saturation** — an actuator at its limit, unable to follow the command it was given.
-- **2024 N** — the tractive force a 10 % climb at 130 km/h demands. **1935 N** — what the
-  engine can deliver. Five per cent short.
+- **2023 N** — the tractive force a 10 % climb at 130 km/h demands. **1935 N** — what the
+  engine can deliver. Four percent short.
 - **118 km/h** — the asymptote this climb heads for. Say *heads for*, not *settles at*: the
   climb is 120 s long and the car is at 119.05 km/h and still falling when the road flattens.
 - **y_min = 0** — the limiter's lower bound. This engine cannot produce negative torque, so
@@ -176,7 +176,7 @@ routeAlias: step-6c
 [page: step 6c](../lecture/lecture-01/#step-6c) · reference `CruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
 
 <!--
-**Say:** we have a 10 % hill that needs 2024 N at 130 km/h, and an engine that makes 1935.
+**Say:** we have a 10 % hill that needs 2023 N at 130 km/h, and an engine that makes 1935.
 Drive up it. Nothing in the controller changes — only the road.
 
 **Build — a new harness in `MyCar`, beside `CruiseLoopStep`:**
@@ -281,7 +281,7 @@ buying anything.
 is usually several times over.
 
 **Say (the drone story, if it helps):** it is the same as holding a drone down on the ground
-while it is trying to fly to 50 metres. The propellers max out at 1000 rpm, the integrator
+while it is trying to fly to 50 meters. The propellers max out at 1000 rpm, the integrator
 winds the command to 2000, and the moment you let go…
 
 **In the model:** `gradient`, `start_time` and **`duration`**. The road flattens again because
@@ -289,7 +289,7 @@ the duration is finite, and the flattening is where the damage shows.
 
 **Readout — every symbol on this slide**
 
-- **grade = 0.10** — tan α, a 10 % climb, about 5.7°.
+- **gradient = 0.10** — tan α, a 10 % climb, about 5.7°.
 - **start_time = 30 s, duration = 120 s** — the hill starts at 30 s and the road flattens
   again at 150 s.
 - **v_set = 130 km/h** — the cruise setpoint.
@@ -297,7 +297,8 @@ the duration is finite, and the flattening is where the damage shows.
   torque** — what the engine gives; it is flat on the limit.
 - **The integrator state** — plotted separately, because it is the thing actually going wrong
   and it is invisible in the speed trace.
-- **antiwindup = :none** — no protection, deliberately, so the failure is visible.
+- **Ni = 1.0e6** — `LimPID`'s back-calculation factor set so large that its correction is
+  negligible: no anti-windup, deliberately, so the failure is visible.
 -->
 
 ---
@@ -392,9 +393,9 @@ thing for them to discover in a moment.)*
 
 **Readout — every symbol on this slide**
 
-- **overshoot(sol, 130; y0 = 130)** — peak excursion past the setpoint as a percentage of the
-  step. `y0` is the pre-step speed, given explicitly here because the run starts at the
-  setpoint.
+- **peak − 130** — the excursion past the setpoint, in km/h. Not the `overshoot` helper:
+  that divides by the step size, and this run starts at the setpoint, so there is no step.
+- **t[argmax(v)]** — when the peak happens, in seconds.
 - **The dotted verticals** — where the climb starts and ends.
 - **The peak** — read it off and compare with the guesses on the board.
 -->
@@ -634,7 +635,7 @@ difference is whether the integrator was allowed to accumulate something it coul
 **Read out** the three overshoot figures.
 
 **Say:** and note what anti-windup did *not* fix. All three traces sag to the same 119 km/h
-on the climb. No controller can make a 150 N·m engine deliver 2024 N of tractive force.
+on the climb. No controller can make a 150 N·m engine deliver 2023 N of tractive force.
 Anti-windup does not add performance — it stops you being punished for asking.
 
 **Ask the room:** which of the two methods would you ship? *(Either. Clamping is cheaper and
@@ -643,8 +644,9 @@ of its own. The real answer is: whichever one your framework already implements 
 
 **Readout — every symbol on this slide**
 
-- **:none** — no protection. **:clamping** — conditional integration. **:backcalculation** —
-  `LimPID`'s built-in, via N<sub>i</sub>.
+- **"none"** — `LimPID` with `Ni = 1e6`: no protection. **"back-calculation"** — `LimPID`'s
+  built-in at `Ni = 0.9`. **"clamping"** — conditional integration, a different controller and
+  so a different analysis.
 - **Peak overshoot** — the single number that separates them.
 - **What none of them fixes** — all three sag to the same 119.05 km/h on the climb.
   Anti-windup does not add performance; it stops you being punished for asking.

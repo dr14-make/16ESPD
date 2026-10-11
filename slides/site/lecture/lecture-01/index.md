@@ -12,7 +12,7 @@ From the car you built in the hands-on to a PID cruise control that survives a h
 
 **How each step works.** The slide that introduces a step shows the finished diagram and links here. Each step below lists the blocks to place with their library path, instance name and values, every wire, and what the plot must show before you go on. Use the instance names given here: the lecture's notebooks read signal paths like `controller.integrator.y`, and with the same names your diagram reads the same way.
 
-**Fell behind?** There are two catch-up checkpoints, both in the course repository under `dyad/Lecture1/CruiseLoop.dyad`: the **P checkpoint** at the end of step 3 and the **PID checkpoint** at the end of step 5. The reference controller is `Lecture1.CruiseController`; its switches `with_I` and `with_D` turn the integral and derivative branches on and off, so the one model is both checkpoints.
+**Fell behind?** There are two catch-up checkpoints: the **P checkpoint** at the end of step 3 and the **PID checkpoint** at the end of step 5. Each has your `CruiseController` and `CruiseLoopStep` as they stand at that point, as code to paste. The course repository has the same checkpoints in `dyad/Lecture1/CruiseLoop.dyad`: the reference `CruiseLoop`, whose switches `with_I` and `with_D` turn the integral and derivative branches on and off.
 
 Every component here exists in the course repository, and every number in an expected result is a test expectation or a docstring of the reference model.
 
@@ -213,11 +213,54 @@ In `CruiseController`:
 
 :::
 
-::: warning Fell behind?
+:::: warning Fell behind?
 
-Open `CruiseLoop` with `with_I = false, with_D = false`.
+Catch-up: paste into a new component. Add a component `CruiseController` in `MyCar`, toggle to code (⇄) and paste the first block over its contents; then the same for `CruiseLoopStep` with the second. If you already have components with these names, paste over their contents instead. `CruiseLoopStep` uses your `GradeCar` from step 1b. Then create the TransientAnalysis `CruiseLoopTransient` of step 2 if you do not have it.
+
+::: code-group
+
+```txt [CruiseController]
+component CruiseController
+  "Setpoint in km/h"
+  u_s = RealInput()
+  "Measured speed in km/h"
+  u_m = RealInput()
+  "Torque command in N·m"
+  y = RealOutput()
+  error = BlockComponents.Math.Add(k1 = 1, k2 = -1)
+  gain = BlockComponents.Math.Gain(k = k)
+  "Controller gain in N·m per km/h"
+  parameter k::Real = 56
+relations
+  connect(u_s, error.u1)
+  connect(u_m, error.u2)
+  connect(error.y, gain.u)
+  connect(gain.y, y)
+end
+```
+
+```txt [CruiseLoopStep]
+component CruiseLoopStep
+  demand = BlockComponents.Sources.Step(offset = 90, height = 20, start_time = 0)
+  controller = CruiseController()
+  plant = GradeCar()
+  road = BlockComponents.Sources.Constant(k = 0)
+relations
+  connect(demand.y, controller.u_s)
+  connect(plant.v_kmh, controller.u_m)
+  connect(controller.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  initial plant.body.mass.s = 0
+  initial plant.body.mass.v = 25
+  initial plant.engine.lag.x = 31.078
+end
+```
 
 :::
+
+Or open the reference `CruiseLoop` with `with_I = false, with_D = false` — the default of `CruiseLoopTransient` — which settles at the same 109.3.
+
+::::
 
 ## 04 Proportional-integral
 
@@ -253,7 +296,7 @@ In `CruiseController`:
 
 ::: tip Expected result
 
-`plant.v_kmh` now reaches **110 km/h** and stays there: the steady-state error of step 3 is gone. `controller.integrator.y` climbs while there is an error and levels off once the speed arrives — it has found the extra torque by itself.
+`plant.v_kmh` now reaches **110 km/h**, passes it briefly — the PI overshoot that step 5 removes — and settles on it: the steady-state error of step 3 is gone. `controller.integrator.y` climbs while there is an error and levels off once the speed arrives — it has found the extra torque by itself.
 
 :::
 
@@ -300,11 +343,77 @@ In `CruiseController`:
 
 :::
 
-::: warning Fell behind?
+:::: warning Fell behind?
 
-Open `CruiseLoop` with `with_I = true, with_D = true`, `Td = 0.5` and `wd = 0`; its `xd0` follows `wd` by itself.
+Catch-up: paste into a new component. Add a component `CruiseController` in `MyCar`, toggle to code (⇄) and paste the first block over its contents; then the same for `CruiseLoopStep` with the second. If you already have components with these names, paste over their contents instead. `CruiseLoopStep` uses your `GradeCar` from step 1b. Then create the TransientAnalysis `CruiseLoopTransient` of step 2 if you do not have it.
+
+::: code-group
+
+```txt [CruiseController]
+component CruiseController
+  "Setpoint in km/h"
+  u_s = RealInput()
+  "Measured speed in km/h"
+  u_m = RealInput()
+  "Torque command in N·m"
+  y = RealOutput()
+  error = BlockComponents.Math.Add(k1 = 1, k2 = -1)
+  add_d = BlockComponents.Math.Add(k1 = wd, k2 = -1)
+  derivative = BlockComponents.Continuous.Derivative(k = Td, T = Td / Nd, x0 = xd0)
+  integrator = BlockComponents.Continuous.Integrator(k = 1 / Ti, x0 = xi0)
+  add_pid = BlockComponents.Math.Add3(k1 = 1, k2 = 1, k3 = 1)
+  gain = BlockComponents.Math.Gain(k = k)
+  "Controller gain in N·m per km/h"
+  parameter k::Real = 56
+  "Integral time"
+  parameter Ti::Time = 10
+  "Initial integrator state"
+  parameter xi0::Real = 0
+  "Derivative time"
+  parameter Td::Time = 0.5
+  "Derivative filter: the filter time constant is Td / Nd"
+  parameter Nd::Real = 10
+  "Setpoint weight in the derivative"
+  parameter wd::Real = 0
+  "Initial derivative-filter state, (wd - 1) * 90"
+  parameter xd0::Real = -90
+relations
+  connect(u_s, error.u1)
+  connect(u_m, error.u2)
+  connect(error.y, add_pid.u1)
+  connect(error.y, integrator.u)
+  connect(integrator.y, add_pid.u3)
+  connect(u_s, add_d.u1)
+  connect(u_m, add_d.u2)
+  connect(add_d.y, derivative.u)
+  connect(derivative.y, add_pid.u2)
+  connect(add_pid.y, gain.u)
+  connect(gain.y, y)
+end
+```
+
+```txt [CruiseLoopStep]
+component CruiseLoopStep
+  demand = BlockComponents.Sources.Step(offset = 90, height = 20, start_time = 0)
+  controller = CruiseController()
+  plant = GradeCar()
+  road = BlockComponents.Sources.Constant(k = 0)
+relations
+  connect(demand.y, controller.u_s)
+  connect(plant.v_kmh, controller.u_m)
+  connect(controller.y, plant.tau_cmd)
+  connect(road.y, plant.grade)
+  initial plant.body.mass.s = 0
+  initial plant.body.mass.v = 25
+  initial plant.engine.lag.x = 31.078
+end
+```
 
 :::
+
+Or open the reference `CruiseLoop` with `with_I = true, with_D = true`, `Td = 0.5` and `wd = 0`; its `xd0` follows `wd` by itself.
+
+::::
 
 ## 06 Integral windup
 
@@ -337,21 +446,30 @@ In `CruiseController`:
 
 | Name | Library path | Set |
 | --- | --- | --- |
-| `y_max` | parameter `Real` | `150` — output ceiling, the engine's `T_max` |
-| `y_min` | parameter `Real` | `0` — the engine cannot brake |
+| `y_max` | parameter `Real` | `1e300` — output ceiling; no limit unless one is set |
+| `y_min` | parameter `Real` | `-y_max` — output floor |
 | `limiter` | BlockComponents › Nonlinear › Limiter | `y_max = y_max`, `y_min = y_min` |
+
+In `CruiseLoopStep`:
+
+| Name | Set |
+| --- | --- |
+| `controller` | `y_max = 150` — the engine's `T_max`; `y_min = 0` — the engine cannot brake |
+
+The defaults are the reference's: a `CruiseController` with no limits set behaves as before. The limits belong to the loop, which knows which engine it drives.
 
 #### Do this
 
 1. Add the parameters `y_max` and `y_min`.
 2. Delete the wire `gain.y → y`. Place `limiter` and wire `gain.y → limiter.u`, `limiter.y → y`.
-3. Run `CruiseLoopTransient` again and plot `controller.y`.
+3. Open `CruiseLoopStep`, click `controller` and set `y_max = 150`, `y_min = 0`.
+4. Run `CruiseLoopTransient` again and plot `controller.y` with `controller.gain.y`.
 
 [![CruiseController ending in gain, limiter and the output y.](/lecture/lecture-01/img/step06-limiter.png)](/lecture/lecture-01/img/step06-limiter.png)
 
 ::: tip Expected result
 
-`controller.y` now stays between 0 and 150 N·m; the speed still reaches 110 km/h. The command the controller *wants* is `controller.gain.y`, the one it sends is `controller.y`.
+The 90 → 110 km/h step asks for more than 150 N·m at the start, so `controller.y` sits flat on 150 for the first moments instead of rising above it; it stays between 0 and 150 N·m throughout, and the speed still reaches 110 km/h. The command the controller *wants* is `controller.gain.y`, the one it sends is `controller.y`: the gap between them is the saturation.
 
 :::
 
@@ -367,7 +485,7 @@ New component `CruiseClimb`, a duplicate of `CruiseLoopStep` with:
 | --- | --- | --- |
 | `demand` | BlockComponents › Sources › Constant | `k = 130` — replaces the step |
 | `road` | BlockComponents › Sources › Pulse | `amplitude = 0.10`, `offset = 0`, `start_time = 30`, `duty_cycle = 1.0`, `period = 120` — replaces the constant |
-| `controller` | your `CruiseController` | `xd0 = -130` — the derivative-filter seed for a 130 km/h cruise |
+| `controller` | your `CruiseController` | `xd0 = -130` — the derivative-filter seed for a 130 km/h cruise; `y_max = 150`, `y_min = 0` come along from step 6b |
 
 Your library cannot see the course library's `GradeProfile`; the pulse is what the reference uses inside it. `xd0` is `(wd − 1) · 130` for this cruise: left at the step-5 value −90, the run opens with a derivative spike.
 
@@ -395,7 +513,7 @@ Your library cannot see the course library's `GradeProfile`; the pulse is what t
 
 ::: tip Expected result
 
-The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car falls back to about **118 km/h**. All that time the error is positive, so `controller.integrator.y` keeps climbing. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
+The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.05 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
 
 Compare with the course model `CruiseClimb`, which closes the loop with the library's `LimPID` and its back-calculation anti-windup; it is back at **130 km/h** at 400 s.
 
@@ -496,7 +614,7 @@ New component `NoisyCruiseStep`, a duplicate of `CruiseLoopStep` with:
 | `controller` | your `CruiseController` | `y_max = 1e6`, `y_min = -1e6` — limits lifted |
 | `plant` | your `GradeCar` | `T_max = 1e6` — limit lifted |
 
-Every limit is lifted, as in the lecture notebook, so the limiter does not clip the chatter and hide it.
+Every limit is lifted, as in the lecture notebook, so the limiter does not clip the chatter and hide it. The limits are lifted on this duplicate only: `CruiseLoopStep` keeps its step 6b limits, 150 and 0.
 
 #### Do this
 
@@ -506,7 +624,7 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
 4. Click `controller` and set `y_max = 1e6`, `y_min = -1e6`; click `plant` and set `T_max = 1e6`.
 5. Click `controller` and set `wd = 1` and `xd0 = 0` — the seed `(wd − 1) · 90` that goes with `wd = 1`. Create a TransientAnalysis `NoisyCruiseTransient` with `stop = 40` s. Run it and plot `controller.y`, then `plant.v_kmh` with `noise.y`.
 6. Set `wd = 0` and `xd0 = -90` back — the step-5 values. Run again, same axes.
-7. Keep `wd = 0` and change `Nd`: run once at `Nd = 100` — the filter almost gone — and compare with `Nd = 10`.
+7. Keep `wd = 0` and change `Nd`: run at `Nd = 100` — the filter almost gone — then at 20, 5 and 2, with `controller.y` on the same axes. `Nd` is an ordinary parameter, so each run is a re-solve, not a recompile.
 
 [![NoisyCruiseStep: the noise block inserted between plant.v_kmh and controller.u_m.](/lecture/lecture-01/img/step07-noise-loop.png)](/lecture/lecture-01/img/step07-noise-loop.png)
 
@@ -516,11 +634,11 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
 
 ::: tip Expected result
 
-At `wd = 1` the car still makes the step — `plant.v_kmh` climbs from 90 towards 110 km/h, and the noisy `noise.y` wiggles a few tenths of a km/h around it — but `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows.
+At `wd = 1` the car still makes the step — `plant.v_kmh` climbs from 90 towards 110 km/h, and the noisy `noise.y` wiggles a few tenths of a km/h around it — but `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows: in the 20–30 s window the swing of `controller.y` falls from about **1760 N·m** at `Nd = 100` to **315 N·m** at `Nd = 2` — still twice what the engine can deliver.
 
 <!-- TODO(numbers): fill from the re-run notebook 07 -->
 
-Reference: `NoisyCruiseLoop`, bench `NoisyCruiseStep`.
+Reference: `NoisyCruiseLoop`, bench `NoisyCruiseStep`. To reproduce this step, run `NoisyCruiseTransient` with `Td = 0.5`, `wd` per run (1, then 0; its `xd0` follows `wd` by itself), `T_max = 1e6`, `y_max = 1e6`, `y_min = -1e6` and `stop = 40`.
 
 :::
 
@@ -530,20 +648,42 @@ Lecture deck: [tuning](../../lecture-01/index.html#/tuning){target="_self"}
 
 ### 8 · Mass and delay as parameters {#step-8}
 
-Expose the two plant values the robustness sweep changes, so a tuning can be tried on a heavier car or a slower engine.
+Expose the two plant values the robustness sweep changes, then try the Ziegler-Nichols gains on a heavier car and a slower engine — on a duplicate of the loop, so `CruiseLoopStep` stays as it is for step 10.
+
+#### Parts
+
+In `GradeCar`:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `m` | parameter `Dyad.Mass` | `1400` — vehicle mass; `body`: `m = m` |
+| `theta_e` | structural parameter `Time` | `0.3` — injection-to-torque delay; `engine`: `theta_e = theta_e` |
+
+New component `TuningCruiseStep`, a duplicate of `CruiseLoopStep` with:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `controller` | your `CruiseController` | `k = 67.39`, `Ti = 1.087`, `Td = 0.272` — the Ziegler-Nichols gains; `y_max = 1e6`, `y_min = -1e6` — limits lifted; `Nd = 10`, `wd = 0`, `xd0 = -90` stay |
+| `plant` | your `GradeCar` | `T_max = 1e6` — limit lifted |
 
 #### Do this
 
 1. Open `GradeCar` and **Add parameter**:
-   - `m`, type `Dyad.Mass`, value `1400`. Click `body` and set `m = m`.
+   - `m`, type `Dyad.Mass`, value `1400`. Click `body` and set `m = m`. Your `GradeBody` passes `m` on to its grade force, so one binding reaches rolling resistance, the slope force and the inertia.
    - `theta_e`, type `Time`, value `0.3`, **structural**. Click `engine` and set `theta_e = theta_e`. It is structural because the engine's Padé delay builds its coefficients from it when the model is compiled; if **Add parameter** offers no structural option, toggle to code and write `structural parameter theta_e::Time = 0.3`.
-2. In `CruiseLoopStep`, click `controller` and set the gains the lecture's tuning rule gives. Then click `plant`, change `m` or `theta_e`, and run again: the same gains on a different car.
+2. Right-click `CruiseLoopStep` → **Duplicate** and name it `TuningCruiseStep`. Click `controller` and set the gains and limits from the table; click `plant` and set `T_max = 1e6`.
+3. <Badge type="tip" text="New analysis" /> Create a TransientAnalysis of `TuningCruiseStep`, name it `TuningCruiseTransient` and set `stop` to `60` s. Run it and plot `plant.v_kmh`: the baseline.
+4. Click `plant`, set `m = 1600` — a 200 kg payload — and run again.
+5. Set `m = 1400` back and `theta_e = 0.6`, twice the delay. Run again; this one recompiles, because `theta_e` is structural.
+6. Put `theta_e = 0.3` back.
 
 [![GradeCar's parameter panel with m and theta_e exposed.](/lecture/lecture-01/img/step08-params.png)](/lecture/lecture-01/img/step08-params.png)
 
 ::: tip Expected result
 
-With the defaults nothing changes. The reference `HandsOn.GradeCar` carries `theta_e`, `T_max`, `m` and also the drag area `CdA`.
+With the `GradeCar` defaults nothing changes in any earlier run. On `TuningCruiseStep`, the 200 kg payload barely moves the response: feedback absorbs it. The doubled delay rings much harder: the Ziegler-Nichols gains came from a measurement at 0.3 s, and the margin they left is gone.
+
+The reference `HandsOn.GradeCar` carries `theta_e`, `T_max`, `m` and also the drag area `CdA`.
 
 :::
 
@@ -553,7 +693,9 @@ Lecture deck: [discretization](../../lecture-01/index.html#/discretization){targ
 
 ### 9 · Discretization (demo) {#step-9}
 
-Demo only: watch, nothing to build. The lecturer runs `SampledCruiseLoop`, the same loop around `GradeCar` with the controller replaced by the library's `DiscreteComponents.DiscretePIDStandard`: a periodic clock, a sampler on the setpoint and one on the measured speed, the discrete PID, and a zero-order hold in front of the car. At a short sample time the P-only loop behaves like your continuous one and settles at about 109.3 km/h; the lecture lengthens the sample period until it does not.
+Demo only: watch, nothing to build. The lecturer runs `SampledCruiseLoop`, the same loop around `GradeCar` with the controller replaced by the library's `DiscreteComponents.DiscretePIDStandard`: a periodic clock, a sampler on the setpoint and one on the measured speed, the discrete PID, and a zero-order hold in front of the car.
+
+The controller runs the Ziegler-Nichols PID gains of step 8 — `k = 67.39`, `Ti = 1.087`, `Td = 0.272`, `wd = 0` — with every limit lifted, on the 90 → 110 km/h step. Only the sample time `Ts` changes: 0.01, 0.1, 0.4 and 1 s. At 0.01 s the loop is close to the continuous one; as `Ts` grows the response overshoots, then rings, then does not come back. Two fixes follow: sample faster (`Ts = 0.05` s, gains untouched), or re-tune for the slow rate (`k = 20`, `Ti = 3`, `Td = 0.5` at `Ts = 1` s), which is stable but slower. `Ts` is structural, so each sample time is a recompile.
 
 [![SampledCruiseLoop: clock, the two samplers, DiscretePIDStandard, the zero-order hold and the plant.](/lecture/lecture-01/img/step09-sampler.png)](/lecture/lecture-01/img/step09-sampler.png)
 
@@ -567,12 +709,12 @@ Put your controller on the `SlipCar` of hands-on [step 10](../../handson/lecture
 
 #### Parts
 
-New component `SlipCruiseIcePatch`, a duplicate of `CruiseLoopStep` with:
+New component `SlipCruiseIcePatch`, a duplicate of `CruiseLoopStep` as it stands after step 6 — steps 7 and 8 worked on duplicates, so it still has `k = 56`, `Ti = 10`, `Td = 0.5`, `Nd = 10`, `wd = 0`, `xd0 = -90` and the limits 150 and 0 — with:
 
 | Name | Library path | Set |
 | --- | --- | --- |
 | `demand` | BlockComponents › Sources › Constant | `k = 90` — replaces the step |
-| `controller` | your `CruiseController` | `xi0 = 31.078 / 56` — the integrator starts at the holding torque; `wd = 0`, `xd0 = -90` stay |
+| `controller` | your `CruiseController` | `xi0 = 31.078 / 56` — the integrator starts at the holding torque; everything else stays |
 | `plant` | your `SlipCar` | replaces `GradeCar` |
 | `friction` | BlockComponents › Sources › Pulse | `amplitude = 0.05`, `offset = 1.0`, `start_time = 4`, `duty_cycle = 1.0`, `period = 8` |
 
@@ -607,7 +749,9 @@ The pulse outputs `amplitude` on the patch and `offset` outside it, so the grip 
 
 Before 4 s `plant.v_kmh` and `plant.wheel_kmh` lie on top of each other at **90 km/h**. Across the patch the two speeds come apart: `plant.wheel_kmh` tears away far above the car's speed — the gap is the wheel spinning — while `plant.v_kmh` sags by only about **3 km/h** and the slip ratio `plant.wheel.kappa` runs far past the 0.04 adhesion peak, to about **38**. The tread reaches about **3400 km/h**. The controller only sees the car's speed, so it answers the lost grip with more torque. When the grip returns at 12 s the car surges to about **112 km/h** before settling back.
 
-Reference: `SlipCruiseLoop`, bench `SlipCruiseIcePatch`.
+<!-- TODO(numbers): re-check after notebook 10 re-runs on CruiseController -->
+
+Reference: `SlipCruiseLoop`, bench `SlipCruiseIcePatch`. To reproduce this step, run `SlipCruiseTransient` with `Td = 0.5`, `wd = 0`, `patch_start = 4`, `patch_duration = 8` and `stop = 45`.
 
 :::
 

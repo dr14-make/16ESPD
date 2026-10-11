@@ -239,7 +239,7 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
 **Run it** before you start talking — it is the slowest solve in the notebook.
 
 **Say:** everyone has seen this curve — it is their step 05, run on the reference `Car`. The point today is not the 246;
-it is the time axis. Two and a half minutes to get within one per cent, because drag is a
+it is the time axis. Two and a half minutes to get within one percent, because drag is a
 very weak restoring force at low speed.
 
 **Say:** remember this time axis. In notebook 03 the closed loop will do a 20 km/h step in a
@@ -317,7 +317,7 @@ different treatment.
 order, Ziegler-Nichols has nothing to oscillate and Cohen-Coon divides by a dead time of zero.
 This plot is the first time they are visible as a control problem.
 
-**Ask the room:** why step from 31 to 41 N·m rather than 0 to 150? *(Because we want the
+**Ask the room:** why step from 31 to 40 N·m rather than 0 to 150? *(Because we want the
 response around the operating point we actually drive at. A huge step wanders across the
 nonlinearity in v².)*
 

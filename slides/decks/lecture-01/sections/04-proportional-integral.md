@@ -94,7 +94,7 @@ routeAlias: build-integrator
 </div>
 <div>
 
-![loop.plant.v_kmh reaching 110 km/h, with loop.controller.integrator.y on a second axis.](/img/lecture-01/step04-pi-plot.png)
+![plant.v_kmh reaching 110 km/h, with controller.integrator.y on a second axis.](/img/lecture-01/step04-pi-plot.png)
 
 </div>
 </div>
@@ -226,7 +226,7 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
 </div>
 <div>
 
-![The integral path's output rising and levelling off exactly on a dashed horizontal line marking the analytically computed cruise torque.](/figures/04-integrator-state.svg)
+![The integral path's output rising and leveling off exactly on a dashed horizontal line marking the analytically computed cruise torque.](/figures/04-integrator-state.svg)
 
 *The integrator's state settles on the dashed line — the cruise torque we computed from the force balance, which the controller was never told.*
 
@@ -237,7 +237,7 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
 **This is the slide.** Slow down.
 
 **Point at:** the dashed line first. Say where it came from: we solved the force balance at
-110 km/h with a pencil, back in hands-on step 05, and got 40 newton-metres.
+110 km/h with a pencil, back in hands-on step 05, and got 40 newton-meters.
 
 **Then point at:** the curve arriving at it. Say: nobody gave the controller the mass. Or the
 drag area. Or the gear ratio. It has never seen the model. It has seen one number — how far
@@ -257,19 +257,19 @@ slide, so stop and find it.
 
 **In the model:** The integrator is **inside `CruiseController`** — the block the students
 just placed — and `integrator.y` is its state *before* the gain. The plot multiplies by `k` to
-get newton-metres. Their own second axis from the build shows the same curve, unscaled.
+get newton-meters. Their own second axis from the build shows the same curve, unscaled.
 
 **Readout — every symbol on this slide**
 
 - **integrator.y** — the integrator's own state, *before* the gain k is applied. Multiply by
-  k to get newton-metres.
+  k to get newton-meters.
 - **k·I = 40.119 N·m** — where it settles.
 - **T_cruise(110) = 40.119 N·m** — the same number, computed from the force balance with a
   pencil in hands-on step 05.
 - **The dashed line** — that hand-computed value, drawn on so the coincidence is visible
   rather than asserted.
 - **stop = 90 s** — a longer window than the step needs, because the last hundredths of a
-  newton-metre take most of a minute.
+  newton-meter take most of a minute.
 -->
 
 ---

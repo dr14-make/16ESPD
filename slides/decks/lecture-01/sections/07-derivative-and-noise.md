@@ -147,7 +147,9 @@ first. That is why every notebook since 05 runs `wd = 0`.
 in the 20–30 s window falls from 1760 N·m at `Nd = 100` to 315 at `Nd = 2`.
 
 **Catch-up:** `NoisyCruiseLoop` is the reference loop with `noise` in place;
-`NoisyCruiseStep` is its bench and `NoisyCruiseTransient` runs it.
+`NoisyCruiseStep` is its bench and `NoisyCruiseTransient` runs it. Its defaults are not the
+room's: set `Td = 0.5`, `wd` per run (1, then 0 — its `xd0` follows `wd` by itself),
+`T_max = 1e6`, `y_max = 1e6`, `y_min = -1e6` and `stop = 40`; for the sweep, `Nd` as above.
 -->
 
 ---
@@ -307,7 +309,7 @@ end
 </div>
 
 <!--
-**Live, on the students' loop from step 7:** set `controller.Nd = 100` and re-run, then 20,
+**Live, on the students' `NoisyCruiseStep` from step 7:** set `controller.Nd = 100` and re-run, then 20,
 5 and 2. `Nd` is an ordinary parameter, so each is a re-solve, not a recompile. Keep
 `controller.y` on the same axes so the band visibly shrinks.
 
@@ -324,7 +326,8 @@ can deliver.
 
 - **sN/(s + N)** — a derivative in series with a first-order low-pass. At low frequency it is
   a derivative; at high frequency it flattens off instead of growing.
-- **N** — the cutoff frequency in rad/s; <code>N<sub>d</sub></code> in the code.
+- **N** — the cutoff frequency in rad/s: N = N<sub>d</sub>/T<sub>d</sub>, with
+  <code>N<sub>d</sub></code> the parameter in the code and T<sub>d</sub> = 0.5 s.
 - **s** — the Laplace variable; multiplying by s is differentiating.
 - **N<sub>d</sub> = 100, 20, 5, 2** — the sweep, from no filter to heavy: cutoffs at 200, 40,
   10 and 4 rad/s.
@@ -397,8 +400,8 @@ your toolchain may well be implemented the second way.
 that lies. Before the plant itself changes character in section 10, we owe an answer to a
 question nobody has asked yet: where did k = 56 come from?
 
-**Before moving on:** students go back to `CruiseLoopStep`, which never had the noise;
-`NoisyCruiseStep` stays as it is. Section 08 runs without limits until the trap, so lift them
-on `CruiseLoopStep` the same way: `controller.y_max = 1e6`, `controller.y_min = -1e6`,
-`plant.T_max = 1e6`.
+**Before moving on:** students go back to `CruiseLoopStep`, which never had the noise and
+still has its step 6b limits, 150 and 0; `NoisyCruiseStep` stays as it is. The limits are
+lifted only on duplicates — here on `NoisyCruiseStep`, in section 08 on `TuningCruiseStep` —
+never on `CruiseLoopStep` itself.
 -->
