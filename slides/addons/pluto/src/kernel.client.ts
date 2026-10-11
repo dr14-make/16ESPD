@@ -6,8 +6,8 @@ import { BondQueue } from "./bond.queue.js"
 import { bondWriter } from "./bond.writer.js"
 import type { BondWriter } from "./bond.writer.js"
 import type { CardContent } from "./card.index.js"
-import { notebookIdAt } from "./deck.session.js"
-import type { KernelAddress } from "./deck.session.js"
+import { notebookIdAt } from "./kernel.address.js"
+import type { KernelAddress } from "./kernel.address.js"
 import {
   isCellDependency,
   isCellInput,

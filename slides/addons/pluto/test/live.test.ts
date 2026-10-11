@@ -8,7 +8,14 @@
 import assert from "node:assert/strict"
 import { execFileSync, spawn } from "node:child_process"
 import type { ChildProcess } from "node:child_process"
-import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import {
+  copyFileSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
 import { createServer } from "node:net"
 import { tmpdir } from "node:os"
 import { basename, dirname, join, resolve } from "node:path"
@@ -24,14 +31,15 @@ const NOTEBOOK = join(SLIDES, "decks/pluto-fixture/browser.jl")
 const KERNEL = join(SLIDES, "addons/pluto/kernel")
 
 /**
- * A Pluto server the way an editor extension starts one for authoring: no secret, and nothing to
- * do with any deck. It exits when its stdin closes, which is how `supervise` stops it.
+ * A Pluto server the way an editor extension starts one for authoring: no secret, no notebook
+ * open yet, and nothing to do with any deck. It exits when its stdin closes, which is how
+ * `supervise` stops it.
  */
 const PLUTO_WITHOUT_SECRET = `
   import Pkg; Pkg.instantiate(); import Pluto
-  port, notebook = ARGS
+  port = ARGS[1]
   @async (read(stdin); exit())
-  Pluto.run(; host="127.0.0.1", port=parse(Int, port), notebook=[notebook],
+  Pluto.run(; host="127.0.0.1", port=parse(Int, port),
     launch_browser=false, dismiss_update_notification=true,
     require_secret_for_access=false, require_secret_for_open_links=false)
 `
@@ -731,6 +739,7 @@ describe("a live deck attached to a running Pluto server", () => {
   let slidev: Process | undefined
   let browser: Browser | undefined
   let page: Page
+  let pageProblems: string[]
   /** The attached server and its notebook's worker, which the deck must leave running. */
   let attached: number[] = []
 
@@ -738,12 +747,11 @@ describe("a live deck attached to a running Pluto server", () => {
     const plutoPort = await freePort()
     plutoUrl = `http://127.0.0.1:${plutoPort}`
     const args = ["--startup-file=no", `--project=${KERNEL}`, "-e", PLUTO_WITHOUT_SECRET]
-    pluto = supervise(process.env.JULIA ?? "julia", [...args, String(plutoPort), notebook], (l) => {
+    pluto = supervise(process.env.JULIA ?? "julia", [...args, String(plutoPort)], (l) => {
       plutoOutput += `${l}\n`
     })
     let plutoExited = false
     void pluto.exited.then(() => (plutoExited = true))
-    // Pluto opens its notebooks before it listens, so a list that answers names this one.
     const listing = async () => {
       if (plutoExited) {
         throw new Error(`Pluto exited, and said:\n${plutoOutput}`)
@@ -762,10 +770,8 @@ describe("a live deck attached to a running Pluto server", () => {
 
     browser = await chromium.launch({ channel: "chromium", args: [NO_NETWORK] })
     page = await (await browser.newContext()).newPage()
+    pageProblems = watchProblems(page)
     await page.goto(`${url}/#/2`, { timeout: NAVIGATION_TIMEOUT })
-    const kernelUp = () => page.evaluate(() => document.body.dataset.kernel === "ready")
-    await until("the attached kernel to come up", kernelUp, KERNEL_TIMEOUT, slidev)
-    attached = pluto.pid === undefined ? [] : juliaProcesses(pluto.pid)
   })
 
   after(async () => {
@@ -779,6 +785,32 @@ describe("a live deck attached to a running Pluto server", () => {
     }
     rmSync(dirname(deck), { recursive: true, force: true })
     rmSync(dirname(notebook), { recursive: true, force: true })
+  })
+
+  it("says the server has not opened the notebook, before it has", async () => {
+    const failed = () => page.evaluate(() => document.body.dataset.kernel === "error")
+    await until("the page to report that it found no notebook", failed, SLIDEV_TIMEOUT, slidev)
+    assert.ok(
+      pageProblems.some((p) => p.includes(`has not opened ${realpathSync(notebook)}`)),
+      pageProblems.join("\n"),
+    )
+    const cards = page.locator(".pluto-card")
+    // The slides' cards only: the bond layer renders once a kernel is live.
+    await until("the cards to mount", async () => (await cards.count()) > 0)
+    assert.ok(
+      await cards.evaluateAll((all: HTMLElement[]) =>
+        all.every((c) => c.dataset.source === "placeholder"),
+      ),
+    )
+  })
+
+  it("finds the notebook on a reload once the server has opened it", async () => {
+    const query = new URLSearchParams({ path: notebook, execution_allowed: "true" })
+    assert.ok((await fetch(`${plutoUrl}/open?${query}`, { method: "POST" })).ok)
+    await page.reload({ timeout: NAVIGATION_TIMEOUT })
+    const kernelUp = () => page.evaluate(() => document.body.dataset.kernel === "ready")
+    await until("the attached kernel to come up", kernelUp, KERNEL_TIMEOUT, slidev)
+    attached = pluto?.pid === undefined ? [] : juliaProcesses(pluto.pid)
   })
 
   it("starts no Julia of its own", () => {

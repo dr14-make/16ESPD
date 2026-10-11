@@ -3,10 +3,10 @@ import { mkdtemp, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
-import type { KernelAddress } from "./deck.session.ts"
+import type { KernelAddress } from "./kernel.address.ts"
 import type { KernelSource } from "./kernel.attach.ts"
 import type { PlutoServer } from "./kernel.launcher.ts"
-import { deckSession, kernelSource } from "./session.plugin.ts"
+import { kernelSource, lookUpKernel } from "./kernel.plugin.ts"
 
 /** A kernel source that runs exactly the notebook at `address.notebook`. */
 function serving(address: KernelAddress): KernelSource {
@@ -20,7 +20,7 @@ function serving(address: KernelAddress): KernelSource {
 }
 
 async function deck() {
-  const directory = await mkdtemp(join(tmpdir(), "pluto-session-"))
+  const directory = await mkdtemp(join(tmpdir(), "pluto-kernel-"))
   await writeFile(join(directory, "notebook.jl"), "")
   const address = {
     plutoUrl: "http://localhost:1234",
@@ -30,10 +30,10 @@ async function deck() {
   }
   return {
     directory,
-    source: (headmatter: unknown, live = true) => ({
+    source: (headmatter: unknown) => ({
       entry: join(directory, "slides.md"),
       headmatter: () => headmatter,
-      live,
+      live: true,
     }),
     address,
     running: serving(address),
@@ -43,45 +43,38 @@ async function deck() {
 test("the page is told the kernel and the notebook, resolved against the deck", async () => {
   const { source, address, running } = await deck()
 
-  assert.deepEqual(await deckSession(source({ pluto: { notebook: "notebook.jl" } }), running), {
-    kernel: address,
-  })
+  assert.deepEqual(
+    await lookUpKernel(source({ pluto: { notebook: "notebook.jl" } }), running),
+    address,
+  )
 })
 
 test("a notebook reached through a symlink is named by the file Pluto opens", async () => {
   const { directory, source, running } = await deck()
   await symlink(directory, `${directory}-link`)
 
-  const session = await deckSession(
+  const found = await lookUpKernel(
     source({ pluto: { notebook: `${directory}-link/notebook.jl` } }),
     running,
   )
 
-  assert.ok("kernel" in session)
-  assert.equal(session.kernel.notebook, join(directory, "notebook.jl"))
-})
-
-test("a built deck carries neither the secret nor a path", async () => {
-  const { source, running } = await deck()
-
-  const session = await deckSession(source({ pluto: { notebook: "notebook.jl" } }, false), running)
-
-  assert.deepEqual(session, { problem: "a built deck has no kernel" })
+  assert.ok("notebook" in found)
+  assert.equal(found.notebook, join(directory, "notebook.jl"))
 })
 
 test("without a kernel for its notebook, or a notebook, the page is told why", async () => {
   const { directory, source, running } = await deck()
 
-  const absent = await deckSession(source({ pluto: { notebook: "notebook.jl" } }), null)
+  const absent = await lookUpKernel(source({ pluto: { notebook: "notebook.jl" } }), null)
   assert.ok("problem" in absent && absent.problem.includes("restart slidev"))
 
   // Named after the dev server started its kernel for another one.
   await writeFile(join(directory, "other.jl"), "")
-  const renamed = await deckSession(source({ pluto: { notebook: "other.jl" } }), running)
+  const renamed = await lookUpKernel(source({ pluto: { notebook: "other.jl" } }), running)
   assert.ok("problem" in renamed && renamed.problem.includes("no kernel runs"))
 
   for (const headmatter of [{}, { pluto: "x" }, { pluto: { notebook: 7 } }]) {
-    const unnamed = await deckSession(source(headmatter), running)
+    const unnamed = await lookUpKernel(source(headmatter), running)
     assert.ok("problem" in unnamed && unnamed.problem.includes("names no notebook"))
   }
 })

@@ -4,6 +4,9 @@
 // By its real extension, because Node's test runner loads this module as written.
 import { isRecord } from "./pluto.interface.ts"
 
+/** Where, under the deck's base, `slidev dev` answers with a `KernelLookup` (`kernel.plugin.ts`). */
+export const KERNEL_ENDPOINT = "@pluto/kernel"
+
 /** The Pluto server a deck's notebook runs in, and the notebook, by its path as Pluto lists it. */
 export interface KernelAddress {
   readonly plutoUrl: string
@@ -20,12 +23,12 @@ export interface KernelAddress {
 /**
  * Either where the kernel is, or why the page has none.
  *
- * `slidev dev` serves this as `virtual:pluto-session` (`session.plugin.ts`). A build always
- * carries a `problem`, so a published deck holds neither the secret nor a path on this machine.
+ * Only `slidev dev` answers it, so a built deck holds neither the secret nor a path on this
+ * machine.
  */
-export type DeckSession = { readonly kernel: KernelAddress } | { readonly problem: string }
+export type KernelLookup = KernelAddress | { readonly problem: string }
 
-export function isKernelAddress(value: unknown): value is KernelAddress {
+function isKernelAddress(value: unknown): value is KernelAddress {
   return (
     isRecord(value) &&
     typeof value.plutoUrl === "string" &&
@@ -35,8 +38,8 @@ export function isKernelAddress(value: unknown): value is KernelAddress {
   )
 }
 
-export function isDeckSession(value: unknown): value is DeckSession {
-  return isRecord(value) && (isKernelAddress(value.kernel) || typeof value.problem === "string")
+export function isKernelLookup(value: unknown): value is KernelLookup {
+  return isKernelAddress(value) || (isRecord(value) && typeof value.problem === "string")
 }
 
 /**

@@ -2,18 +2,15 @@
 // that `PLUTO_URL` names, such as the server an editor extension keeps for authoring.
 
 import { realpath } from "node:fs/promises"
-import type { KernelAddress } from "./deck.session.ts"
+import type { KernelLookup } from "./kernel.address.ts"
 
 /** How long an attached server gets to list its notebooks before the deck says it is not there. */
 const LIST_TIMEOUT_MS = 5_000
 
-/** Where the deck's notebook runs, as the page should address it, or why the page has none. */
-export type Located = KernelAddress | { readonly problem: string }
-
 /** The Pluto server behind a live deck, whichever kind it is. */
 export interface KernelSource {
   /** Where the page finds `notebook`, an absolute path with its symlinks resolved. */
-  locate(notebook: string): Promise<Located>
+  locate(notebook: string): Promise<KernelLookup>
   /** Stop whatever the dev server started; an attached server is left running. */
   stop(): Promise<void>
 }

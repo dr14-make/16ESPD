@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { isDeckSession, notebookIdAt } from "./deck.session.ts"
+import { isKernelLookup, notebookIdAt } from "./kernel.address.ts"
 
 // Pluto's own `notebook_list` entries, which is what `Host.workers()` resolves to.
 const listed = [
@@ -19,12 +19,13 @@ test("a notebook Pluto is not running is not found", () => {
   assert.equal(notebookIdAt(undefined, "/decks/a/notebook.jl"), null)
 })
 
-test("a session is either a kernel's address or the reason there is none", () => {
-  const kernel = { plutoUrl: "http://localhost:1234", secret: "s", notebook: "/n.jl", owned: true }
-  assert.ok(isDeckSession({ kernel }))
-  assert.ok(isDeckSession({ kernel: { ...kernel, secret: null, owned: false } }))
-  assert.ok(isDeckSession({ problem: "a built deck has no kernel" }))
-  assert.ok(!isDeckSession({ kernel: { plutoUrl: "http://localhost:1234", secret: "s" } }))
-  assert.ok(!isDeckSession({ kernel: { ...kernel, owned: undefined } }))
-  assert.ok(!isDeckSession(null))
+test("the page is handed either a kernel's address or the reason there is none", () => {
+  const address = { plutoUrl: "http://localhost:1234", secret: "s", notebook: "/n.jl", owned: true }
+  assert.ok(isKernelLookup(address))
+  assert.ok(isKernelLookup({ ...address, secret: null, owned: false }))
+  assert.ok(isKernelLookup({ problem: "no kernel runs /n.jl" }))
+  assert.ok(!isKernelLookup({ plutoUrl: "http://localhost:1234", secret: "s" }))
+  assert.ok(!isKernelLookup({ ...address, owned: undefined }))
+  assert.ok(!isKernelLookup({ kernel: address }))
+  assert.ok(!isKernelLookup(null))
 })

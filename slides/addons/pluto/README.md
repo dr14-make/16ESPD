@@ -33,10 +33,12 @@ card fills its `Card`, and shows its name in a dashed box until the kernel is li
 
 `slidev dev` starts Pluto itself when the deck it serves names a notebook: `kernel/pluto.jl` opens
 the notebook, allowed to run, on a free port and behind a fresh secret. Its output goes to the dev
-server's terminal, prefixed `[pluto]`. The page imports the URL and secret as the module
-`virtual:pluto-session` (`setup/vite-plugins.ts`), which the dev server answers once Pluto does.
-Vite refuses a request addressed to any host but this machine, so another site cannot read them by
-rebinding its name to 127.0.0.1, and a build never carries them. The browser then opens its own
+server's terminal, prefixed `[pluto]`. On every load the page asks the dev server for the URL and
+secret at `<base>@pluto/kernel` (`src/kernel.plugin.ts`), which answers once Pluto does. Vite
+refuses a request addressed to any host but this machine, so another site cannot read them by
+rebinding its name to 127.0.0.1, and a build never carries them; `slidev --remote` and `--tunnel`
+widen the hosts Vite accepts, so that guarantee holds only for a local dev server. The browser then
+opens its own
 websocket to Pluto and finds the notebook among the ones Pluto is running by its path. Stopping
 the dev server stops Julia and every worker it started. To present a deck from the repository
 root, after `npm ci` in `slides/`:
@@ -95,9 +97,9 @@ server has to run on the `dyad-3.4.0` channel.
 The live suite in `test/live.test.ts` drives `slides/decks/pluto-fixture/` in headless Chromium,
 through Playwright, against a real kernel: it starts `slidev dev` itself, cuts the network, and
 checks that stopping slidev leaves no Julia process behind. A second deck attaches to a Pluto
-server without a secret that the suite starts, and checks that stopping slidev leaves that server
-running. It needs Julia, as above, so it stays
-out of `npm test` and CI. From the repository root:
+server without a secret that the suite starts, opens the notebook there only after the page has
+loaded, checks that a reload finds it, and that stopping slidev leaves that server running. It needs
+Julia, as above, so it stays out of `npm test` and CI. From the repository root:
 
 ```sh
 (cd slides && npx playwright install chromium)   # once, if Playwright's Chromium is missing

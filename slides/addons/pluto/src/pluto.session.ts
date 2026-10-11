@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 // One kernel connection per browser window, shared by every live card in it.
 //
 // Slidev runs each window — the audience view, presenter mode — as an app of its own, so each
@@ -14,7 +15,7 @@ import { createPainter } from "./render.painter.js"
 import type { Painter } from "./render.painter.js"
 import { cardIndex } from "./card.index.js"
 import type { CardIndex } from "./card.index.js"
-import { isDeckSession } from "./deck.session.js"
+import { isKernelLookup, KERNEL_ENDPOINT } from "./kernel.address.js"
 import { THEME_BOND } from "./pluto.interface.js"
 
 /** How a cell that renders an input reads, which is what earns its card a place in the bond layer. */
@@ -58,18 +59,26 @@ export function usePluto(): Promise<Pluto> {
 async function start(view: View): Promise<Pluto> {
   showStatus({})
   sizePlotsToTheirCards()
-  // Imported here, because the dev server answers it only once Pluto does, and the deck around
-  // the cards renders meanwhile.
-  const { default: deckSession } = await import("virtual:pluto-session")
-  if (!isDeckSession(deckSession)) {
-    return fail("the deck's dev server handed it a session this addon cannot read")
+  let found: unknown
+  try {
+    found = await askForKernel()
+  } catch (error) {
+    return fail(`the deck's dev server could not be asked for its kernel: ${String(error)}`)
   }
-  if ("problem" in deckSession) {
-    return fail(deckSession.problem)
+  if (found === null) {
+    // Nothing that fails: a built or exported deck shows each card's name and stays quiet.
+    showStatus({ connected: false })
+    return new Promise<never>(() => undefined)
+  }
+  if (!isKernelLookup(found)) {
+    return fail("the deck's dev server answered with a kernel address this addon cannot read")
+  }
+  if ("problem" in found) {
+    return fail(found.problem)
   }
   let kernel: Kernel
   try {
-    kernel = await connect(deckSession.kernel)
+    kernel = await connect(found)
   } catch (error) {
     return fail(`the kernel could not be reached: ${String(error)}`)
   }
@@ -116,6 +125,26 @@ async function start(view: View): Promise<Pluto> {
   }
   live.value = pluto
   return pluto
+}
+
+/**
+ * What the dev server says about the kernel, or `null` where no dev server answers.
+ *
+ * Answered once Pluto is, while the deck around the cards renders meanwhile.
+ */
+async function askForKernel(): Promise<unknown> {
+  // A build has no endpoint, and asking would put a 404 in the console.
+  if (!import.meta.env.DEV) {
+    return null
+  }
+  const response = await fetch(`${import.meta.env.BASE_URL}${KERNEL_ENDPOINT}`, {
+    cache: "no-store",
+  })
+  // `slidev export` serves no endpoint either, and answers the request with the page.
+  if (!response.ok || response.headers.get("Content-Type") !== "application/json") {
+    return null
+  }
+  return response.json()
 }
 
 function fail(failure: string): never {

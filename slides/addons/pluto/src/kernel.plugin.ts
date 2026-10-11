@@ -1,28 +1,28 @@
-// Hands the page the Pluto server behind a live deck with `slidev dev`, as the module
-// `virtual:pluto-session`: one it starts, or one already running that `PLUTO_URL` names.
+// Answers the page of a live deck served by `slidev dev` with where its Pluto server is: one it
+// starts, or one already running that `PLUTO_URL` names. The answer is `<base>@pluto/kernel`, a
+// request answered afresh each time, so a reload sees a notebook opened since or a headmatter edit.
 //
 // The secret is reachable only through Vite, whose host check refuses a request naming any host
 // but this machine: a page on another site that rebinds its own name to 127.0.0.1 is refused.
+// `slidev --remote` and `--tunnel` widen the hosts Vite allows, so this holds for a local server.
 
 import { realpath } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import type { Plugin } from "vite"
-import type { DeckSession } from "./deck.session.js"
 // By their real extension, because Node, through Slidev's loader and the test runner alike, loads
 // these modules as written.
+import { KERNEL_ENDPOINT } from "./kernel.address.ts"
+import type { KernelLookup } from "./kernel.address.ts"
 import { attachPluto, kernelChoice } from "./kernel.attach.ts"
 import type { KernelChoice, KernelSource } from "./kernel.attach.ts"
 import { launchPluto } from "./kernel.launcher.ts"
 import { isRecord } from "./pluto.interface.ts"
 
-const ID = "virtual:pluto-session"
-const RESOLVED_ID = `\0${ID}`
-
 /** What the plugin needs to know about the deck Slidev is serving. */
 export interface DeckSource {
   /** The deck's Markdown entry. */
   readonly entry: string
-  /** The deck's headmatter, read whenever the module is, so an edit to it applies on reload. */
+  /** The deck's headmatter, read on every request, so an edit to it applies on reload. */
   readonly headmatter: () => unknown
   /** Only `slidev dev` presents against a kernel; a build or an export has none. */
   readonly live: boolean
@@ -48,15 +48,13 @@ export async function deckNotebook(source: DeckSource): Promise<string | { probl
 }
 
 /**
- * The page's session, given the kernel source this dev server set up (`null` when it set up none).
+ * Where the page finds the deck's notebook, given the kernel source this dev server set up (`null`
+ * when it set up none).
  */
-export async function deckSession(
+export async function lookUpKernel(
   source: DeckSource,
   kernel: KernelSource | null,
-): Promise<DeckSession> {
-  if (!source.live) {
-    return { problem: "a built deck has no kernel" }
-  }
+): Promise<KernelLookup> {
   const notebook = await deckNotebook(source)
   if (typeof notebook !== "string") {
     return notebook
@@ -64,8 +62,7 @@ export async function deckSession(
   if (kernel === null) {
     return { problem: `no kernel runs ${notebook}; restart slidev to start one` }
   }
-  const located = await kernel.locate(notebook)
-  return "problem" in located ? located : { kernel: located }
+  return kernel.locate(notebook)
 }
 
 /**
@@ -115,7 +112,7 @@ export async function kernelSource(
   }
 }
 
-export function sessionPlugin(
+export function kernelPlugin(
   source: DeckSource,
   launch = launchPluto,
   env: Readonly<Record<string, string | undefined>> = process.env,
@@ -123,22 +120,24 @@ export function sessionPlugin(
   let kernel: KernelSource | null = null
 
   return {
-    name: "pluto-session",
-    resolveId(id) {
-      return id === ID ? RESOLVED_ID : undefined
-    },
-    // The page imports this once it has rendered, and is answered once Pluto is.
-    async load(id) {
-      if (id !== RESOLVED_ID) {
-        return undefined
-      }
-      const session = await deckSession(source, kernel)
-      return `export default ${JSON.stringify(session)}`
-    },
-    async configureServer() {
+    name: "pluto-kernel",
+    async configureServer(server) {
+      // A build or an export answers nothing here, so the page there has no kernel to find.
       if (!source.live) {
         return
       }
+      const endpoint = `${server.config.base}${KERNEL_ENDPOINT}`
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split("?")[0] !== endpoint) {
+          next()
+          return
+        }
+        lookUpKernel(source, kernel).then((found) => {
+          response.setHeader("Content-Type", "application/json")
+          response.setHeader("Cache-Control", "no-store")
+          response.end(JSON.stringify(found))
+        }, next)
+      })
       const notebook = await deckNotebook(source)
       if (typeof notebook !== "string") {
         return
