@@ -12,13 +12,12 @@ Proportional control gets you close, and close is where it stops.
 `notebooks/lecture01/03-proportional.ipynb`
 
 <!--
-**Say:** from here to the end of section 06 the car never changes. Not one parameter.
-Everything that happens is a change to the controller.
+**Say:** from here to the end of section 05 the car never changes. Not one parameter.
+Everything that happens is a change to the controller — and you make each change yourself.
 
-**Timing:** 10 minutes. Three cells, all of them fast, because the closed loop settles in
-seconds where the open loop took minutes.
-
-**Cut order:** this is spine — do not cut it. The lecture is not complete without it.
+**Timing:** 15 minutes. Control law 2, build step 3 and its first run 4, the notebook's three
+cells 6 (all fast, because the closed loop settles in seconds where the open loop took
+minutes), why it cannot be zero 2, checkpoint P 1.
 -->
 
 ---
@@ -66,8 +65,10 @@ non-zero output out of a non-zero error.
 forever, because drag never stops. Let them get there; the next three slides are just
 evidence for the answer they gave.)*
 
-**In the model:** One **`LimPID`**, and the wire from `plant.v_kmh` back to
-`controller.u_m`. That wire is the whole difference between this section and section 02.
+**In the model:** One **`CruiseController`** with `with_I = false, with_D = false`, and the
+wire from `plant.v_kmh` back to `controller.u_m`. That wire is the whole difference between
+this section and section 02's feedforward. The next slide puts the one block this equation
+needs into the students' controller.
 
 **Readout — every symbol on this slide**
 
@@ -80,6 +81,63 @@ evidence for the answer they gave.)*
   output clamp, a separate number. Both lifted for this section.
 - **280 / 17,800 N·m** — the peak torque the gentlest and fiercest gains here ask for at the
   instant of the step. Against 150 available.
+-->
+
+---
+routeAlias: build-gain
+---
+
+## Build: one gain
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+![CruiseController in progress: error into gain into y.](/img/lecture-01/step03-gain.png)
+
+</div>
+<div>
+
+![loop.plant.v_kmh settling at about 109.3 km/h against demand.y at 110: the steady-state error.](/img/lecture-01/step03-p-plot.png)
+
+</div>
+</div>
+
+*In `CruiseController`: parameter `k` = 56 · `gain` Gain(k = k) · `error.y` → `gain` → `y` ·
+run `CruiseLoopTransient`*
+
+[page: step 3](../lecture/lecture-01/#step-3) · reference `dyad/Lecture1/CruiseController.dyad`
+
+<!--
+**Say:** *u = k e*. The error block already makes *e*. One block multiplies it by *k*, and
+the controller is complete — the simplest one there is.
+
+**Build it live, on the projector, with the room.**
+
+1. Open `CruiseController`. **Add parameter** `k`, default `56`. Units: N·m per km/h.
+2. **Drag in** `BlockComponents.Math.Gain`, name it `gain`. Parameter: `k = k` — the part
+   refers to the controller's parameter by name.
+3. **Wire** `error.y` → `gain.u`, `gain.y` → `y`. Save. The problems panel is now empty: `y`
+   has a source.
+4. Run `CruiseLoopTransient` from Analyses — the analysis made in step 2.
+5. **Plot** `plant.v_kmh` and `demand.y` on one axes.
+
+**The plot must show, before moving on:** the speed climbing from 90 within a few seconds and
+settling at about **109.3 km/h**, below the 110 of `demand.y`. That 0.7 km/h gap is the whole
+section. Point at it and do not explain it yet.
+
+**On the engine ceiling:** the students' engine still clips at 150 N·m — `T_max` only
+becomes a car parameter in section 06 — while the notebook figures that follow lift it. So
+their rise is slower than the notebook's curve at the start. The settled value is the same,
+109.3, because holding 110 takes only 40 N·m, well under the ceiling.
+
+**If a student wants a second run:** `controller = CruiseController(k = 14)` in the loop's
+code, run again — it settles about 2.8 km/h short. The notebook's next slide is that run.
+
+**They get wrong:** typing `k = 56` into the `gain` block instead of `k = k`. It runs the
+same today and breaks every sweep later, because the controller's `k` is no longer wired to
+anything.
+
+**Timing:** 2 minutes building, 2 running and reading the plot.
 -->
 
 ---
@@ -343,6 +401,54 @@ the word.)*
 -->
 
 ---
+routeAlias: checkpoint-p
+---
+
+## Checkpoint P
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+#### Your diagram now
+
+- `CruiseLoopStep`: `demand` → `controller` → `plant` (`GradeCar`), `road` on `grade`, speed
+  back to `u_m`.
+- `CruiseController`: `u_s`, `u_m` → `error` → `gain` → `y`.
+- One parameter, `k` = 56.
+
+#### Your run shows
+
+`plant.v_kmh` settled at **109.3 km/h**, 0.7 below the setpoint.
+
+</div>
+<div>
+
+> **Behind? Rejoin here**
+>
+> The guide page's [step 3](../lecture/lecture-01/#step-3) has the controller and the loop as
+> code to paste. The reference is `CruiseLoop` with `with_I = false, with_D = false` — the
+> default of `CruiseLoopTransient` — and it settles at the same 109.3.
+
+</div>
+</div>
+
+<!--
+**Say:** checkpoint. Everyone should have this diagram and this number. Look at your neighbor's
+screen: same 109.3?
+
+**Wait here.** Give the room a minute. Anyone still building pastes the step 3 code from the
+guide page, or opens the reference `CruiseLoopTransient` — P is its default, because
+`CruiseLoopStep` sets `with_I = false, with_D = false`. From section 04 on, every step adds to
+this diagram, so nobody should go forward without it.
+
+**If a student's number is not 109.3:** check `error`'s signs (`k1 = 1, k2 = -1`), then the
+three `initial` lines, then that `gain` reads `k = k`.
+
+**Timing:** 1 minute, longer if the room needs it — take it from the notebook cells, not from
+the build.
+-->
+
+---
 
 ## What this bought us
 
@@ -355,5 +461,6 @@ the word.)*
 <!--
 **Check before moving on:** if the error vanished at high gain in your executed notebook, the
 integral path was left switched on — `with_I = false` is the whole difference between this
-section and the next.
+section and the next. In the students' diagrams there is no integral path yet, so their 0.7
+km/h gap is the same one.
 -->

@@ -15,11 +15,11 @@ Three terms, three jobs: present, past, future.
 **Say:** second boolean. `with_D = true`. That is the only change from the last notebook, and
 it completes the controller that runs most of the machinery you will ever work on.
 
-**Timing:** 12 minutes. The three-contributions plot is the one to spend time on — it is the
-only place in the lecture where you can see the division of labor directly rather than infer
-it.
-
-**Cut order:** this is spine — do not cut it. The lecture is not complete without it.
+**Timing:** 18 minutes. The third path 2, build step 5 and its run 6, two forms 2, what tuning
+is 2, P/PI/PID 2, who does what 2, how much derivative and the names 1, checkpoint PID 1. The
+three-contributions plot is the one to spend time on — it is the only place in the lecture
+where you can see the division of labor directly rather than infer it. **The 10-minute break
+follows this section.**
 -->
 
 ---
@@ -84,6 +84,69 @@ parameter is not a surprise later.
 -->
 
 ---
+routeAlias: build-derivative
+---
+
+## Build: the third path
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+![CruiseController in progress: add_d into derivative on add_pid's second input, with the derivative's parameter panel showing k = Td and T = Td/Nd.](/img/lecture-01/step05-derivative.png)
+
+</div>
+<div>
+
+![loop.plant.v_kmh and loop.controller.y for the PID loop.](/img/lecture-01/step05-pid-plot.png)
+
+</div>
+</div>
+
+*Parameters `Td` = 0.5, `Nd` = 10, `wd` = 0, `xd0` = −90 · delete `zero_d` · `add_d` Add(k1 = wd, k2 = −1) from `u_s`, `u_m` ·
+`derivative` Derivative(k = Td, T = Td/Nd, x0 = xd0) → `add_pid.u2`*
+
+[page: step 5](../lecture/lecture-01/#step-5) · reference `dyad/Lecture1/CruiseController.dyad`
+
+<!--
+**Say:** the third term needs the error's rate of change. Two details make it a real
+derivative rather than a textbook one: it is filtered, and it may ignore the setpoint. Both
+are parameters you type now and understand fully in section 07.
+
+**Build it live, on the projector, with the room.** In `CruiseController`:
+
+1. **Add parameters:** `Td = 0.5` (seconds, type `Time`), `Nd = 10`, `wd = 0`, `xd0 = -90`.
+   These are the notebook's values; `k = 56`, `Ti = 10` stay.
+2. **Delete** `zero_d` and its wire. `add_pid.u2` is now free.
+3. **Drag in** `BlockComponents.Math.Add`, name it `add_d`. Parameters `k1 = wd`, `k2 = -1`.
+   Place it below the integrator. Wire `u_s` → `add_d.u1`, `u_m` → `add_d.u2`. It is a second
+   error block with its own setpoint weight: at `wd = 1` it would be the error itself; at
+   `wd = 0` it is just `−u_m`, so the derivative acts on the measurement only.
+4. **Drag in** `BlockComponents.Continuous.Derivative`, name it `derivative`. Parameters
+   `k = Td`, `T = Td / Nd`, `x0 = xd0`. Wire `add_d.y` → `derivative.u`,
+   `derivative.y` → `add_pid.u2`.
+5. Save, run `CruiseLoopTransient` again from `CruiseLoopStep`.
+6. **Plot** `plant.v_kmh` with `demand.y`; on a second plot `controller.y`.
+
+**Why `wd = 0`:** say only that it keeps the setpoint out of the derivative; section 07 shows
+the room what `wd = 1` does and why the notebooks run 0.
+
+**Why `xd0 = -90`:** the filter's input is `wd·u_s − u_m`, which at `wd = 0` and a settled
+90 km/h cruise is −90. The seed is `(wd − 1) · m0` with `m0 = 90`, the value the filter would
+hold at that cruise — the reference `CruiseLoop` computes it the same way. Left at 0, the
+filter sees a 90 km/h step at *t* = 0 and commands a spike of −50400 N·m (−k·Nd·m0).
+
+**The plot must show, before moving on:** the speed reaching **110 km/h** with the overshoot of
+step 4 suppressed. In `controller.y` the jump at the setpoint step is the proportional term,
+56 × 20 N·m, as in step 4; no derivative spike rides on it. This is the PID curve of the P/PI/PID slide coming up. (The notebook also lifts
+the 150 N·m ceiling; the room's engine keeps it.)
+
+**They get wrong:** `T = Td * Nd` instead of `Td / Nd`. The filter then becomes 100 times
+slower than the derivative it is meant to smooth, and the D term does almost nothing.
+
+**Timing:** 4 minutes building, 2 running and comparing with step 4.
+-->
+
+---
 
 ## Two ways to write the same controller
 
@@ -107,7 +170,7 @@ $$
 u \;=\; k\left(e + \frac{1}{T_i}\!\int_0^t\! e\,d\tau + T_d\,\frac{de}{dt}\right)
 $$
 
-*What `LimPID` takes, and what this lecture uses throughout.*
+*What `CruiseController` takes, and what this lecture uses throughout.*
 
 </div>
 </div>
@@ -289,7 +352,7 @@ between them. Three lines of configuration.
 contribution(run, path) = (signal(run, path)[1],
                            GAIN .* signal(run, path)[2])
 
-t_p, u_p = contribution(pid_loop, "loop.controller.proportional.y")
+t_p, u_p = contribution(pid_loop, "loop.controller.error.y")
 t_i, u_i = contribution(pid_loop, "loop.controller.integrator.y")
 t_d, u_d = contribution(pid_loop, "loop.controller.derivative.y")
 t_u, u_cmd = signal(pid_loop, "loop.controller.y")
@@ -325,8 +388,8 @@ integral. The other two are at zero. Make them say it out loud.)*
 
 **Readout — every symbol on this slide**
 
-- **proportional.y, integrator.y, derivative.y** — each path's own output inside `LimPID`,
-  before the shared gain.
+- **error.y, integrator.y, derivative.y** — each path's own output inside `CruiseController`,
+  before the shared gain. The proportional path is the error itself.
 - **× k** — every trace is multiplied by the gain so all four are in newton-metres and can
   share an axis.
 - **controller.y** — the sum, which is what the engine is actually asked for.
@@ -429,8 +492,10 @@ a second integrator there mostly buys you oscillation.)*
 cannot filter it enough. Which is most of the time — a large fraction of industrial loops in
 service are PI, not PID.)*
 
-**In the model:** The two **`structural parameter`** lines, and the single `LimPID` they
-configure. Four controllers, one file, twelve lines apart.
+**In the model:** The two **`structural parameter`** lines, and the single
+`CruiseController` they configure. Four controllers, one file. The students' own controller
+has no switches — it is the PID row, built by hand — and the reference's `zero_i` and `zero_d`
+are the placeholders they used on the way.
 
 **Terms, if anyone asks**
 
@@ -439,6 +504,55 @@ configure. Four controllers, one file, twelve lines apart.
   loop, where holding position costs nothing.
 - **Why leave the derivative out** — when the measurement is too noisy to differentiate. Most
   industrial loops in service are PI.
+-->
+
+---
+routeAlias: checkpoint-pid
+---
+
+## Checkpoint PID
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+#### Your controller now
+
+- `error` → `add_pid`, three inputs: `error` straight, `integrator` on `u3`, `add_d` →
+  `derivative` on `u2`.
+- `add_pid` → `gain` → `y`.
+- Parameters `k` = 56, `Ti` = 10, `xi0` = 0, `Td` = 0.5, `Nd` = 10, `wd` = 0, `xd0` = −90.
+
+#### Your run shows
+
+`plant.v_kmh` at **110 km/h** without the PI overshoot, and no derivative spike in
+`controller.y`.
+
+</div>
+<div>
+
+> **Behind? Rejoin here**
+>
+> The guide page's [step 5](../lecture/lecture-01/#step-5) has the finished controller as code
+> to paste. The reference is `CruiseLoop` with `with_I = true, with_D = true`, `Td = 0.5`,
+> `wd = 0`.
+> Section 06 builds on this diagram.
+
+</div>
+</div>
+
+<!--
+**Say:** second checkpoint. This is the controller that runs most of the machinery you will
+ever work on, and you drew every block of it. Check your neighbor's screen.
+
+**Wait here.** Anyone still building pastes the step 5 code from the guide page, or switches
+to the reference `CruiseLoop` with `with_I` and `with_D` both true, `Td = 0.5` and `wd = 0` —
+the room's values; its `xd0` follows `wd` by itself. Section 06 adds a limiter to *this* diagram, so nobody
+should go into the break without it.
+
+**If a student's run differs:** compare against the reference `CruiseController` in this
+order — `add_d`'s signs, then `derivative`'s `T = Td / Nd`, then `xd0`.
+
+**Timing:** 1 minute; the break absorbs stragglers.
 -->
 
 ---
@@ -453,6 +567,9 @@ configure. Four controllers, one file, twelve lines apart.
 
 <!--
 **Say:** everything up to here has been on flat road with a step the engine could easily
-deliver. Every plot has been well behaved. Now we point the car up a hill it cannot climb, and
-the nice linear story breaks in a way that has hurt real hardware.
+deliver. Every plot has been well behaved. After the break we point the car up a hill it
+cannot climb, and the nice linear story breaks in a way that has hurt real hardware.
+
+**Break: 10 minutes.** Before releasing the room, check that everyone is at checkpoint PID —
+the break is the last chance to paste the reference before section 06 builds on it.
 -->

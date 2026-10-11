@@ -16,11 +16,9 @@ You can compute a starting gain set from a single step test, without a model.
 answer, and it is also the practical task from the course slides — the one you will be asked
 to perform.
 
-**Timing:** 15 minutes. This section has the most cells of any in the lecture; if you are
-behind, do the step test, Ziegler-Nichols, and the saturation trap, and let Cohen-Coon and
-Tyreus-Luyben be read from the notebook afterwards.
-
-**Cut order:** this is spine — do not cut it. The lecture is not complete without it.
+**Timing:** 18 minutes: 12 for the step test and the three tables, 4 for step 8 and the
+robustness re-runs on the students' loop, 2 for the trap. This section has the most cells of
+any in the lecture; run them in order and let the tables do the talking.
 -->
 
 ---
@@ -735,6 +733,56 @@ is no free lunch here and they should feel that.)*
 -->
 
 ---
+routeAlias: step-8
+---
+
+## Step 8: how wrong can the model be?
+
+![GradeCar's parameter panel with the vehicle mass m and the transport delay theta_e exposed beside T_max.](/img/lecture-01/step08-params.png)
+
+*Your `GradeCar` · add `parameter m::Dyad.Mass = 1400` and
+`structural parameter theta_e::Time = 0.3` · `body`: `m = m` · `engine`: `theta_e = theta_e`*
+
+[page: step 8](../lecture/lecture-01/#step-8) · reference `dyad/HandsOn/GradeCar.dyad`
+
+<!--
+**Say:** the middle route was "tune on the model, ship to the car". That is only as good as
+the model. So ask the model how much it matters if it is wrong — in the two numbers most likely
+to be wrong: the mass, which changes with every passenger, and the delay, which we never
+measured directly.
+
+**Build, in the students' `MyCar.GradeCar`** (the same move as step 6a):
+
+1. Add `parameter m::Dyad.Mass = 1400` ("Vehicle mass") and
+   `structural parameter theta_e::Time = 0.3` ("Injection-to-torque transport delay").
+   Structural because the Padé delay builds its coefficients from it at compile time.
+2. Select `body`: `m = m`. Their `GradeBody` passes `m` on to `GradeForce` already (hands-on
+   step 07), so one binding reaches rolling resistance, the slope force and the inertia.
+3. Select `engine`: `theta_e = theta_e`.
+4. Nothing to wire.
+
+**Robustness re-runs, on the students' `CruiseLoopStep`** (noise out, limits still lifted from 07:
+`controller.y_max = 1e6`, `y_min = -1e6`, `plant.T_max = 1e6`):
+
+1. Set the Ziegler-Nichols gains: `controller.k = 67.39`, `Ti = 1.087`, `Td = 0.272`
+   (`wd = 0`, `xd0 = -90` stay at their defaults). Run `CruiseLoopTransient`, the
+   90 → 110 km/h step. This is the baseline.
+2. `plant.m = 1600` — section 02's 200 kg payload. Re-run.
+3. Back to `m = 1400`; `plant.theta_e = 0.6`, twice the shipped delay. Re-run — this one
+   recompiles, because `theta_e` is structural.
+
+**What the plot must show before moving on:** `plant.v_kmh` for all three on one axes. The
+payload barely moves the response — feedback absorbs it, the section 02 lesson again. The
+doubled delay rings much harder: the Ziegler-Nichols gain was computed from a K<sub>u</sub>
+measured at 0.3 s, and K<sub>u</sub> falls as the delay grows, so the margin the table left
+is gone. That is "the model is least trustworthy near the stability boundary" in one plot.
+
+**Then put both back:** `m = 1400`, `theta_e = 0.3`.
+
+**Catch-up:** `HandsOn.GradeCar` carries `m` and `theta_e`, with the same defaults.
+-->
+
+---
 
 ## The trap
 
@@ -786,8 +834,9 @@ design would also wind up.
 **Say the rule:** always plot the actuator command. Every time. It is one extra line in the
 notebook and it is the difference between a design and a drawing.
 
-**In the model:** The notebooks lift **`T_max` and `y_max`** to run this. Put them back to 150
-and re-run: the beautiful response is the first thing to go.
+**In the model:** The notebooks lift **`T_max` and `y_max`** to run this, and so has the
+students' loop since step 7. Put them back — `plant.T_max = 150`, `controller.y_max = 150`,
+`controller.y_min = 0` — and re-run: the beautiful response is the first thing to go.
 
 **Readout — every symbol on this slide**
 

@@ -16,10 +16,10 @@ Feedforward is correct exactly as long as the world matches your model.
 fair question before we spend an hour on feedback: why measure anything at all? Just compute
 the right throttle and apply it.
 
-**Timing:** 8 minutes. This section is the *motivation* for everything after it, so if you cut
-it, make sure section 03 opens with the argument instead.
-
-**Cut order:** second to go. Drop this before touching the P → PI → PID → windup run.
+**Timing:** 15 minutes. Two architectures 2, invert and drive 2, break it 3, close the loop 2,
+build step 2 — the loop and the controller shell — 5, what feedback costs and the bridge 1.
+This section is the *motivation* for everything after it, and it ends with the one diagram the
+rest of the lecture never changes.
 -->
 
 ---
@@ -62,9 +62,9 @@ cannot know the plant and the world well enough. Given perfect knowledge we woul
 extra wire at all — it brings problems of its own, which is what the remaining sections are
 about.
 
-**In the model:** `LimPID` has a **feedforward input**, `u_ff`, and we have wired a constant
-**zero** to it. Both architectures are in this one block; today we use only the right-hand
-half of it.
+**In the model:** `CruiseLoop` is the right-hand picture, wired: setpoint into the
+controller's `u_s`, the plant's speed back into `u_m`. `CruiseController` has no feedforward
+input at all — in ten minutes the students draw exactly this loop themselves.
 
 **Terms, if anyone asks**
 
@@ -74,8 +74,6 @@ half of it.
   two signals meet.
 - **Model inversion** — solving the plant backwards: given the output you want, what input
   produces it? That is all a feedforward controller does.
-- **u_ff** — `LimPID`'s feedforward input. Real controllers often use both paths; we tie this
-  one to zero.
 -->
 
 ---
@@ -245,9 +243,89 @@ disturbances it was never designed for.
 is different for each disturbance. Do not explain it — say "hold that thought" and let
 section 03 land it.
 
-**Ask the room:** what did we give up to get this? *(Next slide. Take guesses first — "cost",
-"complexity", "a sensor" are all partly right, and the real answer is more interesting than
-any of them.)*
+**Ask the room:** what did we give up to get this? *(Leave it open — the build comes first, and
+"What feedback costs" answers it after. Take guesses now — "cost", "complexity", "a sensor" are
+all partly right, and the real answer is more interesting than any of them.)*
+
+**Then say:** before we look at the cost, you draw this loop yourselves.
+-->
+
+---
+routeAlias: build-loop
+---
+
+## Build: the loop, and an empty controller
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-6">
+<div>
+
+![CruiseLoopStep: the demand step into the controller, the controller into the plant (GradeCar), the road constant into the plant's grade input, and the plant's speed fed back to the controller.](/img/lecture-01/step02-loop.png)
+
+</div>
+<div>
+
+![CruiseController in progress: ports u_s, u_m and y, and the error block only, with its parameter panel showing k1 = 1 and k2 = -1.](/img/lecture-01/step02-controller-shell.png)
+
+</div>
+</div>
+
+*New `CruiseController`: ports `u_s`, `u_m`, `y` · `error` Add(k1 = 1, k2 = −1) from `u_s`, `u_m` ·
+new `CruiseLoopStep`: `demand` Step(offset = 90, height = 20) → `controller` → `plant` (`GradeCar`) · `road` Constant(k = 0) · speed back to `u_m` ·
+TransientAnalysis `CruiseLoopTransient`, `stop = 100`*
+
+[page: step 2](../lecture/lecture-01/#step-2) · reference `dyad/Lecture1/CruiseLoop.dyad`
+
+<!--
+**Say:** this is the right-hand diagram from the start of the section, as a Dyad model. You
+draw it once, now, and it never changes again. Every step from here to section 08 happens
+*inside* the controller box.
+
+**Build it live, on the projector, with the room.** Two new components.
+
+**A — the controller shell.**
+
+1. Components → right-click `MyCar` → Add Component → `CruiseController`.
+2. **Ports**, from the `Dyad` library: a `RealInput` named `u_s` on the left edge (setpoint,
+   km/h), a `RealInput` named `u_m` on the bottom edge (measured speed, km/h), a `RealOutput`
+   named `y` on the right edge (torque command, N·m). These names are the ones every notebook
+   and the reference use.
+3. **Drag in** `BlockComponents.Math.Add`, name it `error`. Parameters: `k1 = 1`, `k2 = -1`.
+   This block is the comparator — the circle with + and − in every block diagram.
+4. **Wire** `u_s` → `error.u1`, `u_m` → `error.u2`. Leave `error.y` and `y` open.
+
+**B — the loop.**
+
+1. Add Component → `CruiseLoopStep`.
+2. **Drag in** and name, exactly:
+   - `demand` — `BlockComponents.Sources.Step`: `offset = 90`, `height = 20`,
+     `start_time = 0`. The setpoint, 90 → 110 km/h at the start of the run.
+   - `controller` — your `CruiseController`.
+   - `plant` — your `GradeCar`.
+   - `road` — `BlockComponents.Sources.Constant`: `k = 0`. A flat road, for now.
+3. **Wire** `demand.y` → `controller.u_s`; `controller.y` → `plant.tau_cmd`;
+   `road.y` → `plant.grade`; `plant.v_kmh` → `controller.u_m`. That last wire is the feedback —
+   point at it.
+4. ⇄ to code, add the starting state — cruising at 90 km/h, the engine already holding
+   31.078 N·m: `initial plant.body.mass.s = 0` · `initial plant.body.mass.v = 25` ·
+   `initial plant.engine.lag.x = 31.078`. Save.
+5. **▷ Run Analysis** → TransientAnalysis of `CruiseLoopStep`, name it `CruiseLoopTransient`,
+   `stop = 100`. **Do not run it yet.**
+
+**Why the step is at t = 0:** a step later in the run would give the P controller of step 3 an
+interval at zero error, in which it commands zero torque and the car slows down.
+
+**Before moving on:** nothing runs yet. `controller.y` has no source until the gain goes in at
+step 3, so the problems panel reports it; that is expected. Check the two diagrams against the
+screenshots: four blocks and four wires in the loop, two wires into `error`.
+
+**Names matter.** `plant`, `controller` and `error` are the reference instance names: a
+student's signal paths and the notebooks' read the same. The reference wraps the loop one level
+deeper (`loop.plant.v_kmh`); the students' `CruiseLoopStep` is flat (`plant.v_kmh`).
+
+**They get wrong:** `k2 = 1` on `error`. The loop then adds the measurement to the setpoint and
+runs away the moment it can run. The parameter panel in the right-hand screenshot is the check.
+
+**Timing:** 5 minutes. Walk the room after part A; part B is drag and drop.
 -->
 
 ---

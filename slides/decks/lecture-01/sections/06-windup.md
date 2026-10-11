@@ -16,10 +16,11 @@ The integrator does not know the engine has run out.
 place where the real world stops being linear, and it is the failure that has actually
 destroyed hardware.
 
-**Timing:** 14 minutes, and it is worth borrowing from section 09 if you need to. This is the
-most practically useful thing in the lecture.
-
-**Cut order:** this is spine — do not cut it. The lecture is not complete without it.
+**Timing:** 25 minutes, the longest section and the most practically useful thing in the
+lecture: 3 for the two halves, 5 for steps 6a and 6b, 6 for the climb harness (6c) and the
+two slides on why the overshoot is coming, 6 for clamping and step 6d, 5 for back-calculation,
+the three-way comparison and the two limits. Four build steps: two inside `GradeCar` and
+`CruiseController`, one new climb harness, and one equation.
 -->
 
 ---
@@ -32,7 +33,7 @@ most practically useful thing in the lecture.
 Real actuators have backlash, rate limits and **saturation**.
 A linear model has none of these: ask it for a million newton-metres and it will agree.
 
-**Open in Dyad** `dyad/Vehicle/IdealEngine.dyad`
+**Open in Dyad** `dyad/HandsOn/Engine.dyad` — the `limiter` after the lag
 
 > **The hill we are about to drive up**
 >
@@ -74,6 +75,153 @@ matters too — this engine cannot brake, so downhill it has no answer at all.
 -->
 
 ---
+routeAlias: step-6a
+---
+
+## Step 6a: the ceiling becomes a parameter
+
+![GradeCar's parameter panel with T_max, and the engine selected so its binding T_max = T_max shows.](/img/lecture-01/step06-tmax.png)
+
+*Your `GradeCar` · add `parameter T_max::Torque = 150` · `engine`: `T_max = T_max`*
+
+[page: step 6a](../lecture/lecture-01/#step-6a) · reference `dyad/HandsOn/GradeCar.dyad`
+
+<!--
+**Say:** the engine has had a ceiling since hands-on step 02 — the `limiter` inside it, at
+150 N·m. Until now nobody outside the engine could touch it. Today we need to, so it moves up
+one level, onto the car.
+
+**Build, in the students' `MyCar.GradeCar`:**
+
+1. Open `GradeCar`, diagram view. In the parameter panel with nothing selected, add
+   `parameter T_max::Torque = 150`, description "Peak deliverable torque".
+2. Select `engine`. In its parameter panel set `T_max = T_max`. The engine already declares
+   `T_max` (hands-on step 02), so this is a binding, not a new parameter.
+3. Nothing to wire. No new blocks.
+
+**Check before moving on:** the PID checkpoint loop from section 05 compiles and gives the same
+curve as before — 150 is the default, so nothing may move. If it moved, the binding went to
+the wrong instance.
+
+**Say:** this is the hands-on move "add a parameter and pass it down", once more. `T_max` is
+a fact about the hardware. The next step gives the controller its own number, and the rest of
+the section is about what happens when the two disagree.
+
+**Catch-up:** `HandsOn.GradeCar` carries `T_max` already; a student who is behind can
+replace `plant` with it.
+-->
+
+---
+routeAlias: step-6b
+---
+
+## Step 6b: the controller gets a limit of its own
+
+![CruiseController in progress: gain feeds the limiter, and the limiter feeds the output y.](/img/lecture-01/step06-limiter.png)
+
+*Your `CruiseController` · `Limiter(y_max = y_max, y_min = y_min)` between `gain` and `y`*
+
+[page: step 6b](../lecture/lecture-01/#step-6b) · reference `dyad/Lecture1/CruiseController.dyad`
+
+<!--
+**Say:** the engine refuses anything above 150. The controller has never known that: it can
+ask for a thousand N·m and the engine silently clips it. We give the controller its own
+ceiling, so that it can at least see when it is asking for more than it gets.
+
+**Build, inside the students' `CruiseController`:**
+
+1. Add two parameters: `parameter y_max::Real = 1e300` ("Maximum output") and
+   `parameter y_min::Real = -y_max` ("Minimum output") — the reference's defaults, so a
+   controller with no limits set behaves as before.
+2. Drag in `BlockComponents.Nonlinear.Limiter`. Name it **`limiter`**. Set
+   `y_max = y_max`, `y_min = y_min`.
+3. Delete the wire `gain.y → y`.
+4. Wire `gain.y → limiter.u` and `limiter.y → y`.
+
+**In `CruiseLoopStep`:** select `controller` and set `y_max = 150`, `y_min = 0` — the reference
+`CruiseLoop`'s `y_max = T_max`, `y_min = 0`. Zero because this engine cannot brake.
+
+**Check before moving on:** re-run `CruiseLoopTransient` on `CruiseLoopStep`. The 90 → 110 km/h step asks for
+more than 150 N·m at the start, so `controller.y` now sits flat on 150 for the first moments
+instead of spiking above it. `controller.gain.y` is the command *before* the limiter; plot
+both and the gap between them is the saturation.
+
+**They get wrong:** naming. The instance must be `limiter` and the pre-limiter signal
+`gain.y`, or the notebook paths and the clamping equation in 6d will not find them.
+-->
+
+---
+routeAlias: step-6c
+---
+
+## Step 6c: drive up the hill
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+![The climb harness: a constant 130 km/h demand, the controller and the GradeCar plant, with a pulse driving the road input.](/img/lecture-01/step06-climb.png)
+
+</div>
+<div>
+
+![Speed, controller output and integrator state through the climb and after it: the integrator keeps climbing while the engine is saturated, and the speed overshoots after the crest.](/img/lecture-01/step06-windup-plot.png)
+
+</div>
+</div>
+
+*Duplicate `CruiseLoopStep` → `Climb` · `demand` → `Constant(k = 130)` ·
+`road` → `Pulse(amplitude = 0.10, offset = 0, start_time = 30, duty_cycle = 1.0, period = 120)` ·
+`controller.xd0 = -130` · start at 130 km/h*
+
+[page: step 6c](../lecture/lecture-01/#step-6c) · reference `CruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
+
+<!--
+**Say:** we have a 10 % hill that needs 2024 N at 130 km/h, and an engine that makes 1935.
+Drive up it. Nothing in the controller changes — only the road.
+
+**Build — a new harness in `MyCar`, beside `CruiseLoopStep`:**
+
+1. Duplicate `CruiseLoopStep` (section 02). Name the copy **`Climb`**. The four instances
+   keep their names: `demand`, `controller`, `plant`, `road`.
+2. Replace `demand` with `BlockComponents.Sources.Constant`, `k = 130`. Wire
+   `demand.y → controller.u_s`.
+3. Replace `road` with BlockComponents › Sources › Pulse with `amplitude = 0.10`,
+   `offset = 0`, `start_time = 30`, `duty_cycle = 1.0`, `period = 120`, named `road`. Wire
+   `road.y → plant.grade`. The hill starts at 30 s and the road flattens again at 150 s.
+   `MyCar` cannot see the course library; this pulse is what the reference uses, wrapped in
+   its `GradeProfile`.
+4. `controller`: `k = 56`, `Ti = 10`, `Td = 0.5` (the defaults from sections 03–05) and
+   `y_max = 150`, `y_min = 0` (set in 6b). And `xd0 = -130`: the default −90 seeds the
+   derivative filter for a cruise at 90 km/h; this run cruises at 130, so the filter's settled
+   input `wd·u_s − u_m` is −130. Leave it at −90 and the run opens with a derivative kick.
+5. Initial conditions, in the code view — the same three lines `CruiseClimb` uses:
+   `initial plant.body.mass.s = 0`, `initial plant.body.mass.v = 36.111111111111114`
+   (130 km/h in m/s), `initial plant.engine.lag.x = 50.9693` (the holding torque at
+   130 km/h on the flat).
+6. **▷ Run Analysis** → TransientAnalysis, name it `ClimbTransient`, `stop = 400`. Run it.
+
+**Plot, on one axes or stacked:** `plant.v_kmh`; `controller.gain.y` (the command, before
+the limiter); `controller.y` (after it); `plant.engine.limiter.y` (what the engine
+delivers); `controller.integrator.y` on its own axis.
+
+**What the plot must show before moving on:**
+
+- the speed sagging from 130 after t = 30 s, heading for about 118, 119.05 at the crest;
+- `controller.y` and the delivered torque flat on 150 through the climb;
+- `controller.gain.y` and the integrator still climbing, far above anything the engine can
+  give;
+- after t = 150 s, the overshoot — the notebook's no-anti-windup run peaks 49.80 km/h over
+  the setpoint and takes 68.3 s to recover.
+
+This is the students' controller with a limiter and no anti-windup: the "none" row of the
+three-way table. If their overshoot is a few km/h rather than tens, the integrator is not
+wired from `error` — check that before going on.
+
+**Catch-up:** `CruiseClimb` is the reference harness, but its loop is the back-calculation
+comparison (`LimPID`); set `Ni = 1e6` on it to reproduce the no-anti-windup run.
+-->
+
+---
 
 ## The climb, with an ordinary PI controller
 
@@ -84,7 +232,7 @@ matters too — this engine cannot brake, so downhill it has no answer at all.
 Scenarios = VehicleSystemsComponents.Lecture1
 
 SPEED     = "loop.plant.v_kmh"
-COMMAND   = "loop.controller.add_ff.y"      # before the limiter
+COMMAND   = "loop.controller.gain.y"        # before the limiter
 DELIVERED = "loop.plant.engine.limiter.y"   # on the crankshaft
 INTEGRAL  = "loop.controller.integrator.y"
 
@@ -294,6 +442,76 @@ into the integrator instead — and we compare both next.
 -->
 
 ---
+routeAlias: step-6d
+---
+
+## Step 6d: two conditions, one equation
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+![CruiseController code view: the integrator input given by a nested ifelse equation that freezes it while the output is saturated and the error pushes further into the limit.](/img/lecture-01/step06-clamping-code.png)
+
+</div>
+<div>
+
+![The same three signals as the windup run, on the same axes, with clamping: the integrator holds flat while saturated and the speed returns to the setpoint after the crest with almost no overshoot.](/img/lecture-01/step06-clamping-plot.png)
+
+</div>
+</div>
+
+*Your `CruiseController` · delete `error.y → integrator.u` · in code:
+`integrator.u = ifelse(...)` on `limiter.y` and `error.y` · re-run `Climb`*
+
+[page: step 6d](../lecture/lecture-01/#step-6d) · reference `ClampingCruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
+
+<!--
+**Say:** the diagram on the previous slide is two comparisons and a switch. A diagram of it
+would be eight blocks; an equation is four lines. Dyad lets you mix the two, so we write it.
+
+**Build, inside the students' `CruiseController`:**
+
+1. Diagram view: delete the wire `error.y → integrator.u`. The integrator now has an
+   unconnected input; the next equation is what drives it.
+2. Switch to the code view. Under the existing declarations, add
+   `variable control_error::Real`.
+3. In `relations`, add:
+
+```
+control_error = error.y
+integrator.u = ifelse(limiter.y >= y_max,
+                 ifelse(control_error >= 0, 0.0, control_error),
+                 ifelse(limiter.y <= y_min,
+                   ifelse(control_error <= 0, 0.0, control_error),
+                   control_error))
+```
+
+Read it aloud as the two conditions: at the upper limit *and* the error still pushing up →
+zero; at the lower limit *and* the error still pushing down → zero; otherwise the integrator
+gets the error as before. Nested `ifelse` because the equation has no boolean `and`.
+
+4. Back to the diagram: `integrator` has no wire into it, and that is correct. It is still
+   wired `integrator.y → add_pid.u3`.
+
+**Re-run `Climb`,** same plot as 6c, same axes.
+
+**What the plot must show before moving on:**
+
+- the same sag to 119.05 km/h on the climb — clamping adds no torque;
+- `controller.integrator.y` going flat once the limiter saturates, instead of climbing;
+- after t = 150 s: 0.17 km/h over the setpoint and back within 3.5 s, against 49.80 km/h
+  and 68.3 s without it.
+
+**They get wrong:** leaving the old wire in place. Then `integrator.u` is defined twice,
+once by the connection and once by the equation, and Dyad reports one equation too many.
+Second most common: testing `gain.y` instead of `limiter.y`. The output of the limiter is the
+saturated signal, so `limiter.y >= y_max` is exactly "at the limit".
+
+**Catch-up:** `ClampingCruiseClimb` is this harness with the reference controller; the
+reference `CruiseController` carries this exact equation.
+-->
+
+---
 
 ## The other way: back-calculation
 
@@ -320,12 +538,13 @@ $$
 | Action | on / off | continuous |
 | Tuning | none | $N_i$ — how fast it unwinds |
 | Reads | trivially | needs a second look |
-| In `LimPID` | the variant built for task 4 | built in, via `Ni` |
+| Where | your `CruiseController`, step 6d | `LimPID`, via `Ni` |
 
 *Both keep the integrator near the limit rather than far above
 it, which is the only thing that matters.*
 
-**Open in Dyad** `dyad/Lecture1/CruiseLoop.dyad`
+**Open in Dyad** `dyad/Lecture1/WindupClimb.dyad` — `CruiseClimb`, whose loop
+`BackCalcCruiseLoop` closes `LimPID` around the same `GradeCar`
 
 </div>
 </div>
@@ -347,8 +566,11 @@ with T<sub>t</sub> = N<sub>i</sub>·T<sub>i</sub> = 9 s it settles high and stil
 surplus to unwind. That is a library default left alone, not a verdict on the method — and it
 is why the lecture demonstrates clamping, which has no parameter to leave wrong.)*
 
-**In the model:** **`Ni`**, the back-calculation parameter, and **`y_max` defaulting to
-`T_max`** — the controller's own ceiling, which the next slide argues should sit lower.
+**In the model:** `LimPID` appears in this lecture only here, as the comparison. Open
+`CruiseClimb` next to the students' `Climb`: same plant, same road, same gains; the only
+difference is the controller block. Point at **`Ni`**, the back-calculation parameter, and
+**`y_max` defaulting to `T_max`** — the controller's own ceiling, the subject of the last
+slide in this section.
 
 **Readout — every symbol on this slide**
 
@@ -466,6 +688,10 @@ of its own. The real answer is: whichever one your framework already implements 
 and on this car it is a bad trade. Read the *peak after* column downwards: below the ceiling
 and at it are both safe, and above it the damage grows with the gap.
 
+**In your model, if the room wants to see it:** on `Climb`, set `controller.y_max = 140`
+and re-run, then `300`. The lowest speed on the climb and the peak after it move the way the
+first and fourth rows say.
+
 **Point at the last row.** A controller with no output clamp at all reproduces the windup run
 to within a fraction of a km/h — and that row is not hypothetical, it is what notebooks 03, 04
 and 05 were running. Correct anti-windup logic that is never reached is the most expensive
@@ -503,10 +729,10 @@ is low enough that the command lives inside the gap rather than far above it.
 - A rule for the limit itself: below the hardware's, by however much you distrust your model
   of it.
 
-### Next: the numbers that tell you where to start. <Link to="tuning">→ 08, tuning</Link> (or <Link to="derivative-and-noise">07, derivative and noise</Link> if there is time)
+### Next: the derivative, and what a noisy sensor does to it. <Link to="derivative-and-noise">→ 07, derivative and noise</Link>
 
 <!--
-**This is the safe stopping point.** If you are running long, everything from here on can be
-cut except section 08, which carries the practical task from the existing course slides. Go
-straight there.
+**Say:** the students now have the controller the rest of the lecture runs on: P, I, D, a
+limit, and clamping. Section 07 puts a noisy sensor in front of it; after that only
+parameters change, until section 10 swaps the car.
 -->

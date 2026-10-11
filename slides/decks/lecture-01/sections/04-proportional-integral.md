@@ -13,13 +13,12 @@ The integrator works out the answer you would otherwise have to compute by hand.
 
 <!--
 **Say:** one boolean changes between the last notebook and this one. `with_I = true`. Same
-car, same gain, same step.
+car, same gain, same step. In your diagram it is three blocks.
 
-**Timing:** 12 minutes. The middle slide of this section — the integrator's own state
-settling on the number we computed with a pencil — is the best slide in the lecture. Do not
-rush to it and do not rush past it.
-
-**Cut order:** this is spine — do not cut it. The lecture is not complete without it.
+**Timing:** 18 minutes. Adding a memory 2, build step 4 and its run 6, PI against P 2, the
+punchline 5, what it costs 2, bridge 1. The punchline — the integrator's own state settling on
+the number we computed with a pencil — is the best slide in the lecture. Do not rush to it and
+do not rush past it.
 -->
 
 ---
@@ -62,9 +61,11 @@ confusion is exactly what the next two slides destroy.)*
 **On T<sub>i</sub>:** it is a *time*, not a gain, and it divides — so smaller T<sub>i</sub>
 is more aggressive integration. Say it now; it catches people out every single year.
 
-**In the model:** **`with_I` is a `structural` parameter**. The integrator is either compiled
-into the equations or it is not there at all. P and PI are two different models, not one
-model with a gain at zero.
+**In the model:** **`with_I` is a `structural` parameter** of the reference
+`CruiseController`. The integrator is either compiled into the equations or it is not there at
+all — `zero_i` holds its slot when it is out. P and PI are two different models, not one model
+with a gain at zero. The students get the same effect by hand on the next slide: they add the
+block.
 
 **Readout — every symbol on this slide**
 
@@ -77,6 +78,67 @@ model with a gain at zero.
 - **τ** — here just the dummy variable of integration, not the plant time constant.
   Unfortunate collision; say so if anyone frowns.
 - **with_I** — the boolean that compiles the integrator in or out.
+-->
+
+---
+routeAlias: build-integrator
+---
+
+## Build: a memory
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+![CruiseController in progress: add_pid (Add3) between error and gain, the integrator on its third input, and the Constant(0) placeholder on its second.](/img/lecture-01/step04-integrator.png)
+
+</div>
+<div>
+
+![loop.plant.v_kmh reaching 110 km/h, with loop.controller.integrator.y on a second axis.](/img/lecture-01/step04-pi-plot.png)
+
+</div>
+</div>
+
+*Parameters `Ti` = 10, `xi0` = 0 · `add_pid` Add3 between `error` and `gain` · `integrator` Integrator(k = 1/Ti, x0 = xi0) on `u3` ·
+`zero_d` Constant(k = 0) holds the derivative slot on `u2`*
+
+[page: step 4](../lecture/lecture-01/#step-4) · reference `dyad/Lecture1/CruiseController.dyad`
+
+<!--
+**Say:** the formula has a bracket: the error, plus the integral over T<sub>i</sub>, all times
+*k*. So the diagram gets a summing block in front of the gain, with three inputs — one for each
+term the finished controller will have. Today two of them: the error, and its integral. The
+third slot waits for section 05.
+
+**Build it live, on the projector, with the room.** In `CruiseController`:
+
+1. **Add parameters** `Ti`, default `10` (seconds, type `Time`), and `xi0`, default `0` — the
+   integrator's starting state.
+2. **Delete** the wire `error.y` → `gain.u`.
+3. **Drag in** `BlockComponents.Math.Add3`, name it `add_pid`. Parameters `k1 = 1`, `k2 = 1`,
+   `k3 = 1`. Wire `error.y` → `add_pid.u1`, `add_pid.y` → `gain.u`.
+4. **Drag in** `BlockComponents.Continuous.Integrator`, name it `integrator`. Parameter
+   `k = 1 / Ti`, `x0 = xi0`. Wire `error.y` → `integrator.u`,
+   `integrator.y` → `add_pid.u3`.
+5. **Drag in** `BlockComponents.Sources.Constant`, name it `zero_d`, `k = 0`. Wire
+   `zero_d.y` → `add_pid.u2`. It holds the derivative's slot so `add_pid` has all three inputs.
+6. Save. Back in `CruiseLoopStep`, run `CruiseLoopTransient` again — the analysis picks up the
+   changed controller.
+7. **Plot** `plant.v_kmh` and `demand.y`; on a second axis, `controller.integrator.y`.
+
+**The plot must show, before moving on:** the speed reaching **110 km/h** — the 0.7 km/h gap
+from step 3 is gone — and the integrator state rising and leveling off near **0.716**: that is
+40.1 N·m divided by *k* = 56. The punchline slide in two minutes multiplies it back.
+
+**On the engine ceiling, again:** the students' engine still clips at 150 N·m and the notebook
+figures do not, so the first seconds of their climb, and any overshoot, can differ from the
+notebook's. The settled 110 and 0.716 are the same.
+
+**They get wrong:** feeding the integrator from `add_pid.y` instead of `error.y` — it then
+integrates its own output as well as the error. And `k = Ti` instead of `k = 1 / Ti`: then a
+bigger T<sub>i</sub> integrates *harder*, the opposite of the convention.
+
+**Timing:** 4 minutes building, 2 running and reading the plot.
 -->
 
 ---
@@ -193,8 +255,9 @@ for feedback in one sentence.)*
 or the gear ratio disagree between notebook and model — that mismatch is worth more than the
 slide, so stop and find it.
 
-**In the model:** The integrator is **inside `LimPID`**, and `integrator.y` is its state
-*before* the gain. The plot multiplies by `k` to get newton-metres.
+**In the model:** The integrator is **inside `CruiseController`** — the block the students
+just placed — and `integrator.y` is its state *before* the gain. The plot multiplies by `k` to
+get newton-metres. Their own second axis from the build shows the same curve, unscaled.
 
 **Readout — every symbol on this slide**
 

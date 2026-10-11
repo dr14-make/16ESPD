@@ -16,9 +16,9 @@ The same controller gets worse purely because it looks less often.
 section is the bridge, and it uses the gains we just derived in section 08 — same controller,
 nothing re-tuned.
 
-**Timing:** 8 minutes. If you are short, the sample-time sweep alone carries the point.
-
-**Cut order:** second to go. Drop this before touching the P → PI → PID → windup run.
+**Timing:** 8 minutes, and no build: this section is a demo on the reference
+`SampledCruiseLoop`. Students watch; their own controller stays continuous. The sample-time
+sweep is the slide that carries the point.
 -->
 
 ---
@@ -200,8 +200,6 @@ minute; the loop's own bandwidth is seconds. That second number is the one that 
 </div>
 </div>
 
-**Open in Dyad** `dyad/Lecture1/Sampler.dyad` — show **clock → samplers → discrete PID → hold**.
-
 <!--
 **Point at the signal chain.** The car remains continuous. Only sensing, control computation
 and command updates occur on the clock.
@@ -211,6 +209,43 @@ controller update. That held command is where the staircase comes from.
 
 **Ask the room:** why can this still be approximated as half a sample of delay near crossover?
 *(Because a zero-order hold delays the average command. Next slide.)*
+-->
+
+---
+
+## The sampled loop, in Studio
+
+![SampledCruiseLoop: a periodic clock drives two samplers on the setpoint and the measured speed, a DiscretePIDStandard controller, and a zero-order hold feeding the GradeCar plant.](/img/lecture-01/step09-sampler.png)
+
+*Demo only · `SampledCruiseLoop` · clock → samplers → `DiscretePIDStandard` → hold → `plant`*
+
+**Open in Dyad** `dyad/Lecture1/Sampler.dyad`
+
+<!--
+**Demo, not a build.** Open `SampledCruiseLoop` in the lecturer's Studio; students do not
+reproduce it. The plant is the same `HandsOn.GradeCar` they have been driving all lecture, so
+the only new things on the screen are on the controller's side.
+
+**Walk the diagram left to right:**
+
+- `clock` — `DiscreteComponents.PeriodicClock(dt = Ts)`. One tick every `Ts`; 0.1 s by
+  default.
+- `setpoint_sampler` and `measurement_sampler` — `DiscreteComponents.Sampler`. The setpoint
+  and `plant.v_kmh` become clocked values. Point out that the clock wire joins the setpoint
+  sampler's output and the controller: that one connection puts the whole controller on the
+  clock.
+- `controller` — `DiscreteComponents.DiscretePIDStandard`, the library's discrete PID, with
+  `K`, `Ti`, `Td`, `Nd`, `Ts`. Not the students' `CruiseController`: the point is what any
+  sampled controller does, and this one ships with the library.
+- `hold` — `DiscreteComponents.ZeroOrderHold`. The staircase from the previous slide is its
+  output.
+- `plant` — continuous, untouched.
+
+**Say:** `Ts` is a structural parameter, because it defines the clock. Changing it is a
+recompile, which is why the notebook builds one model per sample time.
+
+**If anyone asks how to put their own controller on a clock:** the same two samplers and the
+hold, around a discrete controller. The diagram on the screen is the template.
 -->
 
 ---
@@ -352,6 +387,5 @@ rate is still required.
 ### Next: the tire is an actuator too. <Link to="wheel-and-slip">→ 10, wheel and slip</Link>
 
 <!--
-**If you are stopping here,** close on the whole-lecture summary instead — it is the last
-slide of section 10, and it works from anywhere.
+**Say:** last section. The controller is finished; now the car changes underneath it.
 -->

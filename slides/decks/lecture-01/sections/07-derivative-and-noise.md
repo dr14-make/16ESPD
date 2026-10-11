@@ -15,10 +15,10 @@ The derivative does not care how big the noise is, only how fast.
 **Say:** in section 05 the derivative was free. It cost nothing and it removed the overshoot.
 Here is the bill.
 
-**Timing:** 10 minutes. The two-sines slide is the one that has to land; everything else is
-evidence.
-
-**Cut order:** first to go. Everything here is upside; the lecture stands without it.
+**Timing:** 15 minutes: 2 for the noisy sensor, 5 for step 7 (insert the noise, run at
+`wd = 1`, then `wd = 0`), 2 for the two sines, 4 for the near-pure derivative and the `Nd`
+sweep run live on the students' loop, 2 for choosing the cutoff. The two-sines slide is the
+one that has to land; everything else is evidence.
 -->
 
 ---
@@ -39,7 +39,7 @@ MEASURED   = "loop.noise.y"        # what it is told
 COMMAND    = "loop.controller.y"   # what it asks for
 UNLIMITED  = 1.0e6                 # N.m, both ways
 
-# Nd = 10 is the LimPID default, and what every
+# Nd = 10 is the controller's default, and what every
 # notebook since 05 has silently been running.
 noisy = Scenarios.NoisyCruiseTransient(
     k = 56.0, Ti = 10.0, Td = 0.5, Nd = 10.0, wd = 0.0,
@@ -77,6 +77,75 @@ periodic — then it is a good answer about reproducible simulation.
 - **N<sub>d</sub> = 10** — a sane derivative filter coefficient for this first run.
 - **Deterministic noise** — a sum of sines, not a random process, so the committed plots
   reproduce exactly. Say so only if asked why it looks periodic.
+-->
+
+---
+routeAlias: step-7
+---
+
+## Step 7: give the controller a real sensor
+
+<div class="grid grid-cols-3 gap-6">
+<div>
+
+![The loop with the noise block inserted between the plant's speed output and the controller's measurement input.](/img/lecture-01/step07-noise-loop.png)
+
+</div>
+<div>
+
+![Controller output with derivative setpoint weight 1: a spike at the setpoint step and continuous chatter after it.](/img/lecture-01/step07-noisy-plot.png)
+
+</div>
+<div>
+
+![The same plot with derivative setpoint weight 0: the setpoint kick is gone and the chatter remains.](/img/lecture-01/step07-wd0-plot.png)
+
+</div>
+</div>
+
+*`CruiseLoopStep` · new component `MeasurementNoise` (paste from the page) → `noise` between
+`plant.v_kmh` and `controller.u_m` · run at `wd = 1`, `xd0 = 0`, then back to `wd = 0`, `xd0 = -90` ·
+later: vary `Nd`*
+
+[page: step 7](../lecture/lecture-01/#step-7) · reference `NoisyCruiseLoop` in `dyad/Lecture1/NoisyCruiseLoop.dyad`
+
+<!--
+**Say:** every speed we have fed the controller so far was the true one, to fifteen digits.
+No car has that sensor. Put a realistic one in and look at the command.
+
+**Build, in the students' `CruiseLoopStep` (not `Climb`):**
+
+1. Delete the wire `plant.v_kmh → controller.u_m`.
+2. Add a component `MeasurementNoise`, toggle to code (⇄) and paste the block from the guide
+   page's step 7 over its contents — `MyCar` cannot see the course library, and this is the
+   code of what the reference uses. Place it as **`noise`** with `amplitude = 0.2` (km/h, per
+   sinusoid; six of them, 0.5 to 16 Hz).
+3. Wire `plant.v_kmh → noise.u` and `noise.y → controller.u_m`. The controller now sees
+   `noise.y`; `plant.v_kmh` stays the truth.
+4. Parameters: `controller` keeps `k = 56`, `Ti = 10`, `Td = 0.5`, `Nd = 10`. Set
+   `controller.wd = 1` and `controller.xd0 = 0` — the seed `(wd − 1)·m0` that goes with
+   `wd = 1`. Lift every limit, as the notebook does, so the chatter is not clipped:
+   `controller.y_max = 1e6`, `controller.y_min = -1e6`, `plant.T_max = 1e6` — the parameter
+   from step 6a earning its keep.
+5. `CruiseLoopTransient`, `stop = 40`. Run. Plot `controller.y`, and `plant.v_kmh` against
+   `noise.y`.
+
+**What the plot must show (`wd = 1`):** a tall spike in `controller.y` at the setpoint step —
+the derivative of a step in the setpoint — and then a command that never stops chattering,
+while `plant.v_kmh` looks smooth.
+
+6. Put `controller.wd = 0` and `controller.xd0 = -90` back — the section 05 defaults.
+   Re-run, same axes.
+
+**What the plot must show (`wd = 0`):** the setpoint kick gone; the chatter unchanged. The
+kick came from the setpoint, the chatter comes from the sensor, and `wd` only removes the
+first. That is why every notebook since 05 runs `wd = 0`.
+
+**Later, at "Filter it":** `controller.Nd` = 100, 20, 5, 2, re-run each. The notebook's swing
+in the 20–30 s window falls from 1760 N·m at `Nd = 100` to 315 at `Nd = 2`.
+
+**Catch-up:** `NoisyCruiseLoop` is the reference loop with `noise` in place;
+`NoisyCruiseTransient` runs it.
 -->
 
 ---
@@ -236,6 +305,10 @@ end
 </div>
 
 <!--
+**Live, on the students' loop from step 7:** set `controller.Nd = 100` and re-run, then 20,
+5 and 2. `Nd` is an ordinary parameter, so each is a re-solve, not a recompile. Keep
+`controller.y` on the same axes so the band visibly shrinks.
+
 **Say:** this is what the `Nd` parameter is for. Every PID block in every toolchain has one,
 and most people never touch it because they never look at the actuator command. Now you know
 what it does and why it is there.
@@ -315,10 +388,14 @@ your toolchain may well be implemented the second way.
 - A concrete reason the `Nd` parameter exists.
 - The rule, arriving for the second time today: plot the actuator command.
 
-### Next: the tire has a limit too, and it is not in the engine. <Link to="wheel-and-slip">→ 10, wheel and slip</Link>
+### Next: where the gains came from. <Link to="tuning">→ 08, tuning</Link>
 
 <!--
 **Say:** we have now seen the controller defeated by an actuator that saturates and by a sensor
-that lies. The last section is defeated by neither — it is defeated by the plant itself
-changing character.
+that lies. Before the plant itself changes character in section 10, we owe an answer to a
+question nobody has asked yet: where did k = 56 come from?
+
+**Before moving on:** students take `noise` out again — rewire `plant.v_kmh →
+controller.u_m` — and set `controller.Nd = 10`. Leave the limits lifted: section 08 runs
+without them until the trap.
 -->

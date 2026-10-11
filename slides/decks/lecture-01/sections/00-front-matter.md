@@ -9,7 +9,7 @@ layout: cover
 
 Vehicle Systems &amp; Components — Lecture 1
 
-One car, three fidelity levels, ten notebooks.
+One car you built, one controller you build today, ten notebooks.
 
 <div class="text-xs opacity-60 mt-12">
 
@@ -20,33 +20,47 @@ presenter mode from the nav bar, bottom left
 </div>
 
 <!--
-**Before the room fills.** Deck on the projector, notebooks on the laptop screen. Open
-**presenter mode** from the nav bar now (bottom left, it appears on hover): these notes, the
-next slide and a timer in the same tab, no popup to block.
+**Before the room fills.** Deck on the projector, Dyad Studio and the notebooks on the laptop.
+Open **presenter mode** from the nav bar now (bottom left, it appears on hover): these notes, the
+next slide and a timer in the same tab, no popup to block. In Studio, open the students'
+hands-on package with `Car` and `GradeBody` in it — you build on it live, exactly as they do.
 
 **Where this sits:** second of two sessions on one car. In the hands-on
 (`slides/decks/handson-01/`) students learned each part's physics and built it. This deck does not
 repeat that physics: wherever a slide relies on it, a grey *↩ Hands-on step NN* line links to
-the exact slide. If a group skipped the hands-on, show its slides on the forces (step 04's
-"Four forces on the car") and top speed (step 05, "Adding it all up" to "Top speed") first —
-ten minutes.
+the exact slide. Section 01 opens with a recap of what they built; if a group skipped the
+hands-on, they start from the reference `HandsOn.Car` and follow the recap.
 
-**Say:** you built a car; today we control it six different ways. The car never changes.
-Every new idea in this lecture is a change to the *controller*, never a change of subject —
-so whatever you understand about the car at minute ten is still true at minute ninety.
+**Say:** you built a car; today you build its cruise control, one block at a time, on that car.
+The car never changes. Every new idea in this lecture is a change to the *controller*, never a
+change of subject — so whatever you understand about the car at minute twenty is still true at
+minute one hundred and seventy.
 
-**Timing:** 90 minutes. The spine is sections 01, 03, 04, 05, 06, 08 — about 60 minutes.
-Everything else is bonus; drop from the back, not the middle. Each section's first slide
-tells you, in these notes, whether it is safe to cut.
+**Timing:** 180 minutes, students building along in Dyad Studio. Front matter 5 · 01 the car 22
+· 02 open vs closed loop 15 · 03 P 15 · 04 PI 18 · 05 PID 18 · **break 10** · 06 windup 25 ·
+07 derivative and noise 15 · 08 tuning 18 · 09 discretization 8 (demo only) · 10 wheel and
+slip 11. Each section's first slide repeats its own budget in these notes.
+
+**The build.** Every build step has one slide: a Studio screenshot, a one-line recipe, and a
+`page: step NN` link to the guide page, `lecture/lecture-01/` on the course site — the same
+site as the hands-on page. The notes on each build slide carry the full instructions: what to
+drag in, which parameters, every wire, and what the plot must show before you move on. Switch
+the projector to Studio, build it, run it, switch back.
+
+**Catch-up.** Students who fall behind follow the guide page, which has every step with its
+blocks, parameters, wires and expected plot. Two checkpoints let anyone rejoin with a working
+model: **P** at the end of section 03 and **PID** at the end of section 05. Both are the
+reference `CruiseLoop`, with `with_I = false, with_D = false` and with the defaults
+respectively.
 
 **Driving the deck.** **→** or **Space** next slide, **←** previous. **O** overview of
 everything, **G** jump to a slide number, **F** fullscreen. Presenter mode, opened from the
 nav bar (bottom left, on hover), is this window: these notes, the next slide and a timer.
 
-**Two screens.** Deck on the projector, Jupyter on the laptop. Every demo slide names the
-notebook file and the cell heading and carries the code, with a copy button, so you never
-hunt through a notebook with your back to the room. A grey strip means there is a Dyad model
-worth having open for that beat.
+**Three windows.** Deck on the projector, Dyad Studio for the build, Jupyter for the notebook
+figures. Every demo slide names the notebook file and the cell heading and carries the code,
+with a copy button, so you never hunt through a notebook with your back to the room. A grey
+strip means there is a Dyad model worth having open for that beat.
 
 **Handout:** `handout.pdf`, published next to the deck — one slide per page, these notes
 excluded.
@@ -77,11 +91,12 @@ Scroll to the plot that is already there and keep talking. Do not debug live.
 can re-run yourself afterwards — they are committed with their outputs, so they read even
 without the modeling tools installed.
 
-**Point at:** the column on the right. Rows 01, 03, 04, 05, 06, 08 are the ones we will
-definitely do. The others are there if the room moves quickly.
+**Say:** and you do not just watch these. From section 01 to section 10 you build the car's
+cruise controller yourself, block by block, and every plot in the notebooks comes from a
+diagram you have on your own screen. The one exception is 09, which is a demo.
 
-**Cutting for time:** drop 10, then 07, then 09, then 02. Never cut from the middle of the
-P → PI → PID → windup run; that sequence is one argument.
+**Point at:** rows 03 and 05. Those are the two checkpoints — P and PID. Fall behind and the
+guide page gets you back on at either one.
 -->
 
 ---
@@ -91,7 +106,7 @@ P → PI → PID → windup run; that sequence is one argument.
 ![The general control diagram: a reference enters a comparator, the error goes to a controller which produces a control input u, u enters the system alongside a disturbance d, the system state x evolves, a sensor measures it producing a noisy measurement y, and y is fed back to the comparator.](/diagrams/00-control-loop.svg)
 
 <!--
-**Say:** this one picture is the map for the whole subject, and for the next ninety minutes.
+**Say:** this one picture is the map for the whole subject, and for the next three hours.
 Everything we build today is a change to one box in it.
 
 **Walk it with your hand,** naming each signal:
@@ -129,83 +144,31 @@ else is either chosen by somebody else or done to you.)*
 
 ---
 
-## The car you built
+## Where the models live
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-| Step | Your `MyCar` | Course model |
-|---|---|---|
-| 02 | `Engine` | `Vehicle.IdealEngine` |
-| 03 | `Driveline` | `Vehicle.Driveline` |
-| 07 | `GradeBody` | `Vehicle.VehicleBody` |
-| 05 | `Car` | `Vehicle.CarPlant` |
-| 06 | `WheeledCar` | `Lecture1.WheeledCarPlant` |
-| 10 | `SlipCar` | `Lecture1.SlipCarPlant` |
+#### HandsOn/ — the car, as you built it
+
+*The plant. Today it gains a grade input and, later, a few parameters — never a new part.*
+
+- `Engine`, `Driveline`, `Body`, `Car` — hands-on steps 02–05
+- `GradeForce`, `GradeBody` — step 07, the hill
+- `GradeCar` — `Car` on a road with a grade, **built today** in section 01
+- `WheeledCar`, `SlipCar` — steps 06 and 10, back in section 10
 
 </div>
 <div>
 
-Same parts, same parameters. `CarPlant` adds a `grade` input, and names the 3.6 gain
-`ToKmPerHour`. Both reach 246.39 km/h at 300 s.
-
-> **What we know before any controller**
->
-> The torque arrives late, slow and capped. Drag is quadratic. The tire has a peak.
-> Every one of those comes back today as a control problem.
-
-↩ [What we built in the hands-on](../handson-01/index.html#/what-we-build) ·
-[hands-on page](../handson/lecture-01/index.html)
-
-</div>
-</div>
-
-<!--
-**Say:** you met this car in the hands-on — each part explained on paper car, and in Dyad,
-built part by part. Today it is the plant, and it does not change.
-
-**Point at:** the left column. Every row is a model they built, next to the course model the
-notebooks run. They are the same components; the course versions live in `Vehicle/` so
-lecture 2 can reuse them. The 1 kg·m² wheel and the slip wheel live in `Lecture1/` harnesses
-that section 10 uses.
-
-**Point at:** the callout, one phrase at a time, and name where each returns: the lags in the
-step test and in tuning (sections 01 and 08), the square in the step test's θ (section 01),
-the tire's peak on ice (section 10).
-
-**Timing:** 2 minutes. If the room did not do the hands-on, spend 5 here and show
-`dyad/Vehicle/CarPlant.dyad` open in Dyad — the force balance as a diagram — instead.
-
-**Ask the room:** what did your car need that it did not have in step 05, before it could
-climb a hill? *(A grade input — step 07. CarPlant has it, which is why every harness today
-feeds it two signals.)*
--->
-
----
-
-## Where the models live
-
-#### Vehicle/ — the car
-
-*Physical components. Lecture 2 uses these unchanged, which is the test for whether something
-belongs here.*
-
-- `IdealEngine.dyad` — delay, lag, torque limit
-- `Driveline.dyad` — gear, wheel
-- `VehicleBody.dyad` — mass, drag, rolling, grade
-- `GradeForce.dyad` — the hill, as a force
-- `Conversions.dyad` — ToKmPerHour — the one conversion
-- `CarPlant.dyad` — all of the above, wired up
-- `GradeProfile.dyad` — flat → climb → flat
-
 #### Lecture1/ — what we do to it
 
 *Controllers and scenario harnesses. A plant cannot run on its own: its inputs would be
-unconnected, so every demo is a harness around `CarPlant`.*
+unconnected, so every demo is a harness around `Car` or `GradeCar`.*
 
-- `WideOpenThrottle.dyad` → section 01
-- `CarStepTest.dyad` → sections 01, 08
-- `CruiseLoop.dyad` → sections 02–06, 08, 09
+- `WideOpenThrottle`, `CarStepTest` → section 01
+- `CruiseController` → **built today**, sections 02–06
+- `CruiseLoop` → sections 02–06, 08
 
 > **Each harness ships an analysis**
 >
@@ -213,30 +176,37 @@ unconnected, so every demo is a harness around `CarPlant`.*
 > the initial conditions and the run window live in the model, so a notebook cell is a run and
 > a plot.
 
+</div>
+</div>
+
 <!--
 **This slide is the map for the whole lecture.** Leave it up while you say the rule, because
 it is the thing students most often get wrong when they build their own:
 
-**Say:** the car goes in one place and the experiment goes in another. If lecture 2 would use
-it unchanged, it is a *Vehicle*. If it exists because of what we are teaching today — a step
-source, a setpoint, a controller — it is a *Lecture1*. Moving a component between them later
-breaks every reference to it, so the line gets drawn at the start.
+**Say:** the car goes in one place and the experiment goes in another. If it is part of the
+car, it is in *HandsOn*. If it exists because of what we are teaching today — a step source,
+a setpoint, a controller — it is in *Lecture1*. Your own package follows the same split: the
+`GradeCar` you build in section 01 sits next to your `Car`; the controller and the loop are
+new components beside them.
 
-**Say:** and notice why the harnesses exist at all. `CarPlant` has two inputs, torque and
+**Say:** and notice why the harnesses exist at all. `GradeCar` has two inputs, torque and
 grade. Leave them unconnected and the model is not solvable — it has more unknowns than
 equations. So every single demo today is the same plant with something different plugged
 into those two inputs.
 
-**Ask the room:** where would a traffic-light sequence belong? A tyre pressure? *(The
-sequence is a scenario — Lecture1. The pressure is the car — Vehicle.)*
+**Ask the room:** where would a traffic-light sequence belong? A tire pressure? *(The
+sequence is a scenario — Lecture1. The pressure is the car — HandsOn.)*
 
-**Practical:** when a slide carries a grey "open in Dyad" strip, that is the model to have on
-the second screen for that beat. You do not need it open all the time — only where the
-diagram says something the plot cannot.
+**On `Vehicle/`:** the course library for lectures 2 and 3. It carries the same parts block
+for block, and today's notebooks no longer use it.
+
+**Practical:** when a slide carries a grey "open in Dyad" strip, that is the reference model to
+have on the second screen for that beat. The students' own diagram is the one on the projector
+during a build.
 
 **Terms, if anyone asks**
 
-- **Component** — a Dyad block with ports, parameters and equations. `IdealEngine` is one.
+- **Component** — a Dyad block with ports, parameters and equations. `Engine` is one.
 - **Harness** — a component whose job is to make another one runnable, by connecting sources
   to its inputs and setting initial conditions.
 - **Analysis** — a named, runnable experiment: a model plus a stop time plus the parameters
@@ -291,7 +261,8 @@ diagram says something the plot cannot.
 
 <!--
 **Say:** the same nine numbers students typed into their own `Engine`, `Driveline` and
-`Body`. Leave this slide up a moment: the right-hand column is what the lecture leans on —
+`Body`. Half a minute here — section 01's recap comes back to the ones control cares about.
+The right-hand column is what the lecture leans on —
 31.1 and 40.1 N·m are the step test in section 01, and 1935 N is the ceiling the hill in
 section 06 breaks.
 
@@ -348,9 +319,9 @@ sanity-check; **k = 220** in mixed units is not.*
 The plant's internals are SI throughout. Exactly one conversion exists in the whole model, and
 it is a visible block on the sensor output:
 
-`Vehicle.ToKmPerHour`
+`to_kmh` — `Gain(k = 3.6)`
 
-*The `Gain(k = 3.6)` of hands-on step 05, under a name. No notebook ever multiplies a plotted
+*The block you put on `Car`'s sensor in hands-on step 05. No notebook ever multiplies a plotted
 signal by 3.6: if a speed axis says km/h it is because the model emitted km/h.*
 
 </div>
@@ -372,6 +343,6 @@ someone will say it.)*
 - **k** — the controller gain, N·m per km/h. "This many newton-metres for every km/h I am
   off."
 - **km/h** — the unit of the setpoint, the measurement and therefore the error.
-- **SI inside** — the plant computes in m/s, N, kg. One block, `ToKmPerHour`, converts, and it
+- **SI inside** — the plant computes in m/s, N, kg. One block, `to_kmh`, converts, and it
   sits on the sensor output.
 -->
