@@ -7,8 +7,13 @@
 # alike, because Pluto accepts websockets from any origin and a server without one lets any page
 # the browser visits run Julia on this machine.
 
+# Instantiating costs about a second on every start even with nothing to do, so it runs only
+# when the manifest is missing or older than the project.
 import Pkg
-Pkg.instantiate()
+let manifest = joinpath(@__DIR__, "Manifest.toml")
+    isfile(manifest) && mtime(manifest) >= mtime(joinpath(@__DIR__, "Project.toml")) ||
+        Pkg.instantiate()
+end
 import Pluto
 
 port, secret, notebooks... = ARGS

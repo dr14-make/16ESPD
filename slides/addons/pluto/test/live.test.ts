@@ -37,7 +37,11 @@ const KERNEL = join(SLIDES, "addons/pluto/kernel")
  * `supervise` stops it.
  */
 const PLUTO_WITHOUT_SECRET = `
-  import Pkg; Pkg.instantiate(); import Pluto
+  import Pkg
+  let manifest = joinpath(dirname(Base.active_project()), "Manifest.toml")
+    isfile(manifest) && mtime(manifest) >= mtime(Base.active_project()) || Pkg.instantiate()
+  end
+  import Pluto
   port = ARGS[1]
   @async (read(stdin); exit())
   Pluto.run(; host="127.0.0.1", port=parse(Int, port),
