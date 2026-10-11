@@ -4,7 +4,7 @@
 // and when a reactive run counts as over.
 
 /** How long bond changes are collected before they are written, in milliseconds. */
-const BATCH_MS = 20
+export const BATCH_MS = 20
 
 /** How often a settling run is re-checked, in milliseconds. */
 const POLL_MS = 40
@@ -13,7 +13,7 @@ const POLL_MS = 40
 const QUIET_MS = 120
 
 /** How long to wait for a run that never starts, because the bond changed nothing. */
-const NO_RUN_MS = 800
+export const NO_RUN_MS = 800
 
 /** How long a single reactive run may take before the deck stops waiting for it. */
 const SETTLE_TIMEOUT_MS = 30_000

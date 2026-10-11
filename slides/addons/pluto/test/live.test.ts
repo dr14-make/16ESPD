@@ -16,14 +16,15 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs"
-import { createServer } from "node:net"
 import { tmpdir } from "node:os"
 import { basename, dirname, join, resolve } from "node:path"
 import { after, before, describe, it } from "node:test"
 import { setTimeout as sleep } from "node:timers/promises"
 import { chromium } from "playwright-chromium"
 import type { Browser, BrowserContext, Page } from "playwright-chromium"
-import { supervise } from "../src/kernel.launcher.ts"
+import { BATCH_MS, NO_RUN_MS } from "../src/bond.queue.ts"
+import { freePort, processTree, supervise } from "../src/kernel.launcher.ts"
+import { alive } from "./helpers.ts"
 
 const SLIDES = resolve(import.meta.dirname, "../../..")
 const FIXTURE = join(SLIDES, "decks/pluto-fixture/fixture.md")
@@ -50,6 +51,11 @@ const SLIDEV_TIMEOUT = 60_000
 const SHUTDOWN_TIMEOUT = 60_000
 /** A module script delays `load` until it has evaluated, and the deck's awaits its kernel. */
 const NAVIGATION_TIMEOUT = 180_000
+/**
+ * How long a bond write that was going to happen has to have been collected, sent and settled, so
+ * that none arriving by then means none is coming.
+ */
+const NO_WRITE_WAIT_MS = BATCH_MS + NO_RUN_MS + 1_000
 
 /**
  * Resolve nothing but the loopback, so a fetch off this machine fails the way it would in a
@@ -165,20 +171,6 @@ async function stop(process: Process, signal: NodeJS.Signals, grace: number): Pr
 }
 
 /**
- * `slidev dev` takes its port as given, so a port in use is an error rather than a deck served
- * elsewhere. The gap between releasing this one and Slidev binding it is a race; lost, it fails
- * the run rather than hiding.
- */
-async function freePort(): Promise<number> {
-  const server = createServer().listen(0, "127.0.0.1")
-  await new Promise((done) => server.once("listening", done))
-  const address = server.address()
-  await new Promise((done) => server.close(done))
-  assert.ok(address !== null && typeof address !== "string")
-  return address.port
-}
-
-/**
  * The fixture deck, naming a copy of its notebook, in a directory of its own beside the fixture.
  * Pluto rewrites the notebook it opens, so the kernel gets a copy; the deck stays inside the
  * workspace so Slidev resolves its addons.
@@ -196,26 +188,15 @@ function workspace(): { deck: string; notebook: string } {
 
 /** Every Julia process descended from `root`: the server and each notebook's worker. */
 function juliaProcesses(root: number): number[] {
-  const table = execFileSync("ps", ["-A", "-o", "pid=,ppid=,comm="], { encoding: "utf8" })
-  const rows = table
+  const tree = processTree(root)
+  const table = execFileSync("ps", ["-o", "pid=,comm=", "-p", tree.join(",")], {
+    encoding: "utf8",
+  })
+  return table
     .split("\n")
     .map((line) => line.trim().split(/\s+/))
-    .map(([pid, ppid, command]) => ({ pid: Number(pid), ppid: Number(ppid), command }))
-  const tree = [root]
-  for (const pid of tree) {
-    tree.push(...rows.filter((row) => row.ppid === pid).map((row) => row.pid))
-  }
-  return rows.filter((row) => tree.includes(row.pid) && row.command === "julia").map((r) => r.pid)
-}
-
-/** Whether `pid` has not exited; a zombie has, and only awaits its reaping. */
-function alive(pid: number): boolean {
-  try {
-    const state = execFileSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8" })
-    return !state.trim().startsWith("Z")
-  } catch {
-    return false
-  }
+    .filter(([pid, command]) => pid !== "" && command === "julia")
+    .map(([pid]) => Number(pid))
 }
 
 /** Every console error, uncaught exception and browser log error `page` produces. */
@@ -323,11 +304,43 @@ const allLive = (page: Page) =>
 
 const frequencyWrites = (writes: string[]) => writes.filter((w) => w.includes("freq")).length
 
+/**
+ * The attach suite's Pluto, started before either suite so that its cold start overlaps the first
+ * one. It opens no notebook until that suite asks it to.
+ */
+const unsecured = await (async () => {
+  const port = await freePort()
+  let output = ""
+  const args = ["--startup-file=no", `--project=${KERNEL}`, "-e", PLUTO_WITHOUT_SECRET]
+  const server = supervise(process.env.JULIA ?? "julia", [...args, String(port)], (line) => {
+    output += `${line}\n`
+  })
+  let exited = false
+  void server.exited.then(() => (exited = true))
+  return { server, plutoUrl: `http://127.0.0.1:${port}`, output: () => output, exited: () => exited }
+})()
+
+/**
+ * One Chromium for both suites, each in a context of its own. Every assertion runs in a browser
+ * that can reach nothing but this machine, so "the plot draws" is a statement about a lecture hall
+ * with no wifi rather than about this desk. The full Chromium rather than the headless shell,
+ * which refuses the wake lock Slidev requests.
+ */
+let browser: Browser
+
+before(async () => {
+  browser = await chromium.launch({ channel: "chromium", args: [NO_NETWORK] })
+})
+
+after(async () => {
+  await browser.close()
+  await unsecured.server.stop()
+})
+
 describe("a live deck in a real browser", () => {
   const { deck, notebook } = workspace()
   let slidev: Process | undefined
-  let browser: Browser | undefined
-  let context: BrowserContext
+  let context: BrowserContext | undefined
   let view: Page
   let url: string
   let viewProblems: string[]
@@ -345,10 +358,6 @@ describe("a live deck in a real browser", () => {
     const serving = () => fetch(url).then((r) => r.ok, () => false)
     await until(`slidev to serve ${url}`, serving, SLIDEV_TIMEOUT, slidev)
 
-    // Every assertion runs in a browser that can reach nothing but this machine, so "the plot
-    // draws" is a statement about a lecture hall with no wifi rather than about this desk. The
-    // full Chromium rather than the headless shell, which refuses the wake lock Slidev requests.
-    browser = await chromium.launch({ channel: "chromium", args: [NO_NETWORK] })
     context = await browser.newContext()
     view = await context.newPage()
     viewProblems = watchProblems(view)
@@ -363,7 +372,7 @@ describe("a live deck in a real browser", () => {
   })
 
   after(async () => {
-    await browser?.close()
+    await context?.close()
     if (slidev !== undefined) {
       await stop(slidev, "SIGTERM", SHUTDOWN_TIMEOUT)
     }
@@ -518,7 +527,6 @@ describe("a live deck in a real browser", () => {
     { skip: process.platform !== "linux" && "the renderer's resident size is read from /proc" },
     async () => {
       // The bound allows for Slidev and Vite's dev client.
-      assert.ok(browser !== undefined)
       const resident = await rendererResidentKb(browser)
       assert.ok(resident.length > 0)
       assert.ok(Math.max(...resident) < 800 * 1024, `renderers hold ${resident.join(", ")} kB`)
@@ -627,7 +635,7 @@ describe("a live deck in a real browser", () => {
     await until("the readout to follow the slider", () => readoutShows(view, 5))
     // A copy that followed by re-sending would write after the run settles, so the count is read
     // once a second write has had time to be collected, sent and settled.
-    await sleep(2000)
+    await sleep(NO_WRITE_WAIT_MS)
     assert.deepEqual(await sliderValues(view), ["5", "5", "5"])
     assert.equal(frequencyWrites(viewWrites) - before, 1)
   })
@@ -640,6 +648,7 @@ describe("a live deck in a real browser", () => {
     let presenterWrites: string[]
 
     before(async () => {
+      assert.ok(context !== undefined)
       presenter = await context.newPage()
       presenterProblems = watchProblems(presenter)
       presenterWrites = watchBondWrites(presenter)
@@ -659,7 +668,7 @@ describe("a live deck in a real browser", () => {
       await until("the presenter's plot to draw", async () => (await line.count()) > 0)
       assert.ok(await copiesShow(presenter, 5))
       // Long enough for the bond layer's widgets to have reported, had they been going to write.
-      await sleep(3000)
+      await sleep(NO_WRITE_WAIT_MS)
       assert.deepEqual(presenterWrites, [])
     })
 
@@ -716,7 +725,7 @@ describe("a live deck in a real browser", () => {
     let stopped: string
 
     before(async () => {
-      await browser?.close()
+      await context?.close()
       // What a terminal sends slidev on Ctrl-C when its stdin is not a terminal.
       stopped =
         slidev === undefined ? "never started" : await stop(slidev, "SIGINT", SHUTDOWN_TIMEOUT)
@@ -733,28 +742,18 @@ describe("a live deck in a real browser", () => {
 
 describe("a live deck attached to a running Pluto server", () => {
   const { deck, notebook } = workspace()
-  let pluto: ReturnType<typeof supervise> | undefined
-  let plutoOutput = ""
-  let plutoUrl: string
+  const { plutoUrl } = unsecured
   let slidev: Process | undefined
-  let browser: Browser | undefined
+  let context: BrowserContext | undefined
   let page: Page
   let pageProblems: string[]
   /** The attached server and its notebook's worker, which the deck must leave running. */
   let attached: number[] = []
 
   before(async () => {
-    const plutoPort = await freePort()
-    plutoUrl = `http://127.0.0.1:${plutoPort}`
-    const args = ["--startup-file=no", `--project=${KERNEL}`, "-e", PLUTO_WITHOUT_SECRET]
-    pluto = supervise(process.env.JULIA ?? "julia", [...args, String(plutoPort)], (l) => {
-      plutoOutput += `${l}\n`
-    })
-    let plutoExited = false
-    void pluto.exited.then(() => (plutoExited = true))
     const listing = async () => {
-      if (plutoExited) {
-        throw new Error(`Pluto exited, and said:\n${plutoOutput}`)
+      if (unsecured.exited()) {
+        throw new Error(`Pluto exited, and said:\n${unsecured.output()}`)
       }
       return fetch(`${plutoUrl}/notebooklist`).then((r) => r.ok, () => false)
     }
@@ -768,18 +767,18 @@ describe("a live deck attached to a running Pluto server", () => {
     const serving = () => fetch(url).then((r) => r.ok, () => false)
     await until(`slidev to serve ${url}`, serving, SLIDEV_TIMEOUT, slidev)
 
-    browser = await chromium.launch({ channel: "chromium", args: [NO_NETWORK] })
-    page = await (await browser.newContext()).newPage()
+    context = await browser.newContext()
+    page = await context.newPage()
     pageProblems = watchProblems(page)
     await page.goto(`${url}/#/2`, { timeout: NAVIGATION_TIMEOUT })
   })
 
   after(async () => {
-    await browser?.close()
+    await context?.close()
     if (slidev !== undefined) {
       await stop(slidev, "SIGTERM", SHUTDOWN_TIMEOUT)
     }
-    await pluto?.stop()
+    await unsecured.server.stop()
     for (const pid of attached.filter(alive)) {
       process.kill(pid, "SIGKILL")
     }
@@ -810,7 +809,8 @@ describe("a live deck attached to a running Pluto server", () => {
     await page.reload({ timeout: NAVIGATION_TIMEOUT })
     const kernelUp = () => page.evaluate(() => document.body.dataset.kernel === "ready")
     await until("the attached kernel to come up", kernelUp, KERNEL_TIMEOUT, slidev)
-    attached = pluto?.pid === undefined ? [] : juliaProcesses(pluto.pid)
+    const root = unsecured.server.pid
+    attached = root === undefined ? [] : juliaProcesses(root)
   })
 
   it("starts no Julia of its own", () => {
@@ -832,7 +832,7 @@ describe("a live deck attached to a running Pluto server", () => {
     let stopped: string
 
     before(async () => {
-      await browser?.close()
+      await context?.close()
       stopped =
         slidev === undefined ? "never started" : await stop(slidev, "SIGINT", SHUTDOWN_TIMEOUT)
     })
@@ -845,7 +845,7 @@ describe("a live deck attached to a running Pluto server", () => {
     })
 
     it("lets whoever started the server stop it", async () => {
-      await pluto?.stop()
+      await unsecured.server.stop()
       await until("the attached server to exit", () => !attached.some(alive), 10_000)
     })
   })
