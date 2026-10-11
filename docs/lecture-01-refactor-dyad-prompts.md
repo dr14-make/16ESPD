@@ -1,6 +1,6 @@
 # Dyad agent prompts — Lecture 1 refactor onto the hands-on car
 
-Five tasks, in order. Hand them over one at a time and check the reported numbers before you
+Six tasks, in order. Hand them over one at a time and check the reported numbers before you
 start the next. The rationale is in `docs/lecture-01-live-build-plan.md`.
 
 These rules apply to every task:
@@ -11,11 +11,34 @@ These rules apply to every task:
   moved value means a wiring or parameter mistake.
 - Keep the instance names `plant` and `controller` in every loop. The notebooks read paths like
   `loop.plant.v_kmh`, `loop.plant.engine.lag.x` and `loop.plant.body.mass.v`.
-- Do not touch `dyad/Vehicle/`. Lectures 2 and 3 use it.
+- Do not touch `dyad/Vehicle/`. Lectures 2 and 3 use it. The one exception is
+  `FrictionProfile` in task 0, which only Lecture 1 uses.
 - Compile and run the tests after each task, and commit the regenerated `generated/` files with
   the `.dyad` changes.
 - Comments state constraints and invariants only, with no history ("previously", "was renamed
   from"). Write in US English.
+
+---
+
+## Task 0 — `FrictionProfile` raises grip instead of lowering it
+
+`Vehicle.FrictionProfile` is `Pulse(amplitude = low, offset = 1.0, ...)`. A pulse outputs
+`offset + amplitude` while it is on, so the "low-grip patch" outputs `1 + low`: with
+`low = 0.05` the patch raises the friction multiplier to 1.05. This is why
+`SlipCruiseIcePatch`'s `ice_patch` test barely moves (final speed 89.99954 km/h against a
+90 km/h setpoint, slip 0.0016).
+
+1. Set `amplitude = low - 1.0`, so the output is 1 outside the patch and `low` on it.
+2. `TestFrictionProfile` only checks the output before and after the patch. Add a second test
+   case that stops inside the patch (`stop = 0.75` with the existing `start_time = 0.5`,
+   `duration = 0.5`) and expects `sink.y` = 0.2 there.
+3. Re-run `SlipCruiseIcePatch`. Its `ice_patch` expectations are the one place in this whole
+   refactor where values are meant to change. Update them to the new run and report the old and
+   new values side by side: final `loop.plant.v_kmh`, final `loop.plant.kappa`, and the peak
+   slip on the patch.
+
+**Done when** both `TestFrictionProfile` cases pass, and on the patch the run shows wheelspin
+(slip well above `sAdhesion = 0.04`) followed by recovery after the patch.
 
 ---
 
@@ -113,7 +136,7 @@ expectation.
 6. **`SlipCruiseLoop`**: `plant = HandsOn.SlipCar(theta_e, T_max, m, CdA)` plus
    `CruiseController`. `SlipCar` reports `wheel_kmh`, not `wheel_rpm` or `kappa`, so update any
    test signal paths to `plant.wheel_kmh` and `plant.wheel.kappa`. Keep the `ice_patch`
-   expectations on the vehicle speed.
+   expectations task 0 set.
 7. **`WheeledCruiseStep`** (in `WheeledCarPlant.dyad`): `plant = HandsOn.WheeledCar(T_max, J_w)`
    plus `CruiseController`. Move this component and its analysis into a new
    `dyad/Lecture1/WheeledCruiseStep.dyad`.
