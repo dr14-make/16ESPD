@@ -1,0 +1,57 @@
+"""Step 7: the flat loop with `noise` on the measured speed and every limit lifted."""
+component NoisyCruiseStep
+  demand = BlockComponents.Sources.Step(offset = 90, height = 20, start_time = 0) {^demand}
+  controller = CruiseController(y_max = 1e6, y_min = -1e6) {^controller}
+  plant = GradeCar(T_max = 1e6) {^plant}
+  road = BlockComponents.Sources.Constant(k = 0) {^road}
+  noise = MeasurementNoise(amplitude = 0.2) {^noise}
+relations
+  connect(demand.y, controller.u_s) {^id_demand}
+  connect(plant.v_kmh, noise.u) {^id_sense}
+  connect(noise.y, controller.u_m) {^id_feedback}
+  connect(controller.y, plant.tau_cmd) {^id_command}
+  connect(road.y, plant.grade) {^id_road}
+  initial plant.body.mass.s = 0
+  initial plant.body.mass.v = 25
+  initial plant.engine.lag.x = 31.078
+metadata {
+  "Dyad": {
+    "tests": {
+      "wd1": {
+        "stop": 40,
+        "params": {"controller.wd": 1, "controller.xd0": 0},
+        "atol": {"plant.v_kmh": 0.1, "noise.y": 0.001, "controller.y": 1},
+        "expect": {
+          "initial": {"plant.v_kmh": 90, "noise.y": 90.38071258530745, "controller.y": 12085.48},
+          "final": {"plant.v_kmh": 108.944}
+        }
+      },
+      "wd0": {
+        "stop": 40,
+        "atol": {"plant.v_kmh": 0.1, "noise.y": 0.001, "controller.y": 1},
+        "expect": {
+          "initial": {"plant.v_kmh": 90, "noise.y": 90.38071258530745, "controller.y": 885.48},
+          "final": {"plant.v_kmh": 110.216}
+        }
+      }
+    }
+  },
+  "_links": {
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}},
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 450, "y2": 550}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 620, "y2": 720}}}},
+    "id_demand": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_command": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_road": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 615, "y": 670}, {"x": 615, "y": 545}], "E": 2}], "path": {}}},
+    "noise": {"Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 450, "y2": 550}}}},
+    "id_sense": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_feedback": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 500}, {"x": 990, "y": 850}, {"x": 400, "y": 850}], "E": 2}], "path": {}}}
+  }
+}
+end
+
+analysis NoisyCruiseTransient
+  extends TransientAnalysis(stop = 40)
+  model = NoisyCruiseStep()
+end

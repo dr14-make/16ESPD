@@ -1,0 +1,58 @@
+"""Step 10: the loop on `SlipCar`, crossing an 8 s ice patch from 4 to 12 s."""
+component SlipCruiseIcePatch
+  demand = BlockComponents.Sources.Constant(k = 90) {^demand}
+  controller = CruiseController(y_max = 150, y_min = 0, xi0 = 31.078 / 56) {^controller}
+  plant = VehicleSystemsComponents.HandsOn.SlipCar() {^plant}
+  road = BlockComponents.Sources.Constant(k = 0) {^road}
+  friction = BlockComponents.Sources.Pulse(amplitude = 0.05, offset = 1.0, start_time = 4, duty_cycle = 1.0, period = 8) {^friction}
+relations
+  connect(demand.y, controller.u_s) {^id_demand}
+  connect(plant.v_kmh, controller.u_m) {^id_feedback}
+  connect(controller.y, plant.tau_cmd) {^id_command}
+  connect(road.y, plant.grade) {^id_road}
+  connect(friction.y, plant.mu_scale) {^id_friction}
+  initial plant.body.mass.s = 0
+  initial plant.body.mass.v = 25
+  initial plant.engine.lag.x = 31.078
+  initial plant.wheel_inertia.phi = 0
+  initial plant.wheel_inertia.w = 25 / plant.r
+metadata {
+  "Dyad": {
+    "tests": {
+      "patch_end": {
+        "stop": 12,
+        "atol": {"plant.v_kmh": 0.05, "plant.wheel_kmh": 1, "plant.wheel.kappa": 0.05},
+        "expect": {
+          "initial": {"plant.v_kmh": 90, "plant.wheel_kmh": 90},
+          "final": {"plant.v_kmh": 86.903, "plant.wheel_kmh": 3400.45, "plant.wheel.kappa": 38.129}
+        }
+      },
+      "recovered": {
+        "stop": 45,
+        "atol": {"plant.v_kmh": 0.1, "plant.wheel.kappa": 0.05},
+        "expect": {
+          "initial": {"plant.v_kmh": 90},
+          "final": {"plant.v_kmh": 90.065, "plant.wheel.kappa": 0.0015}
+        }
+      }
+    }
+  },
+  "_links": {
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}},
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 400, "y2": 600}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 150, "y2": 250}}}},
+    "friction": {"Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 300, "y2": 400}}}},
+    "id_demand": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_command": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 500}, {"x": 550, "y": 570}], "E": 2}], "path": {}}},
+    "id_road": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 620, "y": 200}, {"x": 620, "y": 414}], "E": 2}], "path": {}}},
+    "id_friction": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 350}, {"x": 600, "y": 444}], "E": 2}], "path": {}}},
+    "id_feedback": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 530}, {"x": 800, "y": 850}, {"x": 400, "y": 850}], "E": 2}], "path": {}}}
+  }
+}
+end
+
+analysis SlipCruiseTransient
+  extends TransientAnalysis(stop = 45)
+  model = SlipCruiseIcePatch()
+end

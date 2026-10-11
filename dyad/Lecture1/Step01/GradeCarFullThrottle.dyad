@@ -1,0 +1,40 @@
+"""Step 1b bench: full throttle from rest on `GradeCar`, run to terminal speed."""
+component GradeCarFullThrottle
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150) {^cmd}
+  "Road gradient"
+  road = BlockComponents.Sources.Constant(k = 0) {^road}
+  car = GradeCar() {^car}
+relations
+  connect(cmd.y, car.tau_cmd) {^id1}
+  connect(road.y, car.grade) {^id2}
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+metadata {
+  "Dyad": {
+    "tests": {
+      "flat": {
+        "stop": 300,
+        "atol": {"car.v_kmh": 0.05},
+        "expect": {
+          "initial": {"car.v_kmh": 0},
+          "final": {"car.v_kmh": 246.388}
+        }
+      }
+    }
+  },
+  "_links": {
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 650, "y2": 750}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 700}, {"x": 350, "y": 545}], "E": 2}], "path": {}}}
+  }
+}
+end
+
+analysis GradeCarFullThrottleTransient
+  extends TransientAnalysis(stop = 300)
+  model = GradeCarFullThrottle()
+end

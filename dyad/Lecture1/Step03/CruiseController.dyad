@@ -1,0 +1,31 @@
+"""Step 3: `gain` after `error`, the P controller."""
+component CruiseController
+  "Setpoint in km/h"
+  u_s = RealInput() {^u_s}
+  "Measured speed in km/h"
+  u_m = RealInput() {^u_m}
+  "Torque command in N·m"
+  y = RealOutput() {^y}
+  error = BlockComponents.Math.Add(k1 = 1, k2 = -1) {^error}
+  gain = BlockComponents.Math.Gain(k = k) {^gain}
+  "Controller gain in N·m per km/h"
+  parameter k::Real = 56
+relations
+  connect(u_s, error.u1) {^id_us_error}
+  connect(u_m, error.u2) {^id_um_error}
+  connect(error.y, gain.u) {^id_error_gain}
+  connect(gain.y, y) {^id_gain_y}
+metadata {
+  "_links": {
+    "u_s": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}, "diagram": {"x1": -50, "x2": 50, "y1": 420, "y2": 520}}}},
+    "u_m": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 270}, "diagram": {"x1": 0, "x2": 100, "y1": 950, "y2": 1050, "rot": 270}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 950, "x2": 1050, "y1": 480, "y2": 580}}}},
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 450, "y2": 550}}}},
+    "id_us_error": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_um_error": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 50, "y": 530}], "E": 2}], "path": {}}},
+    "id_error_gain": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 430, "y": 500}, {"x": 430, "y": 530}], "E": 2}], "path": {}}},
+    "gain": {"Dyad": {"placement": {"diagram": {"x1": 640, "x2": 740, "y1": 480, "y2": 580}}}},
+    "id_gain_y": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
+end
