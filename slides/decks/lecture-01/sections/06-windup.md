@@ -41,7 +41,7 @@ A linear model has none of these: ask it for a million newton-meters and it will
 >
 > The engine can deliver **1935 N**.
 >
-> The car will lose, and head for about **118 km/h** — a 120 s climb gets it to **119.10**,
+> The car will lose, and head for about **118 km/h** — a 120 s climb gets it to **119.05**,
 > still falling.
 
 *↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/slope)*
@@ -69,7 +69,7 @@ matters too — this engine cannot brake, so downhill it has no answer at all.
 - **2023 N** — the tractive force a 10 % climb at 130 km/h demands. **1935 N** — what the
   engine can deliver. Four percent short.
 - **118 km/h** — the asymptote this climb heads for. Say *heads for*, not *settles at*: the
-  climb is 120 s long and the car is at 119.10 km/h and still falling when the road flattens.
+  climb is 120 s long and the car is at 119.05 km/h and still falling when the road flattens.
 - **y_min = 0** — the limiter's lower bound. This engine cannot produce negative torque, so
   it cannot brake.
 -->
@@ -207,7 +207,7 @@ delivers); `controller.integrator.y` on its own axis.
 
 **What the plot must show before moving on:**
 
-- the speed sagging from 130 after t = 30 s, heading for about 118, 119.10 at the crest;
+- the speed sagging from 130 after t = 30 s, heading for about 118, 119.05 at the crest;
 - `controller.y` and the delivered torque flat on 150 through the climb;
 - `controller.gain.y` and the integrator still climbing, far above anything the engine can
   give;

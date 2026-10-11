@@ -135,8 +135,9 @@ the room what `wd = 1` does and why the notebooks run 0.
 hold at that cruise — the reference `CruiseLoop` computes it the same way. Left at 0, the
 filter sees a 90 km/h step at *t* = 0 and commands a spike of −50400 N·m (−k·Nd·m0).
 
-**The plot must show, before moving on:** the speed reaching **110 km/h** with the overshoot of
-step 4 suppressed. In `controller.y` the jump at the setpoint step is the proportional term,
+**The plot must show, before moving on:** the speed reaching **110 km/h** with less overshoot
+than step 4: a peak of about 114 km/h against 115.5. The engine's 150 N·m ceiling still clips
+the start, so the room's curve overshoots more than the notebook's. In `controller.y` the jump at the setpoint step is the proportional term,
 56 × 20 N·m, as in step 4; no derivative spike rides on it. This is the PID curve of the P/PI/PID slide coming up. (The notebook also lifts
 the 150 N·m ceiling; the room's engine keeps it.)
 
@@ -525,7 +526,7 @@ routeAlias: checkpoint-pid
 
 #### Your run shows
 
-`plant.v_kmh` at **110 km/h** without the PI overshoot, and no derivative spike in
+`plant.v_kmh` at **110 km/h** with less overshoot than PI (a peak of about 114 km/h), and no derivative spike in
 `controller.y`.
 
 </div>
@@ -560,7 +561,7 @@ order — `add_d`'s signs, then `derivative`'s `T = Td / Nd`, then `xd0`.
 
 ## What this bought us
 
-- A controller that reaches the setpoint and does not overshoot getting there.
+- A controller that reaches the setpoint and overshoots far less getting there.
 - A picture of which term does what, and when — the thing to consult when a loop misbehaves.
 - Four controllers from two booleans.
 

@@ -133,8 +133,9 @@ No car has that sensor. Put a realistic one in and look at the command.
    `noise.y`.
 
 **What the plot must show (`wd = 1`):** a tall spike in `controller.y` at the setpoint step —
-the derivative of a step in the setpoint — and then a command that never stops chattering,
-while `plant.v_kmh` looks smooth.
+the derivative of a step in the setpoint — and then a command that never stops chattering.
+With every limit lifted, the kick throws the car well past the setpoint, to about 187 km/h,
+before it comes back to 110.
 
 6. Put `controller.wd = 0` and `controller.xd0 = -90` back — the section 05 defaults.
    Re-run, same axes.

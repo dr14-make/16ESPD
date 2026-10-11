@@ -339,7 +339,7 @@ In `CruiseController`:
 
 ::: tip Expected result — checkpoint PID
 
-`plant.v_kmh` reaches **110 km/h**, as in step 4, without step 4's overshoot. The jump in `controller.y` at the setpoint step is the proportional term, as before; no derivative spike rides on it. The plot matches the PID curve in the lecture deck.
+`plant.v_kmh` reaches **110 km/h**, with less overshoot than step 4: a peak of about **114 km/h** against 115.5, since the engine's 150 N·m ceiling still clips the start. The jump in `controller.y` at the setpoint step is the proportional term, as before; no derivative spike rides on it. The plot matches the PID curve in the lecture deck.
 
 :::
 
@@ -513,7 +513,7 @@ Your library cannot see the course library's `GradeProfile`; the pulse is what t
 
 ::: tip Expected result
 
-The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.10 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
+The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.05 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
 
 Compare with the course model `CruiseClimb`, which closes the loop with the library's `LimPID` and its back-calculation anti-windup; it is back at **130 km/h** at 400 s.
 
@@ -634,7 +634,7 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
 
 ::: tip Expected result
 
-At `wd = 1` the car still makes the step — `plant.v_kmh` climbs from 90 towards 110 km/h, and the noisy `noise.y` wiggles a few tenths of a km/h around it — but `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows: in the 20–30 s window the swing of `controller.y` falls from about **1751 N·m** at `Nd = 100` to **316 N·m** at `Nd = 2` — still twice what the engine can deliver.
+At `wd = 1` the setpoint kick, with every limit lifted, throws the car well past the step — `plant.v_kmh` peaks at about **187 km/h** before it comes back to 110, with the noisy `noise.y` a few tenths of a km/h around it — and `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows: in the 20–30 s window the swing of `controller.y` falls from about **1751 N·m** at `Nd = 100` to **316 N·m** at `Nd = 2` — still twice what the engine can deliver.
 
 Reference: `NoisyCruiseLoop`, bench `NoisyCruiseStep`. To reproduce this step, run `NoisyCruiseTransient` with `Td = 0.5`, `wd` per run (1, then 0; its `xd0` follows `wd` by itself), `T_max = 1e6`, `y_max = 1e6`, `y_min = -1e6` and `stop = 40`.
 
