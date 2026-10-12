@@ -167,7 +167,7 @@ control, and for the cascade control of lecture 2.
 
 ---
 
-## Every number you predicted, and hit
+## Predicted values, step by step
 
 | Step | You build | Your run should show | Worked out in |
 | --- | --- | --- | --- |

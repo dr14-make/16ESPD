@@ -181,7 +181,7 @@ supports connect to the ground block.
 
 ---
 
-## The one parameter that bites
+## Body parameters, and the sign of `f_nominal`
 
 ```julia
 parameter m::Dyad.Mass = 1400

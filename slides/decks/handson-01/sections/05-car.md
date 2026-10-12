@@ -175,7 +175,7 @@ anything about how it gets there. The next lecture's controller will find 31.1
 newton-meters by itself, without being told.
 
 **Ask the room, before the next slide:** 246 km/h from a 150 N·m engine. Does
-anyone believe that? *(Leave the question open; the next slide answers it.)*
+anyone believe that? *(Leave the question open; the slide after the run answers it.)*
 -->
 
 ---
@@ -338,7 +338,7 @@ balance at the start of this step, and 23.6 s to 100 km/h was predicted there to
 
 ---
 
-## 246 km/h is wrong — and that is fine
+## Where the 246 km/h model is wrong
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>

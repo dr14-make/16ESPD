@@ -80,7 +80,7 @@ leaves them out.
 
 **Ask the room first,** before showing the numbers: how much slower will the
 car be? Most guess a lot. *(0.2 s out of 23.6. Not every added detail matters; part of
-modeling is knowing which ones do. But the wheel now has its own speed, and in step 08 that is
+modeling is knowing which ones do. But the wheel now has its own speed, and in step 09 that is
 what lets it spin.)*
 -->
 

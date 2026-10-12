@@ -7,7 +7,7 @@ layout: section
 
 # One model, two views
 
-Place two blocks, wire them, set a parameter — then see the same three facts as code.
+Place two blocks, wire them, set a parameter — then see the same model as code.
 
 [page: step 01](../handson/lecture-01/#tour) · reference `dyad/HandsOn/Tour.dyad`
 
@@ -46,7 +46,7 @@ needed another name. Theirs stays `Engine` — step 02 finishes it.
 
 ---
 
-## ⇄ — the same three facts
+## ⇄ — the same model as code
 
 ```julia
 component Engine

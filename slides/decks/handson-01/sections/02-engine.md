@@ -237,7 +237,7 @@ D bench · E run and plot. Walk the room after C — a broken engine makes D imp
 
 ---
 
-## Every push needs something to push against
+## Support ports: every force needs a reaction
 
 <div class="grid grid-cols-[1.4fr_1fr] gap-8">
 <div>
@@ -440,7 +440,7 @@ named differently. Use their library's name.
 
 ---
 
-## A delay the computer can handle
+## Approximating the delay: `PadeDelay`
 
 <div class="grid grid-cols-2 gap-8">
 <div>
