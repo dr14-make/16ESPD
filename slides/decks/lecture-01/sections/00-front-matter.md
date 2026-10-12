@@ -359,6 +359,124 @@ output. It is what the sensor reports, which is the state plus noise.
 
 ---
 
+## Five jobs, one diagram
+
+| Job | Where it sits on the diagram | Today |
+|---|---|---|
+| **Planning** | produces the reference r | the driver sets 110 km/h |
+| **Control** — feedforward or feedback | turns r, and maybe y, into u | PID, built block by block |
+| **State estimation** | turns the noisy y into an estimate of x | a derivative filter, in 07 |
+| **Modeling** | first principles, or fitted to data: *system identification* | the hands-on car; the step test in 01 |
+| **Analysis, simulation, test** | does the loop meet its requirements? | every run in Dyad |
+
+Models feed all the others: the controller, the estimator, the plan and the analysis.
+
+<div class="text-xs opacity-60 mt-6">
+
+Reference: Brian Douglas, *Everything You Need to Know About Control Theory*, MathWorks Control
+Systems in Practice — <a href="https://youtu.be/lBC1nEq0_nk" target="_blank">youtu.be/lBC1nEq0_nk</a>
+
+</div>
+
+<!--
+Control theory is not one technique. It is five jobs, and each of them lives somewhere on the
+diagram you just saw.
+
+Planning decides what we want, the reference. For a self-driving car that is a whole field: a
+path to the destination that avoids obstacles, follows the rules of the road, and that the car
+can physically drive. For us it is one number. The driver sets 110.
+
+Control turns the reference into the input. Feedforward does it without looking at the result.
+Feedback looks at the measurement and corrects. Today we build a feedback controller, PID.
+
+State estimation is the job between the sensor and the controller. The sensor gives us y, which
+is noisy, and sometimes not even the quantity we need. Estimation turns it into our best guess of
+the true state. A simple running average does that. So does a Kalman filter. In section 07 you
+will meet the simplest one there is, a filter on the derivative.
+
+Modeling is the job underneath all the others. You can write a model from physics, from first
+principles, the way you built the car in the hands-on. Or you can measure the real system and
+fit a model to the data. That is called system identification, and the step test in section 01
+is exactly that.
+
+And analysis, simulation and test is how we check that the result works. Stability margins,
+Bode and Nyquist plots, and simulation. Every run you do in Dyad today is this job.
+
+The one sentence to remember is the last line on the slide. The model is used everywhere: to
+design the controller, to build the estimator, to make a plan the system can follow, and to
+analyze the result. That is why the hands-on came first.
+
+The table follows a short MathWorks video by Brian Douglas. The link is on the slide. It takes
+about fifteen minutes, and it is worth watching tonight.
+-->
+
+---
+
+## Feedback is a family, and two questions come first
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+| Family | Examples |
+|---|---|
+| Linear | **PID** — today; full state feedback |
+| Nonlinear | on-off, sliding mode, gain scheduling |
+| Robust | μ-synthesis, active disturbance rejection |
+| Adaptive | extremum seeking, model reference adaptive |
+| Optimal | LQR |
+| Predictive | model predictive control |
+| Intelligent | fuzzy logic, reinforcement learning |
+
+</div>
+<div>
+
+### Is it controllable?
+
+Can the input actually move the state we care about? Torque moves the car's speed: yes.
+
+### Is it observable?
+
+Can we work out every state we feed back from what we measure? A speedometer alone also gives
+acceleration, as its derivative: yes.
+
+### Feedback is powerful and dangerous
+
+Feedforward changes how a system is operated. Feedback changes its dynamics, so it can make a
+system more stable, or unstable.
+
+</div>
+</div>
+
+<!--
+Feedback is not one algorithm. It is a family. On the left are the main branches, and each has
+many members. Linear controllers, like PID and full state feedback, assume the system behaves
+roughly linearly. Nonlinear ones, like a simple on-off thermostat, sliding mode or gain
+scheduling, do not. Robust controllers are designed to keep working when the model is wrong by a
+known amount. Adaptive ones change themselves as the system changes. Optimal controllers, like
+LQR, balance performance against effort by minimizing a cost. Predictive controllers run a model
+of the system inside the controller and choose the input that makes the predicted future match
+the reference. And intelligent controllers, like fuzzy logic or reinforcement learning, learn
+from data.
+
+Which one you pick depends on the system and on what you want it to do. Today we use the most
+common member of the family by far, PID.
+
+Before any of them, two questions. First, is the system controllable? Can our input actually move
+the state we care about? For cruise control, torque moves the speed. Yes. Second, is it
+observable? Can we work out every state we feed back from what we measure? We do not need a
+sensor on every state. A speedometer alone also tells us acceleration, because acceleration is
+the derivative of speed. So yes.
+
+And the last box is a warning that will come back all afternoon. Feedforward changes how we
+operate a system. Feedback changes what the system is. It changes its dynamics. That means
+feedback can take an unstable system and make it stable, and it can just as easily take a stable
+one and make it unstable. One way to put it: feedback is a hack we need because we can never
+know the system and its environment perfectly. It is powerful, and we have to analyze it before
+we trust it.
+-->
+
+---
+
 ## Where the models live
 
 <div class="grid grid-cols-2 gap-8">

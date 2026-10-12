@@ -4,11 +4,11 @@ What the lecturer needs during Lecture 1 but does not read aloud. The speaker no
 `slides/decks/lecture-01/sections/` are a read-aloud script; timing, setup and contingencies
 live here, one section per deck section, in deck order.
 
-**Total: 184 minutes**, students building along in Dyad Studio.
+**Total: 187 minutes**, students building along in Dyad Studio.
 
 | Section | Minutes |
 |---|---:|
-| 00 Front matter | 9 |
+| 00 Front matter | 12 |
 | 01 The car | 22 |
 | 02 Open vs closed loop | 15 |
 | 03 P | 15 |
@@ -45,9 +45,10 @@ live here, one section per deck section, in deck order.
 - **If a solve stalls in front of the room:** every notebook is committed with its outputs.
   Scroll to the plot that is already there and keep talking. Do not debug live.
 
-## 00 Front matter — 9 min
+## 00 Front matter — 12 min
 
-- Slide budgets: "What a system is" 2, "What a control system is" 1, "Three kinds of control" 1.
+- Slide budgets: "What a system is" 2, "What a control system is" 1, "Three kinds of control" 1,
+  "Five jobs, one diagram" 2, "Feedback is a family" 1.
 - "The car, once": half a minute; section 01's recap comes back to the numbers.
 - "What a system is": walk the table against the students' `Car` diagram if Studio is up.
 - "Where the models live": leave it up while you state the HandsOn/Lecture1 rule. The gray
