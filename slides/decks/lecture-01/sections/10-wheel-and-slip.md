@@ -218,6 +218,9 @@ coefficients.
 
 ## Why the wheel runs away
 
+<div class="grid grid-cols-[1fr_1fr] gap-8">
+<div>
+
 ### More slip → less force → more slip.
 
 That is a positive feedback loop, and it is *inside the plant*.
@@ -231,6 +234,14 @@ In that region the plant is **open-loop unstable**.
 >
 > Here, past the peak, the answer is **no**, and no amount of PID tuning fixes a plant that is
 > unstable on its own.
+
+</div>
+<div>
+
+![The dry-road friction curve: grip rises with slip to a peak, then falls toward a sliding plateau. The region past the peak, where more slip gives less force, is shaded.](/figures/10-past-the-peak.svg)
+
+</div>
+</div>
 
 <!--
 The loop is a recap. The box is new: it ties this loop to the tuning in section 08.
