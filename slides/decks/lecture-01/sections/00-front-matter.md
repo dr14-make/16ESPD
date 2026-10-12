@@ -36,7 +36,7 @@ The car never changes. Every new idea in this lecture is a change to the *contro
 change of subject — so whatever you understand about the car at minute twenty is still true at
 minute one hundred and seventy.
 
-**Timing:** 180 minutes, students building along in Dyad Studio. Front matter 5 · 01 the car 22
+**Timing:** 184 minutes, students building along in Dyad Studio. Front matter 9 · 01 the car 22
 · 02 open vs closed loop 15 · 03 P 15 · 04 PI 18 · 05 PID 18 · **break 10** · 06 windup 25 ·
 07 derivative and noise 15 · 08 tuning 18 · 09 discretization 8 (demo only) · 10 wheel and
 slip 11. Each section's first slide repeats its own budget in these notes.
@@ -97,6 +97,132 @@ diagram you have on your own screen. The one exception is 09, which is a demo.
 
 **Point at:** rows 03 and 05. Those are the two checkpoints — P and PID. Fall behind and the
 guide page gets you back on at either one.
+-->
+
+---
+
+## What a system is
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+A set of interacting parts that forms one whole. Every system has:
+
+- **structure** — parts, related directly or through each other
+- **behavior** — processes that turn inputs into outputs: material, energy, data
+- **interconnection** — the parts and processes are linked
+
+Too big to understand at once? Split it into subsystems, and those into parts. You already did:
+`Car` is `Engine`, `Driveline` and `Body`.
+
+</div>
+<div>
+
+| Element | In your `Car` |
+|---|---|
+| Inputs and outputs | `tau_cmd` in, `v_kmh` out |
+| Processor | engine, driveline, body |
+| Control | the cruise controller, built today |
+| Environment | the road grade, the air |
+| Feedback | the speed sensor, back to the controller |
+| Boundary and interface | the component's ports |
+
+</div>
+</div>
+
+<!--
+**Say:** before any control, what is the thing we control? A system is parts that interact and
+together do something none of them does alone. The engine alone does not move; the body alone
+does not accelerate. Together they are a car.
+
+**Walk the left column** in one sentence each. Structure is the diagram; behavior is what the
+simulation does with it; interconnection is the wires. The last line is the one that matters
+for how we work: divide and conquer. Nobody models a car in one equation. You modeled an
+engine, a driveline and a body, and connected them — that decomposition *is* the hands-on.
+
+**Walk the table** top to bottom, pointing at their `Car` diagram if Studio is up. Two rows are
+empty today and the lecture fills them: *control* is the controller we build from section 02
+on, and *feedback* is the wire from `v_kmh` back into it. The *boundary* row is the one people
+skip: the ports of a component are exactly where the system ends and its environment begins.
+Whatever crosses a port is an input or an output; whatever does not is internal.
+
+**Timing:** 2 minutes.
+-->
+
+---
+
+## What a control system is
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+### Control system
+
+A mechanism that changes the future behavior of a system, so that its output tends toward the
+state we want.
+
+### Control theory
+
+The mathematics of choosing that input. Without it, the strategy is trial and error.
+
+</div>
+<div>
+
+### The question, every time
+
+- a **plant** — the system we are given: here, the car
+- a **desired output** — here, 110 km/h
+- **how do we change the input** to get it? Here, the torque command.
+
+The rest of this lecture is answers to the third line. Whether the answer looks at the output
+or not is <Link to="open-vs-closed-loop">section 02</Link>.
+
+</div>
+</div>
+
+<!--
+**Say:** a control system is the part we add so that the plant ends up where we want it, not
+just where it happens to go. Control theory is how we pick the input on purpose instead of by
+trying things. Trial and error does work — the first tuning method in section 08 is literally
+"guess and check" — but it does not tell you why, and it does not tell you when it will stop
+working.
+
+**Point at the right column:** this is the shape of every control problem. Plant, desired
+output, and the question of the input. Today the plant is fixed — the car they built — and the
+desired output is a speed. Everything from section 02 on is a different answer to the third
+line.
+
+**Timing:** 1 minute.
+-->
+
+---
+
+## Three kinds of control
+
+| Kind | The reference | Example |
+|---|---|---|
+| **Fixed setpoint** | set once, held | cruise control at 110 km/h — **today** |
+| **Follow-up** | moves, and nobody knows in advance how | adaptive cruise behind the car in front; automatic climate control |
+| **Program** | moves along a schedule fixed in advance | central heating by time of day; a radar antenna's sweep |
+
+The controller is the same in all three. Only where the reference comes from changes.
+
+<!--
+**Say:** controllers are often sorted by what their reference does. Fixed setpoint: the driver
+sets 110 and the job is to hold it against hills and wind — that is our whole lecture.
+Follow-up: the reference moves, driven by something else, and you cannot know its future —
+adaptive cruise follows the car ahead, whatever it does. Program: the reference moves, but on a
+timetable written beforehand — the heating that warms the house at six.
+
+**Then say the last line.** The PID we build today does not care which of the three it is in;
+it only ever sees the error. What changes is the job: holding a setpoint is mostly about
+rejecting disturbances, following a moving reference is mostly about speed of response.
+
+**Bridge:** open loop versus closed loop is the next distinction, and it gets a whole section —
+02. The three names for a step response — transient, steady state, dynamic — come in section 01
+on the car's own step test.
+
+**Timing:** 1 minute.
 -->
 
 ---
