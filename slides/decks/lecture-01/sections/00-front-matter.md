@@ -102,6 +102,8 @@ Too big to understand at once? Split it into subsystems, and those into parts. Y
 </div>
 </div>
 
+<img src="/diagrams/00-car-chain.svg" class="mx-auto h-52" alt="The car as a chain of parts: the pedal command goes into the engine, the engine's shaft into the gear and wheel, the wheel pushes the body along the road, and a speedometer reads the body's speed in km/h.">
+
 <!--
 First, what do we control? A system is parts that interact and together do something none of them
 does alone. The engine alone does not move. The body alone does not accelerate. Together they are a
