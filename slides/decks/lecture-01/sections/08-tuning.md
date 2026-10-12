@@ -255,8 +255,7 @@ UNLIMITED = 1.0e6                # N.m — the ceiling lifted away
 
 k_cc, Ti_cc, Td_cc = cohen_coon(K, tau, theta)
 
-# `with_I` and `with_D` are structural, so a PID is a different compiled
-# model rather than the same one with gains set.
+# Both switches on: the full PID, with the Cohen-Coon gains.
 pid = Scenarios.CruiseLoopTransient(
     model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
                                      with_I = true, with_D = true),
@@ -313,7 +312,7 @@ quick, and usually oscillatory. It is a starting point, not an answer.
 ```julia [08-tuning.ipynb · cell Ziegler-Nichols]
 DELTA = 0.1     # km/h — the smallest poke that measures cleanly
 
-# P-only, both structural switches off: the pure proportional
+# P-only, both switches off: the pure proportional
 # loop that Ziegler-Nichols step 2 asks for.
 probe = Scenarios.CruiseLoopTransient(
     model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,

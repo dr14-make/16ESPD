@@ -203,10 +203,11 @@ harder. This catches people out every single year. The gain k multiplies the who
 it scales every path together. And the tau inside the integral is just the variable of
 integration. It is not the plant's time constant. Unfortunate collision of names.
 
-In the reference model, `with_I` is a structural parameter of `CruiseController`. The
-integrator is either compiled into the equations or it is not there at all, and a block called
-`zero_i` holds its slot when it is out. So P and PI are two different models, not one model
-with a gain at zero. On the next slide you get the same effect by hand: you add the block.
+In the reference model, `with_I` is an ordinary parameter of `CruiseController`. The
+integrator is always in the diagram, and an on/off block called `i_switch` sits between it and
+the sum. With `with_I` false, the switch passes zero and the integrator holds still. So P and PI
+are one model with one switch flipped. On the next slide you get the same effect by hand: you
+add the block.
 =====
 The formula has a bracket: the error, plus the integral over T i, all times k. So the diagram
 gets a summing block in front of the gain, with three inputs, one for each term the finished
@@ -537,8 +538,8 @@ equations. `Engine` is one. A harness is a component whose job is to make anothe
 by connecting sources to its inputs and setting initial conditions. An analysis is a named,
 runnable experiment: a model plus a stop time plus the parameters you may vary.
 `CruiseLoopTransient` is one. A structural parameter is one that changes the **equations**, so
-each value is a separately compiled model. `with_I` is one. An ordinary parameter like `k` is
-not.
+each value is a separately compiled model. `theta_e`, the engine's delay, is one. An ordinary
+parameter like `k` is not.
 -->
 
 ---

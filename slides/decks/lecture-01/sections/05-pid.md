@@ -475,9 +475,11 @@ And when would you leave the derivative out? When the measurement is noisy and y
 filter it enough. That is most of the time. A large fraction of industrial loops in service
 are PI, not PID.
 
-In the reference model, two structural parameters configure a single `CruiseController`. Four
-controllers, one file. Your own controller has no switches. It is the PID row, built by hand.
-The reference's `zero_i` and `zero_d` are the placeholders you used on the way.
+In the reference model, two on/off switches configure a single `CruiseController`. `with_I`
+drives a block called `i_switch` between the integrator and the sum, and `with_D` drives
+`d_switch` between the derivative and the sum. Four controllers, one file, one diagram. Your own
+controller has no switches. It is the PID row, built by hand. Where you used `zero_d` as a
+placeholder on the way, the reference keeps the block and switches it off.
 -->
 
 ---
