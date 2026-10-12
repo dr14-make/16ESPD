@@ -267,8 +267,10 @@ TransientAnalysis `CruiseLoopTransient`, `stop = 100`*
 
 <!--
 This is the right-hand diagram from the start of the section, as a Dyad model. You draw it once,
-now, and it never changes again. Every step from here to section 08 happens inside the controller
-box.
+now. Steps 3 to 5, and the limiter and clamping in section 06, all happen inside the controller
+box. Two steps add parameters to `GradeCar`. And four steps copy this diagram into a new bench,
+with a hill, a noisy sensor, other gains or another car. Every one of them keeps the same loop:
+setpoint, controller, car, and the speed fed back.
 
 We build two new components. First, the controller shell.
 

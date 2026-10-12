@@ -289,7 +289,7 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
 </div>
 <div>
 
-![Four step responses at decreasing integral time: each reaches the setpoint sooner and the fastest ones overshoot and oscillate before settling.](/figures/04-ti-family.svg)
+![Five step responses at decreasing integral time: each reaches the setpoint sooner and the fastest ones overshoot and oscillate before settling.](/figures/04-ti-family.svg)
 
 *The **T<sub>i</sub>** family. Overshoot appears, and then grows.*
 

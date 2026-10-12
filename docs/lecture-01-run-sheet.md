@@ -39,9 +39,10 @@ live here, one section per deck section, in deck order.
 - **Build slides:** switch the projector to Studio, build it, run it, switch back. The note on
   each build slide is the narration for the full recipe.
 - **Catch-up checkpoints:** **P** at the end of 03 and **PID** at the end of 05. The guide page
-  (`lecture/lecture-01/` on the course site) has both as code to paste. Reference is
-  `CruiseLoop` with `with_I = false, with_D = false` for P, and `with_I = true, with_D = true`,
-  `Td = 0.5`, `wd = 0` for PID.
+  (`lecture/lecture-01/` on the course site) has both as code to paste; `Lecture1.Step03` and
+  `Lecture1.Step05` are the same checkpoints in the repository. The reference
+  `CruiseLoopTransient` runs P by default; it has no `with_I`/`with_D` of its own, so the PID
+  reference needs them set on its model and `y_max` lifted (the guide page has the call).
 - **If a solve stalls in front of the room:** every notebook is committed with its outputs.
   Scroll to the plot that is already there and keep talking. Do not debug live.
 
@@ -133,8 +134,9 @@ live here, one section per deck section, in deck order.
 - Notebook: `05-pid.ipynb`, cell 2 P/PI/PID, cell 3 contributions, cell 4 Td.
 - If a student's run differs, compare against the reference `CruiseController` in this order:
   `add_d` signs, then `T = Td / Nd`, then `xd0`.
-- **Checkpoint PID:** wait here. Stragglers paste the step 5 code or switch to reference
-  `CruiseLoop` with `with_I` and `with_D` true, `Td = 0.5`, `wd = 0` (its `xd0` follows `wd`).
+- **Checkpoint PID:** wait here. Stragglers paste the step 5 code from the guide, or open
+  `Lecture1.Step05`. The reference `CruiseLoopTransient` has no `with_I`/`with_D` of its own and
+  runs P; reaching the PID reference takes the Julia call on the guide page.
   Nobody goes into the break without it; the break absorbs stragglers.
 
 ## Break — 10 min

@@ -184,8 +184,8 @@ numbers. Not the mass, not the drag area, not the gear ratio. Those never appear
 
 The test steps the torque from one settled value to another, from 31.1 to 40.1 newton-meters.
 The step was applied at t step, and we hand that time to the fit rather than guess it. The run
-stops at 500 seconds, the analysis default. That is long enough for the response to settle,
-about eight time constants.
+stops at 500 seconds, the analysis default. That leaves 450 seconds after the step, about seven
+time constants, long enough for the response to settle.
 
 The scaling step matters. We stepped by 9.04 newton-meters, so we divide the speed change by
 9.04. Dividing by the step is step 4 of the procedure.
@@ -361,13 +361,12 @@ numbers off the wreckage.
 
 Look at the three curves: decaying, sustained, growing. Below the ultimate gain the oscillation
 decays. Above it, it grows. The middle one, neither growing nor decaying, is the measurement.
-Everything either side of it is how you find it. `ks_probe` is the ladder of gains you walk up
-to find it.
+Everything either side of it is how you find it. `ladder` is the set of gains you walk up to find
+it, one run each.
 
 K u is the ultimate gain, the proportional gain at which the loop oscillates at constant
 amplitude. Ours is about 115 newton-meters per km/h. P u is the ultimate period, the period of
-that oscillation. About 2.2 seconds here. I have not printed them on the slide, because they
-move with the engine's transport delay.
+that oscillation. About 2.2 seconds here.
 
 One warning. If the oscillation squares off against the torque limit, instead of looking
 sinusoidal, that is relay limit-cycling. It is caused by banging between the actuator limits.
@@ -406,7 +405,7 @@ integral path **lowers** the gain you may use.*
 </div>
 </div>
 
-*$T_i = 4\,T_d$ in every ZN row, whatever $P_u$ is — the two zeros are always placed in the
+*In the PID row $T_i = 4\,T_d$, whatever $P_u$ is — the two zeros are always placed in the
 same ratio.*
 
 <!--
@@ -419,7 +418,8 @@ Look at the gain column going **down** as you add paths. That surprises people. 
 PID is better than P at the same gain. Adding the integral spends phase margin, so you must give
 gain back.
 
-And the footnote. T i is always four times T d, in every Ziegler-Nichols row, whatever P u is.
+And the footnote. In the PID row, T i is always four times T d, whatever P u is. It is the only
+row with both.
 In the language of the section 05 slide, Ziegler-Nichols always puts the two zeros in the same
 place relative to each other, and only slides them with P u. That is the whole content of the
 method.
@@ -799,11 +799,14 @@ So here is the rule. **Always plot the actuator command.** Every time. It is one
 the notebook, and it is the difference between a design and a drawing.
 
 You can see this in your own model. The notebooks lift `T_max` and `y_max` to run this, and so
-does your `TuningCruiseStep`. On it, set `controller.k` to 539.3 and `Ti` to 0.546. That is
-eight times and one half the Ziegler-Nichols values. Run `TuningCruiseTransient`. Then put the
-limits back: `plant.T_max` to 150, `controller.y_max` to 150, and `controller.y_min` to 0. Re-run.
-You should see the fast arrival go first, just as in the right panel. `CruiseLoopStep` is never
-touched.
+does your `TuningCruiseStep`, which already carries the Ziegler-Nichols gains. Run
+`TuningCruiseTransient`, and plot `controller.y` as well as `plant.v_kmh`. The command starts at
+about 1350 newton-meters, nine times what the engine has. The speed shoots up to about 118.5
+km/h within a second and a half. Then put the limits back: `plant.T_max` to 150,
+`controller.y_max` to 150, and `controller.y_min` to 0. Re-run. Now the command sits on 150 for
+over four seconds, and the speed climbs in a straight line. It reaches 110 just before six
+seconds, and peaks at 110.8. The fast arrival is gone, just as in the right panel.
+`CruiseLoopStep` is never touched.
 -->
 
 ---

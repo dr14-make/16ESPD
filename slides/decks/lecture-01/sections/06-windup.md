@@ -43,7 +43,7 @@ A linear model has none of these: ask it for a million newton-meters and it will
 *↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/slope)*
 
 <!--
-The numbers in the red box are not chosen to make a point. They come out of the force balance
+The numbers in the box are not chosen to make a point. They come out of the force balance
 from hands-on step 05, with the parameters on the front slide. You can compute them yourself.
 That is the whole point of having built the car first.
 
@@ -108,7 +108,8 @@ routeAlias: step-6b
 
 ![CruiseController in progress: gain feeds the limiter, and the limiter feeds the output y.](/img/lecture-01/step06-limiter.png)
 
-*Your `CruiseController` · `Limiter(y_max = y_max, y_min = y_min)` between `gain` and `y`*
+*Your `CruiseController` · `parameter y_max::Real = 1e300`, `parameter y_min::Real = -y_max` ·
+`Limiter(y_max = y_max, y_min = y_min)` between `gain` and `y` · `CruiseLoopStep`: `controller` `y_max = 150`, `y_min = 0`*
 
 ```julia
 using MyCar, Plots; plotly()
@@ -175,7 +176,8 @@ routeAlias: step-6c
 using MyCar, Plots; plotly()
 r = MyCar.CruiseClimbTransient()
 top = plot(r; idxs = r."plant.v_kmh")
-bottom = plot(r; idxs = [r."controller.y", r."controller.integrator.y"])
+bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
+                         r."controller.integrator.y"])
 plot(top, bottom; layout = (2, 1), link = :x)
 ```
 
@@ -213,13 +215,16 @@ the holding torque at 130 km/h on the flat.
 Click Run Analysis, choose TransientAnalysis, name it `CruiseClimbTransient`, and set `stop`
 to 400. Run it.
 
-Plot it with the code on the slide. `plant.v_kmh` on top. Below it, `controller.y`, the command
-after the limiter, and `controller.integrator.y`.
+Plot it with the code on the slide. `plant.v_kmh` on top. Below it, three signals.
+`controller.y` is the command after the limiter. `controller.gain.y` is the command before it.
+And `controller.integrator.y` is the integrator's state.
 
 Here is what you should see. The speed sags from 130 after t equals 30 seconds. It heads for
-about 118, and is at 119.05 at the crest. `controller.y` and the delivered torque lie flat on
-150 through the climb. `controller.gain.y` and the integrator keep climbing, far above
-anything the engine can give. And after t equals 150 seconds comes the overshoot. The
+about 118, and is at 119.05 at the crest. `controller.y` lies flat on 150 through the climb.
+`controller.gain.y` keeps climbing, to about 6000 newton-meters at the crest. That is forty
+times what the engine can give. The integrator is what drives it there. On this axis its trace
+hugs zero, so hover over it. It reaches about 97 at the crest, and 56 times 97 is over 5400
+newton-meters. And after t equals 150 seconds comes the overshoot, to almost 180 km/h. The
 notebook's run without anti-windup peaks 49.47 km/h over the setpoint and takes 66.7 seconds
 to recover.
 
@@ -230,7 +235,7 @@ integrator is not wired from `error`. Check that before we go on.
 
 ---
 
-## The climb, with an ordinary PI controller
+## The climb, with an ordinary PID controller
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -278,8 +283,8 @@ nonsense. And the integrator is what is driving it there.
 The integrator's rule is: the error is not zero, so keep accumulating. It is obeying that rule
 perfectly. Nothing in the loop tells it that the accumulation has stopped buying anything.
 
-Look at the peak of the commanded torque and compare it with 150 N·m. It is usually several
-times over.
+Look at the commanded torque at the top of the climb and compare it with 150 N·m. It is about
+6000 N·m, forty times over.
 
 Think of holding a drone down on the ground while it is trying to fly to 50 meters. The
 propellers max out at 1000 rpm. The integrator winds the command up to 2000. And the moment
@@ -305,8 +310,8 @@ is visible. The engine still stops at 150 N·m.
 When the road flattens at t = 150 s, the car accelerates. The error changes sign. The
 integrator begins to unwind.
 
-But it is unwinding *from far above the limit*. While the command falls from 400 N·m to 150,
-the engine delivers the same full torque it was delivering before.
+But it is unwinding *from far above the limit*. While the command falls from about 6000 N·m
+to 150, the engine delivers the same full torque it was delivering before.
 
 **Nothing the car does can be seen at the output until the command comes back inside the
 limit.**
@@ -323,9 +328,9 @@ Let go. The drone shoots up past 50 meters. The error goes negative. The integra
 coming down. 1900, and still 1000 at the motors. 1500, still 1000. 1100, still 1000. Only at
 1000 does anything at all begin to happen. And by then the drone is out of sight.
 
-And that is the actual harm. Winding up is not itself the problem. Commanding 400 N·m from a
-150 N·m engine hurts nothing. The problem is the time it takes to unwind. During that time the
-controller is effectively disconnected.
+And that is the actual harm. Winding up is not itself the problem. Commanding about
+6000 N·m from a 150 N·m engine hurts nothing. The problem is the time it takes to unwind.
+During that time the controller is effectively disconnected.
 
 So let me name the two halves. **Windup** is an integrator accumulating past the point where
 the actuator can act on it. **Unwinding** is coming back down. The harm is in the unwinding.
@@ -417,8 +422,7 @@ A common mistake is to think clamping means "limit the integrator to some maximu
 does not. It stops the accumulation conditionally. A fixed cap would still wind up to the cap,
 and would still have to unwind from it.
 
-This is conditional integration, the other name for clamping, and the method taught in the
-video I pointed you to. It is not the only method. Back-calculation feeds the saturation error
+This is conditional integration, the other name for clamping. It is not the only method. Back-calculation feeds the saturation error
 back into the integrator instead. We compare both next.
 -->
 
@@ -448,7 +452,8 @@ routeAlias: step-6d
 using MyCar, Plots; plotly()
 r = MyCar.CruiseClimbTransient()
 top = plot(r; idxs = r."plant.v_kmh")
-bottom = plot(r; idxs = [r."controller.y", r."controller.integrator.y"])
+bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
+                         r."controller.integrator.y"])
 plot(top, bottom; layout = (2, 1), link = :x)
 ```
 
@@ -456,7 +461,7 @@ plot(top, bottom; layout = (2, 1), link = :x)
 
 <!--
 The diagram on the previous slide is two comparisons and a switch. As a diagram it would be
-eight blocks. As an equation it is four lines. Dyad lets you mix the two, so we write it.
+eight blocks. As an equation it is five lines. Dyad lets you mix the two, so we write it.
 
 Go inside your `CruiseController`. In the diagram view, delete the wire from `error.y` to
 `integrator.u`. The integrator now has an unconnected input. The equation we are about to write
@@ -482,9 +487,11 @@ from `integrator.y` into `add_pid.u3`.
 Now re-run `CruiseClimbTransient`, and plot it with the same code as in 6c. It is on the slide
 again.
 
-Here is what you should see. The same sag on the climb, to 119.04 km/h against 119.10.
-Clamping adds no torque. `controller.integrator.y` goes flat once the limiter saturates,
-instead of climbing. And after t equals 150 seconds, the car goes 0.17 km/h over the setpoint
+Here is what you should see. The same sag on the climb, to 119.05 km/h at the crest, exactly as
+in 6c. Clamping adds no torque. `controller.integrator.y` goes flat once the limiter saturates,
+instead of climbing. `controller.gain.y` still rises above 150 on the climb, to about 660. That
+is mostly the proportional term, 56 times an error of about 11 km/h, and it drops the moment
+the road flattens. And after t equals 150 seconds, the car goes 0.17 km/h over the setpoint
 and is back within 3.5 seconds. Without clamping it was 49.47 km/h and 66.7 seconds.
 
 The most common mistake is leaving the old wire in place. Then `integrator.u` is defined twice,
@@ -699,8 +706,7 @@ low enough that the command lives inside the gap, rather than far above it.
 - The first genuinely nonlinear failure in the lecture — and it came from the actuator, not
   from the controller's mathematics.
 - Clamping: two conditions, one switch.
-- A rule for the limit itself: below the hardware's, by however much you distrust your model
-  of it.
+- A rule for the limit itself: not above the hardware's.
 
 ### Next: the derivative, and what a noisy sensor does to it. <Link to="derivative-and-noise">→ 07, derivative and noise</Link>
 

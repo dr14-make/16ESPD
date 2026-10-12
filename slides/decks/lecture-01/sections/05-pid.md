@@ -374,23 +374,27 @@ Let's go through the three traces in order. Each is a path's own output inside
 `CruiseController`, multiplied by the gain k, so all of them are in newton-meters and share an
 axis.
 
-Proportional jumps at the step, then decays to almost nothing. It has done its job in the
-first few seconds, and then it retires.
+Proportional jumps at the step, to 1120 newton-meters, 56 times the 20 km/h error. It has done
+its main job in the first few seconds. After that it shrinks, and by the end of the run it is
+almost nothing.
 
-Integral starts at the old cruise torque, climbs, and settles at the new one. It does almost
-nothing at the step and everything at the end.
+Integral starts at zero. This run seeds the integrator at zero, so it has to build the
+holding torque itself. It overshoots to about 75 newton-meters, then settles at 40.2. That is
+the torque that holds 110 km/h. It does almost nothing at the step and everything at the end.
 
-Derivative is zero before the step, a pulse during the transient, and zero after. It is only
-ever present while something is changing. At both ends the error is not moving, so the
-derivative is zero.
+Derivative starts at zero, swings through a pulse during the transient, and returns to zero.
+It is only ever present while something is changing. At both ends the speed is not moving, so
+the derivative is zero.
 
 And `controller.y` is the sum. That is what the engine is actually asked for.
 
 This is the answer to "which gain should I turn". They are not three knobs on the same thing.
 They act at different times, and the symptom tells you which one to reach for.
 
-At t equals 100 seconds, which term is holding the car at 110 km/h? Only the integral. The
-other two are at zero.
+At the right edge of the plot, at t equals 10 seconds, which term is doing most of the
+holding? The integral, at about 57 newton-meters. The proportional is still pulling back, at
+about minus 19, and the derivative is close to zero. By the end of the run, at 60 seconds, the
+integral holds the car at 110 km/h alone, with 40.2 newton-meters. The other two are at zero.
 -->
 
 ---
@@ -417,7 +421,7 @@ plot_sweep(td_family; sig = SPEED, setpoint = 110, name = "Td",
 </div>
 <div>
 
-![Four step responses at increasing derivative time: overshoot shrinks and then the response becomes slow and ragged.](/figures/05-td-family.svg)
+![Six step responses at increasing derivative time: overshoot shrinks and then the response becomes slow and ragged.](/figures/05-td-family.svg)
 
 *There is a middle. Past it, more derivative makes the response worse in a different way.*
 
@@ -517,10 +521,9 @@ routeAlias: checkpoint-pid
 
 > **Behind? Rejoin here**
 >
-> The guide page's [step 5](../lecture/lecture-01/#step-5) has the finished controller as code
-> to paste. The reference is `CruiseLoop` with `with_I = true, with_D = true`, `Td = 0.5`,
-> `wd = 0`.
-> Section 06 builds on this diagram.
+> Paste the step 5 code from the guide page's [step 5](../lecture/lecture-01/#step-5) into
+> `CruiseController` and `CruiseLoopStep`, or open `Lecture1.Step05`. Section 06 builds on this
+> diagram.
 
 </div>
 </div>
@@ -529,10 +532,10 @@ routeAlias: checkpoint-pid
 Second checkpoint. This is the controller that runs most of the machinery you will ever work
 on, and you drew every block of it. Check your neighbor's screen.
 
-If you are still building, paste the step 5 code from the guide page. Or switch to the
-reference `CruiseLoop` with `with_I` and `with_D` both true, `Td` equals 0.5 and `wd` equals
-0. Those are our values. Its `xd0` follows `wd` by itself. Section 06 adds a limiter to
-**this** diagram, so do not go into the break without it.
+If you are still building, paste the step 5 code from the guide page over your
+`CruiseController` and `CruiseLoopStep`. Or open `Lecture1.Step05` in the course repository.
+It is this exact checkpoint. Section 06 adds a limiter to **this** diagram, so do not go into
+the break without it.
 
 If your run differs from mine, compare against the reference `CruiseController` in this
 order. First the signs of `add_d`. Then the derivative's T, which must be `Td` over `Nd`. Then

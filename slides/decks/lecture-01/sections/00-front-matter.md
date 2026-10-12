@@ -20,8 +20,6 @@ presenter mode from the nav bar, bottom left
 </div>
 
 <!--
-(Run sheet: docs/lecture-01-run-sheet.md.)
-
 Welcome. This is the second of two sessions on one car. In the hands-on, you learned the
 physics of each part of the car and you built it. Today I will not repeat that physics. Wherever
 a slide relies on it, you will see a gray line that says "Hands-on step" and a number. It links
@@ -43,9 +41,8 @@ you do.
 If you fall behind, follow the guide page. It has every step with its blocks, parameters, wires
 and the plot you should see. Two checkpoints let anyone rejoin with a working model. The first
 is P, at the end of section 03. The second is PID, at the end of section 05. The guide page has
-both as code to paste. The reference model is `CruiseLoop`. For P, set `with_I` to false and
-`with_D` to false. For PID, set `with_I` to true and `with_D` to true, `Td` to 0.5, and `wd` to
-0.
+both as code to paste. The course repository has them too, as `Lecture1.Step03` and
+`Lecture1.Step05`.
 
 Every demo slide names the notebook file and the cell heading, and it carries the code with a
 copy button. A gray strip on a slide means there is a Dyad model worth having open at that

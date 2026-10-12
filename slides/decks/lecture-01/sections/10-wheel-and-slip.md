@@ -329,7 +329,10 @@ routeAlias: step-10
 
 *Duplicate `CruiseLoopStep` → `SlipCruiseIcePatch` · `plant`: `GradeCar` → `SlipCar` · `demand` →
 `Constant(k = 90)` · `friction` Pulse(amplitude = 0.05, offset = 1.0, start_time = 4,
-duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 / 56`*
+duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 / 56` · `initial`
+`plant.body.mass.s = 0`, `plant.body.mass.v = 25`, `plant.engine.lag.x = 31.078`,
+`plant.wheel_inertia.phi = 0`, `plant.wheel_inertia.w = 25 / plant.r` · TransientAnalysis
+`SlipCruiseTransient`, `stop = 45`*
 
 ```julia
 using MyCar, Plots; plotly()
@@ -521,9 +524,9 @@ benefit.
 
 There is an honest caveat. `y_max` is a constant, so the cap is on for the whole run, including
 the dry road on either side. 26.6 newton meters is less than the 31.1 that holds 90 km/h. So the
-capped car reaches the ice at 89.47 km/h, and drifts down afterwards. Look at the green trace
-after t equals 12 seconds. A fixed cap is the right idea with the wrong information. And that is
-exactly why lecture 2 needs a loop around slip.
+capped car reaches the ice at 89.47 km/h, and drifts down afterwards. Look at the green trace,
+the capped run, after t equals 12 seconds. A fixed cap is the right idea with the wrong
+information. And that is exactly why lecture 2 needs a loop around slip.
 
 That is a general shape worth naming. When an actuator's limit depends on conditions the
 controller cannot see, somebody has to tell it. That is not tuning. That is architecture.
@@ -580,8 +583,8 @@ elegant.
 
 <!--
 If you take one habit away from today, take the one that showed up three times without being
-planned: **plot the actuator command**. Section 06 found windup with it. Section 08 found an
-undeliverable design with it. Section 07 found chatter with it. In all three, the controlled
+planned: **plot the actuator command**. Section 06 found windup with it. Section 07 found
+chatter with it. Section 08 found an undeliverable design with it. In all three, the controlled
 variable looked fine.
 
 The notebooks are in the repository, and so is the `docs` folder. Everything on these slides is
