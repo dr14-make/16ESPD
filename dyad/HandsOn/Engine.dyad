@@ -32,33 +32,43 @@ relations
 metadata {
   "_links": {
     "tau_cmd": {
-      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 450, "y2": 550}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -60, "x2": 40, "y1": 450, "y2": 550},
+          "diagram": {"x1": -60, "x2": 40, "y1": 450, "y2": 550}
+        }
+      }
     },
     "spline": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
     },
     "support": {
-      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050},
+          "diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}
+        }
+      }
     },
-    "delay": {
-      "Dyad": {"placement": {"diagram": {"x1": 110, "x2": 210, "y1": 450, "y2": 550}}}
-    },
-    "lag": {
-      "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 450, "y2": 550}}}
-    },
-    "limiter": {
-      "Dyad": {"placement": {"diagram": {"x1": 490, "x2": 590, "y1": 450, "y2": 550}}}
-    },
-    "torque": {
-      "Dyad": {"placement": {"diagram": {"x1": 680, "x2": 780, "y1": 450, "y2": 550}}}
-    },
+    "delay": {"Dyad": {"placement": {"diagram": {"x1": 110, "x2": 210, "y1": 450, "y2": 550}}}},
+    "lag": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 450, "y2": 550}}}},
+    "limiter": {"Dyad": {"placement": {"diagram": {"x1": 490, "x2": 590, "y1": 450, "y2": 550}}}},
+    "torque": {"Dyad": {"placement": {"diagram": {"x1": 680, "x2": 780, "y1": 450, "y2": 550}}}},
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id6": {
-      "Dyad": {"edges": [{"S": 1, "M": [{"x": 730, "y": 1000}], "E": 2}], "path": {}}
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 730, "y": 900}, {"x": 500, "y": 900}], "E": 2}],
+        "path": {}
+      }
     }
   }
 }

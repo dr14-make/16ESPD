@@ -39,27 +39,29 @@ relations
 metadata {
   "_links": {
     "flange": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
     },
     "grade": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+          "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}
+        }
+      }
     },
-    "mass": {
-      "Dyad": {"placement": {"diagram": {"x1": 660, "x2": 760, "y1": 250, "y2": 350}}}
-    },
-    "drag": {
-      "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 450, "y1": 550, "y2": 650}}}
-    },
-    "rolling": {
-      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 250, "y2": 350}}}
-    },
+    "mass": {"Dyad": {"placement": {"diagram": {"x1": 660, "x2": 760, "y1": 250, "y2": 350}}}},
+    "drag": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 450, "y1": 550, "y2": 650}}}},
+    "rolling": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 250, "y2": 350}}}},
     "cr_const": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
     "gradeforce": {
       "Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 830, "y2": 930}}}
     },
-    "ground": {
-      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 990, "y2": 1090}}}
-    },
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 990, "y2": 1090}}}},
     "id1": {
       "Dyad": {
         "edges": [{"S": 1, "M": [{"x": 410, "y": 500}, {"x": 410, "y": 300}], "E": 2}],

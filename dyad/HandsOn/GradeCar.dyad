@@ -38,26 +38,91 @@ relations
   connect(to_kmh.y, v_kmh) {^id9}
 metadata {
   "_links": {
-    "tau_cmd": {"Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 350, "y2": 450}}}},
-    "grade": {"Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 550, "y2": 650}}}},
-    "v_kmh": {"Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+          "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "grade": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 900, "y2": 1000},
+          "diagram": {"x1": -50, "x2": 50, "y1": 900, "y2": 1000}
+        }
+      }
+    },
+    "v_kmh": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
+    },
     "engine": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 450, "y2": 550}}}},
     "driveline": {"Dyad": {"placement": {"diagram": {"x1": 320, "x2": 420, "y1": 450, "y2": 550}}}},
     "body": {"Dyad": {"placement": {"diagram": {"x1": 560, "x2": 660, "y1": 450, "y2": 550}}}},
     "vsensor": {"Dyad": {"placement": {"diagram": {"x1": 560, "x2": 660, "y1": 250, "y2": 350}}}},
     "to_kmh": {"Dyad": {"placement": {"diagram": {"x1": 760, "x2": 860, "y1": 250, "y2": 350}}}},
-    "rot_ground": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 700, "y2": 800}}}},
-    "trans_ground": {"Dyad": {"placement": {"diagram": {"x1": 331, "x2": 431, "y1": 800, "y2": 900}}}},
+    "rot_ground": {
+      "Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 700, "y2": 800}}}
+    },
+    "trans_ground": {
+      "Dyad": {"placement": {"diagram": {"x1": 331, "x2": 431, "y1": 800, "y2": 900}}}
+    },
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id_grade": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_grade": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 520, "y": 950}, {"x": 520, "y": 500}], "E": 2}],
+        "path": {}
+      }
+    },
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id4": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 358, "y": 650}, {"x": 170, "y": 650}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id5": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 480, "y": 500},
+              {"x": 480, "y": 400},
+              {"x": 700, "y": 400},
+              {"x": 700, "y": 500}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
     "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id7": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 400}], "E": -1},
+          {"S": -1, "M": [{"x": 700, "y": 400}, {"x": 700, "y": 500}], "E": 2}
+        ],
+        "junctions": [{"x": 480, "y": 400}],
+        "path": {}
+      }
+    },
     "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+    "id9": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 900, "y": 300}, {"x": 900, "y": 500}], "E": 2}],
+        "path": {}
+      }
+    }
   }
 }
 end
@@ -101,11 +166,16 @@ metadata {
     }
   },
   "_links": {
-    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 350, "y2": 450}}}},
-    "road": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 550, "y2": 650}}}},
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 620, "y2": 720}}}},
     "car": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}},
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+    "id2": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 400, "y": 670}, {"x": 400, "y": 545}], "E": 2}],
+        "path": {}
+      }
+    }
   }
 }
 end

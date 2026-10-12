@@ -60,42 +60,59 @@ relations
 metadata {
   "_links": {
     "tau_cmd": {
-      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 800, "y2": 900}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -60, "x2": 40, "y1": 800, "y2": 900},
+          "diagram": {"x1": -60, "x2": 40, "y1": 800, "y2": 900}
+        }
+      }
     },
-    "grade": {"Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 20, "y2": 120}}}},
+    "grade": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -60, "x2": 40, "y1": 20, "y2": 120},
+          "diagram": {"x1": -60, "x2": 40, "y1": 20, "y2": 120}
+        }
+      }
+    },
     "mu_scale": {
-      "Dyad": {"placement": {"diagram": {"x1": -60, "x2": 40, "y1": 170, "y2": 270}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -60, "x2": 40, "y1": 170, "y2": 270},
+          "diagram": {"x1": -60, "x2": 40, "y1": 170, "y2": 270}
+        }
+      }
     },
     "v_kmh": {
-      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 600, "y2": 700}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 960, "x2": 1060, "y1": 600, "y2": 700},
+          "diagram": {"x1": 960, "x2": 1060, "y1": 600, "y2": 700}
+        }
+      }
     },
     "wheel_kmh": {
-      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 780, "y2": 880}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 960, "x2": 1060, "y1": 780, "y2": 880},
+          "diagram": {"x1": 960, "x2": 1060, "y1": 780, "y2": 880}
+        }
+      }
     },
-    "engine": {
-      "Dyad": {"placement": {"diagram": {"x1": 70, "x2": 170, "y1": 430, "y2": 530}}}
-    },
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 70, "x2": 170, "y1": 430, "y2": 530}}}},
     "gear": {"Dyad": {"placement": {"diagram": {"x1": 230, "x2": 330, "y1": 430, "y2": 530}}}},
     "wheel_inertia": {
       "Dyad": {"placement": {"diagram": {"x1": 390, "x2": 490, "y1": 430, "y2": 530}}}
     },
     "wheel": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 430, "y2": 530}}}},
     "body": {"Dyad": {"placement": {"diagram": {"x1": 760, "x2": 860, "y1": 310, "y2": 410}}}},
-    "vsensor": {
-      "Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 600, "y2": 700}}}
-    },
-    "to_kmh": {
-      "Dyad": {"placement": {"diagram": {"x1": 830, "x2": 930, "y1": 600, "y2": 700}}}
-    },
-    "wsensor": {
-      "Dyad": {"placement": {"diagram": {"x1": 390, "x2": 490, "y1": 780, "y2": 880}}}
-    },
+    "vsensor": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 600, "y2": 700}}}},
+    "to_kmh": {"Dyad": {"placement": {"diagram": {"x1": 830, "x2": 930, "y1": 600, "y2": 700}}}},
+    "wsensor": {"Dyad": {"placement": {"diagram": {"x1": 390, "x2": 490, "y1": 780, "y2": 880}}}},
     "wheel_to_kmh": {
       "Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 780, "y2": 880}}}
     },
-    "rot_ground": {
-      "Dyad": {"placement": {"diagram": {"x1": 70, "x2": 170, "y1": 650, "y2": 750}}}
-    },
+    "rot_ground": {"Dyad": {"placement": {"diagram": {"x1": 70, "x2": 170, "y1": 650, "y2": 750}}}},
     "id1": {
       "Dyad": {
         "edges": [{"S": 1, "M": [{"x": 35, "y": 850}, {"x": 35, "y": 480}], "E": 2}],
@@ -138,8 +155,20 @@ metadata {
         "edges": [
           {
             "S": 1,
-            "M": [{"x": 360, "y": 830}, {"x": 360, "y": 570}, {"x": 520, "y": 570}, {"x": 520, "y": 480}], "E": 2}], "path": {}}},
-    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+            "M": [
+              {"x": 360, "y": 830},
+              {"x": 360, "y": 570},
+              {"x": 520, "y": 570},
+              {"x": 520, "y": 480}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end
