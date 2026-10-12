@@ -79,88 +79,31 @@ relations
   end
 metadata {
   "_links": {
-    "error": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 420, "y2": 520}}}},
-    "integrator": {
-      "Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 800, "y2": 900}}}
-    },
-    "zero_i": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 800, "y2": 900}}}},
-    "add_d": {"Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 650, "y2": 750}}}},
-    "derivative": {
-      "Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 650, "y2": 750}}}
-    },
-    "zero_d": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 650, "y2": 750}}}},
-    "add_pid": {"Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 450, "y2": 550}}}},
-    "gain": {"Dyad": {"placement": {"diagram": {"x1": 740, "x2": 840, "y1": 450, "y2": 550}}}},
-    "limiter": {"Dyad": {"placement": {"diagram": {"x1": 880, "x2": 980, "y1": 450, "y2": 550}}}},
-    "u_s": {
-      "Dyad": {
-        "placement": {
-          "icon": {"iconName": "default", "x1": -100, "y1": 220, "x2": 0, "y2": 320, "rot": 0},
-          "diagram": {"x1": -50, "x2": 50, "y1": 390, "y2": 490}
-        }
-      }
-    },
-    "u_m": {
-      "Dyad": {
-        "placement": {
-          "icon": {"iconName": "default", "x1": -100, "y1": 680, "x2": 0, "y2": 780, "rot": 0},
-          "diagram": {"x1": -50, "x2": 50, "y1": 680, "y2": 780}
-        }
-      }
-    },
-    "y": {
-      "Dyad": {
-        "placement": {
-          "icon": {"iconName": "output", "x1": 1000, "y1": 450, "x2": 1100, "y2": 550, "rot": 0},
-          "diagram": {"x1": 1000, "x2": 1100, "y1": 450, "y2": 550}
-        }
-      }
-    },
+    "u_s": {"Dyad": {"placement": {"icon": {"iconName": "default", "x1": -100, "y1": 220, "x2": 0, "y2": 320, "rot": 0}, "diagram": {"iconName": "default", "x1": -100, "y1": 220, "x2": 0, "y2": 320, "rot": 0}}}},
+    "u_m": {"Dyad": {"placement": {"icon": {"iconName": "default", "x1": -100, "y1": 680, "x2": 0, "y2": 780, "rot": 0}, "diagram": {"iconName": "default", "x1": -100, "y1": 680, "x2": 0, "y2": 780, "rot": 0}}}},
+    "y": {"Dyad": {"placement": {"icon": {"iconName": "output", "x1": 1000, "y1": 450, "x2": 1100, "y2": 550, "rot": 0}, "diagram": {"iconName": "output", "x1": 1000, "y1": 450, "x2": 1100, "y2": 550, "rot": 0}}}},
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 250, "y2": 350}}}},
+    "add_d": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 560, "y2": 660}}}},
+    "derivative": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 560, "y2": 660}}}},
+    "zero_d": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 420, "y2": 520}}}},
+    "integrator": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 720, "y2": 820}}}},
+    "zero_i": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 860, "y2": 960}}}},
+    "add_pid": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 280, "y2": 380}}}},
+    "gain": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 280, "y2": 380}}}},
+    "limiter": {"Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 280, "y2": 380}}}},
     "id_us_error": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id_um_error": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 110, "y": 500}], "E": 2}],
-        "junctions": [{"x": 110, "y": 730}],
-        "path": {}
-      }
-    },
+    "id_um_error": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 730}, {"x": 60, "y": 330}], "E": 2}], "path": {}}},
     "id_error_pid": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id_pid_gain": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id_gain_limiter": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id_limiter_y": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id_us_d": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 80, "y": 670}], "E": 2}],
-        "junctions": [{"x": 80, "y": 440}],
-        "path": {}
-      }
-    },
-    "id_um_d": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_limiter_y": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 975, "y": 330}, {"x": 975, "y": 500}], "E": 2}], "path": {}}},
+    "id_us_d": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 90, "y": 580}], "E": 2}], "junctions": [{"x": 90, "y": 270}], "path": {}}},
+    "id_um_d": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 60, "y": 640}], "E": 2}], "junctions": [{"x": 60, "y": 730}], "path": {}}},
     "id_add_d_derivative": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id_derivative_pid": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 560, "y": 700}, {"x": 560, "y": 500}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id_zero_d_pid": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 560, "y": 700}, {"x": 560, "y": 500}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id_integrator_pid": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 580, "y": 850}, {"x": 580, "y": 530}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id_zero_i_pid": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 580, "y": 850}, {"x": 580, "y": 530}], "E": 2}],
-        "path": {}
-      }
-    }
+    "id_derivative_pid": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 490, "y": 610}, {"x": 490, "y": 330}], "E": 2}], "path": {}}},
+    "id_zero_d_pid": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 490, "y": 470}, {"x": 490, "y": 330}], "E": 2}], "path": {}}},
+    "id_integrator_pid": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 520, "y": 770}, {"x": 520, "y": 360}], "E": 2}], "path": {}}},
+    "id_zero_i_pid": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 520, "y": 910}, {"x": 520, "y": 360}], "E": 2}], "path": {}}}
   }
 }
 end
