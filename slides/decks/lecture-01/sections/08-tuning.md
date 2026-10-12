@@ -246,6 +246,8 @@ plot_speed(pid; sig = SPEED, setpoint = 110)
 </div>
 <div>
 
+![Speed under the Cohen-Coon PID for the 90 to 110 km/h step, against the 110 km/h setpoint.](/figures/08-cohen-coon.svg)
+
 > **Why the dead time is in the denominator**
 >
 > *k* grows without bound as θ goes to zero. A plant with no dead time has no Cohen-Coon tuning
