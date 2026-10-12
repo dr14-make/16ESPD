@@ -409,9 +409,9 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)
 </div>
 <div>
 
-![The speed response to the torque step: flat at 90 km/h, then an S-shaped climb settling at 110.](/figures/01-step-response.svg)
+![The step test with the fit drawn on it: the 50 and 63.2 percent levels of the 20 km/h change, the times t2 and t3 where the speed crosses them, tau from t1 to t3, the total change B, and a zoom on the step showing theta from t0 to t1.](/figures/01-step-readings.svg)
 
-*The step response the three numbers are read from. θ is the flat piece before it moves, τ the rise, K the settled change divided by the torque step.*
+*Read t₂ and t₃ where the speed crosses 50 % and 63.2 % of B. Then t₁ = (t₂ − ln 2 · t₃) / (1 − ln 2), θ = t₁ − t₀, τ = t₃ − t₁, and K = B / A with A = 9.04 N·m the torque step.*
 
 </div>
 </div>
@@ -438,6 +438,11 @@ small means a car that is easy to control.
 As a check, the force balance gives a tangent time constant of 74.1 seconds at 90 km/h and 60.6 at
 110. The fitted 63.0 lies between them. K should land near 20 divided by 9.04, the total speed
 change over the total torque change.
+
+The plot shows how the fit gets them. Read the two times where the speed crosses half and 63
+percent of the change. The first-order curve through both points starts rising at t1. Theta runs
+from the step to t1, tau from t1 to the 63 percent point. In the zoom, the real speed is already
+moving long before t1. That is why theta is not the engine's delay.
 
 A common mistake is reading tau as the time to reach the final value. It is the time to reach 63
 percent of it.
