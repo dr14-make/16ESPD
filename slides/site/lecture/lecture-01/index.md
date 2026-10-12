@@ -12,6 +12,8 @@ From the car you built in the hands-on to a PID cruise control, tested on a hill
 
 **How each step works.** The slide that introduces a step shows the finished diagram and links here. Each step below lists the blocks to place with their library path, instance name and values, every wire, and what the plot must show before you go on. Use the instance names given here: the lecture's notebooks read signal paths like `controller.integrator.y`, and with the same names your diagram reads the same way.
 
+**No car from the hands-on?** Create your own repository from the [MyCar template](https://github.com/dr14-make/MyCar) (**Use this template**). It is the finished hands-on car with the names this page uses; `GradeCar` is not in it, because you build it in step 1b.
+
 **Fell behind?** There are two catch-up checkpoints: the **P checkpoint** at the end of step 3 and the **PID checkpoint** at the end of step 5. Each has your `CruiseController` and `CruiseLoopStep` as they stand at that point, as code to paste. The course repository has the same checkpoints as `Lecture1.Step03` and `Lecture1.Step05`, and the reference `CruiseLoop` in `dyad/Lecture1/CruiseLoop.dyad`, whose switches `with_I` and `with_D` turn the integral and derivative branches on and off.
 
 **Plotting.** Every plot is drawn in the Julia REPL: click **Dyad: Open Julia REPL** in the **Actions** panel's title bar. Each snippet starts with `using MyCar, Plots; plotly()`. `plotly()` switches Plots to its interactive backend: drag a box to zoom, double-click to zoom back out, hover over a curve to read its values. It needs nothing beyond the `Plots` you added in the hands-on. Once per REPL session is enough, and running it again does no harm, so every snippet also works in a freshly opened REPL.
@@ -141,6 +143,68 @@ On a flat road (`road.k = 0`) full throttle from rest reads **246.388 km/h** at 
 Reference: `HandsOn.GradeCar`, bench `GradeCarFullThrottle`.
 
 :::
+
+:::: warning Fell behind?
+
+Catch-up: right-click `MyCar` → **Add Component**, name it `GradeCar`, toggle to code (⇄) and paste the first block over its contents; then the same for `GradeCarFullThrottle` with the second, which also holds its analysis. It needs your `Engine`, `Driveline` and `GradeBody` from the hands-on.
+
+::: code-group
+
+```txt [GradeCar]
+component GradeCar
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  engine = Engine()
+  driveline = Driveline()
+  body = GradeBody()
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  to_kmh = BlockComponents.Math.Gain(k = 3.6)
+  "Engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Road under the wheel"
+  trans_ground = TranslationalComponents.Components.Fixed()
+relations
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, driveline.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(driveline.support_r, rot_ground.spline)
+  connect(driveline.flange, body.flange)
+  connect(driveline.support_t, trans_ground.flange)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, to_kmh.u)
+  connect(to_kmh.y, v_kmh)
+  connect(grade, body.grade)
+end
+```
+
+```txt [GradeCarFullThrottle]
+component GradeCarFullThrottle
+  "Full throttle: the engine's 150 N·m ceiling"
+  cmd = BlockComponents.Sources.Constant(k = 150)
+  "Road gradient"
+  road = BlockComponents.Sources.Constant(k = 0)
+  car = GradeCar()
+relations
+  connect(cmd.y, car.tau_cmd)
+  connect(road.y, car.grade)
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  initial car.engine.lag.x = 0
+end
+
+analysis GradeCarFullThrottleTransient
+  extends TransientAnalysis(stop = 300)
+  model = GradeCarFullThrottle()
+end
+```
+
+:::
+
+::::
 
 ## 02 Closing the loop
 

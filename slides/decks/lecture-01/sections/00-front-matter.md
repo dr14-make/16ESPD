@@ -29,8 +29,8 @@ Today you build cruise control for that car, one block at a time. The car does n
 the lecture. Every new idea is a change to the **controller**. So what you learn about the car at
 minute twenty still holds at minute one hundred and seventy.
 
-Section 01 opens with a recap of what you built. If you skipped the hands-on, start from the
-reference `HandsOn.Car` and follow that recap.
+Section 01 opens with a recap of what you built. If you skipped the hands-on, make your own
+copy of the MyCar template on GitHub and follow that recap. The guide page links to it.
 
 Every build step has one slide. It shows a Studio screenshot, a one-line recipe, and a link that
 says "page: step" and a number. That link goes to the guide page, `lecture/lecture-01/` on the
@@ -390,9 +390,9 @@ packages.
 
 The car goes in one place, and the experiment goes in another. If it is part of the car, it is in
 `HandsOn`. If it exists because of what we are teaching today, a step source, a setpoint, a
-controller, it is in `Lecture1`. Your own package follows the same split. The `GradeCar` you build
-in section 01 sits next to your `Car`. The controller and the loop are new components beside
-them.
+controller, it is in `Lecture1`. Your `MyCar` has no folders, so everything sits side by side. The
+`GradeCar` you build in section 01 sits next to your `Car`. The controller and the loop are new
+components beside them. Keep the split in your head even so.
 
 The harnesses exist because `GradeCar` has two inputs, torque and grade. Leave
 them unconnected and the model is not solvable. It has more unknowns than equations. So every

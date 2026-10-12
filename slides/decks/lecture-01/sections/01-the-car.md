@@ -20,8 +20,9 @@ measure the same car the way a control engineer would: one step test gives three
 end we give the car a grade input, so that it can drive up a hill.
 
 From here on, you build along with me. You need your hands-on package, `MyCar`, open in Studio,
-with `Car` and `GradeBody` in it. If you do not have it, take the reference `dyad/HandsOn/` from
-the guide page and work on that. The instance names match.
+with `Car` and `GradeBody` in it. If you do not have it, make your own copy of the MyCar template
+on GitHub. The guide page links to it. It is the finished hands-on car, and the instance names
+match.
 -->
 
 ---
@@ -653,7 +654,7 @@ its terminal speed. If the model is that good, why measure anything at all? Why 
 the right throttle and apply it? Notebook 02 answers this with a hill. That is why your
 car just got a `grade` input.
 
-Before we move on, make sure your `GradeCar` compiles. If it does not, take the reference
-`HandsOn.GradeCar` from the guide page now. Section 02 wires it into the loop.
+Before we move on, make sure your `GradeCar` compiles. If it does not, paste the `GradeCar`
+from the guide page's step 1b now. Section 02 wires it into the loop.
 -->
 

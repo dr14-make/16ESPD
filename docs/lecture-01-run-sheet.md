@@ -63,7 +63,9 @@ live here, one section per deck section, in deck order.
   and build 1a 5 (3 building, 1 running), three names 1, K/τ/θ 3, GradeBody reminder and
   build 1b 3 (reminder 30 s, build 2, bench run 1).
 - Students need their hands-on package `MyCar` open with `Car` and `GradeBody`. Anyone without it
-  uses the reference `dyad/HandsOn/` from the guide page; instance names match. Pair anyone who
+  creates a repository from the MyCar template (github.com/dr14-make/MyCar, linked from the guide
+  page); instance names match. A broken `GradeCar` is replaced by the step 1b catch-up on the
+  guide page. Pair anyone who
   skipped the hands-on with someone who did it for the first build.
 - Recap: do not re-derive. The hands-on deck has every derivation; the link at the bottom goes to
   its summary table.
