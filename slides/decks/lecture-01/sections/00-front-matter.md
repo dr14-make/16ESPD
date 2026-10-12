@@ -457,9 +457,11 @@ parameter like `k` is not.
 </div>
 
 <!--
-These are the same nine numbers you typed into your own `Engine`, `Driveline` and `Body`. Section
-01's recap comes back to the ones control cares about. This lecture uses the right-hand
-column. 31.1 and 40.1 newton-meters are the step test in section 01. And 1935 newtons is the
+These are the same nine numbers you typed into your own `Engine`, `Driveline` and `Body`. Three
+of them come back as control problems: the 150 newton-meter ceiling in section 06, the 0.3 second
+delay and lag in section 08's tuning, and the delay again in section 09's sampling. This lecture also uses the
+right-hand column. 31.1 newton-meters holds 90 km/h, and every loop today starts there, already
+cruising. 31.1 and 40.1 newton-meters are the step test in section 01. And 1935 newtons is the
 largest force the engine can deliver, which the hill in section 06 exceeds.
 
 Of these nine, the two lags at the bottom matter most for how hard this car is to control, as

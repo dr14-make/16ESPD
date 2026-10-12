@@ -21,9 +21,9 @@ lecturer; the only demo-only section is 09 (discretization).
 2. The four Studio moves the build repeats: duplicate a component; add a parameter and pass it
    down; wire causal (`RealInput`/`RealOutput`) versus acausal (`Flange`/`Spline`) connectors;
    run and plot a transient analysis.
-3. The plant numbers the later sections lean on: 0.3 s Padé delay, 0.3 s torque lag,
-   150 N·m ceiling, 31.08 N·m holding torque at 90 km/h, and the time constant read off the step
-   test.
+3. The plant numbers the later sections lean on (0.3 s Padé delay, 0.3 s torque lag, 150 N·m
+   ceiling, 31.08 N·m holding torque at 90 km/h) are not a slide of their own: the front
+   matter's parameter slide already shows them, and its notes say where each comes back.
 
 Section 01's existing step test and K/τ/θ reading follow, run on `HandsOn.Car`. Before a section
 brings in a new plant, one reminder slide recaps that plant.

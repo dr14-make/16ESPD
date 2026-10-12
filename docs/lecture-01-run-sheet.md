@@ -59,8 +59,8 @@ live here, one section per deck section, in deck order.
 
 ## 01 The car — 22 min
 
-- Split: recap 8 (model map 3, four Studio moves 3, plant numbers 2), full throttle 2, step test
-  and build 1a 5 (3 building, 1 running), three names 1, K/τ/θ 3, GradeBody reminder and
+- Split: recap 6 (model map 3, four Studio moves 3), full throttle 2, step test
+  and build 1a 7 (5 building, 1 running), three names 1, K/τ/θ 3, GradeBody reminder and
   build 1b 3 (reminder 30 s, build 2, bench run 1).
 - Students need their hands-on package `MyCar` open with `Car` and `GradeBody`. Anyone without it
   creates a repository from the MyCar template (github.com/dr14-make/MyCar, linked from the guide
