@@ -1,0 +1,92 @@
+"""
+Clamping anti-windup gate in front of an integrator.
+
+Passes the control error `u` through to the integrator, except while the limited controller
+output `u_lim` sits at a limit and the error has the same sign as that limit: then integrating
+further would only push the command deeper into saturation, so the gate outputs zero and the
+integrator freezes. As soon as the error reverses, the gate opens and the integrator unwinds.
+With `on = false` the gate always outputs zero, so the integrator holds its initial state.
+"""
+component ClampingGate
+  "Control error"
+  u = RealInput() {^u}
+  "Limited controller output"
+  u_lim = RealInput() {^u_lim}
+  "Integrator input"
+  y = RealOutput() {^y}
+  "Upper output limit"
+  parameter y_max::Real = 1e300
+  "Lower output limit"
+  parameter y_min::Real = -y_max
+  "Pass the error through; with false the output is zero"
+  parameter on::Boolean = true
+relations
+  y = ifelse(on, ifelse(u_lim >= y_max, ifelse(u >= 0, 0.0, u), ifelse(u_lim <= y_min, ifelse(u <= 0, 0.0, u), u)), 0.0)
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "u": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "default", "x1": -100, "y1": 150, "x2": 0, "y2": 250, "rot": 0},
+          "diagram": {"iconName": "default", "x1": -100, "y1": 150, "x2": 0, "y2": 250, "rot": 0}
+        }
+      }
+    },
+    "u_lim": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "default", "x1": -100, "y1": 750, "x2": 0, "y2": 850, "rot": 0},
+          "diagram": {"iconName": "default", "x1": -100, "y1": 750, "x2": 0, "y2": 850, "rot": 0}
+        }
+      }
+    },
+    "y": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "default", "x1": 1000, "y1": 450, "x2": 1100, "y2": 550, "rot": 0},
+          "diagram": {"iconName": "default", "x1": 1000, "y1": 450, "x2": 1100, "y2": 550, "rot": 0}
+        }
+      }
+    }
+  }
+}
+end
+
+test component TestClampingGate
+  err_pos = BlockComponents.Sources.Constant(k = 2.0)
+  err_neg = BlockComponents.Sources.Constant(k = -2.0)
+  at_max = BlockComponents.Sources.Constant(k = 10.0)
+  free = BlockComponents.Sources.Constant(k = 5.0)
+  "Saturated high, error pushing higher: frozen"
+  frozen = VehicleSystemsComponents.Lecture1.ClampingGate(y_max = 10.0, y_min = 0.0)
+  "Saturated high, error reversing: unwinds"
+  unwind = VehicleSystemsComponents.Lecture1.ClampingGate(y_max = 10.0, y_min = 0.0)
+  "Inside the limits: passes the error"
+  pass = VehicleSystemsComponents.Lecture1.ClampingGate(y_max = 10.0, y_min = 0.0)
+  "Switched off: zero"
+  off = VehicleSystemsComponents.Lecture1.ClampingGate(y_max = 10.0, y_min = 0.0, on = false)
+relations
+  connect(err_pos.y, frozen.u)
+  connect(at_max.y, frozen.u_lim)
+  connect(err_neg.y, unwind.u)
+  connect(at_max.y, unwind.u_lim)
+  connect(err_pos.y, pass.u)
+  connect(free.y, pass.u_lim)
+  connect(err_pos.y, off.u)
+  connect(free.y, off.u_lim)
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 1,
+        "atol": {"frozen.y": 1e-9, "unwind.y": 1e-9, "pass.y": 1e-9, "off.y": 1e-9},
+        "expect": {
+          "final": {"frozen.y": 0.0, "unwind.y": -2.0, "pass.y": 2.0, "off.y": 0.0},
+          "signals": ["frozen.y", "unwind.y", "pass.y", "off.y"]
+        }
+      }
+    }
+  }
+}
+end

@@ -5,10 +5,11 @@ The proportional branch acts on the control error, the integral branch supplies 
 correction, and the filtered derivative branch acts on the weighted setpoint and measurement.
 `with_I` and `with_D` switch the integral and derivative branches on and off through the
 `i_switch` and `d_switch` blocks, so P, PI, PD and PID are the same diagram with different
-parameter values. A switched-off branch contributes zero: the integrator holds `xi0`, and the
-derivative filter runs with a harmless 1 s time constant whose output is discarded.
+parameter values. A switched-off branch contributes zero: `clamp` feeds the integrator zero, so
+it holds `xi0`, and the derivative filter runs with a harmless 1 s time constant whose output is
+discarded.
 
-The integrator freezes only when both conditions hold:
+`clamp` freezes the integrator only when both conditions hold:
 
 1. the output is saturated at a limit, and
 2. the control error has the same sign as that limit, so integrating further would push the
@@ -25,6 +26,7 @@ component CruiseController
   # harmless because d_switch discards its output.
   derivative = BlockComponents.Continuous.Derivative(k = Td, T = ifelse(with_D, max(Td / Nd, 1e-14), 1.0), x0 = xd0) {^derivative}
   d_switch = VehicleSystemsComponents.Lecture1.OnOff(on = with_D) {^d_switch}
+  clamp = VehicleSystemsComponents.Lecture1.ClampingGate(y_max = y_max, y_min = y_min, on = with_I) {^clamp}
   integrator = BlockComponents.Continuous.Integrator(k = 1 / Ti, x0 = xi0) {^integrator}
   i_switch = VehicleSystemsComponents.Lecture1.OnOff(on = with_I) {^i_switch}
   add_pid = BlockComponents.Math.Add3(k1 = 1, k2 = 1, k3 = 1) {^add_pid}
@@ -66,8 +68,9 @@ relations
   connect(add_d.y, derivative.u) {^id18}
   connect(derivative.y, d_switch.u) {^id19}
   connect(d_switch.y, add_pid.u2) {^id20}
-  # Freeze only when integration would push the command farther into the active output limit.
-  integrator.u = ifelse(with_I, ifelse(limiter.y >= y_max, ifelse(control_error >= 0, 0.0, control_error), ifelse(limiter.y <= y_min, ifelse(control_error <= 0, 0.0, control_error), control_error)), 0.0)
+  connect(error.y, clamp.u) {^id23}
+  connect(limiter.y, clamp.u_lim) {^id24}
+  connect(clamp.y, integrator.u) {^id25}
   connect(integrator.y, i_switch.u) {^id21}
   connect(i_switch.y, add_pid.u3) {^id22}
 metadata {
@@ -83,6 +86,9 @@ metadata {
     },
     "d_switch": {
       "Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 560, "y2": 660}}}
+    },
+    "clamp": {
+      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 720, "y2": 820}}}
     },
     "integrator": {
       "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 720, "y2": 820}}}
@@ -107,6 +113,27 @@ metadata {
       }
     },
     "id12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id23": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [{"x": 270, "y": 700}, {"x": 125, "y": 700}, {"x": 125, "y": 740}], "E": 2}
+        ],
+        "junctions": [{"x": 270, "y": 300}],
+        "path": {}
+      }
+    },
+    "id24": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [{"x": 988, "y": 330}], "E": -1},
+          {"S": -1, "M": [{"x": 988, "y": 870}, {"x": 110, "y": 870}, {"x": 110, "y": 800}], "E": 2}
+        ],
+        "junctions": [{"x": 988, "y": 420}],
+        "path": {}
+      }
+    },
+    "id25": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id15": {

@@ -163,7 +163,9 @@ Check everyone is at checkpoint PID before releasing the room.
   back-calculation comparison (`LimPID`). The no-anti-windup run is
   `Lecture1.ClampingCruiseClimbTransient` with `y_max = 1e6`, `y_min = -1e6`.
 - Catch-up 6d: `ClampingCruiseClimb` is the same harness with the reference controller; the
-  reference `CruiseController` has the exact clamping equation.
+  reference `CruiseController` wires it as the `clamp` block, and the exact equation is in
+  `Lecture1.ClampingGate`, written on `u` and `u_lim` instead of `control_error` and
+  `limiter.y`.
 
 ## 07 Derivative and noise — 15 min
 

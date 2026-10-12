@@ -13,10 +13,11 @@ The proportional branch acts on the control error, the integral branch supplies 
 correction, and the filtered derivative branch acts on the weighted setpoint and measurement.
 `with_I` and `with_D` switch the integral and derivative branches on and off through the
 `i_switch` and `d_switch` blocks, so P, PI, PD and PID are the same diagram with different
-parameter values. A switched-off branch contributes zero: the integrator holds `xi0`, and the
-derivative filter runs with a harmless 1 s time constant whose output is discarded.
+parameter values. A switched-off branch contributes zero: `clamp` feeds the integrator zero, so
+it holds `xi0`, and the derivative filter runs with a harmless 1 s time constant whose output is
+discarded.
 
-The integrator freezes only when both conditions hold:
+`clamp` freezes the integrator only when both conditions hold:
 
 1. the output is saturated at a limit, and
 2. the control error has the same sign as that limit, so integrating further would push the
@@ -149,6 +150,9 @@ trapping it at the value reached during saturation.
   # Subcomponent d_switch of type VehicleSystemsComponents.Lecture1.OnOff
   d_switch_overrides = __pop_subcomponent_overrides!(__overrides, "d_switch")
   push!(__systems, @named d_switch = VehicleSystemsComponents.Lecture1.OnOff(; on=with_D, d_switch_overrides...))
+  # Subcomponent clamp of type VehicleSystemsComponents.Lecture1.ClampingGate
+  clamp_overrides = __pop_subcomponent_overrides!(__overrides, "clamp")
+  push!(__systems, @named clamp = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=y_max, y_min=y_min, on=with_I, clamp_overrides...))
   # Subcomponent integrator of type BlockComponents.Continuous.Integrator
   integrator_overrides = __pop_subcomponent_overrides!(__overrides, "integrator")
   push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; k=1 / Ti, x0=xi0, integrator_overrides...))
@@ -178,7 +182,6 @@ trapping it at the value reached during saturation.
 
   ### Equations
   push!(__eqs, control_error ~ error.y)
-  push!(__eqs, integrator.u ~ ifelse(with_I, ifelse(limiter.y >= y_max, ifelse(control_error >= 0, 0.0, control_error), ifelse(limiter.y <= y_min, ifelse(control_error <= 0, 0.0, control_error), control_error)), 0.0))
   push!(__eqs, connect(u_s, error.u1))
   push!(__eqs, connect(u_m, error.u2))
   push!(__eqs, connect(error.y, add_pid.u1))
@@ -190,6 +193,9 @@ trapping it at the value reached during saturation.
   push!(__eqs, connect(add_d.y, derivative.u))
   push!(__eqs, connect(derivative.y, d_switch.u))
   push!(__eqs, connect(d_switch.y, add_pid.u2))
+  push!(__eqs, connect(error.y, clamp.u))
+  push!(__eqs, connect(limiter.y, clamp.u_lim))
+  push!(__eqs, connect(clamp.y, integrator.u))
   push!(__eqs, connect(integrator.y, i_switch.u))
   push!(__eqs, connect(i_switch.y, add_pid.u3))
 
