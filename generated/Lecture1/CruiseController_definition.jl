@@ -9,9 +9,12 @@
 
 PID cruise controller with output limiting and clamping anti-windup.
 
-The proportional branch acts on the control error, the optional integral branch supplies
-steady-state correction, and the optional filtered derivative branch acts on the weighted
-setpoint and measurement.
+The proportional branch acts on the control error, the integral branch supplies steady-state
+correction, and the filtered derivative branch acts on the weighted setpoint and measurement.
+`with_I` and `with_D` switch the integral and derivative branches on and off through the
+`i_switch` and `d_switch` blocks, so P, PI, PD and PID are the same diagram with different
+parameter values. A switched-off branch contributes zero: the integrator holds `xi0`, and the
+derivative filter runs with a harmless 1 s time constant whose output is discarded.
 
 The integrator freezes only when both conditions hold:
 
@@ -26,17 +29,17 @@ trapping it at the value reached during saturation.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `with_I`         | Whether or not to include the integral part                         | --  |   true |
-| `with_D`         | Whether or not to include the derivative part                         | --  |   true |
+| `with_I`         | Switch the integral part on                         | --  |   true |
+| `with_D`         | Switch the derivative part on                         | --  |   true |
 | `k`         | Gain of controller                         | --  |   1 |
-| `Ti`         | Time constant of the integrator block (only active if `with_I = true`)                         | s  |   0.5 |
-| `Td`         | Time constant of the derivative block (only active if `with_D = true`)                         | s  |   0.1 |
+| `Ti`         | Time constant of the integrator block (used when `with_I = true`)                         | s  |   0.5 |
+| `Td`         | Time constant of the derivative block (used when `with_D = true`)                         | s  |   0.1 |
 | `y_max`         | Maximum output                         | --  |   1e300 |
 | `y_min`         | Minimum output                         | --  |   -y_max |
-| `wd`         | Set-point weight for derivative block (only active if `with_D = true`)                         | --  |   1 |
-| `Nd`         | Maximum derivative gain (only active if `with_D = true`)                         | --  |   10 |
-| `xi0`         | Initial value for integrator state (only active if `with_I = true`)                         | --  |   0 |
-| `xd0`         | Initial value for derivative-filter state (only active if `with_D = true`)                         | --  |   0 |
+| `wd`         | Set-point weight for derivative block (used when `with_D = true`)                         | --  |   1 |
+| `Nd`         | Maximum derivative gain (used when `with_D = true`)                         | --  |   10 |
+| `xi0`         | Initial value for integrator state; held there when `with_I = false`                         | --  |   0 |
+| `xd0`         | Initial value for derivative-filter state                         | --  |   0 |
 
 ## Connectors
 
@@ -81,14 +84,20 @@ trapping it at the value reached during saturation.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__with_I = with_I
+  append!(__params, @parameters (with_I::Bool), [description = "Switch the integral part on"])
+  __initial_conditions[with_I] = __local__with_I
+  __local__with_D = with_D
+  append!(__params, @parameters (with_D::Bool), [description = "Switch the derivative part on"])
+  __initial_conditions[with_D] = __local__with_D
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Gain of controller"])
   __initial_conditions[k] = __local__k
   __local__Ti = Ti
-  append!(__params, @parameters (Ti::Real), [description = "Time constant of the integrator block (only active if `with_I = true`)"])
+  append!(__params, @parameters (Ti::Real), [description = "Time constant of the integrator block (used when `with_I = true`)"])
   __initial_conditions[Ti] = __local__Ti
   __local__Td = Td
-  append!(__params, @parameters (Td::Real), [description = "Time constant of the derivative block (only active if `with_D = true`)"])
+  append!(__params, @parameters (Td::Real), [description = "Time constant of the derivative block (used when `with_D = true`)"])
   __initial_conditions[Td] = __local__Td
   __local__y_max = y_max
   append!(__params, @parameters (y_max::Real), [description = "Maximum output"])
@@ -97,16 +106,16 @@ trapping it at the value reached during saturation.
   append!(__params, @parameters (y_min::Real), [description = "Minimum output"])
   __initial_conditions[y_min] = __local__y_min
   __local__wd = wd
-  append!(__params, @parameters (wd::Real), [description = "Set-point weight for derivative block (only active if `with_D = true`)"])
+  append!(__params, @parameters (wd::Real), [description = "Set-point weight for derivative block (used when `with_D = true`)"])
   __initial_conditions[wd] = __local__wd
   __local__Nd = Nd
-  append!(__params, @parameters (Nd::Real), [description = "Maximum derivative gain (only active if `with_D = true`)"])
+  append!(__params, @parameters (Nd::Real), [description = "Maximum derivative gain (used when `with_D = true`)"])
   __initial_conditions[Nd] = __local__Nd
   __local__xi0 = xi0
-  append!(__params, @parameters (xi0::Real), [description = "Initial value for integrator state (only active if `with_I = true`)"])
+  append!(__params, @parameters (xi0::Real), [description = "Initial value for integrator state; held there when `with_I = false`"])
   __initial_conditions[xi0] = __local__xi0
   __local__xd0 = xd0
-  append!(__params, @parameters (xd0::Real), [description = "Initial value for derivative-filter state (only active if `with_D = true`)"])
+  append!(__params, @parameters (xd0::Real), [description = "Initial value for derivative-filter state"])
   __initial_conditions[xd0] = __local__xd0
 
   ### Final Parameters (assignments)
@@ -133,29 +142,19 @@ trapping it at the value reached during saturation.
   push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), error_overrides...))
   # Subcomponent add_d of type BlockComponents.Math.Add
   add_d_overrides = __pop_subcomponent_overrides!(__overrides, "add_d")
-  if with_D
-    push!(__systems, @named add_d = BlockComponents.Math.Add(; k1=wd, k2=Float64(-1), add_d_overrides...))
-  end
+  push!(__systems, @named add_d = BlockComponents.Math.Add(; k1=wd, k2=Float64(-1), add_d_overrides...))
   # Subcomponent derivative of type BlockComponents.Continuous.Derivative
   derivative_overrides = __pop_subcomponent_overrides!(__overrides, "derivative")
-  if with_D
-    push!(__systems, @named derivative = BlockComponents.Continuous.Derivative(; k=Td, T=max(Td / Nd, 1e-14), x0=xd0, derivative_overrides...))
-  end
+  push!(__systems, @named derivative = BlockComponents.Continuous.Derivative(; k=Td, T=ifelse(with_D, max(Td / Nd, 1e-14), 1.0), x0=xd0, derivative_overrides...))
+  # Subcomponent d_switch of type VehicleSystemsComponents.Lecture1.OnOff
+  d_switch_overrides = __pop_subcomponent_overrides!(__overrides, "d_switch")
+  push!(__systems, @named d_switch = VehicleSystemsComponents.Lecture1.OnOff(; on=with_D, d_switch_overrides...))
   # Subcomponent integrator of type BlockComponents.Continuous.Integrator
   integrator_overrides = __pop_subcomponent_overrides!(__overrides, "integrator")
-  if with_I
-    push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; k=1 / Ti, x0=xi0, integrator_overrides...))
-  end
-  # Subcomponent zero_d of type BlockComponents.Sources.Constant
-  zero_d_overrides = __pop_subcomponent_overrides!(__overrides, "zero_d")
-  if !with_D
-    push!(__systems, @named zero_d = BlockComponents.Sources.Constant(; k=Float64(0), zero_d_overrides...))
-  end
-  # Subcomponent zero_i of type BlockComponents.Sources.Constant
-  zero_i_overrides = __pop_subcomponent_overrides!(__overrides, "zero_i")
-  if !with_I
-    push!(__systems, @named zero_i = BlockComponents.Sources.Constant(; k=Float64(0), zero_i_overrides...))
-  end
+  push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; k=1 / Ti, x0=xi0, integrator_overrides...))
+  # Subcomponent i_switch of type VehicleSystemsComponents.Lecture1.OnOff
+  i_switch_overrides = __pop_subcomponent_overrides!(__overrides, "i_switch")
+  push!(__systems, @named i_switch = VehicleSystemsComponents.Lecture1.OnOff(; on=with_I, i_switch_overrides...))
   # Subcomponent add_pid of type BlockComponents.Math.Add3
   add_pid_overrides = __pop_subcomponent_overrides!(__overrides, "add_pid")
   push!(__systems, @named add_pid = BlockComponents.Math.Add3(; k1=Float64(1), k2=Float64(1), k3=Float64(1), add_pid_overrides...))
@@ -179,28 +178,20 @@ trapping it at the value reached during saturation.
 
   ### Equations
   push!(__eqs, control_error ~ error.y)
+  push!(__eqs, integrator.u ~ ifelse(with_I, ifelse(limiter.y >= y_max, ifelse(control_error >= 0, 0.0, control_error), ifelse(limiter.y <= y_min, ifelse(control_error <= 0, 0.0, control_error), control_error)), 0.0))
   push!(__eqs, connect(u_s, error.u1))
   push!(__eqs, connect(u_m, error.u2))
   push!(__eqs, connect(error.y, add_pid.u1))
   push!(__eqs, connect(add_pid.y, gain.u))
   push!(__eqs, connect(gain.y, limiter.u))
   push!(__eqs, connect(limiter.y, y))
-
-  ### Control Structures
-  if with_D
-    push!(__eqs, connect(u_s, add_d.u1))
-    push!(__eqs, connect(u_m, add_d.u2))
-    push!(__eqs, connect(add_d.y, derivative.u))
-    push!(__eqs, connect(derivative.y, add_pid.u2))
-  else
-    push!(__eqs, connect(zero_d.y, add_pid.u2))
-  end
-  if with_I
-    push!(__eqs, integrator.u ~ ifelse(limiter.y >= y_max, ifelse(control_error >= 0, 0.0, control_error), ifelse(limiter.y <= y_min, ifelse(control_error <= 0, 0.0, control_error), control_error)))
-    push!(__eqs, connect(integrator.y, add_pid.u3))
-  else
-    push!(__eqs, connect(zero_i.y, add_pid.u3))
-  end
+  push!(__eqs, connect(u_s, add_d.u1))
+  push!(__eqs, connect(u_m, add_d.u2))
+  push!(__eqs, connect(add_d.y, derivative.u))
+  push!(__eqs, connect(derivative.y, d_switch.u))
+  push!(__eqs, connect(d_switch.y, add_pid.u2))
+  push!(__eqs, connect(integrator.y, i_switch.u))
+  push!(__eqs, connect(i_switch.y, add_pid.u3))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -12,8 +12,8 @@ component SlipCruiseLoop
   "Road-friction multiplier"
   mu_scale = RealInput() {^mu_scale}
   structural parameter theta_e::Time = 0.3
-  structural parameter with_I::Boolean = true
-  structural parameter with_D::Boolean = true
+  parameter with_I::Boolean = true
+  parameter with_D::Boolean = true
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
@@ -113,8 +113,8 @@ end
 """Settled 90 km/h cruise crossing a finite low-friction patch."""
 component SlipCruiseIcePatch
   structural parameter theta_e::Time = 0.3
-  structural parameter with_I::Boolean = true
-  structural parameter with_D::Boolean = true
+  parameter with_I::Boolean = true
+  parameter with_D::Boolean = true
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1

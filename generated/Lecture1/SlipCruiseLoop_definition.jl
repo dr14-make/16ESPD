@@ -70,6 +70,12 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__with_I = with_I
+  append!(__params, @parameters (with_I::Bool))
+  __initial_conditions[with_I] = __local__with_I
+  __local__with_D = with_D
+  append!(__params, @parameters (with_D::Bool))
+  __initial_conditions[with_D] = __local__with_D
   __local__k = k
   append!(__params, @parameters (k::Real))
   __initial_conditions[k] = __local__k

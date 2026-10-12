@@ -17,8 +17,8 @@ the controller. The loop signals and noise amplitude are in km/h.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `theta_e`         | Powertrain transport delay                         | s  |   0.3 |
-| `with_I`         | Whether to include integral action                         | --  |   true |
-| `with_D`         | Whether to include derivative action                         | --  |   true |
+| `with_I`         | Switch integral action on                         | --  |   true |
+| `with_D`         | Switch derivative action on                         | --  |   true |
 | `k`         | Controller gain in N.m per km/h                         | --  |   56.0 |
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
@@ -70,6 +70,12 @@ the controller. The loop signals and noise amplitude are in km/h.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__with_I = with_I
+  append!(__params, @parameters (with_I::Bool), [description = "Switch integral action on"])
+  __initial_conditions[with_I] = __local__with_I
+  __local__with_D = with_D
+  append!(__params, @parameters (with_D::Bool), [description = "Switch derivative action on"])
+  __initial_conditions[with_D] = __local__with_D
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Controller gain in N.m per km/h"])
   __initial_conditions[k] = __local__k

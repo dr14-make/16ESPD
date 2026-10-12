@@ -14,10 +14,10 @@ component CruiseLoop
   controller = VehicleSystemsComponents.Lecture1.CruiseController(with_I = with_I, with_D = with_D, k = k, Ti = Ti, Td = Td, Nd = Nd, y_max = y_max, y_min = y_min, wd = wd, xi0 = xi0, xd0 = xd0) {^controller}
   "Powertrain transport delay"
   structural parameter theta_e::Time = 0.3
-  "Whether to include integral action"
-  structural parameter with_I::Boolean = true
-  "Whether to include derivative action"
-  structural parameter with_D::Boolean = true
+  "Switch integral action on"
+  parameter with_I::Boolean = true
+  "Switch derivative action on"
+  parameter with_D::Boolean = true
   "Controller gain in N.m per km/h"
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
@@ -117,8 +117,8 @@ component CruiseLoopStep
   demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step) {^demand}
   road = BlockComponents.Sources.Constant(k = grade) {^road}
   structural parameter theta_e::Time = 0.3
-  structural parameter with_I::Boolean = false
-  structural parameter with_D::Boolean = false
+  parameter with_I::Boolean = false
+  parameter with_D::Boolean = false
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1

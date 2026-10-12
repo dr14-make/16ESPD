@@ -205,8 +205,8 @@ component ClampingCruiseClimb
   demand = BlockComponents.Sources.Constant(k = v_set) {^demand}
   road = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = gradient, start_time = start_time, duration = duration) {^road}
   structural parameter theta_e::Time = 0.3
-  structural parameter with_I::Boolean = true
-  structural parameter with_D::Boolean = true
+  parameter with_I::Boolean = true
+  parameter with_D::Boolean = true
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
