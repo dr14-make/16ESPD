@@ -58,6 +58,10 @@ relations
   connect(wsensor.w, wheel_to_kmh.u) {^id14}
   connect(wheel_to_kmh.y, wheel_kmh) {^id15}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/SlipCar.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "tau_cmd": {
       "Dyad": {

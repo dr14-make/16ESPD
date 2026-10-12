@@ -6,7 +6,10 @@ component OnOff
 relations
   y = ifelse(on, u, 0)
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]}
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/OnOff.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  }
 }
 end
 

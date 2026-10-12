@@ -28,6 +28,10 @@ relations
   connect(add_pid.y, gain.u) {^id_pid_gain}
   connect(gain.y, y) {^id_gain_y}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/CruiseController.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "u_s": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}, "diagram": {"x1": -50, "x2": 50, "y1": 420, "y2": 520}}}},
     "u_m": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 270}, "diagram": {"x1": 0, "x2": 100, "y1": 950, "y2": 1050, "rot": 270}}}},

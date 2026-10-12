@@ -22,6 +22,10 @@ relations
   connect(wheel.support_r, support_r) {^id5}
   connect(wheel.support_t, support_t) {^id6}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/Driveline.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "spline": {
       "Dyad": {

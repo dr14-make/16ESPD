@@ -50,6 +50,10 @@ relations
   connect(controller.y, plant.tau_cmd) {^id7}
   connect(grade, plant.grade) {^id8}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/CruiseLoop.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "setpoint": {
       "Dyad": {

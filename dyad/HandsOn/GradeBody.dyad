@@ -37,6 +37,10 @@ relations
   connect(grade, rolling.inclination) {^id9}
   connect(grade, gradeforce.grade) {^id10}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/GradeBody.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "flange": {
       "Dyad": {

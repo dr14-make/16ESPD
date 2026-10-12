@@ -17,6 +17,10 @@ relations
   # hold the car back.
   f = m * g * sin(atan(grade))
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/GradeForce.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "grade": {
       "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 450, "y2": 550}}}

@@ -30,6 +30,10 @@ relations
   connect(torque.spline, spline) {^id5}
   connect(torque.support, support) {^id6}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/Engine.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "tau_cmd": {
       "Dyad": {

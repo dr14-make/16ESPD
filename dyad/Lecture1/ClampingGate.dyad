@@ -23,7 +23,10 @@ component ClampingGate
 relations
   y = ifelse(on, ifelse(u_lim >= y_max, ifelse(u >= 0, 0.0, u), ifelse(u_lim <= y_min, ifelse(u <= 0, 0.0, u), u)), 0.0)
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/ClampingGate.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "u": {
       "Dyad": {

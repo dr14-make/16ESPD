@@ -25,4 +25,10 @@ relations
     sin(2 * pi * f4 * time + p4) +
     sin(2 * pi * f5 * time + p5) +
     sin(2 * pi * f6 * time + p6))
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/MeasurementNoise.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  }
+}
 end
