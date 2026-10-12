@@ -52,21 +52,27 @@ relations
 metadata {
   "_links": {
     "setpoint": {
-      "Dyad": {"placement": {"diagram": {"x1": -70, "x2": 30, "y1": 170, "y2": 270}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -70, "x2": 30, "y1": 170, "y2": 270},
+          "diagram": {"x1": -70, "x2": 30, "y1": 170, "y2": 270}
+        }
+      }
     },
     "grade": {
-      "Dyad": {"placement": {"diagram": {"x1": -70, "x2": 30, "y1": 730, "y2": 830}}}
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -70, "x2": 30, "y1": 730, "y2": 830},
+          "diagram": {"x1": -70, "x2": 30, "y1": 730, "y2": 830}
+        }
+      }
     },
-    "plant": {
-      "Dyad": {"placement": {"diagram": {"x1": 710, "x2": 810, "y1": 630, "y2": 730}}}
-    },
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 710, "x2": 810, "y1": 620, "y2": 720}}}},
     "controller": {
       "Dyad": {"placement": {"diagram": {"x1": 220, "x2": 320, "y1": 620, "y2": 720}}}
     },
     "zero_ff": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 220, "x2": 320, "y1": 460, "y2": 560, "rot": 90}}
-      }
+      "Dyad": {"placement": {"diagram": {"x1": 220, "x2": 320, "y1": 400, "y2": 500, "rot": 90}}}
     },
     "id6": {
       "Dyad": {
@@ -80,10 +86,10 @@ metadata {
           {
             "S": 1,
             "M": [
-              {"x": 880, "y": 680},
+              {"x": 880, "y": 670},
               {"x": 880, "y": 870},
-              {"x": 60, "y": 870},
-              {"x": 60, "y": 693}
+              {"x": -120, "y": 870},
+              {"x": -120, "y": 693}
             ],
             "E": 2
           }
@@ -95,7 +101,7 @@ metadata {
     "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id10": {
       "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 670, "y": 780}, {"x": 670, "y": 690}], "E": 2}],
+        "edges": [{"S": 1, "M": [{"x": 670, "y": 780}, {"x": 670, "y": 715}], "E": 2}],
         "path": {}
       }
     }
@@ -118,9 +124,9 @@ no-anti-windup case; leave it at 0.9 for the back-calculation case. Set `y_max` 
 to clamp the controller under the physical ceiling, as notebook 06's closing section does.
 """
 component CruiseClimb
-  loop = VehicleSystemsComponents.Lecture1.BackCalcCruiseLoop(theta_e = theta_e, with_I = with_I, with_D = with_D, k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd, m0 = v_set)
-  demand = BlockComponents.Sources.Constant(k = v_set)
-  road = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = gradient, start_time = start_time, duration = duration)
+  loop = VehicleSystemsComponents.Lecture1.BackCalcCruiseLoop(theta_e = theta_e, with_I = with_I, with_D = with_D, k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd, m0 = v_set) {^loop}
+  demand = BlockComponents.Sources.Constant(k = v_set) {^demand}
+  road = VehicleSystemsComponents.Vehicle.GradeProfile(gradient = gradient, start_time = start_time, duration = duration) {^road}
   structural parameter theta_e::Time = 0.3
   structural parameter with_I::Boolean = true
   structural parameter with_D::Boolean = true
@@ -148,8 +154,8 @@ component CruiseClimb
   "Climb duration; the road returns to flat afterwards"
   parameter duration::Time = 120.0
 relations
-  connect(demand.y, loop.setpoint)
-  connect(road.y, loop.grade)
+  connect(demand.y, loop.setpoint) {^id4}
+  connect(road.y, loop.grade) {^id5}
   initial loop.plant.body.mass.s = 0.0
   initial loop.plant.body.mass.v = v0
   initial loop.plant.engine.lag.x = tau0
@@ -169,6 +175,18 @@ metadata {
             "loop.controller.integrator.y"
           ]
         }
+      }
+    }
+  },
+  "_links": {
+    "loop": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 100, "y2": 200}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 0, "x2": 100, "y1": 72, "y2": 172}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 0, "x2": 100, "y1": 300, "y2": 400}}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 160, "y": 350}, {"x": 160, "y": 178}], "E": 2}],
+        "path": {}
       }
     }
   }
@@ -235,17 +253,10 @@ metadata {
     }
   },
   "_links": {
-    "loop": {
-      "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 110, "y2": 210}}}
-    },
-    "demand": {"Dyad": {"placement": {"diagram": {"x1": 0, "x2": 100, "y1": 70, "y2": 170}}}},
+    "loop": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 110, "y2": 210}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 0, "x2": 100, "y1": 76, "y2": 176}}}},
     "road": {"Dyad": {"placement": {"diagram": {"x1": 0, "x2": 100, "y1": 380, "y2": 480}}}},
-    "id4": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 309, "y": 120}, {"x": 309, "y": 126}], "E": 2}],
-        "path": {}
-      }
-    },
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id5": {
       "Dyad": {
         "edges": [{"S": 1, "M": [{"x": 160.5, "y": 430}, {"x": 160.5, "y": 192}], "E": 2}],

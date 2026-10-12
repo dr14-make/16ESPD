@@ -14,15 +14,15 @@ component WheeledCruiseStep
   parameter v0::Velocity = 25.0
   parameter tau0::Torque = 31.078
   parameter t_step::Time = 0.0
-  plant = VehicleSystemsComponents.HandsOn.WheeledCar(T_max = T_max, J_w = J_w)
+  plant = VehicleSystemsComponents.HandsOn.WheeledCar(T_max = T_max, J_w = J_w) {^plant}
   controller = VehicleSystemsComponents.Lecture1.CruiseController(
     with_I = true, with_D = true, k = k, Ti = Ti, Td = Td, Nd = Nd,
-    y_max = y_max, y_min = y_min, wd = wd, xi0 = 0.0, xd0 = (wd - 1) * v_lo)
-  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step)
+    y_max = y_max, y_min = y_min, wd = wd, xi0 = 0.0, xd0 = (wd - 1) * v_lo) {^controller}
+  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step) {^demand}
 relations
-  connect(demand.y, controller.u_s)
-  connect(plant.v_kmh, controller.u_m)
-  connect(controller.y, plant.tau_cmd)
+  connect(demand.y, controller.u_s) {^id1}
+  connect(plant.v_kmh, controller.u_m) {^id2}
+  connect(controller.y, plant.tau_cmd) {^id3}
   initial plant.body.mass.s = 0.0
   initial plant.body.mass.v = v0
   initial plant.engine.lag.x = tau0
@@ -36,7 +36,33 @@ metadata {
       "final": {"plant.v_kmh": 110},
       "signals": ["plant.v_kmh", "controller.y", "demand.y"]
     }
-  }}}
+  }}},
+  "_links": {
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "controller": {
+      "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 473, "y2": 573}}}
+    },
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 473, "y2": 573}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 800, "y": 523},
+              {"x": 800, "y": 700},
+              {"x": 300, "y": 700},
+              {"x": 300, "y": 546}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
 }
 end
 

@@ -20,10 +20,10 @@ component CarStepTest
   parameter v0::Velocity = 25.0
   "Time of the torque step"
   parameter t_step::Time = 50.0
-  plant = VehicleSystemsComponents.HandsOn.Car()
-  cmd = BlockComponents.Sources.Step(offset = tau_lo, height = tau_hi - tau_lo, start_time = t_step)
+  plant = VehicleSystemsComponents.HandsOn.Car() {^plant}
+  cmd = BlockComponents.Sources.Step(offset = tau_lo, height = tau_hi - tau_lo, start_time = t_step) {^cmd}
 relations
-  connect(cmd.y, plant.tau_cmd)
+  connect(cmd.y, plant.tau_cmd) {^id1}
   initial plant.body.mass.s = 0.0
   initial plant.body.mass.v = v0
   initial plant.engine.lag.x = tau_lo
@@ -40,6 +40,11 @@ metadata {
         }
       }
     }
+  },
+  "_links": {
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}},
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end

@@ -79,32 +79,105 @@ relations
   end
 metadata {
   "_links": {
-    "error": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
-    "integrator": {"Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 300, "y2": 400}}}},
-    "zero_i": {"Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 300, "y2": 400}}}},
-    "add_d": {"Dyad": {"placement": {"diagram": {"x1": 210, "x2": 310, "y1": 650, "y2": 750}}}},
-    "derivative": {"Dyad": {"placement": {"diagram": {"x1": 360, "x2": 460, "y1": 650, "y2": 750}}}},
-    "zero_d": {"Dyad": {"placement": {"diagram": {"x1": 360, "x2": 460, "y1": 650, "y2": 750}}}},
-    "add_pid": {"Dyad": {"placement": {"diagram": {"x1": 520, "x2": 620, "y1": 450, "y2": 550}}}},
-    "gain": {"Dyad": {"placement": {"diagram": {"x1": 680, "x2": 780, "y1": 450, "y2": 550}}}},
-    "limiter": {"Dyad": {"placement": {"diagram": {"x1": 840, "x2": 940, "y1": 450, "y2": 550}}}}
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 420, "y2": 520}}}},
+    "integrator": {
+      "Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 800, "y2": 900}}}
+    },
+    "zero_i": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 800, "y2": 900}}}},
+    "add_d": {"Dyad": {"placement": {"diagram": {"x1": 250, "x2": 350, "y1": 650, "y2": 750}}}},
+    "derivative": {
+      "Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 650, "y2": 750}}}
+    },
+    "zero_d": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 650, "y2": 750}}}},
+    "add_pid": {"Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 450, "y2": 550}}}},
+    "gain": {"Dyad": {"placement": {"diagram": {"x1": 740, "x2": 840, "y1": 450, "y2": 550}}}},
+    "limiter": {"Dyad": {"placement": {"diagram": {"x1": 880, "x2": 980, "y1": 450, "y2": 550}}}},
+    "u_s": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "default", "x1": -100, "y1": 220, "x2": 0, "y2": 320, "rot": 0},
+          "diagram": {"x1": -50, "x2": 50, "y1": 390, "y2": 490}
+        }
+      }
+    },
+    "u_m": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "default", "x1": -100, "y1": 680, "x2": 0, "y2": 780, "rot": 0},
+          "diagram": {"x1": -50, "x2": 50, "y1": 680, "y2": 780}
+        }
+      }
+    },
+    "y": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "output", "x1": 1000, "y1": 450, "x2": 1100, "y2": 550, "rot": 0},
+          "diagram": {"x1": 1000, "x2": 1100, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "id_us_error": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_um_error": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 110, "y": 500}], "E": 2}],
+        "junctions": [{"x": 110, "y": 730}],
+        "path": {}
+      }
+    },
+    "id_error_pid": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_pid_gain": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_gain_limiter": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_limiter_y": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_us_d": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 80, "y": 670}], "E": 2}],
+        "junctions": [{"x": 80, "y": 440}],
+        "path": {}
+      }
+    },
+    "id_um_d": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_add_d_derivative": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_derivative_pid": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 560, "y": 700}, {"x": 560, "y": 500}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id_zero_d_pid": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 560, "y": 700}, {"x": 560, "y": 500}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id_integrator_pid": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 580, "y": 850}, {"x": 580, "y": 530}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id_zero_i_pid": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 580, "y": 850}, {"x": 580, "y": 530}], "E": 2}],
+        "path": {}
+      }
+    }
   }
 }
 end
 
 test component TestCruiseController
   "Constant setpoint above the measurement: a fixed positive error"
-  sp = BlockComponents.Sources.Constant(k = 3.0)
+  sp = BlockComponents.Sources.Constant(k = 3.0) {^sp}
   "Constant measurement"
-  meas = BlockComponents.Sources.Constant(k = 0.0)
+  meas = BlockComponents.Sources.Constant(k = 0.0) {^meas}
   # PI with a low ceiling: the proportional term alone (3) is below y_max = 5, so the loop
   # starts unsaturated and the integrator ramps. It saturates when P + I reaches 5, at I = 2,
   # after which the error is still positive and the output is at the limit, so clamping freezes
   # the integrator there rather than letting it wind up without bound.
-  ctrl = VehicleSystemsComponents.Lecture1.CruiseController(with_I = true, with_D = false, k = 1.0, Ti = 1.0, y_max = 5.0, y_min = -5.0)
+  ctrl = VehicleSystemsComponents.Lecture1.CruiseController(with_I = true, with_D = false, k = 1.0, Ti = 1.0, y_max = 5.0, y_min = -5.0) {^ctrl}
 relations
-  connect(sp.y, ctrl.u_s)
-  connect(meas.y, ctrl.u_m)
+  connect(sp.y, ctrl.u_s) {^id1}
+  connect(meas.y, ctrl.u_m) {^id2}
 metadata {
   "Dyad": {
     "tests": {
@@ -119,6 +192,18 @@ metadata {
           "final": {"ctrl.y": 5.0, "ctrl.integrator.y": 2.0},
           "signals": ["ctrl.y", "ctrl.integrator.y"]
         }
+      }
+    }
+  },
+  "_links": {
+    "sp": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 427, "y2": 527}}}},
+    "meas": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 600, "y2": 700}}}},
+    "ctrl": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 450, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 330, "y": 650}, {"x": 330, "y": 523}], "E": 2}],
+        "path": {}
       }
     }
   }

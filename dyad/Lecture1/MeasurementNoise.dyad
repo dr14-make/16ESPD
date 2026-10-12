@@ -42,10 +42,10 @@ end
 
 test component TestMeasurementNoise
   "Constant carrier the noise rides on"
-  carrier = BlockComponents.Sources.Constant(k = 90.0)
-  noise = VehicleSystemsComponents.Lecture1.MeasurementNoise()
+  carrier = BlockComponents.Sources.Constant(k = 90.0) {^carrier}
+  noise = VehicleSystemsComponents.Lecture1.MeasurementNoise() {^noise}
 relations
-  connect(carrier.y, noise.u)
+  connect(carrier.y, noise.u) {^id1}
 metadata {
   "Dyad": {
     "tests": {
@@ -62,6 +62,11 @@ metadata {
         }
       }
     }
+  },
+  "_links": {
+    "carrier": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}},
+    "noise": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 450, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end

@@ -48,20 +48,16 @@ metadata {
     }
   },
   "_links": {
-    "plant": {
-      "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": 440, "y2": 540}}}
-    },
-    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
-    "road": {
-      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 590, "y2": 690}}}
-    },
-    "id4": {
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 440, "y2": 540}}}},
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 440, "y2": 540}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 600, "y2": 700}}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {
       "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 141.5, "y": 70}, {"x": 141.5, "y": 490}], "E": 2}],
+        "edges": [{"S": 1, "M": [{"x": 450, "y": 650}, {"x": 450, "y": 535}], "E": 2}],
         "path": {}
       }
-    },
-    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 512, "y": 640}], "E": 2}], "path": {}}}
+    }
   }
 }
 end
