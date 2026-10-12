@@ -585,6 +585,6 @@ variable looked fine.
 The notebooks are in the repository, and so is the `docs` folder. Everything on these slides is
 reproducible, and the plots are committed, so you can read them without installing anything.
 
-Next lecture: the engine torque map, which corrects the 246 km/h from hands-on step 05. And
+Next lecture: the engine torque map, which brings the 246 km/h top speed from hands-on step 05 down to a realistic value. And
 cascade control, which fixes the ice patch.
 -->
