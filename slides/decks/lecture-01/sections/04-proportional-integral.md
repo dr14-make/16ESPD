@@ -88,6 +88,14 @@ routeAlias: build-integrator
 *Parameters `Ti` = 10, `xi0` = 0 · `add_pid` Add3 between `error` and `gain` · `integrator` Integrator(k = 1/Ti, x0 = xi0) on `u3` ·
 `zero_d` Constant(k = 0) holds the derivative slot on `u2`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.CruiseLoopTransient()
+top = plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
+bottom = plot(r; idxs = r."controller.integrator.y")
+plot(top, bottom; layout = (2, 1), link = :x, xlims = (0, 40))
+```
+
 [page: step 4](../lecture/lecture-01/#step-4) · reference `dyad/Lecture1/CruiseController.dyad`
 
 <!--
@@ -117,7 +125,8 @@ inputs.
 Save. Go back to `CruiseLoopStep` and run `CruiseLoopTransient` again. The analysis picks up
 the changed controller.
 
-Plot `plant.v_kmh` and `demand.y`. On a second axis, plot `controller.integrator.y`.
+Plot `plant.v_kmh` and `demand.y`, with `controller.integrator.y` in a panel below. The code is
+on the slide.
 
 You should see the speed reach **110 km/h**. The 0.7 km/h gap from step 3 is gone. And you
 should see the integrator state rise and level off near **0.716**. That is 40.1 newton-meters

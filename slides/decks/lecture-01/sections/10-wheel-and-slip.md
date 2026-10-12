@@ -331,6 +331,15 @@ routeAlias: step-10
 `Constant(k = 90)` · `friction` Pulse(amplitude = 0.05, offset = 1.0, start_time = 4,
 duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 / 56`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.SlipCruiseTransient()
+s = [r."plant.v_kmh", r."plant.wheel_kmh"]
+top = plot(r; idxs = s)
+bottom = plot(r; idxs = s, ylims = (85, 115))
+plot(top, bottom; layout = (2, 1), link = :x)
+```
+
 [page: step 10](../lecture/lecture-01/#step-10) · reference `SlipCruiseLoop` in `dyad/Lecture1/SlipCruiseLoop.dyad`
 
 <!--
@@ -373,8 +382,8 @@ wheel now has its own speed. Initial `plant.body.mass.s` is 0. Initial `plant.bo
 Step seven. Run Analysis, choose TransientAnalysis, name it `SlipCruiseTransient`, and set stop
 to 45. Run it.
 
-Now plot `plant.v_kmh` and `plant.wheel_kmh` on one axes. Below them, plot `plant.wheel.kappa`
-and `controller.y`.
+Now plot `plant.v_kmh` and `plant.wheel_kmh` with the code on the slide. On top, the two speeds.
+Below, the same two, zoomed in on the car's speed.
 
 Here is what you should see. Before t equals 4 seconds, the two speeds lie on top of each other
 at 90. On the ice, the wheel speed tears away upward. The reference run reaches about 3400 km/h

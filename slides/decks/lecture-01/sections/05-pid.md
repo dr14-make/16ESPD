@@ -96,6 +96,14 @@ routeAlias: build-derivative
 
 **Real controllers almost never differentiate the setpoint. D sees only the speed.**
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.CruiseLoopTransient()
+top = plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
+bottom = plot(r; idxs = r."controller.y")
+plot(top, bottom; layout = (2, 1), link = :x, xlims = (0, 40))
+```
+
 [page: step 5](../lecture/lecture-01/#step-5) · reference `dyad/Lecture1/CruiseController.dyad`
 
 <!--
@@ -123,7 +131,8 @@ Next, drag in a Derivative from `BlockComponents.Continuous` and name it `deriva
 
 Save, and run `CruiseLoopTransient` again from `CruiseLoopStep`.
 
-Plot `plant.v_kmh` with `demand.y`. On a second plot, show `controller.y`.
+Plot `plant.v_kmh` with `demand.y`, and `controller.y` in a panel below. The code is on the
+slide.
 
 Why is `wd` zero? Look at the bold line on the slide. Real controllers almost never
 differentiate the setpoint. This is the standard two-degree-of-freedom PID. P acts on `wp`

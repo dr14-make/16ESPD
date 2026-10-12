@@ -95,6 +95,13 @@ routeAlias: step-7
 the page) → `noise` between `plant.v_kmh` and `controller.u_m` · limits lifted · run at
 `wd = 1`, `xd0 = 0`, then back to `wd = 0`, `xd0 = -90` · later: vary `Nd`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.NoisyCruiseTransient()
+plot(r; idxs = r."controller.y")
+plot(r; idxs = [r."plant.v_kmh", r."noise.y"])
+```
+
 [page: step 7](../lecture/lecture-01/#step-7) · reference `NoisyCruiseLoop` in `dyad/Lecture1/NoisyCruiseLoop.dyad`
 
 <!--
@@ -123,7 +130,7 @@ does, so the chatter is not clipped. Set `controller.y_max` to 1e6, `controller.
 1e6, and `plant.T_max` to 1e6. That is the parameter from step 6a earning its keep.
 
 Now Run Analysis, choose TransientAnalysis, and name it `NoisyCruiseTransient`, with stop equal
-to 40. Run it. Plot `controller.y`, and plot `plant.v_kmh` against `noise.y`.
+to 40. Run it. Plot `controller.y`, then `plant.v_kmh` with `noise.y`. The code is on the slide.
 
 With w d equal to 1, you should see a tall spike in `controller.y` at the setpoint step. That
 spike is the derivative of a step in the setpoint. After it, the command never stops

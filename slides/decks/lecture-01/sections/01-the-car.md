@@ -348,6 +348,14 @@ routeAlias: build-step-test
 *New component `CarStepTest` · `cmd` Step(offset = 31.078, height = 9.041, start_time = 50) → `plant` (your `Car`) ·
 three `initial` lines · TransientAnalysis `stop = 500`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.CarStepTestTransient()
+plot(r; idxs = r."plant.v_kmh")
+```
+
+Paste it into the Julia REPL (**Dyad: Open Julia REPL**). `plotly()` makes the plot interactive: drag to zoom, double-click to reset.
+
 [page: step 1a](../lecture/lecture-01/#step-1a) · reference `dyad/Lecture1/CarStepTest.dyad`
 
 <!--
@@ -372,7 +380,10 @@ And `initial plant.engine.lag.x = 31.078`. Save.
 Now Run Analysis, choose TransientAnalysis, name it `CarStepTestTransient`, and set `stop` to
 500. Run it from Analyses.
 
-Plot `plant.v_kmh`. On a second plot, put `cmd.y` against `plant.engine.limiter.y`.
+Now plot `plant.v_kmh` in the Julia REPL. Open it with Dyad: Open Julia REPL, in the title bar of
+the Actions panel. The code is on the slide. `plotly()` makes the plot interactive: drag a box to
+zoom, and double-click to zoom back out. Every snippet today starts with that same line, so it
+also works in a fresh REPL.
 
 You should see the speed flat at 90 km/h until 50 seconds, then an S-shaped climb that levels
 off at 110 km/h by the end of the run. Zoom in on the step. The delivered torque does nothing
@@ -565,6 +576,12 @@ routeAlias: build-gradecar
 *Duplicate `Car` → `GradeCar` · `body`: `Body` → your `GradeBody` · new `RealInput` `grade`
 on the left, under `tau_cmd` → `body.grade` · bench `GradeCarFullThrottle`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.GradeCarFullThrottleTransient()
+plot(r; idxs = r."car.v_kmh")
+```
+
 [page: step 1b](../lecture/lecture-01/#step-1b) · reference `dyad/HandsOn/GradeCar.dyad`
 
 > **The plant from here to section 09**
@@ -595,7 +612,7 @@ Now the bench. Right-click `CarFullThrottle`, choose Duplicate, and call it
 `GradeCarFullThrottle`. Replace `car` with a `GradeCar` named `car`. Add `road`, a
 `BlockComponents.Sources.Constant` with `k` equal to 0, and wire `road.y` into `car.grade`.
 Add a TransientAnalysis called `GradeCarFullThrottleTransient`, with `stop` at 300. Run it and
-plot `car.v_kmh`.
+plot `car.v_kmh`, with the code on the slide.
 
 No parameters yet. `T_max` arrives in section 06, and `m` and `theta_e` in section 08, each when
 the story first needs it. The reference `GradeCar` already carries all of them. Ignore that for

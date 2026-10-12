@@ -99,6 +99,12 @@ routeAlias: build-gain
 *In `CruiseController`: parameter `k` = 56 · `gain` Gain(k = k) · `error.y` → `gain` → `y` ·
 run `CruiseLoopTransient`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.CruiseLoopTransient()
+plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
+```
+
 [page: step 3](../lecture/lecture-01/#step-3) · reference `dyad/Lecture1/CruiseController.dyad`
 
 <!--
@@ -115,7 +121,7 @@ Wire `error.y` into `gain.u`, and `gain.y` into `y`. Save. The problems panel is
 because `y` has a source.
 
 Now run `CruiseLoopTransient` from Analyses. That is the analysis we made in step 2. Plot
-`plant.v_kmh` and `demand.y` on one axes.
+`plant.v_kmh` and `demand.y` on one axes. The code is on the slide.
 
 You should see the speed climb from 90 within a few seconds and settle at about 109.3 kilometers
 per hour, below the 110 of `demand.y`. That 0.7 kilometer per hour gap is the whole section. Keep

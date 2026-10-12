@@ -110,6 +110,12 @@ routeAlias: step-6b
 
 *Your `CruiseController` · `Limiter(y_max = y_max, y_min = y_min)` between `gain` and `y`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.CruiseLoopTransient()
+plot(r; idxs = [r."controller.y", r."controller.gain.y"], xlims = (0, 20))
+```
+
 [page: step 6b](../lecture/lecture-01/#step-6b) · reference `dyad/Lecture1/CruiseController.dyad`
 
 <!--
@@ -135,7 +141,7 @@ this engine cannot brake.
 Re-run `CruiseLoopTransient` on `CruiseLoopStep`. The step from 90 to 110 km/h asks for more
 than 150 N·m at the start. So you should see `controller.y` sit flat on 150 for the first
 moments, instead of spiking above it. `controller.gain.y` is the command before the limiter.
-Plot both. The gap between them is the saturation.
+Plot both, with the code on the slide. The gap between them is the saturation.
 
 Watch the naming here. The instance must be called `limiter`, and the signal before it is
 `gain.y`. Otherwise the notebook paths and the clamping equation in step 6d will not find
@@ -164,6 +170,14 @@ routeAlias: step-6c
 *Duplicate `CruiseLoopStep` → `CruiseClimb` · `demand` → `Constant(k = 130)` ·
 `road` → `Pulse(amplitude = 0.10, offset = 0, start_time = 30, duty_cycle = 1.0, period = 120)` ·
 `controller.xd0 = -130` · start at 130 km/h*
+
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.CruiseClimbTransient()
+top = plot(r; idxs = r."plant.v_kmh")
+bottom = plot(r; idxs = [r."controller.y", r."controller.integrator.y"])
+plot(top, bottom; layout = (2, 1), link = :x)
+```
 
 [page: step 6c](../lecture/lecture-01/#step-6c) · reference `CruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
 
@@ -199,9 +213,8 @@ the holding torque at 130 km/h on the flat.
 Click Run Analysis, choose TransientAnalysis, name it `CruiseClimbTransient`, and set `stop`
 to 400. Run it.
 
-Plot these, on one set of axes or stacked. `plant.v_kmh`. `controller.gain.y`, the command
-before the limiter. `controller.y`, after it. `plant.engine.limiter.y`, what the engine
-delivers. And `controller.integrator.y` on its own axis.
+Plot it with the code on the slide. `plant.v_kmh` on top. Below it, `controller.y`, the command
+after the limiter, and `controller.integrator.y`.
 
 Here is what you should see. The speed sags from 130 after t equals 30 seconds. It heads for
 about 118, and is at 119.05 at the crest. `controller.y` and the delivered torque lie flat on
@@ -431,6 +444,14 @@ routeAlias: step-6d
 *Your `CruiseController` · delete `error.y → integrator.u` · in code:
 `integrator.u = ifelse(...)` on `limiter.y` and `error.y` · re-run `CruiseClimb`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.CruiseClimbTransient()
+top = plot(r; idxs = r."plant.v_kmh")
+bottom = plot(r; idxs = [r."controller.y", r."controller.integrator.y"])
+plot(top, bottom; layout = (2, 1), link = :x)
+```
+
 [page: step 6d](../lecture/lecture-01/#step-6d) · reference `ClampingCruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
 
 <!--
@@ -458,7 +479,8 @@ error, as before. We nest `ifelse` because the equation has no boolean "and".
 Back in the diagram, `integrator` has no wire into it, and that is correct. It is still wired
 from `integrator.y` into `add_pid.u3`.
 
-Now re-run `CruiseClimbTransient`, with the same plot as in 6c, on the same axes.
+Now re-run `CruiseClimbTransient`, and plot it with the same code as in 6c. It is on the slide
+again.
 
 Here is what you should see. The same sag on the climb, to 119.04 km/h against 119.10.
 Clamping adds no torque. `controller.integrator.y` goes flat once the limiter saturates,

@@ -665,6 +665,15 @@ routeAlias: step-8
 `structural parameter theta_e::Time = 0.3` · `body`: `m = m` · `engine`: `theta_e = theta_e` ·
 duplicate `CruiseLoopStep` → `TuningCruiseStep` · limits lifted · Ziegler-Nichols gains · vary `m`, `theta_e`*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.TuningCruiseTransient()
+p = plot(r; idxs = r."plant.v_kmh", label = "baseline")
+# after each change:
+r = MyCar.TuningCruiseTransient()
+plot!(p, r; idxs = r."plant.v_kmh", label = "m = 1600")
+```
+
 [page: step 8](../lecture/lecture-01/#step-8) · reference `dyad/HandsOn/GradeCar.dyad`
 
 <!--
@@ -707,7 +716,8 @@ Now set `plant.m` to 1600. That is section 02's 200 kilogram payload. Re-run.
 Then set m back to 1400, and set `plant.theta_e` to 0.6, twice the shipped delay. Re-run. This
 one recompiles, because `theta_e` is structural.
 
-Plot `plant.v_kmh` for all three runs on one axes. You should see that the payload barely moves
+The code on the slide puts all three runs on one axes. After each change, run its last two lines
+again, with a new label. You should see that the payload barely moves
 the response. Feedback absorbs it. That is the section 02 lesson again. And you should see the
 doubled delay ring much harder. The Ziegler-Nichols gain was computed from a K u measured at 0.3
 seconds. K u falls as the delay grows, so the margin the table left is gone. That is "the model
