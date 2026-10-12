@@ -12,12 +12,8 @@ Proportional control gets you close, and close is where it stops.
 `notebooks/lecture01/03-proportional.ipynb`
 
 <!--
-**Say:** from here to the end of section 05 the car never changes. Not one parameter.
-Everything that happens is a change to the controller — and you make each change yourself.
-
-**Timing:** 15 minutes. Control law 2, build step 3 and its first run 4, the notebook's three
-cells 6 (all fast, because the closed loop settles in seconds where the open loop took
-minutes), why it cannot be zero 2, checkpoint P 1.
+From here to the end of section 05, the car never changes. Not one parameter. Everything that
+happens is a change to the controller, and you make each change yourself.
 -->
 
 ---
@@ -52,35 +48,33 @@ Units, once and for all: *e* is km/h, *u* is N·m, so **k is N·m per km/h**.
 </div>
 
 <!--
-**Say:** think of walking to a line on a football pitch. Far away, walk fast; close, slow
-down; on the line, stop. A proportional controller and a person crossing a room are the same
-algorithm, and for that problem it works perfectly — you stop exactly on the line.
+Think of walking to a line on a football pitch. Far away, you walk fast. Close, you slow down. On
+the line, you stop. A proportional controller and a person crossing a room are the same algorithm.
+For that problem it works perfectly: you stop exactly on the line.
 
-**Then say:** now think about a drone hovering at 50 m. At the target the error is zero, so
-the controller commands zero, so the propellers stop, so it falls. That system needs a
-non-zero output to *stay* where you put it — and proportional control can only make a
-non-zero output out of a non-zero error.
+Now think about a drone hovering at 50 meters. At the target the error is zero, so the controller
+commands zero, so the propellers stop, so it falls. That system needs a non-zero output to stay
+where you put it. And proportional control can only make a non-zero output out of a non-zero
+error.
 
-**Ask the room:** which of those two is our car? *(The drone. Holding 110 km/h needs 40 N·m
-forever, because drag never stops. Let them get there; the next three slides are just
-evidence for the answer they gave.)*
+Which of those two is our car? The drone. Holding 110 kilometers per hour needs 40 newton-meters
+forever, because drag never stops. The next three slides are the evidence for that answer.
 
-**In the model:** One **`CruiseController`** with `with_I = false, with_D = false`, and the
-wire from `plant.v_kmh` back to `controller.u_m`. That wire is the whole difference between
-this section and section 02's feedforward. The next slide puts the one block this equation
-needs into the students' controller.
+In the model, this is one `CruiseController` with `with_I` false and `with_D` false, plus the wire
+from `plant.v_kmh` back to `controller.u_m`. That wire is the whole difference between this
+section and the feedforward of section 02. On the next slide, you put the one block this equation
+needs into your own controller.
 
-**Readout — every symbol on this slide**
+A word on the symbols. u equals k times e is the entire proportional control law. The output is
+gain times error, and nothing else. k is the proportional gain, in newton-meters per kilometer per
+hour. You will sometimes see it written K p. e is v set minus v, the error, in kilometers per
+hour. Positive means we are going too slowly. And u is the commanded engine torque, in
+newton-meters.
 
-- **u = k·e** — the entire proportional control law. Output is gain times error, and nothing
-  else.
-- **k** — the proportional gain, N·m per km/h. Sometimes written K<sub>p</sub>.
-- **e = v_set − v** — the error, km/h. Positive means we are going too slowly.
-- **u** — commanded engine torque, N·m.
-- **T_max = 150 N·m** — the engine's physical ceiling. **y_max** — the controller's own
-  output clamp, a separate number. Both lifted for this section.
-- **280 / 17,800 N·m** — the peak torque the gentlest and fiercest gains here ask for at the
-  instant of the step. Against 150 available.
+T max, 150 newton-meters, is the engine's physical ceiling. y max is the controller's own output
+clamp, a separate number. In this section both are lifted. That matters, because at the instant of
+the step the gentlest gain here asks for 280 newton-meters, and the fiercest for 17,800. Against
+150 available.
 -->
 
 ---
@@ -108,36 +102,37 @@ run `CruiseLoopTransient`*
 [page: step 3](../lecture/lecture-01/#step-3) · reference `dyad/Lecture1/CruiseController.dyad`
 
 <!--
-**Say:** *u = k e*. The error block already makes *e*. One block multiplies it by *k*, and
-the controller is complete — the simplest one there is.
+u equals k times e. The error block already makes e. One block multiplies it by k, and the
+controller is complete. It is the simplest one there is.
 
-**Build it live, on the projector, with the room.**
+Open `CruiseController`. Add a parameter `k`, with default 56. Its units are newton-meters per
+kilometer per hour.
 
-1. Open `CruiseController`. **Add parameter** `k`, default `56`. Units: N·m per km/h.
-2. **Drag in** `BlockComponents.Math.Gain`, name it `gain`. Parameter: `k = k` — the part
-   refers to the controller's parameter by name.
-3. **Wire** `error.y` → `gain.u`, `gain.y` → `y`. Save. The problems panel is now empty: `y`
-   has a source.
-4. Run `CruiseLoopTransient` from Analyses — the analysis made in step 2.
-5. **Plot** `plant.v_kmh` and `demand.y` on one axes.
+Drag in `BlockComponents.Math.Gain` and name it `gain`. Set its parameter to k equals `k`. The
+block refers to the controller's parameter by name.
 
-**The plot must show, before moving on:** the speed climbing from 90 within a few seconds and
-settling at about **109.3 km/h**, below the 110 of `demand.y`. That 0.7 km/h gap is the whole
-section. Point at it and do not explain it yet.
+Wire `error.y` into `gain.u`, and `gain.y` into `y`. Save. The problems panel is now empty,
+because `y` has a source.
 
-**On the engine ceiling:** the students' engine still clips at 150 N·m — `T_max` only
-becomes a car parameter in section 06 — while the notebook figures that follow lift it. So
-their rise is slower than the notebook's curve at the start. The settled value is the same,
-109.3, because holding 110 takes only 40 N·m, well under the ceiling.
+Now run `CruiseLoopTransient` from Analyses. That is the analysis we made in step 2. Plot
+`plant.v_kmh` and `demand.y` on one axes.
 
-**If a student wants a second run:** `controller = CruiseController(k = 14)` in the loop's
-code, run again — it settles about 2.8 km/h short. The notebook's next slide is that run.
+You should see the speed climb from 90 within a few seconds and settle at about 109.3 kilometers
+per hour, below the 110 of `demand.y`. That 0.7 kilometer per hour gap is the whole section. Keep
+your eye on it. We explain it in a moment.
 
-**They get wrong:** typing `k = 56` into the `gain` block instead of `k = k`. It runs the
-same today and breaks every sweep later, because the controller's `k` is no longer wired to
+One difference from the notebook. Your engine still clips at 150 newton-meters, because `T_max`
+only becomes a car parameter in section 06. The notebook figures that follow lift that ceiling. So
+your rise is slower than the notebook's curve at the start. The settled value is the same, 109.3,
+because holding 110 takes only 40 newton-meters, well under the ceiling.
+
+If you want a second run, set `controller = CruiseController(k = 14)` in the loop's code and run
+again. It settles about 2.8 kilometers per hour short. The next slide is that run, from the
+notebook.
+
+The common mistake here is typing 56 into the `gain` block instead of k equals `k`. It runs the
+same today, and it breaks every sweep later, because the controller's `k` is no longer wired to
 anything.
-
-**Timing:** 2 minutes building, 2 running and reading the plot.
 -->
 
 ---
@@ -178,32 +173,24 @@ bracket_error!(plt, single; setpoint = 110, sig = SPEED)
 </div>
 
 <!--
-**Point at:** the dashed line, then the solid one, then the gap between them. Do not say
-"error" yet — ask what they see.
+Look at the dashed line. Now the solid one. Now the gap between them. What do you see? The speed
+stopped short of where we asked it to go.
 
-**Ask the room:** is this controller broken? *(No. It is doing exactly what it was told. It
-is stable, it is quick, it stopped somewhere sensible — and it is wrong, permanently, and it
-will never notice.)*
+Is this controller broken? No. It is doing exactly what it was told. It is stable, it is quick,
+and it stopped somewhere sensible. And it is wrong, permanently, and it will never notice.
 
-**Read out:** the bracket annotation — 2.8 km/h short at this gain. And then the third number
-on the slide, which is the one nobody expects: to make that modest-looking response the
-controller asked for **280 N·m** at the instant of the step, from an engine that can give
-150. We lifted the limit to get this plot. Say so.
+The bracket says 2.8 kilometers per hour short, at this gain of 14. That is the steady-state
+error: the setpoint minus where the speed settled. A gain of 14 newton-meters per kilometer per
+hour is deliberately gentle. What the loop ends up delivering is about 40 newton-meters, the
+torque needed to hold 110. This run is 30 seconds long.
 
-**Contrast, loudly:** the open-loop car took several minutes to change speed. This took
-seconds. Same engine, same mass, same drag. Feedback changed the dynamics of the system, not
+Now the third number on the slide, the one nobody expects. To make this modest-looking response,
+the controller asked for 280 newton-meters at the instant of the step, when the error was still
+the full 20 kilometers per hour. The engine can give 150. We lifted the limit to get this plot.
+
+And compare it with the open loop. The open-loop car took several minutes to change speed. This
+took seconds. Same engine, same mass, same drag. Feedback changed the dynamics of the system, not
 just how it is operated.
-
-**Readout — every symbol on this slide**
-
-- **k = 14** N·m per km/h — a deliberately gentle gain.
-- **2.8 km/h** — the steady-state error: setpoint minus where it settled.
-- **≈ 40 N·m** — the torque needed to hold 110 km/h, which is what the loop ends up
-  delivering.
-- **280 N·m** — the peak command, at the step, when the error is still the full 20 km/h.
-- **The bracket** — drawn between the settled speed and the dashed setpoint. Its label is the
-  error.
-- **stop = 30.0** — the run length in seconds.
 -->
 
 ---
@@ -251,37 +238,28 @@ plot_sweep(family; sig = SPEED, setpoint = 110, name = "k")
 </div>
 
 <!--
-**Point at:** the curves in order. Each one rises faster and each one stops closer. Then
-point at the dashed setpoint and say: none of them arrives.
+Look at the curves in order: 14, 56, 220 and 890 newton-meters per kilometer per hour. These four
+gains span about two decades. Each curve rises faster, and each one stops closer. Now look at the
+dashed setpoint. None of them arrives.
 
-**Point at the right-hand panel**, the magnified last half minute. Two of these curves are
-flat lines below the setpoint. The other two are still oscillating, and they will still be
-oscillating tomorrow.
+Now the right-hand panel. It is the last 30 seconds, magnified onto a 5 kilometer per hour window.
+Two of these curves are flat lines below the setpoint: 2.8 short at k equals 14, and 0.7 short at
+56. The other two are still oscillating, and they will still be oscillating tomorrow.
 
-**Say:** so the pattern only holds while the loop is stable. Between 56 and 220 we crossed
-something — the *ultimate gain*, about 115 N·m per km/h. Past it, "steady-state error" is not
-a small number, it is a question with no answer.
+So the pattern only holds while the loop is stable. Between 56 and 220 we crossed something: the
+ultimate gain, K u, about 115 newton-meters per kilometer per hour. At that gain the loop
+oscillates forever, neither growing nor decaying. Past it, steady-state error is not a small
+number. It is a question with no answer.
 
-**Ask the room:** so what gain do we need for zero error? *(Infinite. Somebody will say it —
-and now you can answer that we cannot even reach 220. There is a ceiling on this approach and
-we just hit it.)*
+So what gain do we need for zero error? Infinite. And we cannot even reach 220. There is a ceiling
+on this approach, and we just hit it.
 
-**Promise section 08:** that ultimate gain is not a nuisance. It is a measurement, and two of
-the three tuning methods in this lecture are built on it.
+That ultimate gain is not a nuisance. It is a measurement, and in section 08 two of the three
+tuning methods are built on it.
 
-**They get wrong:** "just turn it up more". Ask what else grows when the gain grows — the
-commanded torque at the instant of the step, and the loop's appetite for sensor noise. We
-spend section 08 on exactly that bill.
-
-**Readout — every symbol on this slide**
-
-- **k = 14, 56, 220, 890** — four gains spanning about two decades, N·m per km/h.
-- **K<sub>u</sub> ≈ 115** N·m per km/h — the *ultimate gain*: the gain at which the loop
-  oscillates forever, neither growing nor decaying. Above it there is no steady state.
-- **Settled error** — 2.8 km/h at k = 14, 0.7 at k = 56. The other two never settle, so the
-  question does not apply to them.
-- **The right-hand panel** — the last 30 seconds, magnified onto a 5 km/h window so the
-  difference between "settled" and "still oscillating" is visible.
+You might think: just turn it up more. But what else grows when the gain grows? The commanded
+torque at the instant of the step, and the loop's appetite for sensor noise. We spend section 08
+on exactly that bill.
 -->
 
 ---
@@ -319,35 +297,25 @@ vline!([K_ULTIMATE]; ls = :dash, color = :firebrick, label = "Ku = 115")
 </div>
 
 <!--
-**Point at:** the curve hugging the axis on the right and never touching it. This is the
-shape of "asymptotically, never".
+Look at the curve hugging the axis on the right and never touching it. This is the shape of
+asymptotically, never.
 
-**Then point at the shaded region** and be precise about what changed. This curve is
-*solved*, not simulated — it is the fixed point of e = T(v−e)/k, which has an answer at every
-gain. The shading marks where that answer stops meaning anything, because the loop no longer
-settles. The crosses are the two gains from the last slide that the curve predicts and the
-simulation refuses to deliver.
+Now the shaded region. This curve is solved, not simulated. It is the fixed point of e equals T
+cruise of v set minus e, all over k, and that has an answer at every gain. The shading marks the
+gains above K u, 115, where that answer stops meaning anything, because the loop no longer
+settles. The black dots are simulated runs that settled. The red crosses are the two gains from
+the last slide that the curve predicts and the simulation refuses to deliver. The gain axis is
+logarithmic, because the gain spans two and a half decades. Equal spacing means equal ratios, not
+equal differences.
 
-**Say:** and now the argument, which is three sentences and you should be able to reproduce
-it in the exam. One: at 110 km/h the car needs about 40 N·m just to stand still against drag.
-Two: a proportional controller's only source of output is *k* times the error. Three:
-therefore the error cannot be zero, because if it were, the torque would be zero, and the car
-would slow down.
+Now the argument. It is three sentences, and you should be able to reproduce it in the exam. One:
+at 110 kilometers per hour the car needs about 40 newton-meters just to stand still against drag.
+Two: a proportional controller's only source of output is k times the error. Three: therefore the
+error cannot be zero, because if it were, the torque would be zero, and the car would slow down.
 
-**Ask the room:** what would have to be true of a plant for proportional control to reach the
-setpoint exactly? *(That holding the setpoint needs zero control effort. Walking across a room
-qualifies. Almost nothing you will ever be paid to control does.)*
-
-**Readout — every symbol on this slide**
-
-- **The blue curve** — the error *solved* from the force balance, not simulated: the fixed
-  point of e = T_cruise(v_set − e)/k. It has an answer at every gain.
-- **The shaded region** — gains above K<sub>u</sub> = 115, where the loop does not settle, so
-  the curve's answer is not a thing you could measure.
-- **Black dots** — simulated runs that settled. **Red crosses** — gains the curve predicts but
-  the simulation refuses to deliver.
-- **Log axis** — the gain spans two and a half decades, so equal spacing means equal ratios,
-  not equal differences.
+What would have to be true of a plant for proportional control to reach the setpoint exactly?
+Holding the setpoint would have to need zero control effort. Walking across a room qualifies.
+Almost nothing you will ever be paid to control does.
 -->
 
 ---
@@ -383,25 +351,16 @@ $$
 ### The fix has to be something that *remembers*.
 
 <!--
-**Say:** write that division down. It is the most reusable thing in this section:
-steady-state error under proportional control is the effort you need divided by the gain you
-chose.
+Write that division down. It is the most reusable thing in this section. Steady-state error under
+proportional control is the effort you need, divided by the gain you chose. e infinity equals u
+needed over k. Infinity here means as time goes to infinity, so once the loop has settled. And u
+needed at 110 is about 40 newton-meters. It never goes away, because drag never goes away.
 
-**Say:** and notice what it tells you about the plant — the harder the job, the bigger the
-error. On a hill, this same controller is worse. We will watch that happen in section 06.
+Notice what this tells you about the plant. The harder the job, the bigger the error. On a hill,
+this same controller is worse. We will watch that happen in section 06.
 
-**Ask the room, to set up 04:** what could a controller add to its output that does not
-depend on the error right now? *(Something accumulated. Steer them to "it should remember
-that it has been short for a while." Do not say "integral" for them — let the room produce
-the word.)*
-
-**Readout — every symbol on this slide**
-
-- **u_needed(110) ≈ 40 N·m** — the effort required to hold the setpoint, which never goes
-  away because drag never goes away.
-- **e<sub>∞</sub> = u_needed / k** — the steady-state error. The most reusable formula in this
-  section.
-- **e<sub>∞</sub>** — the subscript means "as time goes to infinity", i.e. once settled.
+So what could a controller add to its output that does not depend on the error right now?
+Something accumulated. It should remember that it has been short for a while.
 -->
 
 ---
@@ -437,19 +396,16 @@ routeAlias: checkpoint-p
 </div>
 
 <!--
-**Say:** checkpoint. Everyone should have this diagram and this number. Look at your neighbor's
-screen: same 109.3?
+Checkpoint. Everyone should have this diagram and this number. Look at your neighbor's screen.
+Same 109.3?
 
-**Wait here.** Give the room a minute. Anyone still building pastes the step 3 code from the
-guide page, or opens the reference `CruiseLoopTransient` — P is its default, because
-`CruiseLoopStep` sets `with_I = false, with_D = false`. From section 04 on, every step adds to
-this diagram, so nobody should go forward without it.
+If you are still building, paste the step 3 code from the guide page, or open the reference
+`CruiseLoopTransient`. P is its default, because `CruiseLoopStep` sets `with_I` false and `with_D`
+false. From section 04 on, every step adds to this diagram, so nobody should go forward without
+it.
 
-**If a student's number is not 109.3:** check `error`'s signs (`k1 = 1, k2 = -1`), then the
-three `initial` lines, then that `gain` reads `k = k`.
-
-**Timing:** 1 minute, longer if the room needs it — take it from the notebook cells, not from
-the build.
+If your number is not 109.3, check three things. First, the signs on `error`: k one is 1 and k two
+is minus 1. Then the three initial lines. Then that `gain` reads k equals `k`.
 -->
 
 ---
@@ -463,8 +419,7 @@ the build.
 ### Next: give the controller a memory. <Link to="proportional-integral">→ 04, proportional-integral</Link>
 
 <!--
-**Check before moving on:** if the error vanished at high gain in your executed notebook, the
-integral path was left switched on — `with_I = false` is the whole difference between this
-section and the next. In the students' diagrams there is no integral path yet, so their 0.7
-km/h gap is the same one.
+So that is proportional control: fast, stable, and permanently wrong. Your diagram has no integral
+path yet, and that is why your 0.7 kilometer per hour gap is still there. Next, we give the
+controller a memory.
 -->
