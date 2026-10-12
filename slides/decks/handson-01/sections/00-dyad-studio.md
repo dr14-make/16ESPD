@@ -29,13 +29,13 @@ block.
 learn the car and build it; Lecture 1 then controls it, and its slides link back to the
 slides here wherever they rely on the physics.
 
-**How the deck is laid out:** each step opens with the theory it needs —
-plain language on the slide, every formula derived, every number worked in the notes — then
-the doing slides. Teach the theory slides from the front, then let the room build. Every
+**How the deck is laid out:** each step opens with the theory it needs
+(plain language on the slide, the derivations and worked numbers in the notes), then the
+building slides. Teach the theory slides from the front, then let the room build. Every
 formula has a *Derivation* list in these notes with the numbers plugged in, so you can
 do it on the board without preparing.
 
-**Students follow the page, not the deck.** Put the link on the board:
+**Students follow the course page.** Put the link on the board:
 `handson/lecture-01/` on the course site. Every step there has the parts
 table, the screenshot, numbered actions and copy buttons. The deck is for you: what to
 explain, what to show, where they get stuck.
@@ -45,8 +45,8 @@ afternoon with a break after step 05, or two sittings split there. Deep links ar
 `#/car` here is step 05 on the page.
 
 **If time runs short:** cut from the back. Steps 02–06 give everyone a
-working car; 07–10 are the slip story. Never cut the next two slides — they are why anyone
-listens to the rest.
+working car; 07–10 cover wheel slip. Do not cut the next two slides: they explain why the
+rest of the session matters.
 -->
 
 ---
@@ -81,9 +81,9 @@ low, and **pressed the pedal** harder. That something is a
 <!--
 **Say:** Let us start with something everyone has seen: cruise control.
 You press a button and the car holds 90 kilometers per hour uphill, downhill, and with
-three people in the back. Nobody programmed "if hill, then more throttle". It measures,
-compares and corrects, over and over. That loop is control, and the next lecture is all
-about it.
+three people in the back. Nobody programmed "if hill, then more throttle". It measures the speed, compares it with
+the set speed and corrects the throttle, again and again. This repeated cycle is called a
+control loop, and the next lecture is about it.
 
 **Say:** But think about a new driver in an unfamiliar car. They press too
 hard and the car jumps, they let go and it slows, then they press again. They do not know
@@ -111,21 +111,21 @@ routeAlias: what-we-build
 - **10 km/h** on snow, wheel spinning — same engine
 
 <!--
-**Say:** This is the whole day on one slide: four parts in a row. The
+**Say:** This slide shows the whole session: four parts in a row. The
 pedal asks for engine torque. The engine makes it, a bit late and a bit slowly. The gear
 and the wheel turn that torque into a push on the road. The body is the car's mass, with
 air and tires holding it back. A speedometer reads the speed.
 
-**Say:** Each box is one step today, and you build them in that order. At
+**Say:** Each box is one step today, and you build them in this order. At
 step 5 the boxes are joined and your car drives. Then we make the tire more realistic, and
 on snow the wheel spins while the car crawls.
 
 **Point at:** the two numbers. Say: before you build each part, we work out
-on paper what it must do. Then your model has to agree. If it does, you built it right. That
-is the deal for the whole day: predict first, then check.
+on paper what it must do. Then your model has to agree. If it does, you built it right. We
+work this way all day: predict first, then check.
 
-**Why this slide matters:** students lose interest when they do not know where
-the formulas are going. Come back to this picture at the start of every step — each step is
+**Why this slide matters:** students lose interest when they do not know what
+the formulas are for. Come back to this picture at the start of every step; each step is
 one box.
 -->
 
@@ -149,18 +149,17 @@ one box.
 
 <!--
 **Say:** We build one car, from the bottom up. Each step is one component,
-and each component is tested before the next one uses it. That habit is the real
-lesson.
+and each component is tested before the next one uses it. Make this a habit.
 
 **Point at:** step 05. That is the milestone: if your car makes 246 km/h,
-the equations and the model agree, and you have built the car the PID lecture uses.
+the equations and the model agree, and you have built the car that the PID lecture uses.
 
 **Point at:** the last column. Each of those is a number we predict at the
 start of the step and check at its end. The last slide of step 10 collects them all.
 
 **Say:** Keep the names the page gives you, like engine, car, and v
-underscore kmh. The checkpoints and the plot commands use those names. A different name
-means a different signal name, and then the command does not find it.
+underscore kmh. The checkpoints and the plot commands use those names. If you rename a
+part, its signal names change and the command does not find them.
 -->
 
 ---
@@ -195,15 +194,15 @@ it: that is the output.
 
 **Why "state" means "remembers":** if you know the speed right now and what
 the pedal and the road will do next, you can predict the speed a second from now. You do not
-need the car's history. That is what a state is — the minimum you need to know.
+need the car's history. A state is the smallest set of values you need for that prediction.
 
 **Ask the room:** is a hill an input or a disturbance? *(It acts like an
-input — it pushes on the car — but nobody chose it. The difference is who decides. A
-controller exists to deal with the things it did not choose.)*
+input, because it pushes on the car, but nobody chose it. The difference is who decides. A
+controller has to deal with disturbances it does not choose.)*
 
 **Flag forward:** from hands-on step 09 the car has a second state, the
 wheel's own speed, because the wheel can spin faster than the car moves. That second state
-is where ice becomes dangerous.
+is what lets the wheel spin on ice.
 -->
 
 ---
@@ -226,7 +225,7 @@ routeAlias: three-ideas
 </div>
 <div>
 
-> **The rule that shapes every step**
+> **The rule behind every test bench**
 >
 > You can only simulate a component whose inputs are all driven. So each experiment gets
 > a small *test bench* around the thing you built: a source into its input, the
@@ -243,11 +242,11 @@ the Dyad language. It compiles them to Julia, with ModelingToolkit underneath, a
 simulates them. You will not write any Julia today, except to plot.
 
 **Point at:** the callout. Students hit this in step 02 and ask why they
-cannot just run the engine. Plant the answer now: an engine with a dangling torque input
-is not a complete problem — nobody said what the torque command is.
+cannot just run the engine. Give the answer now: an engine with an unconnected torque input
+cannot be simulated, because nothing says what the torque command is.
 
 **They get wrong:** editing files in `generated/`. Say it twice:
-it is rewritten on every compile, edits there vanish.
+Dyad rewrites it on every compile, so edits there are lost.
 -->
 
 ---
@@ -289,20 +288,20 @@ At every joint: **speeds are equal**,
 <!--
 **Say:** In a block diagram, every wire is an arrow. Someone has to decide
 that speed causes force, and not the other way around. Physics does not work like that. A
-damper is just a relation between force and speed. If you push it, it moves; if you move
-it, it pushes back. It is the same law in two directions.
+damper is a relation between force and speed. If you push it, it moves; if you move
+it, it pushes back. The same law holds in both directions.
 
 **Say:** In Dyad you write the law once, force equals the damping constant
-times speed, and you bolt parts together. Dyad decides the direction for each model you
+times speed, and you connect parts together. Dyad decides the direction for each model you
 build. That is why the engine, the driveline and the body connect with plain lines today,
 not arrows.
 
-**Point at:** the joint rule. It is the whole of what a mechanical
-connection means: same speed on both sides, and forces balance. The tour step shows it
+**Point at:** the joint rule. A mechanical connection means only this:
+the same speed on both sides, and forces that balance. The tour step shows it
 again as the "two kinds of wire".
 
 **Not everything is acausal:** the torque command and the km/h readout are
-signals, with arrows. Mixing both is normal.
+signals, with arrows. Models often mix both kinds.
 -->
 
 ---
@@ -315,7 +314,7 @@ signals, with arrows. Mixing both is normal.
 1. **Collect equations.** Every part's equations, plus two for every
    joint: equal speeds, forces summing to zero.
 2. **Check: equations = unknowns.** A model that is not balanced does not
-   compile. A dangling input is one unknown too many — the reason for test benches.
+   compile. An unconnected input is one unknown too many, which is why we need test benches.
 3. **Simplify.** Symbolic algebra removes trivial equations
    (*a = b*) and solves for the derivatives. Left: a set of differential
    equations in the states only,
@@ -350,7 +349,7 @@ $$ \dot v = \frac{F - 0.378\,v^2 - 165}{1400} $$
 </div>
 
 <!--
-**Say:** Pressing the run button starts a small compiler. Dyad turns your
+**Say:** The run button starts a compiler. Dyad turns your
 diagram into equations, checks how many there are, simplifies them, and hands the result
 to a numerical solver. Underneath it is Julia's ModelingToolkit, but you never see it.
 
@@ -359,9 +358,9 @@ through the wheel joint, so it is not an unknown of the body alone. Three unknow
 equations — balanced. Substitute the first two into the third and the body is one
 differential equation in one state, the speed.
 
-**On the solver:** the formula on the slide is Euler's method — the
-simplest idea of stepping in time. Real solvers are cleverer, but the idea is the same:
-know the state now, compute how fast it changes, step forward. They pick the step size
+**On the solver:** the formula on the slide is Euler's method, the
+simplest way of stepping in time. Real solvers are more accurate, but they work the same
+way: take the state now, compute how fast it changes, step forward. They pick the step size
 themselves, so a sudden pedal press gets tiny steps and a steady cruise gets large ones.
 
 **They get wrong:** the "not balanced" error. It almost always means an
@@ -384,8 +383,8 @@ bottom right: Julia Commands → Dyad Compile_
 and walk the four panels: Actions, Components, Analyses, Notebooks. Click each control on
 the slide on your own screen as you name it.
 
-**Point at:** 4, the ⇄. It is the most used button today and the easiest
-to miss.
+**Point at:** 4, the ⇄. You will use it more than any other button today, and
+it is easy to miss.
 
 **Say:** Saving compiles your model. If an analysis does not show up in
 the Analyses panel after you save, use Dyad Compile, under Julia Commands, to force
@@ -425,7 +424,7 @@ Rotational for shafts, Translational for the car moving along the road, and Dyad
 ports.
 
 **Point at:** the bottom entry, the student's own library. Components they
-build show up here and are placed exactly like standard parts — that is how the car is
+build show up here and are placed like standard parts. This is how the car is
 assembled in step 05.
 -->
 
@@ -452,7 +451,7 @@ assembled in step 05.
 Page: [Create your library](../handson/lecture-01/#library)
 
 <!--
-**Timing:** this is the step that eats a session. If you could not get
+**Timing:** this step can take a whole session. If you could not get
 students to do it beforehand, start it first thing and talk through the three ideas and
 the map while it downloads.
 
@@ -464,10 +463,11 @@ your results.
 **They get wrong:** skipping the imports. Step 01's search for
 `FirstOrder` then finds nothing, or code that names
 `RotationalComponents` fails to compile. Also: a folder that already has
-files in it, or a name with a space. `MyCar` exactly — the plot commands say `using MyCar`.
+files in it, or a name with a space. The name must be `MyCar`, because the plot commands say
+`using MyCar`.
 
 **If stuck:** a red error in the terminal during instantiate is almost
-always the network or a full disk. Pair the student with a neighbor and keep going;
+always caused by the network or a full disk. Pair the student with a neighbor and keep going;
 re-run `Pkg.instantiate()` at the break.
 -->
 

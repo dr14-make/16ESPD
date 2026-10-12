@@ -13,7 +13,7 @@ Place two blocks, wire them, set a parameter — then see the same three facts a
 
 <!--
 **Say:** The first thing you build is the front half of the engine. It is
-small on purpose, because the point is the editor, not the physics.
+small, because this step is about the editor, not the physics.
 
 **Do it live, first, slowly:** Components → right-click
 `MyCar` → Add Component → `Engine`. Then + → `PadeDelay`,
@@ -66,12 +66,12 @@ end
 also true, for everything except equations, which have no picture. From step 7 on, you
 will write those equations in this view.
 
-**Do it live:** the round trip on the last bullet. It is the moment it
-clicks for most of the room.
+**Do it live:** the round trip on the last bullet. This is where most of the
+room sees that the two views are one file.
 
 **They notice:** `{^delay}` tags and a `metadata`
-block in their file. That is where the diagram keeps positions and wire routes. Leave it
-alone — it is the diagram's, not theirs.
+block in their file. That is where the diagram keeps positions and wire routes. They should
+not edit it.
 -->
 
 ---
@@ -114,8 +114,8 @@ newton-meters". It goes one way. A mechanical joint is like a bolt. The wheel do
 "send" a force to the car body. They are fastened together and they move together, and
 whatever the wheel pushes, the body is pushed by.
 
-**Why it matters:** because a joint has no direction, you never have to decide
-"who drives whom". You draw the car the way it is put together, and Dyad works out the
+**Why it matters:** a joint has no direction, so you never have to decide
+which part drives which. You draw the car the way it is put together, and Dyad works out the
 equations. That is why Dyad can join a body onto a driveline with one wire.
 
 **The technical words, if a student asks:**

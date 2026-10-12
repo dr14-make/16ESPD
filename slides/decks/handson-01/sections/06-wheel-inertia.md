@@ -13,8 +13,8 @@ A 1 kg·m² wheel between gear and road — and how little it changes.
 
 <!--
 **Say:** The wheel now has its own state: its own speed. Today that speed
-is still tied to the car's speed. In step 9 we cut that tie, and that is where ice
-happens.
+is still tied to the car's speed. In step 9 we remove that link, which lets the
+wheel spin on ice.
 
 **Timing:** 12 minutes: 2 for the hidden mass, 10 for Duplicate and one wire.
 -->
@@ -60,8 +60,8 @@ speed v.
 </div>
 
 <!--
-**Say:** A bicycle with heavy wheels feels sluggish when you start, but
-rolls along fine once it is moving. It is the same here.
+**Say:** A bicycle with heavy wheels is slow to start, but rolls along
+fine once it is moving. The car behaves the same way.
 
 **Derivation, step by step**
 
@@ -79,9 +79,9 @@ side spin i times faster, so they count i² = 16 times more: J<sub>e</sub>·i²/
 leaves them out.
 
 **Ask the room first,** before showing the numbers: how much slower will the
-car be? Most guess a lot. *(0.2 s out of 23.6. Not every added detail matters — knowing
-which ones do is the skill. But the wheel now has its own speed, and in step 08 that is what
-lets it spin.)*
+car be? Most guess a lot. *(0.2 s out of 23.6. Not every added detail matters; part of
+modeling is knowing which ones do. But the wheel now has its own speed, and in step 08 that is
+what lets it spin.)*
 -->
 
 ---

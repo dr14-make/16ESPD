@@ -12,8 +12,9 @@ Your three components, assembled — and the 246 km/h you computed on paper.
 [page: step 05](../handson/lecture-01/#car) · reference `dyad/HandsOn/Car.dyad`
 
 <!--
-**Say:** This is the milestone. Everything so far was parts. This is the
-plant that every controller in the PID lecture will be wrapped around.
+**Say:** This is the milestone: the parts become one car. In control terms the
+car is the plant, the system being controlled. Every controller in the PID lecture
+controls this car.
 
 **Timing:** 27 minutes: 7 of theory (force balance, nine numbers, top speed, how long), then assembly 8, bench and analysis 5, run and plot 5, and the "246 is wrong" slide after the plot.
 -->
@@ -53,14 +54,14 @@ steady.
 </div>
 
 <!--
-**Say:** This is the whole car in one line: everything we said in the last
+**Say:** This one equation describes the whole car: the forces from the last
 four slides, added up. The left side is mass times acceleration. The right side is the
 push, minus everything that holds the car back.
 
-**Point at:** the T on the right. It is not the pedal request; it is what
-step 02's engine actually delivers — late, slow, limited.
+**Point at:** the T on the right. It is the torque step 02's engine
+delivers, with its delay, lag and limit, not the pedal request.
 
-**Point at:** the v². Because of it, the car is not "linear": doubling the
+**Point at:** the v². Because of it, the car is nonlinear: doubling the
 push does not double the speed. That will matter in the next lecture's step test.
 
 **Say:** Step 4 builds the right side on a flat road: mass, air and tires.
@@ -99,7 +100,7 @@ g = 9.81 m/s²; α road angle.
 - `Driveline` — i, r (step 03)
 - `Body` — m, C<sub>d</sub>A, ρ, f<sub>r</sub> (step 04)
 
-> **Nothing is chosen to make a point**
+> **Every number comes from these nine**
 >
 > Every number in the hands-on and in the next lecture comes from these nine, by
 > arithmetic you can check.
@@ -108,11 +109,11 @@ g = 9.81 m/s²; α road angle.
 </div>
 
 <!--
-**Say:** This is the entire car: nine numbers. You have now met every one
+**Say:** Nine numbers describe the whole car. You have now met every one
 of them: three in the engine, two in the gear and wheel, and four in the body.
 
 **Ask the room:** which of these nine will make the car hardest to control?
-*(Let two or three guesses land. The answer is the bottom two — the delay and the lag
+*(Take two or three guesses. The answer is the bottom two: the delay and the lag
 from step 02.)*
 -->
 
@@ -153,8 +154,8 @@ experiment, and the answer its controller has to find on its own.*
 </div>
 
 <!--
-**Do it on the board.** This is the most important calculation of the day,
-so go slowly.
+**Do it on the board.** This is the most important calculation of the day;
+take your time.
 
 1. **Why dv/dt = 0:** "top speed" means the car has stopped getting faster.
    So the left side of the force balance is zero, and the forces must cancel.
@@ -169,13 +170,12 @@ so go slowly.
 236 N; plus 165 = 401 N needed at the road. Torque = 401 × 0.31 / 4 = 31.1 N·m. 110 km/h =
 30.56 m/s; 30.56² = 934; × 0.378 = 353 N; plus 165 = 518 N; × 0.31 / 4 = 40.1 N·m.
 
-**Say:** Notice what we did. We set the "speeding up" part to zero and
-solved. That gives the *steady state*, where the car ends up, without saying
+**Say:** We set the "speeding up" part to zero and solved. That gives the *steady state*, where the car ends up, without saying
 anything about how it gets there. The next lecture's controller will find 31.1
 newton-meters by itself, without being told.
 
 **Ask the room, before the next slide:** 246 km/h from a 150 N·m engine. Does
-anyone believe that? *(Let the doubt sit — the next slide answers it.)*
+anyone believe that? *(Leave the question open; the next slide answers it.)*
 -->
 
 ---
@@ -189,7 +189,7 @@ routeAlias: time-constant
 
 Near any speed, the car behaves like step 02's lag: if it goes a little
 faster, drag grows a little and pulls it back. How fast it pulls back sets its
-**time constant**:
+**time constant**, the time to cover 63 % of a change:
 
 $$ \tau_{\text{car}} = \frac{m}{\text{extra drag per extra m/s}} = \frac{m}{2 \cdot 0.378 \cdot v} $$
 
@@ -201,8 +201,8 @@ is 0.378 × 27.8² = 292 N; 1 m/s faster it is 0.378 × 28.8² = 313 N — about
 Those 21 N per m/s pull a too-fast car back, like the lag closing its
 gap: τ = 1400 / 21 = **67 s**.
 
-That is 200 times slower than the engine's 0.3 s. The car itself is the
-slow part.
+That is 200 times slower than the engine's 0.3 s, so the car, not the
+engine, sets how slowly the speed changes.
 
 </div>
 <div>
@@ -221,16 +221,16 @@ slow part.
 </div>
 
 <!--
-**Say:** It takes two and a half minutes of flat-out driving to get within
-one percent of top speed. Drag is weak at low speed, so there is not much pulling the car
-toward its final speed, and it gets there slowly.
+**Say:** It takes two and a half minutes at full throttle to get within
+one percent of top speed. Drag is weak at low speed, so little pulls the car toward its
+final speed, and it gets there slowly.
 
 **Derivation, step by step** (compare with the lag slide in step 02):
 
 1. Suppose the car is near speed v and goes Δv faster. Drag grows from 0.378·v² to about
    0.378·v² + 2·0.378·v·Δv (the slope of v² is 2v).
 2. That extra drag, 2·0.378·v·Δv, slows the car: m·dΔv/dt = −2·0.378·v·Δv.
-3. That is exactly the lag equation from step 02, τ·dΔv/dt = −Δv, with
+3. That is the lag equation from step 02, τ·dΔv/dt = −Δv, with
    τ = m / (2·0.378·v).
 4. At 27.8 m/s: 2 × 0.378 × 27.8 = 21.0; 1400 / 21.0 = 66.7 s. At 90 km/h it is 74 s, at
    110 km/h 61 s — the car is quicker to settle at high speed, because drag is
@@ -242,8 +242,8 @@ is no neat hand formula because τ changes with speed. They are the numbers stud
 against.
 
 **Flag forward:** in the next lecture a controller moves this car 20 km/h in
-a few seconds. The engine is no stronger. Feedback changes how fast the car responds — keep
-the 67 s in mind for that moment.
+a few seconds, with the same engine. Feedback changes how fast the car responds. Remind
+the room of the 67 s at that point.
 -->
 
 ---
@@ -259,8 +259,8 @@ the 67 s in mind for that moment.
 close the reaction paths left open in steps 02 and 03.
 
 **Say:** The sensor gives meters per second, and the gain turns that into
-kilometers per hour. There is one conversion, at the edge of the model, which is the same
-rule the lecture model follows.
+kilometers per hour. The units are converted once, at the model's output; the lecture
+model does the same.
 -->
 
 ---
@@ -329,9 +329,8 @@ reads 246.39 kilometers per hour at 300 seconds. At 800 seconds the two agree to
 0.0001 kilometers per hour. You built the lecture's car.
 
 **Point at:** the shape. Steep first, then flattening, because drag grows
-with the square of speed. Tie back to the start of this step: the 246 is the number we
-worked out on paper from the force balance, and 23.6 s to 100 km/h was predicted there
-too.
+with the square of speed. The 246 is the number we worked out on paper from the force
+balance at the start of this step, and 23.6 s to 100 km/h was predicted there too.
 
 **If a number is off:** drag sign (step 04), gear ratio or radius
 (step 03), limiter ceiling (step 02) — in that order.
@@ -367,10 +366,9 @@ comparison — not measured. Blue: exactly what our engine block computes._
 </div>
 
 <!--
-**Say:** Every model has a range where you can trust it. Ours is fine up
-to about 130 kilometers per hour, and fiction above that. Your car just hit 246 kilometers
-per hour, exactly as we predicted, and it is still fiction. Both are true. That is the
-point of this slide.
+**Say:** Every model has a range where you can trust it. Ours is good up
+to about 130 kilometers per hour and wrong above that. Your car reached 246 kilometers
+per hour, as we predicted, and that number is still wrong for a real car.
 
 **Point at the plot in this order:** the blue line (our engine: 150 N·m
 whatever the revs — the limiter's ceiling is a constant); the red curve (a real engine:
@@ -382,7 +380,7 @@ v / r × i × 60 / 2π): 90 km/h = 25 m/s → 25 / 0.31 × 4 × 9.55 = 3080 rpm.
 4450 rpm. 246 km/h = 68.4 m/s → 8430 rpm.
 
 **They get wrong:** treating a simulation result as a measurement. A model
-only knows what you told it.
+contains only what you put into it.
 
 **Ask the room:** what would you add to get a believable top speed?
 *(Make the maximum torque depend on engine speed — a torque curve. That is where

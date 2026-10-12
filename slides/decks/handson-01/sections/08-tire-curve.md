@@ -12,9 +12,8 @@ Grip peaks at 4 % slip and falls once the tire slides.
 [page: step 08](../handson/lecture-01/#tire-curve) · reference `dyad/HandsOn/TireFrictionCurve.dyad`
 
 <!--
-**Say:** A tire does not grip by rolling perfectly. It grips by slipping a
-little, as the tread deforms, and up to a point, more slip means more force. Past that
-point it slides, and grip drops.
+**Say:** A tire grips by slipping a little as the tread deforms, and up to
+a point, more slip means more force. Past that point it slides, and grip drops.
 
 **Timing:** 20 minutes: 5 for the two slip slides, 15 building. The relations are long; students paste
 the component from the page (New component → ⇄ → Ctrl+A → paste) and spend the time reading it and on the plot.
@@ -34,27 +33,26 @@ always moves the car exactly one wheel-circumference. Wheel and car can never di
 
 > **On a dry road**
 >
-> Nearly true. A driven tire slips by about one per cent. The top speed does not care.
+> Nearly true. A driven tire slips by about one percent. The top speed does not care.
 
 </div>
 <div>
 
 > **On snow or ice**
 >
-> Not true at all. The wheel can spin much faster than the car moves — and that difference
-> is the whole story of this topic.
+> Not true at all. The wheel can spin much faster than the car moves, and steps 08 to 10
+> are about that difference.
 
 </div>
 </div>
 
 <!--
-**Say:** An assumption does not announce itself. This one is even in the
-part's name, "ideal rolling". On a dry road it costs nothing, so nobody notices it until
-it fails.
+**Say:** This assumption is in the part's name: "ideal rolling". On a dry
+road it makes almost no difference, so it is easy to miss until it fails.
 
 **Ask the room:** what else have we quietly assumed? *(Straight road.
-Constant mass. An engine that gives 150 N·m at any revs — that one we flagged in step 05.
-Good answers are worth thirty seconds.)*
+Constant mass. An engine that gives 150 N·m at any revs, which we flagged in step 05.
+Spend thirty seconds on the answers.)*
 -->
 
 ---
@@ -93,8 +91,8 @@ starts to spin or lock.
 </div>
 
 <!--
-**Say:** A tire does not grip by rolling perfectly. To push the car, the
-rubber has to stretch, so the tread moves slightly faster than the road under it. A little
+**Say:** To push the car, the tire rubber has to stretch, so the tread
+moves slightly faster than the road under it. A little
 slip gives a little grip. More slip gives more grip, up to about 4 percent.
 
 **Say:** Past that, the rubber stops stretching and starts sliding. And
@@ -108,8 +106,8 @@ what the car needs. F<sub>z</sub> = m·g/2 = 6865 N on the driven axle. Cruising
 curve reaches at κ ≈ 0.002. Flat out, the engine's 1935 N is μ = 0.28 at κ ≈ 0.008. Both
 sit low on the steep rising part, far left of the 4 % peak.
 
-**Walk the curve:** rising part — normal driving, everything is designed for
-it. Peak at κ = 0.04, μ = 1.0 — the most this tire can ever push. Past it, falling to
+**Walk the curve:** rising part: normal driving, which cars are designed
+for. Peak at κ = 0.04, μ = 1.0: the most this tire can push. Past it, falling to
 μ = 0.7 when fully sliding. The orange curve is the same tire on packed snow: everything
 × 0.2.
 
@@ -126,8 +124,8 @@ it. Peak at κ = 0.04, μ = 1.0 — the most this tire can ever push. Past it, f
 mu_A = 1.0; full sliding from sSlide = 0.12 with mu_S = 0.7. Each piece is a smooth cubic so
 the solver sees no corners. The shape is the same as Dyad's multibody slip wheel.
 
-**The red dashed line** is next slide's punchline: the most the engine can
-ask of the tire.
+**The red dashed line** is the most the engine can ask of the tire. Step 10
+comes back to it.
 -->
 
 ---
@@ -173,8 +171,8 @@ Braking: μ = sign(κ) · μ(|κ|), so the curve is mirrored.
 with four numbers: where the peak is and how high, and where full sliding starts and how
 high. Between those points we need smooth curves.
 
-**Say:** The trick is one small cubic that rises from minus one to one and
-is perfectly flat at both ends. We use it once for the rise and once, stretched and turned
+**Say:** We use one small cubic that rises from minus one to one and
+is flat at both ends. We use it once for the rise and once, stretched and turned
 upside down, for the fall. Because every piece arrives flat, the pieces meet without a
 corner.
 
@@ -191,8 +189,8 @@ checks the midpoint, 0.85.
 **A number to check on the rise:** κ = 0.02 is x = 0.5,
 h = 0.75 − 0.0625 = 0.6875, so μ ≈ 0.69 at half the peak slip.
 
-**Say:** This is not the only way to model a tire. It is the simplest
-one that still has a peak and a slide, which is all today's question needs. Industry uses
+**Say:** There are other ways to model a tire. This is the simplest one
+that still has a peak and a slide, and today's question needs no more. Industry uses
 fitted models with many more parameters, but the shape is the same: rise, peak, fall to
 sliding.
 
@@ -246,9 +244,9 @@ Giving the idxs argument a pair of signals, x and y, plots one signal against th
 other.
 
 **Point at:** the peak, then the right of it. Past the peak more slip
-gives *less* force. Hold that thought: it is why wheelspin runs away in step 10.
+gives *less* force. That is why, in step 10, the wheelspin keeps growing once it starts.
 
-**Tie back:** the slip slide at the start of this step drew this exact curve, with the
-engine's ceiling across it. The shape is Dyad's multibody slip wheel's, and the PID
+**Tie back:** the slip slide at the start of this step drew this curve, with the
+engine's limit across it. The shape is Dyad's multibody slip wheel's, and the PID
 lecture's last section puts a cruise controller on it.
 -->

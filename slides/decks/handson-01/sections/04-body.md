@@ -27,27 +27,26 @@ routeAlias: four-forces
 ![A car on an inclined road with the forces acting on it drawn as labeled arrows: tractive force up the slope at the driven wheel, aerodynamic drag and rolling resistance down the slope, and the weight resolved into a component along the slope and one into the road surface.](/diagrams/04-four-forces.svg)
 
 <!--
-**Say:** There are four arrows on this picture. Here is what each one
-means.
+**Say:** The picture shows four forces.
 
 **Point at:** each arrow in turn and give it one sentence:
 
 - **Green — the push from the wheels.** Step 03's F = T·i/r. The only one
   we control.
-- **Red — air drag.** The car shoving air out of the way. Small when slow,
-  huge when fast.
+- **Red — air drag.** The car pushing air out of the way. Small at low
+  speed, large at high speed.
 - **Amber — rolling resistance.** The tires squash and spring back on every
   turn, and lose a little energy each time. Roughly the same at any speed.
 - **Blue — the slope.** Part of the car's own weight pulls it back down the
   hill.
 
-**Say:** Anything left over after those four is what speeds the car up.
-The next slides take them one at a time, and then add them up.
+**Say:** The push minus the three resistances is what speeds the car up.
+The next slides take the forces one at a time, and then add them up.
 
 **Tie back to the course deck:** the engine-energy slides call these
 O<sub>V</sub> (air), O<sub>f</sub> (rolling), O<sub>s</sub> (slope), O<sub>z</sub>
-(acceleration). O<sub>aux</sub>, electrical loads, we leave out — say so, because leaving
-something out should always be a decision you announce.
+(acceleration). We leave out O<sub>aux</sub>, the electrical loads. Say so: whenever you
+leave something out of a model, state it.
 -->
 
 ---
@@ -70,7 +69,7 @@ $$ F \;\sim\; \underbrace{\rho A v}_{\text{kg of air per second}}\cdot\underbrac
 > **Why it matters for control**
 >
 > Because of the square, the car behaves differently at different speeds. A controller
-> tuned at 90 km/h is tuned for 90 km/h.
+> tuned at 90 km/h is tuned for 90 km/h only.
 
 </div>
 <div>
@@ -95,8 +94,8 @@ frontal area times a shape factor. ½·1.2·0.63 = 0.378.*
 
 <!--
 **Say:** Put your hand out of a car window at 30 kilometers per hour, then
-at 120. You do not feel four times the push. You feel sixteen times the push. That is the
-square.
+at 120. Four times the speed gives sixteen times the push, because drag grows with the
+square of speed.
 
 **Derivation, step by step** (the intuition is enough for the room; this is
 for a student who asks):
@@ -154,11 +153,11 @@ v² = 886 &nbsp;→&nbsp; v = 29.8 m/s
 cost 1.2 percent of the car's weight as a backward force. A 1400-kilogram car weighs 1400
 times 9.81, which is 13,734 newtons. And 1.2 percent of that is 165 newtons.
 
-**Why the drag part wants "one point":** the library's drag block only knows
-"force grows with speed squared". It needs one point to fix the size: at 30 m/s, the force
-is ½·1.2·0.63·30² = 0.378 × 900 = 340.2 N. Any speed would do; 30 m/s is just a round number.
+**Why the drag block needs one point:** the library's drag block only knows
+that force grows with speed squared. It needs one point to set the size: at 30 m/s, the force
+is ½·1.2·0.63·30² = 0.378 × 900 = 340.2 N. Any speed would do; 30 m/s is a round number.
 In step 04 students give the parameters names (ρ, C<sub>d</sub>A, m) instead of typing
-340.2, so the next reader sees physics, not a magic number.
+340.2, so the next reader sees the physical quantities, not an unexplained number.
 
 **The 500 N check, step by step:** at the final speed nothing is speeding up,
 so the push equals the resistances: 500 = 0.378·v² + 165. Subtract 165: 335. Divide by
@@ -176,8 +175,8 @@ so the push equals the resistances: 500 = 0.378·v² + 165. Subtract 165: 335. D
 resistance takes its coefficient (0.012) and the road inclination (0 — flat) as
 *inputs*, not parameters. Unconnected, the model is incomplete.
 
-**Say:** Drag and rolling resistance push against the ground, not against
-the car, so their supports connect to the ground block.
+**Say:** Drag and rolling resistance react against the ground, so their
+supports connect to the ground block.
 -->
 
 ---
@@ -212,13 +211,13 @@ generic quadratic load — fans, pumps, drag — meant to be filled in from a da
 such as "this many newtons at that speed". Its equation is
 f = −f<sub>nominal</sub>·v·|v| / v<sub>nominal</sub>². Substituting
 f<sub>nominal</sub> = −½ρC<sub>d</sub>A·v<sub>nominal</sub>² gives ½ρC<sub>d</sub>A·v·|v|,
-with v<sub>nominal</sub> gone. It only must not be zero, because the block divides by it.
+with v<sub>nominal</sub> gone. It must not be zero, because the block divides by it.
 
-**They get wrong:** a positive `f_nominal`. The car then
-accelerates forever — drag pushes it. If a student's car in step 05 goes to absurd speeds,
+**They get wrong:** a positive `f_nominal`. Drag then pushes the car
+forward and it accelerates without limit. If a student's car in step 05 goes to absurd speeds,
 this sign is the first thing to check.
 
 **Ask the room:** why parameters instead of 340.2 and 13729? *(The
-next reader sees ρ, C<sub>d</sub>A and m, not magic numbers — and `m` feeds the
-mass and the rolling resistance, so changing the car's weight changes both or neither.)*
+next reader sees ρ, C<sub>d</sub>A and m, not unexplained numbers. And `m` feeds the
+mass and the rolling resistance, so changing the car's weight changes both at once.)*
 -->
