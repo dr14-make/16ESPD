@@ -105,6 +105,8 @@ routeAlias: build-derivative
 *Parameters `Td` = 0.5, `Nd` = 10, `wd` = 0, `xd0` = −90 · delete `zero_d` · `add_d` Add(k1 = wd, k2 = −1) from `u_s`, `u_m` ·
 `derivative` Derivative(k = Td, T = Td/Nd, x0 = xd0) → `add_pid.u2`*
 
+**Real controllers almost never differentiate the setpoint. D sees only the speed.**
+
 [page: step 5](../lecture/lecture-01/#step-5) · reference `dyad/Lecture1/CruiseController.dyad`
 
 <!--
@@ -127,8 +129,10 @@ are parameters you type now and understand fully in section 07.
 5. Save, run `CruiseLoopTransient` again from `CruiseLoopStep`.
 6. **Plot** `plant.v_kmh` with `demand.y`; on a second plot `controller.y`.
 
-**Why `wd = 0`:** say only that it keeps the setpoint out of the derivative; section 07 shows
-the room what `wd = 1` does and why the notebooks run 0.
+**Why `wd = 0`:** read the bold line. This is the standard two-degree-of-freedom PID: P acts
+on `wp·r − y`, I on the full error, D on `wd·r − y`. The library's `LimPID` builds `add_p` and
+`add_d` the same way. Industrial controllers offer it as a structure switch, and their default,
+PI-D or "derivative on measurement", is `wd = 0`. Section 07 shows the room what `wd = 1` does.
 
 **Why `xd0 = -90`:** the filter's input is `wd·u_s − u_m`, which at `wd = 0` and a settled
 90 km/h cruise is −90. The seed is `(wd − 1) · m0` with `m0 = 90`, the value the filter would

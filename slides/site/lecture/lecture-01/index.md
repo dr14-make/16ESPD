@@ -331,6 +331,8 @@ In `CruiseController`:
 
 `add_d` is a second error block with its own setpoint weight `wd`. At `wd = 1` it would be the error itself; at `wd = 0` the derivative sees only the measured speed, so a setpoint step does not kick it. Step 7 shows what `wd = 1` would do.
 
+Real controllers almost never differentiate the setpoint: D sees only the speed. This is the standard two-degree-of-freedom PID, where P acts on `wp·r − y`, I on the full error and D on `wd·r − y`. The library's `LimPID` has the same `add_d` block. Industrial controllers call `wd = 0` "PI-D" or "derivative on measurement", and make it their default.
+
 `xd0 = -90` seeds the derivative filter at `(wd − 1) · 90`, the value it would hold at a steady 90 km/h cruise. Left at 0, the filter sees a 90 km/h step at t = 0 and commands a spike of −50400 N·m.
 
 [![CruiseController with add_d feeding derivative into add_pid.u2; the derivative's parameter panel shows k = Td and T = Td/Nd.](/lecture/lecture-01/img/step05-derivative.png)](/lecture/lecture-01/img/step05-derivative.png)
