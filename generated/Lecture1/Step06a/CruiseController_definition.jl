@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    CruiseController(; name, k, Ti, xi0, Td, Nd, wd, xd0)
 
-Step 5: the filtered derivative branch `add_d` -> `derivative` replaces `zero_d`.
+Step 6a: the controller, unchanged from step 5; only `GradeCar` gains `T_max` in this step.
 
 ## Parameters:
 
