@@ -187,8 +187,8 @@ The step was applied at t step, and we hand that time to the fit rather than gue
 stops at 500 seconds, the analysis default. That is long enough for the response to settle,
 about eight time constants.
 
-The scaling step matters. We stepped by 10 newton-meters, so we divide the speed change by 10.
-To be exact, the step A is 9.04 newton-meters, and dividing by it is step 4 of the procedure.
+The scaling step matters. We stepped by 9.04 newton-meters, so we divide the speed change by
+9.04. Dividing by the step is step 4 of the procedure.
 That is what makes K a property of the plant, rather than of the experiment.
 
 A common mistake is stepping from zero, or stepping huge. The point of a step test is to

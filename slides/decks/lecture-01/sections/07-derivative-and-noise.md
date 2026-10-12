@@ -240,8 +240,8 @@ Now think about what this is physically. That command goes to an engine. Fueling
 that, many times a second, forever. It will not break today. It will wear something out, or
 overheat something, or simply feel terrible to sit in.
 
-And here is the same lesson as section 08, arriving from a different direction. **Always plot
-the actuator command.** The controlled variable looked fine in both cases.
+And here is a rule section 08 will make official, arriving early. **Always plot the actuator
+command.** The controlled variable looked fine in both cases.
 
 Would a real cruise control ever run a pure derivative? No. That is why the block you get in
 any real toolchain has a filter coefficient on it. And it is why most industrial loops are PI,
@@ -357,7 +357,7 @@ way.
 
 - The derivative's real cost: it amplifies by frequency, and noise is all frequency.
 - A concrete reason the `Nd` parameter exists.
-- The rule, arriving for the second time today: plot the actuator command.
+- A rule you will hear again in section 08: plot the actuator command.
 
 ### Next: where the gains came from. <Link to="tuning">→ 08, tuning</Link>
 
