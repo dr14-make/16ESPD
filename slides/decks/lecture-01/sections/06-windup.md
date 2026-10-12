@@ -23,6 +23,9 @@ equation.
 
 ## Actuator and process
 
+<div class="grid grid-cols-[1.2fr_1fr] gap-8">
+<div>
+
 - The **actuator** — the thing that supplies the force. Our engine.
 - The **process** — the thing being pushed. Our car.
 
@@ -30,6 +33,9 @@ Real actuators have backlash, rate limits and **saturation**.
 A linear model has none of these: ask it for a million newton-meters and it delivers them.
 
 **Open in Dyad** `dyad/HandsOn/Engine.dyad` — the `limiter` after the lag
+
+</div>
+<div>
 
 > **The hill we are about to drive up**
 >
@@ -41,6 +47,11 @@ A linear model has none of these: ask it for a million newton-meters and it deli
 > still falling.
 
 *↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/slope)*
+
+![A car on a road tilted by angle alpha: its weight splits into m g sine alpha along the road, pulling it back downhill, and m g cosine alpha into the road.](/diagrams/07-slope.svg)
+
+</div>
+</div>
 
 <!--
 The numbers in the box come from the force balance of hands-on step 05. You can compute them
