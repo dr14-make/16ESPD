@@ -12,12 +12,12 @@ The same controller gets worse when it reads the speed less often.
 `notebooks/lecture01/09-discretization.ipynb`
 
 <!--
-Everything we have designed today is continuous. A controller you ship runs on a computer, so it
-is discrete. This section connects the two, and it uses the gains we just derived in section 08. It is the same controller, and
-nothing is re-tuned.
+Everything we designed today is continuous. A controller you ship runs on a computer, so it is
+discrete. This section connects the two, with the gains from section 08. Same controller, nothing
+re-tuned.
 
-This section is a demo, not a build. Your own controller stays continuous. The demo
-runs on the reference model, `SampledCruiseLoop`.
+This is a demo, not a build. Your own controller stays continuous. The demo runs on the reference
+model, `SampledCruiseLoop`.
 -->
 
 ---
@@ -46,18 +46,17 @@ Every sample period, in order:
 </div>
 
 <!--
-An analog controller changes its output continuously and smoothly. A digital one changes it in
-steps, and holds each value until the next update. If the steps are small enough and frequent
-enough, nobody can tell the difference. The engineering question is how fast is fast enough.
+A digital controller changes its output in steps, and holds each value until the next update. If
+the steps are small and frequent enough, nobody can tell the difference. The question is how fast
+is fast enough.
 
-Digital control brings other effects too. There is quantization, and there is the transport
-delay of the computation itself. We are only going to look at sample time, because it usually
-causes problems first.
+The sample time, T s, is the interval between updates, in seconds. The sample rate is its
+reciprocal, in hertz. A zero-order hold keeps the last command constant until the next tick. That
+is the staircase.
 
-The sample time, T s, is the interval between one update and the
-next, in seconds. The sample rate is its reciprocal, in hertz. A zero-order hold keeps the last
-commanded value constant until the next tick. That is the staircase. Quantization comes from
-finite word length. It is real, but it is not our subject today.
+Digital control also brings quantization, from finite word length, and the delay of the computation
+itself. Both are real, but today we look only at sample time, because it usually causes problems
+first.
 -->
 
 ---
@@ -86,16 +85,14 @@ You have to walk a winding corridor.
 </div>
 
 <!--
-Picture yourself walking a winding corridor. With the lights on, you see everything as it
-happens and you correct continuously. You could run. A fast strobe is no different from the
-lights being on. You are still running. One flash a second, and you slow right down. One flash
+Picture yourself walking a winding corridor. With the lights on, you correct continuously, and you
+could run. A fast strobe is no different. One flash a second, and you slow right down. One flash
 every few seconds, and you walk into a wall.
 
-If the strobe slows down, you slow down. Re-tuning for a slower sample rate means the same
-thing: lower gains. The fix at the end of this section is that simple.
+If the strobe slows down, you slow down. Re-tuning for a slower sample rate means the same thing:
+lower gains. The fix at the end of this section is that simple.
 
-A common mistake is to assume that a slow loop is only less responsive. Below some sample rate,
-it goes **unstable**.
+A slow loop is not only less responsive. Below some sample rate, it goes **unstable**.
 -->
 
 ---
@@ -148,22 +145,20 @@ runs = [Ts => solve(p) for (Ts, p) in problems]
 </div>
 
 <!--
-Look at the fastest run first. This is the best the sampled controller does here. It does not
-match the continuous run from section 08. Even the fastest run overshoots far more, probably
-because this demo leaves its discrete derivative unseeded. What matters is the trend across the
-four runs.
+Look at the fastest run first. It does not match the continuous run from section 08. Even this run
+overshoots far more, probably because this demo leaves its discrete derivative unseeded. What
+matters is the trend across the four runs.
 
-Now follow the runs as the sample time grows. First the overshoot grows. Then the loop rings. Then it diverges.
-Ringing means an oscillation that decays, but slowly. Diverging means it does not decay at all.
+As the sample time grows, the overshoot grows first. Then the loop rings: it oscillates and decays
+slowly. Then it diverges: the oscillation does not decay at all.
 
 The sweep is T s equal to 0.01, 0.1, 0.4 and 1.0 seconds, with the Ziegler-Nichols gains from
-section 08. No gain was changed. The controller that was correct at ten
-milliseconds is dangerous at one second, and it is the same controller.
+section 08. No gain was changed. The controller that was correct at ten milliseconds is dangerous
+at one second.
 
-So which sample time would you pick for a cruise control? Fast compared
-with what? The plant's time constant is about a minute. The closed-loop bandwidth, roughly the
-fastest change the loop can follow, is on the scale of seconds. That second number is the one
-that matters.
+So which sample time would you pick for a cruise control? Fast compared with what? The plant's time
+constant is about a minute. The closed-loop bandwidth, roughly the fastest change the loop can
+follow, is on the scale of seconds. That second number is the one that matters.
 -->
 
 ---
@@ -193,14 +188,14 @@ that matters.
 </div>
 
 <!--
-Look at the signal chain. The car remains continuous. Only the sensing, the control computation
-and the command updates happen on the clock.
+The car stays continuous. Only the sensing, the computation and the command updates happen on the
+clock.
 
-The car can move between ticks, but the applied torque cannot change until the next controller
-update. That held command is where the staircase comes from.
+The car moves between ticks, but the torque cannot change until the next update. That held command
+is the staircase.
 
-Near the frequencies that matter for stability, the hold acts like a delay of half a sample,
-because it delays the average command. We come back to this in two slides.
+Near the frequencies that matter for stability, the hold acts like a delay of half a sample. We
+come back to this in two slides.
 -->
 
 ---
@@ -214,34 +209,28 @@ because it delays the average command. We come back to this in two slides.
 **Open in Dyad** `dyad/Lecture1/SampledCruiseLoop.dyad`
 
 <!--
-This is a demo, not a build, so you do not need to reproduce it. The plant is the course's
-`HandsOn.GradeCar`, the same car as the `GradeCar` you have been driving all lecture. So the only new things on the screen are
-on the controller's side.
+You do not need to reproduce this. The plant is the course's `HandsOn.GradeCar`, the same car as
+the `GradeCar` you have been driving all lecture. Everything new is on the controller's side.
 
-Let us go through the diagram from left to right.
+From left to right. `clock` is a `DiscreteComponents.PeriodicClock` with dt equal to `Ts`: one tick
+every `Ts`, 0.1 seconds by default.
 
-First, `clock`. It is a `DiscreteComponents.PeriodicClock` with dt equal to `Ts`. One tick
-every `Ts`, and that is 0.1 seconds by default.
+`setpoint_sampler` and `measurement_sampler` are each a `DiscreteComponents.Sampler`. They turn the
+setpoint and `plant.v_kmh` into clocked values. The clock wire joins the setpoint sampler's output
+and the controller. That one connection puts the whole controller on the clock.
 
-Next, `setpoint_sampler` and `measurement_sampler`. Both are a `DiscreteComponents.Sampler`.
-They turn the setpoint and `plant.v_kmh` into clocked values. Notice that the clock wire joins
-the setpoint sampler's output and the controller. That one connection puts the whole controller
-on the clock.
+`controller` is `DiscreteComponents.DiscretePIDStandard`, the library's discrete PID, with K, T i,
+T d, N d and T s. It is not your `CruiseController`, but any sampled controller behaves this way.
 
-Then `controller`. It is `DiscreteComponents.DiscretePIDStandard`, the library's discrete PID,
-with K, T i, T d, N d and T s. It is not your `CruiseController`. Any sampled controller behaves
-this way, and this one comes with the library.
+`hold` is a `DiscreteComponents.ZeroOrderHold`. Its output is the staircase.
 
-Then `hold`, a `DiscreteComponents.ZeroOrderHold`. The staircase from the previous slide is its
-output.
+`plant` is continuous, and untouched.
 
-And last, `plant`. Continuous, and untouched.
+`Ts` is a structural parameter, because it defines the clock. Changing it is a recompile, so the
+notebook builds one model per sample time.
 
-`Ts` is a structural parameter, because it defines the clock. Changing it is a recompile. That
-is why the notebook builds one model per sample time.
-
-If you want to put your own controller on a clock, use the same two samplers and the hold,
-around a discrete controller. The diagram on the screen is the template.
+To put your own controller on a clock, use the same two samplers and the hold around a discrete
+controller. This diagram is the template.
 -->
 
 ---
@@ -278,26 +267,21 @@ tuning already used most of it.
 </div>
 
 <!--
-Sampling acts like the dead time from section 01. The engine's transport delay was the reason
-this plant could be driven to sustained oscillation at all. Sampling adds more delay, and this
-time **we** added it, by choosing a cheaper processor. A delay has the same effect whether it
-comes from fuel injection or from a scheduler. Your loop tolerates a fixed total delay, and every
-source adds to it.
+Sampling acts like dead time. The engine's transport delay is what let us drive this plant into
+sustained oscillation. Sampling adds more delay, and this time **we** added it, by choosing a
+cheaper processor. A delay has the same effect whether it comes from fuel injection or from a
+scheduler. Your loop tolerates a fixed total delay, and every source adds to it.
 
-Here is the arithmetic. At frequency omega, a zero-order hold costs about minus omega T s over
-two radians of phase. Omega is angular frequency, in radians per second. Omega c is the
-crossover frequency: where the loop gain, the controller's gain times the plant's, passes
-through one, and where phase margin is measured. Phase margin is how much extra phase lag the
-loop can absorb before it oscillates. It is measured in degrees.
+The arithmetic. At angular frequency omega, a zero-order hold costs about omega T s over two
+radians of phase. Omega c is the crossover frequency, where the loop gain passes through one. Phase
+margin is measured there: how much extra phase lag the loop can absorb before it oscillates.
 
 The rule of thumb is to spend at most 0.2 radians, about 12 degrees, on sampling. That means T s
-less than 0.4 over omega c. In other words, sample 20 to 30 times faster than the closed-loop
-bandwidth, not the plant's time constant. Bandwidth is, roughly, the fastest thing the closed
-loop can follow.
+less than 0.4 over omega c: sample 20 to 30 times faster than the closed-loop bandwidth, not the
+plant's time constant.
 
-Note the order: overshoot first, ringing next, then divergence. You can use that order as a
-diagnostic. If a loop that used to be fine starts overshooting after a software change, ask what
-happened to the loop rate before you touch a gain.
+Remember the order: overshoot, then ringing, then divergence. If a loop that used to be fine starts
+overshooting after a software change, ask what happened to the loop rate before you touch a gain.
 -->
 
 ---
@@ -331,20 +315,19 @@ retuned_slow = solve_at(1.0; k = 20.0, Ti = 3.0, Td = 0.5)
 </div>
 
 <!--
-There are two fixes. Sampling faster reduces the delay from measurement to actuation, without
-changing the standard-form settings. Conservative re-tuning reduces the bandwidth, so the
-one-second update rate consumes less phase margin.
+There are two fixes. Sampling faster shortens the delay from measurement to actuation, with the
+same settings. Conservative re-tuning lowers the bandwidth, so the one-second update costs less
+phase margin.
 
-Look at the re-tuned curve, and remember where the continuous design sat. The gap between them
-is what the cheap processor cost. Re-tuning restores stability, not the original bandwidth. The slow
-loop remains slower.
+Compare the re-tuned curve with where the continuous design sat. The gap is what the cheap
+processor cost. Re-tuning restores stability, not the original bandwidth.
 
-This trade-off comes up on every project. A faster loop rate means more expensive hardware, more
-power, more heat. Slower means less performance. The control engineer usually has to put a
-number on that trade, because nobody else can.
+This trade-off comes up on every project. A faster loop means more expensive hardware, more power,
+more heat. Slower means less performance. The control engineer usually has to put a number on that
+trade, because nobody else can.
 
-A third option is a better discrete design, made in discrete time instead of converted from a
-continuous design. That is a course of its own, and it is why the conversion method matters.
+A third option is to design directly in discrete time instead of converting a continuous design.
+That is a course of its own, and it is why the conversion method matters.
 -->
 
 ---
@@ -358,13 +341,12 @@ continuous design. That is a course of its own, and it is why the conversion met
 ### Design in continuous time, convert, **then verify the design at the rate you actually have**, as in the plot we just made.
 
 <!--
-It is the same argument as using a linear model for a nonlinear plant. We work where the tools
-are good, and then we check the approximation. The alternative is to work in the harder domain from
-the start. If you take the shortcut, the check is required.
+This is the same argument as using a linear model for a nonlinear plant. We work where the tools
+are good, and then we check the approximation. If you take the shortcut, the check is required.
 
-This notebook keeps the standard-form values of k, T i and T d. It then implements the integral
-with forward Euler, and the filtered derivative with backward Euler. Other conversion methods
-produce different discrete coefficients. Verification at the deployed rate is still required.
+This notebook keeps the standard-form k, T i and T d. It implements the integral with forward
+Euler, and the filtered derivative with backward Euler. Other conversion methods give different
+discrete coefficients. Either way, verify at the deployed rate.
 -->
 
 ---
