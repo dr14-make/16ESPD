@@ -4,3 +4,8 @@
   max-height: 22rem;
   margin: 0 auto;
 }
+
+/* A figure that has the slide to itself: use the height the code block would have taken. */
+.slidev-layout.big-figure img {
+  max-height: 37rem;
+}

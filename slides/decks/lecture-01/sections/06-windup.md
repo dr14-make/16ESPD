@@ -527,12 +527,12 @@ section.
 -->
 
 ---
+class: big-figure
+---
 
 ## Three anti-windup variants on the same hill
 
 ![Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both hold the integrator near the limit and follow the setpoint back cleanly.](/figures/06-three-way-antiwindup.svg)
-
-*Speed above, integrator state below. The lower plot shows why the runs differ.*
 
 <!--
 Lower plot first. The integrator traces show the cause: one rises far above the limit, the other
