@@ -7,13 +7,13 @@ layout: section
 
 # Integral windup
 
-The integrator does not know the engine has run out.
+The integrator keeps accumulating after the engine reaches its torque limit.
 
 `notebooks/lecture01/06-windup.ipynb`
 
 <!--
-Everything so far has been true of a linear model. This section is about the first place where
-the real world stops being linear. And it is the failure that has actually destroyed hardware.
+Everything so far has been true of a linear model. This section covers the first nonlinearity, the
+engine's torque limit. This failure has destroyed real hardware.
 
 We have four build steps here. Two inside `GradeCar` and `CruiseController`, one new climb
 harness, and one equation.
@@ -21,13 +21,13 @@ harness, and one equation.
 
 ---
 
-## The plant has two halves
+## Actuator and process
 
 - The **actuator** — the thing that supplies the force. Our engine.
 - The **process** — the thing being pushed. Our car.
 
 Real actuators have backlash, rate limits and **saturation**.
-A linear model has none of these: ask it for a million newton-meters and it will agree.
+A linear model has none of these: ask it for a million newton-meters and it delivers them.
 
 **Open in Dyad** `dyad/HandsOn/Engine.dyad` — the `limiter` after the lag
 
@@ -37,30 +37,29 @@ A linear model has none of these: ask it for a million newton-meters and it will
 >
 > The engine can deliver **1935 N**.
 >
-> The car will lose, and head for about **118 km/h** — a 120 s climb gets it to **119.05**,
+> The car slows down toward about **118 km/h**; a 120 s climb gets it to **119.05**,
 > still falling.
 
 *↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/slope)*
 
 <!--
-The numbers in the box are not chosen to make a point. They come out of the force balance
-from hands-on step 05, with the parameters on the front slide. You can compute them yourself.
-That is the whole point of having built the car first.
+The numbers in the box come out of the force balance from hands-on step 05, with the
+parameters on the front slide. You can compute them yourself.
 
-And notice how close it is. 2023 against 1935. Four percent short. This is not a cartoon
-overload. It is the ordinary case of a fully loaded car on a long climb.
+The gap is small: 2023 against 1935, four percent short. This is an ordinary case, a fully
+loaded car on a long climb.
 
 So the climb at 130 km/h on a 10 % grade asks for 2023 newtons, and the engine can give 1935.
-The car heads for about 118 km/h. I say heads for, not settles at. The climb is 120 seconds
+The car heads for about 118 km/h, but it does not get there. The climb is 120 seconds
 long, and the car is at 119.05 km/h and still falling when the road flattens.
 
-What does the controller see when the engine is pinned at its limit? Exactly what it saw
-before: a speed that is too low. It has no sensor for "the actuator has given up". Hold that
-thought for two slides.
+When the engine is at its limit, the controller sees only what it saw before: a speed that is
+too low. No signal tells it that the engine is at its limit. We come back to this in two
+slides.
 
 In the engine model, the ceiling is the `limiter`. Its `y_max` is `T_max`, and its `y_min` is
 zero. That second one matters too. This engine cannot produce negative torque, so it cannot
-brake. Downhill it has no answer at all.
+brake. Downhill it cannot slow the car at all.
 
 When an actuator sits at its limit and cannot follow the command it was given, we call that
 **saturation**.
@@ -70,7 +69,7 @@ When an actuator sits at its limit and cannot follow the command it was given, w
 routeAlias: step-6a
 ---
 
-## Step 6a: the ceiling becomes a parameter
+## Step 6a: the torque limit becomes a parameter
 
 ![GradeCar's parameter panel with T_max, and the engine selected so its binding T_max = T_max shows.](/img/lecture-01/step06-tmax.png)
 
@@ -80,8 +79,8 @@ routeAlias: step-6a
 
 <!--
 The engine has had a ceiling since hands-on step 02. It is the `limiter` inside it, at
-150 N·m. Until now nobody outside the engine could touch it. Today we need to, so it moves up
-one level, onto the car.
+150 N·m. Until now it could not be set from outside the engine. Today we need to set it, so it
+moves up one level, onto the car.
 
 Open your `GradeCar` in the diagram view. With nothing selected, go to the parameter panel and
 add `parameter T_max::Torque = 150`, with the description "Peak deliverable torque".
@@ -92,7 +91,7 @@ declares `T_max`, from hands-on step 02, so this is a binding, not a new paramet
 There is nothing to wire, and there are no new blocks.
 
 Before we move on, run the PID checkpoint loop from section 05. It should compile and give the
-same curve as before. 150 is the default, so nothing may move. If your curve moved, the binding
+same curve as before. 150 is the default, so nothing should change. If your curve moved, the binding
 went to the wrong instance.
 
 This is the hands-on move once more: add a parameter and pass it down. `T_max` is a fact about
@@ -184,8 +183,8 @@ plot(top, bottom; layout = (2, 1), link = :x)
 [page: step 6c](../lecture/lecture-01/#step-6c) · reference `CruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
 
 <!--
-We have a 10 % hill that needs 2023 N at 130 km/h, and an engine that makes 1935. Let us drive
-up it. Nothing in the controller changes. Only the road.
+We have a 10 % hill that needs 2023 N at 130 km/h, and an engine that makes 1935. Now we drive
+up it. Only the road changes; the controller does not.
 
 This is a new harness in `MyCar`, beside `CruiseLoopStep`. Duplicate `CruiseLoopStep` from
 section 02, and name the copy `CruiseClimb`. That is the reference harness's name.
@@ -223,7 +222,7 @@ Here is what you should see. The speed sags from 130 after t equals 30 seconds. 
 about 118, and is at 119.05 at the crest. `controller.y` lies flat on 150 through the climb.
 `controller.gain.y` keeps climbing, to about 6000 newton-meters at the crest. That is forty
 times what the engine can give. The integrator is what drives it there. On this axis its trace
-hugs zero, so hover over it. It reaches about 97 at the crest, and 56 times 97 is over 5400
+stays near zero, so hover over it. It reaches about 97 at the crest, and 56 times 97 is over 5400
 newton-meters. And after t equals 150 seconds comes the overshoot, to almost 180 km/h. The
 notebook's run without anti-windup peaks 49.47 km/h over the setpoint and takes 66.7 seconds
 to recover.
@@ -276,27 +275,27 @@ signal(no_aw, INTEGRAL)                 # the integrator, separately
 
 <!--
 Look at the speed trace first. It sags away from the setpoint at t equals 30 seconds. The car
-is losing. Now the delivered torque. It lies flat on the limit line. The engine is doing
-everything it can. Now the commanded torque. It carries on upward, past the limit, off into
-nonsense. And the integrator is what is driving it there.
+is slowing down. Now the delivered torque. It lies flat on the limit line: the engine gives all
+it can. Now the commanded torque. It keeps rising, far past the limit. The integrator is what
+drives it there.
 
-The integrator's rule is: the error is not zero, so keep accumulating. It is obeying that rule
-perfectly. Nothing in the loop tells it that the accumulation has stopped buying anything.
+The integrator's rule is: while the error is not zero, keep accumulating. It follows that rule.
+Nothing in the loop tells it that a larger command no longer produces more torque.
 
 Look at the commanded torque at the top of the climb and compare it with 150 N·m. It is about
-6000 N·m, forty times over.
+6000 N·m, forty times the limit.
 
-Think of holding a drone down on the ground while it is trying to fly to 50 meters. The
-propellers max out at 1000 rpm. The integrator winds the command up to 2000. And the moment
-you let go...
+Think of holding a drone on the ground while it tries to fly to 50 meters. The propellers max
+out at 1000 rpm. The integrator winds the command up to 2000. The next slide shows what happens
+when you let go.
 
 In the model, three parameters set the hill: `gradient`, `start_time` and `duration`. A
 gradient of 0.10 is a 10 % climb, about 5.7 degrees. The hill starts at 30 seconds and lasts
 120, so the road flattens again at 150 seconds. The setpoint, `v_set`, is 130 km/h. The road
-flattens because the duration is finite, and the flattening is where the damage shows.
+flattens because the duration is finite, and the overshoot appears after it flattens.
 
-We plot the integrator state separately, because it is the thing actually going wrong, and it
-is invisible in the speed trace.
+We plot the integrator state separately, because that is where the problem is, and the speed
+trace does not show it.
 
 The controller limits here are one million and minus one million. The command never reaches
 them, so the clamp never acts. That gives us no anti-windup at all, on purpose, so the failure
@@ -305,10 +304,10 @@ is visible. The engine still stops at 150 N·m.
 
 ---
 
-## Why the crash is already scheduled
+## Why the overshoot follows
 
 When the road flattens at t = 150 s, the car accelerates. The error changes sign. The
-integrator begins to unwind.
+integrator starts to decrease, or *unwind*.
 
 But it is unwinding *from far above the limit*. While the command falls from about 6000 N·m
 to 150, the engine delivers the same full torque it was delivering before.
@@ -316,26 +315,26 @@ to 150, the engine delivers the same full torque it was delivering before.
 **Nothing the car does can be seen at the output until the command comes back inside the
 limit.**
 
-> **The dangerous property**
+> **What sets the delay**
 >
 > The delay between "the error changed sign" and "the actuator responded" is not set by the
-> plant, or by the gains. It is set by how far the integrator was allowed to wander while nobody
-> was looking.
+> plant, or by the gains. It is set by how far the integrator rose above the limit during
+> saturation.
 
 <!--
-The drone numbers make this cleaner. The integrator asks for 2000 rpm. The motors do 1000.
+With the drone numbers: the integrator asks for 2000 rpm. The motors do 1000.
 Let go. The drone shoots up past 50 meters. The error goes negative. The integrator starts
 coming down. 1900, and still 1000 at the motors. 1500, still 1000. 1100, still 1000. Only at
-1000 does anything at all begin to happen. And by then the drone is out of sight.
+1000 does anything at all begin to happen. By then the drone is far above 50 meters.
 
-And that is the actual harm. Winding up is not itself the problem. Commanding about
+Winding up itself does no harm. Commanding about
 6000 N·m from a 150 N·m engine hurts nothing. The problem is the time it takes to unwind.
 During that time the controller is effectively disconnected.
 
-So let me name the two halves. **Windup** is an integrator accumulating past the point where
+Two terms. **Windup** is an integrator accumulating past the point where
 the actuator can act on it. **Unwinding** is coming back down. The harm is in the unwinding.
 Until the command falls back inside the limit, nothing the car does reaches the engine. During
-unwinding, the loop is open, whether you designed it that way or not.
+unwinding, the loop is effectively open.
 
 Now, before we run the next cell: how far past 130 km/h do you think we go? Give me two
 guesses, and I will write them on the board.
@@ -382,8 +381,8 @@ peak = maximum(v)
 Look at the peak. The car goes 49.47 km/h over the setpoint, and it takes 66.7 seconds to come
 back. Compare that with the guesses on the board.
 
-Nobody commanded this. The driver asked for 130, and the car chose to do something else for
-several seconds. Any control failure that surprises the operator is a safety problem, whatever
+Nobody commanded this. The driver asked for 130, and the car did something else for several
+seconds. Any control failure that surprises the operator is a safety problem, whatever
 the numbers say.
 
 We measure the excursion as the peak minus 130, in km/h. We do not use the `overshoot` helper
@@ -391,7 +390,7 @@ here. That helper divides by the step size, and this run starts at the setpoint,
 no step. The time of the peak tells us when it happens. The dotted vertical lines mark where
 the climb starts and ends.
 
-What would you change to stop it? Hold on to your answers. The usual first one is "limit the
+What would you change to stop it? Keep your answers in mind. The usual first one is "limit the
 output". On its own, that is not enough, and you will see why in a moment.
 -->
 
@@ -404,17 +403,17 @@ output". On its own, that is not enough, and you will see why in a moment.
 *Both true → stop integrating. Either one false → the integrator is restored and starts coming down immediately.*
 
 <!--
-Follow the diagram with me, in this order. The output. The saturation block. The two
-comparisons. The AND. And the switch back into the integrator.
+Follow the diagram in this order: the output, the saturation block, the two comparisons, the
+AND, and the switch back into the integrator.
 
 The first check compares the controller's output before and after the saturation block. Equal
 means we are inside the limit, and everything is fine. Not equal means we are saturating.
 
 The second check asks: do the error and the output have the same sign? Same sign means the
-integrator is still pushing in the direction that is already saturated. It is trying to make
-things worse.
+integrator is still pushing in the direction that is already saturated, so integrating further
+only winds it up more.
 
-Both true, and only both, and we switch the integrator's input to zero. It freezes. It does not
+Only when both are true do we switch the integrator's input to zero. It freezes. It does not
 reset, and it does not decay. It holds, ready to move the instant either condition stops being
 true.
 
@@ -430,7 +429,7 @@ back into the integrator instead. We compare both next.
 routeAlias: step-6d
 ---
 
-## Step 6d: two conditions, one equation
+## Step 6d: clamping as an equation
 
 <div class="grid grid-cols-2 gap-8">
 <div>
@@ -461,7 +460,8 @@ plot(top, bottom; layout = (2, 1), link = :x)
 
 <!--
 The diagram on the previous slide is two comparisons and a switch. As a diagram it would be
-eight blocks. As an equation it is five lines. Dyad lets you mix the two, so we write it.
+eight blocks; as an equation it is five lines. Dyad lets you mix diagrams and equations, so we
+write the equation.
 
 Go inside your `CruiseController`. In the diagram view, delete the wire from `error.y` to
 `integrator.u`. The integrator now has an unconnected input. The equation we are about to write
@@ -527,11 +527,11 @@ $$
 |---|---|---|
 | Action | on / off | continuous |
 | Tuning | none | $N_i$ — how fast it unwinds |
-| Reads | trivially | needs a second look |
+| Easy to read | yes | less so |
 | Where | your `CruiseController`, step 6d | `LimPID`, via `Ni` |
 
-*Both keep the integrator near the limit rather than far above
-it, which is the only thing that matters.*
+*Both keep the integrator near the limit instead of far above
+it, and that is what prevents the overshoot.*
 
 **Open in Dyad** `dyad/Lecture1/WindupClimb.dyad` — `CruiseClimb`, whose loop
 `BackCalcCruiseLoop` closes `LimPID` around the same `GradeCar`
@@ -540,7 +540,7 @@ it, which is the only thing that matters.*
 </div>
 
 <!--
-This is the method your toolbox most likely implements, so it is worth being able to read.
+This is probably the method your toolbox implements, so learn to read it.
 Clamping is easy to explain and easy to get right. Back-calculation gives a smoother handover,
 and has one more number to choose.
 
@@ -549,19 +549,19 @@ the error, plus one over T t times u sat minus u. And u sat minus u is how much 
 did not get through. It is zero whenever we are inside the limit, which is why the term
 vanishes in normal operation.
 
-Look at the tracking time constant, T t, in seconds. It sets how fast the integrator is dragged
-back when saturated. Small means the integrator is dragged back hard the moment you saturate.
-Large means it barely notices. Set it too small, and the integral path stops contributing at
+T t is the tracking time constant, in seconds. It sets how fast the integrator is pulled back
+when saturated. Small means the integrator is pulled back hard the moment you saturate. Large
+means it is pulled back slowly. Set it too small, and the integral path stops contributing at
 all near the limit. `LimPID` exposes it through N i: T t equals N i times T i. The default N i
 is 0.9.
 
 What does back-calculation do that clamping does not? It unwinds while still saturated, rather
 than merely refusing to wind further. So you would expect it to recover better. On this hill
 it does not. Clamping overshoots 0.17 km/h and recovers in 3.5 seconds. Back-calculation
-overshoots 1.11 km/h and takes 13.6 seconds. Back-calculation balances rather than freezes.
-With T t equal to N i times T i, which is 9 seconds, it settles high and still has a surplus to
-unwind. That is a library default left alone, not a verdict on the method. And it is why this
-lecture demonstrates clamping, which has no parameter to leave wrong.
+overshoots 1.11 km/h and takes 13.6 seconds. Back-calculation does not freeze the integrator. It
+holds it where the two terms balance. With T t equal to N i times T i, which is 9 seconds, it settles high and still has a surplus to
+unwind. That result comes from the untuned library default, not from the method. It is why this
+lecture demonstrates clamping, which has no parameter to set.
 
 `LimPID` appears in this lecture only here, as the comparison. Put the reference `CruiseClimb`
 next to your own `MyCar.CruiseClimb`. Same plant, same road, same gains. The only difference is
@@ -572,7 +572,7 @@ slide in this section.
 
 ---
 
-## Three controllers, one hill
+## Three anti-windup variants on the same hill
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -604,17 +604,17 @@ runs = ["none"             => Scenarios.ClampingCruiseClimbTransient(; y_max = 1
 
 ![Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both hold the integrator near the limit and follow the setpoint back cleanly.](/figures/06-three-way-antiwindup.svg)
 
-*Speed above, integrator state below. The difference between the runs is entirely in the lower plot.*
+*Speed above, integrator state below. The lower plot shows why the runs differ.*
 
 </div>
 </div>
 
 <!--
-Look at the lower plot first, not the speed. The integrator traces are where the mechanism is
-visible. One of them wanders far above the limit. The other two sit on it.
+Look at the lower plot first, not the speed. The integrator traces show the cause. One of them
+rises far above the limit. The other two stay on it.
 
 Now the speed plot. Same car, same hill, same gains. The only difference is whether the
-integrator was allowed to accumulate something it could not spend.
+integrator could accumulate beyond what the engine can deliver.
 
 "None" is the clamping controller with limits it never reaches, so no protection at all. It
 overshoots 49.47 km/h. "Clamping" is conditional integration, a different controller and so a
@@ -624,50 +624,51 @@ separates them.
 
 And note what anti-windup did not fix. All three traces sag to the same 119 km/h on the climb.
 No controller can make a 150 N·m engine deliver 2023 N of tractive force. Anti-windup does not
-add performance. It stops you being punished for asking.
+add performance. It prevents the overshoot that follows saturation.
 
 Which of the two methods would you ship? Either. Clamping is cheaper, and easier to explain to
-the next engineer. Back-calculation is smoother, with a tuning parameter of its own. The real
-answer is: whichever one your framework already implements correctly.
+the next engineer. Back-calculation is smoother, with a tuning parameter of its own. In practice,
+use whichever one your framework already implements correctly.
 -->
 
 ---
 
-## Two limits, and only one of them is real
+## The controller limit and the engine limit
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
 - `T_max` is what the **engine enforces**. A fact about the hardware, true whether or not any
   software knows it.
-- `y_max` is what the **controller believes**. A constant in a program — and what the
+- `y_max` is what the **controller believes**. A constant in a program, and what the
   saturation detector compares against.
 
 | Engine | Controller believes | Lowest on climb | Peak after |
 |---|---|---|---|
-| 150 | 140 — margin | 102.03 | 130.15 |
-| 150 | 150 — exactly at it | 119.04 | 130.17 |
-| 150 | 200 — optimism | 119.09 | 130.55 |
-| 150 | 300 — twice | 119.09 | 131.58 |
+| 150 | 140, below | 102.03 | 130.15 |
+| 150 | 150, equal | 119.04 | 130.17 |
+| 150 | 200, above | 119.09 | 130.55 |
+| 150 | 300, twice | 119.09 | 131.58 |
 | 150 | none at all | 119.10 | **179.48** |
 
 </div>
 <div>
 
-> **The rule is ordering, not margin**
+> **The clamp must not be above the engine limit**
 >
-> **The clamp must not sit above what the actuator enforces.** Above it, the damage is the size
-> of the gap. Below it buys almost nothing and is *not free*: clamping at 140 against an engine
-> that has 150 costs **17 km/h** of climbing authority to buy back **0.02 km/h** of overshoot.
+> **The clamp must not sit above what the actuator enforces.** Above it, the overshoot grows with
+> the gap. Below it reduces overshoot very little and *costs* climbing torque: clamping at 140
+> against an engine that has 150 costs **17 km/h** on the climb to save **0.02 km/h** of
+> overshoot.
 >
-> How far below is a trade against authority — made with both numbers in front of you, not by
-> reflex.
+> How far below is a trade-off against climbing torque. Decide it with both numbers in front of
+> you.
 
 </div>
 </div>
 
 <!--
-The folklore here is "leave yourself a margin below the nameplate". We measured it, and on this
+A common rule of thumb is "leave a margin below the nameplate limit". We measured it, and on this
 car it is a bad trade. Read the "peak after" column downwards. Below the ceiling and at it are
 both safe. Above it, the damage grows with the gap.
 
@@ -681,32 +682,32 @@ first and fourth rows say.
 
 Look at the last row. A controller with no output clamp at all reproduces the windup run to
 within a fraction of a km/h. And that row is not hypothetical. It is what notebooks 03, 04 and
-05 were running. Correct anti-windup logic that is never reached is the most expensive kind of
-correct. It passes review, and it does nothing.
+05 were running. Correct anti-windup logic whose limit is never reached passes review and does
+nothing.
 
 Why does the margin cost so much here? The proportional term has already driven the command
-hundreds of N·m past both numbers. So 10 N·m of gap is worth almost nothing in overshoot. But
-10 N·m of authority you refused to use is worth 17 km/h on a 10 % climb. On this car, the
-prudent-sounding margin loses that trade, 17 km/h to 0.02.
+hundreds of N·m past both numbers. So 10 N·m of gap changes the overshoot very little. But
+10 N·m of torque the controller refuses to use costs 17 km/h on a 10 % climb. On this car, the
+margin loses that trade, 17 km/h against 0.02.
 
 If `y_max` sits above what the engine delivers, there is a band where the engine is saturated,
-the error will not close, and the controller sees no saturation at all. That is windup, back
-again. So the rule is ordering, not margin: `y_max` must not sit above `T_max`. How far below
-is a trade against climbing authority.
+the error will not close, and the controller sees no saturation at all. That is windup
+again. So the rule is: `y_max` must not sit above `T_max`. How far below is a trade-off against
+climbing torque.
 
-Where does the margin reflex earn its keep? In systems where the gap can be large. A valve that
-sticks, a rudder meeting current, an amplifier sagging under load. And where the loop gain is
-low enough that the command lives inside the gap, rather than far above it.
+A margin is useful in systems where the gap can be large: a valve that sticks, a rudder meeting
+current, an amplifier sagging under load. It also needs gains low enough that the command stays
+inside the gap, instead of far above it.
 -->
 
 ---
 
-## What this bought us
+## Summary of section 06
 
-- The first genuinely nonlinear failure in the lecture — and it came from the actuator, not
-  from the controller's mathematics.
-- Clamping: two conditions, one switch.
-- A rule for the limit itself: not above the hardware's.
+- The first nonlinear failure in the lecture, caused by the actuator's limit, not by the
+  control law.
+- Clamping: two conditions that switch off the integrator.
+- A rule for the controller limit: not above the hardware limit.
 
 ### Next: the derivative, and what a noisy sensor does to it. <Link to="derivative-and-noise">→ 07, derivative and noise</Link>
 

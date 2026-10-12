@@ -7,18 +7,18 @@ layout: section
 
 # Proportional-integral
 
-The integrator works out the answer you would otherwise have to compute by hand.
+The integrator finds the holding torque without a model of the car.
 
 `notebooks/lecture01/04-proportional-integral.ipynb`
 
 <!--
-One boolean changes between the last notebook and this one. `with_I = true`. Same car, same
-gain, same step. In your diagram it is three blocks.
+One switch changes between the last notebook and this one: `with_I = true`. The car, the gain
+and the step are the same. In your diagram it is three blocks.
 -->
 
 ---
 
-## Adding a memory
+## Adding an integral term
 
 $$
 u \;=\; k\left(e \;+\; \frac{1}{T_i}\int_0^t e\,d\tau\right)
@@ -29,7 +29,7 @@ $$
 
 - The integral keeps a running total of the error.
 - So it keeps *changing* for as long as any error remains.
-- And it stops changing only when the error is exactly zero — at which point it holds
+- And it stops changing only when the error is exactly zero. Then it holds
   whatever value it has reached.
 
 **Open in Dyad** `dyad/Lecture1/CruiseLoop.dyad`
@@ -37,27 +37,27 @@ $$
 </div>
 <div>
 
-> **Read that last point again**
+> **Why this removes the error**
 >
-> An integrator's output at rest is *unconstrained by the error*. That is precisely the freedom
-> the proportional path did not have, and it is the whole fix.
+> An integrator's output at rest is *unconstrained by the error*. The proportional path does not
+> have this freedom.
 
 </div>
 </div>
 
 <!--
-Proportional is the present. Integral is the past. That is not a slogan. It is literally what
-the two expressions compute.
+The proportional term uses the present error. The integral term uses all past error. That is
+what the two expressions compute.
 
 If the error has been zero for a while, what is the integral path putting out? Whatever it
-accumulated before. Not zero. Many of you will want to say zero, and the next two slides show
-why it is not.
+accumulated before, not zero. Many of you will want to say zero. The next two slides show why it
+is not.
 
 The integral keeps a running total of the error, in km/h times seconds. T i is the integral
 time, in seconds. It is a **time**, not a gain, and it divides. So a smaller T i integrates
-harder. This catches people out every single year. The gain k multiplies the whole bracket, so
+harder. The gain k multiplies the whole bracket, so
 it scales every path together. And the tau inside the integral is just the variable of
-integration. It is not the plant's time constant. Unfortunate collision of names.
+integration. It is not the plant's time constant, which uses the same letter.
 
 In the reference model, `with_I` is an ordinary parameter of `CruiseController`. The
 integrator is always in the diagram, and an on/off block called `i_switch` sits between it and
@@ -70,7 +70,7 @@ add the block.
 routeAlias: build-integrator
 ---
 
-## Build: a memory
+## Build: the integral path
 
 <div class="grid grid-cols-2 gap-6">
 <div>
@@ -130,7 +130,7 @@ on the slide.
 
 You should see the speed reach **110 km/h**. The 0.7 km/h gap from step 3 is gone. And you
 should see the integrator state rise and level off near **0.716**. That is 40.1 newton-meters
-divided by k equals 56. On the punchline slide we multiply it back.
+divided by k equals 56. Two slides on, we multiply it back.
 
 Your engine still clips at 150 newton-meters, and the notebook figures do not. So the first
 seconds of your climb, and any overshoot, can differ from the notebook's. The settled 110 and
@@ -171,14 +171,14 @@ pi_loop = Scenarios.CruiseLoopTransient(
 
 ![Two step responses on one axes: the proportional run settles below the setpoint, the proportional-integral run climbs the last stretch and reaches it.](/figures/04-p-vs-pi.svg)
 
-*Same gain, same step. P settles short; PI keeps going and arrives.*
+*Same gain, same step. P settles short; PI reaches the setpoint.*
 
 </div>
 </div>
 
 <!--
 Look at the place where the two curves separate. Not at the step, but afterwards, in the slow
-part. The proportional path has already given up there, because its error is nearly zero. The
+part. There the proportional path does little, because the error is nearly zero. The
 integral path is still working, because its input is still not zero.
 
 Both runs use the same gain, k equals 56 newton-meters per km/h. The PI run has T i equals 10
@@ -187,8 +187,7 @@ six, which stands in for no limit at all. The signal we plot is the plant's km/h
 the loop, inside the harness.
 
 The two terms do different jobs at different times. Proportional does the transient. Integral
-does the last stretch. Watch for that division of labor again in the next section, where we
-plot it directly.
+does the last stretch. The next section plots the two terms separately.
 
 Which one reached the setpoint faster, to within, say, 1 km/h? Usually P. Arriving eventually
 and arriving exactly are different requirements, and PID tuning is mostly about trading one
@@ -197,7 +196,7 @@ for the other.
 
 ---
 
-## The punchline
+## The integrator finds the holding torque
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -216,7 +215,7 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/04-proportional-integral.ipynb)
 
 - **40.1** N·m computed
-- **40.1** N·m discovered
+- **40.1** N·m found by the integrator
 
 *↩ Hands-on step 05: [where 40.1 N·m comes from](../handson-01/index.html#/top-speed)*
 
@@ -227,47 +226,44 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
 
 ![The integral path's output rising and leveling off exactly on a dashed horizontal line marking the analytically computed cruise torque.](/figures/04-integrator-state.svg)
 
-*The integrator's state settles on the dashed line — the cruise torque we computed from the force balance, which the controller was never told.*
+*The integrator's state settles on the dashed line: the cruise torque we computed from the force balance, which the controller was never told.*
 
 </div>
 </div>
 
 <!--
-This is the slide. Let's take it slowly.
+The dashed line comes from the force balance. We solved it at 110 km/h with a pencil, back in
+hands-on step 05, and got 40 newton-meters.
 
-Look at the dashed line first. Where did it come from? We solved the force balance at 110 km/h
-with a pencil, back in hands-on step 05, and got 40 newton-meters.
-
-Now look at the curve arriving at it. Nobody gave the controller the mass. Or the drag area.
-Or the gear ratio. It has never seen the model. It has seen one number, how far off it was,
-and by accumulating that it has **inverted the plant**.
+Now look at the curve that reaches it. The controller was not given the mass, the drag area or
+the gear ratio. It has never seen the model. It sees only the speed error, and by accumulating it
+the integrator has found the torque that holds 110 km/h: the same answer as solving the model
+backwards.
 
 The numbers agree. The integrator times k settles at 40.122 newton-meters at the end of the
 run. The force balance gives 40.119. That is the same number to within 0.003 newton-meters.
-The dashed line is drawn on so you can see the coincidence, not just take my word for it. The
+The dashed line is on the plot so you can check the agreement yourself. The
 run is 90 seconds long, longer than the step needs, because the last hundredths of a
 newton-meter take most of a minute.
 
-That is what "an integrator removes steady-state error" actually means. It is not a magic
-property of the formula. The integrator can hold an output that the error no longer
-justifies, and it will keep hunting until it holds exactly the right one.
+This is how an integrator removes steady-state error. It can hold an output while the error is
+zero, and it keeps changing until it holds exactly the right one.
 
 What happens to that line if I put 200 kg of luggage in the trunk? It moves up, and the
-integrator finds the new value without being told. That is the argument for feedback in one
-sentence.
+integrator finds the new value without being told.
 
 The integrator is inside `CruiseController`. It is the block you just placed. Its output,
 `integrator.y`, is its state before the gain. The plot multiplies by k to get newton-meters.
 The second axis from your own build shows the same curve, unscaled.
 
 If your integrator settles anywhere other than the hand-computed torque, then the units or the
-gear ratio disagree between your model and the notebook. That mismatch is worth finding, so
-stop and find it.
+gear ratio disagree between your model and the notebook. Find that mismatch before you go
+on.
 -->
 
 ---
 
-## What it costs
+## The cost: overshoot
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -284,14 +280,14 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/04-proportional-integral.ipynb)
 
-*Still an unlimited engine. Shrinking **T<sub>i</sub>** integrates harder. Every one of these settles at 110 — the question is what it does on the way. The loop arrives sooner, then past.*
+*Still an unlimited engine. A smaller **T<sub>i</sub>** integrates harder. Every one of these settles at 110; they differ on the way there. The loop reaches the setpoint sooner, then overshoots it.*
 
 </div>
 <div>
 
 ![Five step responses at decreasing integral time: each reaches the setpoint sooner and the fastest ones overshoot and oscillate before settling.](/figures/04-ti-family.svg)
 
-*The **T<sub>i</sub>** family. Overshoot appears, and then grows.*
+*The **T<sub>i</sub>** sweep. As T<sub>i</sub> shrinks, overshoot appears, then grows.*
 
 </div>
 </div>
@@ -300,37 +296,35 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
 Look at the first curve that crosses the setpoint and comes back. That crossing is new. The
 proportional controller never did it, at any gain.
 
-We sweep T i through 40, 20, 10, 5 and 2.5 seconds, from lazy to aggressive. Every one of
-these settles at 110. The integrator guarantees that. The sweep is about the journey, not the
-destination.
+We sweep T i through 40, 20, 10, 5 and 2.5 seconds, from weak to strong integration. Every one
+of these settles at 110. The integrator guarantees that. The sweep shows how each one gets there.
 
-Here is the explanation to remember. By the time the car reaches 110, the integrator has been
+By the time the car reaches 110, the integrator has been
 accumulating error for the whole climb. So it is already holding **more** torque than 110 km/h
 needs. The only way to get rid of that excess is to generate error with the opposite sign. That
-means spending time on the far side of the setpoint. The overshoot is not a flaw in the tuning.
-It is how an integrator unwinds.
+means spending time on the far side of the setpoint. So the overshoot comes from the integrator
+itself: it is how the integrator gets rid of its excess.
 
 Overshoot is the peak excursion past the setpoint, as a percentage of the step. A 20 km/h step
 that overshoots to 112 is 10 percent. The notebook prints the overshoot for each T i. Watch it
 grow as T i shrinks.
 
-So what could we add that reacts **before** we arrive, rather than after? Something that
-watches how fast we are closing. That is section 05.
+To react **before** we arrive, we need a term that responds to how fast the error is shrinking.
+That is section 05.
 -->
 
 ---
 
-## What this bought us
+## Summary of section 04
 
-- Zero steady-state error, for free, with no model in the controller.
-- A demonstration that the integral path *is* the model inversion — the same number, found
+- Zero steady-state error, with no model in the controller.
+- The integral path settles on the torque the model inversion gives: the same number, found
   two ways.
-- A new failure mode: overshoot, caused by unwinding.
+- A new problem: overshoot, while the integrator gets rid of its excess.
 
 ### Next: a third path, to arrive without overshooting. <Link to="pid">→ 05, PID</Link>
 
 <!--
 One warning before we move on. An integrator that has accumulated more than the actuator can
-deliver is a much worse problem than overshoot. That is section 06, and it is the one that
-breaks real vehicles.
+deliver is a much worse problem than overshoot. That is section 06.
 -->

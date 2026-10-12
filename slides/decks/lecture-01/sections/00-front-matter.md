@@ -9,7 +9,7 @@ layout: cover
 
 Vehicle Systems &amp; Components — Lecture 1
 
-One car you built, one controller you build today, ten notebooks.
+Cruise control for the car you built, in ten notebooks.
 
 <div class="text-xs opacity-60 mt-12">
 
@@ -25,10 +25,9 @@ physics of each part of the car and you built it. Today I will not repeat that p
 a slide relies on it, you will see a gray line that says "Hands-on step" and a number. It links
 to the exact slide where you built that part.
 
-You built a car. Today you build its cruise control, one block at a time, on that same car. The
-car never changes. Every new idea in this lecture is a change to the **controller**, never a
-change of subject. So whatever you understand about the car at minute twenty is still true at
-minute one hundred and seventy.
+Today you build cruise control for that car, one block at a time. The car does not change during
+the lecture. Every new idea is a change to the **controller**. So what you learn about the car at
+minute twenty still holds at minute one hundred and seventy.
 
 Section 01 opens with a recap of what you built. If you skipped the hands-on, start from the
 reference `HandsOn.Car` and follow that recap.
@@ -55,25 +54,25 @@ The handout is `handout.pdf`, published next to the deck, with one slide per pag
 
 ## The ten notebooks
 
-| # | Title | The point of it |
+| # | Title | What it shows |
 |---|---|---|
 | <Link to="the-car">01</Link> | The car | the step test: read K, τ and θ off the car you built |
-| <Link to="open-vs-closed-loop">02</Link> | Open vs closed loop | feedforward is right until the hill |
+| <Link to="open-vs-closed-loop">02</Link> | Open vs closed loop | feedforward holds the speed until the hill |
 | <Link to="proportional">03</Link> | P | error shrinks with k but never reaches zero |
 | <Link to="proportional-integral">04</Link> | PI | the integrator finds notebook 02's answer by itself |
-| <Link to="pid">05</Link> | PID | three terms, three jobs: present, past, future |
-| <Link to="windup">06</Link> | Windup | the hill the engine cannot climb |
-| <Link to="derivative-and-noise">07</Link> | Derivative and noise | small noise, steep slope, ruined command |
+| <Link to="pid">05</Link> | PID | P, I and D act on the present, past and future error |
+| <Link to="windup">06</Link> | Windup | a hill steeper than the engine can climb |
+| <Link to="derivative-and-noise">07</Link> | Derivative and noise | the derivative amplifies sensor noise |
 | <Link to="tuning">08</Link> | Tuning | a gain set from one step test, without a model |
-| <Link to="discretization">09</Link> | Discretization | the strobe light slows down |
-| <Link to="wheel-and-slip">10</Link> | Wheel and slip | cruise control meets black ice |
+| <Link to="discretization">09</Link> | Discretization | the controller samples less and less often |
+| <Link to="wheel-and-slip">10</Link> | Wheel and slip | cruise control on black ice |
 
 <!--
-Here is the whole lecture on one slide. Ten short steps. Each one is a notebook you can re-run
+This slide lists the whole lecture in ten short steps. Each one is a notebook you can re-run
 yourself afterwards. They are committed with their outputs, so they read even without the
 modeling tools installed.
 
-And you do not just watch these. From section 01 to section 10, you build the car's cruise
+You do not only watch these. From section 01 to section 10, you build the car's cruise
 controller yourself, block by block. Every plot in the notebooks comes from a diagram you have
 on your own screen. The one exception is 09, which is a demo.
 
@@ -113,18 +112,18 @@ Too big to understand at once? Split it into subsystems, and those into parts. Y
 </div>
 
 <!--
-Before any control: what is the thing we control? A system is parts that interact and together
+First, what is the thing we control? A system is parts that interact and together
 do something none of them does alone. The engine alone does not move. The body alone does not
 accelerate. Together they are a car.
 
 Look at the left column. Structure is the diagram. Behavior is what the simulation does with it.
-Interconnection is the wires. The last line is the one that matters for how we work: divide and
-conquer. Nobody models a car in one equation. You modeled an engine, a driveline and a body, and
-connected them. That decomposition **is** the hands-on.
+Interconnection is the wires. The last line describes how we work: split the system into parts.
+Nobody models a car in one equation. You modeled an engine, a driveline and a body, and connected
+them. That is what the hands-on was.
 
-Now the table, top to bottom, against your own `Car` diagram. Two rows are empty today, and this
-lecture fills them. Control is the controller we build from section 02 on. Feedback is the wire
-from `v_kmh` back into it. The boundary row is the one people skip. The ports of a component are
+Now the table, top to bottom, against your own `Car` diagram. Your `Car` has nothing in two of
+the rows yet, and this lecture adds them. Control is the controller we build from section 02 on. Feedback is the wire
+from `v_kmh` back into it. Do not skip the boundary row. The ports of a component are
 exactly where the system ends and its environment begins. Whatever crosses a port is an input or
 an output. Whatever does not is internal.
 -->
@@ -163,11 +162,11 @@ or not is <Link to="open-vs-closed-loop">section 02</Link>.
 <!--
 A control system is the part we add so that the plant ends up where we want it, not just where
 it happens to go. Control theory is how we pick the input on purpose, instead of by trying
-things. Trial and error does work. The first tuning method in section 08 is literally "guess and
-check". But it does not tell you why, and it does not tell you when it will stop working.
+things. Trial and error does work. The first tuning method in section 08 is "guess and check".
+But it does not tell you why it works, or when it will stop working.
 
-Look at the right column. This is the shape of every control problem: a plant, a desired output,
-and the question of the input. Today the plant is fixed. It is the car you built. The desired
+Look at the right column. Every control problem has these three parts: a plant, a desired
+output, and the question of the input. Today the plant is fixed. It is the car you built. The desired
 output is a speed. Everything from section 02 on is a different answer to the third line.
 -->
 
@@ -201,29 +200,27 @@ own step test.
 
 ---
 
-## One diagram, and all of control theory hangs off it
+## The feedback control loop
 
 ![The general control diagram: a reference enters a comparator, the error goes to a controller which produces a control input u, u enters the system alongside a disturbance d, the system state x evolves, a sensor measures it producing a noisy measurement y, and y is fed back to the comparator.](/diagrams/00-control-loop.svg)
 
 <!--
-This one picture is the map for the whole subject, and for the next three hours. Everything we
-build today is a change to one box in it.
+We use this diagram for the next three hours. Everything we build today changes one box in it.
 
-Let me name each signal. r is the reference, what we want. Somebody has to decide it. That is
+Here is each signal. r is the reference, what we want. Somebody has to decide it. That is
 called **planning**, and for us it is just "the driver set 110". u is the control input, what we
 deliberately do: steering, brake, throttle. d is the disturbances, what acts on the system
 anyway and never asked us. x is the state, what the system is actually doing. And y is the
 measurement, what we can **see** it doing. That is not the same thing, because every sensor adds
 noise.
 
-Now note the shape of the argument. Feedback means the sensor's noise gets fed into the
-controller, and therefore it affects the true state. Noise in a feedback loop does not just make
-the picture fuzzy. It moves the car.
+With feedback, the sensor noise enters the controller. So it changes the command, and the noise
+moves the real car, not only the plotted measurement.
 
-Which of these five can you control directly? Only u. Everything else is either chosen by
-somebody else or done to you.
+Of these five signals, we set only u directly. The others are chosen by somebody else or act on
+the system from outside.
 
-Let me give each symbol its other names, because you will meet them in books. r, the reference,
+Each symbol has other names that you will meet in books. r, the reference,
 is also called the setpoint or the command. Its units are whatever we are controlling, here km/h.
 e is the error, r minus the measurement, in the same units as r. Zero means we are where we asked
 to be. u, the control input, is also called the actuating signal or the plant input. It is what
@@ -236,9 +233,9 @@ output. It is what the sensor reports, which is the state plus noise.
 
 ---
 
-## Five jobs, one diagram
+## Five tasks of control engineering
 
-| Job | Where it sits on the diagram | Today |
+| Task | Where it sits on the diagram | Today |
 |---|---|---|
 | **Planning** | produces the reference r | the driver sets 110 km/h |
 | **Control** — feedforward or feedback | turns r, and maybe y, into u | PID, built block by block |
@@ -256,40 +253,40 @@ Systems in Practice — <a href="https://youtu.be/lBC1nEq0_nk" target="_blank">y
 </div>
 
 <!--
-Control theory is not one technique. It is five jobs, and each of them lives somewhere on the
+Control engineering covers the five tasks in this table, and each one belongs to a part of the
 diagram you just saw.
 
-Planning decides what we want, the reference. For a self-driving car that is a whole field: a
+Planning decides what we want, the reference. For a self-driving car, planning is a large subject: a
 path to the destination that avoids obstacles, follows the rules of the road, and that the car
 can physically drive. For us it is one number. The driver sets 110.
 
 Control turns the reference into the input. Feedforward does it without looking at the result.
 Feedback looks at the measurement and corrects. Today we build a feedback controller, PID.
 
-State estimation is the job between the sensor and the controller. The sensor gives us y, which
+State estimation sits between the sensor and the controller. The sensor gives us y, which
 is noisy, and sometimes not even the quantity we need. Estimation turns it into our best guess of
 the true state. A simple running average does that. So does a Kalman filter. In section 07 you
 will meet the simplest one there is, a filter on the derivative.
 
-Modeling is the job underneath all the others. You can write a model from physics, from first
+Every other task needs a model. You can write a model from physics, from first
 principles, the way you built the car in the hands-on. Or you can measure the real system and
 fit a model to the data. That is called system identification, and the step test in section 01
-is exactly that.
+is an example of it.
 
 And analysis, simulation and test is how we check that the result works. Stability margins,
-Bode and Nyquist plots, and simulation. Every run you do in Dyad today is this job.
+Bode and Nyquist plots, and simulation. Every run you do in Dyad today is this task.
 
-The one sentence to remember is the last line on the slide. The model is used everywhere: to
+As the last line on the slide says, the model is used everywhere: to
 design the controller, to build the estimator, to make a plan the system can follow, and to
 analyze the result. That is why the hands-on came first.
 
 The table follows a short MathWorks video by Brian Douglas. The link is on the slide. It takes
-about fifteen minutes, and it is worth watching tonight.
+about fifteen minutes.
 -->
 
 ---
 
-## Feedback is a family, and two questions come first
+## Feedback controllers, controllability and observability
 
 <div class="grid grid-cols-2 gap-8">
 <div>
@@ -316,7 +313,7 @@ Can the input actually move the state we care about? Torque moves the car's spee
 Can we work out every state we feed back from what we measure? A speedometer alone also gives
 acceleration, as its derivative: yes.
 
-### Feedback is powerful and dangerous
+### Feedback can stabilize or destabilize
 
 Feedforward changes how a system is operated. Feedback changes its dynamics, so it can make a
 system more stable, or unstable.
@@ -325,8 +322,7 @@ system more stable, or unstable.
 </div>
 
 <!--
-Feedback is not one algorithm. It is a family. On the left are the main branches, and each has
-many members. Linear controllers, like PID and full state feedback, assume the system behaves
+There are many feedback algorithms. The left column sorts them into families. Linear controllers, like PID and full state feedback, assume the system behaves
 roughly linearly. Nonlinear ones, like a simple on-off thermostat, sliding mode or gain
 scheduling, do not. Robust controllers are designed to keep working when the model is wrong by a
 known amount. Adaptive ones change themselves as the system changes. Optimal controllers, like
@@ -335,8 +331,8 @@ of the system inside the controller and choose the input that makes the predicte
 the reference. And intelligent controllers, like fuzzy logic or reinforcement learning, learn
 from data.
 
-Which one you pick depends on the system and on what you want it to do. Today we use the most
-common member of the family by far, PID.
+Which one you pick depends on the system and on what you want it to do. Today we use PID, by far the
+most common of them.
 
 Before any of them, two questions. First, is the system controllable? Can our input actually move
 the state we care about? For cruise control, torque moves the speed. Yes. Second, is it
@@ -344,12 +340,11 @@ observable? Can we work out every state we feed back from what we measure? We do
 sensor on every state. A speedometer alone also tells us acceleration, because acceleration is
 the derivative of speed. So yes.
 
-And the last box is a warning that will come back all afternoon. Feedforward changes how we
-operate a system. Feedback changes what the system is. It changes its dynamics. That means
-feedback can take an unstable system and make it stable, and it can just as easily take a stable
-one and make it unstable. One way to put it: feedback is a hack we need because we can never
-know the system and its environment perfectly. It is powerful, and we have to analyze it before
-we trust it.
+The last box is a warning that applies all afternoon. Feedforward changes how we operate a
+system. Feedback changes its dynamics, that is, how it responds over time. So feedback can make
+an unstable system stable, and it can also make a stable one unstable. We need feedback because
+we never know the system and its environment exactly. We analyze a feedback loop before we trust
+it.
 -->
 
 ---
@@ -361,7 +356,7 @@ we trust it.
 
 #### HandsOn/ — the car, as you built it
 
-*The plant. Today it gains a grade input and, later, a few parameters — never a new part.*
+*The plant. Today it gains a grade input and, later, a few parameters, but never a new part.*
 
 - `Engine`, `Driveline`, `Body`, `Car` — hands-on steps 02–05
 - `GradeForce`, `GradeBody` — step 07, the hill
@@ -390,8 +385,8 @@ unconnected, so every demo is a harness around `Car` or `GradeCar`.*
 </div>
 
 <!--
-This slide is the map for the whole lecture. And it is the rule people most often get wrong when
-they build their own.
+This slide shows where each model lives. Students often get this split wrong in their own
+packages.
 
 The car goes in one place, and the experiment goes in another. If it is part of the car, it is in
 `HandsOn`. If it exists because of what we are teaching today, a step source, a setpoint, a
@@ -399,9 +394,9 @@ controller, it is in `Lecture1`. Your own package follows the same split. The `G
 in section 01 sits next to your `Car`. The controller and the loop are new components beside
 them.
 
-And notice why the harnesses exist at all. `GradeCar` has two inputs, torque and grade. Leave
+The harnesses exist because `GradeCar` has two inputs, torque and grade. Leave
 them unconnected and the model is not solvable. It has more unknowns than equations. So every
-single demo today is the same plant, with something different plugged into those two inputs.
+demo today is the same plant, with something different plugged into those two inputs.
 
 Where would a traffic-light sequence belong? And a tire pressure? The sequence is a scenario, so
 it belongs in `Lecture1`. The pressure is the car, so it belongs in `HandsOn`.
@@ -409,7 +404,7 @@ it belongs in `Lecture1`. The pressure is the car, so it belongs in `HandsOn`.
 You may also see a package called `Vehicle`. That is the course library for lectures 2 and 3. It
 carries the same parts block for block, and today's notebooks no longer use it.
 
-A few words you will hear all day. A component is a Dyad block with ports, parameters and
+Some terms we use all day. A component is a Dyad block with ports, parameters and
 equations. `Engine` is one. A harness is a component whose job is to make another one runnable,
 by connecting sources to its inputs and setting initial conditions. An analysis is a named,
 runnable experiment: a model plus a stop time plus the parameters you may vary.
@@ -420,7 +415,7 @@ parameter like `k` is not.
 
 ---
 
-## The car, once
+## The car's parameters
 
 <!-- theta_e is 0.3 s: at 0.04 s the Ziegler-Nichols
      demo in notebook 08 relay-limit-cycled against the torque limit instead of oscillating
@@ -441,7 +436,7 @@ parameter like `k` is not.
 | manifold lag *τ<sub>e</sub>* | 0.3 | s |
 | transport delay *θ<sub>e</sub>* | 0.3 | s |
 
-*Nine numbers. Everything else in this lecture is arithmetic on them.*
+*Every car quantity in this lecture is calculated from these nine numbers.*
 
 </div>
 <div>
@@ -456,38 +451,36 @@ parameter like `k` is not.
 > **Every one of these was derived on paper**
 >
 > In [hands-on step 05](../handson-01/index.html#/top-speed), and checked by every student's model.
-> The hill in notebook 06 defeats the engine because 2023 N &gt; 1935 N, and you can check
-> that.
+> The hill in notebook 06 is too steep for the engine because 2023 N &gt; 1935 N.
 
 </div>
 </div>
 
 <!--
 These are the same nine numbers you typed into your own `Engine`, `Driveline` and `Body`. Section
-01's recap comes back to the ones control cares about. The right-hand column is what this lecture
-leans on. 31.1 and 40.1 newton-meters are the step test in section 01. And 1935 newtons is the
-ceiling that the hill in section 06 breaks.
+01's recap comes back to the ones control cares about. This lecture uses the right-hand
+column. 31.1 and 40.1 newton-meters are the step test in section 01. And 1935 newtons is the
+largest force the engine can deliver, which the hill in section 06 exceeds.
 
-Which of these nine matters most for how hard this car is to control? You heard the answer in
-hands-on step 02: the two lags at the bottom. Section 01's step test is where they show up on a
-plot.
+Of these nine, the two lags at the bottom matter most for how hard this car is to control, as
+you saw in hands-on step 02. Section 01's step test shows them on a plot.
 
-A word on the transport delay. 0.3 seconds is the whole powertrain torque-response path: the ECU,
-fueling, combustion, and driveline compliance. It is not injection alone. If you think injection
-is faster than that, you are right. The model lumps more than injection into this one number.
+About the transport delay: 0.3 seconds is the whole powertrain torque-response path: the ECU,
+fueling, combustion, and driveline compliance. Injection alone is faster than that. The model lumps
+the whole path into this one number.
 
-A few of these deserve a sentence each. C d A, 0.63 square meters, is the drag coefficient times
+C d A, 0.63 square meters, is the drag coefficient times
 the frontal area, kept as one number because only the product matters. The rolling coefficient,
 0.012, is the tire losses as a fraction of the normal load. The gear ratio of 4.0 means the
 engine turns four times per wheel turn. The manifold lag, tau e, 0.3 seconds, is a first-order
 lag: how long the engine takes to build the torque it was asked for. The transport delay, theta
-e, 0.3 seconds, is a pure dead time: how long before anything at all happens. And 1935 newtons
+e, 0.3 seconds, is a pure delay, also called dead time: how long before the engine responds at all. And 1935 newtons
 is T max times i over r, the maximum tractive force.
 -->
 
 ---
 
-## Two conventions, for the whole lecture
+## Units in this lecture
 
 <div class="grid grid-cols-2 gap-8">
 <div>
@@ -499,8 +492,8 @@ and means the same thing:
 
 **k** is in **N·m per km/h**.
 
-*"Five newton-meters for every km/h I am off." That is a sentence an engineer can
-sanity-check; **k = 220** in mixed units is not.*
+*"Five newton-meters for every km/h of error" can be checked against the car; **k = 220** in
+mixed units cannot.*
 
 </div>
 <div>
@@ -519,11 +512,10 @@ signal by 3.6: if a speed axis says km/h it is because the model emitted km/h.*
 </div>
 
 <!--
-Two housekeeping rules, and then we start. Both exist so that a number on a plot means one thing
-only.
+Two rules about units, so that a number on a plot has only one meaning.
 
-Here is why it matters. The most common way a cruise controller "mysteriously" misbehaves is a
-gain tuned against meters per second, driving a loop that measures km/h. That is a silent factor
+A common cause of a misbehaving cruise controller is a gain tuned against meters per second, in
+a loop that measures km/h. That is a silent factor
 of 3.6. So we put the conversion in the model, where you can see it, once. It sits on the sensor
 output, and everything inside the plant stays in meters per second, newtons and kilograms.
 
