@@ -24,26 +24,25 @@ $$
 u \;=\; k\left(e \;+\; \frac{1}{T_i}\int_0^t e\,d\tau \;+\; T_d\,\frac{de}{dt}\right)
 $$
 
-<div class="grid grid-cols-3 gap-6">
+<div class="grid grid-cols-[1fr_1.5fr] gap-8">
 <div>
 
 ### Present
 
 Proportional. How far off am I *now*?
 
-</div>
-<div>
-
 ### Past
 
 Integral. How long have I been off?
 
-</div>
-<div>
-
 ### Future
 
 Derivative. How fast is the error changing?
+
+</div>
+<div>
+
+![The speed error of the PID step run over its first seconds. At one moment, marked now, the error's value is the proportional term, the shaded area under the curve up to now is the integral, and the tangent line at now is the derivative.](/figures/05-present-past-future.svg)
 
 </div>
 </div>
