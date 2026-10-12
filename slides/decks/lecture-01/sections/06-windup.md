@@ -616,7 +616,7 @@ answer is: whichever one your framework already implements correctly.
 
 | Engine | Controller believes | Lowest on climb | Peak after |
 |---|---|---|---|
-| 150 | 140 — margin | 102.04 | 130.15 |
+| 150 | 140 — margin | 102.03 | 130.15 |
 | 150 | 150 — exactly at it | 119.04 | 130.17 |
 | 150 | 200 — optimism | 119.09 | 130.55 |
 | 150 | 300 — twice | 119.09 | 131.58 |

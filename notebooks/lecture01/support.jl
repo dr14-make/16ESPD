@@ -280,9 +280,9 @@ function resolve_in(sys, path::Union{AbstractString, Symbol})
 
                 Available there: $(join(available_names(node), ", "))
 
-                A Dyad `structural parameter` — `with_I`, `with_D`, `theta_e` — is baked in
-                when the component is constructed and is not reachable this way either;
-                rebuild the model with a different value instead of reaching for it here.
+                A Dyad `structural parameter` — such as `theta_e` — is baked in when the
+                component is constructed and is not reachable this way either; rebuild the
+                model with a different value instead of reaching for it here.
                 """))
         end
     end
@@ -440,8 +440,8 @@ function tunable(sys, param)
     any(isequal(sym), ModelingToolkit.parameters(sys)) || throw(ArgumentError("""
         `$param` is not a tunable parameter of this model, so `remake` cannot vary it.
 
-        Structural parameters (`with_I`, `with_D`, `theta_e`) and variables are not sweepable:
-        a structural parameter changes the equations, so each value needs its own model.
+        Structural parameters (such as `theta_e`) and variables are not sweepable: a structural
+        parameter changes the equations, so each value needs its own model.
         """))
     return sym
 end
