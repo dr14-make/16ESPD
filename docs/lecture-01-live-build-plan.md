@@ -47,7 +47,7 @@ back-calculation comparison in 06.
 | Step | Section | Students do | Reference after the step |
 | ---- | ------- | ----------- | ------------------------ |
 | 1a | 01 | Run the step test on their `Car` | `HandsOn.Car`, `Lecture1.CarStepTest` |
-| 1b | 01 | `GradeCar`: duplicate `Car`, `Body` → `GradeBody`, add a `grade` input | `HandsOn.GradeCar` |
+| 1b | 01 | `GradeCar`: duplicate `Car`, `Body` → `GradeBody`, add a `grade` input | `Lecture1.Step01.GradeCar` |
 | 2 | 02 | Loop: setpoint step, `CruiseController` shell, `GradeCar`, road constant. In the shell, `error = Add(k1=+1, k2=-1)` | — |
 | 3 | 03 | `Gain(k)` from `error` to `y` | checkpoint **P**: `CruiseLoop(with_I=false, with_D=false)` |
 | 4 | 04 | `Add3` between `error` and the gain; `Integrator(k=1/Ti)` on `u3`; `Constant(0)` holds the derivative slot on `u2` | — |
@@ -57,7 +57,7 @@ back-calculation comparison in 06.
 | 6c | 06 | Climb harness with `Vehicle.GradeProfile`; watch the integrator wind up | `CruiseClimb` (LimPID) for comparison |
 | 6d | 06 | Replace the `error → integrator` connection with the clamping equation | `ClampingCruiseClimb` |
 | 7 | 07 | Insert `MeasurementNoise` between `plant.v_kmh` and `u_m`; then `wd = 0`, then vary `Nd` | `NoisyCruiseLoop` |
-| 8 | 08 | Expose `m` and `theta_e` on `GradeCar` for the robustness sweep | `HandsOn.GradeCar` |
+| 8 | 08 | Expose `m` and `theta_e` on `GradeCar` for the robustness sweep | `Lecture1.Step08.GradeCar` |
 | 9 | 09 | Demo only | `SampledCruiseLoop` |
 | 10 | 10 | Swap `GradeCar` → `SlipCar`, add a friction profile on `mu_scale` | `SlipCruiseLoop` |
 

@@ -214,8 +214,8 @@ because it delays the average command. We come back to this in two slides.
 **Open in Dyad** `dyad/Lecture1/SampledCruiseLoop.dyad`
 
 <!--
-This is a demo, not a build, so you do not need to reproduce it. The plant is the same
-`HandsOn.GradeCar` you have been driving all lecture. So the only new things on the screen are
+This is a demo, not a build, so you do not need to reproduce it. The plant is the course's
+`HandsOn.GradeCar`, the same car as the `GradeCar` you have been driving all lecture. So the only new things on the screen are
 on the controller's side.
 
 Let us go through the diagram from left to right.

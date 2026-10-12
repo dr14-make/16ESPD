@@ -81,7 +81,7 @@ live here, one section per deck section, in deck order.
 - If short of time, skip the `GradeCarFullThrottle` bench run; a `GradeCar` block with `tau_cmd`
   and `grade` inputs is enough.
 - Checkpoint at the end of 01: every student has a `GradeCar` that compiles. Anyone without one
-  takes the reference `HandsOn.GradeCar` from the guide page before 02.
+  pastes the step 1b catch-up from the guide page before 02.
 
 ## 02 Open vs closed loop — 15 min
 
@@ -162,7 +162,7 @@ Check everyone is at checkpoint PID before releasing the room.
   open next to the students' `MyCar.CruiseClimb`.
 - Two-limits slide: optional live demo if the room wants it. Set `controller.y_max = 140` on
   `CruiseClimb`, re-run, then try 300.
-- Catch-up 6a: `HandsOn.GradeCar` already has `T_max`; replace `plant` with it.
+- Catch-up 6a: paste the step 6a `GradeCar` from the guide page over the student's own.
 - Catch-up 6c: reference `Lecture1.CruiseClimb` has the same name but its loop is the
   back-calculation comparison (`LimPID`). The no-anti-windup run is
   `Lecture1.ClampingCruiseClimbTransient` with `y_max = 1e6`, `y_min = -1e6`.
@@ -197,7 +197,8 @@ Check everyone is at checkpoint PID before releasing the room.
 - "All three" slide: about ninety seconds for the hands-up discussion.
 - Saturation trap: show the left panel first with the right covered, then uncover it. Have
   `dyad/Lecture1/CruiseLoop.dyad` open.
-- Catch-up step 8: `HandsOn.GradeCar` carries `m` and `theta_e` with the same defaults. Reference
+- Catch-up step 8: paste the step 8 `GradeCar` from the guide page; it adds `m` and `theta_e` with
+  the same defaults. Reference
   runs are notebook 08's `tuned` cell: `CruiseLoopTransient` with both switches on, the
   Ziegler-Nichols gains and the limits lifted.
 

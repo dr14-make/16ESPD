@@ -140,7 +140,7 @@ A copy of your `Car` whose body is the `GradeBody` of hands-on [step 07](../../h
 
 On a flat road (`road.k = 0`) full throttle from rest reads **246.388 km/h** at 300 s — the same as your `Car`. A flat `GradeBody` is a `Body`. Set `road.k = 0.1` for a 10 % climb and the terminal speed drops; the engine stays at its 150 N·m ceiling throughout.
 
-Reference: `HandsOn.GradeCar`, bench `GradeCarFullThrottle`.
+Reference: `Lecture1.Step01.GradeCar`, bench `GradeCarFullThrottle`.
 
 :::
 
@@ -558,6 +558,45 @@ Nothing changes in any run: the default is the 150 N·m the engine already had. 
 
 :::
 
+:::: warning Fell behind?
+
+Catch-up: open your `GradeCar`, toggle to code (⇄) and paste this over its contents. Reference: `Lecture1.Step06a.GradeCar`.
+
+```txt [GradeCar]
+component GradeCar
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  engine = Engine(T_max = T_max)
+  driveline = Driveline()
+  body = GradeBody()
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  to_kmh = BlockComponents.Math.Gain(k = 3.6)
+  "Engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Road under the wheel"
+  trans_ground = TranslationalComponents.Components.Fixed()
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150
+relations
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, driveline.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(driveline.support_r, rot_ground.spline)
+  connect(driveline.flange, body.flange)
+  connect(driveline.support_t, trans_ground.flange)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, to_kmh.u)
+  connect(to_kmh.y, v_kmh)
+  connect(grade, body.grade)
+end
+```
+
+::::
+
 ### 6b · The limiter {#step-6b}
 
 Limit the controller's own output to what the engine can deliver.
@@ -857,9 +896,53 @@ New component `TuningCruiseStep`, a duplicate of `CruiseLoopStep` with:
 
 With the `GradeCar` defaults nothing changes in any earlier run. On `TuningCruiseStep`, the 200 kg payload barely moves the response: feedback absorbs it. The doubled delay rings much harder: the Ziegler-Nichols gains came from a measurement at 0.3 s, and the distance from instability they left is gone.
 
-The reference `HandsOn.GradeCar` carries `theta_e`, `T_max`, `m` and also the drag area `CdA`.
+The course's `HandsOn.GradeCar` carries `theta_e`, `T_max`, `m` and also the drag area `CdA`.
 
 :::
+
+:::: warning Fell behind?
+
+Catch-up: open your `GradeCar`, toggle to code (⇄) and paste this over its contents. Reference: `Lecture1.Step08.GradeCar`.
+
+```txt [GradeCar]
+component GradeCar
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  engine = Engine(T_max = T_max, theta_e = theta_e)
+  driveline = Driveline()
+  body = GradeBody(m = m)
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  to_kmh = BlockComponents.Math.Gain(k = 3.6)
+  "Engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Road under the wheel"
+  trans_ground = TranslationalComponents.Components.Fixed()
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 1400
+  # Structural because the engine's Pade delay builds its coefficients from it.
+  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.3
+relations
+  connect(tau_cmd, engine.tau_cmd)
+  connect(engine.spline, driveline.spline)
+  connect(engine.support, rot_ground.spline)
+  connect(driveline.support_r, rot_ground.spline)
+  connect(driveline.flange, body.flange)
+  connect(driveline.support_t, trans_ground.flange)
+  connect(vsensor.flange, body.flange)
+  connect(vsensor.v, to_kmh.u)
+  connect(to_kmh.y, v_kmh)
+  connect(grade, body.grade)
+end
+```
+
+::::
 
 ## 09 Discretization
 

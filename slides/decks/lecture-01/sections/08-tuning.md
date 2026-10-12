@@ -662,7 +662,7 @@ r = MyCar.TuningCruiseTransient()
 plot!(p, r; idxs = r."plant.v_kmh", label = "m = 1600")
 ```
 
-[page: step 8](../lecture/lecture-01/#step-8) · reference `dyad/HandsOn/GradeCar.dyad`
+[page: step 8](../lecture/lecture-01/#step-8) · reference `dyad/Lecture1/Step08/GradeCar.dyad`
 
 <!--
 The middle route was: tune on the model, ship to the car. That is only as good as the model. So

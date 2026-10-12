@@ -589,7 +589,7 @@ r = MyCar.GradeCarFullThrottleTransient()
 plot(r; idxs = r."car.v_kmh")
 ```
 
-[page: step 1b](../lecture/lecture-01/#step-1b) · reference `dyad/HandsOn/GradeCar.dyad`
+[page: step 1b](../lecture/lecture-01/#step-1b) · reference `dyad/Lecture1/Step01/GradeCar.dyad`
 
 > **The plant from here to section 09**
 >

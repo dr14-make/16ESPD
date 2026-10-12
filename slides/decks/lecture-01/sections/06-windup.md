@@ -75,7 +75,7 @@ routeAlias: step-6a
 
 *Your `GradeCar` · add `parameter T_max::Torque = 150` · `engine`: `T_max = T_max`*
 
-[page: step 6a](../lecture/lecture-01/#step-6a) · reference `dyad/HandsOn/GradeCar.dyad`
+[page: step 6a](../lecture/lecture-01/#step-6a) · reference `dyad/Lecture1/Step06a/GradeCar.dyad`
 
 <!--
 The engine has had a ceiling since hands-on step 02. It is the `limiter` inside it, at
