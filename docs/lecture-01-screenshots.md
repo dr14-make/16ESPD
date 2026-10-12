@@ -1,19 +1,18 @@
 # Lecture 1 — Studio screenshots
 
-Every shot is taken from the lecturer's own `MyCar` build during rehearsal — the components the
-students build, under the names the guide gives them — not from the reference models in
-`dyad/HandsOn/` and `dyad/Lecture1/`. The one exception is section 09, a demo on the reference
-`SampledCruiseLoop`. The student harnesses are flat, so signal paths read `plant.v_kmh` and
-`controller.*`, never `loop.*`. The list follows the build, so it doubles as a rehearsal script.
-Save the files to `slides/images/lecture-01/` under the names given. Step numbers match the table in
-`docs/lecture-01-live-build-plan.md`.
+The diagrams are Studio screenshots of the `Lecture1.StepNN` models, which hold the student's
+components exactly as they stand after each step, under the names the guide gives them. The one
+exception is section 09, a demo on the reference `SampledCruiseLoop`. The plots are not
+screenshots: `notebooks/lecture01/step-plots.jl` renders them from the same models in the
+hands-on plot style, so a model change is one re-run away from new figures. The list follows the
+build, so it doubles as a rehearsal script. Save the files to `slides/images/lecture-01/` under
+the names given. Step numbers match the table in `docs/lecture-01-live-build-plan.md`.
 
-The hands-on deck's conventions apply to every capture:
+The hands-on deck's conventions apply to every diagram:
 
 - The diagram view, fitted to the window, with the library panel and the problems panel closed.
-- Keep the default zoom across one model's states, so successive shots line up when the deck
-  steps through them.
-- Plots use Studio's plot view with the legend visible and the signals named. Crop to the plot.
+- Every controller state uses the same fit, scroll and crop box, so successive shots line up.
+- A shot that needs a parameter panel shows it over the diagram, with the toolbar masked out.
 - Same window size for every shot. About 1600 × 1000 matches the hands-on images.
 
 The recap reuses the hands-on images `step05-car.png`, `step07-grade-body.png` and

@@ -40,14 +40,14 @@ metadata {
   "_links": {
     "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
     "controller": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}},
-    "plant": {"Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 400, "y2": 600}}}},
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 400, "y2": 500}}}},
     "road": {"Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 150, "y2": 250}}}},
     "friction": {"Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 300, "y2": 400}}}},
     "id_demand": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id_command": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 500}, {"x": 550, "y": 570}], "E": 2}], "path": {}}},
-    "id_road": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 620, "y": 200}, {"x": 620, "y": 414}], "E": 2}], "path": {}}},
-    "id_friction": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 350}, {"x": 600, "y": 444}], "E": 2}], "path": {}}},
-    "id_feedback": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 530}, {"x": 800, "y": 850}, {"x": 400, "y": 850}], "E": 2}], "path": {}}}
+    "id_command": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 500}, {"x": 550, "y": 485}], "E": 2}], "path": {}}},
+    "id_road": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 620, "y": 200}, {"x": 620, "y": 407}], "E": 2}], "path": {}}},
+    "id_friction": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 350}, {"x": 600, "y": 422}], "E": 2}], "path": {}}},
+    "id_feedback": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 465}, {"x": 800, "y": 850}, {"x": 400, "y": 850}], "E": 2}], "path": {}}}
   }
 }
 end
