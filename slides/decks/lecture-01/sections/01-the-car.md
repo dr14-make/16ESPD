@@ -327,46 +327,46 @@ anywhere but 110, check `offset` and `height`.
 
 ## Transient, steady state and dynamic response
 
-<div class="grid grid-cols-3 gap-6">
+<div class="grid grid-cols-[1fr_1.5fr] gap-8">
 <div>
 
 ### Transient
 
-The temporary part. The system's reaction to an abrupt change, which dies
-out.
-
-</div>
-<div>
+The temporary part. The system's reaction to an abrupt change, which dies out.
 
 ### Steady state
 
-What is left after long enough that every startup effect has gone. The
-settled relationship between input and output.
-
-</div>
-<div>
+What is left after long enough that every startup effect has gone. The settled relationship
+between input and output.
 
 ### Dynamic response
 
 The whole response: the sum of the two.
 
-</div>
-</div>
-
 $$
 y(t) \;=\; y_{\text{transient}}(t) \;+\; y_{\text{steady-state}}(t)
 $$
+
+</div>
+<div>
+
+![The step-test speed with its parts shaded: steady state at 90 km/h before the step, the transient climb, and steady state at 110 km/h once the speed stays inside a 2 percent band.](/figures/01-response-parts.svg)
 
 > **Why the vocabulary matters today**
 >
 > Proportional control is about to fail in *steady state* while looking fine in the
 > *transient*. These terms say where the failure is.
 
+</div>
+</div>
+
 <!--
-Look back at the step-test speed plot. At first the speed moves. Later it has stopped moving.
+This is the step test again, with its parts marked. Before the step, and long after it, the speed
+does not move: steady state. In between it climbs: the transient.
 
 The transient never ends exactly. It decays toward the final value. So we pick a band, usually 2 or
-5 percent. Once the response stays inside it, that is the settling time.
+5 percent. Once the response stays inside it, that is the settling time. Here the car stays inside
+2 percent 240 seconds after the step.
 
 Requirements are written in these terms. Rise time, overshoot and settling time describe the
 transient. Steady-state error describes the steady state.
