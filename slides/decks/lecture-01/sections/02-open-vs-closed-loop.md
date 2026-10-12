@@ -82,7 +82,6 @@ tau_ff = F * CAR.r / CAR.i                    # N.m at the engine
 
 nominal = Scenarios.FeedforwardCruiseTransient(
     tau_ff = tau_ff, stop = 1200.0)
-plot_speed(nominal; setpoint = 90)
 ```
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/02-open-vs-closed-loop.ipynb)
