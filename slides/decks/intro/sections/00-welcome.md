@@ -65,7 +65,7 @@ covers, the tool, the schedule, the books.
 </div>
 
 <!--
-**Say:** two of us. Email first for anything; office hours are by
+**Say:** there are two lecturers. Email first for anything; office hours are by
 arrangement. Dmitry is in on Mondays only, so plan questions for the practicals.
 -->
 
@@ -81,11 +81,11 @@ In a sentence each, as we go round:
 - What do you want to get out of this subject?
 
 <!--
-**Say:** nobody needs to stand up or prepare anything — one sentence each
-from your seat. It helps us pitch the examples: a room full of mechanical engineers and a
-room full of programmers need different first weeks.
+**Say:** you do not need to stand up or prepare anything: one sentence each,
+from your seat. It helps us choose the examples, because mechanical engineers and
+programmers need a different start.
 
 **Listen for:** who has used Julia, MATLAB/Simulink or Modelica before, and
-who has a thesis touching vehicle control. Both tell you who will need help in the first
-Dyad practical, and who could be pushed further.
+who has a thesis related to vehicle control. This tells you who will need help in the first
+Dyad practical, and who can be given harder tasks.
 -->

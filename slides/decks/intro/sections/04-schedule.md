@@ -27,7 +27,7 @@ routeAlias: schedule
 </div>
 
 <!--
-**Say:** lectures and practicals alternate, and each one builds on the one before it — in Dyad, in your own repository, in the same vehicle library. The course opens the other way round: you build the car in the first practical (2), and the first lecture (3) recaps it and puts a cruise controller on it, block by block, on your own screen.
+**Say:** lectures and practicals alternate, and each one builds on the one before it, in the same Dyad vehicle library in your own repository. At the start the order is reversed: you build the car in the first practical (2), and the first lecture (3) recaps it and adds a cruise controller to it, block by block, on your own screen.
 
 **Walk the flow:** first you build the car and control it (2–3). Then its powertrain, one kind at a time: the combustion engine (4–5), then the electric motor with its controller and a hybrid drive that combines the two (6–8), and fuel cells as the next source of electric power (9). With the drive done, the safety systems that act on it (10–11): ABS stops the wheels locking when braking, TCS stops them spinning when accelerating, ESP keeps the car from sliding sideways. Comfort and assistance systems (12) and autonomy (14) close the course. The autonomy practical leaves Dyad: in the CARLA simulator you work with the car's camera and sensors in a virtual city.
 

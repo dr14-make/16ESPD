@@ -24,8 +24,8 @@ routeAlias: literature
 </div>
 
 <!--
-**Say:** none of these is required reading. The Bosch handbook is the one to
-keep on your desk; Larminie and Husain cover the electric and hybrid lectures; Kuo is for
+**Say:** none of these is required reading. The Bosch handbook is the general
+reference; Larminie and Husain cover the electric and hybrid lectures; Kuo is for
 digital control.
 -->
 
@@ -39,6 +39,6 @@ digital control.
 </figure>
 
 <!--
-**Say:** next week, control: how a car holds a speed, and why the one in
-the picture needs some. Install Dyad Studio before the first practical.
+**Say:** next week is about control: how a car holds a set speed, and why
+the car in the picture needs a controller. Install Dyad Studio before the first practical.
 -->

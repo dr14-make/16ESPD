@@ -43,11 +43,11 @@ Attendance is not compulsory. But **active attendance and participation** — qu
 </div>
 
 <!--
-**Say:** three parts. Take part, build the simulation, pass the test.
+**Say:** there are three parts: take part in class, build the simulation, and pass the test.
 
-**On attendance:** nobody takes a register. But being there and joining in — asking, answering, working through the practical in the room — earns points that go toward your exam result. It pays to come, and to talk.
+**On attendance:** nobody takes a register. But being there and joining in (asking, answering, working through the practical in the room) earns points toward your exam result.
 
-**On the practice:** it is individual work. Each student has their own GitHub repository and hands in each task as a pull request. That is how software is built in industry, and it makes every piece of work visible and reviewable. If someone has never opened a pull request, the first practical covers it.
+**On the practice:** it is individual work. Each student has their own GitHub repository and hands in each task as a pull request. Software teams in industry work this way, and every piece of work can be seen and reviewed. If someone has never opened a pull request, the first practical covers it.
 
 **On the exam:** about 30 multiple-choice questions. If the result does not satisfy you, you can ask for an oral exam on top.
 -->
