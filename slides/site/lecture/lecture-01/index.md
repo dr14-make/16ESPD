@@ -8,11 +8,11 @@ title: Lecture 1 — build the cruise controller
 
 From the car you built in the hands-on to a PID cruise control that survives a hill, a noisy speedometer and a patch of ice
 
-**What you build.** The [hands-on](../../handson/lecture-01/) left you a car: torque command in, speed out. In this lecture you put a controller in front of it and close the loop, one block at a time, along with the lecturer. Every plot in the lecture comes from a diagram you have on your own screen. The loop itself — setpoint, controller, car, road — is drawn once in step 2 and never changes again; every later step happens inside the controller.
+**What you build.** The [hands-on](../../handson/lecture-01/) left you a car: torque command in, speed out. In this lecture you put a controller in front of it and close the loop, one block at a time, along with the lecturer. Every plot in the lecture comes from a diagram you have on your own screen. The loop itself — setpoint, controller, car, road — is drawn once in step 2. Steps 3–5, 6b and 6d happen inside the controller; steps 6a and 8 add parameters to `GradeCar`; steps 6c, 7, 8 and 10 duplicate the loop into a new bench with a hill, a noisy sensor, other gains or `SlipCar`, and keep its shape.
 
 **How each step works.** The slide that introduces a step shows the finished diagram and links here. Each step below lists the blocks to place with their library path, instance name and values, every wire, and what the plot must show before you go on. Use the instance names given here: the lecture's notebooks read signal paths like `controller.integrator.y`, and with the same names your diagram reads the same way.
 
-**Fell behind?** There are two catch-up checkpoints: the **P checkpoint** at the end of step 3 and the **PID checkpoint** at the end of step 5. Each has your `CruiseController` and `CruiseLoopStep` as they stand at that point, as code to paste. The course repository has the same checkpoints in `dyad/Lecture1/CruiseLoop.dyad`: the reference `CruiseLoop`, whose switches `with_I` and `with_D` turn the integral and derivative branches on and off.
+**Fell behind?** There are two catch-up checkpoints: the **P checkpoint** at the end of step 3 and the **PID checkpoint** at the end of step 5. Each has your `CruiseController` and `CruiseLoopStep` as they stand at that point, as code to paste. The course repository has the same checkpoints as `Lecture1.Step03` and `Lecture1.Step05`, and the reference `CruiseLoop` in `dyad/Lecture1/CruiseLoop.dyad`, whose switches `with_I` and `with_D` turn the integral and derivative branches on and off.
 
 **Plotting.** Every plot is drawn in the Julia REPL: click **Dyad: Open Julia REPL** in the **Actions** panel's title bar. Each snippet starts with `using MyCar, Plots; plotly()`. `plotly()` switches Plots to its interactive backend: drag a box to zoom, double-click to zoom back out, hover over a curve to read its values. It needs nothing beyond the `Plots` you added in the hands-on. Once per REPL session is enough, and running it again does no harm, so every snippet also works in a freshly opened REPL.
 
@@ -88,13 +88,21 @@ New component `CarStepTest` in `MyCar`:
 
    Every later step plots the same way. Several signals on one axes: `idxs = [r."a", r."b"]`.
 
+4. Zoom in on the step: plot the delivered torque `plant.engine.limiter.y` from 49.5 s to 52 s.
+
+   ```julia
+   plot(r; idxs = r."plant.engine.limiter.y", xlims = (49.5, 52))
+   ```
+
+   It holds at 31.078 N·m for about 0.3 s after the step — the engine's transport delay, with a small dip from its Padé approximation — then rises along the 0.3 s lag and is at 40.1 N·m by 52 s.
+
 [![CarStepTest diagram: a torque step source driving the plant, your Car.](/lecture/lecture-01/img/step01-step-test.png)](/lecture/lecture-01/img/step01-step-test.png)
 
 [![Plot of plant.v_kmh: flat at 90 km/h until the step at 50 s, then rising to 110 km/h.](/lecture/lecture-01/img/step01-step-test-plot.png)](/lecture/lecture-01/img/step01-step-test-plot.png)
 
 ::: tip Expected result
 
-`plant.v_kmh` sits at **90 km/h** until 50 s, then rises to **110 km/h** by 500 s; `plant.engine.limiter.y` moves from 31.078 to 40.119 N·m. The vehicle's own time constant is about 60 s. Read K, τ and θ off this curve as the lecture deck does.
+`plant.v_kmh` sits at **90 km/h** until 50 s, then rises to **110 km/h** by 500 s; `plant.engine.limiter.y` moves from 31.078 to 40.119 N·m. The vehicle's own time constant is about 63 s (notebook 01 fits τ = 63.0 s). Read K, τ and θ off this curve as the lecture deck does.
 
 Reference: `HandsOn.Car`, `Lecture1.CarStepTest`.
 
@@ -451,7 +459,17 @@ end
 
 :::
 
-Or open the reference `CruiseLoop` with `with_I = true, with_D = true`, `Td = 0.5` and `wd = 0`; its `xd0` follows `wd` by itself.
+Or open `Lecture1.Step05` in the course repository: it is this checkpoint. To run the reference `CruiseLoop` instead, open the course repository and call it from its Julia REPL. `CruiseLoopTransient` has no `with_I` or `with_D` of its own and runs P unless its model sets them, and its `y_max = 150` would switch on a clamp your step 5 controller does not have:
+
+```julia
+using VehicleSystemsComponents, Plots; plotly()
+L = VehicleSystemsComponents.Lecture1
+r = L.CruiseLoopTransient(model = L.CruiseLoopStep(name = :CruiseLoopStep,
+        with_I = true, with_D = true), Td = 0.5, wd = 0, y_max = 1e6)
+plot(r; idxs = [r."loop.plant.v_kmh", r."demand.y"])
+```
+
+It gives the curve of step 5: a peak of **113.98 km/h**, settling at 110. Its `xd0` follows `wd` by itself.
 
 ::::
 
@@ -551,13 +569,14 @@ Your library cannot see the course library's `GradeProfile`; the pulse is what t
 
    :::
 
-4. Create a TransientAnalysis `CruiseClimbTransient` with `stop = 400` s. Run it and plot `plant.v_kmh` above, `controller.y` and `controller.integrator.y` below:
+4. Create a TransientAnalysis `CruiseClimbTransient` with `stop = 400` s. Run it and plot `plant.v_kmh` above; below it `controller.y`, the command after the limiter, `controller.gain.y`, the command before it, and `controller.integrator.y`:
 
    ```julia
    using MyCar, Plots; plotly()
    r = MyCar.CruiseClimbTransient()
    top = plot(r; idxs = r."plant.v_kmh")
-   bottom = plot(r; idxs = [r."controller.y", r."controller.integrator.y"])
+   bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
+                            r."controller.integrator.y"])
    plot(top, bottom; layout = (2, 1), link = :x)
    ```
 
@@ -567,7 +586,7 @@ Your library cannot see the course library's `GradeProfile`; the pulse is what t
 
 ::: tip Expected result
 
-The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.05 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
+The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.05 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing, to about **97** at the crest, and drags `controller.gain.y` to about **6000 N·m** — forty times what the engine can deliver. At that scale the integrator's trace hugs zero; hover over it to read it. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
 
 Compare with the course model `CruiseClimb`, which closes the loop with the library's `LimPID` and its back-calculation anti-windup; it is back at **130 km/h** at 400 s.
 
@@ -598,13 +617,14 @@ Stop the integrator while it would only push the command deeper into a limit.
 
    :::
 
-4. Save, run `CruiseClimbTransient` again and plot the same three signals as in step 6c, with the same code:
+4. Save, run `CruiseClimbTransient` again and plot the same signals as in step 6c, with the same code:
 
    ```julia
    using MyCar, Plots; plotly()
    r = MyCar.CruiseClimbTransient()
    top = plot(r; idxs = r."plant.v_kmh")
-   bottom = plot(r; idxs = [r."controller.y", r."controller.integrator.y"])
+   bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
+                            r."controller.integrator.y"])
    plot(top, bottom; layout = (2, 1), link = :x)
    ```
 
@@ -616,7 +636,7 @@ The integrator freezes only when both hold: the output is at a limit, **and** th
 
 ::: tip Expected result
 
-On the climb `controller.integrator.y` stops rising as soon as the engine saturates, and after the crest the overshoot is far smaller than in step 6c. The speed is back at **130 km/h** at 400 s.
+The climb ends at the same **119.05 km/h** as in step 6c. On the climb `controller.integrator.y` stops rising as soon as the engine saturates; `controller.gain.y` still rises to about 660 N·m, mostly the proportional term on an 11 km/h error, and falls back as soon as the road flattens. After the crest the overshoot is far smaller than in step 6c: about **0.2 km/h**. The speed is back at **130 km/h** at 400 s.
 
 Reference: `ClampingCruiseClimb` (analysis `ClampingCruiseClimbTransient`).
 
@@ -694,7 +714,16 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
    ```
 
 6. Set `wd = 0` and `xd0 = -90` back — the step-5 values. Run again and re-plot with the same lines.
-7. Keep `wd = 0` and change `Nd`: run at `Nd = 100` — the filter almost gone — then at 20, 5 and 2, and re-plot `controller.y` after each run. `Nd` is an ordinary parameter, so each run is a re-solve, not a recompile.
+7. Keep `wd = 0` and change `Nd`: run at `Nd = 100` — the filter almost gone — then at 20, 5 and 2. `Nd` is an ordinary parameter, so each run is a re-solve, not a recompile. Plot `controller.y` at `Nd = 10` first, then add each run to the same axes with its own label:
+
+   ```julia
+   using MyCar, Plots; plotly()
+   r = MyCar.NoisyCruiseTransient()
+   p = plot(r; idxs = r."controller.y", label = "Nd = 10")
+   # set controller.Nd = 100, run again, then:
+   r2 = MyCar.NoisyCruiseTransient()
+   plot!(p, r2; idxs = r2."controller.y", label = "Nd = 100")
+   ```
 
 [![NoisyCruiseStep: the noise block inserted between plant.v_kmh and controller.u_m.](/lecture/lecture-01/img/step07-noise-loop.png)](/lecture/lecture-01/img/step07-noise-loop.png)
 
@@ -704,7 +733,7 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
 
 ::: tip Expected result
 
-At `wd = 1` the setpoint kick, with every limit lifted, throws the car well past the step — `plant.v_kmh` peaks at about **187 km/h** before it comes back to 110, with the noisy `noise.y` a few tenths of a km/h around it — and `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows: in the 20–30 s window the swing of `controller.y` falls from about **1751 N·m** at `Nd = 100` to **316 N·m** at `Nd = 2` — still twice what the engine can deliver.
+At `wd = 1` the setpoint kick, with every limit lifted, throws the car well past the step — `plant.v_kmh` peaks at about **187 km/h** within the first second, then coasts back down, since the engine cannot brake, and is at 108.9 km/h at 40 s, with the noisy `noise.y` a few tenths of a km/h around it — and `controller.y` chatters: noise of a few tenths of a km/h, differentiated, is a steep slope. At `wd = 0` the kick at the setpoint step disappears; the chatter stays, because it comes from the measurement. A larger `Nd` filters less and the chatter grows: in the 20–30 s window the swing of `controller.y` falls from about **1751 N·m** at `Nd = 100` to **316 N·m** at `Nd = 2` — still twice what the engine can deliver.
 
 Reference: `NoisyCruiseLoop`, bench `NoisyCruiseStep`. To reproduce this step, run `NoisyCruiseTransient` with `Td = 0.5`, `wd` per run (1, then 0; its `xd0` follows `wd` by itself), `T_max = 1e6`, `y_max = 1e6`, `y_min = -1e6` and `stop = 40`.
 

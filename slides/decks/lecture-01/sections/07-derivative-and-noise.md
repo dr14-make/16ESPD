@@ -73,12 +73,13 @@ routeAlias: step-7
 
 ## Step 7: give the controller a real sensor
 
-<div class="grid grid-cols-3 gap-6">
+<div class="grid grid-cols-[1.7fr_1fr] gap-6 items-center">
 <div>
 
 ![The loop with the noise block inserted between the plant's speed output and the controller's measurement input.](/img/lecture-01/step07-noise-loop.png)
 
 </div>
+<div class="step7-plots grid grid-rows-2 gap-2">
 <div>
 
 ![Controller output with derivative setpoint weight 1: a spike at the setpoint step and continuous chatter after it.](/img/lecture-01/step07-noisy-plot.png)
@@ -88,6 +89,7 @@ routeAlias: step-7
 
 ![The same plot with derivative setpoint weight 0: the setpoint kick is gone and the chatter remains.](/img/lecture-01/step07-wd0-plot.png)
 
+</div>
 </div>
 </div>
 
@@ -103,6 +105,10 @@ plot(r; idxs = [r."plant.v_kmh", r."noise.y"])
 ```
 
 [page: step 7](../lecture/lecture-01/#step-7) · reference `NoisyCruiseLoop` in `dyad/Lecture1/NoisyCruiseLoop.dyad`
+
+<style>
+.step7-plots img { max-height: 9rem; }
+</style>
 
 <!--
 Every speed we have fed the controller so far was the true one, to fifteen digits. No car has
@@ -135,7 +141,8 @@ to 40. Run it. Plot `controller.y`, then `plant.v_kmh` with `noise.y`. The code 
 With w d equal to 1, you should see a tall spike in `controller.y` at the setpoint step. That
 spike is the derivative of a step in the setpoint. After it, the command never stops
 chattering. And with every limit lifted, the kick throws the car well past the setpoint, to
-about 187 km/h, before it comes back to 110.
+about 187 km/h, within the first second. The engine cannot brake, so the car then coasts back
+down for the rest of the run. At 40 seconds it is at 108.9 km/h.
 
 Now put `controller.wd` back to 0 and `controller.xd0` back to minus 90. Those are the section
 05 defaults. Re-run, on the same axes.
@@ -290,13 +297,24 @@ end
 
 *The same loop at four cutoffs. The chatter subsides — from 1751 N·m to 316, with the engine's 150 N·m limit still inside the band.*
 
+```julia
+using MyCar, Plots; plotly()
+r = MyCar.NoisyCruiseTransient()
+p = plot(r; idxs = r."controller.y", label = "Nd = 10")
+# set controller.Nd = 100, run again, then:
+r2 = MyCar.NoisyCruiseTransient()
+plot!(p, r2; idxs = r2."controller.y", label = "Nd = 100")
+```
+
 </div>
 </div>
 
 <!--
-Let us do this on your own `NoisyCruiseStep` from step 7. Set `controller.Nd` to 100 and
-re-run. Then 20, then 5, then 2. `Nd` is an ordinary parameter, so each one is a re-solve, not
-a recompile. Keep `controller.y` on the same axes, so you can see the band shrink.
+Let us do this on your own `NoisyCruiseStep` from step 7. First plot `controller.y` as it
+stands, at `Nd` equal to 10, with the first three lines on the slide. Then set `controller.Nd`
+to 100 and re-run. The last two lines add that run to the same plot. Then 20, then 5, then 2,
+each with the same two lines and its own label. `Nd` is an ordinary parameter, so each one is a
+re-solve, not a recompile. On the same axes you can see the band shrink.
 
 What you have here is a derivative in series with a first-order low-pass filter. At low
 frequency it is a derivative. At high frequency it flattens off instead of growing. Its cutoff

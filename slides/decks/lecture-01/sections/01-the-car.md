@@ -218,8 +218,8 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
 
 > **Watch the time axis**
 >
-> 300 seconds, and the last stretch barely moves. The car's own time constant is about
-> **67 s**.
+> 300 seconds, and the last stretch barely moves. The car's own time constant near 100 km/h
+> is about **67 s**.
 
 *↩ Hands-on step 05: [why it takes so long — the car's time constant](../handson-01/index.html#/time-constant)*
 
@@ -354,6 +354,10 @@ r = MyCar.CarStepTestTransient()
 plot(r; idxs = r."plant.v_kmh")
 ```
 
+```julia
+plot(r; idxs = r."plant.engine.limiter.y", xlims = (49.5, 52))
+```
+
 Paste it into the Julia REPL (**Dyad: Open Julia REPL**). `plotly()` makes the plot interactive: drag to zoom, double-click to reset.
 
 [page: step 1a](../lecture/lecture-01/#step-1a) · reference `dyad/Lecture1/CarStepTest.dyad`
@@ -386,8 +390,13 @@ zoom, and double-click to zoom back out. Every snippet today starts with that sa
 also works in a fresh REPL.
 
 You should see the speed flat at 90 km/h until 50 seconds, then an S-shaped climb that levels
-off at 110 km/h by the end of the run. Zoom in on the step. The delivered torque does nothing
-for 0.3 seconds, then rises along the lag to 40.1 newton-meters.
+off at 110 km/h by the end of the run.
+
+Now the second snippet. It plots the delivered torque, `plant.engine.limiter.y`, over the two
+and a half seconds around the step. The command steps at 50 seconds. The delivered torque stays
+at 31.1 for about 0.3 seconds. That is the transport delay. The small dip just before it rises
+comes from the Padé approximation of that delay, not from your model. Then it rises along the
+lag, and is at 40.1 newton-meters by 52 seconds.
 
 The usual mistake is leaving out `initial plant.engine.lag.x`. The lag then starts at zero
 torque, the car spends the first minute slowing down, and the step lands on a car that is not at
