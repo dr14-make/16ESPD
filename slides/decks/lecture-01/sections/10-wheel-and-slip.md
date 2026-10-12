@@ -50,6 +50,8 @@ A rotating wheel is extra inertia the engine has to accelerate:
 J/r² ≈ 10 kg on 1400. The plant is slightly heavier than it was, so the gains should
 still work.
 
+![Speed over the first 20 s of the 90 to 110 km/h step, with and without the wheel's inertia: the dashed wheeled curve lies almost on top of the solid one.](/figures/10-wheel-inertia.svg)
+
 *↩ Hands-on step 06: [the wheel's hidden mass](../handson-01/index.html#/hidden-mass)*
 
 > **Check the rise time**
