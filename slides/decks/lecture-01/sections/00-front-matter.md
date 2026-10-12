@@ -45,6 +45,54 @@ The handout, `handout.pdf`, is published next to the deck, one slide per page.
 -->
 
 ---
+routeAlias: before-we-begin
+---
+
+## Before we begin: keep Julia's memory in check
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8">
+<div>
+
+The Julia language server indexes every package environment it can find. With the Dyad libraries
+that is several gigabytes, and the laptop starts killing Julia mid-build.
+
+1. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → **Preferences: Open Workspace Settings (JSON)**
+2. Add the three lines on the right inside the braces.
+3. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → **Developer: Reload Window**
+
+The MyCar template already has them.
+
+</div>
+<div>
+
+```json [.vscode/settings.json]
+{
+  "julia.enableDynamicIndexing": false,
+  "julia.maxConcurrentIndexingProcesses": 1,
+  "julia.enableWorkspaceEnvironmentResolution": false
+}
+```
+
+> **Still slow?**
+>
+> Close other VS Code windows that have a Julia project open. Each one starts its own language
+> server.
+
+</div>
+</div>
+
+<!--
+Before we build anything, one setting. The Julia extension's language server reads every package
+environment it can find, so it can show you completions. With the Dyad libraries that costs
+several gigabytes. On an 8 or 16 gigabyte laptop the system then starts killing Julia processes,
+and your simulation dies halfway.
+
+Open your workspace settings as JSON, add these three lines, and reload the window. They keep the
+indexing to one process and stop it from crawling every environment. If you made your copy from
+the MyCar template, they are already there.
+-->
+
+---
 
 ## The ten notebooks
 

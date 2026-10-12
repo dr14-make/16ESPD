@@ -48,6 +48,8 @@ live here, one section per deck section, in deck order.
 
 ## 00 Front matter — 12 min
 
+- "Before we begin": wait until every laptop has the three language-server settings and has
+  reloaded its window. A laptop without them is the one that kills Julia mid-build later.
 - Slide budgets: "What a system is" 2, "What a control system is" 1, "Three kinds of control" 1,
   "Five jobs, one diagram" 2, "Feedback is a family" 1.
 - "The car, once": half a minute; section 01's recap comes back to the numbers.

@@ -10,6 +10,16 @@ From the car you built in the hands-on to a PID cruise control, tested on a hill
 
 **What you build.** The [hands-on](../../handson/lecture-01/) left you a car: torque command in, speed out. In this lecture you put a controller in front of it and close the loop, one block at a time, along with the lecturer. Every plot in the lecture comes from a diagram you have on your own screen. The loop itself (setpoint, controller, car, road) is drawn once in step 2. Steps 3–5, 6b and 6d happen inside the controller; steps 6a and 8 add parameters to `GradeCar`; steps 6c, 7, 8 and 10 duplicate the loop into a new bench with a hill, a noisy sensor, other gains or `SlipCar`, and keep its shape.
 
+**Before we begin: keep Julia's memory in check.** The Julia language server indexes every package environment it finds, which with the Dyad libraries costs several gigabytes and can get Julia killed mid-build. Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → **Preferences: Open Workspace Settings (JSON)**, add these lines inside the braces, then **Developer: Reload Window**. The [MyCar template](https://github.com/dr14-make/MyCar) already has them.
+
+```json [.vscode/settings.json]
+{
+  "julia.enableDynamicIndexing": false,
+  "julia.maxConcurrentIndexingProcesses": 1,
+  "julia.enableWorkspaceEnvironmentResolution": false
+}
+```
+
 **How each step works.** The slide that introduces a step shows the finished diagram and links here. Each step below lists the blocks to place with their library path, instance name and values, every wire, and what the plot must show before you go on. Use the instance names given here: the lecture's notebooks read signal paths like `controller.integrator.y`, and with the same names your diagram reads the same way.
 
 **No car from the hands-on?** Create your own repository from the [MyCar template](https://github.com/dr14-make/MyCar) (**Use this template**). It is the finished hands-on car with the names this page uses; `GradeCar` is not in it, because you build it in step 1b.
