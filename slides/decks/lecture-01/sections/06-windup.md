@@ -530,7 +530,27 @@ section.
 
 ## Three anti-windup variants on the same hill
 
-<div class="grid grid-cols-[1fr_1.4fr] gap-8">
+![Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both hold the integrator near the limit and follow the setpoint back cleanly.](/figures/06-three-way-antiwindup.svg)
+
+*Speed above, integrator state below. The lower plot shows why the runs differ.*
+
+<!--
+Lower plot first. The integrator traces show the cause: one rises far above the limit, the other
+two stay on it.
+
+Then the speed. Same car, hill and gains. The only difference is whether the integrator could
+accumulate beyond what the engine delivers.
+
+What anti-windup did not fix: all three sag to the same 119 km/h on the climb. No controller makes
+a 150 N·m engine deliver 2023 N. Anti-windup adds no performance. It prevents the overshoot after
+saturation.
+-->
+
+---
+
+## Three anti-windup variants: the numbers
+
+<div class="grid grid-cols-[1.6fr_1fr] gap-8">
 <div>
 
 ```julia [06-windup.ipynb · cell Three-way comparison]
@@ -549,6 +569,9 @@ runs = ["none"             => Scenarios.ClampingCruiseClimbTransient(; y_max = 1
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/06-windup.ipynb)
 
+</div>
+<div>
+
 | Variant | Over setpoint | Recovery |
 |---|---|---|
 | none | +49.47 km/h | 66.7 s |
@@ -556,29 +579,12 @@ runs = ["none"             => Scenarios.ClampingCruiseClimbTransient(; y_max = 1
 | back-calculation | +1.11 km/h | 13.6 s |
 
 </div>
-<div>
-
-![Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both hold the integrator near the limit and follow the setpoint back cleanly.](/figures/06-three-way-antiwindup.svg)
-
-*Speed above, integrator state below. The lower plot shows why the runs differ.*
-
-</div>
 </div>
 
 <!--
-Lower plot first. The integrator traces show the cause: one rises far above the limit, the other
-two stay on it.
-
-Then the speed. Same car, hill and gains. The only difference is whether the integrator could
-accumulate beyond what the engine delivers.
-
 "None" is the clamping controller with limits it never reaches: 49.47 km/h over. "Clamping" is
 conditional integration: 0.17. "Back-calculation" is `LimPID` at `Ni` 0.9: 1.11. The peak
 overshoot is the number that separates them.
-
-What anti-windup did not fix: all three sag to the same 119 km/h on the climb. No controller makes
-a 150 N·m engine deliver 2023 N. Anti-windup adds no performance. It prevents the overshoot after
-saturation.
 
 Which would you ship? Either. Clamping is cheaper and easier to explain. Back-calculation is
 smoother, with its own tuning parameter. In practice, use whichever your framework already
