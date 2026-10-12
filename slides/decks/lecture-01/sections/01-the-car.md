@@ -100,7 +100,12 @@ Components → right-click → **Duplicate**, then rename. You did it for `Wheel
 
 **Causal** — `RealInput` → `RealOutput`, an arrow: a number one block computes and the next
 reads. The whole controller is these.
+
+<img src="/diagrams/01-signal-wire.svg" class="h-20" alt="Two blocks joined by an arrow: the first block's number is read by the second.">
+
 **Acausal** — `Flange`, `Spline`: a joint, no direction. The car is these.
+
+<img src="/diagrams/01-mechanical-joint.svg" class="h-20" alt="Two blocks joined by a plain line with no arrowhead: they move together and push on each other equally.">
 
 #### 4 · Run and plot
 
