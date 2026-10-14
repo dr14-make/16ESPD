@@ -144,6 +144,68 @@ times slower than the derivative, and the D term does almost nothing.
 
 ---
 
+## What the four derivative parameters do
+
+| Parameter | Value | What it is | Turn it up, and… |
+|---|---|---|---|
+| `Td` | 0.5 s | **Derivative time.** How far ahead D looks: $T_d\,\dot e$ is the error change expected over the next $T_d$ seconds. | …D brakes earlier and harder. Overshoot falls, up to a point; beyond it the loop gets sluggish and noisy. Notebook 05's sweep finds the least overshoot at 0.5 s. |
+| `Nd` | 10 | **Filter ratio.** The derivative is smoothed by a lag of $T_d/N_d$ = 0.05 s. | …D gets closer to a true derivative, and sensor noise is amplified up to $N_d$ times more. Turn it down and D is blurred and weaker. Usual range: 5 to 20. |
+| `wd` | 0 | **Setpoint weight.** D acts on $w_d\,r - y$, not on $e$. | …a setpoint step gets differentiated too: at `wd` = 1, every change of the cruise setting kicks the torque. At 0, D sees only the speed. |
+| `xd0` | −90 | **Filter start value.** Where the filter's state sits at $t = 0$. | …nothing to tune: set it to the filter's input in the starting cruise, $w_d\,r - y = -90$. Leave it at 0, and the run starts with a −50 400 N·m spike. |
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+The `derivative` block computes
+
+$$
+\frac{Y(s)}{U(s)} = \frac{k\,s}{T s + 1} = \frac{T_d\,s}{\frac{T_d}{N_d}\,s + 1}
+$$
+
+</div>
+<div>
+
+> **Slow changes see a derivative, fast ones see a gain of $N_d$**
+>
+> Below about $N_d/T_d$ = 20 rad/s, the block differentiates. Above it, the output stops
+> growing with frequency and levels off at $N_d$ times the input. That cap is what keeps noise
+> from blowing up.
+
+</div>
+</div>
+
+<!--
+You typed four numbers on the last slide. Here is what each one means.
+
+T d is the derivative time. T d times the rate of change of the error is how much the error will
+change over the next T d seconds, if it keeps changing at the current rate. So T d is how far
+ahead the controller looks. Turn it up, and the controller starts braking earlier. Overshoot
+falls, but only up to a point. Push further, and the loop gets sluggish and amplifies noise.
+Notebook 05 sweeps T d and finds the least overshoot at 0.5 seconds, which is why we use it.
+
+N d is the filter ratio. A pure derivative amplifies anything fast without limit, including
+sensor noise. So the derivative goes through a small lag with time constant T d over N d. Ours is
+0.05 seconds, much faster than anything the car does. A bigger N d means a sharper derivative and
+more noise. A smaller one blurs the derivative until it does little. Five to twenty is the usual
+range.
+
+w d is the setpoint weight. The derivative acts on w d times the setpoint minus the speed. At w d
+equals 1 that is the full error, and every time the driver changes the cruise setting, the
+derivative of that step is a spike of torque. At 0, the derivative sees only the measured speed.
+That is the industrial default.
+
+x d zero is not a tuning knob. It is where the filter starts. In the starting cruise at 90 km/h,
+the filter's input is minus 90, so that is where it should start. Leave it at zero, and the run
+opens with a spike of minus fifty thousand newton-meters.
+
+At the bottom is the transfer function of the derivative block itself: T d s over T d over N d
+times s, plus one. For slow signals the bottom is about 1, and the block is T d times a
+derivative. For fast signals the s cancels, and the block becomes a plain gain of N d. That cap
+is what keeps the noise in check. Section 07 shows what happens without it.
+-->
+
+---
+
 ## Two ways to write the same controller
 
 <div class="grid grid-cols-2 gap-8">
@@ -206,6 +268,75 @@ nobody can picture.
 
 ---
 
+## Where a transfer function comes from
+
+<div class="grid grid-cols-[1fr_1.5fr] gap-8">
+<div>
+
+The Laplace transform swaps time *t* for a variable *s*. With everything starting at rest, three
+rules cover this lecture:
+
+| In time | In *s* |
+|---|---|
+| $\dfrac{dx}{dt}$ | $s\,X(s)$ |
+| $\displaystyle\int_0^t x\,d\tau$ | $\dfrac{X(s)}{s}$ |
+| $x(t-\theta)$ | $e^{-\theta s}X(s)$ |
+
+A differential equation becomes algebra. Solve it for **output over input**, and that ratio is
+the transfer function.
+
+</div>
+<div>
+
+#### The car, from section 01's step test
+
+$$
+\tau\,\frac{dv}{dt} + v = K\,T(t-\theta)
+\;\Rightarrow\;
+(\tau s + 1)\,V = K e^{-\theta s}\,T
+\;\Rightarrow\;
+G(s) = \frac{V}{T} = \frac{K\,e^{-\theta s}}{\tau s + 1}
+$$
+
+*K* = 2.21 km/h per N·m, *τ* = 63 s, *θ* = 1.82 s, for changes around 90 km/h.
+
+#### The controller
+
+$$
+u = k\left(e + \frac{1}{T_i}\!\int_0^t\! e\,d\tau + T_d\frac{de}{dt}\right)
+\;\Rightarrow\;
+U = k\left(1 + \frac{1}{T_i s} + T_d s\right)E
+$$
+
+The controller's transfer function $C(s) = U/E$ is *k* times the bracket.
+
+</div>
+</div>
+
+<!--
+Before we treat the PID as a transfer function, here is where a transfer function comes from.
+
+The Laplace transform replaces time with a new variable, s. The three rules on the left are all
+we need. Differentiating becomes multiplying by s. Integrating becomes dividing by s. A delay of
+theta seconds becomes multiplying by e to the minus theta s. The rules hold when everything
+starts at rest, and for a controller acting on changes around a steady cruise, that is our case.
+
+So a differential equation turns into ordinary algebra. We solve it for the output divided by the
+input, and that ratio is the transfer function. It describes the system for any input.
+
+Take the car first. Section 01's step test fitted it as a first-order lag with a delay: tau times
+the rate of change of speed, plus the speed, equals K times the delayed torque. Apply the rules:
+the derivative becomes s V, and the delay becomes e to the minus theta s. Collect V on the left,
+divide by T, and you have G of s: K times the delay, over tau s plus one. The three numbers you
+read off the curve in section 01 are the whole transfer function.
+
+Now the controller. Apply the same rules to the PID law: the error stays E, the integral becomes E
+over s, and the derivative becomes s times E. Divide U by E, and k times the bracket is the
+controller's transfer function. The next slide puts it over one denominator.
+-->
+
+---
+
 ## PID as a transfer function
 
 $$
@@ -220,7 +351,8 @@ $$
 
 - The **pole at the origin** is the integrator. You cannot move it; it is what removes
   steady-state error.
-- The **two zeros** are yours to place, and where you put them is set by $T_i$ and $T_d$.
+- The **two zeros** are yours to place, and where you put them is set by $T_i$ and $T_d$. Ours,
+  $T_i$ = 10 s and $T_d$ = 0.5 s, give $5s^2 + 10s + 1 = 0$: zeros at $s = -0.11$ and $-1.89$.
 - The **gain** scales the whole controller.
 
 </div>
@@ -247,6 +379,62 @@ decide where they go. k scales the whole controller.
 That is why so many tuning methods work: one question, three free parameters, several routes to a
 good answer. The methods in section 08 look like arithmetic on measured numbers. Somebody else did
 the zero placement for a whole class of plants and published a table.
+-->
+
+---
+
+## Poles: what the denominator says about the response
+
+<div class="grid grid-cols-[1fr_1.6fr] gap-6">
+<div>
+
+A **pole** is a value of *s* that makes the denominator zero. Each pole *p* adds a term
+$e^{p t}$ to the response.
+
+- **Left half-plane**: the term dies away with time constant $-1/p$. Further left is faster.
+- **Off the real axis**: a pair $\sigma \pm j\omega$ oscillates at ω rad/s inside an $e^{\sigma t}$
+  envelope.
+- **Right half-plane**: the term grows. Unstable.
+- **At the origin**: $e^{0t} = 1$ never fades. That is the integrator holding its value.
+
+The car's pole sits at $-1/\tau = -0.016$, almost on the axis: 63 seconds per time constant.
+Closing the loop moves the poles, and **tuning is choosing where they go**.
+
+</div>
+<div>
+
+![Left: the complex s-plane with the stable left half shaded green and the unstable right half shaded red, and four poles marked: the car at minus 0.016, a fast real pole at minus 0.8, a complex pair at minus 0.25 plus or minus 1.2 j, and an unstable pole at plus 0.15. Right: the term each pole adds to the response over 20 seconds: the car's barely falls, the fast pole decays within a few seconds, the complex pair rings down, and the unstable pole grows without bound.](/figures/05-poles.svg)
+
+</div>
+</div>
+
+<!--
+The denominator of a transfer function decides how the system moves on its own. Its roots are
+called poles.
+
+Each pole p puts a term e to the p t into the response. So where the pole sits on this plane tells
+you what that term does.
+
+Look at the left plot, then the matching color on the right.
+
+Green, far left on the real axis, at minus 0.8. The term decays, with a time constant of one over
+0.8, about 1.25 seconds. The further left, the faster it dies.
+
+Orange, the pair off the axis. A complex pole always comes with its mirror image. The imaginary
+part, 1.2, is how fast it oscillates. The real part, minus 0.25, is how fast the oscillation dies
+out. That is the ringing you see in an underdamped step response.
+
+Red, right of the axis. The real part is positive, so the term grows without bound. One pole in
+the right half-plane, and the loop is unstable.
+
+Blue is the car. Its pole is minus one over tau, minus 0.016, practically on the axis. That is
+why the car on its own took minutes to settle in section 01.
+
+One more pole sits exactly at the origin: the PID's integrator. e to the zero t is one, a term
+that never fades. That is the integrator remembering the error.
+
+When we close the loop, the poles move. Every tuning method, whether it is a table or a knob, is
+a way of choosing where they end up.
 -->
 
 ---
