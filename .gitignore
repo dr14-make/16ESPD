@@ -8,3 +8,4 @@
 /.migration-backups/
 /materials/DyadAgentResources
 .playwright-mcp/*
+/.dyadcache
