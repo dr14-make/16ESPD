@@ -12,8 +12,8 @@ Shaft torque in, force on the car out: F = T · i / r.
 [page: step 03](../handson/lecture-01/#driveline) · reference `dyad/HandsOn/Driveline.dyad`
 
 <!--
-**Say:** This step has two parts and four ports. This is where rotation
-becomes straight-line motion.
+**Say:** This step has two parts and four ports. It turns rotation into
+straight-line motion.
 
 **Timing:** 13 minutes: 3 for the formula, 10 building. No bench, no analysis — it is checked when the car
 runs in step 05.
@@ -65,7 +65,7 @@ Wheel speed = v / r; engine speed = i × that. At 90 km/h: 25 m/s ÷ 0.31
 </div>
 
 <!--
-**Say:** Here are two steps, and everyone has felt both. First, a bicycle
+**Say:** There are two steps, and you have felt both. First, a bicycle
 in a low gear: you pedal fast, the wheel turns slowly, and climbing is easy. The gear
 trades speed for force. Second, a wrench: the longer the handle, the less force you need
 for the same twist. The wheel is a wrench the other way around: the twist at the axle
@@ -105,8 +105,9 @@ break that? *(Step 08, on snow.)*
 gray circles are rotational ports, green squares translational*
 
 <!--
-**Point at:** the wheel block. Gray circle in, green square out — the port
-shapes tell you the domain, and you can only wire like to like.
+**Point at:** the wheel block. Gray circle in, green square out: the port
+shape tells you whether it is rotational or translational, and you can only wire like to
+like.
 
 **Say:** A torque of 100 newton-meters, times a gear ratio of 4, divided
 by a wheel radius of 0.31 meters, gives 1290 newtons. On a 1400-kilogram car that is

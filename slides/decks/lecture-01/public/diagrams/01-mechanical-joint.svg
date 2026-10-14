@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 100" width="440" height="100">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+  </style>
+  <rect class="box" x="10" y="30" width="130" height="50" rx="4"/>
+  <text x="75" y="61" text-anchor="middle" font-size="16">wheel</text>
+  <rect class="box" x="300" y="30" width="130" height="50" rx="4"/>
+  <text x="365" y="61" text-anchor="middle" font-size="16">car body</text>
+  <path class="wire" d="M140 55 H300" stroke-width="3"/>
+  <text class="lbl" x="220" y="22" text-anchor="middle">same speed · forces balance</text>
+</svg>

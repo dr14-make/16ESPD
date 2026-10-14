@@ -7,25 +7,19 @@ layout: section
 
 # Wheel and slip
 
-The tire is an actuator too, and it saturates — which makes cruise control dangerous on ice.
+The tire is an actuator too, and it saturates. That makes cruise control dangerous on ice.
 
 `notebooks/lecture01/10-wheel-and-slip.ipynb`
 
 <!--
-**Say:** everything so far assumed the tire does whatever the driveline asks. Students already
-removed that assumption in the hands-on — steps 09 and 10 — and watched a wheel spin on snow
-with nobody controlling it. This section puts a controller on that car.
-
-**Timing:** 10 minutes if you have them. Beats one and two are recaps of the hands-on, steps 08
-and 10 — take them fast. Beat three is new and is the section students remember; if you can
-only show one beat, show the ice patch.
-
-**Cut order:** first to go. Everything here is upside; the lecture stands without it.
+Everything so far assumed the tire does whatever the driveline asks. In hands-on steps 09 and 10
+you removed that assumption, and watched a wheel spin on snow with nobody controlling it. Now we
+put a controller on that car.
 -->
 
 ---
 
-## First, just add the wheel
+## Adding the wheel's inertia
 
 <div class="grid grid-cols-[1.4fr_1fr] gap-8">
 <div>
@@ -52,47 +46,50 @@ t1, y1 = signal(l1, SPEED_L1)
 </div>
 <div>
 
-A rotating wheel is extra inertia the engine has to accelerate —
+A rotating wheel is extra inertia the engine has to accelerate:
 J/r² ≈ 10 kg on 1400. The plant is slightly heavier than it was, so the gains should
-survive.
+still work.
+
+![Speed over the first 20 s of the 90 to 110 km/h step, with and without the wheel's inertia: the dashed wheeled curve lies almost on top of the solid one.](/figures/10-wheel-inertia.svg)
 
 *↩ Hands-on step 06: [the wheel's hidden mass](../handson-01/index.html#/hidden-mass)*
 
-> **If the response shifted**
+> **Check the rise time**
 >
-> Say by how much. "The gains still work" is a claim, and a rise time is the evidence for it.
+> If the response shifted, say by how much. The rise time shows whether the gains still work.
 
 </div>
 </div>
 
 <!--
-**Say:** students saw open-loop in step 06 that the wheel barely moves the launch. Now the
-closed-loop question: do the gains of section 05 still hold? This is a fidelity increase that
-changes nothing important, and that is worth showing on its own. Not every added detail
-matters. Knowing which ones do is the modeling skill.
+In hands-on step 06 you saw, open loop, that the wheel barely moves the launch. Now the closed-loop
+question: do the gains of section 05 still hold? Compare the rise time and the overshoot with
+section 05. They barely change. Not every added detail matters, and knowing which ones do is part
+of modeling.
 
-**Read out** the rise time and overshoot and compare with section 05.
+This is model level L1: wheel inertia plus an ideal rolling contact. L0 was everything up to
+section 09. L2 adds slip. Ideal rolling means wheel speed times radius is road speed, by
+definition: no sliding, ever. The wheel inertia, J w, in kilogram meters squared, is extra inertia
+the engine must accelerate.
 
-**Readout — every symbol on this slide**
+Rise time is the time from 10 to 90 percent of the step. Overshoot is the peak past the setpoint,
+in percent.
 
-- **L1** — the model ladder's second rung: wheel inertia plus an ideal rolling contact.
-  **L0** was everything up to section 09; **L2** adds slip.
-- **Wheel inertia J<sub>w</sub>** — rotational inertia the engine must also accelerate, kg·m².
-- **rise_time** — 10 % to 90 % of the commanded step, seconds. **overshoot** — peak past the
-  setpoint, per cent.
-- **Ideal rolling** — wheel speed times radius *is* road speed, by definition. No sliding,
-  ever.
+The model is `WheeledCruiseStep`: the reference `CruiseController` around `HandsOn.WheeledCar`, the
+car from hands-on step 06, with `J_w` exposed. This one is a demo. Your own swap comes with the
+slipping wheel.
 -->
 
 ---
 
-## Beat one: the wheel runs away
+## Wheelspin at a standing start
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
 
 ```julia [10-wheel-and-slip.ipynb · cell 2. Wheelspin]
-@named standing = Scenarios.TestSlipCarPlant()
+# the hands-on bench, step 10: full throttle from rest
+@named standing = VehicleSystemsComponents.HandsOn.SlipCarStandingStart()
 
 MU_SNOW, MU_DRY = 0.2, 1.0   # packed snow, dry asphalt
 
@@ -102,9 +99,9 @@ launch = sweep(standing, "friction.k", [MU_SNOW, MU_DRY];
                tspan = (0.0, 5.0), saveat = 0.01)
 runs = Dict(launch.values .=> launch.sols)
 
-# four panels: rpm and km/h do not share an axis
-for path in ("plant.v_kmh", "plant.wheel_rpm",
-             "plant.kappa", "plant.wheel.F_x")
+# wheel_kmh is on the car's own scale: wheelspin is the gap
+for path in ("car.v_kmh", "car.wheel_kmh",
+             "car.wheel.kappa", "car.wheel.F_x")
     @show path signal(runs[MU_SNOW], path)[2][end]
 end
 ```
@@ -113,58 +110,48 @@ end
 
 *↩ Hands-on step 10: [the same standing start, open loop](../handson-01/index.html#/wheelspin)*
 
-Under closed loop the error stays large, so the integrator winds up —
-against a limit **that is not in the engine at all**.
+Under closed loop the error stays large, so the integrator winds up
+against a limit **that is not in the engine**.
 
 </div>
 <div>
 
-![Four panels from two standing starts, on snow and on dry asphalt: vehicle speed, wheel speed in rpm, slip ratio, and longitudinal tire force. On snow the wheel runs away to 12 843 rpm while the car reaches only 10 km/h, and the force trace peaks then collapses to a plateau.](/figures/10-wheelspin.svg)
+![Four panels from two standing starts, on snow and on dry asphalt: vehicle speed, wheel surface speed, slip ratio, and longitudinal tire force. On snow the wheel surface runs away to 1501 km/h while the car reaches only 10 km/h, and the force trace peaks then collapses to a plateau.](/figures/10-wheelspin.svg)
 
-*Two standing starts, same command. On snow the wheel reaches 12 843 rpm and the car reaches 10 km/h; on dry asphalt, 182 rpm and 21 km/h.*
+*Two standing starts, same command. On snow the wheel surface reaches 1501 km/h and the car 10 km/h; on dry asphalt, 21.2 and 21.1 km/h.*
 
 </div>
 </div>
 
 <!--
-**Say:** this is the standing start from hands-on step 10, on the course model. Same numbers:
-12 843 rpm at the wheel is the 1500 km/h of tread speed they plotted. Do not re-explain it;
-ask someone who finished step 10 what happened.
+This is the standing start from hands-on step 10: your bench, `SlipCarStandingStart`, on the
+reference `SlipCar`. Same numbers: 1501 km/h of tread speed against 10 km/h of car. The wheel ran
+away, and the car barely moved.
 
-**Point at** the force panel, bottom right — it has the whole argument in one step. For the
-first four tenths of a second both surfaces carry every newton the engine asks for. Then the
-snow hits 1 373 N, everything it has, and falls off a cliff to 961 N, where it stays. **More
-wheel speed bought less force.**
+Look at the force panel, bottom right. For the first four tenths of a second, both surfaces carry
+every newton the engine asks for. Then the snow reaches 1 371 newtons, its maximum, and drops
+sharply to 961, where it stays. **More wheel speed gave less force.** The engine delivered
+everything it was asked for, and the car got to 10 km/h.
 
-**Say:** the engine delivered everything it was asked for. The driveline turned. The wheel
-spun to 12 843 rpm. And the car got to 10 km/h.
+On the code: `friction.k` is the road friction multiplier, 1.0 for dry asphalt and 0.2 for packed
+snow. The ice patch later is 0.05. `car.wheel_kmh` is the driven wheel's surface speed, omega times
+r, in km/h, so wheelspin is its gap to `car.v_kmh`. `car.wheel.kappa` is the slip ratio, read
+inside the wheel, because `SlipCar` has no port for it. `car.wheel.F_x` is the tire's longitudinal
+force. The saveat of 0.01 is dense output: the launch is over inside one adaptive step, so the raw
+step points would draw straight lines.
 
-**Say:** and now the new part, which the hands-on could not show: connect it to section 06.
-The integrator sees a large, persistent error and winds up, exactly as it did on the hill. But
-this time the limit is not the engine's torque ceiling — the engine is nowhere near it. The
-limit is in the contact patch, and no amount of torque gets past it.
+What the hands-on could not show connects to section 06. The integrator sees a large, persistent
+error and winds up, as it did on the hill. But this time the engine is nowhere near its torque
+ceiling. The limit is in the contact patch, and no amount of torque gets past it.
 
-**Ask the room:** would the anti-windup from section 06 help here? *(No. It watches the
-engine's saturation, and the engine is not saturating. This is a limit the controller has no
-way of seeing. That is the uncomfortable point of this whole section.)*
-
-**Readout — every symbol on this slide**
-
-- **friction.k** — the road friction multiplier, swept over two values. 1.0 is dry asphalt;
-  0.2 is packed snow. The ice patch later in this section is 0.05.
-- **plant.wheel_rpm** — the driven wheel's rotational speed. It gets its own panel because rpm
-  and km/h do not share an axis.
-- **plant.v_kmh** — the car's actual road speed. **plant.kappa** — the slip ratio.
-  **plant.wheel.F_x** — the longitudinal force the tire makes.
-- **saveat = 0.01** — dense output, not decimation: the launch transient is over inside one
-  adaptive step, so the raw step points would draw straight lines.
-- **The limit that is not in the engine** — the engine is nowhere near its ceiling. The
-  ceiling is in the contact patch.
+Would the anti-windup from section 06 help? No. It watches the engine's saturation, and the engine
+is not saturating. The controller has no way of seeing this limit. That is the main point of this
+section.
 -->
 
 ---
 
-## Beat two: the curve
+## The friction curve
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -177,21 +164,21 @@ $$
 $$
 
 ```julia [10-wheel-and-slip.ipynb · cell 3. The friction curve]
-# the `mu` equation lifted out of the component, not a
+# the curve's equation lifted out of the component, not a
 # formula retyped: change the model and this plot changes
-wheel_model = complete(
-    VehicleSystemsComponents.Vehicle.SlipWheel1D(name = :wheel))
-mu_law = only(eq for eq in equations(wheel_model)
-              if isequal(eq.lhs, wheel_model.mu))
+curve_model = complete(
+    VehicleSystemsComponents.HandsOn.TireFrictionCurve(name = :curve))
+mu_law = only(eq for eq in equations(curve_model)
+              if isequal(eq.lhs, curve_model.mu_abs))
 
 mu_of = build_function(
     substitute(mu_law.rhs,
-        Dict{Any, Any}(initial_conditions(wheel_model))),
-    wheel_model.kappa, wheel_model.mu_scale;
-    expression = Val(false))
+        Dict{Any, Any}(initial_conditions(curve_model))),
+    curve_model.slip; expression = Val(false))
 
+# the wheel scales the curve by the road: mu = mu_scale * curve.mu
 kappas = range(0.0, 0.5; length = 2001)
-dry_curve = mu_of.(kappas, MU_DRY)
+dry_curve = MU_DRY .* mu_of.(kappas)
 peak_kappa = kappas[argmax(dry_curve)]
 ```
 
@@ -202,41 +189,37 @@ peak_kappa = kappas[argmax(dry_curve)]
 
 ![Friction coefficient against slip ratio: a curve rising steeply to a marked peak and then falling away, with the wheelspin run's operating points marked on the falling side.](/figures/10-mu-slip-curve.svg)
 
-*μ against slip ratio, with the peak marked — and the wheelspin run's operating points sitting past it.*
+*μ against slip ratio, with the peak marked, and the wheelspin run's operating points past it.*
 
 </div>
 </div>
 
 <!--
-**Recap, fast:** this is the curve from hands-on step 08 — rising to the adhesion peak at
-κ = 0.04, falling to sliding. Point at the rising part (more slip, more force), the peak (an
-actuator limit that moves with the weather), and past it.
+This is the curve from hands-on step 08. It rises to the adhesion peak at kappa equal to 0.04, then
+falls toward sliding. The peak is an actuator limit that moves with the weather.
 
-**The new thing on this plot:** the wheelspin run's operating points. They all sit on the
-falling side. That is where the car spent beat one.
+New on this plot: the wheelspin run's operating points. They all sit on the falling side.
 
-**Ask the room:** what happens to a wheel that ends up on the right-hand side of that peak?
-*(They met the answer in hands-on step 10: less force, so less resistance to the engine's
-torque, so more slip, so even less force. Let them say it — the next slide is what it means
-for a controller.)*
+On that side, less force means less resistance to the engine's torque, so more slip, so even less
+force. The next slide is what that means for a controller.
 
-**Readout — every symbol on this slide**
+The symbols. Kappa, the slip ratio, is omega r minus v, divided by the larger of the absolute value
+of v and epsilon. It is dimensionless. Zero means pure rolling. Positive means the wheel turns
+faster than the car moves. Omega is the wheel's angular velocity, r the wheel radius, v the vehicle
+speed. Epsilon, `v_eps` in the model, is a small floor so that slip is defined at standstill.
 
-- **κ (kappa)** — the *slip ratio*, dimensionless: (ω·r − v) / max(|v|, ε). Zero means pure
-  rolling; positive means the wheel is turning faster than the car is moving.
-- **ω** — wheel angular velocity, rad/s. **r** — wheel radius. **v** — vehicle speed, m/s.
-- **ε (v_eps)** — a small floor on the denominator so slip is defined at standstill.
-- **μ (mu)** — the friction coefficient: the fraction of the normal load available as
-  tractive force.
-- **F<sub>z</sub>** — the normal load on the wheel, N. **F<sub>x</sub> = μ·F<sub>z</sub>** —
-  the longitudinal force it can make.
-- **sAdhesion, sSlide** — where the curve peaks and where it has fully transitioned to
-  sliding. **μ_A, μ_S** — the adhesion and sliding coefficients.
+Mu is the friction coefficient: the fraction of the normal load F z available as force. F x, mu
+times F z, is the longitudinal force. In the curve component, `sAdhesion` and `sSlide` are where
+the curve peaks and where it has fully reached sliding. Mu A and mu S are the adhesion and sliding
+coefficients.
 -->
 
 ---
 
-## Why it runs away
+## Why the wheel runs away
+
+<div class="grid grid-cols-[1fr_1fr] gap-8">
+<div>
 
 ### More slip → less force → more slip.
 
@@ -249,36 +232,165 @@ In that region the plant is **open-loop unstable**.
 >
 > *Is the system well behaved?* Stable, near enough linear, minimum phase, manageable delay.
 >
-> Here, past the peak, the answer is **no** — and no amount of PID tuning fixes a plant that is
-> running away from you.
+> Here, past the peak, the answer is **no**, and no amount of PID tuning fixes a plant that is
+> unstable on its own.
+
+</div>
+<div>
+
+![The dry-road friction curve: grip rises with slip to a peak, then falls toward a sliding plateau. The region past the peak, where more slip gives less force, is shaded.](/figures/10-past-the-peak.svg)
+
+</div>
+</div>
 
 <!--
-**Say:** the loop on the left is a recap. The box on the right is the new part: this is what
-that loop means for the tuning you did in section 08.
+The loop is a recap. The box is new: it ties this loop to the tuning in section 08.
 
-**Say:** and notice this is the same car. The plant did not get replaced; it moved into a
-region where it has a different character. That is what "nonlinear" means in practice — not a
-curved graph, but different rules in different places.
+More slip gives less force, which gives more slip. That is positive feedback, inside the plant, and
+nobody wired it. Open-loop unstable means the plant runs away on its own, with no controller
+involved.
 
-**Say:** which is why the tuning flowchart puts that question first and not third. If you tune
-a loop on the good side of the peak and it occasionally visits the bad side, your gains are
-answering a question the plant has stopped asking.
+It is the same car. It moved into an operating region where it behaves differently. That is what
+nonlinear means in practice.
 
-**Ask the room:** what would you have to control to stay on the left of the peak? *(Slip
-itself — which needs a sensor for it and a loop around it. Hold that; it is the last slide.)*
+That is why the tuning flowchart asks this question first. If you tune a loop on the good side of
+the peak, and it sometimes visits the bad side, your gains were tuned for a different plant.
 
-**Terms, if anyone asks**
-
-- **Positive feedback** — an effect that reinforces its own cause. Here it is inside the
-  plant, and nobody wired it.
-- **Open-loop unstable** — the plant runs away on its own, with no controller involved.
-- **The well-behaved gate** — section 08's first question. Past the friction peak, the answer
-  is no, and no PID tuning fixes it.
+To stay left of the peak, you have to control slip itself. That needs a slip sensor and a loop
+around it. That is the last slide.
 -->
 
 ---
 
-## Beat three: cruise control on ice
+## Reminder: the car whose wheel can slip
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-8">
+<div>
+
+![SlipWheel1D from hands-on step 09: the friction curve block sits between the shaft and the body contact, connected by equations rather than wires.](/img/handson-01/step09-slip-wheel.png)
+
+</div>
+<div>
+
+`SlipCar` is your `GradeCar` with the rolling constraint cut:
+
+- `Driveline` split open: gear → wheel inertia → `SlipWheel1D` → body
+- κ = (ω·r − v) / max(|v|, v<sub>eps</sub>), μ = `mu_scale` · μ(κ),
+  F<sub>x</sub> = μ · F<sub>z</sub>, F<sub>z</sub> = m·g/2
+- one more input, **`mu_scale`**: 1 dry, 0.2 snow, 0.05 ice
+- one more output, **`wheel_kmh`**: ω·r in km/h, beside `v_kmh`
+- slip ratio inside it: `wheel.kappa`
+
+*↩ Hands-on steps 09–10: [a wheel that can slip](../handson-01/index.html#/slip-wheel)*
+
+</div>
+</div>
+
+<!--
+A recap before this car goes into the loop: the car from hands-on steps 09 and 10, whose wheel spun
+up to 1501 km/h.
+
+`curve` has no wires. It is connected by equations: `curve.kappa` equals `kappa`, and `mu` equals
+`mu_scale` times `curve.mu`.
+
+The two new ports are the only interface change. `tau_cmd`, `grade` and `v_kmh` are where
+`GradeCar` had them. So the next step is a swap, not a rebuild.
+
+If you finished step 10: what does `wheel_kmh` show on the dry road? 21.2 km/h, against 21.1 for
+the car. Wheel and car move together.
+
+If your `SlipCar` lacks `T_max`, `theta_e` or `CdA`, that is fine. The reference `HandsOn.SlipCar`
+has them with the same defaults, and step 10 does not set them.
+-->
+
+---
+routeAlias: step-10
+---
+
+## Step 10: swap the car
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+![The loop with plant as SlipCar and a friction profile driving its mu_scale input.](/img/lecture-01/step10-slip-loop.png)
+
+</div>
+<div>
+
+![Vehicle speed against wheel surface speed across the ice patch: the wheel speed shoots far above the car's, and the gap between them is the wheelspin.](/img/lecture-01/step10-ice-patch-plot.png)
+
+</div>
+</div>
+
+*Duplicate `CruiseLoopStep` → `SlipCruiseIcePatch` · `plant`: `GradeCar` → `SlipCar` · `demand` →
+`Constant(k = 90)` · `friction` Pulse(amplitude = 0.05, offset = 1.0, start_time = 4,
+duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 / 56` · `initial`
+`plant.body.mass.s = 0`, `plant.body.mass.v = 25`, `plant.engine.lag.x = 31.078`,
+`plant.wheel_inertia.phi = 0`, `plant.wheel_inertia.w = 25 / plant.r` · TransientAnalysis
+`SlipCruiseTransient`, `stop = 45`*
+
+```julia
+using Plots; plotly()
+r = MyCar.SlipCruiseTransient()
+s = [r."plant.v_kmh", r."plant.wheel_kmh"]
+top = plot(r; idxs = s)
+bottom = plot(r; idxs = s, ylims = (85, 115))
+plot(top, bottom; layout = (2, 1), link = :x)
+```
+
+[page: step 10](../lecture/lecture-01/#step-10) · reference `SlipCruiseLoop` in `dyad/Lecture1/SlipCruiseLoop.dyad`
+
+<!--
+Same controller, same gains, same loop. Only the car changes, to the one whose tire can let go.
+
+The new harness in `MyCar` is a duplicate of `CruiseLoopStep` as it stands after step 6: k 56, T i
+10, T d 0.5, N d 10, `wd` 0, `xd0` minus 90, and the step 6b limits, `controller.y_max` 150 and
+`y_min` 0. Sections 07 and 08 worked on duplicates, so nothing needs resetting.
+
+Step one. Duplicate `CruiseLoopStep` and name the copy `SlipCruiseIcePatch`, the reference bench's
+name. `CruiseLoopStep` stays on `GradeCar`. In the copy, select `plant` and change its type from
+`MyCar.GradeCar` to `MyCar.SlipCar`, or delete it and drag in a `SlipCar` named `plant`. Clear any
+parameter overrides `SlipCar` does not have.
+
+Step two. Re-wire anything the swap dropped: `controller.y` into `plant.tau_cmd`, `road.y` into
+`plant.grade`, `plant.v_kmh` into `controller.u_m`.
+
+Step three. From BlockComponents, Sources, drag in a Pulse named `friction`. Amplitude 0.05, offset
+1.0, start_time 4, duty_cycle 1.0, period 8. Wire `friction.y` into `plant.mu_scale`. The grip
+drops from 1.0 to 0.05 for 8 seconds. This is the same pulse the reference wraps in its
+`FrictionProfile`, which `MyCar` cannot see.
+
+Step four. Replace `demand` with a `BlockComponents.Sources.Constant`, k equal to 90, named
+`demand`. Wire `demand.y` into `controller.u_s`. `road` stays the constant 0.
+
+Step five. The integrator must start at the holding torque, or the car slows before it reaches the
+ice. Set `controller.xi0` to 31.078 divided by 56: the holding torque divided back through the
+gain, as in the reference.
+
+Step six. The initial conditions, in the code view. Two are new, because the wheel now has its own
+speed. Initial `plant.body.mass.s` is 0. `plant.body.mass.v` is 25. `plant.engine.lag.x` is 31.078.
+`plant.wheel_inertia.phi` is 0. And `plant.wheel_inertia.w` is 25 divided by 0.31: the wheel
+rolling at 90 km/h.
+
+Step seven. Create a TransientAnalysis named `SlipCruiseTransient`, stop 45. Run it, and plot
+`plant.v_kmh` and `plant.wheel_kmh` with the code on the slide.
+
+Before 4 seconds the two speeds lie on top of each other at 90. On the ice the wheel speed shoots
+up: the reference run reaches about 3400 km/h of tread speed, while `plant.v_kmh` sags only 3.10
+km/h. The slip ratio goes to 38. After 12 seconds the car surges to 111.86 km/h. If your wheel
+speed stays on the car's speed, `friction.y` is not reaching `plant.mu_scale`.
+
+The usual mistake is forgetting the wheel's initial speed. Then the wheel starts at rest under a
+car doing 90 km/h: a violent slip at t equals 0 that has nothing to do with the ice.
+
+If you fell behind: the reference loop is `SlipCruiseLoop`, its bench `SlipCruiseIcePatch`, run by
+`SlipCruiseTransient`. Its defaults are not this run. Set `Td` to 0.5, `wd` to 0, `patch_start` to
+4, `patch_duration` to 8 and `stop` to 45.
+-->
+
+---
+
+## Cruise control on ice
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -294,21 +406,21 @@ ice_patch(; kwargs...) = Scenarios.SlipCruiseTransient(;
 # cruising at 90 km/h; friction collapses for eight seconds
 blind = ice_patch(patch_duration = PATCH_LENGTH, stop = 45.0)
 
-SPEED   = "loop.plant.v_kmh"      # what it measures
-RPM     = "loop.plant.wheel_rpm"  # what it does not
-SLIP    = "loop.plant.kappa"      # nor this
+SPEED   = "loop.plant.v_kmh"        # what it measures
+WHEEL   = "loop.plant.wheel_kmh"    # what it does not
+SLIP    = "loop.plant.wheel.kappa"  # nor this
 COMMAND = "loop.controller.y"
 ```
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/10-wheel-and-slip.ipynb)
 
-**The controller reads falling speed, commands more torque,
-spins the driven wheel — and destroys the traction it was trying to use.**
+**The controller reads falling speed and commands more torque.
+The torque spins the driven wheel and removes the traction the car needs.**
 
 </div>
 <div>
 
-![Four panels across a shaded eight-second low-friction patch: vehicle speed sagging by three km/h and then surging past the setpoint, wheel speed climbing to 29 000 rpm, slip ratio past the adhesion peak to 38, and commanded torque rising to the engine's limit.](/figures/10-ice-patch.svg)
+![Four panels across a shaded eight-second low-friction patch: vehicle speed sagging by three km/h and then surging past the setpoint, wheel surface speed climbing to about 3400 km/h, slip ratio past the adhesion peak to 38, and commanded torque rising to the engine's limit.](/figures/10-ice-patch.svg)
 
 *Speed, wheel speed, slip ratio and commanded torque, with the eight seconds of ice shaded. Only the first panel has a sensor on it.*
 
@@ -316,48 +428,37 @@ spins the driven wheel — and destroys the traction it was trying to use.**
 </div>
 
 <!--
-**Narrate the four traces in time order,** as a sequence of entirely reasonable decisions:
+Read the four traces in time order. Each decision in them is reasonable.
 
-- Friction collapses. The car starts to lose speed.
-- The controller sees speed below setpoint — which is true — and commands more torque. That is
-  exactly what it is for.
-- The extra torque cannot go into the road, so it goes into spinning the wheel.
-- Slip passes the peak. Available force *falls*. The car slows further.
-- The controller sees a bigger error and commands more torque still.
+Friction collapses. The car starts to lose speed. The controller sees speed below the setpoint, and
+commands more torque. That is its job. The torque cannot go into the road, so it spins the wheel.
+Slip passes the peak. The available force **falls**. The car slows further. The controller sees a
+bigger error, and commands more torque still.
 
-**Say:** nothing in that chain is a bug. Every step is the controller doing its job correctly.
-The system as a whole does the wrong thing, and it does it faster the better the controller is
-tuned.
+Nothing in that chain is a bug. The controller does its job at every step. The system as a whole
+does the wrong thing, and the tighter the tuning, the faster it does it.
 
-**The numbers, if you want them on the board:** the speed sags **3.10 km/h** across the eight
-seconds — less than a gentle hill would cost, which is the trap. Meanwhile the wheel goes to
-**29 101 rpm** and the slip ratio to **38**; the tire crossed its adhesion peak **0.08 s** into
-the patch and never came back. When the ice ends the car surges to **111.88 km/h**, nearly 22
-km/h over the setpoint, and takes **20.4 s** to come back inside half a km/h of 90.
+The numbers. `v_set` is 90 km/h. `mu_low` is 0.05: at its peak the road then carries 343 newtons,
+against the 401 it takes to hold 90 km/h. The patch starts at 4 seconds and lasts 8. A two-second
+patch would cost only about 2 km/h, too little to see. The run stops at 45 seconds, long enough for
+the recovery.
 
-**If someone asks where the surge comes from:** the wheel is a flywheel holding **4.64 MJ** at
-its peak, against **0.44 MJ** for the whole car at 90 km/h. When grip returns, that energy has
-somewhere to go.
+The speed sags **3.10 km/h** across the eight seconds, less than a gentle hill would cost. So the
+speed signal gives almost no warning. Meanwhile the tread goes to about **3400 km/h**, and the slip
+ratio to **38**. The tire crossed its adhesion peak **0.08 s** into the patch, and never came back.
+When the ice ends, the car surges to **111.86 km/h**, nearly 22 km/h over the setpoint, and takes
+**20.7 s** to come back inside half a km/h of 90.
 
-**Say:** and in a real car the driver feels this as the back stepping out on a motorway at 90
-km/h, caused by a system they switched on for comfort.
+The surge comes from the wheel. It is a flywheel holding **4.64 MJ** at its peak, against **0.44
+MJ** for the whole car at 90 km/h. When grip returns, that energy goes into the car.
 
-**Readout — every symbol on this slide**
-
-- **mu_low = 0.05** — the friction multiplier during the patch. The road carries 343 N at its
-  peak, against the 401 N it takes to hold 90 km/h.
-- **patch_start = 4 s, patch_duration = 8 s** — eight seconds of it. Two seconds cannot
-  produce a visible speed drop: at 90 km/h a total loss of traction for two seconds costs
-  about 2 km/h.
-- **v_set = 90 km/h** — the cruise speed. **stop = 45 s** — long enough to capture the
-  recovery.
-- **Four traces** — vehicle speed, wheel speed, slip ratio, commanded torque, on a shared time
-  axis with the patch shaded. **Only the first has a sensor on it.**
+The driver feels the back stepping out on a motorway at 90 km/h, caused by a system they switched
+on for comfort.
 -->
 
 ---
 
-## What should have happened
+## A friction-aware torque limit
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -377,40 +478,37 @@ capped = rerun(blind, "y_max" => ICE_CEILING; saveat = 0.05)
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/10-wheel-and-slip.ipynb)
 
-The car still loses speed on the ice — physics is physics. It loses
-**less** of it: 1.99 km/h against 3.10, while being asked for a fifth as
-much torque. And it does not lose the wheel — 1 846 rpm against 29 101.
+The car still loses speed on the ice, but
+**less**: 2.01 km/h against 3.10, while being asked for a fifth as
+much torque. And the wheel does not spin up: about 219 km/h of tread against 3400.
 
 </div>
 <div>
 
 ![The same ice patch run overlaid with a friction-aware torque limit: the wheel stays near vehicle speed and the slip ratio stays on the near side of the peak, while speed dips and recovers.](/figures/10-ice-patch-limited.svg)
 
-*Against the blind run. The capped car commands a fifth of the torque and loses **less** speed doing it — 1.99 km/h against 3.10.*
+*Against the blind run. The capped car commands a fifth of the torque and loses **less** speed: 2.01 km/h against 3.10.*
 
 </div>
 </div>
 
 <!--
-**Say:** and be precise about what the fix bought. The car still slows down. It has to — there
-is less friction available and no controller can conjure grip. What the limit prevented was
-the controller *making it worse*. Averaged over the eight seconds the capped tire put *more*
-force on the road — 275 N against 242 — while being asked for a fifth as much torque. More
-command, less force. That is the whole of traction control in one line.
+The car still slows down. It has to: no controller can create grip. What the limit prevented was
+the controller **making it worse**. Over the eight seconds, the capped tire put **more** force on
+the road, 276 newtons against 242, while asked for a fifth as much torque. In the blind run, more
+command gave less force. Traction control is built on that.
 
-**Do not oversell it.** The cap did not hold the tire at its peak: the capped run still ends
-the patch at a slip ratio of 1.5, nowhere near 0.04. A constant ceiling cannot track a peak —
-it can only stop the command running away from the surface, and that turns out to be most of
-the benefit.
+The cap did not hold the tire at its peak. The capped run still ends the patch at a slip ratio of
+1.5, nowhere near 0.04. A constant ceiling cannot track a peak. It only stops the command running
+away from the surface, and that is most of the benefit.
 
-**The honest caveat:** `y_max` is a constant, so the cap is on for the whole run, including
-the dry road either side. 26.6 N.m is less than the 31.1 that holds 90 km/h, so the capped car
-reaches the ice at 89.47 km/h and drifts down afterwards. Watch the green trace past t = 12 s.
-A fixed cap is the right idea with the wrong information — which is exactly why lecture 2
-needs a loop around slip.
+One caveat: `y_max` is a constant, so the cap is on for the whole run, dry road included. 26.6
+newton meters is less than the 31.1 that holds 90 km/h. So the capped car reaches the ice at 89.47
+km/h, and drifts down after it: look at the green trace after 12 seconds. A fixed cap does not know
+the actual grip. That is why lecture 2 adds a loop around slip.
 
-**Say:** that is a general shape worth naming. When an actuator's limit depends on conditions
-the controller cannot see, somebody has to tell it. That is not tuning. That is architecture.
+When an actuator's limit depends on conditions the controller cannot see, something has to tell the
+controller. Tuning cannot do that. It takes a change to the control structure.
 -->
 
 ---
@@ -419,9 +517,9 @@ the controller cannot see, somebody has to tell it. That is not tuning. That is 
 
 ### One
 
-Real cruise control disengages when traction control intervenes. Now
-you know exactly why — the two loops are fighting over the same actuator, and the speed
-loop is the one with the worse information.
+Real cruise control disengages when traction control intervenes. The
+reason: the two loops act on the same actuator, and the speed loop has the worse
+information.
 
 ### Two
 
@@ -431,52 +529,44 @@ one is slow and comfortable.
 
 That is **cascade control**.
 
-### Which is where lecture 2 begins.
+### Lecture 2 starts here.
 
 <!--
-**Say:** and notice we did not need a new controller type to see the need for one. The need
-came out of the plant, by removing one assumption about a tire.
+We found the need for a new controller structure from the plant alone, by removing one assumption
+about the tire.
 
-**Say:** that is a good note to end on generally — almost every advanced control architecture
-you will meet exists because somebody found a plant that defeated the simple one. Not because
-it was elegant.
+The inner loop is fast and local. It rejects disturbances before the outer loop notices. The outer
+loop is slow and comfortable, and sets the inner loop's setpoint.
 
-**Terms, if anyone asks**
-
-- **Cascade control** — one loop inside another: a fast inner loop regulating slip, a slower
-  outer loop regulating speed. Lecture 2's subject.
-- **Inner loop** — fast, local, rejects disturbances before the outer loop notices. **Outer
-  loop** — slow, comfortable, sets the inner loop's setpoint.
-- **Why real cruise control disengages** — two loops fighting over one actuator, and the speed
-  loop has the worse information.
+Almost every advanced control architecture you will meet exists because a simple controller failed
+on some plant.
 -->
 
 ---
 
-## Ninety minutes, one car
+## Summary of the lecture
 
 - **01** know the plant before you control it.
-- **02** feedback exists because the world moves.
-- **03** P is fast and permanently wrong.
-- **04** the integrator inverts the plant for you.
-- **05** present, past, future — three jobs.
-- **06** actuators saturate; integrators do not notice.
-- **07** derivatives amplify by frequency.
-- **08** one step test, three tables — and plot the command.
-- **09** sampling costs phase.
-- **10** the tire is an actuator, and it has a peak.
+- **02** feedback corrects for changes in the road and the car.
+- **03** P is fast, but leaves a steady-state error.
+- **04** the integrator finds the holding torque without a model.
+- **05** P, I and D: present error, past error, rate of change.
+- **06** actuators saturate, and the integrator winds up unless clamped.
+- **07** the derivative amplifies high-frequency noise.
+- **08** one step test, three tables, and always plot the command.
+- **09** sampling adds phase lag.
+- **10** the tire is an actuator whose force has a peak.
 
 ### Every notebook is in the repository, executed, with its plots. Re-run them.
 
 <!--
-**Close with this:** if you take one habit away, take the one that showed up three times
-today without being planned — *plot the actuator command*. Section 06 found windup with it.
-Section 08 found an undeliverable design with it. Section 07 found chatter with it. In all
-three the controlled variable looked fine.
+If you take one habit away from today, take the one that came up three times: **plot the actuator
+command**. Section 06 found windup with it. Section 07 found chatter. Section 08 found an
+undeliverable design. In all three, the controlled variable looked fine.
 
-**Point them at** the notebooks and at `docs/`. Everything on these slides is reproducible,
-and the plots are committed so they can read them without installing anything.
+The notebooks and the `docs` folder are in the repository. The plots are committed, so you can read
+them without installing anything.
 
-**Next lecture:** the engine torque map, which fixes the 246 km/h lie from hands-on step 05 —
-and cascade control, which fixes the ice patch.
+Next lecture: the engine torque map, which brings the 246 km/h top speed from hands-on step 05 down
+to a realistic value, and cascade control, which fixes the ice patch.
 -->

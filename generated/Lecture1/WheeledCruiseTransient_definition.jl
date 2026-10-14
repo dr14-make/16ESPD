@@ -29,7 +29,6 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"Ti"::Float64 = 10.0
   var"Td"::Float64 = 0.5
   var"Nd"::Float64 = 10.0
-  var"Ni"::Float64 = 0.9
   var"T_max"::Float64 = 1000000.0
   var"y_max"::Float64 = T_max
   var"y_min"::Float64 = 0.0
@@ -40,7 +39,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"v0"::Float64 = 25.0
   var"tau0"::Float64 = 31.078
   var"t_step"::Float64 = 0.0
-  # PID setpoint step around the L1 no-slip wheeled plant.
+  # PID setpoint step around the hands-on no-slip wheeled car.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.WheeledCruiseStep(; name=:WheeledCruiseStep)
 end
 
@@ -51,7 +50,6 @@ function DyadInterface.run_analysis(spec::WheeledCruiseTransientSpec)
   push!(overrides, no_namespace_model.Ti => spec.var"Ti")
   push!(overrides, no_namespace_model.Td => spec.var"Td")
   push!(overrides, no_namespace_model.Nd => spec.var"Nd")
-  push!(overrides, no_namespace_model.Ni => spec.var"Ni")
   push!(overrides, no_namespace_model.T_max => spec.var"T_max")
   push!(overrides, no_namespace_model.y_max => spec.var"y_max")
   push!(overrides, no_namespace_model.y_min => spec.var"y_min")

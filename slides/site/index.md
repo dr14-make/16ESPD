@@ -13,9 +13,12 @@ features:
     details: "Session 1 · about 210 min<br>Why a controller needs a model, then the car one part at a time: each step opens with its physics — the engine's delay and lag, torque to force, drag and the force balance, top speed on paper, slip and the friction curve — then builds it and checks the predicted number. Ends with a wheel spinning on snow."
     link: /handson/lecture-01/
   - title: "Control Systems: Introduction and PID"
-    details: "Session 2 · 90 min<br>The car you built, ten notebooks. The step test, open loop and closed loop, P, PI and PID, integral windup, heuristic tuning, discretization, and what happens to cruise control on ice."
+    details: "Session 2 · 180 min<br>The car you built, ten notebooks. The step test, open loop and closed loop, P, PI and PID, integral windup, heuristic tuning, discretization, and what happens to cruise control on ice."
     link: /lecture-01/index.html
     target: _self
+  - title: "Lecture 1 build guide: the cruise controller, block by block"
+    details: "Session 2 · alongside the lecture<br>What you build on your own car while the lecture runs: the loop, then P, PI and PID, the limiter and clamping anti-windup, a noisy speedometer, and the loop on ice. Each step lists its blocks, wires and the plot to expect, with two catch-up checkpoints."
+    link: /lecture/lecture-01/
 ---
 
 ## Lecture 1, in two sessions
@@ -25,6 +28,9 @@ One car throughout: learned and built first, then controlled. Run them in this o
 Present the hands-on with the [tutor deck](./handson-01/index.html){target="_self"}; its speaker
 notes carry what to say, every derivation with the numbers plugged in, and where students get
 stuck.
+
+In the lecture the students build the cruise controller on that car as you go. They follow the
+[build guide](./lecture/lecture-01/); each build slide links to its step.
 
 ## Jump straight to a section
 

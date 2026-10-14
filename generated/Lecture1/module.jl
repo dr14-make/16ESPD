@@ -14,6 +14,18 @@ end
 include("types.jl")
 include("definitions.jl")
 include("experiments.jl")
+include("Step01/module.jl")
+include("Step02/module.jl")
+include("Step03/module.jl")
+include("Step04/module.jl")
+include("Step05/module.jl")
+include("Step06a/module.jl")
+include("Step06b/module.jl")
+include("Step06c/module.jl")
+include("Step06d/module.jl")
+include("Step07/module.jl")
+include("Step08/module.jl")
+include("Step10/module.jl")
 include("precompilation.jl")
 
 end # module Lecture1

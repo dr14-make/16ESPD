@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <path fill="#fff" d="M4 4h992v992H4z"/>
+  <path fill="#84bfed" d="M992 8v984H8V8zm8-8H0v1000h1000z"/>
+  <g fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+
+    <g stroke="#8f8f8f" stroke-width="9"><path d="M160 800 H790 M200 840 V230"/></g><path d="M830 800 L780 775 L780 825Z" fill="#8f8f8f" stroke="#8f8f8f" stroke-width="6"/><path d="M200 190 L175 240 L225 240Z" fill="#8f8f8f" stroke="#8f8f8f" stroke-width="6"/>
+    <path d="M190 330 H800" stroke="#8f8f8f" stroke-width="11" stroke-dasharray="25 20"/>
+    <path stroke="#5757db" stroke-width="17" d="M206 800 V330 H430 Q520 330 560 420 Q600 500 760 480"/>
+    <text x="640" y="720" fill="#8f8f8f" stroke="none" font-family="sans-serif" font-size="150" text-anchor="middle">PID</text>
+  </g>
+</svg>

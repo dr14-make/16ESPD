@@ -35,6 +35,10 @@ relations
   connect(cr_const.y, rolling.cr) {^id6}
   connect(incl_const.y, rolling.inclination) {^id7}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/Body.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "flange": {
       "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}

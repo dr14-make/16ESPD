@@ -1,0 +1,10 @@
+/* Presenter layout 4: current and next slide side by side on top, the notes across the whole
+   lower half. Reached with the presenter's layout button (setup/main.ts) or `L`. */
+.grid-container.layout4 {
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) min-content;
+  grid-template-areas:
+    'main next'
+    'note note'
+    'bottom bottom';
+}

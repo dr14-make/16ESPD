@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SlipCruiseIcePatch(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, J_w, F_z, mu_A, mu_S, v_set, v0, tau0, mu_low, patch_start, patch_duration)
+   SlipCruiseIcePatch(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, m, CdA, v_set, v0, tau0, mu_low, patch_start, patch_duration)
 
 Settled 90 km/h cruise crossing a finite low-friction patch.
 
@@ -20,18 +20,12 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
-| `Ni`         |                          | --  |   0.9 |
 | `T_max`         |                          | N.m  |   150.0 |
 | `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
-| `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
 | `m`         |                          | kg  |   1400.0 |
 | `CdA`         |                          | m2  |   0.63 |
-| `J_w`         |                          | kg.m2  |   1.0 |
-| `F_z`         |                          | N  |   6864.655 |
-| `mu_A`         |                          | --  |   1.0 |
-| `mu_S`         |                          | --  |   0.7 |
 | `v_set`         |                          | --  |   90.0 |
 | `v0`         |                          | m/s  |   25.0 |
 | `tau0`         |                          | N.m  |   31.078 |
@@ -39,7 +33,7 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
 | `patch_start`         |                          | s  |   10.0 |
 | `patch_duration`         |                          | s  |   2.0 |
 """
-@component function SlipCruiseIcePatch(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, J_w=Float64(1.0), F_z=6864.655, mu_A=Float64(1.0), mu_S=0.7, v_set=Float64(90.0), v0=Float64(25.0), tau0=31.078, mu_low=0.05, patch_start=Float64(10.0), patch_duration=Float64(2.0), y_max=T_max, kwargs...)
+@component function SlipCruiseIcePatch(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, v_set=Float64(90.0), v0=Float64(25.0), tau0=31.078, mu_low=0.05, patch_start=Float64(10.0), patch_duration=Float64(2.0), y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -70,6 +64,12 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__with_I = with_I
+  append!(__params, @parameters (with_I::Bool))
+  __initial_conditions[with_I] = __local__with_I
+  __local__with_D = with_D
+  append!(__params, @parameters (with_D::Bool))
+  __initial_conditions[with_D] = __local__with_D
   __local__k = k
   append!(__params, @parameters (k::Real))
   __initial_conditions[k] = __local__k
@@ -82,9 +82,6 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
   __initial_conditions[Nd] = __local__Nd
-  __local__Ni = Ni
-  append!(__params, @parameters (Ni::Real))
-  __initial_conditions[Ni] = __local__Ni
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
   __initial_conditions[T_max] = __local__T_max
@@ -94,9 +91,6 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
   __initial_conditions[y_min] = __local__y_min
-  __local__wp = wp
-  append!(__params, @parameters (wp::Real))
-  __initial_conditions[wp] = __local__wp
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
@@ -106,18 +100,6 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
   __local__CdA = CdA
   append!(__params, @parameters (CdA::Real))
   __initial_conditions[CdA] = __local__CdA
-  __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real))
-  __initial_conditions[J_w] = __local__J_w
-  __local__F_z = F_z
-  append!(__params, @parameters (F_z::Real))
-  __initial_conditions[F_z] = __local__F_z
-  __local__mu_A = mu_A
-  append!(__params, @parameters (mu_A::Real))
-  __initial_conditions[mu_A] = __local__mu_A
-  __local__mu_S = mu_S
-  append!(__params, @parameters (mu_S::Real))
-  __initial_conditions[mu_S] = __local__mu_S
   __local__v_set = v_set
   append!(__params, @parameters (v_set::Real))
   __initial_conditions[v_set] = __local__v_set
@@ -151,7 +133,7 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
   ### Components
   # Subcomponent loop of type VehicleSystemsComponents.Lecture1.SlipCruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.SlipCruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m=m, CdA=CdA, J_w=J_w, F_z=F_z, mu_A=mu_A, mu_S=mu_S, m0=v_set, xi0=tau0 / k, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.SlipCruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wd=wd, m=m, CdA=CdA, m0=v_set, xi0=tau0 / k, loop_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=v_set, demand_overrides...))
@@ -172,7 +154,7 @@ Settled 90 km/h cruise crossing a finite low-friction patch.
   push!(__initialization_eqs, loop.plant.body.mass.v ~ v0)
   push!(__initialization_eqs, loop.plant.engine.lag.x ~ tau0)
   push!(__initialization_eqs, loop.plant.wheel_inertia.phi ~ 0.0)
-  push!(__initialization_eqs, loop.plant.wheel_inertia.w ~ v0 / loop.plant.radius)
+  push!(__initialization_eqs, loop.plant.wheel_inertia.w ~ v0 / loop.plant.r)
 
   ### Assertions
   __assertions = []

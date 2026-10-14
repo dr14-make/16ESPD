@@ -25,9 +25,9 @@ The course gives you a working knowledge of:
 </div>
 
 <!--
-**Say:** a car today is a set of systems that talk to each other — engine, brakes, steering, batteries, comfort — and most of them are controlled by software. This course goes through those systems one at a time: what each does, the physics behind it, and how it is controlled.
+**Say:** a car today is a set of systems that communicate with each other (engine, brakes, steering, batteries, comfort), and most of them are controlled by software. This course goes through those systems one at a time: what each does, the physics behind it, and how it is controlled.
 
-**Point at:** the driver as a controller. The driver is part of the loop too: they watch the speed and press the pedal. Many systems in the course either help the driver (cruise control, ABS) or replace them.
+**Point at:** the driver as a controller. The driver watches the speed and adjusts the pedal, which is the job of a controller. Many systems in the course either help the driver (cruise control, ABS) or replace them.
 -->
 
 ---
@@ -64,5 +64,5 @@ The course gives you a working knowledge of:
 </div>
 
 <!--
-**Say:** lectures go from "what is it for" down to "how is it controlled". Practicals turn that into a model you build and experiment with. The report is short on purpose: what you tried, what you saw, what it means.
+**Say:** lectures go from "what is it for" down to "how is it controlled". Practicals turn that into a model you build and experiment with. The report is short: what you tried, what you observed, and what it means.
 -->

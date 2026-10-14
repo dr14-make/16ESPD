@@ -35,9 +35,9 @@ First practical: [build the car in Dyad](../handson/lecture-01/index.html).
 </div>
 
 <!--
-**Say:** one tool for the modeling practicals. Dyad is a modeling language and a VS Code extension: you place components like engine, gear and wheel, connect them, and simulate. Underneath it is Julia, but you will mostly draw and write models, not program.
+**Say:** all modeling practicals use one tool. Dyad is a modeling language and a VS Code extension: you place components like engine, gear and wheel, connect them, and simulate. Underneath it is Julia, but you will mostly draw and write models, not program.
 
 **Point at:** the screenshot. Every block in the diagram is a line of code on the right, and every wire is a `connect`. You can work in either view.
 
-**Say:** we stay in one dimension — the car moving forward and back. That is enough for the engine, the drivetrain, braking, traction and cruise control, and it keeps the models small enough to understand completely. The autonomous-vehicle practical is the exception: it uses the CARLA simulator.
+**Say:** we stay in one dimension: the car moving forward and back. That is enough for the engine, the drivetrain, braking, traction and cruise control, and it keeps the models small enough to understand in full. The autonomous-vehicle practical is the exception: it uses the CARLA simulator.
 -->

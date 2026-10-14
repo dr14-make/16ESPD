@@ -7,19 +7,15 @@ layout: section
 
 # Open loop versus closed loop
 
-Feedforward is correct exactly as long as the world matches your model.
+Feedforward works only while the road and the car match the model.
 
 `notebooks/lecture01/02-open-vs-closed-loop.ipynb`
 
 <!--
-**Say:** we have a model of the car that predicted its terminal speed correctly. So here is a
-fair question before we spend an hour on feedback: why measure anything at all? Just compute
-the right throttle and apply it.
+Our model predicted the car's terminal speed correctly. So why measure anything at all? Why not
+compute the right throttle and apply it?
 
-**Timing:** 8 minutes. This section is the *motivation* for everything after it, so if you cut
-it, make sure section 03 opens with the argument instead.
-
-**Cut order:** second to go. Drop this before touching the P → PI → PID → windup run.
+This section answers that, and ends with the loop diagram we use for the rest of the lecture.
 -->
 
 ---
@@ -42,7 +38,7 @@ it, make sure section 03 opens with the argument instead.
 
 ![Closed-loop block diagram: reference into a summing junction that subtracts the measured output, then controller, then plant, with a disturbance entering the plant and the output fed back to the summing junction.](/diagrams/02-closed-loop.svg)
 
-*The output is compared with the reference, and the difference — the error — is what the controller acts on.*
+*The output is compared with the reference, and the controller acts on the difference, the error.*
 
 </div>
 </div>
@@ -50,37 +46,28 @@ it, make sure section 03 opens with the argument instead.
 **Open in Dyad** `dyad/Lecture1/CruiseLoop.dyad`
 
 <!--
-**Point at** the missing wire in the left diagram. That absence is the entire difference, and
-everything else follows from it.
+The left diagram has no wire coming back from the output. That is the whole difference.
 
-**Say:** feedforward needs a model, because the controller has to invert the plant — given the
-speed you want, produce the torque that achieves it. Any error in that inversion becomes an
-error in the output, permanently, with nothing to correct it.
+Feedforward runs the plant model backwards: from the speed you want, it computes the torque. Any
+error in that model stays in the output, and nothing corrects it.
 
-**Say:** and feedback is not obviously better. It is a hack we are forced into because we
-cannot know the plant and the world well enough. Given perfect knowledge we would not want the
-extra wire at all — it brings problems of its own, which is what the remaining sections are
-about.
+Feedback is not automatically better. We use it because we never know the plant and its
+surroundings well enough. Feedback brings problems of its own, and the rest of this lecture is
+about them.
 
-**In the model:** `LimPID` has a **feedforward input**, `u_ff`, and we have wired a constant
-**zero** to it. Both architectures are in this one block; today we use only the right-hand
-half of it.
+In the model, `CruiseLoop` is the right-hand picture: the setpoint goes into the controller's
+`u_s`, and the plant's speed comes back into `u_m`. You draw this loop yourselves later in this
+section.
 
-**Terms, if anyone asks**
-
-- **Open loop / feedforward** — u computed from r alone. No sensor, no error, no loop.
-- **Closed loop / feedback** — u computed from the error. The output is fed back and compared.
-- **Comparator** — the circle with + and −. It forms e = r − y, and it is the only place the
-  two signals meet.
-- **Model inversion** — solving the plant backwards: given the output you want, what input
-  produces it? That is all a feedforward controller does.
-- **u_ff** — `LimPID`'s feedforward input. Real controllers often use both paths; we tie this
-  one to zero.
+Open loop computes u from r alone: no sensor, no error. Closed loop computes u from the error. The
+comparator, the circle with plus and minus, forms e equals r minus y. It is the only place the two
+signals meet. Model inversion means solving the plant backwards, from the output you want to the
+input that gives it. That is all a feedforward controller does.
 -->
 
 ---
 
-## Invert the model, and drive
+## Feedforward: the torque from the model
 
 <div class="grid grid-cols-[1.4fr_1fr] gap-8">
 <div>
@@ -95,7 +82,6 @@ tau_ff = F * CAR.r / CAR.i                    # N.m at the engine
 
 nominal = Scenarios.FeedforwardCruiseTransient(
     tau_ff = tau_ff, stop = 1200.0)
-plot_speed(nominal; setpoint = 90)
 ```
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/02-open-vs-closed-loop.ipynb)
@@ -106,39 +92,31 @@ plot_speed(nominal; setpoint = 90)
 - **31.1** N·m computed
 - **90.0** km/h achieved
 
-> **It works**
+> **Feedforward holds the speed**
 >
-> No sensor. No error signal. No controller worth the name — and the car sits on 90 km/h. On a
-> flat, dry road, with the car we modelled, feedforward is exactly right.
+> There is no sensor and no error signal, and the car holds 90 km/h. On a flat, dry road, with
+> the car we modeled, feedforward is exactly right.
 
 </div>
 </div>
 
 <!--
-**Say:** and it is not a trick. This is a legitimate control strategy, it is cheap, and it is
-fast — there is no loop to be unstable, so it cannot oscillate. Feedforward is genuinely the
-right answer for a lot of problems.
+Feedforward is a valid strategy. It is cheap and fast, and with no loop it cannot oscillate.
 
-**Point at** the inversion in the code. That line *is* the controller. Everything the
-controller knows about the car is in it: mass, drag area, rolling coefficient, wheel radius,
-gear ratio.
+The inversion line is the whole controller. Everything it knows about the car is in there: mass,
+drag area, rolling coefficient, wheel radius, gear ratio.
 
-**Ask the room:** what has to be true for this to keep working? *(Collect answers — they will
-list the assumptions themselves, which is much better than you listing them. Then break
-exactly those assumptions on the next slide.)*
+v is 90 divided by 3.6, 25 meters per second; we work in SI because the force balance is in SI. F
+is drag plus rolling at that speed. tau_ff is F times r over i, the driveline equation run
+backwards: 31.1 newton-meters.
 
-**Readout — every symbol on this slide**
-
-- **v = 90/3.6 = 25 m/s** — the target speed in SI, because the force balance is in SI.
-- **F** — the total resisting force at that speed, N: drag plus rolling.
-- **tau_ff = F·r/i = 31.1 N·m** — the torque at the engine that produces it. Divide by the
-  gear ratio, multiply by the wheel radius: the driveline equation run backwards.
-- **Feedforward** — this single number *is* the controller. There is nothing else in it.
+That number assumes a flat road, the mass we modeled and the drag we modeled. The next slide
+changes each one.
 -->
 
 ---
 
-## Break it three ways
+## Feedforward with a grade, a payload and more drag
 
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
@@ -168,34 +146,24 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")
 
 ![Four open-loop runs against a 90 km/h target over twenty minutes: the nominal case sits on target, while the 1% grade, the 200 kg payload and the 20% larger drag area each settle at a visibly different wrong speed, the grade lowest.](/figures/02-open-loop-broken.svg)
 
-*Same torque, four worlds. Three of them settle somewhere the driver did not ask for.*
+*The same torque in four conditions. In three of them the car settles away from 90 km/h.*
 
 </div>
 </div>
 
 <!--
-**Read out** the three wrong speeds.
+On a 1 percent grade the car falls to 58.25 kilometers per hour. With a 200 kilogram payload it
+settles at 85.40. With 20 percent more drag area, 82.16.
 
-**Say:** and now the important part — *nothing in the controller went wrong*. It computed
-31.1 newton-metres, it commanded 31.1, it delivered 31.1. It is still correct. The world
-moved.
+The controller did nothing wrong. It computed 31.1 newton-meters and delivered 31.1. The road and
+the car changed, and with no error signal nothing can notice.
 
-**Say:** and there is no error signal anywhere in this architecture, so nothing in the system
-is even capable of noticing. The car is not failing to correct; it has no concept of
-correction.
+A 1 percent grade is about 0.57 degrees, a gentle motorway rise. It costs 137 newtons against the
+401 the engine is holding. The payload raises both the rolling resistance and the slope term. The
+extra drag area is a roof box, or a headwind.
 
-**Ask the room:** which of the three would a driver notice first? *(The hill. And which would
-they never notice? The payload — the car is just quietly slower than they asked, forever.)*
-
-**Readout — every symbol on this slide**
-
-- **1 % grade** — tan α = 0.01, about 0.57°. A gentle motorway rise, and it costs 137 N
-  against the 401 N the engine is holding — the car falls to 58.25 km/h.
-- **200 kg payload** — m goes from 1400 to 1600 kg, changing both rolling resistance and the
-  slope term. Settles at 85.40 km/h.
-- **20 % more drag area** — a roof box or a headwind, since relative airspeed is what drag
-  depends on. Settles at 82.16 km/h.
-- **The dashed line** — the 90 km/h target nobody is holding any more.
+A driver notices the hill. The payload they may never notice: the car just stays slower than they
+asked.
 -->
 
 ---
@@ -211,6 +179,8 @@ K = 25.0                   # N.m per km/h
 UNLIMITED = 1.0e6          # N.m — both torque ceilings lifted
 
 closed = [name => Scenarios.CruiseLoopTransient(
+              model = Scenarios.CruiseLoopStep(; name = :CruiseLoopStep,
+                                               with_I = false, with_D = false),
               k = K, v_lo = 90.0, v_hi = 90.0,
               grade = w.grade, m = w.m, CdA = w.CdA,
               T_max = UNLIMITED, y_max = UNLIMITED, stop = 60.0)
@@ -223,31 +193,95 @@ end
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/02-open-vs-closed-loop.ipynb)
 
-All three come back towards the target — without the controller being told which disturbance it
-is facing, or that there is one.
+All three come back toward the target, although the controller is not told which disturbance it
+faces, or that there is one.
 
 </div>
 <div>
 
 ![Two panels. Left: the same four worlds under proportional control, every run climbing back to within about two km/h of the 90 km/h target, with dotted lines marking where the open loop had settled. Right: the first twenty seconds magnified onto the last two km/h, showing the runs arriving within five seconds and the small error each one keeps.](/figures/02-closed-loop-recovered.svg)
 
-*One controller, three different worlds, one outcome. That is the argument for feedback.*
+*One controller, without knowing the disturbance, brings all three cases back near the target.*
 
 </div>
 </div>
 
 <!--
-**Say:** the controller has no model. It does not know about the hill, or the luggage, or the
-wind. It knows one number — how far off it is — and that is enough to handle three
-disturbances it was never designed for.
+This controller has no model. It knows only how far off the speed is, and that is enough to handle
+three disturbances it was never designed for.
 
-**Point at** the remaining gap between the curves and the target. It is still there, and it
-is different for each disturbance. Do not explain it — say "hold that thought" and let
-section 03 land it.
+A gap to the target remains, different for each disturbance. Section 03 explains it.
 
-**Ask the room:** what did we give up to get this? *(Next slide. Take guesses first — "cost",
-"complexity", "a sensor" are all partly right, and the real answer is more interesting than
-any of them.)*
+What did we give up for this? Cost, complexity and a sensor are all partly right. The main cost is
+something else, and we come to it right after you draw this loop.
+-->
+
+---
+routeAlias: build-loop
+---
+
+## Build: the loop, and an empty controller
+
+<div class="grid grid-cols-[1.4fr_1fr] gap-6">
+<div>
+
+![CruiseLoopStep: the demand step into the controller, the controller into the plant (GradeCar), the road constant into the plant's grade input, and the plant's speed fed back to the controller.](/img/lecture-01/step02-loop.png)
+
+</div>
+<div>
+
+![CruiseController in progress: ports u_s, u_m and y, and the error block only, with its parameter panel showing k1 = 1 and k2 = -1.](/img/lecture-01/step02-controller-shell.png)
+
+</div>
+</div>
+
+*New `CruiseController`: ports `u_s`, `u_m`, `y` · `error` Add(k1 = 1, k2 = −1) from `u_s`, `u_m` ·
+new `CruiseLoopStep`: `demand` Step(offset = 90, height = 20) → `controller` → `plant` (`GradeCar`) · `road` Constant(k = 0) · speed back to `u_m` ·
+TransientAnalysis `CruiseLoopTransient`, `stop = 100`*
+
+[page: step 2](../lecture/lecture-01/#step-2) · reference `dyad/Lecture1/CruiseLoop.dyad`
+
+<!--
+This is the right-hand diagram from the start of the section, as a Dyad model. You draw it once,
+now. Every later step either changes the controller, adds a parameter to `GradeCar`, or copies
+this loop into a new bench.
+
+First, the controller shell. In Components, right-click `MyCar`, Add Component, name it
+`CruiseController`.
+
+Three ports from the `Dyad` library. A `RealInput` named `u_s` on the left edge: the setpoint, in
+kilometers per hour. A `RealInput` named `u_m` on the bottom edge: the measured speed. A
+`RealOutput` named `y` on the right edge: the torque command, in newton-meters. Use exactly these
+names; the notebooks use them.
+
+Drag in `BlockComponents.Math.Add`, name it `error`, set k one to 1 and k two to minus 1. That is
+the comparator. Wire `u_s` into `error.u1` and `u_m` into `error.u2`. Leave `error.y` and `y`
+open.
+
+Second, the loop: Add Component, `CruiseLoopStep`. Four blocks, named exactly. `demand` is
+`BlockComponents.Sources.Step`, offset 90, height 20, start time 0. `controller` is your
+`CruiseController`. `plant` is your `GradeCar`. `road` is `BlockComponents.Sources.Constant`, k
+equal to 0.
+
+Wire `demand.y` into `controller.u_s`, `controller.y` into `plant.tau_cmd`, `road.y` into
+`plant.grade`, and `plant.v_kmh` into `controller.u_m`. That last wire is the feedback.
+
+In code, add the starting state, cruising at 90 with the engine holding 31.078 newton-meters.
+Initial `plant.body.mass.s` equals 0. Initial `plant.body.mass.v` equals 25. Initial
+`plant.engine.lag.x` equals 31.078. Save.
+
+Run Analysis: TransientAnalysis of `CruiseLoopStep`, named `CruiseLoopTransient`, stop 100. Do not
+run it yet: `controller.y` has no source until step 3, and the problems panel says so. That is
+expected.
+
+The step is at time zero because a later step would give the P controller of step 3 a stretch at
+zero error, where it commands zero torque and the car slows down.
+
+Check against the screenshots: four blocks and four wires in the loop, two wires into `error`. The
+reference wraps the loop one level deeper, as `loop.plant.v_kmh`; yours is `plant.v_kmh`.
+
+The common mistake is k two set to plus 1. Then the speed runs away as soon as there is torque.
+Check the parameter panel: k one is 1, k two is minus 1.
 -->
 
 ---
@@ -256,48 +290,41 @@ any of them.)*
 
 ### Feedforward changes how a system is *operated*.
 
-### Feedback changes what the system *is*.
+### Feedback changes the system's *dynamics*.
 
-*The controller sets the rate of change as a function of the current state, and that
-relationship is new dynamics — dynamics the car did not have before you wired it up.*
+*The controller makes the rate of change depend on the current state. That adds dynamics the car
+did not have before you wired the loop.*
 
-> **Which cuts both ways**
+> **Stabilizing or destabilizing**
 >
-> You can take an unstable system and make it stable. You can also take a perfectly stable car
-> and make it oscillate, or worse. A badly tuned loop is more dangerous than no loop at all —
-> and it is why the rest of this lecture exists.
+> You can take an unstable system and make it stable. You can also take a stable car and make it
+> oscillate or become unstable. A badly tuned loop can be more dangerous than no loop at all, and
+> most of this lecture is about tuning it.
 
 <!--
-**Say:** this is the sentence to take away from the section. Feedforward cannot destabilize
-anything — there is no loop. Feedback can, because there is.
+Feedforward cannot destabilize anything, because there is no loop. Feedback can.
 
-**Say:** which is why control engineering spends so much of its effort on *analysis* rather
-than on design. Designing a controller that works on a good day is not hard. Proving that it
-cannot do harm on a bad one is the job.
+That is why control engineering spends so much effort on analysis. A controller that works on a
+good day is easy. Showing that it does no harm on a bad one is the hard part.
 
-**Flag forward:** we will see the loop destabilize twice today — once on purpose in section
-08, to measure it, and once by accident in section 09, from nothing more than a slow
-processor.
+You will see the loop go unstable twice today: on purpose in section 08, to measure it, and by
+accident in section 09, from nothing more than a slow processor.
 
-**Terms, if anyone asks**
-
-- **Dynamics** — how a system evolves: its poles, its time constants, its stability.
-  Feedforward leaves them alone; feedback rewrites them.
-- **Stability** — whether a disturbance dies out or grows. Feedback can create it, and can
-  destroy it.
+Dynamics means how fast a system responds, whether it oscillates, whether it is stable. Stable
+means a disturbance dies out instead of growing. Feedback can create stability, and it can remove
+it.
 -->
 
 ---
 
-## What this bought us
+## Summary of section 02
 
-- A working feedforward controller — and three ordinary situations that defeat it.
-- The reason feedback exists: the world moves, and only an error signal notices.
+- A working feedforward controller, and three ordinary situations where it misses the target.
+- Why we need feedback: when the road or the car changes, only an error signal detects it.
 - The warning: feedback changes the dynamics, so it can make things worse.
 
 ### Next: the simplest thing that uses an error signal. <Link to="proportional">→ 03, proportional</Link>
 
 <!--
-**Bridge:** so we need feedback. Let us start with the least clever thing we could possibly
-do with an error signal — multiply it by a number.
+We need feedback. The simplest thing to do with an error signal is to multiply it by a number.
 -->

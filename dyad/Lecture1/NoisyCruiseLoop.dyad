@@ -6,25 +6,23 @@ the controller. The loop signals and noise amplitude are in km/h.
 """
 component NoisyCruiseLoop
   "Vehicle-speed setpoint in km/h"
-  setpoint = RealInput()
+  setpoint = RealInput() {^setpoint}
   "Road gradient, tan(alpha)"
-  grade = RealInput()
+  grade = RealInput() {^grade}
   "Powertrain transport delay"
   structural parameter theta_e::Time = 0.3
-  "Whether to include integral action"
-  structural parameter with_I::Boolean = true
-  "Whether to include derivative action"
-  structural parameter with_D::Boolean = true
+  "Switch integral action on"
+  parameter with_I::Boolean = true
+  "Switch derivative action on"
+  parameter with_D::Boolean = true
   "Controller gain in N.m per km/h"
   parameter k::Real = 56.0
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
   parameter Nd::Real = 10.0
-  parameter Ni::Real = 0.9
   parameter T_max::Torque = 150.0
   parameter y_max::Real = T_max
   parameter y_min::Real = 0.0
-  parameter wp::Real = 1.0
   parameter wd::Real = 1.0
   parameter m::Dyad.Mass = 1400.0
   parameter CdA::Area = 0.63
@@ -35,31 +33,86 @@ component NoisyCruiseLoop
   parameter xi0::Real = 0.0
   "Initial derivative-filter state, seeded from the initial measurement"
   parameter xd0::Real = (wd - 1) * m0
-  plant = VehicleSystemsComponents.Vehicle.CarPlant(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA)
-  controller = BlockComponents.Continuous.LimPID(
+  plant = VehicleSystemsComponents.HandsOn.GradeCar(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA) {^plant}
+  controller = VehicleSystemsComponents.Lecture1.CruiseController(
     with_I = with_I,
     with_D = with_D,
     k = k,
     Ti = Ti,
     Td = Td,
     Nd = Nd,
-    Ni = Ni,
     y_max = y_max,
     y_min = y_min,
-    wp = wp,
     wd = wd,
     xi0 = xi0,
-    xd0 = xd0)
-  noise = VehicleSystemsComponents.Lecture1.MeasurementNoise(amplitude = amplitude)
-  "No separate feedforward path in this feedback loop"
-  zero_ff = BlockComponents.Sources.Constant(k = 0.0)
+    xd0 = xd0) {^controller}
+  noise = VehicleSystemsComponents.Lecture1.MeasurementNoise(amplitude = amplitude) {^noise}
 relations
-  connect(setpoint, controller.u_s)
-  connect(plant.v_kmh, noise.u)
-  connect(noise.y, controller.u_m)
-  connect(zero_ff.y, controller.u_ff)
-  connect(controller.y, plant.tau_cmd)
-  connect(grade, plant.grade)
+  connect(setpoint, controller.u_s) {^id1}
+  connect(plant.v_kmh, noise.u) {^id2}
+  connect(noise.y, controller.u_m) {^id3}
+  connect(controller.y, plant.tau_cmd) {^id4}
+  connect(grade, plant.grade) {^id5}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/NoisyCruiseLoop.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "setpoint": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -60, "x2": 40, "y1": 110, "y2": 210},
+          "diagram": {"x1": -60, "x2": 40, "y1": 110, "y2": 210}
+        }
+      }
+    },
+    "grade": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -60, "x2": 40, "y1": 770, "y2": 870},
+          "diagram": {"x1": -60, "x2": 40, "y1": 770, "y2": 870}
+        }
+      }
+    },
+    "controller": {
+      "Dyad": {"placement": {"diagram": {"x1": 240, "x2": 340, "y1": 450, "y2": 550}}}
+    },
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 690, "x2": 790, "y1": 450, "y2": 550}}}},
+    "noise": {"Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 450, "y2": 550}}}},
+    "id1": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 130, "y": 160}, {"x": 130, "y": 477}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id3": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 1000, "y": 500},
+              {"x": 1000, "y": 1010},
+              {"x": -170, "y": 1010},
+              {"x": -170, "y": 523}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 630, "y": 820}, {"x": 630, "y": 545}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
 end
 
 """
@@ -74,11 +127,9 @@ component NoisyCruiseStep
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
   parameter Nd::Real = 10.0
-  parameter Ni::Real = 0.9
   parameter T_max::Torque = 150.0
   parameter y_max::Real = T_max
   parameter y_min::Real = 0.0
-  parameter wp::Real = 1.0
   parameter wd::Real = 1.0
   parameter m::Dyad.Mass = 1400.0
   parameter CdA::Area = 0.63
@@ -97,21 +148,19 @@ component NoisyCruiseStep
     Ti = Ti,
     Td = Td,
     Nd = Nd,
-    Ni = Ni,
     T_max = T_max,
     y_max = y_max,
     y_min = y_min,
-    wp = wp,
     wd = wd,
     m = m,
     CdA = CdA,
     amplitude = amplitude,
-    m0 = v_lo)
-  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step)
-  road = BlockComponents.Sources.Constant(k = grade)
+    m0 = v_lo) {^loop}
+  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step) {^demand}
+  road = BlockComponents.Sources.Constant(k = grade) {^road}
 relations
-  connect(demand.y, loop.setpoint)
-  connect(road.y, loop.grade)
+  connect(demand.y, loop.setpoint) {^id4}
+  connect(road.y, loop.grade) {^id5}
   initial loop.plant.body.mass.s = 0.0
   initial loop.plant.body.mass.v = v0
   initial loop.plant.engine.lag.x = tau0
@@ -123,9 +172,26 @@ metadata {
         "atol": {"loop.plant.v_kmh": 0.1, "loop.noise.y": 0.5},
         "expect": {
           "initial": {"loop.plant.v_kmh": 90.0, "loop.noise.y": 90.38071258530745},
-          "final": {"loop.plant.v_kmh": 110.51, "loop.noise.y": 110.89},
+          "final": {"loop.plant.v_kmh": 110.1561, "loop.noise.y": 110.5368},
           "signals": ["loop.plant.v_kmh", "loop.noise.y", "loop.controller.y", "demand.y"]
         }
+      }
+    }
+  },
+  "_links": {
+    "loop": {"Dyad": {"placement": {"diagram": {"x1": 710, "x2": 810, "y1": 500, "y2": 600}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 240, "x2": 340, "y1": 370, "y2": 470}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 240, "x2": 340, "y1": 640, "y2": 740}}}},
+    "id4": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 500, "y": 420}, {"x": 500, "y": 516}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id5": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 500, "y": 690}, {"x": 500, "y": 582}], "E": 2}],
+        "path": {}
       }
     }
   }
@@ -138,11 +204,9 @@ analysis NoisyCruiseTransient
   parameter Ti::Time = 10.0
   parameter Td::Time = 0.1
   parameter Nd::Real = 10.0
-  parameter Ni::Real = 0.9
   parameter T_max::Torque = 150.0
   parameter y_max::Real = T_max
   parameter y_min::Real = 0.0
-  parameter wp::Real = 1.0
   parameter wd::Real = 1.0
   parameter m::Dyad.Mass = 1400.0
   parameter CdA::Area = 0.63
@@ -158,11 +222,9 @@ analysis NoisyCruiseTransient
     Ti = Ti,
     Td = Td,
     Nd = Nd,
-    Ni = Ni,
     T_max = T_max,
     y_max = y_max,
     y_min = y_min,
-    wp = wp,
     wd = wd,
     m = m,
     CdA = CdA,

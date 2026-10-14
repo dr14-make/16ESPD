@@ -1,0 +1,211 @@
+"""
+Cruise loop with a discrete PID controller and explicit sample-and-hold interfaces.
+
+The reference and vehicle speed are sampled at period `Ts`. The discrete controller executes on
+the same periodic clock, and a zero-order hold applies its output to the continuous vehicle plant.
+Subcomponent names match `CruiseLoop` (`plant`, `controller`) so a harness reads similar paths.
+"""
+component SampledCruiseLoop
+  "Vehicle-speed setpoint in km/h"
+  setpoint = RealInput() {^setpoint}
+  "Road gradient, tan(alpha)"
+  grade = RealInput() {^grade}
+  plant = VehicleSystemsComponents.HandsOn.GradeCar(theta_e = theta_e, T_max = T_max, m = m, CdA = CdA) {^plant}
+  clock = DiscreteComponents.PeriodicClock(dt = Ts) {^clock}
+  setpoint_sampler = DiscreteComponents.Sampler(initial_condition = m0) {^setpoint_sampler}
+  measurement_sampler = DiscreteComponents.Sampler(initial_condition = m0) {^measurement_sampler}
+  controller = DiscreteComponents.DiscretePIDStandard(with_I = with_I, with_D = with_D, with_ff = false, Ts = Ts, K = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, y_max = y_max, y_min = y_min, wp = wp, wd = wd) {^controller}
+  hold = DiscreteComponents.ZeroOrderHold(initial_condition = 0.0) {^hold}
+  "Powertrain transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Whether to include integral action"
+  structural parameter with_I::Boolean = true
+  "Whether to include derivative action"
+  structural parameter with_D::Boolean = true
+  "Controller sample period"
+  structural parameter Ts::Time = 0.1
+  "Controller gain in N.m per km/h"
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter m::Dyad.Mass = 1400.0
+  parameter CdA::Area = 0.63
+  "Initial measured speed in km/h, the settled cruise the loop starts from"
+  parameter m0::Real = 90.0
+relations
+  connect(setpoint, setpoint_sampler.u) {^id9}
+  connect(plant.v_kmh, measurement_sampler.u) {^id10}
+  connect(setpoint_sampler.y, controller.u_s, clock.y) {^id11}
+  connect(measurement_sampler.y, controller.u_m) {^id12}
+  connect(controller.y, hold.u) {^id13}
+  connect(hold.y, plant.tau_cmd) {^id14}
+  connect(grade, plant.grade) {^id15}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/SampledCruiseLoop.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "setpoint": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300},
+          "diagram": {"x1": -50, "x2": 50, "y1": 250, "y2": 350}
+        }
+      }
+    },
+    "grade": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800},
+          "diagram": {"x1": -50, "x2": 50, "y1": 500, "y2": 600}
+        }
+      }
+    },
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 660, "x2": 760, "y1": 278, "y2": 378}}}},
+    "clock": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 100, "y2": 200}}}},
+    "setpoint_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 250, "y2": 350}}}
+    },
+    "measurement_sampler": {
+      "Dyad": {"placement": {"diagram": {"x1": 820, "x2": 920, "y1": 278, "y2": 378}}}
+    },
+    "controller": {
+      "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 278, "y2": 378}}}
+    },
+    "hold": {"Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 278, "y2": 378}}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [], "E": 2},
+          {"S": -1, "M": [{"x": 240, "y": 150}], "E": 3}
+        ],
+        "junctions": [{"x": 240, "y": 300}],
+        "path": {}
+      }
+    },
+    "id12": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 960, "y": 328},
+              {"x": 960, "y": 650},
+              {"x": 250, "y": 650},
+              {"x": 250, "y": 352}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    },
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id15": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 620, "y": 550}, {"x": 620, "y": 373}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
+end
+
+"""
+Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
+
+Mirrors `CruiseLoopStep` using a sampled discrete controller, so notebook 09 can sweep `Ts`
+and observe the effects of controller discretization and sample-and-hold delay.
+"""
+component SampledCruiseStep
+  loop = VehicleSystemsComponents.Lecture1.SampledCruiseLoop(theta_e = theta_e, with_I = with_I, with_D = with_D, Ts = Ts, k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd, m0 = v_lo) {^loop}
+  demand = BlockComponents.Sources.Step(offset = v_lo, height = v_hi - v_lo, start_time = t_step) {^demand}
+  road = BlockComponents.Sources.Constant(k = 0.0) {^road}
+  structural parameter theta_e::Time = 0.3
+  structural parameter with_I::Boolean = false
+  structural parameter with_D::Boolean = false
+  structural parameter Ts::Time = 0.1
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter v_lo::Real = 90.0
+  parameter v_hi::Real = 110.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter t_step::Time = 0.0
+relations
+  connect(demand.y, loop.setpoint) {^id4}
+  connect(road.y, loop.grade) {^id5}
+  initial loop.plant.body.mass.s = 0.0
+  initial loop.plant.body.mass.v = v0
+  initial loop.plant.engine.lag.x = tau0
+metadata {
+  "Dyad": {
+    "tests": {
+      "p_only_small_Ts": {
+        "stop": 100,
+        "atol": {"loop.plant.v_kmh": 0.1},
+        "expect": {
+          "initial": {"loop.plant.v_kmh": 90},
+          "final": {"loop.plant.v_kmh": 109.3},
+          "signals": ["loop.plant.v_kmh", "loop.controller.y", "demand.y"]
+        }
+      }
+    }
+  },
+  "_links": {
+    "loop": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 500, "y1": 400, "y2": 500}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 375, "y2": 475}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 520, "y2": 620}}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 330, "y": 570}, {"x": 330, "y": 475}], "E": 2}],
+        "path": {}
+      }
+    }
+  }
+}
+end
+
+analysis SampledCruiseTransient
+  # `Ts` is structural because it defines the discrete clock. To sweep the sample period,
+  # construct `SampledCruiseStep` with different `Ts` values before compilation.
+  extends TransientAnalysis(stop = 100)
+  model = VehicleSystemsComponents.Lecture1.SampledCruiseStep(k = k, Ti = Ti, Td = Td, Nd = Nd, Ni = Ni, T_max = T_max, y_max = y_max, y_min = y_min, wp = wp, wd = wd, v_lo = v_lo, v_hi = v_hi, v0 = v0, tau0 = tau0, t_step = t_step)
+  parameter k::Real = 56.0
+  parameter Ti::Time = 10.0
+  parameter Td::Time = 0.1
+  parameter Nd::Real = 10.0
+  parameter Ni::Real = 0.9
+  parameter T_max::Torque = 150.0
+  parameter y_max::Real = T_max
+  parameter y_min::Real = 0.0
+  parameter wp::Real = 1.0
+  parameter wd::Real = 1.0
+  parameter v_lo::Real = 90.0
+  parameter v_hi::Real = 110.0
+  parameter v0::Velocity = 25.0
+  parameter tau0::Torque = 31.078
+  parameter t_step::Time = 0.0
+relations
+end

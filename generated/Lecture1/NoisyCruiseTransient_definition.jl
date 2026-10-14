@@ -29,11 +29,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"Ti"::Float64 = 10.0
   var"Td"::Float64 = 0.1
   var"Nd"::Float64 = 10.0
-  var"Ni"::Float64 = 0.9
   var"T_max"::Float64 = 150.0
   var"y_max"::Float64 = T_max
   var"y_min"::Float64 = 0.0
-  var"wp"::Float64 = 1.0
   var"wd"::Float64 = 1.0
   var"m"::Float64 = 1400.0
   var"CdA"::Float64 = 0.63
@@ -58,11 +56,9 @@ function DyadInterface.run_analysis(spec::NoisyCruiseTransientSpec)
   push!(overrides, no_namespace_model.Ti => spec.var"Ti")
   push!(overrides, no_namespace_model.Td => spec.var"Td")
   push!(overrides, no_namespace_model.Nd => spec.var"Nd")
-  push!(overrides, no_namespace_model.Ni => spec.var"Ni")
   push!(overrides, no_namespace_model.T_max => spec.var"T_max")
   push!(overrides, no_namespace_model.y_max => spec.var"y_max")
   push!(overrides, no_namespace_model.y_min => spec.var"y_min")
-  push!(overrides, no_namespace_model.wp => spec.var"wp")
   push!(overrides, no_namespace_model.wd => spec.var"wd")
   push!(overrides, no_namespace_model.m => spec.var"m")
   push!(overrides, no_namespace_model.CdA => spec.var"CdA")

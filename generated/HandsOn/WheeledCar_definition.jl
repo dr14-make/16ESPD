@@ -5,16 +5,26 @@
 
 
 @doc Markdown.doc"""
-   WheeledCar(; name)
+   WheeledCar(; name, theta_e, T_max, m, CdA, J_w)
 
 The car of step 5 with a wheel that has inertia.
+
+## Parameters:
+
+| Name         | Description                         | Units  |   Default value |
+| ------------ | ----------------------------------- | ------ | --------------- |
+| `theta_e`         | Injection-to-torque transport delay                         | s  |   0.3 |
+| `T_max`         | Peak deliverable torque                         | N.m  |   150 |
+| `m`         | Vehicle mass                         | kg  |   1400 |
+| `CdA`         | Aerodynamic drag area, Cd * A                         | m2  |   0.63 |
+| `J_w`         | Road wheel and tire inertia                         | kg.m2  |   1.0 |
 
 ## Connectors
 
  * `tau_cmd` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `v_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function WheeledCar(; name = nothing, kwargs...)
+@component function WheeledCar(; name = nothing, theta_e=0.3, T_max=Float64(150), m=Float64(1400), CdA=0.63, J_w=Float64(1.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,6 +55,18 @@ The car of step 5 with a wheel that has inertia.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Real), [description = "Peak deliverable torque"])
+  __initial_conditions[T_max] = __local__T_max
+  __local__m = m
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  __initial_conditions[m] = __local__m
+  __local__CdA = CdA
+  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area, Cd * A"])
+  __initial_conditions[CdA] = __local__CdA
+  __local__J_w = J_w
+  append!(__params, @parameters (J_w::Real), [description = "Road wheel and tire inertia"])
+  __initial_conditions[J_w] = __local__J_w
 
   ### Final Parameters (assignments)
 
@@ -62,13 +84,13 @@ The car of step 5 with a wheel that has inertia.
   ### Components
   # Subcomponent engine of type VehicleSystemsComponents.HandsOn.Engine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn.Engine(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn.Engine(; theta_e=theta_e, T_max=T_max, engine_overrides...))
   # Subcomponent driveline of type VehicleSystemsComponents.HandsOn.WheeledDriveline
   driveline_overrides = __pop_subcomponent_overrides!(__overrides, "driveline")
-  push!(__systems, @named driveline = VehicleSystemsComponents.HandsOn.WheeledDriveline(; driveline_overrides...))
+  push!(__systems, @named driveline = VehicleSystemsComponents.HandsOn.WheeledDriveline(; J_w=J_w, driveline_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; m=m, CdA=CdA, body_overrides...))
   # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
   vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
   push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))

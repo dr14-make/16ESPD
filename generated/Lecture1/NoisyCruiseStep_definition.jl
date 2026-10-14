@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   NoisyCruiseStep(; name, theta_e, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, grade, v_lo, v_hi, v0, tau0, t_step, amplitude)
+   NoisyCruiseStep(; name, theta_e, k, Ti, Td, Nd, T_max, y_max, y_min, wd, m, CdA, grade, v_lo, v_hi, v0, tau0, t_step, amplitude)
 
 Flat-road 90 to 110 km/h setpoint-step scenario for `NoisyCruiseLoop`.
 
@@ -21,11 +21,9 @@ without rebuilding the model.
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
-| `Ni`         |                          | --  |   0.9 |
 | `T_max`         |                          | N.m  |   150.0 |
 | `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
-| `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
 | `m`         |                          | kg  |   1400.0 |
 | `CdA`         |                          | m2  |   0.63 |
@@ -37,7 +35,7 @@ without rebuilding the model.
 | `t_step`         |                          | s  |   0.0 |
 | `amplitude`         |                          | --  |   0.2 |
 """
-@component function NoisyCruiseStep(; name = nothing, theta_e=0.3, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, grade=Float64(0.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), amplitude=0.2, y_max=T_max, kwargs...)
+@component function NoisyCruiseStep(; name = nothing, theta_e=0.3, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, grade=Float64(0.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), amplitude=0.2, y_max=T_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -80,9 +78,6 @@ without rebuilding the model.
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
   __initial_conditions[Nd] = __local__Nd
-  __local__Ni = Ni
-  append!(__params, @parameters (Ni::Real))
-  __initial_conditions[Ni] = __local__Ni
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
   __initial_conditions[T_max] = __local__T_max
@@ -92,9 +87,6 @@ without rebuilding the model.
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
   __initial_conditions[y_min] = __local__y_min
-  __local__wp = wp
-  append!(__params, @parameters (wp::Real))
-  __initial_conditions[wp] = __local__wp
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
@@ -140,7 +132,7 @@ without rebuilding the model.
   ### Components
   # Subcomponent loop of type VehicleSystemsComponents.Lecture1.NoisyCruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.NoisyCruiseLoop(; theta_e=theta_e, with_I=true, with_D=true, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m=m, CdA=CdA, amplitude=amplitude, m0=v_lo, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.NoisyCruiseLoop(; theta_e=theta_e, with_I=true, with_D=true, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wd=wd, m=m, CdA=CdA, amplitude=amplitude, m0=v_lo, loop_overrides...))
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
   push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=v_lo, height=v_hi - v_lo, start_time=t_step, demand_overrides...))

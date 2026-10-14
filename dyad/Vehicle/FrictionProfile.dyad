@@ -41,6 +41,11 @@ metadata {
         "stop": 2,
         "atol": {"sink.y": 1e-9},
         "expect": {"initial": {"sink.y": 1}, "final": {"sink.y": 1}, "signals": ["sink.y"]}
+      },
+      "mid_patch": {
+        "stop": 0.75,
+        "atol": {"sink.y": 1e-9},
+        "expect": {"initial": {"sink.y": 1}, "final": {"sink.y": 0.2}, "signals": ["sink.y"]}
       }
     }
   }

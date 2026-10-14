@@ -29,6 +29,10 @@ relations
   connect(wheel.support_r, support_r) {^id6}
   connect(wheel.support_t, support_t) {^id7}
 metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/WheeledDriveline.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
   "_links": {
     "spline": {
       "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 450, "y2": 550}}}
@@ -108,27 +112,21 @@ metadata {
     }
   },
   "_links": {
-    "torque": {
-      "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}
-    },
-    "driveline": {
-      "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}
-    },
-    "housing": {
-      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 700, "y2": 800}}}
-    },
+    "torque": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "driveline": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 700, "y2": 800}}}},
     "mass": {"Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 450, "y2": 550}}}},
-    "road": {"Dyad": {"placement": {"diagram": {"x1": 410, "x2": 510, "y1": 700, "y2": 800}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 361, "x2": 461, "y1": 700, "y2": 800}}}},
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id3": {
       "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 388, "y": 650}, {"x": 200, "y": 650}], "E": 2}],
+        "edges": [{"S": 1, "M": [{"x": 388, "y": 650}, {"x": 150, "y": 650}], "E": 2}],
         "path": {}
       }
     },
     "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 411, "y": 700}], "E": 2}], "path": {}}}
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end

@@ -9,7 +9,7 @@ layout: cover
 
 Vehicle Systems &amp; Components — Lecture 1
 
-One car, three fidelity levels, ten notebooks.
+Cruise control for the car you built, in ten notebooks.
 
 <div class="text-xs opacity-60 mt-12">
 
@@ -20,192 +20,373 @@ presenter mode from the nav bar, bottom left
 </div>
 
 <!--
-**Before the room fills.** Deck on the projector, notebooks on the laptop screen. Open
-**presenter mode** from the nav bar now (bottom left, it appears on hover): these notes, the
-next slide and a timer in the same tab, no popup to block.
+Welcome. This is the second of two sessions on one car. In the hands-on you built it and learned its
+physics. I will not repeat that physics today. Where a slide relies on it, a gray "Hands-on step"
+line links to the slide where you built that part.
 
-**Where this sits:** second of two sessions on one car. In the hands-on
-(`slides/decks/handson-01/`) students learned each part's physics and built it. This deck does not
-repeat that physics: wherever a slide relies on it, a grey *↩ Hands-on step NN* line links to
-the exact slide. If a group skipped the hands-on, show its slides on the forces (step 04's
-"Four forces on the car") and top speed (step 05, "Adding it all up" to "Top speed") first —
-ten minutes.
+Today you build cruise control for that car, one block at a time. The car does not change. Every new
+idea is a change to the **controller**.
 
-**Say:** you built a car; today we control it six different ways. The car never changes.
-Every new idea in this lecture is a change to the *controller*, never a change of subject —
-so whatever you understand about the car at minute ten is still true at minute ninety.
+If you skipped the hands-on, make your own copy of the MyCar template on GitHub. The guide page
+links to it.
 
-**Timing:** 90 minutes. The spine is sections 01, 03, 04, 05, 06, 08 — about 60 minutes.
-Everything else is bonus; drop from the back, not the middle. Each section's first slide
-tells you, in these notes, whether it is safe to cut.
+Every build step has one slide: a Studio screenshot, a one-line recipe, and a "page: step" link to
+the guide page on the course site. I build every step live, as you do.
 
-**Driving the deck.** **→** or **Space** next slide, **←** previous. **O** overview of
-everything, **G** jump to a slide number, **F** fullscreen. Presenter mode, opened from the
-nav bar (bottom left, on hover), is this window: these notes, the next slide and a timer.
+If you fall behind, follow the guide page. It has every block, parameter, wire and expected plot.
+Two checkpoints let you rejoin with a working model: P at the end of section 03, and PID at the end
+of section 05. The guide page has both as code to paste. The course repository has them as
+`Lecture1.Step03` and `Lecture1.Step05`.
 
-**Two screens.** Deck on the projector, Jupyter on the laptop. Every demo slide names the
-notebook file and the cell heading and carries the code, with a copy button, so you never
-hunt through a notebook with your back to the room. A grey strip means there is a Dyad model
-worth having open for that beat.
+Demo slides name the notebook and the cell, with the code and a copy button. A gray strip means a
+Dyad model worth having open.
 
-**Handout:** `handout.pdf`, published next to the deck — one slide per page, these notes
-excluded.
+The handout, `handout.pdf`, is published next to the deck, one slide per page.
+-->
 
-**If a solve stalls in front of the room:** every notebook is committed with its outputs.
-Scroll to the plot that is already there and keep talking. Do not debug live.
+---
+routeAlias: before-we-begin
+---
+
+## Before we begin: keep Julia's memory in check
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8">
+<div>
+
+The Julia language server indexes every package environment it can find. With the Dyad libraries
+that is several gigabytes, and the laptop starts killing Julia mid-build.
+
+1. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → **Preferences: Open Workspace Settings (JSON)**
+2. Add the three lines on the right inside the braces.
+3. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → **Developer: Reload Window**
+
+The MyCar template already has them.
+
+</div>
+<div>
+
+```json [.vscode/settings.json]
+{
+  "julia.enableDynamicIndexing": false,
+  "julia.maxConcurrentIndexingProcesses": 1,
+  "julia.enableWorkspaceEnvironmentResolution": false
+}
+```
+
+> **Still slow?**
+>
+> Close other VS Code windows that have a Julia project open. Each one starts its own language
+> server.
+
+</div>
+</div>
+
+<!--
+Before we build anything, one setting. The Julia extension's language server reads every package
+environment it can find, so it can show you completions. With the Dyad libraries that costs
+several gigabytes. On an 8 or 16 gigabyte laptop the system then starts killing Julia processes,
+and your simulation dies halfway.
+
+Open your workspace settings as JSON, add these three lines, and reload the window. They keep the
+indexing to one process and stop it from crawling every environment. If you made your copy from
+the MyCar template, they are already there.
 -->
 
 ---
 
 ## The ten notebooks
 
-| # | Title | The point of it |
+| # | Title | What it shows |
 |---|---|---|
 | <Link to="the-car">01</Link> | The car | the step test: read K, τ and θ off the car you built |
-| <Link to="open-vs-closed-loop">02</Link> | Open vs closed loop | feedforward is right until the hill |
+| <Link to="open-vs-closed-loop">02</Link> | Open vs closed loop | feedforward holds the speed until the hill |
 | <Link to="proportional">03</Link> | P | error shrinks with k but never reaches zero |
 | <Link to="proportional-integral">04</Link> | PI | the integrator finds notebook 02's answer by itself |
-| <Link to="pid">05</Link> | PID | three terms, three jobs: present, past, future |
-| <Link to="windup">06</Link> | Windup | the hill the engine cannot climb |
-| <Link to="derivative-and-noise">07</Link> | Derivative and noise | small noise, steep slope, ruined command |
+| <Link to="pid">05</Link> | PID | P, I and D act on the present, past and future error |
+| <Link to="windup">06</Link> | Windup | a hill steeper than the engine can climb |
+| <Link to="derivative-and-noise">07</Link> | Derivative and noise | the derivative amplifies sensor noise |
 | <Link to="tuning">08</Link> | Tuning | a gain set from one step test, without a model |
-| <Link to="discretization">09</Link> | Discretization | the strobe light slows down |
-| <Link to="wheel-and-slip">10</Link> | Wheel and slip | cruise control meets black ice |
+| <Link to="discretization">09</Link> | Discretization | the controller samples less and less often |
+| <Link to="wheel-and-slip">10</Link> | Wheel and slip | cruise control on black ice |
 
 <!--
-**Say:** here is the whole lecture on one slide. Ten short steps. Each one is a notebook you
-can re-run yourself afterwards — they are committed with their outputs, so they read even
+These are the ten notebooks, one per section. Each is committed with its outputs, so you can read it
 without the modeling tools installed.
 
-**Point at:** the column on the right. Rows 01, 03, 04, 05, 06, 08 are the ones we will
-definitely do. The others are there if the room moves quickly.
+You do not only watch. From section 01 to section 10 you build the cruise controller yourself, and
+every plot comes from a diagram on your own screen. The exception is 09, a demo.
 
-**Cutting for time:** drop 10, then 07, then 09, then 02. Never cut from the middle of the
-P → PI → PID → windup run; that sequence is one argument.
+Rows 03 and 05 are the two checkpoints, P and PID.
 -->
 
 ---
 
-## One diagram, and all of control theory hangs off it
-
-![The general control diagram: a reference enters a comparator, the error goes to a controller which produces a control input u, u enters the system alongside a disturbance d, the system state x evolves, a sensor measures it producing a noisy measurement y, and y is fed back to the comparator.](/diagrams/00-control-loop.svg)
-
-<!--
-**Say:** this one picture is the map for the whole subject, and for the next ninety minutes.
-Everything we build today is a change to one box in it.
-
-**Walk it with your hand,** naming each signal:
-
-- *r*, the reference — what we want. Somebody has to decide it; that is **planning**, and for
-  us it is just "the driver set 110".
-- *u*, the control input — what we deliberately do. Steering, brake, throttle.
-- *d*, the disturbances — what acts on the system anyway, and never asked us.
-- *x*, the state — what the system is actually doing.
-- *y*, the measurement — what we can *see* it doing, which is not the same thing, because
-  every sensor adds noise.
-
-**Say:** and note the shape of the argument. Feedback means the sensor's noise gets fed into
-the controller and therefore affects the true state. Noise in a feedback loop does not just
-make the picture fuzzy — it moves the car.
-
-**Ask the room:** which of these five do you have direct control over? *(Only u. Everything
-else is either chosen by somebody else or done to you.)*
-
-**Readout — every symbol on this slide**
-
-- **r** — the *reference*, also called the setpoint or the command. What we want. Units of
-  whatever we are controlling; here km/h.
-- **e** — the *error*, r minus the measurement. Same units as r. Zero means we are where we
-  asked to be.
-- **u** — the *control input*, also called the actuating signal or plant input. What the
-  controller chooses. Here, newton-metres of commanded engine torque.
-- **d** — the *disturbances*. Inputs we do not choose and cannot command: the hill, the wind,
-  the luggage.
-- **x** — the *state*. What the system is actually doing, and what it remembers. Here, road
-  speed, and how full the inlet manifold is.
-- **y** — the *measurement*, also called the controlled variable or plant output. What the
-  sensor reports, which is the state plus noise.
--->
-
----
-
-## The car you built
+## What a system is
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-| Step | Your `MyCar` | Course model |
-|---|---|---|
-| 02 | `Engine` | `Vehicle.IdealEngine` |
-| 03 | `Driveline` | `Vehicle.Driveline` |
-| 07 | `GradeBody` | `Vehicle.VehicleBody` |
-| 05 | `Car` | `Vehicle.CarPlant` |
-| 06 | `WheeledCar` | `Lecture1.WheeledCarPlant` |
-| 10 | `SlipCar` | `Lecture1.SlipCarPlant` |
+A set of interacting parts that forms one whole. Every system has:
+
+- **structure** — parts, related directly or through each other
+- **behavior** — processes that turn inputs into outputs: material, energy, data
+- **interconnection** — the parts and processes are linked
+
+Too big to understand at once? Split it into subsystems, and those into parts. You already did:
+`Car` is `Engine`, `Driveline` and `Body`.
 
 </div>
 <div>
 
-Same parts, same parameters. `CarPlant` adds a `grade` input, and names the 3.6 gain
-`ToKmPerHour`. Both reach 246.39 km/h at 300 s.
+| Element | In your `Car` |
+|---|---|
+| Inputs and outputs | `tau_cmd` in, `v_kmh` out |
+| Processor | engine, driveline, body |
+| Control | the cruise controller, built today |
+| Environment | the road grade, the air |
+| Feedback | the speed sensor, back to the controller |
+| Boundary and interface | the component's ports |
 
-> **What we know before any controller**
->
-> The torque arrives late, slow and capped. Drag is quadratic. The tire has a peak.
-> Every one of those comes back today as a control problem.
+</div>
+</div>
 
-↩ [What we built in the hands-on](../handson-01/index.html#/what-we-build) ·
-[hands-on page](../handson/lecture-01/index.html)
+<img src="/diagrams/00-car-chain.svg" class="mx-auto h-52" alt="The car as a chain of parts: the pedal command goes into the engine, the engine's shaft into the gear and wheel, the wheel pushes the body along the road, and a speedometer reads the body's speed in km/h.">
+
+<!--
+First, what do we control? A system is parts that interact and together do something none of them
+does alone. The engine alone does not move. The body alone does not accelerate. Together they are a
+car.
+
+The last line of the left column is how we work: split the system into parts. You modeled an engine,
+a driveline and a body, and connected them. That was the hands-on.
+
+Now the table, against your own `Car` diagram. Two rows are still empty, and this lecture fills
+them. Control is the controller we build from section 02 on. Feedback is the wire from `v_kmh` back
+into it. Note the boundary row. A component's ports are where the system ends and its environment
+begins. Whatever crosses a port is an input or an output. Everything else is internal.
+-->
+
+---
+
+## What a control system is
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+### Control system
+
+A mechanism that changes the future behavior of a system, so that its output tends toward the
+state we want.
+
+### Control theory
+
+The mathematics of choosing that input. Without it, the strategy is trial and error.
+
+</div>
+<div>
+
+### The question, every time
+
+- a **plant** — the system we are given: here, the car
+- a **desired output** — here, 110 km/h
+- **how do we change the input** to get it? Here, the torque command.
+
+The rest of this lecture is answers to the third line. Whether the answer looks at the output
+or not is <Link to="open-vs-closed-loop">section 02</Link>.
 
 </div>
 </div>
 
 <!--
-**Say:** you met this car in the hands-on — each part explained on paper car, and in Dyad,
-built part by part. Today it is the plant, and it does not change.
+A control system is the part we add so that the plant ends up where we want it. Control theory picks
+the input on purpose instead of by trying things. Trial and error works: the first tuning method in
+section 08 is "guess and check". It just does not tell you why it works, or when it will stop.
 
-**Point at:** the left column. Every row is a model they built, next to the course model the
-notebooks run. They are the same components; the course versions live in `Vehicle/` so
-lecture 2 can reuse them. The 1 kg·m² wheel and the slip wheel live in `Lecture1/` harnesses
-that section 10 uses.
+Every control problem has the three parts on the right. Today the plant is the car you built, and
+the desired output is a speed. Everything from section 02 on is a different answer to the third
+line.
+-->
 
-**Point at:** the callout, one phrase at a time, and name where each returns: the lags in the
-step test and in tuning (sections 01 and 08), the square in the step test's θ (section 01),
-the tire's peak on ice (section 10).
+---
 
-**Timing:** 2 minutes. If the room did not do the hands-on, spend 5 here and show
-`dyad/Vehicle/CarPlant.dyad` open in Dyad — the force balance as a diagram — instead.
+## Three kinds of control
 
-**Ask the room:** what did your car need that it did not have in step 05, before it could
-climb a hill? *(A grade input — step 07. CarPlant has it, which is why every harness today
-feeds it two signals.)*
+| Kind | The reference | Example |
+|---|---|---|
+| **Fixed setpoint** | set once, held | cruise control at 110 km/h — **today** |
+| **Follow-up** | moves, and nobody knows in advance how | adaptive cruise behind the car in front; automatic climate control |
+| **Program** | moves along a schedule fixed in advance | central heating by time of day; a radar antenna's sweep |
+
+The controller is the same in all three. Only where the reference comes from changes.
+
+<!--
+Controllers are often sorted by what the reference does. Fixed setpoint: the driver sets 110, and
+the job is to hold it against hills and wind. That is today. Follow-up: the reference moves and you
+cannot know its future, like adaptive cruise following the car ahead. Program: the reference moves
+on a timetable written beforehand, like heating that comes on at six.
+
+The PID only ever sees the error, so it works in all three. What changes is the job. Holding a
+setpoint is mostly rejecting disturbances. Following a moving reference is mostly speed of response.
+
+Open versus closed loop gets its own section, 02. Transient, steady state and dynamic come in
+section 01, on the car's step test.
+-->
+
+---
+
+## The feedback control loop
+
+![The general control diagram: a reference enters a comparator, the error goes to a controller which produces a control input u, u enters the system alongside a disturbance d, the system state x evolves, a sensor measures it producing a noisy measurement y, and y is fed back to the comparator.](/diagrams/00-control-loop.svg)
+
+<!--
+We use this diagram for the next three hours. Everything we build changes one box in it.
+
+r is the reference, what we want. Deciding it is **planning**. For us that is the driver
+setting 110. u is the control input, what we deliberately do: here, commanded engine torque in
+newton-meters. d is the disturbances: the hill, the wind, the luggage. We do not choose them. x is
+the state, what the system is actually doing and remembers: road speed, and how full the inlet
+manifold is. y is the measurement, what we can **see**. It is the state plus sensor noise. e is the
+error, r minus the measurement, in km/h. Zero means we are where we asked to be.
+
+Of these, we set only u.
+
+With feedback, sensor noise enters the controller. It changes the command, so the noise moves the
+real car, not only the plotted line.
+
+Books use other names. The reference is also the setpoint or the command. The control input is the
+actuating signal or the plant input. The measurement is the controlled variable or the plant output.
+-->
+
+---
+
+## Five tasks of control engineering
+
+| Task | Where it sits on the diagram | Today |
+|---|---|---|
+| **Planning** | produces the reference r | the driver sets 110 km/h |
+| **Control** — feedforward or feedback | turns r, and maybe y, into u | PID, built block by block |
+| **State estimation** | turns the noisy y into an estimate of x | a derivative filter, in 07 |
+| **Modeling** | first principles, or fitted to data: *system identification* | the hands-on car; the step test in 01 |
+| **Analysis, simulation, test** | does the loop meet its requirements? | every run in Dyad |
+
+Models feed all the others: the controller, the estimator, the plan and the analysis.
+
+<div class="text-xs opacity-60 mt-6">
+
+Reference: Brian Douglas, *Everything You Need to Know About Control Theory*, MathWorks Control
+Systems in Practice — <a href="https://youtu.be/lBC1nEq0_nk" target="_blank">youtu.be/lBC1nEq0_nk</a>
+
+</div>
+
+<!--
+Control engineering is these five tasks, each tied to a part of the diagram you just saw.
+
+Planning decides the reference. For a self-driving car that is a big subject: a path that avoids
+obstacles, follows the rules of the road, and that the car can drive. For us it is one number, 110.
+
+Control turns the reference into the input. Feedforward does it without looking at the result.
+Feedback looks at the measurement and corrects. Today we build a feedback controller, PID.
+
+State estimation turns the noisy y into a best guess of the true state. A running average does that.
+So does a Kalman filter. Section 07 has the simplest one there is, a filter on the derivative.
+
+Every other task needs a model. You can write one from physics, as you did for the car in the
+hands-on. Or you can measure the real system and fit a model to the data. That is system
+identification, and the step test in section 01 is an example.
+
+Analysis, simulation and test checks that the result works: stability margins, Bode and Nyquist
+plots, simulation. Every Dyad run today is this task.
+
+The model is used everywhere, which is why the hands-on came first.
+
+The table follows a short MathWorks video by Brian Douglas, linked on the slide. It takes about
+fifteen minutes.
+-->
+
+---
+
+## Feedback controllers, controllability and observability
+
+<div class="grid grid-cols-2 gap-8">
+<div>
+
+| Family | Examples |
+|---|---|
+| Linear | **PID** — today; full state feedback |
+| Nonlinear | on-off, sliding mode, gain scheduling |
+| Robust | μ-synthesis, active disturbance rejection |
+| Adaptive | extremum seeking, model reference adaptive |
+| Optimal | LQR |
+| Predictive | model predictive control |
+| Intelligent | fuzzy logic, reinforcement learning |
+
+</div>
+<div>
+
+### Is it controllable?
+
+Can the input actually move the state we care about? Torque moves the car's speed: yes.
+
+### Is it observable?
+
+Can we work out every state we feed back from what we measure? A speedometer alone also gives
+acceleration, as its derivative: yes.
+
+### Feedback can stabilize or destabilize
+
+Feedforward changes how a system is operated. Feedback changes its dynamics, so it can make a
+system more stable, or unstable.
+
+</div>
+</div>
+
+<!--
+The left column sorts feedback controllers into families. Linear ones, like PID, assume the system
+behaves roughly linearly. Nonlinear ones, like an on-off thermostat, do not. Robust ones keep
+working when the model is wrong by a known amount. Adaptive ones change as the system changes.
+Optimal ones, like LQR, trade performance against effort by minimizing a cost. Predictive ones run a
+model inside the controller and choose the input whose predicted future matches the reference.
+Intelligent ones, like fuzzy logic or reinforcement learning, learn from data.
+
+Today we use PID, by far the most common.
+
+Before any of them, two questions. Is the system controllable: can our input move the state we care
+about? Torque moves the speed, so yes. Is it observable: can we work out every state we feed back
+from what we measure? A speedometer also gives acceleration, as its derivative, so yes.
+
+The last box applies all afternoon. Feedforward changes how we operate a system. Feedback changes
+its dynamics, how it responds over time. So feedback can make an unstable system stable, and a
+stable one unstable. We need it because we never know the system exactly, so we analyze a loop
+before we trust it.
 -->
 
 ---
 
 ## Where the models live
 
-#### Vehicle/ — the car
+<div class="grid grid-cols-2 gap-8">
+<div>
 
-*Physical components. Lecture 2 uses these unchanged, which is the test for whether something
-belongs here.*
+#### HandsOn/ — the car, as you built it
 
-- `IdealEngine.dyad` — delay, lag, torque limit
-- `Driveline.dyad` — gear, wheel
-- `VehicleBody.dyad` — mass, drag, rolling, grade
-- `GradeForce.dyad` — the hill, as a force
-- `Conversions.dyad` — ToKmPerHour — the one conversion
-- `CarPlant.dyad` — all of the above, wired up
-- `GradeProfile.dyad` — flat → climb → flat
+*The plant. Today it gains a grade input and, later, a few parameters, but never a new part.*
+
+- `Engine`, `Driveline`, `Body`, `Car` — hands-on steps 02–05
+- `GradeForce`, `GradeBody` — step 07, the hill
+- `GradeCar` — `Car` on a road with a grade, **built today** in section 01
+- `WheeledCar`, `SlipCar` — steps 06 and 10, back in section 10
+
+</div>
+<div>
 
 #### Lecture1/ — what we do to it
 
 *Controllers and scenario harnesses. A plant cannot run on its own: its inputs would be
-unconnected, so every demo is a harness around `CarPlant`.*
+unconnected, so every demo is a harness around `Car` or `GradeCar`.*
 
-- `WideOpenThrottle.dyad` → section 01
-- `CarStepTest.dyad` → sections 01, 08
-- `CruiseLoop.dyad` → sections 02–06, 08, 09
+- `WideOpenThrottle`, `CarStepTest` → section 01
+- `CruiseController` → **built today**, sections 02–06
+- `CruiseLoop` → sections 02–06, 08
 
 > **Each harness ships an analysis**
 >
@@ -213,41 +394,36 @@ unconnected, so every demo is a harness around `CarPlant`.*
 > the initial conditions and the run window live in the model, so a notebook cell is a run and
 > a plot.
 
+</div>
+</div>
+
 <!--
-**This slide is the map for the whole lecture.** Leave it up while you say the rule, because
-it is the thing students most often get wrong when they build their own:
+The car goes in one place and the experiment in another. Part of the car: `HandsOn`. There because
+of what we teach today, like a step source, a setpoint or a controller: `Lecture1`. Your `MyCar` has
+no folders, so everything sits side by side, but keep the split in your head. Your `GradeCar` from
+section 01 sits next to your `Car`, and the controller and the loop are new components beside them.
 
-**Say:** the car goes in one place and the experiment goes in another. If lecture 2 would use
-it unchanged, it is a *Vehicle*. If it exists because of what we are teaching today — a step
-source, a setpoint, a controller — it is a *Lecture1*. Moving a component between them later
-breaks every reference to it, so the line gets drawn at the start.
+The harnesses exist because `GradeCar` has two inputs, torque and grade. Unconnected, the model has
+more unknowns than equations and will not solve. So every demo today is the same plant with
+something different plugged into those two inputs.
 
-**Say:** and notice why the harnesses exist at all. `CarPlant` has two inputs, torque and
-grade. Leave them unconnected and the model is not solvable — it has more unknowns than
-equations. So every single demo today is the same plant with something different plugged
-into those two inputs.
+A quick check. A traffic-light sequence is a scenario, so `Lecture1`. A tire pressure is the car, so
+`HandsOn`.
 
-**Ask the room:** where would a traffic-light sequence belong? A tyre pressure? *(The
-sequence is a scenario — Lecture1. The pressure is the car — Vehicle.)*
+You may see a package called `Vehicle`. It is the course library for lectures 2 and 3. Today's
+notebooks do not use it.
 
-**Practical:** when a slide carries a grey "open in Dyad" strip, that is the model to have on
-the second screen for that beat. You do not need it open all the time — only where the
-diagram says something the plot cannot.
-
-**Terms, if anyone asks**
-
-- **Component** — a Dyad block with ports, parameters and equations. `IdealEngine` is one.
-- **Harness** — a component whose job is to make another one runnable, by connecting sources
-  to its inputs and setting initial conditions.
-- **Analysis** — a named, runnable experiment: a model plus a stop time plus the parameters
-  you may vary. `CruiseLoopTransient` is one.
-- **Structural parameter** — one that changes the *equations*, so each value is a separately
-  compiled model. `with_I` is one; an ordinary parameter like `k` is not.
+Four terms for today. A component is a Dyad block with ports, parameters and equations, like
+`Engine`. A harness makes another component runnable: sources on its inputs, and initial conditions.
+An analysis is a named, runnable experiment: a model, a stop time, and the parameters you may vary,
+like `CruiseLoopTransient`. A structural parameter changes the **equations**, so each value is a
+separately compiled model. `theta_e`, the engine's delay, is one. An ordinary parameter like `k` is
+not.
 -->
 
 ---
 
-## The car, once
+## The car's parameters
 
 <!-- theta_e is 0.3 s: at 0.04 s the Ziegler-Nichols
      demo in notebook 08 relay-limit-cycled against the torque limit instead of oscillating
@@ -268,7 +444,7 @@ diagram says something the plot cannot.
 | manifold lag *τ<sub>e</sub>* | 0.3 | s |
 | transport delay *θ<sub>e</sub>* | 0.3 | s |
 
-*Nine numbers. Everything else in this lecture is arithmetic on them.*
+*Every car quantity in this lecture is calculated from these nine numbers.*
 
 </div>
 <div>
@@ -283,49 +459,33 @@ diagram says something the plot cannot.
 > **Every one of these was derived on paper**
 >
 > In [hands-on step 05](../handson-01/index.html#/top-speed), and checked by every student's model.
-> The hill in notebook 06 defeats the engine because 2024 N &gt; 1935 N, and you can check
-> that.
+> The hill in notebook 06 is too steep for the engine because 2023 N &gt; 1935 N.
 
 </div>
 </div>
 
 <!--
-**Say:** the same nine numbers students typed into their own `Engine`, `Driveline` and
-`Body`. Leave this slide up a moment: the right-hand column is what the lecture leans on —
-31.1 and 40.1 N·m are the step test in section 01, and 1935 N is the ceiling the hill in
-section 06 breaks.
+These are the nine numbers you typed into your own `Engine`, `Driveline` and `Body`. Three come back
+as control problems: the 150 newton-meter ceiling in section 06, the 0.3 second delay and lag in
+section 08's tuning, and the delay again in section 09's sampling.
 
-**Ask the room:** which of these nine matters most for how hard this car is to control?
-*(They heard the answer in hands-on step 02: the two lags at the bottom. Section 01's step
-test is where they show up on a plot.)*
+The right-hand column follows from them. 31.1 newton-meters holds 90 km/h, and every loop today
+starts there, already cruising. 31.1 and 40.1 are the step test in section 01. 1935 newtons, T max
+times i over r, is the most the engine can push. The hill in section 06 needs more.
 
-**On the transport delay:** 0.3 s is the whole powertrain torque-response path — ECU,
-fuelling, combustion, driveline compliance — not injection alone. If someone objects that
-injection is faster than that, they are right, and the model lumps more than injection into
-this one number.
+The two lags at the bottom matter most for how hard this car is to control, as you saw in hands-on
+step 02. The transport delay, theta e, is a pure delay: how long before the engine responds at all.
+It lumps the whole torque path into one number: the ECU, fueling, combustion and driveline
+compliance. The manifold lag, tau e, is first order: how long the engine takes to build the torque
+it was asked for. Section 01's step test shows both on a plot.
 
-**Readout — every symbol on this slide**
-
-- **m** = 1400 kg — vehicle mass.
-- **C<sub>d</sub>A** = 0.63 m² — drag area: the drag coefficient times the frontal area, kept
-  as one number because only the product matters.
-- **ρ** = 1.2 kg/m³ — air density at sea level.
-- **f_r** = 0.012 — rolling resistance coefficient, dimensionless. Tyre losses as a fraction
-  of the normal load.
-- **r** = 0.31 m — wheel rolling radius.
-- **i** = 4.0 — total gear ratio, dimensionless. Engine turns four times per wheel turn.
-- **T<sub>max</sub>** = 150 N·m — the engine's torque ceiling.
-- **τ<sub>e</sub>** = 0.3 s — the manifold-filling lag: a first-order lag, how long the
-  engine takes to build the torque it was asked for.
-- **θ<sub>e</sub>** = 0.3 s — the powertrain transport delay: a pure dead time, how long
-  before anything at all happens.
-- **1935 N** — maximum tractive force, T<sub>max</sub>·i/r. **246 km/h** — terminal speed.
-  **31 and 40 N·m** — torque to hold 90 and 110 km/h.
+C d A is the drag coefficient times the frontal area, kept as one number because only the product
+matters.
 -->
 
 ---
 
-## Two conventions, for the whole lecture
+## Units in this lecture
 
 <div class="grid grid-cols-2 gap-8">
 <div>
@@ -337,8 +497,8 @@ and means the same thing:
 
 **k** is in **N·m per km/h**.
 
-*"Five newton-metres for every km/h I am off." That is a sentence an engineer can
-sanity-check; **k = 220** in mixed units is not.*
+*"Five newton-meters for every km/h of error" can be checked against the car; **k = 220** in
+mixed units cannot.*
 
 </div>
 <div>
@@ -348,30 +508,21 @@ sanity-check; **k = 220** in mixed units is not.*
 The plant's internals are SI throughout. Exactly one conversion exists in the whole model, and
 it is a visible block on the sensor output:
 
-`Vehicle.ToKmPerHour`
+`to_kmh` — `Gain(k = 3.6)`
 
-*The `Gain(k = 3.6)` of hands-on step 05, under a name. No notebook ever multiplies a plotted
+*The block you put on `Car`'s sensor in hands-on step 05. No notebook ever multiplies a plotted
 signal by 3.6: if a speed axis says km/h it is because the model emitted km/h.*
 
 </div>
 </div>
 
 <!--
-**Say:** two housekeeping rules, and then we start. Both exist so that a number on a plot
-means one thing only.
+Two rules about units, so a number on a plot has one meaning.
 
-**Why it matters:** the most common way a student's cruise controller "mysteriously"
-misbehaves is a gain tuned against m/s driving a loop that measures km/h — a silent factor
-of 3.6. Put the conversion in the model where you can see it, once.
+A common cruise-control bug is a gain tuned in meters per second, in a loop that measures km/h: a
+silent factor of 3.6. So the conversion sits in the model, once, on the sensor output. Inside the
+plant everything stays in meters per second, newtons and kilograms.
 
-**Ask the room:** if I tell you my gain is 220, what is missing? *(Units. Wait for it —
-someone will say it.)*
-
-**Readout — every symbol on this slide**
-
-- **k** — the controller gain, N·m per km/h. "This many newton-metres for every km/h I am
-  off."
-- **km/h** — the unit of the setpoint, the measurement and therefore the error.
-- **SI inside** — the plant computes in m/s, N, kg. One block, `ToKmPerHour`, converts, and it
-  sits on the sensor output.
+If I tell you my gain is 220, what is missing? The units. k is in newton-meters per km/h:
+newton-meters of torque for every km/h of error.
 -->

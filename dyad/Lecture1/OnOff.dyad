@@ -1,0 +1,38 @@
+"Passes the signal through when `on`, outputs zero when off."
+component OnOff
+  extends BlockComponents.Interfaces.SISO
+  "Pass the signal through"
+  parameter on::Boolean = true
+relations
+  y = ifelse(on, u, 0)
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/OnOff.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  }
+}
+end
+
+test component TestOnOff
+  src = BlockComponents.Sources.Constant(k = 2.5)
+  pass = VehicleSystemsComponents.Lecture1.OnOff(on = true)
+  block = VehicleSystemsComponents.Lecture1.OnOff(on = false)
+relations
+  connect(src.y, pass.u)
+  connect(src.y, block.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "case1": {
+        "stop": 1,
+        "atol": {"pass.y": 1e-9, "block.y": 1e-9},
+        "expect": {
+          "initial": {"pass.y": 2.5, "block.y": 0.0},
+          "final": {"pass.y": 2.5, "block.y": 0.0},
+          "signals": ["pass.y", "block.y"]
+        }
+      }
+    }
+  }
+}
+end

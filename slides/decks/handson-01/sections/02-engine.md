@@ -13,11 +13,11 @@ Torque command in, shaft torque out — late, slow, and never more than 150 N·m
 
 <!--
 **Say:** This is the first box of the chain: a transport delay, a
-first-order lag, and a ceiling.
+first-order lag, and an upper limit.
 
-**Tutor:** the delay and the lag are what will make Ziegler–Nichols and
-Cohen–Coon possible in the PID lecture's tuning section — without them the car is first
-order and never oscillates.
+**Tutor:** the delay and the lag make the Ziegler–Nichols and Cohen–Coon
+tuning methods usable in the PID lecture. Without them the car is first order and never
+oscillates.
 
 **First and higher order — explain it here if the room asks:**
 
@@ -35,12 +35,12 @@ order and never oscillates.
   own.
 - **Higher order**: more states, usually a chain of lags. The step response
   starts flat and S-shaped instead of rising at once, and under feedback the loop
-  *can* oscillate — which is exactly what the PID lecture needs. A pure delay is,
+  *can* oscillate, which the PID lecture needs. A pure delay is,
   strictly, infinite order; the Padé block later in this step replaces it with 6 states,
   so this engine alone is already 7th order.
 
 **Timing:** 27 minutes: 7 of theory up front (the next three slides), then 20 building — the longest step. It is the first bench,
-the first analysis and the first plot; everything after reuses the pattern.
+the first analysis and the first plot; every later step reuses the same pattern.
 -->
 
 ---
@@ -72,8 +72,8 @@ real twist on the shaft._
 
 <!--
 **Say:** You will make this plot yourselves in step 2. Read it from left
-to right. At half a second we ask for 200 newton-meters, which is more than the engine can
-give, on purpose. For 0.3 seconds, nothing happens: that flat piece is the delay. Then
+to right. At half a second we ask for 200 newton-meters, deliberately more than the engine
+can give. For 0.3 seconds, nothing happens: that flat piece is the delay. Then
 comes a curve: that is the lag. At 150 newton-meters the curve is cut flat: that is the
 limiter.
 
@@ -124,7 +124,7 @@ $$ T(t) \;=\; T_{\text{req}}\,\big(1 - e^{-t/\tau_e}\big) $$
 | 2 × τₑ = 0.6 s | 86 % |
 | 3 × τₑ = 0.9 s | 95 % |
 
-> **The one thing to remember**
+> **Remember**
 >
 > After one time constant τ, a lag has covered **63 %** of the way. The car
 > itself will turn out to be a lag too — with τ of about a minute.
@@ -135,8 +135,8 @@ $$ T(t) \;=\; T_{\text{req}}\,\big(1 - e^{-t/\tau_e}\big) $$
 <!--
 **Say:** Imagine filling a bathtub from a faucet that gets weaker as the
 tub fills. Far from the target, it fills fast. Close to the target, it fills slowly. You
-get close quickly, but you never quite arrive. That curve is the exponential, and it shows
-up everywhere in this course.
+get close quickly, but you never quite arrive. That curve is an exponential, and you will
+see it often in this course.
 
 **Derivation, step by step** (if a student asks; otherwise just the
 words):
@@ -206,7 +206,7 @@ Request 200 N·m at t = 0.5 s. Delay 0.3 s, lag τₑ = 0.3 s, limit 150 N·m.
    1 − e<sup>−t′/0.3</sup> = 0.75, so e<sup>−t′/0.3</sup> = 0.25. Take logs:
    t′/0.3 = ln 4 = 1.386, t′ = 0.416 s. Add the 0.8 s start: **1.22 s**.
 
-**Say:** We worked out these three numbers before anyone opened Dyad. In
+**Say:** We worked out these three numbers before opening Dyad. In
 ten minutes you will read the same three numbers off your own plot. If they match, your
 engine is built right.
 
@@ -237,7 +237,7 @@ D bench · E run and plot. Walk the room after C — a broken engine makes D imp
 
 ---
 
-## Every push needs something to push against
+## Support ports: every force needs a reaction
 
 <div class="grid grid-cols-[1.4fr_1fr] gap-8">
 <div>
@@ -256,7 +256,7 @@ forward — and pushes the road backward. That is Newton's third law.
 </div>
 <div>
 
-> **Where this bites today**
+> **Where this matters today**
 >
 > Step 02 — the engine needs fixed mounts.
 >
@@ -273,14 +273,14 @@ forward — and pushes the road backward. That is Newton's third law.
 **Say:** Hold a power drill by the battery and pull the trigger. The bit
 spins one way, and the drill tries to spin the other way in your hand. Your hand is the
 Fixed block. Take your hand away, and the drill spins instead of the bit doing any work. A
-model with a loose support has the same problem, and Dyad refuses to run it.
+model with an unconnected support has the same problem, and Dyad does not run it.
 
-**The sign rule, slowly:** Dyad counts force as positive when it flows
+**The sign rule:** Dyad counts force as positive when it flows
 *into* a block. The tire pushes the car forward, so the car pushes the tire
 backward — the force flowing into the tire is backward, so it is negative. Step 09 writes
-exactly that line: `flange.f = -F_x`. Every Dyad and Modelica library uses this
-rule. It looks backwards the first time, and it is the most common cause of a car that
-drives in reverse.
+that line: `flange.f = -F_x`. Every Dyad and Modelica library uses this
+rule. It looks backwards at first, and a wrong sign here is the most common cause of a car
+that drives in reverse.
 -->
 
 ---
@@ -317,15 +317,15 @@ the mounts `Fixed`.
 </div>
 
 <!--
-**Say — name each value once:** A number that a part needs becomes a
+**Say — define each value once:** A number that a part needs becomes a
 parameter of the component. You add it with **Add parameter** in the
 component panel, and the part refers to it by name. Then setting T max to 200 on the
 Engine changes the ceiling in one place. The delay time, theta e, is a structural
 parameter, because the Padé delay block builds its coefficients when the model compiles.
 If the panel offers no structural option, paste that line into the code.
 
-**Say:** The value 200 is above the ceiling on purpose. The plot should
-show the limiter doing its job.
+**Say:** The value 200 is above the limit so that the plot shows the
+limiter working.
 
 **They get wrong:** leaving `support` unconnected in the bench.
 A torque source needs something to push against — the engine mounts. The compile error
@@ -388,8 +388,8 @@ The starting state has no diagram form, so it is three lines of code. You do not
 type the analysis: the run button in the title bar offers the analysis types, and
 Transient Analysis creates one with this bench as its model.
 
-**Tutor:** say the "new component of its own" part out loud — students try
-to draw the bench inside `Engine`.
+**Tutor:** say the "new component of its own" part out loud; students often
+draw the bench inside `Engine`.
 
 **They get wrong:** the analysis name. The plot command calls
 `MyCar.EngineStepTransient()`; if Dyad Studio picked another name, change the word
@@ -406,7 +406,7 @@ after `analysis` in its code. The code block on this slide is the fallback.
 <div>
 
 ```julia [Julia REPL]
-using MyCar, Plots
+using Plots
 r = MyCar.EngineStepTransient()
 plot(r; idxs = r."engine.limiter.y")
 ```
@@ -440,7 +440,7 @@ named differently. Use their library's name.
 
 ---
 
-## A delay the computer can handle
+## Approximating the delay: `PadeDelay`
 
 <div class="grid grid-cols-2 gap-8">
 <div>
@@ -472,9 +472,8 @@ tuned so that together they behave almost exactly like a 0.3 s delay.
 </div>
 
 <!--
-**Say:** The delay is the only block that is not exactly what it says. It
-is an approximation. That is fine, as long as you know it, and the wiggles are how you see
-it.
+**Say:** The delay is the only block here that is an approximation. The
+wiggles show where it differs from a true delay.
 
 **For a student who wants the math:** a delay of θ has the transfer function
 e<sup>−sθ</sup>. A Padé approximation replaces it by a ratio of polynomials. The simplest
@@ -497,8 +496,7 @@ number.
 
 Without them, the torque appears the instant you ask for it. Then:
 
-- the car becomes too easy to control — any controller works, and there is nothing to
-  learn;
+- the car becomes too easy to control: any controller works;
 - the two tuning methods in the next lecture (Ziegler–Nichols, Cohen–Coon) cannot be
   used at all;
 - real cars are not like that: every real engine is late and slow.
@@ -515,10 +513,10 @@ Without them, the torque appears the instant you ask for it. Then:
 </div>
 
 <!--
-**Say:** Both lags are physically real, but that is not the main reason
-they are here. They are here because the question is control. Pushing a door that opens
-instantly is easy. Pushing one that answers half a second late makes you overshoot. That
-lateness is what makes control interesting, and difficult.
+**Say:** Both effects are physically real, but the main reason they are
+in the model is control. Pushing a door that opens instantly is easy. Pushing one that
+responds half a second late makes you overshoot. That lateness is what makes control
+difficult.
 
 **For the tutor — the precise reasons** (from the lecture plan):
 

@@ -1,0 +1,34 @@
+"""Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5 to 16 Hz."""
+component MeasurementNoise
+  extends BlockComponents.Interfaces.SISO
+  "Amplitude of each sinusoid"
+  parameter amplitude::Real = 0.2
+  "Component frequencies in Hz"
+  parameter f1::Frequency = 0.5
+  parameter f2::Frequency = 1.0
+  parameter f3::Frequency = 2.0
+  parameter f4::Frequency = 4.0
+  parameter f5::Frequency = 8.0
+  parameter f6::Frequency = 16.0
+  # Fixed, non-zero phase offsets so the components do not all peak at t = 0.
+  parameter p1::Real = 0.0
+  parameter p2::Real = 0.7
+  parameter p3::Real = 1.5
+  parameter p4::Real = 2.2
+  parameter p5::Real = 3.0
+  parameter p6::Real = 3.9
+relations
+  y = u + amplitude * (
+    sin(2 * pi * f1 * time + p1) +
+    sin(2 * pi * f2 * time + p2) +
+    sin(2 * pi * f3 * time + p3) +
+    sin(2 * pi * f4 * time + p4) +
+    sin(2 * pi * f5 * time + p5) +
+    sin(2 * pi * f6 * time + p6))
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/MeasurementNoise.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  }
+}
+end

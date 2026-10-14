@@ -12,7 +12,7 @@ The lag state is preloaded with `tau_ff` and the speed with `v0`, so the nominal
 already settled instead of spending the vehicle's ~60 s time constant getting there.
 """
 component FeedforwardCruise
-  plant = VehicleSystemsComponents.Vehicle.CarPlant(m = m, CdA = CdA) {^plant}
+  plant = VehicleSystemsComponents.HandsOn.GradeCar(m = m, CdA = CdA) {^plant}
   "Fixed feedforward torque command"
   cmd = BlockComponents.Sources.Constant(k = tau_ff) {^cmd}
   "Constant road gradient"
@@ -48,15 +48,16 @@ metadata {
     }
   },
   "_links": {
-    "plant": {
-      "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 20, "y2": 120}}}
-    },
-    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
-    "road": {
-      "Dyad": {"placement": {"diagram": {"x1": 10, "x2": 110, "y1": 250, "y2": 350}}}
-    },
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 440, "y2": 540}}}},
+    "cmd": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 440, "y2": 540}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 600, "y2": 700}}}},
     "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 210, "y": 300}], "E": 2}], "path": {}}}
+    "id5": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 450, "y": 650}, {"x": 450, "y": 535}], "E": 2}],
+        "path": {}
+      }
+    }
   }
 }
 end

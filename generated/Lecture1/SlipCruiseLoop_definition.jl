@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SlipCruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, m, CdA, J_w, F_z, mu_A, mu_S, m0, xi0, xd0)
+   SlipCruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, m, CdA, m0, xi0, xd0)
 
 Cruise-control loop around the slip-capable car plant.
 
@@ -23,18 +23,12 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
 | `Ti`         |                          | s  |   10.0 |
 | `Td`         |                          | s  |   0.1 |
 | `Nd`         |                          | --  |   10.0 |
-| `Ni`         |                          | --  |   0.9 |
 | `T_max`         |                          | N.m  |   150.0 |
 | `y_max`         |                          | --  |   T_max |
 | `y_min`         |                          | --  |   0.0 |
-| `wp`         |                          | --  |   1.0 |
 | `wd`         |                          | --  |   1.0 |
 | `m`         |                          | kg  |   1400.0 |
 | `CdA`         |                          | m2  |   0.63 |
-| `J_w`         |                          | kg.m2  |   1.0 |
-| `F_z`         |                          | N  |   6864.655 |
-| `mu_A`         |                          | --  |   1.0 |
-| `mu_S`         |                          | --  |   0.7 |
 | `m0`         | Initial measured speed in km/h                         | --  |   90.0 |
 | `xi0`         | Initial integrator state                         | --  |   0.0 |
 | `xd0`         |                          | --  |   (wd - 1) * m0 |
@@ -45,7 +39,7 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `mu_scale` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function SlipCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, J_w=Float64(1.0), F_z=6864.655, mu_A=Float64(1.0), mu_S=0.7, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
+@component function SlipCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -76,6 +70,12 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__with_I = with_I
+  append!(__params, @parameters (with_I::Bool))
+  __initial_conditions[with_I] = __local__with_I
+  __local__with_D = with_D
+  append!(__params, @parameters (with_D::Bool))
+  __initial_conditions[with_D] = __local__with_D
   __local__k = k
   append!(__params, @parameters (k::Real))
   __initial_conditions[k] = __local__k
@@ -88,9 +88,6 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
   __initial_conditions[Nd] = __local__Nd
-  __local__Ni = Ni
-  append!(__params, @parameters (Ni::Real))
-  __initial_conditions[Ni] = __local__Ni
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
   __initial_conditions[T_max] = __local__T_max
@@ -100,9 +97,6 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
   __initial_conditions[y_min] = __local__y_min
-  __local__wp = wp
-  append!(__params, @parameters (wp::Real))
-  __initial_conditions[wp] = __local__wp
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
   __initial_conditions[wd] = __local__wd
@@ -112,18 +106,6 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
   __local__CdA = CdA
   append!(__params, @parameters (CdA::Real))
   __initial_conditions[CdA] = __local__CdA
-  __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real))
-  __initial_conditions[J_w] = __local__J_w
-  __local__F_z = F_z
-  append!(__params, @parameters (F_z::Real))
-  __initial_conditions[F_z] = __local__F_z
-  __local__mu_A = mu_A
-  append!(__params, @parameters (mu_A::Real))
-  __initial_conditions[mu_A] = __local__mu_A
-  __local__mu_S = mu_S
-  append!(__params, @parameters (mu_S::Real))
-  __initial_conditions[mu_S] = __local__mu_S
   __local__m0 = m0
   append!(__params, @parameters (m0::Real), [description = "Initial measured speed in km/h"])
   __initial_conditions[m0] = __local__m0
@@ -149,15 +131,12 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
   __constants = Any[]
 
   ### Components
-  # Subcomponent plant of type VehicleSystemsComponents.Lecture1.SlipCarPlant
+  # Subcomponent plant of type VehicleSystemsComponents.HandsOn.SlipCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Lecture1.SlipCarPlant(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, J_w=J_w, F_z=F_z, mu_A=mu_A, mu_S=mu_S, plant_overrides...))
-  # Subcomponent controller of type BlockComponents.Continuous.LimPID
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.SlipCar(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
+  # Subcomponent controller of type VehicleSystemsComponents.Lecture1.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, y_max=y_max, y_min=y_min, wp=wp, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
-  # Subcomponent zero_ff of type BlockComponents.Sources.Constant
-  zero_ff_overrides = __pop_subcomponent_overrides!(__overrides, "zero_ff")
-  push!(__systems, @named zero_ff = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_ff_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.CruiseController(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=y_max, y_min=y_min, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -172,7 +151,6 @@ explicit input so the loop cannot hide the tire saturation from the scenario tha
   ### Equations
   push!(__eqs, connect(setpoint, controller.u_s))
   push!(__eqs, connect(plant.v_kmh, controller.u_m))
-  push!(__eqs, connect(zero_ff.y, controller.u_ff))
   push!(__eqs, connect(controller.y, plant.tau_cmd))
   push!(__eqs, connect(grade, plant.grade))
   push!(__eqs, connect(mu_scale, plant.mu_scale))

@@ -38,8 +38,8 @@ flange.f = -F_x
   `flange.f = -F_x`.
 
 <!--
-**Point at:** line 1. Divide by the car's speed, so slip is relative —
-except at a standstill, where v = 0, hence the floor.
+**Point at:** line 1. Dividing by the car's speed makes slip relative. At
+a standstill v = 0, so the divisor has a lower bound, `v_eps`.
 
 **They get wrong:** the sign on `flange.f`. With the wrong sign
 the tire pulls the car backward and the car accelerates in reverse. That is the first
@@ -47,7 +47,7 @@ thing to check if step 10 looks strange.
 
 **Point at the screenshot on the page:** `curve` has no wires.
 It is connected by the equations `curve.kappa = kappa` and
-`curve.mu`, not by `connect`. Both are legal.
+`curve.mu`, not by `connect`. Both are valid.
 -->
 
 ---

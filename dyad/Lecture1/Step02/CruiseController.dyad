@@ -1,0 +1,27 @@
+"""Step 2: the controller shell, ports and the `error` block only."""
+component CruiseController
+  "Setpoint in km/h"
+  u_s = RealInput() {^u_s}
+  "Measured speed in km/h"
+  u_m = RealInput() {^u_m}
+  "Torque command in N·m"
+  y = RealOutput() {^y}
+  error = BlockComponents.Math.Add(k1 = 1, k2 = -1) {^error}
+relations
+  connect(u_s, error.u1) {^id_us_error}
+  connect(u_m, error.u2) {^id_um_error}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/CruiseController.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "u_s": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}, "diagram": {"x1": -50, "x2": 50, "y1": 420, "y2": 520}}}},
+    "u_m": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 270}, "diagram": {"x1": 0, "x2": 100, "y1": 950, "y2": 1050, "rot": 270}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 950, "x2": 1050, "y1": 480, "y2": 580}}}},
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 450, "y2": 550}}}},
+    "id_us_error": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_um_error": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 50, "y": 530}], "E": 2}], "path": {}}}
+  }
+}
+end

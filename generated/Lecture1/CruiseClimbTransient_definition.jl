@@ -42,7 +42,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"duration"::Float64 = 120.0
   # Windup scenario: cruise at 130 km/h, meet a finite 10% climb, then watch the road flatten.
   # 
-  # Drives `CruiseLoop`'s (back-calculation) controller with a constant setpoint and a `GradeProfile`
+  # Drives `BackCalcCruiseLoop`'s controller with a constant setpoint and a `GradeProfile`
   # that switches on a climb at `start_time` and off again after `duration`. The climb needs more
   # tractive force than the engine can supply, so it saturates and the car falls back to about
   # 118 km/h. The lesson is the recovery after the climb ends: an integrator that accumulated

@@ -1,0 +1,32 @@
+"""Step 2: the flat loop; `controller.y` has no driver yet, so it does not run."""
+component CruiseLoopStep
+  demand = BlockComponents.Sources.Step(offset = 90, height = 20, start_time = 0) {^demand}
+  controller = CruiseController() {^controller}
+  plant = GradeCar() {^plant}
+  road = BlockComponents.Sources.Constant(k = 0) {^road}
+relations
+  connect(demand.y, controller.u_s) {^id_demand}
+  connect(plant.v_kmh, controller.u_m) {^id_feedback}
+  connect(controller.y, plant.tau_cmd) {^id_command}
+  connect(road.y, plant.grade) {^id_road}
+  initial plant.body.mass.s = 0
+  initial plant.body.mass.v = 25
+  initial plant.engine.lag.x = 31.078
+metadata {
+  "_links": {
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}},
+    "plant": {"Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 450, "y2": 550}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 620, "y2": 720}}}},
+    "id_demand": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_command": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id_road": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 615, "y": 670}, {"x": 615, "y": 545}], "E": 2}], "path": {}}},
+    "id_feedback": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 500}, {"x": 800, "y": 850}, {"x": 400, "y": 850}], "E": 2}], "path": {}}}
+  }
+}
+end
+
+analysis CruiseLoopTransient
+  extends TransientAnalysis(stop = 100)
+  model = CruiseLoopStep()
+end

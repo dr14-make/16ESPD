@@ -21,8 +21,8 @@ routeAlias: setup
 </div>
 
 <!--
-**Say:** five things, all free. Install them before the first practical,
-not in it — the first Dyad start alone takes minutes, and thirty laptops downloading at
+**Say:** you need five things, all free. Install them before the first practical,
+not during it: the first Dyad start alone takes minutes, and thirty laptops downloading at
 once on the room's Wi-Fi is slow.
 
 **Alternative:** JuliaHub also ships Dyad Studio as a standalone app, with
@@ -118,13 +118,13 @@ your GitHub account. If it does not match, your commits show up without your nam
 </div>
 
 <!--
-**Say:** Git is a save system with memory. Every commit is a snapshot you
-can return to, so you can try something risky in a model and undo it.
+**Say:** Git keeps the history of your files. Every commit is a snapshot you
+can return to, so you can try a risky change in a model and undo it.
 
 **Walk the picture:** you edit files; `git add` picks which
 changes go into the next snapshot; `git commit` saves it on your machine;
-`git push` sends it to GitHub. `git pull` brings changes from GitHub
-back — anything changed there since your last pull.
+`git push` sends it to GitHub. `git pull` downloads anything that changed
+on GitHub since your last pull.
 
 **Say:** nothing reaches GitHub until you push. A commit on your laptop
 only is not handed in.

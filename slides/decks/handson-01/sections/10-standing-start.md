@@ -12,8 +12,8 @@ Floor it on ice: the wheel spins, the car barely moves.
 [page: step 10](../handson/lecture-01/#standing-start) · reference `dyad/HandsOn/SlipCar.dyad`
 
 <!--
-**Say:** Everything in this car is a part you already have. The new thing
-is the wiring. The tire is now the contact with the road, so there is no translational
+**Say:** Every part in this car is one you already have. Only the wiring
+is new. The tire is now the contact with the road, so there is no translational
 ground block. The wheel's flange drives the body directly.
 
 **Timing:** 23 minutes — 3 for the "two limits" slide, then 20: 13 parts and 15 wires. The page lists the wires as
@@ -61,8 +61,8 @@ the wheel **past the peak**.
 </div>
 
 <!--
-**Say:** The push to the road has to get through two things in a row: the
-engine and the tire. Whichever has the lower limit decides. You can tell which one it is
+**Say:** The push to the road passes through two things in a row: the
+engine and the tire. The lower of the two limits decides. You can tell which one it is
 from this table, before simulating anything.
 
 **Derivation, step by step**
@@ -81,14 +81,15 @@ from this table, before simulating anything.
 
 **Why it runs away:** once past the peak, extra slip lowers the grip. Less
 grip means less force holding the wheel back, so the engine spins it faster, which is more
-slip. A loop that feeds itself — nobody built it; it is what the tire does.
+slip. Each change makes the next one bigger. This comes from the tire curve, not from
+anything we built.
 
 **On the 1500 km/h:** the model has no rev limiter, so nothing stops the
-wheel. That number is the model telling the truth about what we left out, not a bug. Say it
-now so nobody tries to "fix" it when it appears on their plot.
+wheel. That number follows from what we left out; it is not a bug. Say it now so nobody
+tries to "fix" it when it appears on their plot.
 
 **Flag forward:** the next lecture ends here. A cruise control on ice sees
-the speed drop and asks for more torque — and does exactly what this table predicts. That is
+the speed drop and asks for more torque, with the result this table predicts. That is
 why real cruise control switches off when traction control steps in.
 -->
 
@@ -102,12 +103,13 @@ why real cruise control switches off when traction control steps in.
 × r × 3.6 · tire `radius = r`, `F_z = m * g / 2` · bench: `cmd` 150, `road` 0, `friction` 0.2*
 
 <!--
-**Point at:** `r` is used twice — the tire's radius and the
-km/h gain — and `m` sets both the body's mass and the axle load. One parameter
-each, so they cannot disagree. Typed twice, a change to one is a silent bug in the other.
+**Point at:** `r` is used twice (the tire's radius and the
+km/h gain), and `m` sets both the body's mass and the axle load. One parameter
+each, so they cannot disagree. If the value were typed twice, changing one copy would
+leave the other wrong without any error.
 
 **Say:** The wheel's surface speed is its spin times its radius. Put that
-on the same axis as the car's speed, and wheelspin is simply the gap between the two
+on the same axis as the car's speed, and wheelspin is the gap between the two
 lines.
 
 **They get wrong:** missing `initial car.wheel_inertia.w = 0`.
@@ -124,7 +126,7 @@ routeAlias: wheelspin
 <div>
 
 ```julia [Julia REPL]
-using MyCar, Plots
+using Plots
 r = MyCar.SlipCarStandingStartTransient()
 plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])
 
@@ -149,24 +151,23 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])
 <!--
 **Say:** Past the peak of the curve, more slip gives less grip. The wheel
 speeds up, grip falls, and it speeds up more. The model has no rev limit, so the engine
-keeps pouring 150 newton-meters into a wheel with nothing to push against. The 1500
-kilometers per hour is the model telling you the truth about an assumption. It is not a
-bug.
+keeps applying 150 newton-meters to a wheel with little grip to resist it. The 1500
+kilometers per hour follows from that missing limit. It is not a bug.
 
 **Then the dry run:** `friction__k = 1.0` overrides the
 constant without editing the model. Twice the speed of the icy car, and the two lines stay
 together.
 
-**Close:** this is the "two limits" table from the start of this step
-come true: on snow the tire saturates before the engine. The PID lecture ends with this car
+**Close:** this matches the "two limits" table from the start of this step:
+on snow the tire reaches its limit before the engine does. The PID lecture ends with this car
 under cruise control on an ice patch. The controller sees speed falling, commands more
-torque, and does exactly what you just watched. That is the argument for traction
-control — and for the cascade control of lecture 2.
+torque, and produces what you just watched. That is the argument for traction
+control, and for the cascade control of lecture 2.
 -->
 
 ---
 
-## Every number you predicted, and hit
+## Predicted values, step by step
 
 | Step | You build | Your run should show | Worked out in |
 | --- | --- | --- | --- |
@@ -180,8 +181,8 @@ control — and for the cascade control of lecture 2.
 | 09–10 | Slip wheel, car | snow: car 10 km/h, wheel 1500 km/h · dry: 21 km/h together | <Link to="standing-start">step 10</Link> |
 
 <!--
-**Say:** This is the session on one slide. Every number in the middle
-column was worked out on paper at the start of its step. Where a run agreed, the model was
+**Say:** This slide collects the session's results. Every number in the
+middle column was worked out on paper at the start of its step. Where a run agreed, the model was
 right. Where it did not, something in the model was wrong, not the arithmetic.
 
 **Where each number comes from**, so you can answer "why that number?":
@@ -195,8 +196,8 @@ right. Where it did not, something in the model was wrong, not the arithmetic.
 - **08** — the curve's own parameters. Step 08.
 - **09–10** — snow limit 1373 N &lt; engine 1935 N, so the wheel must spin; the 10 and 1500 km/h are read off the reference simulation. Step 10.
 
-**Point at:** step 05, the milestone. Two independent routes — the equation
-on paper, and the model you built — and one number.
+**Point at:** step 05, the milestone. Two independent methods, the equation
+on paper and the model you built, give the same number.
 -->
 
 ---
@@ -226,8 +227,9 @@ on paper, and the model you built — and one number.
 <!--
 **Say:** Go back to the first question of the day: how does cruise control
 hold 90 kilometers per hour? You now have the car it has to drive, and you know how that
-car answers: late, slowly, pushed back by air that grows with the square of speed, and on
-snow, not at all. Next lecture, we close the loop.
+car responds: with a delay, slowly, against air drag that grows with the square of speed,
+and on snow, barely at all. In the next lecture we add the controller that measures the
+speed and sets the pedal.
 
 **Say:** Keep your MyCar library. The lecture's slides link back to the
 slides here whenever they use a piece of this physics.

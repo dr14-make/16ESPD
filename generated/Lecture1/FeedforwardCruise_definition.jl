@@ -88,9 +88,9 @@ already settled instead of spending the vehicle's ~60 s time constant getting th
   __constants = Any[]
 
   ### Components
-  # Subcomponent plant of type VehicleSystemsComponents.Vehicle.CarPlant
+  # Subcomponent plant of type VehicleSystemsComponents.HandsOn.GradeCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Vehicle.CarPlant(; m=m, CdA=CdA, plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.GradeCar(; m=m, CdA=CdA, plant_overrides...))
   # Subcomponent cmd of type BlockComponents.Sources.Constant
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
   push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=tau_ff, cmd_overrides...))

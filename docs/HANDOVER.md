@@ -32,7 +32,7 @@ reused by later lectures) and `Lecture1/` (control assemblies and scenarios).
     [x] Notebooks 09, 02               (Tier 2)
     [x] Notebooks 07, 10               (Tier 3)
 
-    [ ] Notebook 09 and dyad/Lecture1/Sampler.dyad carry a Pade surrogate rather than a clocked
+    [ ] Notebook 09 and dyad/Lecture1/SampledCruiseLoop.dyad carry a Pade surrogate rather than a clocked
         partition, and should be translated to DiscreteComponents. Blocked upstream — see
         Risk 3 and https://github.com/dr14-make/16ESPD/issues/1
 

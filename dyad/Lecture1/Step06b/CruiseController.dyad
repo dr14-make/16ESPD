@@ -1,0 +1,136 @@
+"Step 6b: `limiter` between `gain` and `y`."
+component CruiseController
+  "Setpoint in km/h"
+  u_s = RealInput() {^u_s}
+  "Measured speed in km/h"
+  u_m = RealInput() {^u_m}
+  "Torque command in N·m"
+  y = RealOutput() {^y}
+  error = BlockComponents.Math.Add(k1 = 1, k2 = -1) {^error}
+  add_d = BlockComponents.Math.Add(k1 = wd, k2 = -1) {^add_d}
+  derivative = BlockComponents.Continuous.Derivative(k = Td, T = Td / Nd, x0 = xd0) {^derivative}
+  integrator = BlockComponents.Continuous.Integrator(k = 1 / Ti, x0 = xi0) {^integrator}
+  add_pid = BlockComponents.Math.Add3(k1 = 1, k2 = 1, k3 = 1) {^add_pid}
+  gain = BlockComponents.Math.Gain(k = k) {^gain}
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = y_max, y_min = y_min) {^limiter}
+  "Controller gain in N·m per km/h"
+  parameter k::Real = 56
+  "Integral time"
+  parameter Ti::Time = 10
+  "Initial integrator state"
+  parameter xi0::Real = 0
+  "Derivative time"
+  parameter Td::Time = 0.5
+  "Derivative filter: the filter time constant is Td / Nd"
+  parameter Nd::Real = 10
+  "Setpoint weight in the derivative"
+  parameter wd::Real = 0
+  "Initial derivative-filter state, (wd - 1) * 90"
+  parameter xd0::Real = -90
+  "Output ceiling; no limit unless one is set"
+  parameter y_max::Real = 1e300
+  "Output floor"
+  parameter y_min::Real = -y_max
+relations
+  connect(u_s, error.u1) {^id11}
+  connect(u_m, error.u2) {^id12}
+  connect(error.y, add_pid.u1) {^id13}
+  connect(error.y, integrator.u) {^id14}
+  connect(integrator.y, add_pid.u3) {^id15}
+  connect(u_s, add_d.u1) {^id16}
+  connect(u_m, add_d.u2) {^id17}
+  connect(add_d.y, derivative.u) {^id18}
+  connect(derivative.y, add_pid.u2) {^id19}
+  connect(add_pid.y, gain.u) {^id20}
+  connect(gain.y, limiter.u) {^id21}
+  connect(limiter.y, y) {^id22}
+metadata {
+  "_links": {
+    "u_s": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+          "diagram": {"x1": -50, "x2": 50, "y1": 420, "y2": 520}
+        }
+      }
+    },
+    "u_m": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 270},
+          "diagram": {"x1": 0, "x2": 100, "y1": 950, "y2": 1050, "rot": 270}
+        }
+      }
+    },
+    "y": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 480, "y2": 580}
+        }
+      }
+    },
+    "error": {
+      "Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 450, "y2": 550}}}
+    },
+    "add_d": {
+      "Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 800, "y2": 900}}}
+    },
+    "derivative": {
+      "Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 800, "y2": 900}}}
+    },
+    "integrator": {
+      "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 620, "y2": 720}}}
+    },
+    "add_pid": {
+      "Dyad": {"placement": {"diagram": {"x1": 480, "x2": 580, "y1": 480, "y2": 580}}}
+    },
+    "gain": {
+      "Dyad": {"placement": {"diagram": {"x1": 640, "x2": 740, "y1": 480, "y2": 580}}}
+    },
+    "limiter": {
+      "Dyad": {"placement": {"diagram": {"x1": 800, "x2": 900, "y1": 480, "y2": 580}}}
+    },
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 50, "y": 530}], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 260, "y": 670}], "E": 2}],
+        "junctions": [{"x": 260, "y": 500}],
+        "path": {}
+      }
+    },
+    "id15": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 440, "y": 670}, {"x": 440, "y": 560}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id16": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 80, "y": 820}], "E": 2}],
+        "junctions": [{"x": 80, "y": 470}],
+        "path": {}
+      }
+    },
+    "id17": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}],
+        "junctions": [{"x": 50, "y": 880}],
+        "path": {}
+      }
+    },
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id19": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 465, "y": 850}, {"x": 465, "y": 530}], "E": 2}],
+        "path": {}
+      }
+    },
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
+end

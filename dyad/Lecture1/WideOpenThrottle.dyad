@@ -1,20 +1,17 @@
 """
 Open-loop wide-open-throttle run: full torque from rest on flat road.
 
-A `CarPlant` cannot be a `TransientAnalysis` model on its own — its `tau_cmd` and `grade`
-inputs would be unconnected. This harness drives both from constant sources and carries the
-initial conditions, so notebook 01 can run it to terminal speed and read the transient.
+A `Car` cannot be a `TransientAnalysis` model on its own because its `tau_cmd` input would be
+unconnected. This harness drives it from a constant source and carries the initial conditions,
+so notebook 01 can run it to terminal speed and read the transient.
 The command is well above the torque ceiling so the engine clamps at its limit throughout.
 """
 component WideOpenThrottle
-  plant = VehicleSystemsComponents.Vehicle.CarPlant() {^plant}
+  plant = VehicleSystemsComponents.HandsOn.Car() {^plant}
   "Full throttle: commanded torque above the ceiling so the engine clamps at T_max"
   cmd = BlockComponents.Sources.Constant(k = 300.0) {^cmd}
-  "Flat road"
-  road = BlockComponents.Sources.Constant(k = 0.0) {^road}
 relations
   connect(cmd.y, plant.tau_cmd) {^id4}
-  connect(road.y, plant.grade) {^id5}
   initial plant.body.mass.s = 0.0
   initial plant.body.mass.v = 0.0
   initial plant.engine.lag.x = 0.0
@@ -37,11 +34,7 @@ metadata {
       "Dyad": {"placement": {"diagram": {"x1": 158, "x2": 258, "y1": 20, "y2": 120}}}
     },
     "cmd": {"Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 20, "y2": 120}}}},
-    "road": {
-      "Dyad": {"placement": {"diagram": {"x1": 20, "x2": 120, "y1": 290, "y2": 390}}}
-    },
-    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 210, "y": 340}], "E": 2}], "path": {}}}
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end

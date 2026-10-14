@@ -27,9 +27,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"log_file"::String = ""
   # Open-loop wide-open-throttle run: full torque from rest on flat road.
   # 
-  # A `CarPlant` cannot be a `TransientAnalysis` model on its own — its `tau_cmd` and `grade`
-  # inputs would be unconnected. This harness drives both from constant sources and carries the
-  # initial conditions, so notebook 01 can run it to terminal speed and read the transient.
+  # A `Car` cannot be a `TransientAnalysis` model on its own because its `tau_cmd` input would be
+  # unconnected. This harness drives it from a constant source and carries the initial conditions,
+  # so notebook 01 can run it to terminal speed and read the transient.
   # The command is well above the torque ceiling so the engine clamps at its limit throughout.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.WideOpenThrottle(; name=:WideOpenThrottle)
 end
