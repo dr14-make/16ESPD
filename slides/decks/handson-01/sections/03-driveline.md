@@ -26,10 +26,6 @@ car's straight-line motion.
 **Timing:** 13 minutes: 3 for the formula, 10 building. No bench, no analysis — it is
 checked when the car runs in step 05. The students' check today: the component saves with
 nothing in the Problems tab, and it has the four ports.
-
-**Tutor — order of work:** the student page lists "add the two parameters" as its first
-step, but the component does not exist yet. Tell students to create `Driveline` first
-(right-click MyCar → Add Component), then add the parameters.
 -->
 
 ---
@@ -67,7 +63,7 @@ $$ F = \frac{T_{\text{wheel}}}{r} = \frac{T\,i}{r} $$
 | 150 N·m | 600 N·m | **1935 N** |
 
 1290 N on 1400 kg, nothing else acting: a = F/m =
-**0.92 m/s²** — step 03's check.
+**0.92 m/s²** — what the reference test checks.
 
 #### Speeds go the other way
 
@@ -100,8 +96,8 @@ turning speed in radians per second; one turn = 2π ≈ 6.28 rad. rpm = turns pe
 **The numbers:** 150 × 4 = 600 N·m at the wheel; 600 / 0.31 = 1935 N.
 100 × 4 / 0.31 = 1290 N; 1290 / 1400 = 0.92 m/s². 1400 kg is the car's mass (step 04).
 
-**About "step 03's check":** students cannot see the 0.92 themselves today, because this
-step has no bench. It is the result of the reference test `TestDriveline` in
+**About "what the reference test checks":** students cannot see the 0.92 themselves today,
+because this step has no bench. It is the result of the reference test `TestDriveline` in
 `dyad/HandsOn/Driveline.dyad`: 100 N·m into a driveline pushing a 1400 kg mass. That test
 expects 0.9217 m/s², and 9.2 m/s after 10 s.
 

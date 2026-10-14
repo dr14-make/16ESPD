@@ -115,7 +115,7 @@ routeAlias: what-we-build
 ![The car as a chain of four parts: the pedal command goes into the engine, the engine's shaft into the gear and wheel, the wheel pushes the body along the road, and a speedometer reads the body's speed in km/h. Each part is labeled with the hands-on step that builds it.](/diagrams/00-car-chain.svg)
 
 - **246 km/h** flat out — you will predict it, then hit it
-- **10 km/h** on snow, wheel spinning — same engine
+- **10 km/h** after 5 s on snow, wheel spinning — same engine
 
 <!--
 **Say:** This slide shows the whole session: four parts in a row. The
@@ -162,7 +162,7 @@ one box.
 | <Link to="grade">07</Link> | Grade | 13 | your first equation |
 | <Link to="tire-curve">08</Link> | Tire curve | 20 | grip against slip |
 | <Link to="slip-wheel">09</Link> | Slip wheel | 15 | a wheel that can spin |
-| <Link to="standing-start">10</Link> | Standing start | 23 | wheelspin on ice |
+| <Link to="standing-start">10</Link> | Standing start | 23 | wheelspin on snow |
 
 <!--
 **Say:** We build one car, from the bottom up. Each step builds one part of the car (Dyad

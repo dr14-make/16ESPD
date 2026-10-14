@@ -151,7 +151,7 @@ for a student who asks):
 **Rolling resistance** is a fixed share of the weight
 pressing on the tires:
 
-$$ F_{\text{roll}} = f_r\,m\,g = 0.012 \times 1400 \times 9.81 = 165\ \text{N} $$
+$$ F_{\text{roll}} = f_r\,m\,g = 0.012 \times 1400 \times 9.81 = 164.8\ \text{N} $$
 
 It does not depend on speed. In the model, `RollingResistance`
 takes the weight m·g as a parameter, and f<sub>r</sub> and the road slope as
@@ -160,13 +160,13 @@ takes the weight m·g as a parameter, and f<sub>r</sub> and the road slope as
 </div>
 <div>
 
-#### Step 04's check: push with 500 N
+#### The reference test: push with 500 N
 
 The car speeds up until drag + rolling = 500 N:
 
-0.378·v² + 165 = 500<br>
-0.378·v² = 335<br>
-v² = 886 &nbsp;→&nbsp; v = 29.8 m/s
+0.378·v² + 164.8 = 500<br>
+0.378·v² = 335.2<br>
+v² = 886.8 &nbsp;→&nbsp; v = 29.78 m/s
 
 - **29.78** m/s — about 107 km/h
 
@@ -176,11 +176,11 @@ v² = 886 &nbsp;→&nbsp; v = 29.8 m/s
 <!--
 **Say:** The rolling resistance coefficient is 0.012. That means the tires
 cost 1.2 percent of the car's weight as a backward force. A 1400-kilogram car weighs 1400
-times 9.81, about 13,730 newtons. And 1.2 percent of that is 165 newtons.
+times 9.81, about 13,730 newtons. And 1.2 percent of that is about 165 newtons.
 
 **Symbols:** f<sub>r</sub> is the rolling resistance coefficient (0.012, no unit). m is the
 mass, 1400 kg. g is gravity, 9.81 m/s². The model uses g = 9.80665, the standard value; that
-gives 164.75 N instead of 164.8 N, and both round to 165 N.
+gives 164.75 N instead of 164.8 N. The difference does not show in any result.
 
 **Parameter or signal — the one Dyad idea on this slide:** a *parameter* is a number fixed
 before the run starts, like the car's weight. A *signal* is a value that arrives through a
@@ -189,14 +189,12 @@ halfway through a drive (step 07).
 
 **The 500 N check, step by step:** imagine a constant 500 N push on the body alone. It speeds
 up until it stops getting faster. At that point the push equals the resistances:
-500 = 0.378·v² + 165. Subtract 164.75: 335.25. Divide by 0.378: 887. Square root: 29.78 m/s.
+500 = 0.378·v² + 164.8. Subtract 164.8: 335.2. Divide by 0.378: 886.8. Square root: 29.78 m/s.
 Times 3.6 = 107 km/h. At the very start the speed is zero, so there is no drag yet. The
 acceleration is then 500 / 1400 = 0.357 m/s².
 
 **Who runs this check:** the course library's test `TestBody` does, with exactly these
 results (0.357 m/s² at the start, 29.78 m/s at the end). Students do not build a test for it.
-If a student asks why the slide's hand calculation says 29.8 and the list says 29.78: the
-hand version rounds 164.75 up to 165; the model keeps every digit.
 -->
 
 ---

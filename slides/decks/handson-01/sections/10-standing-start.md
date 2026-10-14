@@ -7,7 +7,7 @@ layout: section
 
 # Standing start on a slippery road
 
-Floor it on ice: the wheel spins, the car barely moves.
+Floor it on snow: the wheel spins, the car barely moves.
 
 [page: step 10](../handson/lecture-01/#standing-start) · reference `dyad/HandsOn/SlipCar.dyad`
 
@@ -83,10 +83,6 @@ from this table, before simulating anything.
    "Slip, and how grip depends on it" slide is at μ = 0.28: under the whole dry curve,
    over the whole snow curve. On the dry road it needs only κ ≈ 0.0075; step 09's check
    reads 0.0076 under the same 1935 N.
-
-**Snow or ice?** The bench students build uses `friction` 0.2, the
-"snow" row of the table. Later slides call the same run "ice". It is the same run: say
-"slippery road" if a student asks.
 
 **The three predictions on the right:**
 
@@ -178,8 +174,8 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])
 </div>
 </div>
 
-- **10.1** km/h car, ice, 5 s
-- **1501** km/h wheel, ice, 5 s
+- **10.1** km/h car, snow, 5 s
+- **1501** km/h wheel, snow, 5 s
 - **21.1 / 21.2** km/h car / wheel, dry
 
 <!--

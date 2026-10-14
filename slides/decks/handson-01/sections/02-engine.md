@@ -215,7 +215,7 @@ Request 200 N·m at t = 0.5 s. Delay 0.3 s, lag τₑ = 0.3 s, limit 150 N·m.
 
 0.2 s into the lag:<br>200 × (1 − e<sup>−0.2/0.3</sup>)<br>= 200 × (1 − 0.513)
 
-- **97 N·m** — at 1.0 s
+- **≈ 97 N·m** at 1.0 s — your plot shows 97.5
 
 </div>
 <div>
