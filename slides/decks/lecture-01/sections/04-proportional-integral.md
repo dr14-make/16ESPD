@@ -83,7 +83,7 @@ routeAlias: build-integrator
 `zero_d` Constant(k = 0) holds the derivative slot on `u2`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.CruiseLoopTransient()
 top = plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
 bottom = plot(r; idxs = r."controller.integrator.y")

@@ -306,7 +306,7 @@ stop on the way up and the student thinks the terminal speed is wrong.
 <div>
 
 ```julia [Julia REPL]
-using MyCar, Plots
+using Plots
 r = MyCar.CarFullThrottleTransient()
 plot(r; idxs = r."car.v_kmh")
 ```

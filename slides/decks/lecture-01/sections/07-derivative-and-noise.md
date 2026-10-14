@@ -96,7 +96,7 @@ the page) → `noise` between `plant.v_kmh` and `controller.u_m` · limits lifte
 `wd = 1`, `xd0 = 0`, then back to `wd = 0`, `xd0 = -90` · later: vary `Nd`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.NoisyCruiseTransient()
 plot(r; idxs = r."controller.y")
 plot(r; idxs = [r."plant.v_kmh", r."noise.y"])
@@ -281,7 +281,7 @@ end
 *The same loop at four cutoffs. The command range falls from 1751 N·m to 316, still wider than the engine's 150 N·m limit.*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.NoisyCruiseTransient()
 p = plot(r; idxs = r."controller.y", label = "Nd = 10")
 # set controller.Nd = 100, run again, then:

@@ -224,7 +224,7 @@ sliding.
 - Point-symmetric: braking slip gives negative friction.
 
 ```julia [Julia REPL]
-using MyCar, Plots
+using Plots
 r = MyCar.TireFrictionCurveSweep()
 plot(r; idxs = (r."curve.kappa", r."curve.mu"))
 ```

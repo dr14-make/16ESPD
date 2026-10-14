@@ -126,7 +126,7 @@ routeAlias: wheelspin
 <div>
 
 ```julia [Julia REPL]
-using MyCar, Plots
+using Plots
 r = MyCar.SlipCarStandingStartTransient()
 plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])
 

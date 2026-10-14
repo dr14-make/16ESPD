@@ -99,7 +99,7 @@ what lets it spin.)*
 <div>
 
 ```julia [Julia REPL]
-using MyCar, Plots
+using Plots
 a = MyCar.CarFullThrottleTransient()
 b = MyCar.WheeledCarFullThrottleTransient()
 p = plot(a; idxs = a."car.v_kmh", label = "Car")

@@ -93,7 +93,7 @@ routeAlias: build-derivative
 **Real controllers almost never differentiate the setpoint. D sees only the speed.**
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.CruiseLoopTransient()
 top = plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
 bottom = plot(r; idxs = r."controller.y")

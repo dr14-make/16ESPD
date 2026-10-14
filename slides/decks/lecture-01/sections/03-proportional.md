@@ -92,7 +92,7 @@ routeAlias: build-gain
 run `CruiseLoopTransient`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.CruiseLoopTransient()
 plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
 ```

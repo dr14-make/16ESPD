@@ -308,7 +308,7 @@ end
 13. Run it: press ▷ beside `EngineStepTransient` in the **Analyses** panel. Then plot `engine.limiter.y`. A plain `plot` of the result draws every state at once, including the six internal states of the delay, which swing into the thousands and hide everything else. Pick the one signal by name in the Julia REPL:
 
     ```julia
-    using MyCar, Plots
+    using Plots
     r = MyCar.EngineStepTransient()
     plot(r; idxs = r."engine.limiter.y")
     ```
@@ -667,7 +667,7 @@ The run: steep at first, then flattening as drag grows with the square of speed,
 8. Run it: press ▷ beside `CarFullThrottleTransient` in the **Analyses** panel. Then, in the Julia REPL (**Dyad: Open Julia REPL** in the **Actions** title bar), plot the speed:
 
    ```julia
-   using MyCar, Plots
+   using Plots
    r = MyCar.CarFullThrottleTransient()
    plot(r; idxs = r."car.v_kmh")
    ```
@@ -823,7 +823,7 @@ The run against step 5: the dashed curve lags by a fraction of a second at launc
 6. Run it: press ▷ beside `WheeledCarFullThrottleTransient` in the **Analyses** panel. Then plot it over step 5's curve in the Julia REPL:
 
    ```julia
-   using MyCar, Plots
+   using Plots
    a = MyCar.CarFullThrottleTransient()
    b = MyCar.WheeledCarFullThrottleTransient()
    p = plot(a; idxs = a."car.v_kmh", label = "Car")
@@ -1146,7 +1146,7 @@ end
 7. Run it: press ▷ beside `TireFrictionCurveSweep` in the **Analyses** panel. Then, in the Julia REPL, plot μ against κ rather than against time — the pair in parentheses means “first against second”:
 
    ```julia
-   using MyCar, Plots
+   using Plots
    r = MyCar.TireFrictionCurveSweep()
    plot(r; idxs = (r."curve.kappa", r."curve.mu"))
    ```
@@ -1481,7 +1481,7 @@ Fifteen wires. Tick them off as you go; the screenshot above shows where they ru
 8. Run it: press ▷ beside `SlipCarStandingStartTransient` in the **Analyses** panel. Then plot both speeds together in the Julia REPL:
 
    ```julia
-   using MyCar, Plots
+   using Plots
    r = MyCar.SlipCarStandingStartTransient()
    plot(r; idxs = [r."car.v_kmh", r."car.wheel_kmh"])
    ```

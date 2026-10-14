@@ -26,7 +26,7 @@ From the car you built in the hands-on to a PID cruise control, tested on a hill
 
 **Fell behind?** There are two catch-up checkpoints: the **P checkpoint** at the end of step 3 and the **PID checkpoint** at the end of step 5. Each has your `CruiseController` and `CruiseLoopStep` as they stand at that point, as code to paste. The course repository has the same checkpoints as `Lecture1.Step03` and `Lecture1.Step05`, and the reference `CruiseLoop` in `dyad/Lecture1/CruiseLoop.dyad`, whose switches `with_I` and `with_D` turn the integral and derivative branches on and off.
 
-**Plotting.** Every plot is drawn in the Julia REPL: click **Dyad: Open Julia REPL** in the **Actions** panel's title bar. Each snippet starts with `using MyCar, Plots; plotly()`. `plotly()` switches Plots to its interactive backend: drag a box to zoom, double-click to zoom back out, hover over a curve to read its values. It needs nothing beyond the `Plots` you added in the hands-on. Once per REPL session is enough, and running it again does no harm, so every snippet also works in a freshly opened REPL.
+**Plotting.** Every plot is drawn in the Julia REPL: click **Dyad: Open Julia REPL** in the **Actions** panel's title bar. Each snippet starts with `using Plots; plotly()`. `plotly()` switches Plots to its interactive backend: drag a box to zoom, double-click to zoom back out, hover over a curve to read its values. It needs nothing beyond the `Plots` you added in the hands-on. Once per REPL session is enough, and running it again does no harm. Snippets do not load `MyCar`: the REPL that runs your analyses has already included it, and a `using MyCar` on top would load it a second time.
 
 Every component here exists in the course repository, and every number in an expected result is a test expectation or a docstring of the reference model.
 
@@ -93,7 +93,7 @@ New component `CarStepTest` in `MyCar`:
 3. <Badge type="tip" text="New analysis" /> With `CarStepTest` open, press ▷ (**Run Analysis**), choose **TransientAnalysis**, name it `CarStepTestTransient` and set `stop` to `500` s. Run it, then plot `plant.v_kmh` in the Julia REPL (**Dyad: Open Julia REPL** in the **Actions** title bar):
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.CarStepTestTransient()
    plot(r; idxs = r."plant.v_kmh")
    ```
@@ -139,7 +139,7 @@ A copy of your `Car` whose body is the `GradeBody` of hands-on [step 07](../../h
 4. Bench: right-click `CarFullThrottle` → **Duplicate**, name it `GradeCarFullThrottle`. Replace `car` with a `GradeCar` named `car`, add `road` = BlockComponents › Sources › Constant with `k = 0`, and wire `road.y → car.grade`. Give it a TransientAnalysis `GradeCarFullThrottleTransient` with `stop = 300` s. Run it and plot the speed:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.GradeCarFullThrottleTransient()
    plot(r; idxs = r."car.v_kmh")
    ```
@@ -302,7 +302,7 @@ In `CruiseController`:
 3. Run `CruiseLoopTransient` and plot `plant.v_kmh` with `demand.y`:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.CruiseLoopTransient()
    plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
    ```
@@ -395,7 +395,7 @@ In `CruiseController`:
 5. Run `CruiseLoopTransient` and plot `plant.v_kmh` and `demand.y`, with `controller.integrator.y` in a panel below, on its own scale:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.CruiseLoopTransient()
    top = plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
    bottom = plot(r; idxs = r."controller.integrator.y")
@@ -442,7 +442,7 @@ In `CruiseController`:
 5. Run `CruiseLoopTransient` and plot `plant.v_kmh` and `demand.y`, with `controller.y` in a panel below:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.CruiseLoopTransient()
    top = plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
    bottom = plot(r; idxs = r."controller.y")
@@ -637,7 +637,7 @@ The defaults are the reference's: a `CruiseController` with no limits set behave
 4. Run `CruiseLoopTransient` again and plot `controller.y` with `controller.gain.y`:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.CruiseLoopTransient()
    plot(r; idxs = [r."controller.y", r."controller.gain.y"], xlims = (0, 20))
    ```
@@ -685,7 +685,7 @@ Your library cannot see the course library's `GradeProfile`; the pulse is what t
 4. Create a TransientAnalysis `CruiseClimbTransient` with `stop = 400` s. Run it and plot `plant.v_kmh` above; below it `controller.y`, the command after the limiter, `controller.gain.y`, the command before it, and `controller.integrator.y`:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.CruiseClimbTransient()
    top = plot(r; idxs = r."plant.v_kmh")
    bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
@@ -733,7 +733,7 @@ Stop the integrator while it would only push the command deeper into a limit.
 4. Save, run `CruiseClimbTransient` again and plot the same signals as in step 6c, with the same code:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.CruiseClimbTransient()
    top = plot(r; idxs = r."plant.v_kmh")
    bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
@@ -820,7 +820,7 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
 5. Click `controller` and set `wd = 1` and `xd0 = 0`, the seed `(wd − 1) · 90` that goes with `wd = 1`. Create a TransientAnalysis `NoisyCruiseTransient` with `stop = 40` s. Run it and plot `controller.y`, then `plant.v_kmh` with `noise.y`:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.NoisyCruiseTransient()
    plot(r; idxs = r."controller.y")
    plot(r; idxs = [r."plant.v_kmh", r."noise.y"])
@@ -830,7 +830,7 @@ Every limit is lifted, as in the lecture notebook, so the limiter does not clip 
 7. Keep `wd = 0` and change `Nd`: run at `Nd = 100` (almost no filter), then at 20, 5 and 2. `Nd` is an ordinary parameter, so each run is a re-solve, not a recompile. Plot `controller.y` at `Nd = 10` first, then add each run to the same axes with its own label:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.NoisyCruiseTransient()
    p = plot(r; idxs = r."controller.y", label = "Nd = 10")
    # set controller.Nd = 100, run again, then:
@@ -885,7 +885,7 @@ New component `TuningCruiseStep`, a duplicate of `CruiseLoopStep` with:
 3. <Badge type="tip" text="New analysis" /> Create a TransientAnalysis of `TuningCruiseStep`, name it `TuningCruiseTransient` and set `stop` to `60` s. Run it and plot `plant.v_kmh`: the baseline.
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.TuningCruiseTransient()
    p = plot(r; idxs = r."plant.v_kmh", label = "baseline")
    ```
@@ -1009,7 +1009,7 @@ The pulse outputs `amplitude` on the patch and `offset` outside it, so the grip 
 5. Create a TransientAnalysis `SlipCruiseTransient` with `stop = 45` s. Run it and plot `plant.v_kmh` with `plant.wheel_kmh`, then the same two again zoomed in on the car's speed:
 
    ```julia
-   using MyCar, Plots; plotly()
+   using Plots; plotly()
    r = MyCar.SlipCruiseTransient()
    s = [r."plant.v_kmh", r."plant.wheel_kmh"]
    top = plot(r; idxs = s)

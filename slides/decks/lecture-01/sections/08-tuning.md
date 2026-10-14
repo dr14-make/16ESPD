@@ -615,7 +615,7 @@ routeAlias: step-8
 duplicate `CruiseLoopStep` → `TuningCruiseStep` · limits lifted · Ziegler-Nichols gains · vary `m`, `theta_e`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.TuningCruiseTransient()
 p = plot(r; idxs = r."plant.v_kmh", label = "baseline")
 # after each change:

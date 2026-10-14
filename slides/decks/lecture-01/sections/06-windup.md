@@ -110,7 +110,7 @@ routeAlias: step-6b
 `Limiter(y_max = y_max, y_min = y_min)` between `gain` and `y` · `CruiseLoopStep`: `controller` `y_max = 150`, `y_min = 0`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.CruiseLoopTransient()
 plot(r; idxs = [r."controller.y", r."controller.gain.y"], xlims = (0, 20))
 ```
@@ -165,7 +165,7 @@ routeAlias: step-6c
 `controller.xd0 = -130` · start at 130 km/h*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.CruiseClimbTransient()
 top = plot(r; idxs = r."plant.v_kmh")
 bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
@@ -416,7 +416,7 @@ routeAlias: step-6d
 `integrator.u = ifelse(...)` on `limiter.y` and `error.y` · re-run `CruiseClimb`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.CruiseClimbTransient()
 top = plot(r; idxs = r."plant.v_kmh")
 bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",

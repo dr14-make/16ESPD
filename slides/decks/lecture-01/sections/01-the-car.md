@@ -280,7 +280,7 @@ routeAlias: build-step-test
 three `initial` lines · TransientAnalysis `stop = 500`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.CarStepTestTransient()
 plot(r; idxs = r."plant.v_kmh")
 ```
@@ -504,7 +504,7 @@ routeAlias: build-gradecar
 on the left, under `tau_cmd` → `body.grade` · bench `GradeCarFullThrottle`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.GradeCarFullThrottleTransient()
 plot(r; idxs = r."car.v_kmh")
 ```

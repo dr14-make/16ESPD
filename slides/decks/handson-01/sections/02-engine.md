@@ -406,7 +406,7 @@ after `analysis` in its code. The code block on this slide is the fallback.
 <div>
 
 ```julia [Julia REPL]
-using MyCar, Plots
+using Plots
 r = MyCar.EngineStepTransient()
 plot(r; idxs = r."engine.limiter.y")
 ```

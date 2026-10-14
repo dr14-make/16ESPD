@@ -330,7 +330,7 @@ duty_cycle = 1.0, period = 8) → `plant.mu_scale` · `controller.xi0 = 31.078 /
 `SlipCruiseTransient`, `stop = 45`*
 
 ```julia
-using MyCar, Plots; plotly()
+using Plots; plotly()
 r = MyCar.SlipCruiseTransient()
 s = [r."plant.v_kmh", r."plant.wheel_kmh"]
 top = plot(r; idxs = s)
