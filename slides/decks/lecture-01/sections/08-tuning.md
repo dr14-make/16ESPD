@@ -52,19 +52,26 @@ it, because those are the ones you can use on a real car.*
 
 <!--
 Some say tuning is an art; others give you three rules. Both are right, for different plants. The
-flowchart tells you which case you are in.
+plant is the thing we control; here, the car. This slide tells you which case you are in.
 
-The top question matters most. If the plant is unstable on its own, no table will help. Section 10
-shows a plant that fails this test, and it is the same car. A drone's attitude loop fails it too.
-That is why you do not tune a quadcopter by raising the gain until it oscillates.
+The first question matters most. If the plant is unstable on its own, no table will help. Section
+10 shows a plant that fails this test, and it is the same car. The loop that keeps a drone level
+fails it too. That is why you do not tune a quadcopter by raising the gain until it oscillates.
 
-Well behaved is a judgment: stable open loop, near enough linear, minimum phase, a manageable
-delay. Minimum phase means no zero in the right half plane: the output does not first move the
-**wrong** way when you push it. Open-loop stable means disturbances die out on their own. Our car
-coasts to a stop. A quadcopter falls over.
+Well behaved is a judgment with four parts. Stable open loop means that with no controller acting,
+disturbances die out on their own. Our car coasts to a stop. A quadcopter falls over. Near enough
+linear means the car responds about the same way across the speeds we use. Between 90 and 110 km/h
+its response time only moves from 74 to 61 seconds. Minimum phase means the output never first
+moves the **wrong** way when you push it. More torque never makes our car slow down first. A
+manageable delay means the time before anything happens is short compared with the response. We
+measure that in two slides.
 
-Model-based tuning, such as pole placement, loop shaping and autotuning, needs a mathematical
-model. Heuristic tuning applies a table to measured numbers. It needs only an experiment.
+The second question is whether you have a model. Model-based methods need a mathematical model.
+Pole placement means choosing the gains so the loop responds exactly as fast and as smoothly as you
+specify. Loop shaping means designing the controller from how the loop answers slow and fast
+changes. Autotuning means software that runs a test and computes the gains for you. Heuristic
+tuning means a rule of thumb: you put a few measured numbers into a table. It needs only an
+experiment.
 -->
 
 ---
@@ -106,20 +113,27 @@ $$
 </div>
 
 <!--
-Every heuristic method here assumes your plant looks like this transfer function. Ours does,
-because we built it that way: a first-order body with a lag and a transport delay in front.
+Every rule-of-thumb method here assumes your plant responds like this formula. Its name is first
+order plus dead time, shortened to FOPDT or FOPTD. First order means the output glides toward its
+new value, slowing as it gets close, with no wobble. Dead time means that at first nothing happens.
+Ours has this shape, because we built it that way: a body that responds smoothly, with an engine
+lag and a transport delay in front. The transport delay is the wait between asking for torque and
+getting it.
 
-K is the steady-state gain: 2.21 km/h per newton-meter. Tau is the time constant, the time to cover
+The formula has three numbers. K is the steady-state gain, how far the speed moves per newton-meter
+once everything settles: 2.21 km/h per newton-meter. Tau is the time constant, the time to cover
 63 percent of the change: 63 seconds. Theta is the dead time, how long nothing happens: 1.816
-seconds, as fitted. FOPTD means first order plus dead time.
+seconds, as fitted. That is six times the engine's 0.3 second delay, because the fit also counts
+the slow start of the curve as dead time.
 
 Theta over tau tells you how hard the plant is to control. With almost no dead time, it tolerates
 almost any gain. With mostly dead time, it does not. Ours is 1.82 over 63, about 0.029: the easy
 end, well inside where these rules were fitted.
 
-Cohen-Coon's gain scales as tau over theta, so our small ratio gives a large gain, possibly more
-torque than a 150 newton-meter engine has. We come back to that at the end of this section. And in
-section 09, our own sampling adds dead time.
+Cohen-Coon, the first table we use, gives a gain that grows with tau over theta, about 35 here. So
+our small ratio gives a large gain, more torque than a 150 newton-meter engine has. We come back to
+that at the end of this section. And in section 09, reading the speed only at fixed intervals adds
+more dead time.
 -->
 
 ---
@@ -162,8 +176,12 @@ K, tau, theta = fopdt_fit(step_test;
 </div>
 
 <!--
-Check K, tau and theta against what you wrote down in section 01. They must match: it is the same
-test.
+A step test means: hold the input steady, change it suddenly by a fixed amount, and record what
+the output does. The code holds the car at 90 km/h, steps the torque at 50 seconds to the value
+that holds 110, and fits the three numbers.
+
+Check K, tau and theta against what you wrote down in section 01: 2.21 km/h per newton-meter, 63
+seconds and 1.816 seconds. They must match: it is the same test.
 
 The next four slides use only these three numbers. Mass, drag area and gear ratio do not appear
 again.
@@ -173,8 +191,9 @@ time constants after the step, enough to settle. We divide the speed change by t
 newton-meter step. That is step 4 of the procedure, and it makes K a property of the plant, not of
 the experiment.
 
-Do not step from zero, and do not use a very large step. A step test characterizes the plant
-**where you operate it**. With v squared drag, a step from rest measures a different plant.
+Do not step from zero, and do not use a very large step. A step test describes the plant **where
+you operate it**. Air drag grows with the square of the speed, so a step from rest measures a
+different plant.
 -->
 
 ---
@@ -197,12 +216,16 @@ The output sits still for a while. That is dead time. Then it climbs and settles
 
 t zero is when the input stepped. B is the total change in the output. Mark where the output has
 covered half of B: that is t two. Mark where it has covered one minus one over e of B, about 63.2
-percent: that is t three. Only these two times are measured. The ln 2 appears because t two is the
-half-way point of an exponential.
+percent: that is t three. Only these two times are measured. The natural log of 2 appears because
+t two is the half-way point of that smooth first-order curve.
 
-t one is the intercept those two imply: where the first-order curve would have started with no dead
+t one is the time those two imply: where the first-order curve would have started with no dead
 time. Before it is theta. From it to t three is tau. So K is B over A, tau is t three minus t one,
-and theta is t one minus t zero. Dividing by A is the scaling from the last slide.
+and theta is t one minus t zero. A is the size of the input step, so dividing by A is the scaling
+from the last slide.
+
+Use the exact constants, not 0.632 rounded. With a tau of about a minute, the rounding alone would
+add about a third of a second of dead time.
 
 A common mistake is reading tau as the time to reach the final value. It is 63 percent of it. The
 remaining 37 percent takes another three time constants.
@@ -264,14 +287,19 @@ plot_speed(pid; sig = SPEED, setpoint = 110)
 Cohen and Coon fitted this formula to a family of plants in 1953. It is not derived from our car.
 It uses only the **shape**, first order plus dead time, and that is enough for a starting point.
 
-k is in newton-meters per km/h. T i and T d are in seconds.
+The columns are the three PID settings from section 05. k is the proportional gain, in
+newton-meters per km/h. T i is the integral time and T d the derivative time, both in seconds.
 
 The ratio theta over tau appears in every cell. The gain goes as one over K, so a plant with a high
 gain gets a lower controller gain. And it goes as tau over theta, so it grows without bound as the
 dead time goes to zero. Pick the row for the controller you build: P, PI or PID.
 
-Now the response. Would you ship it? Cohen-Coon is usually quick, and usually oscillatory. It is a
-starting point.
+For our car the PID row gives k equal to 21.06, T i 4.416 seconds and T d 0.657 seconds.
+
+Now the response. Would you ship it? The rise time, from 10 to 90 percent of the step, is 2.43
+seconds. The speed overshoots by 16.3 percent of the step, to about 113 km/h. That is noticeable,
+not broken. Cohen-Coon is usually quick, and usually oscillatory. It is a starting point. It also
+asks the engine for 422 newton-meters, almost three times what it has. We come back to that.
 -->
 
 ---
@@ -331,19 +359,23 @@ on the next two slides use them.*
 </div>
 
 <!--
-This experiment is different. Cohen-Coon watched the plant on its own. Ziegler-Nichols closes the
-loop and pushes it toward instability on purpose. Then it reads two numbers off the oscillation.
+Ziegler-Nichols is the second method, named after its two authors. This experiment is different.
+Cohen-Coon watched the plant on its own. Ziegler-Nichols closes the loop and pushes it toward
+instability on purpose. Then it reads two numbers off the oscillation.
 
-Below the ultimate gain the oscillation decays. Above it, it grows. We measure the one in the
-middle, neither growing nor decaying. `ladder` is the set of gains you walk up to find it, one run
-each.
+The controller is proportional only: the integral and derivative parts are switched off. The
+setpoint moves by just 0.1 km/h. Then you raise the gain, one run per gain. Below a certain gain,
+the ultimate gain, the oscillation decays. Above it, it grows. We want the one in the middle,
+neither growing nor decaying. `ladder` is the set of gains we walk up: 80, 100, 110, 112, 114, 115
+and 125. The crossing lies between 114 and 115.
 
-K u is that gain. Ours is about 115 newton-meters per km/h. P u is the period of that oscillation,
-about 2.2 seconds here.
+K u is that ultimate gain: 114.59, about 115 newton-meters per km/h. P u, the ultimate period, is
+the time for one cycle of that oscillation: 2.185 seconds, about 2.2.
 
 One warning. If the oscillation squares off against the torque limit, that is relay limit-cycling:
-the command banging between the actuator limits. It is not the linear oscillation the method
-assumes, and the K u you read off it is not the one the table wants.
+the command banging between the actuator limits, like an on-off switch. It is not the smooth
+oscillation the method assumes, and the K u you read off it is not the one the table wants. In our
+ladder that happens at 125: the command hits zero, so that run is left out.
 
 We are deliberately making a car oscillate. Would you do this on a real vehicle? Keep your answer.
 We come back to it later in this section.
@@ -385,12 +417,15 @@ This is the table from this lecture you are most likely to use in practice. Copy
 over 2. PI: K u over 2.2, with T i equal to P u over 1.2. PID: K u over 1.7, with T i equal to P u
 over 2 and T d equal to P u over 8. The times are all fractions of the ultimate period.
 
-From P to PI the gain comes **down**. The integral adds phase lag, which brings the loop closer to
-instability.
+For our car the PID row gives k equal to 67.41 newton-meters per km/h, T i 1.092 seconds and T d
+0.273 seconds.
 
-The footnote: in the PID row, T i is always four times T d, whatever P u is. In the language of
-section 05, Ziegler-Nichols keeps the two zeros in the same place relative to each other, and only
-moves them with P u.
+From P to PI the gain comes **down**. The integral reacts late, because it adds up past error, and
+that lag brings the loop closer to oscillating. The derivative reacts early, so the PID row can
+afford a higher gain again.
+
+The footnote: in the PID row, T i is always four times T d, whatever P u is. So the measured period
+only sets the overall time scale of the controller.
 
 The design target is quarter-amplitude decay: each overshoot is a quarter of the one before. That
 was a 1940s process-plant preference, not a law.
@@ -432,12 +467,14 @@ From the same two measured numbers.
 </div>
 
 <!--
+Tyreus-Luyben is a third table, again named after its authors, and it uses the same two numbers.
 The main difference is the T i column. Ziegler-Nichols divides the ultimate period. Tyreus-Luyben
-multiplies it: T i is 2.2 times P u. That is a factor of 4.4 slower, from the same experiment.
+multiplies it: T i is 2.2 times P u, 4.806 seconds against 1.092. That is a factor of 4.4 slower,
+from the same experiment.
 
 In the PID row the gain is K u over 2.2, against K u over 1.7. That is three quarters of the gain:
-52.09 against 67.41 newton-meters per km/h. T d is P u over 6.3. There is no P row, because the
-method mainly slows the integrator, and a P controller has none.
+52.09 against 67.41 newton-meters per km/h. T d is P u over 6.3, 0.347 seconds. There is no P row,
+because the method mainly slows the integrator, and a P controller has none.
 
 Ziegler-Nichols dates from when quarter-amplitude decay counted as a good response. That is far too
 oscillatory for a vehicle. Tyreus-Luyben uses the same measurement with a calmer target.
@@ -479,13 +516,16 @@ Then feed $K_u$ and $P_u$ into either of the last two tables.
 harmonic of a square wave of amplitude $d$, which has amplitude $4d/\pi$.*
 
 <!--
-This is the fifth tuning method in the course slides, and the only closed-loop one that is safe on
-hardware. It is why your thermal chamber has an autotune button, and your car has no "raise the
-gain until it oscillates" button.
+This is the fifth tuning method in the course slides, and the only closed-loop one, with the
+controller in the loop, that is safe on hardware. It is why a temperature test chamber has an
+autotune button, and your car has no "raise the gain until it oscillates" button.
 
-A relay puts out a square wave of amplitude d, which you choose, so the disturbance is bounded. The
-plant mostly responds to the first harmonic, 4 d over pi. The output oscillates with amplitude a,
-and its period is P u. 4 d over pi, divided by a, is the gain at which the loop would sustain the
+A relay is an on-off switch. It puts out u zero, the input that holds the current value, plus d
+while the error is positive, and u zero minus d while it is negative. You choose d, so the shaking
+is bounded. The loop then settles into a steady oscillation, called a limit cycle. The relay's
+output is a square wave. A square wave of height d acts mostly like one smooth wave of height 4 d
+over pi, and the plant smooths away the rest. The plant's output oscillates with amplitude a, and
+its period is P u. 4 d over pi, divided by a, is the gain at which the loop would sustain the
 oscillation. That is K u. Here the limit cycle is the measurement, not a fault.
 
 On a real machine, pick d as small as still gives a clean measurement above the noise.
@@ -534,6 +574,10 @@ Three gain sets, one plant, one step test. Everything that differs between the c
 table, not out of the car.
 
 Which would you ship in a car? Hands up for Cohen-Coon. For Ziegler-Nichols. For Tyreus-Luyben.
+
+Here are the numbers. Cohen-Coon rises in 2.43 seconds and overshoots 16.3 percent. Ziegler-Nichols
+rises in 0.53 seconds, overshoots 46.4 percent, to about 119 km/h, and rings. Tyreus-Luyben rises
+in 0.81 seconds and overshoots 7.5 percent. On this plot Tyreus-Luyben is the clear choice.
 
 Most people pick the calmest. Good reasons are about passengers and the distance from instability,
 not about rise time.
@@ -632,21 +676,24 @@ directly.
 
 First, build in your `MyCar.GradeCar`. It is the same move as step 6a.
 
-Add `parameter m::Dyad.Mass = 1400`, with the description "Vehicle mass". Add `structural parameter
-theta_e::Time = 0.3`, with the description "Injection-to-torque transport delay". It is structural
-because the Padé delay builds its coefficients from it at compile time.
+Open `GradeCar` and click Add parameter. Name it `m`, type `Dyad.Mass`, value 1400, description
+"Vehicle mass". Add a second one: `theta_e`, type `Time`, value 0.3, description
+"Injection-to-torque transport delay", and tick structural. A structural parameter is fixed when the
+model is compiled. The engine's delay block is built from this value at compile time, so changing
+it means a recompile. If Add parameter offers no structural option, switch to the code view and
+write `structural parameter theta_e::Time = 0.3`.
 
 Select `body` and set m to `m`. Your `GradeBody` already passes m on to `GradeForce`, so this one
 binding reaches rolling resistance, the slope force and the inertia.
 
 Select `engine` and set `theta_e` to `theta_e`. There is nothing to wire.
 
-Now the harness. Duplicate `CruiseLoopStep` and name the copy `TuningCruiseStep`. Leave
-`CruiseLoopStep` at its step-6 state: k 56, `Ti` 10, `Td` 0.5, limits 150 and 0. Section 10
-duplicates it again.
+Now the harness. Right-click `CruiseLoopStep`, choose Duplicate, and name the copy
+`TuningCruiseStep`. Leave `CruiseLoopStep` at its step-6 state: k 56, `Ti` 10, `Td` 0.5, limits
+150 and 0. Section 10 duplicates it again.
 
-In the copy, lift every limit, as the notebook does: `controller.y_max` to 1e6, `controller.y_min`
-to minus 1e6, and `plant.T_max` to 1e6.
+In the copy, lift every limit, as the notebook does. Type 1e6, one million: `controller.y_max` to
+1e6, `controller.y_min` to minus 1e6, and `plant.T_max` to 1e6.
 
 Set the Ziegler-Nichols gains: `controller.k` 67.41, `Ti` 1.092, `Td` 0.273. Leave `Nd` at 10, `wd`
 at 0 and `xd0` at minus 90.
@@ -726,7 +773,8 @@ Right panel: the same three with `T_max` and `y_max` back at 150. The rise times
 4.25 seconds, against 2.43, 0.53 and 0.81 unlimited. The curves nearly coincide: for the first
 seconds all three ask for more than 150, so all three get exactly 150. The engine sets the
 response, and the difference between the tables barely shows. The overshoot, 5.5, 3.8 and 0.0
-percent, stays low because of the clamping anti-windup from section 06.
+percent, stays low because of the clamping anti-windup from section 06: while the engine is at its
+limit, the controller stops adding up error it cannot act on.
 
 The rule: **always plot the actuator command.** It is one extra line, and it shows whether the
 hardware can do what the design asks.

@@ -12,8 +12,9 @@ The derivative responds to how fast the noise changes, not to how large it is.
 `notebooks/lecture01/07-derivative-and-noise.ipynb`
 
 <!--
-In section 05 the derivative removed the overshoot at no visible cost. Here is the cost: it
-amplifies sensor noise.
+The derivative is the part of the controller that reacts to how fast the speed is changing. In
+section 05 it removed the overshoot at no visible cost. Here is the cost: it amplifies sensor
+noise, the small random error in every measurement.
 -->
 
 ---
@@ -58,11 +59,17 @@ _, v_meas = signal(noisy, MEASURED)
 </div>
 
 <!--
-Look at the measured trace. Asked whether it is good enough, you would say yes. The noise is a
-fraction of a km/h.
+Where does the noise come from? Thermal noise is heat jiggling the electrons in the electronics.
+Shot and flicker noise come from the semiconductors. Coupling is interference from other wiring;
+in a car mostly the alternator, the injectors and the ignition.
+
+Look at the measured trace. Asked whether it is good enough, you would say yes. The reading is at
+most 0.79 km/h below and 0.90 km/h above the true speed, and the car still holds 110 km/h.
 
 `plant.v_kmh` is the true speed. `noise.y` is the measured speed, the same with noise added. The
-controller runs with `Nd` equal to 10, a reasonable derivative filter for a first run.
+controller runs with `Nd` equal to 10. N d sets how strongly the derivative is smoothed, or
+filtered: a large N d means almost no filter. 10 is the default, and what every notebook since 05
+has run.
 -->
 
 ---
@@ -112,33 +119,42 @@ plot(r; idxs = [r."plant.v_kmh", r."noise.y"])
 Until now the controller saw the true speed, to fifteen digits. No car has that sensor. So we add
 realistic noise and look at the command.
 
-Duplicate `CruiseLoopStep` and name the copy `NoisyCruiseStep`, the reference bench's name.
-`CruiseLoopStep` stays clean. In the copy, delete the wire from `plant.v_kmh` to `controller.u_m`.
+First, add a new component `MeasurementNoise`. Toggle to code and paste the block from step 7 of
+the guide page over its contents; `MyCar` cannot see the course library, so you paste the
+reference's code. It adds six sine waves to its input, 0.2 km/h each, from 0.5 to 16 hertz, that
+is from one wiggle every two seconds to sixteen wiggles a second.
 
-Add a component `MeasurementNoise`. Toggle to code and paste the block from step 7 of the guide
-page; `MyCar` cannot see the course library, so you paste the reference's code. Place it as
-`noise` with `amplitude` 0.2. That is 0.2 km/h per sinusoid, six of them, from 0.5 to 16 hertz.
+Right-click `CruiseLoopStep`, choose Duplicate, and name the copy `NoisyCruiseStep`, the reference
+test model's name. `CruiseLoopStep` stays clean. In the copy, delete the wire from `plant.v_kmh`
+to `controller.u_m`, the controller's measurement input. Place your `MeasurementNoise` and name it
+`noise`, with `amplitude` 0.2.
 
 Wire `plant.v_kmh` into `noise.u`, and `noise.y` into `controller.u_m`. The controller now sees
 `noise.y`; `plant.v_kmh` stays the truth.
 
-The `controller` keeps k 56, `Ti` 10, `Td` 0.5 and `Nd` 10. Set `controller.wd` to 1 and
-`controller.xd0` to 0, the seed that goes with w d equal to 1. Then lift every limit, as the
-notebook does, so the chatter is not clipped: `controller.y_max` 1e6, `controller.y_min` minus
-1e6, and `plant.T_max` 1e6. That is what the step 6a parameter is for.
+Click `controller` and set `y_max` to 1e6, one million, and `y_min` to minus one million. Click
+`plant` and set `T_max` to one million; that is what the step 6a parameter is for. This lifts every
+limit, as the notebook does, so the limiter does not clip the chatter and hide it. Chatter is the
+command jumping up and down many times a second.
 
-Run Analysis, TransientAnalysis, name it `NoisyCruiseTransient`, stop 40. Run it and plot
+The `controller` keeps k 56, `Ti` 10, `Td` 0.5 and `Nd` 10. Set `controller.wd` to 1 and
+`controller.xd0` to 0. w d is the setpoint weight in the derivative: at 1, the derivative sees the
+setpoint as well as the measured speed. x d 0 is the derivative filter's starting value, and 0 is
+the one that goes with w d equal to 1.
+
+Run Analysis, TransientAnalysis, name it `NoisyCruiseTransient`, stop 40 seconds. Run it and plot
 `controller.y`, then `plant.v_kmh` with `noise.y`, with the code on the slide.
 
 With w d equal to 1 you see a tall spike in `controller.y` at the setpoint step: the derivative of
-the step. After it the command never stops chattering. With the limits lifted, the kick throws the
-car to about 187 km/h within the first second. The engine cannot brake, so the car coasts down for
-the rest of the run, to 108.9 km/h at 40 seconds.
+the step, called a derivative kick. After it the command never stops chattering. With the limits
+lifted, the kick throws the car to about 187 km/h within the first second. The engine cannot
+brake, so the car coasts down for the rest of the run, to 108.9 km/h at 40 seconds.
 
 Now set `controller.wd` back to 0 and `controller.xd0` back to minus 90, the section 05 defaults,
-and re-run on the same axes. The kick is gone; the chatter is unchanged. The kick came from the
-setpoint, the chatter from the sensor, and w d only removes the first. That is why every notebook
-since 05 runs with w d equal to 0.
+and re-run and re-plot with the same lines. The kick is gone; the chatter is unchanged. In the
+notebook, at N d 10, the command still swings across 766 newton-meters during steady cruise, five
+times what the engine can give. The kick came from the setpoint, the chatter from the sensor, and
+w d only removes the first. That is why every notebook since 05 runs with w d equal to 0.
 
 On the "Filtering the derivative" slide we come back to this model with `controller.Nd` at 100,
 20, 5 and 2. In the notebook, the swing in the 20 to 30 second window falls from 1751
@@ -176,18 +192,21 @@ frequencies.*
 </div>
 
 <!--
-Any signal is a sum of sine waves; that is what a Fourier transform tells you. So this holds for
-every fast component you feed a derivative.
+Any signal can be split into a sum of sine waves of different speeds. So this holds for every fast
+part of a signal you feed a derivative.
 
-The two tangent lines: same amplitude A, ten times the frequency. The derivative has amplitude A
-times omega, so ten times the slope. Differentiation multiplies each component by its frequency.
-Above 1 radian per second it amplifies; below, it attenuates.
+A is the height of the wave, its amplitude. Omega is how fast it oscillates, in radians per second:
+two pi times the frequency in hertz. The two tangent lines: same amplitude A, ten times the
+frequency. The derivative has amplitude A times omega, so ten times the slope. Differentiation
+multiplies each part of the signal by its frequency. Above 1 radian per second it amplifies; below,
+it shrinks.
 
 A question. Each of our six noise components is 0.2 km/h, and the top one sits at 16 hertz. What
 does the derivative path make of it?
 
-k times T d times A times omega: 563 newton-meters, from a wiggle of two tenths of a km/h. The
-engine makes 150.
+The answer is k times T d times A times omega. 16 hertz is 100.5 radians per second. So 56
+times 0.5 times 0.2 times 100.5: 563 newton-meters, from a wiggle of two tenths of a km/h. The engine
+makes 150. The slowest component, at half a hertz, gives only 18.
 -->
 
 ---
@@ -226,16 +245,18 @@ extrema(u[cruise])              # the damage, in N.m
 </div>
 
 <!--
-`extrema` gives the range: the command swings across 1751 newton-meters. That is twelve times what
-the engine can deliver, and forty times the 40 newton-meters the car needs to hold this speed.
+`extrema` gives the lowest and highest value: the command swings from minus 836 to plus 915
+newton-meters, a range of 1751. That is twelve times what the engine can deliver, and forty times
+the 40 newton-meters the car needs to hold this speed.
 
-N d 100 puts the cutoff at N d over T d, 200 radians per second, above the noise band's 16 hertz.
-In effect, no filter. `Nd` is an ordinary parameter, so `rerun` re-solves the compiled model
+The filter's cutoff is the frequency above which it starts to cut. N d 100 puts the cutoff at N d
+over T d, 200 radians per second, about 32 hertz, above the noise band's 16 hertz. In effect, no
+filter. `Nd` is an ordinary parameter, so `rerun` re-solves the compiled model
 instead of building a new one. We look only at 20 to 30 seconds: settled cruise, so what is left
 is the noise.
 
-That command goes to an engine. The fueling swings like that many times a second, for as long as
-the car drives. Nothing breaks at once, but it wears parts, overheats them, and makes the ride
+That command goes to an engine. It means alternating full torque and hard engine braking, up to 16
+times a second, for as long as the car drives. Nothing breaks at once, but it wears parts, overheats them, and makes the ride
 rough.
 
 Section 08 repeats the rule: **always plot the actuator command.** The speed looked fine in both
@@ -293,21 +314,25 @@ plot!(p, r2; idxs = r2."controller.y", label = "Nd = 100")
 </div>
 
 <!--
-Now on your own `NoisyCruiseStep`. Plot `controller.y` as it stands, at `Nd` 10, with the first
-three lines on the slide. Set `controller.Nd` to 100 and re-run; the last two lines add that run
-to the plot. Then 20, 5 and 2, each with its own label. Each is a re-solve, not a recompile. You
-see the band shrink.
+Now on your own `NoisyCruiseStep`, with w d still 0. Plot `controller.y` as it stands, at `Nd` 10,
+with the first three lines of the lower code block. Click `controller`, set `Nd` to 100 and re-run;
+the last two lines add that run to the plot. Then 20, 5 and 2, each with its own label. Changing
+`Nd` only re-runs the simulation; the model is not rebuilt, so it is quick. You see the band
+shrink.
 
-This is a derivative in series with a first-order low-pass. At low frequency it differentiates; at
-high frequency it flattens off. Its cutoff N is N d over T d, with T d 0.5 seconds, so N d 100,
+On the slide, s stands for "take the derivative". The filter replaces s by s N over s plus N: a
+derivative followed by a low-pass filter, which lets slow changes through and cuts fast ones.
+First-order means the simplest such filter. At low frequency it differentiates; at high frequency
+it flattens off. Its cutoff N is N d over T d, with T d 0.5 seconds, so N d 100,
 20, 5 and 2 put it at 200, 40, 10 and 4 radians per second: from almost no filtering to heavy
 filtering.
 
 Every PID block in every toolchain has this parameter. Most people never change it, because they
 never look at the actuator command.
 
-The filter attenuates the noise; it does not remove it. On this car that is not enough. The
-command falls from 1751 newton-meters to 316, still twice what the engine delivers.
+The filter shrinks the noise; it does not remove it. On this car that is not enough. The command
+range falls from 1751 newton-meters at N d 100, to 1050 at 20, 529 at 5, and 316 at 2. That is
+still twice what the engine delivers.
 -->
 
 ---
@@ -337,20 +362,24 @@ not move while the command range falls by a factor of three. Below 2 it starts t
 
 <!--
 The easy case is well separated: the signal is slow and carries most of the power, the noise is
-fast and weak. Then a first-order filter is all you need. Its cutoff, conventionally at minus 3
-dB, is where it starts to attenuate. Too high, and noise gets through. Too low, and you filter
+fast and weak. Then a first-order filter is all you need. Its cutoff is by convention where it has
+cut the signal to about 70 percent, which engineers call minus 3 decibels. Too high, and noise gets through. Too low, and you filter
 away the signal and the derivative stops working.
 
 This car is not the easy case. We filtered as hard as the response allows, and the command still
-swings twice the engine's limit. The notebook measures both ends of the trade, and no value of
-`Nd` wins. That is a property of the loop, not a tuning mistake.
+swings twice the engine's limit. The notebook measures both ends of the trade, with the noisy
+sensor and with a perfect one. From N d 20 down to 2, the perfect-sensor overshoot stays near 3.1
+percent while the command range falls from 1050 to 316 newton-meters. At N d 1 the overshoot
+doubles, to 6.9 percent. At N d 0.5 it is 17 percent, five times larger. No value of `Nd` wins.
+That is a property of the loop, not a tuning mistake.
 
-So the fix lies outside the filter: less derivative, a better measurement, or a speed estimated
-with a model. That last one is a Kalman filter, and a different course.
+So the fix lies outside the filter. Less derivative: a smaller T d shrinks the noise along with
+everything else. A better sensor. Or an estimator, a calculation that uses a model of the car to
+tell real motion from noise. The best known is the Kalman filter, and that is a different course.
 
-A side note. A filtered derivative, s N over s plus N, is algebraically identical to a loop with N
-forward and an integrator in the feedback path. It behaves the same, needs fewer operations, and
-is much harder to read. Your toolchain's block may be built the second way.
+A side note. A filtered derivative, s N over s plus N, is mathematically identical to a small loop
+with a gain N going forward and an integrator feeding back. It behaves the same, needs fewer
+operations, and is much harder to read. The PID block in your tool may be built the second way.
 -->
 
 ---
@@ -367,6 +396,8 @@ is much harder to read. Your toolchain's block may be built the second way.
 <!--
 The controller has now failed twice: an actuator that saturates, and a sensor that is noisy.
 Before the plant changes in section 10, one question is open: where did k equal to 56 come from?
+
+The answer comes in section 08, from a single test of the car and three tuning tables.
 
 Go back to `CruiseLoopStep`. It never had the noise, and it keeps its step 6b limits, 150 and 0.
 Leave `NoisyCruiseStep` as it is. We lift limits only on duplicates: `NoisyCruiseStep` here,

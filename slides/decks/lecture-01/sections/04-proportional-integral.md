@@ -12,8 +12,9 @@ The integrator finds the holding torque without a model of the car.
 `notebooks/lecture01/04-proportional-integral.ipynb`
 
 <!--
-One switch changes from the last notebook: `with_I = true`. Same car, same gain, same step. In
-your diagram it is three blocks.
+One switch changes from the last notebook: `with_I = true`, integral on. Same car, same gain, same
+step. An integrator is a block that keeps a running total of the error. In your diagram the change
+is three blocks.
 -->
 
 ---
@@ -51,9 +52,12 @@ The proportional term uses the present error. The integral term uses all past er
 If the error has been zero for a while, what is the integral path putting out? Not zero: whatever
 it accumulated before. Many of you will want to say zero. The next two slides show why it is not.
 
+That is what the box on the right says. At zero error the proportional part must be zero, but the
+integral part can hold any value.
+
 T i, the integral time, is in seconds. It is a **time**, not a gain, and it divides, so a smaller
 T i integrates harder. k multiplies the whole bracket. The tau inside the integral is only the
-variable of integration, not the plant's time constant.
+variable of integration, not the car's time constant from section 01.
 
 In the reference, `with_I` is an ordinary parameter. The integrator is always in the diagram, and
 an on/off block, `i_switch`, sits between it and the sum. With `with_I` false it passes zero. On
@@ -97,11 +101,13 @@ The bracket becomes a summing block in front of the gain, with three inputs, one
 you fill two. The third waits for section 05.
 
 In `CruiseController`, add two parameters: `Ti`, of type `Time`, default 10 seconds, and `xi0`,
-default 0, the integrator's starting state.
+of type Real, default 0. `xi0` is the integrator's starting state, the value its running total
+starts from.
 
 Delete the wire from `error.y` to `gain.u`.
 
-Drag in an Add3 from `BlockComponents.Math`, name it `add_pid`, set k one, k two and k three to 1.
+Drag in an Add3, a block that adds three inputs, from `BlockComponents.Math`. Name it `add_pid`,
+and set k one, k two and k three to 1.
 Wire `error.y` into `add_pid.u1`, and `add_pid.y` into `gain.u`.
 
 Drag in an Integrator from `BlockComponents.Continuous`, name it `integrator`, set k to 1 over
@@ -111,14 +117,16 @@ Drag in an Integrator from `BlockComponents.Continuous`, name it `integrator`, s
 Drag in a Constant from `BlockComponents.Sources`, name it `zero_d`, set k to 0, and wire it into
 `add_pid.u2`. It holds the derivative's slot.
 
-Save, and run `CruiseLoopTransient` again from `CruiseLoopStep`. Plot `plant.v_kmh` and
-`demand.y`, with `controller.integrator.y` below.
+Save, and run `CruiseLoopTransient` again from the Analyses list. In the Julia REPL, paste the code
+from the slide. It plots `plant.v_kmh` and `demand.y` on top, and `controller.integrator.y`, the
+integrator's running total, in a panel below.
 
-The speed reaches **110 km/h**; the 0.7 gap is gone. The integrator state levels off near
+The speed reaches **110 km/h**; the 0.7 gap is gone. On the way it overshoots: it passes 110,
+peaks at about 115.5, and comes back down to settle on 110. The integrator state levels off near
 **0.716**: 40.1 newton-meters divided by k equals 56. Two slides on, we multiply it back.
 
-Your engine still clips at 150 and the notebook does not, so your first seconds and any overshoot
-can differ. The settled 110 and 0.716 are the same.
+Your engine still clips at 150 and the notebook does not, so your first seconds differ, and the
+notebook's peak is higher, 118.8. The settled 110 and 0.716 are the same.
 
 Two common mistakes. Feeding the integrator from `add_pid.y` instead of `error.y`, so it
 integrates its own output. And k set to `Ti` instead of 1 over `Ti`, so a bigger T i integrates
@@ -166,10 +174,13 @@ path does little, while the integral path keeps working.
 Both runs use k equals 56; the PI run has T i equals 10 seconds. The torque ceiling is lifted to
 one times ten to the six, which stands in for no limit.
 
-Proportional does the transient. Integral does the last stretch.
+P settles at 109.3. PI settles at 110.0. Proportional does the transient, the fast first part of
+the response. Integral does the last stretch.
 
-Which one got within 1 km/h of the setpoint first? Usually P. Arriving eventually and arriving
-exactly are different requirements, and PID tuning is mostly trading one for the other.
+Both runs pass 110 on the way up. P peaks at 117.8, PI at 118.8. Overshoot is the peak past the
+setpoint as a percentage of the 20 km/h step: 39 percent for P, 44 percent for PI. PI also takes
+longer to settle. Arriving quickly and arriving exactly are different requirements, and PID tuning
+is mostly trading one for the other.
 -->
 
 ---
@@ -210,7 +221,8 @@ hline!([cruise_torque(110.0)]; ls = :dash, lw = 2, color = :black,
 </div>
 
 <!--
-The dashed line is the force balance you solved with a pencil in hands-on step 05.
+The dashed line is the force balance you solved with a pencil in hands-on step 05: the torque at
+which the drive exactly cancels drag and rolling resistance at 110.
 
 The controller was never given the mass, the drag area or the gear ratio. It sees only the speed
 error. By accumulating it, the integrator found the holding torque: the same answer as solving the
@@ -224,7 +236,7 @@ Put 200 kg of luggage in the trunk, and the line moves up. The integrator finds 
 without being told.
 
 `integrator.y` is the state before the gain; the plot multiplies by k. Your own build shows the
-same curve, unscaled.
+same curve, unscaled: it levels off at 0.716, and 56 times 0.716 is 40.1.
 
 If your integrator settles anywhere else, the units or the gear ratio disagree between your model
 and the notebook. Find that before you go on.
@@ -262,17 +274,16 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
 </div>
 
 <!--
-The first curve that crosses the setpoint and comes back is new. The proportional controller never
-did that, at any gain.
-
 Every T i settles at 110; the integrator guarantees it. The sweep shows how each gets there.
+
+The proportional run at this gain already overshot by 39 percent. The integrator
+adds to that, and a smaller T i adds more. At T i equals 40 seconds the peak is 118.1, 40 percent.
+At 10 seconds, 118.8, 44 percent. At 2.5 seconds, 122, 60 percent. The swings also take longer to
+die out.
 
 By the time the car reaches 110, the integrator has accumulated error for the whole climb, so it
 holds **more** torque than 110 needs. It can only shed that excess with error of the opposite
 sign: time on the far side of the setpoint. That is the overshoot.
-
-Overshoot is the peak past the setpoint as a percentage of the step: a 20 km/h step that peaks at
-112 is 10 percent. Watch it grow as T i shrinks.
 
 To react **before** we arrive, we need a term that responds to how fast the error is shrinking.
 That is section 05.
@@ -290,6 +301,9 @@ That is section 05.
 ### Next: a third path, to arrive without overshooting. <Link to="pid">→ 05, PID</Link>
 
 <!--
-One warning. An integrator that has accumulated more than the actuator can deliver is a much worse
+Model inversion means solving the car's equations backwards, from the speed we want to the torque
+it takes, as you did by hand. The integrator found the same 40.1 newton-meters without them.
+
+One warning. An integrator that has accumulated more than the engine can deliver is a much worse
 problem than overshoot. That is section 06.
 -->

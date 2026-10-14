@@ -12,8 +12,8 @@ P, I and D: the present error, the past error, and its rate of change.
 `notebooks/lecture01/05-pid.ipynb`
 
 <!--
-The second switch, `with_D = true`, is the only change. It completes the PID controller, which
-runs most of the machinery you will work on.
+The second switch, `with_D = true`, derivative on, is the only change. It completes the PID
+controller, proportional-integral-derivative, which runs most of the machinery you will work on.
 -->
 
 ---
@@ -56,16 +56,16 @@ Derivative. How fast is the error changing?
 <!--
 The derivative does not know where the setpoint is. It only knows how fast the error is moving.
 That is enough to see an overshoot coming, which is why it is sometimes called a prediction: a
-one-term Taylor extrapolation of the error.
+straight-line guess of where the error is heading.
 
-d e by d t is negative while we close on the setpoint. T d is in seconds, and it multiplies, so
+d e by d t is the rate of change of the error. It is negative while we close on the setpoint. T d is in seconds, and it multiplies, so
 bigger means more derivative action, the opposite convention to T i.
 
 A common mistake is to think the derivative pushes harder when you are far away. Far away and
 closing quickly, it is already pulling back.
 
-A real controller never uses a pure derivative. There is always a filter on it, with a coefficient
-called N d. Section 07 shows what happens without one.
+A real controller never uses a pure derivative. There is always a filter on it, a smoothing stage,
+set by a number called N d. Section 07 shows what happens without one.
 -->
 
 ---
@@ -103,11 +103,11 @@ plot(top, bottom; layout = (2, 1), link = :x, xlims = (0, 40))
 [page: step 5](../lecture/lecture-01/#step-5) · reference `dyad/Lecture1/CruiseController.dyad`
 
 <!--
-This derivative is filtered, and it may ignore the setpoint. You type both parameters now and
-understand them in section 07.
+This derivative is filtered, smoothed, and it may ignore the setpoint. You type both parameters now
+and understand them in section 07.
 
 In `CruiseController`, add four parameters: `Td` equals 0.5, of type `Time`; `Nd` equals 10; `wd`
-equals 0; `xd0` equals minus 90. `k` and `Ti` stay.
+equals 0; `xd0` equals minus 90. The last three are of type Real. `k` and `Ti` stay.
 
 Delete `zero_d` and its wire.
 
@@ -120,23 +120,28 @@ Drag in a Derivative from `BlockComponents.Continuous`, name it `derivative`, an
 to `Td` over `Nd`, and x zero to `xd0`. Wire `add_d.y` into `derivative.u`, and `derivative.y`
 into `add_pid.u2`.
 
-Save, run `CruiseLoopTransient` again, and plot `plant.v_kmh` with `demand.y`, and `controller.y`
+Save, run `CruiseLoopTransient` again from the Analyses list, and paste the slide's code into the
+Julia REPL. It plots `plant.v_kmh` with `demand.y` on top, and `controller.y`, the torque command,
 below.
 
-Why is `wd` zero? Real controllers almost never differentiate the setpoint. This is the standard
-two-degree-of-freedom PID: P acts on `wp` times r minus y, I on the full error, D on `wd` times r
-minus y. The library's `LimPID` builds `add_p` and `add_d` the same way. Industrial controllers
-call `wd` equals 0 PI-D, or derivative on measurement, and make it the default.
+Why is `wd` zero? `wd` is a setpoint weight: how much of the setpoint, r, the derivative sees,
+next to the measured speed, y. Real controllers almost never differentiate the setpoint, because a
+step in the setpoint would make the derivative jump. That jump is called derivative kick. This is
+the standard two-degree-of-freedom PID, where the setpoint and the measurement are treated
+differently: P acts on `wp` times r minus y, I on the full error, D on `wd` times r minus y. `wp`
+is the same kind of weight for P; your controller has none, which is the same as `wp` equals 1. The
+library's `LimPID` block builds `add_p` and `add_d` the same way. Industrial controllers call `wd`
+equals 0 PI-D, or derivative on measurement, and make it the default.
 
-Why is `xd0` minus 90? At `wd` equals 0 and a settled 90 km/h cruise, the filter's input is minus
-90, so that is where the filter starts. The reference `CruiseLoop` computes it the same way. Leave
-it at 0 and the filter sees a 90 km/h step at time zero and commands a spike of minus 50400
-newton-meters.
+Why is `xd0` minus 90? The filter has a state, a memory, and it needs a starting value. At `wd`
+equals 0 and a settled 90 km/h cruise, the filter's input is minus 90, so that is where the filter
+starts. The reference `CruiseLoop` computes it the same way. Leave it at 0 and the filter sees a 90
+km/h step at time zero and commands a spike of minus 50400 newton-meters.
 
 The speed reaches **110 km/h** and peaks at about 114, against 115.5 in step 4. Your engine's 150
-newton-meter ceiling still clips the start, so you overshoot more than the notebook. In
-`controller.y`, the jump at the step is the proportional term, 56 times 20 newton-meters. No
-derivative spike rides on it.
+newton-meter ceiling still clips the start, so you overshoot more than the notebook, which peaks
+at 110.55. In `controller.y`, the jump at the step is the proportional term, 1120 newton-meters,
+56 times 20. No derivative spike rides on it.
 
 A common mistake is T set to `Td` times `Nd` instead of `Td` over `Nd`. The filter is then 100
 times slower than the derivative, and the D term does almost nothing.
@@ -184,8 +189,8 @@ falls, but only up to a point. Push further, and the loop gets sluggish and ampl
 Notebook 05 sweeps T d and finds the least overshoot at 0.5 seconds, which is why we use it.
 
 N d is the filter ratio. A pure derivative amplifies anything fast without limit, including
-sensor noise. So the derivative goes through a small lag with time constant T d over N d. Ours is
-0.05 seconds, much faster than anything the car does. A bigger N d means a sharper derivative and
+sensor noise. So the derivative goes through a small lag, a smoothing stage that needs about T d
+over N d seconds to follow a change. Ours is 0.05 seconds, much faster than anything the car does. A bigger N d means a sharper derivative and
 more noise. A smaller one blurs the derivative until it does little. Five to twenty is the usual
 range.
 
@@ -198,10 +203,13 @@ x d zero is not a tuning knob. It is where the filter starts. In the starting cr
 the filter's input is minus 90, so that is where it should start. Leave it at zero, and the run
 opens with a spike of minus fifty thousand newton-meters.
 
-At the bottom is the transfer function of the derivative block itself: T d s over T d over N d
-times s, plus one. For slow signals the bottom is about 1, and the block is T d times a
-derivative. For fast signals the s cancels, and the block becomes a plain gain of N d. That cap
-is what keeps the noise in check. Section 07 shows what happens without it.
+At the bottom is the transfer function of the derivative block itself, its output over its input
+written with a variable s, where multiplying by s means differentiating. Two slides on we see
+where that comes from. Here it is T d s over T d over N d times s, plus one. For slow signals the
+bottom is about 1, and the block is T d times a derivative. For fast signals the s cancels, and
+the block becomes a plain gain of N d, 10. The border is N d over T d, 20 radians per second,
+about three cycles per second. That cap is what keeps the noise in check. Section 07 shows what
+happens without it.
 -->
 
 ---
@@ -262,7 +270,8 @@ Look at the middle row. In the parallel form a bigger number means more integral
 standard form it means **less**, because T i divides.
 
 The standard form has the easier units. T i and T d are seconds, which you can compare against the
-plant's own time constant, and that is how you sanity-check a gain set. K i and K d have units
+car's own time constant, 63 seconds, and that is how you sanity-check a gain set. Our controller in
+parallel form is K p 56, K i 5.6, and K d 28. K i and K d have units
 nobody can picture.
 -->
 
@@ -324,11 +333,13 @@ starts at rest, and for a controller acting on changes around a steady cruise, t
 So a differential equation turns into ordinary algebra. We solve it for the output divided by the
 input, and that ratio is the transfer function. It describes the system for any input.
 
-Take the car first. Section 01's step test fitted it as a first-order lag with a delay: tau times
-the rate of change of speed, plus the speed, equals K times the delayed torque. Apply the rules:
+Take the car first. Section 01's step test fitted it as a first-order lag with a delay, a system
+that closes a fixed share of the remaining gap every second: tau times the rate of change of
+speed, plus the speed, equals K times the delayed torque. Apply the rules:
 the derivative becomes s V, and the delay becomes e to the minus theta s. Collect V on the left,
 divide by T, and you have G of s: K times the delay, over tau s plus one. The three numbers you
-read off the curve in section 01 are the whole transfer function.
+read off the curve in section 01 are the whole transfer function: K, 2.21 kilometers per hour per
+newton-meter; tau, 63 seconds; and theta, 1.82 seconds.
 
 Now the controller. Apply the same rules to the PID law: the error stays E, the integral becomes E
 over s, and the derivative becomes s times E. Divide U by E, and k times the bracket is the
@@ -369,12 +380,17 @@ $$
 *A real controller has one more pole, from the filter on the derivative, set by section 07's $N_d$.*
 
 <!--
-If you have had a linear systems course, this slide shows PID as an ordinary compensator design.
+If you have had a linear systems course, this slide shows PID as an ordinary controller design.
 If you have not, remember the sentence in the box and move on.
 
-s is the Laplace variable: multiplying by s differentiates, dividing by s integrates. The pole at
-s equals 0 is the integrator, and we do not get to move it. PID has two zeros, and T i and T d
-decide where they go. k scales the whole controller.
+s is the Laplace variable: multiplying by s differentiates, dividing by s integrates. Put over one
+denominator, the controller is a fraction. A zero is a value of s that makes the top zero. A pole
+is a value of s that makes the bottom zero. The bottom is T i times s, so the pole is at s equals
+0, the origin. That pole is the integrator, and we do not get to move it. PID has two zeros, and
+T i and T d decide where they go. With ours they sit at minus 0.11 and minus 1.89. k scales the
+whole controller.
+
+Root locus and loop shaping, in the box, are two classic pencil-and-paper design methods.
 
 That is why so many tuning methods work: one question, three free parameters, several routes to a
 good answer. The methods in section 08 look like arithmetic on measured numbers. Somebody else did
@@ -425,7 +441,8 @@ the curves is where we put the car's pole. Same colors, same line styles as the 
 left.
 
 Start with the solid blue line, the circle: that is the real car. Its pole is minus one over tau,
-minus 0.016, almost on the vertical axis. Its time constant is the 63 seconds from the step test.
+minus 0.016, almost on the vertical axis. Its time constant, the time to cover about two thirds of
+the way, is the 63 seconds from the step test.
 After twenty seconds it has reached only 95 km/h. That is why the car on its own took minutes to
 settle in section 01. A pole close to the axis is slow.
 
@@ -493,11 +510,14 @@ pid_loop = rerun(
 <!--
 P stops short. PI reaches the setpoint but overshoots. PID reaches it and stays.
 
+In numbers: P peaks at 117.8 and settles at 109.3. PI peaks at 118.8, an overshoot of 44 percent,
+and settles at 110. PID peaks at 110.55, 2.7 percent, and settles at 110.
+
 Same car, same gains: k equals 56, T i equals 10 seconds, T d equals 0.5 seconds. Only the
-controller configuration changed.
+switches changed.
 
 `wd` equals 0.0 keeps the setpoint step out of the derivative. `xd0` is preloaded from the
-starting speed, 90 km/h, so the run does not begin with a spurious transient.
+starting speed, 90 km/h, so the run does not begin with a false jolt.
 
 From this one curve you cannot tell whether the gains are well tuned or just suit this one step.
 Section 08 tunes them properly.
@@ -543,10 +563,13 @@ Integral starts at zero, because this run seeds it at zero. It overshoots to abo
 newton-meters and settles at 40.2, the torque that holds 110. Almost nothing at the step, all of
 the torque at the end.
 
-Derivative swings through a pulse during the transient and returns to zero. It is only present
-while something is changing.
+Derivative dips once, to about minus 700 newton-meters, during the fastest part of the approach,
+and returns to zero. It is only present while something is changing. That dip is what removes the
+PI overshoot.
 
-`controller.y` is the sum: what the engine is actually asked for.
+`controller.y` is the sum: what the engine is actually asked for. One exception: for about half a
+second near the start the sum is negative, and the command sits at zero, because the engine cannot
+brake.
 
 The terms act at different times, so when the response misbehaves tells you which term to adjust.
 
@@ -593,8 +616,13 @@ an optimum, and above it the response gets worse.
 Too little and the overshoot survives. Too much and the response is sluggish, slower to arrive,
 and jittery, reacting to small changes it should ignore.
 
-Look at the raggedness of the largest T d, with a clean measurement. Add one percent of
-speedometer noise and that curve becomes unusable. That is section 07.
+The overshoot for each T d: at 0.1 seconds, 28.8 percent. At 0.25, 9.8. At 0.5, 2.7, the least,
+which is why we use it. At 1 second, 5.1. At 2, 9.3. At 4, 16.8. The two largest have not even
+settled when the run ends.
+
+Look at the raggedness of the largest T d, with a clean measurement. Add a few tenths of a
+kilometer per hour of noise to the speed reading and that curve becomes unusable. That is section
+07.
 
 To a passenger, an aggressive derivative feels like surging. Comfort limits the gains too.
 -->
@@ -632,8 +660,9 @@ remain:
 <!--
 You pick a member of the family by deciding which terms your plant needs.
 
-Leave the integrator out when the plant already integrates, like a motor position loop, where
-holding a position needs no effort. A second integrator there mostly adds oscillation.
+Leave the integrator out when the plant, the thing being controlled, already integrates. A motor
+turning to a position is one: the position is the running total of the speed, and holding a
+position needs no effort. A second integrator there mostly adds oscillation.
 
 Leave the derivative out when the measurement is noisy and you cannot filter it enough. That is
 most of the time: a large fraction of industrial loops in service are PI.
@@ -676,11 +705,14 @@ routeAlias: checkpoint-pid
 </div>
 
 <!--
-Second checkpoint. You drew every block of this controller. Check your neighbor's screen.
+Second checkpoint. You drew every block of this controller. Check your neighbor's screen: the
+speed should peak at about 114 and settle at 110, and `controller.y` should show no spike from the
+derivative at the step.
 
 If you are still building, paste the step 5 code from the guide page over your `CruiseController`
 and `CruiseLoopStep`, or open `Lecture1.Step05` in the course repository. Section 06 adds a
-limiter to **this** diagram, so do not go into the break without it.
+limiter, a block that caps the torque command at what the engine can give, to **this** diagram,
+so do not go into the break without it.
 
 If your run differs from mine, check the signs of `add_d`, then the derivative's T, which must be
 `Td` over `Nd`, then `xd0`.
@@ -699,8 +731,8 @@ If your run differs from mine, check the signs of `add_d`, then the derivative's
 
 <!--
 So far: flat road, and a step the engine could easily deliver. After the break the car meets a
-hill it cannot climb. The torque limit makes the loop nonlinear, and this failure has damaged real
-hardware.
+hill it cannot climb. The torque limit makes the loop nonlinear: asking for twice the torque no
+longer gives twice the torque. This failure has damaged real hardware.
 
 Be at checkpoint PID before the break. It is your last chance to paste the reference before
 section 06 builds on it.
