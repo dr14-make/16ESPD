@@ -403,38 +403,54 @@ Closing the loop moves the poles, and **tuning is choosing where they go**.
 </div>
 <div>
 
-![Left: the complex s-plane with the stable left half shaded green and the unstable right half shaded red, and four poles marked: the car at minus 0.016, a fast real pole at minus 0.8, a complex pair at minus 0.25 plus or minus 1.2 j, and an unstable pole at plus 0.15. Right: the term each pole adds to the response over 20 seconds: the car's barely falls, the fast pole decays within a few seconds, the complex pair rings down, and the unstable pole grows without bound.](/figures/05-poles.svg)
+![Left: the complex s-plane, the stable left half shaded blue and the unstable right half orange, with four labeled poles: the car as a circle at minus 0.016, a fast real pole as a square at minus 0.8, a complex pair as diamonds at minus 0.25 plus or minus 1.2 j, and an unstable pole as a triangle at plus 0.15. Right: the term each pole adds to the response over 20 seconds, one line style each: the car's barely falls, the fast pole's decays within a few seconds, the pair rings down, and the unstable pole's grows without bound.](/figures/05-poles.svg)
 
 </div>
 </div>
 
 <!--
-The denominator of a transfer function decides how the system moves on its own. Its roots are
-called poles.
+The denominator of a transfer function decides how the system moves on its own, with nothing
+pushing it. Its roots are called poles.
 
-Each pole p puts a term e to the p t into the response. So where the pole sits on this plane tells
-you what that term does.
+Here is the one fact to take away. Each pole p puts a term e to the p t into the response. The
+whole response is a sum of those terms, one per pole. So where a pole sits on this plane tells you
+what its term does in time.
 
-Look at the left plot, then the matching color on the right.
+The plane has two axes. Left and right is the real part of the pole. It sets how fast the term
+grows or dies. Up and down is the imaginary part. It sets how fast the term oscillates. Every
+curve on the right starts at one, so you can compare their shapes.
 
-Green, far left on the real axis, at minus 0.8. The term decays, with a time constant of one over
-0.8, about 1.25 seconds. The further left, the faster it dies.
+Start with the square, far left on the real axis, at minus 0.8. Its term is e to the minus 0.8 t.
+The time constant is one over 0.8, about 1.25 seconds. After five seconds, that is four time
+constants, less than two percent is left. You can see the dashed curve flat on zero by then. Move
+a pole further left, and its term dies faster.
 
-Orange, the pair off the axis. A complex pole always comes with its mirror image. The imaginary
-part, 1.2, is how fast it oscillates. The real part, minus 0.25, is how fast the oscillation dies
-out. That is the ringing you see in an underdamped step response.
+Now the circle: the car. Its pole is minus one over tau, minus 0.016, almost on the vertical
+axis. Its time constant is the 63 seconds we read off the step test. After the full twenty
+seconds on this plot, the term has only lost about a quarter. That is why the car on its own took
+minutes to settle in section 01. A pole close to the axis is slow, and the slowest pole decides
+how long the whole response takes.
 
-Red, right of the axis. The real part is positive, so the term grows without bound. One pole in
-the right half-plane, and the loop is unstable.
+The diamonds are a complex pair. A complex pole always comes with its mirror image, because the
+real signal is the sum of the two. The imaginary part, 1.2 radians per second, is the
+oscillation: one period every five seconds or so. The real part, minus 0.25, is the envelope that
+shrinks it, with a time constant of four seconds. That is the ringing you see in an underdamped
+step response. Further from the real axis means faster ringing; closer to the vertical axis means
+it takes longer to die out.
 
-Blue is the car. Its pole is minus one over tau, minus 0.016, practically on the axis. That is
-why the car on its own took minutes to settle in section 01.
+The triangle sits right of the axis, at plus 0.15. The real part is positive, so the term grows.
+It doubles about every four and a half seconds, and it never stops. One pole in the right half
+plane, and the whole system is unstable, no matter how good the other poles are.
 
 One more pole sits exactly at the origin: the PID's integrator. e to the zero t is one, a term
-that never fades. That is the integrator remembering the error.
+that neither grows nor fades. That is the integrator remembering the error, and it is why PI and
+PID remove the steady-state error.
 
-When we close the loop, the poles move. Every tuning method, whether it is a table or a knob, is
-a way of choosing where they end up.
+So what does tuning do? When we close the loop around the car, the poles of the loop are no
+longer the car's poles. They move, and the controller's gains decide where they go. A good tuning
+pulls the slow car pole to the left, so the loop responds in seconds instead of minutes, without
+pushing any pole too close to the axis or across it. Every tuning method, a table or a knob, is a
+way of choosing where they end up.
 -->
 
 ---
