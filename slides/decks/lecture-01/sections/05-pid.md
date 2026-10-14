@@ -605,46 +605,55 @@ To a passenger, an aggressive derivative feels like surging. Comfort limits the 
 
 ---
 
-## P, PI, PD and PID
+## P, PI, PD and PID: one family
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-[1.5fr_1fr] gap-8">
 <div>
 
-Set a gain to zero and that path disappears. What is left gets named after the letters that
-remain:
+Switch a path off, and the controller is named after the letters that are left:
 
-| Controller | Paths | In our model |
+| Name | Keeps | Pick it when |
 |---|---|---|
-| P | present | `with_I = false, with_D = false` |
-| PI | present, past | `with_I = true, with_D = false` |
-| PD | present, future | `with_I = false, with_D = true` |
-| PID | all three | `with_I = true, with_D = true` |
+| **P** | present | a small offset is fine — ours settles 0.7 km/h short |
+| **PI** | present, past | the offset must go, and the sensor is noisy — the most common choice in industry |
+| **PD** | present, future | what you control already adds up by itself, like a motor turning to an angle |
+| **PID** | all three | the offset must go *and* the response must be fast and calm — our cruise control |
 
 </div>
 <div>
 
-> **One model for all four**
+> **You have built three of them**
 >
-> Sections 03, 04 and 05 are one Dyad model with two booleans flipped. There is no separate
-> "P controller" anywhere in this repository, because P is PID with two paths switched off.
+> Section 03 was P, section 04 PI, section 05 PID: the same controller, one path added each
+> time.
 
-**Open in Dyad** `dyad/Lecture1/CruiseLoop.dyad`
+The reference model does the same with two on/off switches, `with_I` and `with_D`, in
+`dyad/Lecture1/CruiseController.dyad`.
 
 </div>
 </div>
 
 <!--
-You pick a member of the family by deciding which terms your plant needs.
+P, I and D are three paths that add up. Switch one off, and you get a smaller controller, named
+after the letters that are left. So there are four members of the family.
 
-Leave the integrator out when the plant, the thing being controlled, already integrates. A motor
-turning to a position is one: the position is the running total of the speed, and holding a
-position needs no effort. A second integrator there mostly adds oscillation.
+P alone is the simplest. It leaves a small offset: our car settled 0.7 km/h short. If that is
+good enough, stop here.
 
-Leave the derivative out when the measurement is noisy and you cannot filter it enough. That is
-most of the time: a large fraction of industrial loops in service are PI.
+PI adds the integral, which removes the offset. It leaves out the derivative, which reacts badly
+to a noisy sensor. That makes PI the most common controller in industry.
 
-In the reference, `with_I` drives `i_switch` and `with_D` drives `d_switch`, so all four
-controllers are one diagram. Your controller has no switches: it is the PID row, built by hand.
+PD keeps the derivative and drops the integral. You use it when the thing you control already
+adds up by itself. Think of a motor turning a wheel to an angle. The angle is the running total
+of the motor's speed, so once the wheel is at the angle, the motor needs no effort to hold it.
+There is no offset to remove, and an integral would only make the wheel swing.
+
+PID keeps all three. Our cruise control needs it: no offset, and a fast arrival with little
+overshoot.
+
+You have built three of these already. Section 03 was P, section 04 added the integral, and
+section 05 the derivative. The reference model in the repository is one diagram with two on/off
+switches, with I and with D, so it can be any of the four.
 -->
 
 ---
