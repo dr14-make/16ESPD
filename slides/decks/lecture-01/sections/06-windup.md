@@ -408,8 +408,10 @@ says yes only when both its inputs say yes, and the switch back into the integra
 The first check compares the output before and after saturation. Equal means inside the limit. Not
 equal means saturating.
 
-The second check: do the error and the output have the same sign? Then the integrator is pushing
-further into the saturated direction, and integrating only winds it up more.
+The second check: does the error push the same way as the limit? At the top limit, a positive
+error asks for even more torque. Integrating it would only wind the integrator up more, so we stop.
+A negative error asks for less torque. Integrating that brings the command back inside the limit,
+so we let it through. The next slide shows why that matters.
 
 Only when both are true does the integrator's input switch to zero. It freezes. It does not reset
 or decay. It holds, and moves again the moment either condition stops.
@@ -420,6 +422,69 @@ called conditional integration.
 
 The other common method is back-calculation. It takes the part of the command the engine could
 not deliver and feeds it back to pull the integrator down. We compare both shortly.
+-->
+
+---
+
+## Why check the sign too?
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-8">
+<div>
+
+Suppose the integrator holds **200 N·m** on its own, more than the engine's 150. Gain *k* = 56.
+
+| Speed vs. 130 | P part | Command | Engine gets | Saturation check only | Both checks |
+|---|--:|--:|--:|---|---|
+| 2 km/h under | +112 | 312 | 150 | frozen | frozen |
+| on target | 0 | 200 | 150 | frozen | frozen |
+| 0.5 km/h over | −28 | 172 | 150 | **frozen** | **comes down** |
+| 0.9 km/h over | −50 | 150 | 150 | first moment it can move | coming down |
+
+</div>
+<div>
+
+> **Saturation check only: stuck at full throttle**
+>
+> It freezes the integrator in *both* directions. The car passes 130 at full throttle, and only
+> the P part can pull the command under the limit.
+
+The sign check freezes only the direction that winds up. Unwinding is always allowed.
+
+*On our hill both give the same run: the integrator stops at 62 N·m, so the command is
+already under 150 when the speed passes 130.*
+
+</div>
+</div>
+
+<!--
+Why do we need the second check at all? Why not just freeze the integrator whenever the engine is
+at its limit?
+
+Take an integrator that holds 200 newton-meters by itself, more than the engine can give. The gain
+is 56, so each km/h of error adds 56 newton-meters.
+
+First row: the car is 2 km/h under the target. The command is 312, the engine gives 150. Both
+versions freeze the integrator, and that is right: the error asks for more, and more is impossible.
+
+Second row: the car reaches 130. The proportional part is zero, the command is still the
+integrator's 200, and the engine still gives 150. Still frozen in both.
+
+Third row: the car is half a km/h too fast. The error now asks for less torque. The command is
+172, still above 150, so the engine stays at full throttle. With the saturation check alone, the
+integrator stays frozen: the command is at the limit, and that is all this version looks at. With
+the sign check, the integrator starts coming down at once, because the error points back inside
+the limit.
+
+Last row: only at 0.9 km/h too fast does the proportional part pull the command under 150. Only
+then can the saturation-only version start unwinding its 200, and the car overshoots while it
+does.
+
+So the sign check freezes only the direction that winds up. Unwinding is always allowed.
+
+To be fair to the simple version: on our hill the two give the same run. With clamping, the
+integrator stops at 62 newton-meters. When the speed passes 130, the proportional part is zero and
+the command is about 62, already under the limit, so the second check never has to decide
+anything. It matters when the integrator holds more than the limit on its own.
 -->
 
 ---
