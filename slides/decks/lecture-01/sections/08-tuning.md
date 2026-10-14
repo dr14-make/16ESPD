@@ -780,11 +780,10 @@ The rule: **always plot the actuator command.** It is one extra line, and it sho
 hardware can do what the design asks.
 
 Try it on your `TuningCruiseStep`. Run `TuningCruiseTransient` and plot `controller.y` with
-`plant.v_kmh`. The command starts at about 1350 newton-meters, nine times what the engine has, and
-the speed shoots to about 118.5 km/h within a second and a half. Now put the limits back:
-`plant.T_max` to 150, `controller.y_max` to 150, `controller.y_min` to 0. Re-run. The command sits
-on 150 for over four seconds, the speed climbs in a straight line, reaches 110 just before six
-seconds and peaks at 110.8. `CruiseLoopStep` is never touched.
+`plant.v_kmh`. The command starts at about 1350 newton-meters, the gain of 67 times the 20 km/h step, nine
+times what the engine has, and the speed overshoots to about 119 km/h. Now put the limits back:
+`plant.T_max` to 150, `controller.y_max` to 150, `controller.y_min` to 0. Re-run. The command now sits on
+150 while the speed climbs, and the speed peaks at about 110.8. `CruiseLoopStep` is never touched.
 -->
 
 ---

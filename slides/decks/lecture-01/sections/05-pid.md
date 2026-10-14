@@ -500,9 +500,9 @@ pid_loop = rerun(
 </div>
 <div>
 
-![Three step responses on one axes: P settling below the setpoint, PI reaching it with overshoot, PID reaching it with the overshoot suppressed.](/figures/05-p-pi-pid.svg)
+![Three step responses on one axes: P overshooting and then settling below the setpoint, PI overshooting a little more and settling on it, PID reaching it with the overshoot suppressed.](/figures/05-p-pi-pid.svg)
 
-*P settles short of the target, PI overshoots it, PID reaches it with little overshoot.*
+*P overshoots, then settles short of the target. PI overshoots and reaches it. PID reaches it with little overshoot.*
 
 </div>
 </div>
@@ -573,9 +573,8 @@ brake.
 
 The terms act at different times, so when the response misbehaves tells you which term to adjust.
 
-At 10 seconds, the right edge, the integral holds about 57 newton-meters, the proportional pulls
-back at about minus 19, and the derivative is near zero. By 60 seconds the integral holds the car
-alone, at 40.2.
+By 60 seconds the proportional and derivative parts have faded to zero, and the integral holds
+the car alone, at about 40 newton-meters.
 -->
 
 ---

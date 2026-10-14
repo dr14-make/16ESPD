@@ -228,7 +228,7 @@ Two of these four are above it.*
 </div>
 <div>
 
-![Four step responses at increasing proportional gain on one axes: each rises faster and settles closer to the setpoint, and none reaches it.](/figures/03-gain-family.svg)
+![Four step responses at increasing proportional gain on one axes: each rises faster and settles closer to the setpoint, the higher gains overshoot first, and none settles on it.](/figures/03-gain-family.svg)
 
 *Left: four gains from 14 to 890 N·m per km/h. Right: the last half minute, magnified. The two lowest gains have settled short, the two highest are still oscillating.*
 

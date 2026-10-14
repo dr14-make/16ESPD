@@ -133,7 +133,7 @@ runs = [Ts => solve(p) for (Ts, p) in problems]
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/09-discretization.ipynb)
 
-*As the sample time grows, the overshoot grows, then the loop rings, then it diverges.*
+*As the sample time grows, the overshoot grows, then the loop rings and no longer settles.*
 
 </div>
 <div>

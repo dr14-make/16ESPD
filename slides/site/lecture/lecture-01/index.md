@@ -699,7 +699,7 @@ Your library cannot see the course library's `GradeProfile`; the pulse is what t
 
 ::: tip Expected result
 
-The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.05 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing, to about **97** at the crest, and drags `controller.gain.y` to about **6000 N·m**, forty times what the engine can deliver. At that scale the integrator's trace stays near zero; hover over it to read it. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
+The climb starts at 30 s and needs more tractive force than the engine can supply: `controller.y` sits at 150 N·m and the car heads for about **118 km/h**; the climb ends before it gets there, at **119.05 km/h** and still falling. All that time the error is positive, so `controller.integrator.y` keeps climbing, to about **97** just after the crest, and drags `controller.gain.y` to about **6000 N·m**, forty times what the engine can deliver. At that scale the integrator's trace stays near zero; hover over it to read it. At 150 s the road flattens, and the wound-up integrator still commands acceleration: the speed overshoots 130 km/h, by more the longer the hill lasted.
 
 Compare with the course model `CruiseClimb`, which closes the loop with the library's `LimPID` and its back-calculation anti-windup; it is back at **130 km/h** at 400 s.
 

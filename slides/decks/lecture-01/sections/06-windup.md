@@ -523,7 +523,7 @@ $$
 | Easy to read | yes | less so |
 | Where | your `CruiseController`, step 6d | `LimPID`, via `Ni` |
 
-*Both keep the integrator near the limit instead of far above
+*Both keep the integrator below the limit instead of far above
 it, and that is what prevents the overshoot.*
 
 **Open in Dyad** `dyad/Lecture1/WindupClimb.dyad` — `CruiseClimb`, whose loop
@@ -567,7 +567,7 @@ class: big-figure
 
 ## Three anti-windup variants on the same hill
 
-![Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both hold the integrator near the limit and follow the setpoint back cleanly.](/figures/06-three-way-antiwindup.svg)
+![Speed and integrator state for three controllers through the same climb: without anti-windup the integrator runs far above the limit and the speed overshoots, while clamping and back-calculation both keep the integrator below the limit and follow the setpoint back cleanly.](/figures/06-three-way-antiwindup.svg)
 
 <!--
 Lower plot first. The integrator traces show the cause: one rises far above the limit, to 5431

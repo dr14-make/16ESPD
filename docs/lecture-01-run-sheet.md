@@ -51,13 +51,14 @@ live here, one section per deck section, in deck order.
 - "Before we begin": wait until every laptop has the three language-server settings and has
   reloaded its window. A laptop without them is the one that kills Julia mid-build later.
 - Slide budgets: "What a system is" 2, "What a control system is" 1, "Three kinds of control" 1,
-  "Five jobs, one diagram" 2, "Feedback is a family" 1.
-- "The car, once": half a minute; section 01's recap comes back to the numbers.
+  "Five tasks of control engineering" 2, "Feedback controllers, controllability and
+  observability" 1.
+- "The car's parameters": half a minute; section 01's recap comes back to the numbers.
 - "What a system is": walk the table against the students' `Car` diagram if Studio is up.
 - "Where the models live": leave it up while you state the HandsOn/Lecture1 rule. The gray
   "open in Dyad" strip is the reference model for the second screen; the students' own diagram
   is the one on the projector during a build.
-- "Two conventions": on "what is missing from a gain of 220", wait for someone to say "units".
+- "Units in this lecture": on "what is missing from a gain of 220", wait for someone to say "units".
 
 ## 01 The car — 22 min
 

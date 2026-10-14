@@ -160,7 +160,7 @@ pi_loop = Scenarios.CruiseLoopTransient(
 </div>
 <div>
 
-![Two step responses on one axes: the proportional run settles below the setpoint, the proportional-integral run climbs the last stretch and reaches it.](/figures/04-p-vs-pi.svg)
+![Two step responses on one axes: the proportional run overshoots and then settles below the setpoint, the proportional-integral run overshoots a little further and then settles on it.](/figures/04-p-vs-pi.svg)
 
 *Same gain, same step. P settles short; PI reaches the setpoint.*
 
@@ -268,7 +268,7 @@ plot_sweep(ti_family; sig = SPEED, setpoint = 110, name = "Ti",
 
 ![Five step responses at decreasing integral time: each reaches the setpoint sooner and the fastest ones overshoot and oscillate before settling.](/figures/04-ti-family.svg)
 
-*The **T<sub>i</sub>** sweep. As T<sub>i</sub> shrinks, overshoot appears, then grows.*
+*The **T<sub>i</sub>** sweep. As T<sub>i</sub> shrinks, the overshoot grows.*
 
 </div>
 </div>
