@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 296" width="600" height="296">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .engine { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .cyl { fill: #eaf1fa; stroke: #16202c; stroke-width: 1.5; }
+    .pipe { fill: #fff; stroke: #4a5a6b; stroke-width: 1.5; }
+    .cat { fill: #fbefe0; stroke: #a75d00; stroke-width: 2; }
+    .sensor { fill: #1f5fa8; stroke: #1f5fa8; stroke-width: 1; }
+    .probe { stroke: #1f5fa8; stroke-width: 3; }
+    .cap { font-size: 16px; }
+    .cap-k { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #a75d00; }
+    .lbl-acc { font-size: 14px; fill: #1f5fa8; }
+  </style>
+  <text class="cap-k" x="20" y="32">a</text><text class="cap" x="38" y="32">two-sensor control</text>
+  <rect class="engine" x="20" y="76" width="96" height="48" rx="4"/>
+  <circle class="cyl" cx="36.0" cy="100" r="8"/>
+  <circle class="cyl" cx="57.3" cy="100" r="8"/>
+  <circle class="cyl" cx="78.6" cy="100" r="8"/>
+  <circle class="cyl" cx="99.9" cy="100" r="8"/>
+  <rect class="pipe" x="116" y="92" width="470" height="16"/>
+  <rect class="cat" x="200" y="82" width="62" height="36" rx="6"/>
+  <rect class="cat" x="372" y="80" width="96" height="40" rx="6"/>
+  <text class="lbl" x="231" y="138" text-anchor="middle">primary cat.</text>
+  <text class="lbl" x="420" y="140" text-anchor="middle">main cat.</text>
+  <rect class="sensor" x="154" y="74" width="12" height="18" rx="2"/>
+  <path class="probe" d="M160 92 V102"/>
+  <text class="lbl-acc" x="160" y="68" text-anchor="middle">two-step or broad-band λ</text>
+  <rect class="sensor" x="304" y="74" width="12" height="18" rx="2"/>
+  <path class="probe" d="M310 92 V102"/>
+  <text class="lbl-acc" x="310" y="68" text-anchor="middle">two-step λ</text>
+  <text class="cap-k" x="20" y="172">b</text><text class="cap" x="38" y="172">three-sensor control</text>
+  <rect class="engine" x="20" y="222" width="96" height="48" rx="4"/>
+  <circle class="cyl" cx="36.0" cy="246" r="8"/>
+  <circle class="cyl" cx="57.3" cy="246" r="8"/>
+  <circle class="cyl" cx="78.6" cy="246" r="8"/>
+  <circle class="cyl" cx="99.9" cy="246" r="8"/>
+  <rect class="pipe" x="116" y="238" width="470" height="16"/>
+  <rect class="cat" x="200" y="228" width="62" height="36" rx="6"/>
+  <rect class="cat" x="372" y="226" width="96" height="40" rx="6"/>
+  <text class="lbl" x="231" y="284" text-anchor="middle">primary cat.</text>
+  <text class="lbl" x="420" y="286" text-anchor="middle">main cat.</text>
+  <rect class="sensor" x="154" y="220" width="12" height="18" rx="2"/>
+  <path class="probe" d="M160 238 V248"/>
+  <text class="lbl-acc" x="160" y="214" text-anchor="middle">two-step or broad-band λ</text>
+  <rect class="sensor" x="304" y="220" width="12" height="18" rx="2"/>
+  <path class="probe" d="M310 238 V248"/>
+  <text class="lbl-acc" x="310" y="214" text-anchor="middle">two-step λ</text>
+  <rect class="sensor" x="514" y="220" width="12" height="18" rx="2"/>
+  <path class="probe" d="M520 238 V248"/>
+  <text class="lbl-acc" x="520" y="214" text-anchor="middle">two-step λ</text>
+</svg>

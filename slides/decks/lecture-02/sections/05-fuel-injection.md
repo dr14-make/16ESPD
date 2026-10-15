@@ -369,7 +369,7 @@ Notebook 05 will regenerate these four traces from an electromagnetic model of t
 </div>
 <div>
 
-![Spray geometries: a) tapered spray, 80 % of the fuel inside angle α80 and 50 % inside α50; b) dual spray, two sprays with 70 % of the fuel in each inside β, here β = 8°; c) gamma angle, a spray offset at angle γ.](/pptx/slide46-spray-geometry.png)
+![Spray geometries below three injector tips: a) tapered spray, the cone α80 holding 80 % of the fuel with the denser core α50 holding 50 % inside it; b) dual spray, two jets each holding 70 % of its fuel inside β ≈ 8°, both together inside α50; c) gamma angle, a single jet offset from the injector axis by γ.](/diagrams/05-spray-geometry.svg)
 
 </div>
 </div>
@@ -381,6 +381,10 @@ be mounted pointing at the valve, the spray is angled, gamma.
 
 The angles alpha 80 and alpha 50 contain 80 and 50 percent of the fuel: that is how a spray's width
 is specified.
+
+The drawing is redrawn from the Bosch spray-geometry figure the source deck scanned. The angles are
+illustrative, not to scale for any injector; only beta of about 8 degrees is the figure's own
+number.
 -->
 
 ---

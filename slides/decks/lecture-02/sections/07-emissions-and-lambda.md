@@ -72,7 +72,7 @@ routeAlias: lambda-control
 
 <div class="stack mt-4">
 
-![Installation locations of λ sensors: a) two-sensor control, a two-step or broad-band sensor before the primary catalytic converter and a two-step sensor after it; b) three-sensor control, with a further sensor after the main catalytic converter.](/pptx/slide57-sensor-locations.png)
+![Installation locations of λ sensors: a) two-sensor control, a two-step or broad-band λ sensor before the primary catalytic converter and a two-step λ sensor after it; b) three-sensor control, with a further two-step λ sensor after the main catalytic converter.](/diagrams/07-lambda-sensor-locations.svg)
 
 </div>
 </div>
@@ -100,6 +100,9 @@ what limits the dynamics, as the last bullet says. You met dead time in Lecture 
 
 The second sensor after the catalyst trims the first: if the catalyst output drifts rich, it shifts
 the switching point, the dwell time t v in panel a and b.
+
+The sensor locations at the bottom left are redrawn from the Bosch installation figure the source
+deck scanned, with the sensors labeled by type instead of by number.
 
 Notebook 06, "Lambda control and the catalyst", will regenerate this limit cycle from a model with
 the exhaust delay and a switching sensor.
@@ -167,7 +170,7 @@ class: big-figure
 
 ## Catalytic converters
 
-<div class="grid grid-cols-[2fr_1fr] gap-6">
+<div class="grid grid-cols-[1fr_1fr] gap-6 items-center">
 <div>
 
 A catalytic converter is a vehicle emissions control device. It converts the toxic by-products of
@@ -188,7 +191,7 @@ catalyzed chemical reactions. It treats
 </div>
 <div>
 
-![Catalytic converter configurations: a) a primary catalytic converter close to the engine and a main converter under the floor; b) a 4-in-2 exhaust manifold with the main converter after the second junction; c) one exhaust system per cylinder bank, each with a primary and main converter; d) a Y-shaped junction joining both banks into one main converter.](/pptx/slide59-catalyst-layouts.png)
+![Catalytic converter configurations: a) a primary catalytic converter close to the engine and a main converter under the floor; b) a 4-in-2 exhaust manifold with a primary converter in each branch and the main converter after the junction; c) a V engine with one exhaust system per cylinder bank, each with a primary and main converter; d) a V engine whose two branches, each with a primary converter, join in a Y into one main converter.](/diagrams/07-catalyst-layouts.svg)
 
 </div>
 </div>
@@ -206,7 +209,9 @@ The third stage is not chemistry: it is the second oxygen sensor, which checks t
 and trims the first loop.
 
 On the right, where the converters sit. A small primary converter close to the engine lights off
-quickly after a cold start; the main one under the floor does the bulk of the work.
+quickly after a cold start; the main one under the floor does the bulk of the work. In b, the main
+converter only after the second junction would heat up too slowly, so each branch gets its own
+primary converter. Redrawn from the Bosch configuration figure the source deck scanned.
 -->
 
 ---
