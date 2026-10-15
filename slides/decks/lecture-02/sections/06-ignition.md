@@ -204,43 +204,34 @@ one-cylinder model and find the MBT angle.
 routeAlias: timing-and-emissions
 ---
 
-## Effect of ignition timing on exhaust gases and fuel consumption
+## Effect of ignition timing on exhaust gases
 
-<div class="grid grid-cols-3 gap-6 items-center mt-4">
-<div>
+<CardExport notebook="02-cycle-and-spark" name="emissions-vs-lambda" height="30rem" />
 
-![HC emissions in g/kWh against excess-air factor λ from 0.8 to 1.4, for ignition angles α_z from 20° to 50°: a minimum near λ 1.1 to 1.2, higher everywhere with more advance.](/pptx/slide51-hc-vs-lambda.png)
-
-</div>
-<div>
-
-![NOx emissions in g/kWh against λ for α_z from 20° to 50°: a peak just lean of λ 1, near 1.05 to 1.1, much higher with more advance.](/pptx/slide51-nox-vs-lambda.png)
-
-</div>
-<div>
-
-![CO emissions in g/kWh against λ for α_z from 20° to 50°: high on the rich side and falling to almost zero at λ 1 and above, nearly independent of the ignition angle.](/pptx/slide51-co-vs-lambda.png)
-
-</div>
-</div>
-
-<div class="caption">Hydrocarbons · nitrogen oxides · carbon monoxide, each against the excess-air factor λ, one curve per ignition angle α<sub>z</sub></div>
+<div class="caption">Hydrocarbons · nitrogen oxides · carbon monoxide, each against the excess-air factor λ, one curve per ignition angle α<sub>z</sub> (MBT at 50°); drawn from an assumed trend model</div>
 
 <!--
-Three pollutants, one horizontal axis, lambda, and one curve per spark advance.
+Three pollutants, one horizontal axis, lambda, and one curve per spark advance. The slider under
+the plot changes the load.
 
-HC, unburned fuel: lowest a little lean of one, rising when too rich, and rising again when too
-lean as the flame starts to fail. More advance means more HC.
+These curves are drawn from an assumed trend model, a few lines per pollutant with the shapes of
+the Bosch figure and of Heywood's textbook. They are neither simulated nor measured. The units are
+grams per kilogram of fuel; the Bosch original used grams per kilowatt-hour.
+
+HC, unburned fuel: lowest a little lean of one, rising when too rich, and rising steeply when too
+lean as the flame starts to fail. More advance means more HC; a late spark leaves the exhaust
+hotter, and the hydrocarbons burn off there.
 
 NOx forms at high temperature with spare oxygen, so it peaks just lean of one. More advance means
 higher peak temperature and much more NOx. That is the main reason to retard the spark below MBT.
+Computing NOx from physics needs a burned-gas zone and Zeldovich kinetics in the single-cylinder
+model; that comes later, with Dyad task 6.
 
 CO is incomplete combustion from too little oxygen: high rich, near zero lean, and the spark hardly
 changes it.
 
-The fuel consumption half of the title is on the next slide, with the torque.
-
-The notebooks show this plot as it is; we do not simulate the chemistry.
+Fuel consumption and torque against lambda are on the next slide; their curves wait on the engine
+model of Dyad task 2.
 -->
 
 ---
