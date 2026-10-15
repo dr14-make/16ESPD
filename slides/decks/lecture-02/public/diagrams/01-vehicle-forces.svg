@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 340" width="620" height="340">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .body { fill: #eaf1fa; stroke: #16202c; stroke-width: 2; stroke-linejoin: round; }
+    .glass { fill: #fff; stroke: #16202c; stroke-width: 1.5; }
+    .wheel { fill: #fff; stroke: #16202c; stroke-width: 6; }
+    .hub { fill: #16202c; }
+    .ground { stroke: #4a5a6b; stroke-width: 2; }
+    .hatch { stroke: #4a5a6b; stroke-width: 1.2; }
+    .lbl { font-size: 16px; fill: #4a5a6b; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-acc { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .arrow-warn { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .f-lbl { font-size: 18px; font-weight: 600; fill: #16202c; }
+    .f-lbl-acc { font-size: 18px; font-weight: 600; fill: #1f5fa8; }
+    .f-lbl-warn { font-size: 18px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="vf-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="vf-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="vf-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <!-- direction of travel -->
+  <path class="arrow" d="M250 30 H330" marker-end="url(#vf-ink)"/>
+  <text class="f-lbl" x="340" y="36">v</text>
+
+  <!-- car, facing right -->
+  <path class="body" d="M80 228 V186 Q82 168 106 164 L190 156 L238 114 Q248 106 266 106 L370 106 Q386 106 398 116 L446 156 L500 164 Q522 168 524 188 V228 Z"/>
+  <path class="glass" d="M206 158 L246 122 Q252 117 262 117 L300 117 V158 Z"/>
+  <path class="glass" d="M312 158 V117 L368 117 Q380 117 388 125 L420 158 Z"/>
+  <circle class="wheel" cx="150" cy="226" r="30"/>
+  <circle class="hub" cx="150" cy="226" r="6"/>
+  <circle class="wheel" cx="440" cy="226" r="30"/>
+  <circle class="hub" cx="440" cy="226" r="6"/>
+
+  <!-- road -->
+  <path class="ground" d="M30 260 H590"/>
+  <path class="hatch" d="M40 260 l-10 12 M70 260 l-10 12 M100 260 l-10 12 M130 260 l-10 12 M160 260 l-10 12 M190 260 l-10 12 M220 260 l-10 12 M250 260 l-10 12 M280 260 l-10 12 M310 260 l-10 12 M340 260 l-10 12 M370 260 l-10 12 M400 260 l-10 12 M430 260 l-10 12 M460 260 l-10 12 M490 260 l-10 12 M520 260 l-10 12 M550 260 l-10 12 M580 260 l-10 12"/>
+
+  <!-- weight at the center of gravity -->
+  <circle cx="300" cy="180" r="7" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path d="M300 173 A7 7 0 0 1 307 180 H300 Z M300 187 A7 7 0 0 1 293 180 H300 Z" fill="#16202c"/>
+  <path class="arrow" d="M300 188 V250" marker-end="url(#vf-ink)"/>
+  <text class="f-lbl" x="310" y="242">m·g</text>
+  <text class="lbl" x="310" y="224">weight</text>
+
+  <!-- reaction forces at the contact patches -->
+  <path class="arrow-acc" d="M150 318 V264" marker-end="url(#vf-acc)"/>
+  <path class="arrow-acc" d="M440 318 V264" marker-end="url(#vf-acc)"/>
+  <text class="f-lbl-acc" x="160" y="318">N₁</text>
+  <text class="f-lbl-acc" x="450" y="318">N₂</text>
+  <text class="lbl" x="216" y="306">reaction forces</text>
+
+  <!-- rolling resistance at both wheels, tractive force at the driven front wheel -->
+  <path class="arrow-warn" d="M150 252 H96" marker-end="url(#vf-warn)"/>
+  <path class="arrow-warn" d="M440 252 H386" marker-end="url(#vf-warn)"/>
+  <text class="f-lbl-warn" x="40" y="246">O<tspan baseline-shift="sub" font-size="12">F</tspan></text>
+  <text class="lbl" x="4" y="290" fill="#a75d00">rolling resistance</text>
+  <path class="arrow-acc" d="M440 252 H520" marker-end="url(#vf-acc)"/>
+  <text class="f-lbl-acc" x="530" y="246">F<tspan baseline-shift="sub" font-size="12">t</tspan></text>
+  <text class="lbl" x="490" y="290" fill="#1f5fa8">driving force</text>
+
+  <!-- air resistance on the front -->
+  <path class="arrow-warn" d="M600 150 H534" marker-end="url(#vf-warn)"/>
+  <text class="f-lbl-warn" x="548" y="140">O<tspan baseline-shift="sub" font-size="12">V</tspan></text>
+  <text class="lbl" x="612" y="122" text-anchor="end" fill="#a75d00">air resistance</text>
+</svg>

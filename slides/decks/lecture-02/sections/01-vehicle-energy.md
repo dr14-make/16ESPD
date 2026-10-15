@@ -45,7 +45,7 @@ $$
 </div>
 <div>
 
-![A car with its forces drawn as arrows: weight, reaction forces, driving force, friction and air resistance.](/pptx/slide16-vehicle-forces.jpeg)
+![A car moving right with its forces as arrows: weight m·g down from the center of gravity, reaction forces N₁ and N₂ up at the wheels, rolling resistance O_F backward at both contact patches, the driving force F_t forward at the driven front wheel, and air resistance O_V backward on the front.](/diagrams/01-vehicle-forces.svg)
 
 > **Units**
 >
@@ -71,6 +71,9 @@ That gives power at the wheels; integrate over a drive cycle and you have energy
 The auxiliaries: climate, battery management, lights, audio. On a modern car they are several
 hundred watts, more with the air conditioning on.
 
+The force sketch is redrawn from the source deck's clip art with the table's symbols on the arrows:
+the rolling term O F at the contact patches, drag O V on the front.
+
 Notebook 01, "Where the energy goes", will drive these terms over a WLTC cycle and show which one
 dominates in town and on the motorway.
 -->
@@ -84,7 +87,7 @@ routeAlias: rolling-resistance
 <div class="grid grid-cols-[1.15fr_1fr] gap-4 items-center">
 <div>
 
-![Coefficient of rolling resistance of a car tire against speed from 0 to 140 km/h, one curve per tire pressure from 1 to 4 bar; lower pressure gives a higher coefficient, and every curve rises with speed.](/pptx/slide17-rolling-resistance-vs-speed.png)
+<CardExport notebook="illustrations" name="rolling-vs-speed" height="25rem" />
 
 </div>
 <div>
@@ -94,7 +97,7 @@ routeAlias: rolling-resistance
 </div>
 </div>
 
-<div class="caption">Source: engineeringtoolbox.com</div>
+<div class="caption">Left: the engineeringtoolbox.com fit for car tires, f = 0.005 + (0.01 + 0.0095 (v/100)²) / p, p in bar, v in km/h</div>
 
 <!--
 The coefficient f k from the previous slide. Left: it rises with speed, and it rises a lot when the
@@ -104,7 +107,9 @@ Right: by surface. An ordinary car tire on asphalt or concrete is 0.01 to 0.015.
 car had 0.012, right in that band. Gravel doubles it, loose sand multiplies it by more than ten.
 
 The table is notebook 01's, read from its coefficient file, with the row that holds Lecture 1's
-0.012 highlighted. Once the drive-cycle model lands, the notebook sweeps the road surface over it.
+0.012 highlighted. The curves on the left are drawn from the empirical fit behind the engineeringtoolbox.com
+chart the source deck carried, not from measurements: an idealized characteristic, valid from
+about 10 to 140 kilometers per hour. Once the drive-cycle model lands, the notebook sweeps the road surface over it.
 -->
 
 ---

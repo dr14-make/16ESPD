@@ -347,7 +347,7 @@ Notebook 08 will model this as two coupled inductors and show the secondary volt
 
 ![Vacuum advance mechanism: a diaphragm unit connected to the intake manifold behind the throttle pulls the breaker plate round, advancing the timing as the vacuum rises.](/pptx/slide54-advance-mechanism.png)
 
-![Contact-breaker ignition circuit: battery, ignition coil, contact breaker and capacitor, distributor and four spark plugs.](/pptx/slide54-contact-breaker-circuit.png)
+![Contact-breaker ignition circuit: the battery feeds the coil primary L₁ through the ignition switch; the contact breaker, opened by a cam on the distributor shaft and bridged by a capacitor, grounds the primary; the secondary L₂ sends high voltage to the distributor rotor, which passes it to the four spark plugs in turn.](/diagrams/06-contact-breaker-ignition.svg)
 
 </div>
 </div>
@@ -360,6 +360,11 @@ rotor then sent the spark to each plug in turn.
 
 Two axes, speed and load: the same two axes as the electronic map two slides back, implemented with
 springs and weights.
+
+The circuit at the bottom right is a schematic redrawn from the pictorial drawing the source deck
+used. When the cam opens the breaker, the primary current collapses and the secondary induces the
+spark; the capacitor stops the breaker from arcing. The cam and the rotor are on one shaft, so the
+plug the rotor points at fires.
 -->
 
 ---
