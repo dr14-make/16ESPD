@@ -22,13 +22,14 @@ routeAlias: ignition-timing
 
 ## Ignition timing
 
-<div class="grid grid-cols-[1.6fr_1fr] gap-6">
+<div class="grid grid-cols-[1.25fr_1fr] gap-6">
 <div>
 
 - **Ignition timing** is a measurement, in degrees of crankshaft rotation, of the point at which
   the spark is fired in each cylinder.
 - **Advanced ignition**: ignition before the piston reaches top dead center (TDC).
-- Normal operation is about **5° BTDC**; with increasing engine speed the advance is increased.
+- At idle the spark fires a few degrees **BTDC**; the advance increases with engine speed and
+  decreases with load.
 - **Why bother?**
   - the fuel does not burn completely the instant the spark fires
   - the combustion gases take time to expand
@@ -39,9 +40,9 @@ routeAlias: ignition-timing
 </div>
 <div>
 
-![Example of cumulative ignition timing from centrifugal and vacuum advance: top, ignition advance before TDC against engine speed, rising from about 7° at idle to 25–35°; bottom, the manifold low pressure that drives the vacuum advance. Curve 1 part-load operation, curve 2 full load.](/pptx/slide47-advance-curves.png)
+<CardExport notebook="illustrations" name="advance-curves" height="25rem" />
 
-<div class="caption">Cumulative ignition timing from centrifugal and vacuum advance. 1 part load, 2 full load.</div>
+<div class="caption">Centrifugal plus vacuum advance, 1 part load, 2 full load; right, the vacuum unit. Idealized, drawn from textbook trends</div>
 
 </div>
 </div>
@@ -54,10 +55,16 @@ the same crank angle, just after top dead center.
 
 Load matters too. At part load the manifold pressure is low, the charge is thin and burns slowly,
 so it needs more advance. That is curve 1, which has more advance than full load, curve 2. In old
-engines the vacuum in the manifold drove that extra advance directly, the lower plot.
+engines the vacuum in the manifold drove that extra advance directly: the lower plot is the
+vacuum along each curve, the right plot what the vacuum unit adds for it. Full load has almost no
+vacuum, so curve 2 is the centrifugal advance alone: 7 degrees at idle, 27 from 5500 rpm. Part
+load peaks near 36 degrees around 4000 rpm.
 
-The source slide writes "-5 degrees BTDC"; the sign is a typo, it is 5 degrees before top dead
-center.
+The plot is idealized, drawn from textbook trends: the shapes of the Bosch figure the source deck
+scanned, with the vacuum unit's 13 degrees an assumed value that reproduces it. The source slide
+said "about 5 degrees BTDC" for normal operation; idle timing is a few degrees, 7 in the figure.
+Dyad task 6 replaces the plot with the MBT advance its single-cylinder sweep finds at part and full
+load.
 
 A video: http://www.youtube.com/watch?v=IYWUWMmimjQ
 -->
@@ -162,7 +169,8 @@ routeAlias: ignition-advance
 <div class="grid grid-cols-[1.5fr_1fr] gap-6">
 <div>
 
-- Deliver **maximum engine torque**: maximum combustion pressure should occur shortly after TDC
+- Deliver **maximum engine torque**: maximum combustion pressure should occur shortly after TDC,
+  about 15° after
   - there is a delay between the moment of ignition and complete combustion, so ignition must
     occur before
   - ignition must be advanced more
@@ -174,30 +182,41 @@ routeAlias: ignition-advance
   - knock sensors
 
 </div>
-<div class="stack">
+<div>
 
-![Combustion-chamber pressure against ignition angle for three moments of ignition: 1 at the correct point, a smooth peak just after TDC; 2 too advanced, a much higher, ragged peak; 3 too retarded, a low peak late in expansion.](/pptx/slide50-combustion-pressure.png)
+<CardExport notebook="02-cycle-and-spark" name="pressure-vs-crank" height="17rem" />
 
-![A three-dimensional ignition map: advance angle over load and engine speed.](/pptx/slide50-advance-map.png)
+<CardExport notebook="illustrations" name="advance-map" height="14rem" />
+
+<div class="caption">Cylinder pressure for three sparks and motored; the MBT advance map over speed and manifold pressure. Idealized, drawn from textbook trends</div>
 
 </div>
 </div>
 
 <!--
-The top figure is the key one. Three sparks, three pressure traces. Curve 1, correct timing: the
-pressure peaks shortly after top dead center, when the piston can turn it into work. Curve 2, too
-advanced: the pressure rises while the piston is still coming up, so it pushes against the piston;
-the peak is high and ragged. That raggedness is knock, the end gas exploding instead of burning.
-Curve 3, too retarded: the piston is already moving away, and the pressure never builds.
+The top figure is the key one. Three sparks, three pressure traces, and the motored cylinder with no
+fuel for reference. MBT, the dark blue line: the pressure peaks about 15 degrees after top dead
+center, when the piston can turn it into work. Too early, 15 degrees more advance: the pressure
+rises while the piston is still coming up, so it pushes against the piston; the peak is 69 bar
+instead of 49. In a real engine that peak is ragged: knock, the end gas exploding instead of
+burning. Too late, 15 degrees less: the piston is already moving away, and the pressure peaks at
+31 bar near 30 degrees. Each costs about 7 percent of the work.
 
 Between too early and too late there is a spark angle that gives the most torque. It is called
-MBT, minimum advance for best torque. The map below holds it, or a knock-limited angle short of
-it, for every speed and load. The knock sensor pulls the spark back when it hears detonation.
+MBT, minimum advance for best torque. The map below holds it for every speed and manifold
+pressure: about 10 degrees at idle, rising with speed, falling with load, about 35 degrees at high
+speed and light load. A production map holds a knock-limited angle short of MBT at high load and
+low speed, which gives the scanned map its ridges. The knock sensor pulls the spark back when it
+hears detonation.
+
+Both plots are idealized, drawn from textbook trends. The pressure comes from a few-line cylinder:
+one zone, compression ratio 10.5 as in the Otto loop, a Wiebe burn of 50 degrees and an assumed
+wall heat loss, at 3000 rpm and half load. The map is an assumed function with the anchors of
+Dyad task 2. Task 6, the single cylinder and its spark sweep, replaces both: the traces and the
+MBT it finds.
 
 A video on knock: https://www.youtube.com/watch?v=oVIrebbfdlA
 
-Notebook 02, "The cycle and the spark", will regenerate the three pressure traces from a
-one-cylinder model and find the MBT angle.
 -->
 
 ---
@@ -230,8 +249,8 @@ model; that comes later, with Dyad task 6.
 CO is incomplete combustion from too little oxygen: high rich, near zero lean, and the spark hardly
 changes it.
 
-Fuel consumption and torque against lambda are on the next slide; their curves wait on the engine
-model of Dyad task 2.
+Fuel consumption and torque against lambda are on the next slide, from an assumed trend model of
+the same kind, for the same four angles.
 -->
 
 ---
@@ -240,7 +259,7 @@ routeAlias: ignition-functions
 
 ## Functions of the ignition system
 
-<div class="grid grid-cols-[1.5fr_1fr] gap-8">
+<div class="grid grid-cols-[1fr_1.3fr] gap-6">
 <div>
 
 - Determine the **timing of ignition**
@@ -251,11 +270,11 @@ routeAlias: ignition-functions
     energy
 
 </div>
-<div class="grid grid-cols-2 gap-2 items-center">
+<div>
 
-![Torque in N·m against excess-air factor λ for ignition angles α_z 20° to 50°: highest slightly rich of λ 1, falling as the mixture gets leaner.](/pptx/slide52-torque-vs-lambda.png)
+<CardExport notebook="02-cycle-and-spark" name="torque-bsfc-vs-lambda" height="28rem" />
 
-![Specific fuel consumption in g/kWh against λ for α_z 20° to 50°: a minimum near λ 1.1 to 1.2, lower with more advance.](/pptx/slide52-bsfc-vs-lambda.png)
+<div class="caption">Torque and specific fuel consumption against λ, one curve per ignition angle α<sub>z</sub> (MBT at 50°), at the operating point of the emissions slide; idealized, drawn from textbook trends</div>
 
 </div>
 </div>
@@ -268,8 +287,17 @@ in its magnetic field while current flows in the primary, and the energy at the 
 spark depends on the current reached. Too short a dwell, a weak spark; too long, a hot coil. Where
 is making sure the right plug fires.
 
-The two plots close the title of the previous slide. Torque peaks slightly rich; fuel consumption
-is lowest slightly lean. And within the knock limit, more advance gives more torque and less fuel.
+The two plots close the title of the previous slide. Torque peaks slightly rich, at lambda 0.88;
+fuel consumption is lowest slightly lean, at lambda 1.09. And up to MBT, more advance gives more
+torque and less fuel: at lambda one, 69.7 newton-meters and 244 grams per kilowatt-hour at MBT,
+38 newton-meters and about 450 grams 30 degrees later.
+
+These curves are idealized, drawn from textbook trends: the hands-on engine at 3000 rpm and half
+its full-load air charge, with an assumed lambda multiplier and spark-retard multiplier, the
+structure Dyad task 2's mean-value engine uses. So the trends are true by construction, not
+found. The same axis and the same four angles as the emissions slide; MBT is held at 50 degrees
+for every lambda, which is why the lines spread wider than in the Bosch scan, where MBT moves with
+the mixture. A lambda and spark sweep of task 2's engine replaces them.
 
 Notebook 08, "Ignition coil, dwell and knock", will model the coil's charging and the dwell.
 -->
@@ -305,7 +333,11 @@ $$
 
 </div>
 
-![Coil ignition circuit: battery 1, ignition switch 2, coil 3 with primary and secondary windings, contact breaker 5 and capacitor, distributor 4 routing the high voltage to the spark plugs 7.](/pptx/slide53-coil-ignition-circuit.png)
+<div class="diagram-short">
+
+![Coil ignition circuit: the battery feeds the primary winding L₁ through the ignition switch and a ballast resistor R_v; a transistor switched by the ECU's dwell pulse grounds the primary, current i₁; the secondary winding L₂, about 80 times the turns on the same core, sends up to 30 kV to the spark plug.](/diagrams/06-coil-ignition-circuit.svg)
+
+</div>
 
 </div>
 </div>
@@ -321,6 +353,11 @@ wire.
 
 The two formulas: the voltage scales with the turns ratio, and the stored energy is half L I
 squared in the primary. That is why the current at cut-off, and so the dwell, sets the spark energy.
+
+The circuit is redrawn as Dyad task 9's ignition coil will model it: battery, switch, ballast
+resistor, primary, a transistor switched by the ECU's dwell pulse, the secondary and one plug. The
+turns ratio of 1 to 80 is task 9's assumed value. The source deck's version had contact breaker
+and distributor; that circuit is on the contact-breaker slide that follows.
 
 Notebook 08 will model this as two coupled inductors and show the secondary voltage at cut-off.
 -->

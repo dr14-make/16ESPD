@@ -71,8 +71,10 @@ begin
     const AFR_S = 14.6        # stoichiometric (deck slide 23)
     const Q_IN = H_L / AFR_S  # J per kg of air: a stoichiometric charge burned completely
 
-    # Task 6's single cylinder (assumed, 1.5 L class): bore 74.5 mm, stroke 85.8 mm.
-    const V_SWEPT = π / 4 * 0.0745^2 * 0.0858
+    # Task 6's single cylinder (assumed, 1.5 L class).
+    const BORE = 0.0745
+    const STROKE = 0.0858
+    const V_SWEPT = π / 4 * BORE^2 * STROKE
     const RC_OTTO = 10.5      # (assumed), as task 6
     const RC_DIESEL = 18.0    # (assumed), a typical passenger-car diesel
 
@@ -318,14 +320,249 @@ let
     """
 end
 
+# ╔═╡ f0dca466-d105-4443-8b28-e98da2485499
+md"""
+## Pressure against crank angle
+
+Until task 6's `SingleCylinder` exists, the same cylinder in a few lines: one zone with
+``\gamma`` = 1.3 (textbook), the 10.5 compression ratio and bore and stroke of the ideal loop above,
+a 140 mm connecting rod (assumed), and the heat released by a Wiebe function with ``a`` = 5,
+``m`` = 2 over 50° of crank (textbook, unverified), starting 1 ms after the spark (assumed). Heat
+leaves to walls at 450 K by Woschni's correlation with its coefficient tripled, standing in for
+its combustion term (assumed). The charge is that of the operating point below: 3000 rpm, half the
+full-load air charge, stoichiometric, 320 K at inlet valve closing (assumed).
+
+```math
+\frac{dp}{d\theta} = \frac{\gamma - 1}{V}\left(Q\,\frac{dx_b}{d\theta} - \frac{dQ_w}{d\theta}\right)
+  - \gamma\,\frac{p}{V}\,\frac{dV}{d\theta},
+\qquad x_b = 1 - e^{-a\left((\theta - \theta_0)/\Delta\theta\right)^{m + 1}}
+```
+
+MBT is the spark that gets the most work out of the closed cycle; the figure also fires 15°
+earlier and 15° later, beside the motored cylinder. The traces are **idealized, drawn from
+textbook trends**: nothing knocks, so the early spark's peak is smooth where the scan's is ragged.
+"""
+
+# ╔═╡ 888dda8d-5a7e-4625-8813-1c4c8ae3e51e
+begin
+    # The model lives outside the notebook so that the illustrations notebook can reuse it.
+    const Trends = include(joinpath(@__DIR__, "..", "..", "scripts", "si_torque_trends.jl"))
+    const RPM_DECK = 3000          # speed of the operating point (assumed)
+    const OP_DECK = Trends.operating_point(RPM_DECK, LOAD_DECK)
+
+    const GAMMA_BURN = 1.3         # unburned and burned mixture (textbook, task 6)
+    const CONROD = 0.140           # m (assumed, task 6)
+    const WIEBE_A = 5.0            # (textbook, unverified; task 6)
+    const WIEBE_M = 2.0            # (textbook, unverified; task 6)
+    const BURN = 50.0              # deg of crank for the whole burn (textbook, unverified; task 6)
+    const T_IGN = 1e-3             # s, spark to start of burn (assumed, task 6)
+    const T_IVC = 320.0            # K, charge at inlet valve closing (assumed)
+    const T_WALL = 450.0           # K (assumed)
+    const WOSCHNI = 3 * 130.0      # Woschni's coefficient, tripled for its combustion term (assumed)
+
+    const V_CLEAR = V_SWEPT / (RC_OTTO - 1)
+    const CRANK = STROKE / 2
+    piston_area = π * BORE^2 / 4
+    rod_term(θ) = sqrt(CONROD^2 - (CRANK * sind(θ))^2)
+    cyl_V(θ) = V_CLEAR + piston_area * (CONROD + CRANK - CRANK * cosd(θ) - rod_term(θ))
+    cyl_dV(θ) = piston_area * CRANK * sind(θ) * (1 + CRANK * cosd(θ) / rod_term(θ)) * π / 180
+    wall_area(θ) = 2piston_area + 4cyl_V(θ) / BORE
+
+    """
+        cylinder(σ; fired = true) -> (; θ, p, work, heat, θ_peak, p_peak)
+
+    Pressure [Pa] from BDC to BDC, crank angle `θ` in degrees after TDC, by fourth-order
+    Runge–Kutta in 0.2° steps, for a spark `σ` degrees BTDC at the operating point.
+    """
+    function cylinder(σ; fired = true, dθ = 0.2)
+        rpm, p_ivc = RPM_DECK, 1e3 * OP_DECK.p_m_kPa
+        m = p_ivc * cyl_V(-180) / (R_AIR * T_IVC)
+        heat = fired ? m / AFR_S * H_L : 0.0
+        θ0 = -σ + 6rpm * T_IGN
+        function burn_rate(θ)
+            θ <= θ0 && return 0.0
+            x = (θ - θ0) / BURN
+            WIEBE_A * (WIEBE_M + 1) * x^WIEBE_M / BURN * exp(-WIEBE_A * x^(WIEBE_M + 1))
+        end
+        u_mean = 2 * STROKE * rpm / 60
+        function wall_loss(θ, p)
+            T = p * cyl_V(θ) / (m * R_AIR)
+            h = WOSCHNI * BORE^-0.2 * (p / 1e5)^0.8 * T^-0.55 * (2.28u_mean)^0.8
+            h * wall_area(θ) * (T - T_WALL) / 6rpm
+        end
+        f(θ, p) = (GAMMA_BURN - 1) / cyl_V(θ) * (heat * burn_rate(θ) - wall_loss(θ, p)) -
+                  GAMMA_BURN * p / cyl_V(θ) * cyl_dV(θ)
+        θ = collect(-180.0:dθ:180.0)
+        p = similar(θ)
+        p[1] = p_ivc
+        for k in 1:(length(θ) - 1)
+            k1 = f(θ[k], p[k])
+            k2 = f(θ[k] + dθ / 2, p[k] + dθ / 2 * k1)
+            k3 = f(θ[k] + dθ / 2, p[k] + dθ / 2 * k2)
+            k4 = f(θ[k] + dθ, p[k] + dθ * k3)
+            p[k + 1] = p[k] + dθ / 6 * (k1 + 2k2 + 2k3 + k4)
+        end
+        work = sum((p[k] + p[k + 1]) / 2 * (cyl_V(θ[k + 1]) - cyl_V(θ[k])) for k in 1:(length(θ) - 1))
+        return (; θ, p, work, heat, θ_peak = θ[argmax(p)], p_peak = maximum(p))
+    end
+
+    const MBT_CYLINDER = let sparks = 20.0:0.5:55.0
+        sparks[argmax([cylinder(σ).work for σ in sparks])]
+    end
+    spark_runs = (
+        early = (σ = MBT_CYLINDER + 15, run = cylinder(MBT_CYLINDER + 15)),
+        mbt = (σ = MBT_CYLINDER, run = cylinder(MBT_CYLINDER)),
+        late = (σ = MBT_CYLINDER - 15, run = cylinder(MBT_CYLINDER - 15)),
+        motored = cylinder(0; fired = false))
+end
+
+# ╔═╡ b04a2afc-0f7e-48f4-a442-a26a5b1e1b0a
+# ╠═╡ card = "pressure-vs-crank"
+let window = -60 .<= spark_runs.motored.θ .<= 90
+    θ = spark_runs.motored.θ[window]
+    bar(r) = round.(r.p[window] ./ 1e5; digits = 3)
+    deg(σ) = isinteger(σ) ? string(Int(σ)) : string(σ)
+    fired = ((spark_runs.early, "early", "#a75d00"), (spark_runs.mbt, "MBT", "#1f5fa8"),
+        (spark_runs.late, "late", "#86b6ef"))
+    traces = [PP.scatter(; x = θ, y = bar(spark_runs.motored), mode = "lines", name = "motored",
+        line = PP.attr(width = 2, dash = "dash", color = "gray"),
+        hovertemplate = "motored, %{x:.0f}°: %{y:.1f} bar<extra></extra>")]
+    for (s, label, color) in fired
+        name = "$label $(deg(s.σ))°"
+        push!(traces, PP.scatter(; x = θ, y = bar(s.run), mode = "lines", name,
+            line = PP.attr(; width = 3, color),
+            hovertemplate = "$label, %{x:.0f}°: %{y:.1f} bar<extra></extra>"))
+    end
+    sparks = [s for (s, _, _) in fired]
+    at(r, θq) = r.p[argmin(abs.(r.θ .- θq))] / 1e5
+    push!(traces, PP.scatter(; x = [-s.σ for s in sparks], y = [round(at(s.run, -s.σ); digits = 3) for s in sparks],
+        mode = "markers", marker = PP.attr(size = 11, color = "white", line = PP.attr(width = 2.5,
+            color = [c for (_, _, c) in fired])),
+        showlegend = false, hovertemplate = "spark at %{x:.1f}°<extra></extra>"))
+    m = spark_runs.mbt.run
+    PP.plot(traces, deck_layout(;
+        xaxis = PP.attr(title = "crank angle [° after TDC]", range = [-60, 90], dtick = 15),
+        yaxis = PP.attr(title = "pressure [bar]",
+            range = [0, 10 * ceil(1.1 * spark_runs.early.run.p_peak / 1e6)]),
+        margin = PP.attr(l = 70, r = 20, t = 76, b = 60),
+        legend = PP.attr(orientation = "h", x = 0.5, xanchor = "center", y = 1.02, yanchor = "bottom",
+            title = PP.attr(text = "spark, ° BTDC:")),
+        shapes = [PP.attr(type = "line", x0 = 0, x1 = 0, yref = "paper", y0 = 0, y1 = 1,
+            line = PP.attr(color = "gray", width = 1, dash = "dot"))],
+        annotations = [PP.attr(x = m.θ_peak, y = m.p_peak / 1e5, ax = 80, ay = -6, xanchor = "left",
+            text = "peak at $(round(m.θ_peak; digits = 1))° after TDC",
+            font = PP.attr(color = "#1f5fa8"), arrowcolor = "#1f5fa8")]))
+end
+
+# ╔═╡ 10c1ba82-7ed5-4802-9297-62be020cde6e
+let (e, m, l) = (spark_runs.early.run, spark_runs.mbt.run, spark_runs.late.run)
+    @assert 12 <= m.θ_peak <= 20 "MBT's peak pressure must sit 12–20° after TDC, found $(m.θ_peak)°"
+    @assert e.p_peak > m.p_peak > l.p_peak > spark_runs.motored.p_peak "peak pressure must fall with retard"
+    @assert e.θ_peak < m.θ_peak < l.θ_peak "the peak must move later with retard"
+    @assert m.work > max(e.work, l.work) "MBT must give the most work"
+    md"""
+    **MBT** at $(MBT_CYLINDER)° BTDC: peak $(round(m.p_peak / 1e5; digits = 1)) bar at
+    $(round(m.θ_peak; digits = 1))° after TDC, gross indicated efficiency
+    $(round(100m.work / m.heat; digits = 1)) %. **15° early** $(round(e.p_peak / 1e5; digits = 1)) bar at
+    $(round(e.θ_peak; digits = 1))°; **15° late** $(round(l.p_peak / 1e5; digits = 1)) bar at
+    $(round(l.θ_peak; digits = 1))°; **motored** $(round(spark_runs.motored.p_peak / 1e5; digits = 1)) bar.
+    Each spark gives $(round(100e.work / m.work; digits = 1)) % and $(round(100l.work / m.work; digits = 1)) %
+    of MBT's work.
+    """
+end
+
+# ╔═╡ 23dce16c-5ebc-46e1-ba66-4889053b496d
+md"""
+## Torque and fuel consumption against λ
+
+The slide after the emissions pairs them with torque and specific fuel consumption, over the same
+λ axis and for the same four ignition angles, MBT at 50°, at the same relative load. The curves
+come from `scripts/si_torque_trends.jl`, the structure task 2's `TorqueProduction` takes (lecture
+plan S3, the MathWorks SI Core Engine's): inner torque scaled by a λ multiplier and a
+spark-retard multiplier, then friction and pumping ``T_f`` taken off,
+
+```math
+T_e = \left(T_{e,0} + T_f\right) M_\sigma(\Delta\sigma)\,M_\lambda(\lambda)\,\min(1, 1/\lambda) - T_f,
+\qquad M_\sigma = 1 - 0.0004\,\Delta\sigma^2 .
+```
+
+The air charge is held at the operating point: 3000 rpm (assumed) and half the full-load air
+charge, which is the relative load 0.5 of the emission figure and
+$(round(OP_DECK.p_m_kPa; digits = 1)) kPa on the hands-on engine's maps. At λ = 1 and MBT the
+curves return those maps' torque and efficiency, $(round(OP_DECK.T_e; digits = 1)) N·m and
+$(round(100OP_DECK.eta_b; digits = 1)) %; ``T_f`` is task 2's Barnes-Moss friction ×0.6 plus pumping. ``M_\lambda`` and
+``M_\sigma`` are task 2's (assumed) shapes, so torque peaks rich and consumption is lowest lean by
+construction. The curves are **idealized, drawn from textbook trends**.
+
+The scan's lines lie closer together, because its MBT moves with λ; here MBT stays at 50° at
+every λ, as in the emission model. The cylinder above puts MBT at this point at
+$(MBT_CYLINDER)°, and the spark-advance map on slide 06.5 at
+$(round(Int, Trends.sigma_mbt(RPM_DECK, OP_DECK.p_m_kPa)))°: the three are separate assumptions
+until task 6 computes one.
+"""
+
+# ╔═╡ b04a2afc-0f7e-48f4-a442-a26a5b1e1b0b
+# ╠═╡ card = "torque-bsfc-vs-lambda"
+let
+    colors = ("#86b6ef", "#3987e5", "#1c5cab", "#0d366b")
+    dashes = ("solid", "dot", "dashdot", "dash")
+    x = collect(LAMBDA_AXIS)
+    runs = Dict(α => [Trends.brake(λ, α - SIGMA_MBT, OP_DECK) for λ in LAMBDA_AXIS] for α in ALPHA_Z)
+    panels = ((:torque, "torque [N·m]", "N·m", [0, 80]), (:bsfc, "BSFC [g/kWh]", "g/kWh", [200, 700]))
+    traces = [PP.scatter(; x, y = round.(getfield.(runs[α], q); digits = 2), mode = "lines",
+                  name = "α<sub>z</sub> = $(α)°", legendgroup = "$α", showlegend = p == 1,
+                  xaxis = "x$p", yaxis = "y$p",
+                  line = PP.attr(width = 2.5, color = colors[a], dash = dashes[a]),
+                  hovertemplate = "α<sub>z</sub> $(α)°, λ %{x:.2f}: %{y:.0f} $unit<extra></extra>")
+              for (p, (q, _, unit, _)) in enumerate(panels) for (a, α) in enumerate(ALPHA_Z)]
+    axes = Dict{Symbol, Any}()
+    for (p, (_, title, _, range)) in enumerate(panels)
+        top = p == 1 ? 1.0 : 0.46
+        axes[Symbol("xaxis$p")] = Dict{Symbol, Any}(:range => [0.75, 1.4], :dtick => 0.1,
+            :anchor => "y$p", :title => p == 2 ? "excess-air factor λ" : "",
+            :showticklabels => p == 2)
+        axes[Symbol("yaxis$p")] = Dict{Symbol, Any}(:domain => [top - 0.46, top], :range => range,
+            :anchor => "x$p", :title => title)
+    end
+    axes[:xaxis1][:matches] = "x2"
+    PP.plot(traces, deck_layout(;
+        axes...,
+        hovermode = "closest",
+        margin = PP.attr(l = 70, r = 20, t = 40, b = 56),
+        legend = PP.attr(orientation = "h", x = 0.5, xanchor = "center", y = 1.1)))
+end
+
+# ╔═╡ 92e1073d-c083-4677-b228-2aec37f9a435
+let fine = 0.75:0.001:1.40
+    at(α, λ) = Trends.brake(λ, α - SIGMA_MBT, OP_DECK)
+    λ_torque = [fine[argmax([at(α, λ).torque for λ in fine])] for α in ALPHA_Z]
+    λ_bsfc = [fine[argmin([at(α, λ).bsfc for λ in fine])] for α in ALPHA_Z]
+    @assert all(0.85 .<= λ_torque .<= 0.90) "torque must peak rich, at λ 0.85–0.90: $λ_torque"
+    @assert all(1.0 .< λ_bsfc .<= 1.15) "BSFC must be lowest lean, at λ 1.0–1.15: $λ_bsfc"
+    @assert all(issorted([at(α, λ).torque for α in ALPHA_Z]) for λ in LAMBDA_AXIS) "advance up to MBT must raise torque at every λ"
+    mbt = at(SIGMA_MBT, 1.0)
+    @assert isapprox(mbt.torque, OP_DECK.T_e; rtol = 1e-9) "λ = 1 at MBT must return the map's torque"
+    @assert isapprox(mbt.efficiency, OP_DECK.eta_b; rtol = 1e-9) "λ = 1 at MBT must return the map's efficiency"
+    bsfc_min = [minimum(at(α, λ).bsfc for λ in fine) for α in ALPHA_Z]
+    md"""
+    At $(RPM_DECK) rpm and $(round(OP_DECK.p_m_kPa; digits = 1)) kPa, λ = 1 and MBT give
+    $(round(mbt.torque; digits = 1)) N·m and $(round(Int, mbt.bsfc)) g/kWh
+    (η $(round(100mbt.efficiency; digits = 1)) %). Torque peaks at λ $(λ_torque[end]) for every
+    angle; BSFC is lowest at λ $(join(λ_bsfc, ", ")), $(join(round.(Int, bsfc_min), ", ")) g/kWh
+    for α``_z`` $(join(ALPHA_Z, ", "))°. Ten degrees of retard cost
+    $(round(100 * (1 - at(SIGMA_MBT - 10, 1.0).torque / mbt.torque); digits = 1)) % of the brake torque.
+    """
+end
+
 # ╔═╡ 85aada20-329a-4835-bb86-06dffbb020b0
 md"""
 ## What comes later
 
 With Dyad task 6 (`Vehicle.Engine.SingleCylinder`, `SparkSweep`) this notebook fires the cycle:
 a motored loop, the fired loop at MBT beside this ideal one, pressure against crank angle around
-MBT, IMEP against spark advance at three speeds, the knock proxy, and indicated against ideal
-efficiency. The same cylinder with a burned-gas zone and Zeldovich kinetics then computes NOx
+MBT in place of the few-line cylinder above, IMEP against spark advance at three speeds, the knock
+proxy, and indicated against ideal efficiency. With Dyad task 2 (`MeanValueEngine` on
+`EngineDyno`), a λ × spark sweep replaces the torque and fuel-consumption trends. The same cylinder with a burned-gas zone and Zeldovich kinetics then computes NOx
 against spark advance from physics, beside the assumed trend above.
 """
 
@@ -342,4 +579,11 @@ against spark advance from physics, beside the assumed trend above.
 # ╠═dda179a4-cfb9-4e69-846e-4a7145320cb8
 # ╠═0a8954d9-9ede-4149-9d5d-3f178a19d4d3
 # ╠═4a7938e8-74c3-49be-a234-ef4a83a162ae
+# ╟─f0dca466-d105-4443-8b28-e98da2485499
+# ╠═888dda8d-5a7e-4625-8813-1c4c8ae3e51e
+# ╠═b04a2afc-0f7e-48f4-a442-a26a5b1e1b0a
+# ╠═10c1ba82-7ed5-4802-9297-62be020cde6e
+# ╟─23dce16c-5ebc-46e1-ba66-4889053b496d
+# ╠═b04a2afc-0f7e-48f4-a442-a26a5b1e1b0b
+# ╠═92e1073d-c083-4677-b228-2aec37f9a435
 # ╟─85aada20-329a-4835-bb86-06dffbb020b0

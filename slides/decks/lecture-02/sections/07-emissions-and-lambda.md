@@ -67,7 +67,7 @@ routeAlias: lambda-control
 - Ensures the conversion rate of the catalytic converter: it must hold the **stoichiometric ratio**.
 - Mixture formation is followed up in a **control loop**.
 - Deviations are detected by **lambda sensors**.
-- Typical variation **2–3 %**.
+- Typical variation **2–3 %**, about 2 Hz at idle.
 - Limited control dynamics, determined by the **sum of the response times**.
 
 <div class="stack mt-4">
@@ -78,7 +78,9 @@ routeAlias: lambda-control
 </div>
 <div>
 
-![Two-step control with a λ sensor before the catalytic converter: the sensor voltage switches between rich and lean, and the manipulated variable jumps at each switch and then ramps, a limit cycle; a) shift to rich, b) shift to lean, using a dwell time t_v after the sensor jump, from the post-catalyst control.](/pptx/slide57-two-step.png)
+<CardExport notebook="illustrations" name="two-step-cycle" height="27rem" />
+
+<div class="caption">Two-step control at idle: sensor voltage, the controller's fuel correction (jump and ramp) and the cylinder λ, from a 3 % lean start; idealized, drawn from textbook trends</div>
 
 </div>
 </div>
@@ -94,18 +96,27 @@ the controller cannot regulate to a value; it oscillates around it. When the sen
 correction jumps lean, then ramps further lean until the sensor flips. Then it jumps rich and ramps.
 A jump and a ramp: a PI controller acting on a sign. The result is a limit cycle around lambda one.
 
+The figure is a small simulation, not a drawing: a 0.2 second delay from injector to sensor at
+idle, the switching sensor of the next slide behind a 70 millisecond lag, a jump of 1.5 percent and
+a ramp of 6 percent per second. All of those are assumed, tuned so lambda swings by the 2 to 3
+percent of the bullet: here from 0.984 to 1.026, every 0.52 seconds, about 2 hertz. It starts 3
+percent lean, and the ramp has pulled that in within the first second. The limit cycle is real, it
+comes out of the loop by itself; only the numbers are chosen. The swing is lopsided, a little
+more lean than rich, because the switching level sits at 0.45 volts, below the middle of the
+sensor's range. Idealized, drawn from textbook trends.
+
 Why does it oscillate and not settle? The response times add up: injection, combustion, the gas
 traveling down the exhaust to the sensor, and the sensor's own response. That transport delay is
 what limits the dynamics, as the last bullet says. You met dead time in Lecture 1.
 
 The second sensor after the catalyst trims the first: if the catalyst output drifts rich, it shifts
-the switching point, the dwell time t v in panel a and b.
+the switching point, with a dwell time after each sensor jump. The figure leaves that shift out.
 
 The sensor locations at the bottom left are redrawn from the Bosch installation figure the source
 deck scanned, with the sensors labeled by type instead of by number.
 
-Notebook 06, "Lambda control and the catalyst", will regenerate this limit cycle from a model with
-the exhaust delay and a switching sensor.
+Dyad task 5 replaces the plot: its lambda loop, with the speed-dependent exhaust delay, the
+switching sensor and the two-step controller, in notebook 06, "Lambda control and the catalyst".
 -->
 
 ---
@@ -114,7 +125,7 @@ routeAlias: oxygen-sensor
 
 ## Oxygen sensor
 
-<div class="grid grid-cols-[1.5fr_1fr] gap-6">
+<div class="grid grid-cols-[1fr_1.1fr] gap-6">
 <div class="text-[0.95rem]">
 
 - Used to determine whether the air–fuel ratio of a combustion engine is **rich or lean**.
@@ -126,20 +137,19 @@ routeAlias: oxygen-sensor
 - The sensor does not actually measure oxygen concentration, but the **difference** between the
   oxygen in the exhaust gas and the oxygen in air.
 
-</div>
-<div class="grid grid-cols-[1fr_1.6fr] gap-3 items-center">
-<div class="stack">
+<div class="diagram-short">
 
 ![A zirconia oxygen sensor: the finger-shaped ceramic element with exhaust gas outside and reference air inside, and the sensor housing.](/pptx/slide58-sensor-construction.jpeg)
 
 </div>
-<div>
-
-![Switching oxygen sensor characteristic: sensor voltage about 0.9 V on the rich side falling steeply through U_reg near λ = 1 to about 0.1 V on the lean side.](/pptx/slide58-sensor-curve.jpeg)
-
-<div class="caption">Sensor voltage (0 to 0.9 V) against normalized A/F ratio λ (0.98, 1.0, 1.02); dashed line U<sub>reg</sub>, the switching level</div>
 
 </div>
+<div>
+
+<CardExport notebook="illustrations" name="lambda-sensors" height="20rem" />
+
+<div class="caption">Left, switching sensor voltage against λ, dashed U<sub>reg</sub>; right, the broadband Bosch LSU 4.9's pump current, datasheet points. Idealized switching curve</div>
+
 </div>
 </div>
 
@@ -153,14 +163,18 @@ exhaust, so the difference is large: about 0.9 volts. Lean, there is spare oxyge
 In between, within two percent of lambda one, the voltage drops off a cliff. So the sensor is a
 superb detector of which side of one you are on, and almost useless for how far. Hence the switch,
 the jump and the ramp. A broad-band sensor, the alternative in the previous figure, measures lambda
-over a wide range and allows a continuous controller.
+over a wide range and allows a continuous controller: on the right, its pump current is smooth from
+lambda 0.65 to 2, crossing zero at 1.003.
+
+The switching curve is idealized, drawn from textbook trends: a tanh step from 0.9 to 0.1 volts,
+two percent wide, the form Dyad task 5's switching sensor takes, with no temperature dependence.
+The broad-band points are the Bosch LSU 4.9 datasheet's. Task 5 replaces both with its two sensor
+models under a lambda ramp, in notebook 06.
 
 300 degrees is why the lambda loop cannot close straight after a cold start, as section 03 said.
 Sensors have a heater to get there faster.
 
 ECM is engine control module, another name for the ECU.
-
-Notebook 06 will regenerate this characteristic.
 -->
 
 ---

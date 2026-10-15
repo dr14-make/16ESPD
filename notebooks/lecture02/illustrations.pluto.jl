@@ -76,8 +76,8 @@ against time.
   on a 5 V supply. Idealized: no dead band, no wear.
 - *Continuous, non-linear*: the Bosch Motorsport NTC M12, its ten datasheet points, joined by
   straight lines in `ln R` between neighbors.
-- *Discontinuous*: a switching (two-step) λ sensor, about 0.85 V rich and 0.1 V lean with the
-  jump at λ = 1. Idealized as a steep logistic step.
+- *Discontinuous*: a switching (two-step) λ sensor, about 0.9 V rich and 0.1 V lean with the
+  jump at λ = 1. Idealized as a steep tanh step, the one the λ figures below use too.
 - *Amplitude*: the potentiometer's voltage through a tip-in, 10° to 60° in 0.2 s.
 - *Frequency*: a Hall wheel-speed sensor on a 48-tooth ring, the wheel accelerating from about
   30 to 60 km/h, so the pulse rate rises from 200 to 400 Hz. Compressed in time to show it.
@@ -112,7 +112,8 @@ begin
     end
 
     tps_V(angle_deg) = 0.5 + 4.0 * angle_deg / 90
-    lambda_V(λ) = 0.1 + 0.75 / (1 + exp((λ - 1) / 0.004))
+    "Switching λ sensor voltage, task 5's `LambdaSensorSwitching` without its lag (deck slide 58)."
+    lambda_V(λ) = 0.1 + 0.4 * (1 + tanh((1 - λ) / 0.005))
 
     """
         square(edges, duty) -> (t, u)
@@ -268,6 +269,412 @@ let
     """
 end
 
+# ╔═╡ 4847d6cb-f506-4620-b8dd-df28fe29b1fe
+md"""
+## Engine and ignition slides: interim figures
+
+These stand in for scanned plots on Lecture 2's engine, ignition and λ slides until the Dyad
+models can draw them. Each is **idealized, drawn from textbook trends**: explicit functions with
+every coefficient tagged (textbook) or (assumed), never a run of a Dyad model. Each section names
+the Dyad task whose model replaces its figure; the slide then changes one `<CardExport>` line.
+
+Torque and efficiency come from `scripts/si_torque_trends.jl`, the form task 2's
+`TorqueProduction` takes (lecture plan S3), anchored on the hands-on engine's maps in
+`data/engine/`. Notebook 02 draws slide 52's torque and fuel consumption from the same module.
+"""
+
+# ╔═╡ cb4510f1-3f0c-48d1-9463-c80c37a075dc
+const Trends = include(joinpath(@__DIR__, "..", "..", "scripts", "si_torque_trends.jl"))
+
+# ╔═╡ 7a0e2e3f-22f0-4c98-a767-ab72a9815758
+md"""
+### Power and efficiency against the mixture (slide 02.6)
+
+At the hands-on engine's best point, 3000 rpm and 77.5 kPa (99 N·m and 35.7 % at λ = 1, the star
+on the efficiency map), the air charge is held and the fuel varied. Power follows the inner
+torque ``M_\lambda(\lambda)\,\min(1, 1/\lambda)`` less friction; efficiency divides the same
+torque by the fuel. Rich, the fuel that finds no oxygen is wasted; lean, all of it burns, but in
+less charge. ``M_\lambda`` is task 2's shape (assumed): 1.03 at λ 0.88, 1 at λ 1, 1.04 at λ 1.1.
+
+Replaced by: Dyad task 2, a λ sweep of `MeanValueEngine` on `EngineDyno` (notebook 03).
+"""
+
+# ╔═╡ 89b9520e-51b4-4935-9306-54c576ef875c
+# ╠═╡ card = "power-efficiency-vs-afr"
+let op = Trends.map_point(3000, 77.5), afr_s = 14.6
+    afr = collect(10.0:0.05:20.0)
+    runs = [Trends.brake(a / afr_s, 0, op) for a in afr]
+    power, eff = getfield.(runs, :power), getfield.(runs, :efficiency)
+    ip, ie, i1 = argmax(power), argmax(eff), argmin(abs.(afr .- afr_s))
+    pct(y) = round.(100 .* y ./ maximum(y); digits = 2)
+    peak(i, y, text, color, ax, xanchor) = PP.attr(; x = afr[i], y = pct(y)[i], text, ax,
+        ay = -30, xanchor, arrowcolor = color, font = PP.attr(; color))
+    label(a, y, text, color) = PP.attr(; x = a, y = pct(y)[argmin(abs.(afr .- a))], text,
+        showarrow = false, xanchor = "right", yshift = 14, font = PP.attr(; color))
+    λ_ticks = 0.7:0.1:1.3
+    traces = [
+        PP.scatter(; x = afr, y = pct(power), mode = "lines", name = "power", line = line(ACCENT),
+            customdata = round.(power ./ 1e3; digits = 2),
+            hovertemplate = "AFR %{x:.1f}: %{y:.1f} % of max power, %{customdata:.1f} kW<extra></extra>"),
+        PP.scatter(; x = afr, y = pct(eff), mode = "lines", name = "brake efficiency",
+            line = line(WARN), customdata = round.(100 .* eff; digits = 2),
+            hovertemplate = "AFR %{x:.1f}: %{y:.1f} % of max efficiency, η = %{customdata:.1f} %<extra></extra>"),
+        PP.scatter(; x = [afr[ip], afr[ie], afr_s], y = [100, 100, pct(eff)[i1]],
+            mode = "markers", marker = PP.attr(; size = 9, color = [ACCENT, WARN, INK]),
+            showlegend = false, hoverinfo = "skip"),
+        PP.scatter(; x = [10, 20], y = [nothing, nothing], xaxis = "x2", showlegend = false,
+            hoverinfo = "skip"),
+    ]
+    PP.plot(traces, deck_layout(;
+        margin = PP.attr(l = 70, r = 20, t = 60, b = 60),
+        showlegend = false,
+        xaxis = axis("air-fuel ratio [kg/kg]"; range = [10, 20], dtick = 1),
+        xaxis2 = axis("λ"; overlaying = "x", side = "top", range = [10, 20],
+            tickvals = round.(afr_s .* λ_ticks; digits = 3), ticktext = string.(λ_ticks)),
+        yaxis = axis("% of maximum"; range = [55, 117], tickvals = 60:10:100),
+        shapes = [PP.attr(; type = "line", x0 = afr_s, x1 = afr_s, y0 = 55, y1 = 117,
+            line = PP.attr(; color = MUTED, width = 1.5, dash = "dot"))],
+        annotations = [
+            peak(ip, power, "max power, λ $(round(afr[ip] / afr_s; digits = 2))", ACCENT, 10, "right"),
+            peak(ie, eff, "max efficiency, λ $(round(afr[ie] / afr_s; digits = 2))", WARN, -10, "left"),
+            label(19.6, power, "power", ACCENT),
+            label(19.6, eff, "brake efficiency", WARN),
+            PP.attr(; x = afr_s, y = pct(eff)[i1], ax = -15, ay = 110, xanchor = "right",
+                text = "λ = 1: η = $(round(100 * op.eta_b; digits = 1)) %",
+                arrowcolor = INK, font = PP.attr(; size = 13, color = INK))]))
+end
+
+# ╔═╡ ee5941f2-1f3c-4ec4-9e18-2fbe5efbe221
+let op = Trends.map_point(3000, 77.5), λ = 0.65:0.001:1.40
+    runs = [Trends.brake(l, 0, op) for l in λ]
+    λ_power = λ[argmax(getfield.(runs, :power))]
+    λ_eff = λ[argmax(getfield.(runs, :efficiency))]
+    η_1 = Trends.brake(1.0, 0, op).efficiency
+    η_max = maximum(getfield.(runs, :efficiency))
+    @assert 0.85 <= λ_power <= 0.90 "power must peak rich, at λ 0.85–0.90; found $λ_power"
+    @assert 1.05 <= λ_eff <= 1.10 "efficiency must peak lean, at λ 1.05–1.10; found $λ_eff"
+    @assert isapprox(η_1, 0.357; atol = 5e-4) "λ = 1 must give the map's 35.7 %; found $η_1"
+    md"""
+    **Power** peaks at λ $(λ_power), AFR $(round(14.6λ_power; digits = 1)); **efficiency** at
+    λ $(λ_eff), AFR $(round(14.6λ_eff; digits = 1)), with $(round(100η_max; digits = 1)) %
+    against $(round(100η_1; digits = 1)) % at λ = 1.
+    """
+end
+
+# ╔═╡ a1e7bc12-5bae-4eec-b2f7-8d6c4b49dfe8
+md"""
+### Ignition advance against speed and load (slide 06.2)
+
+A distributor's two mechanisms, with the shapes of the Bosch figure the slide carried. The
+**centrifugal** advance depends on speed alone: 7° BTDC up to 1200 rpm, 21° at 3000 rpm, 27° from
+5500 rpm (textbook, read off the figure). The **vacuum** advance depends on load through the
+manifold low pressure, ambient minus manifold: none below 150 mbar, rising to 13° at 350 mbar
+(assumed, so the sum reproduces the figure). Part load, line 1, runs at high vacuum and gets both;
+at full load, line 2, there is almost no vacuum and the centrifugal advance acts alone. The low
+pressure along line 1 is a monotone cubic through points read off the figure.
+
+Replaced by: Dyad task 6, the MBT advance that `SparkSweep` finds on `SingleCylinder` at part and
+full load (notebook 02).
+"""
+
+# ╔═╡ 26cc9c6c-e335-4b03-b72e-d51effecc50a
+begin
+    centrifugal_advance(rpm) = Trends.interpolate([0.0, 1200, 3000, 5500, 7000], [7.0, 7, 21, 27, 27], rpm)
+    vacuum_advance(Δp_mbar) = 13 * clamp((Δp_mbar - 150) / 200, 0, 1)
+    const PART_LOAD_VACUUM = Trends.pchip([600.0, 900, 1200, 1500, 2300, 3000, 3800, 4800, 5500, 6000],
+        [0.0, 40, 140, 400, 620, 560, 400, 230, 150, 120])
+    full_load_vacuum(rpm) = 150 * (rpm - 600) / 5400
+    const ADVANCE_RPM = collect(600.0:20.0:6000.0)
+    advance_lines = (
+        part = (vacuum = PART_LOAD_VACUUM.(ADVANCE_RPM),),
+        full = (vacuum = full_load_vacuum.(ADVANCE_RPM),))
+    advance(line) = centrifugal_advance.(ADVANCE_RPM) .+ vacuum_advance.(line.vacuum)
+end
+
+# ╔═╡ d4714c17-3940-4b5d-a6c3-103813f3f7e7
+# ╠═╡ card = "advance-curves"
+let rpm = ADVANCE_RPM
+    lines = ((advance_lines.part, "1 part load", ACCENT, "solid"),
+        (advance_lines.full, "2 full load", INK, "dash"))
+    traces = Any[]
+    for (k, (l, name, color, dash)) in enumerate(lines)
+        push!(traces, PP.scatter(; x = rpm, y = round.(advance(l); digits = 3), mode = "lines", name,
+            legendgroup = name, line = line(color; dash),
+            hovertemplate = "$name, %{x:.0f} rpm: %{y:.1f}° BTDC<extra></extra>"))
+        push!(traces, PP.scatter(; x = rpm, y = round.(l.vacuum; digits = 2), mode = "lines", name,
+            legendgroup = name, showlegend = false, xaxis = "x2", yaxis = "y2",
+            line = line(color; dash),
+            hovertemplate = "$name, %{x:.0f} rpm: %{y:.0f} mbar<extra></extra>"))
+    end
+    Δp = collect(0.0:5.0:700.0)
+    push!(traces, PP.scatter(; x = Δp, y = vacuum_advance.(Δp), mode = "lines",
+        name = "vacuum unit", showlegend = false, xaxis = "x3", yaxis = "y3", line = line(WARN),
+        hovertemplate = "%{x:.0f} mbar: +%{y:.1f}°<extra></extra>"))
+    unit_band = [PP.attr(; type = "line", xref = "x2", yref = "y2", x0 = 600, x1 = 6000, y0 = y,
+                     y1 = y, line = PP.attr(; color = WARN, width = 1, dash = "dot"))
+                 for y in (150, 350)]
+    PP.plot(identity.(traces), deck_layout(;
+        margin = PP.attr(l = 64, r = 16, t = 40, b = 56),
+        legend = PP.attr(orientation = "h", x = 0, y = 1.1),
+        xaxis = axis(""; domain = [0, 0.6], range = [600, 6000], dtick = 1000, matches = "x2",
+            showticklabels = false, anchor = "y"),
+        yaxis = axis("advance [° BTDC]"; domain = [0.5, 1], range = [0, 40], dtick = 10, anchor = "x"),
+        xaxis2 = axis("engine speed [rpm]"; domain = [0, 0.6], range = [600, 6000], dtick = 1000,
+            anchor = "y2"),
+        yaxis2 = axis("low pressure [mbar]"; domain = [0, 0.4], range = [0, 700], dtick = 200,
+            anchor = "x2"),
+        xaxis3 = axis("low pressure [mbar]"; domain = [0.74, 1], range = [0, 700], dtick = 300,
+            anchor = "y3"),
+        yaxis3 = axis("vacuum advance [°]"; domain = [0.25, 0.85], range = [0, 15], dtick = 5,
+            anchor = "x3"),
+        shapes = unit_band,
+        annotations = [PP.attr(; x = 0.87, y = 0.97, xref = "paper", yref = "paper",
+            showarrow = false, text = "advance against load", font = PP.attr(; size = 15, color = INK))]))
+end
+
+# ╔═╡ 7665de7d-a613-45a6-be33-cf29b356d2c7
+let part = advance(advance_lines.part), full = advance(advance_lines.full)
+    at(rpm) = findfirst(==(rpm), ADVANCE_RPM)
+    @assert part[at(800)] == full[at(800)] == 7 "both lines must idle at 7° BTDC"
+    @assert all(part[at(1600):at(4500)] .> full[at(1600):at(4500)] .+ 5) "part load must advance more than full load at mid speed"
+    peak_rpm = ADVANCE_RPM[argmax(part)]
+    @assert 33 <= maximum(part) <= 37 && 3000 <= peak_rpm <= 4200 "part load must peak at 33–37° near 3000–4200 rpm"
+    @assert abs(part[at(5500)] - full[at(5500)]) < 1 "the lines must meet near 5500 rpm"
+    md"""
+    **Part load** peaks at $(round(maximum(part); digits = 1))° BTDC at $(round(Int, peak_rpm)) rpm;
+    **full load** reaches $(round(full[end]; digits = 1))° at 6000 rpm; both idle at 7°.
+    """
+end
+
+# ╔═╡ c999f430-7ecd-4907-8971-c34fcd0a5ddd
+md"""
+### The spark-advance map (slide 06.5)
+
+The MBT advance over speed and manifold pressure, as task 2's `TorqueProduction` holds it: about
+10° BTDC at idle, more with speed, because the flame needs about the same time at any speed and
+that time spans more crank angle, and less with load, because a denser charge burns faster; about
+35° at high speed and light load (assumed, task 2's anchors).
+
+```math
+\sigma_{\mathrm{MBT}} = 10 + 27\left(1 - e^{-(N - 800)/1400}\right)\left(1.1 - 0.5\,\frac{p_m}{100\ \mathrm{kPa}}\right)
+```
+
+A production map also holds the knock limit below MBT at high load and low speed, which gives the
+scanned map its ridges; this one does not.
+
+Replaced by: Dyad task 2's `sigma_mbt` table, then task 6's `SparkSweep` MBT beside it.
+"""
+
+# ╔═╡ 9a6a263a-f956-4b00-aa7d-6461e088ac58
+# ╠═╡ card = "advance-map"
+let kpa = collect(20.0:5.0:100.0), rpm = collect(800.0:200.0:6400.0)
+    z = [round(Trends.sigma_mbt(n, p); digits = 2) for n in rpm, p in kpa]
+    PP.plot(
+        PP.contour(; x = rpm, y = kpa, z = [z[i, :] for i in axes(z, 1)], colorscale = "Blues",
+            zmin = 5, zmax = 40, contours = PP.attr(; start = 10, size = 5, :end => 35,
+                showlabels = true, labelfont = PP.attr(; size = 13, color = INK)),
+            line = PP.attr(; color = INK, width = 1),
+            colorbar = PP.attr(; title = PP.attr(; text = "° BTDC"), thickness = 12),
+            hovertemplate = "%{x:.0f} rpm, %{y:.0f} kPa: %{z:.1f}° BTDC<extra></extra>"),
+        deck_layout(;
+            margin = PP.attr(l = 70, r = 10, t = 16, b = 56),
+            xaxis = axis("engine speed [rpm]"; dtick = 1000),
+            yaxis = axis("p<sub>m</sub> [kPa] (load)"; dtick = 20)))
+end
+
+# ╔═╡ 63ecd2e9-638d-4905-abf9-27e413e5ca15
+let σ = Trends.sigma_mbt
+    @assert isapprox(σ(800, 33), 10; atol = 0.5) "idle MBT must be about 10°"
+    @assert 33 <= σ(6000, 20) <= 37 "high speed, light load must reach about 35°"
+    @assert σ(3000, 30) > σ(3000, 90) && σ(5000, 50) > σ(2000, 50) "advance rises with speed and falls with load"
+    md"""
+    **MBT** $(round(σ(800, 33); digits = 1))° at idle (800 rpm, 33 kPa),
+    $(round(σ(3000, 65); digits = 1))° at 3000 rpm and 65 kPa, $(round(σ(6000, 20); digits = 1))°
+    at 6000 rpm and 20 kPa.
+    """
+end
+
+# ╔═╡ 475fa2ff-5c13-49d0-a720-1cf7f02acc7b
+md"""
+### Two-step λ control: the limit cycle (slide 07.3)
+
+A loop in plain Julia, stepped every millisecond. The controller's fuel factor ``u`` sets the
+cylinder λ; a transport delay of 0.2 s carries it to the sensor (idle, assumed within task 5's
+0.15–0.35 s); the switching sensor below turns it into a voltage behind a 70 ms lag (assumed,
+task 5); and the controller acts on the sign of that voltage against 0.45 V (task 5),
+
+```math
+s = \tanh\!\left(\frac{V - 0.45\ \mathrm{V}}{0.05\ \mathrm{V}}\right), \qquad
+u = 1 + F - k_j\,s, \qquad \dot F = -k_r\,s,
+```
+
+a jump ``k_j`` = 1.5 % at each switch and a ramp ``k_r`` = 6 %/s between (assumed, tuned to the
+slide's 2–3 %). The open-loop mixture is 3 % lean (assumed), and the ramp has removed that within
+the first second. Task 5's defaults, a 3 % jump and 5 %/s, swing λ by about +5/−2 % in this loop.
+
+The oscillation is a true limit cycle, not a drawing of one: the controller only knows rich or
+lean, so it cannot settle, and each half period lasts as long as the delay plus the sensor's
+switching time. The post-catalyst shift of panels a and b on the scan is left out.
+
+Replaced by: Dyad task 5, `LambdaLoop` with `TwoStepLambdaController` and
+`LambdaSensorSwitching` (notebook 06).
+"""
+
+# ╔═╡ 64cce6e7-3580-40f8-951f-e7123bd9c050
+begin
+    const LAMBDA_DELAY = 0.20   # s, injection to sensor at idle (assumed, task 5 band 0.15–0.35 s)
+    const SENSOR_LAG = 0.07     # s (assumed, task 5)
+    const V_REF = 0.45          # V, switching level (task 5)
+    const EPS_V = 0.05          # V, width of the controller's switch (assumed)
+    const K_JUMP = 0.015        # (assumed, tuned to ±2–3 %)
+    const K_RAMP = 0.06         # 1/s (assumed, tuned to ±2–3 %)
+    const LAMBDA_OPEN = 1.03    # open-loop mixture error (assumed)
+
+    """
+        two_step(; dt, t_end) -> (; t, λ, V, u)
+
+    Cylinder λ, sensor voltage [V] and fuel factor of the two-step loop, by explicit Euler steps.
+    """
+    function two_step(; dt = 1e-3, t_end = 4.0)
+        n, delay = round(Int, t_end / dt) + 1, round(Int, LAMBDA_DELAY / dt)
+        t = collect(0:(n - 1)) .* dt
+        λ, V, u = zeros(n), zeros(n), zeros(n)
+        F, v = 0.0, lambda_V(LAMBDA_OPEN)
+        for k in 1:n
+            s = tanh((v - V_REF) / EPS_V)
+            u[k] = 1 + F - K_JUMP * s
+            λ[k] = LAMBDA_OPEN / u[k]
+            V[k] = v
+            v += dt / SENSOR_LAG * (lambda_V(k > delay ? λ[k - delay] : LAMBDA_OPEN) - v)
+            F -= K_RAMP * s * dt
+        end
+        return (; t, λ, V, u)
+    end
+
+    lambda_loop = two_step()
+end
+
+# ╔═╡ 888dda8d-5a7e-4625-8813-1c4c8ae3e51f
+# ╠═╡ card = "two-step-cycle"
+let r = lambda_loop, k = 1:5:length(lambda_loop.t)
+    t = round.(r.t[k]; digits = 3)
+    panel(y, n, name, color, unit) = PP.scatter(; x = t, y, mode = "lines", name,
+        xaxis = "x$n", yaxis = "y$n", line = line(color; width = 2.5),
+        hovertemplate = "%{x:.2f} s: %{y:.3f} $unit<extra></extra>")
+    traces = [
+        panel(round.(r.V[k]; digits = 4), 1, "sensor voltage", ACCENT, "V"),
+        panel(round.(100 .* (r.u[k] .- 1); digits = 3), 2, "fuel correction", INK, "%"),
+        panel(round.(r.λ[k]; digits = 4), 3, "λ in the cylinder", WARN, ""),
+    ]
+    guide(n, y) = PP.attr(; type = "line", xref = "x$n", yref = "y$n", x0 = 0, x1 = 4, y0 = y,
+        y1 = y, line = PP.attr(; color = MUTED, width = 1, dash = "dot"))
+    rows = ((1, "sensor [V]", [0, 1], 0.5), (2, "fuel corr. [%]", [-4, 6], 2),
+        (3, "λ", [0.96, 1.05], 0.02))
+    axes = Dict{Symbol, Any}()
+    for (n, title, range, dtick) in rows
+        top = 1 - (n - 1) * 0.35
+        axes[Symbol("xaxis$n")] = axis(n == 3 ? "time [s]" : ""; range = [0, 4], dtick = 0.5,
+            anchor = "y$n", showticklabels = n == 3)
+        n < 3 && (axes[Symbol("xaxis$n")][:matches] = "x3")
+        axes[Symbol("yaxis$n")] = axis(title; domain = [top - 0.29, top], range, dtick,
+            anchor = "x$n")
+    end
+    PP.plot(traces, deck_layout(;
+        axes...,
+        showlegend = false,
+        hovermode = "x unified",
+        margin = PP.attr(l = 80, r = 20, t = 16, b = 56),
+        shapes = [guide(1, V_REF), guide(3, 1.0)]))
+end
+
+# ╔═╡ a1992a7f-f4c9-42d2-94b2-e4c14e16a2b7
+let r = lambda_loop, steady = lambda_loop.t .>= 2
+    λ = r.λ[steady]
+    excursion = maximum(abs.(λ .- 1))
+    rising = [r.t[k] for k in 2:length(r.t) if r.t[k] >= 2 && r.V[k - 1] < V_REF <= r.V[k]]
+    period = (rising[end] - rising[1]) / (length(rising) - 1)
+    @assert 0.02 <= excursion <= 0.03 "λ must swing ±2–3 % about 1, found $(round(100excursion; digits = 2)) %"
+    @assert minimum(λ) < 1 < maximum(λ) "λ must cross 1 every cycle"
+    @assert 0.5 <= 1 / period <= 5 "the limit cycle must run at 0.5–5 Hz, found $(1 / period) Hz"
+    md"""
+    **λ** swings from $(round(minimum(λ); digits = 3)) to $(round(maximum(λ); digits = 3)) once
+    the bias is removed; the cycle repeats every $(round(period; digits = 2)) s,
+    $(round(1 / period; digits = 2)) Hz.
+    """
+end
+
+# ╔═╡ b1988eb2-5414-4334-9929-f071764c410a
+md"""
+### Oxygen sensor characteristics (slide 07.4)
+
+Left, the switching ZrO₂ sensor as task 5's `LambdaSensorSwitching` states it: 0.9 V rich, 0.1 V
+lean (deck slide 58), a tanh step 0.005 wide in λ so the jump spans λ 0.98–1.02 (derived), with
+no temperature dependence. The same function drives the sensor in the loop above and the
+discontinuous panel of the sensor classification. Right, the broadband sensor for comparison:
+the Bosch LSU 4.9's pump current is continuous in λ, read from the Bosch Motorsport datasheet as
+`teaching_materials.md` transcribes it.
+
+Replaced by: Dyad task 5, `LambdaSensorSwitching` and `LambdaSensorWideband` under a λ ramp
+(notebook 06).
+"""
+
+# ╔═╡ d8d499f6-e837-4b54-80f7-f0473f4b1505
+lsu49 = let
+    row = only(filter(l -> occursin("**Bosch LSU 4.9 wideband**", l), readlines(NOTES)))
+    table = match(r"Ip→λ table: (.*?)\. Nernst", row)[1]
+    pairs = map(split(table, ";")) do entry
+        numbers = [parse(Float64, replace(m.match, "−" => "-"))
+            for m in eachmatch(r"−?\d+(\.\d+)?", replace(entry, "**" => ""))]
+        numbers[1] => numbers[2]
+    end
+    (; Ip_mA = first.(pairs), λ = last.(pairs))
+end
+
+# ╔═╡ f22bbfeb-f558-41f2-ba35-0af2f82658a8
+# ╠═╡ card = "lambda-sensors"
+let λ = collect(0.95:0.0005:1.05), wide = lsu49.λ .<= 2.0
+    traces = [
+        PP.scatter(; x = λ, y = round.(lambda_V.(λ); digits = 4), mode = "lines",
+            name = "switching sensor", line = line(ACCENT),
+            hovertemplate = "λ %{x:.3f}: %{y:.2f} V<extra></extra>"),
+        PP.scatter(; x = lsu49.λ[wide], y = lsu49.Ip_mA[wide], mode = "lines+markers",
+            name = "LSU 4.9", xaxis = "x2", yaxis = "y2", line = line(WARN),
+            marker = PP.attr(; size = 7, color = INK),
+            hovertemplate = "λ %{x:.3f}: %{y:.3f} mA<extra></extra>"),
+    ]
+    PP.plot(traces, deck_layout(;
+        showlegend = false,
+        margin = PP.attr(l = 64, r = 16, t = 40, b = 56),
+        xaxis = axis("λ"; domain = [0, 0.42], range = [0.95, 1.05], dtick = 0.025, anchor = "y"),
+        yaxis = axis("sensor voltage [V]"; range = [0, 1], dtick = 0.2, anchor = "x"),
+        xaxis2 = axis("λ"; domain = [0.64, 1], range = [0.6, 2.0], dtick = 0.4, anchor = "y2"),
+        yaxis2 = axis("pump current [mA]"; range = [-2.2, 1.4], dtick = 0.5, anchor = "x2"),
+        shapes = [PP.attr(; type = "line", xref = "x", yref = "y", x0 = 0.95, x1 = 1.05,
+            y0 = V_REF, y1 = V_REF, line = PP.attr(; color = MUTED, width = 1, dash = "dash"))],
+        annotations = [
+            PP.attr(; x = 0.21, y = 1.08, xref = "paper", yref = "paper", showarrow = false,
+                text = "two-step ZrO₂", font = PP.attr(; size = 15, color = INK)),
+            PP.attr(; x = 0.82, y = 1.08, xref = "paper", yref = "paper", showarrow = false,
+                text = "broadband LSU 4.9", font = PP.attr(; size = 15, color = INK)),
+            PP.attr(; x = 1.045, y = V_REF, xref = "x", yref = "y", yshift = 10, xanchor = "right",
+                showarrow = false, text = "U<sub>reg</sub>", font = PP.attr(; size = 14, color = MUTED))]))
+end
+
+# ╔═╡ 92e1073d-c083-4677-b228-2aec37f9a434
+let fine = 0.95:0.0001:1.05
+    slope = abs.(diff(lambda_V.(fine)))
+    λ_jump = fine[argmax(slope)]
+    @assert abs(λ_jump - 1) <= 0.0005 "the sensor must jump at λ = 1, found $λ_jump"
+    @assert lambda_V(0.98) > 0.85 && lambda_V(1.02) < 0.15 "the sensor must read about 0.9 V rich and 0.1 V lean"
+    @assert issorted(lsu49.Ip_mA) && issorted(lsu49.λ) "the LSU table must rise with λ"
+    @assert lsu49.λ[lsu49.Ip_mA .== 0] == [1.003] "the LSU pump current must cross zero at λ 1.003"
+    md"""
+    **Switching** $(round(lambda_V(0.98); digits = 2)) V at λ 0.98, $(round(lambda_V(1.02); digits = 2))
+    V at λ 1.02, steepest at λ $(round(λ_jump; digits = 4)). **LSU 4.9** $(length(lsu49.λ))
+    datasheet points, λ $(first(lsu49.λ)) to $(last(lsu49.λ)).
+    """
+end
+
 # ╔═╡ Cell order:
 # ╠═7635b61c-86fb-4a32-99de-86a0c84a2c00
 # ╟─88324f20-40ae-4205-872b-e284cfea7231
@@ -280,3 +687,23 @@ end
 # ╠═3948eff6-60d0-44f7-8b26-9653dd89565d
 # ╠═c641e16a-e6dd-4c36-96cd-51ac4e0614bf
 # ╠═8f2346ea-1348-45c6-8f57-d4c8e5015409
+# ╟─4847d6cb-f506-4620-b8dd-df28fe29b1fe
+# ╠═cb4510f1-3f0c-48d1-9463-c80c37a075dc
+# ╟─7a0e2e3f-22f0-4c98-a767-ab72a9815758
+# ╠═89b9520e-51b4-4935-9306-54c576ef875c
+# ╠═ee5941f2-1f3c-4ec4-9e18-2fbe5efbe221
+# ╟─a1e7bc12-5bae-4eec-b2f7-8d6c4b49dfe8
+# ╠═26cc9c6c-e335-4b03-b72e-d51effecc50a
+# ╠═d4714c17-3940-4b5d-a6c3-103813f3f7e7
+# ╠═7665de7d-a613-45a6-be33-cf29b356d2c7
+# ╟─c999f430-7ecd-4907-8971-c34fcd0a5ddd
+# ╠═9a6a263a-f956-4b00-aa7d-6461e088ac58
+# ╠═63ecd2e9-638d-4905-abf9-27e413e5ca15
+# ╟─475fa2ff-5c13-49d0-a720-1cf7f02acc7b
+# ╠═64cce6e7-3580-40f8-951f-e7123bd9c050
+# ╠═888dda8d-5a7e-4625-8813-1c4c8ae3e51f
+# ╠═a1992a7f-f4c9-42d2-94b2-e4c14e16a2b7
+# ╟─b1988eb2-5414-4334-9929-f071764c410a
+# ╠═d8d499f6-e837-4b54-80f7-f0473f4b1505
+# ╠═f22bbfeb-f558-41f2-ba35-0af2f82658a8
+# ╠═92e1073d-c083-4677-b228-2aec37f9a434
