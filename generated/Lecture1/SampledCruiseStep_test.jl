@@ -21,7 +21,7 @@ __dyad_run_test_case!(
   expected_final=Tuple[(m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 109.3, 0.1, 1e-5)],
   signals=Tuple[
     (m -> m.loop.plant.v_kmh, "loop.plant.v_kmh", 0.1, 1e-5),
-    (m -> m.loop.controller.y, "loop.controller.y", 1e-5, 1e-5),
+    (m -> m.loop.hold.y, "loop.hold.y", 1e-5, 1e-5),
     (m -> m.demand.y, "demand.y", 1e-5, 1e-5),
   ],
 )
