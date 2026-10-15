@@ -197,6 +197,127 @@ let
     """
 end
 
+# ╔═╡ c752564c-a8e4-4273-9f8b-a92d44ca0c9c
+md"""
+## Spark timing and the exhaust
+
+The deck's slide on ignition timing and exhaust gases shows HC, NOx and CO against λ, one line
+per ignition angle α``_z`` from 20° to 50° before TDC. The curves below are drawn from an
+**assumed trend model**, `scripts/engine_out_emissions.jl`: a few lines per species with the
+shapes of Heywood ch. 11 and of that figure, not a simulation and not a measurement.
+
+```math
+\begin{aligned}
+\mathrm{EI}_{CO} &= (1 + 0.005\,\Delta\sigma)\,\bigl(2 \cdot 0.75 \cdot n_{O_2,st}\,M_{CO}\,\max(1.02 - \lambda,\ 0) + 20\bigr) \\
+\mathrm{EI}_{NO_x} &= 75 \cdot \frac{e^{T_a/T_{ref} - T_a/T_b}}{1 + \bigl((\lambda - 1.05)/0.1\bigr)^2},
+  \qquad T_b = 2600 + 3\,\Delta\sigma + 150\,(L - 0.5) \\
+\mathrm{EI}_{HC} &= 15\,e^{0.015\,\Delta\sigma}\,\bigl(1 - 0.4\,(L - 0.5)\bigr)\bigl(1 + 12\,(\lambda - 1.1)^2\bigr)
+  + 10\,e^{(\lambda - \lambda_{lim})/0.04}
+\end{aligned}
+```
+
+in g per kg of fuel, with Δσ the advance from MBT in degrees, ``L`` the relative load,
+``n_{O_2,st}`` = 105.7 mol of O₂ per kg of gasoline, ``T_a`` = 69 090 K the Zeldovich activation
+temperature (textbook), ``T_{ref}`` = 2600 K and ``\lambda_{lim} = 1.35 + 0.1\,(L - 0.5)`` the
+lean misfire limit (textbook 1.3–1.4). CO is the oxygen a rich mixture lacks, three quarters of it
+left as CO and the rest as H₂ (textbook). NOx grows with the burned-gas temperature, which
+advance and load raise. HC is fuel left in crevices, burned off in a hotter exhaust when the spark
+is late, and it climbs steeply once the flame starts to fail lean. Every other number is
+(assumed), chosen to match the shapes of the original figure.
+
+MBT at the figure's operating point is taken as 50° before TDC (assumed: the fuel consumption on
+the deck's next slide still falls at 50°), so the four lines are 0, 10, 20 and 30° of retard. The
+figure plots g per kg of fuel; the original plots g/kWh, which divides by work instead of fuel.
+"""
+
+# ╔═╡ dda179a4-cfb9-4e69-846e-4a7145320cb8
+begin
+    # The model lives outside the notebook so that the mapped engine can reuse it.
+    const Emissions = include(joinpath(@__DIR__, "..", "..", "scripts", "engine_out_emissions.jl"))
+    const SIGMA_MBT = 50                 # degrees BTDC at the figure's point (assumed)
+    const ALPHA_Z = (20, 30, 40, 50)     # ignition angles of the original figure, degrees BTDC
+    const LAMBDA_AXIS = 0.75:0.01:1.40
+    const LOADS = 0.2:0.1:0.8
+    const LOAD_DECK = 0.5
+
+    emission_curves(load) = Dict(α => [Emissions.engine_out_emissions(λ, α - SIGMA_MBT, load)
+                                       for λ in LAMBDA_AXIS] for α in ALPHA_Z)
+end
+
+# ╔═╡ 0a8954d9-9ede-4149-9d5d-3f178a19d4d3
+# ╠═╡ card = "emissions-vs-lambda"
+let
+    species = ((:HC, "HC"), (:NOx, "NO<sub>x</sub>"), (:CO, "CO"))
+    ranges = (HC = [0, 80], NOx = [0, 125], CO = [0, 1300])
+    colors = ("#86b6ef", "#3987e5", "#1c5cab", "#0d366b")
+    dashes = ("solid", "dot", "dashdot", "dash")
+    # One array per trace, in trace order, as a restyle step takes them.
+    ys(curves) = [round.(getfield.(curves[α], s); digits = 2) for (s, _) in species for α in ALPHA_Z]
+
+    x = collect(LAMBDA_AXIS)
+    deck = ys(emission_curves(LOAD_DECK))
+    traces = [PP.scatter(; x, y = deck[(p - 1) * length(ALPHA_Z) + a], mode = "lines",
+                  name = "α<sub>z</sub> = $(α)°", legendgroup = "$α", showlegend = p == 1,
+                  xaxis = "x$p", yaxis = "y$p",
+                  line = PP.attr(width = 2.5, color = colors[a], dash = dashes[a]),
+                  hovertemplate = "α<sub>z</sub> $(α)°, λ %{x:.2f}: %{y:.1f} g/kg<extra></extra>")
+              for p in eachindex(species) for (a, α) in enumerate(ALPHA_Z)]
+
+    gap = 0.07
+    width = (1 - 2gap) / 3
+    axes = Dict{Symbol, Any}()
+    for (p, (s, label)) in enumerate(species)
+        left = (p - 1) * (width + gap)
+        axes[Symbol("xaxis$p")] = PP.attr(domain = [left, left + width], range = [0.75, 1.4],
+            dtick = 0.1, title = "excess-air factor λ", anchor = "y$p")
+        axes[Symbol("yaxis$p")] = PP.attr(range = ranges[s], anchor = "x$p",
+            title = "$label [g/kg fuel]")
+    end
+
+    steps = [PP.attr(label = string(load), method = "restyle",
+                 args = [Dict("y" => ys(emission_curves(load)))]) for load in LOADS]
+    PP.plot(traces, deck_layout(;
+        axes...,
+        hovermode = "closest",
+        margin = PP.attr(l = 70, r = 20, t = 40, b = 20),
+        legend = PP.attr(orientation = "h", x = 0.5, xanchor = "center", y = 1.14),
+        sliders = [PP.attr(active = findfirst(==(LOAD_DECK), LOADS) - 1, steps = steps,
+            currentvalue = PP.attr(prefix = "relative load "), pad = PP.attr(t = 40),
+            len = 0.5, x = 0.25)]))
+end
+
+# ╔═╡ 4a7938e8-74c3-49be-a234-ef4a83a162ae
+let
+    e = Emissions.engine_out_emissions
+    c = Emissions.exhaust_concentrations
+    fine = 0.75:0.001:1.40
+    λ_nox = fine[argmax([e(λ, 0, LOAD_DECK).NOx for λ in fine])]
+    λ_hc = fine[argmin([e(λ, 0, LOAD_DECK).HC for λ in fine])]
+    nox_105 = [e(1.05, α - SIGMA_MBT, LOAD_DECK).NOx for α in ALPHA_Z]
+    co_rich = [e(λ, α - SIGMA_MBT, LOAD_DECK).CO for α in ALPHA_Z, λ in 0.8:0.01:1.0]
+    @assert 1.03 <= λ_nox <= 1.12 "NOx must peak at λ 1.03–1.12, found $λ_nox"
+    @assert 1.0 < λ_hc <= 1.2 "HC minimum must lie lean of 1, at most at 1.2, found $λ_hc"
+    @assert all(diff(nox_105) .> 0) "NOx at λ 1.05 must rise with advance: $nox_105"
+    @assert all(diff(co_rich; dims = 2) .< 0) "CO must fall over λ 0.8–1.0 at every advance"
+
+    nox_peak = c(e(λ_nox, 0, LOAD_DECK), λ_nox).NOx_ppm
+    co_09 = c(e(0.9, 0, LOAD_DECK), 0.9).CO_pct
+    hc_min = c(e(λ_hc, 0, LOAD_DECK), λ_hc).HC_ppmC1
+    hc_lim = c(e(1.35, 0, LOAD_DECK), 1.35).HC_ppmC1
+    retard = nox_105[1] / nox_105[end]
+    @assert 1000 <= nox_peak <= 4000 "NOx peak must be 1000–4000 ppm, found $nox_peak"
+    @assert 2 <= co_09 <= 5 "CO at λ 0.9 must be 2–5 %, found $co_09"
+    @assert 1000 <= hc_min <= 3000 "HC minimum must be 1000–3000 ppm C1, found $hc_min"
+    @assert 2500 <= hc_lim <= 6000 "HC at λ 1.35 must be 2500–6000 ppm C1, found $hc_lim"
+    @assert 0.3 <= retard <= 0.6 "30° of retard must leave 0.3–0.6 of the NOx, found $retard"
+    md"""
+    At MBT and half load: NOx peaks at λ $(λ_nox) with $(round(Int, nox_peak)) ppm; CO at λ 0.9 is
+    $(round(co_09; digits = 1)) %; HC is lowest at λ $(λ_hc) with $(round(Int, hc_min)) ppm C₁
+    and reaches $(round(Int, hc_lim)) ppm C₁ at λ 1.35. At λ 1.05, NOx for α``_z`` 20…50° is
+    $(join(round.(Int, nox_105), ", ")) g/kg: 30° of retard leaves $(round(retard; digits = 2)) of it.
+    """
+end
+
 # ╔═╡ 85aada20-329a-4835-bb86-06dffbb020b0
 md"""
 ## What comes later
@@ -204,7 +325,8 @@ md"""
 With Dyad task 6 (`Vehicle.Engine.SingleCylinder`, `SparkSweep`) this notebook fires the cycle:
 a motored loop, the fired loop at MBT beside this ideal one, pressure against crank angle around
 MBT, IMEP against spark advance at three speeds, the knock proxy, and indicated against ideal
-efficiency.
+efficiency. The same cylinder with a burned-gas zone and Zeldovich kinetics then computes NOx
+against spark advance from physics, beside the assumed trend above.
 """
 
 # ╔═╡ Cell order:
@@ -216,4 +338,8 @@ efficiency.
 # ╟─f89f72ec-6fd7-4d0b-bd14-9436255e9162
 # ╠═283a705e-5ab0-4310-bf4b-bc0d26b39971
 # ╠═a9055122-aff8-4359-814f-8bbd6e45bf38
+# ╟─c752564c-a8e4-4273-9f8b-a92d44ca0c9c
+# ╠═dda179a4-cfb9-4e69-846e-4a7145320cb8
+# ╠═0a8954d9-9ede-4149-9d5d-3f178a19d4d3
+# ╠═4a7938e8-74c3-49be-a234-ef4a83a162ae
 # ╟─85aada20-329a-4835-bb86-06dffbb020b0
