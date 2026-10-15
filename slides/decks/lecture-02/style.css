@@ -1,0 +1,25 @@
+/* Images from the source deck vary widely in size and aspect; capped by height so a picture
+   beside a column of text still fits the slide. */
+.slidev-layout img {
+  max-height: 27rem;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+/* A picture that has the slide to itself. */
+.slidev-layout.big-figure img {
+  max-height: 34rem;
+}
+
+/* Several pictures stacked in one column. */
+.slidev-layout .stack img {
+  max-height: 15rem;
+}
+
+.slidev-layout .caption {
+  font-size: 0.75rem;
+  line-height: 1.1rem;
+  opacity: 0.7;
+  text-align: center;
+  margin-top: 0.25rem;
+}

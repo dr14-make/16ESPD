@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 300" width="1180" height="300">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-dash { stroke: #a75d00; stroke-width: 3; fill: none; stroke-dasharray: 8 6; }
+    .f-lbl { font-size: 16px; font-weight: 600; fill: #16202c; }
+    .f-lbl-warn { font-size: 16px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="ar-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="ar-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+  <rect class="box" x="10" y="100" width="110" height="56" rx="4"/>
+  <text x="65" y="134" text-anchor="middle" font-size="18">pedal</text>
+  <path class="arrow" d="M120 128 H164" marker-end="url(#ar-ink)"/>
+  <rect class="box" x="170" y="100" width="130" height="56" rx="4"/>
+  <text x="235" y="134" text-anchor="middle" font-size="18">throttle</text>
+  <path class="arrow" d="M300 128 H354" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="306" y="118">ṁ_thr</text>
+  <rect class="box-accent" x="360" y="92" width="180" height="72" rx="4"/>
+  <text x="450" y="122" text-anchor="middle" font-size="18">intake manifold</text>
+  <text x="450" y="148" text-anchor="middle" font-size="16" font-weight="600">state p_m</text>
+  <rect class="box" x="370" y="10" width="160" height="44" rx="4"/>
+  <text x="450" y="38" text-anchor="middle" font-size="16">brake booster</text>
+  <path class="arrow-dash" d="M450 54 V86" marker-end="url(#ar-warn)"/>
+  <text class="f-lbl-warn" x="466" y="76">ṁ_bst</text>
+  <rect class="box" x="370" y="220" width="160" height="50" rx="4"/>
+  <text x="450" y="251" text-anchor="middle" font-size="18">cylinders</text>
+  <path class="arrow" d="M450 164 V214" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="460" y="196">ṁ_cyl</text>
+  <path class="arrow" d="M540 128 H614" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="560" y="118">p_m</text>
+  <rect class="box-accent" x="620" y="86" width="220" height="84" rx="4"/>
+  <text x="730" y="114" text-anchor="middle" font-size="18">maps at (N, p_m)</text>
+  <text x="730" y="138" text-anchor="middle" font-size="15">torque · fuel</text>
+  <text x="730" y="158" text-anchor="middle" font-size="15">HC · CO · NOx</text>
+  <path class="arrow" d="M840 110 H924" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="868" y="100">T_e</text>
+  <rect class="box" x="930" y="82" width="230" height="56" rx="4"/>
+  <text x="1045" y="116" text-anchor="middle" font-size="18">crankshaft and car</text>
+  <path class="arrow" d="M840 156 H924" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="868" y="186">ṁ_f</text>
+  <rect class="box" x="930" y="150" width="230" height="64" rx="4"/>
+  <text x="1045" y="176" text-anchor="middle" font-size="16">fuel L/h, L/100 km</text>
+  <text x="1045" y="200" text-anchor="middle" font-size="16">CO₂ g/km</text>
+  <path class="arrow" d="M1160 110 H1172 V286 H730 V176" marker-end="url(#ar-ink)"/>
+  <path class="arrow" d="M730 286 H450 V276" marker-end="url(#ar-ink)"/>
+  <text class="f-lbl" x="900" y="280">engine speed N</text>
+</svg>
