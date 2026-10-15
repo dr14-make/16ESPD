@@ -1,11 +1,14 @@
 // The workspace check CI runs before publishing: with the shared images copied into place, every
-// image a deck references exists, the site builds into dist/ with no dead link, and every deck
-// builds into dist/<deck>/.
+// image and exported card page a deck references exists, the site builds into dist/ with no dead
+// link, and every deck builds into dist/<deck>/.
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { extractImagesUsage, parseSync } from "@slidev/parser/core"
 import { build, buildSite, DECKS, decks, WORKSPACE } from "./decks.mjs"
 import "./images.mjs"
+
+// A CardExport names a page that scripts/export_deck_cards.jl writes under the deck's public/cards/.
+const CARD_EXPORT = /<CardExport\s+notebook="([^"]+)"\s+name="([^"]+)"/g
 
 const all = decks()
 const failures = []
@@ -17,6 +20,10 @@ for (const deck of all) {
     for (const slide of parseSync(markdown, file).slides) {
       for (const src of extractImagesUsage(slide.content, slide.frontmatter)) {
         if (!resolves(src, file, deck)) failures.push(`${where(slide.start + 1)}: image ${src} resolves to nothing`)
+      }
+      for (const [, notebook, name] of slide.content.matchAll(CARD_EXPORT)) {
+        const page = join(DECKS, deck, "public", "cards", notebook, `${name}.html`)
+        if (!existsSync(page)) failures.push(`${where(slide.start + 1)}: card ${notebook}/${name} has no exported page`)
       }
     }
   }

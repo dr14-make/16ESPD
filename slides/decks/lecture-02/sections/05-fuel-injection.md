@@ -262,8 +262,8 @@ routeAlias: pulse-width
 
 ## Fuel injection: basic principles
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-8">
-<div>
+<div class="grid grid-cols-[1.1fr_1fr] gap-6">
+<div class="text-sm">
 
 The engine control unit uses a formula and a large number of lookup tables to determine the
 **pulse width** for given operating conditions. The equation is a series of many factors multiplied
@@ -277,10 +277,14 @@ $$
 - Some of the parameters even change over time, to compensate for changes in the performance of
   engine components.
 
+<CardExport notebook="12-mapped-engine" name="pulse-width-map" height="15rem" />
+
 </div>
 <div>
 
-![Target air-fuel ratio map over engine speed (rows, 600 to 6000 rpm) and engine load (columns, 10 to 100): 14.7 across most of the map, falling to about 10.5 to 13 at high load and above 4000 rpm, shaded from green to red.](/pptx/slide44-afr-map.png)
+<CardExport notebook="12-mapped-engine" name="afr-table" height="22rem" />
+
+<div class="caption">Target air-fuel ratio of the hands-on engine, 14.6 · λ, over engine speed and manifold pressure</div>
 
 </div>
 </div>
@@ -290,20 +294,24 @@ This is the heart of fuel control.
 
 The base pulse width comes from the air: the measured air mass per cylinder, divided by the target
 air-fuel ratio, gives the fuel mass; divided by the injector's flow rate, it gives a time. The
-target comes from a map like this one: 14.7 over most of it, richer at high load and speed to
-protect the exhaust valves and the catalyst from overheating.
+target comes from a map like this one, the hands-on engine's, from notebook 12: rows are engine
+speed, columns manifold pressure. It holds 14.6 below 85 percent of full-load pressure, and richens
+above that, deepest at high speed, to protect the exhaust valves and the catalyst from
+overheating.
+
+The contour at the bottom left is the base pulse width that results, with a 146 cubic centimeters
+per minute injector: about 2 milliseconds at idle. The dashed line is where the pulse fills the
+whole engine cycle. Beyond it, above about 5250 rpm at full load, this small injector cannot keep
+up; the real engine would need a bigger one.
 
 Then the factors: one for coolant temperature, rich when cold; one for intake air temperature; one
 for battery voltage, because the injector opens slower on a low battery; one for acceleration
 enrichment; one from the lambda loop of section 07. Each is a lookup table, each calibrated on a
 test bench. Adaptive factors learn slowly as the injectors and the sensors age.
 
-This map's 14.7 is the same stoichiometric ratio as the 14.6 of section 02; the value depends on
-the fuel blend.
-
 A video: https://www.youtube.com/watch?v=4FfcjERUtUw
 
-Notebook 04, "How much fuel", will build this formula and plot this map from its data.
+Notebook 04, "How much fuel", will build the whole formula, factors and dead time included.
 -->
 
 ---

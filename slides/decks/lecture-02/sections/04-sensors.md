@@ -253,7 +253,9 @@ routeAlias: temperature-sensors
 </div>
 <div>
 
-![Resistance of an NTC temperature sensor against temperature from −20 to 120 °C on a logarithmic scale: from about 10–20 kΩ when cold down to about 0.1 kΩ when hot.](/pptx/slide36-ntc-characteristic.png)
+<CardExport notebook="09-sensors" name="ntc-curve" height="25rem" />
+
+<div class="caption">Bosch Motorsport NTC M12, datasheet</div>
 
 </div>
 </div>
@@ -266,15 +268,16 @@ thermistor in a voltage divider and reads the voltage.
 Inlet air: cold air is denser, so the same volume holds more oxygen, and needs more fuel.
 
 Coolant: a cold engine needs a richer mixture, because fuel condenses on cold walls and does not
-all evaporate. Cold means high resistance on an NTC. The source slide says "low resistance" here,
-which contradicts its own curve; the curve is right.
+all evaporate. Cold means high resistance on an NTC.
 
-The Fahrenheit labels on the curve repeat 104 under 50 and 60 degrees; 60 degrees Celsius is 140.
+The curve is a real sensor's, the Bosch Motorsport NTC M12: its datasheet points, and a
+Steinhart-Hart curve through three of them, from notebook 09. 2.5 kilo-ohms at 20 degrees, about
+190 ohms at 100.
 
 The exploded sensor is a hot-film air-mass meter. The small part at the bottom is the inlet air
 temperature sensor built into it.
 
-Notebook 09, "Sensors", will regenerate this NTC curve from the thermistor equation.
+Notebook 09, "Sensors", will add the divider voltage the ECU actually reads beside this curve.
 -->
 
 ---
@@ -283,8 +286,8 @@ routeAlias: maf
 
 ## Load sensor: mass flowmeters
 
-<div class="grid grid-cols-[1.4fr_1fr] gap-8">
-<div>
+<div class="grid grid-cols-[1.25fr_1fr] gap-6">
+<div class="text-sm">
 
 - Mass flowmeters work on the **hot-wire or hot-film principle**, with no moving mechanical part
   inside the unit
@@ -296,12 +299,17 @@ routeAlias: maf
     compensated
 - This helps the computer determine how much fuel is needed
 
-</div>
 <div class="stack">
 
-![Oscilloscope trace of a mass air flow sensor's output: a sharp spike within milliseconds, then a settled level.](/pptx/slide37-maf-response.png)
-
 ![A hot-film air-mass meter: a plug-in sensor in a tubular housing with a honeycomb flow straightener.](/pptx/slide37-hot-film-maf.png)
+
+</div>
+</div>
+<div>
+
+<CardExport notebook="12-mapped-engine" name="maf-tip-in" height="14rem" />
+
+<CardExport notebook="12-mapped-engine" name="eta-v-map" height="14rem" />
 
 </div>
 </div>
@@ -318,12 +326,17 @@ The alternative is a manifold absolute pressure sensor, a MAP sensor: a flexible
 voltage changes as it bends. With the engine speed and a volumetric efficiency, the manifold
 pressure gives the air flow. That is called speed-density. When you accelerate the throttle opens,
 there is less vacuum, and the intake pressure rises. The hands-on engine works this way: its maps
-are read at speed and manifold pressure.
+are read at speed and manifold pressure. The contour at the bottom right is its volumetric
+efficiency, the speed-density table: idle sits at 33 kilopascals, full load along the black line.
 
 Drawbacks of older vane meters: inertia, and they had to be mounted the right way up for gravity.
 The hot film has neither.
 
-Notebook 09 will regenerate the hot-film characteristic.
+The trace at the top right is no sensor's output: it is the air path's throttle flow through a
+tip-in at 3000 rpm, from notebook 12, which is what a perfect meter upstream of the throttle would
+read. As the throttle snaps open, the flow spikes to about eight times its final value while the
+manifold fills, then settles onto the flow into the cylinders. Notebook 09 will put the hot-film
+sensor's own response on top of it.
 -->
 
 ---

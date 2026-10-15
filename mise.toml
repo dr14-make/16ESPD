@@ -1,3 +1,7 @@
 # The slides/ workspace builds on the Node major the Pages workflow uses.
 [tools]
 node = "22"
+
+[tasks."cards:lecture-02"]
+description = "Export the Lecture 2 notebooks' deck cells into the theory deck's public/cards/"
+run = "julia +dyad-3.4.0 --project=. scripts/export_deck_cards.jl"
