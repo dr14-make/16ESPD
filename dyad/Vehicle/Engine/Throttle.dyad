@@ -1,0 +1,62 @@
+"""
+Throttle plate as a compressible orifice: ambient air in, mass flow into the manifold out.
+
+    alpha    = alpha_0 + u_thr (pi/2 - alpha_0)
+    A_thr    = A_idle + (pi D_thr^2 / 4) (1 - cos(alpha) / cos(alpha_0))
+    Pi       = max(p_m / p_a, Pi_cr)
+    mdot_thr = C_d A_thr p_a / sqrt(R T_a) Psi(Pi)
+
+`Psi` is the isentropic flow function. Below the critical ratio `Pi_cr` = 0.528 the throttle is
+choked and the flow does not depend on `p_m`, which is why the idle manifold pressure is set by
+`A_idle` alone. Above `Pi_lin` = 0.95 `Psi` is replaced by a straight line through zero at
+`Pi = 1`: the exact `Psi` has an infinite slope there, and the line lets air flow back out if
+`p_m` ever exceeds `p_a`.
+
+`A_idle` is the closed-throttle leakage plus idle bypass, calibrated so the default air path
+idles at 33 kPa at 800 rpm.
+"""
+component Throttle
+  "Throttle position: 0 closed against its stop, 1 wide open"
+  u_thr = RealInput()
+  "Manifold (downstream) pressure [Pa]"
+  p_m = RealInput()
+  "Air mass flow through the throttle into the manifold [kg/s]"
+  mdot_thr = RealOutput()
+  "Throttle bore diameter (MathWorks)"
+  parameter D_thr::Length = 0.05
+  "Plate angle at the closed stop, 7 deg (assumed)"
+  parameter alpha_0::Angle = 0.122173
+  "Leakage plus idle-bypass area, sets 33 kPa idle at 800 rpm (derived)"
+  parameter A_idle::Area = 7.4e-6
+  "Discharge coefficient (assumed)"
+  parameter C_d::Real = 0.8
+  "Ambient pressure (textbook)"
+  parameter p_a::Pressure = 101325.0
+  "Ambient air temperature (MathWorks)"
+  parameter T_a::Temperature = 298.15
+  "Gas constant of air [J/(kg.K)] (textbook)"
+  parameter R::Real = 287.05
+  "Ratio of specific heats of air (textbook)"
+  parameter gamma::Real = 1.4
+  "Pressure ratio above which Psi is linearized (MathWorks)"
+  parameter Pi_lin::Real = 0.95
+  "Critical pressure ratio, choked below it (derived)"
+  final parameter Pi_cr::Real = (2 / (gamma + 1))^(gamma / (gamma - 1))
+  "Flow function at Pi_lin (derived)"
+  final parameter Psi_lin::Real = sqrt(2 * gamma / (gamma - 1) * (Pi_lin^(2 / gamma) - Pi_lin^((gamma + 1) / gamma)))
+  "Plate angle"
+  variable alpha::Angle
+  "Effective open area"
+  variable A_thr::Area
+  "Pressure ratio across the throttle, floored at the choked value"
+  variable Pi::Real
+  "Isentropic flow function"
+  variable Psi::Real
+relations
+  alpha = alpha_0 + min(max(u_thr, 0), 1) * (pi / 2 - alpha_0)
+  A_thr = A_idle + (pi * D_thr^2 / 4) * (1 - cos(alpha) / cos(alpha_0))
+  Pi = max(p_m / p_a, Pi_cr)
+  # ifelse evaluates both branches, so the subsonic one gets a ratio clamped below Pi_lin.
+  Psi = ifelse(Pi > Pi_lin, Psi_lin * (1 - Pi) / (1 - Pi_lin), sqrt(2 * gamma / (gamma - 1) * (min(Pi, Pi_lin)^(2 / gamma) - min(Pi, Pi_lin)^((gamma + 1) / gamma))))
+  mdot_thr = C_d * A_thr * p_a / sqrt(R * T_a) * Psi
+end

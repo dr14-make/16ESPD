@@ -85,7 +85,7 @@ One place for shared numbers. Each component repeats the ones it uses as default
 | `p_a` ambient | 101 325 Pa | (textbook) |
 | `T_a`, `T_m` intake air | 298.15 K | (MathWorks) |
 | `D_thr` throttle plate | 0.05 m | (MathWorks) |
-| `A_idle` throttle leakage / bypass at closed throttle | 13e-6 m², calibrate for 33 kPa idle | (derived) brake plan 2a |
+| `A_idle` throttle leakage / bypass at closed throttle | 7.4e-6 m², gives 33 kPa idle at 800 rpm | (derived) with the `eta_v` below |
 | `AFR_s` stoichiometric | 14.7 | (deck) slide 44 map; slide 23 says 14.6, a fuel-composition difference: note it in the docstring |
 | `H_l` lower heating value, gasoline | 43.4e6 J/kg | (textbook) |
 | `rho_f` gasoline density | 740 kg/m³ | (textbook) |
@@ -119,28 +119,32 @@ must never go negative while choked.
 
 ### `IntakeManifold` (new equations)
 
-    RealInput mdot_in, mdot_out, mdot_aux     # aux = booster check-valve inflow (brake plan 2a); 0 here
+    RealInput mdot_thr, mdot_bst, mdot_cyl    # bst = booster check-valve inflow (brake plan 2a)
     RealOutput p_m
-    der(p_m) = R * T_m / V_m * (mdot_in + mdot_aux - mdot_out)
+    V_m / (R * T_m) * der(p_m) = mdot_thr + mdot_bst - mdot_cyl
 
 ### `CylinderAirflow` (new equations)
 
     RealInput p_m, omega
     RealOutput mdot_cyl
-    mdot_cyl = eta_v(omega, p_m) * V_d * omega / (4*pi) * p_m / (R * T_m)
+    N        = omega * 30 / pi                                    # rpm
+    eta_v    = eta_fl(N) * (1 - k + k * p_m / p_ref)
+    mdot_cyl = eta_v * p_m * V_d * N / (120 * R * T_m)
 
-`omega/(4*pi)` is the four-stroke `N/120` in rad/s; the Simscape `omega*V_d*p/(2RT)` form is off
-by 2π (see the manifold note). `eta_v` is a `BlockComponents.Tables.InterpolatedTable`
-(`agent_resources/stdlib_reference/BlockComponents/Tables/InterpolatedTable.dyad`) over `omega`
-and `p_m`, with a structural `use_table` switch that falls back to a constant `eta_v0 = 0.8` for
-the brake plan. Default table: `eta_v` ≈ 0.55 at idle pressure rising to 0.90 at mid-speed wide
-open, falling to 0.80 at 6500 rpm (assumed shape; the note computes ≈ 0.51 at a real idle point).
+The equation is written in rpm because that is the form students meet; the Simscape
+`omega*V_d*p/(2RT)` form is off by 2π (see the manifold note). `eta_v` is the closed form the
+engine maps were derived with, `data/engine/eta_v_coeffs.csv`, copied verbatim (`eta_fl` a
+quadratic in `N/1000`, `N` clamped to 500–6750 rpm; `k` = 0.8989; `p_ref` = 95 kPa); see
+`data/engine/README.md`. There is no separate table and no constant fallback: one `eta_v` serves
+the brake plan and the mapped engine, and with it the air the cylinders draw and the fuel the maps
+meter give the maps' λ. `eta_v` ≈ 0.36 at idle, against the note's ≈ 0.51 at a real idle point.
 
 ### `AirPath` (assembly)
 
-`Throttle` + `IntakeManifold` + `CylinderAirflow`. Inputs `u_thr`, `omega`, `mdot_aux`; outputs
+`Throttle` + `IntakeManifold` + `CylinderAirflow`. Inputs `u_thr`, `omega`, `mdot_bst`; outputs
 `p_m`, `mdot_thr` (what a MAF sensor would see), `mdot_cyl`. This is exactly brake plan 2a's
-interface; once it lands, 2a is done.
+interface; once it lands, 2a is done. Built: `dyad/Vehicle/Engine/`, harness `TestAirPath` and
+analysis `AirPathTransient`, anchors in `test/engine_plausibility.jl`.
 
 ## Vehicle/Engine — torque and the mean-value engine (task 2)
 
@@ -509,7 +513,11 @@ Verify each numerically and report the number. Bands are in the plan's reality-a
 
 **Task 1 (air path).** Idle 800 rpm closed throttle: `p_m` 30–36 kPa. WOT: `p_m` > 90 kPa.
 Overrun at 3000 rpm: `p_m` below idle, 17–34 kPa. Step-response time constant 0.08–0.2 s at
-800 rpm and 0.02–0.05 s at 3000 rpm. `mdot_thr` never negative while choked.
+800 rpm and 0.02–0.05 s at 3000 rpm. `mdot_thr` never negative while choked. Because `eta_v`
+depends on `p_m`, the linearized time constant is `V_m/(R T_m) / (∂mdot_cyl/∂p_m − ∂mdot_thr/∂p_m)`,
+not `120 V_m/(eta_v V_d N)`. Measured: idle 32.96 kPa, WOT 99.9 kPa, overrun 13.5 kPa (below the
+17–34 kPa band: only the idle leak feeds the manifold on overrun), τ 0.15 s at idle and 0.023 s at
+3000 rpm part load.
 
 **Task 2 (mean-value engine), the gate for Tier 1.** *Verify this first*: `LinearAnalysis` (or a
 step fit) at idle, 2000 and 4000 rpm shows the throttle-to-torque time constant falling with

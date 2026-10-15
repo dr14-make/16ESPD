@@ -1,0 +1,113 @@
+"""
+Brake plan increment 2a: the air path under prescribed throttle, speed and booster inflow.
+
+The throttle steps from `u0` by `du` at `t_step`, the speed is held at `omega`, and the booster
+pushes `mdot_bst` into the manifold for `d_bst` seconds from `t_bst`. The test cases are the 2a
+scenarios: idle pull-down from ambient, tip-in to wide open at 3000 rpm, overrun at 3000 rpm, a
+small throttle step at idle for the time constant, and a booster release at idle.
+"""
+test component TestAirPath
+  "Throttle position before the step"
+  parameter u0::Real = 0.0
+  "Throttle step height"
+  parameter du::Real = 0.0
+  "Time of the throttle step"
+  parameter t_step::Time = 1.0
+  "Engine speed, 83.776 rad/s = 800 rpm"
+  parameter omega::AngularVelocity = 83.776
+  "Booster inflow during its pulse [kg/s]"
+  parameter mdot_bst::Real = 0.0
+  "Start of the booster inflow pulse"
+  parameter t_bst::Time = 1.0
+  "Length of the booster inflow pulse"
+  parameter d_bst::Time = 0.5
+  "Initial manifold pressure"
+  parameter p_m0::Pressure = 101325.0
+  throttle_cmd = BlockComponents.Sources.Step(offset = u0, height = du, start_time = t_step)
+  speed = BlockComponents.Sources.Constant(k = omega)
+  booster = BlockComponents.Sources.Pulse(amplitude = mdot_bst, duty_cycle = 1.0, period = d_bst, start_time = t_bst, offset = 0.0)
+  air = VehicleSystemsComponents.Vehicle.Engine.AirPath()
+relations
+  connect(throttle_cmd.y, air.u_thr)
+  connect(speed.y, air.omega)
+  connect(booster.y, air.mdot_bst)
+  initial air.manifold.p = p_m0
+metadata {
+  "Dyad": {
+    "tests": {
+      "idle": {
+        "stop": 3,
+        "params": {"u0": 0, "du": 0, "omega": 83.776, "p_m0": 101325},
+        "atol": {"air.p_m": 50},
+        "expect": {
+          "initial": {"air.p_m": 101325},
+          "final": {"air.p_m": 32955.7},
+          "signals": ["air.p_m", "air.mdot_thr", "air.mdot_cyl", "air.cylinders.eta_v"]
+        }
+      },
+      "tip_in": {
+        "stop": 2,
+        "params": {"u0": 0, "du": 1, "t_step": 0.5, "omega": 314.159, "p_m0": 13482.4},
+        "atol": {"air.p_m": 50},
+        "expect": {
+          "initial": {"air.p_m": 13482.4},
+          "final": {"air.p_m": 99889.9},
+          "signals": ["air.p_m", "air.mdot_thr", "air.mdot_cyl", "air.cylinders.eta_v"]
+        }
+      },
+      "overrun": {
+        "stop": 2,
+        "params": {"u0": 0, "du": 0, "omega": 314.159, "p_m0": 32955.7},
+        "atol": {"air.p_m": 50},
+        "expect": {
+          "initial": {"air.p_m": 32955.7},
+          "final": {"air.p_m": 13482.4},
+          "signals": ["air.p_m", "air.mdot_thr", "air.mdot_cyl", "air.cylinders.eta_v"]
+        }
+      },
+      "idle_step": {
+        "stop": 3,
+        "params": {"u0": 0, "du": 0.005, "t_step": 1, "omega": 83.776, "p_m0": 32955.7},
+        "atol": {"air.p_m": 50},
+        "expect": {
+          "initial": {"air.p_m": 32955.7},
+          "final": {"air.p_m": 37270},
+          "signals": ["air.p_m", "air.mdot_thr", "air.mdot_cyl"]
+        }
+      },
+      "booster_release": {
+        "stop": 4,
+        "params": {"u0": 0, "du": 0, "omega": 83.776, "mdot_bst": 0.002, "t_bst": 1, "d_bst": 0.5, "p_m0": 32955.7},
+        "atol": {"air.p_m": 50},
+        "expect": {
+          "initial": {"air.p_m": 32955.7},
+          "final": {"air.p_m": 32955.7},
+          "signals": ["air.p_m", "air.mdot_bst", "air.mdot_cyl"]
+        }
+      }
+    }
+  }
+}
+end
+
+analysis AirPathTransient
+  extends TransientAnalysis(stop = 3.0, saveat = 0.001)
+  "Throttle position before the step"
+  parameter u0::Real = 0.0
+  "Throttle step height"
+  parameter du::Real = 0.0
+  "Time of the throttle step"
+  parameter t_step::Time = 1.0
+  "Engine speed, 83.776 rad/s = 800 rpm"
+  parameter omega::AngularVelocity = 83.776
+  "Booster inflow during its pulse [kg/s]"
+  parameter mdot_bst::Real = 0.0
+  "Start of the booster inflow pulse"
+  parameter t_bst::Time = 1.0
+  "Length of the booster inflow pulse"
+  parameter d_bst::Time = 0.5
+  "Initial manifold pressure"
+  parameter p_m0::Pressure = 101325.0
+  model = VehicleSystemsComponents.Vehicle.Engine.TestAirPath(u0 = u0, du = du, t_step = t_step, omega = omega, mdot_bst = mdot_bst, t_bst = t_bst, d_bst = d_bst, p_m0 = p_m0)
+relations
+end
