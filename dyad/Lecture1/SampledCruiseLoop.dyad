@@ -158,6 +158,9 @@ relations
   initial loop.plant.body.mass.s = 0.0
   initial loop.plant.body.mass.v = v0
   initial loop.plant.engine.lag.x = tau0
+# The case records the held command `loop.hold.y`, not the clocked `loop.controller.y`. Reading a
+# clocked variable back from the solution at time t returns its value at the final tick for every
+# t, so a snapshot of it would hold one constant instead of the command history.
 metadata {
   "Dyad": {
     "tests": {
@@ -167,7 +170,7 @@ metadata {
         "expect": {
           "initial": {"loop.plant.v_kmh": 90},
           "final": {"loop.plant.v_kmh": 109.3},
-          "signals": ["loop.plant.v_kmh", "loop.controller.y", "demand.y"]
+          "signals": ["loop.plant.v_kmh", "loop.hold.y", "demand.y"]
         }
       }
     }
