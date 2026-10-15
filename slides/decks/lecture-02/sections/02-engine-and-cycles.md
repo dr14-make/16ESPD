@@ -264,7 +264,9 @@ $\lambda < 1$ rich &nbsp;·&nbsp; $\lambda = 1$ stoichiometric &nbsp;·&nbsp; $\
 </div>
 <div>
 
-![Percent of maximum power and of maximum efficiency against air-fuel ratio from 10 to 20: maximum power is on the rich side near 12.5 to 13.5, maximum efficiency on the lean side near 16 to 17, with stoichiometric between them.](/pptx/slide23-power-and-efficiency-vs-afr.png)
+<CardExport notebook="illustrations" name="power-efficiency-vs-afr" height="22rem" />
+
+<div class="caption">Power and brake efficiency at fixed air charge, 3000 rpm, each as % of its maximum; idealized, drawn from textbook trends</div>
 
 </div>
 </div>
@@ -276,14 +278,21 @@ ratio of the actual air-fuel ratio to this one is lambda. Lambda below one is ri
 lean.
 
 The plot on the right shows why there is no single best mixture. Maximum power is a little rich,
-around 12.5 to 13.5, because all the oxygen gets used. Maximum efficiency is a little lean, because
-all the fuel gets burned. Outside about 7 to 20, the mixture does not burn at all: 7 to 1 is too
-rich, 20 to 1 too lean.
+lambda 0.88 or 12.8 to 1, because all the oxygen gets used. Maximum efficiency is a little lean,
+lambda 1.09 or 16 to 1, because all the fuel gets burned. Outside about 7 to 20, the mixture does
+not burn at all: 7 to 1 is too rich, 20 to 1 too lean.
+
+The plot is idealized, drawn from textbook trends. It holds the air of the hands-on engine's best
+point, 3000 rpm and 77.5 kilopascals, and varies the fuel. At lambda one it gives that point's 35.7
+percent; leaning to 1.09 would add about one percentage point. The shape is an assumed lambda
+multiplier, the one Dyad task 2's mean-value engine will use; a lambda sweep of that engine replaces
+this plot.
 
 The source slide said stoichiometric is used for idle. In a modern petrol engine with a three-way
 catalyst it is used nearly everywhere except full load, because the catalyst only works close to
 lambda one. That is section 07. The hands-on engine runs at lambda one up to 85 percent of its
-full-load manifold pressure, then richens to between 0.9 and 0.8.
+full-load manifold pressure, then richens to between 0.9 and 0.8; at 3000 rpm it uses 0.87, next to
+the power peak in the plot.
 
 A video on the mixture: https://www.youtube.com/watch?v=h5Ug-U-Rsts
 -->

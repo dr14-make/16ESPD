@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .ht { stroke: #a75d00; stroke-width: 2.5; fill: none; }
+    .plate { stroke: #16202c; stroke-width: 3; fill: none; }
+    .core { stroke: #4a5a6b; stroke-width: 2; }
+    .res { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .ecu { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .pulse { stroke: #1f5fa8; stroke-width: 2; fill: none; }
+    .tip { fill: #16202c; stroke: #16202c; stroke-width: 1; }
+    .spark { stroke: #a75d00; stroke-width: 1.8; fill: none; }
+    .flow { stroke: #1f5fa8; stroke-width: 2; fill: none; }
+    .head { fill: #1f5fa8; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .sym { font-size: 16px; font-weight: 600; font-style: italic; fill: #16202c; }
+    .hv { font-size: 16px; font-weight: 600; font-style: italic; fill: #a75d00; }
+    .acc { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+    .pm { font-size: 16px; font-weight: 600; fill: #16202c; }
+  </style>
+
+  <path class="wire" d="M60 158 V60 H118"/>
+  <path class="plate" d="M42 158 H78"/>
+  <path class="plate" d="M51 170 H69" stroke-width="5"/>
+  <path class="wire" d="M60 170 V282"/>
+  <path class="wire" d="M60 282 v8 M50 290 h20 M54 295 h12 M58 300 h4"/>
+  <text class="pm" x="84" y="156">+</text>
+  <text class="pm" x="84" y="178">−</text>
+  <text class="lbl" x="60" y="330" text-anchor="middle">battery 12 V</text>
+
+  <circle cx="120" cy="60" r="3" fill="#16202c"/>
+  <circle cx="160" cy="60" r="3" fill="#16202c"/>
+  <path class="wire" d="M120 60 L158 52"/>
+  <text class="lbl" x="140" y="40" text-anchor="middle">ignition switch</text>
+
+  <path class="wire" d="M160 60 H196"/>
+  <rect class="res" x="196" y="51" width="52" height="18"/>
+  <path class="wire" d="M248 60 H300 V92"/>
+  <text class="sym" x="218" y="40" text-anchor="middle">R</text>
+  <text class="sym" x="226" y="44" font-size="12">v</text>
+  <text class="lbl" x="222" y="92" text-anchor="middle">ballast</text>
+
+  <path class="wire" d="M300 92 a12 12 0 0 1 0 24 a12 12 0 0 1 0 24 a12 12 0 0 1 0 24 a12 12 0 0 1 0 24 a12 12 0 0 1 0 24"/>
+  <path class="core" d="M322 80 V226 M328 80 V226"/>
+  <path class="wire" d="M350 92 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12 a6 6 0 0 0 0 12"/>
+  <text class="sym" x="282" y="160" text-anchor="end">L₁</text>
+  <text class="sym" x="368" y="160">L₂</text>
+  <text class="lbl" x="280" y="238" text-anchor="end">ignition coil</text>
+  <text class="lbl" x="280" y="256" text-anchor="end">N₁ : N₂ = 1 : 80</text>
+
+  <path class="wire" d="M350 212 V226"/>
+  <path class="wire" d="M350 226 v8 M340 234 h20 M344 239 h12 M348 244 h4"/>
+
+  <path class="ht" d="M350 92 V30 H560 V112"/>
+  <text class="hv" x="456" y="22" text-anchor="middle">U₂ up to 30 kV</text>
+  <path class="tip" d="M555 108 L560 118 L565 108 Z"/>
+  <path class="tip" d="M555 140 L560 130 L565 140 Z"/>
+  <path class="spark" d="M556 119 L563 122 L557 126 L563 129"/>
+  <path class="wire" d="M560 140 V156"/>
+  <path class="wire" d="M560 156 v8 M550 164 h20 M554 169 h12 M558 174 h4"/>
+  <text class="lbl" x="580" y="128">spark</text>
+  <text class="lbl" x="580" y="146">plug</text>
+
+  <path class="wire" d="M300 212 V266 H450 V276"/>
+  <path class="flow" d="M366 254 H396"/>
+  <path class="head" d="M396 249 L406 254 L396 259 Z"/>
+  <text class="sym" x="384" y="244" text-anchor="middle">i₁</text>
+
+  <circle cx="462" cy="296" r="24" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path class="plate" d="M470 282 V310"/>
+  <path class="wire" d="M470 288 L450 276 M470 304 L450 316 V336"/>
+  <path class="tip" d="M452 309 L450 316 L458 315 Z"/>
+  <path class="wire" d="M450 336 v8 M440 344 h20 M444 349 h12 M448 354 h4"/>
+  <text class="lbl" x="432" y="300" text-anchor="end">switch</text>
+  <text class="lbl" x="432" y="318" text-anchor="end">(transistor)</text>
+
+  <path class="wire" d="M470 296 H500"/>
+  <rect class="ecu" x="500" y="274" width="100" height="44" rx="6"/>
+  <text class="acc" x="550" y="292" text-anchor="middle">ECU</text>
+  <path class="pulse" d="M514 310 H526 V300 H558 V310 H586"/>
+  <text class="lbl" x="550" y="338" text-anchor="middle">dwell pulse</text>
+</svg>
