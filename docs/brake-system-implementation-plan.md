@@ -201,8 +201,14 @@ engine speed.
 
 **Build:** one state `p_m`, with inputs throttle angle `θ`, engine speed `N` and booster inflow
 `ṁ_bst`, and output `p_m`. Compressible throttle flow with the Π > 0.95 linearization, and
-speed-density cylinder flow in its rpm form. `A_idle = 13 mm²`. Do not copy MathWorks' 1 cm²
-leakage default, and do not use the `ω·V_d·p/(2RT)` cylinder-flow form (it is off by 2π).
+speed-density cylinder flow in its rpm form. `A_idle = 7.4 mm²` (derived: 33 kPa idle with the
+engine maps' `η_v`, about 0.36 at idle; the earlier 13 mm² assumed a higher `η_v`). Do not copy
+MathWorks' 1 cm² leakage default, and do not use the `ω·V_d·p/(2RT)` cylinder-flow form (it is
+off by 2π).
+
+**Built as `Vehicle.Engine.AirPath`** (lecture plan S5), with harness `TestAirPath`, analysis
+`AirPathTransient` and the anchors in `test/engine_plausibility.jl`. Its throttle input is the
+position `u_thr` (0 closed, 1 wide open) and its speed input `omega` in rad/s.
 
 **Tests** (`TestIntakeManifold`, prescribed inputs):
 - Idle: θ = 0, N = 800 rpm, held for 3 s.
@@ -214,7 +220,8 @@ leakage default, and do not use the `ω·V_d·p/(2RT)` cylinder-flow form (it is
 - Idle `p_m` is 30–36 kPa (calibrated to 33 kPa).
 - Wide open throttle gives `p_m` > 90 kPa.
 - Overrun gives `p_m` below the idle value.
-- Idle time constant is 0.08–0.2 s (predicted 0.125 s).
+- Idle time constant is 0.08–0.2 s (predicted 0.125 s with a constant `η_v` of 0.8; 0.156 s
+  linearized with the maps' `η_v`, 0.15 s measured).
 - Mass flow never goes negative through the choked throttle.
 
 ### 2b. `VacuumBooster` at constant vacuum

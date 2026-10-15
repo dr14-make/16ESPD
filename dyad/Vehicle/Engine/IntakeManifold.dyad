@@ -1,0 +1,29 @@
+"""
+Intake manifold as one isothermal receiver: the manifold pressure is the only state.
+
+    V_m / (R T_m) dp_m/dt = mdot_thr + mdot_bst - mdot_cyl
+
+Air enters through the throttle and, when the brake booster's check valve is open, from the
+booster; the cylinders draw it out.
+"""
+component IntakeManifold
+  "Air flow in through the throttle [kg/s]"
+  mdot_thr = RealInput()
+  "Air flow in from the brake booster through its check valve [kg/s]"
+  mdot_bst = RealInput()
+  "Air flow out into the cylinders [kg/s]"
+  mdot_cyl = RealInput()
+  "Manifold absolute pressure [Pa]"
+  p_m = RealOutput()
+  "Manifold volume (MathWorks)"
+  parameter V_m::Volume = 1.0e-3
+  "Manifold air temperature (MathWorks)"
+  parameter T_m::Temperature = 298.15
+  "Gas constant of air [J/(kg.K)] (textbook)"
+  parameter R::Real = 287.05
+  "Manifold absolute pressure"
+  variable p::Pressure
+relations
+  V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
+  p_m = p
+end

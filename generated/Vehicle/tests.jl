@@ -50,4 +50,5 @@ include("VehicleBody_test.jl")
 include("WheeledDriveline_test.jl")
 end
 include("Brake/tests.jl")
+include("Engine/tests.jl")
 include("Wheel/tests.jl")

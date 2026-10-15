@@ -1,0 +1,48 @@
+"""
+Mean-value air path of a throttled petrol engine: throttle, intake manifold and cylinders.
+
+Throttle position and engine speed set the manifold pressure `p_m`, the signal the engine maps
+are read at and the vacuum the brake booster draws on. `mdot_bst` is the booster's inflow
+through its check valve; hold it at zero when no booster is connected. `mdot_cyl` is the air the
+cylinders draw, which the fuel path meters against, and `mdot_thr` is what a mass-airflow
+sensor upstream of the throttle would read.
+
+With the defaults: 33 kPa at idle (closed throttle, 800 rpm), 13.5 kPa on overrun at 3000 rpm,
+about 100 kPa at wide-open throttle, and a manifold time constant of about 0.15 s at idle.
+"""
+component AirPath
+  "Throttle position: 0 closed against its stop, 1 wide open"
+  u_thr = RealInput()
+  "Engine speed [rad/s]"
+  omega = RealInput()
+  "Air flow in from the brake booster [kg/s]"
+  mdot_bst = RealInput()
+  "Manifold absolute pressure [Pa]"
+  p_m = RealOutput()
+  "Air mass flow into the cylinders [kg/s]"
+  mdot_cyl = RealOutput()
+  "Air mass flow through the throttle [kg/s]"
+  mdot_thr = RealOutput()
+  throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle(A_idle = A_idle, C_d = C_d, D_thr = D_thr)
+  manifold = VehicleSystemsComponents.Vehicle.Engine.IntakeManifold(V_m = V_m, T_m = T_m)
+  cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow(V_d = V_d, T_m = T_m)
+  "Leakage plus idle-bypass area, sets 33 kPa idle at 800 rpm (derived)"
+  parameter A_idle::Area = 7.4e-6
+  "Throttle discharge coefficient (assumed)"
+  parameter C_d::Real = 0.8
+  "Throttle bore diameter (MathWorks)"
+  parameter D_thr::Length = 0.05
+  "Manifold volume (MathWorks)"
+  parameter V_m::Volume = 1.0e-3
+  "Displacement (MathWorks)"
+  parameter V_d::Volume = 1.5e-3
+  "Manifold air temperature (MathWorks)"
+  parameter T_m::Temperature = 298.15
+relations
+  connect(u_thr, throttle.u_thr)
+  connect(omega, cylinders.omega)
+  connect(mdot_bst, manifold.mdot_bst)
+  connect(throttle.mdot_thr, manifold.mdot_thr, mdot_thr)
+  connect(cylinders.mdot_cyl, manifold.mdot_cyl, mdot_cyl)
+  connect(manifold.p_m, throttle.p_m, cylinders.p_m, p_m)
+end

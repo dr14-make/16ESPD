@@ -1,0 +1,52 @@
+"""
+Air drawn by the cylinders, by speed-density: a four-stroke fills its displacement once every
+two revolutions.
+
+    mdot_cyl = eta_v p_m V_d N / (120 R T_m)          N in rpm
+    eta_v    = eta_fl(N) (1 - k + k p_m / p_ref)
+    eta_fl   = c0 + c1 nu + c2 nu^2,  nu = N / 1000 rpm, N clamped to n_min..n_max
+
+This volumetric efficiency is the one the engine maps in `data/engine/` were derived with
+(`eta_v_coeffs.csv`), so the air the cylinders draw here and the fuel the maps meter give the
+map's lambda. `eta_fl` is the full-load breathing curve; the load factor lowers `eta_v` at part
+load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_m`.
+"""
+component CylinderAirflow
+  "Manifold absolute pressure [Pa]"
+  p_m = RealInput()
+  "Engine speed [rad/s]"
+  omega = RealInput()
+  "Air mass flow into the cylinders [kg/s]"
+  mdot_cyl = RealOutput()
+  "Displacement (MathWorks)"
+  parameter V_d::Volume = 1.5e-3
+  "Manifold air temperature (MathWorks)"
+  parameter T_m::Temperature = 298.15
+  "Gas constant of air [J/(kg.K)] (textbook)"
+  parameter R::Real = 287.05
+  "Full-load breathing, constant term (derived, data/engine/eta_v_coeffs.csv)"
+  parameter c0::Real = 0.777026
+  "Full-load breathing, linear term [1/krpm] (derived, data/engine/eta_v_coeffs.csv)"
+  parameter c1::Real = 0.148753
+  "Full-load breathing, quadratic term [1/krpm^2] (derived, data/engine/eta_v_coeffs.csv)"
+  parameter c2::Real = -0.020452
+  "Load sensitivity of eta_v (derived, data/engine/eta_v_coeffs.csv)"
+  parameter k::Real = 0.898877
+  "Full-load manifold pressure the breathing curve refers to (assumed)"
+  parameter p_ref::Pressure = 95000.0
+  "Lowest speed of the breathing fit [rpm] (assumed)"
+  parameter n_min::Real = 500.0
+  "Highest speed of the breathing fit [rpm] (assumed)"
+  parameter n_max::Real = 6750.0
+  "Engine speed [rpm]"
+  variable N::Real
+  "Full-load volumetric efficiency"
+  variable eta_fl::Real
+  "Volumetric efficiency"
+  variable eta_v::Real
+relations
+  N = omega * 30 / pi
+  eta_fl = c0 + c1 * (min(max(N, n_min), n_max) / 1000) + c2 * (min(max(N, n_min), n_max) / 1000)^2
+  eta_v = eta_fl * (1 - k + k * p_m / p_ref)
+  mdot_cyl = eta_v * p_m * V_d * N / (120 * R * T_m)
+end

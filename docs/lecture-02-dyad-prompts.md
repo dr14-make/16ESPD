@@ -29,12 +29,11 @@ Also read `research_notes/Passenger car brake system modeling/engine_manifold_va
 `docs/brake-system-implementation-plan.md` § 2a.
 
 Create `dyad/Vehicle/Engine/` with `Throttle`, `IntakeManifold`, `CylinderAirflow` (with the
-`use_table` switch and an assumed `eta_v` table) and the `AirPath` assembly with brake plan 2a's
-interface (inputs `u_thr`, `omega`, `mdot_aux`; outputs `p_m`, `mdot_thr`, `mdot_cyl`). Write
+`eta_v` of `data/engine/eta_v_coeffs.csv`) and the `AirPath` assembly with brake plan 2a's
+interface (inputs `u_thr`, `omega`, `mdot_bst`; outputs `p_m`, `mdot_thr`, `mdot_cyl`). Write
 `test component TestAirPath` cases: idle (800 rpm, closed, 3 s), tip-in to WOT at 3000 rpm,
 overrun at 3000 rpm, and a small throttle step at idle and at 3000 rpm for the time constant.
-Calibrate `A_idle` so idle `p_m` is 33 kPa, with the constant `eta_v0` that brake 2a uses
-and again with the table; report both values.
+Calibrate `A_idle` so idle `p_m` is 33 kPa and report it.
 
 Done when acceptance "Task 1" passes. Report: idle, WOT and overrun `p_m`; the two time constants
 against the predicted 0.125 s and 0.033 s; the calibrated `A_idle`; the minimum `mdot_thr`.
