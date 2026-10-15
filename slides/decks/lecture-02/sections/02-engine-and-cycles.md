@@ -80,7 +80,7 @@ routeAlias: otto-cycle
 <div class="grid grid-cols-[2.6fr_1fr] gap-6 items-center">
 <div>
 
-![Otto cycle on a pressure-volume diagram, points 0 to 4 between TDC and BDC, with the definition of compression ratio as V_bdc over V_tdc, and four cylinder sketches: intake 0–1, compression 1–2, combustion 2–3 and expansion 3–4, exhaust 1–0.](/pptx/slide20-otto-cycle.png)
+<CardExport notebook="02-cycle-and-spark" name="otto-pv" height="24rem" />
 
 </div>
 <div>
@@ -111,8 +111,11 @@ into the cylinder, so combustion happens at roughly constant pressure while the 
 
 V tdc is the clearance volume, what is left when the piston is at the top.
 
-Notebook 02, "The cycle and the spark", will compute this p–V loop from a crank-angle model of one
-cylinder and replace the diagram.
+The loop is the ideal air-standard Otto cycle from notebook 02, "The cycle and the spark": a
+compression ratio of 10.5, intake at ambient, and the heat of a stoichiometric charge burned
+completely. Its efficiency depends on the compression ratio alone, 61 percent here. With no heat
+loss and an instant burn its peak pressure is far above a real engine's; the fired cycle of a
+crank-angle cylinder model will stand beside it.
 -->
 
 ---
@@ -159,7 +162,7 @@ routeAlias: diesel-cycle
 <div class="grid grid-cols-[1fr_1.4fr] gap-8 items-center">
 <div>
 
-![Diesel cycle on a pressure-volume diagram: suction 1–2, isentropic compression 2–3, constant-pressure combustion 3–4, isentropic expansion 4–5, constant-volume heat rejection 5–2.](/pptx/slide22-diesel-pv.png)
+<CardExport notebook="02-cycle-and-spark" name="diesel-pv" height="24rem" />
 
 </div>
 <div>
@@ -189,31 +192,65 @@ it can be squeezed much harder without anything igniting early. Second, the heat
 sprayed in at the end of compression, at point 3, and burns as it enters, so the pressure stays
 roughly constant from 3 to 4 while the piston already moves down.
 
-Higher compression is why a diesel is more efficient.
+Higher compression is why a diesel is more efficient, but the plot shows it is not the whole
+story. Both ideal loops take the same heat per kilogram of air, that of a stoichiometric charge.
+The diesel, at 18, compresses much harder than the Otto at 10.5, yet its ideal efficiency is lower,
+55 against 61 percent, because it adds the heat while the piston is already moving down. A real
+diesel wins because it runs lean, with far less heat per kilogram of air, so its constant-pressure
+phase is short, and because it has no throttle to pump against.
 
 A video of the cycle: https://youtu.be/DZt5xU44IfQ?t=88
+-->
+
+---
+routeAlias: ice-principles
+---
+
+## ICE principles and efficiency
+
+<div class="grid grid-cols-[1fr_1.45fr] gap-6 items-center">
+<div>
+
+- **Law of conservation of energy**: the total energy of an isolated system cannot change. Energy
+  can be neither created nor destroyed, only changed from one form to another.
+- The chemical energy of the fuel–air mixture is converted to kinetic energy in the explosion.
+- These transformations lose a lot: the hands-on engine's best point is **35.7 % efficiency**
+  (232 g/kWh), at 3000 rpm and 99 N·m.
+
+</div>
+<div>
+
+<CardExport notebook="12-mapped-engine" name="efficiency-map" height="27rem" />
+
+<div class="caption">Brake efficiency of the hands-on engine, from the EPA ALPHA maps of a 2014 Mazda 2.0 L, scaled to 1.5 L</div>
+
+</div>
+</div>
+
+<!--
+The map is the hands-on engine's, from the US EPA's measured Mazda data, in notebook 12. Brake
+efficiency is the power at the shaft over the heat flow of the fuel burned. The star is the best
+point: 35.7 percent, 232 grams of fuel per kilowatt-hour, at 3000 rpm and 99 newton-meters. That is
+a good modern petrol engine at its best. Most of the rest leaves as heat in the exhaust and the
+coolant.
+
+Read the map from the lower left: at light load the efficiency falls fast, because the engine
+pumps against a nearly closed throttle and its friction is a large share of a small output. A car
+cruising in town sits down there. The black line is full load.
 -->
 
 ---
 routeAlias: stoichiometric
 ---
 
-## ICE principles and the stoichiometric mixture
+## The stoichiometric mixture
 
-<div class="grid grid-cols-[1.5fr_1fr] gap-6">
-<div class="text-sm">
-
-**Principles**
-
-- **Law of conservation of energy**: the total energy of an isolated system cannot change. Energy
-  can be neither created nor destroyed, only changed from one form to another.
-- The chemical energy of the fuel–air mixture is converted to kinetic energy in the explosion.
-- These transformations lose a lot: about **37 % efficiency**.
-
-**Stoichiometric fuel/air mixture**
+<div class="grid grid-cols-[1.5fr_1fr] gap-6 items-center">
+<div>
 
 - An "ideal" mixture in which both the fuel and the oxygen in the air are completely consumed:
-  **14.6 kg of air per kg of fuel**. Used for idle running.
+  **14.6 kg of air per kg of fuel**. With a three-way catalyst it is used everywhere except near
+  full load.
 - To increase power, the mixture is made **rich**.
 - When power is not needed, a **lean** mixture saves fuel.
 
@@ -225,19 +262,14 @@ $$
 $\lambda < 1$ rich &nbsp;·&nbsp; $\lambda = 1$ stoichiometric &nbsp;·&nbsp; $\lambda > 1$ lean
 
 </div>
-<div class="stack">
+<div>
 
 ![Percent of maximum power and of maximum efficiency against air-fuel ratio from 10 to 20: maximum power is on the rich side near 12.5 to 13.5, maximum efficiency on the lean side near 16 to 17, with stoichiometric between them.](/pptx/slide23-power-and-efficiency-vs-afr.png)
-
-![Air-fuel ratio scale: 7:1 too rich to burn, 15:1 in the combustible range, 20:1 too lean to burn; excess fuel on the rich side, excess air on the lean side.](/pptx/slide23-mixture-range.png)
 
 </div>
 </div>
 
 <!--
-37 percent is a good modern petrol engine at its best point. Most of the rest leaves as heat in the
-exhaust and the coolant.
-
 The stoichiometric ratio is the one number to remember today: 14.6 kilograms of air for each
 kilogram of petrol, a little more or less depending on the fuel blend; you will also see 14.7. The
 ratio of the actual air-fuel ratio to this one is lambda. Lambda below one is rich, above one is
@@ -245,11 +277,13 @@ lean.
 
 The plot on the right shows why there is no single best mixture. Maximum power is a little rich,
 around 12.5 to 13.5, because all the oxygen gets used. Maximum efficiency is a little lean, because
-all the fuel gets burned. Outside about 7 to 20, the mixture does not burn at all.
+all the fuel gets burned. Outside about 7 to 20, the mixture does not burn at all: 7 to 1 is too
+rich, 20 to 1 too lean.
 
-The slide says stoichiometric is used for idle. In a modern petrol engine with a three-way catalyst,
-it is used nearly everywhere except full load, because the catalyst only works close to lambda one.
-That is section 07. The hands-on engine runs at lambda one up to 85 percent load, then richens.
+The source slide said stoichiometric is used for idle. In a modern petrol engine with a three-way
+catalyst it is used nearly everywhere except full load, because the catalyst only works close to
+lambda one. That is section 07. The hands-on engine runs at lambda one up to 85 percent of its
+full-load manifold pressure, then richens to between 0.9 and 0.8.
 
 A video on the mixture: https://www.youtube.com/watch?v=h5Ug-U-Rsts
 -->

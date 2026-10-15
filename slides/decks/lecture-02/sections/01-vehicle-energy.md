@@ -89,7 +89,7 @@ routeAlias: rolling-resistance
 </div>
 <div>
 
-![Table of rolling resistance coefficients, from 0.001 for railroad steel wheels on rails, through 0.01 to 0.015 for ordinary car tires on concrete or new asphalt, to 0.2 to 0.4 for a car tire on loose sand.](/pptx/slide17-rolling-resistance-table.png)
+<CardExport notebook="01-energy" name="rolling-table" height="27rem" />
 
 </div>
 </div>
@@ -103,7 +103,8 @@ tire is underinflated. At 1 bar it is twice what it is at 3.
 Right: by surface. An ordinary car tire on asphalt or concrete is 0.01 to 0.015. In Lecture 1 the
 car had 0.012, right in that band. Gravel doubles it, loose sand multiplies it by more than ten.
 
-Notebook 01 will sweep the road surface using this table.
+The table is notebook 01's, read from its coefficient file, with the row that holds Lecture 1's
+0.012 highlighted. Once the drive-cycle model lands, the notebook sweeps the road surface over it.
 -->
 
 ---
@@ -116,7 +117,7 @@ class: big-figure
 <div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
 <div>
 
-![Drag force and rolling resistance force against velocity from 0 to 35 m/s. Drag rises as the square of speed to about 750 N at 35 m/s; rolling resistance is nearly flat, about 30 to 60 N. The two cross near 7 to 8 m/s.](/pptx/slide18-drag-and-rolling-force.png)
+<CardExport notebook="01-energy" name="drag-and-rolling" height="27rem" />
 
 </div>
 <div>
@@ -129,8 +130,8 @@ $$
 O_F = m\, g\, f_k
 $$
 
-Below about **8 m/s** (29 km/h) rolling resistance is the larger force. Above it, drag takes over,
-and at motorway speed it is more than ten times larger.
+For Lecture 1's car, below **20.9 m/s** (75 km/h) rolling resistance is the larger force. Above
+it, drag takes over; at 130 km/h it is **3.0×** the rolling resistance.
 
 </div>
 </div>
@@ -138,15 +139,20 @@ and at motorway speed it is more than ten times larger.
 <!--
 The two forces on one axis, on a flat road, so cos alpha is one.
 
-Rolling resistance is almost flat; it creeps up because f k rises with speed. Drag starts at zero
-and grows with the square. They cross between 7 and 8 meters per second, below 30 kilometers per
-hour. So in town both matter; on the motorway drag is nearly everything. That is why a car's fuel
-consumption climbs so steeply above 100 kilometers per hour.
+This is Lecture 1's car: 1400 kilograms, f k of 0.012, C d A of 0.63 square meters, air at 1.2
+kilograms per cubic meter. Rolling resistance is 165 newtons and flat, because the model takes f k
+as a constant; on a real tire it creeps up with speed, as the previous slide showed. Drag starts at
+zero and grows with the square. They cross at 20.9 meters per second, 75 kilometers per hour. At
+130 drag is three times the rolling resistance. So in town both matter; on the motorway drag
+dominates. That is why a car's fuel consumption climbs so steeply above 100 kilometers per hour.
+
+The source slide's plot crossed near 8 meters per second, for a vehicle it does not name.
 
 The source slide writes the rolling term as m times f k, without g. It needs g to be a force, as on
 the previous slide.
 
-Notebook 01 will regenerate this plot from the Lecture 1 car's parameters.
+The plot is notebook 01's, computed from the parameters of Vehicle Body. Once the drive-cycle
+model lands it reads the road-load meter instead.
 -->
 
 ---
@@ -156,7 +162,8 @@ Notebook 01 will regenerate this plot from the Lecture 1 car's parameters.
 - The engine's work goes into drag, rolling resistance, slope and acceleration, divided by the
   driveline efficiency, plus the electrical auxiliaries.
 - Rolling resistance depends on the surface and the tire pressure, and rises with speed.
-- Drag grows with the square of speed and dominates above about 30 km/h.
+- Drag grows with the square of speed: for Lecture 1's car it overtakes rolling resistance at
+  75 km/h and is three times it at 130 km/h.
 
 ### Next: how the engine turns fuel into that work. <Link to="engine-and-cycles">→ 02, engine and cycles</Link>
 

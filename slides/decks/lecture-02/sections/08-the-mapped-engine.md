@@ -69,7 +69,7 @@ routeAlias: mapped-engine-equations
 
 ## The equations under it
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-[1fr_1.1fr] gap-6 text-sm">
 <div>
 
 **Manifold filling** (one isothermal receiver)
@@ -84,9 +84,6 @@ $$
 \dot m_{\text{cyl}} \;=\; \eta_v(N, p_m)\,\frac{p_m\,V_d\,N}{120\,R\,T_m}
 $$
 
-</div>
-<div>
-
 **Fuel from air and λ** (sections 02 and 05)
 
 $$
@@ -98,6 +95,13 @@ $$
 $$
 \dot m_{\text{CO}_2} \;=\; 3.09\,\dot m_f
 $$
+
+</div>
+<div>
+
+<CardExport notebook="12-mapped-engine" name="manifold-lag" height="19rem" />
+
+<div class="caption">Manifold pressure after a small throttle step, both from 33 kPa, beside Lecture 1's lag</div>
 
 </div>
 </div>
@@ -114,7 +118,9 @@ Four lines, all of which you have now seen in the lecture.
 
 The first is the manifold: mass in minus mass out, over a volume. V m over R T m is how much the
 pressure moves per kilogram of air. With a liter of manifold that gives a time constant of about
-0.15 seconds at idle.
+0.15 seconds at idle, 800 rpm. At 3000 rpm, from the same manifold pressure, it is 0.034 seconds:
+the cylinders empty the manifold almost four times as fast. The plot shows both against Lecture 1's
+fixed 0.3 second lag, which was slower than either.
 
 The second is how much air the cylinders take: the displacement times the revolutions, at the
 manifold density, times a volumetric efficiency. N over 120, because a four-stroke fills each

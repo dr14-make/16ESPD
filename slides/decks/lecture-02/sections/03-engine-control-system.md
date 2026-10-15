@@ -33,16 +33,12 @@ routeAlias: ecs-structure
     delivered to the actuators
   - ***actuators***, which carry out the defined commands
 
+<CardExport notebook="12-mapped-engine" name="torque-map" height="21rem" />
+
 </div>
 <div>
 
 ![The engine control loop: sensors on the engine feed the ECU, the ECU drives the actuators, the actuators act on the engine; the ECU also exchanges data with other vehicle systems' control.](/diagrams/03-engine-control-loop.svg)
-
-<div class="stack">
-
-![A three-dimensional calibration map: a surface over two operating axes, the kind of table an ECU stores.](/pptx/slide24-ecu-map.png)
-
-</div>
 
 </div>
 </div>
@@ -52,11 +48,11 @@ Three parts, in a loop. The sensors read the engine, the ECU decides, the actuat
 engine responds. The ECU also talks to the rest of the car: the gearbox, the brakes, the stability
 control.
 
-The surface below the diagram is a calibration map, a table over two operating variables. The ECU
-holds hundreds of these. What the ECU adjusts first are the fuel injection and the ignition timing.
+The surface below the text is a calibration map, a table over two operating variables. This
+one is the hands-on engine's torque map, from the EPA's measured Mazda data in notebook 12: brake
+torque over manifold pressure and engine speed. The ECU holds hundreds of these. What the ECU adjusts first are the fuel injection and the ignition timing.
 For ecology, modern engines add more sensors: a second oxygen sensor, exhaust temperature, NOx.
 
-Notebook 03, "The engine as a plant", will put the maps of our own 1.5 liter engine here.
 Notebook 11, "The whole ECU in the car", closes all the loops of this diagram around one engine.
 -->
 
