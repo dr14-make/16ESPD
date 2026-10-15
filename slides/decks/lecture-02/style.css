@@ -23,3 +23,8 @@
   text-align: center;
   margin-top: 0.25rem;
 }
+
+/* A diagram that shares its column with a plot. */
+.slidev-layout .diagram-short img {
+  max-height: 14rem;
+}
