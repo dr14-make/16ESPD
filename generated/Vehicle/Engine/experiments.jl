@@ -11,6 +11,12 @@ end
 
 include("AirPath_experiment.jl")
 include("CylinderAirflow_experiment.jl")
+include("ElectronicThrottle_experiment.jl")
+include("FuelInjector_experiment.jl")
 include("IntakeManifold_experiment.jl")
+include("LimpHomeSpring_experiment.jl")
+include("Solenoid_experiment.jl")
 include("TestAirPath_experiment.jl")
+include("ThrottleEndStops_experiment.jl")
+include("ThrottlePositionSensor_experiment.jl")
 include("Throttle_experiment.jl")

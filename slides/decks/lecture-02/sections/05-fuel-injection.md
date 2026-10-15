@@ -320,39 +320,49 @@ routeAlias: injector-activation
 
 ## Activation of the fuel injector
 
-<div class="grid grid-cols-[1.4fr_1fr] gap-8">
-<div>
+<div class="grid grid-cols-[1fr_1.25fr] gap-6">
+<div class="text-[0.95rem]">
 
 - The injector **activates with the switch signal** (a).
-- The **rising current** (b) causes the needle to lift (*c*).
-- Maximum displacement is reached at the **pickup time** $t_{\text{on}}$.
+- The **rising current** (b) causes the needle to lift (*c*) once its magnetic force beats the
+  spring.
+- While the needle moves, the **current dips**: the closing air gap induces a back voltage.
+- Maximum displacement is reached at the **pickup time** $t_{\text{on}}$, 1.2 ms at 14 V.
   - The needle stops at the solenoid armature stop.
 - The **current continues to rise**: the magnetic field is not yet at saturation.
 - At switch-off the **magnetic field does not decay abruptly**, so the needle closes only after
-  the **dropout time** $t_{\text{off}}$.
-- The **injected fuel quantity** (d) grows while the needle is open.
+  the **dropout time** $t_{\text{off}}$, 0.4 ms.
+- The **injected fuel quantity** (d) grows while the needle is open: 4.2 mg in a 3 ms pulse.
 
 </div>
 <div>
 
-![Activation of a fuel injector against time: a) the activation signal, a rectangular pulse; b) the current curve, rising with a kink when the armature reaches its stop; c) the valve-needle displacement, lagging by the pickup time t_on and the dropout time t_off; d) the injected fuel quantity, a ramp while the needle is open.](/pptx/slide45-injector.png)
+<CardExport notebook="05-injector" name="injector-pulse" height="31rem" />
 
 </div>
 </div>
 
 <!--
-Four traces, one time axis. The ECU's command is a clean rectangle, a. The current, b, cannot jump,
-because the winding is an inductor, so it rises with the winding's time constant. When the magnetic
-force beats the spring, the needle lifts, c. The small kink in the current is the armature arriving
-at its stop: its motion induces a back voltage.
+Four traces, one time axis, and they come from notebook 05's model of an injector the size of a
+Bosch EV14: a 12 ohm winding, a needle that lifts 0.05 millimeters, 146 cubic centimeters per
+minute at 3 bar. A 3 millisecond pulse at 14 volts.
 
-At switch-off the field takes time to collapse, so the needle closes late.
+The ECU's command is a clean rectangle, a. The current, b, cannot jump, because the winding is an
+inductor, so it rises with the winding's time constant. When the magnetic force beats the spring,
+the needle lifts, c. The dent in the current is the needle moving: as the air gap closes, the
+inductance grows, and that induces a back voltage. Once the armature hits its stop, the current
+rises again. Drivers use the dent to detect when the needle opened.
+
+At switch-off the coil's current cannot stop at once. The voltage across the driver flies back to
+its Zener clamp, about 70 volts here, which burns the stored energy, and the needle is back on its
+seat 0.4 milliseconds later.
 
 So the fuel delivered, d, is not proportional to the command pulse. It is the command minus the
-opening delay plus the closing delay. ECUs correct for that with a dead-time added to every pulse,
-and the dead-time depends on battery voltage. That is one of the factors on the previous slide.
-
-Notebook 05 will regenerate these four traces from an electromagnetic model of the injector.
+opening delay plus the closing delay. ECUs correct for that with a dead-time added to every pulse:
+0.68 milliseconds at 14 volts in the model, against 0.80 in Bosch's table. The dead-time depends on
+battery voltage: at 8 volts the needle needs 2.8 milliseconds to open, and the dead time is 2.3.
+That is one of the factors on the previous slide. Notebook 05 sweeps pulse width and battery voltage
+and has a slider for the battery.
 -->
 
 ---

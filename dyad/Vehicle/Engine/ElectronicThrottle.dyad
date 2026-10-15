@@ -1,0 +1,162 @@
+"""
+An electronic throttle (drive by wire): the ECU positions the throttle plate with a DC motor and
+closes a position loop on the plate's own position sensor.
+
+    u_cmd -> controller (PID) -> H-bridge -> DC motor -> gearbox -> plate
+                  ^                                                  |
+                  +---- u_meas <- ECU estimate <- V1, V2 <- TPS <----+
+
+The motor is a `RotationalEMF` behind its armature resistance and inductance, with its rotor
+inertia. A gearbox multiplies its torque onto the plate shaft, where the plate inertia, the
+`LimpHomeSpring`, the `ThrottleEndStops` and the bearing friction act. The H-bridge is an ideal
+voltage source standing for the averaged PWM output, so the controller output is the motor
+voltage, limited to +/- `U_batt`.
+
+The ECU estimates the opening from both tracks of the `ThrottlePositionSensor`,
+
+    u_meas = 1/2 + (V1 - V2) / (2 V_window)
+
+which is 0 at the closed stop and 1 wide open, and uses half of each track, so a small error on
+one track moves the estimate half as much. `u_cmd` and `u_thr` share the meaning of
+`Throttle.u_thr`, a fraction of the plate's travel from the closed stop, so `u_thr` can drive an
+`AirPath` directly.
+
+Every value is assumed, at the scale of a passenger-car throttle body with a 50 mm bore: no
+supplier publishes its motor and spring data.
+"""
+component ElectronicThrottle
+  "Commanded opening, 0 at the closed stop and 1 wide open"
+  u_cmd = RealInput() {^u_cmd}
+  "Opening the ECU measures through the TPS"
+  u_thr = RealOutput() {^u_thr}
+  "Plate angle from the closed stop [rad]"
+  phi = RealOutput() {^phi}
+  "TPS track 1 voltage [V]"
+  V1 = RealOutput() {^V1}
+  "TPS track 2 voltage [V]"
+  V2 = RealOutput() {^V2}
+  "Motor current [A]"
+  i_motor = RealOutput() {^i_motor}
+  "ECU's position estimate from the two TPS tracks"
+  estimate = BlockComponents.Math.LinearDependency(y0 = 0.5, k1 = 0.5 / V_window, k2 = -0.5 / V_window) {^estimate}
+  controller = BlockComponents.Continuous.LimPID(k = k, Ti = Ti, Td = Td, Nd = Nd, y_max = U_batt, y_min = -U_batt) {^controller}
+  no_feed_forward = BlockComponents.Sources.Constant(k = 0) {^no_feed_forward}
+  "H-bridge, averaged over the PWM period"
+  bridge = ElectricalComponents.Analog.Sources.VoltageSource() {^bridge}
+  armature_R = ElectricalComponents.Analog.Basic.Resistor(R = R_a) {^armature_R}
+  armature_L = ElectricalComponents.Analog.Basic.Inductor(L = L_a, i = initial 0) {^armature_L}
+  current_sensor = ElectricalComponents.Analog.Sensors.CurrentSensor() {^current_sensor}
+  emf = ElectricalComponents.Analog.Basic.RotationalEMF(k = k_m) {^emf}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  rotor = RotationalComponents.Components.Inertia(J = J_m) {^rotor}
+  gearbox = RotationalComponents.Components.IdealGear(ratio = n_gear) {^gearbox}
+  plate = RotationalComponents.Components.Inertia(J = J_p, phi = initial phi_0, w = initial 0) {^plate}
+  return_spring = VehicleSystemsComponents.Vehicle.Engine.LimpHomeSpring(phi_lh = phi_lh, T_pre = T_pre, c = c_spring, eps = eps_lh) {^return_spring}
+  stops = VehicleSystemsComponents.Vehicle.Engine.ThrottleEndStops(phi_max = phi_span) {^stops}
+  bearing = RotationalComponents.Components.Damper(d = d_bearing) {^bearing}
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  angle_sensor = RotationalComponents.Sensors.AngleSensor() {^angle_sensor}
+  tps = VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor(phi_span = phi_span, R_wiper1 = R_wiper1) {^tps}
+  "Plate travel from the closed stop to wide open, 83 deg (the Throttle's 7 to 90 deg)"
+  parameter phi_span::Angle = 1.448623
+  "Window the ECU expects a healthy TPS track to span, V_hi - V_lo = 4.5 - 0.5 V"
+  parameter V_window::Voltage = 4.0
+  "Supply voltage the H-bridge can apply (textbook)"
+  parameter U_batt::Voltage = 14.0
+  "Armature resistance (assumed)"
+  parameter R_a::Resistance = 1.5
+  "Armature inductance (assumed)"
+  parameter L_a::Inductance = 1e-3
+  "Motor torque and back-EMF constant (assumed)"
+  parameter k_m::ElectricalTorqueConstant = 0.01
+  "Motor rotor inertia (assumed)"
+  parameter J_m::MomentOfInertia = 2e-6
+  "Gearbox ratio, motor angle over plate angle (assumed)"
+  parameter n_gear::Real = 20.0
+  "Plate, shaft and sector gear inertia (assumed)"
+  parameter J_p::MomentOfInertia = 5e-5
+  "Limp-home plate angle, 6 deg (assumed)"
+  parameter phi_lh::Angle = 0.10472
+  "Return-spring preload (assumed)"
+  parameter T_pre::Torque = 0.25
+  "Return-spring rate (assumed)"
+  parameter c_spring::RotationalSpringConstant = 0.1
+  "Width over which the spring preload changes sign at limp home (assumed)"
+  parameter eps_lh::Angle = 0.0035
+  "Bearing and seal friction (assumed)"
+  parameter d_bearing::RotationalDampingConstant = 1e-3
+  "Position controller gain [V per unit opening] (assumed, tuned)"
+  parameter k::Real = 40.0
+  "Position controller integral time (assumed, tuned)"
+  parameter Ti::Time = 0.1
+  "Position controller derivative time (assumed, tuned)"
+  parameter Td::Time = 0.02
+  "Derivative filter ratio (assumed)"
+  parameter Nd::Real = 10.0
+  "Plate angle at the start (defaults to limp home)"
+  parameter phi_0::Angle = 0.10472
+  "TPS track 1 wiper contact resistance; raise it to simulate a worn track"
+  parameter R_wiper1::Resistance = 10.0
+relations
+  connect(u_cmd, controller.u_s) {^id1}
+  connect(estimate.y, controller.u_m) {^id2}
+  connect(no_feed_forward.y, controller.u_ff) {^id3}
+  connect(controller.y, bridge.V) {^id4}
+  connect(bridge.p, current_sensor.p) {^id5}
+  connect(current_sensor.n, armature_R.p) {^id6}
+  connect(armature_R.n, armature_L.p) {^id7}
+  connect(armature_L.n, emf.p) {^id8}
+  connect(emf.n, bridge.n) {^id9}
+  connect(bridge.n, ground.g) {^id10}
+  connect(emf.rotor, rotor.spline_a) {^id11}
+  connect(emf.housing, housing.spline) {^id12}
+  connect(rotor.spline_b, gearbox.spline_a) {^id13}
+  connect(gearbox.support, housing.spline) {^id14}
+  connect(gearbox.spline_b, plate.spline_a) {^id15}
+  connect(housing.spline, return_spring.spline_a) {^id16}
+  connect(return_spring.spline_b, plate.spline_b) {^id17}
+  connect(housing.spline, stops.spline_a) {^id18}
+  connect(stops.spline_b, plate.spline_b) {^id19}
+  connect(housing.spline, bearing.spline_a) {^id20}
+  connect(bearing.spline_b, plate.spline_b) {^id21}
+  connect(plate.spline_b, angle_sensor.spline) {^id22}
+  connect(angle_sensor.phi, tps.phi) {^id23}
+  connect(angle_sensor.phi, phi) {^id24}
+  connect(tps.V1, estimate.u1) {^id25}
+  connect(tps.V2, estimate.u2) {^id26}
+  connect(tps.V1, V1) {^id27}
+  connect(tps.V2, V2) {^id28}
+  connect(estimate.y, u_thr) {^id29}
+  connect(current_sensor.i, i_motor) {^id30}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/ElectronicThrottle.svg"}
+  },
+  "_links": {
+    "u_cmd": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "u_thr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "phi": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "V1": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "V2": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}},
+    "i_motor": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "no_feed_forward": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 120, "x2": 200, "y2": 220}}}},
+    "estimate": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 750, "x2": 200, "y2": 850, "rot": 180}}}},
+    "bridge": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 300, "x2": 350, "y2": 400, "rot": 270}}}},
+    "current_sensor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
+    "armature_R": {"Dyad": {"placement": {"diagram": {"x1": 375, "y1": 150, "x2": 475, "y2": 250}}}},
+    "armature_L": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 150, "x2": 600, "y2": 250}}}},
+    "emf": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 300, "x2": 600, "y2": 400}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 450, "x2": 350, "y2": 550}}}},
+    "rotor": {"Dyad": {"placement": {"diagram": {"x1": 625, "y1": 300, "x2": 725, "y2": 400}}}},
+    "gearbox": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 300, "x2": 850, "y2": 400}}}},
+    "plate": {"Dyad": {"placement": {"diagram": {"x1": 875, "y1": 300, "x2": 975, "y2": 400}}}},
+    "return_spring": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 470, "x2": 850, "y2": 570}}}},
+    "stops": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 590, "x2": 850, "y2": 690}}}},
+    "bearing": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 710, "x2": 850, "y2": 810}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 590, "x2": 700, "y2": 690}}}},
+    "angle_sensor": {"Dyad": {"placement": {"diagram": {"x1": 875, "y1": 750, "x2": 975, "y2": 850, "rot": 90}}}},
+    "tps": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 750, "x2": 550, "y2": 900, "rot": 180}}}}
+  }
+}
+end

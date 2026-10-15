@@ -194,38 +194,99 @@ routeAlias: tps
 
 ## Throttle position sensor (TPS)
 
-<div class="grid grid-cols-[1.2fr_1fr] gap-6">
+<div class="grid grid-cols-[1fr_1.3fr] gap-6">
 <div>
 
 - A variable resistor connected to the throttle plate
+  - **two tracks** on one shaft: V1 rises, V2 falls, and **V1 + V2 = 5 V** at every angle
+  - each track reads 0.5–4.5 V; outside that window is a short or an open circuit
 - Today electronic throttles are used
-  - only the accelerator pedal has a sensor, and the throttle plate is moved by a DC stepper motor:
+  - only the accelerator pedal has a sensor, and the throttle plate is moved by a DC motor:
     electronic throttle control (ETC), or "drive by wire"
-  - the throttle position sensor is then redundant, kept for diagnostic purposes
+  - the throttle position sensor then closes the motor's position loop, and its second track
+    is kept for diagnosis
 
-<div class="grid grid-cols-2 gap-3 stack mt-2">
+<div class="stack mt-2">
 
 ![A throttle body with its position sensor mounted on the shaft.](/pptx/slide34-throttle-body.jpeg)
-
-![Throttle-valve sensor construction: throttle-valve shaft, two potentiometer tracks, wiper arm with wipers, electrical connection.](/pptx/slide34-tps-construction.png)
 
 </div>
 </div>
 <div>
 
-![Electrical circuit of a throttle-valve sensor: two potentiometer tracks R1 and R2 between operating voltage and ground, with trimming and protective resistors, giving two measurement voltages U_A1 and U_A2.](/pptx/slide34-tps-circuit.png)
+<div class="diagram-short">
+
+![The dual-track throttle position sensor: two potentiometer tracks between 5 V and ground, each with an end resistor at both ends; one throttle shaft moves both wipers, track 1's voltage V1 rises as the plate opens and track 2's V2 falls, so V1 + V2 = 5 V at every angle.](/diagrams/04-tps-circuit.svg)
+
+</div>
+
+<CardExport notebook="09-sensors" name="tps-tracks" height="20rem" />
 
 </div>
 </div>
 
 <!--
-The classic throttle position sensor is a potentiometer on the throttle shaft. The circuit on the
-right has two tracks, R 1 and R 2. Two tracks give two voltages, and the ECU compares them: if they
-disagree, a track is worn or a wire is broken. That is diagnosis built into the sensor.
+The classic throttle position sensor is a potentiometer on the throttle shaft. This one has two
+tracks, wired in opposite directions: as the plate opens, V 1 rises from half a volt to four and a
+half, and V 2 falls by the same amount. The end resistors keep each wiper off the supply and off
+ground, so a healthy track never reads below 0.5 volts or above 4.5. A reading outside that window
+is a broken wire or a short, not a throttle position.
+
+The plot is notebook 09's model of it, swept past both stops. The green line is the sum, 5 volts
+at every angle, give or take the 30 millivolts the ECU's own inputs pull. That sum is the
+plausibility check. The dashed curves are the same sensor with track 1 worn, its wiper contact
+grown to 50 kilo-ohms: track 1 alone reads low, which on its own looks like a smaller opening. The
+sum gives it away, from about 4 degrees on.
+
+The diagram stands in for the Dyad Studio screenshot of `Vehicle.Engine.ThrottlePositionSensor`,
+`img/lecture-02/tps-sensor.png` in docs/lecture-02-screenshots.md; swap it in when it exists.
 
 With drive by wire the pedal has the sensor, and the throttle is an actuator the ECU positions.
 That is what makes torque-based control possible: the ECU, not your foot, decides how far the
-throttle opens. The hands-on engine keeps it simple: pedal straight to throttle angle.
+throttle opens. Next slide.
+-->
+
+---
+routeAlias: etc
+---
+
+## Electronic throttle control: drive by wire
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-6">
+<div>
+
+![The electronic throttle's position loop: pedal command u_cmd minus the measured opening u_meas into a PID controller, whose voltage drives an H-bridge, the DC motor and a gearbox onto the throttle plate; the return spring with its limp-home position and the stops act on the plate; the two-track TPS reads the plate angle, and the ECU's estimate from V1 and V2 closes the loop.](/diagrams/04-etc-loop.svg)
+
+- The ECU positions the plate with a DC motor, closing a loop on the TPS
+- Unpowered, springs hold the plate at **limp home**, a few degrees open
+- The motor fights the spring preload in both directions: the loop needs integral action
+
+</div>
+<div>
+
+<CardExport notebook="09-sensors" name="etc-step" height="27rem" />
+
+</div>
+</div>
+
+<!--
+This is the throttle as an actuator. The ECU compares the commanded opening with the opening it
+measures through both TPS tracks, and a PID controller sets the motor voltage through an H-bridge.
+The motor turns the plate through a gearbox.
+
+Unpowered, two preloaded springs hold the plate about 6 degrees open: limp home. If the motor or
+its driver fails, the engine still gets enough air to drive to a garage. The cost is that the
+motor always works against a spring preload, which changes sign at limp home; that is why the loop
+needs integral action.
+
+The plot is notebook 09's model: a step from limp home to 60 percent at 0.1 seconds, a hold, a
+ramp back to 10 percent. The plate gets there in about 60 milliseconds, 10 to 90 percent, with no
+visible overshoot. The current saturates at the H-bridge's limit, about 9 amps, during the step,
+and then settles to the 1.6 amps that hold the plate against the spring. Notebook 09 has a slider
+for the controller gain.
+
+The diagram stands in for the Dyad Studio screenshot of `Vehicle.Engine.ElectronicThrottle`,
+`img/lecture-02/etc-diagram.png` in docs/lecture-02-screenshots.md; swap it in when it exists.
 -->
 
 ---

@@ -1,0 +1,122 @@
+"""
+One injection pulse: a battery drives a `FuelInjector` through a low-side driver for `t_pulse`
+seconds, with the fuel rail 3 bar above the manifold.
+
+    battery (U_batt) -> injector -> transistor -> ground
+                                 \-> zener ---/
+
+The activation `pulse` switches the transistor, a `VariableConductor` with `R_on` = 0.1 ohm. Off,
+the coil current has nowhere to go but the driver's Zener clamp, a `NonlinearResistor` that is
+open (10 kohm, the off-state leakage) below `V_clamp` and conducts at 10 ohm above it, so the switch voltage flies back
+to the clamp, the stored energy is burned there, and the current dies quickly instead of
+arcing. `fuel_mass` integrates the fuel that has left the nozzle.
+
+The needle starts on its seat with no current. Nothing happens before `t_start`, so the
+traces open with a flat stretch, as on deck slide 45.
+"""
+component InjectorPulse
+  "Battery voltage"
+  parameter U_batt::Voltage = 14.0
+  "Activation pulse width"
+  parameter t_pulse::Time = 3e-3
+  "Start of the activation pulse"
+  parameter t_start::Time = 0.5e-3
+  "Rail pressure above the manifold, 3 bar (Bosch EV14 rating)"
+  parameter dp_rail::Pressure = 3e5
+  "Driver on-resistance (assumed)"
+  parameter R_on::Resistance = 0.1
+  "Driver switching time constant (assumed)"
+  parameter t_switch::Time = 1e-6
+  "Driver Zener clamp voltage (assumed, a common 60-80 V driver clamp)"
+  parameter V_clamp::Voltage = 60.0
+  "Activation signal: 1 while the ECU commands injection"
+  pulse = BlockComponents.Sources.Pulse(amplitude = 1, offset = 0, duty_cycle = 1, period = t_pulse, start_time = t_start) {^pulse}
+  "Gate drive: the transistor takes t_switch to turn on or off"
+  gate_drive = BlockComponents.Continuous.FirstOrder(k = 1 / R_on, T = t_switch) {^gate_drive}
+  battery_level = BlockComponents.Sources.Constant(k = U_batt) {^battery_level}
+  battery = ElectricalComponents.Analog.Sources.VoltageSource() {^battery}
+  injector = VehicleSystemsComponents.Vehicle.Engine.FuelInjector() {^injector}
+  "Low-side driver transistor"
+  transistor = ElectricalComponents.Analog.Basic.VariableConductor() {^transistor}
+  "Driver Zener clamp across the transistor"
+  zener = ElectricalComponents.Analog.Basic.NonlinearResistor(Ga = 1e-4, Gb = 0.1, Ve = V_clamp) {^zener}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  ambient = ThermalComponents.Sources.FixedTemperature(T = 293.15) {^ambient}
+  rail = BlockComponents.Sources.Constant(k = dp_rail) {^rail}
+  "Fuel delivered since the start [kg]"
+  fuel_mass = BlockComponents.Continuous.Integrator() {^fuel_mass}
+relations
+  connect(battery_level.y, battery.V) {^id1}
+  connect(battery.p, injector.p) {^id2}
+  connect(injector.n, transistor.p) {^id3}
+  connect(transistor.n, ground.g) {^id4}
+  connect(battery.n, ground.g) {^id5}
+  connect(zener.p, transistor.p) {^id6}
+  connect(zener.n, transistor.n) {^id7}
+  connect(pulse.y, gate_drive.u) {^id8}
+  connect(gate_drive.y, transistor.G) {^id9}
+  initial gate_drive.y = 0
+  connect(transistor.heat_port, ambient.port) {^id10}
+  connect(rail.y, injector.dp_rail) {^id11}
+  connect(injector.mdot_f, fuel_mass.u) {^id12}
+metadata {
+  "Dyad": {
+    "tests": {
+      "pulse_14V": {
+        "stop": 0.0065,
+        "solver": "Rodas5P",
+        "abstol": 1e-11,
+        "reltol": 1e-8,
+        "atol": {"injector.lift": 1e-7, "fuel_mass.y": 2e-8, "injector.solenoid.i": 0.001, "transistor.v": 0.05},
+        "expect": {
+          "initial": {"injector.solenoid.i": 0.0, "fuel_mass.y": 0.0},
+          "final": {"injector.solenoid.i": 0.0014, "injector.lift": 0.0, "fuel_mass.y": 4.2429e-6, "transistor.v": 13.98},
+          "signals": ["injector.solenoid.i", "injector.lift", "fuel_mass.y", "transistor.v"]
+        }
+      },
+      "pulse_8V": {
+        "stop": 0.0065,
+        "solver": "Rodas5P",
+        "abstol": 1e-11,
+        "reltol": 1e-8,
+        "params": {"U_batt": 8.0},
+        "atol": {"injector.lift": 1e-7, "fuel_mass.y": 2e-8, "injector.solenoid.i": 0.001, "transistor.v": 0.05},
+        "expect": {
+          "initial": {"injector.solenoid.i": 0.0, "fuel_mass.y": 0.0},
+          "final": {"injector.solenoid.i": 0.0008, "injector.lift": 0.0, "fuel_mass.y": 1.1680e-6},
+          "signals": ["injector.solenoid.i", "injector.lift", "fuel_mass.y"]
+        }
+      }
+    }
+  },
+  "_links": {
+    "pulse": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 650, "x2": 150, "y2": 750}}}},
+    "gate_drive": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 650, "x2": 350, "y2": 750}}}},
+    "battery_level": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 250, "x2": 150, "y2": 350}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350, "rot": 270}}}},
+    "injector": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 200, "x2": 650, "y2": 400}}}},
+    "transistor": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 600, "x2": 550, "y2": 700, "rot": 90}}}},
+    "zener": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 600, "x2": 700, "y2": 700, "rot": 90}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 850, "x2": 550, "y2": 950}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 850, "x2": 350, "y2": 950}}}},
+    "rail": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 50, "x2": 350, "y2": 150}}}},
+    "fuel_mass": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 250, "x2": 900, "y2": 350}}}}
+  }
+}
+end
+
+analysis InjectorPulseTransient
+  extends TransientAnalysis(stop = 6.5e-3, alg = ODEAlg.Rodas5P(), abstol = 1e-11, reltol = 1e-8, dtmax = 1e-5)
+  "Battery voltage"
+  parameter U_batt::Voltage = 14.0
+  "Activation pulse width"
+  parameter t_pulse::Time = 3e-3
+  "Start of the activation pulse"
+  parameter t_start::Time = 0.5e-3
+  "Rail pressure above the manifold"
+  parameter dp_rail::Pressure = 3e5
+  "Driver Zener clamp voltage"
+  parameter V_clamp::Voltage = 60.0
+  model = VehicleSystemsComponents.Lecture2.InjectorPulse(U_batt = U_batt, t_pulse = t_pulse, t_start = t_start, dp_rail = dp_rail, V_clamp = V_clamp)
+relations
+end
