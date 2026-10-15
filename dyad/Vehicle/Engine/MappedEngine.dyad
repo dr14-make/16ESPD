@@ -1,0 +1,130 @@
+"""
+Map-based petrol engine with a dynamic air path and rotational crankshaft.
+
+The maps are generated from `scripts/alpha_engine_maps.jl`. Their engineering-unit axes are
+converted at the table boundary: rad/s to rpm, Pa to kPa, and g/s to kg/s. Deceleration fuel cut
+and the rev limiter are continuous hysteresis latches, so neither introduces events.
+"""
+component MappedEngine
+  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
+  "Driver pedal command, 0 closed to 1 fully open"
+  pedal = RealInput()
+  "Brake-booster air inflow to the manifold [kg/s]"
+  mdot_bst = RealInput()
+  "Engine output shaft"
+  spline = Spline()
+  "Reaction support (engine mounts)"
+  support = Spline()
+  "Manifold absolute pressure [Pa]"
+  p_m = RealOutput()
+  "Fuel mass flow [kg/s]"
+  mdot_fuel = RealOutput()
+  "Carbon-dioxide mass flow [kg/s]"
+  mdot_co2 = RealOutput()
+  "Engine-out hydrocarbon mass flow [kg/s] (assumed map)"
+  mdot_hc = RealOutput()
+  "Engine-out carbon-monoxide mass flow [kg/s] (assumed map)"
+  mdot_co = RealOutput()
+  "Engine-out nitrogen-oxide mass flow [kg/s] (assumed map)"
+  mdot_nox = RealOutput()
+  "Brake torque [N.m]"
+  tau_e = RealOutput()
+  "Air-fuel equivalence ratio"
+  lambda = RealOutput()
+
+  air = VehicleSystemsComponents.Vehicle.Engine.AirPath()
+  torque_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = torque_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  fuel_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = fuel_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  lambda_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = lambda_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  hc_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = hc_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  co_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = co_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  nox_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = nox_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  full_load = BlockComponents.Tables.InterpolatedTable(axis1 = full_load_rpm, axis2 = curve_axis, data = full_load_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  closed_throttle = BlockComponents.Tables.InterpolatedTable(axis1 = closed_rpm, axis2 = curve_axis, data = closed_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  torque_source = RotationalComponents.Sources.TorqueSource()
+  crankshaft = RotationalComponents.Components.Inertia(J = J_e)
+
+  "Progressive drive-by-wire pedal exponent (assumed)"
+  parameter pedal_exponent::Real = 1.5
+  "Drive-by-wire throttle actuator time constant (assumed)"
+  parameter throttle_time::Time(min = eps(Float64)) = 0.05
+  "Engine plus flywheel inertia (assumed; lecture-02-dyad-tasks.md)"
+  parameter J_e::MomentOfInertia = 0.15
+  "Closed-pedal threshold for deceleration fuel cut (assumed)"
+  parameter pedal_closed::Real = 1e-4
+  "Deceleration fuel-cut speed [rpm] (assumed)"
+  parameter fuel_cut_rpm::Real = 1300.0
+  "Deceleration fuel-resume speed [rpm] (assumed)"
+  parameter fuel_resume_rpm::Real = 1000.0
+  "Rev-limiter fuel-cut speed [rpm] (assumed)"
+  parameter rev_cut_rpm::Real = 6500.0
+  "Rev-limiter fuel-resume speed [rpm] (assumed)"
+  parameter rev_resume_rpm::Real = 6300.0
+  "Continuous latch transition time (assumed)"
+  parameter latch_time::Time(min = eps(Float64)) = 0.01
+  "Gasoline carbon balance at full oxidation (textbook)"
+  parameter co2_per_fuel::Real = 3.09
+
+  variable omega::AngularVelocity
+  variable N::Real
+  variable p_kPa::Real
+  variable u_thr_cmd::Real
+  variable u_thr::Real
+  variable tau_fired::Torque
+  variable cut_request::Real
+  variable rev_request::Real
+  variable fuel_cut_state::Real
+  variable rev_cut_state::Real
+  variable cut_fraction::Real
+relations
+  omega = crankshaft.w
+  N = min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis[26])
+  p_kPa = min(max(air.p_m / 1000, kpa_axis[1]), kpa_axis[43])
+  u_thr_cmd = min(max(pedal, 0.0), 1.0)^pedal_exponent
+  initial u_thr = u_thr_cmd
+  der(u_thr) = (u_thr_cmd - u_thr) / throttle_time
+
+  air.u_thr = u_thr
+  air.omega = omega
+  connect(mdot_bst, air.mdot_bst)
+  connect(air.p_m, p_m)
+
+  torque_map.u1 = N
+  torque_map.u2 = p_kPa
+  fuel_map.u1 = N
+  fuel_map.u2 = p_kPa
+  lambda_map.u1 = N
+  lambda_map.u2 = p_kPa
+  hc_map.u1 = N
+  hc_map.u2 = p_kPa
+  co_map.u1 = N
+  co_map.u2 = p_kPa
+  nox_map.u1 = N
+  nox_map.u2 = p_kPa
+  full_load.u1 = min(max(N, full_load_rpm[1]), full_load_rpm[21])
+  full_load.u2 = 0.0
+  closed_throttle.u1 = min(max(N, closed_rpm[1]), closed_rpm[6])
+  closed_throttle.u2 = 0.0
+
+  tau_fired = min(torque_map.y, full_load.y)
+  cut_request = ifelse(fuel_cut_state < 0.5, ifelse(pedal <= pedal_closed and N > fuel_cut_rpm, 1.0, 0.0), ifelse(pedal > pedal_closed or N < fuel_resume_rpm, 0.0, 1.0))
+  rev_request = ifelse(rev_cut_state < 0.5, ifelse(N > rev_cut_rpm, 1.0, 0.0), ifelse(N < rev_resume_rpm, 0.0, 1.0))
+  initial fuel_cut_state = 0.0
+  initial rev_cut_state = 0.0
+  der(fuel_cut_state) = (cut_request - fuel_cut_state) / latch_time
+  der(rev_cut_state) = (rev_request - rev_cut_state) / latch_time
+  cut_fraction = min(max(fuel_cut_state + rev_cut_state, 0.0), 1.0)
+
+  tau_e = (1 - cut_fraction) * tau_fired + cut_fraction * closed_throttle.y
+  mdot_fuel = (1 - cut_fraction) * fuel_map.y / 1000
+  mdot_co2 = co2_per_fuel * mdot_fuel
+  mdot_hc = (1 - cut_fraction) * hc_map.y / 1000
+  mdot_co = (1 - cut_fraction) * co_map.y / 1000
+  mdot_nox = (1 - cut_fraction) * nox_map.y / 1000
+  lambda = lambda_map.y
+
+  torque_source.tau = tau_e
+  connect(torque_source.spline, crankshaft.spline_a)
+  connect(crankshaft.spline_b, spline)
+  connect(torque_source.support, support)
+end

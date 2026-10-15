@@ -18,7 +18,11 @@ end
 @testset "`VehicleSystemsComponents.Vehicle.Engine`" begin
 include("AirPath_test.jl")
 include("CylinderAirflow_test.jl")
+include("EngineMapData_test.jl")
 include("IntakeManifold_test.jl")
+include("MappedEngine_test.jl")
 include("TestAirPath_test.jl")
+include("TestMappedEngineDyno_test.jl")
+include("TestMappedEngine_test.jl")
 include("Throttle_test.jl")
 end

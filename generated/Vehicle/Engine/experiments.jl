@@ -11,6 +11,10 @@ end
 
 include("AirPath_experiment.jl")
 include("CylinderAirflow_experiment.jl")
+include("EngineMapData_experiment.jl")
 include("IntakeManifold_experiment.jl")
+include("MappedEngine_experiment.jl")
 include("TestAirPath_experiment.jl")
+include("TestMappedEngineDyno_experiment.jl")
+include("TestMappedEngine_experiment.jl")
 include("Throttle_experiment.jl")
