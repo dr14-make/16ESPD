@@ -92,7 +92,7 @@ routeAlias: single-point
 - One single injector sized for full-load fueling
 - Reasonable air/fuel ratio control
   - better transient performance than a carburetor
-  - better steady-state mixture preparation than a carburetor
+  - poorer steady-state mixture preparation than a carburetor
 - Poor cylinder-to-cylinder AFR distribution
 - Little potential to tune the intake manifold
 - Reasonable cost
@@ -115,8 +115,9 @@ Its weakness is the manifold. The fuel still has to travel the whole manifold to
 the cylinders nearest the injector get a different mixture from the farthest. That is the poor
 distribution.
 
-On the second sub-bullet: the source figure underneath says "poorer" steady-state mixture
-preparation; the slide overlays "better". This deck carries the slide.
+Steady-state mixing is poorer than a carburetor's: the venturi atomizes fuel into the whole
+airstream, while the injector sprays it in pulses. The gain is in transients and control, not in
+steady running.
 -->
 
 ---
@@ -131,7 +132,7 @@ routeAlias: multipoint
 - One injector per cylinder
 - Good air/fuel ratio control
   - better transient performance than single-point injection
-  - better steady-state mixture preparation than single-point injection
+  - poorer steady-state mixture preparation than single-point injection
 - Excellent cylinder-to-cylinder distribution
 - Tuned intake manifold possible: increased performance
 - Early systems not crank-synchronous
@@ -156,8 +157,9 @@ valve was open. Sequential injection, timed to each cylinder's intake stroke, ca
 This is the engine of the hands-on: port injection, four cylinders. And the diagram names almost
 every sensor from section 04.
 
-As on the previous slide, the source figure says "poorer" on the second sub-bullet and the slide
-overlays "better".
+Steady-state mixing is poorer than single-point injection's: fuel sprayed at the valve has less
+time and distance to evaporate than fuel injected at the throttle. Multipoint wins on transients
+and distribution, not on mixing time.
 -->
 
 ---
