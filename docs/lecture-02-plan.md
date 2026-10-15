@@ -188,7 +188,7 @@ Everything an agent needs to pick up a task cold. Commands assume the repository
 
 | Purpose | Command or path |
 |---|---|
-| Compile `dyad/` into `generated/` | `~/.dyad-maxwell/dyad-lang/apps/cli/dyad compile .` |
+| Compile `dyad/` into `generated/` | `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` (the version must equal `[dyad] kernel` in `Project.toml`; see HANDOVER gotchas) |
 | Run the test suite | `cd test && julia +dyad-3.4.0 --project=.. runtests.jl` (never from the root; see HANDOVER gotchas) |
 | Load the library interactively | `julia +dyad-3.4.0 --project=.`, then `using VehicleSystemsComponents` |
 | Run a Pluto notebook headless | `julia +dyad-3.4.0 --project=. notebooks/lecture02/<file>.pluto.jl` (the `@bind` mock supplies defaults) |

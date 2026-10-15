@@ -13,7 +13,7 @@ component shapes only make sense once you know which notebook consumes them
    `analyses.md` and `analysis_points.md` (needed for `LinearAnalysis` in task 2).
 3. `docs/HANDOVER.md` § "Gotchas found during the build". Every item there has already cost a
    cycle once. The two that bite hardest: a `.dyad` edit does nothing until
-   `~/.dyad-maxwell/dyad-lang/apps/cli/dyad compile .` regenerates `generated/`, and the suite must
+   `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` regenerates `generated/`, and the suite must
    run from `test/`.
 4. `docs/lecture-01-dyad-tasks.md` § "Parameter forwarding" and § "Harnesses and analyses". The
    same rules apply here.
