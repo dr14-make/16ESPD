@@ -44,11 +44,21 @@ result keeps lecture plan S4 (1.5 L NA, port injection) and Lecture 1's `T_max =
 keeps the manifold reality anchors already written for 1.5 L. The 1.5 L Honda L15B7 package is
 not used: it is turbocharged and its manifold leaves the vacuum range.
 
-**M5 — Torque axis to manifold-pressure axis.** At λ = 1 the air flow is `14.6 · ṁ_f`, and
-speed-density inverts it: `p_m = 120 R T_m ṁ_air / (η_v V_d N)`. Each ALPHA grid point thus gets a
-`p_m`; re-grid torque and fuel onto (N, p_m). `η_v(N)` is the one assumption, calibrated so the
-full-load curve lands at 90–98 kPa. The conversion is a script in `scripts/` that writes the
-tables to `data/engine/`, so the raw ALPHA file and every step from it stay reviewable.
+**M5 — Torque axis to manifold-pressure axis.** Speed-density inverts the fuel map: each ALPHA
+point's fuel flow is the cylinder air flow `ṁ_cyl = η_v p_m V_d N / (120 R T_m)` divided by
+`AFR_s · λ`, which fixes its `p_m`; torque and fuel are then re-gridded onto (N, p_m). Two
+assumptions carry the conversion, both in `data/engine/eta_v_coeffs.csv`:
+
+- `η_v(N, p_m) = η_fl(N) · (1 − k + k p_m / 95 kPa)`. `η_fl(N)` is a quadratic in speed, fitted to
+  the ALPHA full-load fuel at 95 kPa and peaking at 1.05; the load factor, with `k` set so zero
+  brake torque at 800 rpm falls at 33 kPa, gives `η_v` ≈ 0.37 at idle, as late intake-valve
+  closing does. With `0 < k < 1` the cylinder air flow rises strictly with `p_m`.
+- `λ(N, p_m)` is 1 below 85 % of 95 kPa and falls to 0.90 (≤ 1500 rpm) through 0.80 (≥ 6000 rpm)
+  at full load, for exhaust-component protection.
+
+`Engine.CylinderAirflow` uses this `η_v` verbatim, so the air path and the maps agree on λ. The
+conversion is `scripts/alpha_engine_maps.jl`, which writes the tables to `data/engine/`, so the
+raw ALPHA file and every step from it stay reviewable.
 
 **M6 — Pedal to throttle angle, directly.** A 1-D progressive pedal curve, as on a drive-by-wire
 throttle with no torque structure. The torque-based pedal interpretation belongs to the lecture's
@@ -76,8 +86,11 @@ Bands from `lecture-02-plan.md` and the brake plan still apply. Added for the ma
 | Cruise 50 km/h (1710 rpm) | 3–4 L/100 km | 3.4 L/100 km, 77 g CO₂/km |
 | Cruise 90 km/h (3080 rpm) | 4–5.5 L/100 km | 4.6 L/100 km, 105 g CO₂/km |
 | Cruise 130 km/h (4450 rpm) | 6–8 L/100 km | 7.0 L/100 km, 162 g CO₂/km |
-| Full-load manifold pressure | 90–98 kPa | calibrates `η_v` |
-| Idle manifold pressure, 800 rpm | 30–36 kPa | brake plan 2a |
+| Full-load manifold pressure, each ALPHA breakpoint | 90–98 kPa | 95 kPa; four breakpoints miss (see `data/engine/README.md`) |
+| Full-load `η_v` | ≤ 1.05 | 1.05 peak |
+| Zero-torque manifold pressure, 800 rpm | 30–36 kPa | 33 kPa (sets `k`); brake plan 2a |
+| λ at the 50/90/130 km/h cruise points | 1 | 1 |
+| Round-trip fuel, maps back at the ALPHA points | < 5 % | 4.4 % max, 0.5 % RMS |
 
 The cruise figures are single-gear and steady-state, so they sit below a real car's WLTC label;
 scope B is where that comparison is made.
@@ -94,7 +107,9 @@ bands above.
    with V_d = 1.5 L. Closes 2a.
 3. **`Engine.MappedEngine`**: pedal → throttle → manifold → `InterpolatedTable` maps → torque
    source on a crankshaft `Inertia`; outputs fuel, CO₂ and emission flows and `p_m`; exposes the
-   `ṁ_bst` input. Test component with idle, tip-in and coast-down.
+   `ṁ_bst` input. The maps hold fueled operation only, so overrun needs deceleration fuel cut:
+   torque from `closed_throttle.csv`, zero fuel and emissions. Test component with idle, tip-in
+   and coast-down.
 4. **`Engine.MappedEngineCar`** + hands-on analyses: the hands-on car with the mapped engine, the
    scenario set of M7-A, integrated fuel and CO₂ per distance.
 5. **Hands-on guide and deck** (`slides/decks/handson-02/`, VitePress guide): steps mirror tasks
@@ -110,5 +125,3 @@ on PR #39.
 - HC, CO and NOx table shapes and magnitudes: only trends are defensible without a source; say so
   in the guide.
 - The exact pedal curve.
-- Whether the speed-density air flow should come from the shared `CylinderAirflow` or stay inside
-  the map conversion; decide in task 2.
