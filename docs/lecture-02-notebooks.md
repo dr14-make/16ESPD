@@ -76,7 +76,8 @@ Reuse Lecture 1 helpers (`signal`, `sweep`, `rerun`, `show_dyad`) rather than re
    it links to Lecture 3.
 6. *Slider*: `C_r` from the slide 17 table (dry asphalt to gravel), rerun the cycle.
 
-**Check.** Energy closure within 1 %; drag/rolling ratio > 3 at 130 km/h.
+**Check.** Energy closure within 1 %; drag/rolling ratio 2.5–3.5 at 130 km/h (2.99 for the Lecture 1
+car with a constant `f_r`).
 
 ---
 

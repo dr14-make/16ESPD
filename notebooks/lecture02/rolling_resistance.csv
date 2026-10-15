@@ -1,0 +1,15 @@
+c_min,c_max,surface
+0.001,0.002,railroad steel wheels on steel rails
+0.001,0.001,bicycle tire on wooden track
+0.002,0.005,low resistance tubeless tires
+0.002,0.002,bicycle tire on concrete
+0.004,0.004,bicycle tire on asphalt road
+0.005,0.005,dirty tram rails
+0.006,0.01,truck tire on asphalt
+0.008,0.008,bicycle tire on rough paved road
+0.01,0.015,"ordinary car tires on concrete, new asphalt, cobbles small new"
+0.02,0.02,car tires on tar or asphalt
+0.02,0.02,car tires on gravel - rolled new
+0.03,0.03,car tires on cobbles - large worn
+0.04,0.08,"car tire on solid sand, gravel loose worn, soil medium hard"
+0.2,0.4,car tire on loose sand
