@@ -204,11 +204,12 @@ Notebook 10 models the warm-up strategy; notebook 07, "Idle speed control", the 
 
 ---
 routeAlias: ee-architecture
+class: big-figure
 ---
 
 ## Models of electrical and electronic architecture
 
-<div class="grid grid-cols-[1.5fr_1fr] gap-8 items-center">
+<div class="grid grid-cols-[1fr_1.1fr] gap-8 items-center">
 <div>
 
 - **Functional**: preliminary stage, signal flow diagram
@@ -224,7 +225,7 @@ routeAlias: ee-architecture
 </div>
 <div>
 
-![Models of E/E architecture, from abstract to physical: function network, component network, circuit diagram, wiring harness, installation space; each shows sensors, ECUs and actuators in more physical detail.](/pptx/slide29-ee-architecture.png)
+![Models of E/E architecture, from abstract to physical: the function network links sensors through functions to actuators; the component network places the functions on ECUs joined by a bus; the circuit diagram adds every wire, switch and ground; the wiring harness bundles the wires through connectors; the installation space places the ECUs and harness in the body and a door.](/diagrams/03-ee-architecture.svg)
 
 </div>
 </div>
@@ -236,6 +237,9 @@ each function. The circuit diagram and the wiring harness say how the wires actu
 installation space where the boxes sit in the body.
 
 In this course we work at the top level: functions and signals. That is what Dyad models are.
+
+The figure is redrawn from the Bosch figure the source deck scanned: the same five levels and the
+same sensor, ECU and actuator in each, with a one-line gloss per level.
 -->
 
 ---

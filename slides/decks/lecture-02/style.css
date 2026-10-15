@@ -28,3 +28,12 @@
 .slidev-layout .diagram-short img {
   max-height: 14rem;
 }
+
+/* Diagrams are drawn in the light palette, like the exported cards; in dark mode they keep a
+   light ground so their ink stays readable. Vite inlines a small SVG as a data URI. */
+html.dark .slidev-layout img[src$=".svg"],
+html.dark .slidev-layout img[src^="data:image/svg+xml"] {
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.5rem;
+}

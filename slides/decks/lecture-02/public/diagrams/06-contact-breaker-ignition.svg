@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2; fill: none; }
+    .ht { stroke: #a75d00; stroke-width: 2.5; fill: none; }
+    .plate { stroke: #16202c; stroke-width: 3; fill: none; }
+    .core { stroke: #4a5a6b; stroke-width: 2; }
+    .dist { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .term { fill: #fff; stroke: #16202c; stroke-width: 1.5; }
+    .rotor { stroke: #1f5fa8; stroke-width: 5; stroke-linecap: round; }
+    .cam { fill: #fff; stroke: #1f5fa8; stroke-width: 2; }
+    .link { stroke: #1f5fa8; stroke-width: 1.5; stroke-dasharray: 5 4; }
+    .tip { fill: #16202c; stroke: #16202c; stroke-width: 1; }
+    .spark { stroke: #a75d00; stroke-width: 1.8; fill: none; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .sym { font-size: 16px; font-weight: 600; font-style: italic; fill: #16202c; }
+    .pm { font-size: 16px; font-weight: 600; fill: #16202c; }
+  </style>
+  <path class="wire" d="M60 158 V60 H118"/>
+  <path class="plate" d="M42 158 H78"/>
+  <path class="plate" d="M51 170 H69" stroke-width="5"/>
+  <path class="wire" d="M60 170 V282"/>
+  <path class="wire" d="M60 282 v8 M50 290 h20 M54 295 h12 M58 300 h4"/>
+  <text class="pm" x="84" y="156" text-anchor="start">+</text>
+  <text class="pm" x="84" y="178" text-anchor="start">−</text>
+  <text class="lbl" x="60" y="330" text-anchor="middle">battery</text>
+  <circle cx="120" cy="60" r="3" fill="#16202c"/>
+  <circle cx="160" cy="60" r="3" fill="#16202c"/>
+  <path class="wire" d="M120 60 L158 52"/>
+  <path class="wire" d="M160 60 H250 V90"/>
+  <text class="lbl" x="140" y="40" text-anchor="middle">ignition switch</text>
+  <path class="wire" d="M250 90 a12.00 12.00 0 0 1 0 24.00 a12.00 12.00 0 0 1 0 24.00 a12.00 12.00 0 0 1 0 24.00 a12.00 12.00 0 0 1 0 24.00 a12.00 12.00 0 0 1 0 24.00"/>
+  <path class="wire" d="M300 90 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00 a6.00 6.00 0 0 0 0 12.00"/>
+  <path class="core" d="M272 84 V216 M278 84 V216"/>
+  <text class="lbl" x="236" y="252" text-anchor="end">ignition coil</text>
+  <text class="sym" x="236" y="150" text-anchor="end">L₁</text>
+  <text class="sym" x="316" y="150" text-anchor="start">L₂</text>
+  <path class="wire" d="M250 210 V282 H400"/>
+  <circle cx="400" cy="282" r="3" fill="#16202c"/>
+  <path class="wire" d="M400 282 L436 268"/>
+  <circle cx="440" cy="282" r="3" fill="#16202c"/>
+  <path class="wire" d="M440 282 H480"/>
+  <circle cx="480" cy="282" r="3" fill="#16202c"/>
+  <path class="wire" d="M480 282 V292"/>
+  <path class="wire" d="M480 292 v8 M470 300 h20 M474 305 h12 M478 310 h4"/>
+  <path class="wire" d="M370 282 V318 H418 M426 318 H470 V282"/>
+  <circle cx="370" cy="282" r="3" fill="#16202c"/>
+  <circle cx="470" cy="282" r="3" fill="#16202c"/>
+  <path class="plate" d="M418 306 V330 M426 306 V330"/>
+  <text class="lbl" x="422" y="348" text-anchor="middle">capacitor</text>
+  <text class="lbl" x="500" y="304" text-anchor="start">contact breaker</text>
+  <path class="cam" d="M436 226 Q446 226 450 236 Q454 246 446 252 Q440 256 430 252 Q420 248 422 238 Q424 228 436 226 Z"/>
+  <path class="link" d="M436 226 V196"/>
+  <circle cx="436" cy="240" r="2.5" fill="#1f5fa8"/>
+  <path class="wire" d="M300 210 V226"/>
+  <path class="wire" d="M300 226 v8 M290 234 h20 M294 239 h12 M298 244 h4"/>
+  <path class="ht" d="M300 90 V40 H436 V112"/>
+  <circle class="dist" cx="436" cy="150" r="46"/>
+  <circle cx="436" cy="150" r="3" fill="#16202c"/>
+  <text class="lbl" x="402" y="96" text-anchor="end">distributor</text>
+  <text class="lbl" x="458" y="246" text-anchor="start">cam</text>
+  <rect class="term" x="451.0" y="113.1" width="8" height="8"/>
+  <path class="ht" d="M459.0 117.1 H530 V70 H566"/>
+  <path class="tip" d="M562 66 L568 70 L562 74 Z"/>
+  <path class="tip" d="M582 66 L576 70 L582 74 Z"/>
+  <path class="wire" d="M582 70 H594 V74"/>
+  <path class="wire" d="M594 74 v8 M584 82 h20 M588 87 h12 M592 92 h4"/>
+  <rect class="term" x="467.7" y="133.0" width="8" height="8"/>
+  <path class="ht" d="M475.7 137.0 H530 V124 H566"/>
+  <path class="tip" d="M562 120 L568 124 L562 128 Z"/>
+  <path class="tip" d="M582 120 L576 124 L582 128 Z"/>
+  <path class="wire" d="M582 124 H594 V128"/>
+  <path class="wire" d="M594 128 v8 M584 136 h20 M588 141 h12 M592 146 h4"/>
+  <rect class="term" x="467.7" y="159.0" width="8" height="8"/>
+  <path class="ht" d="M475.7 163.0 H530 V178 H566"/>
+  <path class="tip" d="M562 174 L568 178 L562 182 Z"/>
+  <path class="tip" d="M582 174 L576 178 L582 182 Z"/>
+  <path class="wire" d="M582 178 H594 V182"/>
+  <path class="wire" d="M594 182 v8 M584 190 h20 M588 195 h12 M592 200 h4"/>
+  <rect class="term" x="451.0" y="178.9" width="8" height="8"/>
+  <path class="ht" d="M459.0 182.9 H530 V232 H566"/>
+  <path class="tip" d="M562 228 L568 232 L562 236 Z"/>
+  <path class="tip" d="M582 228 L576 232 L582 236 Z"/>
+  <path class="wire" d="M582 232 H594 V236"/>
+  <path class="wire" d="M594 236 v8 M584 244 h20 M588 249 h12 M592 254 h4"/>
+  <path class="rotor" d="M436 150 L451.0 124.0"/>
+  <path class="spark" d="M568 63 L571 68 L573 72 L576 77"/>
+  <text class="lbl" x="608" y="54" text-anchor="end">spark plugs</text>
+</svg>

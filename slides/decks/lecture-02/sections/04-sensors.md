@@ -17,17 +17,38 @@ control system as a whole, then at the four that feed the fuel calculation direc
 
 ---
 routeAlias: automotive-sensors
+class: big-figure
 ---
 
 ## Automotive sensors
 
-<div class="grid grid-cols-[1.3fr_1fr_0.7fr] gap-6">
-<div>
-
 A sensor converts a physical or chemical (usually non-electric) quantity $\Phi$ into an electric
 quantity $E$.
 
-**Sensor classification**
+![The automotive sensor in its loop: the physical quantity Φ from the vehicle enters the measuring sensor MS; the adapter circuit AD turns it into the electrical quantity E for the ECU, which also takes other sensors and ECUs (SE/ECU) and a switch SA, and drives a display DPL. The ECU's output goes through the driver D to the final controlling element FCE, which together form the actuator AC, and acts on the vehicle. Disturbances Z enter the measuring sensor and the adapter circuit.](/diagrams/04-automotive-sensor.svg)
+
+<!--
+This is the loop from section 03 with the sensor and the actuator opened up. The physical quantity
+phi enters the measuring sensor, an adapter circuit makes it an electrical signal E, the ECU
+computes, a driver amplifies, and a final controlling element, the actuator, acts on the vehicle.
+Z marks the disturbances that get into the sensor and its adapter: temperature, supply voltage,
+interference.
+
+The ECU also takes signals that are not from this sensor: other sensors and other ECUs over the
+bus, and plain switches. And it can drive a display.
+
+Redrawn from Bosch's "Figure 3, Automotive sensor", which the source deck scanned: the same blocks
+and the same abbreviations, written out in full beside each one.
+-->
+
+---
+routeAlias: sensor-classification
+---
+
+## Sensor classification
+
+<div class="grid grid-cols-[0.75fr_2fr] gap-6 items-center">
+<div>
 
 - Assignment and application
   - functional · safety · monitoring
@@ -43,26 +64,31 @@ quantity $E$.
 </div>
 <div>
 
-![Automotive sensor in the loop: physical quantity Φ measured by the measuring sensor MS and adapter circuit AD, into the ECU, out through driver D and final controlling element FCE to the vehicle; Z marks disturbances.](/pptx/slide30-sensor-in-the-loop.png)
+<CardExport notebook="illustrations" name="sensor-classification" height="33rem" />
 
-</div>
-<div>
-
-![Types of characteristic curve (continuous linear, continuous non-linear, discontinuous multistage, discontinuous with hysteresis) and signal shapes (frequency, pulse duration).](/pptx/slide30-characteristic-curves.png)
+<div class="caption">Idealized curves; the NTC points are the Bosch Motorsport NTC M12 datasheet's</div>
 
 </div>
 </div>
 
 <!--
-The middle figure is the loop from section 03 drawn properly. The physical quantity phi enters the
-measuring sensor, an adapter circuit makes it an electrical signal, the ECU computes, a driver
-amplifies, and a final controlling element, the actuator, acts on the vehicle. Z marks the
-disturbances that get in at each stage.
+The top row is the characteristic curve, output against measured quantity, with a real sensor of
+each kind. A throttle potentiometer is continuous and linear: half a volt closed, four and a half
+volts at ninety degrees. A temperature sensor is continuous and non-linear: this is the NTC we meet
+again in a few slides, 45 kilo-ohms at minus 40, under 100 ohms at 130. A switching oxygen sensor
+is discontinuous: about 0.85 volts rich, 0.1 volts lean, and the jump sits at lambda one.
 
-On the right, the shapes a characteristic can have. A throttle potentiometer is continuous and
-linear. A temperature sensor is continuous and non-linear. A switching oxygen sensor is nearly
-discontinuous, a step with a little hysteresis. Below, the output types: a voltage level, a
-frequency, or a pulse width that encodes the value.
+The bottom row is how the value travels down the wire. Amplitude: the voltage itself is the value,
+here the potentiometer through a tip-in. Frequency: a Hall wheel-speed sensor gives one pulse per
+tooth, so the pulse rate is the speed; here the wheel accelerates from about 30 to 60 kilometers
+per hour on a 48-tooth ring, 200 to 400 pulses a second, compressed to fifty milliseconds. Pulse
+duration: a fixed carrier whose duty cycle carries the value. Frequency and pulse width survive a
+long, noisy wire far better than a voltage level does.
+
+These replace the scanned Bosch sketches of curve types and signal shapes. The curves are drawn
+from explicit functions in the illustrations notebook, not from any model: idealized shapes,
+except the NTC points, which are the datasheet's. The source sketch also showed a multistage
+characteristic and a two-stage switch with hysteresis; the switching lambda sensor stands for both.
 -->
 
 ---
