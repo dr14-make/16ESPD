@@ -256,6 +256,24 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   regenerated without it, and the run went green comparing unpinned against unpinned. The pin
   only took effect when an unrelated build triggered a recompile. After any `.dyad` edit,
   confirm the change appears in the matching `generated/` file before trusting a test result.
+- **Compile with the CLI release that matches `[dyad] kernel` in `Project.toml`.** The command
+  is `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` from the repository root; bump the
+  version together with the kernel pin. The package lives on the GitHub npm registry, so
+  `~/.npmrc` needs a token with `read:packages` for the `@juliacomputing` scope (see the
+  dyad-lang `apps/cli/README.md`). Recompiling an unchanged checkout must leave `git status`
+  clean; that is the check that the compiler is the right one. Older CLIs on this machine fail
+  on the 3.4 standard libraries rather than on our code: `~/.dyad-maxwell/dyad-lang/apps/cli/dyad`
+  is a 1.1 prerelease and dies in `ElectricalComponents` ("Expected module Analog/Basic/Tests"),
+  and `~/julia/dyad-lang/apps/cli/dyad` is a 3.2.0 build that rejects `DiscreteComponents`
+  0.5 (`Unknown element x0 in definition InitialCondition`).
+- **A clocked variable reads back as its last value.** `sol(t, idxs = controller.y)` on a
+  variable of the discrete partition returns the value from the final tick for every `t`, with
+  no error. Read the held, continuous-time side instead (`hold.y` after a `ZeroOrderHold`), in
+  tests and notebooks alike.
+- **A changed model needs new references, and only a changed model.** The sampled cruise loop
+  became a real `DiscreteComponents` loop while its references still described the continuous
+  half-sample-delay version, and the suite failed on them. Before regenerating a case, name the
+  model or package change that moved its curve.
 - **Run the test suite from `test/`, not the repository root.** `generated/test_internals.jl`
   resolves references at the relative path `joinpath("snapshots", ...)`. `Pkg.test()` runs from
   `test/` so this works; a direct `julia test/runtests.jl` from the root finds no snapshots,
