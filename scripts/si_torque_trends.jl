@@ -19,11 +19,14 @@ from that point is the shape of `M_λ` and `M_σ`, which are `(assumed)` as task
 
 - `M_λ` is 1.03 at λ 0.88 (rich power), 1 at λ 1, 1.04 at λ 1.1 (lean efficiency) and falls to 0
   at the lean misfire limit near λ 1.6, joined by a monotone cubic so each peak sits on its node.
-- `M_σ = 1 − c_σ·Δσ²` with `c_σ` = 4·10⁻⁴ /deg², 4 % at 10° from MBT (anchor 2–5 %).
+- `M_σ = 1 − c_σ·Δσ²` with `c_σ` = 3.5·10⁻⁴ /deg²: 3.5 % of inner torque at 10° from MBT, about
+  4.4 % of brake torque at half load (anchor 2–5 % of torque). Task 2's suggested 4·10⁻⁴ costs
+  just over 5 % of brake torque there, since friction does not shrink with the spark.
 - `FMEP` is the Barnes-Moss SI correlation scaled by `k_f` = 0.6 (task 2, decision D3).
 
-`sigma_mbt` is task 2's MBT spark-advance table, about 10° at idle to 35° at high speed and light
-load, written as one smooth function `(assumed)`. Task 6's single cylinder will replace it.
+`sigma_mbt` stands for task 2's MBT spark-advance table as one smooth function `(assumed)`: 10° at
+idle, rising with speed and falling with load, anchored to 36° at 3000 rpm and half the full-load
+air charge, where notebook 02's single-zone Wiebe cylinder finds MBT. Task 6 will replace it.
 
 Nothing here is simulated or measured; every coefficient is tagged.
 """
@@ -37,7 +40,7 @@ const V_D = 1.5e-3            # m³, displacement (plan S4)
 const P_A = 101.325           # kPa, ambient (textbook)
 const P_EXH = 1.05 * P_A      # kPa, exhaust back pressure (assumed, task 2)
 const K_F = 0.6               # Barnes-Moss scale for a modern engine (assumed, task 2 D3)
-const C_SIGMA = 4e-4          # 1/deg², spark-retard curvature (assumed, task 2)
+const C_SIGMA = 3.5e-4        # 1/deg², spark-retard curvature (assumed)
 const P_REF = 95.0            # kPa, full-load manifold pressure (assumed, data/engine/README.md)
 
 const LAMBDA_NODES = [0.65, 0.70, 0.75, 0.80, 0.88, 1.00, 1.10, 1.20, 1.30, 1.40, 1.50, 1.60]
@@ -79,7 +82,7 @@ M_lambda(λ) = M_LAMBDA(clamp(λ, first(LAMBDA_NODES), last(LAMBDA_NODES)))
 M_sigma(Δσ) = max(0.0, 1 - C_SIGMA * Δσ^2)
 
 "MBT spark advance in degrees BTDC at `rpm` and manifold pressure `p_m_kPa`."
-sigma_mbt(rpm, p_m_kPa) = 10 + 27 * (1 - exp(-max(rpm - 800, 0) / 1400)) * (1.1 - 0.5 * p_m_kPa / 100)
+sigma_mbt(rpm, p_m_kPa) = 10 + 38 * (1 - exp(-max(rpm - 800, 0) / 1000)) * (1.1 - 0.5 * p_m_kPa / 100)
 
 "Friction and pumping torque in N·m: Barnes-Moss FMEP plus the exhaust-to-manifold pressure step."
 function friction_torque(rpm, p_m_kPa)

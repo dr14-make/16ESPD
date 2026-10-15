@@ -452,11 +452,14 @@ md"""
 
 The MBT advance over speed and manifold pressure, as task 2's `TorqueProduction` holds it: about
 10° BTDC at idle, more with speed, because the flame needs about the same time at any speed and
-that time spans more crank angle, and less with load, because a denser charge burns faster; about
-35° at high speed and light load (assumed, task 2's anchors).
+that time spans more crank angle, and less with load, because a denser charge burns faster
+(assumed shape). It is anchored to 36° at 3000 rpm and half the full-load air charge, the MBT
+that notebook 02's single-zone Wiebe cylinder computes at the operating point of slides 50–52, so
+the map, the pressure traces and the λ figures share one MBT there. That puts high speed and light
+load near 48°, above the 35° task 2 suggested.
 
 ```math
-\sigma_{\mathrm{MBT}} = 10 + 27\left(1 - e^{-(N - 800)/1400}\right)\left(1.1 - 0.5\,\frac{p_m}{100\ \mathrm{kPa}}\right)
+\sigma_{\mathrm{MBT}} = 10 + 38\left(1 - e^{-(N - 800)/1000}\right)\left(1.1 - 0.5\,\frac{p_m}{100\ \mathrm{kPa}}\right)
 ```
 
 A production map also holds the knock limit below MBT at high load and low speed, which gives the
@@ -471,7 +474,7 @@ let kpa = collect(20.0:5.0:100.0), rpm = collect(800.0:200.0:6400.0)
     z = [round(Trends.sigma_mbt(n, p); digits = 2) for n in rpm, p in kpa]
     PP.plot(
         PP.contour(; x = rpm, y = kpa, z = [z[i, :] for i in axes(z, 1)], colorscale = "Blues",
-            zmin = 5, zmax = 40, contours = PP.attr(; start = 10, size = 5, :end => 35,
+            zmin = 5, zmax = 50, contours = PP.attr(; start = 10, size = 5, :end => 45,
                 showlabels = true, labelfont = PP.attr(; size = 13, color = INK)),
             line = PP.attr(; color = INK, width = 1),
             colorbar = PP.attr(; title = PP.attr(; text = "° BTDC"), thickness = 12),
@@ -483,14 +486,16 @@ let kpa = collect(20.0:5.0:100.0), rpm = collect(800.0:200.0:6400.0)
 end
 
 # ╔═╡ 63ecd2e9-638d-4905-abf9-27e413e5ca15
-let σ = Trends.sigma_mbt
+let σ = Trends.sigma_mbt, op = Trends.operating_point(3000, 0.5)
+    rpm, kpa = 800.0:200.0:6400.0, 20.0:5.0:100.0
     @assert isapprox(σ(800, 33), 10; atol = 0.5) "idle MBT must be about 10°"
-    @assert 33 <= σ(6000, 20) <= 37 "high speed, light load must reach about 35°"
-    @assert σ(3000, 30) > σ(3000, 90) && σ(5000, 50) > σ(2000, 50) "advance rises with speed and falls with load"
+    @assert isapprox(σ(3000, op.p_m_kPa), 36; atol = 0.5) "the map must read the Wiebe MBT, 36°, at the slides' operating point"
+    @assert all(issorted(σ.(rpm, p)) for p in kpa) "advance must not fall with speed"
+    @assert all(issorted(σ.(n, kpa); rev = true) for n in rpm) "advance must not rise with load"
     md"""
     **MBT** $(round(σ(800, 33); digits = 1))° at idle (800 rpm, 33 kPa),
-    $(round(σ(3000, 65); digits = 1))° at 3000 rpm and 65 kPa, $(round(σ(6000, 20); digits = 1))°
-    at 6000 rpm and 20 kPa.
+    $(round(σ(3000, op.p_m_kPa); digits = 1))° at 3000 rpm and $(round(op.p_m_kPa; digits = 1)) kPa,
+    $(round(σ(6000, 20); digits = 1))° at 6000 rpm and 20 kPa.
     """
 end
 

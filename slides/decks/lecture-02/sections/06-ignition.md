@@ -204,16 +204,17 @@ burning. Too late, 15 degrees less: the piston is already moving away, and the p
 
 Between too early and too late there is a spark angle that gives the most torque. It is called
 MBT, minimum advance for best torque. The map below holds it for every speed and manifold
-pressure: about 10 degrees at idle, rising with speed, falling with load, about 35 degrees at high
+pressure: about 10 degrees at idle, rising with speed, falling with load, about 48 degrees at high
 speed and light load. A production map holds a knock-limited angle short of MBT at high load and
 low speed, which gives the scanned map its ridges. The knock sensor pulls the spark back when it
 hears detonation.
 
 Both plots are idealized, drawn from textbook trends. The pressure comes from a few-line cylinder:
 one zone, compression ratio 10.5 as in the Otto loop, a Wiebe burn of 50 degrees and an assumed
-wall heat loss, at 3000 rpm and half load. The map is an assumed function with the anchors of
-Dyad task 2. Task 6, the single cylinder and its spark sweep, replaces both: the traces and the
-MBT it finds.
+wall heat loss, at 3000 rpm and half load, the operating point of the next two slides. The map is
+an assumed function, 10 degrees at idle and anchored to the cylinder's MBT at that point, 36
+degrees. Task 6, the single cylinder and its spark sweep, replaces both: the traces and the MBT it
+finds.
 
 A video on knock: https://www.youtube.com/watch?v=oVIrebbfdlA
 
@@ -227,14 +228,16 @@ routeAlias: timing-and-emissions
 
 <CardExport notebook="02-cycle-and-spark" name="emissions-vs-lambda" height="30rem" />
 
-<div class="caption">Hydrocarbons · nitrogen oxides · carbon monoxide, each against the excess-air factor λ, one curve per ignition angle α<sub>z</sub> (MBT at 50°); drawn from an assumed trend model</div>
+<div class="caption">Hydrocarbons · nitrogen oxides · carbon monoxide, each against the excess-air factor λ, one curve per ignition angle α<sub>z</sub> (MBT at 36°); drawn from an assumed trend model</div>
 
 <!--
 Three pollutants, one horizontal axis, lambda, and one curve per spark advance. The slider under
 the plot changes the load.
 
 These curves are drawn from an assumed trend model, a few lines per pollutant with the shapes of
-the Bosch figure and of Heywood's textbook. They are neither simulated nor measured. The units are
+the Bosch figure and of Heywood's textbook. MBT at this point is 36 degrees, computed by the
+single-zone Wiebe model of the previous slide; the four lines are MBT and 10, 20 and 30 degrees
+of retard, the spacing of the Bosch figure, whose lines all sit at or below its MBT too. They are neither simulated nor measured. The units are
 grams per kilogram of fuel; the Bosch original used grams per kilowatt-hour.
 
 HC, unburned fuel: lowest a little lean of one, rising when too rich, and rising steeply when too
@@ -274,7 +277,7 @@ routeAlias: ignition-functions
 
 <CardExport notebook="02-cycle-and-spark" name="torque-bsfc-vs-lambda" height="28rem" />
 
-<div class="caption">Torque and specific fuel consumption against λ, one curve per ignition angle α<sub>z</sub> (MBT at 50°), at the operating point of the emissions slide; idealized, drawn from textbook trends</div>
+<div class="caption">Torque and specific fuel consumption against λ, one curve per ignition angle α<sub>z</sub> (MBT at 36°), at the operating point of the emissions slide; idealized, drawn from textbook trends</div>
 
 </div>
 </div>
@@ -290,13 +293,14 @@ is making sure the right plug fires.
 The two plots close the title of the previous slide. Torque peaks slightly rich, at lambda 0.88;
 fuel consumption is lowest slightly lean, at lambda 1.09. And up to MBT, more advance gives more
 torque and less fuel: at lambda one, 69.7 newton-meters and 244 grams per kilowatt-hour at MBT,
-38 newton-meters and about 450 grams 30 degrees later.
+42 newton-meters and about 405 grams 30 degrees later. Ten degrees of retard cost 4.4 percent of
+the torque.
 
 These curves are idealized, drawn from textbook trends: the hands-on engine at 3000 rpm and half
 its full-load air charge, with an assumed lambda multiplier and spark-retard multiplier, the
 structure Dyad task 2's mean-value engine uses. So the trends are true by construction, not
-found. The same axis and the same four angles as the emissions slide; MBT is held at 50 degrees
-for every lambda, which is why the lines spread wider than in the Bosch scan, where MBT moves with
+found. The same axis and the same four angles as the emissions slide. MBT at this point is 36
+degrees, computed by the single-zone Wiebe model; it is held there for every lambda, which is why the lines spread wider than in the Bosch scan, where MBT moves with
 the mixture. A lambda and spark sweep of task 2's engine replaces them.
 
 Notebook 08, "Ignition coil, dwell and knock", will model the coil's charging and the dwell.
