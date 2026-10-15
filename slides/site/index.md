@@ -23,6 +23,9 @@ features:
     details: "Session 3<br>The theory: where the vehicle's energy goes, the Otto and Diesel cycles and the stoichiometric mixture, the engine control system and its sensors, fuel injection and the pulse-width formula, ignition timing and the coil, and the λ loop around the catalyst. Ends with the mapped engine you build in the hands-on."
     link: /lecture-02/index.html
     target: _self
+  - title: "Hands-on: drive a mapped engine"
+    details: "Session 4 · about 90 min<br>Read measured engine maps at speed and manifold pressure, build the manifold and a map engine of your own, put the course engine in your car, and read its fuel in L/100 km and its CO₂ in g/km at 50, 90 and 130 km/h. Ends with fuel cut on a coast-down and the vacuum the brake booster draws on."
+    link: /handson/lecture-02/
 ---
 
 ## Lecture 1, in two sessions
@@ -65,6 +68,11 @@ models, one notebook at a time.
 6. [**Ignition**](./lecture-02/index.html#/ignition){target="_self"} — spark advance, the coil and the dwell
 7. [**Emissions and lambda control**](./lecture-02/index.html#/emissions-and-lambda){target="_self"} — the λ loop and the catalyst
 8. [**The mapped engine**](./lecture-02/index.html#/mapped-engine){target="_self"} — what the hands-on builds
+
+The hands-on that follows the lecture builds that engine into the car. Students follow the
+[hands-on guide](./handson/lecture-02/); present it with the
+[tutor deck](./handson-02/index.html){target="_self"}, whose speaker notes carry what to say, the
+numbers behind every checkpoint, and where students get stuck.
 
 ## For the lecturer
 
