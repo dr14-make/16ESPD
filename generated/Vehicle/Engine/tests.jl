@@ -18,7 +18,13 @@ end
 @testset "`VehicleSystemsComponents.Vehicle.Engine`" begin
 include("AirPath_test.jl")
 include("CylinderAirflow_test.jl")
+include("ElectronicThrottle_test.jl")
+include("FuelInjector_test.jl")
 include("IntakeManifold_test.jl")
+include("LimpHomeSpring_test.jl")
+include("Solenoid_test.jl")
 include("TestAirPath_test.jl")
+include("ThrottleEndStops_test.jl")
+include("ThrottlePositionSensor_test.jl")
 include("Throttle_test.jl")
 end
