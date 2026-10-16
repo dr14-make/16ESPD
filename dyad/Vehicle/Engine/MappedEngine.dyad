@@ -8,41 +8,41 @@ and the rev limiter are continuous hysteresis latches, so neither introduces eve
 component MappedEngine
   extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
   "Driver pedal command, 0 closed to 1 fully open"
-  pedal = RealInput()
+  pedal = RealInput() {^pedal}
   "Brake-booster air inflow to the manifold [kg/s]"
-  mdot_bst = RealInput()
+  mdot_bst = RealInput() {^mdot_bst}
   "Engine output shaft"
-  spline = Spline()
+  spline = Spline() {^spline}
   "Reaction support (engine mounts)"
-  support = Spline()
+  support = Spline() {^support}
   "Manifold absolute pressure [Pa]"
-  p_m = RealOutput()
+  p_m = RealOutput() {^p_m}
   "Fuel mass flow [kg/s]"
-  mdot_fuel = RealOutput()
+  mdot_fuel = RealOutput() {^mdot_fuel}
   "Carbon-dioxide mass flow [kg/s]"
-  mdot_co2 = RealOutput()
+  mdot_co2 = RealOutput() {^mdot_co2}
   "Engine-out hydrocarbon mass flow [kg/s] (assumed map)"
-  mdot_hc = RealOutput()
+  mdot_hc = RealOutput() {^mdot_hc}
   "Engine-out carbon-monoxide mass flow [kg/s] (assumed map)"
-  mdot_co = RealOutput()
+  mdot_co = RealOutput() {^mdot_co}
   "Engine-out nitrogen-oxide mass flow [kg/s] (assumed map)"
-  mdot_nox = RealOutput()
+  mdot_nox = RealOutput() {^mdot_nox}
   "Brake torque [N.m]"
-  tau_e = RealOutput()
+  tau_e = RealOutput() {^tau_e}
   "Air-fuel equivalence ratio"
-  lambda = RealOutput()
+  lambda = RealOutput() {^lambda}
 
-  air = VehicleSystemsComponents.Vehicle.Engine.AirPath()
-  torque_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = torque_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  fuel_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = fuel_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  lambda_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = lambda_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  hc_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = hc_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  co_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = co_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  nox_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = nox_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  full_load = BlockComponents.Tables.InterpolatedTable(axis1 = full_load_rpm, axis2 = curve_axis, data = full_load_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  closed_throttle = BlockComponents.Tables.InterpolatedTable(axis1 = closed_rpm, axis2 = curve_axis, data = closed_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  torque_source = RotationalComponents.Sources.TorqueSource()
-  crankshaft = RotationalComponents.Components.Inertia(J = J_e)
+  air = VehicleSystemsComponents.Vehicle.Engine.AirPath() {^air}
+  torque_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = torque_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^torque_map}
+  fuel_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = fuel_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^fuel_map}
+  lambda_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = lambda_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^lambda_map}
+  hc_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = hc_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^hc_map}
+  co_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = co_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^co_map}
+  nox_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = nox_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^nox_map}
+  full_load = BlockComponents.Tables.InterpolatedTable(axis1 = full_load_rpm, axis2 = curve_axis, data = full_load_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^full_load}
+  closed_throttle = BlockComponents.Tables.InterpolatedTable(axis1 = closed_rpm, axis2 = curve_axis, data = closed_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^closed_throttle}
+  torque_source = RotationalComponents.Sources.TorqueSource() {^torque_source}
+  crankshaft = RotationalComponents.Components.Inertia(J = J_e) {^crankshaft}
 
   "Progressive drive-by-wire pedal exponent (assumed)"
   parameter pedal_exponent::Real = 1.5
@@ -86,8 +86,8 @@ relations
 
   air.u_thr = u_thr
   air.omega = omega
-  connect(mdot_bst, air.mdot_bst)
-  connect(air.p_m, p_m)
+  connect(mdot_bst, air.mdot_bst) {^id1}
+  connect(air.p_m, p_m) {^id2}
 
   torque_map.u1 = N
   torque_map.u2 = p_kPa
@@ -124,7 +124,40 @@ relations
   lambda = lambda_map.y
 
   torque_source.tau = tau_e
-  connect(torque_source.spline, crankshaft.spline_a)
-  connect(crankshaft.spline_b, spline)
-  connect(torque_source.support, support)
+  connect(torque_source.spline, crankshaft.spline_a) {^id3}
+  connect(crankshaft.spline_b, spline) {^id4}
+  connect(torque_source.support, support) {^id5}
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "MAP", "x": 500, "y": 180, "rot": 0, "attrs": {"font-size": "200"}}]},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}}}},
+    "tau_e": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "lambda": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "mdot_co2": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "mdot_hc": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "mdot_co": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}},
+    "mdot_nox": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 850, "x2": 1050, "y2": 950}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "air": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 450, "x2": 250, "y2": 550}}}},
+    "torque_map": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 150, "x2": 500, "y2": 250}}}},
+    "full_load": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 310, "x2": 500, "y2": 410}}}},
+    "closed_throttle": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 470, "x2": 500, "y2": 570}}}},
+    "lambda_map": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 630, "x2": 500, "y2": 730}}}},
+    "fuel_map": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 150, "x2": 700, "y2": 250}}}},
+    "hc_map": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 310, "x2": 700, "y2": 410}}}},
+    "co_map": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 470, "x2": 700, "y2": 570}}}},
+    "nox_map": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 630, "x2": 700, "y2": 730}}}},
+    "torque_source": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 800, "x2": 550, "y2": 900}}}},
+    "crankshaft": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 800, "x2": 750, "y2": 900}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 75, "y": 700}, {"x": 75, "y": 500}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 500}, {"x": 300, "y": 100}], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 875, "y": 850}, {"x": 875, "y": 900}], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end

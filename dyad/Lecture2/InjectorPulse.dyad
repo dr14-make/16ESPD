@@ -93,14 +93,26 @@ metadata {
     "pulse": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 650, "x2": 150, "y2": 750}}}},
     "gate_drive": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 650, "x2": 350, "y2": 750}}}},
     "battery_level": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 250, "x2": 150, "y2": 350}}}},
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350, "rot": 270}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350, "rot": 90}}}},
     "injector": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 200, "x2": 650, "y2": 400}}}},
     "transistor": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 600, "x2": 550, "y2": 700, "rot": 90}}}},
     "zener": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 600, "x2": 700, "y2": 700, "rot": 90}}}},
     "ground": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 850, "x2": 550, "y2": 950}}}},
     "ambient": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 850, "x2": 350, "y2": 950}}}},
     "rail": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 50, "x2": 350, "y2": 150}}}},
-    "fuel_mass": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 250, "x2": 900, "y2": 350}}}}
+    "fuel_mass": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 290, "x2": 800, "y2": 390}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 300}, {"x": 200, "y": 220}, {"x": 375, "y": 220}, {"x": 375, "y": 300}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 185}, {"x": 510, "y": 185}], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 590, "y": 160}, {"x": 850, "y": 160}, {"x": 850, "y": 540}, {"x": 500, "y": 540}], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 420}, {"x": 220, "y": 420}, {"x": 220, "y": 830}, {"x": 500, "y": 830}], "E": 2}], "path": {}}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 560}, {"x": 500, "y": 560}], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 800}, {"x": 500, "y": 800}], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 700}, {"x": 400, "y": 750}, {"x": 575, "y": 750}, {"x": 575, "y": 650}], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 430, "y": 651}, {"x": 430, "y": 900}], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 420, "y": 100}, {"x": 420, "y": 300}], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end

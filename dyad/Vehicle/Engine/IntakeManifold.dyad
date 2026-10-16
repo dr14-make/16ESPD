@@ -8,13 +8,13 @@ booster; the cylinders draw it out.
 """
 component IntakeManifold
   "Air flow in through the throttle [kg/s]"
-  mdot_thr = RealInput()
+  mdot_thr = RealInput() {^mdot_thr}
   "Air flow in from the brake booster through its check valve [kg/s]"
-  mdot_bst = RealInput()
+  mdot_bst = RealInput() {^mdot_bst}
   "Air flow out into the cylinders [kg/s]"
-  mdot_cyl = RealInput()
+  mdot_cyl = RealInput() {^mdot_cyl}
   "Manifold absolute pressure [Pa]"
-  p_m = RealOutput()
+  p_m = RealOutput() {^p_m}
   "Manifold volume (MathWorks)"
   parameter V_m::Volume = 1.0e-3
   "Manifold air temperature (MathWorks)"
@@ -26,4 +26,12 @@ component IntakeManifold
 relations
   V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
   p_m = p
+metadata {
+  "_links": {
+    "mdot_thr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "mdot_cyl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
 end

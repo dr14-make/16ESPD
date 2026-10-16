@@ -28,8 +28,8 @@ relations
 metadata {
   "Dyad": {"icons": {"default": "dyad://RotationalComponents/Spring.svg"}},
   "_links": {
-    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "default", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "default", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
   }
 }
 end
