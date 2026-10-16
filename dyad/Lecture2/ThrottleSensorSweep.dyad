@@ -49,7 +49,10 @@ metadata {
   "_links": {
     "angle": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 400, "x2": 250, "y2": 550}}}},
     "tps": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 375, "x2": 600, "y2": 575}}}},
-    "track_sum": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 400, "x2": 900, "y2": 550}}}}
+    "track_sum": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 400, "x2": 900, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 670, "y": 435}, {"x": 670, "y": 430}], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 670, "y": 515}, {"x": 670, "y": 520}], "E": 2}], "path": {}}}
   }
 }
 end

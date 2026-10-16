@@ -17,11 +17,11 @@ idles at 33 kPa at 800 rpm.
 """
 component Throttle
   "Throttle position: 0 closed against its stop, 1 wide open"
-  u_thr = RealInput()
+  u_thr = RealInput() {^u_thr}
   "Manifold (downstream) pressure [Pa]"
-  p_m = RealInput()
+  p_m = RealInput() {^p_m}
   "Air mass flow through the throttle into the manifold [kg/s]"
-  mdot_thr = RealOutput()
+  mdot_thr = RealOutput() {^mdot_thr}
   "Throttle bore diameter (MathWorks)"
   parameter D_thr::Length = 0.05
   "Plate angle at the closed stop, 7 deg (assumed)"
@@ -59,4 +59,11 @@ relations
   # ifelse evaluates both branches, so the subsonic one gets a ratio clamped below Pi_lin.
   Psi = ifelse(Pi > Pi_lin, Psi_lin * (1 - Pi) / (1 - Pi_lin), sqrt(2 * gamma / (gamma - 1) * (min(Pi, Pi_lin)^(2 / gamma) - min(Pi, Pi_lin)^((gamma + 1) / gamma))))
   mdot_thr = C_d * A_thr * p_a / sqrt(R * T_a) * Psi
+metadata {
+  "_links": {
+    "u_thr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "mdot_thr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
 end

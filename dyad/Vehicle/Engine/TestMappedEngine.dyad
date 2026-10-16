@@ -12,15 +12,22 @@ test component TestMappedEngine
   parameter booster_duration::Time = 0.5
   "Initial manifold pressure [Pa]"
   parameter p_m0::Pressure = 32955.7
-  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine()
-  fixed = RotationalComponents.Components.Fixed()
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine() {^engine}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
 relations
   engine.pedal = pedal_cmd
   engine.mdot_bst = ifelse(time > t_booster and time <= t_booster + booster_duration, booster_flow, 0.0)
-  connect(engine.support, fixed.spline)
+  connect(engine.support, fixed.spline) {^id1}
   initial engine.crankshaft.phi = 0.0
   initial engine.crankshaft.w = rpm * pi / 30
   initial engine.air.manifold.p = p_m0
+metadata {
+  "_links": {
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 600, "x2": 550, "y2": 700}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
 end
 
 "Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun."
@@ -45,9 +52,9 @@ test component TestMappedEngineDyno
   parameter t_ramp::Time = 1.0
   "Duration of the overrun speed ramp"
   parameter ramp_duration::Time = 3.0
-  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine()
-  dyno = RotationalComponents.Sources.VelocitySource()
-  fixed = RotationalComponents.Components.Fixed()
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine() {^engine}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
   variable pedal_value::Real
   variable dyno_rpm::Real
 relations
@@ -56,11 +63,21 @@ relations
   engine.pedal = pedal_value
   engine.mdot_bst = 0.0
   dyno.w_ref = dyno_rpm * pi / 30
-  connect(engine.spline, dyno.spline)
-  connect(engine.support, fixed.spline)
-  connect(dyno.support, fixed.spline)
+  connect(engine.spline, dyno.spline) {^id1}
+  connect(engine.support, fixed.spline) {^id2}
+  connect(dyno.support, fixed.spline) {^id3}
   initial engine.crankshaft.phi = 0.0
   initial engine.air.manifold.p = p_m0
+metadata {
+  "_links": {
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 430, "x2": 850, "y2": 530}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 650, "x2": 550, "y2": 750}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 480}, {"x": 680, "y": 380}, {"x": 900, "y": 380}, {"x": 900, "y": 480}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 600}, {"x": 500, "y": 600}], "E": 2}], "path": {}}}
+  }
+}
 end
 
 analysis MappedEngineTransient
