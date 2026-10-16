@@ -27,6 +27,7 @@ relations
   V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
   p_m = p
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/IntakeManifold.svg"}},
   "_links": {
     "mdot_thr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
     "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},

@@ -11,7 +11,7 @@ component CutBlend
 relations
   y = (1 - cut) * fired + cut * motored
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "cut blend", "x": 500, "y": 300, "rot": 0}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/CutBlend.svg"}},
   "_links": {
     "fired": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
     "cut": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},

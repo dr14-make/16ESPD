@@ -94,7 +94,7 @@ relations
   connect(crankshaft.spline_b, spline, speed.spline) {^shaft_wire}
   connect(torque_source.support, support) {^support_wire}
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "MAP", "x": 500, "y": 180, "rot": 0, "attrs": {"font-size": "200"}}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 235, "x2": 25, "y2": 285}}}},
     "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -25, "y1": 375, "x2": 25, "y2": 425}}}},

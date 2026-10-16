@@ -27,7 +27,7 @@ relations
   rev.reset = ifelse(omega * 30 / pi < rev_resume_rpm, 1.0, 0.0)
   cut = min(max(decel.y + rev.y, 0.0), 1.0)
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "fuel cut", "x": 500, "y": 300, "rot": 0}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/FuelCutLogic.svg"}},
   "_links": {
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},

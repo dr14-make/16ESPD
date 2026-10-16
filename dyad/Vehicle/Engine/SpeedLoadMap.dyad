@@ -22,7 +22,7 @@ relations
   table.u2 = min(max(p_m / 1000, kpa_axis[1]), kpa_axis[length(kpa_axis)])
   y = gain * table.y
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "ω,p → map", "x": 500, "y": 300, "rot": 0}], "doc": {"behavior": false}},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/SpeedLoadMap.svg"}, "doc": {"behavior": false}},
   "_links": {
     "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
@@ -82,7 +82,7 @@ relations
   connect(p_m, map.p_m) {^pressure_wire}
   y = (1 - cut) * map.y
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "cut map", "x": 500, "y": 300, "rot": 0}], "doc": {"behavior": false}},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/CutMap.svg"}, "doc": {"behavior": false}},
   "_links": {
     "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},

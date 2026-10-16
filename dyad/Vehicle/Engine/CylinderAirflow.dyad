@@ -50,6 +50,7 @@ relations
   eta_v = eta_fl * (1 - k + k * p_m / p_ref)
   mdot_cyl = eta_v * p_m * V_d * N / (120 * R * T_m)
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/CylinderAirflow.svg"}},
   "_links": {
     "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},

@@ -60,6 +60,7 @@ relations
   Psi = ifelse(Pi > Pi_lin, Psi_lin * (1 - Pi) / (1 - Pi_lin), sqrt(2 * gamma / (gamma - 1) * (min(Pi, Pi_lin)^(2 / gamma) - min(Pi, Pi_lin)^((gamma + 1) / gamma))))
   mdot_thr = C_d * A_thr * p_a / sqrt(R * T_a) * Psi
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/Throttle.svg"}},
   "_links": {
     "u_thr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},

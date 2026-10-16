@@ -19,7 +19,7 @@ relations
   initial y = ifelse(set > 0.5, 1.0, 0.0)
   der(y) = (request - y) / latch_time
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "S  R", "x": 500, "y": 300, "rot": 0}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/HysteresisLatch.svg"}},
   "_links": {
     "set": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "reset": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
