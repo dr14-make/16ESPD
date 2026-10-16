@@ -1,0 +1,54 @@
+"Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis latches."
+component FuelCutLogic
+  "Driver pedal command, 0 closed to 1 fully open"
+  pedal = RealInput() {^pedal}
+  "Engine angular speed [rad/s]"
+  omega = RealInput() {^omega}
+  "Combined fuel-cut fraction, 0 fired to 1 cut"
+  cut = RealOutput() {^cut}
+  "Closed-pedal threshold for deceleration fuel cut (assumed)"
+  parameter pedal_closed::Real = 1e-4
+  "Deceleration fuel-cut speed [rpm] (assumed)"
+  parameter fuel_cut_rpm::Real = 1300.0
+  "Deceleration fuel-resume speed [rpm] (assumed)"
+  parameter fuel_resume_rpm::Real = 1000.0
+  "Rev-limiter fuel-cut speed [rpm] (assumed)"
+  parameter rev_cut_rpm::Real = 6500.0
+  "Rev-limiter fuel-resume speed [rpm] (assumed)"
+  parameter rev_resume_rpm::Real = 6300.0
+  "Continuous latch transition time (assumed)"
+  parameter latch_time::Time(min = eps(Float64)) = 0.01
+  decel = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = latch_time) {^decel}
+  rev = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = latch_time) {^rev}
+relations
+  decel.set = ifelse(pedal <= pedal_closed and omega * 30 / pi > fuel_cut_rpm, 1.0, 0.0)
+  decel.reset = ifelse(pedal > pedal_closed or omega * 30 / pi < fuel_resume_rpm, 1.0, 0.0)
+  rev.set = ifelse(omega * 30 / pi > rev_cut_rpm, 1.0, 0.0)
+  rev.reset = ifelse(omega * 30 / pi < rev_resume_rpm, 1.0, 0.0)
+  cut = min(max(decel.y + rev.y, 0.0), 1.0)
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "fuel cut", "x": 500, "y": 300, "rot": 0}]},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "cut": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "decel": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 300, "x2": 450, "y2": 400}}}},
+    "rev": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 600, "x2": 450, "y2": 700}}}}
+  }
+}
+end
+
+test component TestFuelCutLogic
+  pedal = BlockComponents.Sources.Constant(k = 0.0)
+  overrun_speed = BlockComponents.Sources.Constant(k = 3000 * pi / 30)
+  rev_speed = BlockComponents.Sources.Constant(k = 6600 * pi / 30)
+  decel_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic()
+  rev_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic()
+relations
+  connect(pedal.y, decel_logic.pedal, rev_logic.pedal)
+  connect(overrun_speed.y, decel_logic.omega)
+  connect(rev_speed.y, rev_logic.omega)
+metadata {
+  "Dyad": {"tests": {"both_latches": {"stop": 0.1, "atol": {"decel_logic.cut": 1e-5, "rev_logic.cut": 1e-5}, "expect": {"initial": {"decel_logic.cut": 1.0, "rev_logic.cut": 1.0}, "final": {"decel_logic.cut": 1.0, "rev_logic.cut": 1.0}, "signals": ["decel_logic.decel.y", "decel_logic.rev.y", "rev_logic.decel.y", "rev_logic.rev.y"]}}}}
+}
+end

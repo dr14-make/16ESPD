@@ -1,0 +1,43 @@
+"""
+Continuous set/reset latch.
+
+The state relaxes toward the selected Boolean request rather than changing discontinuously. Its
+initial value follows an asserted set input so a simulation begun inside a cut region starts cut.
+"""
+component HysteresisLatch
+  "Set request, 0 or 1"
+  set = RealInput() {^set}
+  "Reset request, 0 or 1"
+  reset = RealInput() {^reset}
+  "Latched fraction, 0 to 1"
+  y = RealOutput() {^y}
+  "Continuous latch transition time (assumed)"
+  parameter latch_time::Time(min = eps(Float64)) = 0.01
+  variable request::Real
+relations
+  request = ifelse(y < 0.5, ifelse(set > 0.5, 1.0, 0.0), ifelse(reset > 0.5, 0.0, 1.0))
+  initial y = ifelse(set > 0.5, 1.0, 0.0)
+  der(y) = (request - y) / latch_time
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "S  R", "x": 500, "y": 300, "rot": 0}]},
+  "_links": {
+    "set": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "reset": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end
+
+test component TestHysteresisLatch
+  set_signal = RealOutput()
+  reset_signal = RealOutput()
+  latch = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = 0.01)
+relations
+  set_signal = ifelse(time < 0.05, 1.0, 0.0)
+  reset_signal = ifelse(time > 0.15, 1.0, 0.0)
+  connect(set_signal, latch.set)
+  connect(reset_signal, latch.reset)
+metadata {
+  "Dyad": {"tests": {"set_hold_reset": {"stop": 0.3, "atol": {"latch.y": 1e-5}, "expect": {"initial": {"latch.y": 1.0}, "final": {"latch.y": 0.0}, "signals": ["latch.y", "latch.request"]}}}}
+}
+end
