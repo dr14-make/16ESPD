@@ -71,9 +71,9 @@ metadata {
   "Dyad": {
     "labels": [
       {"label": "$(instance)", "x": 500, "y": 1100, "rot": 0},
-      {"label": "R=$(R)Ω", "x": 500, "y": 150, "rot": 0}
+      {"label": "R=$(R)Ω", "x": 780, "y": 150, "rot": 0}
     ],
-    "icons": {"default": "dyad://ElectricalComponents/TranslationalEMF.svg"}
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/Solenoid.svg"}
   },
   "_links": {
     "p": {

@@ -12,7 +12,7 @@ relations
   table.u2 = 0.0
   connect(table.y, y)
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "ω → curve", "x": 500, "y": 300, "rot": 0}], "doc": {"behavior": false}},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/SpeedCurve.svg"}, "doc": {"behavior": false}},
   "_links": {
     "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
