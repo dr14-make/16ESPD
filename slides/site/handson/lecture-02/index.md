@@ -242,134 +242,144 @@ Commit: **Source Control** → message `Step 02: manifold` → **Commit** → **
 
 ### 03 Map engine on a dynamometer <Badge type="info" text="20 min" /> {#map-engine}
 
-An engine of your own: pedal in; torque, fuel and CO₂ out, read from the maps at speed and manifold pressure.
+An engine of your own, drawn from six given blocks: pedal in; torque, fuel and CO₂ out, read from the maps at speed and manifold pressure.
 
-Theory: [tutor slides — four lines make the engine](../../handson-02/index.html#/engine-equations){target="_self"}
+Theory: [tutor slides — three lines make the engine](../../handson-02/index.html#/engine-equations){target="_self"}
 
 #### Where you are, where you are going
 
-Your engine has four lines that matter:
+Your engine has three lines that matter:
 
-- the throttle follows the pedal through a progressive curve, `u_thr = pedal^1.5`;
 - torque is the torque map at (*N*, *p<sub>m</sub>*), never more than the full-load curve;
 - fuel is the fuel map at (*N*, *p<sub>m</sub>*);
 - CO₂ is 3.09 × fuel: each kilogram of petrol burned completely makes 3.09 kg of CO₂.
 
-The manifold pressure comes from `AirPath`, the course library's version of your step 02 bench, packaged as one part. The maps come from `EngineMapData`, which holds the CSV files as parameters. You test the engine on a **dynamometer**: a bench that holds the shaft at a fixed speed whatever the engine does, so a pedal step shows only the engine.
+The pedal sets the throttle directly. The manifold pressure comes from `AirPath`, the course library's version of your step 02 bench, packaged as one part. The two maps are given parts too, `TorqueMap` and `FuelMap`: each already holds its table and converts rad/s and Pa to the rpm and kPa the table uses, and `TorqueMap` caps itself at the full-load curve. A `VelocitySensor` on the shaft reads the engine speed. You place the parts and draw the wires; the only number you type is 3.09.
 
-#### A · Paste the engine and read it
+You test the engine on a **dynamometer**: a bench that holds the shaft at a fixed speed whatever the engine does, so a pedal step shows only the engine.
 
-1. <Badge type="tip" text="New component" /> Add a component `MapEngine`, toggle to code, select everything, paste the block below and save.
+<!-- TODO(screenshot): step03-map-engine.png, the finished MapEngine diagram. -->
 
-::: code-group
+#### A · Draw the engine
 
-```txt [MapEngine]
-"""
-Pedal in; torque, fuel and CO2 out, read from the maps at engine speed and manifold pressure.
-"""
+| Name | Library path | Set |
+| --- | --- | --- |
+| `pedal` | Dyad › RealInput | port, left edge |
+| `mdot_bst` | Dyad › RealInput | port, left edge, below `pedal`: the brake booster's air, zero today |
+| `spline` | Dyad › Spline | port, right edge: the output shaft |
+| `support` | Dyad › Spline | port, right edge, below `spline`: the engine mounts |
+| `mdot_fuel`, `mdot_co2`, `p_m` | Dyad › RealOutput | ports, right edge, below `support` |
+| `air` | VehicleSystemsComponents › Vehicle › Engine › AirPath | — |
+| `speed` | RotationalComponents › Sensors › VelocitySensor | — |
+| `torque_map` | VehicleSystemsComponents › Vehicle › Engine › TorqueMap | — |
+| `fuel_map` | VehicleSystemsComponents › Vehicle › Engine › FuelMap | — |
+| `co2` | BlockComponents › Math › Gain | `k = 3.09` |
+| `torque` | RotationalComponents › Sources › TorqueSource | — |
+
+1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `MapEngine`. It opens as an empty diagram.
+2. With **+**, place the six parts of the table and rename each. Set `co2`'s `k` to `3.09`. Arrange them as the picture above: `air` on the left; `torque_map` above `fuel_map` to its right; `torque` right of `torque_map`, `co2` right of `fuel_map`; `speed` above `torque`.
+3. Place the seven ports from the `Dyad` library and drag them onto the component's outline as the table says.
+4. Draw the 15 wires. Each starts at the port named first:
+   - **Air in:** `pedal` → `air.u_thr`; `mdot_bst` → `air.mdot_bst`.
+   - **Speed**, three wires from `speed.w`: → `air.omega`, → `torque_map.omega`, → `fuel_map.omega`.
+   - **Pressure**, three wires from `air.p_m`: → `torque_map.p_m`, → `fuel_map.p_m`, → the `p_m` port.
+   - **Torque:** `torque_map.y` → `torque.tau`; `torque`'s right-hand circle → `spline`; `torque`'s bottom circle → `support`.
+   - **Shaft speed:** `speed`'s circle → `spline`, so the sensor reads the shaft the torque drives.
+   - **Fuel:** `fuel_map.y` → `mdot_fuel`; `fuel_map.y` → `co2.u`; `co2.y` → `mdot_co2`.
+5. Save with <kbd>Ctrl</kbd>+<kbd>S</kbd>. The **Problems** tab should show nothing for `MapEngine`.
+
+Read what you drew:
+
+- The two maps hang off the same two wires, speed and pressure. That picture is the lecture: an engine control unit knows *N* and *p<sub>m</sub>* and looks everything up there.
+- The pedal moves the throttle at once. Whatever lag you see between pedal and torque is the manifold filling, the state you built in step 02.
+- There is no flywheel: on the dynamometer the bench sets the speed. The course engine of step 04 has one.
+
+::: details Stuck? The full model
+
+From `dyad/HandsOn02/MapEngine.dyad`, diagram annotations omitted.
+
+```txt
 component MapEngine
-  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
-  "Pedal, 0 released to 1 floored"
   pedal = RealInput()
-  "Output shaft"
+  mdot_bst = RealInput()
   spline = Spline()
-  "Engine mounts"
   support = Spline()
-  "Manifold absolute pressure [Pa]"
   p_m = RealOutput()
-  "Brake torque [N.m]"
-  tau_e = RealOutput()
-  "Fuel mass flow [kg/s]"
   mdot_fuel = RealOutput()
-  "CO2 mass flow [kg/s]"
   mdot_co2 = RealOutput()
   air = VehicleSystemsComponents.Vehicle.Engine.AirPath()
-  no_booster = BlockComponents.Sources.Constant(k = 0)
-  torque_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = torque_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  fuel_map = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = fuel_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
-  full_load = BlockComponents.Tables.InterpolatedTable(axis1 = full_load_rpm, axis2 = curve_axis, data = full_load_data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension())
+  speed = RotationalComponents.Sensors.VelocitySensor()
+  torque_map = VehicleSystemsComponents.Vehicle.Engine.TorqueMap()
+  fuel_map = VehicleSystemsComponents.Vehicle.Engine.FuelMap()
+  co2 = BlockComponents.Math.Gain(k = 3.09)
   torque = RotationalComponents.Sources.TorqueSource()
-  crankshaft = RotationalComponents.Components.Inertia(J = 0.15)
-  "Engine speed [rpm], clamped to the map"
-  variable N::Real
-  "Manifold pressure [kPa], clamped to the map"
-  variable p_kPa::Real
 relations
-  air.u_thr = min(max(pedal, 0), 1)^1.5
-  air.omega = crankshaft.w
-  connect(no_booster.y, air.mdot_bst)
+  connect(pedal, air.u_thr)
+  connect(mdot_bst, air.mdot_bst)
+  connect(speed.w, air.omega)
+  connect(speed.w, torque_map.omega)
+  connect(speed.w, fuel_map.omega)
+  connect(air.p_m, torque_map.p_m)
+  connect(air.p_m, fuel_map.p_m)
   connect(air.p_m, p_m)
-  N = min(max(crankshaft.w * 30 / pi, 500), 6750)
-  p_kPa = min(max(air.p_m / 1000, 0), 105)
-  torque_map.u1 = N
-  torque_map.u2 = p_kPa
-  fuel_map.u1 = N
-  fuel_map.u2 = p_kPa
-  full_load.u1 = N
-  full_load.u2 = 0
-  tau_e = min(torque_map.y, full_load.y)
-  mdot_fuel = fuel_map.y / 1000
-  mdot_co2 = 3.09 * mdot_fuel
-  torque.tau = tau_e
-  connect(torque.spline, crankshaft.spline_a)
-  connect(crankshaft.spline_b, spline)
+  connect(torque_map.y, torque.tau)
+  connect(fuel_map.y, co2.u)
+  connect(fuel_map.y, mdot_fuel)
+  connect(co2.y, mdot_co2)
+  connect(torque.spline, spline)
+  connect(speed.spline, spline)
   connect(torque.support, support)
 end
 ```
 
 :::
 
-<!-- TODO(reference): verify against dyad/HandsOn02/MapEngine.dyad once written; EngineMapData and
-its field names (rpm_axis, kpa_axis, torque_data, fuel_data, full_load_rpm, curve_axis,
-full_load_data) are on feat/lecture02-mapped-engine, task 3, not merged. -->
-<!-- TODO(screenshot): step03-map-engine-code.png. -->
-
-2. Read it top to bottom:
-   - `extends …EngineMapData` brings in the axes and the tables as parameters.
-   - `air` is the given air path; `no_booster` holds its booster input at zero.
-   - `N` and `p_kPa` convert rad/s to rpm and Pa to kPa — the units the tables use — and clamp them to the tables' edges.
-   - `tau_e = min(…)` is the full-load cap: the map runs to 105 kPa, which the engine never reaches.
-   - `mdot_fuel` converts g/s to kg/s; `mdot_co2` is 3.09 × fuel.
-   - The torque drives a 0.15 kg·m² `crankshaft` inertia; `spline` and `support` are the shaft and the mounts, as in hands-on 1.
-
 #### B · The dynamometer bench
 
-| Name | Library path | Set |
-| --- | --- | --- |
-| `pedal` | BlockComponents › Sources › Step | `height = 1`, `offset = 0`, `start_time = 1` |
-| `speed` | BlockComponents › Sources › Constant | `k = 314.159` (3000 rpm) |
-| `engine` | your `MapEngine` | — |
-| `dyno` | RotationalComponents › Sources › VelocitySource | — |
-| `mounts` | RotationalComponents › Components › Fixed | — |
+The bench is given as code: paste it. Its parameters are the knobs of the two runs below.
 
-3. <Badge type="tip" text="New component" /> Add a component `MapEngineDyno` and place the parts.
-4. Wire `pedal` → `engine.pedal`, `speed` → `dyno.w_ref`, `engine.spline` → `dyno.spline`, and both `engine.support` and `dyno.support` → `mounts`.
-5. In code, add the two `initial` lines from the block below. The manifold starts at the 3000 rpm overrun pressure from step 02.
-6. <Badge type="tip" text="New analysis" /> **TransientAnalysis**, named `MapEngineDynoTransient`, `stop = 3`.
+6. <Badge type="tip" text="New component" /> Add a component `MapEngineDyno`, toggle to code, select everything, paste the block below and save. Toggle back to see it: `pedal` and `no_booster` feed the engine, `speed` drives the `dyno`, and both supports go to `mounts`.
+7. <Badge type="tip" text="New analysis" /> Create `MapEngineDynoTransient` as in step 02, or paste the `analysis` block below into its own file.
 
 ::: code-group
 
 ```txt [MapEngineDyno and MapEngineDynoTransient]
 component MapEngineDyno
-  pedal = BlockComponents.Sources.Step(height = 1, offset = 0, start_time = 1)
-  "3000 rpm"
-  speed = BlockComponents.Sources.Constant(k = 314.159)
+  "Held engine speed [rpm]"
+  parameter rpm::Real = 3080.0
+  "Pedal before the step"
+  parameter pedal_initial::Real = 0.1034
+  "Pedal after the step"
+  parameter pedal_final::Real = 0.12
+  "Pedal step time"
+  parameter t_step::Time = 1.0
+  "Initial manifold pressure"
+  parameter p_m0::Pressure = 47829.1
+  pedal = BlockComponents.Sources.Step(height = pedal_final - pedal_initial, offset = pedal_initial, start_time = t_step)
+  no_booster = BlockComponents.Sources.Constant(k = 0)
+  speed = BlockComponents.Sources.Constant(k = rpm * pi / 30)
   engine = MapEngine()
   dyno = RotationalComponents.Sources.VelocitySource()
   mounts = RotationalComponents.Components.Fixed()
 relations
   connect(pedal.y, engine.pedal)
+  connect(no_booster.y, engine.mdot_bst)
   connect(speed.y, dyno.w_ref)
   connect(engine.spline, dyno.spline)
   connect(engine.support, mounts.spline)
   connect(dyno.support, mounts.spline)
-  initial engine.crankshaft.phi = 0
-  initial engine.air.manifold.p = 13482.4
+  initial dyno.phi = 0
+  initial engine.air.manifold.p = p_m0
 end
 
 analysis MapEngineDynoTransient
-  extends TransientAnalysis(stop = 3)
-  model = MapEngineDyno()
+  extends TransientAnalysis(stop = 2.0, saveat = 0.001)
+  parameter rpm::Real = 3080.0
+  parameter pedal_initial::Real = 0.1034
+  parameter pedal_final::Real = 0.12
+  parameter t_step::Time = 1.0
+  parameter p_m0::Pressure = 47829.1
+  model = MapEngineDyno(rpm = rpm, pedal_initial = pedal_initial, pedal_final = pedal_final, t_step = t_step, p_m0 = p_m0)
 end
 ```
 
@@ -377,44 +387,69 @@ end
 
 <!-- TODO(screenshot): step03-dyno-bench.png. -->
 
-#### C · Run it
+#### C · Run 1: a small pedal step at 90 km/h
 
-7. Run it and plot the pressure and the torque, then the fuel:
+The defaults hold the 90 km/h cruise point of step 01, 3080 rpm and 31.1 N·m, and at 1 s open the pedal from 0.1034 to 0.12.
+
+8. Run it and plot the pressure and the torque, then the fuel:
 
    ```julia
    r = MyCar.MapEngineDynoTransient()
-   plot(r; idxs = [r."engine.p_m", r."engine.tau_e"], layout = (2, 1))
+   plot(r; idxs = [r."engine.p_m", r."engine.torque_map.y"], layout = (2, 1))
    plot(r; idxs = r."engine.mdot_fuel")
    ```
 
-   Zoom into 0.9–1.3 s: the torque follows the pressure, not the pedal.
+   Zoom into 0.9–1.3 s: the pedal jumped, the torque follows the pressure.
 
-<!-- TODO(screenshot): step03-tip-in-plot.png. -->
-<!-- TODO(checkpoint): the 10–90 % rise time of engine.tau_e after the step, from
-HandsOn02.MapEngineDynoTransient. -->
+<!-- TODO(screenshot): step03-step-plot.png. -->
+
+::: tip Checkpoint
+
+| | before the step | after |
+| --- | --: | --: |
+| `engine.p_m` | 47.8 kPa | 52.9 kPa |
+| `engine.torque_map.y` | 31.1 N·m | 41.4 N·m |
+| `engine.mdot_fuel` | 0.85 g/s | 1.02 g/s |
+
+The torque takes about **50 ms** to go from 10 % to 90 % of its rise; the pressure covers 63 % of its rise in about 23 ms. The pedal moved in no time: that 50 ms is the manifold filling. The plot shows kg/s: 0.00085 is 0.85 g/s.
+
+:::
+
+#### D · Run 2: closed pedal, then wide open
+
+9. Run the same bench at 3000 rpm, from closed to wide open, starting at step 02's overrun pressure:
+
+   ```julia
+   r = MyCar.MapEngineDynoTransient(rpm = 3000, pedal_initial = 0, pedal_final = 1, p_m0 = 13482.4)
+   plot(r; idxs = [r."engine.p_m", r."engine.torque_map.y"], layout = (2, 1))
+   ```
 
 ::: tip Checkpoint
 
 At 3000 rpm, the pressures from step 02 and the maps read there:
 
-| | pedal released | pedal floored |
+| | pedal closed | pedal floored |
 | --- | --: | --: |
 | `engine.p_m` | 13.5 kPa | 99.9 kPa |
-| `engine.tau_e` | −18.2 N·m | **148.4 N·m** |
+| `engine.torque_map.y` | −18.2 N·m | **148.4 N·m** |
 | `engine.mdot_fuel` | 0.097 g/s | 3.75 g/s |
 | `engine.mdot_co2` | 0.30 g/s | 11.6 g/s |
 
-Without the cap the map would give 163.1 N·m. The plot shows kg/s: 0.00375 is 3.75 g/s.
+Without the cap the map would give 163.0 N·m. The torque now rises 10–90 % in about 2 ms: a wide-open throttle fills the manifold almost at once, so a big step hides the lag that run 1 shows.
 
 :::
 
-#### D · Swap in the course engine: fuel cut
+#### E · Swap in the course engine: fuel cut
 
-With the pedal released at 3000 rpm your engine still burns 0.097 g/s while making negative torque. A real engine control unit cuts the fuel on overrun and turns it back on near idle so the engine does not stall. The course library's `MappedEngine` does; otherwise it reads the same maps.
+With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making negative torque. A real engine control unit cuts the fuel on overrun and turns it back on near idle so the engine does not stall. The course library's `MappedEngine` does; otherwise it reads the same maps.
 
-8. In `MapEngineDyno`, delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine` and name it `engine`. Rewire `pedal`, `spline` and `support` as before.
-9. `MappedEngine` has one more input, the brake booster's air flow. Add `no_booster` = `BlockComponents › Sources › Constant` with `k = 0` and wire it to `engine.mdot_bst`.
-10. Make the pedal a release: `pedal` with `offset = 1`, `height = -1`. Change the manifold's initial value to `99889.9`, the wide-open pressure. Run and plot `engine.mdot_fuel` and `engine.tau_e`.
+10. In `MapEngineDyno`, delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine` and name it `engine`. Rewire `pedal`, `no_booster`, `spline` and `support` as before.
+11. Run it as a release from wide open, and plot `engine.mdot_fuel` and `engine.tau_e`:
+
+    ```julia
+    r = MyCar.MapEngineDynoTransient(rpm = 3000, pedal_initial = 1, pedal_final = 0, p_m0 = 99889.9)
+    plot(r; idxs = [r."engine.mdot_fuel", r."engine.tau_e"], layout = (2, 1))
+    ```
 
 <!-- TODO(screenshot): step03-fuel-cut-plot.png. -->
 
@@ -422,7 +457,7 @@ With the pedal released at 3000 rpm your engine still burns 0.097 g/s while maki
 
 Before 1 s the course engine gives the same 148.4 N·m and 3.75 g/s as yours. At the release the fuel drops to **0**, and the torque to **−18.7 N·m**, the engine's measured closed-throttle (motored) torque at 3000 rpm. It would refuel below 1000 rpm; the cut only arms above 1300 rpm.
 
-`MappedEngine` also has `lambda`, `mdot_hc`, `mdot_co` and `mdot_nox` outputs. The HC, CO and NOx tables are **assumed**: their shapes follow textbook trends and their sizes are typical, not measured. Use them for trends only.
+`MappedEngine` also puts a progressive pedal curve and a 50 ms throttle actuator in front of the air path, so its pedal is not yours: it holds 90 km/h at 0.220, not 0.103. It has `lambda`, `mdot_hc`, `mdot_co` and `mdot_nox` outputs too. The HC, CO and NOx tables are **assumed**: their shapes follow textbook trends and their sizes are typical, not measured. Use them for trends only.
 
 :::
 

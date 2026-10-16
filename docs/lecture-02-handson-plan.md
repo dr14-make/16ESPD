@@ -33,15 +33,15 @@ physics the lecture states and does not teach, and 90 minutes cannot hold them. 
 | The maps (`data/engine/*.csv`) | given, read in the REPL | Derived from EPA data by a script; reading them is the skill, not making them. |
 | `Manifold` — `V_m/(R T_m)·dp_m/dt = ṁ_thr + ṁ_bst − ṁ_cyl` | **built** (paste one equation) | It is the state the whole session is about: the lag, the overrun vacuum, the booster bump. One line, five minutes. |
 | `Throttle`, `CylinderAirflow` | given, `Vehicle.Engine` | Choked-flow orifice and an `η_v` that must match the maps exactly. Re-typing coefficients teaches nothing and risks a λ that disagrees with `lambda.csv`. |
-| `MapEngine` — pedal curve, `AirPath`, torque and fuel maps, full-load cap, CO₂ = 3.09·fuel | **built** (paste, then read line by line) | The core of the lecture: speed and `p_m` in, torque and fuel out. Built small, it shows every idea in under 40 lines. |
-| `MappedEngine` — adds fuel cut, rev limiter, throttle actuator lag, λ and emission outputs | given, `Vehicle.Engine` | Hysteresis latches and five more maps are plumbing. The student meets fuel cut by swapping it onto their own bench and watching the fuel go to zero. |
+| `MapEngine` — `AirPath`, a speed sensor, `TorqueMap` (full-load cap inside), `FuelMap`, CO₂ = 3.09·fuel | **built** (drawn in the diagram: 6 given blocks, 15 wires) | The core of the lecture: speed and `p_m` in, torque and fuel out. Drawn, it is the picture of two maps hanging off the same speed and pressure wires; the only number typed is 3.09. |
+| `MappedEngine` — adds fuel cut, rev limiter, pedal curve, throttle actuator lag, λ and emission outputs | given, `Vehicle.Engine` | Hysteresis latches and five more maps are plumbing. The student meets fuel cut by swapping it onto their own bench and watching the fuel go to zero. |
 | `MappedCar` — Lecture 1's `Car` with the engine swapped and a brake added | **built** (diagram edits) | The milestone, as `Car` was in hands-on 1, and it is the student's own car. |
 | Scenario benches | **built** (sources and initial lines) | Same pattern as hands-on 1; each is a few blocks. |
 | WLTC driver and gearbox (scope B) | given, if it exists | Task 6. Not in the 90 minutes. |
 
-Student reference solutions go in a new subpackage `dyad/HandsOn02/`, as `dyad/HandsOn/` holds
-hands-on 1's. They are task 4's to write, or a follow-up to it; nothing in this task touches
-`dyad/`.
+Student reference solutions go in the subpackage `dyad/HandsOn02/`, as `dyad/HandsOn/` holds
+hands-on 1's. Step 03's `MapEngine`, `MapEngineDyno` and `MapEngineDynoTransient` are there, with
+their checkpoints in `test/engine_plausibility.jl`; the other steps' are still to write.
 
 ## Steps
 
@@ -124,34 +124,54 @@ should: the equation is `IntakeManifold`'s).
 ### Step 03 · Map engine on a dynamometer · 20 min
 
 **Goal.** An engine of your own that reads torque and fuel at (N, `p_m`), caps torque at the
-full-load curve and makes CO₂ = 3.09 × fuel; on a bench that holds 3000 rpm, a pedal tip-in
-shows the manifold lag in the torque. Then swap in the library `MappedEngine` and see fuel cut.
+full-load curve and makes CO₂ = 3.09 × fuel; on a bench that holds the speed, a small pedal step
+at the 90 km/h cruise point shows the manifold lag in the torque. Then swap in the library
+`MappedEngine` and see fuel cut.
 
-**Built / given.** Built: `MapEngine` (paste, extends `Vehicle.Engine.EngineMapData`), bench
-`MapEngineDyno`. Given: `Vehicle.Engine.AirPath`, `EngineMapData`, `MappedEngine`.
+**Built / given.** Built: `MapEngine`, drawn in the diagram; bench `MapEngineDyno`, pasted.
+Given: `Vehicle.Engine.AirPath`, `TorqueMap`, `FuelMap`, `MappedEngine`.
 
-**Actions.** Paste `MapEngine`, read it line by line; draw `MapEngineDyno`: pedal `Step` 0 → 1 at
-1 s, a `VelocitySource` holding 314.16 rad/s, mounts; run 3 s; plot `p_m`, `tau_e`,
-`mdot_fuel`. Then replace `engine` with `Vehicle.Engine.MappedEngine` (plus `Constant(0)` into
-`mdot_bst`), make the pedal step 1 → 0 and rerun.
+**Actions.** Draw `MapEngine`. Place `air` = `Engine.AirPath`, `speed` = `VelocitySensor`,
+`torque_map` = `Engine.TorqueMap`, `fuel_map` = `Engine.FuelMap`, `co2` = `Gain(k = 3.09)`,
+`torque` = `TorqueSource`; add the ports `pedal`, `mdot_bst` (inputs), `spline`, `support`,
+`p_m`, `mdot_fuel`, `mdot_co2` (outputs). Draw the 15 wires: `pedal` → `air.u_thr`;
+`mdot_bst` → `air.mdot_bst`; `speed.w` → `air.omega`, `torque_map.omega`, `fuel_map.omega`;
+`air.p_m` → `torque_map.p_m`, `fuel_map.p_m`, `p_m`; `torque_map.y` → `torque.tau`;
+`fuel_map.y` → `co2.u`, `mdot_fuel`; `co2.y` → `mdot_co2`; `torque.spline` → `spline`;
+`speed.spline` → `spline`; `torque.support` → `support`. The pedal drives the throttle directly,
+so the only lag between pedal and torque is the manifold's. Paste `MapEngineDyno` (pedal `Step`,
+`Constant(0)` → `mdot_bst`, a `VelocitySource` holding `rpm`, mounts) and its analysis. First run,
+the defaults: hold 3080 rpm at the 90 km/h pedal, step the pedal 0.1034 → 0.12 at 1 s, run 2 s,
+plot `engine.p_m` and `engine.torque_map.y`. Second run: 3000 rpm, pedal 0 → 1. Then replace
+`engine` with `Vehicle.Engine.MappedEngine` and release the pedal from wide open.
 
-**Reference model.** Existing: `Vehicle.Engine.TestMappedEngineDyno` (on
-`feat/lecture02-mapped-engine`, task 3). To build: `HandsOn02.MapEngine`,
-`HandsOn02.MapEngineDyno`, `HandsOn02.MapEngineDynoTransient`.
+**Reference model.** `HandsOn02.MapEngine`, `HandsOn02.MapEngineDyno`,
+`HandsOn02.MapEngineDynoTransient`; the "Hands-on 02 map engine" testset in
+`test/engine_plausibility.jl` checks every number below. The swap uses
+`Vehicle.Engine.TestMappedEngineDyno`'s numbers.
 
-**Checkpoint** (3000 rpm; values from the CSVs at the `TestAirPath` pressures):
+**Checkpoint** (from `HandsOn02.MapEngineDynoTransient`):
 
-- Closed pedal: `p_m` **13.5 kPa**, `tau_e` **−18.2 N·m**, fuel **0.097 g/s** — still burning.
-- Wide open: `p_m` **99.9 kPa**; map torque 163.1 N·m, capped to **148.4 N·m**; fuel
-  **3.75 g/s**, CO₂ **11.6 g/s**, λ 0.87.
-- `MappedEngine`, pedal released: fuel **0**, `tau_e` **−18.7 N·m** (`closed_throttle.csv`).
+- Run 1, 3080 rpm: before the step `p_m` **47.8 kPa**, torque **31.1 N·m**, fuel **0.85 g/s**;
+  after it **52.9 kPa**, **41.4 N·m**, **1.02 g/s**. The torque rises 10–90 % in **51 ms**; `p_m`
+  covers 63 % of its rise in 23 ms.
+- Run 2, 3000 rpm, closed: `p_m` **13.5 kPa**, torque **−18.2 N·m**, fuel **0.097 g/s** — still
+  burning. Wide open: `p_m` **99.9 kPa**; map torque 163.0 N·m, capped to **148.4 N·m**; fuel
+  **3.75 g/s**, CO₂ **11.6 g/s**. The torque rises 10–90 % in 2.3 ms: a wide-open step fills the
+  manifold almost at once and hides the lag.
+- Cruise pedals, found by bisection: **0.044 / 0.103 / 0.190** hold 18.4 / 31.1 / 51.0 N·m at
+  1710 / 3080 / 4450 rpm, with fuel 0.346 / 0.850 / 1.892 g/s as `fuel_gps.csv` reads at those
+  pressures. `MappedEngine` puts a pedal curve and a 50 ms throttle actuator in front of the
+  same air path; the curve makes its steady pedals 0.124 / 0.220 / 0.331.
+- Idle, 800 rpm, closed: `p_m` **33.0 kPa**.
+- `MappedEngine`, pedal released from wide open at 3000 rpm: fuel **0**, `tau_e` **−18.7 N·m**
+  (`closed_throttle.csv`).
 
-**TODO.** The rise time of `tau_e` after the tip-in (expect tens of ms, the 3000 rpm τ plus the
-20 ms throttle actuator in `MappedEngine`) — read off `HandsOn02.MapEngineDynoTransient`. Confirm
-the name `EngineMapData` and its parameter names once task 3 merges; `MapEngine` extends it.
+**TODO.** Rehearse the 15-wire drawing once in Dyad Studio against the 8 minutes it is given; if
+it overruns, hand out the "Stuck?" code and keep the runs.
 
-**Screenshots.** `step03-map-engine-code.png`, `step03-dyno-bench.png`,
-`step03-tip-in-plot.png`, `step03-fuel-cut-plot.png`.
+**Screenshots.** `step03-map-engine.png`, `step03-dyno-bench.png`, `step03-step-plot.png`,
+`step03-fuel-cut-plot.png`.
 
 ### Step 04 · The car with a mapped engine · 12 min
 
@@ -260,8 +280,7 @@ compare against (with its source).
 | Slot | Where | Filled by |
 |---|---|---|
 | Course-library add route and pin | step 00 | rehearsal in Studio |
-| `EngineMapData` name and fields | step 03 code | task 3 merge |
-| Tip-in rise time of `tau_e` | step 03 | `HandsOn02.MapEngineDynoTransient` |
+| Rehearsal of the 15-wire `MapEngine` drawing | step 03 | rehearsal in Studio |
 | Initial lines of the car benches | steps 04–06 | `HandsOn02.MappedCar*` |
 | Time to 100 km/h; rev-limiter sawtooth | step 04 | `HandsOn02.MappedCarWOTTransient` |
 | Pedal values for 50/90/130 km/h | steps 05–06 | task 4's cruise runs |

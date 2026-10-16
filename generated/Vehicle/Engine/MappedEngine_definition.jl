@@ -11,6 +11,8 @@ Map-based petrol engine assembled as a visible pedal-to-torque signal chain.
 
 The maps are generated from `scripts/alpha_engine_maps.jl`. Small blocks keep engineering-unit
 conversion, interpolation, actuator dynamics, and fuel-cut behavior at their natural boundaries.
+The torque comes from the same `TorqueMap` students draw in Hands-on 02; the fuel and emission
+maps are `CutMap`s, because the fuel cut has to gate them.
 
 ## Parameters:
 
@@ -163,15 +165,9 @@ conversion, interpolation, actuator dynamics, and fuel-cut behavior at their nat
   # Subcomponent cut_logic of type VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic
   cut_logic_overrides = __pop_subcomponent_overrides!(__overrides, "cut_logic")
   push!(__systems, @named cut_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic(; pedal_closed=pedal_closed, fuel_cut_rpm=fuel_cut_rpm, fuel_resume_rpm=fuel_resume_rpm, rev_cut_rpm=rev_cut_rpm, rev_resume_rpm=rev_resume_rpm, latch_time=latch_time, cut_logic_overrides...))
-  # Subcomponent torque_map of type VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap
+  # Subcomponent torque_map of type VehicleSystemsComponents.Vehicle.Engine.TorqueMap
   torque_map_overrides = __pop_subcomponent_overrides!(__overrides, "torque_map")
-  push!(__systems, @named torque_map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(; rpm_axis=rpm_axis, kpa_axis=kpa_axis, data=torque_data, torque_map_overrides...))
-  # Subcomponent full_load of type VehicleSystemsComponents.Vehicle.Engine.SpeedCurve
-  full_load_overrides = __pop_subcomponent_overrides!(__overrides, "full_load")
-  push!(__systems, @named full_load = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(; rpm_axis=full_load_rpm, data=full_load_data, full_load_overrides...))
-  # Subcomponent torque_cap of type BlockComponents.Math.Min
-  torque_cap_overrides = __pop_subcomponent_overrides!(__overrides, "torque_cap")
-  push!(__systems, @named torque_cap = BlockComponents.Math.Min(; torque_cap_overrides...))
+  push!(__systems, @named torque_map = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(; rpm_axis=rpm_axis, kpa_axis=kpa_axis, torque_data=torque_data, full_load_rpm=full_load_rpm, full_load_data=full_load_data, torque_map_overrides...))
   # Subcomponent closed_throttle of type VehicleSystemsComponents.Vehicle.Engine.SpeedCurve
   closed_throttle_overrides = __pop_subcomponent_overrides!(__overrides, "closed_throttle")
   push!(__systems, @named closed_throttle = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(; rpm_axis=closed_rpm, data=closed_data, closed_throttle_overrides...))
@@ -220,10 +216,8 @@ conversion, interpolation, actuator dynamics, and fuel-cut behavior at their nat
   push!(__eqs, connect(pedal_map.u_thr, air.u_thr))
   push!(__eqs, connect(mdot_bst, air.mdot_bst))
   push!(__eqs, connect(air.p_m, p_m, torque_map.p_m, lambda_map.p_m, fuel_map.p_m, hc_map.p_m, co_map.p_m, nox_map.p_m))
-  push!(__eqs, connect(speed.w, air.omega, cut_logic.omega, torque_map.omega, full_load.omega, closed_throttle.omega, lambda_map.omega, fuel_map.omega, hc_map.omega, co_map.omega, nox_map.omega))
-  push!(__eqs, connect(torque_map.y, torque_cap.u1))
-  push!(__eqs, connect(full_load.y, torque_cap.u2))
-  push!(__eqs, connect(torque_cap.y, torque_blend.fired))
+  push!(__eqs, connect(speed.w, air.omega, cut_logic.omega, torque_map.omega, closed_throttle.omega, lambda_map.omega, fuel_map.omega, hc_map.omega, co_map.omega, nox_map.omega))
+  push!(__eqs, connect(torque_map.y, torque_blend.fired))
   push!(__eqs, connect(closed_throttle.y, torque_blend.motored))
   push!(__eqs, connect(cut_logic.cut, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut))
   push!(__eqs, connect(torque_blend.y, tau_e, torque_source.tau))
