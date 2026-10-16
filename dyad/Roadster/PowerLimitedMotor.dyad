@@ -4,7 +4,8 @@ ceiling, and above base speed no more than its rated power allows.
 
 The torque ceiling and the power ceiling meet at base speed `P_max / T_max`. Below it the drive
 is torque-limited, above it the available torque falls as `P_max / w`. `w_eps` keeps the power
-ceiling finite at standstill.
+ceiling finite at standstill. This reduced-order source models forward traction only; it does not
+represent reverse drive or regenerative braking.
 """
 component PowerLimitedMotor
   extends RotationalComponents.Interfaces.PartialTorque
