@@ -158,8 +158,8 @@ end
         run = mapped_engine_run(MappedEngineDynoTransient; scenario = 1, rpm = rpm,
                                 pedal_cmd = 1.0, p_m0 = 95e3)
         tau = run.sol(5.0, idxs = run.model.engine.tau_e)
-        capped = run.sol(5.0, idxs = run.model.engine.torque_map.y) >=
-                 run.sol(5.0, idxs = run.model.engine.full_load.y)
+        capped = run.sol(5.0, idxs = run.model.engine.torque_map.map.y) >=
+                 run.sol(5.0, idxs = run.model.engine.torque_map.full_load.y)
         on_curve = isapprox(tau, engine_curve("full_load.csv", rpm); rtol = 0.01)
         push!(wot_torques, tau)
         if rpm == 6000
@@ -190,14 +190,14 @@ end
     @test overrun.sol(5.0, idxs = overrun.model.engine.mdot_co) < 1e-10
     @test overrun.sol(5.0, idxs = overrun.model.engine.mdot_nox) < 1e-10
 
-    # Speed ramp 3000 -> 800 rpm over 1-4 s. The cut latch starts fueled, so skip its first 0.5 s.
+    # Speed ramp 3000 -> 800 rpm over 1-4 s. The run starts closed above 1300 rpm, where the latch
+    # initializes cut, so the fuel is zero from the first sample.
     ramp = mapped_engine_run(MappedEngineDynoTransient; scenario = 3, rpm = 3000,
                              pedal_cmd = 0.0, p_m0 = 13482.4)
     t, rpm_ramp = ramp.sol.t, ramp.sol[ramp.model.engine.N]
     fuel_ramp, tau_ramp = ramp.sol[ramp.model.engine.mdot_fuel], ramp.sol[ramp.model.engine.tau_e]
-    latched = t .>= 0.5
-    @test all(fuel_ramp[latched .& (rpm_ramp .> 1300)] .< 1e-10)
-    resume = findfirst(k -> latched[k] && fuel_ramp[k] > 1e-7, eachindex(t))
+    @test all(fuel_ramp[rpm_ramp .> 1300] .< 1e-10)
+    resume = findfirst(>(1e-7), fuel_ramp)
     @test resume !== nothing && rpm_ramp[resume] < 1000
     @test fuel_ramp[end] > 1e-5
     @test maximum(tau_ramp[resume:end]) <= tau_ramp[end] + 0.5

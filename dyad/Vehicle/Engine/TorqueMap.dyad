@@ -1,0 +1,71 @@
+"""
+Engine brake torque read at speed and manifold pressure, capped at the full-load curve.
+
+The torque map runs to pressures the air path never reaches at full load, and its last columns
+are extrapolated past what ALPHA measured, so the map alone overshoots wide open by up to 10 %.
+The full-load curve holds what the engine really delivers at each speed, and the output never
+exceeds it. The tables default to the EPA ALPHA data in `EngineMapData`.
+"""
+component TorqueMap
+  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
+  "Engine angular speed [rad/s]"
+  omega = RealInput() {^omega}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealInput() {^p_m}
+  "Brake torque [N.m]"
+  y = RealOutput() {^y}
+  full_load = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(rpm_axis = full_load_rpm, data = full_load_data) {^full_load}
+  map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = torque_data) {^map}
+  cap = BlockComponents.Math.Min() {^cap}
+relations
+  connect(omega, full_load.omega, map.omega) {^speed_wire}
+  connect(p_m, map.p_m) {^pressure_wire}
+  connect(full_load.y, cap.u1) {^full_load_wire}
+  connect(map.y, cap.u2) {^map_wire}
+  connect(cap.y, y) {^torque_wire}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/TorqueMap.svg"}, "doc": {"behavior": false}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "full_load": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
+    "map": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 450, "x2": 350, "y2": 550}}}},
+    "cap": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 300, "x2": 650, "y2": 400}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 150, "y": 200}], "E": 2}, {"S": -1, "M": [{"x": 150, "y": 480}], "E": 3}], "junctions": [{"x": 150, "y": 300}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 700}, {"x": 200, "y": 520}], "E": 2}]}},
+    "full_load_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 200}, {"x": 450, "y": 320}], "E": 2}]}},
+    "map_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 500}, {"x": 480, "y": 380}], "E": 2}]}},
+    "torque_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 350}, {"x": 800, "y": 500}], "E": 2}]}}
+  }
+}
+end
+
+test component TestTorqueMap
+  omega_part = BlockComponents.Sources.Constant(k = 3000 * pi / 30) {^omega_part}
+  pressure_part = BlockComponents.Sources.Constant(k = 50000.0) {^pressure_part}
+  omega_capped = BlockComponents.Sources.Constant(k = 3000 * pi / 30) {^omega_capped}
+  pressure_capped = BlockComponents.Sources.Constant(k = 100000.0) {^pressure_capped}
+  part = VehicleSystemsComponents.Vehicle.Engine.TorqueMap() {^part}
+  capped = VehicleSystemsComponents.Vehicle.Engine.TorqueMap() {^capped}
+relations
+  connect(omega_part.y, part.omega) {^part_speed_wire}
+  connect(pressure_part.y, part.p_m) {^part_pressure_wire}
+  connect(omega_capped.y, capped.omega) {^capped_speed_wire}
+  connect(pressure_capped.y, capped.p_m) {^capped_pressure_wire}
+metadata {
+  "Dyad": {"tests": {"part_load_and_cap": {"stop": 0.1, "atol": {"part.y": 1e-6, "capped.y": 1e-6}, "expect": {"initial": {"part.y": 35.6319, "capped.y": 148.383425}, "final": {"part.y": 35.6319, "capped.y": 148.383425}, "signals": ["part.y", "capped.y"]}}}},
+  "_links": {
+    "omega_part": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "pressure_part": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "omega_capped": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 550, "x2": 200, "y2": 650}}}},
+    "pressure_capped": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 700, "x2": 200, "y2": 800}}}},
+    "part": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 170, "x2": 550, "y2": 270}}}},
+    "capped": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 570, "x2": 550, "y2": 670}}}},
+    "part_speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "part_pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 350}, {"x": 350, "y": 240}], "E": 2}]}},
+    "capped_speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "capped_pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 750}, {"x": 350, "y": 640}], "E": 2}]}}
+  }
+}
+end
