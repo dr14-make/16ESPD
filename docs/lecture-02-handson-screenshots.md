@@ -42,9 +42,9 @@ signal per axis unless the row says otherwise.
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step03-map-engine-code.png` | `HandsOn02.MapEngine`, code view | The `extends … EngineMapData` line, `air`, the three tables, and the relations from `air.u_thr` to `mdot_co2`. The table lines may be cut at the right edge. |
-| `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | `pedal` step → `engine`, `speed` → `dyno`, `engine.spline` → `dyno`, both supports to `mounts`. |
-| `step03-tip-in-plot.png` | `HandsOn02.MapEngineDynoTransient` | Two axes, one time base: `engine.p_m` 13.5 → 99.9 kPa and `engine.tau_e` −18.2 → 148.4 N·m, zoomed to 0.9–1.3 s so the lag shows. |
+| `step03-map-engine.png` | `HandsOn02.MapEngine` | The diagram students draw: ports `pedal` and `mdot_bst` on the left; `air`, `speed`, `torque_map` above `fuel_map`, `torque`, `co2`; the speed wires from `speed.w` and the pressure wires from `air.p_m` fanning out to both maps; `spline`, `support`, `mdot_fuel`, `mdot_co2`, `p_m` on the right edge. |
+| `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | `pedal` step and `no_booster` → `engine`, `speed` → `dyno`, `engine.spline` → `dyno`, both supports to `mounts`. |
+| `step03-step-plot.png` | `HandsOn02.MapEngineDynoTransient`, defaults | Two axes, one time base: `engine.p_m` 47.8 → 52.9 kPa and `engine.torque_map.y` 31.1 → 41.4 N·m, zoomed to 0.9–1.3 s so the 50 ms lag shows. |
 | `step03-fuel-cut-plot.png` | `HandsOn02.MapEngineDynoTransient` with `MappedEngine` swapped in, pedal 1 → 0 | `engine.mdot_fuel` stepping to zero and `engine.tau_e` to −18.7 N·m at the release. |
 
 ## Step 04 — the car with a mapped engine
@@ -79,9 +79,9 @@ To be listed with task 6.
 | `step02-manifold-code.png` | `HandsOn02.Manifold` | — |
 | `step02-airpath-bench.png` | `HandsOn02.AirPathStep` | — |
 | `step02-idle-plot.png` | — | `HandsOn02.AirPathStepTransient` |
-| `step03-map-engine-code.png` | `HandsOn02.MapEngine` | — |
+| `step03-map-engine.png` | `HandsOn02.MapEngine` | — |
 | `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | — |
-| `step03-tip-in-plot.png` | — | `HandsOn02.MapEngineDynoTransient` |
+| `step03-step-plot.png` | — | `HandsOn02.MapEngineDynoTransient` |
 | `step03-fuel-cut-plot.png` | — | `HandsOn02.MappedEngineDynoTransient` |
 | `step04-mapped-car.png` | `HandsOn02.MappedCar` | — |
 | `step04-wot-plot.png` | — | `HandsOn02.MappedCarWOTTransient` |
