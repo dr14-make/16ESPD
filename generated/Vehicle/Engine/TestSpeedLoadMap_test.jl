@@ -18,12 +18,12 @@ __dyad_run_test_case!(
   params=(;),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
-    (m -> m.node.y, "node.y", 0.004, 1e-12, 1e-5),
-    (m -> m.clamped.y, "clamped.y", 0.002, 1e-12, 1e-5),
+    (m -> m.node.y, "node.y", 0.000570253851, 1e-12, 1e-5),
+    (m -> m.clamped.y, "clamped.y", 0.000540584116, 1e-12, 1e-5),
   ],
   expected_final=Tuple[
-    (m -> m.node.y, "node.y", 0.004, 1e-12, 1e-5),
-    (m -> m.clamped.y, "clamped.y", 0.002, 1e-12, 1e-5),
+    (m -> m.node.y, "node.y", 0.000570253851, 1e-12, 1e-5),
+    (m -> m.clamped.y, "clamped.y", 0.000540584116, 1e-12, 1e-5),
   ],
   signals=Tuple[
     (m -> m.node.y, "node.y", 1e-12, 1e-5),

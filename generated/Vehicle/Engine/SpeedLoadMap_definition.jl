@@ -92,8 +92,8 @@ boundary so the interpolator is never asked to extrapolate.
   __assertions = []
 
   ### Equations
-  push!(__eqs, table.u1 ~ min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis))
-  push!(__eqs, table.u2 ~ min(max(p_m / 1000, kpa_axis[1]), kpa_axis))
+  push!(__eqs, table.u1 ~ min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis[length(rpm_axis)]))
+  push!(__eqs, table.u2 ~ min(max(p_m / 1000, kpa_axis[1]), kpa_axis[length(kpa_axis)]))
   push!(__eqs, y ~ gain * table.y)
 
   # Return completely constructed System

@@ -20,15 +20,40 @@ __dyad_run_test_case!(
   expected_initial=Tuple[
     (m -> m.decel_logic.cut, "decel_logic.cut", 1, 0.00001, 1e-5),
     (m -> m.rev_logic.cut, "rev_logic.cut", 1, 0.00001, 1e-5),
+    (m -> m.decel_logic.rev.y, "decel_logic.rev.y", 0, 0.00001, 1e-5),
   ],
   expected_final=Tuple[
     (m -> m.decel_logic.cut, "decel_logic.cut", 1, 0.00001, 1e-5),
     (m -> m.rev_logic.cut, "rev_logic.cut", 1, 0.00001, 1e-5),
+    (m -> m.decel_logic.rev.y, "decel_logic.rev.y", 0, 0.00001, 1e-5),
   ],
   signals=Tuple[
     (m -> m.decel_logic.decel.y, "decel_logic.decel.y", 1e-5, 1e-5),
-    (m -> m.decel_logic.rev.y, "decel_logic.rev.y", 1e-5, 1e-5),
-    (m -> m.rev_logic.decel.y, "rev_logic.decel.y", 1e-5, 1e-5),
+    (m -> m.decel_logic.rev.y, "decel_logic.rev.y", 0.00001, 1e-5),
+    (m -> m.rev_logic.decel.y, "rev_logic.decel.y", 0.00001, 1e-5),
     (m -> m.rev_logic.rev.y, "rev_logic.rev.y", 1e-5, 1e-5),
   ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Vehicle.Engine.TestFuelCutLogic,
+  "fired for VehicleSystemsComponents.Vehicle.Engine.TestFuelCutLogic";
+  case_name="fired",
+  component_stem="TestFuelCutLogic",
+  module_path=String["Vehicle", "Engine"],
+  start=0e+0,
+  stop=1e-1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(; pedal__k=0.3),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[
+    (m -> m.decel_logic.cut, "decel_logic.cut", 0, 0.00001, 1e-5),
+    (m -> m.rev_logic.cut, "rev_logic.cut", 1, 0.00001, 1e-5),
+  ],
+  expected_final=Tuple[
+    (m -> m.decel_logic.cut, "decel_logic.cut", 0, 0.00001, 1e-5),
+    (m -> m.rev_logic.cut, "rev_logic.cut", 1, 0.00001, 1e-5),
+  ],
+  signals=Tuple[],
 )

@@ -21,3 +21,20 @@ __dyad_run_test_case!(
   expected_final=Tuple[(m -> m.map.y, "map.y", 0, 1e-12, 1e-5)],
   signals=Tuple[(m -> m.map.y, "map.y", 1e-12, 1e-5)],
 )
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Vehicle.Engine.TestCutMap,
+  "fired for VehicleSystemsComponents.Vehicle.Engine.TestCutMap";
+  case_name="fired",
+  component_stem="TestCutMap",
+  module_path=String["Vehicle", "Engine"],
+  start=0e+0,
+  stop=1e-1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(; cut__k=0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.map.y, "map.y", 0.004, 1e-12, 1e-5)],
+  expected_final=Tuple[(m -> m.map.y, "map.y", 0.004, 1e-12, 1e-5)],
+  signals=Tuple[],
+)

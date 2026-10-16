@@ -21,3 +21,20 @@ __dyad_run_test_case!(
   expected_final=Tuple[(m -> m.curve.y, "curve.y", 15, 1e-12, 1e-5)],
   signals=Tuple[(m -> m.curve.y, "curve.y", 1e-12, 1e-5)],
 )
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Vehicle.Engine.TestSpeedCurve,
+  "clamp for VehicleSystemsComponents.Vehicle.Engine.TestSpeedCurve";
+  case_name="clamp",
+  component_stem="TestSpeedCurve",
+  module_path=String["Vehicle", "Engine"],
+  start=0e+0,
+  stop=1e-1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(; omega__k=0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.curve.y, "curve.y", 10, 1e-12, 1e-5)],
+  expected_final=Tuple[(m -> m.curve.y, "curve.y", 10, 1e-12, 1e-5)],
+  signals=Tuple[],
+)

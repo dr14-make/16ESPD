@@ -82,7 +82,7 @@ One-dimensional engine-speed curve backed by the standard two-dimensional table.
   __assertions = []
 
   ### Equations
-  push!(__eqs, table.u1 ~ min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis))
+  push!(__eqs, table.u1 ~ min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis[length(rpm_axis)]))
   push!(__eqs, table.u2 ~ 0.0)
   push!(__eqs, connect(table.y, y))
 

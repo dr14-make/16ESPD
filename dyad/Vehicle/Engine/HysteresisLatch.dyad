@@ -29,15 +29,20 @@ metadata {
 end
 
 test component TestHysteresisLatch
-  set_signal = RealOutput()
-  reset_signal = RealOutput()
-  latch = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = 0.01)
+  set_pulse = BlockComponents.Sources.Pulse(amplitude = 1.0, duty_cycle = 0.5, period = 0.1, start_time = 0.05) {^set_pulse}
+  reset_step = BlockComponents.Sources.Step(height = 1.0, start_time = 0.2) {^reset_step}
+  latch = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(latch_time = 0.01) {^latch}
 relations
-  set_signal = ifelse(time < 0.05, 1.0, 0.0)
-  reset_signal = ifelse(time > 0.15, 1.0, 0.0)
-  connect(set_signal, latch.set)
-  connect(reset_signal, latch.reset)
+  connect(set_pulse.y, latch.set) {^set_wire}
+  connect(reset_step.y, latch.reset) {^reset_wire}
 metadata {
-  "Dyad": {"tests": {"set_hold_reset": {"stop": 0.3, "atol": {"latch.y": 1e-5}, "expect": {"initial": {"latch.y": 1.0}, "final": {"latch.y": 0.0}, "signals": ["latch.y", "latch.request"]}}}}
+  "Dyad": {"tests": {"set_and_hold": {"stop": 0.19, "atol": {"latch.y": 1e-4}, "expect": {"initial": {"latch.y": 0.0}, "final": {"latch.y": 1.0}, "signals": ["latch.y"]}}, "reset": {"stop": 0.4, "atol": {"latch.y": 1e-4}, "expect": {"initial": {"latch.y": 0.0}, "final": {"latch.y": 0.0}, "signals": ["latch.y"]}}, "start_latched": {"stop": 0.04, "params": {"set_pulse.start_time": -0.01}, "atol": {"latch.y": 1e-6}, "expect": {"initial": {"latch.y": 1.0}, "final": {"latch.y": 1.0}}}}},
+  "_links": {
+    "set_pulse": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 250, "x2": 200, "y2": 350}}}},
+    "reset_step": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 650, "x2": 200, "y2": 750}}}},
+    "latch": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}},
+    "set_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 330, "y": 300}, {"x": 330, "y": 480}], "E": 2}]}},
+    "reset_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 330, "y": 700}, {"x": 330, "y": 520}], "E": 2}]}}
+  }
 }
 end

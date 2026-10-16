@@ -6,11 +6,6 @@
 
 @doc Markdown.doc"""
    TestHysteresisLatch(; name)
-
-## Connectors
-
- * `set_signal` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
- * `reset_signal` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
 @component function TestHysteresisLatch(; name = nothing, kwargs...)
   isnothing(name) && throw(ArgumentError("""
@@ -47,8 +42,6 @@
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (set_signal(t)::Real), [output = true])
-  append!(__vars, @variables (reset_signal(t)::Real), [output = true])
 
   ### Variables (declarations)
 
@@ -58,6 +51,12 @@
   __constants = Any[]
 
   ### Components
+  # Subcomponent set_pulse of type BlockComponents.Sources.Pulse
+  set_pulse_overrides = __pop_subcomponent_overrides!(__overrides, "set_pulse")
+  push!(__systems, @named set_pulse = BlockComponents.Sources.Pulse(; amplitude=Float64(1.0), duty_cycle=0.5, period=0.1, start_time=0.05, set_pulse_overrides...))
+  # Subcomponent reset_step of type BlockComponents.Sources.Step
+  reset_step_overrides = __pop_subcomponent_overrides!(__overrides, "reset_step")
+  push!(__systems, @named reset_step = BlockComponents.Sources.Step(; height=Float64(1.0), start_time=0.2, reset_step_overrides...))
   # Subcomponent latch of type VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch
   latch_overrides = __pop_subcomponent_overrides!(__overrides, "latch")
   push!(__systems, @named latch = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(; latch_time=0.01, latch_overrides...))
@@ -73,10 +72,8 @@
   __assertions = []
 
   ### Equations
-  push!(__eqs, set_signal ~ ifelse(t < 0.05, 1.0, 0.0))
-  push!(__eqs, reset_signal ~ ifelse(t > 0.15, 1.0, 0.0))
-  push!(__eqs, connect(set_signal, latch.set))
-  push!(__eqs, connect(reset_signal, latch.reset))
+  push!(__eqs, connect(set_pulse.y, latch.set))
+  push!(__eqs, connect(reset_step.y, latch.reset))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

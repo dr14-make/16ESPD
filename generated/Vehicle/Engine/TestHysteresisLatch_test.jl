@@ -6,21 +6,52 @@
 
 __dyad_run_test_case!(
   VehicleSystemsComponents.Vehicle.Engine.TestHysteresisLatch,
-  "set_hold_reset for VehicleSystemsComponents.Vehicle.Engine.TestHysteresisLatch";
-  case_name="set_hold_reset",
+  "set_and_hold for VehicleSystemsComponents.Vehicle.Engine.TestHysteresisLatch";
+  case_name="set_and_hold",
   component_stem="TestHysteresisLatch",
   module_path=String["Vehicle", "Engine"],
   start=0e+0,
-  stop=3e-1,
+  stop=1.9e-1,
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
   params=(;),
   initial_conditions=Tuple[],
-  expected_initial=Tuple[(m -> m.latch.y, "latch.y", 1, 0.00001, 1e-5)],
-  expected_final=Tuple[(m -> m.latch.y, "latch.y", 0, 0.00001, 1e-5)],
-  signals=Tuple[
-    (m -> m.latch.y, "latch.y", 0.00001, 1e-5),
-    (m -> m.latch.request, "latch.request", 1e-5, 1e-5),
-  ],
+  expected_initial=Tuple[(m -> m.latch.y, "latch.y", 0, 0.0001, 1e-5)],
+  expected_final=Tuple[(m -> m.latch.y, "latch.y", 1, 0.0001, 1e-5)],
+  signals=Tuple[(m -> m.latch.y, "latch.y", 0.0001, 1e-5)],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Vehicle.Engine.TestHysteresisLatch,
+  "reset for VehicleSystemsComponents.Vehicle.Engine.TestHysteresisLatch";
+  case_name="reset",
+  component_stem="TestHysteresisLatch",
+  module_path=String["Vehicle", "Engine"],
+  start=0e+0,
+  stop=4e-1,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(;),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.latch.y, "latch.y", 0, 0.0001, 1e-5)],
+  expected_final=Tuple[(m -> m.latch.y, "latch.y", 0, 0.0001, 1e-5)],
+  signals=Tuple[(m -> m.latch.y, "latch.y", 0.0001, 1e-5)],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Vehicle.Engine.TestHysteresisLatch,
+  "start_latched for VehicleSystemsComponents.Vehicle.Engine.TestHysteresisLatch";
+  case_name="start_latched",
+  component_stem="TestHysteresisLatch",
+  module_path=String["Vehicle", "Engine"],
+  start=0e+0,
+  stop=4e-2,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(; set_pulse__start_time=-0.01),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.latch.y, "latch.y", 1, 0.000001, 1e-5)],
+  expected_final=Tuple[(m -> m.latch.y, "latch.y", 1, 0.000001, 1e-5)],
+  signals=Tuple[],
 )

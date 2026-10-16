@@ -8,7 +8,7 @@ component SpeedCurve
   structural parameter data::Real[:, :]
   table = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = [0, 1], data = data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^table}
 relations
-  table.u1 = min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis[end])
+  table.u1 = min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis[length(rpm_axis)])
   table.u2 = 0.0
   connect(table.y, y)
 metadata {
@@ -22,11 +22,16 @@ metadata {
 end
 
 test component TestSpeedCurve
-  omega = BlockComponents.Sources.Constant(k = 1500 * pi / 30)
-  curve = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(rpm_axis = [1000, 2000], data = [[10, 10], [20, 20]])
+  omega = BlockComponents.Sources.Constant(k = 1500 * pi / 30) {^omega}
+  curve = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(rpm_axis = [1000, 2000], data = [[10, 10], [20, 20]]) {^curve}
 relations
-  connect(omega.y, curve.omega)
+  connect(omega.y, curve.omega) {^speed_wire}
 metadata {
-  "Dyad": {"tests": {"interpolate": {"stop": 0.1, "atol": {"curve.y": 1e-12}, "expect": {"initial": {"curve.y": 15.0}, "final": {"curve.y": 15.0}, "signals": ["curve.y"]}}}}
+  "Dyad": {"tests": {"interpolate": {"stop": 0.1, "atol": {"curve.y": 1e-12}, "expect": {"initial": {"curve.y": 15.0}, "final": {"curve.y": 15.0}, "signals": ["curve.y"]}}, "clamp": {"stop": 0.1, "params": {"omega.k": 0.0}, "atol": {"curve.y": 1e-12}, "expect": {"initial": {"curve.y": 10.0}, "final": {"curve.y": 10.0}}}}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 400, "x2": 200, "y2": 500}}}},
+    "curve": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
 }
 end

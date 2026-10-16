@@ -18,8 +18,8 @@ component SpeedLoadMap
   parameter gain::Real = 1.0
   table = BlockComponents.Tables.InterpolatedTable(axis1 = rpm_axis, axis2 = kpa_axis, data = data, interpolation_dim1 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2 = BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension()) {^table}
 relations
-  table.u1 = min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis[end])
-  table.u2 = min(max(p_m / 1000, kpa_axis[1]), kpa_axis[end])
+  table.u1 = min(max(omega * 30 / pi, rpm_axis[1]), rpm_axis[length(rpm_axis)])
+  table.u2 = min(max(p_m / 1000, kpa_axis[1]), kpa_axis[length(kpa_axis)])
   y = gain * table.y
 metadata {
   "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "ω,p → map", "x": 500, "y": 300, "rot": 0}], "doc": {"behavior": false}},
@@ -33,19 +33,32 @@ metadata {
 end
 
 test component TestSpeedLoadMap
-  omega_node = BlockComponents.Sources.Constant(k = 2000 * pi / 30)
-  pressure_node = BlockComponents.Sources.Constant(k = 20000.0)
-  omega_clamped = BlockComponents.Sources.Constant(k = 0.0)
-  pressure_clamped = BlockComponents.Sources.Constant(k = 30000.0)
-  node = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = [1000, 2000], kpa_axis = [10, 20], data = [[1, 2], [3, 4]], gain = 1e-3)
-  clamped = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = [1000, 2000], kpa_axis = [10, 20], data = [[1, 2], [3, 4]], gain = 1e-3)
+  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
+  omega_node = BlockComponents.Sources.Constant(k = 2000 * pi / 30) {^omega_node}
+  pressure_node = BlockComponents.Sources.Constant(k = 50000.0) {^pressure_node}
+  omega_clamped = BlockComponents.Sources.Constant(k = 0.0) {^omega_clamped}
+  pressure_clamped = BlockComponents.Sources.Constant(k = 150000.0) {^pressure_clamped}
+  node = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = fuel_data, gain = 1e-3) {^node}
+  clamped = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = fuel_data, gain = 1e-3) {^clamped}
 relations
-  connect(omega_node.y, node.omega)
-  connect(pressure_node.y, node.p_m)
-  connect(omega_clamped.y, clamped.omega)
-  connect(pressure_clamped.y, clamped.p_m)
+  connect(omega_node.y, node.omega) {^node_speed_wire}
+  connect(pressure_node.y, node.p_m) {^node_pressure_wire}
+  connect(omega_clamped.y, clamped.omega) {^clamped_speed_wire}
+  connect(pressure_clamped.y, clamped.p_m) {^clamped_pressure_wire}
 metadata {
-  "Dyad": {"tests": {"node_and_clamp": {"stop": 0.1, "atol": {"node.y": 1e-12, "clamped.y": 1e-12}, "expect": {"initial": {"node.y": 0.004, "clamped.y": 0.002}, "final": {"node.y": 0.004, "clamped.y": 0.002}, "signals": ["node.y", "clamped.y"]}}}}
+  "Dyad": {"tests": {"node_and_clamp": {"stop": 0.1, "atol": {"node.y": 1e-12, "clamped.y": 1e-12}, "expect": {"initial": {"node.y": 5.70253851e-4, "clamped.y": 5.40584116e-4}, "final": {"node.y": 5.70253851e-4, "clamped.y": 5.40584116e-4}, "signals": ["node.y", "clamped.y"]}}}},
+  "_links": {
+    "omega_node": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "pressure_node": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "omega_clamped": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 550, "x2": 200, "y2": 650}}}},
+    "pressure_clamped": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 700, "x2": 200, "y2": 800}}}},
+    "node": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 170, "x2": 550, "y2": 270}}}},
+    "clamped": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 570, "x2": 550, "y2": 670}}}},
+    "node_speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "node_pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 350}, {"x": 350, "y": 240}], "E": 2}]}},
+    "clamped_speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "clamped_pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 750}, {"x": 350, "y": 640}], "E": 2}]}}
+  }
 }
 end
 
@@ -65,8 +78,8 @@ component CutMap
   parameter gain::Real = 1.0
   map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = data, gain = gain) {^map}
 relations
-  connect(omega, map.omega)
-  connect(p_m, map.p_m)
+  connect(omega, map.omega) {^omega_wire}
+  connect(p_m, map.p_m) {^pressure_wire}
   y = (1 - cut) * map.y
 metadata {
   "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "cut map", "x": 500, "y": 300, "rot": 0}], "doc": {"behavior": false}},
@@ -75,21 +88,32 @@ metadata {
     "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "cut": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}}}},
     "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}}
+    "map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}},
+    "omega_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 250}, {"x": 300, "y": 480}], "E": 2}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 500}, {"x": 350, "y": 520}], "E": 2}]}}
   }
 }
 end
 
 test component TestCutMap
-  omega = BlockComponents.Sources.Constant(k = 2000 * pi / 30)
-  pressure = BlockComponents.Sources.Constant(k = 20000.0)
-  cut = BlockComponents.Sources.Constant(k = 1.0)
-  map = VehicleSystemsComponents.Vehicle.Engine.CutMap(rpm_axis = [1000, 2000], kpa_axis = [10, 20], data = [[1, 2], [3, 4]], gain = 1e-3)
+  omega = BlockComponents.Sources.Constant(k = 2000 * pi / 30) {^omega}
+  pressure = BlockComponents.Sources.Constant(k = 20000.0) {^pressure}
+  cut = BlockComponents.Sources.Constant(k = 1.0) {^cut}
+  map = VehicleSystemsComponents.Vehicle.Engine.CutMap(rpm_axis = [1000, 2000], kpa_axis = [10, 20], data = [[1, 2], [3, 4]], gain = 1e-3) {^map}
 relations
-  connect(omega.y, map.omega)
-  connect(pressure.y, map.p_m)
-  connect(cut.y, map.cut)
+  connect(omega.y, map.omega) {^speed_wire}
+  connect(pressure.y, map.p_m) {^pressure_wire}
+  connect(cut.y, map.cut) {^cut_wire}
 metadata {
-  "Dyad": {"tests": {"cut": {"stop": 0.1, "atol": {"map.y": 1e-12}, "expect": {"initial": {"map.y": 0.0}, "final": {"map.y": 0.0}, "signals": ["map.y"]}}}}
+  "Dyad": {"tests": {"cut": {"stop": 0.1, "atol": {"map.y": 1e-12}, "expect": {"initial": {"map.y": 0.0}, "final": {"map.y": 0.0}, "signals": ["map.y"]}}, "fired": {"stop": 0.1, "params": {"cut.k": 0.0}, "atol": {"map.y": 1e-12}, "expect": {"initial": {"map.y": 0.004}, "final": {"map.y": 0.004}}}}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 350, "x2": 200, "y2": 450}}}},
+    "cut": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 550, "x2": 200, "y2": 650}}}},
+    "map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 350, "x2": 550, "y2": 450}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 330, "y": 200}, {"x": 330, "y": 375}], "E": 2}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 330, "y": 600}, {"x": 330, "y": 425}], "E": 2}]}}
+  }
 }
 end

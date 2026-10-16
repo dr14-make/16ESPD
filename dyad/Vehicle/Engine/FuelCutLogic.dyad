@@ -39,16 +39,26 @@ metadata {
 end
 
 test component TestFuelCutLogic
-  pedal = BlockComponents.Sources.Constant(k = 0.0)
-  overrun_speed = BlockComponents.Sources.Constant(k = 3000 * pi / 30)
-  rev_speed = BlockComponents.Sources.Constant(k = 6600 * pi / 30)
-  decel_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic()
-  rev_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic()
+  pedal = BlockComponents.Sources.Constant(k = 0.0) {^pedal}
+  overrun_speed = BlockComponents.Sources.Constant(k = 3000 * pi / 30) {^overrun_speed}
+  rev_speed = BlockComponents.Sources.Constant(k = 6600 * pi / 30) {^rev_speed}
+  decel_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic() {^decel_logic}
+  rev_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic() {^rev_logic}
 relations
-  connect(pedal.y, decel_logic.pedal, rev_logic.pedal)
-  connect(overrun_speed.y, decel_logic.omega)
-  connect(rev_speed.y, rev_logic.omega)
+  connect(pedal.y, decel_logic.pedal, rev_logic.pedal) {^pedal_wire}
+  connect(overrun_speed.y, decel_logic.omega) {^overrun_wire}
+  connect(rev_speed.y, rev_logic.omega) {^rev_wire}
 metadata {
-  "Dyad": {"tests": {"both_latches": {"stop": 0.1, "atol": {"decel_logic.cut": 1e-5, "rev_logic.cut": 1e-5}, "expect": {"initial": {"decel_logic.cut": 1.0, "rev_logic.cut": 1.0}, "final": {"decel_logic.cut": 1.0, "rev_logic.cut": 1.0}, "signals": ["decel_logic.decel.y", "decel_logic.rev.y", "rev_logic.decel.y", "rev_logic.rev.y"]}}}}
+  "Dyad": {"tests": {"both_latches": {"stop": 0.1, "atol": {"decel_logic.cut": 1e-5, "rev_logic.cut": 1e-5, "decel_logic.rev.y": 1e-5, "rev_logic.decel.y": 1e-5}, "expect": {"initial": {"decel_logic.cut": 1.0, "rev_logic.cut": 1.0, "decel_logic.rev.y": 0.0}, "final": {"decel_logic.cut": 1.0, "rev_logic.cut": 1.0, "decel_logic.rev.y": 0.0}, "signals": ["decel_logic.decel.y", "decel_logic.rev.y", "rev_logic.decel.y", "rev_logic.rev.y"]}}, "fired": {"stop": 0.1, "params": {"pedal.k": 0.3}, "atol": {"decel_logic.cut": 1e-5, "rev_logic.cut": 1e-5}, "expect": {"initial": {"decel_logic.cut": 0.0, "rev_logic.cut": 1.0}, "final": {"decel_logic.cut": 0.0, "rev_logic.cut": 1.0}}}}},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 400, "x2": 200, "y2": 500}}}},
+    "overrun_speed": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 220, "x2": 200, "y2": 320}}}},
+    "rev_speed": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 670, "x2": 200, "y2": 770}}}},
+    "decel_logic": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 200, "x2": 600, "y2": 300}}}},
+    "rev_logic": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 650, "x2": 600, "y2": 750}}}},
+    "pedal_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 350, "y": 230}], "E": 2}, {"S": -1, "M": [{"x": 350, "y": 680}], "E": 3}], "junctions": [{"x": 350, "y": 450}]}},
+    "overrun_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "rev_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
 }
 end
