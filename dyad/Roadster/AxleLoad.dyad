@@ -1,0 +1,55 @@
+"""
+Normal load on the driven axle during straight-line acceleration.
+
+The driven axle carries `share` of the weight and of the downforce at rest. Acceleration
+`a` moves `m * a * h / L` onto the rear axle, which is the term that limits a rear-wheel-drive
+launch. All-wheel drive is `share = 1` with `h_over_L = 0`: weight transfer only moves load
+between driven wheels.
+
+The transfer follows the acceleration through a first-order lag of `T_pitch`, the time the
+suspension takes to pitch the body. The lag also keeps the solver from solving the load equation
+for the acceleration, which would divide by `h_over_L`.
+"""
+component AxleLoad
+  "Connection to the vehicle body, used to measure its acceleration"
+  flange = Flange() {^flange}
+  "Downforce, as a force pushing the car onto the road"
+  downforce = RealInput() {^downforce}
+  "Normal load on the driven axle"
+  F_z = RealOutput() {^F_z}
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 2000
+  "Static fraction of weight and downforce on the driven axle"
+  parameter share::Real = 0.55
+  "Center-of-mass height over wheelbase"
+  parameter h_over_L::Real = 0.17
+  "Time constant of the body pitching onto the rear suspension"
+  parameter T_pitch::Time = 0.1
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Vehicle speed"
+  variable v::Velocity
+  "Vehicle acceleration"
+  variable a::Acceleration
+  "Acceleration seen by the suspension"
+  variable a_pitch::Acceleration
+relations
+  v = der(flange.s)
+  a = der(v)
+  flange.f = 0
+  T_pitch * der(a_pitch) = a - a_pitch
+  F_z = share * (m * g + downforce) + m * a_pitch * h_over_L
+metadata {
+  "_links": {
+    "flange": {
+      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    },
+    "downforce": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": -50, "y2": 50}}}
+    },
+    "F_z": {
+      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end
