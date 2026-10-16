@@ -10,11 +10,11 @@ component PowerLimitedMotor
   extends RotationalComponents.Interfaces.PartialTorque
   "Requested wheel torque"
   tau_cmd = RealInput() {^tau_cmd}
-  "Peak wheel torque"
+  "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"
   parameter T_max::Torque = 12000
-  "Rated power"
+  "Rated power; press reports describe the drive as over 1 MW"
   parameter P_max::Power = 1.0e6
-  "Speed floor for the power ceiling"
+  "Speed floor for the power ceiling; numerical regularization"
   parameter w_eps::AngularVelocity = 1.0
   "Wheel speed"
   variable w::AngularVelocity

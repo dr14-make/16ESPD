@@ -17,15 +17,15 @@ component AxleLoad
   downforce = RealInput() {^downforce}
   "Normal load on the driven axle"
   F_z = RealOutput() {^F_z}
-  "Vehicle mass"
+  "Vehicle mass; assumed because Tesla has not disclosed it"
   parameter m::Dyad.Mass = 2000
-  "Static fraction of weight and downforce on the driven axle"
+  "Static fraction of weight and downforce on the driven axle; assumed"
   parameter share::Real = 0.55
-  "Center-of-mass height over wheelbase"
+  "Center-of-mass height over wheelbase; assumed"
   parameter h_over_L::Real = 0.17
-  "Time constant of the body pitching onto the rear suspension"
+  "Reduced-order suspension pitch time constant; assumed"
   parameter T_pitch::Time = 0.1
-  "Gravitational acceleration"
+  "Standard gravitational acceleration"
   parameter g::Acceleration = 9.80665
   "Vehicle speed"
   variable v::Velocity

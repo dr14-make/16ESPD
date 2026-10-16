@@ -14,17 +14,17 @@ component LoadedSlipWheel1D
   F_z = RealInput() {^F_z}
   "Friction coefficient against slip"
   curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {^curve}
-  "Wheel rolling radius"
+  "Wheel rolling radius; assumed"
   parameter radius::Length = 0.35
-  "Slip ratio at peak adhesion"
+  "Slip ratio at peak adhesion; assumed from the reusable tire curve"
   parameter sAdhesion::Real = 0.04
-  "Slip ratio at the sliding plateau"
+  "Slip ratio at the sliding plateau; assumed from the reusable tire curve"
   parameter sSlide::Real = 0.12
-  "Peak adhesion coefficient"
+  "Peak adhesion coefficient; Tesla's stated tire limit"
   parameter mu_A::Real = 1.26
-  "Sliding friction coefficient"
+  "Sliding friction coefficient; assumed"
   parameter mu_S::Real = 1.0
-  "Low-speed denominator floor that avoids singular standstill slip"
+  "Low-speed denominator floor that avoids singular standstill slip; numerical regularization"
   parameter v_eps::Velocity = 0.5
   "Wheel angular speed"
   variable omega::AngularVelocity

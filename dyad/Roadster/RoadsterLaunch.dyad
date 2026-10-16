@@ -17,27 +17,27 @@ component RoadsterLaunch
   flat = BlockComponents.Sources.Constant(k = 0) {^flat}
   "Motor housing"
   rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
-  "Vehicle mass"
+  "Vehicle mass; assumed because Tesla has not disclosed it"
   parameter m::Dyad.Mass = 2000
-  "Aerodynamic drag area, Cd * A"
+  "Aerodynamic drag area, Cd * A; assumed"
   parameter CdA::Area = 0.6
-  "Peak wheel torque"
+  "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"
   parameter T_max::Torque = 12000
-  "Rated power"
+  "Rated power; press reports describe the drive as over 1 MW"
   parameter P_max::Power = 1.0e6
-  "Driven wheels' inertia"
+  "Combined inertia of the driven wheels; assumed"
   parameter J_w::MomentOfInertia = 2.4
-  "Wheel rolling radius"
+  "Wheel rolling radius; assumed"
   parameter radius::Length = 0.35
-  "Peak tire adhesion"
+  "Peak tire adhesion; Tesla's stated tire limit"
   parameter mu_A::Real = 1.26
-  "Sliding tire friction"
+  "Sliding tire friction; assumed"
   parameter mu_S::Real = 1.0
-  "Fraction of peak adhesion the traction control aims for"
+  "Fraction of peak adhesion targeted by ideal traction control; assumed margin"
   parameter grip::Real = 0.98
-  "Static fraction of weight on the driven axle"
+  "Static fraction of weight on the driven axle; assumed"
   parameter share::Real = 0.55
-  "Center-of-mass height over wheelbase"
+  "Center-of-mass height over wheelbase; assumed"
   parameter h_over_L::Real = 0.17
   "Vehicle speed"
   variable v::Velocity
