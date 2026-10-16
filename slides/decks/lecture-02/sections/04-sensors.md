@@ -17,17 +17,38 @@ control system as a whole, then at the four that feed the fuel calculation direc
 
 ---
 routeAlias: automotive-sensors
+class: big-figure
 ---
 
 ## Automotive sensors
 
-<div class="grid grid-cols-[1.3fr_1fr_0.7fr] gap-6">
-<div>
-
 A sensor converts a physical or chemical (usually non-electric) quantity $\Phi$ into an electric
 quantity $E$.
 
-**Sensor classification**
+![The automotive sensor in its loop: the physical quantity Φ from the vehicle enters the measuring sensor MS; the adapter circuit AD turns it into the electrical quantity E for the ECU, which also takes other sensors and ECUs (SE/ECU) and a switch SA, and drives a display DPL. The ECU's output goes through the driver D to the final controlling element FCE, which together form the actuator AC, and acts on the vehicle. Disturbances Z enter the measuring sensor and the adapter circuit.](/diagrams/04-automotive-sensor.svg)
+
+<!--
+This is the loop from section 03 with the sensor and the actuator opened up. The physical quantity
+phi enters the measuring sensor, an adapter circuit makes it an electrical signal E, the ECU
+computes, a driver amplifies, and a final controlling element, the actuator, acts on the vehicle.
+Z marks the disturbances that get into the sensor and its adapter: temperature, supply voltage,
+interference.
+
+The ECU also takes signals that are not from this sensor: other sensors and other ECUs over the
+bus, and plain switches. And it can drive a display.
+
+Redrawn from Bosch's "Figure 3, Automotive sensor", which the source deck scanned: the same blocks
+and the same abbreviations, written out in full beside each one.
+-->
+
+---
+routeAlias: sensor-classification
+---
+
+## Sensor classification
+
+<div class="grid grid-cols-[0.75fr_2fr] gap-6 items-center">
+<div>
 
 - Assignment and application
   - functional · safety · monitoring
@@ -43,26 +64,31 @@ quantity $E$.
 </div>
 <div>
 
-![Automotive sensor in the loop: physical quantity Φ measured by the measuring sensor MS and adapter circuit AD, into the ECU, out through driver D and final controlling element FCE to the vehicle; Z marks disturbances.](/pptx/slide30-sensor-in-the-loop.png)
+<CardExport notebook="illustrations" name="sensor-classification" height="33rem" />
 
-</div>
-<div>
-
-![Types of characteristic curve (continuous linear, continuous non-linear, discontinuous multistage, discontinuous with hysteresis) and signal shapes (frequency, pulse duration).](/pptx/slide30-characteristic-curves.png)
+<div class="caption">Idealized curves; the NTC points are the Bosch Motorsport NTC M12 datasheet's</div>
 
 </div>
 </div>
 
 <!--
-The middle figure is the loop from section 03 drawn properly. The physical quantity phi enters the
-measuring sensor, an adapter circuit makes it an electrical signal, the ECU computes, a driver
-amplifies, and a final controlling element, the actuator, acts on the vehicle. Z marks the
-disturbances that get in at each stage.
+The top row is the characteristic curve, output against measured quantity, with a real sensor of
+each kind. A throttle potentiometer is continuous and linear: half a volt closed, four and a half
+volts at ninety degrees. A temperature sensor is continuous and non-linear: this is the NTC we meet
+again in a few slides, 45 kilo-ohms at minus 40, under 100 ohms at 130. A switching oxygen sensor
+is discontinuous: about 0.85 volts rich, 0.1 volts lean, and the jump sits at lambda one.
 
-On the right, the shapes a characteristic can have. A throttle potentiometer is continuous and
-linear. A temperature sensor is continuous and non-linear. A switching oxygen sensor is nearly
-discontinuous, a step with a little hysteresis. Below, the output types: a voltage level, a
-frequency, or a pulse width that encodes the value.
+The bottom row is how the value travels down the wire. Amplitude: the voltage itself is the value,
+here the potentiometer through a tip-in. Frequency: a Hall wheel-speed sensor gives one pulse per
+tooth, so the pulse rate is the speed; here the wheel accelerates from about 30 to 60 kilometers
+per hour on a 48-tooth ring, 200 to 400 pulses a second, compressed to fifty milliseconds. Pulse
+duration: a fixed carrier whose duty cycle carries the value. Frequency and pulse width survive a
+long, noisy wire far better than a voltage level does.
+
+These replace the scanned Bosch sketches of curve types and signal shapes. The curves are drawn
+from explicit functions in the illustrations notebook, not from any model: idealized shapes,
+except the NTC points, which are the datasheet's. The source sketch also showed a multistage
+characteristic and a two-stage switch with hysteresis; the switching lambda sensor stands for both.
 -->
 
 ---
@@ -168,38 +194,99 @@ routeAlias: tps
 
 ## Throttle position sensor (TPS)
 
-<div class="grid grid-cols-[1.2fr_1fr] gap-6">
+<div class="grid grid-cols-[1fr_1.3fr] gap-6">
 <div>
 
 - A variable resistor connected to the throttle plate
+  - **two tracks** on one shaft: V1 rises, V2 falls, and **V1 + V2 = 5 V** at every angle
+  - each track reads 0.5–4.5 V; outside that window is a short or an open circuit
 - Today electronic throttles are used
-  - only the accelerator pedal has a sensor, and the throttle plate is moved by a DC stepper motor:
+  - only the accelerator pedal has a sensor, and the throttle plate is moved by a DC motor:
     electronic throttle control (ETC), or "drive by wire"
-  - the throttle position sensor is then redundant, kept for diagnostic purposes
+  - the throttle position sensor then closes the motor's position loop, and its second track
+    is kept for diagnosis
 
-<div class="grid grid-cols-2 gap-3 stack mt-2">
+<div class="stack mt-2">
 
 ![A throttle body with its position sensor mounted on the shaft.](/pptx/slide34-throttle-body.jpeg)
-
-![Throttle-valve sensor construction: throttle-valve shaft, two potentiometer tracks, wiper arm with wipers, electrical connection.](/pptx/slide34-tps-construction.png)
 
 </div>
 </div>
 <div>
 
-![Electrical circuit of a throttle-valve sensor: two potentiometer tracks R1 and R2 between operating voltage and ground, with trimming and protective resistors, giving two measurement voltages U_A1 and U_A2.](/pptx/slide34-tps-circuit.png)
+<div class="diagram-short">
+
+![The dual-track throttle position sensor: two potentiometer tracks between 5 V and ground, each with an end resistor at both ends; one throttle shaft moves both wipers, track 1's voltage V1 rises as the plate opens and track 2's V2 falls, so V1 + V2 = 5 V at every angle.](/diagrams/04-tps-circuit.svg)
+
+</div>
+
+<CardExport notebook="09-sensors" name="tps-tracks" height="20rem" />
 
 </div>
 </div>
 
 <!--
-The classic throttle position sensor is a potentiometer on the throttle shaft. The circuit on the
-right has two tracks, R 1 and R 2. Two tracks give two voltages, and the ECU compares them: if they
-disagree, a track is worn or a wire is broken. That is diagnosis built into the sensor.
+The classic throttle position sensor is a potentiometer on the throttle shaft. This one has two
+tracks, wired in opposite directions: as the plate opens, V 1 rises from half a volt to four and a
+half, and V 2 falls by the same amount. The end resistors keep each wiper off the supply and off
+ground, so a healthy track never reads below 0.5 volts or above 4.5. A reading outside that window
+is a broken wire or a short, not a throttle position.
+
+The plot is notebook 09's model of it, swept past both stops. The green line is the sum, 5 volts
+at every angle, give or take the 30 millivolts the ECU's own inputs pull. That sum is the
+plausibility check. The dashed curves are the same sensor with track 1 worn, its wiper contact
+grown to 50 kilo-ohms: track 1 alone reads low, which on its own looks like a smaller opening. The
+sum gives it away, from about 4 degrees on.
+
+The diagram stands in for the Dyad Studio screenshot of `Vehicle.Engine.ThrottlePositionSensor`,
+`img/lecture-02/tps-sensor.png` in docs/lecture-02-screenshots.md; swap it in when it exists.
 
 With drive by wire the pedal has the sensor, and the throttle is an actuator the ECU positions.
 That is what makes torque-based control possible: the ECU, not your foot, decides how far the
-throttle opens. The hands-on engine keeps it simple: pedal straight to throttle angle.
+throttle opens. Next slide.
+-->
+
+---
+routeAlias: etc
+---
+
+## Electronic throttle control: drive by wire
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-6">
+<div>
+
+![The electronic throttle's position loop: pedal command u_cmd minus the measured opening u_meas into a PID controller, whose voltage drives an H-bridge, the DC motor and a gearbox onto the throttle plate; the return spring with its limp-home position and the stops act on the plate; the two-track TPS reads the plate angle, and the ECU's estimate from V1 and V2 closes the loop.](/diagrams/04-etc-loop.svg)
+
+- The ECU positions the plate with a DC motor, closing a loop on the TPS
+- Unpowered, springs hold the plate at **limp home**, a few degrees open
+- The motor fights the spring preload in both directions: the loop needs integral action
+
+</div>
+<div>
+
+<CardExport notebook="09-sensors" name="etc-step" height="27rem" />
+
+</div>
+</div>
+
+<!--
+This is the throttle as an actuator. The ECU compares the commanded opening with the opening it
+measures through both TPS tracks, and a PID controller sets the motor voltage through an H-bridge.
+The motor turns the plate through a gearbox.
+
+Unpowered, two preloaded springs hold the plate about 6 degrees open: limp home. If the motor or
+its driver fails, the engine still gets enough air to drive to a garage. The cost is that the
+motor always works against a spring preload, which changes sign at limp home; that is why the loop
+needs integral action.
+
+The plot is notebook 09's model: a step from limp home to 60 percent at 0.1 seconds, a hold, a
+ramp back to 10 percent. The plate gets there in about 60 milliseconds, 10 to 90 percent, with no
+visible overshoot. The current saturates at the H-bridge's limit, about 9 amps, during the step,
+and then settles to the 1.6 amps that hold the plate against the spring. Notebook 09 has a slider
+for the controller gain.
+
+The diagram stands in for the Dyad Studio screenshot of `Vehicle.Engine.ElectronicThrottle`,
+`img/lecture-02/etc-diagram.png` in docs/lecture-02-screenshots.md; swap it in when it exists.
 -->
 
 ---
@@ -253,7 +340,9 @@ routeAlias: temperature-sensors
 </div>
 <div>
 
-![Resistance of an NTC temperature sensor against temperature from −20 to 120 °C on a logarithmic scale: from about 10–20 kΩ when cold down to about 0.1 kΩ when hot.](/pptx/slide36-ntc-characteristic.png)
+<CardExport notebook="09-sensors" name="ntc-curve" height="25rem" />
+
+<div class="caption">Bosch Motorsport NTC M12, datasheet</div>
 
 </div>
 </div>
@@ -266,15 +355,16 @@ thermistor in a voltage divider and reads the voltage.
 Inlet air: cold air is denser, so the same volume holds more oxygen, and needs more fuel.
 
 Coolant: a cold engine needs a richer mixture, because fuel condenses on cold walls and does not
-all evaporate. Cold means high resistance on an NTC. The source slide says "low resistance" here,
-which contradicts its own curve; the curve is right.
+all evaporate. Cold means high resistance on an NTC.
 
-The Fahrenheit labels on the curve repeat 104 under 50 and 60 degrees; 60 degrees Celsius is 140.
+The curve is a real sensor's, the Bosch Motorsport NTC M12: its datasheet points, and a
+Steinhart-Hart curve through three of them, from notebook 09. 2.5 kilo-ohms at 20 degrees, about
+190 ohms at 100.
 
 The exploded sensor is a hot-film air-mass meter. The small part at the bottom is the inlet air
 temperature sensor built into it.
 
-Notebook 09, "Sensors", will regenerate this NTC curve from the thermistor equation.
+Notebook 09, "Sensors", will add the divider voltage the ECU actually reads beside this curve.
 -->
 
 ---
@@ -283,8 +373,8 @@ routeAlias: maf
 
 ## Load sensor: mass flowmeters
 
-<div class="grid grid-cols-[1.4fr_1fr] gap-8">
-<div>
+<div class="grid grid-cols-[1.25fr_1fr] gap-6">
+<div class="text-sm">
 
 - Mass flowmeters work on the **hot-wire or hot-film principle**, with no moving mechanical part
   inside the unit
@@ -296,12 +386,17 @@ routeAlias: maf
     compensated
 - This helps the computer determine how much fuel is needed
 
-</div>
 <div class="stack">
 
-![Oscilloscope trace of a mass air flow sensor's output: a sharp spike within milliseconds, then a settled level.](/pptx/slide37-maf-response.png)
-
 ![A hot-film air-mass meter: a plug-in sensor in a tubular housing with a honeycomb flow straightener.](/pptx/slide37-hot-film-maf.png)
+
+</div>
+</div>
+<div>
+
+<CardExport notebook="12-mapped-engine" name="maf-tip-in" height="14rem" />
+
+<CardExport notebook="12-mapped-engine" name="eta-v-map" height="14rem" />
 
 </div>
 </div>
@@ -318,12 +413,17 @@ The alternative is a manifold absolute pressure sensor, a MAP sensor: a flexible
 voltage changes as it bends. With the engine speed and a volumetric efficiency, the manifold
 pressure gives the air flow. That is called speed-density. When you accelerate the throttle opens,
 there is less vacuum, and the intake pressure rises. The hands-on engine works this way: its maps
-are read at speed and manifold pressure.
+are read at speed and manifold pressure. The contour at the bottom right is its volumetric
+efficiency, the speed-density table: idle sits at 33 kilopascals, full load along the black line.
 
 Drawbacks of older vane meters: inertia, and they had to be mounted the right way up for gravity.
 The hot film has neither.
 
-Notebook 09 will regenerate the hot-film characteristic.
+The trace at the top right is no sensor's output: it is the air path's throttle flow through a
+tip-in at 3000 rpm, from notebook 12, which is what a perfect meter upstream of the throttle would
+read. As the throttle snaps open, the flow spikes to about eight times its final value while the
+manifold fills, then settles onto the flow into the cylinders. Notebook 09 will put the hot-film
+sensor's own response on top of it.
 -->
 
 ---

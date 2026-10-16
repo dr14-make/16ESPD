@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 548 640" width="548" height="640">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .panel { fill: #f7f9fb; stroke: #c9d1da; stroke-width: 1.5; }
+    .title { font-size: 17px; font-weight: 600; }
+    .step { font-size: 13px; fill: #4a5a6b; }
+    .sensor { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .unit { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .actuator { fill: #fbefe0; stroke: #a75d00; stroke-width: 2; }
+    .t { font-size: 14px; }
+    .sig { stroke: #16202c; stroke-width: 2; fill: none; }
+    .wire { stroke: #16202c; stroke-width: 1.6; fill: none; }
+    .bundle { stroke: #4a5a6b; stroke-width: 5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .outline { fill: #fff; stroke: #4a5a6b; stroke-width: 1.5; }
+    .side { font-size: 13px; fill: #4a5a6b; }
+  </style>
+  <defs>
+    <marker id="ee-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <g id="ee-ground">
+      <path d="M-9 0 H9 M-6 4 H6 M-3 8 H3" stroke="#16202c" stroke-width="1.6"/>
+    </g>
+  </defs>
+
+  <!-- abstract to physical -->
+  <path d="M518 30 V610" stroke="#4a5a6b" stroke-width="2" marker-end="url(#ee-ink)"/>
+  <text class="side" transform="translate(526 36) rotate(90)">abstract</text>
+  <text class="side" transform="translate(526 540) rotate(90)">physical</text>
+
+  <!-- 1 function network -->
+  <rect class="panel" x="10" y="10" width="490" height="112" rx="6"/>
+  <text class="title" x="22" y="32">Function network</text>
+  <text class="step" x="490" y="32" text-anchor="end">which function needs which signal</text>
+  <rect class="sensor" x="24" y="46" width="92" height="28" rx="3"/><text class="t" x="70" y="65" text-anchor="middle">sensor</text>
+  <rect class="sensor" x="24" y="84" width="92" height="28" rx="3"/><text class="t" x="70" y="103" text-anchor="middle">sensor</text>
+  <rect class="unit" x="160" y="46" width="96" height="28" rx="3"/><text class="t" x="208" y="65" text-anchor="middle">function</text>
+  <rect class="unit" x="280" y="84" width="96" height="28" rx="3"/><text class="t" x="328" y="103" text-anchor="middle">function</text>
+  <rect class="actuator" x="398" y="46" width="92" height="28" rx="3"/><text class="t" x="444" y="65" text-anchor="middle">actuator</text>
+  <rect class="actuator" x="398" y="84" width="92" height="28" rx="3"/><text class="t" x="444" y="103" text-anchor="middle">actuator</text>
+  <path class="sig" d="M116 60 H154" marker-end="url(#ee-ink)"/>
+  <path class="sig" d="M116 98 H274" marker-end="url(#ee-ink)"/>
+  <path class="sig" d="M256 60 H300 V78" marker-end="url(#ee-ink)"/>
+  <path class="sig" d="M376 98 H392" marker-end="url(#ee-ink)"/>
+  <path class="sig" d="M384 98 V60 H392" marker-end="url(#ee-ink)"/>
+
+  <!-- 2 component network -->
+  <rect class="panel" x="10" y="132" width="490" height="112" rx="6"/>
+  <text class="title" x="22" y="154">Component network</text>
+  <text class="step" x="490" y="154" text-anchor="end">which ECU runs each function</text>
+  <rect class="sensor" x="24" y="168" width="92" height="28" rx="3"/><text class="t" x="70" y="187" text-anchor="middle">sensor</text>
+  <rect class="unit" x="150" y="168" width="96" height="28" rx="3"/><text class="t" x="198" y="187" text-anchor="middle">ECU</text>
+  <rect class="unit" x="150" y="206" width="96" height="28" rx="3"/><text class="t" x="198" y="225" text-anchor="middle">ECU</text>
+  <rect class="unit" x="290" y="206" width="96" height="28" rx="3"/><text class="t" x="338" y="225" text-anchor="middle">ECU</text>
+  <rect class="actuator" x="398" y="168" width="92" height="28" rx="3"/><text class="t" x="444" y="187" text-anchor="middle">actuator</text>
+  <path class="sig" d="M116 182 H150"/>
+  <path class="sig" d="M246 182 H268 V220 M246 220 H290"/>
+  <path class="sig" d="M338 206 V182 H398"/>
+  <text class="step" x="272" y="200">bus</text>
+
+  <!-- 3 circuit diagram -->
+  <rect class="panel" x="10" y="254" width="490" height="112" rx="6"/>
+  <text class="title" x="22" y="276">Circuit diagram</text>
+  <text class="step" x="490" y="276" text-anchor="end">every wire, switch and ground</text>
+  <rect class="sensor" x="24" y="290" width="92" height="28" rx="3"/><text class="t" x="70" y="309" text-anchor="middle">sensor</text>
+  <rect class="unit" x="150" y="290" width="96" height="28" rx="3"/><text class="t" x="198" y="309" text-anchor="middle">ECU</text>
+  <rect class="unit" x="290" y="328" width="96" height="28" rx="3"/><text class="t" x="338" y="347" text-anchor="middle">ECU</text>
+  <rect class="actuator" x="398" y="290" width="92" height="28" rx="3"/><text class="t" x="444" y="309" text-anchor="middle">actuator</text>
+  <path class="wire" d="M116 304 H150"/>
+  <path class="wire" d="M246 298 H274 V336 H290 M246 310 H266 V344 H290"/>
+  <path class="wire" d="M44 318 V342"/>
+  <use href="#ee-ground" x="44" y="342"/>
+  <path class="wire" d="M70 318 V350 H150 M180 350 H266"/>
+  <path class="wire" d="M150 350 L176 340" stroke-width="2"/>
+  <circle cx="150" cy="350" r="2.5" fill="#16202c"/><circle cx="180" cy="350" r="2.5" fill="#16202c"/>
+  <path class="wire" d="M338 328 V304 H398"/>
+  <path class="wire" d="M444 318 V342"/>
+  <use href="#ee-ground" x="444" y="342"/>
+
+  <!-- 4 wiring harness -->
+  <rect class="panel" x="10" y="376" width="490" height="112" rx="6"/>
+  <text class="title" x="22" y="398">Wiring harness</text>
+  <text class="step" x="490" y="398" text-anchor="end">wires bundled, with connectors</text>
+  <rect class="sensor" x="24" y="412" width="92" height="28" rx="3"/><text class="t" x="70" y="431" text-anchor="middle">sensor</text>
+  <rect class="unit" x="150" y="412" width="96" height="28" rx="3"/><text class="t" x="198" y="431" text-anchor="middle">ECU</text>
+  <rect class="unit" x="300" y="450" width="96" height="28" rx="3"/><text class="t" x="348" y="469" text-anchor="middle">ECU</text>
+  <rect class="actuator" x="398" y="412" width="92" height="28" rx="3"/><text class="t" x="444" y="431" text-anchor="middle">actuator</text>
+  <path class="bundle" d="M116 426 H150 M246 426 H262 V464 H278 M70 440 V464 H262 M286 464 H300"/>
+  <rect x="270" y="448" width="12" height="32" fill="#16202c"/>
+  <path class="bundle" d="M348 450 V426 H398"/>
+
+  <!-- 5 installation space -->
+  <rect class="panel" x="10" y="498" width="490" height="132" rx="6"/>
+  <text class="title" x="22" y="520">Installation space</text>
+  <text class="step" x="490" y="520" text-anchor="end">where it all sits in the car</text>
+  <path class="outline" d="M24 534 H322 V618 H24 Z"/>
+  <path class="outline" d="M344 534 H490 V618 H344 Z"/>
+  <text class="side" x="32" y="552">body</text>
+  <text class="side" x="352" y="552">door</text>
+  <rect class="unit" x="44" y="580" width="26" height="22" rx="2"/>
+  <rect class="unit" x="128" y="560" width="26" height="22" rx="2"/>
+  <rect class="unit" x="196" y="584" width="26" height="22" rx="2"/>
+  <rect class="unit" x="270" y="560" width="26" height="22" rx="2"/>
+  <rect class="unit" x="380" y="566" width="26" height="22" rx="2"/>
+  <rect class="unit" x="446" y="560" width="26" height="22" rx="2"/>
+  <path class="bundle" d="M70 591 H110 L128 571 M154 571 H176 L196 595 M222 595 L250 595 L270 571 M296 571 L310 596 H336 M352 596 H368 L380 577 M406 577 H430 L446 571"/>
+  <rect x="330" y="588" width="16" height="16" fill="#16202c"/>
+</svg>

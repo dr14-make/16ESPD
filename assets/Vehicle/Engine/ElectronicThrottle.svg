@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="420" cy="500" r="300" fill="#eceff1"/>
+    <path d="M230 690 L610 310" stroke-width="70"/>
+    <circle cx="420" cy="500" r="40" fill="#263238"/>
+    <rect x="760" y="560" width="200" height="260" rx="30" fill="#cfd8dc"/>
+    <text x="860" y="730" text-anchor="middle" font-family="sans-serif" font-size="130" fill="#263238" stroke="none">M</text>
+    <path d="M0 500 L120 500"/>
+    <path d="M720 200 L1000 200 M740 400 L1000 400"/>
+  </g>
+  <text x="420" y="140" text-anchor="middle" font-family="sans-serif" font-size="100" fill="#263238">ETC</text>
+</svg>

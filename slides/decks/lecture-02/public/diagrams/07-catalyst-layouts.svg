@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 400" width="660" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .engine { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .cyl { fill: #eaf1fa; stroke: #16202c; stroke-width: 1.5; }
+    .pipe-o { fill: none; stroke: #4a5a6b; stroke-width: 11; stroke-linejoin: round; }
+    .pipe-i { fill: none; stroke: #fff; stroke-width: 7; stroke-linejoin: round; }
+    .cat { fill: #fbefe0; stroke: #a75d00; stroke-width: 2; }
+    .num { font-size: 15px; font-weight: 600; fill: #a75d00; }
+    .cap { font-size: 16px; }
+    .cap-k { font-size: 16px; font-weight: 600; }
+  </style>
+  <path class="pipe-o" d="M66 61 H90 C112 61 112 100 134 100"/>
+  <path class="pipe-o" d="M66 87 H90 C112 87 112 100 134 100"/>
+  <path class="pipe-o" d="M66 113 H90 C112 113 112 100 134 100"/>
+  <path class="pipe-o" d="M66 139 H90 C112 139 112 100 134 100"/>
+  <path class="pipe-o" d="M134 100 H320"/>
+  <path class="pipe-o" d="M386 61 H402 C420 61 420 74 438 74"/>
+  <path class="pipe-o" d="M386 87 H402 C420 87 420 74 438 74"/>
+  <path class="pipe-o" d="M386 113 H402 C420 113 420 126 438 126"/>
+  <path class="pipe-o" d="M386 139 H402 C420 139 420 126 438 126"/>
+  <path class="pipe-o" d="M438 74 H510 C536 74 536 100 562 100"/>
+  <path class="pipe-o" d="M438 126 H510 C536 126 536 100 562 100"/>
+  <path class="pipe-o" d="M562 100 H640"/>
+  <path class="pipe-o" d="M90 250 H320"/>
+  <path class="pipe-o" d="M90 310 H320"/>
+  <path class="pipe-o" d="M410 250 H500 C530 250 530 280 560 280"/>
+  <path class="pipe-o" d="M410 310 H500 C530 310 530 280 560 280"/>
+  <path class="pipe-o" d="M560 280 H640"/>
+  <path class="pipe-i" d="M66 61 H90 C112 61 112 100 134 100"/>
+  <path class="pipe-i" d="M66 87 H90 C112 87 112 100 134 100"/>
+  <path class="pipe-i" d="M66 113 H90 C112 113 112 100 134 100"/>
+  <path class="pipe-i" d="M66 139 H90 C112 139 112 100 134 100"/>
+  <path class="pipe-i" d="M134 100 H320"/>
+  <path class="pipe-i" d="M386 61 H402 C420 61 420 74 438 74"/>
+  <path class="pipe-i" d="M386 87 H402 C420 87 420 74 438 74"/>
+  <path class="pipe-i" d="M386 113 H402 C420 113 420 126 438 126"/>
+  <path class="pipe-i" d="M386 139 H402 C420 139 420 126 438 126"/>
+  <path class="pipe-i" d="M438 74 H510 C536 74 536 100 562 100"/>
+  <path class="pipe-i" d="M438 126 H510 C536 126 536 100 562 100"/>
+  <path class="pipe-i" d="M562 100 H640"/>
+  <path class="pipe-i" d="M90 250 H320"/>
+  <path class="pipe-i" d="M90 310 H320"/>
+  <path class="pipe-i" d="M410 250 H500 C530 250 530 280 560 280"/>
+  <path class="pipe-i" d="M410 310 H500 C530 310 530 280 560 280"/>
+  <path class="pipe-i" d="M560 280 H640"/>
+  <text class="cap-k" x="20" y="30">a</text><text class="cap" x="38" y="30">close-coupled primary + main</text>
+  <rect class="engine" x="20" y="44" width="46" height="112" rx="4"/>
+  <circle class="cyl" cx="43" cy="61" r="9"/>
+  <circle class="cyl" cx="43" cy="87" r="9"/>
+  <circle class="cyl" cx="43" cy="113" r="9"/>
+  <circle class="cyl" cx="43" cy="139" r="9"/>
+  <rect class="cat" x="148" y="87.0" width="46" height="26" rx="6"/><text class="num" x="171.0" y="105" text-anchor="middle">1</text>
+  <rect class="cat" x="234" y="84.0" width="70" height="32" rx="6"/><text class="num" x="269.0" y="105" text-anchor="middle">2</text>
+  <text class="cap-k" x="340" y="30">b</text><text class="cap" x="358" y="30">4-in-2 manifold</text>
+  <rect class="engine" x="340" y="44" width="46" height="112" rx="4"/>
+  <circle class="cyl" cx="363" cy="61" r="9"/>
+  <circle class="cyl" cx="363" cy="87" r="9"/>
+  <circle class="cyl" cx="363" cy="113" r="9"/>
+  <circle class="cyl" cx="363" cy="139" r="9"/>
+  <rect class="cat" x="446" y="61.0" width="46" height="26" rx="6"/><text class="num" x="469.0" y="79" text-anchor="middle">1</text>
+  <rect class="cat" x="446" y="113.0" width="46" height="26" rx="6"/><text class="num" x="469.0" y="131" text-anchor="middle">1</text>
+  <rect class="cat" x="566" y="84.0" width="64" height="32" rx="6"/><text class="num" x="598.0" y="105" text-anchor="middle">2</text>
+  <text class="cap-k" x="20" y="210">c</text><text class="cap" x="38" y="210">V engine, one branch per bank</text>
+  <rect class="engine" x="20" y="224" width="70" height="112" rx="4"/>
+  <circle class="cyl" cx="34" cy="250" r="8"/>
+  <circle class="cyl" cx="34" cy="310" r="8"/>
+  <circle class="cyl" cx="55" cy="250" r="8"/>
+  <circle class="cyl" cx="55" cy="310" r="8"/>
+  <circle class="cyl" cx="76" cy="250" r="8"/>
+  <circle class="cyl" cx="76" cy="310" r="8"/>
+  <rect class="cat" x="116" y="237.0" width="46" height="26" rx="6"/><text class="num" x="139.0" y="255" text-anchor="middle">1</text>
+  <rect class="cat" x="220" y="234.0" width="70" height="32" rx="6"/><text class="num" x="255.0" y="255" text-anchor="middle">2</text>
+  <rect class="cat" x="116" y="297.0" width="46" height="26" rx="6"/><text class="num" x="139.0" y="315" text-anchor="middle">1</text>
+  <rect class="cat" x="220" y="294.0" width="70" height="32" rx="6"/><text class="num" x="255.0" y="315" text-anchor="middle">2</text>
+  <text class="cap-k" x="340" y="210">d</text><text class="cap" x="358" y="210">V engine, Y junction, shared main</text>
+  <rect class="engine" x="340" y="224" width="70" height="112" rx="4"/>
+  <circle class="cyl" cx="354" cy="250" r="8"/>
+  <circle class="cyl" cx="354" cy="310" r="8"/>
+  <circle class="cyl" cx="375" cy="250" r="8"/>
+  <circle class="cyl" cx="375" cy="310" r="8"/>
+  <circle class="cyl" cx="396" cy="250" r="8"/>
+  <circle class="cyl" cx="396" cy="310" r="8"/>
+  <rect class="cat" x="432" y="237.0" width="46" height="26" rx="6"/><text class="num" x="455.0" y="255" text-anchor="middle">1</text>
+  <rect class="cat" x="432" y="297.0" width="46" height="26" rx="6"/><text class="num" x="455.0" y="315" text-anchor="middle">1</text>
+  <rect class="cat" x="566" y="264.0" width="64" height="32" rx="6"/><text class="num" x="598.0" y="285" text-anchor="middle">2</text>
+  <rect class="cat" x="20" y="374" width="22" height="18" rx="4"/><text class="num" x="31" y="388" text-anchor="middle">1</text><text class="cap" x="50" y="388">primary catalytic converter</text><rect class="cat" x="290" y="374" width="22" height="18" rx="4"/><text class="num" x="301" y="388" text-anchor="middle">2</text><text class="cap" x="320" y="388">main catalytic converter</text>
+</svg>

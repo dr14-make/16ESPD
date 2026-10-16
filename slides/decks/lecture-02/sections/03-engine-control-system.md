@@ -33,16 +33,12 @@ routeAlias: ecs-structure
     delivered to the actuators
   - ***actuators***, which carry out the defined commands
 
+<CardExport notebook="12-mapped-engine" name="torque-map" height="21rem" />
+
 </div>
 <div>
 
 ![The engine control loop: sensors on the engine feed the ECU, the ECU drives the actuators, the actuators act on the engine; the ECU also exchanges data with other vehicle systems' control.](/diagrams/03-engine-control-loop.svg)
-
-<div class="stack">
-
-![A three-dimensional calibration map: a surface over two operating axes, the kind of table an ECU stores.](/pptx/slide24-ecu-map.png)
-
-</div>
 
 </div>
 </div>
@@ -52,11 +48,11 @@ Three parts, in a loop. The sensors read the engine, the ECU decides, the actuat
 engine responds. The ECU also talks to the rest of the car: the gearbox, the brakes, the stability
 control.
 
-The surface below the diagram is a calibration map, a table over two operating variables. The ECU
-holds hundreds of these. What the ECU adjusts first are the fuel injection and the ignition timing.
+The surface below the text is a calibration map, a table over two operating variables. This
+one is the hands-on engine's torque map, from the EPA's measured Mazda data in notebook 12: brake
+torque over manifold pressure and engine speed. The ECU holds hundreds of these. What the ECU adjusts first are the fuel injection and the ignition timing.
 For ecology, modern engines add more sensors: a second oxygen sensor, exhaust temperature, NOx.
 
-Notebook 03, "The engine as a plant", will put the maps of our own 1.5 liter engine here.
 Notebook 11, "The whole ECU in the car", closes all the loops of this diagram around one engine.
 -->
 
@@ -208,11 +204,12 @@ Notebook 10 models the warm-up strategy; notebook 07, "Idle speed control", the 
 
 ---
 routeAlias: ee-architecture
+class: big-figure
 ---
 
 ## Models of electrical and electronic architecture
 
-<div class="grid grid-cols-[1.5fr_1fr] gap-8 items-center">
+<div class="grid grid-cols-[1fr_1.1fr] gap-8 items-center">
 <div>
 
 - **Functional**: preliminary stage, signal flow diagram
@@ -228,7 +225,7 @@ routeAlias: ee-architecture
 </div>
 <div>
 
-![Models of E/E architecture, from abstract to physical: function network, component network, circuit diagram, wiring harness, installation space; each shows sensors, ECUs and actuators in more physical detail.](/pptx/slide29-ee-architecture.png)
+![Models of E/E architecture, from abstract to physical: the function network links sensors through functions to actuators; the component network places the functions on ECUs joined by a bus; the circuit diagram adds every wire, switch and ground; the wiring harness bundles the wires through connectors; the installation space places the ECUs and harness in the body and a door.](/diagrams/03-ee-architecture.svg)
 
 </div>
 </div>
@@ -240,6 +237,9 @@ each function. The circuit diagram and the wiring harness say how the wires actu
 installation space where the boxes sit in the body.
 
 In this course we work at the top level: functions and signals. That is what Dyad models are.
+
+The figure is redrawn from the Bosch figure the source deck scanned: the same five levels and the
+same sensor, ECU and actuator in each, with a one-line gloss per level.
 -->
 
 ---
