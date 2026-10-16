@@ -72,6 +72,7 @@ it runs cleanly.
 | Total fluid demand at 60 bar | 3–5 cm³ | report §2 (assumed P–V, textbook magnitude) |
 | Booster run-out line pressure | 80–100 bar | report §2 (PATH area, assumed servo ratio) |
 | Idle manifold pressure | 27–45 kPa abs (16–20 inHg vacuum) | MOTOR, AA1Car |
+| Overrun manifold pressure | 17–34 kPa with ECU bypass air; the plain air path's 13.5 kPa at 3000 rpm is expected because it models only the idle leak | AA1Car; mapped-engine air-path result |
 | Wide-open-throttle manifold pressure | > 90 kPa abs | AA1Car |
 | Manifold time constant at 800 rpm | 0.08–0.2 s | derived from MathWorks defaults |
 | Booster rear-chamber rise, driver apply | 0.1–0.4 s | PATH measured traces |
