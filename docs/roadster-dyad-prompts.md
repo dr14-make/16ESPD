@@ -134,6 +134,10 @@ must reproduce task 2's results exactly; check that first. Run three configurati
 - tires + suction + thrust
 - all three with a 200 L tank
 
+**Add `down_fraction`**: the share of thrust pushing the car down into `AxleLoad.downforce`
+instead of forward. Sweep it from 0 to 1 for rear-wheel and all-wheel drive, each with suction off
+and with full suction.
+
 **Build `dyad/Roadster/VerticalHop.dyad`.** It has the car's mass, gravity, an `ElastoGap`-style
 ground contact, and the tank with four downward nozzles sized to match the rear set. Add two
 analyses:
@@ -146,6 +150,9 @@ analyses:
 **Report.**
 - t60 and air used to 60 mph, for each launch configuration, compared with Tesla's 0.81 s and
   under-0.59 s claims.
+- The best `down_fraction` in each of the four cases, with its t60 curve, and one sentence on
+  why: pushing down only pays while the tire is the limit and each newton gains more than one
+  newton of drive.
 - `t_b` and the air used for the 8 m hop.
 - Hover time at the defaults, with the sweeps over mass (1,700–2,350 kg) and p0 (300–690 bar).
 - One sentence each for the verdicts of steps 3 and 4.

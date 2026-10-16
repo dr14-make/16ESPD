@@ -179,6 +179,31 @@ the task 2 result exactly. Run three configurations at 2,000 kg:
 
 Report t60 and the air used to 60 mph for each.
 
+**Rear thrust passes both limits.** It acts on the body directly, so it adds acceleration
+whether the tire or the drive torque is binding. The second configuration should show this:
+suction leaves the launch limited by torque at 1.75 g, and rear thrust then adds about 4 g on top.
+
+**Down or back: the split question.** A plume over the roof suggests air pushing the car down for
+grip. Add a parameter `down_fraction`, from 0 to 1:
+- **Down:** that fraction of the thrust pushes the car down, entering `AxleLoad.downforce`.
+- **Back:** the rest pushes the car forward.
+
+Sweep it from 0 to 1 in four cases: rear-wheel and all-wheel drive, each with suction off and
+with full suction. In each case, report t60 against `down_fraction`, the best split, and why.
+
+Closed-form expectations at t = 0:
+- **Pushing down helps only while the tire is the limit, and only if each newton gains more than
+  one newton of drive.**
+  - Rear-wheel drive gains 0.98·1.26·0.55 / (1 − 0.98·1.26·0.17) = 0.86 N per newton pushing
+    down. Pointing all the air backward is therefore always best: `down_fraction = 0`.
+  - All-wheel drive gains 1.23 N per newton, but only until the drive-torque cap. That takes
+    (34.3 − 24.2) kN / 1.23 ≈ 8 kN of downward thrust. Beyond it, the downward air is wasted, so
+    the best split is near 0.1 and the gain is a few percent at most.
+  - With full suction, the drive torque binds from the start, so `down_fraction = 0` is best for
+    both layouts.
+- **The model assumes the thrust line passes at center-of-mass height,** so thrust moves load
+  only through the acceleration term. State this; do not model the pitch moment.
+
 **Build `Roadster.VerticalHop`.** A vertical 1D model for "can it fly":
 - **Body:** the car's mass with gravity.
 - **Ground:** a ground contact (a unilateral spring-damper; follow the `ElastoGap` stdlib
@@ -199,6 +224,8 @@ Report t60 and the air used to 60 mph for each.
 | Tires + thrust, initial acceleration | (F_tire + 80 kN) / m | Within 2 % at t = 0+ |
 | t60, tires + thrust | Average 3.4 g gives 0.81 s (Tesla, live) | Report it and compare with 0.81 s |
 | t60, all three | Rocket trim claims under 0.59 s | Report it and compare |
+| t60, tires + suction + thrust | (34.3 kN + 80 kN) / m = 5.8 g at the start, fading as the tank empties | About 0.5–0.6 s. Report the binding limits |
+| Best `down_fraction` | 0 for rear-wheel drive in both suction cases. Near 0.1 for all-wheel drive without suction. 0 with full suction | Matches in every case. Report the t60 curves |
 | Hop to 8 m | v_z = √(2·g·8) = 12.5 m/s | 40–70 kg of air |
 | Hover time, 2,000 kg, 600 L at 380 bar | ṁ ≈ m·g / v_e ≈ 30–35 kg/s at the start, rising as v_e falls | 3–8 s. Report it, plus the sweep over mass (1,700–2,350 kg) and p0 (300–690 bar) |
 
