@@ -213,3 +213,58 @@ end
     booster_bump = maximum(booster_pm) - booster.sol(1.0, idxs = booster.model.engine.p_m) / 1e3
     @info "Mapped engine acceptance" idle_rpm idle_pm wot_torques tip_rise rpm_ramp[resume] booster_bump extrema(booster_rpm)
 end
+
+
+const MapEngineDynoTransient = VehicleSystemsComponents.HandsOn02.MapEngineDynoTransient
+
+# Hands-on 02's MapEngine held at one pedal for the analysis's 2 s, read at the end.
+function map_engine_steady(rpm, pedal, p_m0)
+    run = mapped_engine_run(MapEngineDynoTransient; rpm = rpm, pedal_initial = pedal,
+                            pedal_final = pedal, t_step = 10.0, p_m0 = p_m0)
+    engine, t = run.model.engine, run.sol.t[end]
+    return (p_kpa = run.sol(t, idxs = engine.p_m) / 1e3,
+            tau = run.sol(t, idxs = engine.torque_map.y),
+            fuel_gps = run.sol(t, idxs = engine.mdot_fuel) * 1e3,
+            co2_gps = run.sol(t, idxs = engine.mdot_co2) * 1e3)
+end
+
+@testset "Hands-on 02 map engine" begin
+    closed = map_engine_steady(3000, 0.0, 13482.4)
+    @test closed.p_kpa ≈ 13.5 rtol = 0.01
+    @test closed.tau ≈ -18.2 rtol = 0.01
+    # No fuel cut: the closed-pedal map point still burns what the measured engine burned there.
+    @test closed.fuel_gps ≈ 0.097 rtol = 0.01
+
+    wot = map_engine_steady(3000, 1.0, 99.9e3)
+    @test wot.p_kpa ≈ 99.9 rtol = 0.01
+    @test wot.tau ≈ 148.4 rtol = 0.01
+    @test wot.tau ≈ engine_curve("full_load.csv", 3000) rtol = 0.01
+    @test wot.fuel_gps ≈ 3.75 rtol = 0.01
+    @test wot.co2_gps ≈ 3.09 * wot.fuel_gps rtol = 1e-9
+
+    # Pedals found by bisection on the 2 s dyno torque against the plan's cruise torques. The
+    # pedal drives the throttle directly, so they sit below MappedEngine's progressive-pedal ones.
+    fuel = read_engine_map("fuel_gps.csv")
+    cruise_torques = Float64[]
+    for (rpm, pedal, tau_target, p_m0) in ((1710, 0.043754, 18.4, 41.9e3),
+                                           (3080, 0.103415, 31.1, 47.8e3),
+                                           (4450, 0.190361, 51.0, 60.8e3))
+        point = map_engine_steady(rpm, pedal, p_m0)
+        push!(cruise_torques, point.tau)
+        @test point.tau ≈ tau_target rtol = 0.01
+        @test point.fuel_gps ≈ bilinear(fuel, rpm, point.p_kpa) rtol = 0.01
+    end
+
+    # The analysis defaults: the 90 km/h cruise point, pedal opened a little at 1 s. The pedal
+    # moves the throttle instantly, so the torque rise is the manifold filling alone.
+    step = mapped_engine_run(MapEngineDynoTransient)
+    step_tau = step.sol[step.model.engine.torque_map.y]
+    step_rise = rise_time(step.sol.t, step_tau, 0.9; t0 = 1.0) -
+                rise_time(step.sol.t, step_tau, 0.1; t0 = 1.0)
+    @test 0.01 <= step_rise <= 0.1
+
+    idle = map_engine_steady(800, 0.0, 33e3)
+    @test idle.p_kpa ≈ 33.0 rtol = 0.01
+
+    @info "Hands-on 02 map engine" closed wot cruise_torques step_rise idle
+end
