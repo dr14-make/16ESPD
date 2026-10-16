@@ -18,9 +18,9 @@ ceiling finite at standstill.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `T_max`         | Peak wheel torque                         | N.m  |   12000 |
-| `P_max`         | Rated power                         | W  |   1.0e6 |
-| `w_eps`         | Speed floor for the power ceiling                         | rad/s  |   1.0 |
+| `T_max`         | Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction                         | N.m  |   12000 |
+| `P_max`         | Rated power; press reports describe the drive as over 1 MW                         | W  |   1.0e6 |
+| `w_eps`         | Speed floor for the power ceiling; numerical regularization                         | rad/s  |   1.0 |
 
 ## Connectors
 
@@ -70,13 +70,13 @@ ceiling finite at standstill.
 
   ### Symbolic Parameters
   __local__T_max = T_max
-  append!(__params, @parameters (T_max::Real), [description = "Peak wheel torque"])
+  append!(__params, @parameters (T_max::Real), [description = "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"])
   __initial_conditions[T_max] = __local__T_max
   __local__P_max = P_max
-  append!(__params, @parameters (P_max::Real), [description = "Rated power"])
+  append!(__params, @parameters (P_max::Real), [description = "Rated power; press reports describe the drive as over 1 MW"])
   __initial_conditions[P_max] = __local__P_max
   __local__w_eps = w_eps
-  append!(__params, @parameters (w_eps::Real), [description = "Speed floor for the power ceiling"])
+  append!(__params, @parameters (w_eps::Real), [description = "Speed floor for the power ceiling; numerical regularization"])
   __initial_conditions[w_eps] = __local__w_eps
 
   ### Final Parameters (assignments)

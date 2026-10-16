@@ -22,11 +22,11 @@ for the acceleration, which would divide by `h_over_L`.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `m`         | Vehicle mass                         | kg  |   2000 |
-| `share`         | Static fraction of weight and downforce on the driven axle                         | --  |   0.55 |
-| `h_over_L`         | Center-of-mass height over wheelbase                         | --  |   0.17 |
-| `T_pitch`         | Time constant of the body pitching onto the rear suspension                         | s  |   0.1 |
-| `g`         | Gravitational acceleration                         | m/s2  |   9.80665 |
+| `m`         | Vehicle mass; assumed because Tesla has not disclosed it                         | kg  |   2000 |
+| `share`         | Static fraction of weight and downforce on the driven axle; assumed                         | --  |   0.55 |
+| `h_over_L`         | Center-of-mass height over wheelbase; assumed                         | --  |   0.17 |
+| `T_pitch`         | Reduced-order suspension pitch time constant; assumed                         | s  |   0.1 |
+| `g`         | Standard gravitational acceleration                         | m/s2  |   9.80665 |
 
 ## Connectors
 
@@ -74,19 +74,19 @@ for the acceleration, which would divide by `h_over_L`.
 
   ### Symbolic Parameters
   __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass; assumed because Tesla has not disclosed it", bounds = (0, Inf)])
   __initial_conditions[m] = __local__m
   __local__share = share
-  append!(__params, @parameters (share::Real), [description = "Static fraction of weight and downforce on the driven axle"])
+  append!(__params, @parameters (share::Real), [description = "Static fraction of weight and downforce on the driven axle; assumed"])
   __initial_conditions[share] = __local__share
   __local__h_over_L = h_over_L
-  append!(__params, @parameters (h_over_L::Real), [description = "Center-of-mass height over wheelbase"])
+  append!(__params, @parameters (h_over_L::Real), [description = "Center-of-mass height over wheelbase; assumed"])
   __initial_conditions[h_over_L] = __local__h_over_L
   __local__T_pitch = T_pitch
-  append!(__params, @parameters (T_pitch::Real), [description = "Time constant of the body pitching onto the rear suspension"])
+  append!(__params, @parameters (T_pitch::Real), [description = "Reduced-order suspension pitch time constant; assumed"])
   __initial_conditions[T_pitch] = __local__T_pitch
   __local__g = g
-  append!(__params, @parameters (g::Real), [description = "Gravitational acceleration"])
+  append!(__params, @parameters (g::Real), [description = "Standard gravitational acceleration"])
   __initial_conditions[g] = __local__g
 
   ### Final Parameters (assignments)

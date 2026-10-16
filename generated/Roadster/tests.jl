@@ -19,4 +19,5 @@ end
 include("AxleLoad_test.jl")
 include("PowerLimitedMotor_test.jl")
 include("RoadsterLaunch_test.jl")
+include("TestRoadsterLaunch_test.jl")
 end

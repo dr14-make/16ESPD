@@ -17,12 +17,12 @@ grip the tire offers while the vehicle moves.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `radius`         | Wheel rolling radius                         | m  |   0.35 |
-| `sAdhesion`         | Slip ratio at peak adhesion                         | --  |   0.04 |
-| `sSlide`         | Slip ratio at the sliding plateau                         | --  |   0.12 |
-| `mu_A`         | Peak adhesion coefficient                         | --  |   1.26 |
-| `mu_S`         | Sliding friction coefficient                         | --  |   1.0 |
-| `v_eps`         | Low-speed denominator floor that avoids singular standstill slip                         | m/s  |   0.5 |
+| `radius`         | Wheel rolling radius; assumed                         | m  |   0.35 |
+| `sAdhesion`         | Slip ratio at peak adhesion; assumed from the reusable tire curve                         | --  |   0.04 |
+| `sSlide`         | Slip ratio at the sliding plateau; assumed from the reusable tire curve                         | --  |   0.12 |
+| `mu_A`         | Peak adhesion coefficient; Tesla's stated tire limit                         | --  |   1.26 |
+| `mu_S`         | Sliding friction coefficient; assumed                         | --  |   1.0 |
+| `v_eps`         | Low-speed denominator floor that avoids singular standstill slip; numerical regularization                         | m/s  |   0.5 |
 
 ## Connectors
 
@@ -71,22 +71,22 @@ grip the tire offers while the vehicle moves.
 
   ### Symbolic Parameters
   __local__radius = radius
-  append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius"])
+  append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius; assumed"])
   __initial_conditions[radius] = __local__radius
   __local__sAdhesion = sAdhesion
-  append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion"])
+  append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion; assumed from the reusable tire curve"])
   __initial_conditions[sAdhesion] = __local__sAdhesion
   __local__sSlide = sSlide
-  append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau"])
+  append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau; assumed from the reusable tire curve"])
   __initial_conditions[sSlide] = __local__sSlide
   __local__mu_A = mu_A
-  append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient"])
+  append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient; Tesla's stated tire limit"])
   __initial_conditions[mu_A] = __local__mu_A
   __local__mu_S = mu_S
-  append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient"])
+  append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient; assumed"])
   __initial_conditions[mu_S] = __local__mu_S
   __local__v_eps = v_eps
-  append!(__params, @parameters (v_eps::Real), [description = "Low-speed denominator floor that avoids singular standstill slip"])
+  append!(__params, @parameters (v_eps::Real), [description = "Low-speed denominator floor that avoids singular standstill slip; numerical regularization"])
   __initial_conditions[v_eps] = __local__v_eps
 
   ### Final Parameters (assignments)

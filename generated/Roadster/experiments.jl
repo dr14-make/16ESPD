@@ -12,3 +12,4 @@ end
 include("AxleLoad_experiment.jl")
 include("PowerLimitedMotor_experiment.jl")
 include("RoadsterLaunch_experiment.jl")
+include("TestRoadsterLaunch_experiment.jl")

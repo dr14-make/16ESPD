@@ -18,17 +18,17 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `m`         | Vehicle mass                         | kg  |   2000 |
-| `CdA`         | Aerodynamic drag area, Cd * A                         | m2  |   0.6 |
-| `T_max`         | Peak wheel torque                         | N.m  |   12000 |
-| `P_max`         | Rated power                         | W  |   1.0e6 |
-| `J_w`         | Driven wheels' inertia                         | kg.m2  |   2.4 |
-| `radius`         | Wheel rolling radius                         | m  |   0.35 |
-| `mu_A`         | Peak tire adhesion                         | --  |   1.26 |
-| `mu_S`         | Sliding tire friction                         | --  |   1.0 |
-| `grip`         | Fraction of peak adhesion the traction control aims for                         | --  |   0.98 |
-| `share`         | Static fraction of weight on the driven axle                         | --  |   0.55 |
-| `h_over_L`         | Center-of-mass height over wheelbase                         | --  |   0.17 |
+| `m`         | Vehicle mass; assumed because Tesla has not disclosed it                         | kg  |   2000 |
+| `CdA`         | Aerodynamic drag area, Cd * A; assumed                         | m2  |   0.6 |
+| `T_max`         | Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction                         | N.m  |   12000 |
+| `P_max`         | Rated power; press reports describe the drive as over 1 MW                         | W  |   1.0e6 |
+| `J_w`         | Combined inertia of the driven wheels; assumed                         | kg.m2  |   2.4 |
+| `radius`         | Wheel rolling radius; assumed                         | m  |   0.35 |
+| `mu_A`         | Peak tire adhesion; Tesla's stated tire limit                         | --  |   1.26 |
+| `mu_S`         | Sliding tire friction; assumed                         | --  |   1.0 |
+| `grip`         | Fraction of peak adhesion targeted by ideal traction control; assumed margin                         | --  |   0.98 |
+| `share`         | Static fraction of weight on the driven axle; assumed                         | --  |   0.55 |
+| `h_over_L`         | Center-of-mass height over wheelbase; assumed                         | --  |   0.17 |
 
 ## Variables
 
@@ -68,37 +68,37 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
 
   ### Symbolic Parameters
   __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass; assumed because Tesla has not disclosed it", bounds = (0, Inf)])
   __initial_conditions[m] = __local__m
   __local__CdA = CdA
-  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area, Cd * A"])
+  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area, Cd * A; assumed"])
   __initial_conditions[CdA] = __local__CdA
   __local__T_max = T_max
-  append!(__params, @parameters (T_max::Real), [description = "Peak wheel torque"])
+  append!(__params, @parameters (T_max::Real), [description = "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"])
   __initial_conditions[T_max] = __local__T_max
   __local__P_max = P_max
-  append!(__params, @parameters (P_max::Real), [description = "Rated power"])
+  append!(__params, @parameters (P_max::Real), [description = "Rated power; press reports describe the drive as over 1 MW"])
   __initial_conditions[P_max] = __local__P_max
   __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real), [description = "Driven wheels' inertia"])
+  append!(__params, @parameters (J_w::Real), [description = "Combined inertia of the driven wheels; assumed"])
   __initial_conditions[J_w] = __local__J_w
   __local__radius = radius
-  append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius"])
+  append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius; assumed"])
   __initial_conditions[radius] = __local__radius
   __local__mu_A = mu_A
-  append!(__params, @parameters (mu_A::Real), [description = "Peak tire adhesion"])
+  append!(__params, @parameters (mu_A::Real), [description = "Peak tire adhesion; Tesla's stated tire limit"])
   __initial_conditions[mu_A] = __local__mu_A
   __local__mu_S = mu_S
-  append!(__params, @parameters (mu_S::Real), [description = "Sliding tire friction"])
+  append!(__params, @parameters (mu_S::Real), [description = "Sliding tire friction; assumed"])
   __initial_conditions[mu_S] = __local__mu_S
   __local__grip = grip
-  append!(__params, @parameters (grip::Real), [description = "Fraction of peak adhesion the traction control aims for"])
+  append!(__params, @parameters (grip::Real), [description = "Fraction of peak adhesion targeted by ideal traction control; assumed margin"])
   __initial_conditions[grip] = __local__grip
   __local__share = share
-  append!(__params, @parameters (share::Real), [description = "Static fraction of weight on the driven axle"])
+  append!(__params, @parameters (share::Real), [description = "Static fraction of weight on the driven axle; assumed"])
   __initial_conditions[share] = __local__share
   __local__h_over_L = h_over_L
-  append!(__params, @parameters (h_over_L::Real), [description = "Center-of-mass height over wheelbase"])
+  append!(__params, @parameters (h_over_L::Real), [description = "Center-of-mass height over wheelbase; assumed"])
   __initial_conditions[h_over_L] = __local__h_over_L
 
   ### Final Parameters (assignments)

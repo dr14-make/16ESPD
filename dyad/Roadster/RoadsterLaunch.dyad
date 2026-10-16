@@ -91,6 +91,37 @@ metadata {
 }
 end
 
+test component TestRoadsterLaunch
+  launch = VehicleSystemsComponents.Roadster.RoadsterLaunch()
+metadata {
+  "Dyad": {
+    "tests": {
+      "rear_wheel_drive": {
+        "stop": 4,
+        "params": {"launch.share": 0.55, "launch.h_over_L": 0.17},
+        "atol": {"launch.v": 0.02, "launch.wheel.kappa": 0.001},
+        "expect": {
+          "initial": {"launch.v": 0, "launch.wheel.kappa": 0},
+          "final": {"launch.v": 32.18359, "launch.wheel.kappa": 0.034254},
+          "signals": ["launch.v", "launch.wheel.kappa"]
+        }
+      },
+      "all_wheel_drive": {
+        "stop": 4,
+        "params": {"launch.share": 1, "launch.h_over_L": 0},
+        "atol": {"launch.v": 0.02, "launch.wheel.kappa": 0.001},
+        "expect": {
+          "initial": {"launch.v": 0, "launch.wheel.kappa": 0},
+          "final": {"launch.v": 46.44041, "launch.wheel.kappa": 0.026170},
+          "signals": ["launch.v", "launch.wheel.kappa"]
+        }
+      }
+    }
+  }
+}
+end
+
+
 analysis RoadsterLaunchTransient
   extends TransientAnalysis(stop = 6.0, abstol = 1e-8, reltol = 1e-6)
   "Vehicle mass"
