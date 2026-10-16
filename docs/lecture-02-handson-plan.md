@@ -55,16 +55,20 @@ Budgets add up to 90 minutes: 8 + 12 + 15 + 20 + 12 + 12 + 8 + 3.
 **Built / given.** Given: the course library from github.com/dr14-make/16ESPD (public).
 
 **Actions.** Branch `handson-02` from `main` after hands-on 1's PR; in the Julia REPL
-`Pkg.add(url = "https://github.com/dr14-make/16ESPD")`; Dyad Compile; check the **+** tree.
+`Pkg.add(url = "https://github.com/dr14-make/16ESPD")`; <kbd>F1</kbd> → `Dyad: Compile`; check the
+**+** tree.
 
 **Reference model.** None.
 
 **Checkpoint.** `using VehicleSystemsComponents` loads; **+** → `VehicleSystemsComponents` →
-`Vehicle` → `Engine` lists `AirPath`, `Throttle`, `CylinderAirflow`, `MappedEngine`.
+`Vehicle` → `Engine` includes `AirPath`, `Throttle`, `CylinderAirflow`, `MappedEngine`.
 
-**TODO.** Rehearse the add route. If Dyad Studio needs **Actions → Import Library** for a git
-package, or a branch other than `main`, the action changes. Pin the course library to a tag
-once tasks 3–4 merge, so students get the engine the checkpoints were read from.
+**Rehearsed.** `Pkg.add(url = …)` plus Dyad Compile is enough: the library shows under **+**, not
+in the left **Components** tree. Pkg's yellow "different versions are currently loaded" warning is
+harmless.
+
+**TODO.** Pin the course library to a tag once its branch merges, so students get the engine the
+checkpoints were read from.
 
 **Screenshots.** `step00-engine-library.png`.
 
@@ -88,7 +92,10 @@ there; convert to L/h and L/100 km with ρ = 0.745 kg/L; look at λ.
 - 90 km/h: 3080 rpm, 31.1 N·m → `p_m` ≈ **47.8 kPa**; fuel **0.85 g/s** = **4.10 L/h** →
   **4.6 L/100 km**, **105 g CO₂/km**.
 - λ = 1.00 there; **0.87** at 3000 rpm, 100 kPa (full-load enrichment).
-- Full-load torque peaks at **150.2 N·m** near 4100 rpm (`full_load.csv`).
+- The 3000 rpm row alone crosses 31.1 N·m at **47.7 kPa** (0.82 g/s, 4.4 L/100 km); 47.8 kPa is
+  the 90 km/h point at 3080 rpm.
+- The torque map gives **160.3 N·m** at 4000 rpm, 100 kPa, and peaks at **177.0 N·m** at
+  3250 rpm, 105 kPa; the full-load curve peaks at **150.2 N·m** near 4100 rpm (`full_load.csv`).
 
 **Screenshots.** `step01-torque-map.png`, `step01-fuel-map.png` (REPL plots, not Studio).
 
@@ -112,7 +119,8 @@ checkpoints). To build: `HandsOn02.Manifold`, `HandsOn02.AirPathStep`,
 **Checkpoint** (from `TestAirPath`, merged in #47):
 
 - Idle, 800 rpm, closed: 101.3 → **33.0 kPa** (32955.7 Pa).
-- Small step at idle, `du = 0.005`: 33.0 → **37.3 kPa**; τ ≈ **0.15 s**.
+- Small step at idle, `du = 0.005`: 33.0 → **37.3 kPa**; τ ≈ **0.15 s** on this step. The first
+  fall from 101 kPa is nonlinear, with a 1/e time of about 0.10 s.
 - 3000 rpm closed (overrun): **13.5 kPa**; wide open: **99.9 kPa**; τ ≈ **0.03 s**.
 
 **TODO.** Confirm the student `Manifold` with given parts reproduces `TestAirPath` exactly (it
@@ -279,7 +287,7 @@ compare against (with its source).
 
 | Slot | Where | Filled by |
 |---|---|---|
-| Course-library add route and pin | step 00 | rehearsal in Studio |
+| Course-library tag to pin | step 00 | the branch merging |
 | Rehearsal of the 15-wire `MapEngine` drawing | step 03 | rehearsal in Studio |
 | Initial lines of the car benches | steps 04–06 | `HandsOn02.MappedCar*` |
 | Time to 100 km/h; rev-limiter sawtooth | step 04 | `HandsOn02.MappedCarWOTTransient` |

@@ -116,6 +116,15 @@ library's `EngineMapData`.
 torque source's, or the sensor reads a shaft nobody drives. And there is no flywheel: on the
 dynamometer the bench sets the speed.
 
+**Ports:** drop each one from **+** straight onto the outline, in `MapEngine`'s own diagram; a
+placed port does not drag. If a name will not change in the diagram, rename it in code
+(<kbd>Ctrl</kbd>+<kbd>H</kbd>, Match Case, Whole Word). Hover to read port names: `air` has
+`u_thr`, `mdot_bst`, `omega` in from the top and `mdot_thr`, `p_m`, `mdot_cyl` out; the maps
+have `omega` on top, `p_m` below.
+
+**Save twice** after the last wire: one <kbd>Ctrl</kbd>+<kbd>S</kbd> can miss it (a known Studio
+bug). Then check the **Problems** tab is empty.
+
 **TODO (screenshot):** `step03-map-engine.png`.
 -->
 
@@ -178,6 +187,9 @@ pressures are `TestAirPath`'s at 3000 rpm; the torques and fuel are the maps rea
 `fuel_gps` 3.75 g/s; × 3.09 = 11.6 g/s. Closed: `torque_Nm` at (3000, 13.5) = −18.2, `fuel_gps`
 = 0.097 g/s. Fuel in the plot is in kg/s: 0.00375.
 
+**The pasted bench carries placement annotations,** so it lays out left to right. Without them
+the parts pile up in one corner.
+
 **TODO (screenshots):** `step03-dyno-bench.png`, `step03-step-plot.png`.
 -->
 
@@ -194,7 +206,7 @@ Closed pedal at 3000 rpm, your engine still burns **0.097 g/s** — for a negati
 
 A real ECU cuts the fuel on overrun. The library engine does:
 
-1. Delete `engine`; **+** → `Vehicle › Engine › MappedEngine`, named `engine`; rewire.
+1. Delete `engine`; **+** → `Vehicle › Engine › MappedEngine`, named `engine`; rewire. `spline` is the bottom-right circle, `support` the bottom centre: zoom in.
 2. Run with `pedal_initial = 1`, `pedal_final = 0`, `p_m0 = 99889.9`: released at 1 s.
 
 </div>
@@ -202,7 +214,7 @@ A real ECU cuts the fuel on overrun. The library engine does:
 
 > **Checkpoint · pedal released**
 >
-> - `mdot_fuel` → **0**
+> - `mdot_fuel` → **0** within about 30 ms
 > - `tau_e` → **−18.7 N·m**, the closed-throttle curve
 > - fueled again below **1000 rpm**; armed above 1300 rpm
 

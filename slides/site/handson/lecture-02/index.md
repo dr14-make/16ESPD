@@ -44,17 +44,22 @@ A branch for today on your `MyCar`, and the course library beside your own.
    Pkg.add(url = "https://github.com/dr14-make/16ESPD")
    ```
 
-   It downloads and precompiles: a few minutes. Read step 01 meanwhile.
-3. Bottom right, **Julia Commands → Dyad Compile**.
-4. Open any diagram, click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Engine`.
+   It downloads and precompiles: a few minutes. Read step 01 meanwhile. A yellow warning that packages are precompiled but "different versions are currently loaded … Restart julia" is harmless: carry on.
+3. <kbd>F1</kbd> → `Dyad: Compile`.
+4. Open any diagram (double-click it in the **Components** tree), click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Engine`. The course library shows under **+**, not in the **Components** tree on the left: that is expected.
 
 <!-- TODO(screenshot): step00-engine-library.png, the + tree at Vehicle › Engine. -->
-<!-- TODO(rehearsal): confirm Pkg.add(url = …) is enough for Dyad Studio to list the library, or
-switch the action to Actions → Import Library; pin to a tag once tasks 3–4 merge. -->
+<!-- TODO: pin Pkg.add to a tag once the course library's branch merges. -->
 
 ::: tip Checkpoint
 
-`Engine` lists `AirPath`, `CylinderAirflow`, `MappedEngine` and `Throttle`, and `using VehicleSystemsComponents` runs in the REPL without an error.
+`Engine` includes `AirPath`, `CylinderAirflow`, `MappedEngine` and `Throttle`, among many more, and `using VehicleSystemsComponents` runs in the REPL without an error.
+
+:::
+
+::: warning The answers are in the + tree
+
+Under **+**, `VehicleSystemsComponents` also holds a `HandsOn02` folder and, in `Vehicle › Engine`, the `Test…` components: they are the reference answers to today's steps. Build your own; open them only to compare.
 
 :::
 
@@ -88,12 +93,12 @@ The data is the US EPA's ALPHA map of a 2014 Mazda 2.0 L Skyactiv, scaled to 1.5
        M, head = readdlm(joinpath(dir, name), ','; header = true)
        return parse.(Float64, vec(head)[2:end]), M[:, 1], M[:, 2:end]
    end
-   kpa, rpm, T = engine_map("torque_Nm.csv")
+   kpa, rpm, T = engine_map("torque_Nm.csv");
    heatmap(kpa, rpm, T; xlabel = "p_m [kPa]", ylabel = "N [rpm]", title = "torque [N·m]")
    ```
 
-2. Do the same for `fuel_gps.csv` and `lambda.csv`.
-3. **Find 90 km/h.** From hands-on 1, step 05: at 90 km/h the engine turns **3080 rpm** and must give **31.1 N·m**. Print the nearest row of the torque map with `T[rpm .== 3000, :]` and find the two pressures between which it passes 31.1 N·m. Interpolate.
+2. Do the same for `fuel_gps.csv` and `lambda.csv`, under their own names so `T` stays the torque map: `_, _, F = engine_map("fuel_gps.csv");` and `_, _, L = engine_map("lambda.csv");`, then `heatmap(kpa, rpm, F; …)` and `heatmap(kpa, rpm, L; …)`.
+3. **Find 90 km/h.** From hands-on 1, step 05: at 90 km/h the engine turns **3080 rpm** and must give **31.1 N·m**. Print the nearest row of the torque map next to its pressures with `[kpa vec(T[rpm .== 3000, :])]` and find the two pressures between which it passes 31.1 N·m. Interpolate. Give your own results names longer than one letter, such as `p_cruise` and `fuel_cruise`: a one-letter name like `f` is easy to reuse by accident later.
 4. Read the fuel map's 3000 rpm row at that pressure.
 5. Turn it into consumption: g/s × 3600 ÷ 745 g/L = L/h; then L/h ÷ 90 km/h × 100 = L/100 km.
 
@@ -103,9 +108,10 @@ The data is the US EPA's ALPHA map of a 2014 Mazda 2.0 L Skyactiv, scaled to 1.5
 
 Computed from the tables:
 
-- Torque reaches about **150 N·m** near 4000 rpm at 100 kPa, and is negative at low pressure: the engine pumping against a vacuum.
+- The map gives **160.3 N·m** at 4000 rpm and 100 kPa, and peaks at **177 N·m** near 3250 rpm and 105 kPa. It is negative at low pressure: the engine pumping against a vacuum.
 - The 3000 rpm row passes 31.1 N·m at about **47.7 kPa** (30.7 N·m at 47.5, 35.6 at 50).
-- Fuel there: about **0.82 g/s** → 4.0 L/h → **4.4 L/100 km**. Interpolating to 3080 rpm exactly gives 0.85 g/s, 4.10 L/h and **4.6 L/100 km**; step 05 measures it.
+- Fuel there: about **0.82 g/s** → 4.0 L/h → **4.4 L/100 km**.
+- The 90 km/h point itself, at 3080 rpm between the 3000 and 3250 rpm rows, sits at **47.8 kPa**: 0.85 g/s, 4.10 L/h and **4.6 L/100 km**. Step 05 measures it. Mark your plots there.
 - λ is **1** up to about 80 kPa and **0.87** at 3000 rpm, 100 kPa: the engine runs rich only near full load.
 
 :::
@@ -127,7 +133,9 @@ You write this equation as a component, then put it on a bench between two given
 #### A · Paste the manifold
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `Manifold`.
-2. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save.
+2. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save. This also replaces the template's `metadata` block: that is fine.
+
+The `{"Dyad": …}` annotation after each port only places it on the block's edge: three flows in on the left, `p_m` out on the right.
 
 ::: code-group
 
@@ -137,13 +145,13 @@ Intake manifold as one isothermal receiver: the pressure is its only state.
 """
 component Manifold
   "Air flow in through the throttle [kg/s]"
-  mdot_thr = RealInput()
+  mdot_thr = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}}}}
   "Air flow in from the brake booster [kg/s]"
-  mdot_bst = RealInput()
+  mdot_bst = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
   "Air flow out into the cylinders [kg/s]"
-  mdot_cyl = RealInput()
+  mdot_cyl = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}, "diagram": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}}}}
   "Manifold absolute pressure [Pa]"
-  p_m = RealOutput()
+  p_m = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
   "Manifold volume"
   parameter V_m::Volume = 1.0e-3
   "Manifold air temperature"
@@ -173,12 +181,16 @@ end
 | `cylinders` | VehicleSystemsComponents › Vehicle › Engine › CylinderAirflow | — |
 | `manifold` | your `Manifold` | — |
 
-3. <Badge type="tip" text="New component" /> Add a component `AirPathStep` and place the six parts of the table.
-4. Wire `throttle_cmd` → `throttle.u_thr`, `speed` → `cylinders.omega`, `no_booster` → `manifold.mdot_bst`.
+3. <Badge type="tip" text="New component" /> Add a component `AirPathStep` and place the six parts of the table: **+** → type the name in the search box → drag the result onto the canvas.
+   - Search "Manifold" also offers `IntakeManifold` from the course library: take your own `MyCar › Manifold`.
+   - Search "Throttle" offers four throttles: take the plain `Vehicle › Engine › Throttle`, not `ElectronicThrottle`, `ThrottleEndStops` or `ThrottlePositionSensor`.
+   - The parts arrive as `step`, `constant1`, `constant2`, `throttle`, `cylinderairflow` and `manifold`. Rename each to the **Name** column: select it → **Edit Parameters** → the pencil next to its name. Set its parameters first, then rename.
+   - To set a parameter, click its field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type the value, <kbd>Enter</kbd>.
+4. Wire `throttle_cmd` → `throttle.u_thr`, `speed` → `cylinders.omega`, `no_booster` → `manifold.mdot_bst`. The icons do not say which input is which: hover a port to read its name before you wire it. On `Throttle` the top input is `u_thr` and the bottom one `p_m`; on `CylinderAirflow` the top input is `p_m` and the bottom one `omega`.
 5. Wire the flows: `throttle.mdot_thr` → `manifold.mdot_thr`, `cylinders.mdot_cyl` → `manifold.mdot_cyl`.
 6. Wire the pressure back: `manifold.p_m` → `throttle.p_m` and → `cylinders.p_m`. Both flows depend on it; this loop is what makes the pressure settle.
-7. Toggle to code and add `initial manifold.p = 101325` at the end of `relations`: the manifold starts full of outside air.
-8. <Badge type="tip" text="New analysis" /> ▷ **Run Analysis** → **TransientAnalysis**, named `AirPathStepTransient`, `stop = 3`.
+7. Toggle to code and add `initial manifold.p = 101325` after the last `connect`, before `metadata`: the manifold starts full of outside air.
+8. <Badge type="tip" text="New analysis" /> ▷ (top right of the diagram) → **Create New Analysis** → `TransientAnalysis` → name it `AirPathStepTransient`. In the analysis that opens, **Edit Parameters** → `stop` = `3`, and save.
 
 ::: code-group
 
@@ -213,7 +225,7 @@ end
 
 #### C · Run it at idle, then at 3000 rpm
 
-9. Run `AirPathStepTransient` and plot the pressure:
+9. Run `AirPathStepTransient` with ▷ on its analysis tab first. Then plot the pressure in the REPL:
 
    ```julia
    using Plots
@@ -221,7 +233,8 @@ end
    plot(r; idxs = r."manifold.p_m")
    ```
 
-10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s). Run and plot again.
+   A REPL opened before `AirPathStep` existed answers `UndefVarError: AirPathStepTransient not defined`. Running once with ▷ loads the new components into it; restarting the REPL does too.
+10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s): click the field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type, <kbd>Enter</kbd>. Run and plot again.
 
 <!-- TODO(screenshot): step02-idle-plot.png. -->
 
@@ -229,7 +242,7 @@ end
 
 The same numbers as the course model's tests (`Vehicle.Engine.TestAirPath`), which use this equation:
 
-- **Idle, 800 rpm:** 101.3 kPa falls to **33.0 kPa** well within the first second, settling with a time constant of about **0.15 s**; the small throttle step at 1 s lifts it to **37.3 kPa**.
+- **Idle, 800 rpm:** 101.3 kPa falls to **33.0 kPa** well within the first second; the small throttle step at 1 s lifts it to **37.3 kPa**, settling with a time constant of about **0.15 s**. Read τ on that small step: the first big fall from 101 kPa is not a straight lag, and its 1/e time is about 0.10 s.
 - **3000 rpm:** closed, the pressure falls to **13.5 kPa** (overrun); wide open it rises to **99.9 kPa**, almost the outside air. It settles about five times faster than at idle, τ ≈ **0.03 s**.
 
 The plot is in pascals: 33 000 is 33 kPa.
@@ -278,15 +291,15 @@ You test the engine on a **dynamometer**: a bench that holds the shaft at a fixe
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `MapEngine`. It opens as an empty diagram.
 2. With **+**, place the six parts of the table and rename each. Set `co2`'s `k` to `3.09`. Arrange them as the picture above: `air` on the left; `torque_map` above `fuel_map` to its right; `torque` right of `torque_map`, `co2` right of `fuel_map`; `speed` above `torque`.
-3. Place the seven ports from the `Dyad` library and drag them onto the component's outline as the table says.
-4. Draw the 15 wires. Each starts at the port named first:
+3. Place the seven ports from the `Dyad` library: drag each from **+** and drop it straight onto the dashed outline, on the edge the table says. A port that has landed does not move, so drop it where it belongs. Place and name ports here, in `MapEngine`'s own diagram, never on an instance of it in another diagram. If a port's name will not change in the diagram, toggle to code and rename it with <kbd>Ctrl</kbd>+<kbd>H</kbd>, **Match Case** and **Whole Word** on.
+4. Draw the 15 wires. Hover a port to read its name. `air`'s inputs are, from the top, `u_thr`, `mdot_bst`, `omega`, and its outputs `mdot_thr`, `p_m`, `mdot_cyl`. On `torque_map` and `fuel_map`, `omega` is the top input and `p_m` the one below. Each wire starts at the port named first:
    - **Air in:** `pedal` → `air.u_thr`; `mdot_bst` → `air.mdot_bst`.
    - **Speed**, three wires from `speed.w`: → `air.omega`, → `torque_map.omega`, → `fuel_map.omega`.
    - **Pressure**, three wires from `air.p_m`: → `torque_map.p_m`, → `fuel_map.p_m`, → the `p_m` port.
    - **Torque:** `torque_map.y` → `torque.tau`; `torque`'s right-hand circle → `spline`; `torque`'s bottom circle → `support`.
    - **Shaft speed:** `speed`'s circle → `spline`, so the sensor reads the shaft the torque drives.
    - **Fuel:** `fuel_map.y` → `mdot_fuel`; `fuel_map.y` → `co2.u`; `co2.y` → `mdot_co2`.
-5. Save with <kbd>Ctrl</kbd>+<kbd>S</kbd>. The **Problems** tab should show nothing for `MapEngine`.
+5. Save with <kbd>Ctrl</kbd>+<kbd>S</kbd>, twice: a single save right after the last wire can miss it, a known Studio bug. The **Problems** tab should show nothing for `MapEngine`.
 
 Read what you drew:
 
@@ -338,7 +351,7 @@ end
 
 The bench is given as code: paste it. Its parameters are the knobs of the two runs below.
 
-6. <Badge type="tip" text="New component" /> Add a component `MapEngineDyno`, toggle to code, select everything, paste the block below and save. Toggle back to see it: `pedal` and `no_booster` feed the engine, `speed` drives the `dyno`, and both supports go to `mounts`.
+6. <Badge type="tip" text="New component" /> Add a component `MapEngineDyno`, toggle to code, select everything, paste the block below and save. Toggle back to see it, left to right: `pedal` and `no_booster` feed the engine, `speed` drives the `dyno`, and both supports go to `mounts`. The `{"Dyad": …}` annotations only place the parts in the diagram.
 7. <Badge type="tip" text="New analysis" /> Create `MapEngineDynoTransient` as in step 02, or paste the `analysis` block below into its own file.
 
 ::: code-group
@@ -355,12 +368,12 @@ component MapEngineDyno
   parameter t_step::Time = 1.0
   "Initial manifold pressure"
   parameter p_m0::Pressure = 47829.1
-  pedal = BlockComponents.Sources.Step(height = pedal_final - pedal_initial, offset = pedal_initial, start_time = t_step)
-  no_booster = BlockComponents.Sources.Constant(k = 0)
-  speed = BlockComponents.Sources.Constant(k = rpm * pi / 30)
-  engine = MapEngine()
-  dyno = RotationalComponents.Sources.VelocitySource()
-  mounts = RotationalComponents.Components.Fixed()
+  pedal = BlockComponents.Sources.Step(height = pedal_final - pedal_initial, offset = pedal_initial, start_time = t_step) {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 250, "x2": 150, "y2": 350}}}}
+  no_booster = BlockComponents.Sources.Constant(k = 0) {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 550, "x2": 150, "y2": 650}}}}
+  engine = MapEngine() {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 300, "x2": 500, "y2": 500}}}}
+  mounts = RotationalComponents.Components.Fixed() {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 750, "x2": 650, "y2": 850}}}}
+  dyno = RotationalComponents.Sources.VelocitySource() {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 350, "x2": 750, "y2": 450}}}}
+  speed = BlockComponents.Sources.Constant(k = rpm * pi / 30) {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 350, "x2": 950, "y2": 450}}}}
 relations
   connect(pedal.y, engine.pedal)
   connect(no_booster.y, engine.mdot_bst)
@@ -443,7 +456,7 @@ Without the cap the map would give 163.0 N·m. The torque now rises 10–90 % in
 
 With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making negative torque. A real engine control unit cuts the fuel on overrun and turns it back on near idle so the engine does not stall. The course library's `MappedEngine` does; otherwise it reads the same maps.
 
-10. In `MapEngineDyno`, delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine` and name it `engine`. Rewire `pedal`, `no_booster`, `spline` and `support` as before.
+10. In `MapEngineDyno`, delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine` and name it `engine`. Rewire `pedal`, `no_booster`, `spline` and `support` as before. On `MappedEngine`'s icon, `spline` is the circle at the bottom right, under the last output triangle, and `support` the circle at the bottom centre: zoom in to hit them, and hover to check the name.
 11. Run it as a release from wide open, and plot `engine.mdot_fuel` and `engine.tau_e`:
 
     ```julia
@@ -455,7 +468,7 @@ With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making
 
 ::: tip Checkpoint
 
-Before 1 s the course engine gives the same 148.4 N·m and 3.75 g/s as yours. At the release the fuel drops to **0**, and the torque to **−18.7 N·m**, the engine's measured closed-throttle (motored) torque at 3000 rpm. It would refuel below 1000 rpm; the cut only arms above 1300 rpm.
+Before 1 s the course engine gives the same 148.4 N·m and 3.75 g/s as yours. At the release the fuel falls to **0** within about 30 ms, and the torque to **−18.7 N·m**, the engine's measured closed-throttle (motored) torque at 3000 rpm. It would refuel below 1000 rpm; the cut only arms above 1300 rpm.
 
 `MappedEngine` also puts a progressive pedal curve and a 50 ms throttle actuator in front of the air path, so its pedal is not yours: it holds 90 km/h at 0.220, not 0.103. It has `lambda`, `mdot_hc`, `mdot_co` and `mdot_nox` outputs too. The HC, CO and NOx tables are **assumed**: their shapes follow textbook trends and their sizes are typical, not measured. Use them for trends only.
 
@@ -481,10 +494,10 @@ Same body, same driveline, same single gear of 4.0. The engine changes, and with
 
 1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was.
 2. Open `MappedCar`. Delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine`, name it `engine`, and put it where the old one was.
-3. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal`.
+3. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal`. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench; if the name will not change in the diagram, rename it in code.
 4. Wire `engine.spline` → `driveline.spline` and `engine.support` → `rot_ground`, as before.
 5. Add `no_booster` = `BlockComponents › Sources › Constant` (`k = 0`) → `engine.mdot_bst`.
-6. Add two `RealOutput` ports on the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.
+6. Drop two `RealOutput` ports from **+** straight onto the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.
 7. <Badge type="tip" text="New component" /> The bench `MappedCarWOT`: `pedal` = `Constant(k = 1)` → `car.pedal`, with the `initial` lines below. <Badge type="tip" text="New analysis" /> `MappedCarWOTTransient`, `stop = 120`.
 
 ::: code-group

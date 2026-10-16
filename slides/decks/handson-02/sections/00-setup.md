@@ -146,9 +146,10 @@ it to your library once, like the standard libraries in hands-on 1.
 **Timing:** 8 minutes. The add downloads and precompiles; talk through step 01's maps while it
 runs.
 
-**TODO (rehearsal):** confirm that `Pkg.add(url = …)` is enough for Dyad Studio to list
-`VehicleSystemsComponents` under **+**, or whether **Actions → Import Library** is needed. Pin the
-add to a tag once the mapped engine (task 3) and the car (task 4) are merged, so students get the
+**Rehearsed:** `Pkg.add(url = …)` plus **Dyad: Compile** is enough: the library shows under
+**+** in a diagram. It does not show in the left **Components** tree; that is expected.
+
+**TODO:** pin the add to a tag once the course library's branch merges, so students get the
 engine the checkpoints were read from.
 -->
 
@@ -165,12 +166,12 @@ engine the checkpoints were read from.
    Pkg.add(url = "https://github.com/dr14-make/16ESPD")
    ```
 
-3. Julia Commands → **Dyad Compile**.
+3. <kbd>F1</kbd> → `Dyad: Compile`.
 4. **+** in any diagram → `VehicleSystemsComponents` → `Vehicle` → `Engine`.
 
 > **Checkpoint**
 >
-> `Engine` lists `AirPath`, `CylinderAirflow`, `MappedEngine` and `Throttle`.
+> `Engine` includes `AirPath`, `CylinderAirflow`, `MappedEngine` and `Throttle`.
 
 Page: [Set up](../handson/lecture-02/#setup)
 
@@ -180,6 +181,15 @@ appear under the plus button like the standard ones.
 
 **They get wrong:** branching from `main`, which holds only the empty library: step 04 then has
 no `Car` to duplicate. Check a few status bars.
+
+**They worry about:** Pkg's yellow "different versions are currently loaded … Restart julia"
+warning after the add. It is harmless; carry on.
+
+**They get wrong:** looking for the library in the left **Components** tree. It shows only under
+**+**.
+
+**Say:** the **+** tree also shows `HandsOn02` and the `Test…` components: those are the reference
+answers. Build your own.
 
 **If stuck:** a network error during the add: pair the student with a neighbor; step 01 needs
 only the REPL and the CSV files, which come with the same add.
