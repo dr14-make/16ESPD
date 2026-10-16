@@ -291,7 +291,7 @@ You test the engine on a **dynamometer**: a bench that holds the shaft at a fixe
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `MapEngine`. It opens as an empty diagram.
 2. With **+**, place the six parts of the table and rename each. Set `co2`'s `k` to `3.09`. Arrange them as the picture above: `air` on the left; `torque_map` above `fuel_map` to its right; `torque` right of `torque_map`, `co2` right of `fuel_map`; `speed` above `torque`.
-3. Place the seven ports from the `Dyad` library: drag each from **+** and drop it straight onto the dashed outline, on the edge the table says. A port that has landed does not move, so drop it where it belongs. Place and name ports here, in `MapEngine`'s own diagram, never on an instance of it in another diagram. If a port's name will not change in the diagram, toggle to code and rename it with <kbd>Ctrl</kbd>+<kbd>H</kbd>, **Match Case** and **Whole Word** on.
+3. Place the seven ports from the `Dyad` library: drag each from **+** and drop it straight onto the dashed outline, on the edge the table says. Place and name ports here, in `MapEngine`'s own diagram, never on an instance of it in another diagram. To grab a port, click just outside its triangle or circle, not on it: a click on the port itself starts a wire. Then drag it to move it, or **Edit Parameters** → pencil to rename it.
 4. Draw the 15 wires. Hover a port to read its name. `air`'s inputs are, from the top, `u_thr`, `mdot_bst`, `omega`, and its outputs `mdot_thr`, `p_m`, `mdot_cyl`. On `torque_map` and `fuel_map`, `omega` is the top input and `p_m` the one below. Each wire starts at the port named first:
    - **Air in:** `pedal` → `air.u_thr`; `mdot_bst` → `air.mdot_bst`.
    - **Speed**, three wires from `speed.w`: → `air.omega`, → `torque_map.omega`, → `fuel_map.omega`.
@@ -494,7 +494,7 @@ Same body, same driveline, same single gear of 4.0. The engine changes, and with
 
 1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was.
 2. Open `MappedCar`. Delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine`, name it `engine`, and put it where the old one was.
-3. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal`. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench; if the name will not change in the diagram, rename it in code.
+3. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal`. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench: click just outside the port to select it, then **Edit Parameters** → pencil.
 4. Wire `engine.spline` → `driveline.spline` and `engine.support` → `rot_ground`, as before.
 5. Add `no_booster` = `BlockComponents › Sources › Constant` (`k = 0`) → `engine.mdot_bst`.
 6. Drop two `RealOutput` ports from **+** straight onto the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.

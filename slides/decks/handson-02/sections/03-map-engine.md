@@ -116,9 +116,9 @@ library's `EngineMapData`.
 torque source's, or the sensor reads a shaft nobody drives. And there is no flywheel: on the
 dynamometer the bench sets the speed.
 
-**Ports:** drop each one from **+** straight onto the outline, in `MapEngine`'s own diagram; a
-placed port does not drag. If a name will not change in the diagram, rename it in code
-(<kbd>Ctrl</kbd>+<kbd>H</kbd>, Match Case, Whole Word). Hover to read port names: `air` has
+**Ports:** drop each one from **+** straight onto the outline, in `MapEngine`'s own diagram. To
+move or rename one, click just outside it (a click on it starts a wire), then drag, or Edit
+Parameters → pencil. Hover to read port names: `air` has
 `u_thr`, `mdot_bst`, `omega` in from the top and `mdot_thr`, `p_m`, `mdot_cyl` out; the maps
 have `omega` on top, `p_m` below.
 
