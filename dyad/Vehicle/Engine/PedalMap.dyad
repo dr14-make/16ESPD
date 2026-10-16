@@ -1,0 +1,39 @@
+"Progressive pedal map followed by a first-order drive-by-wire actuator."
+component PedalMap
+  "Driver pedal command, 0 closed to 1 fully open"
+  pedal = RealInput() {^pedal}
+  "Throttle command, 0 closed to 1 fully open"
+  u_thr = RealOutput() {^u_thr}
+  "Progressive drive-by-wire pedal exponent (assumed)"
+  parameter pedal_exponent::Real = 1.5
+  "Drive-by-wire throttle actuator time constant (assumed)"
+  parameter throttle_time::Time(min = eps(Float64)) = 0.05
+  actuator = BlockComponents.Continuous.FirstOrder(T = throttle_time) {^actuator}
+relations
+  actuator.u = min(max(pedal, 0.0), 1.0)^pedal_exponent
+  connect(actuator.y, u_thr)
+  initial actuator.y = actuator.u
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "pedal → throttle", "x": 500, "y": 300, "rot": 0}]},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "u_thr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "actuator": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}}
+  }
+}
+end
+
+test component TestPedalMap
+  pedal = BlockComponents.Sources.Constant(k = 0.25) {^pedal}
+  map = VehicleSystemsComponents.Vehicle.Engine.PedalMap(pedal_exponent = 2.0, throttle_time = 0.05) {^map}
+relations
+  connect(pedal.y, map.pedal) {^pedal_wire}
+metadata {
+  "Dyad": {"tests": {"steady": {"stop": 0.1, "atol": {"map.u_thr": 1e-12}, "expect": {"initial": {"map.u_thr": 0.0625}, "final": {"map.u_thr": 0.0625}, "signals": ["map.u_thr"]}}, "clamp": {"stop": 0.1, "params": {"pedal.k": 1.5}, "atol": {"map.u_thr": 1e-12}, "expect": {"initial": {"map.u_thr": 1.0}, "final": {"map.u_thr": 1.0}}}}},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 400, "x2": 200, "y2": 500}}}},
+    "map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
+    "pedal_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

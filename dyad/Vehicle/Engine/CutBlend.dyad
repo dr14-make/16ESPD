@@ -1,0 +1,51 @@
+"Blend fired and motored values with a continuous cut fraction."
+component CutBlend
+  "Fired value"
+  fired = RealInput() {^fired}
+  "Cut fraction, 0 fired to 1 cut"
+  cut = RealInput() {^cut}
+  "Motored value"
+  motored = RealInput() {^motored}
+  "Blended value"
+  y = RealOutput() {^y}
+relations
+  y = (1 - cut) * fired + cut * motored
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}, {"label": "cut blend", "x": 500, "y": 300, "rot": 0}]},
+  "_links": {
+    "fired": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "cut": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "motored": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end
+
+test component TestCutBlend
+  fired = BlockComponents.Sources.Constant(k = 100.0) {^fired}
+  motored = BlockComponents.Sources.Constant(k = -20.0) {^motored}
+  fired_end = BlockComponents.Sources.Constant(k = 0.0) {^fired_end}
+  motored_end = BlockComponents.Sources.Constant(k = 1.0) {^motored_end}
+  at_fired = VehicleSystemsComponents.Vehicle.Engine.CutBlend() {^at_fired}
+  at_motored = VehicleSystemsComponents.Vehicle.Engine.CutBlend() {^at_motored}
+relations
+  connect(fired.y, at_fired.fired, at_motored.fired) {^fired_wire}
+  connect(motored.y, at_fired.motored, at_motored.motored) {^motored_wire}
+  connect(fired_end.y, at_fired.cut) {^fired_end_wire}
+  connect(motored_end.y, at_motored.cut) {^motored_end_wire}
+metadata {
+  "Dyad": {"tests": {"ends": {"stop": 0.1, "atol": {"at_fired.y": 1e-12, "at_motored.y": 1e-12}, "expect": {"initial": {"at_fired.y": 100.0, "at_motored.y": -20.0}, "final": {"at_fired.y": 100.0, "at_motored.y": -20.0}, "signals": ["at_fired.y", "at_motored.y"]}}}},
+  "_links": {
+    "fired": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 100, "x2": 200, "y2": 200}}}},
+    "fired_end": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "motored_end": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 500, "x2": 200, "y2": 600}}}},
+    "motored": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 700, "x2": 200, "y2": 800}}}},
+    "at_fired": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 200, "x2": 600, "y2": 300}}}},
+    "at_motored": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 550, "x2": 600, "y2": 650}}}},
+    "fired_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 150}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 300, "y": 570}], "E": 3}], "junctions": [{"x": 300, "y": 220}]}},
+    "motored_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 750}], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [{"x": 350, "y": 280}], "E": 2}], "junctions": [{"x": 350, "y": 630}]}},
+    "fired_end_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 350}, {"x": 400, "y": 250}], "E": 2}]}},
+    "motored_end_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 420, "y": 550}, {"x": 420, "y": 600}], "E": 2}]}}
+  }
+}
+end
