@@ -12,35 +12,57 @@ Torque command in, shaft torque out — late, slow, and never more than 150 N·m
 [page: step 02](../handson/lecture-01/#engine) · reference `dyad/HandsOn/Engine.dyad`
 
 <!--
-**Say:** This is the first box of the chain: a transport delay, a
-first-order lag, and an upper limit.
+**Say:** This step finishes the engine. It is a chain of three boxes. The first makes the
+torque late, the second makes it slow, the third caps it at 150 newton-meters.
 
-**Tutor:** the delay and the lag make the Ziegler–Nichols and Cohen–Coon
-tuning methods usable in the PID lecture. Without them the car is first order and never
-oscillates.
+**Words for this step** — say the plain meaning the first time you use each one:
 
-**First and higher order — explain it here if the room asks:**
+- **Torque** — a twist, in newton-meters (N·m). It is what the engine delivers.
+- **Delay** (also *transport delay* or *dead time*, symbol θ, "theta") — the output
+  copies the input, but 0.3 s later.
+- **Lag** (also *first-order lag*) — the output follows the input gradually instead of
+  jumping. How fast is set by its *time constant*, τ ("tau").
+- **Limiter** — keeps a number between a floor and a ceiling, here 0 and 150 N·m.
+- **Component** — one model in Dyad, such as `Engine`. You draw it as a diagram of
+  parts and wires; Dyad also shows it as code.
+- **Parameter** — a named number of a component, such as `T_max = 150`.
+- **Port** — a plug on the edge of a component that other components connect to.
+- **Bench** (test bench) — a small extra model that feeds the engine a test input so it
+  can be run.
+- **Analysis** — the instruction "simulate this model for so many seconds". Running it
+  gives a result you can plot.
 
-- **Order = number of states**: how many first-order differential
-  equations are left once Dyad has simplified the model (the ▷ slide in Part 1). Rule
-  of thumb: one per independent store of energy or memory — an inertia, a spring, a
-  heated mass, a filter.
-- **First order**: one state, τ·dy/dt + y = K·u. The step response rises
-  smoothly toward its final value, 63 % after one τ, and *never overshoots or
-  oscillates*. Examples: the engine's lag on its own; the car's speed against drag,
-  with τ of about a minute; a cup of tea cooling.
-- **Second order**: two states, e.g. position and speed of a mass on a
-  spring — a car's suspension. It can overshoot and oscillate, depending on its damping.
-  Two first-order lags in a row are also second order, but without oscillation on their
-  own.
-- **Higher order**: more states, usually a chain of lags. The step response
-  starts flat and S-shaped instead of rising at once, and under feedback the loop
-  *can* oscillate, which the PID lecture needs. A pure delay is,
-  strictly, infinite order; the Padé block later in this step replaces it with 6 states,
-  so this engine alone is already 7th order.
+**Tutor — why the delay and the lag are there:** the next lecture builds a cruise
+control. It picks the controller settings with two textbook recipes, Ziegler–Nichols and
+Cohen–Coon. Both need a car that reacts late and slowly. Without the delay and the lag the
+car never swings back and forth under control, and the recipes have nothing to measure.
+The last slide of this step says the same.
 
-**Timing:** 27 minutes: 7 of theory up front (the next three slides), then 20 building — the longest step. It is the first bench,
-the first analysis and the first plot; every later step reuses the same pattern.
+**If the room asks what "first order" or "higher order" means:**
+
+- **State** — a quantity the simulator must remember from one instant to the next,
+  because it can only change gradually: a speed, an angle, a temperature. Dyad counts
+  them after it simplifies the model (the "What Dyad does when you press ▷" slide in
+  Part 1).
+- **Order** = the number of states. Rule of thumb: one per thing that stores energy or
+  memory — a spinning mass, a spring, a warm object, a filter.
+- **First order** — one state, equation τ·dy/dt + y = K·u. After a sudden change of
+  input, the output rises smoothly: 63 % of the way after one τ. It *never overshoots*
+  (goes past the target) and never oscillates (swings back and forth). Examples: the
+  engine's lag on its own; the car's speed against air drag, with τ of about a minute
+  (67 s at 90 km/h, step 05); a cup of tea cooling.
+- **Second order** — two states, for example the position and speed of a mass on a
+  spring, like a car's suspension. It can overshoot and oscillate. Two lags in a row are
+  also second order, but do not oscillate on their own.
+- **Higher order** — more states, usually a chain of lags. After a sudden change the
+  output starts flat and bends upward in an S-shape. Under a controller it *can*
+  oscillate, which the PID lecture needs. A true delay counts, strictly, as infinite
+  order. Dyad replaces it with a stand-in that has 6 states (the `PadeDelay` slide later
+  in this step). With the lag's 1 state, the engine alone has 7.
+
+**Timing:** 27 minutes: 7 of theory up front (the next three slides), then 20 building —
+the longest step. It is the first bench, the first analysis and the first plot; every later
+step repeats the same pattern.
 -->
 
 ---
@@ -72,27 +94,33 @@ real twist on the shaft._
 
 <!--
 **Say:** You will make this plot yourselves in step 2. Read it from left
-to right. At half a second we ask for 200 newton-meters, deliberately more than the engine
-can give. For 0.3 seconds, nothing happens: that flat piece is the delay. Then
+to right. At half a second we ask for 200 newton-meters, more than the engine can give, on
+purpose. For 0.3 seconds, nothing happens: that flat piece is the delay. Then
 comes a curve: that is the lag. At 150 newton-meters the curve is cut flat: that is the
 limiter.
 
+**The plot, in numbers:** request jumps 0 → 200 N·m at 0.5 s. Delivered torque is
+0 until 0.8 s, then curves up, and is flat at 150 N·m from about 1.22 s. The next two
+slides work these out.
+
 **Where the numbers come from physically:**
 
-- **Delay 0.3 s** — the whole chain from pedal to combustion: the engine
-  computer, fuel metering, waiting for a cylinder to fire, the driveline winding up. A
-  student who says "injection is much faster than that" is right: 0.3 s lumps the whole
+- **Delay 0.3 s** — the whole chain from pedal to burning fuel: the engine
+  computer, measuring out the fuel, waiting for a cylinder to fire, the shafts twisting up.
+  A student who says "injection is much faster than that" is right: 0.3 s lumps the whole
   chain into one number.
-- **Lag 0.3 s** — the inlet manifold, the pipe that feeds air to the
-  cylinders, has to fill before more torque is possible. Filling a volume through a
-  throttle behaves like a first-order lag (next slide).
-- **Limit 0 to 150 N·m** — the engine's peak torque. The floor of 0 means it
-  cannot brake. Ask the room what a cruise control on this car does going downhill.
-  *(Nothing useful — it can only cut torque to zero. Real cruise controls use the
-  brakes too.)*
+- **Lag 0.3 s** — the intake manifold, the pipe that feeds air to the
+  cylinders, has to fill before the engine can make more torque. Filling a volume through
+  a valve behaves like a lag (next slide).
+- **Limit 0 to 150 N·m** — 150 N·m is this engine's peak torque. The floor of 0 means
+  it cannot brake.
+
+**Ask the room:** what does a cruise control on this car do going downhill?
+*(Nothing useful — it can only cut the torque to zero. Real cruise controls also use the
+brakes.)*
 
 **Ask the room:** delay and lag are both 0.3 s. How do you tell them apart
-on the plot? *(Delay: flat, nothing happens. Lag: starts immediately, but gradually.)*
+on the plot? *(Delay: flat, nothing happens. Lag: starts at once, but gradually.)*
 -->
 
 ---
@@ -135,17 +163,25 @@ $$ T(t) \;=\; T_{\text{req}}\,\big(1 - e^{-t/\tau_e}\big) $$
 <!--
 **Say:** Imagine filling a bathtub from a faucet that gets weaker as the
 tub fills. Far from the target, it fills fast. Close to the target, it fills slowly. You
-get close quickly, but you never quite arrive. That curve is an exponential, and you will
-see it often in this course.
+get close quickly, but you never quite arrive. That curve is called an exponential, and you
+will see it often in this course.
 
-**Derivation, step by step** (if a student asks; otherwise just the
+**Read the symbols aloud as:** T = delivered torque. T<sub>req</sub> = requested
+torque. dT/dt = how fast T is changing. τₑ ("tau e") = the lag's time constant, 0.3 s.
+θₑ ("theta e") = the delay, also 0.3 s, a different thing. e ≈ 2.718, the base of the
+exponential (the eˣ key on a calculator).
+
+**Ask the room** (if they mix up the two 0.3 s values): which one is the flat part of the
+plot? *(θₑ, the delay. τₑ shapes the curve after it.)*
+
+**Derivation, step by step** (only if a student asks; otherwise just the
 words):
 
 1. Call the gap *g = T<sub>req</sub> − T*. The request is constant, so
    d*g*/dt = −d*T*/dt.
 2. The equation says τₑ·dT/dt = g, so τₑ·dg/dt = −g: the gap shrinks at a rate
    proportional to its own size.
-3. The function whose derivative is proportional to itself is the exponential:
+3. The function whose rate of change is proportional to itself is the exponential:
    g(t) = g(0)·e<sup>−t/τₑ</sup>. Check by differentiating: dg/dt = −g/τₑ. ✓
 4. Starting from T = 0, the gap starts at g(0) = T<sub>req</sub>. So
    T = T<sub>req</sub> − g = T<sub>req</sub>(1 − e<sup>−t/τₑ</sup>).
@@ -179,7 +215,7 @@ Request 200 N·m at t = 0.5 s. Delay 0.3 s, lag τₑ = 0.3 s, limit 150 N·m.
 
 0.2 s into the lag:<br>200 × (1 − e<sup>−0.2/0.3</sup>)<br>= 200 × (1 − 0.513)
 
-- **97 N·m** — at 1.0 s
+- **≈ 97 N·m** at 1.0 s — your plot shows 97.5
 
 </div>
 <div>
@@ -194,7 +230,8 @@ Request 200 N·m at t = 0.5 s. Delay 0.3 s, lag τₑ = 0.3 s, limit 150 N·m.
 </div>
 
 <!--
-**Do it on the board, one column at a time.**
+**Do it on the board, one column at a time.** "ln" is the natural logarithm, the ln key
+on a calculator; it undoes e<sup>x</sup>.
 
 1. **Start:** the request arrives at 0.5 s. The delay holds everything back
    for 0.3 s. 0.5 + 0.3 = **0.8 s**.
@@ -204,11 +241,17 @@ Request 200 N·m at t = 0.5 s. Delay 0.3 s, lag τₑ = 0.3 s, limit 150 N·m.
    cuts the result afterwards.)
 3. **Hitting 150:** set 200(1 − e<sup>−t′/0.3</sup>) = 150. Divide by 200:
    1 − e<sup>−t′/0.3</sup> = 0.75, so e<sup>−t′/0.3</sup> = 0.25. Take logs:
-   t′/0.3 = ln 4 = 1.386, t′ = 0.416 s. Add the 0.8 s start: **1.22 s**.
+   t′/0.3 = ln 4 = 1.386, t′ = 0.416 s. t′ is time since the lag started, so add the
+   0.8 s start: **1.22 s**.
 
 **Say:** We worked out these three numbers before opening Dyad. In
 ten minutes you will read the same three numbers off your own plot. If they match, your
 engine is built right.
+
+**What the simulation actually shows** (reference run, `test/snapshots/HandsOn`): about
+2 N·m of wiggle before 0.8 s, 97.5 N·m at 1.0 s, and 150 N·m from about 1.22 s. The small
+differences from the board come from the stand-in Dyad uses for the delay (the
+`PadeDelay` slide). Within about 1 N·m counts as a match.
 
 **Ask the room:** why ask for 200 when the engine can only give 150?
 *(To see the limiter work. A test should exercise every block it is testing.)*
@@ -223,16 +266,21 @@ engine is built right.
 *Same `Engine` as step 01 — add 3 parameters, `limiter`, `torque`, and 3 ports on the outline*
 
 <!--
-**Say:** You do not start a new component. Open the Engine from step 1,
-under Components, then MyCar, then Engine, and keep adding to it. The two blocks you
-already have are the second and third in this row.
+**Say:** You do not start a new component. Open the Engine from step 1:
+in the Dyad sidebar, the Components panel, expand MyCar and click Engine. Keep adding to
+it. The two blocks you already have, delay and lag, are the second and third in this row.
 
-**Point at:** the outline rectangle and the three ports on it. A port on the
-outline is what another component connects to; that is how the car plugs into this engine in
-step 05.
+**Point at:** the thin blue rectangle around the parts — the component's
+outline — and the three ports on it. Left: `tau_cmd`, the torque request coming in.
+Right: `spline`, the output shaft. Bottom: `support`, the engine mounts. "Spline" is
+Dyad's name for a rotating shaft connection, drawn as a gray circle. Another component
+plugs into these ports; that is how the car connects to this engine in step 05.
 
-**Order on the page:** A open it · B parameters · C limiter, torque, ports ·
-D bench · E run and plot. Walk the room after C — a broken engine makes D impossible.
+**Order on the page:** the student page splits step 02 into stages A to E.
+A open it · B add the three parameters · C add limiter, torque source and ports ·
+D build the bench · E run and plot. Walk the room after C: an engine that is wired wrong
+makes D impossible. After C, the **Problems** tab under the editor should list nothing
+for `Engine`.
 -->
 
 ---
@@ -275,12 +323,18 @@ spins one way, and the drill tries to spin the other way in your hand. Your hand
 Fixed block. Take your hand away, and the drill spins instead of the bit doing any work. A
 model with an unconnected support has the same problem, and Dyad does not run it.
 
+**Words:** a `support` port is the "other side" of a part — where its reaction
+goes. `Fixed` is a block that holds a port still: the ground, or the car's frame.
+"Unbalanced" in a Dyad error means the model has more unknowns than equations (the
+"What Dyad does when you press ▷" slide in Part 1); a loose support is the usual cause.
+A `flange` is the straight-line version of a port (green square), used from step 03 on.
+
 **The sign rule:** Dyad counts force as positive when it flows
 *into* a block. The tire pushes the car forward, so the car pushes the tire
 backward — the force flowing into the tire is backward, so it is negative. Step 09 writes
-that line: `flange.f = -F_x`. Every Dyad and Modelica library uses this
-rule. It looks backwards at first, and a wrong sign here is the most common cause of a car
-that drives in reverse.
+that line: `flange.f = -F_x`. Dyad's libraries all use this rule, as does Modelica, the
+older modeling language Dyad follows. It looks backwards at first, and a wrong sign here
+is the most common cause of a car that drives in reverse.
 -->
 
 ---
@@ -317,22 +371,35 @@ the mounts `Fixed`.
 </div>
 
 <!--
+**Where to click:** click an empty spot of the canvas. The panel on the right then
+shows `Engine` itself, with an **Add parameter** button. Add `theta_e` = 0.3 (type Time),
+`tau_e` = 0.3 (Time), `T_max` = 150 (Torque). Then click each block and type the *name*
+into its field: `delay` → `delayTime` = `theta_e`, `lag` → `T` = `tau_e`,
+`limiter` → `y_max` = `T_max`, `y_min` = `0`.
+
 **Say — define each value once:** A number that a part needs becomes a
-parameter of the component. You add it with **Add parameter** in the
-component panel, and the part refers to it by name. Then setting T max to 200 on the
-Engine changes the ceiling in one place. The delay time, theta e, is a structural
-parameter, because the Padé delay block builds its coefficients when the model compiles.
-If the panel offers no structural option, paste that line into the code.
+parameter of the component, and the part refers to it by name. Then setting T max to 200
+on the Engine changes the ceiling in one place. The delay time, theta e, is a *structural*
+parameter: changing it changes the model's structure, so Dyad rebuilds the model. That is
+because the delay block computes its internal numbers from it when the model compiles.
+If the panel offers no structural option, switch to code (⇄) and paste the line from the
+student page.
 
 **Say:** The value 200 is above the limit so that the plot shows the
 limiter working.
 
+**About the inertia** (the box on the slide): a 1 kg·m² spinning disc on the shaft.
+With J = 1, the disc's speed-up in rad/s² equals the torque in N·m. rad/s is the unit of
+turning speed: one full turn is 2π ≈ 6.28 rad. In the reference run the disc ends at
+306 rad/s after 3 s.
+
 **They get wrong:** leaving `support` unconnected in the bench.
 A torque source needs something to push against — the engine mounts. The compile error
-talks about an unbalanced system; the fix is the `Fixed`.
+talks about an unbalanced system; the fix is the `Fixed` block wired to `support`.
 
-**Why `y_min = 0`:** the engine cannot brake through this
-path. Ask the room what would happen at a negative command without it.
+**Ask the room:** why `y_min = 0`? What would a negative command do without it?
+*(The torque source would twist the shaft backward: the engine would act as a brake, or
+spin the disc in reverse. A real engine cannot do that through this path.)*
 -->
 
 ---
@@ -391,11 +458,23 @@ Transient Analysis creates one with this bench as its model.
 **Tutor:** say the "new component of its own" part out loud; students often
 draw the bench inside `Engine`.
 
+**What the three `initial` lines mean:** at time 0, the lag's output is 0
+(`engine.lag.x`), the shaft angle is 0 (`load.phi`), and the shaft speed is 0
+(`load.w`). These are the bench's states: the quantities the simulator must remember.
+
+**Where to click:** ⇄ (Toggle Between Code and Diagram View) and ▷ (Run Analysis) are
+in the editor's title bar, top right, on the row with the file's tab. *Transient
+Analysis* means "simulate over time"; `stop = 3` means 3 seconds.
+
 **They get wrong:** the analysis name. The plot command calls
 `MyCar.EngineStepTransient()`; if Dyad Studio picked another name, change the word
 after `analysis` in its code. The code block on this slide is the fallback.
 
-**If it does not appear in Analyses:** Dyad Compile under Julia Commands.
+**If it does not appear in Analyses:** click Dyad Compile under Julia Commands, bottom
+right beside the terminal.
+
+**After ▷ runs it:** a Julia Plots pane opens with every signal at once, unreadable.
+That is expected; the next slide fixes it.
 -->
 
 ---
@@ -426,16 +505,31 @@ plot(r; idxs = r."engine.limiter.y")
 <!--
 **Say:** The default plot draws every state. The delay has six internal
 states that swing into the thousands, and they bury the one curve you care about. Pick
-that curve by name with the idxs argument.
+that curve by name with the idxs argument — "idxs" means "which signals to plot".
+
+**Open the REPL:** the REPL is Julia's command line: type a line, press Enter, it runs.
+Open it from the Dyad sidebar: the **Actions** panel's title bar → **Dyad: Open Julia
+REPL**. Type the three lines on the slide. The first `using Plots` in a session can take a
+while.
 
 **Point at:** the flat start. The command arrived at 0.5 s; torque starts
-at about 0.8 s. That 0.3 s is the transport delay. The small wiggles before it are the
-Padé approximation of a delay, not physics — the next slide explains them.
+at about 0.8 s. That 0.3 s is the delay. The small wiggles before it are the stand-in
+for the delay, not physics — the next slide explains them.
 
-**Open the REPL:** Actions panel title bar → Dyad: Open Julia REPL.
+**What students should see** (guide checkpoint, `HandsOn.EngineStepTransient`):
 
-**They get wrong:** `using MyCar` fails if the library was
-named differently. Use their library's name.
+- `engine.limiter.y`: 0 at the step at 0.5 s, only 6.2 N·m at 0.8 s, 97.5 N·m at 1.0 s,
+  flat at 150 N·m from 1.22 s to the end.
+- If they also plot `engine.delay.y`: it peaks at about 208 near 0.9 s, then settles at
+  200. The stand-in overshoots; the limiter hides it.
+- `load.w` (disc speed) ends at 306.0 rad/s at 3 s.
+
+**If a student's curve differs:** flat at 200 instead of 150 → `y_max` is not
+`T_max`. Rises at 0.5 s → the delay is not wired in. A different curve shape → check
+`T = tau_e` and the Step's `height = 200`, `start_time = 0.5`.
+
+**They get wrong:** "`MyCar` not defined" in the REPL. Run `using MyCar` first, and if
+the library got another name, use that name in both places.
 -->
 
 ---
@@ -472,15 +566,19 @@ tuned so that together they behave almost exactly like a 0.3 s delay.
 </div>
 
 <!--
-**Say:** The delay is the only block here that is an approximation. The
+**Say:** The delay is the only block here that is an approximation, a stand-in. The
 wiggles show where it differs from a true delay.
 
-**For a student who wants the math:** a delay of θ has the transfer function
-e<sup>−sθ</sup>. A Padé approximation replaces it by a ratio of polynomials. The simplest
-one is (1 − sθ/2)/(1 + sθ/2). `PadeDelay(n = 6, m = 5)` uses a 6th-order
-denominator and a 5th-order numerator; they match e<sup>−sθ</sup> to order 11. Because the
-numerator is lower order, a sudden step cannot pass straight through before the delay has
-elapsed.
+**In plain words:** Padé is the name of the mathematician whose method builds the stand-in;
+say "the delay stand-in" if you prefer. "Structural" means changing the value rebuilds the
+model, not just one number in it.
+
+**For a student who knows Laplace transforms** (skip otherwise): a delay of θ has the
+transfer function e<sup>−sθ</sup>. A Padé approximation replaces it by a ratio of
+polynomials. The simplest is (1 − sθ/2)/(1 + sθ/2). `PadeDelay(n = 6, m = 5)` uses a
+6th-order denominator and a 5th-order numerator; they match e<sup>−sθ</sup> to order 11.
+Because the numerator is lower order, a sudden step cannot pass straight through before
+the delay has elapsed.
 
 **Why structural:** the block computes its internal coefficients from the
 delay when the model is compiled, so a new delay value means a new model, not just a new
@@ -518,13 +616,18 @@ in the model is control. Pushing a door that opens instantly is easy. Pushing on
 responds half a second late makes you overshoot. That lateness is what makes control
 difficult.
 
+**Words:** Ziegler–Nichols and Cohen–Coon are two textbook recipes that pick a
+controller's settings from how the car responds to a test. Students meet them in the next
+lecture; nobody needs them today.
+
 **For the tutor — the precise reasons** (from the lecture plan):
 
-- Without the lags, the car is *first order*: one state, speed. A first-order
-  system under a proportional controller never oscillates, however high the gain.
-  Ziegler–Nichols needs that oscillation to measure anything.
-- Cohen–Coon fits a model "first order plus dead time" and divides by the dead time.
-  With no delay, it divides by zero.
-- With no lag there is little overshoot, so the derivative part of PID has nothing to
-  do.
+- Without the delay and lag, the car is *first order*: one state, its speed. A
+  proportional controller pushes harder the further the speed is from the target; on a
+  first-order car it never makes the speed swing back and forth, however hard it pushes.
+  Ziegler–Nichols needs that swinging to measure anything.
+- Cohen–Coon describes the car as "a lag plus a delay" and divides by the delay. With no
+  delay, it divides by zero.
+- With no lag there is little overshoot, so the derivative part of PID — the part that
+  reacts to how fast the error is changing, to calm overshoot — has nothing to do.
 -->

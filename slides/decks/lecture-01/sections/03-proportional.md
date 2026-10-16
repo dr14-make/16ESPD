@@ -13,7 +13,8 @@ Proportional control gets close to the setpoint, but not all the way.
 
 <!--
 From here to the end of section 05 the car does not change, not one parameter. Every change is to
-the controller, and you make each one yourself.
+the controller, the part that decides how much engine torque to ask for, and you make each one
+yourself. The setpoint is the speed the driver asks for.
 -->
 
 ---
@@ -48,6 +49,11 @@ Units: *e* is km/h, *u* is N·m, so **k is N·m per km/h**.
 </div>
 
 <!--
+First the letters. u is the torque the controller asks the engine for. v set is the setpoint, v is
+the measured speed. e, the error, is v set minus v; positive means we are too slow. k is the gain:
+how many newton-meters the controller asks for per kilometer per hour of error. It is also written
+K p, p for proportional.
+
 Walk to a line on a football pitch. Far away, you walk fast. Close, you slow down. On the line,
 you stop. That is the proportional rule, and here it works perfectly.
 
@@ -58,11 +64,11 @@ only makes a non-zero output from a non-zero error.
 Our car is the drone. Holding 110 kilometers per hour needs 40 newton-meters for as long as we
 drive, because drag never stops.
 
-In the model this is `CruiseController` with `with_I` and `with_D` false, plus the wire from
-`plant.v_kmh` back to `controller.u_m`, the wire feedforward did not have. On the next slide you
-add the one block this equation needs.
-
-k is the proportional gain, also written K p. e is v set minus v; positive means we are too slow.
+In the model this is `CruiseController`, one block of the Dyad diagram, with its two switches
+`with_I` and `with_D` set to false. The loop has a wire from `plant.v_kmh`, the car's speed, back to
+`controller.u_m`, the controller's measurement input. Section 02's feedforward controller never
+looked at the speed, so it had no such wire. On the next slide you add the one block this equation
+needs.
 
 T max, 150 newton-meters, is the engine's ceiling. y max is the controller's own output clamp, a
 separate number. In this section both are lifted, because at the step the lowest gain here asks
@@ -102,27 +108,33 @@ plot(r; idxs = [r."plant.v_kmh", r."demand.y"])
 <!--
 The error block already makes e. One block multiplies it by k.
 
-Open `CruiseController`. Add a parameter `k`, default 56. Drag in `BlockComponents.Math.Gain`,
-name it `gain`, and set its parameter to k equals `k`, so it uses the controller's parameter by
-name.
+Open `CruiseController`. Click an empty spot of the canvas, choose Add parameter, and add `k`, type
+Real, value 56. A parameter is a named number you can change later without rewiring. Drag in
+`BlockComponents.Math.Gain`, name it `gain`, and set its parameter to k equals `k`, so it uses the
+controller's parameter by name.
 
-Wire `error.y` into `gain.u`, and `gain.y` into `y`. Save. The problems panel is now empty.
+Wire `error.y` into `gain.u`, and `gain.y` into `y`. Save. The problems panel, Dyad's list of
+errors, is now empty.
 
-Run `CruiseLoopTransient` from Analyses, and plot `plant.v_kmh` and `demand.y` on one axes. The
-code is on the slide.
+Run `CruiseLoopTransient` with its run button in the Analyses list. Then open the Julia REPL, the
+window where you type Julia commands: click Dyad: Open Julia REPL in the Actions panel's title bar.
+Paste the code from the slide. It plots `plant.v_kmh`, the speed, and `demand.y`, the setpoint, on
+one axes.
 
 The speed climbs from 90 within a few seconds and settles at about 109.3, below the 110 of
-`demand.y`. The rest of this section explains that 0.7 kilometer per hour gap.
+`demand.y`. The gap that remains once nothing changes any more is called the steady-state error.
+The rest of this section explains that 0.7 kilometer per hour gap.
 
 Your engine still clips at 150 newton-meters, because `T_max` only becomes a car parameter in
-section 06, and the notebook lifts that ceiling. So your rise is slower at the start. The settled
-109.3 is the same, because holding 110 takes only 40 newton-meters.
+section 06. The notebook, the prepared Julia file whose plots fill the next slides, lifts that
+ceiling. So your rise is slower at the start. The settled 109.3 is the same, because holding 110
+takes only 40 newton-meters.
 
 For a second run, set `controller = CruiseController(k = 14)` in the loop's code. It settles about
 2.8 kilometers per hour short. That run is on the next slide.
 
 The common mistake is typing 56 into `gain` instead of k equals `k`. It runs the same today, and
-breaks every sweep later.
+breaks every sweep later, the runs that try many values of k in a row.
 -->
 
 ---
@@ -166,14 +178,16 @@ bracket_error!(plt, single; setpoint = 110, sig = SPEED)
 The speed stopped short of the setpoint. The controller is not broken: it is stable, quick, and
 settles close. But the error stays for as long as the loop runs.
 
-That 2.8 kilometers per hour is the steady-state error, at a low gain of 14. The loop ends up
-delivering about 40 newton-meters, the torque that holds 110.
+That 2.8 kilometers per hour, the bracket on the plot, is the steady-state error at a low gain of
+14: the car settles at 107.2. The loop ends up delivering about 40 newton-meters, the torque that
+holds 110.
 
 At the instant of the step, with the full 20 kilometers per hour of error, the controller asked
-for 280 newton-meters. The engine can give 150. We lifted the limit to get this plot.
+for 280 newton-meters, 14 times 20. The engine can give 150. We lifted the limit to get this plot.
 
-The open-loop car took several minutes to change speed. This one took seconds, with the same
-engine, mass and drag. Feedback changed the dynamics.
+The car on its own, with no controller, took several minutes to change speed in section 01. This
+one gets most of the way in about five seconds, with the same engine, mass and drag. Feedback,
+measuring the speed and correcting, changed how fast the car responds.
 -->
 
 ---
@@ -214,7 +228,7 @@ Two of these four are above it.*
 </div>
 <div>
 
-![Four step responses at increasing proportional gain on one axes: each rises faster and settles closer to the setpoint, and none reaches it.](/figures/03-gain-family.svg)
+![Four step responses at increasing proportional gain on one axes: each rises faster and settles closer to the setpoint, the higher gains overshoot first, and none settles on it.](/figures/03-gain-family.svg)
 
 *Left: four gains from 14 to 890 N·m per km/h. Right: the last half minute, magnified. The two lowest gains have settled short, the two highest are still oscillating.*
 
@@ -225,19 +239,22 @@ Two of these four are above it.*
 Each higher gain rises faster and stops closer to the setpoint, but none reaches it.
 
 The right-hand panel magnifies the last 30 seconds. At 14 and 56 the curves are flat lines below
-the setpoint. At 220 and 890 they oscillate and never settle.
+the setpoint, 2.8 and 0.7 short. At 56 the speed first swings past 110, to about 118, before it
+settles. At 220 and 890 the speed oscillates, swinging up and down, and never settles: at 220 it
+overshoots to 162, at 890 to 316 kilometers per hour.
 
-Between 56 and 220 we crossed the ultimate gain, K u, about 115. At K u the loop oscillates
-forever, neither growing nor decaying. Above it there is no settled value, so no steady-state
-error to measure.
+Between 56 and 220 we crossed the ultimate gain, K u, about 115 newton-meters per kilometer per
+hour. At K u the loop oscillates forever, neither growing nor dying out. Above it the loop is
+unstable: there is no settled value, so no steady-state error to measure.
 
 Zero error would need an infinite gain, and the loop is already unstable at 220. Raising the gain
 cannot remove the error.
 
-Remember K u: two of the three tuning methods in section 08 are built on it.
+Remember K u: two of the three tuning methods in section 08, recipes for choosing the controller's
+numbers, are built on it.
 
-A higher gain also raises the torque commanded at the step, and how much sensor noise reaches the
-command. Section 08 deals with both.
+A higher gain also raises the torque commanded at the step, and how much sensor noise, the small
+random wobble in the speed reading, reaches the command. Section 08 deals with both.
 -->
 
 ---
@@ -280,15 +297,16 @@ The curve approaches the axis but never touches it.
 It is solved, not simulated, so it has an answer at every gain. The shading marks gains above K u,
 115, where that answer means nothing because the loop no longer settles. Black dots are simulated
 runs that settled. Red crosses are the two gains from the last slide that do not. The gain axis is
-logarithmic: it spans a factor of 400.
+logarithmic: each step along it multiplies the gain by ten. It runs from 5 to 2000, a factor of
+400.
 
 The argument has three steps, and you should be able to reproduce it in the exam. One: at 110 the
 car needs about 40 newton-meters just to hold speed. Two: a proportional controller's only output
 is k times the error. Three: so the error cannot be zero, because then the torque would be zero
 and the car would slow down.
 
-What plant would let proportional control reach the setpoint exactly? One where holding the
-setpoint needs zero effort, like walking across a room. Almost no plant you will control in
+What plant, meaning the thing being controlled, would let proportional control reach the setpoint
+exactly? One where holding the setpoint needs zero effort, like walking across a room. Almost no plant you will control in
 practice does.
 -->
 
@@ -326,8 +344,9 @@ $$
 
 <!--
 Write this down: under proportional control, the steady-state error is the effort you need divided
-by the gain you chose. Here that effort is about 40 newton-meters, and it never goes away, because
-drag never goes away.
+by the gain you chose. On the slide, e with an infinity sign is that error after a long time. Here
+the effort is about 40 newton-meters, and it never goes away, because drag never goes away. At k
+equals 56 that is 40 divided by 56, the 0.7 kilometers per hour you saw.
 
 The more torque the car needs, the bigger the error. On a hill this same controller does worse;
 you see that in section 06.
@@ -369,14 +388,16 @@ routeAlias: checkpoint-p
 </div>
 
 <!--
-Checkpoint. Look at your neighbor's screen. Same 109.3?
+Checkpoint. Look at your neighbor's screen. Both of you should read a speed settled at 109.3.
 
-If you are still building, paste the step 3 code from the guide page, or open the reference
-`CruiseLoopTransient`; P is its default, because `CruiseLoopStep` sets `with_I` and `with_D`
-false. Every step from section 04 on builds on this diagram.
+If you are still building, paste the step 3 code from the guide page, or open the reference, the
+finished version in the course repository: `CruiseLoopTransient`. P, proportional only, is its
+default, because `CruiseLoopStep` sets `with_I` and `with_D` false. Every step from section 04 on
+builds on this diagram.
 
-If your number is not 109.3, check the signs on `error`, then the three initial lines, then that
-`gain` reads k equals `k`.
+If your number is not 109.3, check the signs on `error`, k one equals 1 and k two equals minus 1.
+Then check the three lines starting with the word initial in `CruiseLoopStep`'s code, which set
+the starting speed and engine state. Then check that `gain` reads k equals `k`.
 -->
 
 ---

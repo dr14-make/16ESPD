@@ -51,13 +51,14 @@ live here, one section per deck section, in deck order.
 - "Before we begin": wait until every laptop has the three language-server settings and has
   reloaded its window. A laptop without them is the one that kills Julia mid-build later.
 - Slide budgets: "What a system is" 2, "What a control system is" 1, "Three kinds of control" 1,
-  "Five jobs, one diagram" 2, "Feedback is a family" 1.
-- "The car, once": half a minute; section 01's recap comes back to the numbers.
+  "Five tasks of control engineering" 2, "Feedback controllers, controllability and
+  observability" 1.
+- "The car's parameters": half a minute; section 01's recap comes back to the numbers.
 - "What a system is": walk the table against the students' `Car` diagram if Studio is up.
 - "Where the models live": leave it up while you state the HandsOn/Lecture1 rule. The gray
   "open in Dyad" strip is the reference model for the second screen; the students' own diagram
   is the one on the projector during a build.
-- "Two conventions": on "what is missing from a gain of 220", wait for someone to say "units".
+- "Units in this lecture": on "what is missing from a gain of 220", wait for someone to say "units".
 
 ## 01 The car — 22 min
 
@@ -169,9 +170,8 @@ Check everyone is at checkpoint PID before releasing the room.
   back-calculation comparison (`LimPID`). The no-anti-windup run is
   `Lecture1.ClampingCruiseClimbTransient` with `y_max = 1e6`, `y_min = -1e6`.
 - Catch-up 6d: `ClampingCruiseClimb` is the same harness with the reference controller; the
-  reference `CruiseController` wires it as the `clamp` block, and the exact equation is in
-  `Lecture1.ClampingGate`, written on `u` and `u_lim` instead of `control_error` and
-  `limiter.y`.
+  reference `CruiseController` wires it as the `clamp` block, and `Lecture1.ClampingGate` holds
+  the same logic as the students' five blocks, written as one equation on `u` and `u_lim`.
 
 ## 07 Derivative and noise — 15 min
 

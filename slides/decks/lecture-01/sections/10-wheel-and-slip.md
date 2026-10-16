@@ -62,18 +62,20 @@ still work.
 </div>
 
 <!--
-In hands-on step 06 you saw, open loop, that the wheel barely moves the launch. Now the closed-loop
-question: do the gains of section 05 still hold? Compare the rise time and the overshoot with
-section 05. They barely change. Not every added detail matters, and knowing which ones do is part
-of modeling.
+In hands-on step 06 you saw, with no controller, that the wheel barely changes the launch. Now the
+question with the controller in the loop: do the gains of section 05 still hold?
 
-This is model level L1: wheel inertia plus an ideal rolling contact. L0 was everything up to
-section 09. L2 adds slip. Ideal rolling means wheel speed times radius is road speed, by
-definition: no sliding, ever. The wheel inertia, J w, in kilogram meters squared, is extra inertia
-the engine must accelerate.
+Rise time is the time from 10 to 90 percent of the step. Overshoot is how far the peak goes past
+the setpoint, in percent of the step. Without the wheel, the rise time is 1.27 seconds and the
+overshoot 2.73 percent. With the wheel, 1.31 seconds and 2.78 percent. The wheel costs about 3
+percent of rise time, and the overshoot barely changes. Not every added detail matters, and knowing
+which ones do is part of modeling.
 
-Rise time is the time from 10 to 90 percent of the step. Overshoot is the peak past the setpoint,
-in percent.
+We number the model levels. L0 was everything up to section 09. This is L1: wheel inertia plus an
+ideal rolling contact. L2 adds slip. Ideal rolling means wheel speed times radius is road speed, by
+definition: no sliding, ever. Inertia is resistance to being spun up. The wheel inertia, J w, is 1
+kilogram meter squared. Divided by the radius squared, it acts like about 10 extra kilograms on a
+1400 kilogram car.
 
 The model is `WheeledCruiseStep`: the reference `CruiseController` around `HandsOn.WheeledCar`, the
 car from hands-on step 06, with `J_w` exposed. This one is a demo. Your own swap comes with the
@@ -135,10 +137,12 @@ everything it was asked for, and the car got to 10 km/h.
 
 On the code: `friction.k` is the road friction multiplier, 1.0 for dry asphalt and 0.2 for packed
 snow. The ice patch later is 0.05. `car.wheel_kmh` is the driven wheel's surface speed, omega times
-r, in km/h, so wheelspin is its gap to `car.v_kmh`. `car.wheel.kappa` is the slip ratio, read
-inside the wheel, because `SlipCar` has no port for it. `car.wheel.F_x` is the tire's longitudinal
-force. The saveat of 0.01 is dense output: the launch is over inside one adaptive step, so the raw
-step points would draw straight lines.
+r, in km/h, so wheelspin is its gap to `car.v_kmh`. `car.wheel.kappa` is the slip ratio: how much
+faster the tread moves than the car, as a fraction of the car's speed. After five seconds it is 147
+on snow and 0.0076 on dry asphalt. It is read inside the wheel, because `SlipCar` has no connection
+point for it. `car.wheel.F_x` is the tire's force along the road. The saveat of 0.01 asks for a
+value every hundredth of a second. The solver picks its own time steps, and the whole launch fits
+inside one of them, so without it the plot would draw straight lines.
 
 What the hands-on could not show connects to section 06. The integrator sees a large, persistent
 error and winds up, as it did on the hill. But this time the engine is nowhere near its torque
@@ -195,10 +199,13 @@ peak_kappa = kappas[argmax(dry_curve)]
 </div>
 
 <!--
-This is the curve from hands-on step 08. It rises to the adhesion peak at kappa equal to 0.04, then
-falls toward sliding. The peak is an actuator limit that moves with the weather.
+This is the curve from hands-on step 08. Adhesion means grip. The curve rises to the adhesion peak,
+mu equal to 1.0 at kappa equal to 0.04, then falls to a sliding plateau of 0.7 from kappa 0.12 on.
+Crossing the peak throws away 30 percent of the grip. The peak is an actuator limit that moves with
+the weather.
 
-New on this plot: the wheelspin run's operating points. They all sit on the falling side.
+New on this plot: the wheelspin run's operating points. They all sit on the falling side. The snow
+run went out along the plateau to a slip ratio of 147.
 
 On that side, less force means less resistance to the engine's torque, so more slip, so even less
 force. The next slide is what that means for a controller.
@@ -208,10 +215,10 @@ of v and epsilon. It is dimensionless. Zero means pure rolling. Positive means t
 faster than the car moves. Omega is the wheel's angular velocity, r the wheel radius, v the vehicle
 speed. Epsilon, `v_eps` in the model, is a small floor so that slip is defined at standstill.
 
-Mu is the friction coefficient: the fraction of the normal load F z available as force. F x, mu
-times F z, is the longitudinal force. In the curve component, `sAdhesion` and `sSlide` are where
-the curve peaks and where it has fully reached sliding. Mu A and mu S are the adhesion and sliding
-coefficients.
+Mu is the friction coefficient: the fraction of the normal load F z available as force. The normal
+load is the weight pressing the tire onto the road. F x, mu times F z, is the force along the road.
+In the curve component, `sAdhesion` and `sSlide` are where the curve peaks and where it has fully
+reached sliding. Mu A and mu S are the adhesion and sliding coefficients.
 -->
 
 ---
@@ -291,10 +298,12 @@ A recap before this car goes into the loop: the car from hands-on steps 09 and 1
 up to 1501 km/h.
 
 `curve` has no wires. It is connected by equations: `curve.kappa` equals `kappa`, and `mu` equals
-`mu_scale` times `curve.mu`.
+`mu_scale` times `curve.mu`. F z, the load on the driven wheels, is half the car's weight: about
+6 900 newtons.
 
-The two new ports are the only interface change. `tau_cmd`, `grade` and `v_kmh` are where
-`GradeCar` had them. So the next step is a swap, not a rebuild.
+A port is a connection point on a block. The two new ports are the only interface change.
+`tau_cmd`, `grade` and `v_kmh` are where `GradeCar` had them. So the next step is a swap, not a
+rebuild.
 
 If you finished step 10: what does `wheel_kmh` show on the dry road? 21.2 km/h, against 21.1 for
 the car. Wheel and car move together.
@@ -363,22 +372,26 @@ drops from 1.0 to 0.05 for 8 seconds. This is the same pulse the reference wraps
 Step four. Replace `demand` with a `BlockComponents.Sources.Constant`, k equal to 90, named
 `demand`. Wire `demand.y` into `controller.u_s`. `road` stays the constant 0.
 
-Step five. The integrator must start at the holding torque, or the car slows before it reaches the
-ice. Set `controller.xi0` to 31.078 divided by 56: the holding torque divided back through the
-gain, as in the reference.
+Step five. The integrator must start at the holding torque, 31.078 newton-meters, or the car slows
+before it reaches the ice. The controller multiplies its integrator by the gain, so set
+`controller.xi0` to 31.078 divided by 56, about 0.555, as in the reference.
 
 Step six. The initial conditions, in the code view. Two are new, because the wheel now has its own
-speed. Initial `plant.body.mass.s` is 0. `plant.body.mass.v` is 25. `plant.engine.lag.x` is 31.078.
-`plant.wheel_inertia.phi` is 0. And `plant.wheel_inertia.w` is 25 divided by 0.31: the wheel
-rolling at 90 km/h.
+speed. Initial `plant.body.mass.s` is 0. `plant.body.mass.v` is 25, meters per second, which is 90
+km/h. `plant.engine.lag.x` is 31.078. `plant.wheel_inertia.phi` is 0. And `plant.wheel_inertia.w` is
+25 divided by `plant.r`, the 0.31 meter radius: about 80.6 radians per second, the wheel rolling at
+90 km/h.
 
 Step seven. Create a TransientAnalysis named `SlipCruiseTransient`, stop 45. Run it, and plot
-`plant.v_kmh` and `plant.wheel_kmh` with the code on the slide.
+`plant.v_kmh` and `plant.wheel_kmh` with the code on the slide. The top plot shows both speeds in
+full. The bottom plot shows the same two zoomed in to 85 to 115 km/h, so you can see the car's own
+speed.
 
 Before 4 seconds the two speeds lie on top of each other at 90. On the ice the wheel speed shoots
 up: the reference run reaches about 3400 km/h of tread speed, while `plant.v_kmh` sags only 3.10
-km/h. The slip ratio goes to 38. After 12 seconds the car surges to 111.86 km/h. If your wheel
-speed stays on the car's speed, `friction.y` is not reaching `plant.mu_scale`.
+km/h, to 86.9. The slip ratio goes to 38: the tread moves about 39 times as fast as the car. After
+12 seconds the car surges to 111.86 km/h. If your wheel speed stays on the car's speed, `friction.y`
+is not reaching `plant.mu_scale`.
 
 The usual mistake is forgetting the wheel's initial speed. Then the wheel starts at rest under a
 car doing 90 km/h: a violent slip at t equals 0 that has nothing to do with the ice.
@@ -440,19 +453,20 @@ does the wrong thing, and the tighter the tuning, the faster it does it.
 
 The numbers. `v_set` is 90 km/h. `mu_low` is 0.05: at its peak the road then carries 343 newtons,
 against the 401 it takes to hold 90 km/h. The patch starts at 4 seconds and lasts 8. A two-second
-patch would cost only about 2 km/h, too little to see. The run stops at 45 seconds, long enough for
+patch would cost only 0.77 km/h, too little to see. The run stops at 45 seconds, long enough for
 the recovery.
 
 The speed sags **3.10 km/h** across the eight seconds, less than a gentle hill would cost. So the
-speed signal gives almost no warning. Meanwhile the tread goes to about **3400 km/h**, and the slip
-ratio to **38**. The tire crossed its adhesion peak **0.08 s** into the patch, and never came back.
-When the ice ends, the car surges to **111.86 km/h**, nearly 22 km/h over the setpoint, and takes
-**20.7 s** to come back inside half a km/h of 90.
+speed signal gives almost no warning. Meanwhile the command climbs to the engine's 150
+newton-meters and stays there. The tread goes to about **3400 km/h**, and the slip ratio to
+**38**. The tire crossed its adhesion peak, the point of best grip, **0.08 seconds** into the
+patch, and never came back. When the ice ends, the car surges to **111.86 km/h**, nearly 22 km/h
+over the setpoint, and takes **20.7 seconds** to come back inside half a km/h of 90.
 
-The surge comes from the wheel. It is a flywheel holding **4.64 MJ** at its peak, against **0.44
-MJ** for the whole car at 90 km/h. When grip returns, that energy goes into the car.
+The surge comes from the wheel. It is a flywheel holding **4.64 megajoules** at its peak, against
+**0.44 megajoules** for the whole car at 90 km/h. When grip returns, that energy goes into the car.
 
-The driver feels the back stepping out on a motorway at 90 km/h, caused by a system they switched
+The driver feels the back stepping out on a highway at 90 km/h, caused by a system they switched
 on for comfort.
 -->
 
@@ -496,7 +510,11 @@ much torque. And the wheel does not spin up: about 219 km/h of tread against 340
 The car still slows down. It has to: no controller can create grip. What the limit prevented was
 the controller **making it worse**. Over the eight seconds, the capped tire put **more** force on
 the road, 276 newtons against 242, while asked for a fifth as much torque. In the blind run, more
-command gave less force. Traction control is built on that.
+command gave less force. Traction control, the system in a car that cuts engine torque when a
+driven wheel starts to spin, is built on that.
+
+The cap is 26.6 newton-meters: the most force the ice can carry, 343 newtons, taken back through
+the gearbox and the wheel radius to the engine.
 
 The cap did not hold the tire at its peak. The capped run still ends the patch at a slip ratio of
 1.5, nowhere near 0.04. A constant ceiling cannot track a peak. It only stops the command running
@@ -567,6 +585,7 @@ undeliverable design. In all three, the controlled variable looked fine.
 The notebooks and the `docs` folder are in the repository. The plots are committed, so you can read
 them without installing anything.
 
-Next lecture: the engine torque map, which brings the 246 km/h top speed from hands-on step 05 down
-to a realistic value, and cascade control, which fixes the ice patch.
+Next lecture: the engine torque map, a table of how much torque the engine gives at each engine
+speed. It brings the 246 km/h top speed from hands-on step 05 down to a realistic value. And
+cascade control, which fixes the ice patch.
 -->
