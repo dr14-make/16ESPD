@@ -707,30 +707,68 @@ Compare with the course model `CruiseClimb`, which closes the loop with the libr
 
 ### 6d · Clamping: freeze the integrator {#step-6d}
 
-Stop the integrator while it would only push the command deeper into a limit.
+Stop the integrator while it would only push the command deeper into a limit. Five blocks do it: one measures how much the limiter cuts off, one checks whether the error pushes the same way, and a switch feeds the integrator zero while it does.
+
+#### Parts
+
+Five new blocks inside your `CruiseController`:
+
+| Name | Library path | Set | What it says |
+| --- | --- | --- | --- |
+| `excess` | BlockComponents › Math › Add | `k1 = 1`, `k2 = -1` | `gain.y − limiter.y`: how much the limiter cuts off. Positive at the top limit, negative at the bottom, zero in between |
+| `push` | BlockComponents › Math › Product | — | `excess × error`: positive only when the error pushes the same way as the cut |
+| `winding` | BlockComponents › Logical › GreaterThreshold | `threshold = 0` | true while integrating would wind the integrator up |
+| `zero` | BlockComponents › Sources › Constant | `k = 0` | what the integrator gets while frozen |
+| `gate` | BlockComponents › Logical › Switch | — | `u1` when `u2` is true, otherwise `u3` |
+
+The sign test needs no block of its own: the product of two numbers is positive only when they have the same sign.
+
+| Situation | `excess` | `error` | `push` | Integrator |
+| --- | --- | --- | --- | --- |
+| Top limit, car too slow (the climb) | + | + | + | frozen |
+| Top limit, car too fast (after the crest) | + | − | − | runs, unwinds |
+| Bottom limit, car too fast (just after the ice patch in step 10) | − | − | + | frozen |
+| Inside the limits | 0 | any | 0 | runs |
 
 #### Do this
 
-1. Open `CruiseController` and toggle to code (⇄).
-2. Delete the line `connect(error.y, integrator.u)`.
-3. Add a variable for the error above `relations`, and the clamping equation inside it:
+1. Open `CruiseController`. Select the wire `error.y → integrator.u` and delete it.
+2. Place the five parts and set them as in the table.
+3. Wire the check:
+   - `gain.y → excess.u1`, `limiter.y → excess.u2`
+   - `excess.y → push.u1`, `error.y → push.u2`
+   - `push.y → winding.u`
+4. Wire the gate into the integrator:
+   - `zero.y → gate.u1`, `winding.y → gate.u2`, `error.y → gate.u3`
+   - `gate.y → integrator.u`
+
+   Or toggle to code (⇄) and paste the parts above `relations` and the wires inside it:
 
    ::: code-group
 
-   ```txt [Clamping]
-     variable control_error::Real
-   relations
-     control_error = error.y
-     integrator.u = ifelse(limiter.y >= y_max,
-                      ifelse(control_error >= 0, 0.0, control_error),
-                      ifelse(limiter.y <= y_min,
-                        ifelse(control_error <= 0, 0.0, control_error),
-                        control_error))
+   ```txt [Parts]
+     excess = BlockComponents.Math.Add(k1 = 1, k2 = -1)
+     push = BlockComponents.Math.Product()
+     winding = BlockComponents.Logical.GreaterThreshold(threshold = 0)
+     zero = BlockComponents.Sources.Constant(k = 0.0)
+     gate = BlockComponents.Logical.Switch()
+   ```
+
+   ```txt [Wires]
+     connect(gain.y, excess.u1)
+     connect(limiter.y, excess.u2)
+     connect(excess.y, push.u1)
+     connect(error.y, push.u2)
+     connect(push.y, winding.u)
+     connect(zero.y, gate.u1)
+     connect(winding.y, gate.u2)
+     connect(error.y, gate.u3)
+     connect(gate.y, integrator.u)
    ```
 
    :::
 
-4. Save, run `CruiseClimbTransient` again and plot the same signals as in step 6c, with the same code:
+5. Save, run `CruiseClimbTransient` again and plot the same signals as in step 6c, with the same code:
 
    ```julia
    using Plots; plotly()
@@ -741,9 +779,9 @@ Stop the integrator while it would only push the command deeper into a limit.
    plot(top, bottom; layout = (2, 1), link = :x)
    ```
 
-The integrator freezes only when both hold: the output is at a limit, **and** the error has the sign that would drive it further into that limit. Freezing on saturation alone would keep the integrator frozen when the hill ends and the loop needs it to come back down; with the sign condition it unwinds the moment the error reverses. The nested `ifelse` avoids boolean operators.
+The integrator freezes only when both hold: the output is at a limit, **and** the error has the sign that would drive it further into that limit. Freezing on saturation alone would keep the integrator frozen when the hill ends and the loop needs it to come back down; with the sign condition it unwinds the moment the error reverses.
 
-[![The integrator.u = ifelse(...) equation in CruiseController's code view.](/lecture/lecture-01/img/step06-clamping-code.png)](/lecture/lecture-01/img/step06-clamping-code.png)
+[![CruiseController with the clamping blocks: above the main row, excess takes gain.y minus limiter.y, push multiplies it by the error, and winding tests the product against 0; below, the Switch gate passes zero to the integrator while winding is true and error.y otherwise.](/lecture/lecture-01/img/step06-clamping-diagram.png)](/lecture/lecture-01/img/step06-clamping-diagram.png)
 
 [![Speed, controller output and integrator on the same axes as the windup plot, with clamping.](/lecture/lecture-01/img/step06-clamping-plot.png)](/lecture/lecture-01/img/step06-clamping-plot.png)
 

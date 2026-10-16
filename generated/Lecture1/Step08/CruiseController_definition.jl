@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    CruiseController(; name, k, Ti, xi0, Td, Nd, wd, xd0, y_max, y_min)
 
-Step 6d: the clamping equation drives `integrator.u` instead of `error.y`.
+Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the command and the error pushes the same way as the cut.
 
 ## Parameters:
 
@@ -28,12 +28,6 @@ Step 6d: the clamping equation drives `integrator.u` instead of `error.y`.
  * `u_s` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `u_m` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `control_error`         |                          | --  |
 """
 @component function CruiseController(; name = nothing, k=Float64(56), Ti=Float64(10), xi0=Float64(0), Td=0.5, Nd=Float64(10), wd=Float64(0), xd0=Float64(-90), y_max=Float64(1e+300), y_min=-y_max, kwargs...)
   isnothing(name) && throw(ArgumentError("""
@@ -102,12 +96,8 @@ Step 6d: the clamping equation drives `integrator.u` instead of `error.y`.
   append!(__vars, @variables (y(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (control_error(t)::Real))
 
   ### Variables (assignments)
-  __ovr_control_error = pop!(__overrides, "control_error", nothing); isnothing(__ovr_control_error) || push!(__eqs, control_error ~ __ovr_control_error)
-  __ovr_control_error__initial = pop!(__overrides, "control_error__initial", nothing); isnothing(__ovr_control_error__initial) || (__initial_conditions[control_error] = __ovr_control_error__initial)
-  __ovr_control_error__guess = pop!(__overrides, "control_error__guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -134,12 +124,26 @@ Step 6d: the clamping equation drives `integrator.u` instead of `error.y`.
   # Subcomponent limiter of type BlockComponents.Nonlinear.Limiter
   limiter_overrides = __pop_subcomponent_overrides!(__overrides, "limiter")
   push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=y_max, y_min=y_min, limiter_overrides...))
+  # Subcomponent excess of type BlockComponents.Math.Add
+  excess_overrides = __pop_subcomponent_overrides!(__overrides, "excess")
+  push!(__systems, @named excess = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), excess_overrides...))
+  # Subcomponent push of type BlockComponents.Math.Product
+  push_overrides = __pop_subcomponent_overrides!(__overrides, "push")
+  push!(__systems, @named push = BlockComponents.Math.Product(; push_overrides...))
+  # Subcomponent winding of type BlockComponents.Logical.GreaterThreshold
+  winding_overrides = __pop_subcomponent_overrides!(__overrides, "winding")
+  push!(__systems, @named winding = BlockComponents.Logical.GreaterThreshold(; threshold=Float64(0), winding_overrides...))
+  # Subcomponent zero of type BlockComponents.Sources.Constant
+  zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  # Subcomponent gate of type BlockComponents.Logical.Switch
+  gate_overrides = __pop_subcomponent_overrides!(__overrides, "gate")
+  push!(__systems, @named gate = BlockComponents.Logical.Switch(; gate_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
 
   ### Guesses
-  isnothing(__ovr_control_error__guess) || (__guesses[control_error] = __ovr_control_error__guess)
 
   ### Initialization Equations
 
@@ -147,8 +151,6 @@ Step 6d: the clamping equation drives `integrator.u` instead of `error.y`.
   __assertions = []
 
   ### Equations
-  push!(__eqs, control_error ~ error.y)
-  push!(__eqs, integrator.u ~ ifelse(limiter.y >= y_max, ifelse(control_error >= 0, 0.0, control_error), ifelse(limiter.y <= y_min, ifelse(control_error <= 0, 0.0, control_error), control_error)))
   push!(__eqs, connect(u_s, error.u1))
   push!(__eqs, connect(u_m, error.u2))
   push!(__eqs, connect(error.y, add_pid.u1))
@@ -160,6 +162,15 @@ Step 6d: the clamping equation drives `integrator.u` instead of `error.y`.
   push!(__eqs, connect(add_pid.y, gain.u))
   push!(__eqs, connect(gain.y, limiter.u))
   push!(__eqs, connect(limiter.y, y))
+  push!(__eqs, connect(gain.y, excess.u1))
+  push!(__eqs, connect(limiter.y, excess.u2))
+  push!(__eqs, connect(excess.y, push.u1))
+  push!(__eqs, connect(error.y, push.u2))
+  push!(__eqs, connect(push.y, winding.u))
+  push!(__eqs, connect(winding.y, gate.u2))
+  push!(__eqs, connect(zero.y, gate.u1))
+  push!(__eqs, connect(error.y, gate.u3))
+  push!(__eqs, connect(gate.y, integrator.u))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

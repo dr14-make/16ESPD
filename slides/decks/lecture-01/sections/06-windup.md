@@ -151,7 +151,7 @@ km/h asks for more than 150 N·m at the start, so `controller.y` sits flat on 15
 moments instead of rising above it. It stays between 0 and 150 throughout, and the speed still
 reaches 110. The gap between the two curves is the saturation.
 
-Use the names `limiter` and `gain.y` exactly. The notebooks and the clamping equation in step 6d
+Use the names `limiter` and `gain.y` exactly. The notebooks and the clamping blocks in step 6d
 look for them.
 -->
 
@@ -489,14 +489,15 @@ anything. It matters when the integrator holds more than the limit on its own.
 
 ---
 routeAlias: step-6d
+class: big-figure
 ---
 
-## Step 6d: clamping as an equation
+## Step 6d: clamping with blocks
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-[1.5fr_1fr] gap-6 items-center">
 <div>
 
-![CruiseController code view: the integrator input given by a nested ifelse equation that freezes it while the output is saturated and the error pushes further into the limit.](/img/lecture-01/step06-clamping-code.png)
+![CruiseController diagram with the clamping blocks: above the main row, excess takes gain.y minus limiter.y, push multiplies it by the error, and winding tests the product against 0; below the main row, the Switch gate passes zero to the integrator while winding is true and error.y otherwise.](/img/lecture-01/step06-clamping-diagram.png)
 
 </div>
 <div>
@@ -506,43 +507,61 @@ routeAlias: step-6d
 </div>
 </div>
 
-*Your `CruiseController` · delete `error.y → integrator.u` · in code:
-`integrator.u = ifelse(...)` on `limiter.y` and `error.y` · re-run `CruiseClimb`*
+*Delete `error.y → integrator.u` · `excess` = `gain.y` − `limiter.y` · `push` = `excess` × `error.y` · `winding`: `push` > 0 ·
+Switch `gate`: `zero.y` / `winding.y` / `error.y` → `integrator.u`*
 
-```julia
-using Plots; plotly()
-r = MyCar.CruiseClimbTransient()
-top = plot(r; idxs = r."plant.v_kmh")
-bottom = plot(r; idxs = [r."controller.y", r."controller.gain.y",
-                         r."controller.integrator.y"])
-plot(top, bottom; layout = (2, 1), link = :x)
-```
-
-[page: step 6d](../lecture/lecture-01/#step-6d) · reference `ClampingCruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
+Plot with the same code as in step 6c · [page: step 6d](../lecture/lecture-01/#step-6d) · reference `ClampingCruiseClimb` in `dyad/Lecture1/WindupClimb.dyad`
 
 <!--
-As a diagram, two comparisons and a switch are eight blocks. As an equation, five lines. A Dyad
-model can mix blocks and equations, so we write the equation.
+Now we build the two checks out of real blocks. Five of them, all from the `BlockComponents`
+library. The guide page has the table, so you can follow along there.
 
-Open your `CruiseController` and toggle to the code view. Delete the line `connect(error.y,
-integrator.u)`, the wire from the error to the integrator. The equation drives that input now.
+Open your `CruiseController`. Click the wire from `error.y` to `integrator.u` and delete it. The
+integrator will get its input from a switch instead.
 
-Above `relations`, add `variable control_error::Real`, a named value that holds the error. Inside
-`relations`, add `control_error = error.y`.
+First: is the limiter cutting, and which way? Compare what goes in with what comes out. Place an
+`Add` from `BlockComponents.Math`, name it `excess`, and set k one to 1 and k two to minus 1. Wire
+`gain.y`, the command before the limiter, into the first input, and `limiter.y`, the command
+after it, into the second. Inside the limits the two are equal and `excess` is zero. At the top
+limit the command is cut down, so `excess` is positive. At the bottom it is negative.
 
-The second equation sets `integrator.u` with nested `ifelse`. `ifelse` takes a condition, a value
-for true and a value for false. In words: if `limiter.y` is greater
-than or equal to `y_max`, then zero if `control_error` is greater than or equal to zero, otherwise
-`control_error`. Else, if `limiter.y` is less than or equal to `y_min`, then zero if
-`control_error` is less than or equal to zero, otherwise `control_error`. Otherwise just
-`control_error`. Write the zero as 0.0.
+Second: does the error push the same way? Place a `Product`, name it `push`, and wire `excess.y`
+and `error.y` into it.
 
-Read it as the two conditions. At the upper limit with the error still pushing up: zero. At the
-lower limit with the error pushing down: zero. Otherwise the error, as before. We nest `ifelse`
-because the equation has no boolean "and".
+Why multiply? We need two signs to agree, and a product checks that for us. Plus times plus is
+plus, minus times minus is plus, and a mixed pair gives minus. So we never test a sign on its own;
+we only ask whether the product is above zero. Let us go through the four cases.
 
-Back in the diagram, `integrator` has no input wire. That is correct. Its output still goes into
-`add_pid.u3`, the block that adds the three terms.
+One: the top limit, and the car is too slow. On the climb `gain.y` asks for about 660 N·m and the
+limiter lets 150 through, so `excess` is plus 510. The car is about 11 km/h under the setpoint, so
+the error is plus too. Plus times plus is plus: freeze. More integrating would only ask for torque
+the engine cannot give.
+
+Two: the top limit, but the car is now too fast. The command can still be cut while the error has
+already turned negative. Plus times minus is minus: the integrator runs, and the negative error
+winds it back down. This is why saturation alone is not enough: the integrator must be free to
+come down while the limiter still cuts.
+
+Three: the bottom limit, and the car is too fast. The limiter gives no less than zero, so `excess`
+is negative, and the error is negative too. Minus times minus is plus: freeze. You will meet this
+in step 10: just after the ice patch the car shoots up to about 110 km/h and the limiter holds the
+command at zero. Without this case the integrator winds down there, and 45 seconds into the run
+the car is at about 78.5 km/h instead of back at 90.
+
+Four: inside the limits. `gain.y` and `limiter.y` are equal, so `excess` is zero, and so is the
+product, whatever the error. Zero is not above zero, so the integrator runs as normal.
+
+So `push` is positive exactly when the limiter cuts and the error asks for more of the same. Those
+are our two conditions from the last slide, in one block.
+
+Place a `GreaterThreshold` from `BlockComponents.Logical`, name it `winding`, threshold 0, and
+wire `push.y` into it. It says true while integrating would only wind the integrator up.
+
+Last, the switch. Place a `Switch` from the same library and call it `gate`. A switch has three
+inputs: it passes the top one when the middle one is true, and the bottom one otherwise. Wire a
+`Constant` with value 0, called `zero`, to the top, `winding.y` to the middle, and `error.y` to
+the bottom. Wire `gate.y` into `integrator.u`. So the integrator gets zero while it would wind up,
+and the error otherwise. Its output still goes into `add_pid.u3`, as before.
 
 Save, re-run `CruiseClimbTransient` and plot it with the same code as in 6c.
 
@@ -554,9 +573,10 @@ car goes about 0.2 km/h over the setpoint; the notebook's run says 0.17, back wi
 3.5 seconds. Without clamping it was 49.47 km/h and 66.7 seconds. At 400 seconds the speed is back
 at 130.
 
-The most common mistake is leaving the old wire. Then `integrator.u` is defined twice, and Dyad
-reports one equation too many. The second is testing `gain.y` instead of `limiter.y`. Only
-`limiter.y` is the saturated signal, so `limiter.y` at `y_max` means exactly "at the limit".
+The most common mistake is leaving the old wire from `error.y` to `integrator.u`. Then the
+integrator has two inputs, and Dyad reports one equation too many. The second is swapping the
+inputs of `excess`: with `limiter.y` first, its sign flips and the integrator freezes exactly
+when it should run.
 -->
 
 ---
