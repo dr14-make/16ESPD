@@ -251,7 +251,44 @@ The plot is in pascals: 33 000 is 33 kPa.
 
 Commit: **Source Control** → message `Step 02: manifold` → **Commit** → **Sync Changes**.
 
-<!-- TODO(reference): a "Stuck? The full model" block from dyad/HandsOn02/Manifold.dyad once it exists. -->
+::: details Stuck? The full model
+
+From `dyad/HandsOn02/Manifold.dyad` and `dyad/HandsOn02/AirPathStep.dyad`, diagram annotations omitted.
+
+```txt
+component Manifold
+  mdot_thr = RealInput()
+  mdot_bst = RealInput()
+  mdot_cyl = RealInput()
+  p_m = RealOutput()
+  parameter V_m::Volume = 1.0e-3
+  parameter T_m::Temperature = 298.15
+  parameter R::Real = 287.05
+  variable p::Pressure
+relations
+  V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
+  p_m = p
+end
+
+component AirPathStep
+  throttle_cmd = BlockComponents.Sources.Step(offset = 0, height = 0.005, start_time = 1)
+  speed = BlockComponents.Sources.Constant(k = 83.776)
+  no_booster = BlockComponents.Sources.Constant(k = 0)
+  throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle()
+  cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow()
+  manifold = Manifold()
+relations
+  connect(throttle_cmd.y, throttle.u_thr)
+  connect(speed.y, cylinders.omega)
+  connect(no_booster.y, manifold.mdot_bst)
+  connect(throttle.mdot_thr, manifold.mdot_thr)
+  connect(cylinders.mdot_cyl, manifold.mdot_cyl)
+  connect(manifold.p_m, throttle.p_m, cylinders.p_m)
+  initial manifold.p = 101325
+end
+```
+
+:::
 
 ### 03 Map engine on a dynamometer <Badge type="info" text="20 min" /> {#map-engine}
 

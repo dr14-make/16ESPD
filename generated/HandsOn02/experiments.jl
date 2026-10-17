@@ -9,5 +9,7 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "HandsOn0
 end
 
 
+include("AirPathStep_experiment.jl")
+include("Manifold_experiment.jl")
 include("MapEngineDyno_experiment.jl")
 include("MapEngine_experiment.jl")
