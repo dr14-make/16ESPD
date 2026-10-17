@@ -48,21 +48,22 @@ This section answers that, and ends with the loop diagram we use for the rest of
 <!--
 The left diagram has no wire coming back from the output. That is the whole difference.
 
-Feedforward runs the plant model backwards: from the speed you want, it computes the torque. Any
-error in that model stays in the output, and nothing corrects it.
+Open loop, also called feedforward, computes the input u from the reference r alone, the speed we
+want. There is no sensor and no error. Closed loop, also called feedback, measures the output y and
+computes u from the error. The circle with plus and minus is the comparator. It forms e equals r
+minus y, and it is the only place the two signals meet.
+
+The plant is the system we control, here the car. Feedforward runs a model of the plant backwards:
+from the speed you want, it computes the torque. That is called model inversion. Any error in that
+model stays in the output, and nothing corrects it.
 
 Feedback is not automatically better. We use it because we never know the plant and its
 surroundings well enough. Feedback brings problems of its own, and the rest of this lecture is
 about them.
 
-In the model, `CruiseLoop` is the right-hand picture: the setpoint goes into the controller's
-`u_s`, and the plant's speed comes back into `u_m`. You draw this loop yourselves later in this
-section.
-
-Open loop computes u from r alone: no sensor, no error. Closed loop computes u from the error. The
-comparator, the circle with plus and minus, forms e equals r minus y. It is the only place the two
-signals meet. Model inversion means solving the plant backwards, from the output you want to the
-input that gives it. That is all a feedforward controller does.
+In the model, `CruiseLoop` is the right-hand picture. The setpoint, the speed the driver sets, goes
+into the controller's input `u_s`. The plant's measured speed comes back into its input `u_m`. You
+draw this loop yourselves later in this section.
 -->
 
 ---
@@ -106,9 +107,13 @@ Feedforward is a valid strategy. It is cheap and fast, and with no loop it canno
 The inversion line is the whole controller. Everything it knows about the car is in there: mass,
 drag area, rolling coefficient, wheel radius, gear ratio.
 
-v is 90 divided by 3.6, 25 meters per second; we work in SI because the force balance is in SI. F
-is drag plus rolling at that speed. tau_ff is F times r over i, the driveline equation run
-backwards: 31.1 newton-meters.
+v is 90 divided by 3.6, 25 meters per second. We work in SI, the standard metric units, because the
+force balance is in SI. F is drag plus rolling resistance at that speed: 236.25 newtons of drag plus
+164.75 of rolling, 401 newtons in all. tau_ff, the feedforward torque, is F times r over i, the
+driveline equation run backwards: 31.1 newton-meters.
+
+The right column shows the result. The simulation applies those 31.1 newton-meters and the car holds
+exactly 90.0 km/h.
 
 That number assumes a flat road, the mass we modeled and the drag we modeled. The next slide
 changes each one.
@@ -153,14 +158,15 @@ hline!(plt, [90]; ls = :dash, color = :black, label = "target")
 
 <!--
 On a 1 percent grade the car falls to 58.25 kilometers per hour. With a 200 kilogram payload it
-settles at 85.40. With 20 percent more drag area, 82.16.
+settles at 85.40. With 20 percent more drag area, 82.16. The plot runs for twenty minutes because
+these drifts are slow. The hill needs about eleven minutes to finish falling.
 
 The controller did nothing wrong. It computed 31.1 newton-meters and delivered 31.1. The road and
 the car changed, and with no error signal nothing can notice.
 
 A 1 percent grade is about 0.57 degrees, a gentle motorway rise. It costs 137 newtons against the
-401 the engine is holding. The payload raises both the rolling resistance and the slope term. The
-extra drag area is a roof box, or a headwind.
+401 the engine is holding. The payload is on a flat road, so it raises only the rolling resistance.
+The extra drag area is a roof box, or a headwind.
 
 A driver notices the hill. The payload they may never notice: the car just stays slower than they
 asked.
@@ -207,13 +213,18 @@ faces, or that there is one.
 </div>
 
 <!--
-This controller has no model. It knows only how far off the speed is, and that is enough to handle
-three disturbances it was never designed for.
+This is a proportional controller: the torque command is 25 newton-meters for every km/h of error.
+For this demo the engine's 150 newton-meter ceiling is lifted, so the limit plays no part. A
+disturbance is anything that pushes the speed that we did not choose, like the hill or the payload.
 
-A gap to the target remains, different for each disturbance. Section 03 explains it.
+This controller has no model. It knows only how far off the speed is, and that is enough to handle
+three disturbances it was never designed for. Every run settles within about five seconds.
+
+A gap to the target remains, different for each disturbance. The flat road settles at 88.78 km/h,
+the hill at 88.36, the payload at 88.70, the extra drag at 88.64. Section 03 explains the gap.
 
 What did we give up for this? Cost, complexity and a sensor are all partly right. The main cost is
-something else, and we come to it right after you draw this loop.
+that feedback changes how the car responds, and we come to it right after you draw this loop.
 -->
 
 ---
@@ -249,30 +260,32 @@ this loop into a new bench.
 First, the controller shell. In Components, right-click `MyCar`, Add Component, name it
 `CruiseController`.
 
-Three ports from the `Dyad` library. A `RealInput` named `u_s` on the left edge: the setpoint, in
-kilometers per hour. A `RealInput` named `u_m` on the bottom edge: the measured speed. A
-`RealOutput` named `y` on the right edge: the torque command, in newton-meters. Use exactly these
-names; the notebooks use them.
+Three ports from the `Dyad` library. Ports are the connection points on the block's edge. A
+`RealInput` named `u_s` on the left edge: the setpoint, in kilometers per hour. A `RealInput` named
+`u_m` on the bottom edge: the measured speed. A `RealOutput` named `y` on the right edge: the torque
+command, in newton-meters. Use exactly these names; the notebooks use them.
 
-Drag in `BlockComponents.Math.Add`, name it `error`, set k one to 1 and k two to minus 1. That is
-the comparator. Wire `u_s` into `error.u1` and `u_m` into `error.u2`. Leave `error.y` and `y`
-open.
+Drag in `BlockComponents.Math.Add`, name it `error`, set k one to 1 and k two to minus 1. The Add
+block multiplies each input by its k and adds them, so this one computes u s minus u m: positive
+when the car is too slow. That is the comparator. Wire `u_s` into `error.u1` and `u_m` into
+`error.u2`. Leave `error.y` and `y` open.
 
-Second, the loop: Add Component, `CruiseLoopStep`. Four blocks, named exactly. `demand` is
-`BlockComponents.Sources.Step`, offset 90, height 20, start time 0. `controller` is your
-`CruiseController`. `plant` is your `GradeCar`. `road` is `BlockComponents.Sources.Constant`, k
-equal to 0.
+Second, the loop: right-click `MyCar`, Add Component, `CruiseLoopStep`. Four blocks, named exactly.
+`demand` is `BlockComponents.Sources.Step`, offset 90, height 20, start time 0, so the wanted speed
+jumps from 90 to 110 km/h at the start. `controller` is your `CruiseController`. `plant` is your
+`GradeCar`. `road` is `BlockComponents.Sources.Constant`, k equal to 0, a flat road.
 
 Wire `demand.y` into `controller.u_s`, `controller.y` into `plant.tau_cmd`, `road.y` into
 `plant.grade`, and `plant.v_kmh` into `controller.u_m`. That last wire is the feedback.
 
-In code, add the starting state, cruising at 90 with the engine holding 31.078 newton-meters.
-Initial `plant.body.mass.s` equals 0. Initial `plant.body.mass.v` equals 25. Initial
-`plant.engine.lag.x` equals 31.078. Save.
+Press the code toggle and add the starting state, cruising at 90 with the engine holding 31.078
+newton-meters. Initial `plant.body.mass.s` equals 0. Initial `plant.body.mass.v` equals 25, meters
+per second, which is 90 km/h. Initial `plant.engine.lag.x` equals 31.078. Save.
 
-Run Analysis: TransientAnalysis of `CruiseLoopStep`, named `CruiseLoopTransient`, stop 100. Do not
-run it yet: `controller.y` has no source until step 3, and the problems panel says so. That is
-expected.
+Press Run Analysis, choose TransientAnalysis of `CruiseLoopStep`, name it `CruiseLoopTransient`, and
+set stop to 100 seconds. Do not run it yet: `controller.y` has no source until step 3. The problems
+panel lists that unconnected `y` and nothing else. That is expected, and there is nothing to plot
+yet.
 
 The step is at time zero because a later step would give the P controller of step 3 a stretch at
 zero error, where it commands zero torque and the car slows down.
@@ -304,6 +317,9 @@ did not have before you wired the loop.*
 <!--
 Feedforward cannot destabilize anything, because there is no loop. Feedback can.
 
+You already saw feedback change the car. Open loop, the car's time constant at 90 km/h is about 74
+seconds. With the loop from a minute ago it is about 1.2 seconds, some sixty times faster.
+
 That is why control engineering spends so much effort on analysis. A controller that works on a
 good day is easy. Showing that it does no harm on a bad one is the hard part.
 
@@ -326,5 +342,6 @@ it.
 ### Next: the simplest thing that uses an error signal. <Link to="proportional">→ 03, proportional</Link>
 
 <!--
-We need feedback. The simplest thing to do with an error signal is to multiply it by a number.
+We need feedback. The simplest thing to do with an error signal is to multiply it by a number. That
+number is the gain, and the next section builds it.
 -->

@@ -12,9 +12,10 @@ The same controller gets worse when it reads the speed less often.
 `notebooks/lecture01/09-discretization.ipynb`
 
 <!--
-Everything we designed today is continuous. A controller you ship runs on a computer, so it is
-discrete. This section connects the two, with the gains from section 08. Same controller, nothing
-re-tuned.
+Everything we designed today is continuous: the controller reacts at every instant. A controller
+you ship runs on a computer. It reads the speed only at fixed intervals and computes a new command
+each time. That is called discrete. Discretization means turning the first kind into the second.
+This section connects the two, with the gains from section 08. Same controller, nothing re-tuned.
 
 This is a demo, not a build. Your own controller stays continuous. The demo runs on the reference
 model, `SampledCruiseLoop`.
@@ -50,13 +51,13 @@ A digital controller changes its output in steps, and holds each value until the
 the steps are small and frequent enough, nobody can tell the difference. The question is how fast
 is fast enough.
 
-The sample time, T s, is the interval between updates, in seconds. The sample rate is its
-reciprocal, in hertz. A zero-order hold keeps the last command constant until the next tick. That
-is the staircase.
+The sample time, T s, is the interval between updates, in seconds. The sample rate is one over
+that: updates per second, in hertz. A zero-order hold keeps the last command constant until the
+next tick. That is the staircase.
 
-Digital control also brings quantization, from finite word length, and the delay of the computation
-itself. Both are real, but today we look only at sample time, because it usually causes problems
-first.
+Digital control also brings rounding, because a computer stores numbers with limited digits, and
+the delay of the computation itself. Both are real, but today we look only at sample time, because
+it usually causes problems first.
 -->
 
 ---
@@ -132,7 +133,7 @@ runs = [Ts => solve(p) for (Ts, p) in problems]
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/09-discretization.ipynb)
 
-*As the sample time grows, the overshoot grows, then the loop rings, then it diverges.*
+*As the sample time grows, the overshoot grows, then the loop rings and no longer settles.*
 
 </div>
 <div>
@@ -145,20 +146,24 @@ runs = [Ts => solve(p) for (Ts, p) in problems]
 </div>
 
 <!--
-Look at the fastest run first. It does not match the continuous run from section 08. Even this run
-overshoots far more, probably because this demo leaves its discrete derivative unseeded. What
-matters is the trend across the four runs.
-
-As the sample time grows, the overshoot grows first. Then the loop rings: it oscillates and decays
-slowly. Then it diverges: the oscillation does not decay at all.
+Look at the fastest run first. It does not match the continuous run from section 08. That one
+peaked at about 119 km/h; this one peaks at about 151. This demo starts its discrete controller
+less carefully than section 08 did, so ignore the absolute numbers. What matters is the trend
+across the four runs.
 
 The sweep is T s equal to 0.01, 0.1, 0.4 and 1.0 seconds, with the Ziegler-Nichols gains from
-section 08. No gain was changed. The controller that was correct at ten milliseconds is dangerous
-at one second.
+section 08: k 67.41, T i 1.092, T d 0.273. No gain was changed. The torque limit stays lifted, so
+only the sampling differs.
+
+As the sample time grows, the overshoot grows first. The peaks are about 151, 157 and 182 km/h.
+Then the loop rings: it oscillates and decays slowly. At one second it peaks at about 203 km/h and
+does not settle: over the last 20 seconds of the run it still swings by 3.6 km/h. The controller
+that was correct at ten milliseconds is dangerous at one second.
 
 So which sample time would you pick for a cruise control? Fast compared with what? The plant's time
 constant is about a minute. The closed-loop bandwidth, roughly the fastest change the loop can
-follow, is on the scale of seconds. That second number is the one that matters.
+follow, is on the scale of seconds. That second number is the one that matters. With these gains,
+0.05 seconds, twenty updates a second, works: we use it as a fix in three slides.
 -->
 
 ---
@@ -219,15 +224,16 @@ every `Ts`, 0.1 seconds by default.
 setpoint and `plant.v_kmh` into clocked values. The clock wire joins the setpoint sampler's output
 and the controller. That one connection puts the whole controller on the clock.
 
-`controller` is `DiscreteComponents.DiscretePIDStandard`, the library's discrete PID, with K, T i,
-T d, N d and T s. It is not your `CruiseController`, but any sampled controller behaves this way.
+`controller` is `DiscreteComponents.DiscretePIDStandard`, the library's discrete PID. Its settings
+are K, T i, T d, N d and T s. N d is the derivative filter from section 07; T s is the sample time.
+It is not your `CruiseController`, but any sampled controller behaves this way.
 
 `hold` is a `DiscreteComponents.ZeroOrderHold`. Its output is the staircase.
 
 `plant` is continuous, and untouched.
 
-`Ts` is a structural parameter, because it defines the clock. Changing it is a recompile, so the
-notebook builds one model per sample time.
+`Ts` is a structural parameter: a value fixed when the model is compiled, because it defines the
+clock. Changing it is a recompile, so the notebook builds one model per sample time.
 
 To put your own controller on a clock, use the same two samplers and the hold around a discrete
 controller. This diagram is the template.
@@ -272,9 +278,12 @@ sustained oscillation. Sampling adds more delay, and this time **we** added it, 
 cheaper processor. A delay has the same effect whether it comes from fuel injection or from a
 scheduler. Your loop tolerates a fixed total delay, and every source adds to it.
 
-The arithmetic. At angular frequency omega, a zero-order hold costs about omega T s over two
-radians of phase. Omega c is the crossover frequency, where the loop gain passes through one. Phase
-margin is measured there: how much extra phase lag the loop can absorb before it oscillates.
+The arithmetic. Think of the loop as handling waves of different speeds. Omega is how fast a wave
+cycles, in radians per second. Phase lag is how far the response trails behind the wave, measured
+as an angle. At angular frequency omega, a zero-order hold adds about omega T s over two radians
+of lag. Omega c is the crossover frequency: the wave speed at which the loop neither amplifies nor
+shrinks a signal. Phase margin is measured there: how much extra lag the loop can absorb before it
+oscillates.
 
 The rule of thumb is to spend at most 0.2 radians, about 12 degrees, on sampling. That means T s
 less than 0.4 over omega c: sample 20 to 30 times faster than the closed-loop bandwidth, not the
@@ -315,9 +324,10 @@ retuned_slow = solve_at(1.0; k = 20.0, Ti = 3.0, Td = 0.5)
 </div>
 
 <!--
-There are two fixes. Sampling faster shortens the delay from measurement to actuation, with the
-same settings. Conservative re-tuning lowers the bandwidth, so the one-second update costs less
-phase margin.
+There are two fixes. The first samples faster: 0.05 seconds, with the same gains. That shortens the
+delay from measurement to action. The second stays at one second and re-tunes gently: k 20, T i 3
+seconds, T d 0.5 seconds. That lowers the bandwidth, so the one-second update costs less phase
+margin. Both settle.
 
 Compare the re-tuned curve with where the continuous design sat. The gap is what the cheap
 processor cost. Re-tuning restores stability, not the original bandwidth.
@@ -344,9 +354,9 @@ That is a course of its own, and it is why the conversion method matters.
 This is the same argument as using a linear model for a nonlinear plant. We work where the tools
 are good, and then we check the approximation. If you take the shortcut, the check is required.
 
-This notebook keeps the standard-form k, T i and T d. It implements the integral with forward
-Euler, and the filtered derivative with backward Euler. Other conversion methods give different
-discrete coefficients. Either way, verify at the deployed rate.
+This notebook keeps the same k, T i and T d. It turns the integral and the filtered derivative into
+step-by-step sums, using two simple recipes called forward Euler and backward Euler. Other
+conversion methods give slightly different numbers. Either way, verify at the rate you deploy.
 -->
 
 ---

@@ -15,12 +15,13 @@ A recap of the car you built, a step test that measures it, and a road with a gr
 
 <!--
 No controller in this section either. We recall the hands-on car in a few slides, then measure it
-the way a control engineer would: one step test, three numbers. At the end the car gets a grade
-input, so it can climb a hill.
+the way a control engineer would. A step test changes the input in one jump and records what the
+output does. One step test gives three numbers. At the end the car gets a grade input, for the
+slope of the road, so it can climb a hill.
 
-From here on you build along with me. Open your `MyCar` in Studio, with `Car` and `GradeBody` in it.
-If you do not have it, copy the MyCar template linked from the guide page. It is the finished
-hands-on car, with the same instance names.
+From here on you build along with me. Open your `MyCar` in Dyad Studio, with `Car` and `GradeBody`
+in it. If you do not have it, copy the MyCar template linked from the guide page. It is the finished
+hands-on car, with the same instance names, the names of the blocks inside each diagram.
 -->
 
 ---
@@ -61,10 +62,19 @@ routeAlias: recap-models
 ↩ Hands-on: [step 10 and its summary table](../handson-01/index.html#/standing-start) · [hands-on page](../handson/lecture-01/index.html)
 
 <!--
-This is the hands-on in one table. Each row is the equation a part adds and the number your bench
-showed. You predicted each one on paper first, and your model matched.
+This is the hands-on in one table. A bench is a small test model that drives one part with fixed
+inputs. Each row is the equation a part adds and the number your bench showed. You predicted each
+one on paper first, and your model matched.
 
-The `Car` diagram, top right, is the plant for the whole lecture. At the end of this section its
+Read the last column with me. The engine, asked for 200 newton-meters at half a second, does nothing
+until 0.8 seconds, then rises, and is capped at 150 from 1.22 seconds. The driveline turns 100
+newton-meters into 1290 newtons at the road, which pushes 1400 kilograms at 0.92 meters per second
+squared. The body, pushed with a steady 500 newtons, settles at 29.78 meters per second, about 107
+km/h. The whole car, flat out, reaches 100 km/h at 23.6 seconds and 246.39 at 300 seconds. On snow,
+`SlipCar` does 10 km/h after 5 seconds while its tire surface spins at about 1500.
+
+The `Car` diagram, top right, is the plant for the whole lecture. The plant is the system we
+control. At the end of this section its
 `Body` becomes your `GradeBody`: the hill we need from section 02. In section 10 the whole car
 becomes `SlipCar`, with a tire whose grip has a peak, on ice.
 
@@ -123,17 +133,20 @@ Analyses → plot the signals.
 <!--
 Every build step today is one of four Studio moves, sometimes two. You know all of them.
 
-One. Duplicate: right-click the component, Duplicate, rename. The copy keeps every wire. Today `Car`
-becomes `GradeCar`.
+One. Duplicate: in the Components list, right-click the component, Duplicate, rename. A component
+is one Dyad block. The copy keeps every wire. Today `Car` becomes `GradeCar`.
 
-Two. Parameter: add it with a name and a default, then type that name into the part's parameter.
-Today that is `k`, `Ti` and `Td` on the controller, and `T_max`, `m` and `theta_e` on the car.
+Two. Parameter: a named number on a component. Add it with a name and a default, then type that
+name into the part's parameter. Today that is `k`, `Ti` and `Td` on the controller, and `T_max`,
+`m` and `theta_e` on the car.
 
-Three. Two kinds of wire. Arrows carry numbers, one way. Joints carry physics, both ways. The port
-shape tells you which, and you can only wire like to like. The controller is all arrows.
+Three. Two kinds of wire. Arrows carry numbers, one way. The slide calls them causal. Joints carry
+physics, both ways, and push on each other equally. The slide calls them acausal. The port shape
+tells you which, and you can only wire like to like. The controller is all arrows.
 
-Four. Run and plot: a harness for the inputs, the initial state in code, a TransientAnalysis from
-the Run button, run it from Analyses, plot.
+Four. Run and plot. Make a harness, a model that feeds the inputs. Type the initial state, the
+starting values, in code view. Press the Run Analysis button and choose TransientAnalysis, a
+simulation over time. Run it from the Analyses panel, then plot.
 
 You will use wiring most. The controller is seven blocks and about a dozen wires.
 -->
@@ -178,16 +191,17 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
 </div>
 
 <!--
-This is your step 05, on the reference `Car`. Today, look at the time axis, not the 246. The car
-needs 143 seconds to reach 99 percent of terminal speed, because at low speed drag pushes back very
-weakly.
+This is your step 05, on the reference `Car`: full torque, 150 newton-meters, from standstill on a
+flat road. Terminal speed is the top speed, 246 km/h, where drag uses up all the engine's push.
+Today, look at the time axis, not the 246. The car needs 143 seconds to reach 99 percent of terminal
+speed, because at low speed drag pushes back very weakly.
 
 Remember that time axis. In notebook 03 the closed loop does a 20 km/h step in a few seconds.
 Feedback does not make the engine stronger. It changes the **dynamics**: how fast the car responds,
 and in what way.
 
-The car's time constant near 100 km/h is 67 seconds: the mass divided by how hard drag pushes back
-per unit of speed. One time constant covers 63 percent of the remaining distance. Three cover 95
+A time constant measures how slowly a system follows a change. The car's time constant near 100
+km/h is 67 seconds: the mass divided by how hard drag pushes back per unit of speed. One time constant covers 63 percent of the remaining distance. Three cover 95
 percent. The dashed line is the 246 km/h you computed by hand in hands-on step 05, and the
 simulation agrees.
 
@@ -237,8 +251,10 @@ plot_torque(step_test;
 </div>
 
 <!--
-Notebook 08 builds on this four-line procedure. Every tuning rule in this lecture reads its numbers
-off this one experiment.
+Notebook 08 builds on this four-line procedure. Tuning means choosing the controller's numbers, and
+every tuning rule in this lecture reads its numbers off this one experiment. Manual, in line two,
+means no controller acts and we set the input by hand. We have no controller yet, so that holds. In
+line four we divide the change in speed by the torque step, 9.04 newton-meters.
 
 We step from 31 to 40 newton-meters, the cruise torques for 90 and 110 km/h, and not from 0 to 150.
 We want the response around the speed we actually drive at. Drag grows with v squared, so over a
@@ -246,13 +262,14 @@ large step the car's behavior changes too much.
 
 Look at the torque plot. The commanded torque is `cmd.y`. The delivered torque is
 `plant.engine.limiter.y`, after the engine's delay, lag and limit. First a flat gap, where the
-command has stepped and nothing has happened yet. That is **dead time**, a pure delay. Then a curve:
-the manifold filling. That is a lag. A lag starts at once and approaches gradually. Two delays with
-two causes, and they need different treatment.
+command has stepped and nothing has happened yet. That is **dead time**, a pure delay, about 0.3
+seconds here. Then a curve: the manifold, the engine's air pipe, filling. That is a lag. A lag starts
+at once and approaches gradually. Two delays with two causes, and they need different treatment.
 
-In hands-on step 02 we justified these lags on paper. Without them the car is first order,
-Ziegler-Nichols has nothing to oscillate, and Cohen-Coon divides by a dead time of zero. This plot
-is where they first become a control problem.
+In hands-on step 02 we justified these lags on paper. Without them the car has a single lag, the
+simplest kind of response. Ziegler-Nichols and Cohen-Coon are two classic tuning recipes from
+section 08. Without the lags, Ziegler-Nichols has nothing to make oscillate, and Cohen-Coon divides
+by a dead time of zero. This plot is where they first become a control problem.
 
 Next, you build this same harness on your own `Car`.
 -->
@@ -298,30 +315,33 @@ Let's build it.
 
 Under Components, right-click `MyCar`, choose Add Component, and call it `CarStepTest`.
 
-Drag in `BlockComponents.Sources.Step` and name it `cmd`. Set `offset` to 31.078, `height` to 9.041,
-and `start_time` to 50. 31.078 holds 90 km/h, 40.119 holds 110, and the height is the difference.
+Drag in `BlockComponents.Sources.Step` and name it `cmd`. A Step block outputs one value, then jumps
+to another at a set time. Set `offset` to 31.078, `height` to 9.041, and `start_time` to 50. 31.078
+newton-meters holds 90 km/h, 40.119 holds 110, and the height is the difference.
 
 Drag in your `Car` and name it `plant`. The name matters: the notebook reads `plant.v_kmh` and
 `plant.engine.limiter.y`.
 
 Wire `cmd.y` into `plant.tau_cmd`. That is the only wire.
 
-Switch to code and add the initial state, so the car starts cruising at 90 km/h. `initial
-plant.body.mass.s = 0`. `initial plant.body.mass.v = 25`. `initial plant.engine.lag.x = 31.078`.
-Save.
+Press the code toggle, the two-arrow button, and add the initial state at the end of `relations`, so
+the car starts cruising at 90 km/h. `initial plant.body.mass.s = 0`: position zero. `initial
+plant.body.mass.v = 25`: 25 meters per second, which is 90 km/h. `initial plant.engine.lag.x =
+31.078`: the engine already delivers the holding torque. Save.
 
-Run Analysis, choose TransientAnalysis, name it `CarStepTestTransient`, and set `stop` to 500. Run
-it from Analyses.
+Press Run Analysis, choose TransientAnalysis, name it `CarStepTestTransient`, and set `stop` to 500
+seconds. Run it from the Analyses panel.
 
-Plot in the Julia REPL. Open it with Dyad: Open Julia REPL, in the Actions panel's title bar. The
-code is on the slide. `plotly()` makes the plot interactive: drag a box to zoom, double-click to
-zoom back out.
+Plot in the Julia REPL, a command window where Julia runs each line as you type it. Open it with
+Dyad: Open Julia REPL, in the Actions panel's title bar. Paste the first code block from the slide.
+`plotly()` makes the plot interactive: drag a box to zoom, double-click to zoom back out.
 
 You should see 90 km/h until 50 seconds, then an S-shaped climb that levels off at 110 by the end.
 
-The second snippet zooms in on the delivered torque around the step. It stays at 31.1 for about 0.3
-seconds: the transport delay. The small dip before it rises comes from the Padé approximation, not
-from your model. Then it climbs along the lag and reaches 40.1 by 52 seconds.
+The second snippet zooms in on the delivered torque, from 49.5 to 52 seconds. It stays at 31.1 for
+about 0.3 seconds: the transport delay. The small dip before it rises is not your model's fault. The
+simulator replaces the exact delay with a close formula, the Padé approximation, and that formula
+makes the dip. Then the torque climbs along the 0.3 second lag and reaches 40.1 by 52 seconds.
 
 The usual mistake is leaving out `initial plant.engine.lag.x`. The lag then starts at zero torque,
 the car slows for the first minute, and the step lands on a car that is not at 90. If the run ends
@@ -374,7 +394,9 @@ The transient never ends exactly. It decays toward the final value. So we pick a
 2 percent 240 seconds after the step.
 
 Requirements are written in these terms. Rise time, overshoot and settling time describe the
-transient. Steady-state error describes the steady state.
+transient. Rise time is how fast the response gets most of the way. Overshoot is how far it goes
+past the target. Steady-state error describes the steady state: the gap to the target that is left
+at the end.
 -->
 
 ---
@@ -417,17 +439,19 @@ local_tau(v)  = CAR.m / (2 * c_drag * v)
 </div>
 
 <!--
-K is 2.21 km/h per newton-meter: how far the speed moves per unit of torque, once settled. Tau is
-63.0 seconds: how long it takes to get there, set by the vehicle, not the engine. Theta is 1.816
-seconds, the dead time as the fit reports it. Write all three down. Section 08 uses them.
+K, the gain, is 2.21 km/h per newton-meter: how far the speed moves per unit of torque, once
+settled. Tau, the time constant, is 63.0 seconds: how long it takes to get most of the way there,
+set by the vehicle, not the engine. Theta, the dead time, is 1.816 seconds, as the fit reports it.
+Write all three down. Section 08 uses them.
 
-This is system identification for a first-order plant plus dead time, F O P T D. One step in, one
-curve out, three numbers. No equations of motion. If somebody handed you this car as a sealed box,
-you could still get them.
+This is system identification: fitting a model to measured data. The model is first order plus
+dead time, F O P T D. That means one lag, after a pure delay. One step in, one curve out, three
+numbers. No equations of motion. If somebody handed you this car as a sealed box, you could still
+get them.
 
 The amber box. The engine's delay is 0.3 seconds, and the fit says 1.82. The fit is still right. Our
-car is not FOPTD: its drag is **quadratic**, so its time constant changes with speed. Theta is the
-only parameter left to absorb that mismatch.
+car is not exactly FOPTD: its drag is **quadratic**, it grows with the square of the speed, so its
+time constant changes with speed. Theta is the only parameter left to absorb that mismatch.
 
 In practice this is all you have: a curve and three numbers. Notebook 08 tunes from them as they
 stand, and the controller works.
@@ -435,9 +459,9 @@ stand, and the controller works.
 Theta over tau is about 0.029. Every tuning rule in notebook 08 uses this ratio, and a value this
 small means a car that is easy to control.
 
-As a check, the force balance gives a tangent time constant of 74.1 seconds at 90 km/h and 60.6 at
-110. The fitted 63.0 lies between them. K should land near 20 divided by 9.04, the total speed
-change over the total torque change.
+As a check, the force balance gives the car's time constant at exactly one speed: 74.1 seconds at 90
+km/h and 60.6 at 110. The fitted 63.0 lies between them. K should land near 20 divided by 9.04, the
+total speed change over the total torque change. That is 2.212, and the fit says 2.21.
 
 The plot shows how the fit gets them. Read the two times where the speed crosses half and 63
 percent of the change. The first-order curve through both points starts rising at t1. Theta runs
@@ -479,7 +503,12 @@ $$ F_{\text{slope}} = m\,g\,\sin(\arctan \text{grade}) $$
 This is your `GradeBody` from hands-on step 07: the same body, plus your first hand-written
 equation, the part of the weight that pulls back along the slope.
 
-One `grade` input drives both the slope force and the rolling resistance's inclination, so they
+The grade is how much the road rises per distance covered: 0.10 means 10 meters up for every 100
+meters forward, measured flat on a map. That is the 10 percent on a road sign. On that hill gravity pulls back with 1366 newtons, against
+the 1935 the engine can push.
+
+One `grade` input drives both the slope force and the rolling resistance. On a slope the car presses
+a little less on the road, so rolling resistance drops slightly. One signal for both means they
 cannot disagree.
 
 Section 02 needs a hill to show why we need feedback. So before we close any loop, the car gets this
@@ -524,20 +553,23 @@ Let's build it.
 Right-click `Car`, choose Duplicate, and rename it `GradeCar`. Open it.
 
 Swap the body. Delete `body`, drag in your `GradeBody`, and name it `body`. Redraw its two wires:
-`driveline.flange` to `body.flange`, and `vsensor.flange` to `body.flange`. Faster, in code: change
-`body = Body()` to `body = GradeBody()`. The wires survive, because the port has the same name.
+`driveline.flange` to `body.flange`, and `vsensor.flange` to `body.flange`. A flange is a mechanical
+connection point. Faster, in code view: change `body = Body()` to `body = GradeBody()`. The wires
+survive, because the port has the same name.
 
-Add a `RealInput` from the `Dyad` library on the left edge, under `tau_cmd`. Name it `grade` and
-wire it into `body.grade`. Save. The problems panel must be empty.
+Add a `RealInput` from the `Dyad` library on the left edge, under `tau_cmd`. A `RealInput` is an
+input port that carries a number. Name it `grade` and wire it into `body.grade`. Save. The problems
+panel must be empty.
 
-Now the bench. Duplicate `CarFullThrottle` as `GradeCarFullThrottle`. Replace `car` with a
-`GradeCar` named `car`. Add `road`, a `BlockComponents.Sources.Constant` with `k` equal to 0, and
-wire `road.y` into `car.grade`. Add a TransientAnalysis `GradeCarFullThrottleTransient` with `stop`
-at 300, run it, and plot `car.v_kmh` with the code on the slide.
+Now the bench. Right-click `CarFullThrottle`, Duplicate, and name it `GradeCarFullThrottle`. Replace
+`car` with a `GradeCar` named `car`. Add `road`, a `BlockComponents.Sources.Constant` with `k` equal
+to 0. A Constant block outputs one fixed number. Wire `road.y` into `car.grade`. Press Run Analysis,
+choose TransientAnalysis, name it `GradeCarFullThrottleTransient`, set `stop` to 300 seconds, run
+it, and plot `car.v_kmh` with the code on the slide.
 
 You should see 246.39 km/h at 300 seconds, the same as `Car`: on a flat road a `GradeBody` is a
-`Body`. Set `road.k` to 0.1 and run again. The terminal speed drops, and the engine sits on its 150
-newton-meter ceiling the whole way.
+`Body`. Set `road.k` to 0.1, a 10 percent climb, and run again. The speed at 300 seconds drops to
+about 116.7 km/h, and the engine sits on its 150 newton-meter ceiling the whole way.
 
 No parameters yet. `T_max` comes in section 06, `m` and `theta_e` in section 08. The reference
 `GradeCar` already has them. Ignore that for now.
@@ -564,7 +596,8 @@ design starts here, and people often skip it.
 Our model predicts the terminal speed. So why not just compute the right throttle and apply it?
 Notebook 02 answers that with a hill. That is why your car just got a `grade` input.
 
-Make sure your `GradeCar` compiles. If it does not, paste the one from the guide page's step 1b now.
+Make sure your `GradeCar` compiles: Dyad accepts it, and the problems panel is empty. If it does
+not, paste the one from the guide page's step 1b now.
 Section 02 wires it into the loop.
 -->
 

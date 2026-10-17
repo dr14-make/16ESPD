@@ -12,11 +12,20 @@ Your three components, assembled — and the 246 km/h you computed on paper.
 [page: step 05](../handson/lecture-01/#car) · reference `dyad/HandsOn/Car.dyad`
 
 <!--
-**Say:** This is the milestone: the parts become one car. In control terms the
-car is the plant, the system being controlled. Every controller in the PID lecture
-controls this car.
+**Say:** This is the milestone: the parts become one car. Every controller in the next
+lecture drives this car.
 
-**Timing:** 27 minutes: 7 of theory (force balance, nine numbers, top speed, how long), then assembly 8, bench and analysis 5, run and plot 5, and the "246 is wrong" slide after the plot.
+**Tutor:** two words on this slide. *Terminal speed* is the top speed: the speed where the
+car stops getting faster. *Full throttle* means the engine is asked for its maximum torque,
+150 N·m, the whole time. If you hear "plant" in the next lecture, it means this car: the
+thing being controlled.
+
+**Timing:** 27 minutes: 7 of theory (force balance, nine numbers, top speed, how long), then
+assembly 8, test model and run settings 5, run and plot 5, and the "246 is wrong" slide
+after the plot.
+
+**What students should see at the end:** a speed curve that rises and flattens at
+**246.39 km/h** after 300 seconds.
 -->
 
 ---
@@ -55,21 +64,28 @@ steady.
 
 <!--
 **Say:** This one equation describes the whole car: the forces from the last
-four slides, added up. The left side is mass times acceleration. The right side is the
+three slides, added up. The left side is mass times acceleration. The right side is the
 push, minus everything that holds the car back.
 
-**Point at:** the T on the right. It is the torque step 02's engine
-delivers, with its delay, lag and limit, not the pedal request.
+**Symbols:** m = 1400 kg; dv/dt is the acceleration, how fast the speed changes; v is speed
+in m/s; T is engine torque; i = 4 is the gear ratio; r = 0.31 m is the wheel radius;
+ρ = 1.2 kg/m³; C<sub>d</sub>A = 0.63 m²; f<sub>r</sub> = 0.012; g = 9.81 m/s²; α is the road
+angle, 0 on a flat road. sin and cos split the weight into "along the road" and "into the
+road"; on a flat road cos α = 1 and sin α = 0.
 
-**Point at:** the v². Because of it, the car is nonlinear: doubling the
-push does not double the speed. That will matter in the next lecture's step test.
+**Point at:** the T on the right. It is the torque step 02's engine actually delivers,
+after its 0.3 s delay, its 0.3 s lag and its 150 N·m limit. It is not the torque the driver
+asks for.
 
-**Say:** Step 4 builds the right side on a flat road: mass, air and tires.
+**Point at:** the v². Because of it, the car is *nonlinear*: doubling the push does not
+double the speed. That will matter in the next lecture.
+
+**The box on the right, in plain words:** students never type this equation. Where parts
+are wired to the same point, Dyad adds "all forces here sum to zero" by itself. Step 01
+showed that rule.
+
+**Say:** Step 4 built the right side on a flat road: mass, air and tires.
 Step 7 adds the slope.
-
-**Symbols, once more:** m = 1400 kg; v speed in m/s; T engine torque;
-i = 4; r = 0.31 m; ρ = 1.2 kg/m³; C<sub>d</sub>A = 0.63 m²; f<sub>r</sub> = 0.012;
-g = 9.81 m/s²; α road angle.
 -->
 
 ---
@@ -112,9 +128,18 @@ g = 9.81 m/s²; α road angle.
 **Say:** Nine numbers describe the whole car. You have now met every one
 of them: three in the engine, two in the gear and wheel, and four in the body.
 
+**The two engine timings, in plain words** (from step 02): the *delay* θ<sub>e</sub> ("theta")
+is 0.3 s where nothing happens after a command. The *lag* τ<sub>e</sub> ("tau") means the
+torque then builds up gradually rather than jumping; 0.3 s is the time to get 63 % of the
+way.
+
 **Ask the room:** which of these nine will make the car hardest to control?
-*(Take two or three guesses. The answer is the bottom two: the delay and the lag
-from step 02.)*
+*(Take two or three guesses. The answer is the bottom two: the delay and the lag. A
+controller that sees the car's reaction late tends to overreact.)*
+
+**If a student asks about g or v_nominal:** those are also in `Body`, but they do not
+describe this car. g is gravity, the same for every car. v_nominal is only the reference
+speed for the drag block, and it cancels out (step 04).
 -->
 
 ---
@@ -166,16 +191,19 @@ take your time.
 4. **Solve for v:** 0.378·v² = 1770, so v² = 1770 / 0.378 = 4683, and
    v = 68.4 m/s. Times 3.6 = 246 km/h.
 
-**The cruise torques, step by step:** 90 km/h = 25 m/s; air 0.378 × 625 =
-236 N; plus 165 = 401 N needed at the road. Torque = 401 × 0.31 / 4 = 31.1 N·m. 110 km/h =
-30.56 m/s; 30.56² = 934; × 0.378 = 353 N; plus 165 = 518 N; × 0.31 / 4 = 40.1 N·m.
+**The cruise table:** "cruise" means holding one speed steady. The table asks: how much
+engine torque holds 90 km/h, and 110 km/h? 90 km/h = 25 m/s; air 0.378 × 625 = 236 N; plus
+165 = 401 N needed at the road. Torque = 401 × 0.31 / 4 = 31.1 N·m. 110 km/h = 30.56 m/s;
+30.56² = 934; × 0.378 = 353 N; plus 165 = 518 N; × 0.31 / 4 = 40.1 N·m.
 
-**Say:** We set the "speeding up" part to zero and solved. That gives the *steady state*, where the car ends up, without saying
-anything about how it gets there. The next lecture's controller will find 31.1
+**Say:** We set the "speeding up" part to zero and solved. That gives the *steady state*:
+where the car ends up once nothing changes any more. It says nothing about how long it
+takes to get there; the next slide does. The next lecture's controller will find 31.1
 newton-meters by itself, without being told.
 
 **Ask the room, before the next slide:** 246 km/h from a 150 N·m engine. Does
-anyone believe that? *(Leave the question open; the slide after the run answers it.)*
+anyone believe that? *(Leave the question open; the last slide of this step answers it:
+the model is too optimistic at high speed.)*
 -->
 
 ---
@@ -225,7 +253,12 @@ engine, sets how slowly the speed changes.
 one percent of top speed. Drag is weak at low speed, so little pulls the car toward its
 final speed, and it gets there slowly.
 
-**Derivation, step by step** (compare with the lag slide in step 02):
+**Time constant, in plain words:** a single number for "how slow" something is. It is the
+time to get 63 % of the way to a new value. Big number, slow response. The engine's is
+0.3 s; the car's is about a minute. 67 / 0.3 ≈ 220, which the slide rounds to "200 times".
+
+**Derivation, step by step** (for a student who asks; compare with the lag slide in
+step 02):
 
 1. Suppose the car is near speed v and goes Δv faster. Drag grows from 0.378·v² to about
    0.378·v² + 2·0.378·v·Δv (the slope of v² is 2v).
@@ -236,14 +269,16 @@ final speed, and it gets there slowly.
    110 km/h 61 s — the car is quicker to settle at high speed, because drag is
    stronger there.
 
-**Where 23.6 s, 143 s and 246.39 come from:** these are read off a simulation
-of this same force balance (the reference model `HandsOn.CarFullThrottle`); there
-is no neat hand formula because τ changes with speed. They are the numbers students compare
-against.
+**Where 23.6 s, 143 s and 246.39 come from:** a simulation of this same model (the course
+library's `HandsOn.CarFullThrottleTransient`). There is no neat hand formula, because the
+time constant changes with speed. These are the numbers students compare against. More
+points on the same curve, if a student wants to check early: 21.2 km/h at 5 s, 43.6 km/h at
+10 s, 197.5 km/h at 60 s.
 
-**Flag forward:** in the next lecture a controller moves this car 20 km/h in
-a few seconds, with the same engine. Feedback changes how fast the car responds. Remind
-the room of the 67 s at that point.
+**Flag forward:** in the next lecture a controller takes this car from 90 to 110 km/h in a
+few seconds, with the same engine. It uses *feedback*: it keeps measuring the speed and
+adjusts the pedal. That changes how fast the car responds. Remind the room of the 67 s at
+that point.
 -->
 
 ---
@@ -255,8 +290,30 @@ the room of the 67 s at that point.
 *Your `Engine`, `Driveline`, `Body` from + → MyCar · `VelocitySensor` → `Gain(k = 3.6)` → `v_kmh` · two grounds*
 
 <!--
-**Point at:** `rot_ground` and `trans_ground`. These
-close the reaction paths left open in steps 02 and 03.
+**Where to click:** in the **Components** panel, right-click `MyCar` → **Add Component** →
+name it `Car`. Press **+** in the diagram toolbar; the student's own library, `MyCar`, is at
+the bottom of the list. Place `Engine`, `Driveline` and `Body` from there.
+
+**Tutor — the new parts:**
+
+- `vsensor` (`VelocitySensor`) — a speedometer. It reads the body's speed in m/s.
+- `to_kmh` (`Gain`, k = 3.6) — multiplies its input by 3.6, turning m/s into km/h.
+- `rot_ground` and `trans_ground` — two fixed points. The engine pushes against its mounts
+  and the gearbox housing; the wheel pushes against the road. Those "other ends" must be tied
+  to something that does not move. One ground is for turning parts, one for straight-line
+  parts.
+- `tau_cmd` and `v_kmh` — the car's input (torque request) and output (speed in km/h).
+
+**The wires, in the order of the student page:**
+
+1. `engine.spline` → `driveline.spline`, and `driveline.flange` → `body.flange`.
+2. `engine.support` and `driveline.support_r` → `rot_ground`; `driveline.support_t` →
+   `trans_ground`.
+3. `vsensor.flange` → `body.flange`, then `vsensor.v` → `to_kmh.u`.
+4. `tau_cmd` → `engine.tau_cmd`, and `to_kmh.y` → `v_kmh`.
+
+**Point at:** `rot_ground` and `trans_ground`. Steps 02 and 03 left these "other ends" open;
+this is where they get fixed.
 
 **Say:** The sensor gives meters per second, and the gain turns that into
 kilometers per hour. The units are converted once, at the model's output; the lecture
@@ -286,13 +343,33 @@ end
 ```
 
 <!--
-**Same pattern as step 02:** New component `CarFullThrottle` →
-draw → three `initial` lines in code → ▷ Run Analysis → TransientAnalysis, named
-`CarFullThrottleTransient`, `stop = 300` → ▷ in Analyses.
+**Tutor — two words:** a *bench* (test bench) is a small extra model that holds the car and
+feeds its input, here a constant 150 N·m request. `Car` alone cannot run because nothing
+drives its input. An *analysis* is the experiment: which model to run and for how long.
+`extends TransientAnalysis(stop = 300)` just means "a simulation over time, from 0 to
+300 seconds".
 
-**They get wrong:** leaving out `car.body.mass.s`. Position
-appears in no force, so it feels optional, but without it the start is not unique and the
-model will not initialize.
+**The three `initial` lines** set the starting values: position 0, speed 0, and the
+engine's lag starting from 0. They can only be typed in code; the diagram has no place for
+them.
+
+**Same steps as step 02:**
+
+1. **Components** panel → right-click `MyCar` → **Add Component** → `CarFullThrottle`.
+2. Press **+**, place `Car` (under `MyCar`) as `car`, and `BlockComponents › Sources ›
+   Constant` as `cmd` with `k = 150`. Wire `cmd.y` → `car.tau_cmd`.
+3. Switch to code (⇄), paste the three `initial` lines at the end of `relations`. Save.
+4. With `CarFullThrottle` open, press ▷ (**Run Analysis**) in the editor title bar →
+   choose **TransientAnalysis**. Name it `CarFullThrottleTransient`, set `stop` to `300`.
+5. Run it with ▷ next to its name in the **Analyses** panel.
+
+**If ▷ does not offer to create the analysis:** paste the `analysis … end` block from this
+slide (also on the student page) into the file and save. If the **Analyses** panel does not
+show it, click **Dyad Compile** under **Julia Commands**.
+
+**They get wrong:** leaving out `car.body.mass.s`. Position appears in no force, so it
+feels optional. Without it the starting point is not fully defined, and the model will not
+start.
 
 **Why 300 s:** the car's own time constant is about a minute. Shorter runs
 stop on the way up and the student thinks the terminal speed is wrong.
@@ -324,16 +401,34 @@ plot(r; idxs = r."car.v_kmh")
 - **246.39** km/h at 300 s
 
 <!--
-**Say:** The course model that the PID lecture runs, called CarPlant, also
-reads 246.39 kilometers per hour at 300 seconds. At 800 seconds the two agree to within
-0.0001 kilometers per hour. You built the lecture's car.
+**Where to type:** the Julia REPL is Julia's command line. Open it with
+**Dyad: Open Julia REPL** in the title bar of the **Actions** panel in the Dyad sidebar.
+Type the three lines. The second line runs the analysis and keeps the result as `r`; the
+third plots only the car's speed.
+
+**What students should see:** the curve on the slide. 0 at the start, about 43.6 km/h at
+10 s, 100 km/h at 23.6 s, 197.5 km/h at 60 s, and 246.39 km/h at the end (300 s).
+
+**Say:** The course model that the next lecture uses, called CarPlant, also reads 246.39
+kilometers per hour at 300 seconds. At 800 seconds the two agree to within 0.0001 kilometers
+per hour. You built the lecture's car.
 
 **Point at:** the shape. Steep first, then flattening, because drag grows
-with the square of speed. The 246 is the number we worked out on paper from the force
-balance at the start of this step, and 23.6 s to 100 km/h was predicted there too.
+with the square of speed. The 246 is the number we worked out on paper at the start of this
+step.
 
-**If a number is off:** drag sign (step 04), gear ratio or radius
-(step 03), limiter ceiling (step 02) — in that order.
+**If a number is off, check in this order:**
+
+1. Speed keeps climbing far past 246 → the sign of `f_nominal` in `Body` (step 04). It must
+   be negative.
+2. A different final speed → gear ratio `i = 4` and radius `r = 0.31` in `Driveline`
+   (step 03).
+3. Still different → the engine's ceiling `T_max = 150` (step 02).
+4. Curve still rising at the right edge → `stop` is not 300.
+
+**If the REPL says the name is not defined:** the analysis name must match exactly,
+`CarFullThrottleTransient`, and the library name `MyCar`. If the student's library has
+another name, use that name instead of `MyCar`.
 -->
 
 ---
@@ -370,14 +465,19 @@ comparison — not measured. Blue: exactly what our engine block computes._
 to about 130 kilometers per hour and wrong above that. Your car reached 246 kilometers
 per hour, as we predicted, and that number is still wrong for a real car.
 
-**Point at the plot in this order:** the blue line (our engine: 150 N·m
-whatever the revs — the limiter's ceiling is a constant); the red curve (a real engine:
-same peak, but only in the middle); the shaded band (90–130 km/h, where the two agree); the
-mark at 8400 rpm (our 246 km/h, where a real engine is down to about 95 N·m).
+**Words on the slide:** "rpm" is revolutions per minute, how fast the engine turns. "Rev
+range" is the span of engine speeds it can run at. A *torque curve* is a table of how much
+torque the engine gives at each engine speed.
+
+**Point at the plot in this order:** the blue line (our engine: 150 N·m at any engine
+speed); the red curve (a typical real engine: same peak, but only in the middle); the shaded
+band (90–130 km/h, where the next lecture drives and the two agree); the mark at 8400 rpm
+(our 246 km/h). There the drawn red curve is down to about 95 N·m. The red curve is a
+typical shape, not data from a real engine, so 95 is an illustration, not a measurement.
 
 **The rpm numbers, step by step** (step 03's formula, engine rpm =
-v / r × i × 60 / 2π): 90 km/h = 25 m/s → 25 / 0.31 × 4 × 9.55 = 3080 rpm. 130 km/h →
-4450 rpm. 246 km/h = 68.4 m/s → 8430 rpm.
+v / r × i × 60 / 2π; 60 / 2π ≈ 9.55): 90 km/h = 25 m/s → 25 / 0.31 × 4 × 9.55 = 3080 rpm.
+130 km/h → 4450 rpm. 246 km/h = 68.4 m/s → 8430 rpm.
 
 **They get wrong:** treating a simulation result as a measurement. A model
 contains only what you put into it.

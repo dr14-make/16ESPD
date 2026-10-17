@@ -62,7 +62,7 @@ The recap reuses the hands-on images `step05-car.png`, `step07-grade-body.png` a
 | `step06-limiter.png` | `CruiseController`, in progress | `gain` → `limiter` → `y`. |
 | `step06-climb.png` | `CruiseClimb` | The climb harness: `road` is the `Pulse`, wired to `plant.grade`; `demand` is the `Constant(k = 130)`. |
 | `step06-windup-plot.png` | `CruiseClimbTransient` | `plant.v_kmh`, `controller.y` and `controller.integrator.y` through the climb and after it: the overshoot after the crest. |
-| `step06-clamping-code.png` | `CruiseController`, code view | The `integrator.u = ifelse(...)` equation, scrolled so the whole equation fits. |
+| `step06-clamping-diagram.png` | `CruiseController`, diagram view | The five clamping blocks above and below the main row, the whole diagram fitted, side bar hidden. |
 | `step06-clamping-plot.png` | `CruiseClimbTransient`, re-run after step 6d | The same three signals as `step06-windup-plot.png`, on the same axes, with clamping. |
 
 ## Section 07 — derivative and noise
@@ -117,7 +117,7 @@ subpackages are the catch-up checkpoints for every step.
 | `step06-limiter.png` | `Lecture1.Step06b.CruiseController` | `Lecture1.Step06b.CruiseLoopTransient` for the re-run |
 | `step06-climb.png` | `Lecture1.Step06c.CruiseClimb` | — |
 | `step06-windup-plot.png` | — | `Lecture1.Step06c.CruiseClimbTransient` |
-| `step06-clamping-code.png` | `Lecture1.Step06d.CruiseController`, code view | — |
+| `step06-clamping-diagram.png` | `Lecture1.Step06d.CruiseController`, diagram view | — |
 | `step06-clamping-plot.png` | — | `Lecture1.Step06d.CruiseClimbTransient` |
 | `step07-noise-loop.png` | `Lecture1.Step07.NoisyCruiseStep` | — |
 | `step07-noisy-plot.png` | — | `Lecture1.Step07.NoisyCruiseTransient`, with `controller` set to `wd = 1`, `xd0 = 0` |

@@ -40,7 +40,7 @@ Every component here exists in the course repository under `dyad/HandsOn/`, and 
 
 ## Part 1 — Dyad Studio and the extension
 
-Why we build the car, what the tool is, where its controls are · 38 min
+Why we build the car, what the tool is, where its controls are · 48 min
 
 ### What you are looking at <Badge type="info" text="15 min" /> {#ui}
 
@@ -425,7 +425,9 @@ The finished `Driveline`, its panel listing the parameters `i` and `r` that the 
 
 #### Do this
 
-1. Add the two parameters. Click an empty spot of the canvas and use **Add parameter** in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above `relations`:
+1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `Driveline`. It opens as an empty diagram.
+
+2. Add the two parameters. Click an empty spot of the canvas and use **Add parameter** in the component panel for each row of the parameters table, or toggle to code (⇄) and paste them above `relations`:
 
    ::: code-group
 
@@ -440,13 +442,13 @@ The finished `Driveline`, its panel listing the parameters `i` and `r` that the 
 
    Then give the parts the *names*, not the numbers — the parts table shows which.
 
-2. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `Driveline`. It opens as an empty diagram. Then: Place `gear` and `wheel` and wire `gear.spline_b → wheel.spline`.
+3. Place `gear` and `wheel` and wire `gear.spline_b → wheel.spline`.
 
-3. Add the four ports. Wire `spline → gear.spline_a` and `wheel.flange → flange`.
+4. Add the four ports. Wire `spline → gear.spline_a` and `wheel.flange → flange`.
 
-4. Both reaction paths go out of the component: wire `gear.support` and `wheel.support_r` to `support_r`, and `wheel.support_t` to `support_t`. The car will ground them.
+5. Both reaction paths go out of the component: wire `gear.support` and `wheel.support_r` to `support_r`, and `wheel.support_t` to `support_t`. The car will ground them.
 
-5. Set `ratio = i` and `radius = r`. The force at the flange is then `T · i / r`, the formula from the theory slide at the start of this step.
+6. Set `ratio = i` and `radius = r`. The force at the flange is then `T · i / r`, the formula from the theory slide at the start of this step.
 
 ::: tip Checkpoint
 
@@ -1372,7 +1374,7 @@ This is a new car, not an edit of `Car`. The slipping wheel replaces the rolling
 
 [![SlipCar diagram: engine, gear, wheel inertia and slip wheel drive the grade body, with separate sensors for vehicle speed and wheel surface speed.](/handson/lecture-01/img/step10-standing-start.png){width="1502" height="940"}](/handson/lecture-01/img/step10-standing-start.png)
 
-`SlipCar`: two speed outputs, `v_kmh` from the body and `wheel_kmh` from the wheel shaft. On ice they come apart.
+`SlipCar`: two speed outputs, `v_kmh` from the body and `wheel_kmh` from the wheel shaft. On snow they come apart.
 
 #### A · Create the car and its parameters
 

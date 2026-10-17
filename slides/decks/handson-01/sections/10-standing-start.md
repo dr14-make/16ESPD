@@ -7,18 +7,22 @@ layout: section
 
 # Standing start on a slippery road
 
-Floor it on ice: the wheel spins, the car barely moves.
+Floor it on snow: the wheel spins, the car barely moves.
 
 [page: step 10](../handson/lecture-01/#standing-start) · reference `dyad/HandsOn/SlipCar.dyad`
 
 <!--
 **Say:** Every part in this car is one you already have. Only the wiring
-is new. The tire is now the contact with the road, so there is no translational
-ground block. The wheel's flange drives the body directly.
+is new. The new wheel is the contact with the road: its `flange` (road contact) connects
+straight to the body. This is a new car, `SlipCar`, not an edit of `Car`.
 
-**Timing:** 23 minutes — 3 for the "two limits" slide, then 20: 13 parts and 15 wires. The page lists the wires as
-a numbered table; tell the room to tick them off. Create the car, then its parameters, then
-the parts, then the wires, then a separate bench.
+**Timing:** 23 minutes: 3 for the "two limits" slide, then 20 to build: 10 parts, 5 ports
+and 15 wires. The page lists the wires as a numbered table; tell the room to tick them off.
+Order: create the car, then its five parameters, then the parts, then the wires, then a
+separate *bench* (a small test model that feeds fixed inputs into the car).
+
+**Words in this step:** *wheelspin* = the wheel turning much faster than the
+car moves. *Standing start* = full throttle from a stop.
 -->
 
 ---
@@ -75,22 +79,33 @@ from this table, before simulating anything.
 3. **Compare with 1935 N**, the engine at full torque. Dry: the tire could
    take 3.5 × more, so the engine is the limit. Snow: 1373 &lt; 1935, so the tire is the
    limit and the extra torque spins the wheel.
-4. **On the curve:** 1935 / 6865 = 0.28. The red dashed line on the last
-   slide is at μ = 0.28 — under the whole dry curve, over the whole snow curve. On the dry
-   road it needs only κ ≈ 0.0075 — step 09's check reads 0.0076 under the same 1935 N.
+4. **On the curve:** 1935 / 6865 = 0.28. The red dashed line on step 08's
+   "Slip, and how grip depends on it" slide is at μ = 0.28: under the whole dry curve,
+   over the whole snow curve. On the dry road it needs only κ ≈ 0.0075; step 09's check
+   reads 0.0076 under the same 1935 N.
+
+**The three predictions on the right:**
+
+- 21 km/h dry: the tire barely slips, so this car behaves like the step 05 car, which also
+  read 21.2 km/h at 5 s.
+- 10 km/h and 1500 km/h on snow: read off the reference simulation, not worked out on
+  paper. The table only says the wheel *must* spin.
 
 **Why it runs away:** once past the peak, extra slip lowers the grip. Less
 grip means less force holding the wheel back, so the engine spins it faster, which is more
 slip. Each change makes the next one bigger. This comes from the tire curve, not from
 anything we built.
 
-**On the 1500 km/h:** the model has no rev limiter, so nothing stops the
-wheel. That number follows from what we left out; it is not a bug. Say it now so nobody
-tries to "fix" it when it appears on their plot.
+**On the 1500 km/h:** a rev limiter is the part of a real engine that cuts
+power at a maximum engine speed. The model has none, so nothing stops the wheel. For
+scale: 1500 km/h at the tire is the engine turning at about 51 000 rpm (through gear 4 and
+the 0.31 m radius). That number follows from what we left out; it is not a bug. Say it now
+so nobody tries to "fix" it when it appears on their plot.
 
 **Flag forward:** the next lecture ends here. A cruise control on ice sees
 the speed drop and asks for more torque, with the result this table predicts. That is
-why real cruise control switches off when traction control steps in.
+why real cruise control switches off when traction control (a system that cuts power when a
+driven wheel spins) steps in.
 -->
 
 ---
@@ -112,8 +127,23 @@ leave the other wrong without any error.
 on the same axis as the car's speed, and wheelspin is the gap between the two
 lines.
 
+**The caption, decoded:**
+
+- `v_kmh`: car speed, from a speed sensor on the body, × 3.6 to get km/h.
+- `wheel_kmh`: tire surface speed, from a turn-rate sensor on the wheel shaft,
+  × r × 3.6 (r = 0.31 m).
+- The five parameters, typed once on the car: `i = 4.0` (gear), `J_w = 1.0` (wheel
+  inertia), `r = 0.31`, `m = 1400`, `g = 9.80665`.
+- The bench `SlipCarStandingStart` holds the car and three constant blocks: `cmd` 150
+  (full throttle, N·m), `road` 0 (flat), `friction` 0.2 (slippery; 1.0 is dry).
+
+**Then:** in the bench's code, at the end of `relations`, five `initial`
+lines set the starting values (position, speed, engine, wheel angle, wheel speed all
+zero). The page has them under "Starting state". Save; nothing in **Problems**.
+
 **They get wrong:** missing `initial car.wheel_inertia.w = 0`.
 With slip, wheel speed is no longer tied to car speed, so it needs its own start.
+If `Problems` lists `SlipCar`, compare the wires with the page's numbered table.
 -->
 
 ---
@@ -144,8 +174,8 @@ plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])
 </div>
 </div>
 
-- **10.1** km/h car, ice, 5 s
-- **1501** km/h wheel, ice, 5 s
+- **10.1** km/h car, snow, 5 s
+- **1501** km/h wheel, snow, 5 s
 - **21.1 / 21.2** km/h car / wheel, dry
 
 <!--
@@ -154,15 +184,40 @@ speeds up, grip falls, and it speeds up more. The model has no rev limit, so the
 keeps applying 150 newton-meters to a wheel with little grip to resist it. The 1500
 kilometers per hour follows from that missing limit. It is not a bug.
 
-**Then the dry run:** `friction__k = 1.0` overrides the
-constant without editing the model. Twice the speed of the icy car, and the two lines stay
-together.
+**How to run it:** with `SlipCarStandingStart` open, press ▷
+(**Run Analysis**, editor title bar) → **TransientAnalysis**. Name it
+`SlipCarStandingStartTransient`, set `stop` to 5. Run it with ▷ in the **Analyses**
+panel, then type the first three lines on the slide into the Julia REPL.
+
+**Expected on screen** (the reference test checks these, within 0.1 km/h for the car and
+0.5 km/h for the wheel):
+
+- Slippery (friction 0.2): after 1 s, car 1.94 km/h and wheel surface already 159.8 km/h.
+  After 5 s, car **10.12 km/h**, wheel **1501 km/h**. Blue line is the car, orange the wheel.
+- Dry (friction 1.0): after 5 s, car 21.08 km/h, wheel 21.24 km/h. The lines lie on top of
+  each other.
+
+**Then the dry run:** `friction__k = 1.0` means "the `k` of the
+block named `friction`". It changes the constant for this run without editing the model.
+Students can instead set `friction`'s `k` to 1.0 in the bench, save and run again. Twice
+the speed of the slippery car, and the two lines stay together.
+
+**If a result differs:**
+
+- Car goes backward: the sign on `flange.f` in `SlipWheel1D` (step 09).
+- Both lines together on the slippery run: the bench's `friction` is still 1.0. Set it
+  back to 0.2.
+- Error that `SlipCarStandingStartTransient` is not defined: rename the word after
+  `analysis` in the analysis code.
+
+Commit: `Step 10: standing start`.
 
 **Close:** this matches the "two limits" table from the start of this step:
 on snow the tire reaches its limit before the engine does. The PID lecture ends with this car
 under cruise control on an ice patch. The controller sees speed falling, commands more
 torque, and produces what you just watched. That is the argument for traction
-control, and for the cascade control of lecture 2.
+control, and for the cascade control of lecture 2 (one controller inside another; lecture 2
+explains it, you do not need to).
 -->
 
 ---
@@ -187,11 +242,11 @@ right. Where it did not, something in the model was wrong, not the arithmetic.
 
 **Where each number comes from**, so you can answer "why that number?":
 
-- **02** — 0.5 s request + 0.3 s delay = 0.8 s; 200·(1 − e<sup>−0.2/0.3</sup>) = 97; 0.8 + 0.3·ln 4 = 1.22 s. Step 02.
-- **03** — 100 × 4 / 0.31 = 1290 N; ÷ 1400 kg = 0.92 m/s². Step 03.
-- **04** — 500 = 0.378·v² + 165 → v = 29.78 m/s. Step 04.
-- **05** — 1935 − 165 = 1770 = 0.378·v² → 68.4 m/s = 246 km/h. The times (23.6 s, 143 s) are read off the reference simulation. Step 05.
-- **06** — wheel adds J/r² = 10 kg, 0.7 % → 23.6 × 1.007 = 23.8 s. Step 06.
+- **02** — the bench asks for 200 N·m at 0.5 s; the engine waits 0.3 s, so nothing until 0.8 s. Then the torque rises gradually (time constant 0.3 s): 200·(1 − e<sup>−0.2/0.3</sup>) = 97 at 1.0 s. It reaches the 150 N·m ceiling at 0.8 + 0.3·ln 4 = 1.22 s. Step 02.
+- **03** — torque × gear 4 ÷ wheel radius 0.31 m: 100 × 4 / 0.31 = 1290 N; ÷ 1400 kg = 0.92 m/s². Step 03.
+- **04** — top speed is where the push equals air drag (0.378·v²) plus rolling resistance (165 N): 500 = 0.378·v² + 165 → v = 29.78 m/s. Step 04.
+- **05** — the same balance with the engine's 1935 N: 1935 − 165 = 1770 = 0.378·v² → 68.4 m/s = 246 km/h. The time to 100 km/h (23.6 s) is read off the reference simulation, as is 143 s, when the car reaches 99 % of its top speed. Step 05.
+- **06** — the spinning wheel acts like J/r² = 1 / 0.31² ≈ 10 kg of extra mass, 0.7 % of the car → 23.6 × 1.007 = 23.8 s. Step 06.
 - **07** — 1400 × 9.81 × sin(arctan 0.1) = 1366 N. Step 07.
 - **08** — the curve's own parameters. Step 08.
 - **09–10** — snow limit 1373 N &lt; engine 1935 N, so the wheel must spin; the 10 and 1500 km/h are read off the reference simulation. Step 10.
@@ -257,6 +312,20 @@ Page: [Hand in](../handson/lecture-01/#hand-in)
 branch into main, describe what you did and what numbers you got, and leave it open. It
 gets reviewed there. If you get a comment, fix the model, commit and sync again on the
 same branch, and the fix shows up in the same pull request.
+
+**Plain words:** a *pull request* is a request on GitHub to merge one
+branch into another; reviewers comment on it. The *branch* `handson-01` is the separate
+line of work students created at the start of the session; `main` is the original.
+**Sync Changes** (in **Source Control**) uploads local commits to GitHub.
+
+**On github.com:** a yellow bar says `handson-01` had recent pushes, with
+the **Compare &amp; pull request** button. No bar: **Pull requests** → **New pull request**,
+base `main`, compare `handson-01`.
+
+**Checkpoint:** the **Commits** tab lists one commit per step, named
+`Step 07: grade`, `Step 08: tire curve` and so on. A missing commit means that step was
+not committed or not synced: commit, **Sync Changes**, and it appears in the same pull
+request.
 
 **They get wrong:** merging their own pull request. If it happened, it is
 not lost — the commits are on `main` — but the pull request is gone, so the
