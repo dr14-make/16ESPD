@@ -1,0 +1,77 @@
+"""
+Engine brake torque read at speed and manifold pressure, blended to the closed-throttle curve by a
+fuel-cut fraction.
+
+At cut 0 it is `TorqueMap`: the map, capped at the full-load curve. At cut 1 no fuel burns, the
+wheels drive the engine, and the torque is the measured closed-throttle (motoring) curve, which
+depends on speed alone. The ports sit where `TorqueMap`'s do, so a drawn `TorqueMap` can change
+type without moving a wire.
+"""
+component CutTorqueMap
+  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
+  "Engine angular speed [rad/s]"
+  omega = RealInput() {^omega}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealInput() {^p_m}
+  "Fuel-cut fraction, 0 fired to 1 cut"
+  cut = RealInput() {^cut}
+  "Brake torque [N.m]"
+  y = RealOutput() {^y}
+  fired = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, torque_data = torque_data, full_load_rpm = full_load_rpm, full_load_data = full_load_data) {^fired}
+  closed_throttle = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(rpm_axis = closed_rpm, data = closed_data) {^closed_throttle}
+  blend = VehicleSystemsComponents.Vehicle.Engine.CutBlend() {^blend}
+relations
+  connect(omega, fired.omega, closed_throttle.omega) {^speed_wire}
+  connect(p_m, fired.p_m) {^pressure_wire}
+  connect(fired.y, blend.fired) {^fired_wire}
+  connect(closed_throttle.y, blend.motored) {^motored_wire}
+  connect(cut, blend.cut) {^cut_wire}
+  connect(blend.y, y) {^torque_wire}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/CutTorqueMap.svg"}, "doc": {"behavior": false}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "cut": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050, "rot": 270}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "fired": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
+    "closed_throttle": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 600, "x2": 350, "y2": 700}}}},
+    "blend": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 450, "x2": 700, "y2": 550}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 150, "y": 280}], "E": 2}, {"S": -1, "M": [{"x": 150, "y": 650}], "E": 3}], "junctions": [{"x": 150, "y": 300}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 700}, {"x": 200, "y": 320}], "E": 2}]}},
+    "fired_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 300}, {"x": 500, "y": 470}], "E": 2}]}},
+    "motored_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 650}, {"x": 500, "y": 530}], "E": 2}]}},
+    "cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 850}, {"x": 560, "y": 850}, {"x": 560, "y": 500}], "E": 2}]}},
+    "torque_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+test component TestCutTorqueMap
+  omega = BlockComponents.Sources.Constant(k = 3000 * pi / 30) {^omega}
+  pressure = BlockComponents.Sources.Constant(k = 50000.0) {^pressure}
+  no_cut = BlockComponents.Sources.Constant(k = 0.0) {^no_cut}
+  full_cut = BlockComponents.Sources.Constant(k = 1.0) {^full_cut}
+  fired_map = VehicleSystemsComponents.Vehicle.Engine.CutTorqueMap() {^fired_map}
+  cut_map = VehicleSystemsComponents.Vehicle.Engine.CutTorqueMap() {^cut_map}
+relations
+  connect(omega.y, fired_map.omega, cut_map.omega) {^speed_wire}
+  connect(pressure.y, fired_map.p_m, cut_map.p_m) {^pressure_wire}
+  connect(no_cut.y, fired_map.cut) {^no_cut_wire}
+  connect(full_cut.y, cut_map.cut) {^full_cut_wire}
+metadata {
+  "Dyad": {"tests": {"fired_and_cut": {"stop": 0.1, "atol": {"fired_map.y": 1e-6, "cut_map.y": 1e-6}, "expect": {"initial": {"fired_map.y": 35.6319, "cut_map.y": -18.725203}, "final": {"fired_map.y": 35.6319, "cut_map.y": -18.725203}, "signals": ["fired_map.y", "cut_map.y"]}}}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 350, "x2": 200, "y2": 450}}}},
+    "no_cut": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 450, "x2": 400, "y2": 550}}}},
+    "full_cut": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 850, "x2": 400, "y2": 950}}}},
+    "fired_map": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 170, "x2": 650, "y2": 270}}}},
+    "cut_map": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 570, "x2": 650, "y2": 670}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 470, "y": 600}], "E": 3}], "junctions": [{"x": 470, "y": 200}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 500, "y": 240}], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 640}], "E": 3}], "junctions": [{"x": 500, "y": 400}]}},
+    "no_cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 500}], "E": 2}]}},
+    "full_cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 900}], "E": 2}]}}
+  }
+}
+end
