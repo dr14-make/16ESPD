@@ -132,8 +132,19 @@ it, like the tire curve in hands-on 1. Then draw the bench around it with the tw
 **Point at:** the feedback wire. `p_m` goes back into the throttle and the cylinders, because both
 flows depend on it. That loop is what makes the pressure settle.
 
-**They get wrong:** forgetting the initial line. Without it the solver does not know the manifold
-starts full of outside air.
+**The slide omits the port annotations.** The page's `Manifold` carries a `{"Dyad": …}`
+placement on each port: three inputs on the left edge, `p_m` on the right. Without them the four
+ports stack in the middle of the `manifold` block and the bench cannot be wired. If a student's
+ports stack, they pasted without them: paste the page's block again.
+
+**They get wrong:** search "Manifold" also offers `IntakeManifold`, and "Throttle" offers four
+throttles: take their own `MyCar › Manifold` and the plain `Vehicle › Engine › Throttle`. The
+parts arrive as `step`, `constant1`, `constant2`, `throttle`, `cylinderairflow`, `manifold`;
+rename them to the page's names. The icons do not name their inputs: hover a port. `Throttle`
+has `u_thr` on top, `p_m` below; `CylinderAirflow` has `p_m` on top, `omega` below.
+
+**They get wrong:** forgetting the initial line, or putting it after `metadata`. It goes after the
+last `connect`. Without it the solver does not know the manifold starts full of outside air.
 
 **TODO (screenshots):** `step02-manifold-code.png` and `step02-airpath-bench.png`; put the bench
 shot on this slide in place of the bullet list once it exists.
@@ -146,7 +157,7 @@ shot on this slide in place of the bullet list once it exists.
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-1. ▷ Run Analysis → **TransientAnalysis** → `AirPathStepTransient`, `stop = 3`.
+1. ▷ → **Create New Analysis** → `TransientAnalysis`, `AirPathStepTransient`, `stop = 3`. Run it with ▷.
 2. **Idle:** `throttle_cmd` with `height = 0.005`, `start_time = 1`.
 3. **3000 rpm:** `speed` `k = 314.159`, `throttle_cmd` `height = 1`. Run again.
 
@@ -162,7 +173,7 @@ plot(r; idxs = r."manifold.p_m")
 >
 > - idle: 101.3 → **33.0 kPa** within 1 s, then **37.3 kPa** after the small step
 > - 3000 rpm: down to **13.5 kPa**, then **99.9 kPa** wide open
-> - the 3000 rpm curve settles about **5 ×** faster
+> - τ ≈ **0.15 s** on the small step at idle; the 3000 rpm curve settles about **5 ×** faster
 
 Page: [Manifold](../handson/lecture-02/#manifold)
 
@@ -180,6 +191,15 @@ idle step 37270 Pa, overrun 13482.4 Pa, tip-in 99889.9 Pa. A student manifold wi
 parts is the same equation, so it must give the same numbers.
 
 **They get wrong:** plotting in pascals and reading 33000 as wrong. Divide by 1000.
+
+**They get wrong:** calling `MyCar.AirPathStepTransient()` in a REPL opened before the component
+existed: `UndefVarError`. Run once with ▷ on the analysis tab, which loads it, or restart the REPL.
+
+**They get wrong:** reading τ on the first fall from 101 kPa. That fall is not a straight lag; its
+1/e time is about 0.10 s. The 0.15 s is the small step at 1 s.
+
+**Parameter fields:** click, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type, <kbd>Enter</kbd>. A triple-click
+does not select the old value.
 
 **TODO (screenshot):** `step02-idle-plot.png`.
 -->

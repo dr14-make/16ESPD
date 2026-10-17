@@ -144,19 +144,20 @@ function engine_map(name)
     M, head = readdlm(joinpath(dir, name), ','; header = true)
     return parse.(Float64, vec(head)[2:end]), M[:, 1], M[:, 2:end]
 end
-kpa, rpm, T = engine_map("torque_Nm.csv")
+kpa, rpm, T = engine_map("torque_Nm.csv");
 heatmap(kpa, rpm, T; xlabel = "p_m [kPa]", ylabel = "N [rpm]")
 ```
 
-Then `fuel_gps.csv` and `lambda.csv` the same way, and
-`T[rpm .== 3000, :]` for the row.
+Then `_, _, F = engine_map("fuel_gps.csv");` and
+`_, _, L = engine_map("lambda.csv");`, and
+`[kpa vec(T[rpm .== 3000, :])]` for the row.
 
 </div>
 <div>
 
 > **Checkpoint**
 >
-> - torque up to **≈ 150 N·m** near 4000 rpm, 100 kPa
+> - torque **160.3 N·m** at 4000 rpm, 100 kPa; peak **177 N·m** near 3250 rpm, 105 kPa
 > - 3000 rpm row: 31.1 N·m at **≈ 47.7 kPa**
 > - fuel there **≈ 0.82 g/s**
 > - λ = **1** up to about 80 kPa; **0.87** at 3000 rpm, 100 kPa
@@ -175,12 +176,18 @@ richen, to cool the exhaust.
 **Point at:** the torque map's left edge. At low pressure torque is negative: the engine is
 pumping air against a vacuum, and that costs work. Step 06 uses it to brake the car.
 
+**They get wrong:** `kpa, rpm, T = engine_map("fuel_gps.csv")`, which overwrites the torque map
+in `T`; the page names the others `F` and `L`.
+
 **They get wrong:** `heatmap(rpm, kpa, T)`, axes swapped: Plots wants x, y, then a matrix with one
 row per y. The rows of the file are speeds, so speeds go on y.
 
 **Full-load cap, for step 03:** the map holds torque up to 105 kPa, above what the engine can
 reach. `full_load.csv` holds the real ceiling per speed, 148.4 N·m at 3000 rpm against the map's
 163 at 100 kPa.
+
+**Which pressure:** 47.7 kPa is the 3000 rpm row; the 90 km/h point itself, at 3080 rpm, is
+47.8 kPa. The plot marker goes at 3080 rpm, 47.8 kPa.
 
 **TODO (screenshot):** `step01-torque-map.png` and `step01-fuel-map.png`, with the 90 km/h point
 marked. Not on this slide yet: the room sees their own.

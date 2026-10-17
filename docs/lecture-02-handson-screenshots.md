@@ -15,7 +15,9 @@ The hands-on deck's conventions apply to every diagram:
 - Same window size for every shot. About 1600 × 1000 matches the hands-on 1 images.
 
 Plots are REPL plots of the reference analyses, at the hands-on 1 plot size (990 × 528), one
-signal per axis unless the row says otherwise.
+signal per axis unless the row says otherwise. Dyad's REPL defaults to the Plotly backend, where
+`savefig` cannot write a PNG: run `gr()` first, and again after any ▷ run, which switches back to
+Plotly. At 990 × 528, GR clips the axis labels without `margin = 5Plots.mm`.
 
 ## Step 00 — set up
 
@@ -27,7 +29,7 @@ signal per axis unless the row says otherwise.
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step01-torque-map.png` | `data/engine/torque_Nm.csv` | Heatmap, `p_m` in kPa across, rpm up. A marker at 3080 rpm, 47.8 kPa (the 90 km/h point). |
+| `step01-torque-map.png` | `data/engine/torque_Nm.csv` | Heatmap, `p_m` in kPa across, rpm up. A marker at 3080 rpm, 47.8 kPa: the 90 km/h point. The page's 47.7 kPa is the 3000 rpm row alone, not the marker. |
 | `step01-fuel-map.png` | `data/engine/fuel_gps.csv` | Same axes and marker; the color bar in g/s. |
 
 ## Step 02 — manifold
@@ -43,9 +45,9 @@ signal per axis unless the row says otherwise.
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
 | `step03-map-engine.png` | `HandsOn02.MapEngine` | The diagram students draw: ports `pedal` and `mdot_bst` on the left; `air`, `speed`, `torque_map` above `fuel_map`, `torque`, `co2`; the speed wires from `speed.w` and the pressure wires from `air.p_m` fanning out to both maps; `spline`, `support`, `mdot_fuel`, `mdot_co2`, `p_m` on the right edge. |
-| `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | `pedal` step and `no_booster` → `engine`, `speed` → `dyno`, `engine.spline` → `dyno`, both supports to `mounts`. |
+| `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | Laid out left to right, no labels overlapping. `pedal` step and `no_booster` → `engine`, `speed` → `dyno`, `engine.spline` → `dyno`, both supports to `mounts`. |
 | `step03-step-plot.png` | `HandsOn02.MapEngineDynoTransient`, defaults | Two axes, one time base: `engine.p_m` 47.8 → 52.9 kPa and `engine.torque_map.y` 31.1 → 41.4 N·m, zoomed to 0.9–1.3 s so the 50 ms lag shows. |
-| `step03-fuel-cut-plot.png` | `HandsOn02.MapEngineDynoTransient` with `MappedEngine` swapped in, pedal 1 → 0 | `engine.mdot_fuel` stepping to zero and `engine.tau_e` to −18.7 N·m at the release. |
+| `step03-fuel-cut-plot.png` | `HandsOn02.MapEngineDynoTransient` with `MappedEngine` swapped in, pedal 1 → 0 | `engine.mdot_fuel` falling to zero within about 30 ms and `engine.tau_e` to −18.7 N·m at the release. |
 
 ## Step 04 — the car with a mapped engine
 
