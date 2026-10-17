@@ -7,23 +7,28 @@ layout: section
 
 # The car with a mapped engine
 
-Your hands-on 1 car, a new engine, a pedal instead of a torque command — and a real top speed.
+Your hands-on 1 car, your own engine, a pedal instead of a torque command — and a real top speed.
 
 [page: step 04](../handson/lecture-02/#mapped-car)
 
 <!--
 **Say:** The milestone. Same body, same driveline, same single gear of 4.0. Only the engine
-changes, and with it the input: the driver now presses a pedal from 0 to 1, not a torque.
+changes, and with it the input: the driver now presses a pedal from 0 to 1, not a torque. The
+engine is the one you drew in step 03, with the fuel cut you pasted in.
 
 **Built or given:** students build `MappedCar` by duplicating their `Car` and swapping the engine
-for the library `MappedEngine`, the one with fuel cut. Their own `MapEngine` stays on its bench;
-the car needs the fuel cut for step 06.
+for their own `MapEngine`, fuel cut included: step 06 needs the cut. The car also needs the crank
+inertia the dynamometer made unnecessary: one `Inertia` block, `flywheel`, `J = 0.15` kg·m² as
+`MappedEngine` assumes, between `engine.spline` and `driveline.spline`. Reflected to the wheel it is
+0.15 × (4 / 0.31)² = 25 kg on a 1400 kg car.
 
 **Timing:** 12 minutes: 2 of theory, 6 to duplicate and rewire, 4 for the full-pedal run.
 
 **TODO (reference):** `HandsOn02.MappedCar`, `HandsOn02.MappedCarWOT`,
-`HandsOn02.MappedCarWOTTransient`, built on task 4's `Vehicle.Engine.MappedEngineCar`. Add
-`reference dyad/HandsOn02/MappedCar.dyad` to the line above.
+`HandsOn02.MappedCarWOTTransient`, built on `HandsOn02.MapEngineFuelCut` with the flywheel. Add
+`reference dyad/HandsOn02/MappedCar.dyad` to the line above. A trial of this car did not move from
+v = 0 (the full-load curve is 0 N·m at 0 rpm) and, started at 2 m/s, hit MaxIters at about 87 s
+on the rev limiter at 189.9 km/h; the car with `MappedEngine` behaves the same.
 -->
 
 ---
@@ -41,7 +46,7 @@ $$ \frac{T_{\text{full}}(N)\cdot 4}{0.31} \;=\; 0.378\,v^2 + 165 $$
 
 - At 190 km/h the engine turns **6500 rpm**; the full-load curve has fallen to about **96 N·m**.
 - Drag alone would stop the car at **192 km/h**.
-- But **6500 rpm** is the rev limiter: fuel cut until 6300 rpm.
+- But **6500 rpm** is the rev limiter in your `cut_logic`: fuel cut until 6300 rpm.
 
 </div>
 <div>
@@ -75,16 +80,16 @@ between 184 and 190 km/h or sits at 190; and the time to 100 km/h.
 
 ---
 
-## Duplicate `Car`, swap the engine
+## Duplicate `Car`, swap in your engine
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
 1. **Components** → right-click `Car` → **Duplicate** → `MappedCar`.
-2. Delete `engine`. **+** → `Vehicle › Engine › MappedEngine`, named `engine`.
+2. Delete `engine`. **+** → `MyCar › MapEngine`, named `engine`.
 3. Rename the input `tau_cmd` to `pedal`; wire it to `engine.pedal`.
 4. `no_booster` = `Constant(k = 0)` → `engine.mdot_bst`.
-5. `engine.spline` → `driveline`, `engine.support` → `rot_ground`, as before.
+5. `flywheel` = `Inertia(J = 0.15)`: `engine.spline` → `flywheel` → `driveline`; `engine.support` → `rot_ground`.
 6. New outputs on the right edge:
    - `p_m` ← `engine.p_m`
    - `fuel_lph` ← `Gain(k = 4832.2)` ← `engine.mdot_fuel`
@@ -113,12 +118,15 @@ control still runs on it.
 **Point at:** the gain. Fuel comes out of the engine in kilograms per second, a tiny number. A
 gain turns it into liters per hour, the number on the dashboard.
 
+**Point at:** the flywheel. On the dynamometer the bench set the speed, so the engine needed no
+inertia of its own. In the car the crankshaft and flywheel resist every change of speed.
+
 **They get wrong:** leaving `mdot_bst` unconnected. The model then has an input nobody drives and
 does not compile: the same "unbalanced" error as hands-on 1's missing support.
 
-**TODO (checkpoint):** the bench's `initial` lines. The crankshaft is tied to the wheel through
-the gear, so only `car.body.mass.s`, `car.body.mass.v` and `car.engine.air.manifold.p` should be
-set; confirm on the reference before the session.
+**TODO (checkpoint):** the bench's `initial` lines. The engine shaft and the flywheel are tied to
+the wheel through the gear, so only `car.body.mass.s`, `car.body.mass.v` and
+`car.engine.air.manifold.p` should be set; confirm on the reference before the session.
 
 **TODO (screenshots):** `step04-mapped-car.png`, `step04-wot-plot.png`.
 -->

@@ -107,7 +107,7 @@ library: they are physics the lecture stated, not what today teaches.
 | <Link to="setup-library">00</Link> | Set up | 8 | the course library in `MyCar`, a `handson-02` branch |
 | <Link to="maps">01</Link> | Read the maps | 12 | 4.6 L/100 km at 90 km/h — from the table, by hand |
 | <Link to="manifold">02</Link> | Manifold | 15 | a pressure that fills: 33 kPa at idle |
-| <Link to="map-engine">03</Link> | Map engine on a dynamometer | 20 | your own engine: 148 N·m at full load, 3000 rpm |
+| <Link to="map-engine">03</Link> | Map engine on a dynamometer | 20 | your own engine: 148 N·m at full load, 3000 rpm; then fuel cut |
 | <Link to="mapped-car">04</Link> | The car with a mapped engine | 12 | about 190 km/h flat out, not 246 |
 | <Link to="cruise">05</Link> | Cruise: fuel and CO₂ | 12 | L/100 km and g CO₂/km at 50, 90, 130 km/h |
 | <Link to="coast-brake">06</Link> | Coast-down and brake stop | 8 | fuel cut, and the vacuum for the brakes |
@@ -139,9 +139,9 @@ A new branch on your `MyCar`, and the course library beside your own.
 [page: step 00](../handson/lecture-02/#setup)
 
 <!--
-**Say:** Today's engine uses parts you will not build: the throttle, the cylinders' air flow and
-the finished mapped engine. They live in the course library, `VehicleSystemsComponents`. You add
-it to your library once, like the standard libraries in hands-on 1.
+**Say:** Today's engine uses parts you will not build: the throttle, the cylinders' air flow, the
+map tables and the fuel-cut logic. They live in the course library, `VehicleSystemsComponents`.
+You add it to your library once, like the standard libraries in hands-on 1.
 
 **Timing:** 8 minutes. The add downloads and precompiles; talk through step 01's maps while it
 runs.
