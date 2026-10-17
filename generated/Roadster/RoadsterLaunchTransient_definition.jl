@@ -29,18 +29,27 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"m"::Float64 = 2000
   # Rated power
   var"P_max"::Float64 = 1000000.0
+  # Peak wheel torque
+  var"T_max"::Float64 = 12000
+  # Normalized suction-fan command
+  var"fan_cmd"::Float64 = 0.0
+  # Effective skirt gap; assumed
+  var"skirt_gap"::Float64 = 0.003
   # Peak tire adhesion
   var"mu_A"::Float64 = 1.26
   # Static fraction of weight on the driven axle; 1 for all-wheel drive
   var"share"::Float64 = 0.55
   # Center-of-mass height over wheelbase; 0 for all-wheel drive
   var"h_over_L"::Float64 = 0.17
-  # Standing-start launch of a 1 MW car on its tires alone, with ideal traction control.
+  # Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
   # 
   # The traction control requests the torque that holds the tire just below peak adhesion,
   # `grip * mu_A * F_z * radius`, and the motor delivers it up to its torque and power ceilings.
-  # The run answers whether 0–60 mph (26.82 m/s) in under one second is possible on tires: it is
-  # limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel drive.
+  # The fan begins at its commanded pressure because the car sits on suction before launch.
+  # 
+  # Suction downforce loads rolling resistance because tire deformation depends on total normal
+  # load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds
+  # only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only car exactly.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Roadster.RoadsterLaunch(; name=:RoadsterLaunch)
 end
 
@@ -49,6 +58,9 @@ function DyadInterface.run_analysis(spec::RoadsterLaunchTransientSpec)
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.m => spec.var"m")
   push!(overrides, no_namespace_model.P_max => spec.var"P_max")
+  push!(overrides, no_namespace_model.T_max => spec.var"T_max")
+  push!(overrides, no_namespace_model.fan_cmd => spec.var"fan_cmd")
+  push!(overrides, no_namespace_model.skirt_gap => spec.var"skirt_gap")
   push!(overrides, no_namespace_model.mu_A => spec.var"mu_A")
   push!(overrides, no_namespace_model.share => spec.var"share")
   push!(overrides, no_namespace_model.h_over_L => spec.var"h_over_L")

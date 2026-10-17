@@ -1,0 +1,131 @@
+"""
+Reduced-order underbody suction fan with skirt leakage.
+
+The commanded pressure drop is clamped to `0 <= cmd <= 1` and reached through a first-order
+lag. Leakage is treated as an incompressible orifice around the skirt perimeter; fan power is
+the pressure-flow product divided by efficiency.
+"""
+component SuctionFan
+  "Normalized fan command, clamped to 0..1"
+  cmd = RealInput() {^cmd}
+  "Suction downforce"
+  downforce = RealOutput(units = "N") {^downforce}
+  "Fan shaft power required to maintain the pressure drop"
+  power = RealOutput(units = "W") {^power}
+  "Floor area; assumed"
+  parameter A_floor::Area = 4.0
+  "Sealed-floor perimeter; assumed"
+  parameter perimeter::Length = 10.0
+  "Effective skirt gap; assumed"
+  parameter gap::Length = 0.003
+  "Skirt discharge coefficient; assumed"
+  parameter C_d::Real = 0.6
+  "Fan efficiency; assumed"
+  parameter eta::Real = 0.6
+  "Air density; assumed"
+  parameter rho::Density = 1.2
+  "Fan pressure-response time constant; assumed"
+  parameter T_fan::Time = 0.3
+  "Maximum pressure drop, sized from the 4,700 kgf readout over the default floor area"
+  parameter dp_max::Pressure = 4700 * 9.80665 / 4.0
+  "Underbody pressure drop"
+  variable dp::Pressure
+  "Skirt leakage volume flow"
+  variable Q::VolumeFlowRate
+relations
+  T_fan * der(dp) = max(0, min(1, cmd)) * dp_max - dp
+  downforce = dp * A_floor
+  Q = C_d * perimeter * gap * sqrt(2 * dp / rho)
+  power = Q * dp / eta
+metadata {
+  "_links": {
+    "cmd": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "downforce": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 300, "y2": 400}}}},
+    "power": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 600, "y2": 700}}}}
+  }
+}
+end
+
+"Fan operating-point harness, including the least-pressure inverted-hold case."
+test component TestSuctionFan
+  command = BlockComponents.Sources.Constant(k = cmd)
+  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = gap)
+  "Fan command"
+  parameter cmd::Real = 1.0
+  "Effective skirt gap"
+  parameter gap::Length = 0.003
+relations
+  connect(command.y, fan.cmd)
+  initial fan.dp = cmd * fan.dp_max
+metadata {
+  "Dyad": {
+    "tests": {
+      "full_suction_3mm": {
+        "stop": 0.1,
+        "expect": {
+          "initial": {"fan.dp": 11522.81375, "fan.power": 47905.28661},
+          "final": {"fan.dp": 11522.81375, "fan.power": 47905.28661}
+        },
+        "atol": {"fan.dp": 0.1, "fan.power": 1.0}
+      },
+      "full_suction_10mm": {
+        "stop": 0.1,
+        "params": {"gap": 0.01},
+        "expect": {"final": {"fan.power": 159684.28869}},
+        "atol": {"fan.power": 2.0}
+      }
+    }
+  }
+}
+end
+
+"""
+Inverted-hold harness: reversed gravity pulls the car away from the road, while suction acts
+toward it. `hold_force = 0` is the least pressure that holds the stationary car.
+"""
+test component TestSuctionFanInvertedHold
+  command = BlockComponents.Sources.Constant(k = cmd)
+  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = gap)
+  "Vehicle mass; assumed because Tesla has not disclosed it"
+  parameter m::Dyad.Mass = 2000
+  "Reversed gravitational acceleration"
+  parameter g::Acceleration = -9.80665
+  "Least command that balances reversed gravity"
+  parameter cmd::Real = -m * g / (4.0 * (4700 * 9.80665 / 4.0))
+  "Effective skirt gap; assumed"
+  parameter gap::Length = 0.003
+  "Net holding force toward the road"
+  variable hold_force::Force
+relations
+  connect(command.y, fan.cmd)
+  hold_force = fan.downforce + m * g
+  initial fan.dp = cmd * fan.dp_max
+metadata {
+  "Dyad": {
+    "tests": {
+      "least_pressure_hold": {
+        "stop": 0.1,
+        "expect": {
+          "initial": {"fan.dp": 4903.325, "fan.power": 13297.85672, "hold_force": 0},
+          "final": {"fan.dp": 4903.325, "fan.power": 13297.85672, "hold_force": 0}
+        },
+        "atol": {"fan.dp": 0.1, "fan.power": 1.0, "hold_force": 0.1}
+      }
+    }
+  }
+}
+end
+
+analysis SuctionFanTransient
+  extends TransientAnalysis(stop = 2.0, abstol = 1e-8, reltol = 1e-6)
+  "Fan command"
+  parameter cmd::Real = 1.0
+  "Effective skirt gap"
+  parameter gap::Length = 0.003
+  model = VehicleSystemsComponents.Roadster.TestSuctionFan(cmd = cmd, gap = gap)
+end
+
+analysis SuctionFanInvertedHoldTransient
+  extends TransientAnalysis(stop = 0.1, abstol = 1e-8, reltol = 1e-6)
+  model = VehicleSystemsComponents.Roadster.TestSuctionFanInvertedHold()
+end

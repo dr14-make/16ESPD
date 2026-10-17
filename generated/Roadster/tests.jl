@@ -19,5 +19,9 @@ end
 include("AxleLoad_test.jl")
 include("PowerLimitedMotor_test.jl")
 include("RoadsterLaunch_test.jl")
+include("SuctionFan_test.jl")
+include("SuctionRollingResistance_test.jl")
 include("TestRoadsterLaunch_test.jl")
+include("TestSuctionFanInvertedHold_test.jl")
+include("TestSuctionFan_test.jl")
 end

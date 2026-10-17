@@ -1,10 +1,30 @@
+"Incremental rolling resistance caused by suction downforce."
+component SuctionRollingResistance
+  "Connection to the moving vehicle body"
+  flange = Flange()
+  "Suction downforce"
+  downforce = RealInput()
+  "Rolling resistance coefficient; inherited from the baseline vehicle assumption"
+  parameter f_r::Real = 0.012
+  "Speed scale for a continuous force reversal; numerical regularization"
+  parameter v_eps::Velocity = 0.1
+  "Vehicle speed"
+  variable v::Velocity
+relations
+  v = der(flange.s)
+  flange.f = f_r * downforce * tanh(v / v_eps)
+end
+
 """
-Standing-start launch of a 1 MW car on its tires alone, with ideal traction control.
+Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
 
 The traction control requests the torque that holds the tire just below peak adhesion,
 `grip * mu_A * F_z * radius`, and the motor delivers it up to its torque and power ceilings.
-The run answers whether 0–60 mph (26.82 m/s) in under one second is possible on tires: it is
-limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel drive.
+The fan begins at its commanded pressure because the car sits on suction before launch.
+
+Suction downforce loads rolling resistance because tire deformation depends on total normal
+load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds
+only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only car exactly.
 """
 component RoadsterLaunch
   motor = VehicleSystemsComponents.Roadster.PowerLimitedMotor(T_max = T_max, P_max = P_max) {^motor}
@@ -13,7 +33,9 @@ component RoadsterLaunch
   body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m, CdA = CdA) {^body}
   axle = VehicleSystemsComponents.Roadster.AxleLoad(m = m, share = share, h_over_L = h_over_L) {^axle}
   traction = BlockComponents.Math.Gain(k = grip * mu_A * radius) {^traction}
-  no_downforce = BlockComponents.Sources.Constant(k = 0) {^no_downforce}
+  fan_command = BlockComponents.Sources.Constant(k = fan_cmd) {^fan_command}
+  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = skirt_gap) {^fan}
+  suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance() {^suction_rolling}
   flat = BlockComponents.Sources.Constant(k = 0) {^flat}
   "Motor housing"
   rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
@@ -39,6 +61,10 @@ component RoadsterLaunch
   parameter share::Real = 0.55
   "Center-of-mass height over wheelbase; assumed"
   parameter h_over_L::Real = 0.17
+  "Normalized suction-fan command"
+  parameter fan_cmd::Real = 0.0
+  "Effective skirt gap; assumed"
+  parameter skirt_gap::Length = 0.003
   "Vehicle speed"
   variable v::Velocity
 relations
@@ -47,7 +73,10 @@ relations
   connect(wheel_inertia.spline_b, wheel.spline) {^id3}
   connect(wheel.flange, body.flange) {^id4}
   connect(axle.flange, body.flange) {^id5}
-  connect(no_downforce.y, axle.downforce) {^id6}
+  connect(suction_rolling.flange, body.flange)
+  connect(fan_command.y, fan.cmd)
+  connect(fan.downforce, axle.downforce) {^id6}
+  connect(fan.downforce, suction_rolling.downforce)
   connect(axle.F_z, wheel.F_z) {^id7}
   connect(axle.F_z, traction.u) {^id8}
   connect(traction.y, motor.tau_cmd) {^id9}
@@ -58,6 +87,7 @@ relations
   initial body.mass.s = 0.0
   initial body.mass.v = 0.0
   initial axle.a_pitch = 0.0
+  initial fan.dp = fan_cmd * fan.dp_max
 metadata {
   "_links": {
     "motor": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
@@ -70,8 +100,12 @@ metadata {
     "traction": {
       "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 200, "y2": 300}}}
     },
-    "no_downforce": {
-      "Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 20, "y2": 120}}}
+    "fan_command": {
+      "Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 20, "y2": 120}}}
+    },
+    "fan": {"Dyad": {"placement": {"diagram": {"x1": 800, "x2": 900, "y1": 20, "y2": 120}}}},
+    "suction_rolling": {
+      "Dyad": {"placement": {"diagram": {"x1": 900, "x2": 1000, "y1": 200, "y2": 300}}}
     },
     "flat": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 700, "y2": 800}}}},
     "rot_ground": {
@@ -115,6 +149,24 @@ metadata {
           "final": {"launch.v": 46.44041, "launch.wheel.kappa": 0.026170},
           "signals": ["launch.v", "launch.wheel.kappa"]
         }
+      },
+      "suction_rear_wheel_drive": {
+        "stop": 2,
+        "params": {"launch.fan_cmd": 1, "launch.share": 0.55, "launch.h_over_L": 0.17},
+        "expect": {
+          "initial": {"launch.fan.dp": 11522.81375},
+          "final": {"launch.fan.dp": 11522.81375}
+        },
+        "atol": {"launch.fan.dp": 0.1}
+      },
+      "suction_all_wheel_drive": {
+        "stop": 2,
+        "params": {"launch.fan_cmd": 1, "launch.share": 1, "launch.h_over_L": 0},
+        "expect": {
+          "initial": {"launch.fan.dp": 11522.81375},
+          "final": {"launch.fan.dp": 11522.81375}
+        },
+        "atol": {"launch.fan.dp": 0.1}
       }
     }
   }
@@ -128,12 +180,18 @@ analysis RoadsterLaunchTransient
   parameter m::Dyad.Mass = 2000
   "Rated power"
   parameter P_max::Power = 1.0e6
+  "Peak wheel torque"
+  parameter T_max::Torque = 12000
+  "Normalized suction-fan command"
+  parameter fan_cmd::Real = 0.0
+  "Effective skirt gap; assumed"
+  parameter skirt_gap::Length = 0.003
   "Peak tire adhesion"
   parameter mu_A::Real = 1.26
   "Static fraction of weight on the driven axle; 1 for all-wheel drive"
   parameter share::Real = 0.55
   "Center-of-mass height over wheelbase; 0 for all-wheel drive"
   parameter h_over_L::Real = 0.17
-  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, P_max = P_max, mu_A = mu_A, share = share, h_over_L = h_over_L)
+  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, mu_A = mu_A, share = share, h_over_L = h_over_L)
 relations
 end
