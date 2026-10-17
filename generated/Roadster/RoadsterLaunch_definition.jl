@@ -5,14 +5,17 @@
 
 
 @doc Markdown.doc"""
-   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L)
+   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L, fan_cmd, skirt_gap)
 
-Standing-start launch of a 1 MW car on its tires alone, with ideal traction control.
+Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
 
 The traction control requests the torque that holds the tire just below peak adhesion,
 `grip * mu_A * F_z * radius`, and the motor delivers it up to its torque and power ceilings.
-The run answers whether 0–60 mph (26.82 m/s) in under one second is possible on tires: it is
-limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel drive.
+The fan begins at its commanded pressure because the car sits on suction before launch.
+
+Suction downforce loads rolling resistance because tire deformation depends on total normal
+load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds
+only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only car exactly.
 
 ## Parameters:
 
@@ -29,6 +32,8 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
 | `grip`         | Fraction of peak adhesion targeted by ideal traction control; assumed margin                         | --  |   0.98 |
 | `share`         | Static fraction of weight on the driven axle; assumed                         | --  |   0.55 |
 | `h_over_L`         | Center-of-mass height over wheelbase; assumed                         | --  |   0.17 |
+| `fan_cmd`         | Normalized suction-fan command                         | --  |   0.0 |
+| `skirt_gap`         | Effective skirt gap; assumed                         | m  |   0.003 |
 
 ## Variables
 
@@ -36,7 +41,7 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
 | ------------ | ----------------------------------- | ------ |
 | `v`         | Vehicle speed                         | m/s  |
 """
-@component function RoadsterLaunch(; name = nothing, m=Float64(2000), CdA=0.6, T_max=Float64(12000), P_max=Float64(1000000.0), J_w=2.4, radius=0.35, mu_A=1.26, mu_S=Float64(1.0), grip=0.98, share=0.55, h_over_L=0.17, kwargs...)
+@component function RoadsterLaunch(; name = nothing, m=Float64(2000), CdA=0.6, T_max=Float64(12000), P_max=Float64(1000000.0), J_w=2.4, radius=0.35, mu_A=1.26, mu_S=Float64(1.0), grip=0.98, share=0.55, h_over_L=0.17, fan_cmd=Float64(0.0), skirt_gap=0.003, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -100,6 +105,12 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
   __local__h_over_L = h_over_L
   append!(__params, @parameters (h_over_L::Real), [description = "Center-of-mass height over wheelbase; assumed"])
   __initial_conditions[h_over_L] = __local__h_over_L
+  __local__fan_cmd = fan_cmd
+  append!(__params, @parameters (fan_cmd::Real), [description = "Normalized suction-fan command"])
+  __initial_conditions[fan_cmd] = __local__fan_cmd
+  __local__skirt_gap = skirt_gap
+  append!(__params, @parameters (skirt_gap::Real), [description = "Effective skirt gap; assumed"])
+  __initial_conditions[skirt_gap] = __local__skirt_gap
 
   ### Final Parameters (assignments)
 
@@ -135,9 +146,15 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
   # Subcomponent traction of type BlockComponents.Math.Gain
   traction_overrides = __pop_subcomponent_overrides!(__overrides, "traction")
   push!(__systems, @named traction = BlockComponents.Math.Gain(; k=grip * mu_A * radius, traction_overrides...))
-  # Subcomponent no_downforce of type BlockComponents.Sources.Constant
-  no_downforce_overrides = __pop_subcomponent_overrides!(__overrides, "no_downforce")
-  push!(__systems, @named no_downforce = BlockComponents.Sources.Constant(; k=Float64(0), no_downforce_overrides...))
+  # Subcomponent fan_command of type BlockComponents.Sources.Constant
+  fan_command_overrides = __pop_subcomponent_overrides!(__overrides, "fan_command")
+  push!(__systems, @named fan_command = BlockComponents.Sources.Constant(; k=fan_cmd, fan_command_overrides...))
+  # Subcomponent fan of type VehicleSystemsComponents.Roadster.SuctionFan
+  fan_overrides = __pop_subcomponent_overrides!(__overrides, "fan")
+  push!(__systems, @named fan = VehicleSystemsComponents.Roadster.SuctionFan(; gap=skirt_gap, fan_overrides...))
+  # Subcomponent suction_rolling of type VehicleSystemsComponents.Roadster.SuctionRollingResistance
+  suction_rolling_overrides = __pop_subcomponent_overrides!(__overrides, "suction_rolling")
+  push!(__systems, @named suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance(; suction_rolling_overrides...))
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0), flat_overrides...))
@@ -157,6 +174,7 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
   push!(__initialization_eqs, body.mass.s ~ 0.0)
   push!(__initialization_eqs, body.mass.v ~ 0.0)
   push!(__initialization_eqs, axle.a_pitch ~ 0.0)
+  push!(__initialization_eqs, fan.dp ~ fan_cmd * fan.dp_max)
 
   ### Assertions
   __assertions = []
@@ -168,7 +186,10 @@ limited by `mu_A * g` for all-wheel drive and by weight transfer for rear-wheel 
   push!(__eqs, connect(wheel_inertia.spline_b, wheel.spline))
   push!(__eqs, connect(wheel.flange, body.flange))
   push!(__eqs, connect(axle.flange, body.flange))
-  push!(__eqs, connect(no_downforce.y, axle.downforce))
+  push!(__eqs, connect(suction_rolling.flange, body.flange))
+  push!(__eqs, connect(fan_command.y, fan.cmd))
+  push!(__eqs, connect(fan.downforce, axle.downforce))
+  push!(__eqs, connect(fan.downforce, suction_rolling.downforce))
   push!(__eqs, connect(axle.F_z, wheel.F_z))
   push!(__eqs, connect(axle.F_z, traction.u))
   push!(__eqs, connect(traction.y, motor.tau_cmd))

@@ -56,3 +56,37 @@ __dyad_run_test_case!(
     (m -> m.launch.wheel.kappa, "launch.wheel.kappa", 0.001, 1e-5),
   ],
 )
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Roadster.TestRoadsterLaunch,
+  "suction_rear_wheel_drive for VehicleSystemsComponents.Roadster.TestRoadsterLaunch";
+  case_name="suction_rear_wheel_drive",
+  component_stem="TestRoadsterLaunch",
+  module_path=String["Roadster"],
+  start=0e+0,
+  stop=2e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(; launch__fan_cmd=1, launch__share=0.55, launch__h_over_L=0.17),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.launch.fan.dp, "launch.fan.dp", 11522.81375, 0.1, 1e-5)],
+  expected_final=Tuple[(m -> m.launch.fan.dp, "launch.fan.dp", 11522.81375, 0.1, 1e-5)],
+  signals=Tuple[],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Roadster.TestRoadsterLaunch,
+  "suction_all_wheel_drive for VehicleSystemsComponents.Roadster.TestRoadsterLaunch";
+  case_name="suction_all_wheel_drive",
+  component_stem="TestRoadsterLaunch",
+  module_path=String["Roadster"],
+  start=0e+0,
+  stop=2e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Auto(),
+  params=(; launch__fan_cmd=1, launch__share=1, launch__h_over_L=0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[(m -> m.launch.fan.dp, "launch.fan.dp", 11522.81375, 0.1, 1e-5)],
+  expected_final=Tuple[(m -> m.launch.fan.dp, "launch.fan.dp", 11522.81375, 0.1, 1e-5)],
+  signals=Tuple[],
+)
