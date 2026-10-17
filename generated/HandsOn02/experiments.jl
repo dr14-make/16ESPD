@@ -10,4 +10,6 @@ end
 
 
 include("MapEngineDyno_experiment.jl")
+include("MapEngineFuelCutDyno_experiment.jl")
+include("MapEngineFuelCut_experiment.jl")
 include("MapEngine_experiment.jl")

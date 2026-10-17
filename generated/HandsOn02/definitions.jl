@@ -204,4 +204,7 @@ end
 
 include("MapEngineDynoTransient_definition.jl")
 include("MapEngineDyno_definition.jl")
+include("MapEngineFuelCutDynoTransient_definition.jl")
+include("MapEngineFuelCutDyno_definition.jl")
+include("MapEngineFuelCut_definition.jl")
 include("MapEngine_definition.jl")
