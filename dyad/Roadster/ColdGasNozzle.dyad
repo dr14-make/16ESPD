@@ -1,0 +1,118 @@
+"""
+Choked compressed-air nozzle with ideal expansion to ambient pressure.
+
+The command is clamped to `0 <= cmd <= 1` and scales the total throat area.
+The model closes the valve below 2 bar absolute rather than extrapolating the
+choked-flow equation into the subsonic regime. This keeps the lesson focused on
+the high-pressure thrust pulse and defines its endpoint conservatively.
+"""
+component ColdGasNozzle
+  "Normalized valve command, clamped to 0..1"
+  cmd = RealInput() {^cmd}
+  "Upstream stagnation pressure from the tank"
+  p = RealInput(units = "Pa") {^p}
+  "Upstream stagnation temperature from the tank"
+  T = RealInput(units = "K") {^T}
+  "Mass flow leaving the tank"
+  mdot = RealOutput(units = "kg/s") {^mdot}
+  "Thrust applied to the connected body"
+  flange = Flange() {^flange}
+  "Total throat area, sized for 80 kN at 380 bar; four rear nozzles are about 20 mm diameter each"
+  parameter A_t::Area = 1.286e-3
+  "Ratio of specific heats for air; standard thermodynamic value"
+  parameter gamma::Real = 1.4
+  "Specific gas constant of dry air; standard thermodynamic value"
+  parameter R::Real(units = "J/(kg.K)") = 287.05
+  "Constant-pressure specific heat of air; standard thermodynamic value"
+  parameter c_p::SpecificHeatCapacity = 1005
+  "Ambient sea-level pressure; standard atmosphere"
+  parameter p_a::Pressure = 101325
+  "Nozzle velocity efficiency; ideal expansion assumed by default"
+  parameter eta_n::Real = 1.0
+  "Valve cutoff pressure; assumed 2 bar to avoid the unmodeled subsonic branch"
+  parameter p_close::Pressure = 2e5
+  "Ideal expanded exhaust speed"
+  variable v_e::Velocity
+  "Thrust magnitude"
+  variable F::Force
+  "Effective open command"
+  variable opening::Real
+relations
+  opening = ifelse(p >= p_close, max(0, min(1, cmd)), 0)
+  mdot = opening * A_t * p * sqrt(gamma / (R * T)) *
+         (2 / (gamma + 1)) ^ ((gamma + 1) / (2 * (gamma - 1)))
+  v_e = ifelse(p >= p_close,
+               eta_n * sqrt(2 * c_p * T * (1 - (p_a / p) ^ ((gamma - 1) / gamma))),
+               0)
+  F = mdot * v_e
+  flange.f = -F
+metadata {
+  "_links": {
+    "cmd": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 150, "y2": 250}}}},
+    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 350, "y2": 450}}}},
+    "T": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 550, "y2": 650}}}},
+    "mdot": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 750, "y2": 850}}}},
+    "flange": {"Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  }
+}
+end
+
+"Wide-open fixed thrust stand for a complete tank blowdown."
+test component TestColdGasThrustStand
+  command = BlockComponents.Sources.Constant(k = 1.0)
+  tank = VehicleSystemsComponents.Roadster.AirTank(p0 = p0, V = V, n = n)
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle()
+  fixed = TranslationalComponents.Components.Fixed()
+  "Initial tank pressure"
+  parameter p0::Pressure = 380e5
+  "Tank volume"
+  parameter V::Volume = 0.6
+  "Polytropic index"
+  parameter n::Real = 1.4
+relations
+  connect(command.y, nozzle.cmd)
+  connect(tank.p, nozzle.p)
+  connect(tank.T, nozzle.T)
+  connect(nozzle.mdot, tank.mdot)
+  connect(nozzle.flange, fixed.flange)
+metadata {
+  "Dyad": {
+    "tests": {
+      "adiabatic_initial": {
+        "stop": 0.01,
+        "expect": {
+          "initial": {
+            "tank.m_g": 270.9489032,
+            "nozzle.mdot": 115.3509352,
+            "nozzle.v_e": 693.4545206,
+            "nozzle.F": 79990.6275
+          }
+        },
+        "rtol": {
+          "tank.m_g": 1e-6,
+          "nozzle.mdot": 1e-6,
+          "nozzle.v_e": 1e-6,
+          "nozzle.F": 1e-6
+        }
+      },
+      "adiabatic_cutoff": {
+        "stop": 15.0,
+        "expect": {"final": {"nozzle.mdot": 0, "nozzle.F": 0}},
+        "atol": {"nozzle.mdot": 1e-8, "nozzle.F": 1e-5}
+      }
+    }
+  }
+}
+end
+
+analysis ColdGasThrustStandTransient
+  extends TransientAnalysis(stop = 15.0, abstol = 1e-9, reltol = 1e-7,
+                            automatic_discontinuity_detection = true)
+  "Initial tank pressure"
+  parameter p0::Pressure = 380e5
+  "Tank volume"
+  parameter V::Volume = 0.6
+  "Polytropic index"
+  parameter n::Real = 1.4
+  model = VehicleSystemsComponents.Roadster.TestColdGasThrustStand(p0 = p0, V = V, n = n)
+end

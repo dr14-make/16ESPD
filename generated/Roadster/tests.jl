@@ -16,11 +16,14 @@ end
 
 
 @testset "`VehicleSystemsComponents.Roadster`" begin
+include("AirTank_test.jl")
 include("AxleLoad_test.jl")
+include("ColdGasNozzle_test.jl")
 include("PowerLimitedMotor_test.jl")
 include("RoadsterLaunch_test.jl")
 include("SuctionFan_test.jl")
 include("SuctionRollingResistance_test.jl")
+include("TestColdGasThrustStand_test.jl")
 include("TestRoadsterLaunch_test.jl")
 include("TestSuctionFanInvertedHold_test.jl")
 include("TestSuctionFan_test.jl")

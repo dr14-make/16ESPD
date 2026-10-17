@@ -1,0 +1,43 @@
+"""
+Fixed-volume compressed-air tank with polytropic blowdown.
+
+Pressure and temperature follow `p/p0 = (m_g/m0)^n` and
+`T/T0 = (m_g/m0)^(n - 1)`. The initial mass uses the ideal-gas law; real-gas
+storage near 380 bar is outside this teaching model and is reported separately.
+Signals carry pressure, temperature, and nozzle mass flow because the stdlib
+hydraulic connector has no gas temperature or energy state.
+"""
+component AirTank
+  "Tank pressure"
+  p = RealOutput(units = "Pa") {^p}
+  "Tank temperature"
+  T = RealOutput(units = "K") {^T}
+  "Mass flow leaving the tank"
+  mdot = RealInput(units = "kg/s") {^mdot}
+  "Tank volume; Tesla reports 600 L of compressed-air COPVs"
+  parameter V::Volume = 0.6
+  "Initial pressure; 5,500 psi in-car readout reported by Paul Tan"
+  parameter p0::Pressure = 380e5
+  "Initial temperature; assumed room temperature"
+  parameter T0::Temperature = 293.15
+  "Specific gas constant of dry air; standard thermodynamic value"
+  parameter R::Real(units = "J/(kg.K)") = 287.05
+  "Polytropic index; 1.4 is the adiabatic-air bound and 1 is isothermal"
+  parameter n::Real = 1.4
+  "Initial ideal-gas air mass"
+  final parameter m0::Mass = p0 * V / (R * T0)
+  "Air mass remaining in the tank"
+  variable m_g::Mass
+relations
+  initial m_g = m0
+  der(m_g) = -mdot
+  p = p0 * (m_g / m0) ^ n
+  T = T0 * (m_g / m0) ^ (n - 1)
+metadata {
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 250, "y2": 350}}}},
+    "T": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "mdot": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
+  }
+}
+end
