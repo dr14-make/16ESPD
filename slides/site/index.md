@@ -19,6 +19,13 @@ features:
   - title: "Lecture 1 build guide: the cruise controller, block by block"
     details: "Session 2 · alongside the lecture<br>What you build on your own car while the lecture runs: the loop, then P, PI and PID, the limiter and clamping anti-windup, a noisy speedometer, and the loop on ice. Each step lists its blocks, wires and the plot to expect, with two catch-up checkpoints."
     link: /lecture/lecture-01/
+  - title: "Engine Control Systems: the engine and its control unit"
+    details: "Session 3<br>The theory: where the vehicle's energy goes, the Otto and Diesel cycles and the stoichiometric mixture, the engine control system and its sensors, fuel injection and the pulse-width formula, ignition timing and the coil, and the λ loop around the catalyst. Ends with the mapped engine you build in the hands-on."
+    link: /lecture-02/index.html
+    target: _self
+  - title: "Hands-on: drive a mapped engine"
+    details: "Session 4 · about 90 min<br>Read measured engine maps at speed and manifold pressure, build the manifold and a map engine of your own, put the course engine in your car, and read its fuel in L/100 km and its CO₂ in g/km at 50, 90 and 130 km/h. Ends with fuel cut on a coast-down and the vacuum the brake booster draws on."
+    link: /handson/lecture-02/
 ---
 
 ## Lecture 1, in two sessions
@@ -47,6 +54,25 @@ beginning.
 8. [**Tuning**](./lecture-01/index.html#/tuning){target="_self"} — a gain set from one step test, without a model
 9. [**Discretization**](./lecture-01/index.html#/discretization){target="_self"} — the strobe light slows down
 10. [**Wheel and slip**](./lecture-01/index.html#/wheel-and-slip){target="_self"} — cruise control meets black ice
+
+## Lecture 2: engines and their control systems
+
+The theory deck carries the lecturer's engine slides; the notebooks will regenerate its plots from
+models, one notebook at a time.
+
+1. [**Vehicle energy**](./lecture-02/index.html#/vehicle-energy){target="_self"} — drag, rolling, slope, acceleration and the auxiliaries
+2. [**Engine and cycles**](./lecture-02/index.html#/engine-and-cycles){target="_self"} — Otto and Diesel, and the stoichiometric 14.6
+3. [**Engine control system**](./lecture-02/index.html#/engine-control-system){target="_self"} — sensors, ECU, actuators and the control strategies
+4. [**Sensors**](./lecture-02/index.html#/sensors){target="_self"} — throttle position, temperature and air mass
+5. [**Fuel injection**](./lecture-02/index.html#/fuel-injection){target="_self"} — pulse width = base × factors
+6. [**Ignition**](./lecture-02/index.html#/ignition){target="_self"} — spark advance, the coil and the dwell
+7. [**Emissions and lambda control**](./lecture-02/index.html#/emissions-and-lambda){target="_self"} — the λ loop and the catalyst
+8. [**The mapped engine**](./lecture-02/index.html#/mapped-engine){target="_self"} — what the hands-on builds
+
+The hands-on that follows the lecture builds that engine into the car. Students follow the
+[hands-on guide](./handson/lecture-02/); present it with the
+[tutor deck](./handson-02/index.html){target="_self"}, whose speaker notes carry what to say, the
+numbers behind every checkpoint, and where students get stuck.
 
 ## For the lecturer
 

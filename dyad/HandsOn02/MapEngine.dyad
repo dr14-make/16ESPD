@@ -1,0 +1,79 @@
+"""
+Pedal in; torque, fuel and CO2 out, read from the maps at engine speed and manifold pressure.
+
+The pedal sets the throttle directly, so the only lag between pedal and torque is the manifold
+filling. Torque and fuel come from two maps read at the same speed and pressure; the torque map
+caps itself at the full-load curve.
+"""
+component MapEngine
+  "Pedal, 0 released to 1 floored"
+  pedal = RealInput() {^pedal}
+  "Brake-booster air flow into the manifold [kg/s]"
+  mdot_bst = RealInput() {^mdot_bst}
+  "Output shaft"
+  spline = Spline() {^spline}
+  "Engine mounts"
+  support = Spline() {^support}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealOutput() {^p_m}
+  "Fuel mass flow [kg/s]"
+  mdot_fuel = RealOutput() {^mdot_fuel}
+  "CO2 mass flow [kg/s]"
+  mdot_co2 = RealOutput() {^mdot_co2}
+  air = VehicleSystemsComponents.Vehicle.Engine.AirPath() {^air}
+  speed = RotationalComponents.Sensors.VelocitySensor() {^speed}
+  torque_map = VehicleSystemsComponents.Vehicle.Engine.TorqueMap() {^torque_map}
+  fuel_map = VehicleSystemsComponents.Vehicle.Engine.FuelMap() {^fuel_map}
+  "CO2 per kilogram of petrol burned completely, 3.09 (textbook)"
+  co2 = BlockComponents.Math.Gain(k = 3.09) {^co2}
+  torque = RotationalComponents.Sources.TorqueSource() {^torque}
+relations
+  connect(pedal, air.u_thr) {^w01}
+  connect(mdot_bst, air.mdot_bst) {^w02}
+  connect(speed.w, air.omega) {^w03}
+  connect(speed.w, torque_map.omega) {^w04}
+  connect(speed.w, fuel_map.omega) {^w05}
+  connect(air.p_m, torque_map.p_m) {^w06}
+  connect(air.p_m, fuel_map.p_m) {^w07}
+  connect(air.p_m, p_m) {^w08}
+  connect(torque_map.y, torque.tau) {^w09}
+  connect(fuel_map.y, co2.u) {^w10}
+  connect(fuel_map.y, mdot_fuel) {^w11}
+  connect(co2.y, mdot_co2) {^w12}
+  connect(torque.spline, spline) {^w13}
+  connect(speed.spline, spline) {^w14}
+  connect(torque.support, support) {^w15}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 175, "x2": 25, "y2": 225}}}},
+    "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -25, "y1": 275, "x2": 25, "y2": 325}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 185, "x2": 1025, "y2": 235}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 975, "y1": 305, "x2": 1025, "y2": 355}}}},
+    "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 975, "y1": 455, "x2": 1025, "y2": 505}}}},
+    "mdot_co2": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 975, "y1": 535, "x2": 1025, "y2": 585}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": 975, "y1": 635, "x2": 1025, "y2": 685}}}},
+    "air": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 180, "x2": 250, "y2": 280}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 60, "x2": 950, "y2": 160}}}},
+    "torque_map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 160, "x2": 550, "y2": 260}}}},
+    "fuel_map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 430, "x2": 550, "y2": 530}}}},
+    "co2": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 510, "x2": 800, "y2": 610}}}},
+    "torque": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 160, "x2": 800, "y2": 260}}}},
+    "w01": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w02": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 300}, {"x": 80, "y": 230}], "E": 2}]}},
+    "w03": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 110}, {"x": 970, "y": 30}, {"x": 400, "y": 30}, {"x": 400, "y": 380}, {"x": 110, "y": 380}, {"x": 110, "y": 260}], "E": 2}]}},
+    "w04": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 110}, {"x": 970, "y": 30}, {"x": 400, "y": 30}, {"x": 400, "y": 190}], "E": 2}]}},
+    "w05": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 110}, {"x": 970, "y": 30}, {"x": 400, "y": 30}, {"x": 400, "y": 460}], "E": 2}]}},
+    "w06": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w07": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 420, "y": 230}, {"x": 420, "y": 500}], "E": 2}]}},
+    "w08": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 420, "y": 230}, {"x": 420, "y": 660}], "E": 2}]}},
+    "w09": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 620, "y": 480}, {"x": 620, "y": 560}], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 830, "y": 110}, {"x": 830, "y": 210}], "E": 2}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 330}], "E": 2}]}}
+  }
+}
+end

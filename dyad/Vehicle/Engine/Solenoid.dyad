@@ -1,0 +1,93 @@
+"""
+A solenoid actuator: an electrical winding and a magnetic armature, coupled through the air gap.
+
+    L(g)  = L_inf + L_0 g_0 / (g + g_0),       g = g_max - x
+    psi   = L(g) i
+    v     = R i + der(psi)
+    f     = 1/2 i^2 dL/dx
+
+`x` is the armature travel from rest, positive closing the gap. The flux linkage `psi` is the
+electrical state, so `der(psi)` carries both the self-induced voltage `L di/dt` and the motion
+term `i (dL/dx) v_x`: while the armature moves, that term is a back-EMF that dents the current.
+The force follows from the co-energy `1/2 L i^2`, so it always pulls the armature toward the
+closing gap and grows with the square of the current.
+
+`TranslationalEMF` is a constant-gain transducer and has no gap-dependent inductance, so it cannot
+produce the pickup kink; this component writes the equations instead.
+
+The coil resistance is the Bosch EV14 datasheet value. The inductance curve is assumed: no
+manufacturer publishes it. `L_inf + L_0 g_0 / (g_max + g_0)` is the inductance with the armature
+at rest, and divided by `R` gives the electrical time constant that sets the opening dead time.
+"""
+component Solenoid
+  "Positive winding terminal"
+  p = Pin() {^p}
+  "Negative winding terminal"
+  n = Pin() {^n}
+  "Armature: positive travel closes the air gap"
+  flange = Flange() {^flange}
+  "Housing that carries the winding and the core"
+  support = Flange() {^support}
+  "Winding resistance, 12 ohm (Bosch EV14 datasheet)"
+  parameter R::Resistance = 12.0
+  "Inductance that does not depend on the gap: leakage flux (assumed)"
+  parameter L_inf::Inductance = 2.88e-3
+  "Gap-dependent inductance scale (assumed)"
+  parameter L_0::Inductance = 28.8e-3
+  "Gap length at which the gap-dependent inductance halves (assumed)"
+  parameter g_0::Length = 0.1e-3
+  "Air gap with the armature at rest (assumed): needle lift plus a residual gap at the stop"
+  parameter g_max::Length = 0.15e-3
+  "Winding voltage"
+  variable v::Voltage
+  "Winding current"
+  variable i::Current
+  "Flux linkage"
+  variable psi::Real(units = "Wb")
+  "Armature travel from rest"
+  variable x::Length
+  "Air gap"
+  variable g::Length
+  "Inductance at the present gap"
+  variable L::Inductance
+  "Slope of the inductance with armature travel"
+  variable dLdx::Real(units = "H/m")
+  "Magnetic force on the armature, toward closing the gap"
+  variable f::Dyad.Force
+relations
+  v = p.v - n.v
+  i = p.i
+  p.i + n.i = 0
+  x = flange.s - support.s
+  g = g_max - x
+  L = L_inf + L_0 * g_0 / (g + g_0)
+  dLdx = L_0 * g_0 / (g + g_0)^2
+  psi = L * i
+  v = R * i + der(psi)
+  f = 0.5 * i^2 * dLdx
+  flange.f = -f
+  support.f = f
+metadata {
+  "Dyad": {
+    "labels": [
+      {"label": "$(instance)", "x": 500, "y": 1100, "rot": 0},
+      {"label": "R=$(R)Ω", "x": 780, "y": 150, "rot": 0}
+    ],
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/Solenoid.svg"}
+  },
+  "_links": {
+    "p": {
+      "Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 450, "y1": -50, "x2": 550, "y2": 50}}}
+    },
+    "n": {
+      "Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}
+    },
+    "flange": {
+      "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}
+    },
+    "support": {
+      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}
+    }
+  }
+}
+end
