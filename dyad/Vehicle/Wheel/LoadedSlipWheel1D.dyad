@@ -3,7 +3,8 @@ One-dimensional tire contact whose normal load is a signal rather than a constan
 
 Same slip definition, sign conventions and friction curve as `SlipWheel1D`. The normal load
 `F_z` arrives at an input, so weight transfer and aerodynamic or suction downforce can change the
-grip the tire offers while the vehicle moves.
+grip the tire offers while the vehicle moves. The slip ratio leaves at an output, so a traction
+controller can read it.
 """
 component LoadedSlipWheel1D
   "Wheel shaft"
@@ -12,6 +13,8 @@ component LoadedSlipWheel1D
   flange = Flange() {^flange}
   "Normal load on the tire"
   F_z = RealInput() {^F_z}
+  "Regularized longitudinal slip ratio"
+  kappa = RealOutput() {^kappa}
   "Friction coefficient against slip"
   curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {^curve}
   "Wheel rolling radius; assumed"
@@ -30,8 +33,6 @@ component LoadedSlipWheel1D
   variable omega::AngularVelocity
   "Vehicle longitudinal speed"
   variable v::Velocity
-  "Regularized longitudinal slip ratio"
-  variable kappa::Real
   "Longitudinal tire force"
   variable F_x::Force
 relations
@@ -53,6 +54,9 @@ metadata {
     },
     "F_z": {
       "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": -50, "y2": 50}}}
+    },
+    "kappa": {
+      "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": 950, "y2": 1050}}}
     },
     "curve": {
       "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}

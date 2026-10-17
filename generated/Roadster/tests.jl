@@ -24,4 +24,6 @@ include("SuctionRollingResistance_test.jl")
 include("TestRoadsterLaunch_test.jl")
 include("TestSuctionFanInvertedHold_test.jl")
 include("TestSuctionFan_test.jl")
+include("TestTractionControl_test.jl")
+include("TractionControl_test.jl")
 end

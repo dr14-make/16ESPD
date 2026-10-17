@@ -11,7 +11,8 @@ One-dimensional tire contact whose normal load is a signal rather than a constan
 
 Same slip definition, sign conventions and friction curve as `SlipWheel1D`. The normal load
 `F_z` arrives at an input, so weight transfer and aerodynamic or suction downforce can change the
-grip the tire offers while the vehicle moves.
+grip the tire offers while the vehicle moves. The slip ratio leaves at an output, so a traction
+controller can read it.
 
 ## Parameters:
 
@@ -29,6 +30,7 @@ grip the tire offers while the vehicle moves.
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `F_z` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -36,7 +38,6 @@ grip the tire offers while the vehicle moves.
 | ------------ | ----------------------------------- | ------ |
 | `omega`         | Wheel angular speed                         | rad/s  |
 | `v`         | Vehicle longitudinal speed                         | m/s  |
-| `kappa`         | Regularized longitudinal slip ratio                         | --  |
 | `F_x`         | Longitudinal tire force                         | N  |
 """
 @component function LoadedSlipWheel1D(; name = nothing, radius=0.35, sAdhesion=0.04, sSlide=0.12, mu_A=1.26, mu_S=Float64(1.0), v_eps=0.5, kwargs...)
@@ -93,11 +94,11 @@ grip the tire offers while the vehicle moves.
 
   ### Final Path Parameters
   append!(__vars, @variables (F_z(t)::Real), [input = true])
+  append!(__vars, @variables (kappa(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (omega(t)::Real), [description = "Wheel angular speed"])
   append!(__vars, @variables (v(t)::Real), [description = "Vehicle longitudinal speed"])
-  append!(__vars, @variables (kappa(t)::Real), [description = "Regularized longitudinal slip ratio"])
   append!(__vars, @variables (F_x(t)::Real), [description = "Longitudinal tire force"])
 
   ### Variables (assignments)
@@ -107,9 +108,6 @@ grip the tire offers while the vehicle moves.
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
   __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
   __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
-  __ovr_kappa = pop!(__overrides, "kappa", nothing); isnothing(__ovr_kappa) || push!(__eqs, kappa ~ __ovr_kappa)
-  __ovr_kappa__initial = pop!(__overrides, "kappa__initial", nothing); isnothing(__ovr_kappa__initial) || (__initial_conditions[kappa] = __ovr_kappa__initial)
-  __ovr_kappa__guess = pop!(__overrides, "kappa__guess", nothing)
   __ovr_F_x = pop!(__overrides, "F_x", nothing); isnothing(__ovr_F_x) || push!(__eqs, F_x ~ __ovr_F_x)
   __ovr_F_x__initial = pop!(__overrides, "F_x__initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
   __ovr_F_x__guess = pop!(__overrides, "F_x__guess", nothing)
@@ -130,7 +128,6 @@ grip the tire offers while the vehicle moves.
   ### Guesses
   isnothing(__ovr_omega__guess) || (__guesses[omega] = __ovr_omega__guess)
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
-  isnothing(__ovr_kappa__guess) || (__guesses[kappa] = __ovr_kappa__guess)
   isnothing(__ovr_F_x__guess) || (__guesses[F_x] = __ovr_F_x__guess)
 
   ### Initialization Equations

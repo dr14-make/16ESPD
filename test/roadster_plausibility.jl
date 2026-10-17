@@ -1,4 +1,5 @@
 using DyadInterface: symbolic_container
+using OrdinaryDiffEqDefault: remake, solve
 
 const ROADSTER_V60 = 26.8224
 const ROADSTER_G = 9.80665
@@ -140,5 +141,27 @@ end
         end
         @test all(diff(sweep_times) .< 0)
         @test all(isfinite, sweep_times)
+    end
+end
+
+@testset "Roadster traction control is tolerance-independent" begin
+    # Past the adhesion peak the tire curve falls, so a request that ignores slip lets the wheel
+    # run away the moment a coarse step lands beyond it. The launch must not depend on step size.
+    layouts = (rwd = (;), awd = (share = 1.0, h_over_L = 0.0))
+    for (layout, geometry) in pairs(layouts), fan_cmd in (0.0, 1.0)
+        tight_sol, model = roadster_launch(; fan_cmd, geometry...)
+        t60_tight = first_crossing(tight_sol, model.v, ROADSTER_V60)
+        loose_runs = (
+            "solver defaults" => solve(remake(tight_sol.prob)),
+            "abstol 1e-6, reltol 1e-3" => first(roadster_launch(;
+                fan_cmd, geometry..., abstol = 1e-6, reltol = 1e-3)),
+            "abstol 1e-4, reltol 1e-2" => first(roadster_launch(;
+                fan_cmd, geometry..., abstol = 1e-4, reltol = 1e-2)),
+        )
+        @testset "$layout, fan_cmd = $fan_cmd, $name" for (name, sol) in loose_runs
+            t60 = first_crossing(sol, model.v, ROADSTER_V60)
+            @test t60 ≈ t60_tight rtol = 0.01
+            @test maximum(sol[model.wheel.kappa]) < 0.1
+        end
     end
 end

@@ -1,0 +1,80 @@
+"""
+Slip-limited traction control: a load feedforward with a proportional slip cut-back.
+
+The feedforward requests `tau_ff = grip * mu_A * F_z * radius`, the torque that holds the tire just
+below its adhesion peak when the load is known. While the slip stays below `kappa_on` the request
+is exactly `tau_ff`. Between `kappa_on` and `kappa_off` it falls linearly to zero, and above
+`kappa_off` it is zero:
+
+    tau_cmd = tau_ff * clamp((kappa_off - kappa) / (kappa_off - kappa_on), 0, 1)
+
+Past the adhesion peak the tire's friction falls as slip grows, so a request that ignores slip
+lets the wheel spin up without bound once it overshoots. With `kappa_off` at the peak, any wheel
+beyond it receives no drive torque and the tire friction brings it back, whatever the solver's
+step size. `kappa_on` must sit above the slip the feedforward holds on its own, about 0.034 at
+`grip = 0.98`, so the cut-back acts only on an overshoot and leaves the steady launch untouched.
+"""
+component TractionControl
+  "Normal load on the driven tire"
+  F_z = RealInput() {^F_z}
+  "Measured slip ratio of the driven tire"
+  kappa = RealInput() {^kappa}
+  "Requested wheel torque"
+  tau_cmd = RealOutput(units = "N.m") {^tau_cmd}
+  "Fraction of peak adhesion the feedforward targets; assumed margin"
+  parameter grip::Real = 0.98
+  "Peak tire adhesion"
+  parameter mu_A::Real = 1.26
+  "Wheel rolling radius"
+  parameter radius::Length = 0.35
+  "Slip at which the request starts to fall; assumed, between the working slip and the peak"
+  parameter kappa_on::Real = 0.036
+  "Slip at which the request reaches zero; the tire's adhesion peak, sAdhesion"
+  parameter kappa_off::Real = 0.04
+  "Load feedforward torque"
+  variable tau_ff::Torque
+relations
+  tau_ff = grip * mu_A * F_z * radius
+  tau_cmd = tau_ff * max(0, min(1, (kappa_off - kappa) / (kappa_off - kappa_on)))
+metadata {
+  "_links": {
+    "F_z": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 250, "y2": 350}}}},
+    "kappa": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 650, "y2": 750}}}},
+    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  }
+}
+end
+
+"Traction control at fixed load, one slip value per case: below, inside and above the cut-back."
+test component TestTractionControl
+  load = BlockComponents.Sources.Constant(k = 10000)
+  slip = BlockComponents.Sources.Constant(k = 0.03)
+  control = VehicleSystemsComponents.Roadster.TractionControl()
+relations
+  connect(load.y, control.F_z)
+  connect(slip.y, control.kappa)
+metadata {
+  "Dyad": {
+    "tests": {
+      "below_cut_back": {
+        "stop": 0.1,
+        "params": {"slip.k": 0.03},
+        "expect": {"final": {"control.tau_cmd": 4321.8}},
+        "atol": {"control.tau_cmd": 1e-6}
+      },
+      "mid_cut_back": {
+        "stop": 0.1,
+        "params": {"slip.k": 0.038},
+        "expect": {"final": {"control.tau_cmd": 2160.9}},
+        "atol": {"control.tau_cmd": 1e-6}
+      },
+      "past_peak": {
+        "stop": 0.1,
+        "params": {"slip.k": 0.5},
+        "expect": {"final": {"control.tau_cmd": 0}},
+        "atol": {"control.tau_cmd": 1e-6}
+      }
+    }
+  }
+}
+end

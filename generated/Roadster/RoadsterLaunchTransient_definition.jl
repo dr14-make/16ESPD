@@ -44,8 +44,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
   # 
   # The traction control requests the torque that holds the tire just below peak adhesion,
-  # `grip * mu_A * F_z * radius`, and the motor delivers it up to its torque and power ceilings.
-  # The fan begins at its commanded pressure because the car sits on suction before launch.
+  # `grip * mu_A * F_z * radius`, and cuts that request back when the measured slip approaches the
+  # adhesion peak; the motor delivers it up to its torque and power ceilings. The fan begins at its
+  # commanded pressure because the car sits on suction before launch.
   # 
   # Suction downforce loads rolling resistance because tire deformation depends on total normal
   # load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds

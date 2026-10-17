@@ -19,8 +19,9 @@ end
 Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
 
 The traction control requests the torque that holds the tire just below peak adhesion,
-`grip * mu_A * F_z * radius`, and the motor delivers it up to its torque and power ceilings.
-The fan begins at its commanded pressure because the car sits on suction before launch.
+`grip * mu_A * F_z * radius`, and cuts that request back when the measured slip approaches the
+adhesion peak; the motor delivers it up to its torque and power ceilings. The fan begins at its
+commanded pressure because the car sits on suction before launch.
 
 Suction downforce loads rolling resistance because tire deformation depends on total normal
 load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds
@@ -32,7 +33,7 @@ component RoadsterLaunch
   wheel = VehicleSystemsComponents.Vehicle.Wheel.LoadedSlipWheel1D(radius = radius, mu_A = mu_A, mu_S = mu_S) {^wheel}
   body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m, CdA = CdA) {^body}
   axle = VehicleSystemsComponents.Roadster.AxleLoad(m = m, share = share, h_over_L = h_over_L) {^axle}
-  traction = BlockComponents.Math.Gain(k = grip * mu_A * radius) {^traction}
+  traction = VehicleSystemsComponents.Roadster.TractionControl(grip = grip, mu_A = mu_A, radius = radius) {^traction}
   fan_command = BlockComponents.Sources.Constant(k = fan_cmd) {^fan_command}
   fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = skirt_gap) {^fan}
   suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance() {^suction_rolling}
@@ -78,8 +79,9 @@ relations
   connect(fan.downforce, axle.downforce) {^id6}
   connect(fan.downforce, suction_rolling.downforce)
   connect(axle.F_z, wheel.F_z) {^id7}
-  connect(axle.F_z, traction.u) {^id8}
-  connect(traction.y, motor.tau_cmd) {^id9}
+  connect(axle.F_z, traction.F_z) {^id8}
+  connect(wheel.kappa, traction.kappa) {^id11}
+  connect(traction.tau_cmd, motor.tau_cmd) {^id9}
   connect(flat.y, body.grade) {^id10}
   v = axle.v
   initial wheel_inertia.phi = 0.0
@@ -120,7 +122,8 @@ metadata {
     "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end

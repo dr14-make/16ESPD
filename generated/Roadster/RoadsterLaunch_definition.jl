@@ -10,8 +10,9 @@
 Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
 
 The traction control requests the torque that holds the tire just below peak adhesion,
-`grip * mu_A * F_z * radius`, and the motor delivers it up to its torque and power ceilings.
-The fan begins at its commanded pressure because the car sits on suction before launch.
+`grip * mu_A * F_z * radius`, and cuts that request back when the measured slip approaches the
+adhesion peak; the motor delivers it up to its torque and power ceilings. The fan begins at its
+commanded pressure because the car sits on suction before launch.
 
 Suction downforce loads rolling resistance because tire deformation depends on total normal
 load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds
@@ -143,9 +144,9 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   # Subcomponent axle of type VehicleSystemsComponents.Roadster.AxleLoad
   axle_overrides = __pop_subcomponent_overrides!(__overrides, "axle")
   push!(__systems, @named axle = VehicleSystemsComponents.Roadster.AxleLoad(; m=m, share=share, h_over_L=h_over_L, axle_overrides...))
-  # Subcomponent traction of type BlockComponents.Math.Gain
+  # Subcomponent traction of type VehicleSystemsComponents.Roadster.TractionControl
   traction_overrides = __pop_subcomponent_overrides!(__overrides, "traction")
-  push!(__systems, @named traction = BlockComponents.Math.Gain(; k=grip * mu_A * radius, traction_overrides...))
+  push!(__systems, @named traction = VehicleSystemsComponents.Roadster.TractionControl(; grip=grip, mu_A=mu_A, radius=radius, traction_overrides...))
   # Subcomponent fan_command of type BlockComponents.Sources.Constant
   fan_command_overrides = __pop_subcomponent_overrides!(__overrides, "fan_command")
   push!(__systems, @named fan_command = BlockComponents.Sources.Constant(; k=fan_cmd, fan_command_overrides...))
@@ -191,8 +192,9 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   push!(__eqs, connect(fan.downforce, axle.downforce))
   push!(__eqs, connect(fan.downforce, suction_rolling.downforce))
   push!(__eqs, connect(axle.F_z, wheel.F_z))
-  push!(__eqs, connect(axle.F_z, traction.u))
-  push!(__eqs, connect(traction.y, motor.tau_cmd))
+  push!(__eqs, connect(axle.F_z, traction.F_z))
+  push!(__eqs, connect(wheel.kappa, traction.kappa))
+  push!(__eqs, connect(traction.tau_cmd, motor.tau_cmd))
   push!(__eqs, connect(flat.y, body.grade))
 
   # Return completely constructed System
