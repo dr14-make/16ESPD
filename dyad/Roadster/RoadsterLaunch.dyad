@@ -48,7 +48,7 @@ component RoadsterLaunch
   parameter T_max::Torque = 12000
   "Rated power; press reports describe the drive as over 1 MW"
   parameter P_max::Power = 1.0e6
-  "Combined inertia of the driven wheels; assumed"
+  "Driven road wheels only, without reflected motor rotors; assumed. Rotors would make it about 7-10 kg.m^2 and the rear-wheel-drive t60 about 3.41-3.46 s"
   parameter J_w::MomentOfInertia = 2.4
   "Wheel rolling radius; assumed"
   parameter radius::Length = 0.35

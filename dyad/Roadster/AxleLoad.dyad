@@ -4,7 +4,8 @@ Normal load on the driven axle during straight-line acceleration.
 The driven axle carries `share` of the weight and of the downforce at rest. Acceleration
 `a` moves `m * a * h / L` onto the rear axle, which is the term that limits a rear-wheel-drive
 launch. All-wheel drive is `share = 1` with `h_over_L = 0`: weight transfer only moves load
-between driven wheels.
+between driven wheels. A front-wheel-drive car needs a negative `h_over_L`, because acceleration
+takes load off the front axle.
 
 The transfer follows the acceleration through a first-order lag of `T_pitch`, the time the
 suspension takes to pitch the body. The lag also keeps the solver from solving the load equation

@@ -26,7 +26,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
 | `CdA`         | Aerodynamic drag area, Cd * A; assumed                         | m2  |   0.6 |
 | `T_max`         | Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction                         | N.m  |   12000 |
 | `P_max`         | Rated power; press reports describe the drive as over 1 MW                         | W  |   1.0e6 |
-| `J_w`         | Combined inertia of the driven wheels; assumed                         | kg.m2  |   2.4 |
+| `J_w`         | Driven road wheels only, without reflected motor rotors; assumed. Rotors would make it about 7-10 kg.m^2 and the rear-wheel-drive t60 about 3.41-3.46 s                         | kg.m2  |   2.4 |
 | `radius`         | Wheel rolling radius; assumed                         | m  |   0.35 |
 | `mu_A`         | Peak tire adhesion; Tesla's stated tire limit                         | --  |   1.26 |
 | `mu_S`         | Sliding tire friction; assumed                         | --  |   1.0 |
@@ -86,7 +86,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   append!(__params, @parameters (P_max::Real), [description = "Rated power; press reports describe the drive as over 1 MW"])
   __initial_conditions[P_max] = __local__P_max
   __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real), [description = "Combined inertia of the driven wheels; assumed"])
+  append!(__params, @parameters (J_w::Real), [description = "Driven road wheels only, without reflected motor rotors; assumed. Rotors would make it about 7-10 kg.m^2 and the rear-wheel-drive t60 about 3.41-3.46 s"])
   __initial_conditions[J_w] = __local__J_w
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius; assumed"])
