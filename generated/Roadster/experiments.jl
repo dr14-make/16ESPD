@@ -9,11 +9,14 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Roadster
 end
 
 
+include("AirTank_experiment.jl")
 include("AxleLoad_experiment.jl")
+include("ColdGasNozzle_experiment.jl")
 include("PowerLimitedMotor_experiment.jl")
 include("RoadsterLaunch_experiment.jl")
 include("SuctionFan_experiment.jl")
 include("SuctionRollingResistance_experiment.jl")
+include("TestColdGasThrustStand_experiment.jl")
 include("TestRoadsterLaunch_experiment.jl")
 include("TestSuctionFanInvertedHold_experiment.jl")
 include("TestSuctionFan_experiment.jl")

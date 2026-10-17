@@ -202,7 +202,10 @@ component.
 end
 
 
+include("AirTank_definition.jl")
 include("AxleLoad_definition.jl")
+include("ColdGasNozzle_definition.jl")
+include("ColdGasThrustStandTransient_definition.jl")
 include("PowerLimitedMotor_definition.jl")
 include("RoadsterLaunchTransient_definition.jl")
 include("RoadsterLaunch_definition.jl")
@@ -210,6 +213,7 @@ include("SuctionFanInvertedHoldTransient_definition.jl")
 include("SuctionFanTransient_definition.jl")
 include("SuctionFan_definition.jl")
 include("SuctionRollingResistance_definition.jl")
+include("TestColdGasThrustStand_definition.jl")
 include("TestRoadsterLaunch_definition.jl")
 include("TestSuctionFanInvertedHold_definition.jl")
 include("TestSuctionFan_definition.jl")

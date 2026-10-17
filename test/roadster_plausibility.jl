@@ -142,3 +142,79 @@ end
         @test all(isfinite, sweep_times)
     end
 end
+
+
+
+@testset "Roadster cold-gas tank and nozzle plausibility" begin
+    p0 = 380e5
+    V = 0.6
+    T0 = 293.15
+    R_air = 287.05
+    gamma = 1.4
+    c_p = 1005.0
+    p_a = 101325.0
+    p_close = 2e5
+    A_t = 1.286e-3
+
+    adiabatic_result = VehicleSystemsComponents.Roadster.ColdGasThrustStandTransient(n = 1.4)
+    adiabatic_sol = adiabatic_result.sol
+    adiabatic = symbolic_container(adiabatic_result)
+    isothermal_result = VehicleSystemsComponents.Roadster.ColdGasThrustStandTransient(n = 1.0)
+    isothermal_sol = isothermal_result.sol
+    isothermal = symbolic_container(isothermal_result)
+
+    m0_closed = p0 * V / (R_air * T0)
+    choked_factor = (2 / (gamma + 1)) ^ ((gamma + 1) / (2 * (gamma - 1)))
+    mdot0_closed = A_t * p0 * sqrt(gamma / (R_air * T0)) * choked_factor
+    ve0_closed = sqrt(2 * c_p * T0 * (1 - (p_a / p0) ^ ((gamma - 1) / gamma)))
+    thrust0_closed = mdot0_closed * ve0_closed
+    pressure_half_closed = p0 * 0.5 ^ 1.4
+
+    function blowdown_quadrature(n; intervals = 200_000)
+        mass_fraction_cutoff = (p_close / p0) ^ (1 / n)
+        dx = (1 - mass_fraction_cutoff) / intervals
+        integral = 0.0
+        for i in 0:intervals
+            x = mass_fraction_cutoff + i * dx
+            temperature = T0 * x ^ (n - 1)
+            pressure = p0 * x ^ n
+            exhaust_speed = sqrt(2 * c_p * temperature *
+                                 (1 - (p_a / pressure) ^ ((gamma - 1) / gamma)))
+            integral += (i == 0 || i == intervals ? 0.5 : 1.0) * exhaust_speed
+        end
+        impulse = m0_closed * dx * integral
+        air_used = m0_closed * (1 - mass_fraction_cutoff)
+        return impulse, air_used
+    end
+
+    function simulated_blowdown(sol, model; samples = 20_001)
+        ts = range(0.0, 15.0, length = samples)
+        forces = [sol(t, idxs = model.nozzle.F) for t in ts]
+        masses = [sol(t, idxs = model.tank.m_g) for t in ts]
+        impulse = sum((forces[1:end-1] .+ forces[2:end]) .* diff(ts)) / 2
+        return impulse, masses[1] - masses[end]
+    end
+
+    impulse_adiabatic_closed, air_adiabatic_closed = blowdown_quadrature(1.4)
+    impulse_isothermal_closed, air_isothermal_closed = blowdown_quadrature(1.0)
+    impulse_adiabatic, air_adiabatic = simulated_blowdown(adiabatic_sol, adiabatic)
+    impulse_isothermal, air_isothermal = simulated_blowdown(isothermal_sol, isothermal)
+
+    m0_measured = adiabatic_sol(0.0, idxs = adiabatic.tank.m_g)
+    mdot0_measured = adiabatic_sol(0.0, idxs = adiabatic.nozzle.mdot)
+    ve0_measured = adiabatic_sol(0.0, idxs = adiabatic.nozzle.v_e)
+    thrust0_measured = adiabatic_sol(0.0, idxs = adiabatic.nozzle.F)
+
+    @test m0_measured ≈ m0_closed rtol = 0.005
+    @test thrust0_measured ≈ thrust0_closed rtol = 0.01
+    @test mdot0_measured ≈ mdot0_closed rtol = 0.01
+    @test ve0_measured ≈ ve0_closed rtol = 0.01
+    @test pressure_half_closed ≈ 0.379 * p0 rtol = 0.01
+    @test impulse_adiabatic ≈ impulse_adiabatic_closed rtol = 0.02
+    @test air_adiabatic ≈ air_adiabatic_closed rtol = 0.02
+    @test impulse_adiabatic ≈ 146.6e3 rtol = 0.02
+    @test air_adiabatic ≈ 264.8 rtol = 0.02
+    @test impulse_isothermal ≈ impulse_isothermal_closed rtol = 0.02
+    @test air_isothermal ≈ air_isothermal_closed rtol = 0.02
+    @test impulse_isothermal > impulse_adiabatic
+end
