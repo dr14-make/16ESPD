@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L, fan_cmd, skirt_gap)
+   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L, fan_cmd, skirt_gap, thrust_cmd, tank_volume, tank_pressure, down_fraction)
 
 Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
 
@@ -35,6 +35,10 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
 | `h_over_L`         | Center-of-mass height over wheelbase; assumed                         | --  |   0.17 |
 | `fan_cmd`         | Normalized suction-fan command                         | --  |   0.0 |
 | `skirt_gap`         | Effective skirt gap; assumed                         | m  |   0.003 |
+| `thrust_cmd`         | Normalized rear-thrust valve command                         | --  |   0.0 |
+| `tank_volume`         | Compressed-air volume; Tesla reports 600 L total and Electrek reports 200 L for the Thrust trim                         | m3  |   0.6 |
+| `tank_pressure`         | Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan                         | Pa  |   380e5 |
+| `down_fraction`         | Share of rear thrust directed downward rather than backward                         | --  |   0.0 |
 
 ## Variables
 
@@ -42,7 +46,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
 | ------------ | ----------------------------------- | ------ |
 | `v`         | Vehicle speed                         | m/s  |
 """
-@component function RoadsterLaunch(; name = nothing, m=Float64(2000), CdA=0.6, T_max=Float64(12000), P_max=Float64(1000000.0), J_w=2.4, radius=0.35, mu_A=1.26, mu_S=Float64(1.0), grip=0.98, share=0.55, h_over_L=0.17, fan_cmd=Float64(0.0), skirt_gap=0.003, kwargs...)
+@component function RoadsterLaunch(; name = nothing, m=Float64(2000), CdA=0.6, T_max=Float64(12000), P_max=Float64(1000000.0), J_w=2.4, radius=0.35, mu_A=1.26, mu_S=Float64(1.0), grip=0.98, share=0.55, h_over_L=0.17, fan_cmd=Float64(0.0), skirt_gap=0.003, thrust_cmd=Float64(0.0), tank_volume=0.6, tank_pressure=Float64(38000000.0), down_fraction=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -112,6 +116,18 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   __local__skirt_gap = skirt_gap
   append!(__params, @parameters (skirt_gap::Real), [description = "Effective skirt gap; assumed"])
   __initial_conditions[skirt_gap] = __local__skirt_gap
+  __local__thrust_cmd = thrust_cmd
+  append!(__params, @parameters (thrust_cmd::Real), [description = "Normalized rear-thrust valve command"])
+  __initial_conditions[thrust_cmd] = __local__thrust_cmd
+  __local__tank_volume = tank_volume
+  append!(__params, @parameters (tank_volume::Real), [description = "Compressed-air volume; Tesla reports 600 L total and Electrek reports 200 L for the Thrust trim"])
+  __initial_conditions[tank_volume] = __local__tank_volume
+  __local__tank_pressure = tank_pressure
+  append!(__params, @parameters (tank_pressure::Real), [description = "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"])
+  __initial_conditions[tank_pressure] = __local__tank_pressure
+  __local__down_fraction = down_fraction
+  append!(__params, @parameters (down_fraction::Real), [description = "Share of rear thrust directed downward rather than backward", bounds = (0, 1)])
+  __initial_conditions[down_fraction] = __local__down_fraction
 
   ### Final Parameters (assignments)
 
@@ -156,6 +172,30 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   # Subcomponent suction_rolling of type VehicleSystemsComponents.Roadster.SuctionRollingResistance
   suction_rolling_overrides = __pop_subcomponent_overrides!(__overrides, "suction_rolling")
   push!(__systems, @named suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance(; suction_rolling_overrides...))
+  # Subcomponent thrust_command of type BlockComponents.Sources.Constant
+  thrust_command_overrides = __pop_subcomponent_overrides!(__overrides, "thrust_command")
+  push!(__systems, @named thrust_command = BlockComponents.Sources.Constant(; k=thrust_cmd, thrust_command_overrides...))
+  # Subcomponent tank of type VehicleSystemsComponents.Roadster.AirTank
+  tank_overrides = __pop_subcomponent_overrides!(__overrides, "tank")
+  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, tank_overrides...))
+  # Subcomponent nozzle of type VehicleSystemsComponents.Roadster.ColdGasNozzle
+  nozzle_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle")
+  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; nozzle_overrides...))
+  # Subcomponent thrust_stand of type TranslationalComponents.Components.Fixed
+  thrust_stand_overrides = __pop_subcomponent_overrides!(__overrides, "thrust_stand")
+  push!(__systems, @named thrust_stand = TranslationalComponents.Components.Fixed(; thrust_stand_overrides...))
+  # Subcomponent forward_gain of type BlockComponents.Math.Gain
+  forward_gain_overrides = __pop_subcomponent_overrides!(__overrides, "forward_gain")
+  push!(__systems, @named forward_gain = BlockComponents.Math.Gain(; k=1 - down_fraction, forward_gain_overrides...))
+  # Subcomponent forward_force of type TranslationalComponents.Sources.Force
+  forward_force_overrides = __pop_subcomponent_overrides!(__overrides, "forward_force")
+  push!(__systems, @named forward_force = TranslationalComponents.Sources.Force(; forward_force_overrides...))
+  # Subcomponent force_ground of type TranslationalComponents.Components.Fixed
+  force_ground_overrides = __pop_subcomponent_overrides!(__overrides, "force_ground")
+  push!(__systems, @named force_ground = TranslationalComponents.Components.Fixed(; force_ground_overrides...))
+  # Subcomponent downforce_sum of type BlockComponents.Math.Add
+  downforce_sum_overrides = __pop_subcomponent_overrides!(__overrides, "downforce_sum")
+  push!(__systems, @named downforce_sum = BlockComponents.Math.Add(; k1=Float64(1), k2=down_fraction, downforce_sum_overrides...))
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
   push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0), flat_overrides...))
@@ -189,8 +229,19 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   push!(__eqs, connect(axle.flange, body.flange))
   push!(__eqs, connect(suction_rolling.flange, body.flange))
   push!(__eqs, connect(fan_command.y, fan.cmd))
-  push!(__eqs, connect(fan.downforce, axle.downforce))
-  push!(__eqs, connect(fan.downforce, suction_rolling.downforce))
+  push!(__eqs, connect(thrust_command.y, nozzle.cmd))
+  push!(__eqs, connect(tank.p, nozzle.p))
+  push!(__eqs, connect(tank.T, nozzle.T))
+  push!(__eqs, connect(nozzle.mdot, tank.mdot))
+  push!(__eqs, connect(nozzle.flange, thrust_stand.flange))
+  push!(__eqs, connect(nozzle.thrust, forward_gain.u))
+  push!(__eqs, connect(forward_gain.y, forward_force.f))
+  push!(__eqs, connect(forward_force.flange_a, force_ground.flange))
+  push!(__eqs, connect(forward_force.flange_b, body.flange))
+  push!(__eqs, connect(fan.downforce, downforce_sum.u1))
+  push!(__eqs, connect(nozzle.thrust, downforce_sum.u2))
+  push!(__eqs, connect(downforce_sum.y, axle.downforce))
+  push!(__eqs, connect(downforce_sum.y, suction_rolling.downforce))
   push!(__eqs, connect(axle.F_z, wheel.F_z))
   push!(__eqs, connect(axle.F_z, traction.F_z))
   push!(__eqs, connect(wheel.kappa, traction.kappa))

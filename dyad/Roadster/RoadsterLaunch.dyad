@@ -37,6 +37,14 @@ component RoadsterLaunch
   fan_command = BlockComponents.Sources.Constant(k = fan_cmd) {^fan_command}
   fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = skirt_gap) {^fan}
   suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance() {^suction_rolling}
+  thrust_command = BlockComponents.Sources.Constant(k = thrust_cmd)
+  tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure)
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle()
+  thrust_stand = TranslationalComponents.Components.Fixed()
+  forward_gain = BlockComponents.Math.Gain(k = 1 - down_fraction)
+  forward_force = TranslationalComponents.Sources.Force()
+  force_ground = TranslationalComponents.Components.Fixed()
+  downforce_sum = BlockComponents.Math.Add(k1 = 1, k2 = down_fraction)
   flat = BlockComponents.Sources.Constant(k = 0) {^flat}
   "Motor housing"
   rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
@@ -66,6 +74,14 @@ component RoadsterLaunch
   parameter fan_cmd::Real = 0.0
   "Effective skirt gap; assumed"
   parameter skirt_gap::Length = 0.003
+  "Normalized rear-thrust valve command"
+  parameter thrust_cmd::Real = 0.0
+  "Compressed-air volume; Tesla reports 600 L total and Electrek reports 200 L for the Thrust trim"
+  parameter tank_volume::Volume = 0.6
+  "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"
+  parameter tank_pressure::Pressure = 380e5
+  "Share of rear thrust directed downward rather than backward"
+  parameter down_fraction::Real(min = 0, max = 1) = 0.0
   "Vehicle speed"
   variable v::Velocity
 relations
@@ -76,8 +92,19 @@ relations
   connect(axle.flange, body.flange) {^id5}
   connect(suction_rolling.flange, body.flange)
   connect(fan_command.y, fan.cmd)
-  connect(fan.downforce, axle.downforce) {^id6}
-  connect(fan.downforce, suction_rolling.downforce)
+  connect(thrust_command.y, nozzle.cmd)
+  connect(tank.p, nozzle.p)
+  connect(tank.T, nozzle.T)
+  connect(nozzle.mdot, tank.mdot)
+  connect(nozzle.flange, thrust_stand.flange)
+  connect(nozzle.thrust, forward_gain.u)
+  connect(forward_gain.y, forward_force.f)
+  connect(forward_force.flange_a, force_ground.flange)
+  connect(forward_force.flange_b, body.flange)
+  connect(fan.downforce, downforce_sum.u1)
+  connect(nozzle.thrust, downforce_sum.u2)
+  connect(downforce_sum.y, axle.downforce) {^id6}
+  connect(downforce_sum.y, suction_rolling.downforce)
   connect(axle.F_z, wheel.F_z) {^id7}
   connect(axle.F_z, traction.F_z) {^id8}
   connect(wheel.kappa, traction.kappa) {^id11}
@@ -189,12 +216,20 @@ analysis RoadsterLaunchTransient
   parameter fan_cmd::Real = 0.0
   "Effective skirt gap; assumed"
   parameter skirt_gap::Length = 0.003
+  "Normalized rear-thrust valve command"
+  parameter thrust_cmd::Real = 0.0
+  "Compressed-air tank volume"
+  parameter tank_volume::Volume = 0.6
+  "Initial compressed-air pressure"
+  parameter tank_pressure::Pressure = 380e5
+  "Share of thrust directed downward"
+  parameter down_fraction::Real = 0.0
   "Peak tire adhesion"
   parameter mu_A::Real = 1.26
   "Static fraction of weight on the driven axle; 1 for all-wheel drive"
   parameter share::Real = 0.55
   "Center-of-mass height over wheelbase; 0 for all-wheel drive"
   parameter h_over_L::Real = 0.17
-  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, mu_A = mu_A, share = share, h_over_L = h_over_L)
+  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, thrust_cmd = thrust_cmd, tank_volume = tank_volume, tank_pressure = tank_pressure, down_fraction = down_fraction, mu_A = mu_A, share = share, h_over_L = h_over_L)
 relations
 end

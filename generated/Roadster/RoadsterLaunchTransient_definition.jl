@@ -35,6 +35,14 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"fan_cmd"::Float64 = 0.0
   # Effective skirt gap; assumed
   var"skirt_gap"::Float64 = 0.003
+  # Normalized rear-thrust valve command
+  var"thrust_cmd"::Float64 = 0.0
+  # Compressed-air tank volume
+  var"tank_volume"::Float64 = 0.6
+  # Initial compressed-air pressure
+  var"tank_pressure"::Float64 = 38000000.0
+  # Share of thrust directed downward
+  var"down_fraction"::Float64 = 0.0
   # Peak tire adhesion
   var"mu_A"::Float64 = 1.26
   # Static fraction of weight on the driven axle; 1 for all-wheel drive
@@ -62,6 +70,10 @@ function DyadInterface.run_analysis(spec::RoadsterLaunchTransientSpec)
   push!(overrides, no_namespace_model.T_max => spec.var"T_max")
   push!(overrides, no_namespace_model.fan_cmd => spec.var"fan_cmd")
   push!(overrides, no_namespace_model.skirt_gap => spec.var"skirt_gap")
+  push!(overrides, no_namespace_model.thrust_cmd => spec.var"thrust_cmd")
+  push!(overrides, no_namespace_model.tank_volume => spec.var"tank_volume")
+  push!(overrides, no_namespace_model.tank_pressure => spec.var"tank_pressure")
+  push!(overrides, no_namespace_model.down_fraction => spec.var"down_fraction")
   push!(overrides, no_namespace_model.mu_A => spec.var"mu_A")
   push!(overrides, no_namespace_model.share => spec.var"share")
   push!(overrides, no_namespace_model.h_over_L => spec.var"h_over_L")

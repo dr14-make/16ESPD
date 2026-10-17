@@ -15,6 +15,8 @@ component ColdGasNozzle
   T = RealInput(units = "K") {^T}
   "Mass flow leaving the tank"
   mdot = RealOutput(units = "kg/s") {^mdot}
+  "Thrust magnitude for force allocation"
+  thrust = RealOutput(units = "N")
   "Thrust applied to the connected body"
   flange = Flange() {^flange}
   "Total throat area, sized for 80 kN at 380 bar; four rear nozzles are about 20 mm diameter each"
@@ -45,6 +47,7 @@ relations
                eta_n * sqrt(2 * c_p * T * (1 - (p_a / p) ^ ((gamma - 1) / gamma))),
                0)
   F = mdot * v_e
+  thrust = F
   flange.f = -F
 metadata {
   "_links": {
