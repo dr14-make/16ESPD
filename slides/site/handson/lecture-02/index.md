@@ -102,7 +102,9 @@ The data is the US EPA's ALPHA map of a 2014 Mazda 2.0 L Skyactiv, scaled to 1.5
 4. Read the fuel map's 3000 rpm row at that pressure.
 5. Turn it into consumption: g/s × 3600 ÷ 745 g/L = L/h; then L/h ÷ 90 km/h × 100 = L/100 km.
 
-<!-- TODO(screenshot): step01-torque-map.png and step01-fuel-map.png, the 90 km/h point marked. -->
+[![The torque map as a heat map, engine speed against manifold pressure: torque rises from about −25 N·m at low pressure to about 175 N·m at full pressure, and a white dot marks the 90 km/h point at 3080 rpm and 47.8 kPa.](/handson/lecture-02/img/step01-torque-map.png){width="990" height="528"}](/handson/lecture-02/img/step01-torque-map.png)
+
+[![The fuel map on the same axes: fuel flow rises from near 0 g/s at low pressure to about 8 g/s at full pressure and high speed, with the 90 km/h point at 3080 rpm and 47.8 kPa marked.](/handson/lecture-02/img/step01-fuel-map.png){width="990" height="528"}](/handson/lecture-02/img/step01-fuel-map.png)
 
 ::: tip Checkpoint
 
@@ -246,7 +248,7 @@ end
    A REPL opened before `AirPathStep` existed answers `UndefVarError: AirPathStepTransient not defined`. Running once with ▷ loads the new components into it; restarting the REPL does too.
 10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s): click the field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type, <kbd>Enter</kbd>. Run and plot again.
 
-<!-- TODO(screenshot): step02-idle-plot.png. -->
+[![Manifold pressure of AirPathStepTransient at idle: it falls from 101.3 kPa to 33.0 kPa within the first second, then rises to 37.3 kPa after the small throttle step at 1 s.](/handson/lecture-02/img/step02-idle-plot.png){width="990" height="528"}](/handson/lecture-02/img/step02-idle-plot.png)
 
 ::: tip Checkpoint
 
@@ -461,7 +463,7 @@ The defaults hold the 90 km/h cruise point of step 01, 3080 rpm and 31.1 N·m, a
 
    Zoom into 0.9–1.3 s: the pedal jumped, the torque follows the pressure.
 
-<!-- TODO(screenshot): step03-step-plot.png. -->
+[![MapEngineDynoTransient zoomed to 0.9–1.3 s: after the pedal step from 0.1034 to 0.12 at 1 s, the manifold pressure rises from 47.8 to 52.9 kPa and the map torque follows it from 31.1 to 41.4 N·m.](/handson/lecture-02/img/step03-step-plot.png){width="990" height="528"}](/handson/lecture-02/img/step03-step-plot.png)
 
 ::: tip Checkpoint
 
