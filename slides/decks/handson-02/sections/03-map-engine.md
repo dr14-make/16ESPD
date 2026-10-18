@@ -7,9 +7,9 @@ layout: section
 
 # Map engine on a dynamometer
 
-Pedal in, torque, fuel and CO₂ out: your own engine, drawn from six given blocks, at a speed the bench holds.
+Pedal in, torque, fuel and CO₂ out: your own engine, drawn from six given blocks, at a speed the bench holds. Then fuel cut, pasted in.
 
-[page: step 03](../handson/lecture-02/#map-engine) · reference `dyad/HandsOn02/MapEngine.dyad`, `MapEngineDyno.dyad`
+[page: step 03](../handson/lecture-02/#map-engine) · reference `dyad/HandsOn02/MapEngine.dyad`, `MapEngineDyno.dyad`, `MapEngineFuelCut.dyad`, `MapEngineFuelCutDyno.dyad`
 
 <!--
 **Say:** This is the lecture's engine as a picture you draw. The pedal opens the throttle, the air
@@ -18,12 +18,13 @@ CO2 is fuel times 3.09.
 
 **Built or given:** students draw `MapEngine` from given blocks: `AirPath` (exactly the bench of
 step 02, packaged), `TorqueMap` and `FuelMap` (the tables are already inside), a speed sensor, a
-gain and a torque source. Nothing to type but 3.09. The dyno bench is pasted. At the end they swap
-in the finished library `MappedEngine`, which adds fuel cut, a rev limiter, a pedal curve, a
-throttle actuator lag and the emission maps.
+gain and a torque source. Nothing to type but 3.09. The dyno bench is pasted. At the end they
+paste fuel cut into their own engine: the library's `FuelCutLogic` (overrun cut and rev limiter),
+and the two maps changed to `CutTorqueMap` and `CutFuelMap`, which take its cut signal. That engine
+goes into their car in step 04.
 
 **Timing:** 20 minutes: 3 of theory, 8 to draw the engine, 3 to paste the bench, 3 for the two
-runs, 3 for the swap. The 15-wire drawing is the tight part: if the room is slow, hand out the
+runs, 3 for the fuel-cut paste and its run. The 15-wire drawing is the tight part: if the room is slow, hand out the
 "Stuck?" code from the page and keep the runs.
 -->
 
@@ -197,29 +198,35 @@ the parts pile up in one corner.
 routeAlias: fuel-cut
 ---
 
-## Swap in the library engine: fuel cut
+## Paste in fuel cut
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
 Closed pedal at 3000 rpm, your engine still burns **0.097 g/s** — for a negative torque.
 
-A real ECU cuts the fuel on overrun. The library engine does:
+A real ECU cuts the fuel on overrun. Paste it into **your** `MapEngine`:
 
-1. Delete `engine`; **+** → `Vehicle › Engine › MappedEngine`, named `engine`; rewire. `spline` is the bottom-right circle, `support` the bottom centre: zoom in.
-2. Run with `pedal_initial = 1`, `pedal_final = 0`, `p_m0 = 99889.9`: released at 1 s.
+1. Over the `torque_map` and `fuel_map` lines: `CutTorqueMap`, `CutFuelMap`, and `cut_logic` = `FuelCutLogic`.
+2. After the last `connect`: four wires, pedal and speed in, the cut out to both maps.
+3. In `MapEngineDyno`'s `speed` line: `Constant(…)` → a `Ramp` to 800 rpm from 2 s.
+
+Run with `rpm = 3000`, `pedal_initial = 1`, `pedal_final = 0`, `p_m0 = 99889.9`, `stop = 6`.
 
 </div>
 <div>
 
-> **Checkpoint · pedal released**
+> **Checkpoint · pedal released at 1 s**
 >
-> - `mdot_fuel` → **0** within about 30 ms
-> - `tau_e` → **−18.7 N·m**, the closed-throttle curve
-> - fueled again below **1000 rpm**; armed above 1300 rpm
+> - `mdot_fuel` 99 % gone in **30 ms**, then **0**
+> - `torque_map.y` → **−18.7 N·m**, the closed-throttle curve; `MappedEngine` gives the same
+> - fuel back at **4.73 s**, as the shaft passes **1000 rpm**
+> - at 800 rpm: **33.0 kPa**, **0.096 g/s**, torque ≈ 0
 
-`MappedEngine` also brings a pedal curve, a 50 ms throttle actuator, λ, HC, CO and NOx outputs,
-and a rev limiter at 6500 rpm.
+| | arms | ends |
+| --- | --- | --- |
+| overrun | pedal closed, > 1300 rpm | pedal opens, or < 1000 rpm |
+| rev limiter | > 6500 rpm | < 6300 rpm |
 
 </div>
 </div>
@@ -227,19 +234,31 @@ and a rev limiter at 6500 rpm.
 <!--
 **Say:** Your engine is correct as far as it goes, and it wastes fuel. On overrun, with the pedal
 up and the car driving the engine, there is no reason to inject anything. Every modern engine cuts
-the fuel there; it resumes near idle so the engine does not stall. The library engine adds that
-switch, and the same maps otherwise: same pressure and torque with the pedal floored.
+the fuel there: it saves fuel, keeps unburned fuel out of the catalyst, and brakes the car a little
+harder. It turns the fuel back on near idle so the engine does not stall.
 
-**Its pedal is not yours:** `MappedEngine` puts a progressive pedal curve (pedal^1.5) and a 50 ms
-throttle actuator in front of the same air path, so it holds 90 km/h at pedal 0.220, not 0.103.
-Its booster input is already wired: the bench feeds `mdot_bst` from the start.
+**Why two speeds:** with one threshold the injectors would chatter on and off around it. Between
+1000 and 1300 rpm the logic keeps its last decision: hysteresis, like a thermostat. The rev limiter
+is the same latch at 6500 / 6300 rpm; step 04's car meets it.
 
-**Where the numbers come from:** `closed_throttle.csv` at 3000 rpm, interpolated, = −18.7 N·m;
-the cut and resume speeds are `MappedEngine`'s parameters (1300 and 1000 rpm, task 3, assumed).
+**The torque in the cut:** no combustion, so the engine is an air pump driven by the shaft. The
+test bench measured that torque with the fuel off, over speed alone: `closed_throttle.csv`, −18.7
+N·m at 3000 rpm. `CutTorqueMap` blends from the map to that curve with the cut fraction, and
+`CutFuelMap` gates the fuel to zero. Run 2's closed pedal read −18.2 N·m from the map: the 0.5 N·m
+is what the 0.097 g/s was still giving.
 
-**Emissions:** HC, CO and NOx come from assumed tables; shapes follow textbook trends, magnitudes
-are typical, not measured. Say so if anyone plots them.
+**The paste:** the two new map blocks have their ports where `TorqueMap`'s and `FuelMap`'s are, so
+retyping the two lines moves no wire. The `cut_logic` block lands at the bottom left with its
+placement and wires annotated. The ramp starts at 2 s, so runs 1 and 2 (which stop at 2 s) are
+unchanged; rerun run 2 now and its closed pedal starts in the cut, 0 fuel and −18.7 N·m.
 
-**TODO (screenshot):** `step03-fuel-cut-plot.png`. **TODO (reference):** the swapped bench as
-`HandsOn02.MappedEngineDyno` with its analysis.
+**Against `MappedEngine`:** the same −18.7 N·m after the same release, because it uses the same
+`FuelCutLogic` and curve. Its fuel goes a little later: its 50 ms throttle actuator keeps the
+manifold full a moment longer. In the cut the torque does not depend on `p_m`.
+
+**Where the numbers come from:** `HandsOn02.MapEngineFuelCutDynoTransient`, the bench after the
+paste, in the "Hands-on 02 fuel cut" testset of `test/engine_plausibility.jl`. The cut and resume
+speeds are `FuelCutLogic`'s defaults (1300, 1000, 6500, 6300 rpm, assumed).
+
+**TODO (screenshot):** `step03-fuel-cut-plot.png`.
 -->

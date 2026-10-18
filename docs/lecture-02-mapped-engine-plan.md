@@ -83,7 +83,7 @@ Bands from `lecture-02-plan.md` and the brake plan still apply. Added for the ma
 | Peak brake torque | 145–155 N·m | 150 N·m |
 | Minimum BSFC | 225–260 g/kWh | 232 g/kWh |
 | Idle fuel flow, 750 rpm | 0.4–0.9 L/h | 0.45 L/h |
-| Cruise 50 km/h (1710 rpm) | 3–4 L/100 km | 3.4 L/100 km, 77 g CO₂/km |
+| Cruise 50 km/h (1710 rpm) | 3–4 L/100 km | 3.3 L/100 km, 77 g CO₂/km |
 | Cruise 90 km/h (3080 rpm) | 4–5.5 L/100 km | 4.6 L/100 km, 105 g CO₂/km |
 | Cruise 130 km/h (4450 rpm) | 6–8 L/100 km | 7.0 L/100 km, 162 g CO₂/km |
 | Full-load manifold pressure, each ALPHA breakpoint | 90–98 kPa | 95 kPa; four breakpoints miss (see `data/engine/README.md`) |

@@ -386,7 +386,7 @@ function checks(s, m, t)
         f = "%.2f")
     band!("Idle fuel, source map [L/h]", 0.4, 0.9, lph(source_fuel(s, 750, 0.0)), "0.45"; f = "%.2f")
 
-    for (v, lo, hi, pred) in ((50, 3, 4, "3.4"), (90, 4, 5.5, "4.6"), (130, 6, 8, "7.0"))
+    for (v, lo, hi, pred) in ((50, 3, 4, "3.3"), (90, 4, 5.5, "4.6"), (130, 6, 8, "7.0"))
         c = cruise(t, v)
         band!(@sprintf("Cruise %d km/h, %.0f rpm, %.1f N·m [L/100 km]", v, c.n, c.T), lo, hi, c.l100,
             pred; f = "%.2f")

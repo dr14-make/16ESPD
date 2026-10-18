@@ -1,0 +1,66 @@
+"""
+Fuel mass flow read at speed and manifold pressure, gated by a fuel-cut fraction.
+
+`FuelMap` with a `cut` input from below: at 0 it passes the map through, at 1 it injects nothing.
+The ports sit where `FuelMap`'s do, so a drawn `FuelMap` can change type without moving a wire.
+"""
+component CutFuelMap
+  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
+  "Engine angular speed [rad/s]"
+  omega = RealInput() {^omega}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealInput() {^p_m}
+  "Fuel-cut fraction, 0 fired to 1 cut"
+  cut = RealInput() {^cut}
+  "Fuel mass flow [kg/s]"
+  y = RealOutput() {^y}
+  map = VehicleSystemsComponents.Vehicle.Engine.CutMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = fuel_data, gain = 1e-3) {^map}
+relations
+  connect(omega, map.omega) {^speed_wire}
+  connect(p_m, map.p_m) {^pressure_wire}
+  connect(cut, map.cut) {^cut_wire}
+  connect(map.y, y) {^fuel_wire}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/CutFuelMap.svg"}, "doc": {"behavior": false}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "cut": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050, "rot": 270}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 300}, {"x": 300, "y": 475}], "E": 2}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 700}, {"x": 350, "y": 500}], "E": 2}]}},
+    "cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 850}, {"x": 400, "y": 850}, {"x": 400, "y": 525}], "E": 2}]}},
+    "fuel_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+test component TestCutFuelMap
+  omega = BlockComponents.Sources.Constant(k = 2000 * pi / 30) {^omega}
+  pressure = BlockComponents.Sources.Constant(k = 50000.0) {^pressure}
+  no_cut = BlockComponents.Sources.Constant(k = 0.0) {^no_cut}
+  full_cut = BlockComponents.Sources.Constant(k = 1.0) {^full_cut}
+  fired_map = VehicleSystemsComponents.Vehicle.Engine.CutFuelMap() {^fired_map}
+  cut_map = VehicleSystemsComponents.Vehicle.Engine.CutFuelMap() {^cut_map}
+relations
+  connect(omega.y, fired_map.omega, cut_map.omega) {^speed_wire}
+  connect(pressure.y, fired_map.p_m, cut_map.p_m) {^pressure_wire}
+  connect(no_cut.y, fired_map.cut) {^no_cut_wire}
+  connect(full_cut.y, cut_map.cut) {^full_cut_wire}
+metadata {
+  "Dyad": {"tests": {"fired_and_cut": {"stop": 0.1, "atol": {"fired_map.y": 1e-12, "cut_map.y": 1e-12}, "expect": {"initial": {"fired_map.y": 5.70253851e-4, "cut_map.y": 0.0}, "final": {"fired_map.y": 5.70253851e-4, "cut_map.y": 0.0}, "signals": ["fired_map.y", "cut_map.y"]}}}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 350, "x2": 200, "y2": 450}}}},
+    "no_cut": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 450, "x2": 400, "y2": 550}}}},
+    "full_cut": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 850, "x2": 400, "y2": 950}}}},
+    "fired_map": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 170, "x2": 650, "y2": 270}}}},
+    "cut_map": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 570, "x2": 650, "y2": 670}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 470, "y": 600}], "E": 3}], "junctions": [{"x": 470, "y": 200}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 500, "y": 240}], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 640}], "E": 3}], "junctions": [{"x": 500, "y": 400}]}},
+    "no_cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 500}], "E": 2}]}},
+    "full_cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 900}], "E": 2}]}}
+  }
+}
+end

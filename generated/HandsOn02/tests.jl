@@ -17,5 +17,7 @@ end
 
 @testset "`VehicleSystemsComponents.HandsOn02`" begin
 include("MapEngineDyno_test.jl")
+include("MapEngineFuelCutDyno_test.jl")
+include("MapEngineFuelCut_test.jl")
 include("MapEngine_test.jl")
 end

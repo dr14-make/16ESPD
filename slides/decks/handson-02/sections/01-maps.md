@@ -120,14 +120,16 @@ Same row, same pressure, in `fuel_gps`: between 0.816 and 0.895 g/s.
    30.66 at 47.5 kPa, 35.63 at 50 kPa; (31.08 − 30.66) / 4.97 × 2.5 = 0.21 → 47.7 kPa.
 2. **Fuel:** 0.816 + 0.085 × (0.895 − 0.816) = 0.823 g/s.
 3. **Per distance:** 0.823 × 3.6 / 0.745 = 3.98 L/h; ÷ 90 × 100 = 4.4 L/100 km. Interpolating
-   between the 3000 and 3250 rpm rows to 3080 rpm gives 47.8 kPa and 0.849 g/s = 4.10 L/h =
-   **4.56 L/100 km**, the plan's predicted anchor; CO2 3.09 × 0.849 / 25 m/s × 1000 = **105 g/km**.
+   between the 3000 and 3250 rpm rows to 3080 rpm gives 47.8 kPa and 0.850 g/s = 4.11 L/h =
+   **4.56 L/100 km**, the plan's predicted anchor; CO2 3.09 × 0.850 / 25 m/s × 1000 = **105 g/km**.
 
 **Say:** We have not built anything, and we already know what the car burns at 90. Step 05 checks
 it.
 
-**Lecturer's choice:** whether to reveal the 50 and 130 km/h numbers now (3.4 and 7.0 L/100 km)
-or let step 05 find them. The guide shows only 90 km/h.
+**The other two speeds,** read the same way and shown on the page's checkpoint: 50 km/h is
+1710 rpm and 18.4 N·m → 41.9 kPa, 0.346 g/s, 1.67 L/h, **3.3 L/100 km**, **77 g/km**; 130 km/h is
+4450 rpm and 51.0 N·m → 60.8 kPa, 1.892 g/s, 9.14 L/h, **7.0 L/100 km**, **162 g/km**. Checked to
+the digit in the "Hands-on 02 cruise table" testset. Step 05 measures all three in the car.
 -->
 
 ---
@@ -161,6 +163,7 @@ Then `_, _, F = engine_map("fuel_gps.csv");` and
 > - 3000 rpm row: 31.1 N·m at **≈ 47.7 kPa**
 > - fuel there **≈ 0.82 g/s**
 > - λ = **1** up to about 80 kPa; **0.87** at 3000 rpm, 100 kPa
+> - 50 · 90 · 130 km/h: **3.3 · 4.6 · 7.0 L/100 km**, 77 · 105 · 162 g CO₂/km
 
 </div>
 </div>

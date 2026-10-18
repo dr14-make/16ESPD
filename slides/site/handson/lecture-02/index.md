@@ -8,11 +8,11 @@ title: Lecture 2 hands-on — drive a mapped engine
 
 From measured engine maps to the fuel and CO₂ your car burns at 50, 90 and 130 km/h
 
-**Why we build it.** Lecture 1's engine gave 150 N·m at every speed and could not say how much fuel it burned. A real engine control unit reads tables measured on a test bench, at the engine speed and the pressure in the intake manifold. **What you build:** the manifold, whose pressure fills and empties, and a small engine of your own that reads torque and fuel from those tables. Then you put the finished course engine into your hands-on 1 car and drive it: flat out, at steady speeds, lifting off and braking. By the end you have your car's fuel consumption in L/100 km and its CO₂ in g/km, the two numbers on a car's sticker.
+**Why we build it.** Lecture 1's engine gave 150 N·m at every speed and could not say how much fuel it burned. A real engine control unit reads tables measured on a test bench, at the engine speed and the pressure in the intake manifold. **What you build:** the manifold, whose pressure fills and empties, and a small engine of your own that reads torque and fuel from those tables. Then you paste the course library's fuel cut into your engine, put it into your hands-on 1 car and drive it: flat out, at steady speeds, lifting off and braking. By the end you have your car's fuel consumption in L/100 km and its CO₂ in g/km, the two numbers on a car's sticker.
 
 **How each step works.** It starts with the idea it needs. Your tutor explains it from the [tutor deck](../../handson-02/index.html){target="_self"}, and the *Theory* link under each step's goal opens those slides. Then you build, and the checkpoint is a number you could have predicted first. **Before this session:** the [engine lecture](../../lecture-02/index.html#/mapped-engine){target="_self"}, whose last section shows what you build here.
 
-You build on your `MyCar` library from [hands-on 1](../lecture-01/). The throttle, the cylinders' air flow and the finished mapped engine come from the course library, `VehicleSystemsComponents`: they are physics the lecture stated, not what this session teaches. The budgets add up to about 90 minutes; step 07 is for when time is left.
+You build on your `MyCar` library from [hands-on 1](../lecture-01/). The throttle, the cylinders' air flow, the map tables and the fuel-cut logic come from the course library, `VehicleSystemsComponents`: they are physics the lecture stated, not what this session teaches. The budgets add up to about 90 minutes; step 07 is for when time is left.
 
 0. [Set up](#setup) — 8 min
 1. [Read the maps](#maps) — 12 min
@@ -111,8 +111,18 @@ Computed from the tables:
 - The map gives **160.3 N·m** at 4000 rpm and 100 kPa, and peaks at **177 N·m** near 3250 rpm and 105 kPa. It is negative at low pressure: the engine pumping against a vacuum.
 - The 3000 rpm row passes 31.1 N·m at about **47.7 kPa** (30.7 N·m at 47.5, 35.6 at 50).
 - Fuel there: about **0.82 g/s** → 4.0 L/h → **4.4 L/100 km**.
-- The 90 km/h point itself, at 3080 rpm between the 3000 and 3250 rpm rows, sits at **47.8 kPa**: 0.85 g/s, 4.10 L/h and **4.6 L/100 km**. Step 05 measures it. Mark your plots there.
+- The 90 km/h point itself, at 3080 rpm between the 3000 and 3250 rpm rows, sits at **47.8 kPa**: 0.850 g/s, 4.11 L/h and **4.6 L/100 km**. Step 05 measures it. Mark your plots there.
 - λ is **1** up to about 80 kPa and **0.87** at 3000 rpm, 100 kPa: the engine runs rich only near full load.
+
+The same reading at the other two speeds step 05 drives, from hands-on 1's holding torques:
+
+| km/h | engine rpm | N·m | `p_m` kPa | fuel g/s | L/h | L/100 km | g CO₂/km |
+| --: | --: | --: | --: | --: | --: | --: | --: |
+| 50 | 1710 | 18.4 | 41.9 | 0.346 | 1.67 | **3.3** | **77** |
+| 90 | 3080 | 31.1 | 47.8 | 0.850 | 4.11 | **4.6** | **105** |
+| 130 | 4450 | 51.0 | 60.8 | 1.892 | 9.14 | **7.0** | **162** |
+
+g CO₂/km is 3.09 × fuel in g/s ÷ speed in m/s × 1000.
 
 :::
 
@@ -255,7 +265,7 @@ Commit: **Source Control** → message `Step 02: manifold` → **Commit** → **
 
 ### 03 Map engine on a dynamometer <Badge type="info" text="20 min" /> {#map-engine}
 
-An engine of your own, drawn from six given blocks: pedal in; torque, fuel and CO₂ out, read from the maps at speed and manifold pressure.
+An engine of your own, drawn from six given blocks: pedal in; torque, fuel and CO₂ out, read from the maps at speed and manifold pressure. Then you paste in fuel cut.
 
 Theory: [tutor slides — three lines make the engine](../../handson-02/index.html#/engine-equations){target="_self"}
 
@@ -305,7 +315,7 @@ Read what you drew:
 
 - The two maps hang off the same two wires, speed and pressure. That picture is the lecture: an engine control unit knows *N* and *p<sub>m</sub>* and looks everything up there.
 - The pedal moves the throttle at once. Whatever lag you see between pedal and torque is the manifold filling, the state you built in step 02.
-- There is no flywheel: on the dynamometer the bench sets the speed. The course engine of step 04 has one.
+- There is no flywheel: on the dynamometer the bench sets the speed. Step 04 adds one in the car.
 
 ::: details Stuck? The full model
 
@@ -452,25 +462,72 @@ Without the cap the map would give 163.0 N·m. The torque now rises 10–90 % in
 
 :::
 
-#### E · Swap in the course engine: fuel cut
+#### E · Paste in fuel cut
 
-With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making negative torque. A real engine control unit cuts the fuel on overrun and turns it back on near idle so the engine does not stall. The course library's `MappedEngine` does; otherwise it reads the same maps.
+With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making negative torque. The dynamometer turns the engine, as the wheels do in a car that rolls with the pedal up, and that fuel does nothing useful.
 
-10. In `MapEngineDyno`, delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine` and name it `engine`. Rewire `pedal`, `no_booster`, `spline` and `support` as before. On `MappedEngine`'s icon, `spline` is the circle at the bottom right, under the last output triangle, and `support` the circle at the bottom centre: zoom in to hit them, and hover to check the name.
-11. Run it as a release from wide open, and plot `engine.mdot_fuel` and `engine.tau_e`:
+**Deceleration fuel cut.** Every modern engine control unit stops injecting when the driver lifts off at speed. It saves the fuel the engine would burn for nothing, sends no unburned fuel to the catalyst, and makes the engine brake the car harder.
+
+**When it cuts.** The course library's `FuelCutLogic` decides. It starts the cut when the pedal is closed and the engine turns faster than **1300 rpm**. It ends the cut as soon as the pedal opens, or when the engine falls below **1000 rpm**, so that it idles on its own instead of stalling.
+
+**Why two speeds.** With one threshold, an engine turning right at it would switch the fuel on and off at every small wobble of speed. Between 1000 and 1300 rpm the logic keeps whatever it last decided. That gap is called hysteresis; a thermostat works the same way.
+
+**The rev limiter.** The same block also cuts the fuel above **6500 rpm**, whatever the pedal, and turns it back on below **6300 rpm**. Your car meets it at full throttle in step 04.
+
+**The torque during the cut.** No fuel burns, so the engine makes no combustion torque. The wheels turn it, and it pumps air through the closed throttle. The torque it then takes from the shaft was measured on the test bench with the fuel off, as a curve over speed alone: the **closed-throttle (motoring) curve**. While the cut is on, `CutTorqueMap` gives that curve instead of your torque map, and `CutFuelMap` gives zero fuel. Both switch over about 10 ms, so the solver never sees a jump.
+
+You edit your own `MapEngine` in place. The two new map blocks have their ports where `TorqueMap`'s and `FuelMap`'s are, so your wires stay where they are. The course library keeps both versions for reference: `HandsOn02.MapEngine` before the paste, `HandsOn02.MapEngineFuelCut` after it.
+
+10. Open `MapEngine` and toggle to code (⇄). Select the two lines that start `torque_map =` and `fuel_map =`, and paste the first block over them. If the two lines are not next to each other, delete both and paste the block after the last component line, before `relations`.
+11. Paste the second block after the last `connect(…)` line, before `metadata`. Save, and toggle back to the diagram: `cut_logic` sits at the bottom left, its output goes up into both maps from below, and nothing you drew has moved.
+12. Open `MapEngineDyno` and toggle to code. In the line that starts `speed =`, select `Constant(k = rpm * pi / 30)` and paste the third block over it. Save. The dynamometer now holds `rpm` until 2 s, then slows the shaft to 800 rpm over 3 s. Runs 1 and 2 stop at 2 s, so the ramp does not change them.
+
+::: code-group
+
+```txt [1 · MapEngine, over torque_map and fuel_map]
+  torque_map = VehicleSystemsComponents.Vehicle.Engine.CutTorqueMap() {^torque_map}
+  fuel_map = VehicleSystemsComponents.Vehicle.Engine.CutFuelMap() {^fuel_map}
+  cut_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic() {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 800, "x2": 300, "y2": 900}}}}
+```
+
+```txt [2 · MapEngine, after the last connect]
+  connect(pedal, cut_logic.pedal) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 200}, {"x": 60, "y": 830}], "E": 2}]}}
+  connect(speed.w, cut_logic.omega) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 110}, {"x": 970, "y": 30}, {"x": 400, "y": 30}, {"x": 400, "y": 380}, {"x": 110, "y": 380}, {"x": 110, "y": 870}], "E": 2}]}}
+  connect(cut_logic.cut, fuel_map.cut) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 850}], "E": 2}]}}
+  connect(cut_logic.cut, torque_map.cut) {"Dyad": {"edges": [{"S": 1, "M": [{"x": 580, "y": 850}, {"x": 580, "y": 340}, {"x": 500, "y": 340}], "E": 2}]}}
+```
+
+```txt [3 · MapEngineDyno, over Constant(…) in the speed line]
+Ramp(offset = rpm * pi / 30, height = (800 - rpm) * pi / 30, start_time = 2, duration = 3)
+```
+
+:::
+
+The `{"Dyad": …}` annotations only draw the new block and its four wires: the logic reads the pedal and the shaft speed, and its one output, the cut fraction from 0 to 1, goes to both maps.
+
+13. Run the release from wide open for 6 s, and plot the shaft speed, the fuel and the torque:
 
     ```julia
-    r = MyCar.MapEngineDynoTransient(rpm = 3000, pedal_initial = 1, pedal_final = 0, p_m0 = 99889.9)
-    plot(r; idxs = [r."engine.mdot_fuel", r."engine.tau_e"], layout = (2, 1))
+    r = MyCar.MapEngineDynoTransient(rpm = 3000, pedal_initial = 1, pedal_final = 0, p_m0 = 99889.9, stop = 6)
+    plot(r; idxs = [r."engine.speed.w", r."engine.mdot_fuel", r."engine.torque_map.y"], layout = (3, 1))
     ```
 
+    The speed is in rad/s: 1000 rpm is 104.7 rad/s.
+
 <!-- TODO(screenshot): step03-fuel-cut-plot.png. -->
+<!-- TODO(rehearsal): run E's three pastes in Dyad Studio's code view; so far checked with the CLI only. -->
 
 ::: tip Checkpoint
 
-Before 1 s the course engine gives the same 148.4 N·m and 3.75 g/s as yours. At the release the fuel falls to **0** within about 30 ms, and the torque to **−18.7 N·m**, the engine's measured closed-throttle (motored) torque at 3000 rpm. It would refuel below 1000 rpm; the cut only arms above 1300 rpm.
+From `HandsOn02.MapEngineFuelCutDynoTransient`, the course's copy of your bench:
 
-`MappedEngine` also puts a progressive pedal curve and a 50 ms throttle actuator in front of the air path, so its pedal is not yours: it holds 90 km/h at 0.220, not 0.103. It has `lambda`, `mdot_hc`, `mdot_co` and `mdot_nox` outputs too. The HC, CO and NOx tables are **assumed**: their shapes follow textbook trends and their sizes are typical, not measured. Use them for trends only.
+- Before 1 s, run 2's wide-open numbers: **148.4 N·m** and **3.75 g/s**.
+- At the release the fuel is 99 % gone within **30 ms** and then **0**. The torque settles at **−18.7 N·m**, the closed-throttle curve at 3000 rpm, and `p_m` falls to **13.5 kPa**, as in run 2. Run 2's closed pedal gave −18.2 N·m: the 0.5 N·m between them is what the 0.097 g/s of fuel was still giving.
+- The course engine `MappedEngine` ends on the same **−18.7 N·m** after the same release: it uses the same `FuelCutLogic` and the same curve. Its fuel takes a little longer to go, because its throttle actuator closes over 50 ms and keeps the manifold full a moment longer. In the cut the torque does not depend on `p_m`, so the end value is the same.
+- From 2 s the speed falls, and the fuel stays at 0 through 1300 rpm and below. It comes back at **4.73 s**, as the shaft passes **1000 rpm**, with `p_m` at **27.0 kPa**.
+- At 800 rpm, 6 s: `p_m` **33.0 kPa**, step 02's idle; fuel **0.096 g/s**; torque about **0**: with the pedal closed, the engine burns just enough to turn itself.
+
+If you run run 2 again now, its closed pedal shows 0 fuel and −18.7 N·m: the engine starts above 1300 rpm with the pedal closed, so it starts in the cut.
 
 :::
 
@@ -478,24 +535,26 @@ Commit: **Source Control** → message `Step 03: map engine` → **Commit** → 
 
 ## Drive the car
 
-Steps 4–6 · the course engine in your hands-on 1 car · 32 min
+Steps 4–6 · your engine in your hands-on 1 car · 32 min
 
 ### 04 The car with a mapped engine <Badge type="info" text="12 min" /> {#mapped-car}
 
-Your hands-on 1 car with the course engine and a pedal — and a real top speed.
+Your hands-on 1 car with your own engine and a pedal — and a real top speed.
 
 Theory: [tutor slides — top speed, with a torque curve](../../handson-02/index.html#/top-speed-again){target="_self"}
 
 #### Where you are, where you are going
 
-Same body, same driveline, same single gear of 4.0. The engine changes, and with it the input: a pedal from 0 to 1 instead of a torque. Two new outputs read the manifold pressure and the fuel in liters per hour. Hands-on 1's car reached 246 km/h at 8400 rpm; this engine gives less at high revs and stops fueling at 6500 rpm.
+Same body, same driveline, same single gear of 4.0. The engine changes to your `MapEngine` from step 03, fuel cut included, and with it the input: a pedal from 0 to 1 instead of a torque. Two new outputs read the manifold pressure and the fuel in liters per hour. Hands-on 1's car reached 246 km/h at 8400 rpm; this engine gives less at high revs, and its rev limiter stops fueling at 6500 rpm.
+
+The car needs one part the dynamometer did not: the inertia of the crankshaft and flywheel. On the bench the dynamometer set the speed, so the engine's own rotating mass did not matter. In the car it resists every change of speed, like 0.15 × (4 / 0.31)² = 25 kg more car. You add it as one block on the shaft between the engine and the driveline, with the value the course library's `MappedEngine` assumes, J = 0.15 kg·m².
 
 #### Do this
 
 1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was.
-2. Open `MappedCar`. Delete `engine`. Click **+** → `VehicleSystemsComponents › Vehicle › Engine › MappedEngine`, name it `engine`, and put it where the old one was.
+2. Open `MappedCar`. Delete `engine`. Click **+** → `MyCar › MapEngine`, your own engine, name it `engine`, and put it where the old one was.
 3. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal`. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench: click just outside the port to select it, then **Edit Parameters** → pencil.
-4. Wire `engine.spline` → `driveline.spline` and `engine.support` → `rot_ground`, as before.
+4. Add `flywheel` = `RotationalComponents › Components › Inertia` with `J = 0.15`, between `engine` and `driveline`. Wire `engine.spline` → `flywheel.spline_a` and `flywheel.spline_b` → `driveline.spline`. Wire `engine.support` → `rot_ground`, as before.
 5. Add `no_booster` = `BlockComponents › Sources › Constant` (`k = 0`) → `engine.mdot_bst`.
 6. Drop two `RealOutput` ports from **+** straight onto the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.
 7. <Badge type="tip" text="New component" /> The bench `MappedCarWOT`: `pedal` = `Constant(k = 1)` → `car.pedal`, with the `initial` lines below. <Badge type="tip" text="New analysis" /> `MappedCarWOTTransient`, `stop = 120`.
@@ -508,7 +567,9 @@ component MappedCar
   v_kmh = RealOutput()
   p_m = RealOutput()
   fuel_lph = RealOutput()
-  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine()
+  engine = MapEngine()
+  "Crankshaft and flywheel, J as MappedEngine assumes"
+  flywheel = RotationalComponents.Components.Inertia(J = 0.15)
   no_booster = BlockComponents.Sources.Constant(k = 0)
   "kg/s of petrol to L/h: 3600 / 0.745"
   to_lph = BlockComponents.Math.Gain(k = 4832.2)
@@ -521,7 +582,8 @@ component MappedCar
 relations
   connect(pedal, engine.pedal)
   connect(no_booster.y, engine.mdot_bst)
-  connect(engine.spline, driveline.spline)
+  connect(engine.spline, flywheel.spline_a)
+  connect(flywheel.spline_b, driveline.spline)
   connect(engine.support, rot_ground.spline)
   connect(driveline.support_r, rot_ground.spline)
   connect(driveline.flange, body.flange)
@@ -555,8 +617,12 @@ end
 
 :::
 
-<!-- TODO(reference): confirm the initial lines on HandsOn02.MappedCarWOT. The crankshaft is tied to
-the wheel through the gear, so it should take no initial speed of its own. -->
+<!-- TODO(reference): confirm the initial lines on HandsOn02.MappedCarWOT. The engine shaft and the
+flywheel are tied to the wheel through the gear, so they should take no initial speed of their own.
+Two findings from a trial of this car: from v = 0 it does not move, because the full-load curve is
+0 N·m at 0 rpm and caps the torque there; started at 2 m/s it reaches 189.9 km/h, and then the
+solver stops at about 87 s with MaxIters while the rev limiter holds it. The car with MappedEngine
+does the same, so the fix belongs to the bench or the limiter, not to the engine choice. -->
 <!-- TODO(screenshot): step04-mapped-car.png. -->
 
 8. Run it and plot the speed:
@@ -572,7 +638,7 @@ HandsOn02.MappedCarWOTTransient. -->
 
 ::: tip Checkpoint
 
-The car tops out at about **190 km/h**, not 246. Drag alone would hold it at 192 km/h, where the engine turns 6570 rpm and gives 96 N·m; but at **6500 rpm = 189.9 km/h** the rev limiter cuts the fuel, and it refuels at 6300 rpm = 184.1 km/h.
+The car tops out at about **190 km/h**, not 246. Drag alone would hold it at 192 km/h, where the engine turns 6570 rpm and gives 96 N·m; but at **6500 rpm = 189.9 km/h** the rev limiter in your `cut_logic` cuts the fuel, and it refuels at 6300 rpm = 184.1 km/h.
 
 :::
 
@@ -595,7 +661,7 @@ At a steady speed the fuel flow in L/h, divided by the speed in km/h, is liters 
 
 #### Do this
 
-1. <Badge type="tip" text="New component" /> The bench `MappedCarCruise`: `pedal` = `Constant(k = 0.2)` → `car.pedal`, with the `initial` lines below. <Badge type="tip" text="New analysis" /> `MappedCarCruiseTransient`, `stop = 60`.
+1. <Badge type="tip" text="New component" /> The bench `MappedCarCruise`: `pedal` = `Constant(k = 0.1)` → `car.pedal`, with the `initial` lines below. <Badge type="tip" text="New analysis" /> `MappedCarCruiseTransient`, `stop = 60`.
 2. Run it and plot speed and fuel:
 
    ```julia
@@ -611,7 +677,7 @@ At a steady speed the fuel flow in L/h, divided by the speed in km/h, is liters 
 
 ```txt [MappedCarCruise and MappedCarCruiseTransient]
 component MappedCarCruise
-  pedal = BlockComponents.Sources.Constant(k = 0.2)
+  pedal = BlockComponents.Sources.Constant(k = 0.1)
   car = MappedCar()
 relations
   connect(pedal.y, car.pedal)
@@ -630,17 +696,19 @@ end
 :::
 
 <!-- TODO(actions): replace the pedal search with the values that hold 50, 90 and 130 km/h, to
-three decimals, from task 4's cruise runs. -->
+three decimals, from HandsOn02.MappedCarCruise. The car runs the student's MapEngine, whose pedal
+drives the throttle directly: on the dynamometer it holds the three cruise torques at
+0.044 / 0.103 / 0.190 ("Hands-on 02 map engine" testset), not MappedEngine's 0.124 / 0.220 / 0.331. -->
 <!-- TODO(screenshots): step05-cruise-bench.png, step05-cruise-90-plot.png. -->
 
 ::: tip Checkpoint
 
-Predicted from the maps for this car; your table should match to the last digit shown:
+Predicted from the maps for this car, the table of step 01; your table should match to the last digit shown:
 
 | km/h | engine rpm | `p_m` kPa | `fuel_lph` | L/100 km | g CO₂/km |
 | --: | --: | --: | --: | --: | --: |
-| 50 | 1710 | 41.9 | 1.67 | **3.4** | **77** |
-| 90 | 3080 | 47.8 | 4.10 | **4.6** | **105** |
+| 50 | 1710 | 41.9 | 1.67 | **3.3** | **77** |
+| 90 | 3080 | 47.8 | 4.11 | **4.6** | **105** |
 | 130 | 4450 | 60.8 | 9.14 | **7.0** | **162** |
 
 λ is 1 at all three. These are steady-state, one-gear figures with a warm engine and nothing switched on, so they sit below a real car's label; step 07 makes the fair comparison.
@@ -665,11 +733,11 @@ With the pedal up at speed, the throttle closes and the manifold drops to the ov
 2. Run it; plot `car.v_kmh`, `car.fuel_lph` and `car.p_m`, one above the other.
 
 <!-- TODO(screenshot): step06-coast-plot.png. -->
-<!-- TODO(checkpoint): p_m at the fuel-resume instant, from task 4's coast-down run. -->
+<!-- TODO(checkpoint): p_m at the fuel-resume instant, from HandsOn02.MappedCarCoastTransient. -->
 
 ::: tip Checkpoint
 
-- At 5 s the fuel drops from 4.10 L/h to **0**, and `p_m` falls to about **13.5 kPa**.
+- At 5 s the fuel drops from 4.11 L/h to **0**, and `p_m` falls to about **13.5 kPa**.
 - The car slows at **0.46 m/s²**: 401 N of drag and rolling plus 246 N of engine braking (−19 N·m × 4 / 0.31) on 1400 kg. In neutral it would be 0.29 m/s².
 - The fuel comes back on at **29 km/h**, where the engine drops below 1000 rpm.
 
@@ -682,7 +750,8 @@ With the pedal up at speed, the throttle closes and the manifold drops to the ov
 5. Run it and plot `car.v_kmh` and `car.p_m`.
 
 <!-- TODO(reference): the brake force's sign as wired, p_m during the stop and the time to 25 km/h,
-from task 4's brake-stop run; then give the one correct flange wiring instead of "swap". -->
+from HandsOn02.MappedCarCoast's brake-stop run; then give the one correct flange wiring instead of
+"swap". -->
 <!-- TODO(screenshot): step06-brake-plot.png. -->
 
 ::: tip Checkpoint
