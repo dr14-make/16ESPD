@@ -83,7 +83,7 @@ routeAlias: what-we-build
 
 ## What we are building today
 
-![The mapped engine: pedal to throttle, throttle air flow into the intake manifold whose state is the pressure p_m, the brake booster feeding air in as well, the cylinders drawing air out; maps read at engine speed and p_m return torque to the crankshaft and car, and fuel flow to the fuel and CO₂ outputs; engine speed feeds back to the maps and the cylinders.](/diagrams/00-mapped-engine.svg)
+![The mapped engine: pedal to throttle, throttle air flow into the intake manifold whose state is the pressure p_m, the brake booster feeding air in as well, the cylinders drawing air out; maps read at engine speed and p_m return torque to the crankshaft and car, and fuel flow to the fuel and CO₂ outputs; engine speed feeds back to the maps and the cylinders.](/img/mapped-engine-overview.svg)
 
 <!--
 **Say:** This is the picture from the end of the lecture. Follow the air: the pedal opens the
