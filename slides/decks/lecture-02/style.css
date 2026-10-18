@@ -29,6 +29,13 @@
   max-height: 14rem;
 }
 
+/* A diagram that has the slide to itself: an SVG's intrinsic width would otherwise cap it. */
+.slidev-layout .diagram-full img {
+  height: 35rem;
+  max-height: none;
+  width: auto;
+}
+
 /* Diagrams are drawn in the light palette, like the exported cards; in dark mode they keep a
    light ground so their ink stays readable. Vite inlines a small SVG as a data URI. */
 html.dark .slidev-layout img[src$=".svg"],
