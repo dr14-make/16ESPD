@@ -28,4 +28,10 @@ relations
   tau = -spline.tau
   tau = min(min(tau_cmd, T_max), P_max / max(w, w_eps))
   P = tau * w
+metadata {
+  "_links": {
+    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
+  },
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": -150, "rot": 0}]}
+}
 end
