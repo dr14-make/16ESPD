@@ -18,7 +18,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"saveat"::Float64 = 0
   var"dtmax"::Float64 = 0
   var"tstops"::Array{Float64, 1} = []
-  var"automatic_discontinuity_detection"::Bool = true
+  var"automatic_discontinuity_detection"::Bool = false
   var"optimize"::OptimizationLevel.Type = OptimizationLevel.Aggressive()
   var"progress"::Bool = true
   var"respecialize"::Bool = false
@@ -29,6 +29,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"m"::Float64 = 2000
   var"tank_volume"::Float64 = 0.6
   var"tank_pressure"::Float64 = 38000000.0
+  var"A_t"::Float64 = 0.001286
   # Open-loop full-thrust hop followed by ballistic coast.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Roadster.TestVerticalHop(; name=:TestVerticalHop)
 end
@@ -40,6 +41,7 @@ function DyadInterface.run_analysis(spec::HopSpec)
   push!(overrides, no_namespace_model.m => spec.var"m")
   push!(overrides, no_namespace_model.tank_volume => spec.var"tank_volume")
   push!(overrides, no_namespace_model.tank_pressure => spec.var"tank_pressure")
+  push!(overrides, no_namespace_model.A_t => spec.var"A_t")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

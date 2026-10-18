@@ -21,6 +21,80 @@ function first_crossing(sol, signal, target)
     return t0 + (target - y0) * (t1 - t0) / (y1 - y0)
 end
 
+
+@testset "Roadster presentation parameter forwarding" begin
+    function same_signal(plain, explicit, signal)
+        plain_model = symbolic_container(plain)
+        explicit_model = symbolic_container(explicit)
+        plain_signal = getproperty(plain_model, signal)
+        explicit_signal = getproperty(explicit_model, signal)
+        @test maximum(abs.(plain.sol[plain_signal] .-
+                           explicit.sol(plain.sol.t, idxs = explicit_signal))) < 1e-10
+    end
+
+    same_signal(VehicleSystemsComponents.Roadster.RoadsterLaunchTransient(),
+                VehicleSystemsComponents.Roadster.RoadsterLaunchTransient(
+                    CdA = 0.6, tank_n = 1.4, A_t = 1.286e-3), :v)
+    plain_stand = VehicleSystemsComponents.Roadster.ColdGasThrustStandTransient()
+    explicit_stand = VehicleSystemsComponents.Roadster.ColdGasThrustStandTransient(A_t = 1.286e-3)
+    plain_stand_model = symbolic_container(plain_stand)
+    explicit_stand_model = symbolic_container(explicit_stand)
+    @test maximum(abs.(plain_stand.sol[plain_stand_model.nozzle.F] .-
+                       explicit_stand.sol(plain_stand.sol.t,
+                           idxs = explicit_stand_model.nozzle.F))) < 1e-8
+
+    plain_hold = VehicleSystemsComponents.Roadster.SuctionFanInvertedHoldTransient()
+    explicit_hold = VehicleSystemsComponents.Roadster.SuctionFanInvertedHoldTransient(
+        m = 2000, gap = 0.003)
+    plain_hop = VehicleSystemsComponents.Roadster.Hop()
+    explicit_hop = VehicleSystemsComponents.Roadster.Hop(A_t = 1.286e-3)
+    plain_hop_model = symbolic_container(plain_hop)
+    explicit_hop_model = symbolic_container(explicit_hop)
+    @test maximum(abs.(plain_hop.sol[plain_hop_model.hop.altitude] .-
+                       explicit_hop.sol(plain_hop.sol.t,
+                           idxs = explicit_hop_model.hop.altitude))) < 1e-8
+
+    plain_hover = VehicleSystemsComponents.Roadster.Hover()
+    explicit_hover = VehicleSystemsComponents.Roadster.Hover(A_t = 1.286e-3)
+    plain_hover_model = symbolic_container(plain_hover)
+    explicit_hover_model = symbolic_container(explicit_hover)
+    @test maximum(abs.(plain_hover.sol[plain_hover_model.hover.altitude] .-
+                       explicit_hover.sol(plain_hover.sol.t,
+                           idxs = explicit_hover_model.hover.altitude))) < 1e-8
+
+
+    plain_model = symbolic_container(plain_hold)
+    explicit_model = symbolic_container(explicit_hold)
+    @test plain_hold.sol(0.0, idxs = plain_model.fan.power) ≈
+          explicit_hold.sol(0.0, idxs = explicit_model.fan.power) rtol = 1e-12
+
+    base_sol, base = roadster_launch()
+    drag_sol, drag = roadster_launch(CdA = 1.2)
+    @test first_crossing(drag_sol, drag.v, ROADSTER_V60) >
+          first_crossing(base_sol, base.v, ROADSTER_V60)
+
+    adiabatic_sol, adiabatic = roadster_launch(thrust_cmd = 1.0)
+    isothermal_sol, isothermal = roadster_launch(thrust_cmd = 1.0, tank_n = 1.0)
+    @test isothermal_sol(0.8, idxs = isothermal.v) >
+          adiabatic_sol(0.8, idxs = adiabatic.v)
+
+    full = VehicleSystemsComponents.Roadster.ColdGasThrustStandTransient()
+    half = VehicleSystemsComponents.Roadster.ColdGasThrustStandTransient(A_t = 1.286e-3 / 2)
+    full_model = symbolic_container(full)
+    half_model = symbolic_container(half)
+    @test half.sol(0.0, idxs = half_model.nozzle.F) ≈
+          full.sol(0.0, idxs = full_model.nozzle.F) / 2 rtol = 0.01
+
+    light = VehicleSystemsComponents.Roadster.SuctionFanInvertedHoldTransient(m = 1700)
+    wide = VehicleSystemsComponents.Roadster.SuctionFanInvertedHoldTransient(gap = 0.006)
+    light_model = symbolic_container(light)
+    wide_model = symbolic_container(wide)
+    @test light.sol(0.0, idxs = light_model.hold_force) !=
+          plain_hold.sol(0.0, idxs = plain_model.hold_force)
+    @test wide.sol(0.0, idxs = wide_model.fan.power) >
+          plain_hold.sol(0.0, idxs = plain_model.fan.power)
+end
+
 @testset "Roadster tire-only launch plausibility" begin
     awd_sol, awd = roadster_launch(share = 1.0, h_over_L = 0.0)
     rwd_sol, rwd = roadster_launch()
@@ -289,14 +363,44 @@ end
         @test fractions[argmin(times)] == expected_best[(layout, fan_cmd)]
     end
 
-    hop_result = VehicleSystemsComponents.Roadster.Hop(t_b = 0.413)
-    hop_sol = hop_result.sol
-    hop = symbolic_container(hop_result)
-    hop_apex = maximum(hop_sol[hop.hop.altitude])
-    hop_air = hop_sol(0.0, idxs = hop.hop.tank.m_g) -
-              hop_sol(0.413, idxs = hop.hop.tank.m_g)
-    @test hop_apex ≈ 8.0 atol = 0.15
+    function hop_metrics(m, t_b)
+        result = VehicleSystemsComponents.Roadster.Hop(; m, t_b)
+        sol = result.sol
+        model = symbolic_container(result)
+        ts = range(0.0, 10.0, length = 20_001)
+        altitude = sol(ts, idxs = model.hop.altitude)
+        landing = findfirst(i -> ts[i] > t_b && altitude[i] <= 0 &&
+                                 maximum(@view altitude[1:i-1]) > 0.05,
+                            eachindex(altitude))
+        apex = maximum(@view altitude[1:landing])
+        h_bo = sol(t_b, idxs = model.hop.altitude)
+        v_bo = sol(t_b, idxs = model.hop.body.v)
+        closed = h_bo + v_bo^2 / (2 * ROADSTER_G)
+        rebound = max(0.0, maximum(@view altitude[landing:end]))
+        return (; apex, closed, minimum = minimum(altitude), rebound, sol, model)
+    end
+
+    hop = hop_metrics(2000, 0.413)
+    hop_air = hop.sol(0.0, idxs = hop.model.hop.tank.m_g) -
+              hop.sol(0.413, idxs = hop.model.hop.tank.m_g)
+    @test hop.apex ≈ 8.0 atol = 0.15
     @test 40 <= hop_air <= 70
+
+    hop_sweep = [hop_metrics(m, t_b) for m in (1700, 2000, 2350),
+                 t_b in (0.2, 0.3, 0.413, 0.6)]
+    @test all(case.minimum >= -0.05 for case in hop_sweep)
+    @test all(case.rebound <= 0.5 for case in hop_sweep)
+    @test all(isapprox(case.apex, case.closed; rtol = 0.02) for case in hop_sweep)
+    for m in (1700, 2000, 2350), t_b in (0.2, 0.3, 0.413, 0.6)
+        repeated = [hop_metrics(m, t_b).apex for _ in 1:5]
+        @test all(==(repeated[1]), repeated)
+    end
+    println("Hop sweep (apex, closed form, minimum, rebound), rows m = " *
+            "1700/2000/2350 kg, columns t_b = 0.2/0.3/0.413/0.6 s:")
+    show(stdout, MIME("text/plain"),
+         map(case -> round.((case.apex, case.closed, case.minimum, case.rebound), digits = 3),
+             hop_sweep))
+    println()
 
     # Initial hover flow is thrust divided by exhaust speed; this anchors the 3--8 s estimate.
     hover_result = VehicleSystemsComponents.Roadster.Hover()

@@ -127,5 +127,9 @@ end
 
 analysis SuctionFanInvertedHoldTransient
   extends TransientAnalysis(stop = 0.1, abstol = 1e-8, reltol = 1e-6)
-  model = VehicleSystemsComponents.Roadster.TestSuctionFanInvertedHold()
+  "Vehicle mass; assumed because Tesla has not disclosed it"
+  parameter m::Dyad.Mass = 2000
+  "Effective skirt gap; assumed"
+  parameter gap::Length = 0.003
+  model = VehicleSystemsComponents.Roadster.TestSuctionFanInvertedHold(m = m, gap = gap)
 end

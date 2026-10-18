@@ -64,8 +64,10 @@ end
 test component TestColdGasThrustStand
   command = BlockComponents.Sources.Constant(k = 1.0)
   tank = VehicleSystemsComponents.Roadster.AirTank(p0 = p0, V = V, n = n)
-  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle()
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t)
   fixed = TranslationalComponents.Components.Fixed()
+  "Total nozzle throat area"
+  parameter A_t::Area = 1.286e-3
   "Initial tank pressure"
   parameter p0::Pressure = 380e5
   "Tank volume"
@@ -111,11 +113,13 @@ end
 analysis ColdGasThrustStandTransient
   extends TransientAnalysis(stop = 15.0, abstol = 1e-9, reltol = 1e-7,
                             automatic_discontinuity_detection = true)
+  "Total nozzle throat area"
+  parameter A_t::Area = 1.286e-3
   "Initial tank pressure"
   parameter p0::Pressure = 380e5
   "Tank volume"
   parameter V::Volume = 0.6
   "Polytropic index"
   parameter n::Real = 1.4
-  model = VehicleSystemsComponents.Roadster.TestColdGasThrustStand(p0 = p0, V = V, n = n)
+  model = VehicleSystemsComponents.Roadster.TestColdGasThrustStand(A_t = A_t, p0 = p0, V = V, n = n)
 end

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   VerticalHop(; name, m, tank_volume, tank_pressure, g, contact_c, contact_d)
+   VerticalHop(; name, m, tank_volume, tank_pressure, A_t, g, contact_c, contact_d)
 
 Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thrust set.
 
@@ -16,6 +16,7 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
 | `m`         | Car mass; assumed because Tesla has not disclosed it                         | kg  |   2000 |
 | `tank_volume`         | Tank volume; Tesla reports 600 L total                         | m3  |   0.6 |
 | `tank_pressure`         | Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan                         | Pa  |   380e5 |
+| `A_t`         | Total nozzle throat area, sized for 80 kN at 380 bar                         | m2  |   1.286e-3 |
 | `g`         | Standard gravitational acceleration                         | m/s2  |   9.80665 |
 | `contact_c`         | Ground-contact stiffness; assumed                         | N/m  |   2.0e6 |
 | `contact_d`         | Ground-contact damping; assumed                         | N.s/m  |   1.0e5 |
@@ -30,7 +31,7 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
 | ------------ | ----------------------------------- | ------ |
 | `altitude`         | Altitude relative to the undeflected ground                         | m  |
 """
-@component function VerticalHop(; name = nothing, m=Float64(2000), tank_volume=0.6, tank_pressure=Float64(38000000.0), g=9.80665, contact_c=Float64(2000000.0), contact_d=Float64(100000.0), kwargs...)
+@component function VerticalHop(; name = nothing, m=Float64(2000), tank_volume=0.6, tank_pressure=Float64(38000000.0), A_t=0.001286, g=9.80665, contact_c=Float64(2000000.0), contact_d=Float64(100000.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -70,6 +71,9 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
   __local__tank_pressure = tank_pressure
   append!(__params, @parameters (tank_pressure::Real), [description = "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"])
   __initial_conditions[tank_pressure] = __local__tank_pressure
+  __local__A_t = A_t
+  append!(__params, @parameters (A_t::Real), [description = "Total nozzle throat area, sized for 80 kN at 380 bar"])
+  __initial_conditions[A_t] = __local__A_t
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Standard gravitational acceleration"])
   __initial_conditions[g] = __local__g
@@ -108,7 +112,7 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
   push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, tank_overrides...))
   # Subcomponent nozzle of type VehicleSystemsComponents.Roadster.ColdGasNozzle
   nozzle_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle")
-  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; nozzle_overrides...))
+  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, nozzle_overrides...))
   # Subcomponent nozzle_stand of type TranslationalComponents.Components.Fixed
   nozzle_stand_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle_stand")
   push!(__systems, @named nozzle_stand = TranslationalComponents.Components.Fixed(; nozzle_stand_overrides...))

@@ -25,6 +25,8 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
+  # Total nozzle throat area
+  var"A_t"::Float64 = 0.001286
   # Initial tank pressure
   var"p0"::Float64 = 38000000.0
   # Tank volume
@@ -38,6 +40,7 @@ end
 function DyadInterface.run_analysis(spec::ColdGasThrustStandTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
+  push!(overrides, no_namespace_model.A_t => spec.var"A_t")
   push!(overrides, no_namespace_model.p0 => spec.var"p0")
   push!(overrides, no_namespace_model.V => spec.var"V")
   push!(overrides, no_namespace_model.n => spec.var"n")

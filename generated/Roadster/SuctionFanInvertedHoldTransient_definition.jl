@@ -25,6 +25,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
+  # Vehicle mass; assumed because Tesla has not disclosed it
+  var"m"::Float64 = 2000
+  # Effective skirt gap; assumed
+  var"gap"::Float64 = 0.003
   # Inverted-hold harness: reversed gravity pulls the car away from the road, while suction acts
   # toward it. `hold_force = 0` is the least pressure that holds the stationary car.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Roadster.TestSuctionFanInvertedHold(; name=:TestSuctionFanInvertedHold)
@@ -33,7 +37,8 @@ end
 function DyadInterface.run_analysis(spec::SuctionFanInvertedHoldTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  
+  push!(overrides, no_namespace_model.m => spec.var"m")
+  push!(overrides, no_namespace_model.gap => spec.var"gap")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

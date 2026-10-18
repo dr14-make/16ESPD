@@ -28,6 +28,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"m"::Float64 = 2000
   var"tank_volume"::Float64 = 0.6
   var"tank_pressure"::Float64 = 38000000.0
+  var"A_t"::Float64 = 0.001286
   var"target"::Float64 = 2.0
   var"k_p"::Float64 = 0.15
   var"k_i"::Float64 = 0.2
@@ -42,6 +43,7 @@ function DyadInterface.run_analysis(spec::HoverSpec)
   push!(overrides, no_namespace_model.m => spec.var"m")
   push!(overrides, no_namespace_model.tank_volume => spec.var"tank_volume")
   push!(overrides, no_namespace_model.tank_pressure => spec.var"tank_pressure")
+  push!(overrides, no_namespace_model.A_t => spec.var"A_t")
   push!(overrides, no_namespace_model.target => spec.var"target")
   push!(overrides, no_namespace_model.k_p => spec.var"k_p")
   push!(overrides, no_namespace_model.k_i => spec.var"k_i")
