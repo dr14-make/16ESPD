@@ -417,7 +417,7 @@ plug the rotor points at fires.
 
 - **Distributorless ignition systems**
   - one coil fires one pair of companion cylinders simultaneously
-- **Coil-over-plug system**
+- **Coil-on-plug system**
   - each cylinder has an ignition coil mounted directly above the spark plug on the cylinder head
     cover; a short suppressor/connector connects the coil to the plug
 - **Coil-near-plug system**

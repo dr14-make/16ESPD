@@ -198,8 +198,8 @@ existed: `UndefVarError`. Run once with ▷ on the analysis tab, which loads it,
 **They get wrong:** reading τ on the first fall from 101 kPa. That fall is not a straight lag; its
 1/e time is about 0.10 s. The 0.15 s is the small step at 1 s.
 
-**Parameter fields:** click, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type, <kbd>Enter</kbd>. A triple-click
-does not select the old value.
+**Parameter fields:** click, <kbd>End</kbd>, <kbd>Shift</kbd>+<kbd>Home</kbd>, type, <kbd>Enter</kbd>. <kbd>Ctrl</kbd>+<kbd>A</kbd>
+selects the whole Studio page, and a triple-click does not select the old value.
 
 **TODO (screenshot):** `step02-idle-plot.png`.
 -->
