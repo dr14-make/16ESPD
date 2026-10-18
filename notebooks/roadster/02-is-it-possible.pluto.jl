@@ -16,21 +16,6 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ b519eab0-5aed-5d96-9f02-4c18458705d3
-md"""
-# Tesla Roadster: is it physically possible?
-
-On 2026-10-15 Tesla unveiled the new Roadster at SpaceX's McGregor test site: a sub-second
-0–60 mph, a car stuck to a ramp curling past vertical, and a kickflip over a row of cars. The
-session question is simple: **which of these claims survive Newton, a tire and a tank of air?**
-
-We answer it one layer at a time on the same 1D car: tires, then suction, then thrust, then
-"can it fly?".
-"""
-
-# ╔═╡ c54392d6-d24f-54c8-8e3d-e9c893d7f2b4
-html"<button onclick='present()'>present</button>"
-
 # ╔═╡ 70ca7453-e2e9-5fa4-a2a9-af10ca7b3eba
 begin
     import Pkg
@@ -48,6 +33,25 @@ begin
     nothing
 end
 
+# ╔═╡ b519eab0-5aed-5d96-9f02-4c18458705d3
+md"""
+# Tesla Roadster: is it physically possible?
+
+On 2026-10-15 Tesla unveiled the new Roadster at SpaceX's McGregor test site: a sub-second
+0–60 mph, a car stuck to a ramp curling past vertical, and a kickflip over a row of cars. The
+session question is simple: **which of these claims survive Newton, a tire and a tank of air?**
+
+We answer it one layer at a time on the same 1D car: tires, then suction, then thrust, then
+"can it fly?".
+
+*Start with `julia +dyad-3.4.0 notebooks/roadster/present.jl`. Pluto's worker processes cannot
+load the Dyad packages with this Julia build, so the launcher runs the notebook in its own
+process.*
+"""
+
+# ╔═╡ c54392d6-d24f-54c8-8e3d-e9c893d7f2b4
+html"<button onclick='present()'>present</button>"
+
 # ╔═╡ 8356f8de-1589-5f84-9769-f90f600c385a
 md"""
 **Car** · mass [kg] $(@bind m_car Slider(1700:50:2350; default = 2000, show_value = true)) · drive $(@bind drive_layout Select(["RWD", "AWD"]))
@@ -60,6 +64,7 @@ car_panel_style("8356f8de-1589-5f84-9769-f90f600c385a")
 begin
     car = (; m = m_car, LAYOUTS[drive_layout]...)
     other_layout = drive_layout == "RWD" ? "AWD" : "RWD"
+    nothing
 end
 
 # ╔═╡ 40ef78e6-32c9-5c2d-9f7e-b2839b5a029d
@@ -91,8 +96,8 @@ Tesla's official clips. Offline, follow the links instead:
 # ╔═╡ d3171829-f6d6-55d0-b2eb-713d6ad7a265
 html"""
 <div style="display:flex;gap:10px;flex-wrap:wrap">
-<iframe style="flex:1 1 300px;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/7p5LxFdc-Qg" title="The Ramp | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
-<iframe style="flex:1 1 300px;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/r5vsHHPVhJg" title="The Kickflip | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+<iframe style="flex:1 1 300px;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/7p5LxFdc-Qg" title="The Ramp | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe style="flex:1 1 300px;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/r5vsHHPVhJg" title="The Kickflip | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 </div>
 """
 
@@ -207,43 +212,45 @@ Hovering means thrust equals weight, so the air flow is fixed by the exhaust spe
 md"""
 ## Knowns and unknowns
 
-| Item | Value | Source |
-|---|---|---|
-| 0–60 mph claims | Performance < 1.6 s, Thrust < 0.9 s, Rocket < 0.59 s | **T** |
-| 0–60 mph runs | 1.0 s recorded, 0.81 s live | **T** |
-| Thrusters | 10 cold-gas thrusters, 600 L of air in COPVs | **T** |
-| Downforce | 4,700 kg readout; holds the car inverted | **T** |
-| Tire grip limit | 1.26 g | **P** |
-| Rear thrust | over 80 kN from 4 rear ports | **P** |
-| Air mass | about 250 kg; Electrek splits 200 L Thrust + 400 L Rocket | **P** |
-| Tank pressure | 380 bar (5,500 psi cabin readout) **vs** 690 bar (10,000 psi, Electrek) | **P**, conflicting |
-| Drive | RWD, 2 rear motors, over 1 MW, about 1,400 N·m | **P** |
-| Fans | about 4 × 20 kW | **M** |
-| Mass | under 1,700 kg (Electrek), about 1,900 kg, about 2,350 kg (CellCog) | **M**, conflicting |
-| Video fits | kickflip apex 8.0 m, roll 177 °/s; ramp early fall 2.3 g | **M** |
-| Not disclosed | mass, tank pressure, battery capacity, thrust per nozzle, gear ratio | **?** |
-
 **T** Tesla said it · **P** press report, not confirmed by Tesla · **M** measured or estimated by a
 third party · **?** unknown.
 """
 
+# ╔═╡ b80af6e2-b5e3-5bdd-97dd-0a6ecf66c074
+html_table(["Item", "Value", "Source"], [
+    ("0–60 mph claims", "Performance < 1.6 s, Thrust < 0.9 s, Rocket < 0.59 s", "**T**"),
+    ("0–60 mph runs", "1.0 s recorded, 0.81 s live", "**T**"),
+    ("Thrusters", "10 cold-gas thrusters, 600 L of air in COPVs", "**T**"),
+    ("Downforce", "4,700 kg readout; holds the car inverted", "**T**"),
+    ("Tire grip limit", "1.26 g", "**P**"),
+    ("Rear thrust", "over 80 kN from 4 rear ports", "**P**"),
+    ("Air mass", "about 250 kg; Electrek splits 200 L Thrust + 400 L Rocket", "**P**"),
+    ("Tank pressure", "380 bar (5,500 psi cabin readout) **vs** 690 bar (10,000 psi, Electrek)", "**P**, conflicting"),
+    ("Drive", "RWD, 2 rear motors, over 1 MW, about 1,400 N·m", "**P**"),
+    ("Fans", "about 4 × 20 kW", "**M**"),
+    ("Mass", "under 1,700 kg (Electrek), about 1,900 kg, about 2,350 kg (CellCog)", "**M**, conflicting"),
+    ("Video fits", "kickflip apex 8.0 m, roll 177 °/s; ramp early fall 2.3 g", "**M**"),
+    ("Not disclosed", "mass, tank pressure, battery capacity, thrust per nozzle, gear ratio", "**?**"),
+]; widths = ["22%", "58%", "20%"])
+
 # ╔═╡ 6db050a1-68fc-5767-abf9-74ddea7261d8
 md"""
 ## What the models assume for the unknowns
-
-| Unknown | Model value | Why |
-|---|---|---|
-| Mass | **2,000 kg**, slider 1,700–2,350 | middle of the estimates |
-| Drive | 12,000 N·m at the wheel, 1 MW, r = 0.35 m | 1,400 N·m × an assumed 8.5:1 reduction |
-| Tire | `μ_A = 1.26`, traction control at 98 % of peak | Tesla's figure, ideal controller |
-| Layout | RWD: 55 % rear, h/L = 0.17; AWD for comparison | assumed geometry |
-| Drag | `C_dA = 0.6` m² | assumed |
-| Fan | 4 m² floor, 10 m skirt, 3 mm gap, `C_d = 0.6`, `η = 0.6` | assumed; Δp sized to 4,700 kgf |
-| Tank | 600 L at **380 bar**, 20 °C, ideal gas: 271 kg | the cabin readout; 271 kg is close to the reported 250 kg |
-| Blowdown | n = 1.4 (adiabatic), slider down to 1 | the conservative bound |
-| Nozzles | 1,286 mm² total throat, 80 kN at 380 bar, valve shut below 2 bar | sized to the 80 kN figure |
-| Hover | PI altitude hold to 2 m with gravity feed-forward | assumed gains |
 """
+
+# ╔═╡ 1bf3759a-417c-5ada-8ebd-6a35dad71f88
+html_table(["Unknown", "Model value", "Why"], [
+    ("Mass", "**2,000 kg**, slider 1,700–2,350", "middle of the estimates"),
+    ("Drive", "12,000 N·m at the wheel, 1 MW, r = 0.35 m", "1,400 N·m × an assumed 8.5:1 reduction"),
+    ("Tire", "`μ_A = 1.26`, traction control at 98 % of peak", "Tesla's figure, ideal controller"),
+    ("Layout", "RWD: 55 % rear, h/L = 0.17; AWD for comparison", "assumed geometry"),
+    ("Drag", "`C_dA = 0.6` m²", "assumed"),
+    ("Fan", "4 m² floor, 10 m skirt, 3 mm gap, `C_d = 0.6`, `η = 0.6`", "assumed; Δp sized to 4,700 kgf"),
+    ("Tank", "600 L at **380 bar**, 20 °C, ideal gas: 271 kg", "the cabin readout; 271 kg is close to the reported 250 kg"),
+    ("Blowdown", "n = 1.4 (adiabatic), slider down to 1", "the conservative bound"),
+    ("Nozzles", "1,286 mm² total throat, 80 kN at 380 bar, valve shut below 2 bar", "sized to the 80 kN figure"),
+    ("Hover", "PI altitude hold to 2 m with gravity feed-forward", "assumed gains"),
+]; widths = ["16%", "46%", "38%"])
 
 # ╔═╡ b6d7b622-21c6-550c-948d-f5cfb96bf5f1
 md"""
@@ -277,7 +284,7 @@ playback factor k $(@bind k_play Slider(0.8:0.02:2.0; default = 1.0, show_value 
 """
 
 # ╔═╡ 532b5431-9db1-5e77-b0bc-66f8324ca14c
-warmup = (k_ramp = sqrt(2.3), k_kick = sqrt(0.92))
+warmup = (k_ramp = sqrt(2.3), k_kick = sqrt(0.92));
 
 # ╔═╡ 213033f3-32af-536b-a121-8c95e70f4fd0
 let
@@ -449,7 +456,7 @@ reference = let
         suction_thrust = run_case((; thrust_cmd = 1.0, fan_cmd = 1.0)),
         thrust_200l = run_case((; thrust_cmd = 1.0, fan_cmd = 1.0, tank_volume = 0.2)),
     )
-end
+end;
 
 # ╔═╡ bb74c430-4f14-5088-bcf4-a82715e51758
 down_grid = let
@@ -460,7 +467,7 @@ down_grid = let
         (; layout = lay, fan_cmd = fan, t60 = times, best = fractions[argmin(times)])
     end
     (; fractions, curves)
-end
+end;
 
 # ╔═╡ f8dc7c02-1ddb-5ae9-b536-1c2c2679a8fb
 hover_grid = let
@@ -469,7 +476,7 @@ hover_grid = let
     times = [hover_time(solve_with(hover_rig; m, tank_pressure = p * 1e5), hover_rig.sys)
              for m in masses, p in pressures]
     (; masses, pressures, times)
-end
+end;
 
 # ╔═╡ f260e1c6-2e3d-5709-bc2b-16b4bd5a8abf
 md"""
@@ -497,7 +504,7 @@ tires = let
     (; sol, ghost, t60 = t, t60_ghost = t60(ghost, launch_rig.sys),
         limits = binding_limit(sol, launch_rig.sys; until = min(t, 6.0)),
         ms = 1000 * (time() - t_start))
-end
+end;
 
 # ╔═╡ 481ffd01-b7ce-5a10-83be-4a9908d528c4
 let
@@ -567,7 +574,7 @@ suction = let
         hold_power = hold_sol(0.0, idxs = hold_rig.sys.fan.power),
         hold_margin = sol(0.0, idxs = sys.fan.downforce) / (car.m * G0),
         ms = 1000 * (time() - t_start))
-end
+end;
 
 # ╔═╡ 71b6de44-ece9-5e3f-ad46-e1a5f649b945
 limit_map(suction.sol, launch_rig.sys; until = min(suction.t60, 6.0),
@@ -635,7 +642,7 @@ dyad_fold("AirTank", "ColdGasNozzle")
 
 # ╔═╡ 82ddb7df-c1e1-5e05-829e-9a3486abaa4e
 tank_setup = (p0 = p0_bar * 1e5, V = V_L / 1e3, n = n_poly,
-    A_t = throat == "fixed" ? 1.286e-3 : 1.286e-3 * 380 / p0_bar)
+    A_t = throat == "fixed" ? 1.286e-3 : 1.286e-3 * 380 / p0_bar);
 
 # ╔═╡ 16a8f827-cd4b-55dc-8b1b-0feb358c99aa
 blowdown = let
@@ -645,7 +652,7 @@ blowdown = let
     ghost = solve_with(stand_rig; tank_setup..., n = ghost_n)
     (; sol, ghost, ghost_n, marks = blowdown_marks(sol, stand_rig.sys),
         ms = 1000 * (time() - t_start))
-end
+end;
 
 # ╔═╡ 454b7935-c1c3-5914-b6f5-ad13edd86d01
 let
@@ -706,7 +713,7 @@ thrust_launch = let
     t = t60(sol, launch_rig.sys)
     (; sol, cfg, t60 = t, air = isfinite(t) ? air_used(sol, launch_rig.sys, t) : NaN,
         ms = 1000 * (time() - t_start))
-end
+end;
 
 # ╔═╡ c526562d-9690-5b95-b0f9-67f9765b3fdf
 trims = let
@@ -714,7 +721,7 @@ trims = let
         tank_n = tank_setup.n, A_t = tank_setup.A_t)
     (thrust = t60(solve_with(launch_rig; base..., tank_volume = 0.2), launch_rig.sys),
         rocket = t60(solve_with(launch_rig; base..., tank_volume = 0.6), launch_rig.sys))
-end
+end;
 
 # ╔═╡ 309bafac-d1f8-5e0a-b637-83a654847224
 let
@@ -826,7 +833,7 @@ hop_run = let
     h_b = sol(t_b, idxs = sys.hop.altitude)
     (; sol, apex = hop_apex(sol, sys), closed_apex = h_b + v_b^2 / (2 * G0),
         air = air_used(sol, sys, t_b; tank = "hop.tank"), ms = 1000 * (time() - t_start))
-end
+end;
 
 # ╔═╡ 7297e311-1114-51f5-9256-06ee3e0555a4
 let
@@ -872,7 +879,7 @@ hover_run = let
     sol = solve_with(hover_rig; m = car.m, tank_pressure = p0_hover * 1e5)
     (; sol, time = hover_time(sol, hover_rig.sys),
         closed = hover_closed_form(car.m; p0 = p0_hover * 1e5), ms = 1000 * (time() - t_start))
-end
+end;
 
 # ╔═╡ 4ce799f5-e25f-5455-92cf-7868dc713552
 let
@@ -889,19 +896,16 @@ let
 end
 
 # ╔═╡ 1eb22217-6b48-5fd1-bbd0-29ab9b184fdf
-let
-    rows = join(["| **$(m) kg** | " * join(fmt.(hover_grid.times[i, :], 2), " | ") * " |"
-                 for (i, m) in enumerate(hover_grid.masses)], "\n")
-    Markdown.parse("""
-    **Verdict: no, it cannot fly.** $(car.m) kg at $(p0_hover) bar hovers for
-    **$(fmt(hover_run.time, 2)) s** (closed form $(fmt(hover_run.closed, 2)) s), then the tank can
-    no longer carry it. Hops, not flight. *Re-solved in $(fmt(hover_run.ms, 0)) ms.*
+Markdown.parse("""
+**Verdict: no, it cannot fly.** $(car.m) kg at $(p0_hover) bar hovers for
+**$(fmt(hover_run.time, 2)) s** (closed form $(fmt(hover_run.closed, 2)) s), then the tank can
+no longer carry it. Hops, not flight. *Re-solved in $(fmt(hover_run.ms, 0)) ms.*
+""")
 
-    | hover time [s] | 300 bar | 380 bar | 690 bar |
-    |---|---:|---:|---:|
-    $rows
-    """)
-end
+# ╔═╡ 62cc1624-ca88-5b76-9cef-c99bf1e68897
+html_table(["hover time [s]", "300 bar", "380 bar", "690 bar"],
+    [("**$(m) kg**", fmt.(hover_grid.times[i, :], 2)...) for (i, m) in enumerate(hover_grid.masses)];
+    numeric = 2:4)
 
 # ╔═╡ 4f6ecd1c-90bb-52bd-85da-d989ab7adc4a
 score_rows = let
@@ -927,23 +931,22 @@ score_rows = let
         verdict_row("It can fly", "\"it can fly\"", "hovers $(fmt(hover_run.time, 1)) s",
             isfinite(hover_run.time) && hover_run.time > 60 ? :yes : :no),
     ]
-end
+end;
 
 # ╔═╡ 4378f115-d8fc-5392-9deb-ead3ccf2eb03
+md"""
+## Verdicts
+
+Tires alone cannot do it; suction moves the limit from the tire to the drive; compressed air
+pushes past both, for about a second. It hops; it does not fly.
+"""
+
+# ╔═╡ 1a1cf665-5227-5108-b6d8-6a9c8e955454
 let
     word = Dict(:yes => "possible", :no => "**not on this physics**", :pending => "not reached")
-    rows = join(["| $(r.claim) | $(r.tesla) | $(r.model) | $(word[r.verdict]) |"
-                 for r in score_rows], "\n")
-    Markdown.parse("""
-    ## Verdicts
-
-    | claim | Tesla | model | verdict |
-    |---|---|---|---|
-    $rows
-
-    Tires alone cannot do it; suction moves the limit from the tire to the drive; compressed air
-    pushes past both, for about a second. It hops; it does not fly.
-    """)
+    html_table(["claim", "Tesla", "model", "verdict"],
+        [(r.claim, r.tesla, r.model, word[r.verdict]) for r in score_rows];
+        widths = ["30%", "22%", "30%", "18%"])
 end
 
 # ╔═╡ 14bd41f4-6154-55bd-84db-91319ba078bd
@@ -1035,16 +1038,11 @@ checks = let
         @assert abs(value - ref) <= tol "$name: $value is not within $tol of $ref"
     end
     rows
-end
+end;
 
 # ╔═╡ 67ad1529-9b11-596d-8256-6ed6365d8d8e
-Markdown.parse("""
-| check | model | reference | tolerance |
-|---|---:|---:|---:|
-$(join(["| $(n) | $(fmt(v, 3)) | $(r) | ± $(t) |" for (n, v, r, t) in checks], "\n"))
-
-All $(length(checks)) checks pass.
-""")
+html_table(["check", "model", "reference", "tolerance"],
+    [(n, fmt(v, 3), string(r), "± $(t)") for (n, v, r, t) in checks]; numeric = 2:4)
 
 # ╔═╡ Cell order:
 # ╟─b519eab0-5aed-5d96-9f02-4c18458705d3
@@ -1062,7 +1060,9 @@ All $(length(checks)) checks pass.
 # ╟─1837c786-5be9-5433-9592-fa23679aa51f
 # ╟─9e4e98b3-0b60-5d19-875e-ba9acad48fe5
 # ╟─d73c9887-b6d8-5fad-9d96-d7566fc823bb
+# ╟─b80af6e2-b5e3-5bdd-97dd-0a6ecf66c074
 # ╟─6db050a1-68fc-5767-abf9-74ddea7261d8
+# ╟─1bf3759a-417c-5ada-8ebd-6a35dad71f88
 # ╟─b6d7b622-21c6-550c-948d-f5cfb96bf5f1
 # ╟─0a85f4c7-90ac-595f-b127-8474860e03df
 # ╟─532b5431-9db1-5e77-b0bc-66f8324ca14c
@@ -1123,8 +1123,10 @@ All $(length(checks)) checks pass.
 # ╟─72c966ff-94be-574b-9a41-d1909b728c48
 # ╟─4ce799f5-e25f-5455-92cf-7868dc713552
 # ╟─1eb22217-6b48-5fd1-bbd0-29ab9b184fdf
+# ╟─62cc1624-ca88-5b76-9cef-c99bf1e68897
 # ╟─4f6ecd1c-90bb-52bd-85da-d989ab7adc4a
 # ╟─4378f115-d8fc-5392-9deb-ead3ccf2eb03
+# ╟─1a1cf665-5227-5108-b6d8-6a9c8e955454
 # ╟─14bd41f4-6154-55bd-84db-91319ba078bd
 # ╟─b05ee7f3-2185-518f-9536-7635c28a8067
 # ╟─efcd227c-be87-5b78-b0a3-49f80f436147

@@ -24,7 +24,7 @@ using ..Lecture01Support: dyad_source
 export V60, G0, LAYOUTS, Rig, solve_with, signal_path, first_crossing, t60, air_used,
     binding_limit, blowdown_marks, hop_apex, hover_time, limit_map,
     nozzle_closed_form, blowdown_closed_form, hover_closed_form, fan_power_closed_form,
-    scoreboard, verdict_row, dyad_fold, car_panel_style, fmt
+    scoreboard, verdict_row, html_table, dyad_fold, car_panel_style, fmt
 
 "60 mph in m/s."
 const V60 = 26.8224
@@ -58,7 +58,7 @@ end
 
 function Rig(name::Symbol, analysis; kwargs...)
     spec = getfield(parentmodule(analysis), Symbol(nameof(analysis), :Spec))(; kwargs...)
-    result = analysis(; kwargs..., stop = spec.start + 1e-6)
+    result = analysis(; progress = false, kwargs..., stop = spec.start + 1e-6)
     prob = remake(result.sol.prob; tspan = (spec.start, spec.stop))
     solve_kwargs = (abstol = spec.abstol, reltol = spec.reltol)
     return Rig(name, prob, symbolic_container(result), solve(prob; solve_kwargs...), solve_kwargs)
@@ -260,7 +260,7 @@ function limit_map(sol, sys; until, title = "Which limit binds?")
     kN(x) = x ./ 1e3
     p = plot(v, kN(mu .* Fz); lw = 2, color = :seagreen, label = "tire limit μ_A·F_z",
         xlabel = "speed [m/s]", ylabel = "force at the wheel [kN]", title,
-        legend = :bottomleft, xlims = (0, V60 * 1.02), ylims = (0, max(60, 1.15 * maximum(kN(mu .* Fz)))))
+        legend = :outerright, xlims = (0, V60 * 1.02), ylims = (0, max(60, 1.15 * maximum(kN(mu .* Fz)))))
     hline!(p, [T_max / r / 1e3]; lw = 2, color = :darkorange, label = "torque cap T_max/r")
     plot!(p, v, kN(P_max ./ (max.(w, 1.0) .* r)); lw = 2, color = :purple,
         label = "power cap P_max/(ω·r)")
@@ -274,9 +274,9 @@ end
 # ---------------------------------------------------------------------------------------
 
 const CHIP = Dict(
-    :yes => ("possible", "#2e7d32"),
-    :no => ("not on this physics", "#c62828"),
-    :pending => ("not reached yet", "#757575"),
+    :yes => ("yes", "#2e7d32"),
+    :no => ("no", "#c62828"),
+    :pending => ("—", "#757575"),
 )
 
 """
@@ -286,32 +286,75 @@ One scoreboard row. `verdict` is `:yes`, `:no` or `:pending`.
 """
 verdict_row(claim, tesla, model, verdict::Symbol) = (; claim, tesla, model, verdict)
 
+# Pluto styles output tables as data: monospaced and right-aligned. These tables hold prose.
+const TABLE_STYLE = """
+<style>
+pluto-output table.roadster-table { font-family: inherit !important; font-size: 0.92rem;
+  width: 100%; border-collapse: collapse; table-layout: fixed; margin: 0.4em 0; }
+pluto-output table.roadster-table th, pluto-output table.roadster-table td {
+  font-family: inherit !important; text-align: left !important; vertical-align: top;
+  white-space: normal !important; overflow-wrap: anywhere; padding: 3px 8px; }
+pluto-output table.roadster-table td.num, pluto-output table.roadster-table th.num {
+  text-align: right !important; font-variant-numeric: tabular-nums; }
+pluto-output table.roadster-table tbody tr:nth-child(odd) { background: #8881; }
+pluto-output table.roadster-table p { margin: 0; }
+</style>
+"""
+
+inline_html(x) = replace(strip(Markdown.html(Markdown.parse(string(x)))), r"^<p>|</p>$" => "")
+
+"""
+    html_table(header, rows; widths, numeric) -> HTML
+
+A left-aligned table in the slide's text font. Each cell is inline Markdown. `widths` gives CSS
+column widths; the columns in `numeric` are right-aligned.
+"""
+function html_table(header, rows; widths = nothing, numeric = Int[])
+    cls(j) = j in numeric ? " class=\"num\"" : ""
+    cols = widths === nothing ? "" :
+        "<colgroup>" * join("<col style=\"width:$w\">" for w in widths) * "</colgroup>"
+    head = join("<th$(cls(j))>$(inline_html(h))</th>" for (j, h) in enumerate(header))
+    body = join(("<tr>" * join("<td$(cls(j))>$(inline_html(c))</td>" for (j, c) in enumerate(r)) *
+                 "</tr>" for r in rows), "\n")
+    return HTML("""<table class="roadster-table">$cols<thead><tr>$head</tr></thead>
+    <tbody>$body</tbody></table>$TABLE_STYLE""")
+end
+
 """
     scoreboard(rows) -> HTML
 
 The claim-against-model panel, fixed in the bottom-right corner so it stays in view in present
-mode. It sits above the car panel, which [`car_panel_style`](@ref) pins below it.
+mode. It starts collapsed to its summary line and sits above the car panel, which
+[`car_panel_style`](@ref) pins below it.
 """
 function scoreboard(rows)
-    esc(s) = replace(string(s), "&" => "&amp;", "<" => "&lt;", ">" => "&gt;")
+    done = count(r -> r.verdict != :pending, rows)
+    yes = count(r -> r.verdict == :yes, rows)
     body = join(map(rows) do r
         label, color = CHIP[r.verdict]
-        """<tr><td>$(esc(r.claim))</td><td>$(esc(r.tesla))</td><td><b>$(esc(r.model))</b></td>
-        <td><span style="background:$color;color:white;border-radius:8px;padding:1px 6px;white-space:nowrap">$label</span></td></tr>"""
+        """<tr><td>$(inline_html(r.claim))</td><td>$(inline_html(r.tesla))</td>
+        <td><b>$(inline_html(r.model))</b></td>
+        <td><span class="chip" style="background:$color">$label</span></td></tr>"""
     end, "\n")
     return HTML("""
     <aside class="roadster-scoreboard">
-    <details open><summary><b>Claim vs model</b></summary>
-    <table><thead><tr><th>claim</th><th>Tesla</th><th>model</th><th></th></tr></thead>
+    <details><summary><b>Claim vs model</b> · $yes of $done possible</summary>
+    <table class="roadster-table"><colgroup><col style="width:36%"><col style="width:24%">
+    <col style="width:28%"><col style="width:12%"></colgroup>
+    <thead><tr><th>claim</th><th>Tesla</th><th>model</th><th></th></tr></thead>
     <tbody>$body</tbody></table></details>
     </aside>
+    $TABLE_STYLE
     <style>
-    aside.roadster-scoreboard { position: fixed; right: 12px; bottom: 96px; width: 340px;
-      max-height: 60vh; overflow-y: auto; z-index: 50; font-size: 11px; line-height: 1.25;
+    aside.roadster-scoreboard { position: fixed; right: 12px; bottom: 64px; width: 380px;
+      max-height: 55vh; overflow-y: auto; z-index: 50; line-height: 1.2;
       background: var(--main-bg-color, white); border: 1px solid #9994; border-radius: 8px;
-      padding: 6px 8px; box-shadow: 0 2px 8px #0003; }
-    aside.roadster-scoreboard table { margin: 4px 0 0 0; width: 100%; }
-    aside.roadster-scoreboard td, aside.roadster-scoreboard th { padding: 2px 3px; }
+      padding: 4px 8px; box-shadow: 0 2px 8px #0003; }
+    aside.roadster-scoreboard table.roadster-table { font-size: 10.5px; margin: 4px 0 0 0; }
+    aside.roadster-scoreboard table.roadster-table td,
+    aside.roadster-scoreboard table.roadster-table th { padding: 1px 3px; }
+    aside.roadster-scoreboard .chip { color: white; border-radius: 8px; padding: 0 6px; }
+    aside.roadster-scoreboard summary { cursor: pointer; font-size: 12px; }
     </style>
     """)
 end
@@ -325,7 +368,7 @@ cannot live in the scoreboard cell itself: every result the scoreboard shows dep
 car_panel_style(cell_id::AbstractString) = HTML("""
 <style>
 pluto-cell[id="$cell_id"] > pluto-output { position: fixed; right: 12px; bottom: 12px;
-  width: 340px; z-index: 51; font-size: 12px; background: var(--main-bg-color, white);
+  width: 380px; z-index: 51; font-size: 12px; background: var(--main-bg-color, white);
   border: 1px solid #9994; border-radius: 8px; padding: 4px 8px; box-shadow: 0 2px 8px #0003; }
 pluto-cell[id="$cell_id"] > pluto-output p { margin: 2px 0; }
 </style>

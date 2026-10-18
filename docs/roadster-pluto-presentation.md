@@ -214,8 +214,9 @@ on every section's result. It stays visible in present mode and when scrolling.
 
 - **Rows:** one per claim, top to bottom in story order. Each row shows the claim, Tesla's value,
   the current model value and a verdict chip.
-- **Verdict chips:** green "possible", red "not on this physics", gray "not reached yet". A row is
-  gray until its section's cell has run.
+- **Verdict chips:** green "yes", red "no", gray "—" for a value that is not finite. As built, the
+  panel starts collapsed to a summary line ("n of m possible") so it does not cover plots; the
+  Verdicts slide has the same rows in full.
 - **Car sliders:** `m` and the layout, so one move updates every section. As built they are a
   separate cell pinned under the scoreboard by CSS on its cell id: inside the scoreboard cell they
   would form a cycle, because every result the scoreboard shows depends on them.
@@ -239,6 +240,15 @@ on every section's result. It stays visible in present mode and when scrolling.
   SynchJulia.DNode`). The lecture 3 notebooks fail the same way, so it is not specific to this
   notebook. Running Pluto in-process (`workspace_use_distributed = false`) with the packages
   loaded before the notebook opens works: every cell runs, and every slider re-runs without error.
+  `notebooks/roadster/present.jl` does exactly that, and the title slide names it:
+  `julia +dyad-3.4.0 notebooks/roadster/present.jl`.
+- **Slides show only markdown, sliders, plots and rendered tables.** Every computation cell ends
+  in `;` or returns `nothing`, and the rigs are built with `progress = false`.
+- **Tables are HTML** (`html_table` in support), left-aligned in the text font. Pluto styles a
+  bare output table as data, monospaced and right-aligned, which is unreadable for prose.
+- **Videos:** the iframes carry `referrerpolicy="strict-origin-when-cross-origin"`. Pluto serves
+  `Referrer-Policy: same-origin`, and YouTube's player refuses to load without a referrer
+  (error 153).
 - **Thin cells:** a cell is a call and a plot. `notebooks/roadster/support.jl` (module
   `RoadsterSupport`) holds the rigs and plot recipes, the same pattern as
   `notebooks/lecture02/support.jl`. Model assembly stays in `dyad/`. `src/` stays the generated
