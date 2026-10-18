@@ -1,9 +1,9 @@
 "Incremental rolling resistance caused by suction downforce."
 component SuctionRollingResistance
   "Connection to the moving vehicle body"
-  flange = Flange()
+  flange = Flange() {^flange}
   "Suction downforce"
-  downforce = RealInput()
+  downforce = RealInput() {^downforce}
   "Rolling resistance coefficient; inherited from the baseline vehicle assumption"
   parameter f_r::Real = 0.012
   "Speed scale for a continuous force reversal; numerical regularization"
@@ -13,6 +13,12 @@ component SuctionRollingResistance
 relations
   v = der(flange.s)
   flange.f = f_r * downforce * tanh(v / v_eps)
+metadata {
+  "_links": {
+    "downforce": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  }
+}
 end
 
 """
@@ -37,14 +43,14 @@ component RoadsterLaunch
   fan_command = BlockComponents.Sources.Constant(k = fan_cmd) {^fan_command}
   fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = skirt_gap) {^fan}
   suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance() {^suction_rolling}
-  thrust_command = BlockComponents.Sources.Constant(k = thrust_cmd)
-  tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure, n = tank_n)
-  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t)
-  thrust_stand = TranslationalComponents.Components.Fixed()
-  forward_gain = BlockComponents.Math.Gain(k = 1 - down_fraction)
-  forward_force = TranslationalComponents.Sources.Force()
-  force_ground = TranslationalComponents.Components.Fixed()
-  downforce_sum = BlockComponents.Math.Add(k1 = 1, k2 = down_fraction)
+  thrust_command = BlockComponents.Sources.Constant(k = thrust_cmd) {^thrust_command}
+  tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure, n = tank_n) {^tank}
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t) {^nozzle}
+  thrust_stand = TranslationalComponents.Components.Fixed() {^thrust_stand}
+  forward_gain = BlockComponents.Math.Gain(k = 1 - down_fraction) {^forward_gain}
+  forward_force = TranslationalComponents.Sources.Force() {^forward_force}
+  force_ground = TranslationalComponents.Components.Fixed() {^force_ground}
+  downforce_sum = BlockComponents.Math.Add(k1 = 1, k2 = down_fraction) {^downforce_sum}
   flat = BlockComponents.Sources.Constant(k = 0) {^flat}
   "Motor housing"
   rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
@@ -94,21 +100,21 @@ relations
   connect(wheel_inertia.spline_b, wheel.spline) {^id3}
   connect(wheel.flange, body.flange) {^id4}
   connect(axle.flange, body.flange) {^id5}
-  connect(suction_rolling.flange, body.flange)
-  connect(fan_command.y, fan.cmd)
-  connect(thrust_command.y, nozzle.cmd)
-  connect(tank.p, nozzle.p)
-  connect(tank.T, nozzle.T)
-  connect(nozzle.mdot, tank.mdot)
-  connect(nozzle.flange, thrust_stand.flange)
-  connect(nozzle.thrust, forward_gain.u)
-  connect(forward_gain.y, forward_force.f)
-  connect(forward_force.flange_a, force_ground.flange)
-  connect(forward_force.flange_b, body.flange)
-  connect(fan.downforce, downforce_sum.u1)
-  connect(nozzle.thrust, downforce_sum.u2)
+  connect(suction_rolling.flange, body.flange) {^id12}
+  connect(fan_command.y, fan.cmd) {^id13}
+  connect(thrust_command.y, nozzle.cmd) {^id14}
+  connect(tank.p, nozzle.p) {^id15}
+  connect(tank.T, nozzle.T) {^id16}
+  connect(nozzle.mdot, tank.mdot) {^id17}
+  connect(nozzle.flange, thrust_stand.flange) {^id18}
+  connect(nozzle.thrust, forward_gain.u) {^id19}
+  connect(forward_gain.y, forward_force.f) {^id20}
+  connect(forward_force.flange_a, force_ground.flange) {^id21}
+  connect(forward_force.flange_b, body.flange) {^id22}
+  connect(fan.downforce, downforce_sum.u1) {^id23}
+  connect(nozzle.thrust, downforce_sum.u2) {^id24}
   connect(downforce_sum.y, axle.downforce) {^id6}
-  connect(downforce_sum.y, suction_rolling.downforce)
+  connect(downforce_sum.y, suction_rolling.downforce) {^id25}
   connect(axle.F_z, wheel.F_z) {^id7}
   connect(axle.F_z, traction.F_z) {^id8}
   connect(wheel.kappa, traction.kappa) {^id11}
@@ -123,38 +129,50 @@ relations
   initial fan.dp = fan_cmd * fan.dp_max
 metadata {
   "_links": {
-    "motor": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
-    "wheel_inertia": {
-      "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 450, "y2": 550}}}
-    },
-    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 450, "y2": 550}}}},
-    "body": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 450, "y2": 550}}}},
-    "axle": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 200, "y2": 300}}}},
-    "traction": {
-      "Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 200, "y2": 300}}}
-    },
-    "fan_command": {
-      "Dyad": {"placement": {"diagram": {"x1": 650, "x2": 750, "y1": 20, "y2": 120}}}
-    },
-    "fan": {"Dyad": {"placement": {"diagram": {"x1": 800, "x2": 900, "y1": 20, "y2": 120}}}},
-    "suction_rolling": {
-      "Dyad": {"placement": {"diagram": {"x1": 900, "x2": 1000, "y1": 200, "y2": 300}}}
-    },
-    "flat": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 700, "y2": 800}}}},
-    "rot_ground": {
-      "Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 700, "y2": 800}}}
-    },
+    "fan_command": {"Dyad": {"placement": {"diagram": {"x1": -350, "x2": -250, "y1": 115, "y2": 215}}}},
+    "fan": {"Dyad": {"placement": {"diagram": {"x1": -150, "x2": -50, "y1": 115, "y2": 215}}}},
+    "thrust_command": {"Dyad": {"placement": {"diagram": {"x1": -350, "x2": -250, "y1": 300, "y2": 400}}}},
+    "tank": {"Dyad": {"placement": {"diagram": {"x1": -350, "x2": -250, "y1": 470, "y2": 570}}}},
+    "nozzle": {"Dyad": {"placement": {"diagram": {"x1": -150, "x2": -50, "y1": 470, "y2": 570}}}},
+    "thrust_stand": {"Dyad": {"placement": {"diagram": {"x1": -70, "x2": 30, "y1": 650, "y2": 750}}}},
+    "downforce_sum": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 130, "y2": 230}}}},
+    "forward_gain": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "axle": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 130, "y2": 230}}}},
+    "suction_rolling": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 300, "y2": 400}}}},
+    "forward_force": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 570, "y2": 670}}}},
+    "force_ground": {"Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}},
+    "traction": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 130, "y2": 230}}}},
+    "motor": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 500, "y2": 600}}}},
+    "rot_ground": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 660, "y2": 760}}}},
+    "wheel_inertia": {"Dyad": {"placement": {"diagram": {"x1": 870, "x2": 970, "y1": 500, "y2": 600}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 1040, "x2": 1140, "y1": 500, "y2": 600}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 1210, "x2": 1310, "y1": 500, "y2": 600, "rot": 180}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 1210, "x2": 1310, "y1": 670, "y2": 770}}}},
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
     "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 205}, {"x": 450, "y": 890}, {"x": 1175, "y": 890}, {"x": 1175, "y": 550}], "E": 2}], "path": {}}},
     "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 425, "y": 160}, {"x": 425, "y": 80}, {"x": 1090, "y": 80}], "E": 2}], "path": {}}},
     "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 180}, {"x": 650, "y": 550}], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1360, "y": 720}, {"x": 1360, "y": 550}], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1090, "y": 830}, {"x": 480, "y": 830}, {"x": 480, "y": 200}], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 350}, {"x": 450, "y": 890}, {"x": 1175, "y": 890}, {"x": 1175, "y": 550}], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -100, "y": 350}], "E": 2}], "path": {}}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -20, "y": 540}], "E": 2}], "path": {}}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 500}], "E": 2}], "path": {}}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 620}], "E": 2}], "path": {}}},
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 620}, {"x": 450, "y": 890}, {"x": 1175, "y": 890}, {"x": 1175, "y": 550}], "E": 2}], "path": {}}},
+    "id23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 20, "y": 500}, {"x": 20, "y": 210}], "E": 2}], "path": {}}},
+    "id25": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 180}, {"x": 250, "y": 350}], "E": 2}], "path": {}}}
   }
 }
 end
