@@ -2,7 +2,7 @@
 title: Lecture 2 hands-on — drive a mapped engine
 ---
 
-[← Vehicle Systems & Components](../../index.html) · [Tutor deck →](../../handson-02/index.html){target="_self"}
+[← Vehicle Systems & Components](../../index.html) · [Projector deck →](../../handson-02/index.html){target="_self"}
 
 # Lecture 2 hands-on: drive a mapped engine
 
@@ -10,7 +10,9 @@ From measured engine maps to the fuel and CO₂ your car burns at 50, 90 and 130
 
 **Why we build it.** Lecture 1's engine gave 150 N·m at every speed and could not say how much fuel it burned. A real engine control unit reads tables measured on a test bench, at the engine speed and the pressure in the intake manifold. **What you build:** the manifold, whose pressure fills and empties, and a small engine of your own that reads torque and fuel from those tables. Then you paste the course library's fuel cut into your engine, put it into your hands-on 1 car and drive it: flat out, at steady speeds, lifting off and braking. By the end you have your car's fuel consumption in L/100 km and its CO₂ in g/km, the two numbers on a car's sticker.
 
-**How each step works.** It starts with the idea it needs. Your tutor explains it from the [tutor deck](../../handson-02/index.html){target="_self"}, and the *Theory* link under each step's goal opens those slides. Then you build, and the checkpoint is a number you could have predicted first. **Before this session:** the [engine lecture](../../lecture-02/index.html#/mapped-engine){target="_self"}, whose last section shows what you build here.
+![The mapped engine as a chain: the pedal opens the throttle; the throttle's air flow and the brake booster's fill the intake manifold, whose state is the pressure p_m; the cylinders draw air out; maps read at engine speed and p_m return torque to the crankshaft and the car, and fuel flow to the fuel and CO₂ outputs; engine speed feeds back to the maps and the cylinders.](/handson/lecture-02/img/mapped-engine-overview.svg){style="background:#fff;padding:8px;border-radius:4px"}
+
+**How each step works.** It starts with the idea it needs, in a short **Why** box; the *Details* boxes hold the derivations, for when you want them. Each build opens with a picture of the finished model, so you know where you are going. Then you build, and the checkpoint is a number you could have predicted first. **Before this session:** the [engine lecture](../../lecture-02/index.html#/mapped-engine){target="_self"}, whose last section shows what you build here.
 
 You build on your `MyCar` library from [hands-on 1](../lecture-01/). The throttle, the cylinders' air flow, the map tables and the fuel-cut logic come from the course library, `VehicleSystemsComponents`: they are physics the lecture stated, not what this session teaches. The budgets add up to about 90 minutes; step 07 is for when time is left.
 
@@ -67,8 +69,6 @@ Under **+**, `VehicleSystemsComponents` also holds a `HandsOn02` folder and, in 
 
 Find the 90 km/h cruise point on the torque map and read its fuel flow — before any model runs.
 
-Theory: [tutor slides — speed × manifold pressure, and 90 km/h from the table](../../handson-02/index.html#/speed-density){target="_self"}
-
 #### Where you are, where you are going
 
 Every map is a grid over engine speed *N* (26 speeds, 500–6750 rpm, down the side) and manifold absolute pressure *p<sub>m</sub>* (43 pressures, 0–105 kPa, across the top). The engine control unit knows both at every instant, from the crankshaft sensor and the MAP sensor, and looks everything up there.
@@ -81,6 +81,16 @@ Every map is a grid over engine speed *N* (26 speeds, 500–6750 rpm, down the s
 | `full_load.csv` | the most torque the engine reaches at each speed | N·m |
 
 The data is the US EPA's ALPHA map of a 2014 Mazda 2.0 L Skyactiv, scaled to 1.5 L. How it was converted, and every assumption, is in `data/engine/README.md` in the course repository.
+
+::: info Why speed and manifold pressure
+
+Two numbers fix the engine's state: how fast it turns, and how much air each cylinder gets. A cylinder fills from the manifold at the manifold's pressure, so *p<sub>m</sub>* says how full it gets: more pressure, more air, more fuel, more torque. An engine control unit that reads its load this way, without an air-mass meter, is called *speed-density*.
+
+The pedal is not on the map. It says what the driver wants; the pressure says what the cylinders actually get, a moment later, once the manifold has filled. Step 02 builds that moment.
+
+The pressures are absolute: 101 kPa is the air outside, a wide-open throttle; 33 kPa at idle is a strong vacuum.
+
+:::
 
 #### Do this
 
@@ -105,6 +115,22 @@ The data is the US EPA's ALPHA map of a 2014 Mazda 2.0 L Skyactiv, scaled to 1.5
 [![The torque map as a heat map, engine speed against manifold pressure: torque rises from about −25 N·m at low pressure to about 175 N·m at full pressure, and a white dot marks the 90 km/h point at 3080 rpm and 47.8 kPa.](/handson/lecture-02/img/step01-torque-map.png){width="990" height="528"}](/handson/lecture-02/img/step01-torque-map.png)
 
 [![The fuel map on the same axes: fuel flow rises from near 0 g/s at low pressure to about 8 g/s at full pressure and high speed, with the 90 km/h point at 3080 rpm and 47.8 kPa marked.](/handson/lecture-02/img/step01-fuel-map.png){width="990" height="528"}](/handson/lecture-02/img/step01-fuel-map.png)
+
+::: info Why the maps look like this
+
+Torque and fuel rise across the map with pressure, almost in a straight line: more air, more of both. At low pressure the torque is negative: the engine pumps air against a vacuum, and that costs work; step 06 uses it to brake the car. λ is 1 almost everywhere because the engine control unit holds the mixture at stoichiometric for the catalyst, the λ loop of the lecture's section 7; only near full load does it run rich, to cool the exhaust.
+
+:::
+
+::: details Details: where 3080 rpm and 31.1 N·m come from, and the reading worked through
+
+- **Speed:** 90 km/h is 25 m/s; 25 / 0.31 m × 4 × 60 / 2π = 3080 rpm.
+- **Torque:** at 90 km/h the car needs 236 N against drag and 165 N against rolling, 401 N; × 0.31 / 4 = 31.1 N·m.
+- **Pressure:** the 3000 rpm row gives 30.66 N·m at 47.5 kPa and 35.63 at 50 kPa; (31.08 − 30.66) / 4.97 × 2.5 = 0.21, so 47.7 kPa.
+- **Fuel:** the same row of `fuel_gps` gives 0.816 g/s at 47.5 kPa and 0.895 at 50; 0.816 + 0.085 × (0.895 − 0.816) = 0.823 g/s.
+- **Per distance:** 0.823 × 3600 / 745 = 3.98 L/h; ÷ 90 × 100 = 4.4 L/100 km. Interpolating between the 3000 and 3250 rpm rows to 3080 rpm instead gives 47.8 kPa and 0.850 g/s: 4.11 L/h, 4.6 L/100 km.
+
+:::
 
 ::: tip Checkpoint
 
@@ -132,8 +158,6 @@ g CO₂/km is 3.09 × fuel in g/s ÷ speed in m/s × 1000.
 
 Build the intake manifold as one equation, and watch its pressure pull down to 33 kPa at idle.
 
-Theory: [tutor slides — mass in, mass out](../../handson-02/index.html#/filling){target="_self"}
-
 #### Where you are, where you are going
 
 The manifold is a box of air between the throttle and the cylinders. Air comes in through the throttle and leaves into the cylinders; its pressure is what is left, and it takes time to change:
@@ -142,7 +166,26 @@ The manifold is a box of air between the throttle and the cylinders. Air comes i
 
 You write this equation as a component, then put it on a bench between two given parts: the `Throttle`, whose flow the pedal sets, and `CylinderAirflow`, which draws more air the higher the pressure and the faster the engine turns. The brake booster's flow `ṁ_bst` is zero today.
 
+::: info Why the pressure settles, and why it lags
+
+A bathtub, as in hands-on 1: the throttle is the tap, the cylinders are the drain, and the drain pulls harder the fuller the tub. So the pressure settles where in equals out, and it gets there with a time constant. That is the engine lag of hands-on 1, a fixed 0.3 s there; here it comes out of a volume of air, it is shorter, and it depends on speed: about 0.15 s at idle, 0.03 s at 3000 rpm.
+
+A closed throttle does not give 0 kPa. It still leaks a little air, and the cylinders draw less the lower the pressure, so at 800 rpm the two balance at 33 kPa. The idle leak was sized to give that, and the torque map gives zero torque at 800 rpm at the same pressure: the air path and the maps agree.
+
+:::
+
+::: details Details: where τ comes from
+
+1. Near a balance point, a small rise δp makes the cylinders draw more: δṁ<sub>cyl</sub> = (∂ṁ<sub>cyl</sub>/∂p<sub>m</sub>)·δp. The throttle's flow does not change: below 53.5 kPa (0.528 × 101.3) it is choked, so it does not depend on *p<sub>m</sub>*.
+2. So (V<sub>m</sub>/RT<sub>m</sub>)·dδp/dt = −(∂ṁ<sub>cyl</sub>/∂p<sub>m</sub>)·δp: a first-order lag with τ = (V<sub>m</sub>/RT<sub>m</sub>) / (∂ṁ<sub>cyl</sub>/∂p<sub>m</sub>).
+3. V<sub>m</sub>/(R T<sub>m</sub>) = 0.001 / (287 × 298) = 1.17·10⁻⁸ kg/Pa. At 800 rpm and 33 kPa, ∂ṁ<sub>cyl</sub>/∂p<sub>m</sub> ≈ 7.5·10⁻⁸ kg/(s·Pa), so τ = 0.156 s.
+4. At 3000 rpm the cylinders pump 3.75 times as often and breathe better: τ ≈ 0.034 s.
+
+:::
+
 #### A · Paste the manifold
+
+[![The Manifold component in the code view: the three RealInput ports mdot_thr, mdot_bst and mdot_cyl, the RealOutput p_m, the parameters V_m, T_m and R, the variable p, and the one equation V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl with p_m = p.](/handson/lecture-02/img/step02-manifold-code.png){width="638" height="584"}](/handson/lecture-02/img/step02-manifold-code.png)
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `Manifold`.
 2. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save. This also replaces the template's `metadata` block: that is fine.
@@ -180,9 +223,9 @@ end
 
 :::
 
-[![The Manifold component in the code view: the three RealInput ports mdot_thr, mdot_bst and mdot_cyl, the RealOutput p_m, the parameters V_m, T_m and R, the variable p, and the one equation V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl with p_m = p.](/handson/lecture-02/img/step02-manifold-code.png){width="638" height="584"}](/handson/lecture-02/img/step02-manifold-code.png)
-
 #### B · The bench
+
+[![The AirPathStep diagram: throttle_cmd feeds throttle, no_booster feeds the manifold's middle input and speed feeds cylinders; the throttle and cylinder flows run into the manifold's top and bottom inputs, and the manifold output p_m loops back to both throttle and cylinders.](/handson/lecture-02/img/step02-airpath-bench.png){width="638" height="584"}](/handson/lecture-02/img/step02-airpath-bench.png)
 
 | Name | Library path | Set |
 | --- | --- | --- |
@@ -232,8 +275,6 @@ end
 ```
 
 :::
-
-[![The AirPathStep diagram: throttle_cmd feeds throttle, no_booster feeds the manifold's middle input and speed feeds cylinders; the throttle and cylinder flows run into the manifold's top and bottom inputs, and the manifold output p_m loops back to both throttle and cylinders.](/handson/lecture-02/img/step02-airpath-bench.png){width="638" height="584"}](/handson/lecture-02/img/step02-airpath-bench.png)
 
 #### C · Run it at idle, then at 3000 rpm
 
@@ -306,8 +347,6 @@ end
 
 An engine of your own, drawn from six given blocks: pedal in; torque, fuel and CO₂ out, read from the maps at speed and manifold pressure. Then you paste in fuel cut.
 
-Theory: [tutor slides — three lines make the engine](../../handson-02/index.html#/engine-equations){target="_self"}
-
 #### Where you are, where you are going
 
 Your engine has three lines that matter:
@@ -317,6 +356,14 @@ Your engine has three lines that matter:
 - CO₂ is 3.09 × fuel: each kilogram of petrol burned completely makes 3.09 kg of CO₂.
 
 The pedal sets the throttle directly. The manifold pressure comes from `AirPath`, the course library's version of your step 02 bench, packaged as one part. The two maps are given parts too, `TorqueMap` and `FuelMap`: each already holds its table and converts rad/s and Pa to the rpm and kPa the table uses, and `TorqueMap` caps itself at the full-load curve. A `VelocitySensor` on the shaft reads the engine speed. You place the parts and draw the wires; the only number you type is 3.09.
+
+::: info Why a cap, and why 3.09
+
+**The cap.** The map runs to 105 kPa, past anything the engine reaches; its last columns are extrapolated beyond what was measured. `full_load.csv` holds the torque the engine really gives at each speed, and `TorqueMap` applies it inside: at 3000 rpm and 99.9 kPa the map reads 163.0 N·m, the full-load curve 148.4.
+
+**3.09.** A kilogram of carbon burns to 44/12 = 3.67 kg of CO₂, and petrol is about 84 % carbon by mass: 0.84 × 3.67 = 3.09. That holds when the fuel burns completely; the little CO the engine makes is a small correction.
+
+:::
 
 You test the engine on a **dynamometer**: a bench that holds the shaft at a fixed speed whatever the engine does, so a pedal step shows only the engine.
 
@@ -400,6 +447,8 @@ end
 
 The bench is given as code: paste it. Its parameters are the knobs of the two runs below.
 
+[![The MapEngineDyno bench left to right: the pedal step and no_booster feed engine; the speed constant k = rpm * pi / 30 drives dyno, which holds the engine shaft; the supports of engine and dyno both go to mounts below.](/handson/lecture-02/img/step03-dyno-bench.png){width="638" height="584"}](/handson/lecture-02/img/step03-dyno-bench.png)
+
 6. <Badge type="tip" text="New component" /> Add a component `MapEngineDyno`, toggle to code, select everything, paste the block below and save. Toggle back to see it, left to right: `pedal` and `no_booster` feed the engine, `speed` drives the `dyno`, and both supports go to `mounts`. The `{"Dyad": …}` annotations only place the parts in the diagram.
 7. <Badge type="tip" text="New analysis" /> Create `MapEngineDynoTransient` as in step 02, or paste the `analysis` block below into its own file.
 
@@ -446,8 +495,6 @@ end
 ```
 
 :::
-
-[![The MapEngineDyno bench left to right: the pedal step and no_booster feed engine; the speed constant k = rpm * pi / 30 drives dyno, which holds the engine shaft; the supports of engine and dyno both go to mounts below.](/handson/lecture-02/img/step03-dyno-bench.png){width="638" height="584"}](/handson/lecture-02/img/step03-dyno-bench.png)
 
 #### C · Run 1: a small pedal step at 90 km/h
 
@@ -505,6 +552,8 @@ Without the cap the map would give 163.0 N·m. The torque now rises 10–90 % in
 
 With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making negative torque. The dynamometer turns the engine, as the wheels do in a car that rolls with the pedal up, and that fuel does nothing useful.
 
+::: info Why fuel cut, and how it decides
+
 **Deceleration fuel cut.** Every modern engine control unit stops injecting when the driver lifts off at speed. It saves the fuel the engine would burn for nothing, sends no unburned fuel to the catalyst, and makes the engine brake the car harder.
 
 **When it cuts.** The course library's `FuelCutLogic` decides. It starts the cut when the pedal is closed and the engine turns faster than **1300 rpm**. It ends the cut as soon as the pedal opens, or when the engine falls below **1000 rpm**, so that it idles on its own instead of stalling.
@@ -515,7 +564,13 @@ With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making
 
 **The torque during the cut.** No fuel burns, so the engine makes no combustion torque. The wheels turn it, and it pumps air through the closed throttle. The torque it then takes from the shaft was measured on the test bench with the fuel off, as a curve over speed alone: the **closed-throttle (motoring) curve**. While the cut is on, `CutTorqueMap` gives that curve instead of your torque map, and `CutFuelMap` gives zero fuel. Both switch over about 10 ms, so the solver never sees a jump.
 
-You edit your own `MapEngine` in place. The two new map blocks have their ports where `TorqueMap`'s and `FuelMap`'s are, so your wires stay where they are. The course library keeps both versions for reference: `HandsOn02.MapEngine` before the paste, `HandsOn02.MapEngineFuelCut` after it.
+:::
+
+You edit your own `MapEngine` in place. The two new map blocks have their ports where `TorqueMap`'s and `FuelMap`'s are, so your wires stay where they are. The course library keeps both versions for reference: `HandsOn02.MapEngine` before the paste, `HandsOn02.MapEngineFuelCut` after it. After the paste your engine and bench look like this, drawn without port names:
+
+[![MapEngine after the fuel-cut paste, the course's layout: as before, plus cut_logic at the bottom left, whose inputs come from the pedal port and from speed.w, and whose output runs up into the bottom of both torque_map and fuel_map.](/handson/lecture-02/img/step03-map-engine-fuel-cut.png){width="888" height="770" style="max-width:520px"}](/handson/lecture-02/img/step03-map-engine-fuel-cut.png)
+
+[![MapEngineDyno after the paste: the same bench, with speed now a ramp that holds rpm until 2 s and then slows the dyno to 800 rpm.](/handson/lecture-02/img/step03-dyno-bench-fuel-cut.png){width="817" height="478" style="max-width:520px"}](/handson/lecture-02/img/step03-dyno-bench-fuel-cut.png)
 
 10. Open `MapEngine` and toggle to code (⇄). Select from the `t` of `torque_map =` to the end of the `fuel_map =` line, and paste the first block over it. If the two lines are not next to each other, delete both, click at the end of the last component line, press <kbd>Enter</kbd> and paste the block there. The blocks end without a line break: select whole lines from the margin instead and the line after the paste joins its last line.
 11. Click at the end of the last `connect(…)` line, press <kbd>Enter</kbd> and paste the second block. Save, and toggle back to the diagram: `cut_logic` sits at the bottom left, its output goes up into both maps from below, and nothing you drew has moved. The four new wires are drawn for the course's layout, `HandsOn02.MapEngineFuelCut`, so on your own they may run diagonally or across a block: only the drawing is off, the connections are right. The **Problems** tab should show nothing.
@@ -579,15 +634,25 @@ Steps 4–6 · your engine in your hands-on 1 car · 32 min
 
 Your hands-on 1 car with your own engine and a pedal — and a real top speed.
 
-Theory: [tutor slides — top speed, with a torque curve](../../handson-02/index.html#/top-speed-again){target="_self"}
-
 #### Where you are, where you are going
 
 Same body, same driveline, same single gear of 4.0. The engine changes to your `MapEngine` from step 03, fuel cut included, and with it the input: a pedal from 0 to 1 instead of a torque. Two new outputs read the manifold pressure and the fuel in liters per hour. Hands-on 1's car reached 246 km/h at 8400 rpm; this engine gives less at high revs, and its rev limiter stops fueling at 6500 rpm.
 
 The car needs one part the dynamometer did not: the inertia of the crankshaft and flywheel. On the bench the dynamometer set the speed, so the engine's own rotating mass did not matter. In the car it resists every change of speed, like 0.15 × (4 / 0.31)² = 25 kg more car. You add it as one block on the shaft between the engine and the driveline, with the value the course library's `MappedEngine` assumes, J = 0.15 kg·m².
 
+::: info Why the top speed falls
+
+The force balance is hands-on 1's, but the push now depends on engine speed:
+
+**T<sub>full</sub>(N) · 4 / 0.31 = 0.378 v² + 165**
+
+The engine turns 34.2 rpm per km/h (v / 0.31 × 4 × 60 / 2π), and above its middle the full-load torque falls away. So the push meets the drag well below 246 km/h, and the rev limiter, which is part of your `cut_logic`, comes earlier still. A real car rarely meets its limiter in top gear: this car's one gear, ratio 4, is a second or third gear on a real one.
+
+:::
+
 #### Do this
+
+<!-- TODO(screenshot): step04-mapped-car.png, the finished MappedCar, as the goal of this build. -->
 
 1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was.
 2. Open `MappedCar`. Delete `engine`. Click **+** → `MyCar › MapEngine`, your own engine, name it `engine`, and put it where the old one was.
@@ -661,7 +726,6 @@ Two findings from a trial of this car: from v = 0 it does not move, because the 
 0 N·m at 0 rpm and caps the torque there; started at 2 m/s it reaches 189.9 km/h, and then the
 solver stops at about 87 s with MaxIters while the rev limiter holds it. The car with MappedEngine
 does the same, so the fix belongs to the bench or the limiter, not to the engine choice. -->
-<!-- TODO(screenshot): step04-mapped-car.png. -->
 
 8. Run it and plot the speed:
 
@@ -686,8 +750,6 @@ Commit: **Source Control** → message `Step 04: mapped car` → **Commit** → 
 
 Hold 50, 90 and 130 km/h, read the fuel in liters per hour, and turn it into L/100 km and g CO₂/km.
 
-Theory: [tutor slides — from L/h to the sticker](../../handson-02/index.html#/per-distance){target="_self"}
-
 #### Where you are, where you are going
 
 At a steady speed the fuel flow in L/h, divided by the speed in km/h, is liters per kilometer:
@@ -697,7 +759,15 @@ At a steady speed the fuel flow in L/h, divided by the speed in km/h, is liters 
 
 2302 g of CO₂ per liter is 745 g of petrol × 3.09. Step 01 predicted 4.6 L/100 km at 90 km/h from the table alone; now the car gives it.
 
+::: info Why per kilometer
+
+The engine gives liters per hour, the car covers kilometers per hour: divide, and the hours cancel. A car idling at a standstill burns fuel and covers no distance, so its L/100 km is infinite. That is why a car's label is measured over a driving cycle, step 07, and not at one speed.
+
+:::
+
 #### Do this
+
+<!-- TODO(screenshot): step05-cruise-bench.png, the finished MappedCarCruise, as the goal of this build. -->
 
 1. <Badge type="tip" text="New component" /> The bench `MappedCarCruise`: `pedal` = `Constant(k = 0.1)` → `car.pedal`, with the `initial` lines below. <Badge type="tip" text="New analysis" /> `MappedCarCruiseTransient`, `stop = 60`.
 2. Run it and plot speed and fuel:
@@ -737,7 +807,7 @@ end
 three decimals, from HandsOn02.MappedCarCruise. The car runs the student's MapEngine, whose pedal
 drives the throttle directly: on the dynamometer it holds the three cruise torques at
 0.044 / 0.103 / 0.190 ("Hands-on 02 map engine" testset), not MappedEngine's 0.124 / 0.220 / 0.331. -->
-<!-- TODO(screenshots): step05-cruise-bench.png, step05-cruise-90-plot.png. -->
+<!-- TODO(screenshot): step05-cruise-90-plot.png. -->
 
 ::: tip Checkpoint
 
@@ -753,17 +823,33 @@ Predicted from the maps for this car, the table of step 01; your table should ma
 
 :::
 
+::: info Why the fuel per kilometer rises with speed
+
+From 50 to 130 km/h the speed grows 2.6 times, the fuel per hour 5.5 times, the fuel per kilometer 2.1 times: the drag grows with v². And even at 130 km/h the manifold sits at only 61 kPa. A cruising petrol engine is throttled hard, and pumping air against that vacuum is part of why it is inefficient at part load.
+
+:::
+
 Commit: **Source Control** → message `Step 05: cruise` → **Commit** → **Sync Changes**.
 
 ### 06 Coast-down and a brake stop <Badge type="info" text="8 min" /> {#coast-brake}
 
 Lift off at 90 km/h and the fuel stops; brake, and read the vacuum the brake booster draws on.
 
-Theory: [tutor slides — lift off at 90 km/h](../../handson-02/index.html#/coast-brake){target="_self"}
-
 #### Where you are, where you are going
 
 With the pedal up at speed, the throttle closes and the manifold drops to the overrun pressure of step 02. The engine control unit cuts the fuel completely, and the engine, driven by the wheels, pumps air against that vacuum: it brakes the car. A brake booster draws its vacuum from this manifold, so you plot that too.
+
+::: info Why the fuel comes back at 29 km/h
+
+The cut ends when the engine falls below 1000 rpm: 1000 / 34.2 rpm per km/h = 29.2 km/h. It starts only above 1300 rpm, 38 km/h, so lifting off at 30 km/h never cuts. Coasting down a long hill in gear therefore burns nothing; in neutral the engine idles on its own fuel, about 0.45 L/h.
+
+:::
+
+::: info Why the brake needs the vacuum
+
+A brake booster is a can of air split by a diaphragm, its vacuum side connected to this manifold. The deeper the vacuum while you brake, the harder the booster helps your foot. In the brake lecture its own air flows back into the manifold, through the `mdot_bst` input you hold at zero today.
+
+:::
 
 #### A · Coast down
 
@@ -783,6 +869,8 @@ With the pedal up at speed, the throttle closes and the manifold drops to the ov
 
 #### B · Brake
 
+<!-- TODO(screenshot): step06-mapped-car-brake.png, MappedCar with F_brake and brake, as the goal of this build. -->
+
 3. In `MappedCar`, add an input `F_brake` and `brake` = `TranslationalComponents › Sources › Force`. Wire `F_brake` → `brake.f`, one flange of `brake` to `body.flange` and the other to `trans_ground`.
 4. In `MappedCarCoast`, add `brake_cmd` = `Step(height = 4000, start_time = 5)` → `car.F_brake`, and set `stop = 10`. Your other car benches now have an input nobody drives: give each a `Constant(k = 0)` into `car.F_brake` before running them again.
 5. Run it and plot `car.v_kmh` and `car.p_m`.
@@ -794,7 +882,7 @@ from HandsOn02.MappedCarCoast's brake-stop run; then give the one correct flange
 
 ::: tip Checkpoint
 
-The car slows far faster than in the coast-down — if it speeds up, swap the two flanges of `brake`. `p_m` stays deep below the outside 101 kPa through the stop: that is the vacuum the brake booster works with. The car has no clutch, so below about 25 km/h the engine is dragged toward a stall; read the plot only down to there.
+The car slows far faster than in the coast-down — if it speeds up, swap the two flanges of `brake`. `p_m` stays deep below the outside 101 kPa through the stop: that is the vacuum the brake booster works with. The car has no clutch, so below about 25 km/h, 855 rpm, the engine is dragged toward a stall and `p_m` climbs to the outside pressure, an artifact of the missing clutch; read the plot only down to there. The 4000 N is about 0.3 g on 1400 kg, a firm stop.
 
 :::
 
@@ -821,9 +909,7 @@ The pull request is open on github.com and its **Commits** tab lists one commit 
 
 The same engine with a gearbox and a driver, following the 30-minute speed trace a car's label is measured on.
 
-Theory: [tutor slides — what changes, and what to compare](../../handson-02/index.html#/wltc){target="_self"}
-
-Steady cruise is not how anyone drives, and it is not how the label is measured. The WLTC class 3 trace runs 1800 s through town, suburb, road and motorway, up to 131 km/h. To follow it the car needs a gearbox with a shift schedule, so the engine stays near its efficient middle, and a driver: a PI controller from speed error to pedal, Lecture 1's cruise control following a trace instead of a setpoint. Compare your L/100 km and g CO₂/km over the whole cycle with a real 1.5 L petrol car's label.
+Steady cruise is not how anyone drives, and it is not how the label is measured. The WLTC class 3 trace runs 1800 s through town, suburb, road and motorway, up to 131 km/h. To follow it the car needs a gearbox with a shift schedule, so the engine stays near its efficient middle, and a driver: a PI controller from speed error to pedal, Lecture 1's cruise control following a trace instead of a setpoint. Compare your L/100 km and g CO₂/km over the whole cycle with a real 1.5 L petrol car's label. Expect yours a little lower: no cold start, no auxiliaries, no driver who overshoots.
 
 <!-- TODO(whole step): task 6 (scope B). Model names, actions, the checkpoint numbers, and a real
 1.5 L car's label figure with its source. If task 6 is not ready, link the prepared notebook. -->
