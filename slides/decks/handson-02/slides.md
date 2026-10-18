@@ -183,22 +183,17 @@ routeAlias: mapped-car
 
 ## The car with a mapped engine
 
-<div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
-<div>
+<div class="max-w-200">
 
 **Goal:** your hands-on 1 car with your own engine, a flywheel and a pedal, floored from rest.
-
-[Guide: step 04 →](../handson/lecture-02/#mapped-car)
-
-</div>
-<div>
 
 > **Checkpoint**
 >
 > Top speed about **190 km/h**, not 246:
 > the rev limiter at **6500 rpm**.
 
-</div>
+[Guide: step 04 →](../handson/lecture-02/#mapped-car)
+
 </div>
 
 <!-- TODO(screenshot): step04-mapped-car.png, once HandsOn02.MappedCar exists. -->
@@ -215,15 +210,9 @@ routeAlias: cruise
 
 ## Cruise: fuel and CO₂
 
-<div class="grid grid-cols-[1fr_1.3fr] gap-8 items-start">
-<div>
+<div class="max-w-200">
 
 **Goal:** hold 50, 90 and 130 km/h, and read the numbers on a car's sticker.
-
-[Guide: step 05 →](../handson/lecture-02/#cruise)
-
-</div>
-<div>
 
 > **Checkpoint**
 >
@@ -233,7 +222,8 @@ routeAlias: cruise
 > | 90 | 47.8 | 4.11 | **4.6** | **105** |
 > | 130 | 60.8 | 9.14 | **7.0** | **162** |
 
-</div>
+[Guide: step 05 →](../handson/lecture-02/#cruise)
+
 </div>
 
 <!-- TODO(screenshot): step05-cruise-bench.png, once HandsOn02.MappedCarCruise exists. -->
@@ -250,15 +240,9 @@ routeAlias: coast-brake
 
 ## Coast-down and a brake stop
 
-<div class="grid grid-cols-[1fr_1fr] gap-8 items-start">
-<div>
+<div class="max-w-200">
 
 **Goal:** lift off at 90 km/h and watch the fuel stop; then brake, and read the vacuum.
-
-[Guide: step 06 →](../handson/lecture-02/#coast-brake)
-
-</div>
-<div>
 
 > **Checkpoint**
 >
@@ -267,7 +251,8 @@ routeAlias: coast-brake
 > - fuel back at **29 km/h**
 > - braking: *p<sub>m</sub>* stays deep below 101 kPa
 
-</div>
+[Guide: step 06 →](../handson/lecture-02/#coast-brake)
+
 </div>
 
 <!-- TODO(screenshot): step06-coast-plot.png, once HandsOn02.MappedCarCoast exists. -->
