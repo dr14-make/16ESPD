@@ -202,6 +202,9 @@ component.
 end
 
 
+include("AirPathStepTransient_definition.jl")
+include("AirPathStep_definition.jl")
+include("Manifold_definition.jl")
 include("MapEngineDynoTransient_definition.jl")
 include("MapEngineDyno_definition.jl")
 include("MapEngineFuelCutDynoTransient_definition.jl")

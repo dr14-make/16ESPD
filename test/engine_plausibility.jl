@@ -269,6 +269,27 @@ end
     @info "Hands-on 02 map engine" closed wot cruise_torques step_rise idle
 end
 
+const AirPathStep = VehicleSystemsComponents.HandsOn02.AirPathStep
+const AirPathStepTransient = VehicleSystemsComponents.HandsOn02.AirPathStepTransient
+
+# The step 02 bench's pressure in kPa just before its throttle step at 1 s and at the end.
+function air_path_step_kpa(; kwargs...)
+    run = mapped_engine_run(AirPathStepTransient;
+                            model = AirPathStep(; name = :AirPathStep, kwargs...))
+    p_m = run.model.manifold.p_m
+    return (before = run.sol(0.999, idxs = p_m) / 1e3, after = run.sol[p_m][end] / 1e3)
+end
+
+@testset "Hands-on 02 manifold" begin
+    idle = air_path_step_kpa()
+    @test idle.before ≈ 33.0 atol = 0.05
+    @test idle.after ≈ 37.3 atol = 0.05
+
+    open_3000 = air_path_step_kpa(speed__k = 314.159, throttle_cmd__height = 1.0)
+    @test open_3000.before ≈ 13.5 atol = 0.05
+    @test open_3000.after ≈ 99.9 atol = 0.05
+end
+
 @testset "Hands-on 02 cruise table" begin
     # Steps 01 and 05: the cruise points read off the maps at the hands-on car's speed and
     # holding torque, to the digits the page shows. Petrol 745 g/L; CO2 3.09 x fuel.

@@ -102,7 +102,9 @@ The data is the US EPA's ALPHA map of a 2014 Mazda 2.0 L Skyactiv, scaled to 1.5
 4. Read the fuel map's 3000 rpm row at that pressure.
 5. Turn it into consumption: g/s × 3600 ÷ 745 g/L = L/h; then L/h ÷ 90 km/h × 100 = L/100 km.
 
-<!-- TODO(screenshot): step01-torque-map.png and step01-fuel-map.png, the 90 km/h point marked. -->
+[![The torque map as a heat map, engine speed against manifold pressure: torque rises from about −25 N·m at low pressure to about 175 N·m at full pressure, and a white dot marks the 90 km/h point at 3080 rpm and 47.8 kPa.](/handson/lecture-02/img/step01-torque-map.png){width="990" height="528"}](/handson/lecture-02/img/step01-torque-map.png)
+
+[![The fuel map on the same axes: fuel flow rises from near 0 g/s at low pressure to about 8 g/s at full pressure and high speed, with the 90 km/h point at 3080 rpm and 47.8 kPa marked.](/handson/lecture-02/img/step01-fuel-map.png){width="990" height="528"}](/handson/lecture-02/img/step01-fuel-map.png)
 
 ::: tip Checkpoint
 
@@ -246,7 +248,7 @@ end
    A REPL opened before `AirPathStep` existed answers `UndefVarError: AirPathStepTransient not defined`. Running once with ▷ loads the new components into it; restarting the REPL does too.
 10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s): click the field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type, <kbd>Enter</kbd>. Run and plot again.
 
-<!-- TODO(screenshot): step02-idle-plot.png. -->
+[![Manifold pressure of AirPathStepTransient at idle: it falls from 101.3 kPa to 33.0 kPa within the first second, then rises to 37.3 kPa after the small throttle step at 1 s.](/handson/lecture-02/img/step02-idle-plot.png){width="990" height="528"}](/handson/lecture-02/img/step02-idle-plot.png)
 
 ::: tip Checkpoint
 
@@ -261,7 +263,44 @@ The plot is in pascals: 33 000 is 33 kPa.
 
 Commit: **Source Control** → message `Step 02: manifold` → **Commit** → **Sync Changes**.
 
-<!-- TODO(reference): a "Stuck? The full model" block from dyad/HandsOn02/Manifold.dyad once it exists. -->
+::: details Stuck? The full model
+
+From `dyad/HandsOn02/Manifold.dyad` and `dyad/HandsOn02/AirPathStep.dyad`, diagram annotations omitted.
+
+```txt
+component Manifold
+  mdot_thr = RealInput()
+  mdot_bst = RealInput()
+  mdot_cyl = RealInput()
+  p_m = RealOutput()
+  parameter V_m::Volume = 1.0e-3
+  parameter T_m::Temperature = 298.15
+  parameter R::Real = 287.05
+  variable p::Pressure
+relations
+  V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
+  p_m = p
+end
+
+component AirPathStep
+  throttle_cmd = BlockComponents.Sources.Step(offset = 0, height = 0.005, start_time = 1)
+  speed = BlockComponents.Sources.Constant(k = 83.776)
+  no_booster = BlockComponents.Sources.Constant(k = 0)
+  throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle()
+  cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow()
+  manifold = Manifold()
+relations
+  connect(throttle_cmd.y, throttle.u_thr)
+  connect(speed.y, cylinders.omega)
+  connect(no_booster.y, manifold.mdot_bst)
+  connect(throttle.mdot_thr, manifold.mdot_thr)
+  connect(cylinders.mdot_cyl, manifold.mdot_cyl)
+  connect(manifold.p_m, throttle.p_m, cylinders.p_m)
+  initial manifold.p = 101325
+end
+```
+
+:::
 
 ### 03 Map engine on a dynamometer <Badge type="info" text="20 min" /> {#map-engine}
 
@@ -424,7 +463,7 @@ The defaults hold the 90 km/h cruise point of step 01, 3080 rpm and 31.1 N·m, a
 
    Zoom into 0.9–1.3 s: the pedal jumped, the torque follows the pressure.
 
-<!-- TODO(screenshot): step03-step-plot.png. -->
+[![MapEngineDynoTransient zoomed to 0.9–1.3 s: after the pedal step from 0.1034 to 0.12 at 1 s, the manifold pressure rises from 47.8 to 52.9 kPa and the map torque follows it from 31.1 to 41.4 N·m.](/handson/lecture-02/img/step03-step-plot.png){width="990" height="528"}](/handson/lecture-02/img/step03-step-plot.png)
 
 ::: tip Checkpoint
 
