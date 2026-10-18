@@ -247,3 +247,83 @@ end
     @test air_isothermal ≈ air_isothermal_closed rtol = 0.02
     @test impulse_isothermal > impulse_adiabatic
 end
+
+@testset "Roadster thrust launch and vertical flight plausibility" begin
+    valve_closed, closed_model = roadster_launch(thrust_cmd = 0.0)
+    baseline, baseline_model = roadster_launch()
+    @test maximum(abs.(valve_closed[closed_model.v] .-
+                       baseline(valve_closed.t, idxs = baseline_model.v))) < 1e-8
+
+    launch_cases = (
+        tires_thrust = (; thrust_cmd = 1.0),
+        suction_thrust = (; thrust_cmd = 1.0, fan_cmd = 1.0),
+        thrust_200_l = (; thrust_cmd = 1.0, fan_cmd = 1.0, tank_volume = 0.2),
+    )
+    launch_results = map(launch_cases) do config
+        sol, model = roadster_launch(; config...)
+        t60 = first_crossing(sol, model.v, ROADSTER_V60)
+        air = sol(0.0, idxs = model.tank.m_g) - sol(t60, idxs = model.tank.m_g)
+        (; t60, air)
+    end
+    @test 0.5 <= launch_results.suction_thrust.t60 <= 0.6
+    @test launch_results.tires_thrust.t60 < 0.81
+    @test launch_results.suction_thrust.t60 < 0.59
+    @test launch_results.thrust_200_l.t60 > 0.59
+
+    initial_sol, initial_model = roadster_launch(thrust_cmd = 1.0)
+    tire_force = ROADSTER_GRIP * ROADSTER_MU * 0.55 * 2000 * ROADSTER_G
+    expected_a0 = (tire_force + 80e3) / 2000
+    measured_a0 = initial_sol(1e-4, idxs = initial_model.axle.a)
+    @test measured_a0 ≈ expected_a0 rtol = 0.02
+
+    fractions = collect(0.0:0.1:1.0)
+    expected_best = Dict((:rwd, 0.0) => 0.0, (:rwd, 1.0) => 0.0,
+                         (:awd, 0.0) => 0.1, (:awd, 1.0) => 0.0)
+    for (layout, geometry) in ((:rwd, (;)), (:awd, (; share = 1.0, h_over_L = 0.0))),
+        fan_cmd in (0.0, 1.0)
+        times = map(fractions) do down_fraction
+            sol, model = roadster_launch(; thrust_cmd = 1.0, fan_cmd, down_fraction,
+                                         geometry...)
+            first_crossing(sol, model.v, ROADSTER_V60)
+        end
+        @test fractions[argmin(times)] == expected_best[(layout, fan_cmd)]
+    end
+
+    hop_result = VehicleSystemsComponents.Roadster.Hop(t_b = 0.413)
+    hop_sol = hop_result.sol
+    hop = symbolic_container(hop_result)
+    hop_apex = maximum(hop_sol[hop.hop.altitude])
+    hop_air = hop_sol(0.0, idxs = hop.hop.tank.m_g) -
+              hop_sol(0.413, idxs = hop.hop.tank.m_g)
+    @test hop_apex ≈ 8.0 atol = 0.15
+    @test 40 <= hop_air <= 70
+
+    # Initial hover flow is thrust divided by exhaust speed; this anchors the 3--8 s estimate.
+    hover_result = VehicleSystemsComponents.Roadster.Hover()
+    hover_sol = hover_result.sol
+    hover = symbolic_container(hover_result)
+    hover_flow_closed = 2000 * ROADSTER_G / hover_sol(0.0, idxs = hover.hover.nozzle.v_e)
+    @test hover_flow_closed ≈ 28.3 rtol = 0.02
+
+    # Hover ends when the valve saturates: past that point the tank cannot hold mg and the car sinks.
+    function hover_time(; kwargs...)
+        result = VehicleSystemsComponents.Roadster.Hover(; kwargs...)
+        sol = result.sol
+        model = symbolic_container(result)
+        ts = range(0.0, 15.0, length = 30_001)
+        altitude = [sol(t, idxs = model.hover.altitude) for t in ts]
+        command = [sol(t, idxs = model.hover.command) for t in ts]
+        i_up = findfirst(>=(1.9), altitude)
+        i_sat = findfirst(i -> i > i_up && command[i] >= 1, eachindex(command))
+        @test sol(ts[end], idxs = model.hover.altitude) < 1.9
+        return ts[i_sat]
+    end
+    @test 3 <= hover_time() <= 8
+    hover_sweep = [hover_time(; m, tank_pressure) for m in (1700, 2000, 2350),
+                   tank_pressure in (300e5, 380e5, 690e5)]
+    @test all(diff(hover_sweep, dims = 1) .< 0)
+    @test all(diff(hover_sweep, dims = 2) .> 0)
+    println("Hover time (s), rows m = 1700/2000/2350 kg, columns p0 = 300/380/690 bar:")
+    show(stdout, MIME("text/plain"), round.(hover_sweep, digits = 3))
+    println()
+end

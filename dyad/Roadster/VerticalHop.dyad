@@ -1,0 +1,123 @@
+"Unilateral vertical ground contact following the ElastoGap spring-damper law."
+component VerticalGroundContact
+  "Connection to the car; positive position and force are upward"
+  flange = Flange()
+  "Ground-contact stiffness; assumed for a roughly 10 mm static deflection"
+  parameter c::TranslationalSpringConstant = 2.0e6
+  "Ground-contact damping; assumed near critical for the 2,000 kg car"
+  parameter d::TranslationalDampingConstant = 1.0e5
+  variable v::Velocity
+  variable compression::Length
+  variable spring_force::Force
+  variable damping_force::Force
+relations
+  v = der(flange.s)
+  compression = ifelse(flange.s < 0, -flange.s, 0)
+  spring_force = c * compression
+  damping_force = ifelse(compression > 0, min(max(-d * v, -spring_force), spring_force), 0)
+  flange.f = -(spring_force + damping_force)
+end
+
+"Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thrust set."
+component VerticalHop
+  command = RealInput()
+  body = TranslationalComponents.Components.Mass(m = m, g = -g, theta = -1.5707963267948966)
+  ground = VehicleSystemsComponents.Roadster.VerticalGroundContact(c = contact_c, d = contact_d)
+  tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure)
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle()
+  nozzle_stand = TranslationalComponents.Components.Fixed()
+  upward_gain = BlockComponents.Math.Gain(k = 1)
+  thrust = TranslationalComponents.Sources.Force()
+  thrust_ground = TranslationalComponents.Components.Fixed()
+  "Car mass; assumed because Tesla has not disclosed it"
+  parameter m::Dyad.Mass = 2000
+  "Tank volume; Tesla reports 600 L total"
+  parameter tank_volume::Volume = 0.6
+  "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"
+  parameter tank_pressure::Pressure = 380e5
+  "Standard gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Ground-contact stiffness; assumed"
+  parameter contact_c::TranslationalSpringConstant = 2.0e6
+  "Ground-contact damping; assumed"
+  parameter contact_d::TranslationalDampingConstant = 1.0e5
+  "Altitude relative to the undeflected ground"
+  variable altitude::Position
+relations
+  connect(command, nozzle.cmd)
+  connect(tank.p, nozzle.p)
+  connect(tank.T, nozzle.T)
+  connect(nozzle.mdot, tank.mdot)
+  connect(nozzle.flange, nozzle_stand.flange)
+  connect(nozzle.thrust, upward_gain.u)
+  connect(upward_gain.y, thrust.f)
+  connect(thrust.flange_a, thrust_ground.flange)
+  connect(thrust.flange_b, body.flange_a)
+  connect(ground.flange, body.flange_a)
+  altitude = body.s
+  initial body.s = -m * g / contact_c
+  initial body.v = 0
+end
+
+"Open-loop full-thrust hop followed by ballistic coast."
+test component TestVerticalHop
+  hop = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure)
+  "Full-thrust burn duration"
+  parameter t_b::Time = 0.5
+  parameter m::Dyad.Mass = 2000
+  parameter tank_volume::Volume = 0.6
+  parameter tank_pressure::Pressure = 380e5
+relations
+  hop.command = ifelse(time < t_b, 1.0, 0.0)
+end
+
+"PI altitude hold from rest, including a gravity feed-forward valve command."
+test component TestVerticalHover
+  hover = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure)
+  "Car mass"
+  parameter m::Dyad.Mass = 2000
+  "Initial tank pressure"
+  parameter tank_pressure::Pressure = 380e5
+  "Tank volume"
+  parameter tank_volume::Volume = 0.6
+  "Altitude target"
+  parameter target::Length = 2.0
+  "Proportional valve gain; assumed"
+  parameter k_p::Real(units = "1/m") = 0.15
+  "Integral valve gain; assumed"
+  parameter k_i::Real(units = "1/(m.s)") = 0.2
+  "Vertical-speed damping gain used with the altitude PI; assumed"
+  parameter k_v::Real(units = "s/m") = 0.2
+  "Full-open thrust at the initial pressure; the 80 kN design point at 380 bar, scaled with pressure because choked thrust is nearly proportional to it"
+  final parameter F_full::Force = 80000 * tank_pressure / 380e5
+  variable integral_error::Real(units = "m.s")
+  variable unsaturated_command::Real
+relations
+  initial integral_error = 0
+  der(integral_error) = target - hover.altitude
+  unsaturated_command = m * hover.g / F_full + k_p * (target - hover.altitude) + k_i * integral_error - k_v * hover.body.v
+  hover.command = max(0, min(1, unsaturated_command))
+end
+
+analysis Hop
+  extends TransientAnalysis(stop = 10.0, abstol = 1e-8, reltol = 1e-6,
+                            automatic_discontinuity_detection = true)
+  parameter t_b::Time = 0.5
+  parameter m::Dyad.Mass = 2000
+  parameter tank_volume::Volume = 0.6
+  parameter tank_pressure::Pressure = 380e5
+  model = VehicleSystemsComponents.Roadster.TestVerticalHop(t_b = t_b, m = m, tank_volume = tank_volume, tank_pressure = tank_pressure)
+end
+
+analysis Hover
+  extends TransientAnalysis(stop = 15.0, abstol = 1e-8, reltol = 1e-6,
+                            automatic_discontinuity_detection = true)
+  parameter m::Dyad.Mass = 2000
+  parameter tank_volume::Volume = 0.6
+  parameter tank_pressure::Pressure = 380e5
+  parameter target::Length = 2.0
+  parameter k_p::Real(units = "1/m") = 0.15
+  parameter k_i::Real(units = "1/(m.s)") = 0.2
+  parameter k_v::Real(units = "s/m") = 0.2
+  model = VehicleSystemsComponents.Roadster.TestVerticalHover(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, target = target, k_p = k_p, k_i = k_i, k_v = k_v)
+end

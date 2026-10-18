@@ -32,6 +32,7 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
  * `p` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `T` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `mdot` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `thrust` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `flange` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
 
 ## Variables
@@ -102,6 +103,7 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
   append!(__vars, @variables (p(t)::Real), [input = true])
   append!(__vars, @variables (T(t)::Real), [input = true])
   append!(__vars, @variables (mdot(t)::Real), [output = true])
+  append!(__vars, @variables (thrust(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (v_e(t)::Real), [description = "Ideal expanded exhaust speed"])
@@ -143,6 +145,7 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
   push!(__eqs, mdot ~ opening * A_t * p * sqrt(gamma / (R * T)) * (2 / (gamma + 1)) ^ ((gamma + 1) / (2 * (gamma - 1))))
   push!(__eqs, v_e ~ ifelse(p >= p_close, eta_n * sqrt(2 * c_p * T * (1 - (p_a / p) ^ ((gamma - 1) / gamma))), 0))
   push!(__eqs, F ~ mdot * v_e)
+  push!(__eqs, thrust ~ F)
   push!(__eqs, flange.f ~ -F)
 
   # Return completely constructed System
