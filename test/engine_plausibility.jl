@@ -400,8 +400,8 @@ end
     lock = findfirst(i -> s.t[i] > 0.1 && abs(s.slip[i]) < 1.0 && s.capacity[i] > 200.0,
                      eachindex(s.t))
     @test s.t[lock] ≈ 1.33 atol = 0.05
-    @test s.v[lock] ≈ 13.75 atol = 0.5
-    @test s.rpm[lock] ≈ 1417 atol = 20
+    @test s.v[lock] ≈ 13.7 atol = 0.05
+    @test s.rpm[lock] ≈ 1414 atol = 5
     @test all(abs.(s.slip[lock:end]) .< 1.0)
 
     t100 = s.t[findfirst(>=(100.0), s.v)]
