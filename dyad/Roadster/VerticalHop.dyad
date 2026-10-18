@@ -63,13 +63,17 @@ end
 
 "Open-loop full-thrust hop followed by ballistic coast."
 test component TestVerticalHop
-  hop = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, A_t = A_t)
+  hop = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, A_t = A_t, contact_c = contact_c, contact_d = contact_d)
   "Full-thrust burn duration"
   parameter t_b::Time = 0.5
   parameter m::Dyad.Mass = 2000
   parameter tank_volume::Volume = 0.6
   parameter tank_pressure::Pressure = 380e5
   parameter A_t::Area = 1.286e-3
+  "Hop landing stiffness, selected to limit penetration below 50 mm in the presentation sweep"
+  parameter contact_c::TranslationalSpringConstant = 2.0e8
+  "Hop landing damping, selected to suppress rebound in the presentation sweep"
+  parameter contact_d::TranslationalDampingConstant = 4.0e6
 relations
   hop.command = ifelse(time < t_b, 1.0, 0.0)
 end
@@ -105,8 +109,10 @@ relations
 end
 
 analysis Hop
+  # Symbolic discontinuity detection freezes the unilateral contact on stale branches after
+  # landing. Numerical evaluation resolves the valve cutoff and contact law deterministically.
   extends TransientAnalysis(stop = 10.0, abstol = 1e-8, reltol = 1e-6,
-                            automatic_discontinuity_detection = true)
+                            automatic_discontinuity_detection = false)
   parameter t_b::Time = 0.5
   parameter m::Dyad.Mass = 2000
   parameter tank_volume::Volume = 0.6
