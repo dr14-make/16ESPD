@@ -189,6 +189,17 @@ Slide 08.4 can carry the cruise table only if the hands-on is not meant to revea
 first; the section's notes say the numbers are for the hands-on. That is the lecturer's choice.
 The table counts as N below.
 
+### 09 Drive cycles (no pptx source)
+
+Added after this plan's counts; the tables below do not include it. Sources and the numbers'
+provenance are in `lecture-02-drive-cycles-research.md`.
+
+| pptx | Deck | Visual | Class | Replacement | Produced by | Blocked on | Text update |
+|---|---|---|---|---|---|---|---|
+| — | 09.3 `modal-vs-transient` | NEDC above WLTC class 3b on one time axis, parts shaded | N | — | `illustrations` card `nedc-vs-wltc`, from `assets/data/drive_cycles/` and R83's tables | nothing | — |
+| — | 09.4 `cycles-by-region` | comparison table | G | authored Markdown; the NEDC, WLTC and EPA rows pinned by the `illustrations` assertion cell | `illustrations` | nothing | — |
+| — | 09.7 `wltc-class-3b` | WLTC class 3b with phases and the cumulative distance | N | — | `illustrations` card `wltc-3b` | nothing | — |
+
 Front-matter slides 00.1–00.3 have no picture, and the equation tables on 01.2 and 08.3 and the
 section index on 00.3 are authored text, so they are not counted.
 
