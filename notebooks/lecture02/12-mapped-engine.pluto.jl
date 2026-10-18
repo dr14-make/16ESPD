@@ -125,7 +125,7 @@ PP.plot(
             xaxis = PP.attr(title = "p_m [kPa]", dtick = 25),
             yaxis = PP.attr(title = "N [rpm]", dtick = 2000),
             zaxis = PP.attr(title = "T_e [N·m]", dtick = 50),
-            camera = PP.attr(eye = PP.attr(x = 1.5, y = -1.6, z = 0.8)))))
+            camera = PP.attr(eye = PP.attr(x = 1.65, y = -1.75, z = 0.9)))))
 
 # ╔═╡ 951025b0-6e13-4223-b802-7600f96078b9
 md"""
