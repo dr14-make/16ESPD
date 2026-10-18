@@ -27,6 +27,8 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"log_file"::String = ""
   # Vehicle mass
   var"m"::Float64 = 2000
+  # Aerodynamic drag area, Cd * A; assumed
+  var"CdA"::Float64 = 0.6
   # Rated power
   var"P_max"::Float64 = 1000000.0
   # Peak wheel torque
@@ -66,6 +68,7 @@ function DyadInterface.run_analysis(spec::RoadsterLaunchTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.m => spec.var"m")
+  push!(overrides, no_namespace_model.CdA => spec.var"CdA")
   push!(overrides, no_namespace_model.P_max => spec.var"P_max")
   push!(overrides, no_namespace_model.T_max => spec.var"T_max")
   push!(overrides, no_namespace_model.fan_cmd => spec.var"fan_cmd")

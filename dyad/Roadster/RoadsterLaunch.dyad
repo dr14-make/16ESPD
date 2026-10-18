@@ -208,6 +208,8 @@ analysis RoadsterLaunchTransient
   extends TransientAnalysis(stop = 6.0, abstol = 1e-8, reltol = 1e-6)
   "Vehicle mass"
   parameter m::Dyad.Mass = 2000
+  "Aerodynamic drag area, Cd * A; assumed"
+  parameter CdA::Area = 0.6
   "Rated power"
   parameter P_max::Power = 1.0e6
   "Peak wheel torque"
@@ -230,6 +232,6 @@ analysis RoadsterLaunchTransient
   parameter share::Real = 0.55
   "Center-of-mass height over wheelbase; 0 for all-wheel drive"
   parameter h_over_L::Real = 0.17
-  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, thrust_cmd = thrust_cmd, tank_volume = tank_volume, tank_pressure = tank_pressure, down_fraction = down_fraction, mu_A = mu_A, share = share, h_over_L = h_over_L)
+  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, CdA = CdA, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, thrust_cmd = thrust_cmd, tank_volume = tank_volume, tank_pressure = tank_pressure, down_fraction = down_fraction, mu_A = mu_A, share = share, h_over_L = h_over_L)
 relations
 end
