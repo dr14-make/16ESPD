@@ -42,15 +42,9 @@ relations
   F_z = share * (m * g + downforce) + m * a_pitch * h_over_L
 metadata {
   "_links": {
-    "flange": {
-      "Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
-    },
-    "downforce": {
-      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": -50, "y2": 50}}}
-    },
-    "F_z": {
-      "Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
-    }
+    "downforce": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "F_z": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 250, "y2": 350}}}},
+    "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
   }
 }
 end

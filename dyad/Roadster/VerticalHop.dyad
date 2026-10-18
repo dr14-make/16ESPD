@@ -1,7 +1,7 @@
 "Unilateral vertical ground contact following the ElastoGap spring-damper law."
 component VerticalGroundContact
   "Connection to the car; positive position and force are upward"
-  flange = Flange()
+  flange = Flange() {^flange}
   "Ground-contact stiffness; assumed for a roughly 10 mm static deflection"
   parameter c::TranslationalSpringConstant = 2.0e6
   "Ground-contact damping; assumed near critical for the 2,000 kg car"
@@ -16,19 +16,24 @@ relations
   spring_force = c * compression
   damping_force = ifelse(compression > 0, min(max(-d * v, -spring_force), spring_force), 0)
   flange.f = -(spring_force + damping_force)
+metadata {
+  "_links": {
+    "flange": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50}}}}
+  }
+}
 end
 
 "Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thrust set."
 component VerticalHop
-  command = RealInput()
-  body = TranslationalComponents.Components.Mass(m = m, g = -g, theta = -1.5707963267948966)
-  ground = VehicleSystemsComponents.Roadster.VerticalGroundContact(c = contact_c, d = contact_d)
-  tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure)
-  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t)
-  nozzle_stand = TranslationalComponents.Components.Fixed()
-  upward_gain = BlockComponents.Math.Gain(k = 1)
-  thrust = TranslationalComponents.Sources.Force()
-  thrust_ground = TranslationalComponents.Components.Fixed()
+  command = RealInput() {^command}
+  body = TranslationalComponents.Components.Mass(m = m, g = -g, theta = -1.5707963267948966) {^body}
+  ground = VehicleSystemsComponents.Roadster.VerticalGroundContact(c = contact_c, d = contact_d) {^ground}
+  tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure) {^tank}
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t) {^nozzle}
+  nozzle_stand = TranslationalComponents.Components.Fixed() {^nozzle_stand}
+  upward_gain = BlockComponents.Math.Gain(k = 1) {^upward_gain}
+  thrust = TranslationalComponents.Sources.Force() {^thrust}
+  thrust_ground = TranslationalComponents.Components.Fixed() {^thrust_ground}
   "Car mass; assumed because Tesla has not disclosed it"
   parameter m::Dyad.Mass = 2000
   "Tank volume; Tesla reports 600 L total"
@@ -46,19 +51,42 @@ component VerticalHop
   "Altitude relative to the undeflected ground"
   variable altitude::Position
 relations
-  connect(command, nozzle.cmd)
-  connect(tank.p, nozzle.p)
-  connect(tank.T, nozzle.T)
-  connect(nozzle.mdot, tank.mdot)
-  connect(nozzle.flange, nozzle_stand.flange)
-  connect(nozzle.thrust, upward_gain.u)
-  connect(upward_gain.y, thrust.f)
-  connect(thrust.flange_a, thrust_ground.flange)
-  connect(thrust.flange_b, body.flange_a)
-  connect(ground.flange, body.flange_a)
+  connect(command, nozzle.cmd) {^id1}
+  connect(tank.p, nozzle.p) {^id2}
+  connect(tank.T, nozzle.T) {^id3}
+  connect(nozzle.mdot, tank.mdot) {^id4}
+  connect(nozzle.flange, nozzle_stand.flange) {^id5}
+  connect(nozzle.thrust, upward_gain.u) {^id6}
+  connect(upward_gain.y, thrust.f) {^id7}
+  connect(thrust.flange_a, thrust_ground.flange) {^id8}
+  connect(thrust.flange_b, body.flange_a) {^id9}
+  connect(ground.flange, body.flange_a) {^id10}
   altitude = body.s
   initial body.s = -m * g / contact_c
   initial body.v = 0
+metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 250, "y2": 350}}}},
+    "tank": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 400, "y2": 500}}}},
+    "nozzle": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 400, "y2": 500}}}},
+    "nozzle_stand": {"Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 580, "y2": 680}}}},
+    "upward_gain": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 380, "y2": 480}}}},
+    "thrust": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 480, "y2": 580}}}},
+    "thrust_ground": {"Dyad": {"placement": {"diagram": {"x1": 680, "x2": 780, "y1": 620, "y2": 720}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 480, "y2": 580}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 650, "y2": 750}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 300}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 470}], "E": 2}], "path": {}}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 430}], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 730, "y": 530}], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1000, "y": 620}, {"x": 900, "y": 620}, {"x": 900, "y": 530}], "E": 2}], "path": {}}}
+  }
+}
 end
 
 "Open-loop full-thrust hop followed by ballistic coast."

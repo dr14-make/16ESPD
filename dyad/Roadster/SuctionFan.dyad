@@ -48,16 +48,21 @@ end
 
 "Fan operating-point harness, including the least-pressure inverted-hold case."
 test component TestSuctionFan
-  command = BlockComponents.Sources.Constant(k = cmd)
-  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = gap)
+  command = BlockComponents.Sources.Constant(k = cmd) {^command}
+  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = gap) {^fan}
   "Fan command"
   parameter cmd::Real = 1.0
   "Effective skirt gap"
   parameter gap::Length = 0.003
 relations
-  connect(command.y, fan.cmd)
+  connect(command.y, fan.cmd) {^id1}
   initial fan.dp = cmd * fan.dp_max
 metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 450, "y2": 550}}}},
+    "fan": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 450, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  },
   "Dyad": {
     "tests": {
       "full_suction_3mm": {
@@ -84,8 +89,8 @@ Inverted-hold harness: reversed gravity pulls the car away from the road, while 
 toward it. `hold_force = 0` is the least pressure that holds the stationary car.
 """
 test component TestSuctionFanInvertedHold
-  command = BlockComponents.Sources.Constant(k = cmd)
-  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = gap)
+  command = BlockComponents.Sources.Constant(k = cmd) {^command}
+  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = gap) {^fan}
   "Vehicle mass; assumed because Tesla has not disclosed it"
   parameter m::Dyad.Mass = 2000
   "Reversed gravitational acceleration"
@@ -97,10 +102,15 @@ test component TestSuctionFanInvertedHold
   "Net holding force toward the road"
   variable hold_force::Force
 relations
-  connect(command.y, fan.cmd)
+  connect(command.y, fan.cmd) {^id1}
   hold_force = fan.downforce + m * g
   initial fan.dp = cmd * fan.dp_max
 metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 450, "y2": 550}}}},
+    "fan": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 450, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  },
   "Dyad": {
     "tests": {
       "least_pressure_hold": {

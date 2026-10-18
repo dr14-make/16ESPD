@@ -45,6 +45,7 @@ relations
   flange.f = -F_x
   0 = spline.tau + radius * flange.f
 metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 800, "y": 1100, "rot": 0}]},
   "_links": {
     "spline": {
       "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 440, "y2": 540}}}

@@ -47,13 +47,20 @@ end
 
 "Traction control at fixed load, one slip value per case: below, inside and above the cut-back."
 test component TestTractionControl
-  load = BlockComponents.Sources.Constant(k = 10000)
-  slip = BlockComponents.Sources.Constant(k = 0.03)
-  control = VehicleSystemsComponents.Roadster.TractionControl()
+  load = BlockComponents.Sources.Constant(k = 10000) {^load}
+  slip = BlockComponents.Sources.Constant(k = 0.03) {^slip}
+  control = VehicleSystemsComponents.Roadster.TractionControl() {^control}
 relations
-  connect(load.y, control.F_z)
-  connect(slip.y, control.kappa)
+  connect(load.y, control.F_z) {^id1}
+  connect(slip.y, control.kappa) {^id2}
 metadata {
+  "_links": {
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 325, "x2": 425, "y1": 355, "y2": 455}}}},
+    "slip": {"Dyad": {"placement": {"diagram": {"x1": 325, "x2": 425, "y1": 545, "y2": 645}}}},
+    "control": {"Dyad": {"placement": {"diagram": {"x1": 575, "x2": 675, "y1": 425, "y2": 525}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 505, "y": 405}, {"x": 505, "y": 455}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 525, "y": 595}, {"x": 525, "y": 495}], "E": 2}], "path": {}}}
+  },
   "Dyad": {
     "tests": {
       "below_cut_back": {

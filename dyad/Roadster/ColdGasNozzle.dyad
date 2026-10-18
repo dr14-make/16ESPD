@@ -16,7 +16,7 @@ component ColdGasNozzle
   "Mass flow leaving the tank"
   mdot = RealOutput(units = "kg/s") {^mdot}
   "Thrust magnitude for force allocation"
-  thrust = RealOutput(units = "N")
+  thrust = RealOutput(units = "N") {^thrust}
   "Thrust applied to the connected body"
   flange = Flange() {^flange}
   "Total throat area, sized for 80 kN at 380 bar; four rear nozzles are about 20 mm diameter each"
@@ -51,21 +51,22 @@ relations
   flange.f = -F
 metadata {
   "_links": {
-    "cmd": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 150, "y2": 250}}}},
-    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 350, "y2": 450}}}},
-    "T": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 550, "y2": 650}}}},
-    "mdot": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 750, "y2": 850}}}},
-    "flange": {"Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+    "cmd": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50}}}},
+    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 250, "y2": 350}}}},
+    "T": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "mdot": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 650, "y2": 750}}}},
+    "thrust": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 250, "y2": 350}}}},
+    "flange": {"Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 650, "y2": 750}}}}
   }
 }
 end
 
 "Wide-open fixed thrust stand for a complete tank blowdown."
 test component TestColdGasThrustStand
-  command = BlockComponents.Sources.Constant(k = 1.0)
-  tank = VehicleSystemsComponents.Roadster.AirTank(p0 = p0, V = V, n = n)
-  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t)
-  fixed = TranslationalComponents.Components.Fixed()
+  command = BlockComponents.Sources.Constant(k = 1.0) {^command}
+  tank = VehicleSystemsComponents.Roadster.AirTank(p0 = p0, V = V, n = n) {^tank}
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t) {^nozzle}
+  fixed = TranslationalComponents.Components.Fixed() {^fixed}
   "Total nozzle throat area"
   parameter A_t::Area = 1.286e-3
   "Initial tank pressure"
@@ -75,12 +76,23 @@ test component TestColdGasThrustStand
   "Polytropic index"
   parameter n::Real = 1.4
 relations
-  connect(command.y, nozzle.cmd)
-  connect(tank.p, nozzle.p)
-  connect(tank.T, nozzle.T)
-  connect(nozzle.mdot, tank.mdot)
-  connect(nozzle.flange, fixed.flange)
+  connect(command.y, nozzle.cmd) {^id1}
+  connect(tank.p, nozzle.p) {^id2}
+  connect(tank.T, nozzle.T) {^id3}
+  connect(nozzle.mdot, tank.mdot) {^id4}
+  connect(nozzle.flange, fixed.flange) {^id5}
 metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 310, "x2": 410, "y1": 270, "y2": 370}}}},
+    "tank": {"Dyad": {"placement": {"diagram": {"x1": 310, "x2": 410, "y1": 450, "y2": 550}}}},
+    "nozzle": {"Dyad": {"placement": {"diagram": {"x1": 510, "x2": 610, "y1": 450, "y2": 550}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 590, "x2": 690, "y1": 630, "y2": 730}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 320}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 640, "y": 520}], "E": 2}], "path": {}}}
+  },
   "Dyad": {
     "tests": {
       "adiabatic_initial": {
