@@ -680,6 +680,327 @@ let fine = 0.95:0.0001:1.05
     """
 end
 
+# ╔═╡ 5899b91d-9a95-4b60-9720-969504ab481a
+md"""
+## Sensors section: the 60−2 crank wheel (section 04)
+
+A 60−2 trigger wheel has 60 tooth positions 6° apart with two teeth removed: 58 teeth, then a
+gap of 18° between tooth edges, three pitches (derived). The gap is the once-per-revolution
+reference, and crank angle is counted from the first tooth after it. One tooth passes per 6°, so
+the tooth frequency in Hz equals the engine speed in rpm (derived).
+
+Each tooth is idealized as a Gaussian bump in the flux through the sensor,
+``\Phi(\theta) = \sum_k e^{-(\theta - \theta_k)^2 / 2\sigma^2}``, with σ = 1.2° (assumed) so that
+a tooth is about half a pitch wide, as on the Bosch Motorsport IS-C reference wheel (tooth 4.1 mm,
+gap 4.3 mm).
+
+- An **inductive (VR)** sensor's voltage follows ``d\Phi/dt = \omega\, d\Phi/d\theta``: its
+  amplitude grows with speed and its zero crossings, at the tooth centers, do not move with speed
+  (Woodward MotoHawk VR documentation). It is drawn relative to its peak at 3000 rpm.
+- A **Hall** sensor switches where the field crosses a fixed threshold, here half a tooth's peak:
+  the same edges at any speed, and a signal from standstill (Bosch Motorsport, *Drehzahlsensoren*).
+- The **cam** sensor turns at half speed and sees one window per 720° cycle; where the window sits
+  is set by the cam wheel (assumed here: 30° to 210°).
+"""
+
+# ╔═╡ ca1ca354-9221-4ac0-832e-a3278771a768
+begin
+    const PITCH = 6.0         # ° per tooth position on a 60−2 wheel
+    const TOOTH_SIGMA = 1.2   # °, width of one tooth's flux bump (assumed)
+    const RPM_REF = 3000.0    # the VR voltage is drawn relative to its peak at this speed
+
+    "Tooth centers [°] over the given revolutions, tooth 1 at 0°: 58 teeth, then the gap."
+    tooth_centers(revs) = [360r + PITCH * k for r in revs for k in 0:57]
+    const TEETH = tooth_centers(-1:2)
+
+    bump(x) = exp(-(x / TOOTH_SIGMA)^2 / 2)
+    flux(θ) = sum(bump(θ - c) for c in TEETH)
+    dflux(θ) = sum(-(θ - c) / TOOTH_SIGMA^2 * bump(θ - c) for c in TEETH)
+    const DFLUX_PEAK = maximum(abs ∘ dflux, 0.0:0.01:360.0)
+
+    "VR voltage relative to its peak at `RPM_REF`: v ∝ ω dΦ/dθ."
+    vr(θ, rpm) = rpm / RPM_REF * dflux(θ) / DFLUX_PEAK
+    "Hall output, 1 while the field exceeds half a tooth's peak."
+    hall_out(θ) = flux(θ) > 0.5 ? 1.0 : 0.0
+    const CAM_WINDOW = (30.0, 210.0)  # ° of the 720° cycle (assumed)
+    cam(θ) = CAM_WINDOW[1] <= mod(θ, 720) < CAM_WINDOW[2] ? 1.0 : 0.0
+
+    "A 0/1 signal sampled on `θ` as step-line vertices: only the samples where it changes."
+    function steps(f, θ)
+        x, y = [θ[1]], [f(θ[1])]
+        for t in θ[2:end]
+            v = f(t)
+            v == y[end] && continue
+            push!(x, t)
+            push!(y, v)
+        end
+        push!(x, θ[end])
+        push!(y, y[end])
+        round.(x; digits = 2), y
+    end
+end
+
+# ╔═╡ 996bcf9b-cc10-40c1-86d8-9d41a3332d9b
+# ╠═╡ card = "crank-vr-hall"
+let θ = collect(-48.0:0.05:48.0)
+    rows = (
+        (1, "VR, 3000 rpm", round.(vr.(θ, 3000); digits = 4), ACCENT),
+        (2, "VR, 300 rpm", round.(vr.(θ, 300); digits = 4), ACCENT),
+    )
+    traces = Any[PP.scatter(; x = θ, y, mode = "lines", name, xaxis = "x$n", yaxis = "y$n",
+                     line = line(color; width = 2.5),
+                     hovertemplate = "%{x:.1f}°: %{y:.2f}<extra>$name</extra>")
+                 for (n, name, y, color) in rows]
+    hx, hy = steps(hall_out, θ)
+    push!(traces, PP.scatter(; x = hx, y = hy, mode = "lines", name = "Hall", xaxis = "x3",
+        yaxis = "y3", line = line(INK; width = 2.5, shape = "hv"),
+        hovertemplate = "%{x:.1f}°: %{y}<extra>Hall, any speed</extra>"))
+    axes = Dict{Symbol, Any}()
+    for (n, title, range) in ((1, "VR 3000 rpm", [-1.2, 1.7]), (2, "VR 300 rpm", [-1.2, 1.7]),
+        (3, "Hall", [-0.2, 1.3]))
+        top = 1 - (n - 1) * 0.34
+        axes[Symbol("xaxis$n")] = axis(n == 3 ? "crank angle from tooth 1 [°]" : "";
+            range = [-48, 48], dtick = 12, anchor = "y$n", showticklabels = n == 3)
+        n < 3 && (axes[Symbol("xaxis$n")][:matches] = "x3")
+        axes[Symbol("yaxis$n")] = axis(title; domain = [top - 0.28, top], range,
+            dtick = 1, anchor = "x$n")
+    end
+    gap = PP.attr(; type = "rect", xref = "x3", yref = "paper", x0 = -15, x1 = -3, y0 = 0, y1 = 1,
+        fillcolor = WARN, opacity = 0.12, line = PP.attr(; width = 0))
+    note(n, y, text; color = INK) = PP.attr(; xref = "x$n", yref = "y$n", x = 47, y,
+        xanchor = "right", showarrow = false, text, font = PP.attr(; size = 13, color))
+    PP.plot(identity.(traces), deck_layout(;
+        axes...,
+        showlegend = false,
+        margin = PP.attr(l = 80, r = 16, t = 28, b = 56),
+        shapes = [gap],
+        annotations = [
+            PP.attr(; xref = "x3", yref = "paper", x = -9, y = 1.0, yanchor = "bottom",
+                showarrow = false, text = "gap: two teeth missing",
+                font = PP.attr(; size = 14, color = WARN)),
+            note(1, 1.45, "amplitude ∝ speed"; color = MUTED),
+            note(2, 1.45, "one tenth: hard to read at cranking"; color = MUTED),
+            note(3, 1.18, "same edges at any speed, from 0 rpm"; color = MUTED)]))
+end
+
+# ╔═╡ c9d26062-2cf3-4764-a527-abc952a7ebcc
+# ╠═╡ card = "crank-cam-phase"
+let θ = collect(0.0:0.02:720.0)
+    cx, cy = steps(hall_out, θ)
+    kx, ky = steps(cam, θ)
+    traces = [
+        PP.scatter(; x = cx, y = cy, mode = "lines", name = "crank (Hall)", xaxis = "x1",
+            yaxis = "y1", line = line(INK; width = 1.5, shape = "hv"), hoverinfo = "skip"),
+        PP.scatter(; x = kx, y = ky, mode = "lines", name = "cam", xaxis = "x2", yaxis = "y2",
+            line = line(ACCENT; width = 2.5, shape = "hv"),
+            hovertemplate = "%{x:.0f}°: %{y}<extra>cam</extra>"),
+    ]
+    revolution(x) = PP.attr(; type = "line", xref = "x2", yref = "paper", x0 = x, x1 = x,
+        y0 = 0, y1 = 1, line = PP.attr(; color = MUTED, width = 1, dash = "dot"))
+    gap(x) = PP.attr(; type = "rect", xref = "x2", yref = "paper", x0 = x - 15, x1 = x - 3,
+        y0 = 0, y1 = 1, fillcolor = WARN, opacity = 0.25, line = PP.attr(; width = 0))
+    label(x, y, text; color = INK, xanchor = "center") = PP.attr(; xref = "x2", yref = "paper",
+        x, y, xanchor, showarrow = false, text, font = PP.attr(; size = 14, color))
+    PP.plot(traces, deck_layout(;
+        showlegend = false,
+        margin = PP.attr(l = 80, r = 16, t = 36, b = 56),
+        xaxis = axis(""; range = [0, 720], dtick = 90, matches = "x2", showticklabels = false,
+            anchor = "y1"),
+        yaxis = axis("crank"; domain = [0.55, 0.95], range = [-0.2, 1.3], dtick = 1,
+            anchor = "x1"),
+        xaxis2 = axis("crank angle over one cycle [°]"; range = [0, 720], dtick = 90,
+            anchor = "y2"),
+        yaxis2 = axis("cam"; domain = [0, 0.4], range = [-0.2, 1.3], dtick = 1, anchor = "x2"),
+        shapes = [revolution.((360.0, 720.0))..., gap.((360.0, 720.0))...],
+        annotations = [
+            label(180, 1.02, "revolution 1"), label(540, 1.02, "revolution 2"),
+            label(351, 0.47, "gap"; color = WARN), label(711, 0.47, "gap"; color = WARN,
+                xanchor = "right"),
+            label(220, 0.36, "cam high: revolution 1 of the cycle"; color = ACCENT,
+                xanchor = "left")]))
+end
+
+# ╔═╡ 27c76275-ba77-4373-8f54-fdb2f5f14b64
+let fine = -45.0:0.01:45.0
+    edges = [fine[k] for k in 2:length(fine) if hall_out(fine[k - 1]) != hall_out(fine[k])]
+    high = [(edges[k], edges[k + 1]) for k in 1:2:(length(edges) - 1) if hall_out(edges[k] + 0.01) == 1]
+    widths = [b - a for (a, b) in high]
+    centers = [round((a + b) / 2; digits = 2) for (a, b) in high]
+    @assert count(c -> -45 < c < 45, TEETH) == length(high) "every tooth must give one Hall pulse"
+    @assert all(abs.(centers .- round.(centers ./ PITCH) .* PITCH) .< 0.02) "Hall pulses must center on the teeth"
+    @assert 2.4 <= minimum(widths) && maximum(widths) <= 3.4 "a tooth must be about half a pitch wide"
+    gap_edges = [c for c in centers if -20 < c < 1]
+    @assert isapprox(gap_edges, [-18.0, 0.0]; atol = 0.02) "the gap must span 18° between tooth centers"
+    zero = [θ for θ in -45.0:0.001:45.0 if vr(θ - 0.0005, 3000) > 0 >= vr(θ + 0.0005, 3000)]
+    @assert all(abs.(zero .- round.(zero ./ PITCH) .* PITCH) .< 0.01) "VR must cross zero at tooth centers"
+    @assert isapprox(maximum(abs ∘ (θ -> vr(θ, 300)), fine) * 10, maximum(abs ∘ (θ -> vr(θ, 3000)), fine))
+    md"""
+    **Hall pulses** $(round(minimum(widths); digits = 2))–$(round(maximum(widths); digits = 2))° wide
+    of a 6° pitch; **VR** zero crossings on the tooth centers; the gap spans
+    $(round(gap_edges[2] - gap_edges[1]; digits = 1))° between tooth centers. Tooth frequency at 800 rpm:
+    $(round(Int, 800 / 60 * 360 / PITCH)) Hz.
+    """
+end
+
+# ╔═╡ 8df692b9-0099-4095-9d85-16675cb87f83
+md"""
+## Misfire in the crank speed (section 04)
+
+A four-cylinder crank in plain Julia: one inertia ``J`` driven by four firings per cycle and held
+back by a constant load equal to the mean torque, with no speed controller. Each firing delivers
+its work ``W = \bar T \pi`` as a half-sine of torque over the 180° after its TDC, and the speed
+follows from the energy balance along the crank angle, with no time stepping,
+
+```math
+\tfrac12 J \omega^2(\theta) = \tfrac12 J \omega_0^2 + \int_0^\theta (T_\mathrm{gas} - \bar T)\,d\theta' .
+```
+
+``J`` = 0.15 kg·m² and ``\bar T`` = 50 N·m are assumed, as in the research note: a missed firing
+removes ``W`` = 157 J, and the dip ``\Delta\omega \approx W / (J\omega)`` is about 5 rad/s (2.4 %)
+at 2000 rpm and 1.7 rad/s (0.27 %) at 6000 rpm (derived). The firing order is 1-3-4-2; cylinder 4,
+the third firing, misfires. Below the speed, the ECU's view: the speed each cylinder's 180° segment
+gains, from its end against its start, which the ECU reads off the tooth periods there.
+
+Idealized: no compression torque, no torsional vibration, no wheel tolerances, which is where a
+real detector's difficulty at high speed comes from.
+"""
+
+# ╔═╡ c949f048-159f-4c96-8c70-2a9e6c1eef22
+begin
+    const J_CRANK = 0.15            # kg·m², crank, flywheel and clutch (assumed)
+    const T_MEAN = 50.0             # N·m, mean torque and load (assumed)
+    const W_FIRE = T_MEAN * π       # J per firing: four firings share the cycle's 4π
+    const FIRING_ORDER = [1, 3, 4, 2]
+    const MISFIRE_EVENT = 3         # the third firing in the run, cylinder 4
+
+    "Work [J] the firings have delivered by crank angle `θ` [rad], the misfiring one left out."
+    function gas_work(θ)
+        sum(k + 1 == MISFIRE_EVENT ? 0.0 : W_FIRE / 2 * (1 - cos(min(θ - k * π, π)))
+            for k in 0:floor(Int, θ / π))
+    end
+
+    """
+        misfire_run(rpm) -> (; θ_deg, ω, Δω_pct, segment_mid, segment_gain_pct, ω0)
+
+    Crank speed over two cycles from `rpm`, and the speed each 180° segment gains, in % of the
+    starting speed.
+    """
+    function misfire_run(rpm; dθ_deg = 0.5)
+        ω0 = rpm * π / 30
+        θ_deg = collect(0.0:dθ_deg:1440.0)
+        ω = [sqrt(ω0^2 + 2 * (gas_work(deg2rad(t)) - T_MEAN * deg2rad(t)) / J_CRANK) for t in θ_deg]
+        per = round(Int, 180 / dθ_deg)
+        gain = [100 * (ω[(k + 1) * per + 1] - ω[k * per + 1]) / ω0 for k in 0:7]
+        (; θ_deg, ω, Δω_pct = 100 .* (ω ./ ω0 .- 1), segment_mid = 180.0 .* (0:7) .+ 90,
+            segment_gain_pct = gain, ω0)
+    end
+
+    misfire_runs = (misfire_run(2000), misfire_run(6000))
+end
+
+# ╔═╡ 8627240b-ee7d-4378-8739-24102aee09bf
+# ╠═╡ card = "misfire-dip"
+let speeds = ((misfire_runs[1], "2000 rpm", ACCENT, -22), (misfire_runs[2], "6000 rpm", WARN, 22))
+    traces = Any[]
+    for (r, name, color, offset) in speeds
+        k = 1:4:length(r.θ_deg)
+        push!(traces, PP.scatter(; x = r.θ_deg[k], y = round.(r.Δω_pct[k]; digits = 4),
+            mode = "lines", name, legendgroup = name, line = line(color),
+            hovertemplate = "%{x:.0f}°: %{y:.2f} %<extra>$name</extra>"))
+        push!(traces, PP.bar(; x = r.segment_mid .+ offset, y = round.(r.segment_gain_pct; digits = 4),
+            width = 40, name, legendgroup = name, showlegend = false, xaxis = "x2", yaxis = "y2",
+            marker = PP.attr(; color),
+            hovertemplate = "%{y:.2f} %<extra>$name</extra>"))
+    end
+    mids = 180.0 .* (0:7) .+ 90
+    cylinders = ["cyl $(FIRING_ORDER[mod1(k, 4)])" for k in 1:8]
+    PP.plot(identity.(traces), deck_layout(;
+        margin = PP.attr(l = 80, r = 16, t = 36, b = 56),
+        legend = PP.attr(; orientation = "h", x = 0.99, xanchor = "right", y = 1.08),
+        barmode = "overlay",
+        xaxis = axis(""; range = [0, 1440], dtick = 180, matches = "x2", anchor = "y",
+            showticklabels = false),
+        yaxis = axis("speed change [%]"; domain = [0.5, 1], range = [-3, 0.8], dtick = 1,
+            anchor = "x"),
+        xaxis2 = axis("180° segment, firing order 1-3-4-2"; range = [0, 1440], anchor = "y2",
+            tickvals = mids, ticktext = cylinders),
+        yaxis2 = axis("gain per segment [%]"; domain = [0, 0.4], range = [-3, 0.8],
+            dtick = 1, anchor = "x2"),
+        shapes = [PP.attr(; type = "rect", xref = "x2", yref = "paper", x0 = 360, x1 = 540,
+            y0 = 0, y1 = 1, fillcolor = WARN, opacity = 0.08, line = PP.attr(; width = 0))],
+        annotations = [PP.attr(; xref = "x2", yref = "paper", x = 450, y = 1.0,
+            yanchor = "bottom", showarrow = false, text = "cylinder 4 misfires",
+            font = PP.attr(; size = 14, color = WARN))]))
+end
+
+# ╔═╡ bb5c3017-7a60-4a7e-9a52-a70d9d917ba8
+let (low, high) = misfire_runs
+    dip(r) = r.ω0 - r.ω[findfirst(==(540.0), r.θ_deg)]
+    @assert isapprox(W_FIRE, 157.08; atol = 0.01) "a firing must carry 157 J"
+    @assert isapprox(dip(low), W_FIRE / (J_CRANK * low.ω0); rtol = 0.03) "the 2000 rpm dip must be W/(Jω)"
+    @assert isapprox(dip(low), 5.0; atol = 0.15) "the 2000 rpm dip must be about 5 rad/s"
+    @assert isapprox(dip(high), 1.67; atol = 0.05) "the 6000 rpm dip must be about 1.7 rad/s"
+    @assert isapprox(100 * dip(low) / low.ω0, 2.4; atol = 0.1) "2000 rpm: about 2.4 %"
+    @assert isapprox(100 * dip(high) / high.ω0, 0.27; atol = 0.02) "6000 rpm: about 0.27 %"
+    @assert argmin(low.segment_gain_pct) == argmin(high.segment_gain_pct) == MISFIRE_EVENT "the misfiring segment must stand out"
+    @assert all(abs.(low.segment_gain_pct[[1, 2, 4, 5, 6, 7, 8]]) .< 1e-6) "a firing segment must gain nothing"
+    md"""
+    **Dip** $(round(dip(low); digits = 2)) rad/s ($(round(100 * dip(low) / low.ω0; digits = 2)) %)
+    at 2000 rpm, $(round(dip(high); digits = 2)) rad/s ($(round(100 * dip(high) / high.ω0; digits = 2)) %)
+    at 6000 rpm. **Misfiring segment** loses $(round(-minimum(low.segment_gain_pct); digits = 2)) % at
+    2000 rpm, $(round(-minimum(high.segment_gain_pct); digits = 3)) % at 6000 rpm.
+    """
+end
+
+# ╔═╡ 744b13c3-5c7d-45e1-ac03-e1fb95dc6ebd
+md"""
+## The MAP sensor's transfer line (section 04)
+
+The Bosch Motorsport PS-AA, its 0.1–1.15 bar variant at a 5 V supply, as its datasheet states it:
+4,048 mV/bar with an offset of −4.8 mV, ratiometric, so the output spans 0.4 V at 10 kPa to
+4.65 V at 115 kPa. A reading outside that span comes from no healthy sensor: a short or an open
+wire. Marked on the line: the hands-on engine's idle at 33 kPa and full load at 95 kPa (the
+`eta-v-map` lines), and ambient pressure, 100 kPa, which a MAP sensor reads before the engine
+turns (derived voltages: 1.33, 3.84 and 4.04 V).
+"""
+
+# ╔═╡ 4b59056c-86d4-47ee-a13e-e6c5b5b5d47d
+begin
+    const PSAA_SLOPE = 4.048       # V/bar, Bosch Motorsport PS-AA 1.15 bar datasheet
+    const PSAA_OFFSET = -0.0048    # V
+    const PSAA_SPAN = (10.0, 115.0) # kPa
+    psaa_V(kPa) = PSAA_SLOPE * kPa / 100 + PSAA_OFFSET
+end
+
+# ╔═╡ 7a0ff0b0-36b0-4cd5-aff0-16877e762328
+# ╠═╡ card = "map-transfer"
+let kPa = collect(PSAA_SPAN[1]:0.5:PSAA_SPAN[2])
+    lo, hi = psaa_V.(PSAA_SPAN)
+    points = ((33.0, "idle"), (95.0, "full load"), (100.0, "ambient"))
+    band(y0, y1) = PP.attr(; type = "rect", xref = "paper", yref = "y", x0 = 0, x1 = 1, y0, y1,
+        fillcolor = WARN, opacity = 0.15, line = PP.attr(; width = 0))
+    PP.plot([
+            PP.scatter(; x = kPa, y = round.(psaa_V.(kPa); digits = 4), mode = "lines",
+                name = "PS-AA", line = line(ACCENT),
+                hovertemplate = "%{x:.1f} kPa: %{y:.3f} V<extra></extra>"),
+            PP.scatter(; x = first.(points), y = round.(psaa_V.(first.(points)); digits = 3),
+                mode = "markers+text", text = ["$(n) $(round(psaa_V(p); digits = 2)) V" for (p, n) in points],
+                textposition = ["middle right", "top left", "middle right"],
+                marker = PP.attr(; size = 10, color = INK), name = "operating points",
+                hovertemplate = "%{x:.0f} kPa: %{y:.2f} V<extra></extra>"),
+        ], deck_layout(;
+            showlegend = false,
+            margin = PP.attr(l = 70, r = 16, t = 16, b = 56),
+            xaxis = axis("manifold pressure [kPa]"; range = [0, 140], dtick = 20),
+            yaxis = axis("output at 5 V supply [V]"; range = [0, 5], dtick = 1),
+            shapes = [band(0, lo), band(hi, 5)],
+            annotations = [
+                PP.attr(; x = 138, y = lo / 2, xanchor = "right", showarrow = false,
+                    text = "below $(round(lo; digits = 2)) V: fault", font = PP.attr(; size = 13, color = WARN)),
+                PP.attr(; x = 2, y = (hi + 5) / 2, xanchor = "left", showarrow = false,
+                    text = "above $(round(hi; digits = 2)) V: fault", font = PP.attr(; size = 13, color = WARN))]))
+end
+
 # ╔═╡ Cell order:
 # ╠═7635b61c-86fb-4a32-99de-86a0c84a2c00
 # ╟─88324f20-40ae-4205-872b-e284cfea7231
@@ -712,3 +1033,15 @@ end
 # ╠═d8d499f6-e837-4b54-80f7-f0473f4b1505
 # ╠═f22bbfeb-f558-41f2-ba35-0af2f82658a8
 # ╠═92e1073d-c083-4677-b228-2aec37f9a434
+# ╟─5899b91d-9a95-4b60-9720-969504ab481a
+# ╠═ca1ca354-9221-4ac0-832e-a3278771a768
+# ╠═996bcf9b-cc10-40c1-86d8-9d41a3332d9b
+# ╠═c9d26062-2cf3-4764-a527-abc952a7ebcc
+# ╠═27c76275-ba77-4373-8f54-fdb2f5f14b64
+# ╟─8df692b9-0099-4095-9d85-16675cb87f83
+# ╠═c949f048-159f-4c96-8c70-2a9e6c1eef22
+# ╠═8627240b-ee7d-4378-8739-24102aee09bf
+# ╠═bb5c3017-7a60-4a7e-9a52-a70d9d917ba8
+# ╟─744b13c3-5c7d-45e1-ac03-e1fb95dc6ebd
+# ╠═4b59056c-86d4-47ee-a13e-e6c5b5b5d47d
+# ╠═7a0ff0b0-36b0-4cd5-aff0-16877e762328
