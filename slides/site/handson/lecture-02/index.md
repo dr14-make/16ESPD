@@ -197,7 +197,7 @@ end
    - Search "Manifold" also offers `IntakeManifold` from the course library: take your own `MyCar › Manifold`.
    - Search "Throttle" offers four throttles: take the plain `Vehicle › Engine › Throttle`, not `ElectronicThrottle`, `ThrottleEndStops` or `ThrottlePositionSensor`.
    - The parts arrive as `step`, `constant1`, `constant2`, `throttle`, `cylinderairflow` and `manifold`. Rename each to the **Name** column: select it → **Edit Parameters** → the pencil next to its name. Set its parameters first, then rename.
-   - To set a parameter, click its field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type the value, <kbd>Enter</kbd>.
+   - To set a parameter, click its field, <kbd>End</kbd>, <kbd>Shift</kbd>+<kbd>Home</kbd> to select the old value, type the new one, <kbd>Enter</kbd>. Not <kbd>Ctrl</kbd>+<kbd>A</kbd>: in Studio it selects the whole page.
 4. Wire `throttle_cmd` → `throttle.u_thr`, `speed` → `cylinders.omega`, `no_booster` → `manifold.mdot_bst`. The icons do not say which input is which: hover a port to read its name before you wire it. On `Throttle` the top input is `u_thr` and the bottom one `p_m`; on `CylinderAirflow` the top input is `p_m` and the bottom one `omega`.
 5. Wire the flows: `throttle.mdot_thr` → `manifold.mdot_thr`, `cylinders.mdot_cyl` → `manifold.mdot_cyl`.
 6. Wire the pressure back: `manifold.p_m` → `throttle.p_m` and → `cylinders.p_m`. Both flows depend on it; this loop is what makes the pressure settle.
@@ -246,7 +246,7 @@ end
    ```
 
    A REPL opened before `AirPathStep` existed answers `UndefVarError: AirPathStepTransient not defined`. Running once with ▷ loads the new components into it; restarting the REPL does too.
-10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s): click the field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type, <kbd>Enter</kbd>. Run and plot again.
+10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s): click the field, <kbd>End</kbd>, <kbd>Shift</kbd>+<kbd>Home</kbd>, type, <kbd>Enter</kbd>. Run and plot again.
 
 [![Manifold pressure of AirPathStepTransient at idle: it falls from 101.3 kPa to 33.0 kPa within the first second, then rises to 37.3 kPa after the small throttle step at 1 s.](/handson/lecture-02/img/step02-idle-plot.png){width="990" height="528"}](/handson/lecture-02/img/step02-idle-plot.png)
 
@@ -453,7 +453,7 @@ end
 
 The defaults hold the 90 km/h cruise point of step 01, 3080 rpm and 31.1 N·m, and at 1 s open the pedal from 0.1034 to 0.12.
 
-8. Run it and plot the pressure and the torque, then the fuel:
+8. Run `MapEngineDynoTransient` once with ▷ on its analysis tab: that loads the engine and bench you just drew into the REPL. Then plot the pressure and the torque, then the fuel:
 
    ```julia
    r = MyCar.MapEngineDynoTransient()
@@ -517,8 +517,8 @@ With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making
 
 You edit your own `MapEngine` in place. The two new map blocks have their ports where `TorqueMap`'s and `FuelMap`'s are, so your wires stay where they are. The course library keeps both versions for reference: `HandsOn02.MapEngine` before the paste, `HandsOn02.MapEngineFuelCut` after it.
 
-10. Open `MapEngine` and toggle to code (⇄). Select the two lines that start `torque_map =` and `fuel_map =`, and paste the first block over them. If the two lines are not next to each other, delete both and paste the block after the last component line, before `relations`.
-11. Paste the second block after the last `connect(…)` line, before `metadata`. Save, and toggle back to the diagram: `cut_logic` sits at the bottom left, its output goes up into both maps from below, and nothing you drew has moved.
+10. Open `MapEngine` and toggle to code (⇄). Select from the `t` of `torque_map =` to the end of the `fuel_map =` line, and paste the first block over it. If the two lines are not next to each other, delete both, click at the end of the last component line, press <kbd>Enter</kbd> and paste the block there. The blocks end without a line break: select whole lines from the margin instead and the line after the paste joins its last line.
+11. Click at the end of the last `connect(…)` line, press <kbd>Enter</kbd> and paste the second block. Save, and toggle back to the diagram: `cut_logic` sits at the bottom left, its output goes up into both maps from below, and nothing you drew has moved. The four new wires are drawn for the course's layout, `HandsOn02.MapEngineFuelCut`, so on your own they may run diagonally or across a block: only the drawing is off, the connections are right. The **Problems** tab should show nothing.
 12. Open `MapEngineDyno` and toggle to code. In the line that starts `speed =`, select `Constant(k = rpm * pi / 30)` and paste the third block over it. Save. The dynamometer now holds `rpm` until 2 s, then slows the shaft to 800 rpm over 3 s. Runs 1 and 2 stop at 2 s, so the ramp does not change them.
 
 ::: code-group
@@ -544,7 +544,7 @@ Ramp(offset = rpm * pi / 30, height = (800 - rpm) * pi / 30, start_time = 2, dur
 
 The `{"Dyad": …}` annotations only draw the new block and its four wires: the logic reads the pedal and the shaft speed, and its one output, the cut fraction from 0 to 1, goes to both maps.
 
-13. Run the release from wide open for 6 s, and plot the shaft speed, the fuel and the torque:
+13. Run `MapEngineDynoTransient` once with ▷ on its analysis tab. The REPL keeps the `MapEngine` and `MapEngineDyno` it loaded before your pastes, and runs them without an error; ▷ loads the new ones. Then run the release from wide open for 6 s, and plot the shaft speed, the fuel and the torque:
 
     ```julia
     r = MyCar.MapEngineDynoTransient(rpm = 3000, pedal_initial = 1, pedal_final = 0, p_m0 = 99889.9, stop = 6)
@@ -553,8 +553,7 @@ The `{"Dyad": …}` annotations only draw the new block and its four wires: the 
 
     The speed is in rad/s: 1000 rpm is 104.7 rad/s.
 
-<!-- TODO(screenshot): step03-fuel-cut-plot.png. -->
-<!-- TODO(rehearsal): run E's three pastes in Dyad Studio's code view; so far checked with the CLI only. -->
+[![The release run of MapEngineDynoTransient, three panels over 6 s. Speed: 3000 rpm until 2 s, then down to 800 rpm at 5 s. Fuel: 3.75 g/s, cut to 0 at 1 s, back at 4.73 s as the speed passes 1000 rpm. Torque: 148.4 N·m, then −18.7 N·m on the closed-throttle curve, rising to about 0 at 800 rpm.](/handson/lecture-02/img/step03-fuel-cut-plot.png){width="990" height="528"}](/handson/lecture-02/img/step03-fuel-cut-plot.png)
 
 ::: tip Checkpoint
 

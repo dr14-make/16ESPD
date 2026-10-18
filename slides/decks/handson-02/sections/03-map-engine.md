@@ -211,7 +211,7 @@ A real ECU cuts the fuel on overrun. Paste it into **your** `MapEngine`:
 2. After the last `connect`: four wires, pedal and speed in, the cut out to both maps.
 3. In `MapEngineDyno`'s `speed` line: `Constant(…)` → a `Ramp` to 800 rpm from 2 s.
 
-Run with `rpm = 3000`, `pedal_initial = 1`, `pedal_final = 0`, `p_m0 = 99889.9`, `stop = 6`.
+▷ once, then run with `rpm = 3000`, `pedal_initial = 1`, `pedal_final = 0`, `p_m0 = 99889.9`, `stop = 6`.
 
 </div>
 <div>
@@ -249,8 +249,15 @@ is what the 0.097 g/s was still giving.
 
 **The paste:** the two new map blocks have their ports where `TorqueMap`'s and `FuelMap`'s are, so
 retyping the two lines moves no wire. The `cut_logic` block lands at the bottom left with its
-placement and wires annotated. The ramp starts at 2 s, so runs 1 and 2 (which stop at 2 s) are
-unchanged; rerun run 2 now and its closed pedal starts in the cut, 0 fuel and −18.7 N·m.
+placement and wires annotated; those wires follow `HandsOn02.MapEngineFuelCut`'s layout, so on a
+student's own layout they may cut diagonally across blocks. The connections are right. The blocks
+end without a line break: a student who selects whole lines from the margin gets the next line
+joined onto the paste's last one. The ramp starts at 2 s, so runs 1 and 2
+(which stop at 2 s) are unchanged; rerun run 2 now and its closed pedal starts in the cut, 0 fuel and −18.7 N·m.
+
+**▷ before the REPL run:** the REPL keeps the `MapEngine` and `MapEngineDyno` it loaded before the
+paste and runs them without an error, so a student who skips ▷ sees no cut, or a speed that never
+ramps. One ▷ on `MapEngineDynoTransient` loads the edited ones.
 
 **Against `MappedEngine`:** the same −18.7 N·m after the same release, because it uses the same
 `FuelCutLogic` and curve. Its fuel goes a little later: its 50 ms throttle actuator keeps the
