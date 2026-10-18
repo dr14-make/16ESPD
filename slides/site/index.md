@@ -32,9 +32,11 @@ features:
 
 One car throughout: learned and built first, then controlled. Run them in this order.
 
-Present the hands-on with the [tutor deck](./handson-01/index.html){target="_self"}; its speaker
-notes carry what to say, every derivation with the numbers plugged in, and where students get
-stuck.
+Students follow the [hands-on guide](./handson/lecture-01/), which holds every instruction and the
+theory, each derivation in a box at the step that needs it. Put the
+[projector deck](./handson-01/index.html){target="_self"} on the wall, one slide per step with its
+goal, the finished model and the checkpoint. The [tutor guide](./handson/lecture-01/tutor.html)
+carries what to say, the time per part, where students get stuck, and the answer models.
 
 In the lecture the students build the cruise controller on that car as you go. They follow the
 [build guide](./lecture/lecture-01/); each build slide links to its step.

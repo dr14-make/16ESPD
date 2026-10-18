@@ -478,7 +478,7 @@ notebooks do not use it.
 
 > **Every one of these was derived on paper**
 >
-> In [hands-on step 05](../handson-01/index.html#/top-speed), and checked by every student's model.
+> In [hands-on step 05](../handson/lecture-01/index.html#top-speed), and checked by every student's model.
 > The hill in notebook 06 is too steep for the engine because 2023 N &gt; 1935 N.
 
 </div>

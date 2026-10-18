@@ -47,7 +47,7 @@ A linear model has none of these: ask it for a million newton-meters and it deli
 > The car slows down toward about **118 km/h**; a 120 s climb gets it to **119.05**,
 > still falling.
 
-*↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson-01/index.html#/slope)*
+*↩ Hands-on step 07: [the slope, and the 2023 N sum](../handson/lecture-01/index.html#slope)*
 
 ![A car on a road tilted by angle alpha: its weight splits into m g sine alpha along the road, pulling it back downhill, and m g cosine alpha into the road.](/diagrams/07-slope.svg)
 

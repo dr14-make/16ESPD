@@ -70,8 +70,8 @@ live here, one section per deck section, in deck order.
   page); instance names match. A broken `GradeCar` is replaced by the step 1b catch-up on the
   guide page. Pair anyone who
   skipped the hands-on with someone who did it for the first build.
-- Recap: do not re-derive. The hands-on deck has every derivation; the link at the bottom goes to
-  its summary table.
+- Recap: do not re-derive. The hands-on guide (`handson/lecture-01/`) has every derivation in its
+  Why boxes; the link at the bottom goes to the hands-on projector deck's summary table.
 - Start the full-throttle solve (`01-the-car.ipynb`, cell 4) while the recap is still up; it is
   the slowest solve in the notebook.
 - Have open: `dyad/Lecture1/WideOpenThrottle.dyad` for full throttle;
