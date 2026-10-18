@@ -39,7 +39,7 @@ $$
 | $O_F$ | friction (rolling) | $O_F = m\, g\, f_k \cos\alpha$ |
 | $O_Z$ | acceleration | $O_Z = m\, a\, v$ |
 | $O_S$ | overcoming a slope | $O_S = m\, g\, v \sin\alpha$ |
-| $O_{\text{aux}}$ | all other electrical equipment | $O_{\text{aux}} = O_{\text{climat}} + O_{\text{batmngm}} + O_{\text{light}} + O_{\text{audio}}$ |
+| $O_{\text{aux}}$ | all other electrical equipment | $O_{\text{aux}} = O_{\text{AC}} + O_{\text{battery}} + O_{\text{light}} + O_{\text{audio}}$ |
 
 </div>
 </div>
@@ -68,7 +68,7 @@ One thing to watch: as written, the drag and rolling terms are forces, and the a
 slope terms are powers, because they carry the speed v. To add them, multiply the first two by v.
 That gives power at the wheels; integrate over a drive cycle and you have energy.
 
-The auxiliaries: climate, battery management, lights, audio. On a modern car they are several
+The auxiliaries: air conditioning (AC), battery management, lights, audio. On a modern car they are several
 hundred watts, more with the air conditioning on.
 
 The force sketch is redrawn from the source deck's clip art with the table's symbols on the arrows:
