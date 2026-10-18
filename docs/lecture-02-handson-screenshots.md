@@ -13,6 +13,11 @@ The hands-on deck's conventions apply to every diagram:
 - A shot that needs a parameter panel shows it over the diagram, with the toolbar masked out.
 - A code shot shows the whole component without scrolling, at the editor's default font size.
 - Same window size for every shot. About 1600 × 1000 matches the hands-on 1 images.
+- Reset view fits the dashed outline to the canvas's shorter side, so on a portrait canvas the
+  ports on the left and right edges and their labels fall outside it. Use a landscape canvas.
+- The step 02–03 shots were taken in a 706 × 1015 window, the only size Chrome would take, with
+  the diagram's webview cut to 480 px high so the fit goes by height. All four are cropped to the
+  same 638 × 584 frame; the step 00 popup is cropped to itself, 324 × 878.
 
 Plots are REPL plots of the reference analyses, at the hands-on 1 plot size (990 × 528), one
 signal per axis unless the row says otherwise. Dyad's REPL defaults to the Plotly backend, where
@@ -23,7 +28,7 @@ Plotly. At 990 × 528, GR clips the axis labels without `margin = 5Plots.mm`.
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step00-engine-library.png` | — | The **+** (Add component) tree opened at `VehicleSystemsComponents › Vehicle › Engine`, listing `AirPath`, `CylinderAirflow`, `MappedEngine`, `Throttle`. `MyCar` visible below it. |
+| `step00-engine-library.png` | — | The **+** (Add component) tree opened at `VehicleSystemsComponents › Vehicle › Engine`, cropped to the popup. `Engine` holds about 40 parts in alphabetical order, the `Test…` reference models among them, so one view shows `AirPath`, `CylinderAirflow` and `MappedEngine`; `Throttle` comes after the `Test…` entries, below the fold. `MyCar` is the last top-level library, under `VehicleSystemsComponents`, and is off screen once `Vehicle` is open. |
 
 ## Step 01 — read the maps
 
