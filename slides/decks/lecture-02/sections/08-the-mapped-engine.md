@@ -170,30 +170,7 @@ torque curve, the number Lecture 1 promised to fix. The cruise points give fuel 
 per kilometer, the numbers on a car's sticker. Coast-down shows fuel cut-off. And the brake stop
 records the manifold pressure the booster depends on.
 
-If time allows, the hands-on adds a gearbox and a driver following the WLTC cycle, where the
-results can be compared with a real car's label.
+If time allows, the hands-on adds a CVT and a driver following the WLTC cycle, where the
+results can be compared with a real car's label. Section 09 is about that cycle.
 -->
 
----
-
-## Summary of the lecture
-
-- **01** the engine's work goes to drag, rolling, slope, acceleration and the auxiliaries.
-- **02** Otto and Diesel cycles; stoichiometric is 14.6, and λ measures the mixture against it.
-- **03** sensors, ECU and actuators in a loop, with a strategy for every operating mode.
-- **04** the ECU knows what its sensors tell it: position, temperature, air mass.
-- **05** pulse width = base × factors; the injector is a solenoid valve timed by the ECU.
-- **06** the spark fires before TDC to put peak pressure just after it; advance trades torque for
-  emissions.
-- **07** the λ loop holds the catalyst's window with a switching sensor and a limit cycle.
-- **08** in the hands-on, the mapped engine: pedal, manifold pressure, maps, fuel and CO₂.
-
-### An engine control unit is a stack of control loops wrapped around one nonlinear plant.
-
-<!--
-Back to the sentence we started with. The plant is the engine, nonlinear in speed and load: the
-maps are how the ECU copes with that. The loops are fuel, spark, idle and lambda, each with its
-sensors and actuators.
-
-In the hands-on you build the plant. The notebooks put the loops around it, one at a time.
--->

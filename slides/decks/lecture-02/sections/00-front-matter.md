@@ -93,11 +93,13 @@ The mapped engine in the hands-on fixes that.
 | <Link to="ignition">06</Link> | Ignition | timing and advance, spark plug, coil, dwell, distributor to coil-on-plug |
 | <Link to="emissions-and-lambda">07</Link> | Emissions and lambda control | evaporative emissions, the λ loop, the oxygen sensor, the catalyst |
 | <Link to="mapped-engine">08</Link> | The mapped engine | what you build in the hands-on |
+| <Link to="drive-cycles">09</Link> | Drive cycles | why labels come from fixed speed traces; NEDC, WLTC and the others; the WLTC you drive |
 
 <!--
-Eight sections. The first two are the physics: where the energy goes and how the engine makes it.
+Nine sections. The first two are the physics: where the energy goes and how the engine makes it.
 Sections 03 to 07 are the control system, from the outside in: the whole system, then its sensors,
 then the two main actuators, fuel and spark, then the emissions loop that closes around both.
 
-Section 08 is the bridge to the hands-on.
+Sections 08 and 09 are the bridge to the hands-on: the engine you build, and the drive cycle you
+drive it over.
 -->
