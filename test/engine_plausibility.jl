@@ -372,63 +372,172 @@ const MapEngineFuelCutDynoTransient = VehicleSystemsComponents.HandsOn02.MapEngi
     @info "Hands-on 02 fuel cut" t_cut tau_cut rpm[resume] t[resume] idle
 end
 
+const HandsOn02Car = VehicleSystemsComponents.HandsOn02
 
+# A run's signals on a uniform 1 ms grid, so event times below resolve to the millisecond.
+function car_signals(run)
+    car, sol = run.model.car, run.sol
+    t = collect(range(0.0, sol.t[end]; step = 0.001))
+    read(sym) = sol(t, idxs = sym).u
+    return (t = t, v = read(car.v_kmh), rpm = read(car.flywheel.w) .* 30 ./ pi,
+            p_kpa = read(car.p_m) ./ 1e3, fuel = read(car.fuel_lph),
+            cut = read(car.engine.cut_logic.cut), slip = read(car.driveline.clutch.w_slip),
+            capacity = read(car.driveline.clutch.tau_capacity),
+            ratio = read(car.driveline.variator.ratio), a = read(car.body.mass.a))
+end
 
 @testset "Hands-on 02 CVT" begin
-    run = mapped_engine_run(VehicleSystemsComponents.HandsOn02.MappedCarCVTWOTTransient)
+    # Step 04: pedal floored from rest, engine idling at 900 rpm behind the open clutch.
+    run = mapped_engine_run(HandsOn02Car.MappedCarWOTTransient; stop = 300.0)
+    s = car_signals(run)
+    @test string(run.sol.retcode) == "Success"
+    @test s.t[end] == 300.0
+
+    # The clutch slips while it engages, holding the engine near its 1300 rpm ramp center.
+    at(x, time) = x[round(Int, time / 0.001) + 1]
+    @test at(s.rpm, 0.5) ≈ 1300 atol = 5
+    @test at(s.rpm, 1.0) ≈ 1300 atol = 5
+    lock = findfirst(i -> s.t[i] > 0.1 && abs(s.slip[i]) < 1.0 && s.capacity[i] > 200.0,
+                     eachindex(s.t))
+    @test s.t[lock] ≈ 1.33 atol = 0.05
+    @test s.v[lock] ≈ 13.75 atol = 0.5
+    @test s.rpm[lock] ≈ 1417 atol = 20
+    @test all(abs.(s.slip[lock:end]) .< 1.0)
+
+    t100 = s.t[findfirst(>=(100.0), s.v)]
+    @test t100 ≈ 10.43 atol = 0.05
+    @test at(s.v, 60.0) ≈ 196.6 atol = 0.2
+    @test at(s.v, 120.0) ≈ 204.9 atol = 0.2
+    @test s.v[end] ≈ 205.33 atol = 0.1
+    @test abs(s.a[end]) < 1e-4
+    @test s.rpm[end] ≈ 6000 atol = 10
+    @test at(s.ratio, 300.0) ≈ 3.41 atol = 0.01
+    # At top speed the wide-open engine's power is what drag and rolling take, lossless CVT.
     car, sol = run.model.car, run.sol
-    sample_t = range(0.0, sol.t[end]; length = 30_001)
-    speed = sol(sample_t, idxs = car.v_kmh)
-    rpm = sol(sample_t, idxs = car.flywheel.w) .* 30 ./ pi
-    slip = abs.(sol(sample_t, idxs = car.driveline.clutch.w_slip))
-    capacity = sol(sample_t, idxs = car.driveline.clutch.tau_capacity)
+    tau_top = sol(300.0, idxs = car.engine.torque_map.y)
+    road_n = 0.5 * 1.2 * 0.63 * (s.v[end] / 3.6)^2 + 0.012 * 1400 * 9.80665
+    @test tau_top ≈ 126.5 atol = 0.2
+    @test tau_top * s.rpm[end] * pi / 30 ≈ road_n * s.v[end] / 3.6 rtol = 1e-3
 
-    t100_index = findfirst(>=(100.0), speed)
-    lock_index = findfirst(i -> sample_t[i] > 0.1 && slip[i] < 1.0 &&
-                               capacity[i] > 200.0, eachindex(sample_t))
+    # Until about 58 km/h the ratio sits at its 12.0 launch stop, so the engine runs past the
+    # 6000 rpm target; it peaks short of the 6500 rpm limiter, and the fuel is never cut.
+    @test maximum(s.rpm) ≈ 6393 atol = 15
+    @test s.t[argmax(s.rpm)] ≈ 6.37 atol = 0.05
+    @test maximum(s.rpm) < 6500.0
+    @test maximum(s.cut) < 1e-3
+    @test minimum(s.rpm) >= 899.0
 
-    @test string(sol.retcode) == "Success"
-    @test sol.t[end] == 300.0
-    @test minimum(rpm) >= 600.0
-    @test t100_index !== nothing
-    @test sample_t[t100_index] ≈ 10.43 atol = 0.05
-    @test speed[end] ≈ 205.33 atol = 0.1
-    @test abs(sol(300.0, idxs = car.body.mass.a)) < 1e-4
-    @test maximum(rpm) < 6500.0
-    @test lock_index !== nothing
-    @test sample_t[lock_index] ≈ 1.33 atol = 0.05
-    @test speed[lock_index] ≈ 13.75 atol = 0.5
-    @test slip[end] < 1.0
-
-    metrics = (; t_0_100 = sample_t[t100_index], top_speed = speed[end],
-               minimum_rpm = minimum(rpm), maximum_rpm = maximum(rpm),
-               clutch_lock_time = sample_t[lock_index],
-               clutch_lock_speed = speed[lock_index])
+    metrics = (; lock_t = s.t[lock], lock_kmh = s.v[lock], lock_rpm = s.rpm[lock], t100,
+               v60 = at(s.v, 60.0), v120 = at(s.v, 120.0), top = s.v[end], rpm_top = s.rpm[end],
+               rpm_max = maximum(s.rpm), t_rpm_max = s.t[argmax(s.rpm)], ratio_top = s.ratio[end],
+               fuel_top = s.fuel[end], p_top = s.p_kpa[end], tau_top)
     @info "Hands-on 02 CVT" metrics
 end
 
-@testset "Hands-on 02 cruise table" begin
-    analysis = VehicleSystemsComponents.HandsOn02.MappedCarCVTCruiseTransient
-    cases = ((50.0, 0.048779296875, 40.1e3, 4.6544028455, 3.7),
-             (90.0, 0.0916015625, 54.42e3, 2.8309614123, 4.0),
-             (130.0, 0.17373046875, 67.22e3, 2.8, 6.0))
-    measured = NamedTuple[]
-    for (speed, pedal, p_m0, ratio0, expected_l100) in cases
-        run = mapped_engine_run(analysis; speed_kmh = speed, pedal_cmd = pedal,
-                                p_m0 = p_m0, ratio0 = ratio0)
-        car, sol = run.model.car, run.sol
-        t = sol.t[end]
-        actual_speed = sol(t, idxs = car.v_kmh)
-        rpm = sol(t, idxs = car.flywheel.w) * 30 / pi
-        p_kpa = sol(t, idxs = car.p_m) / 1e3
-        fuel_lph = sol(t, idxs = car.fuel_lph)
-        fuel_l100 = fuel_lph / actual_speed * 100
-        push!(measured, (; speed, actual_speed, rpm, p_kpa, fuel_l100))
-
-        @test string(sol.retcode) == "Success"
-        @test actual_speed ≈ speed atol = 0.6
-        @test fuel_l100 ≈ expected_l100 atol = 0.1
+@testset "Vehicle road brake" begin
+    run = mapped_engine_run(VehicleSystemsComponents.Vehicle.RoadBrakeTransient)
+    sol, m = run.sol, run.model
+    for body in (m.body, m.swapped_body)
+        @test sol(1.0, idxs = body.v) ≈ 10 - 4000 / 1400 rtol = 1e-3
+        @test abs(sol(6.0, idxs = body.v)) < 1e-3
+        @test minimum(sol[body.v]) > -1e-3
     end
+end
 
-    @info "Hands-on 02 CVT cruise table" measured fixed_gear_l100 = (3.3, 4.6, 7.0)
+@testset "Hands-on 02 CVT cruise" begin
+    # Step 05: the CVT car started steady; each speed's pedal holds it within 0.25 km/h for 60 s.
+    # Petrol 745 g/L, CO2 3.09 x fuel, so 2302 g CO2 per liter.
+    fuel_map = read_engine_map("fuel_gps.csv")
+    measured = NamedTuple[]
+    for (kmh, pedal, rpm0, p_m0, rpm, ratio, p_kpa, lph, l100, co2, fixed_l100) in
+        ((50, 0.04878, 1992, 40100, 1992, 4.64, 40.1, 1.84, 3.7, 85, 3.3),
+         (90, 0.0916, 2182, 54420, 2182, 2.83, 54.4, 3.55, 3.9, 91, 4.6),
+         (130, 0.17373, 3118, 67220, 3118, 2.80, 67.2, 7.78, 6.0, 138, 7.0))
+        run = mapped_engine_run(HandsOn02Car.MappedCarCruiseTransient; speed_kmh = kmh,
+                                pedal_cmd = pedal, rpm0 = rpm0, p_m0 = p_m0)
+        s = car_signals(run)
+        @test string(run.sol.retcode) == "Success"
+        @test maximum(abs.(s.v .- kmh)) < 0.25
+        v, fuel = s.v[end], s.fuel[end]
+        @test round(s.rpm[end]) ≈ rpm atol = 2
+        @test round(s.ratio[end]; digits = 2) == ratio
+        @test round(s.p_kpa[end]; digits = 1) == p_kpa
+        @test round(fuel; digits = 2) == lph
+        # The fuel map read at the CVT's operating point predicts the car's fuel flow.
+        @test fuel * 745 / 3600 ≈ bilinear(fuel_map, s.rpm[end], s.p_kpa[end]) rtol = 0.01
+        @test round(fuel / v * 100; digits = 1) == l100
+        @test round(fuel * 2302 / v) == co2
+        # Above 50 km/h the CVT runs the engine slower and less throttled than the fixed gear;
+        # at 50 km/h its 1800 rpm floor runs it faster.
+        @test (fuel / v * 100 > fixed_l100) == (kmh == 50)
+        push!(measured, (; kmh, v, rpm = s.rpm[end], ratio = s.ratio[end], p_kpa = s.p_kpa[end],
+                         lph = fuel, l100 = fuel / v * 100, co2 = fuel * 2302 / v))
+    end
+    @info "Hands-on 02 CVT cruise" measured
+end
+
+@testset "Hands-on 02 CVT coast and brake" begin
+    # Step 06 A: pedal released at 5 s from the 90 km/h cruise.
+    coast = car_signals(mapped_engine_run(HandsOn02Car.MappedCarCoastTransient))
+    after = coast.t .> 5.0
+    cut_on = findfirst(i -> after[i] && coast.cut[i] > 0.5, eachindex(coast.t))
+    resume = findfirst(i -> i > cut_on && coast.cut[i] < 0.5, eachindex(coast.t))
+    opens = findfirst(i -> coast.t[i] > 6.0 && abs(coast.slip[i]) > 1.0, eachindex(coast.t))
+    rest = findfirst(i -> after[i] && coast.v[i] < 0.1, eachindex(coast.t))
+    @test coast.fuel[4990] ≈ 3.55 atol = 0.005
+    @test coast.t[cut_on] - 5.0 < 0.01
+    # The cut fades the fuel out over the latch's 10 ms, so it is gone within 0.2 s.
+    @test maximum(coast.fuel[5200:resume-50]) < 1e-6
+    @test minimum(coast.p_kpa[after]) ≈ 17.1 atol = 0.1
+    @test coast.a[5500] ≈ -0.39 atol = 0.01
+    # Below 75 km/h the ratio climbs and holds the engine just under the 1800 rpm floor.
+    band = findall(i -> after[i] && 30 < coast.v[i] < 70, eachindex(coast.t))
+    @test all(1725 .< coast.rpm[band] .< 1780)
+    @test coast.t[opens] ≈ 66.0 atol = 0.1
+    @test coast.v[opens] ≈ 11.2 atol = 0.2
+    @test coast.rpm[opens] ≈ 1140 atol = 10
+    @test opens < resume
+    @test coast.t[resume] ≈ 66.3 atol = 0.1
+    @test coast.v[resume] ≈ 10.8 atol = 0.2
+    @test 990 < coast.rpm[resume] < 1000
+    @test coast.p_kpa[resume] ≈ 27.4 atol = 0.2
+    @test coast.t[rest] ≈ 91.5 atol = 0.2
+    @test coast.rpm[end] ≈ 775 atol = 2
+    @test coast.p_kpa[end] ≈ 33.6 atol = 0.1
+    @test coast.fuel[end] ≈ 0.47 atol = 0.005
+    @test minimum(coast.rpm[after]) > 770
+
+    # Step 06 B: the same release with 4000 N of brake from 5 s, to rest and held there.
+    stop = car_signals(mapped_engine_run(HandsOn02Car.MappedCarBrakeStopTransient))
+    after = stop.t .> 5.0
+    braking = findall(i -> 5.2 < stop.t[i] < 10.0, eachindex(stop.t))
+    @test all(-3.25 .< stop.a[braking] .< -3.1)
+    t25 = stop.t[findfirst(i -> after[i] && stop.v[i] < 25.0, eachindex(stop.t))]
+    stopped = findfirst(i -> after[i] && stop.v[i] < 0.1, eachindex(stop.t))
+    @test t25 ≈ 10.69 atol = 0.02
+    @test stop.t[stopped] ≈ 12.94 atol = 0.02
+    @test maximum(stop.p_kpa[stop.t .> 5.2]) < 34.0
+    @test minimum(stop.p_kpa[after]) ≈ 17.6 atol = 0.1
+    refuel = findfirst(i -> stop.t[i] > 5.1 && stop.cut[i] < 0.5, eachindex(stop.t))
+    release = findfirst(i -> stop.t[i] > 6.0 && abs(stop.slip[i]) > 1.0, eachindex(stop.t))
+    @test stop.t[refuel] ≈ 11.97 atol = 0.02
+    @test stop.v[refuel] ≈ 10.4 atol = 0.2
+    @test stop.t[release] ≈ 12.0 atol = 0.02
+    @test minimum(stop.rpm[after]) > 770
+    @test stop.rpm[end] ≈ 775 atol = 2
+    @test all(abs.(stop.v[stopped:end]) .< 0.1)
+    @test abs(stop.v[end]) < 1e-3
+
+    coast_events = (; cut = coast.t[cut_on], p_min = minimum(coast.p_kpa[coast.t .> 5]),
+                    a_release = coast.a[5500], rpm_band = extrema(coast.rpm[band]),
+                    clutch_opens = (coast.t[opens], coast.v[opens], coast.rpm[opens]),
+                    fuel_back = (coast.t[resume], coast.v[resume], coast.rpm[resume],
+                                 coast.p_kpa[resume]),
+                    at_rest = coast.t[rest])
+    stop_events = (; a = extrema(stop.a[braking]), t25, at_rest = stop.t[stopped],
+                   p_range = (minimum(stop.p_kpa[after]), maximum(stop.p_kpa[stop.t .> 5.2])),
+                   fuel_back = (stop.t[refuel], stop.v[refuel], stop.rpm[refuel],
+                                stop.p_kpa[refuel]),
+                   clutch_opens = (stop.t[release], stop.v[release], stop.rpm[release]))
+    @info "Hands-on 02 CVT coast and brake" coast_events stop_events
 end

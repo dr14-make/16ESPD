@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct MappedCarCVTWOTTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :MappedCarCVTWOTTransient
+@kwdef mutable struct MappedCarCoastTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :MappedCarCoastTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 300.0
+  var"stop"::Float64 = 100
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -25,11 +25,11 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # Wide-open acceleration from rest and idle to CVT-car terminal speed.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn02.MappedCarCVTWOT(; name=:MappedCarCVTWOT)
+  # Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal released at 5 s.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn02.MappedCarCoast(; name=:MappedCarCoast)
 end
 
-function DyadInterface.run_analysis(spec::MappedCarCVTWOTTransientSpec)
+function DyadInterface.run_analysis(spec::MappedCarCoastTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   
@@ -39,5 +39,5 @@ function DyadInterface.run_analysis(spec::MappedCarCVTWOTTransientSpec)
   run_analysis(base_spec)
 end
 
-MappedCarCVTWOTTransient(;kwargs...) = run_analysis(MappedCarCVTWOTTransientSpec(;kwargs...))
-export MappedCarCVTWOTTransient, MappedCarCVTWOTTransientSpec
+MappedCarCoastTransient(;kwargs...) = run_analysis(MappedCarCoastTransientSpec(;kwargs...))
+export MappedCarCoastTransient, MappedCarCoastTransientSpec
