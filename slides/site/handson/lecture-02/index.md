@@ -197,7 +197,7 @@ end
    - Search "Manifold" also offers `IntakeManifold` from the course library: take your own `MyCar › Manifold`.
    - Search "Throttle" offers four throttles: take the plain `Vehicle › Engine › Throttle`, not `ElectronicThrottle`, `ThrottleEndStops` or `ThrottlePositionSensor`.
    - The parts arrive as `step`, `constant1`, `constant2`, `throttle`, `cylinderairflow` and `manifold`. Rename each to the **Name** column: select it → **Edit Parameters** → the pencil next to its name. Set its parameters first, then rename.
-   - To set a parameter, click its field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type the value, <kbd>Enter</kbd>.
+   - To set a parameter, click its field, <kbd>End</kbd>, <kbd>Shift</kbd>+<kbd>Home</kbd> to select the old value, type the new one, <kbd>Enter</kbd>. Not <kbd>Ctrl</kbd>+<kbd>A</kbd>: in Studio it selects the whole page.
 4. Wire `throttle_cmd` → `throttle.u_thr`, `speed` → `cylinders.omega`, `no_booster` → `manifold.mdot_bst`. The icons do not say which input is which: hover a port to read its name before you wire it. On `Throttle` the top input is `u_thr` and the bottom one `p_m`; on `CylinderAirflow` the top input is `p_m` and the bottom one `omega`.
 5. Wire the flows: `throttle.mdot_thr` → `manifold.mdot_thr`, `cylinders.mdot_cyl` → `manifold.mdot_cyl`.
 6. Wire the pressure back: `manifold.p_m` → `throttle.p_m` and → `cylinders.p_m`. Both flows depend on it; this loop is what makes the pressure settle.
@@ -246,7 +246,7 @@ end
    ```
 
    A REPL opened before `AirPathStep` existed answers `UndefVarError: AirPathStepTransient not defined`. Running once with ▷ loads the new components into it; restarting the REPL does too.
-10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s): click the field, <kbd>Ctrl</kbd>+<kbd>A</kbd>, type, <kbd>Enter</kbd>. Run and plot again.
+10. Set `speed` to `k = 314.159` (3000 rpm) and `throttle_cmd` to `height = 1` (wide open at 1 s): click the field, <kbd>End</kbd>, <kbd>Shift</kbd>+<kbd>Home</kbd>, type, <kbd>Enter</kbd>. Run and plot again.
 
 [![Manifold pressure of AirPathStepTransient at idle: it falls from 101.3 kPa to 33.0 kPa within the first second, then rises to 37.3 kPa after the small throttle step at 1 s.](/handson/lecture-02/img/step02-idle-plot.png){width="990" height="528"}](/handson/lecture-02/img/step02-idle-plot.png)
 
@@ -453,7 +453,7 @@ end
 
 The defaults hold the 90 km/h cruise point of step 01, 3080 rpm and 31.1 N·m, and at 1 s open the pedal from 0.1034 to 0.12.
 
-8. Run it and plot the pressure and the torque, then the fuel:
+8. Run `MapEngineDynoTransient` once with ▷ on its analysis tab: that loads the engine and bench you just drew into the REPL. Then plot the pressure and the torque, then the fuel:
 
    ```julia
    r = MyCar.MapEngineDynoTransient()
