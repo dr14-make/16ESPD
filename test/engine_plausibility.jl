@@ -289,3 +289,85 @@ end
     @test open_3000.before ≈ 13.5 atol = 0.05
     @test open_3000.after ≈ 99.9 atol = 0.05
 end
+
+@testset "Hands-on 02 cruise table" begin
+    # Steps 01 and 05: the cruise points read off the maps at the hands-on car's speed and
+    # holding torque, to the digits the page shows. Petrol 745 g/L; CO2 3.09 x fuel.
+    torque, fuel = read_engine_map("torque_Nm.csv"), read_engine_map("fuel_gps.csv")
+    for (kmh, rpm, tau, p_kpa, gps, lph, l100, co2) in
+        ((50, 1710, 18.4, 41.9, 0.346, 1.67, 3.3, 77),
+         (90, 3080, 31.1, 47.8, 0.850, 4.11, 4.6, 105),
+         (130, 4450, 51.0, 60.8, 1.892, 9.14, 7.0, 162))
+        lo, hi = 0.0, 105.0
+        for _ in 1:60
+            mid = (lo + hi) / 2
+            bilinear(torque, rpm, mid) < tau ? (lo = mid) : (hi = mid)
+        end
+        fuel_gps = bilinear(fuel, rpm, lo)
+        fuel_lph = fuel_gps * 3600 / 745
+        @test round(lo; digits = 1) == p_kpa
+        @test round(fuel_gps; digits = 3) == gps
+        @test round(fuel_lph; digits = 2) == lph
+        @test round(fuel_lph / kmh * 100; digits = 1) == l100
+        @test round(3.09 * fuel_gps / (kmh / 3.6) * 1000) == co2
+    end
+end
+
+const MapEngineFuelCutDynoTransient = VehicleSystemsComponents.HandsOn02.MapEngineFuelCutDynoTransient
+
+@testset "Hands-on 02 fuel cut" begin
+    # Step 03 E: released from wide open at 1 s and 3000 rpm; from 2 s the dyno ramps the speed
+    # down to 800 rpm over 3 s.
+    release = mapped_engine_run(MapEngineFuelCutDynoTransient; rpm = 3000, pedal_initial = 1.0,
+                                pedal_final = 0.0, p_m0 = 99889.9, stop = 6.0)
+    engine, sol = release.model.engine, release.sol
+    t, fuel = sol.t, sol[engine.mdot_fuel]
+    rpm = sol[engine.speed.w] .* 30 ./ pi
+
+    fired_fuel = sol(0.99, idxs = engine.mdot_fuel)
+    @test sol(0.99, idxs = engine.torque_map.y) ≈ 148.4 rtol = 0.01
+    @test fired_fuel * 1e3 ≈ 3.75 rtol = 0.01
+
+    t_cut = t[findfirst(k -> t[k] > 1.0 && fuel[k] < 0.01 * fired_fuel, eachindex(t))] - 1.0
+    @test t_cut ≈ 0.03 atol = 0.005
+    tau_cut = sol(2.0, idxs = engine.torque_map.y)
+    @test sol(2.0, idxs = engine.mdot_fuel) < 1e-10
+    @test tau_cut ≈ -18.7 rtol = 0.01
+    @test tau_cut ≈ engine_curve("closed_throttle.csv", 3000) rtol = 0.01
+    @test sol(2.0, idxs = engine.p_m) / 1e3 ≈ 13.5 rtol = 0.01
+
+    # During the cut the torque is the closed-throttle curve at any pressure, so MappedEngine,
+    # whose throttle actuator closes 50 ms later, ends on the same torque.
+    course = mapped_engine_run(MappedEngineDynoTransient; scenario = 2, rpm = 3000,
+                               pedal_initial = 1.0, pedal_final = 0.0, t_step = 1.0,
+                               p_m0 = 99889.9)
+    @test course.sol(2.0, idxs = course.model.engine.tau_e) ≈ tau_cut rtol = 1e-6
+
+    after = t .> 1.2
+    @test all(fuel[after .& (rpm .> 1000)] .< 1e-7)
+    resume = findfirst(k -> after[k] && fuel[k] > 1e-7, eachindex(t))
+    @test resume !== nothing
+    @test 990 < rpm[resume] < 1000
+    @test t[resume] ≈ 4.73 atol = 0.01
+    @test sol(t[resume], idxs = engine.p_m) / 1e3 ≈ 27.0 rtol = 0.01
+
+    idle = (p_kpa = sol(6.0, idxs = engine.p_m) / 1e3,
+            fuel_gps = sol(6.0, idxs = engine.mdot_fuel) * 1e3,
+            tau = sol(6.0, idxs = engine.torque_map.y))
+    @test idle.p_kpa ≈ 33.0 rtol = 0.01
+    @test idle.fuel_gps ≈ 0.096 rtol = 0.01
+    @test abs(idle.tau) < 1.0
+
+    # Runs 1 and 2 on the bench after the paste. Run 1 never closes the pedal and ends before
+    # the ramp, so it is unchanged; run 2 starts closed above 1300 rpm, so it starts cut.
+    run1 = mapped_engine_run(MapEngineFuelCutDynoTransient)
+    @test run1.sol(2.0, idxs = run1.model.engine.p_m) ≈ 52944.0 atol = 10.0
+    @test run1.sol(2.0, idxs = run1.model.engine.torque_map.y) ≈ 41.3722 atol = 0.01
+    run2 = mapped_engine_run(MapEngineFuelCutDynoTransient; rpm = 3000, pedal_initial = 0.0,
+                             pedal_final = 1.0, p_m0 = 13482.4)
+    @test run2.sol(0.99, idxs = run2.model.engine.mdot_fuel) < 1e-10
+    @test run2.sol(0.99, idxs = run2.model.engine.torque_map.y) ≈ tau_cut rtol = 1e-6
+    @test run2.sol(2.0, idxs = run2.model.engine.torque_map.y) ≈ 148.4 rtol = 0.01
+
+    @info "Hands-on 02 fuel cut" t_cut tau_cut rpm[resume] t[resume] idle
+end

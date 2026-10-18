@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="180" y="200" width="160" height="150" fill="#64b5f6" stroke="none"/>
+    <rect x="340" y="200" width="160" height="150" fill="#42a5f5" stroke="none"/>
+    <rect x="500" y="200" width="160" height="150" fill="#1e88e5" stroke="none"/>
+    <rect x="660" y="200" width="160" height="150" fill="#1e88e5" stroke="none"/>
+    <rect x="180" y="350" width="160" height="150" fill="#90caf9" stroke="none"/>
+    <rect x="340" y="350" width="160" height="150" fill="#64b5f6" stroke="none"/>
+    <rect x="500" y="350" width="160" height="150" fill="#42a5f5" stroke="none"/>
+    <rect x="660" y="350" width="160" height="150" fill="#1e88e5" stroke="none"/>
+    <rect x="180" y="500" width="160" height="150" fill="#bbdefb" stroke="none"/>
+    <rect x="340" y="500" width="160" height="150" fill="#90caf9" stroke="none"/>
+    <rect x="500" y="500" width="160" height="150" fill="#64b5f6" stroke="none"/>
+    <rect x="660" y="500" width="160" height="150" fill="#42a5f5" stroke="none"/>
+    <rect x="180" y="650" width="160" height="150" fill="#e3f2fd" stroke="none"/>
+    <rect x="340" y="650" width="160" height="150" fill="#bbdefb" stroke="none"/>
+    <rect x="500" y="650" width="160" height="150" fill="#90caf9" stroke="none"/>
+    <rect x="660" y="650" width="160" height="150" fill="#64b5f6" stroke="none"/>
+    <path d="M340 200 V800 M500 200 V800 M660 200 V800 M180 350 H820 M180 500 H820 M180 650 H820" stroke-width="16"/>
+    <path d="M180 200 H820 V300 C 700 250, 560 250, 470 290 S 280 380, 180 430 Z" fill="#fff" fill-opacity="0.75" stroke="none"/>
+    <path d="M180 430 C 280 380, 380 330, 470 290 S 700 250, 820 300" stroke="#e53935" stroke-width="44" stroke-linecap="butt"/>
+    <rect x="180" y="200" width="640" height="600" rx="20"/>
+    <path d="M0 300 H180 M0 700 H180 M820 500 H1000" stroke-width="30"/>
+    <path d="M500 1000 V820" stroke-width="24" stroke-dasharray="40 36"/>
+    <path d="M420 900 H580" stroke="#e53935" stroke-width="40"/>
+  </g>
+</svg>

@@ -21,8 +21,9 @@ vacuum, which is exactly what the brake booster needs.
 **Timing:** 8 minutes: 4 for the coast-down, 4 for the brake. If short of time, do only the
 coast-down.
 
-**TODO (reference):** task 4's coast-down and brake-stop analyses, and the student
-`HandsOn02.MappedCarCoast`. Add the reference file to the line above.
+**TODO (reference):** the student `HandsOn02.MappedCarCoast`, on the car with the student's
+`MapEngine` and its pasted fuel cut, with its coast-down and brake-stop analyses. Add the reference
+file to the line above.
 -->
 
 ---
@@ -44,7 +45,7 @@ on top of 401 N of drag and rolling.
 
 > **Checkpoint**
 >
-> - at 5 s: fuel **4.10 → 0 L/h**
+> - at 5 s: fuel **4.11 → 0 L/h**
 > - `p_m` drops to about **13.5 kPa**
 > - deceleration **0.46 m/s²** (in neutral: 0.29)
 > - fuel back on at **29 km/h** — 1000 rpm
@@ -61,13 +62,13 @@ now an air pump driven by the wheels, and pumping against that vacuum brakes the
 −19.0 N·m; × 4 / 0.31 = 246 N. With 401 N of road load: 647 N / 1400 kg = 0.46 m/s². Neutral,
 road load only: 401 / 1400 = 0.29 m/s².
 
-**Why 29 km/h:** fuel resumes below 1000 rpm, `MappedEngine`'s assumed resume speed: 1000 / 34.2 =
+**Why 29 km/h:** fuel resumes below 1000 rpm, `FuelCutLogic`'s assumed resume speed: 1000 / 34.2 =
 29.2 km/h. It arms only above 1300 rpm, 38 km/h, so a pedal lift at 30 km/h never cuts.
 
 **Ask the room:** coasting down a long hill in gear, or in neutral: which uses less fuel?
 *(In gear: zero. In neutral the engine idles at 0.45 L/h.)*
 
-**TODO (checkpoint):** `p_m` at the fuel-resume instant, from task 4's coast-down run.
+**TODO (checkpoint):** `p_m` at the fuel-resume instant, from `HandsOn02.MappedCarCoastTransient`.
 
 **TODO (screenshot):** `step06-coast-plot.png`.
 -->
@@ -131,7 +132,7 @@ replace "swap the flanges" with the one correct wiring.
 | 02 | manifold at idle, overrun, wide open | 33.0 · 13.5 · 99.9 kPa | mass balance |
 | 03 | full load at 3000 rpm | 148.4 N·m, 3.75 g/s | map, capped |
 | 04 | top speed | ≈ 190 km/h, not 246 | rev limiter |
-| 05 | cruise 50 · 90 · 130 km/h | 3.4 · 4.6 · 7.0 L/100 km | 77 · 105 · 162 g CO₂/km |
+| 05 | cruise 50 · 90 · 130 km/h | 3.3 · 4.6 · 7.0 L/100 km | 77 · 105 · 162 g CO₂/km |
 | 06 | lift off at 90 km/h | 0 L/h, 0.46 m/s² | fuel cut |
 
 <!--

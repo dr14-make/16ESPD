@@ -12,4 +12,6 @@ end
 include("AirPathStep_experiment.jl")
 include("Manifold_experiment.jl")
 include("MapEngineDyno_experiment.jl")
+include("MapEngineFuelCutDyno_experiment.jl")
+include("MapEngineFuelCut_experiment.jl")
 include("MapEngine_experiment.jl")

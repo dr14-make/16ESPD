@@ -47,13 +47,13 @@ Plotly. At 990 × 528, GR clips the axis labels without `margin = 5Plots.mm`.
 | `step03-map-engine.png` | `HandsOn02.MapEngine` | The diagram students draw: ports `pedal` and `mdot_bst` on the left; `air`, `speed`, `torque_map` above `fuel_map`, `torque`, `co2`; the speed wires from `speed.w` and the pressure wires from `air.p_m` fanning out to both maps; `spline`, `support`, `mdot_fuel`, `mdot_co2`, `p_m` on the right edge. |
 | `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | Laid out left to right, no labels overlapping. `pedal` step and `no_booster` → `engine`, `speed` → `dyno`, `engine.spline` → `dyno`, both supports to `mounts`. |
 | `step03-step-plot.png` | `HandsOn02.MapEngineDynoTransient`, defaults | Two axes, one time base: `engine.p_m` 47.8 → 52.9 kPa and `engine.torque_map.y` 31.1 → 41.4 N·m, zoomed to 0.9–1.3 s so the 50 ms lag shows. |
-| `step03-fuel-cut-plot.png` | `HandsOn02.MapEngineDynoTransient` with `MappedEngine` swapped in, pedal 1 → 0 | `engine.mdot_fuel` falling to zero within about 30 ms and `engine.tau_e` to −18.7 N·m at the release. |
+| `step03-fuel-cut-plot.png` | `HandsOn02.MapEngineFuelCutDynoTransient`, `rpm = 3000`, pedal 1 → 0, `p_m0 = 99889.9`, `stop = 6` | Three axes, one time base: `engine.speed.w` held, then ramping down from 2 s; `engine.mdot_fuel` falling to zero within about 30 ms of the release and back on at 4.73 s, below 1000 rpm; `engine.torque_map.y` at −18.7 N·m during the cut. |
 
 ## Step 04 — the car with a mapped engine
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step04-mapped-car.png` | `HandsOn02.MappedCar` | `pedal` input → `engine` (`MappedEngine`) → `driveline` → `body`; `no_booster` → `engine.mdot_bst`; outputs `v_kmh`, `p_m`, `fuel_lph` on the right edge; the grounds. Shoot before step 06 adds the brake. |
+| `step04-mapped-car.png` | `HandsOn02.MappedCar` | `pedal` input → `engine` (the student's `MapEngine`) → `flywheel` → `driveline` → `body`; `no_booster` → `engine.mdot_bst`; outputs `v_kmh`, `p_m`, `fuel_lph` on the right edge; the grounds. Shoot before step 06 adds the brake. |
 | `step04-wot-plot.png` | `HandsOn02.MappedCarWOTTransient` | `car.v_kmh` from rest to about 190 km/h over 120 s, with a dashed line at 246 km/h for Lecture 1's car. |
 
 ## Step 05 — cruise
@@ -84,7 +84,7 @@ To be listed with task 6.
 | `step03-map-engine.png` | `HandsOn02.MapEngine` | — |
 | `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | — |
 | `step03-step-plot.png` | — | `HandsOn02.MapEngineDynoTransient` |
-| `step03-fuel-cut-plot.png` | — | `HandsOn02.MappedEngineDynoTransient` |
+| `step03-fuel-cut-plot.png` | — | `HandsOn02.MapEngineFuelCutDynoTransient` |
 | `step04-mapped-car.png` | `HandsOn02.MappedCar` | — |
 | `step04-wot-plot.png` | — | `HandsOn02.MappedCarWOTTransient` |
 | `step05-cruise-bench.png` | `HandsOn02.MappedCarCruise` | — |
