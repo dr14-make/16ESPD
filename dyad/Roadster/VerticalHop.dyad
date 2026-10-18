@@ -110,8 +110,10 @@ analysis Hop
 end
 
 analysis Hover
+  # Symbolic discontinuity detection can freeze the unilateral contact on the wrong branch
+  # across repeated solves. Numerical evaluation of the contact law is deterministic here.
   extends TransientAnalysis(stop = 15.0, abstol = 1e-8, reltol = 1e-6,
-                            automatic_discontinuity_detection = true)
+                            automatic_discontinuity_detection = false)
   parameter m::Dyad.Mass = 2000
   parameter tank_volume::Volume = 0.6
   parameter tank_pressure::Pressure = 380e5
