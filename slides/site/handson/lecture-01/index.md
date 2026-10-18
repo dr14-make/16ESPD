@@ -2,15 +2,17 @@
 title: Lecture 1 hands-on — build the car
 ---
 
-[← Vehicle Systems & Components](../../index.html) · [Tutor deck →](../../handson-01/index.html){target="_self"}
+[← Vehicle Systems & Components](../../index.html) · [Projector deck →](../../handson-01/index.html){target="_self"}
 
 # Lecture 1 hands-on: build the car
 
 From a first look at Dyad Studio to a car spinning its wheel on a slippery road
 
-**Why we build it.** A cruise control has to know how the car reacts before it can drive it: how late the engine answers, how hard the air pushes back, when the wheels spin. So before the next lecture designs a controller, you build the car. **What you build:** a pedal command into an engine, through a gear and wheel, pushing a car body, read by a speedometer — then a tire that can slip. By the end your car reaches 246 km/h flat out on a dry road, and barely 10 km/h on snow with its wheel spinning.
+**Why we build it.** A cruise control has to know how the car reacts before it can drive it: how late the engine answers, how hard the air pushes back, when the wheels spin. So before the next lecture designs a controller, you build the car. **What you build:** a pedal command into an engine, through a gear and wheel, pushing a car body, read by a speedometer — then a tire that can slip. By the end your car reaches 246 km/h flat out on a dry road, and barely 10 km/h after 5 s on snow with its wheel spinning.
 
-**How each step works.** It starts with the physics it needs — your tutor explains it from the [tutor deck](../../handson-01/index.html){target="_self"}, and the *Theory* link under each step's goal opens those slides. Then you build, and the checkpoint is a number you predicted first. **After this session:** [Lecture 1](../../lecture-01/index.html){target="_self"} puts this car under P, PI and PID control.
+![The car as a chain of four parts: the pedal command goes into the engine, the engine's shaft into the gear and wheel, the wheel pushes the body along the road, and a speedometer reads the body's speed in km/h. Each part is labeled with the hands-on step that builds it.](/handson/lecture-01/img/car-chain.svg){style="background:#fff;padding:8px;border-radius:4px"}
+
+**How each step works.** It starts with the idea it needs, in a short **Why** box; the *Details* boxes hold the derivations, for when you want them. Each build opens with a picture of the finished model, so you know where you are going. Then you build, and the checkpoint is a number you could have predicted first: where your run agrees, your model is right. **After this session:** [Lecture 1](../../lecture-01/index.html){target="_self"} puts this car under P, PI and PID control.
 
 **Part 1** introduces Dyad Studio: what the extension adds to VS Code, where its controls are, and how a diagram and its code are one model. **Part 2** builds the car out of standard-library parts, one component per step, mostly in the diagram editor. At the end of step 5 your car reaches the same terminal speed as the course model `Vehicle.CarPlant`; step 6 gives its wheel inertia; steps 7–10 add equations of your own and end with the car spinning its wheel on a slippery road.
 
@@ -51,6 +53,23 @@ Dyad Studio is a VS Code extension: you draw or write models in the Dyad languag
 - **A library is a folder.** Your models live as `.dyad` files under `dyad/`. The extension compiles them into Julia under `generated/` — never edit that folder by hand; it is rewritten on every compile. The folder is also a Julia package, so `using MyCar` loads your models in a Julia REPL.
 - **A component is a model; an analysis is an experiment on one.** A component says what the system is — parts, wires, equations. An analysis says what to do with it — for example simulate for 300 s. You can only simulate a component whose inputs are all driven, so every experiment gets a small test bench component around the thing you built.
 - **Diagram and code are the same file.** Every block you place is a line of code, every wire a `connect`. Step 01 shows it.
+
+::: info Why parts, not arrows: acausal modeling
+
+In a block diagram (Simulink, most control tools) every wire is an arrow: *speed in, force out*, and you decide what is computed from what. Physics does not work that way: a damper relates force and speed, whichever side drives it. In Dyad (and Modelica) each part states its physics as **equations**, and joining two parts adds more: at every mechanical joint the **speeds are equal** and the **forces add up to zero**. Dyad works out the direction for each model you build. Signals such as the torque command and the km/h readout still have arrows; a model mixes both kinds.
+
+:::
+
+::: details What Dyad does when you press ▷
+
+1. **Collect equations:** every part's own, plus two for every joint.
+2. **Check equations = unknowns.** A model that is not balanced does not compile. An input nobody drives is one unknown too many, which is why every experiment needs a test bench; a part not tied to ground is the other usual cause.
+3. **Simplify.** Symbolic algebra removes trivial equations and solves for the derivatives, leaving differential equations in the states only: *ẋ = f(x, u, t)*, how fast the state changes depends on the state, the input and the time.
+4. **Solve in time.** A solver steps forward from the start state, *x(t + Δt) ≈ x(t) + Δt·f(x, u, t)*, and picks Δt itself: small where things change fast.
+
+The car body of step 04: unknowns *v*, *F*<sub>drag</sub>, *F*<sub>roll</sub>; equations *F*<sub>drag</sub> = 0.378·*v*², *F*<sub>roll</sub> = 165 N and 1400·*v̇* = *F* − *F*<sub>drag</sub> − *F*<sub>roll</sub>. Three and three; simplified, one state: *v̇* = (*F* − 0.378·*v*² − 165) / 1400.
+
+:::
 
 #### Where things are
 
@@ -128,8 +147,6 @@ After every checkpoint from step 01 on, save your progress: in **Source Control*
 
 Place two blocks, wire them, set a parameter, and see that the diagram and the code are the same model.
 
-Theory: [tutor slides — Two kinds of wire](../../handson-01/index.html#/two-kinds-of-wire){target="_self"}
-
 #### Parts
 
 | Name | Library path | Set |
@@ -143,6 +160,8 @@ Theory: [tutor slides — Two kinds of wire](../../handson-01/index.html#/two-ki
 
 Same model, two views: each block in the diagram is one line under `component`, the wire is the one `connect` under `relations`, and the values in the parameter panel are the arguments in parentheses.
 
+`delay` holds a signal back: what goes in comes out 0.3 s later. `lag` follows its input smoothly instead of jumping. Together they are the front half of the engine; step 02 explains them. Here only the clicking matters.
+
 #### Do this
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `Engine`. It opens as an empty diagram. Type the name and press <kbd>Enter</kbd>; a white canvas opens with a small toolbar in its top-left corner.
@@ -155,6 +174,18 @@ Same model, two views: each block in the diagram is one line under `component`, 
 8. **Save** with <kbd>Ctrl</kbd>+<kbd>S</kbd>.
 9. **Switch to code.** In the editor's title bar — the row with the file's tab, top right — click ⇄ (**Toggle Between Code and Diagram View**, arrow 4 in the map). Every block you placed is now a line `name = Library.Path(parameters)`, and the wire is a `connect(delay.y, lag.u)` line under `relations`.
 10. **Round trip.** In the code, change `T = 0.3` to `T = 0.5`, save, click ⇄ again, click `lag`: its panel shows 0.5. Set it back to 0.3. One model, two views — whichever you edit, the other follows.
+
+The `{^delay}` tags and the `metadata` block at the end of the code are where the diagram keeps positions and wire routes: leave them alone.
+
+::: info Why two kinds of wire
+
+The wire you drew is a **signal**: one number, one way, like an arrow — `delay` works it out, `lag` reads it. Today's signals are the torque you ask for, the km/h on the speedometer and how slippery the road is.
+
+A **mechanical joint** has no arrow: two parts bolted together. Dyad then knows two facts: they **move together** (same position, same speed), and they **push each other equally** (the forces add up to zero). A sliding port (`Flange`) carries position *s* and force *f*; a turning port (`Spline`) angle *φ* and torque *τ*. The one that is equal at both ends is the *potential*, the one that sums to zero the *flow*, like voltage and current in a circuit. So you never decide which part drives which: you draw the car the way it is put together.
+
+In Studio the port's shape tells the kind: triangles are signals, gray circles turning shafts, green squares sliding parts. You can only wire like to like.
+
+:::
 
 ::: tip Checkpoint
 
@@ -191,8 +222,6 @@ Steps 2–10 · theory, then one component per step · 171 min
 
 Finish the engine — torque command in, shaft torque out through a delay, a lag and a 150 N·m ceiling — and watch it answer a step.
 
-Theory: [tutor slides — what happens when you press the pedal, the lag, and the step-02 numbers](../../handson-01/index.html#/pedal){target="_self"}
-
 #### Where you are, where you are going
 
 Step 01 left you a component called `Engine` holding two blocks, `delay → lag`. This step turns it into the engine below by adding four things to that same component: three **parameters**, two more **parts** (a limiter and a torque source), and three **ports** so other components can plug into it. Then a small test bench drives it.
@@ -200,6 +229,35 @@ Step 01 left you a component called `Engine` holding two blocks, `delay → lag`
 [![The finished Engine diagram: tau_cmd input on the left, then delay, lag, limiter and torque blocks in a row, the spline port on the right and the support port at the bottom; the Engine panel at top right lists the parameters theta_e, tau_e and T_max above an Add parameter button.](/handson/lecture-01/img/step02-engine-finished.png){style="max-width:560px" width="903" height="897"}](/handson/lecture-01/img/step02-engine-finished.png)
 
 The finished `Engine`: `tau_cmd` → `delay` → `lag` → `limiter` → `torque` → `spline`, with `torque`'s support down to `support`. The two blocks you already have are the second and third. Top right is `Engine`'s own panel — click an empty spot of the canvas to open it — with the three parameters of stage B and the **Add parameter** button.
+
+::: info Why the engine is late, slow and limited
+
+Press the pedal, and the torque comes in three stages, one block each: {#pedal}
+
+1. **Late** (`delay`, θ<sub>e</sub> = 0.3 s): for 0.3 s nothing happens. The engine computer reacts, fuel is measured out, a cylinder fires, the shafts twist up; 0.3 s lumps that whole chain into one number.
+2. **Slow** (`lag`, τ<sub>e</sub> = 0.3 s): then the torque grows, quickly at first and then more gently, as the intake manifold fills with air.
+3. **Limited** (`limiter`): never above 150 N·m, this engine's peak, and never below 0: it cannot brake.
+
+A fourth block, the torque source, turns the number into a real twist on the shaft. You can tell delay and lag apart on a plot: the delay is flat, nothing happens; the lag starts at once, but gradually.
+
+![Torque against time. The request jumps from 0 to 200 newton-meters at 0.5 seconds. The delivered torque stays at zero until 0.8 seconds, then rises along a curve, and is cut flat at 150 newton-meters from about 1.22 seconds.](/handson/lecture-01/img/step02-pedal-response.svg){style="background:#fff;padding:8px;border-radius:4px"}
+
+The **lag** in words: the torque moves toward the request, and the bigger the gap, the faster it moves, τ<sub>e</sub>·d*T*/d*t* = *T*<sub>req</sub> − *T*. A gap that shrinks in proportion to itself shrinks exponentially, *T*(*t*) = *T*<sub>req</sub>(1 − e<sup>−*t*/τ<sub>e</sub></sup>): after one time constant it has covered **63 %** of the way, after two 86 %, after three 95 %. The time constant is not how long it takes to get there; it never strictly arrives. The car itself will turn out to be a lag too, with a time constant of about a minute.
+
+:::
+
+::: details Details: the plot of stage E, worked out before you make it
+
+Request 200 N·m at 0.5 s; delay 0.3 s, lag 0.3 s, ceiling 150 N·m.
+
+- **When it starts:** 0.5 + 0.3 = **0.8 s**; nothing before.
+- **At 1.0 s:** the lag has run 0.2 s. 200 × (1 − e<sup>−0.2/0.3</sup>) = 200 × (1 − 0.513) = **97 N·m**. The lag aims at the full 200; the limiter only cuts the result afterwards.
+- **When it hits 150:** 200 × (1 − e<sup>−*t*′/0.3</sup>) = 150, so e<sup>−*t*′/0.3</sup> = 0.25 and *t*′ = 0.3 × ln 4 = 0.42 s after the start: **1.22 s**.
+- **The lag's solution:** call the gap *g* = *T*<sub>req</sub> − *T*. Then τ<sub>e</sub>·d*g*/d*t* = −*g*, whose solution is *g*(*t*) = *g*(0)·e<sup>−*t*/τ<sub>e</sub></sup>. 1 − e<sup>−1</sup> = 0.632, 1 − e<sup>−2</sup> = 0.865, 1 − e<sup>−3</sup> = 0.950.
+
+Your plot shows 97.5 N·m at 1.0 s and a little wiggle before 0.8 s: the delay is an approximation (stage E). Within about 1 N·m is a match.
+
+:::
 
 #### A · Open your Engine
 
@@ -254,9 +312,25 @@ A number a part needs becomes a parameter of `Engine`, and the part refers to it
 
 Your diagram should now match the picture at the top of this step, and the **Problems** tab under the editor should show nothing for `Engine`.
 
+::: info Why a support port: every force needs a reaction
+
+An engine twists its shaft — and twists its mounts the other way, like a drill trying to spin in your hand. A wheel pushes the car forward and the road backward: Newton's third law. In Dyad that other side is a `support` port, and it must end at a `Fixed` block, the ground or the car's frame. Leave it open, and Dyad calls the system *unbalanced*: a force with nowhere to go. The engine needs fixed mounts here; step 03 brings the gear's and wheel's supports out, step 05 grounds them.
+
+The **sign rule**: a force counts as positive when it flows *into* a part. So a tire pushing the car forward shows up as a *negative* force at its port; step 09 writes it.
+
+:::
+
 #### D · A test bench
 
 An engine with an unconnected input cannot be simulated — nobody has said what the torque command is. So it gets a bench: a source for the command, a load on the shaft, and something for the mounts to push against.
+
+::: info Why an inertia, and why initial values
+
+The engine's torque must act on something: on a bare shaft it has nowhere to go and the model cannot be solved. An **inertia** is a spinning mass that resists changes in rotation, *T* = *J*·d*ω*/d*t*; with *J* = 1 kg·m² its angular acceleration in rad/s² equals the delivered torque in N·m.
+
+The solver steps forward from a known start, so every state needs a value at *t* = 0: here the lag's output and the shaft's angle and speed. All zero means no torque, not turning. Change them and the same model starts elsewhere — a car already at 90 km/h, say. The starting state has no diagram form, so it is written in code.
+
+:::
 
 | Name | Library path | Set |
 | --- | --- | --- |
@@ -319,6 +393,14 @@ end
 
 The run: 200 N·m is asked for at 0.5 s. Nothing arrives for the 0.3 s dead time (the small wiggles are the Padé approximation), the lag shapes the rise, and the limiter clips it at 150 N·m.
 
+::: info Why the wiggles: the delay is a stand-in
+
+A true delay must remember the whole last 0.3 s of its input, to replay it later. A simulator only tracks a handful of numbers that change smoothly. So Dyad uses a stand-in, `PadeDelay`: six such numbers, tuned to behave almost exactly like a 0.3 s delay. The tiny wiggles before 0.8 s come from the stand-in, not from the engine. Those six helper numbers are also what a plain `plot` draws: they swing into the thousands and hide the torque.
+
+`theta_e` is **structural** because the block computes its coefficients from the delay when the model is compiled: a new delay is a new model, not just a new number. With `m = n − 1` a sudden step cannot leak through before the delay has elapsed.
+
+:::
+
 ::: tip Checkpoint
 
 Measured on `HandsOn.EngineStepTransient`:
@@ -330,6 +412,12 @@ Measured on `HandsOn.EngineStepTransient`:
 :::
 
 Commit: **Source Control** → message `Step 02: engine` → **Commit** → **Sync Changes**.
+
+::: info Why keep the delay and the lag at all
+
+For "how fast is it flat out?" the delay barely matters. For "how should a cruise control react?" it matters a lot: a model is good enough when it keeps the effects that matter for your question. Without the delay and the lag the torque appears the instant you ask for it, and the car becomes too easy to control — any controller works, real cars are not like that, and the two tuning recipes of the next lecture, Ziegler–Nichols and Cohen–Coon, cannot be used: one needs the car to swing back and forth under control, the other divides by the delay.
+
+:::
 
 ::: details Stuck? The full model
 
@@ -397,7 +485,23 @@ end
 
 Turn engine torque into a force on the car: a 4:1 gear and a 0.31 m rolling wheel.
 
-Theory: [tutor slides — from a twist to a push, F = T · i / r](../../handson-01/index.html#/twist-to-push){target="_self"}
+::: info Why F = T · i / r: from a twist to a push
+
+Two steps, and you have felt both. **The gear multiplies the twist:** the engine turns *i* = 4 times for every turn of the wheel, like a low bicycle gear, so the wheel gets 4 × the torque and turns 4 × slower. **The wheel turns the twist into a push:** torque is force times lever arm, and at the road the lever arm is the radius *r*, so *F* = *T*<sub>wheel</sub> / *r*. Together:
+
+*F* = *T* · *i* / *r*: 100 N·m × 4 / 0.31 m = **1290 N**, which on 1400 kg and nothing else gives **0.92 m/s²**; flat out, 150 N·m gives **1935 N** — almost 2 kN, the weight of 200 kg, from a "weak" 150 N·m engine.
+
+**Speeds go the other way:** wheel speed = *v* / *r*, engine speed = *i* × that. At 90 km/h, 25 m/s / 0.31 × 4 = 323 rad/s = **3080 rpm**.
+
+The wheel here *rolls without sliding*. Steps 08–10 break that.
+
+:::
+
+::: details Details: why the gear multiplies the torque
+
+An ideal gear loses no energy, so power in = power out: *T*·ω<sub>engine</sub> = *T*<sub>wheel</sub>·ω<sub>wheel</sub>. With ω<sub>engine</sub> = *i*·ω<sub>wheel</sub> that gives *T*<sub>wheel</sub> = *i*·*T*. To rpm: rad/s × 60 / 2π; one turn is 2π ≈ 6.28 rad.
+
+:::
 
 #### Parameters
 
@@ -448,7 +552,7 @@ The finished `Driveline`, its panel listing the parameters `i` and `r` that the 
 
 5. Both reaction paths go out of the component: wire `gear.support` and `wheel.support_r` to `support_r`, and `wheel.support_t` to `support_t`. The car will ground them.
 
-6. Set `ratio = i` and `radius = r`. The force at the flange is then `T · i / r`, the formula from the theory slide at the start of this step.
+6. Set `ratio = i` and `radius = r`. The force at the flange is then `T · i / r`, the formula of the Why box at the start of this step.
 
 ::: tip Checkpoint
 
@@ -495,7 +599,50 @@ end
 
 Give the car its 1400 kg and the two forces that hold it back on a flat road: drag and rolling resistance.
 
-Theory: [tutor slides — the forces on the car, air drag, rolling resistance](../../handson-01/index.html#/four-forces){target="_self"}
+::: info Why these forces: four on the car
+
+![A car on an inclined road with the forces acting on it drawn as labeled arrows: tractive force up the slope at the driven wheel, aerodynamic drag and rolling resistance down the slope, and the weight resolved into a component along the slope and one into the road surface.](/handson/lecture-01/img/step04-four-forces.svg){style="background:#fff;padding:8px;border-radius:4px"}
+
+- **The push from the wheels**, step 03's *T*·*i*/*r*: the only force we control.
+- **Air drag**: the car pushing air out of the way; small at low speed, large at high speed.
+- **Rolling resistance**: the tires squash and spring back on every turn and lose a little energy each time; about the same at any speed.
+- **The slope**: part of the car's own weight pulls it back down a hill. Zero on a flat road; step 07 adds it.
+
+The push minus the three resistances is what speeds the car up. The course lectures call them *O*<sub>V</sub> (air), *O*<sub>f</sub> (rolling), *O*<sub>s</sub> (slope) and *O*<sub>z</sub> (speeding up); they also list *O*<sub>aux</sub>, power for electrical equipment, which this model leaves out. The slope in the picture is drawn steeper than a real road, so the arrows are readable.
+
+:::
+
+::: info Why drag grows with speed squared
+
+Speed enters twice. **How much air:** each second the car's front, area *A*, moves *v* meters and pushes away the air in front of it: twice as fast, twice the air. **How hard:** each kilogram of that air is pushed to roughly the car's speed: twice as fast, twice as hard. So drag goes as ρ·*A*·*v* × *v* = ρ·*A*·*v*², and doubling the speed gives **4 ×** the drag. The measured shape factor *C*<sub>d</sub> and the ½ account for air that flows around the car instead of being carried along:
+
+*F*<sub>drag</sub> = ½ ρ *C*<sub>d</sub>*A* *v*² = ½ × 1.2 × 0.63 × *v*² = **0.378 · *v*²**
+
+| speed | m/s | drag |
+| --- | --: | --: |
+| 30 km/h | 8.3 | 26 N |
+| 90 km/h | 25.0 | 236 N |
+| 130 km/h | 36.1 | 493 N |
+
+Because of the square, the car behaves differently at different speeds: a controller tuned at 90 km/h is tuned for 90 km/h only.
+
+:::
+
+::: info Why rolling resistance is a constant, and a signal
+
+**Rolling resistance** is a fixed share of the weight pressing on the tires: *F*<sub>roll</sub> = *f*<sub>r</sub>·*m*·*g* = 0.012 × 1400 × 9.81 = **164.8 N**, at any speed. At 90 km/h drag is the bigger one, 236 against 165; at 30 km/h it flips, 26 against 165.
+
+`RollingResistance` takes the weight *m*·*g* as a **parameter**, a number fixed before the run starts, and the coefficient and the road slope as **signals**, values that arrive through a wire and may change during the run — so a hill can appear halfway through a drive (step 07).
+
+:::
+
+::: details Details: the 500 N check, and why v_nominal does not matter
+
+**Push the body with a constant 500 N.** At the start nothing holds it back yet: 500 / 1400 = **0.357 m/s²**. It speeds up until drag + rolling = 500 N: 0.378·*v*² + 164.8 = 500, so *v*² = 335.2 / 0.378 = 886.8 and *v* = **29.78 m/s**, about 107 km/h. The reference test `TestBody` checks both. (The model uses *g* = 9.80665, which gives 164.75 N; it does not show in any result.)
+
+**The drag block** is a general block for any force that grows with speed squared, and knows it as one point on its curve: force `f_nominal` at speed `v_nominal`. It computes *f* = −*f*<sub>nominal</sub>·*v*·|*v*| / *v*<sub>nominal</sub>². With *f*<sub>nominal</sub> = −½ρ*C*<sub>d</sub>*A*·*v*<sub>nominal</sub>², *v*<sub>nominal</sub> cancels and leaves ½ρ*C*<sub>d</sub>*A*·*v*·|*v*|: any value gives the same drag, 30 m/s (340.2 N) is just a reference. It must not be zero: the block divides by it.
+
+:::
 
 #### Parameters
 
@@ -557,7 +704,7 @@ The finished `Body`. Both `Constant` blocks feed `rolling`: one is the rolling c
 
 4. Feed `rolling` its two signal inputs: `cr_const.y → rolling.cr` and `incl_const.y → rolling.inclination`. An unconnected input would leave the model incomplete.
 
-5. Set the drag parameters. `f_nominal` is negative, which makes the source a load; `ForceDirection = false` makes drag oppose motion both ways. `-0.5 * rho * CdA * v_nominal ^ 2` is ½ρ·C<sub>d</sub>A·v² at the nominal speed, written in the parameters' names.
+5. Set the drag parameters. `f_nominal` is negative, which makes the source a load; `ForceDirection = false` makes drag oppose motion both ways. `-0.5 * rho * CdA * v_nominal ^ 2` is ½ρ·C<sub>d</sub>A·v² at the nominal speed, written in the parameters' names. A positive `f_nominal` makes drag push the car forward: if your car in step 05 runs away to absurd speeds, check this sign first.
 
 ::: tip Checkpoint
 
@@ -617,7 +764,54 @@ end
 
 Assemble engine, driveline and body into the car and drive it flat out from rest until it stops getting faster — at the 246 km/h worked out on paper at the start of this step.
 
-Theory: [tutor slides — the force balance, top speed on paper, how long it takes](../../handson-01/index.html#/force-balance){target="_self"}
+::: info Why one equation describes the whole car: the force balance
+
+Newton's second law, mass × acceleration = the sum of all forces:
+
+*m*·d*v*/d*t* = *T*·*i*/*r* − ½ρ*C*<sub>d</sub>*A*·*v*² − *f*<sub>r</sub>·*m*·*g*·cos α − *m*·*g*·sin α
+
+Read it as a budget: the push comes in, air, tires and slope take their share, and **what is left speeds the car up**; if nothing is left, the speed is steady. *T* is the torque the engine actually delivers, after its delay, lag and ceiling, not what the driver asks for. On a flat road cos α = 1 and sin α = 0. Because of the *v*², the car is *nonlinear*: doubling the push does not double the speed. You do not type this equation: you join the parts on one mechanical joint, and the rule of step 01 — forces add up to zero — writes it for you.
+
+The whole car is **nine numbers**: in `Engine` *T*<sub>max</sub> = 150 N·m, τ<sub>e</sub> = 0.3 s, θ<sub>e</sub> = 0.3 s; in `Driveline` *i* = 4.0, *r* = 0.31 m; in `Body` *m* = 1400 kg, *C*<sub>d</sub>*A* = 0.63 m², ρ = 1.2 kg/m³, *f*<sub>r</sub> = 0.012. Every number in this hands-on and in the next lecture comes from these nine, by arithmetic you can check. (`g` and `v_nominal` are in `Body` too, but they do not describe this car.)
+
+:::
+
+::: info Why 246 km/h: when the push runs out
+
+At top speed the car no longer speeds up, d*v*/d*t* = 0, and on a flat road the balance becomes **push = air + tires**: {#top-speed}
+
+1. The most push: 150 × 4 / 0.31 = **1935 N**.
+2. The tires take 165 N; 1935 − 165 = 1770 N is left for the air.
+3. 0.378·*v*² = 1770, so *v*² = 4683 and *v* = 68.4 m/s × 3.6 = **246 km/h**.
+
+The same idea holds a speed: push = air + tires, then back to engine torque, *T* = *F*·*r*/*i*.
+
+| hold | air | + tires | = push | torque |
+| --- | --: | --: | --: | --: |
+| 90 km/h | 236 | 165 | 401 N | **31.1 N·m** |
+| 110 km/h | 353 | 165 | 518 N | **40.1 N·m** |
+
+The next lecture opens with these two: its controller has to find them on its own. Setting d*v*/d*t* = 0 gives the *steady state*, where the car ends up; it says nothing about how long it takes.
+
+:::
+
+::: info Why it takes so long: the car is a lag, with a time constant of a minute
+
+Near any speed the car behaves like step 02's lag: a little too fast, and drag grows a little and pulls it back. How hard it pulls back sets its time constant: {#time-constant}
+
+τ<sub>car</sub> = *m* / (extra drag per extra m/s) = *m* / (2 × 0.378 × *v*)
+
+At 100 km/h (27.8 m/s) drag is 0.378 × 27.8² = 292 N; 1 m/s faster it is 313 N, about **21 N** more. So τ = 1400 / 21 = **67 s**: some 200 times slower than the engine's 0.3 s. The car, not the engine, sets how slowly the speed changes. Drag is stronger at high speed, so the car settles quicker there: 74 s at 90 km/h, 61 s at 110.
+
+From the reference run: **23.6 s** to 100 km/h, **143 s** to 99 % of the top speed, **246.39 km/h** at 300 s. There is no neat hand formula for these, because the time constant changes with speed. **So run for 300 s:** stop sooner and the car is still on its way up, and 246 looks wrong.
+
+:::
+
+::: details Details: the time constant derived
+
+Suppose the car is near speed *v* and goes Δ*v* faster. Drag grows from 0.378·*v*² to about 0.378·*v*² + 2·0.378·*v*·Δ*v* (the slope of *v*² is 2*v*). That extra drag slows the car: *m*·dΔ*v*/d*t* = −2·0.378·*v*·Δ*v*. This is step 02's lag equation, τ·dΔ*v*/d*t* = −Δ*v*, with τ = *m* / (2·0.378·*v*). At 27.8 m/s: 2 × 0.378 × 27.8 = 21.0, and 1400 / 21.0 = 66.7 s.
+
+:::
 
 #### Parts
 
@@ -706,7 +900,19 @@ Same check against the course model: `Vehicle.CarPlant` at full torque reads 246
 
 :::
 
+A different number? Check in this order: speed climbing far past 246 → the sign of `f_nominal` in `Body`; a different final speed → `i = 4` and `r = 0.31` in `Driveline`; still different → `T_max = 150` in `Engine`; still rising at the right edge → `stop` is not 300.
+
 Commit: **Source Control** → message `Step 05: car` → **Commit** → **Sync Changes**.
+
+::: info Why 246 km/h is still wrong
+
+Your car reached the 246 km/h worked out on paper, and that number is wrong for a real car. Our engine gives 150 N·m at every engine speed; a real one gives its best only in the middle of its rev range. At 246 km/h the engine would turn at **8430 rpm** (step 03: *v* / *r* × *i* × 60 / 2π), where a real one gives much less, so the real top speed is lower. Between 90 km/h (3080 rpm) and 130 km/h (4450 rpm), where the next lecture drives, the two agree, and there the model is good. A model contains only what you put into it. Fixing the top end means a torque curve: the Lecture 2 hands-on.
+
+![Engine torque against crankshaft speed. A flat line at 150 newton-meters across the whole range is our model; a curve that rises, plateaus and falls away is the shape of a real engine. The band where the PID lecture operates is shaded, and the crankshaft speed implied by 246 km/h is marked well past the real curve's peak.](/handson/lecture-01/img/step05-torque-curve.svg){style="background:#fff;padding:8px;border-radius:4px"}
+
+Blue: exactly what our engine block computes. Red: the usual *shape* of a petrol engine, drawn for comparison, not measured.
+
+:::
 
 ::: details Stuck? The full model
 
@@ -766,7 +972,21 @@ end
 
 Put a 1 kg·m² road wheel between the gear and the rolling contact, and see how little it changes.
 
-Theory: [tutor slides — the wheel's hidden mass](../../handson-01/index.html#/hidden-mass){target="_self"}
+::: info Why so little: the wheel's hidden mass
+
+To speed up the car, the engine must also spin up the wheels, which costs energy as if the car were a little heavier. A wheel of inertia *J* spinning at ω = *v* / *r* holds ½*J*ω² = ½(*J*/*r*²)*v*²: exactly the energy of a mass **J / r²** moving at *v*. {#hidden-mass}
+
+For *J* = 1 kg·m² (a road wheel with its tire, about 20 kg mostly 0.2–0.3 m from the center): 1 / 0.31² ≈ **10 kg** on a 1400 kg car, 0.7 % heavier. The time to 100 km/h grows with the mass, 23.6 s × 1.0074 ≈ **23.8 s**. At a steady speed nothing speeds up, so the top speed does not change: like a bicycle with heavy wheels, slow to start, fine once rolling.
+
+Not every added detail matters, and part of modeling is knowing which. But the wheel now has a spin of its own, and in step 09 that is what lets it slip.
+
+:::
+
+::: details Details: the hidden mass derived
+
+The car's moving energy is ½·*m*·*v*², a wheel's spinning energy ½*J*ω². The wheel rolls, so ω = *v* / *r*, and the total is ½(*m* + *J*/*r*²)*v*². The engine supplies it, so the car behaves as if its mass were *m* + *J*/*r*² = 1400 + 10.4 kg. Parts on the engine side, such as a flywheel, turn *i* = 4 times faster and count *i*² = 16 times more, *J*<sub>e</sub>·*i*²/*r*²; this model leaves them out.
+
+:::
 
 #### Parts
 
@@ -931,7 +1151,19 @@ end
 
 Write your first component with an equation — the along-slope pull of gravity — and give the body a `grade` input.
 
-Theory: [tutor slides — the slope](../../handson-01/index.html#/slope){target="_self"}
+::: info Why an equation: part of the weight pulls back
+
+On a flat road the weight presses straight into the road. Tilt the road by α, and the weight *m*·*g* splits in two: **along the road**, *m*·*g*·sin α, pulling the car back; **into the road**, *m*·*g*·cos α, pressing the tires down. {#slope}
+
+![A car on a road tilted by angle alpha. Its weight m g points straight down and splits into m g sine alpha along the road, pointing downhill, and m g cosine alpha into the road. A right triangle under the road shows rise over run, which is tangent alpha.](/handson/lecture-01/img/step07-slope.svg){style="background:#fff;padding:8px;border-radius:4px;max-width:420px"}
+
+A road sign's **10 %** means rise ÷ run: 10 m up for every 100 m across. Rise ÷ run is **tan α**, so α = arctan 0.10 = 5.7° (the picture exaggerates it to 30°), and
+
+*F*<sub>slope</sub> = *m*·*g*·sin(arctan 0.10) = 1400 × 9.81 × 0.0995 = **1366 N**
+
+For small slopes sin α ≈ tan α (0.0995 against 0.100); the exact formula keeps the model right on any slope. Compare with the engine: flat out it pushes 1935 N. At 130 km/h up 10 % the car needs 1366 + 493 drag + 164 rolling = **2023 N**, more than 1935: it cannot hold 130 km/h there. The next lecture's windup section uses this hill. No library part turns a slope into a force, so this is your first equation.
+
+:::
 
 #### Parts
 
@@ -952,7 +1184,7 @@ Theory: [tutor slides — the slope](../../handson-01/index.html#/slope){target=
 #### Do this
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `GradeForce`. It opens as an empty diagram. Toggle to code (⇄): an equation has no diagram form. Start from the solution's first block — `extends` the force interface, declare the `grade` input and the two parameters. Short on time? Copy the whole component from **Stuck? The full model** below, paste it over the new file's contents, and read the relations against the next point.
-2. Write the one equation below. `grade` is tan α, the same convention `RollingResistance` uses for its `inclination`, so one signal can drive both.
+2. Write the one equation below. `grade` is tan α, the same convention `RollingResistance` uses for its `inclination`, so one signal can drive both: a 10 % grade is `grade = 0.10`, not α = 0.10. There is no minus sign: a force source acts on the body with −`f`, so a climb needs a positive `f` to hold the car back.
 3. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `Body` → **Duplicate** and name the copy `GradeBody`. In the diagram, delete `incl_const`, add a `grade` input port, wire it to `rolling.inclination`, place a `GradeForce` with `m = m`, `g = g` — the body's own parameters, so the car's mass is set in one place — and wire `grade → gradeforce.grade`, `gradeforce.flange → mass.flange_a`, `gradeforce.support → ground.flange`.
 
 ::: code-group
@@ -978,6 +1210,37 @@ end
 ::: tip Checkpoint
 
 The reference tests: on a 10 % climb (`TestGradeForce`) `gf.f` reads 1366.1 N and the free mass decelerates at 0.976 m/s². With 500 N of traction on a 2 % climb starting at 10 m/s (`TestGradeBody`, case `climb`) the body barely accelerates: 0.0164 m/s² at the start, 10.16 m/s after 10 s.
+
+:::
+
+::: details Details: what `extends` brings, and how to see it all
+
+`extends X` copies everything `X` declares — ports, variables, equations — into your component, and each level adds a little:
+
+1. `PartialElementaryOneFlangeAndSupport2`: the ports `flange` and `support`, *s* = `flange.s` − `support.s`, and the push-back `support.f = -flange.f`.
+2. `PartialForce`: a variable `f`, with `f = flange.f`. Its one gap: what `f` is.
+3. Your `GradeForce` fills the gap with one equation.
+
+Flattened, that is:
+
+```
+component GradeForce
+  flange = Flange()       # from …Support2
+  support = Flange()      # from …Support2
+  grade = RealInput()
+  variable s::Length      # from …Support2
+  variable f::Dyad.Force  # from PartialForce
+  parameter m::Dyad.Mass = 1400
+  parameter g::Acceleration = 9.80665
+relations
+  s = flange.s - support.s      # …Support2
+  support.f = -flange.f         # …Support2
+  f = flange.f                  # PartialForce
+  f = m * g * sin(atan(grade))  # yours
+end
+```
+
+In the code view, click **Flatten Component** above the `component` line to see this for any model; Studio may format it differently. Dyad needs exactly one equation per unknown, and this is the list it counts. Every analysis works the same way: `extends TransientAnalysis(stop = 300)` inherits the solver set-up, and you set only what differs.
 
 :::
 
@@ -1055,7 +1318,23 @@ end
 
 A component made of equations instead of parts: slip ratio κ in, friction coefficient μ out — a peak of 1.0 at 4 % slip, falling to 0.7 once the tire slides.
 
-Theory: [tutor slides — slip, and how grip depends on it](../../handson-01/index.html#/no-slip){target="_self"}
+::: info Why slip: until now the wheel could not
+
+Steps 03–07 use an `IdealRollingWheel`: one turn of the wheel always moves the car exactly one circumference, so wheel and car can never disagree. On a dry road that is nearly true — a driven tire slips by about one percent, and the top speed does not care. On snow or ice it is not true at all: the wheel can spin much faster than the car moves. Steps 08–10 are about that difference.
+
+**Slip** κ is how much faster the tire surface moves than the car, as a share of the car's speed: {#slip-and-grip}
+
+κ = (ω·*r* − *v*) / *v*
+
+A car at 10 m/s with its tire surface at 10.4 m/s has κ = 0.4 / 10 = 0.04: 4 % slip. **Grip** μ is the share of the load on the tire, *F*<sub>z</sub>, that it can turn into a push: *F*<sub>x</sub> = μ(κ)·*F*<sub>z</sub>.
+
+A tire grips by slipping a little as the tread stretches: more slip, more grip, up to a **peak** of μ = 1.0 at 4 % slip. Past it the rubber slides instead of stretching, and sliding grips worse than sticking — like a heavy box, hard to get moving, easier once it slides — so grip falls to 0.7. Braking makes κ negative, and the curve is mirrored: that side is where anti-lock brakes work.
+
+![Friction coefficient against slip ratio from 0 to 0.3. The dry-road curve rises steeply to a peak of 1.0 at slip 0.04, then falls to a plateau of 0.7 beyond 0.12. A snow curve is the same shape at one fifth the height, peaking at 0.2. A dashed line at 0.28 marks the most the engine can ask for: below the whole dry curve, above the whole snow curve.](/handson/lecture-01/img/step08-slip-grip.svg){style="background:#fff;padding:8px;border-radius:4px"}
+
+**Normal driving is the rising part.** The model drives one axle carrying half the car, *F*<sub>z</sub> = 1400 × 9.81 / 2 = 6865 N. Cruising at 100 km/h needs 292 + 165 = 457 N, μ = 0.07, a slip of about 0.2 %. Even flat out, 1935 N is μ = 0.28 at under 1 % slip. The peak is reached only when a wheel starts to spin or lock. On snow every height is × 0.2: the dashed line, the most the engine can ask for, lies under the whole dry curve and over the whole snow curve. Step 10 comes back to it.
+
+:::
 
 #### Where you are, where you are going
 
@@ -1124,6 +1403,20 @@ end
 - `mu_abs = ifelse(…)` — three pieces: rising to the peak, falling from peak to sliding, flat after. Each piece is a cubic with zero slope at its ends, so the curve has no corners for the solver to trip on.
 - `mu = sign(kappa) * mu_abs` — negative slip (braking) gives negative friction.
 
+::: details Details: how the curve is built, and other tire models
+
+One building block, an S-shaped cubic, *h*(*x*) = 1.5·*x* − 0.5·*x*³. It goes from −1 to 1 as *x* goes from −1 to 1, and its slope, 1.5 − 1.5·*x*², is zero at both ends, so pieces built from it join without corners. A corner would make the slope jump, and the solver, which picks its step from how fast things change, would need tiny steps or fail one.
+
+![The dry tire curve split into three pieces: a rising S-curve from slip 0 to 0.04 reaching 1.0, a falling S-curve from 0.04 to 0.12 down to 0.7, and a flat line at 0.7 beyond 0.12.](/handson/lecture-01/img/step08-three-pieces.svg){style="background:#fff;padding:8px;border-radius:4px"}
+
+1. **Rise**, κ from 0 to 0.04: μ = μ<sub>A</sub>·*h*(κ / 0.04), flat on top exactly at the peak. At κ = 0.02, *h*(0.5) = 0.6875, so μ ≈ 0.69.
+2. **Fall**, 0.04 to 0.12: *x* = (κ − 0.08)·2 / 0.08 runs from −1 to 1, and μ = (μ<sub>A</sub> + μ<sub>S</sub>)/2 + (μ<sub>S</sub> − μ<sub>A</sub>)/2·*h*(*x*) = 0.85 − 0.15·*h*(*x*): 1.0, then 0.85 halfway, then 0.7. The reference test checks the midpoint.
+3. **Slide**, beyond 0.12: μ = 0.7.
+
+Ours is the simplest model that still has a peak and a slide. Others: **linear**, μ = *C*·κ, fine for small slip but with no peak, so it can never show wheelspin running away; **Pacejka's Magic Formula**, *F* = *D*·sin(*C*·arctan(*B*κ − *E*(*B*κ − arctan *B*κ))), fitted to test-rig data and the industry standard; **brush** models, the tread as elastic bristles that stick, then slide; **dynamic** models such as LuGre, friction with its own state, for effects like the rolling distance a tire needs before its force builds up.
+
+:::
+
 #### C · Sweep it and plot the curve
 
 4. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `TestTireFrictionCurve`. It is the bench: a ramp that moves κ from −1 to +1 in 2 s, into your curve.
@@ -1155,7 +1448,7 @@ end
 
 ::: tip Checkpoint
 
-The curve is point-symmetric: −0.7 for a wheel locked under braking (κ = −1), −0.85 at κ = −0.08, the peak of 1.0 at κ = 0.04, and 0.7 at κ = 1. These are the values `TestTireFrictionCurve` asserts.
+The curve is point-symmetric: −0.7 for a wheel locked under braking (κ = −1), −0.85 at κ = −0.08, the peak of 1.0 at κ = 0.04, and 0.7 at κ = 1. These are the values `TestTireFrictionCurve` asserts. The axis runs from −1 to +1, so the peaks sit in a narrow spike near zero: that is correct. A plot against time means the round-bracket pair is missing in `idxs`.
 
 :::
 
@@ -1223,7 +1516,7 @@ end
 
 A tire instead of a rolling constraint: the wheel and the car may now move at different speeds, and your friction curve turns the difference into force.
 
-Theory: [tutor slides — slip, and how grip depends on it (step 08)](../../handson-01/index.html#/slip-and-grip){target="_self"}
+The idea is step 08's: [slip, and how grip depends on it](#slip-and-grip).
 
 #### Where you are, where you are going
 
@@ -1307,6 +1600,12 @@ The file saves with nothing in **Problems**, and the diagram shows `spline`, `fl
 
 :::
 
+::: info Why the slippery road gives less push
+
+The test drives the wheel with a steady 600 N·m, the engine's 150 × 4, into a 1 kg·m² wheel and a bare 1400 kg mass, with no drag and no rolling resistance. **Dry:** 600 / 0.31 = 1935 N is μ = 0.28 of the 6865 N load, which the curve reaches at a slip of about 0.0076. **Slippery:** the push needed is past the peak, so the tire gives only sliding grip, 0.7 × 0.2 = 0.14 of the load, and the rest of the engine's push spins the wheel. A slip of 135 means the tire surface moves 136 times as fast as the car.
+
+:::
+
 Commit: **Source Control** → message `Step 09: slip wheel` → **Commit** → **Sync Changes**.
 
 ::: details Stuck? The full model
@@ -1366,7 +1665,20 @@ end
 
 Build a car around the slipping wheel and floor it on a slippery road: the wheel spins, the car barely moves.
 
-Theory: [tutor slides — two limits: the engine's and the tire's](../../handson-01/index.html#/two-limits){target="_self"}
+::: info Why the wheel spins: two limits, the engine's and the tire's
+
+The push to the road passes through two things in a row, the engine and the tire, and the lower limit decides. The driven wheels carry half the car, *F*<sub>z</sub> = 6865 N, and the most the tire can push is μ<sub>peak</sub> × *F*<sub>z</sub>:
+
+| limit | N at the road |
+| --- | --: |
+| engine, flat out (step 03) | 1935 |
+| tire, dry: 1.0 × 6865 | 6865 |
+| tire, snow: 0.2 × 6865 | 1373 |
+| tire, ice: 0.05 × 6865 | 343 |
+
+**Dry:** the engine runs out first, and the tire stays left of its peak; the car behaves like step 05's, 21 km/h after 5 s. **Snow:** the tire runs out first, 1373 < 1935, and the engine keeps pushing the wheel **past the peak**. Then it runs away: more slip → less grip → less holding the wheel back → it spins faster → more slip. That comes from the tire curve, not from anything you built. The table only says the wheel *must* spin; how far the car gets, about 10 km/h after 5 s, comes from the run. (The 50/50 split of the weight is a modeling choice.)
+
+:::
 
 #### Where you are, where you are going
 
@@ -1454,6 +1766,10 @@ Fifteen wires. Tick them off as you go; the screenshot above shows where they ru
 
 4. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `SlipCarStandingStart`. It is the bench.
 
+[![The SlipCarStandingStart bench: the constants road (k = 0), friction (k = 0.2) and cmd (k = 150) on the left, wired into the car block's three inputs on its left edge, from top to bottom grade, mu_scale and tau_cmd.](/handson/lecture-01/img/step10-standing-start-bench.png){style="max-width:300px" width="460" height="598"}](/handson/lecture-01/img/step10-standing-start-bench.png)
+
+The finished bench, drawn by the Dyad command line from the reference `HandsOn.SlipCarStandingStart`; it draws no port names. `car`'s inputs are, from the top, `grade`, `mu_scale` and `tau_cmd`.
+
 5. With **+**, place your `SlipCar` as `car` and three `BlockComponents › Sources › Constant`: `cmd` with `k = 150` (full throttle), `road` with `k = 0` (flat), `friction` with `k = 0.2` (slippery). Wire them:
 
    | From | To |
@@ -1498,13 +1814,21 @@ Fifteen wires. Tick them off as you go; the screenshot above shows where they ru
 
 [![Plot of car.v_kmh and car.wheel_kmh: the wheel surface speed climbs to 1500 km/h in 5 s while the body barely reaches 10 km/h.](/handson/lecture-01/img/step10-standing-start-plot.png){width="990" height="528"}](/handson/lecture-01/img/step10-standing-start-plot.png)
 
-The run: the wheel surface (orange) is past 1500 km/h after 5 s while the car (blue) has reached 10 km/h. Past the peak of the curve, more slip gives less grip, so the wheel runs away.
+The run: the wheel surface (orange) is past 1500 km/h after 5 s while the car (blue) has reached 10 km/h. Past the peak of the curve, more slip gives less grip, so the wheel runs away. {#wheelspin}
 
 ::: tip Checkpoint
 
 Measured on `HandsOn.SlipCarStandingStartTransient`, friction 0.2: after 1 s the car makes 1.94 km/h while the wheel surface is already at 159.8 km/h; after 5 s the car makes **10.12 km/h** and the wheel surface **1501 km/h**. The model has no rev limit, so the engine keeps delivering 150 N·m into a wheel that has nothing to push against. On the dry road (friction 1.0) the two speeds stay together: 21.08 km/h for the car, 21.24 km/h at the wheel surface after 5 s.
 
 :::
+
+::: info Why 1500 km/h is not a bug
+
+A real engine has a rev limiter that cuts power at a maximum engine speed. This model has none, so nothing stops the wheel: 1500 km/h at the tire is the engine at about 51 000 rpm. The number follows from what was left out. This is also where the next lecture ends: a cruise control on ice sees the speed drop and asks for more torque, with exactly this result. That is why a real cruise control switches off when traction control steps in.
+
+:::
+
+Something else? The car goes backward: the sign of `flange.f` in `SlipWheel1D`. Both lines together on the slippery run: the bench's `friction` is still 1.0. A violent slip at the start: `initial car.wheel_inertia.w = 0` is missing.
 
 Commit: **Source Control** → message `Step 10: standing start` → **Commit** → **Sync Changes**.
 

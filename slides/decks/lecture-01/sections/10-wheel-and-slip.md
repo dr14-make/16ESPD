@@ -52,7 +52,7 @@ still work.
 
 ![Speed over the first 20 s of the 90 to 110 km/h step, with and without the wheel's inertia: the dashed wheeled curve lies almost on top of the solid one.](/figures/10-wheel-inertia.svg)
 
-*↩ Hands-on step 06: [the wheel's hidden mass](../handson-01/index.html#/hidden-mass)*
+*↩ Hands-on step 06: [the wheel's hidden mass](../handson/lecture-01/index.html#hidden-mass)*
 
 > **Check the rise time**
 >
@@ -110,7 +110,7 @@ end
 
 [open notebook](https://github.com/dr14-make/16ESPD/blob/main/notebooks/lecture01/10-wheel-and-slip.ipynb)
 
-*↩ Hands-on step 10: [the same standing start, open loop](../handson-01/index.html#/wheelspin)*
+*↩ Hands-on step 10: [the same standing start, open loop](../handson/lecture-01/index.html#wheelspin)*
 
 Under closed loop the error stays large, so the integrator winds up
 against a limit **that is not in the engine**.
@@ -160,7 +160,7 @@ section.
 <div class="grid grid-cols-[1fr_1.4fr] gap-8">
 <div>
 
-*↩ Hands-on step 08: [slip, and how grip depends on it](../handson-01/index.html#/slip-and-grip)*
+*↩ Hands-on step 08: [slip, and how grip depends on it](../handson/lecture-01/index.html#slip-and-grip)*
 
 $$
 \kappa \;=\; \frac{\omega r - v}{\max(|v|,\ \varepsilon)}
@@ -288,7 +288,7 @@ around it. That is the last slide.
 - one more output, **`wheel_kmh`**: ω·r in km/h, beside `v_kmh`
 - slip ratio inside it: `wheel.kappa`
 
-*↩ Hands-on steps 09–10: [a wheel that can slip](../handson-01/index.html#/slip-wheel)*
+*↩ Hands-on steps 09–10: [a wheel that can slip](../handson/lecture-01/index.html#slip-wheel)*
 
 </div>
 </div>
