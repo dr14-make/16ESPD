@@ -66,6 +66,6 @@
 
   <!-- air resistance on the front -->
   <path class="arrow-warn" d="M600 150 H534" marker-end="url(#vf-warn)"/>
-  <text class="f-lbl-warn" x="548" y="140">O<tspan baseline-shift="sub" font-size="12">V</tspan></text>
-  <text class="lbl" x="612" y="122" text-anchor="end" fill="#a75d00">air resistance</text>
+  <text class="f-lbl-warn" x="548" y="134">O<tspan baseline-shift="sub" font-size="12">V</tspan></text>
+  <text class="lbl" x="612" y="112" text-anchor="end" fill="#a75d00">air resistance</text>
 </svg>
