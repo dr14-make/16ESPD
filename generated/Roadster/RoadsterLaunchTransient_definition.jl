@@ -43,6 +43,8 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"tank_volume"::Float64 = 0.6
   # Initial compressed-air pressure
   var"tank_pressure"::Float64 = 38000000.0
+  # Tank polytropic index
+  var"tank_n"::Float64 = 1.4
   # Share of thrust directed downward
   var"down_fraction"::Float64 = 0.0
   # Peak tire adhesion
@@ -76,6 +78,7 @@ function DyadInterface.run_analysis(spec::RoadsterLaunchTransientSpec)
   push!(overrides, no_namespace_model.thrust_cmd => spec.var"thrust_cmd")
   push!(overrides, no_namespace_model.tank_volume => spec.var"tank_volume")
   push!(overrides, no_namespace_model.tank_pressure => spec.var"tank_pressure")
+  push!(overrides, no_namespace_model.tank_n => spec.var"tank_n")
   push!(overrides, no_namespace_model.down_fraction => spec.var"down_fraction")
   push!(overrides, no_namespace_model.mu_A => spec.var"mu_A")
   push!(overrides, no_namespace_model.share => spec.var"share")

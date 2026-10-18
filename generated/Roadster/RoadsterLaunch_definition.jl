@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L, fan_cmd, skirt_gap, thrust_cmd, tank_volume, tank_pressure, down_fraction)
+   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L, fan_cmd, skirt_gap, thrust_cmd, tank_volume, tank_pressure, tank_n, down_fraction)
 
 Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
 
@@ -38,6 +38,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
 | `thrust_cmd`         | Normalized rear-thrust valve command                         | --  |   0.0 |
 | `tank_volume`         | Compressed-air volume; Tesla reports 600 L total and Electrek reports 200 L for the Thrust trim                         | m3  |   0.6 |
 | `tank_pressure`         | Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan                         | Pa  |   380e5 |
+| `tank_n`         | Tank polytropic index; 1.4 is the adiabatic-air bound and 1 is isothermal                         | --  |   1.4 |
 | `down_fraction`         | Share of rear thrust directed downward rather than backward                         | --  |   0.0 |
 
 ## Variables
@@ -46,7 +47,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
 | ------------ | ----------------------------------- | ------ |
 | `v`         | Vehicle speed                         | m/s  |
 """
-@component function RoadsterLaunch(; name = nothing, m=Float64(2000), CdA=0.6, T_max=Float64(12000), P_max=Float64(1000000.0), J_w=2.4, radius=0.35, mu_A=1.26, mu_S=Float64(1.0), grip=0.98, share=0.55, h_over_L=0.17, fan_cmd=Float64(0.0), skirt_gap=0.003, thrust_cmd=Float64(0.0), tank_volume=0.6, tank_pressure=Float64(38000000.0), down_fraction=Float64(0.0), kwargs...)
+@component function RoadsterLaunch(; name = nothing, m=Float64(2000), CdA=0.6, T_max=Float64(12000), P_max=Float64(1000000.0), J_w=2.4, radius=0.35, mu_A=1.26, mu_S=Float64(1.0), grip=0.98, share=0.55, h_over_L=0.17, fan_cmd=Float64(0.0), skirt_gap=0.003, thrust_cmd=Float64(0.0), tank_volume=0.6, tank_pressure=Float64(38000000.0), tank_n=1.4, down_fraction=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -125,6 +126,9 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   __local__tank_pressure = tank_pressure
   append!(__params, @parameters (tank_pressure::Real), [description = "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"])
   __initial_conditions[tank_pressure] = __local__tank_pressure
+  __local__tank_n = tank_n
+  append!(__params, @parameters (tank_n::Real), [description = "Tank polytropic index; 1.4 is the adiabatic-air bound and 1 is isothermal"])
+  __initial_conditions[tank_n] = __local__tank_n
   __local__down_fraction = down_fraction
   append!(__params, @parameters (down_fraction::Real), [description = "Share of rear thrust directed downward rather than backward", bounds = (0, 1)])
   __initial_conditions[down_fraction] = __local__down_fraction
@@ -177,7 +181,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   push!(__systems, @named thrust_command = BlockComponents.Sources.Constant(; k=thrust_cmd, thrust_command_overrides...))
   # Subcomponent tank of type VehicleSystemsComponents.Roadster.AirTank
   tank_overrides = __pop_subcomponent_overrides!(__overrides, "tank")
-  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, tank_overrides...))
+  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, n=tank_n, tank_overrides...))
   # Subcomponent nozzle of type VehicleSystemsComponents.Roadster.ColdGasNozzle
   nozzle_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle")
   push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; nozzle_overrides...))
