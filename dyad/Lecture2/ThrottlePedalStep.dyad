@@ -1,0 +1,99 @@
+"""
+The electronic throttle answering the driver's pedal: a step opening, a hold, then a ramp back.
+
+The ECU commands the opening `u_cmd`: it starts at limp home, steps to `u_step` at `t_step`, and
+ramps down to `u_end` over `d_ramp` seconds from `t_ramp`. Pedal and command are taken as equal,
+a one-to-one pedal map, so the run shows the throttle's own position loop and nothing of the
+torque structure. The plate starts at rest at limp home with the motor unpowered, so the run
+opens in equilibrium.
+"""
+component ThrottlePedalStep
+  "Opening before the step, limp home (6 of 83 deg)"
+  parameter u_0::Real = 0.0722892
+  "Opening after the step"
+  parameter u_step::Real = 0.6
+  "Time of the step"
+  parameter t_step::Time = 0.1
+  "Opening at the end of the ramp"
+  parameter u_end::Real = 0.1
+  "Start of the ramp"
+  parameter t_ramp::Time = 0.6
+  "Duration of the ramp"
+  parameter d_ramp::Time = 0.4
+  "Supply voltage"
+  parameter U_batt::Voltage = 14.0
+  "Position controller gain"
+  parameter k::Real = 40.0
+  "Position controller integral time"
+  parameter Ti::Time = 0.1
+  "Position controller derivative time"
+  parameter Td::Time = 0.02
+  "TPS track 1 wiper contact resistance"
+  parameter R_wiper1::Resistance = 10.0
+  "Width over which the spring preload changes sign at limp home"
+  parameter eps_lh::Angle = 0.0035
+  step = BlockComponents.Sources.Step(offset = u_0, height = u_step - u_0, start_time = t_step) {^step}
+  ramp = BlockComponents.Sources.Ramp(offset = 0, height = u_end - u_step, duration = d_ramp, start_time = t_ramp) {^ramp}
+  "Commanded opening"
+  command = BlockComponents.Math.Add() {^command}
+  etc = VehicleSystemsComponents.Vehicle.Engine.ElectronicThrottle(U_batt = U_batt, k = k, Ti = Ti, Td = Td, R_wiper1 = R_wiper1, eps_lh = eps_lh, phi_0 = u_0 * 1.448623) {^etc}
+relations
+  connect(step.y, command.u1) {^id1}
+  connect(ramp.y, command.u2) {^id2}
+  connect(command.y, etc.u_cmd) {^id3}
+metadata {
+  "Dyad": {
+    "tests": {
+      "step_and_ramp": {
+        "stop": 1.5,
+        "solver": "Rodas5P",
+        "atol": {"etc.u_thr": 0.002, "etc.i_motor": 0.02},
+        "expect": {
+          "initial": {"etc.u_thr": 0.07375, "etc.i_motor": 0.0},
+          "final": {"etc.u_thr": 0.1, "etc.i_motor": 1.269},
+          "signals": ["etc.u_thr", "etc.i_motor", "etc.V1", "etc.V2"]
+        }
+      }
+    }
+  },
+  "_links": {
+    "step": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 250, "x2": 250, "y2": 400}}}},
+    "ramp": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 600, "x2": 250, "y2": 750}}}},
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 375, "y1": 425, "x2": 525, "y2": 575}}}},
+    "etc": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 400, "x2": 850, "y2": 600}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 310, "y": 325}, {"x": 310, "y": 455}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 310, "y": 675}, {"x": 310, "y": 545}], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
+end
+
+analysis ThrottlePedalStepTransient
+  extends TransientAnalysis(stop = 1.5, alg = ODEAlg.Rodas5P(), saveat = 0.001, dtmax = 0.002)
+  "Opening before the step"
+  parameter u_0::Real = 0.0722892
+  "Opening after the step"
+  parameter u_step::Real = 0.6
+  "Time of the step"
+  parameter t_step::Time = 0.1
+  "Opening at the end of the ramp"
+  parameter u_end::Real = 0.1
+  "Start of the ramp"
+  parameter t_ramp::Time = 0.6
+  "Duration of the ramp"
+  parameter d_ramp::Time = 0.4
+  "Supply voltage"
+  parameter U_batt::Voltage = 14.0
+  "Position controller gain"
+  parameter k::Real = 40.0
+  "Position controller integral time"
+  parameter Ti::Time = 0.1
+  "Position controller derivative time"
+  parameter Td::Time = 0.02
+  "TPS track 1 wiper contact resistance"
+  parameter R_wiper1::Resistance = 10.0
+  "Width over which the spring preload changes sign at limp home"
+  parameter eps_lh::Angle = 0.0035
+  model = VehicleSystemsComponents.Lecture2.ThrottlePedalStep(u_0 = u_0, u_step = u_step, t_step = t_step, u_end = u_end, t_ramp = t_ramp, d_ramp = d_ramp, U_batt = U_batt, k = k, Ti = Ti, Td = Td, R_wiper1 = R_wiper1, eps_lh = eps_lh)
+relations
+end

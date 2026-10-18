@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .unit { fill: #fff; stroke: #16202c; stroke-width: 2; stroke-linejoin: round; }
+    .seal { fill: #eaf1fa; stroke: #16202c; stroke-width: 2; }
+    .axis { stroke: #4a5a6b; stroke-width: 1.2; stroke-dasharray: 10 4 2 4; fill: none; }
+    .spray80 { fill: #d6e3f3; stroke: #1f5fa8; stroke-width: 1.2; }
+    .spray50 { fill: #7fa6d6; stroke: #1f5fa8; stroke-width: 1.2; }
+    .spray70 { fill: #9dbbe0; stroke: #1f5fa8; stroke-width: 1.2; }
+    .dim { stroke: #a75d00; stroke-width: 1.6; fill: none; }
+    .ext { stroke: #a75d00; stroke-width: 1.2; stroke-dasharray: 4 3; fill: none; }
+    .f-lbl { font-size: 17px; font-weight: 600; font-style: italic; fill: #a75d00; }
+    .f-lbl-light { font-size: 17px; font-weight: 600; font-style: italic; fill: #a75d00; }
+    .cap { font-size: 16px; }
+    .cap-k { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+  </style>
+  <defs>
+    <marker id="sp-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+  <path class="spray80" d="M120 132 L84.7 298.3 A170 170 0 0 0 155.3 298.3 Z"/>
+  <path class="spray50" d="M120 132 L102.2 301.1 A170 170 0 0 0 137.8 301.1 Z"/>
+  <g>
+    <path class="axis" d="M120 18 V318"/>
+    <rect class="unit" x="86" y="28" width="68" height="40" rx="3"/>
+    <rect class="seal" x="74" y="68" width="92" height="24" rx="12"/>
+    <rect class="unit" x="96" y="92" width="48" height="26" rx="2"/>
+    <path class="unit" d="M106 118 H134 L127 132 H113 Z"/>
+  </g>
+  <path class="dim" d="M81.7 312.0 A184 184 0 0 0 158.3 312.0" marker-start="url(#sp-dim)" marker-end="url(#sp-dim)"/>
+  <text class="f-lbl" x="186.0" y="314.0" text-anchor="middle">α<tspan baseline-shift="sub" font-size="12">80</tspan></text>
+  <path class="dim" d="M110.0 227.5 A96 96 0 0 0 130.0 227.5" marker-start="url(#sp-dim)" marker-end="url(#sp-dim)"/>
+  <text class="f-lbl-light" x="172.0" y="234.0" text-anchor="middle">α<tspan baseline-shift="sub" font-size="12">50</tspan></text>
+  <path class="spray70" d="M360 132 L321.8 297.6 A170 170 0 0 0 345.2 301.4 Z"/>
+  <path class="spray70" d="M360 132 L374.8 301.4 A170 170 0 0 0 398.2 297.6 Z"/>
+  <g>
+    <path class="axis" d="M360 18 V318"/>
+    <rect class="unit" x="326" y="28" width="68" height="40" rx="3"/>
+    <rect class="seal" x="314" y="68" width="92" height="24" rx="12"/>
+    <rect class="unit" x="336" y="92" width="48" height="26" rx="2"/>
+    <path class="unit" d="M346 118 H374 L367 132 H353 Z"/>
+  </g>
+  <path class="dim" d="M334.8 241.1 A112 112 0 0 0 350.2 243.6" marker-start="url(#sp-dim)" marker-end="url(#sp-dim)"/>
+  <text class="f-lbl" x="310.0" y="240.0" text-anchor="middle">β ≈ 8°</text>
+  <path class="dim" d="M318.6 311.3 A184 184 0 0 0 401.4 311.3" marker-start="url(#sp-dim)" marker-end="url(#sp-dim)"/>
+  <text class="f-lbl" x="426.0" y="314.0" text-anchor="middle">α<tspan baseline-shift="sub" font-size="12">50</tspan></text>
+  <path class="spray70" d="M600 132 L539.1 290.7 A170 170 0 0 0 567.6 298.9 Z"/>
+  <g>
+    <path class="axis" d="M600 18 V318"/>
+    <rect class="unit" x="566" y="28" width="68" height="40" rx="3"/>
+    <rect class="seal" x="554" y="68" width="92" height="24" rx="12"/>
+    <rect class="unit" x="576" y="92" width="48" height="26" rx="2"/>
+    <path class="unit" d="M586 118 H614 L607 132 H593 Z"/>
+  </g>
+  <path class="ext" d="M589.0 170.5 L553.1 295.4"/>
+  <path class="dim" d="M564.7 255.0 A128 128 0 0 0 600.0 260.0" marker-start="url(#sp-dim)" marker-end="url(#sp-dim)"/>
+  <text class="f-lbl" x="582.0" y="282.0" text-anchor="middle">γ</text>
+  <text class="cap-k" x="40" y="362">a</text><text class="cap" x="58" y="362">tapered spray</text>
+  <text class="cap-k" x="280" y="362">b</text><text class="cap" x="298" y="362">dual spray</text>
+  <text class="cap-k" x="520" y="362">c</text><text class="cap" x="538" y="362">gamma angle</text>
+  <text class="lbl" x="40" y="390">α₈₀ / α₅₀: cone holding 80 % / 50 % of the fuel · β: 70 % of one jet · γ: offset from the axis</text>
+</svg>

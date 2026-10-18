@@ -13,11 +13,11 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
 """
 component CylinderAirflow
   "Manifold absolute pressure [Pa]"
-  p_m = RealInput()
+  p_m = RealInput() {^p_m}
   "Engine speed [rad/s]"
-  omega = RealInput()
+  omega = RealInput() {^omega}
   "Air mass flow into the cylinders [kg/s]"
-  mdot_cyl = RealOutput()
+  mdot_cyl = RealOutput() {^mdot_cyl}
   "Displacement (MathWorks)"
   parameter V_d::Volume = 1.5e-3
   "Manifold air temperature (MathWorks)"
@@ -49,4 +49,12 @@ relations
   eta_fl = c0 + c1 * (min(max(N, n_min), n_max) / 1000) + c2 * (min(max(N, n_min), n_max) / 1000)^2
   eta_v = eta_fl * (1 - k + k * p_m / p_ref)
   mdot_cyl = eta_v * p_m * V_d * N / (120 * R * T_m)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/CylinderAirflow.svg"}},
+  "_links": {
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "mdot_cyl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
 end

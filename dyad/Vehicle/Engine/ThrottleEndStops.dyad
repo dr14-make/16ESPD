@@ -1,0 +1,41 @@
+"""
+The two mechanical end stops of a throttle plate: closed at `phi_min`, wide open at `phi_max`.
+
+Between the stops no torque acts. Past a stop the plate meets a stiff spring-damper, pushing back
+only, never pulling, like `TranslationalComponents.Components.ElastoGap` in the rotational
+domain, which the standard library does not have:
+
+    tau = c (phi_rel - phi_min) + d w_rel      below phi_min
+    tau = c (phi_rel - phi_max) + d w_rel      above phi_max
+
+with the damping torque limited to the spring torque, so a plate leaving a stop is never held.
+
+`phi_rel` is the plate angle from the closed stop, `spline_b` relative to `spline_a`. The stop
+stiffness and damping are assumed.
+"""
+component ThrottleEndStops
+  extends RotationalComponents.Interfaces.PartialCompliant
+  "Closed stop (assumed at the angle origin)"
+  parameter phi_min::Angle = 0.0
+  "Wide-open stop, 83 deg of plate travel (the Throttle's 7 to 90 deg)"
+  parameter phi_max::Angle = 1.448623
+  "Stop stiffness (assumed)"
+  parameter c::RotationalSpringConstant = 100.0
+  "Stop damping (assumed)"
+  parameter d::RotationalDampingConstant = 0.5
+  "Relative angular velocity"
+  variable w_rel::AngularVelocity
+  "Spring part of the contact torque"
+  variable tau_c::Torque
+relations
+  w_rel = der(phi_rel)
+  tau_c = ifelse(phi_rel < phi_min, c * (phi_rel - phi_min), ifelse(phi_rel > phi_max, c * (phi_rel - phi_max), 0))
+  tau = ifelse(phi_rel < phi_min, min(max(tau_c + d * w_rel, 2 * tau_c), 0), ifelse(phi_rel > phi_max, max(min(tau_c + d * w_rel, 2 * tau_c), 0), 0))
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Damper.svg"}},
+  "_links": {
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

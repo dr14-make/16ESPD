@@ -1,0 +1,62 @@
+"""
+Fuel mass flow read at engine speed and manifold pressure.
+
+The table is in g/s, as the source data is; the output is in kg/s. It defaults to the EPA ALPHA
+data in `EngineMapData`. The map has no fuel cut: on a closed throttle it still reads the small
+flow the measured engine burned there.
+"""
+component FuelMap
+  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
+  "Engine angular speed [rad/s]"
+  omega = RealInput() {^omega}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealInput() {^p_m}
+  "Fuel mass flow [kg/s]"
+  y = RealOutput() {^y}
+  map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = fuel_data, gain = 1e-3) {^map}
+relations
+  connect(omega, map.omega) {^speed_wire}
+  connect(p_m, map.p_m) {^pressure_wire}
+  connect(map.y, y) {^fuel_wire}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/FuelMap.svg"}, "doc": {"behavior": false}},
+  "_links": {
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "map": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 450, "x2": 550, "y2": 550}}}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 300}, {"x": 300, "y": 480}], "E": 2}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 700}, {"x": 300, "y": 520}], "E": 2}]}},
+    "fuel_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+test component TestFuelMap
+  omega_node = BlockComponents.Sources.Constant(k = 2000 * pi / 30) {^omega_node}
+  pressure_node = BlockComponents.Sources.Constant(k = 50000.0) {^pressure_node}
+  omega_clamped = BlockComponents.Sources.Constant(k = 0.0) {^omega_clamped}
+  pressure_clamped = BlockComponents.Sources.Constant(k = 150000.0) {^pressure_clamped}
+  node = VehicleSystemsComponents.Vehicle.Engine.FuelMap() {^node}
+  clamped = VehicleSystemsComponents.Vehicle.Engine.FuelMap() {^clamped}
+relations
+  connect(omega_node.y, node.omega) {^node_speed_wire}
+  connect(pressure_node.y, node.p_m) {^node_pressure_wire}
+  connect(omega_clamped.y, clamped.omega) {^clamped_speed_wire}
+  connect(pressure_clamped.y, clamped.p_m) {^clamped_pressure_wire}
+metadata {
+  "Dyad": {"tests": {"node_and_clamp": {"stop": 0.1, "atol": {"node.y": 1e-12, "clamped.y": 1e-12}, "expect": {"initial": {"node.y": 5.70253851e-4, "clamped.y": 5.40584116e-4}, "final": {"node.y": 5.70253851e-4, "clamped.y": 5.40584116e-4}, "signals": ["node.y", "clamped.y"]}}}},
+  "_links": {
+    "omega_node": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+    "pressure_node": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "omega_clamped": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 550, "x2": 200, "y2": 650}}}},
+    "pressure_clamped": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 700, "x2": 200, "y2": 800}}}},
+    "node": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 170, "x2": 550, "y2": 270}}}},
+    "clamped": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 570, "x2": 550, "y2": 670}}}},
+    "node_speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "node_pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 350}, {"x": 350, "y": 240}], "E": 2}]}},
+    "clamped_speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "clamped_pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 750}, {"x": 350, "y": 640}], "E": 2}]}}
+  }
+}
+end
