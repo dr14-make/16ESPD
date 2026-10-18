@@ -17,8 +17,11 @@ the original plan.
   deterministic since it runs without automatic discontinuity detection.
 - **The scoreboard is a fixed panel** in the bottom-right corner, with the two car sliders (mass
   and drive layout) pinned directly under it, so they stay in reach in present mode.
-- **Narrative order** (as built): introduction, the videos, theory, knowns and unknowns,
-  technology, closed forms without simulation, the Dyad simulations, verdicts.
+- **Narrative order:** introduction, the videos, knowns and assumptions, a warm-up, then one
+  section per Tesla claim (claim, physics check, model, simulation, verdict), then the
+  scoreboard and a summary.
+- **Plain language.** Short sentences, every symbol defined where it first appears, one idea per
+  slide, and a reading guide under every plot.
 - **Plots.jl with GR**, through `Lecture01Support.setup()`, as in `notebooks/lecture03/`.
 
 ## 1. Interactivity budget (measured)
@@ -86,126 +89,97 @@ These are the teaching points, and the sliders are chosen to show them:
 
 ## 3. Sections
 
-Each section is one `##` heading, so it is one slide in present mode. Each one ends with its
-verdict and a "what this bought us" line that names the next section. Each one shows its model
-once with `show_dyad`. Defaults are the baseline car, and check cells assert on the default
-solution, never on the slider-bound one.
+The notebook is organized around Tesla's claims, so a student can follow one question at a time.
+Each `##` heading is one slide in present mode, and each slide carries one idea.
 
-### Car panel (inside the scoreboard, global)
+### Opening
 
-- `m`: 1,700–2,350 kg, step 50, default 2,000.
-- Layout: `Select(["RWD", "AWD"])`, which maps to `share`/`h_over_L` = 0.55/0.17 or 1/0.
+1. Title, with the four steps every claim goes through, and the present button.
+2. **What Tesla showed:** the five claims, numbered as the sections that follow.
+3. **The videos:** the two official clips.
+4. **What Tesla said, and what it did not:** each number marked T, P, M or ?.
+5. **What we assume for the unknowns.**
+6. **How the simulations run:** build once, `remake` per slider. The rig, reference, grid and
+   hint cells sit under this slide and show only the build time.
+7. **Warm-up: is the ramp video real time?** k = √(a/g), with the playback slider.
 
-### 0. Warm-up: is the ramp video real time?
+### One section per claim
 
-- **Method:** closed form only. Playing a clip k times too fast scales the apparent acceleration by
-  k², so k = √(a_measured / g).
-- **Data:** the repo has no frame data. The section shows the stated fits from `sources.md`: the
-  ramp's early fall at 2.3 g gives k ≈ 1.52, and the kickflip's −0.92 g gives k ≈ 0.96, which is
-  real time. If a CSV of frame positions is later added under `notebooks/roadster/assets/`, the
-  same cell fits it by least squares.
-- **Slider:** playback factor k, 0.8–2.0.
-- **Plot:** fall distance against video time. The 2.3 g "measured" parabola is overlaid with a
-  1 g parabola replayed at k.
-- **Scoreboard row:** "Ramp shot plays in real time" — model: about 1.5× sped up.
+| # | Claim | Physics check | Dyad model | Simulation |
+| --- | --- | --- | --- | --- |
+| 1 | The tires grip up to 1.26 g | needed acceleration, μg, RWD weight transfer, torque and power caps, grip needed for 1 s | `RoadsterLaunch` with `PowerLimitedMotor`, `AxleLoad`, `TractionControl` | v(t); limit map |
+| 2 | Suction fan: 4,700 kg, under 1.6 s, upside down | Δp = D/A, the motor becomes the limit, leak flow and fan power | `SuctionFan` | limit map; fan power against skirt gap |
+| 3 | Cold-gas thrusters: 80 kN from 600 L | ideal-gas mass, choked thrust, blowdown table from the closed form | `AirTank`, `ColdGasNozzle` on `TestColdGasThrustStand` | thrust and air against time |
+| 4 | 0–60 mph in 1.0 / 0.81 / under 0.59 s | needed acceleration table, what thrust adds | the full `RoadsterLaunch` with tank, nozzle and force split | v(t); force stack; push down or back |
+| 5 | "It can fly": 8 m hop, hover | √(2gh), impulse and air, hover flow, hover time against mass | `VerticalHop`, `VerticalGroundContact`, hop and hover tests | hop; hover; 3 × 3 hover table; roll budget |
 
-### 1. Tires only: 0–60 under 1 s?
+Every claim section has the same four parts, in this order:
 
-- **Solve:** a launch problem, `remake` per move. Each move also solves the other layout as a ghost
-  curve, so two solves, about 50 ms.
-- **Sliders:** `mu_A` 1.0–1.6 (1.26); `P_max` 0.5–2.0 MW (1.0); `CdA` 0.3–1.2 m² (0.6). The power
-  and drag sliders exist to show that they do nothing.
-- **Plots:**
-  - v(t), with a 60 mph line, Tesla's 1.0 s recorded and 0.81 s live markers, and the other layout
-    as a ghost.
-  - **The limit map,** the hero plot that sections 2 and 4 reuse: force at the wheel against speed.
-    It shows the grip line `mu_A·F_z` (from the solution), the torque cap `T_max/r` (horizontal),
-    the power hyperbola `P_max/v`, and the delivered `F_x(v)` trajectory. The binding limit is the
-    lowest curve.
-- **Verdict:** No. RWD takes 3.33 s and AWD 2.27 s, limited by grip, not by power.
-- **Scoreboard row:** "0–60 under 1 s on tires" — model t60.
+1. **Tesla's claim:** what was said, with the number and the source marking.
+2. **Physics check:** a worked example. Formula, numbers in, result with units. Every symbol is
+   defined where it first appears.
+3. **Our model:** the Dyad diagram screenshot from `notebooks/roadster/img/`, a one-line role
+   for each block, and the Dyad source under a fold.
+4. **Simulation:** the sliders, the plot, and a fixed five-line reading guide under each plot:
+   axes with units, what each line or color is, what to look at, what it means for the claim,
+   and what to try.
 
-### 2. Suction fan
+Each section closes with a verdict box: green "plausible", amber "only if" or "as a peak", red
+"not plausible". The closing slides are the scoreboard table, the summary, the sources and the
+appendix of checks.
 
-- **Solve:** a launch problem with `fan_cmd`, `skirt_gap` and `T_max`, through `remake`. The fan
-  and inverted hold call the analyses directly, because they take 5 ms warm.
-- **Sliders:** `fan_cmd` 0–1 (1); skirt gap 1–10 mm (3); `T_max` 8–20 kN·m (12).
-- **Plots:**
-  - The limit map again. The grip line now sits above the torque cap, which shows the limit moving
-    from the tire to the drive.
-  - Fan power against skirt gap, from the closed form `Q·dp/η` as a curve, with the
-    `SuctionFanTransient` operating point at the current gap. The 3 mm (48 kW) and 10 mm (160 kW)
-    anchors are marked.
-  - Inverted hold: a bar of downforce against weight for the current `m`, and the least `dp`
-    (4,903 Pa, 13.3 kW at 3 mm).
-- **Verdict:** Yes. 1.62 s, limited by torque. The skirt gap sets the power bill, not the time.
-- **Scoreboard rows:** "Performance trim under 1.6 s" — model t60. "Holds the car upside down" —
-  margin of downforce over weight.
+### Numbers in the text
 
-### 3. Cold-gas tank
+Every number in the prose comes from a calculation or a model run, never from memory:
 
-- **Solve:** a thrust-stand problem through `remake` (5 ms).
-- **Sliders:**
-  - p0: 300–690 bar (380).
-  - V: 200–600 L (600).
-  - n: 1.0–1.4 (1.4).
-  - A toggle, "fixed throat" or "80 kN at any pressure". The second needs `A_t` exposed.
-- **Plot:** thrust against time, with horizontal lines at 80 % and 50 % of the initial thrust and
-  their crossing times. The other polytropic index is a ghost curve, and remaining air mass is on a
-  second axis.
-- **Verdict:** 80 kN falls below 80 % after 0.37 s and below 50 % after 1.18 s, so the claimed
-  thrust is a peak, not a level.
-- **Scoreboard row:** "80 kN rear thrust" — model initial thrust and the time it holds above 80 %.
+- **Worked examples** are closed forms, computed once and typed in.
+- **Readings of a plot** are interpolated from the cell that drew it, so they follow the
+  sliders.
+- **"Try" suggestions** quote the `hints` cell, which solves the baseline car (2,000 kg, RWD)
+  with one setting changed when the notebook opens: about 20 extra solves, under a second.
+- **Verdicts** quote the default runs (`reference`, the rigs' `default`) and add the current
+  slider value.
 
-### 4. Thrust launch
+### Sliders
 
-- **Solve:** a launch problem through `remake`, 25 ms per move. The `down_fraction` grid is
-  computed at load (1.0 s).
-- **Controls:**
-  - Checkboxes for thrust and suction.
-  - Tank: `Select` 200 L (Thrust trim, per Electrek) or 600 L. Pressure is taken from section 3.
-  - `down_fraction`: 0–1, step 0.05 (0).
-- **Plots:**
-  - v(t) for the current configuration. The three reference configurations from the brief are
-    ghosts: tires + thrust 0.55 s, + suction 0.53 s, 200 L 0.68 s. Tesla's 0.81 s and <0.59 s are
-    markers.
-  - A force stack over time: tire force plus forward thrust, against the grip and torque limits.
-  - t60 against `down_fraction` for the 4 precomputed cases, with the live point.
-- **Verdict:** Thrust beats the claim. Pushing down pays only for AWD without suction, around 0.1.
-  Report the air used to 60 mph (`tank.m_g` difference).
-- **Scoreboard rows:** "Thrust trim under 0.9 s (0.81 s live)" and "Rocket trim under 0.59 s" —
-  model t60 and air used.
+The sliders and their ranges are unchanged from the first version. They live in the simulation
+slide of the claim they belong to:
 
-### 5. Hop and hover: can it fly?
+- **Car panel (global):** mass 1,700–2,350 kg, step 50, default 2,000; RWD or AWD.
+- **Warm-up:** playback factor k, 0.8–2.0.
+- **Claim 1:** `mu_A` 1.0–1.6 (1.26), `P_max` 0.5–2.0 MW (1.0), `CdA` 0.3–1.2 m² (0.6).
+- **Claim 2:** `fan_cmd` 0–1 (1), skirt gap 1–10 mm (3), `T_max` 8–20 kN·m (12).
+- **Claim 3:** p0 300–690 bar (380), V 200–600 L (600), n 1.0–1.4 (1.4), throat fixed or scaled.
+  Claim 4 takes its tank pressure, n and throat from these.
+- **Claim 4:** thrust and suction checkboxes, 600 L or 200 L, `down_fraction` 0–1 (0).
+- **Claim 5:** `t_b` 0.2–0.8 s (0.413), hover p0 300–690 bar (380), roll rate 90–360 °/s (177)
+  and moment arm 0.6–1.2 m (0.9).
 
-- **Hop:**
-  - **Solve:** a Hop problem through `remake` with `t_b` and `m` (9 ms).
-  - **Slider:** `t_b` 0.2–0.8 s (0.413).
-  - **Plot:** altitude over time through the landing. The closed-form apex,
-    `h(t_b) + v(t_b)²/(2g)`, is overlaid, and the air used is shown as a number.
-  - **Verdict:** an 8 m hop costs about 43 kg of air. As built, the ground contact is fixed and the
-    plain maximum is the apex: 7.99 m at `t_b = 0.413` s.
-- **Hover:**
-  - **Solve:** a Hover problem through `remake` with `m` (the car panel) and `tank_pressure`
-    (its own slider, 300–690 bar), 9 ms warm.
-  - **Grid:** the 3 × 3 table (m 1,700/2,000/2,350 kg × p0 300/380/690 bar) is computed at load.
-  - **Live closed form:** endurance from `ṁ = m·g/v_e` integrated over the usable air.
-  - **Plot:** altitude and valve command, with the saturation time marked.
-  - **Verdict:** about 5.5 s of hover, so hops, not flight.
-- **Scoreboard row:** "It can fly" — hover seconds.
+### Diagram screenshots
 
-**Hover caveat (resolved).** Repeated `Hover()` calls used to differ in their peak altitude, and
-the plan was a committed snapshot. The Hover analysis now runs without automatic discontinuity
-detection and is deterministic, so the section is live and no snapshot is committed.
+`diagrams([path => caption, ...])` in `support.jl` embeds each PNG as a data URI, so the image
+travels with the notebook output. The paths resolve from the notebook's own directory. A file
+that does not exist yet renders as a dashed box naming it, so a slide never shows an error:
 
-### Optional: kickflip budget
+- `img/roadster-launch.png` (Claims 1 and 4)
+- `img/power-limited-motor.png`, `img/axle-load.png`, `img/traction-control.png` (Claim 1)
+- `img/suction-fan.png` (Claim 2)
+- `img/cold-gas-thrust-stand.png` (Claim 3)
+- `img/vertical-hop.png` (Claim 5)
 
-- **Method:** closed form only.
-- **Sliders:** roll rate 90–360 °/s (177), moment arm 0.6–1.2 m (0.9).
-- **Calculation:** I_roll ≈ 870 kg·m², so L = I·ω, the impulse is L/arm, and the air is impulse/v_e,
-  doubled to stop the roll. This comes to about 5 kg (about 9 kg with stopping), against 43 kg for
-  the 8 m hop.
-- **Verdict:** rotation is cheap and lift is expensive.
+A diagram cell runs once when the notebook opens. An image added later appears after a re-run
+of that cell or a reopen.
+
+### Results the verdicts rest on (baseline car, measured)
+
+- **Claim 1:** RWD 3.33 s, AWD 2.27 s; the tire limits for the whole run. 1 s would need μ ≈ 2.8.
+- **Claim 2:** 1.62 s with either layout, torque-limited; 47.9 kW at 3 mm, 160 kW at 10 mm;
+  downforce 2.35× weight; least hold 4,903 Pa, 13.3 kW.
+- **Claim 3:** 80.0 kN at the start, below 80 % after 0.37 s, below 50 % after 1.18 s; 271 kg.
+- **Claim 4:** tires + thrust 0.554 s, suction + thrust 0.532 s, 200 L 0.676 s; about 54 kg of
+  air. 2,350 kg gives 0.637 s, which misses 0.59 s.
+- **Claim 5:** 7.99 m apex for 43 kg at `t_b = 0.413` s; hover 5.47 s at 2,000 kg and 380 bar,
+  14.3 s at best (1,700 kg, 690 bar).
 
 ## 4. Claim vs model scoreboard
 
@@ -216,7 +190,7 @@ on every section's result. It stays visible in present mode and when scrolling.
   the current model value and a verdict chip.
 - **Verdict chips:** green "yes", red "no", gray "—" for a value that is not finite. As built, the
   panel starts collapsed to a summary line ("n of m possible") so it does not cover plots; the
-  Verdicts slide has the same rows in full.
+  Scoreboard slide has the same rows in full.
 - **Car sliders:** `m` and the layout, so one move updates every section. As built they are a
   separate cell pinned under the scoreboard by CSS on its cell id: inside the scoreboard cell they
   would form a cycle, because every result the scoreboard shows depends on them.

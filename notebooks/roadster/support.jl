@@ -13,6 +13,7 @@ tolerances, so a move costs milliseconds rather than a model rebuild.
 """
 module RoadsterSupport
 
+using Base64
 using Markdown
 using ModelingToolkit
 using OrdinaryDiffEqDefault: remake, solve
@@ -24,7 +25,7 @@ using ..Lecture01Support: dyad_source
 export V60, G0, LAYOUTS, Rig, solve_with, signal_path, first_crossing, t60, air_used,
     binding_limit, blowdown_marks, hop_apex, hover_time, limit_map,
     nozzle_closed_form, blowdown_closed_form, hover_closed_form, fan_power_closed_form,
-    scoreboard, verdict_row, html_table, dyad_fold, car_panel_style, fmt
+    scoreboard, verdict_row, verdict_box, html_table, diagrams, dyad_fold, car_panel_style, fmt
 
 "60 mph in m/s."
 const V60 = 26.8224
@@ -390,6 +391,56 @@ function strip_metadata(text)
         push!(keep, line)
     end
     return join(keep, "\n")
+end
+
+const FIGURE_STYLE = """
+<style>
+.roadster-figures { display: flex; gap: 16px; align-items: flex-start; margin: 0.4em 0; }
+.roadster-figures figure { flex: 1 1 0; margin: 0; min-width: 0; }
+.roadster-figures img { display: block; max-width: 100%; max-height: var(--fig-height);
+  margin: 0 auto; object-fit: contain; background: white; border-radius: 6px; }
+.roadster-figures .missing { height: var(--fig-height); display: flex; align-items: center;
+  justify-content: center; text-align: center; padding: 8px; border: 2px dashed #9998;
+  border-radius: 8px; color: #888; font-size: 0.95rem; }
+.roadster-figures figcaption { font-size: 0.95rem; line-height: 1.35; margin-top: 6px; }
+</style>
+"""
+
+const VERDICT_COLOR = Dict(:yes => "#2e7d32", :partly => "#b26a00", :no => "#c62828")
+
+"""
+    verdict_box(verdict, title, body) -> HTML
+
+A section's closing verdict: a colored bar, `title` in bold, then `body` as Markdown. `verdict`
+is `:yes` (green), `:partly` (amber) or `:no` (red).
+"""
+function verdict_box(verdict::Symbol, title, body)
+    color = VERDICT_COLOR[verdict]
+    return HTML("""<div style="border-left: 8px solid $color; background: $(color)1a;
+    border-radius: 6px; padding: 8px 16px; margin: 0.6em 0; font-size: 1.05rem;">
+    <p style="margin: 0.2em 0 0.4em 0; font-size: 1.2rem; color: $color"><b>$(inline_html(title))</b></p>
+    $(Markdown.html(Markdown.parse(body)))</div>""")
+end
+
+"""
+    diagrams(items; height = "380px") -> HTML
+
+Dyad diagram screenshots side by side. Each item is `path => caption`, with `caption` as
+inline Markdown. The image is embedded from the file at render time. A file that does not exist
+yet renders as a dashed placeholder box naming it, so the slide keeps its layout.
+"""
+function diagrams(items; height = "380px")
+    figures = map(items) do (path, caption)
+        picture = if isfile(path)
+            data = Base64.base64encode(read(path))
+            """<img src="data:image/png;base64,$data" alt="$(basename(path))">"""
+        else
+            """<div class="missing">Diagram not available yet:<br><code>$(basename(path))</code></div>"""
+        end
+        "<figure>$picture<figcaption>$(inline_html(caption))</figcaption></figure>"
+    end
+    return HTML("""<div class="roadster-figures" style="--fig-height:$height">$(join(figures))</div>
+    $FIGURE_STYLE""")
 end
 
 """
