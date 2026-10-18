@@ -88,7 +88,7 @@ The mapped engine in the hands-on fixes that.
 | <Link to="vehicle-energy">01</Link> | Vehicle energy | where the engine's work goes: drag, rolling, slope, acceleration, auxiliaries |
 | <Link to="engine-and-cycles">02</Link> | Engine and cycles | engine types, the Otto and Diesel cycles, the stoichiometric mixture |
 | <Link to="engine-control-system">03</Link> | Engine control system | sensors, ECU, actuators; functions, subsystems, control strategies |
-| <Link to="sensors">04</Link> | Sensors | classification, throttle position, temperature, air mass flow |
+| <Link to="sensors">04</Link> | Sensors | classification; throttle, crank and cam, temperature, air mass and pressure, knock; the ECU's checks |
 | <Link to="fuel-injection">05</Link> | Fuel injection | single-point, multipoint and direct injection; the injector; pulse width |
 | <Link to="ignition">06</Link> | Ignition | timing and advance, spark plug, coil, dwell, distributor to coil-on-plug |
 | <Link to="emissions-and-lambda">07</Link> | Emissions and lambda control | evaporative emissions, the λ loop, the oxygen sensor, the catalyst |

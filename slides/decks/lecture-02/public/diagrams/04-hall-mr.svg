@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 320" width="700" height="320">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .thin { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .fill { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .acc { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .warnline { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .lbl { font-size: 18px; fill: #4a5a6b; }
+    .sm { font-size: 15px; fill: #4a5a6b; }
+    .out { font-size: 20px; font-weight: 600; }
+    .head { font-size: 21px; font-weight: 600; }
+    .warn { font-size: 18px; font-weight: 600; fill: #a75d00; }
+    .accent { font-size: 18px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="hm-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="hm-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+  <text x="170" y="30" class="head" text-anchor="middle">Hall effect</text>
+  <rect class="fill" x="40" y="90" width="240" height="100"/>
+  <circle cx="85" cy="118" r="9" class="thin"/><path class="thin" d="M79 112 L91 124 M91 112 L79 124"/>
+  <circle cx="85" cy="162" r="9" class="thin"/><path class="thin" d="M79 156 L91 168 M91 156 L79 168"/>
+  <circle cx="140" cy="118" r="9" class="thin"/><path class="thin" d="M134 112 L146 124 M146 112 L134 124"/>
+  <circle cx="140" cy="162" r="9" class="thin"/><path class="thin" d="M134 156 L146 168 M146 156 L134 168"/>
+  <circle cx="195" cy="118" r="9" class="thin"/><path class="thin" d="M189 112 L201 124 M201 112 L189 124"/>
+  <circle cx="195" cy="162" r="9" class="thin"/><path class="thin" d="M189 156 L201 168 M201 156 L189 168"/>
+  <circle cx="250" cy="118" r="9" class="thin"/><path class="thin" d="M244 112 L256 124 M256 112 L244 124"/>
+  <circle cx="250" cy="162" r="9" class="thin"/><path class="thin" d="M244 156 L256 168 M256 156 L244 168"/>
+  <text x="40" y="78" class="accent">B into the plate</text>
+  <path class="wire" d="M14 140 H40 M280 140 H300"/>
+  <path class="acc" d="M60 210 H200" marker-end="url(#hm-a)"/>
+  <text x="130" y="234" class="accent" text-anchor="middle">current I</text>
+  <text x="62" y="108" class="warn" text-anchor="middle">−</text>
+  <text x="62" y="186" class="warn" text-anchor="middle">+</text>
+  <text x="112" y="108" class="warn" text-anchor="middle">−</text>
+  <text x="112" y="186" class="warn" text-anchor="middle">+</text>
+  <text x="168" y="108" class="warn" text-anchor="middle">−</text>
+  <text x="168" y="186" class="warn" text-anchor="middle">+</text>
+  <text x="262" y="108" class="warn" text-anchor="middle">−</text>
+  <text x="262" y="186" class="warn" text-anchor="middle">+</text>
+  <path class="wire" d="M230 90 V60 H330 V118 M330 162 V250 H230 V190"/>
+  <circle cx="330" cy="140" r="22" class="box"/>
+  <text x="326" y="146" class="out" text-anchor="middle">U<tspan dy="5" font-size="14">H</tspan></text>
+  <text x="170" y="282" class="out" text-anchor="middle">U<tspan dy="5" font-size="14">H</tspan><tspan dy="-5"> ∝ I · B</tspan></text>
+  <text x="170" y="306" class="lbl" text-anchor="middle">the Lorentz force pushes carriers sideways</text>
+  <text x="540" y="30" class="head" text-anchor="middle">Magnetoresistive</text>
+  <rect class="fill" x="420" y="105" width="240" height="70"/>
+  <path class="wire" d="M400 140 H420 M660 140 H680"/>
+  <path class="acc" d="M440 210 H640" marker-end="url(#hm-a)"/>
+  <text x="540" y="234" class="accent" text-anchor="middle">current I</text>
+  <path class="warnline" d="M510 140 L567.3 99.8" marker-end="url(#hm-w)"/>
+  <path class="thin" d="M510 140 H605"/>
+  <path class="thin" d="M555 140 A45 45 0 0 0 546.9 114.2"/>
+  <text x="562" y="134" class="sm">α</text>
+  <text x="575" y="104" class="warn">M</text>
+  <text x="540" y="68" class="lbl" text-anchor="middle">the field turns the magnetization M</text>
+  <text x="540" y="282" class="out" text-anchor="middle">R depends on α</text>
+  <text x="540" y="306" class="lbl" text-anchor="middle">the field’s direction, not its strength</text>
+</svg>

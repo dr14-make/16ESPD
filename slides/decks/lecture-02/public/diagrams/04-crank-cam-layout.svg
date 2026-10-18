@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 380" width="700" height="380">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .thin { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .fill { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .acc { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .warnline { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .lbl { font-size: 18px; fill: #4a5a6b; }
+    .sm { font-size: 15px; fill: #4a5a6b; }
+    .out { font-size: 20px; font-weight: 600; }
+    .head { font-size: 21px; font-weight: 600; }
+    .warn { font-size: 18px; font-weight: 600; fill: #a75d00; }
+    .accent { font-size: 18px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="cc-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+  <circle cx="260" cy="200" r="120" class="fill"/>
+  <path d="M362.3 262.7 L372.5 269.0 L376.0 263.0 L365.5 257.3 z M368.3 251.7 L379.1 256.8 L382.0 250.5 L370.9 245.9 z M373.1 240.1 L384.4 244.1 L386.6 237.5 L375.1 234.1 z M376.7 228.0 L388.4 230.8 L389.8 224.1 L378.0 221.9 z M379.0 215.7 L390.9 217.2 L391.6 210.4 L379.6 209.4 z M380.0 203.1 L392.0 203.5 L392.0 196.5 L380.0 196.9 z M379.6 190.6 L391.6 189.6 L390.9 182.8 L379.0 184.3 z M378.0 178.1 L389.8 175.9 L388.4 169.2 L376.7 172.0 z M375.1 165.9 L386.6 162.5 L384.4 155.9 L373.1 159.9 z M370.9 154.1 L382.0 149.5 L379.1 143.2 L368.3 148.3 z M365.5 142.7 L376.0 137.0 L372.5 131.0 L362.3 137.3 z M358.9 132.0 L368.8 125.2 L364.7 119.6 L355.2 126.9 z M351.2 122.1 L360.4 114.3 L355.7 109.1 L347.0 117.4 z M342.6 113.0 L350.9 104.3 L345.7 99.6 L337.9 108.8 z M333.1 104.8 L340.4 95.3 L334.8 91.2 L328.0 101.1 z M322.7 97.7 L329.0 87.5 L323.0 84.0 L317.3 94.5 z M311.7 91.7 L316.8 80.9 L310.5 78.0 L305.9 89.1 z M300.1 86.9 L304.1 75.6 L297.5 73.4 L294.1 84.9 z M288.0 83.3 L290.8 71.6 L284.1 70.2 L281.9 82.0 z M275.7 81.0 L277.2 69.1 L270.4 68.4 L269.4 80.4 z M263.1 80.0 L263.5 68.0 L256.5 68.0 L256.9 80.0 z M250.6 80.4 L249.6 68.4 L242.8 69.1 L244.3 81.0 z M238.1 82.0 L235.9 70.2 L229.2 71.6 L232.0 83.3 z M225.9 84.9 L222.5 73.4 L215.9 75.6 L219.9 86.9 z M214.1 89.1 L209.5 78.0 L203.2 80.9 L208.3 91.7 z M202.7 94.5 L197.0 84.0 L191.0 87.5 L197.3 97.7 z M192.0 101.1 L185.2 91.2 L179.6 95.3 L186.9 104.8 z M182.1 108.8 L174.3 99.6 L169.1 104.3 L177.4 113.0 z M173.0 117.4 L164.3 109.1 L159.6 114.3 L168.8 122.1 z M164.8 126.9 L155.3 119.6 L151.2 125.2 L161.1 132.0 z M157.7 137.3 L147.5 131.0 L144.0 137.0 L154.5 142.7 z M151.7 148.3 L140.9 143.2 L138.0 149.5 L149.1 154.1 z M146.9 159.9 L135.6 155.9 L133.4 162.5 L144.9 165.9 z M143.3 172.0 L131.6 169.2 L130.2 175.9 L142.0 178.1 z M141.0 184.3 L129.1 182.8 L128.4 189.6 L140.4 190.6 z M140.0 196.9 L128.0 196.5 L128.0 203.5 L140.0 203.1 z M140.4 209.4 L128.4 210.4 L129.1 217.2 L141.0 215.7 z M142.0 221.9 L130.2 224.1 L131.6 230.8 L143.3 228.0 z M144.9 234.1 L133.4 237.5 L135.6 244.1 L146.9 240.1 z M149.1 245.9 L138.0 250.5 L140.9 256.8 L151.7 251.7 z M154.5 257.3 L144.0 263.0 L147.5 269.0 L157.7 262.7 z M161.1 268.0 L151.2 274.8 L155.3 280.4 L164.8 273.1 z M168.8 277.9 L159.6 285.7 L164.3 290.9 L173.0 282.6 z M177.4 287.0 L169.1 295.7 L174.3 300.4 L182.1 291.2 z M186.9 295.2 L179.6 304.7 L185.2 308.8 L192.0 298.9 z M197.3 302.3 L191.0 312.5 L197.0 316.0 L202.7 305.5 z M208.3 308.3 L203.2 319.1 L209.5 322.0 L214.1 310.9 z M219.9 313.1 L215.9 324.4 L222.5 326.6 L225.9 315.1 z M232.0 316.7 L229.2 328.4 L235.9 329.8 L238.1 318.0 z M244.3 319.0 L242.8 330.9 L249.6 331.6 L250.6 319.6 z M256.9 320.0 L256.5 332.0 L263.5 332.0 L263.1 320.0 z M269.4 319.6 L270.4 331.6 L277.2 330.9 L275.7 319.0 z M281.9 318.0 L284.1 329.8 L290.8 328.4 L288.0 316.7 z M294.1 315.1 L297.5 326.6 L304.1 324.4 L300.1 313.1 z M305.9 310.9 L310.5 322.0 L316.8 319.1 L311.7 308.3 z M317.3 305.5 L323.0 316.0 L329.0 312.5 L322.7 302.3 z M328.0 298.9 L334.8 308.8 L340.4 304.7 L333.1 295.2 z M337.9 291.2 L345.7 300.4 L350.9 295.7 L342.6 287.0 z" fill="#1f5fa8" stroke="none"/>
+  <circle cx="260" cy="200" r="24" class="box"/>
+  <circle cx="260" cy="200" r="6" fill="#16202c"/>
+  <text x="260" y="260" class="lbl" text-anchor="middle">crankshaft</text>
+  <path class="warnline" d="M382 301 L365 281" marker-end="url(#cc-w)"/>
+  <text x="384" y="317" class="warn">gap: 2 teeth missing</text>
+  <rect class="box" x="44" y="184" width="70" height="32"/>
+  <path class="wire" d="M44 200 H24"/>
+  <text x="78" y="172" class="out" text-anchor="middle">crank</text>
+  <text x="78" y="240" class="sm" text-anchor="middle">VR or Hall</text>
+  <text x="260" y="44" class="lbl" text-anchor="middle">60 positions, 6° apart</text>
+  <path class="thin" stroke-dasharray="8 6" d="M260 176 L560 102 M260 224 L560 198"/>
+  <circle cx="560" cy="150" r="68" class="box"/>
+  <circle cx="560" cy="150" r="48" class="thin" stroke-dasharray="8 6"/>
+  <path d="M560 82 A68 68 0 0 1 560 218 L560 230 A80 80 0 0 0 560 70 z" fill="#1f5fa8"/>
+  <circle cx="560" cy="150" r="6" fill="#16202c"/>
+  <text x="560" y="258" class="lbl" text-anchor="middle">one window per 720°</text>
+  <text x="560" y="44" class="lbl" text-anchor="middle">camshaft, belt or chain 2 : 1</text>
+  <rect class="box" x="532" y="274" width="56" height="30"/>
+  <text x="600" y="296" class="out">cam, Hall</text>
+  <text x="350" y="368" class="lbl" text-anchor="middle">crank: angle within a turn · cam: which turn of the cycle</text>
+</svg>
