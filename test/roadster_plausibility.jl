@@ -248,7 +248,6 @@ end
     @test impulse_isothermal > impulse_adiabatic
 end
 
-
 @testset "Roadster thrust launch and vertical flight plausibility" begin
     valve_closed, closed_model = roadster_launch(thrust_cmd = 0.0)
     baseline, baseline_model = roadster_launch()
@@ -305,4 +304,26 @@ end
     hover = symbolic_container(hover_result)
     hover_flow_closed = 2000 * ROADSTER_G / hover_sol(0.0, idxs = hover.hover.nozzle.v_e)
     @test hover_flow_closed ≈ 28.3 rtol = 0.02
+
+    # Hover ends when the valve saturates: past that point the tank cannot hold mg and the car sinks.
+    function hover_time(; kwargs...)
+        result = VehicleSystemsComponents.Roadster.Hover(; kwargs...)
+        sol = result.sol
+        model = symbolic_container(result)
+        ts = range(0.0, 15.0, length = 30_001)
+        altitude = [sol(t, idxs = model.hover.altitude) for t in ts]
+        command = [sol(t, idxs = model.hover.command) for t in ts]
+        i_up = findfirst(>=(1.9), altitude)
+        i_sat = findfirst(i -> i > i_up && command[i] >= 1, eachindex(command))
+        @test sol(ts[end], idxs = model.hover.altitude) < 1.9
+        return ts[i_sat]
+    end
+    @test 3 <= hover_time() <= 8
+    hover_sweep = [hover_time(; m, tank_pressure) for m in (1700, 2000, 2350),
+                   tank_pressure in (300e5, 380e5, 690e5)]
+    @test all(diff(hover_sweep, dims = 1) .< 0)
+    @test all(diff(hover_sweep, dims = 2) .> 0)
+    println("Hover time (s), rows m = 1700/2000/2350 kg, columns p0 = 300/380/690 bar:")
+    show(stdout, MIME("text/plain"), round.(hover_sweep, digits = 3))
+    println()
 end

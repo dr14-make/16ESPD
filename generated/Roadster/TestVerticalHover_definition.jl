@@ -55,6 +55,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   ### Path Parameters (non-final)
 
   ### Final Parameters (declarations)
+  append!(__params, @parameters (F_full::Real), [description = "Full-open thrust at the initial pressure; the 80 kN design point at 380 bar, scaled with pressure because choked thrust is nearly proportional to it", misc = "final"])
 
   ### Deferred assignment (default values that depend on final parameters)
 
@@ -82,6 +83,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   __initial_conditions[k_v] = __local__k_v
 
   ### Final Parameters (assignments)
+  __bindings[F_full] = 80000 * tank_pressure / 38000000.0
 
   ### Final Path Parameters
 
@@ -120,7 +122,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
 
   ### Equations
   push!(__eqs, ModelingToolkit.D_nounits(integral_error) ~ target - hover.altitude)
-  push!(__eqs, unsaturated_command ~ m * 9.80665 / 80000 + k_p * (target - hover.altitude) + k_i * integral_error - k_v * hover.body.v)
+  push!(__eqs, unsaturated_command ~ m * hover.g / F_full + k_p * (target - hover.altitude) + k_i * integral_error - k_v * hover.body.v)
   push!(__eqs, hover.command ~ max(0, min(1, unsaturated_command)))
 
   # Return completely constructed System

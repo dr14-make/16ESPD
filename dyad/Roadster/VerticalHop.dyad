@@ -88,12 +88,14 @@ test component TestVerticalHover
   parameter k_i::Real(units = "1/(m.s)") = 0.2
   "Vertical-speed damping gain used with the altitude PI; assumed"
   parameter k_v::Real(units = "s/m") = 0.2
+  "Full-open thrust at the initial pressure; the 80 kN design point at 380 bar, scaled with pressure because choked thrust is nearly proportional to it"
+  final parameter F_full::Force = 80000 * tank_pressure / 380e5
   variable integral_error::Real(units = "m.s")
   variable unsaturated_command::Real
 relations
   initial integral_error = 0
   der(integral_error) = target - hover.altitude
-  unsaturated_command = m * 9.80665 / 80000 + k_p * (target - hover.altitude) + k_i * integral_error - k_v * hover.body.v
+  unsaturated_command = m * hover.g / F_full + k_p * (target - hover.altitude) + k_i * integral_error - k_v * hover.body.v
   hover.command = max(0, min(1, unsaturated_command))
 end
 
