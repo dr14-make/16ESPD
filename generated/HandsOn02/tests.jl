@@ -22,4 +22,7 @@ include("MapEngineDyno_test.jl")
 include("MapEngineFuelCutDyno_test.jl")
 include("MapEngineFuelCut_test.jl")
 include("MapEngine_test.jl")
+include("MappedCarCVTCruise_test.jl")
+include("MappedCarCVTWOT_test.jl")
+include("MappedCarCVT_test.jl")
 end
