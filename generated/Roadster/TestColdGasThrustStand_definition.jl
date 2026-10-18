@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestColdGasThrustStand(; name, p0, V, n)
+   TestColdGasThrustStand(; name, A_t, p0, V, n)
 
 Wide-open fixed thrust stand for a complete tank blowdown.
 
@@ -13,11 +13,12 @@ Wide-open fixed thrust stand for a complete tank blowdown.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `A_t`         | Total nozzle throat area                         | m2  |   1.286e-3 |
 | `p0`         | Initial tank pressure                         | Pa  |   380e5 |
 | `V`         | Tank volume                         | m3  |   0.6 |
 | `n`         | Polytropic index                         | --  |   1.4 |
 """
-@component function TestColdGasThrustStand(; name = nothing, p0=Float64(38000000.0), V=0.6, n=1.4, kwargs...)
+@component function TestColdGasThrustStand(; name = nothing, A_t=0.001286, p0=Float64(38000000.0), V=0.6, n=1.4, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -48,6 +49,9 @@ Wide-open fixed thrust stand for a complete tank blowdown.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
+  __local__A_t = A_t
+  append!(__params, @parameters (A_t::Real), [description = "Total nozzle throat area"])
+  __initial_conditions[A_t] = __local__A_t
   __local__p0 = p0
   append!(__params, @parameters (p0::Real), [description = "Initial tank pressure"])
   __initial_conditions[p0] = __local__p0
@@ -78,7 +82,7 @@ Wide-open fixed thrust stand for a complete tank blowdown.
   push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; p0=p0, V=V, n=n, tank_overrides...))
   # Subcomponent nozzle of type VehicleSystemsComponents.Roadster.ColdGasNozzle
   nozzle_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle")
-  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; nozzle_overrides...))
+  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, nozzle_overrides...))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; fixed_overrides...))

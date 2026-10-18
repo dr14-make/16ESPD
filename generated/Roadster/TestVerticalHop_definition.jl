@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestVerticalHop(; name, t_b, m, tank_volume, tank_pressure)
+   TestVerticalHop(; name, t_b, m, tank_volume, tank_pressure, A_t)
 
 Open-loop full-thrust hop followed by ballistic coast.
 
@@ -17,8 +17,9 @@ Open-loop full-thrust hop followed by ballistic coast.
 | `m`         |                          | kg  |   2000 |
 | `tank_volume`         |                          | m3  |   0.6 |
 | `tank_pressure`         |                          | Pa  |   380e5 |
+| `A_t`         |                          | m2  |   1.286e-3 |
 """
-@component function TestVerticalHop(; name = nothing, t_b=0.5, m=Float64(2000), tank_volume=0.6, tank_pressure=Float64(38000000.0), kwargs...)
+@component function TestVerticalHop(; name = nothing, t_b=0.5, m=Float64(2000), tank_volume=0.6, tank_pressure=Float64(38000000.0), A_t=0.001286, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -61,6 +62,9 @@ Open-loop full-thrust hop followed by ballistic coast.
   __local__tank_pressure = tank_pressure
   append!(__params, @parameters (tank_pressure::Real))
   __initial_conditions[tank_pressure] = __local__tank_pressure
+  __local__A_t = A_t
+  append!(__params, @parameters (A_t::Real))
+  __initial_conditions[A_t] = __local__A_t
 
   ### Final Parameters (assignments)
 
@@ -76,7 +80,7 @@ Open-loop full-thrust hop followed by ballistic coast.
   ### Components
   # Subcomponent hop of type VehicleSystemsComponents.Roadster.VerticalHop
   hop_overrides = __pop_subcomponent_overrides!(__overrides, "hop")
-  push!(__systems, @named hop = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, hop_overrides...))
+  push!(__systems, @named hop = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, A_t=A_t, hop_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

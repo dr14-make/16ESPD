@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestVerticalHover(; name, m, tank_pressure, tank_volume, target, k_p, k_i, k_v)
+   TestVerticalHover(; name, m, tank_pressure, tank_volume, A_t, target, k_p, k_i, k_v)
 
 PI altitude hold from rest, including a gravity feed-forward valve command.
 
@@ -16,6 +16,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
 | `m`         | Car mass                         | kg  |   2000 |
 | `tank_pressure`         | Initial tank pressure                         | Pa  |   380e5 |
 | `tank_volume`         | Tank volume                         | m3  |   0.6 |
+| `A_t`         | Total nozzle throat area                         | m2  |   1.286e-3 |
 | `target`         | Altitude target                         | m  |   2.0 |
 | `k_p`         | Proportional valve gain; assumed                         | 1/m  |   0.15 |
 | `k_i`         | Integral valve gain; assumed                         | 1/(m.s)  |   0.2 |
@@ -28,7 +29,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
 | `integral_error`         |                          | m.s  |
 | `unsaturated_command`         |                          | --  |
 """
-@component function TestVerticalHover(; name = nothing, m=Float64(2000), tank_pressure=Float64(38000000.0), tank_volume=0.6, target=Float64(2.0), k_p=0.15, k_i=0.2, k_v=0.2, kwargs...)
+@component function TestVerticalHover(; name = nothing, m=Float64(2000), tank_pressure=Float64(38000000.0), tank_volume=0.6, A_t=0.001286, target=Float64(2.0), k_p=0.15, k_i=0.2, k_v=0.2, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -69,6 +70,9 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   __local__tank_volume = tank_volume
   append!(__params, @parameters (tank_volume::Real), [description = "Tank volume"])
   __initial_conditions[tank_volume] = __local__tank_volume
+  __local__A_t = A_t
+  append!(__params, @parameters (A_t::Real), [description = "Total nozzle throat area"])
+  __initial_conditions[A_t] = __local__A_t
   __local__target = target
   append!(__params, @parameters (target::Real), [description = "Altitude target"])
   __initial_conditions[target] = __local__target
@@ -105,7 +109,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   ### Components
   # Subcomponent hover of type VehicleSystemsComponents.Roadster.VerticalHop
   hover_overrides = __pop_subcomponent_overrides!(__overrides, "hover")
-  push!(__systems, @named hover = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, hover_overrides...))
+  push!(__systems, @named hover = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, A_t=A_t, hover_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

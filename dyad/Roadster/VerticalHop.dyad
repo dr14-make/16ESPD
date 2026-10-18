@@ -24,7 +24,7 @@ component VerticalHop
   body = TranslationalComponents.Components.Mass(m = m, g = -g, theta = -1.5707963267948966)
   ground = VehicleSystemsComponents.Roadster.VerticalGroundContact(c = contact_c, d = contact_d)
   tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure)
-  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle()
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t)
   nozzle_stand = TranslationalComponents.Components.Fixed()
   upward_gain = BlockComponents.Math.Gain(k = 1)
   thrust = TranslationalComponents.Sources.Force()
@@ -35,6 +35,8 @@ component VerticalHop
   parameter tank_volume::Volume = 0.6
   "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"
   parameter tank_pressure::Pressure = 380e5
+  "Total nozzle throat area, sized for 80 kN at 380 bar"
+  parameter A_t::Area = 1.286e-3
   "Standard gravitational acceleration"
   parameter g::Acceleration = 9.80665
   "Ground-contact stiffness; assumed"
@@ -61,25 +63,28 @@ end
 
 "Open-loop full-thrust hop followed by ballistic coast."
 test component TestVerticalHop
-  hop = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure)
+  hop = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, A_t = A_t)
   "Full-thrust burn duration"
   parameter t_b::Time = 0.5
   parameter m::Dyad.Mass = 2000
   parameter tank_volume::Volume = 0.6
   parameter tank_pressure::Pressure = 380e5
+  parameter A_t::Area = 1.286e-3
 relations
   hop.command = ifelse(time < t_b, 1.0, 0.0)
 end
 
 "PI altitude hold from rest, including a gravity feed-forward valve command."
 test component TestVerticalHover
-  hover = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure)
+  hover = VehicleSystemsComponents.Roadster.VerticalHop(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, A_t = A_t)
   "Car mass"
   parameter m::Dyad.Mass = 2000
   "Initial tank pressure"
   parameter tank_pressure::Pressure = 380e5
   "Tank volume"
   parameter tank_volume::Volume = 0.6
+  "Total nozzle throat area"
+  parameter A_t::Area = 1.286e-3
   "Altitude target"
   parameter target::Length = 2.0
   "Proportional valve gain; assumed"
@@ -106,7 +111,8 @@ analysis Hop
   parameter m::Dyad.Mass = 2000
   parameter tank_volume::Volume = 0.6
   parameter tank_pressure::Pressure = 380e5
-  model = VehicleSystemsComponents.Roadster.TestVerticalHop(t_b = t_b, m = m, tank_volume = tank_volume, tank_pressure = tank_pressure)
+  parameter A_t::Area = 1.286e-3
+  model = VehicleSystemsComponents.Roadster.TestVerticalHop(t_b = t_b, m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, A_t = A_t)
 end
 
 analysis Hover
@@ -117,9 +123,10 @@ analysis Hover
   parameter m::Dyad.Mass = 2000
   parameter tank_volume::Volume = 0.6
   parameter tank_pressure::Pressure = 380e5
+  parameter A_t::Area = 1.286e-3
   parameter target::Length = 2.0
   parameter k_p::Real(units = "1/m") = 0.15
   parameter k_i::Real(units = "1/(m.s)") = 0.2
   parameter k_v::Real(units = "s/m") = 0.2
-  model = VehicleSystemsComponents.Roadster.TestVerticalHover(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, target = target, k_p = k_p, k_i = k_i, k_v = k_v)
+  model = VehicleSystemsComponents.Roadster.TestVerticalHover(m = m, tank_volume = tank_volume, tank_pressure = tank_pressure, A_t = A_t, target = target, k_p = k_p, k_i = k_i, k_v = k_v)
 end

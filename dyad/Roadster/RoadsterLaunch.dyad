@@ -39,7 +39,7 @@ component RoadsterLaunch
   suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance() {^suction_rolling}
   thrust_command = BlockComponents.Sources.Constant(k = thrust_cmd)
   tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure, n = tank_n)
-  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle()
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t)
   thrust_stand = TranslationalComponents.Components.Fixed()
   forward_gain = BlockComponents.Math.Gain(k = 1 - down_fraction)
   forward_force = TranslationalComponents.Sources.Force()
@@ -82,6 +82,8 @@ component RoadsterLaunch
   parameter tank_pressure::Pressure = 380e5
   "Tank polytropic index; 1.4 is the adiabatic-air bound and 1 is isothermal"
   parameter tank_n::Real = 1.4
+  "Total nozzle throat area, sized for 80 kN at 380 bar"
+  parameter A_t::Area = 1.286e-3
   "Share of rear thrust directed downward rather than backward"
   parameter down_fraction::Real(min = 0, max = 1) = 0.0
   "Vehicle speed"
@@ -228,6 +230,8 @@ analysis RoadsterLaunchTransient
   parameter tank_pressure::Pressure = 380e5
   "Tank polytropic index"
   parameter tank_n::Real = 1.4
+  "Total nozzle throat area"
+  parameter A_t::Area = 1.286e-3
   "Share of thrust directed downward"
   parameter down_fraction::Real = 0.0
   "Peak tire adhesion"
@@ -236,6 +240,6 @@ analysis RoadsterLaunchTransient
   parameter share::Real = 0.55
   "Center-of-mass height over wheelbase; 0 for all-wheel drive"
   parameter h_over_L::Real = 0.17
-  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, CdA = CdA, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, thrust_cmd = thrust_cmd, tank_volume = tank_volume, tank_pressure = tank_pressure, tank_n = tank_n, down_fraction = down_fraction, mu_A = mu_A, share = share, h_over_L = h_over_L)
+  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, CdA = CdA, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, thrust_cmd = thrust_cmd, tank_volume = tank_volume, tank_pressure = tank_pressure, tank_n = tank_n, A_t = A_t, down_fraction = down_fraction, mu_A = mu_A, share = share, h_over_L = h_over_L)
 relations
 end
