@@ -3,7 +3,8 @@
 Design for issue #64's lecturer-driven Pluto notebook, "Tesla Roadster: is it physically
 possible?". The story, baseline car and acceptance bands are in `docs/roadster-dyad-tasks.md`;
 claims and sources are in `docs/research_notes/Roadster plausibility/sources.md`. This file decides
-how the notebook runs live. It does not build it.
+how the notebook runs live. The notes marked "as built" record where the notebook departs from
+the original plan.
 
 ## Decisions at a glance
 
@@ -12,10 +13,12 @@ how the notebook runs live. It does not build it.
 - **Every live slider calls `remake` on a problem built once at load.** No slider calls an
   analysis constructor. A warm `remake` + `solve` takes 4–25 ms. A warm analysis call takes 5 ms
   to 11 s, depending on the analysis.
-- **Hover is read from a committed snapshot**, not solved live, until the nondeterminism fix
-  lands.
-- **The scoreboard is a fixed panel** in the bottom-right corner. It also holds the two car
-  sliders (mass and drive layout), so they stay in reach in present mode.
+- **Hover is solved live** through `remake`, like every other section. The Hover analysis is
+  deterministic since it runs without automatic discontinuity detection.
+- **The scoreboard is a fixed panel** in the bottom-right corner, with the two car sliders (mass
+  and drive layout) pinned directly under it, so they stay in reach in present mode.
+- **Narrative order** (as built): introduction, the videos, theory, knowns and unknowns,
+  technology, closed forms without simulation, the Dyad simulations, verdicts.
 - **Plots.jl with GR**, through `Lecture01Support.setup()`, as in `notebooks/lecture03/`.
 
 ## 1. Interactivity budget (measured)
@@ -41,13 +44,24 @@ to 4 decimal places, for every parameter checked: `m`, `share`/`h_over_L`, `fan_
 `tank_pressure` (the dependent `m0` updates), `tank_volume`, `down_fraction`, `CdA`, `mu_A`,
 `T_max`, `P_max`, `skirt_gap`, nested `tank.n`, the stand's `p0`/`n`/`V` and Hop's `t_b`.
 
+**As built, after the Hop and Hover fixes.** Both run with `automatic_discontinuity_detection =
+false`, so a warm direct `Hop()` or `Hover()` call now takes 15–18 ms and a warm `remake` + `solve`
+8–9 ms. `ColdGasThrustStandTransient` still uses detection. A `remake` of a problem whose analysis
+solve ran to the end can restart from the callbacks' end state: before the hop fix, a remade
+`Hop` at `t_b = 0.413` reached 8.19 m against the analysis's 8.01 m. The support `Rig` therefore
+runs each analysis to `start + 1e-6` only, re-spans the problem, and solves the default itself.
+With that, `remake` matched direct analysis calls exactly for every `t_b` checked.
+
 **Load cost.** A cold load takes about 90 s: each problem's first build plus its first `remake`.
+As built: the rig cell takes 99 s, the whole headless script 108–118 s wall, and a Pluto open
+with the packages already loaded 137 s.
 The lecturer opens the notebook before the session, and Pluto keeps it warm. A precompile workload
 could cut this, but it adds to every lecture's package precompile, so it is left out.
 
 **The heaviest slider move** is a `down_fraction` grid: 4 cases × 11 points, 44 solves, 1.0 s.
 That is over budget, so it is computed once at load for the baseline car, and a slider moves only
-the live marker (one solve).
+the live marker (one solve). As built, the grid uses the slider's 0.05 step, 4 × 21 solves, 1.6 s at
+load.
 
 ## 2. Sensitivity of t60 (measured, Δt60 in s from the default)
 
@@ -167,26 +181,22 @@ solution, never on the slider-bound one.
 - **Hop:**
   - **Solve:** a Hop problem through `remake` with `t_b` and `m` (9 ms).
   - **Slider:** `t_b` 0.2–0.8 s (0.413).
-  - **Plot:** altitude over time, cut at first landing. The closed-form apex,
+  - **Plot:** altitude over time through the landing. The closed-form apex,
     `h(t_b) + v(t_b)²/(2g)`, is overlaid, and the air used is shown as a number.
-  - **Verdict:** an 8 m hop costs about 43 kg of air.
+  - **Verdict:** an 8 m hop costs about 43 kg of air. As built, the ground contact is fixed and the
+    plain maximum is the apex: 7.99 m at `t_b = 0.413` s.
 - **Hover:**
-  - **Data:** read from a committed snapshot, `notebooks/roadster/assets/hover_reference.csv`. It
-    holds the 3 × 3 grid (m 1,700/2,000/2,350 kg × p0 300/380/690 bar) of hover time and the
-    default altitude and valve traces.
-  - **Controls:** grid-snapped `Select`s for m and p0.
-  - **Live closed form:** ṁ = m·g / v_e, and endurance ≈ usable air / ṁ.
-  - **Plot:** the default altitude and valve trace, with the saturation time marked, plus the grid
-    as a heat table.
+  - **Solve:** a Hover problem through `remake` with `m` (the car panel) and `tank_pressure`
+    (its own slider, 300–690 bar), 9 ms warm.
+  - **Grid:** the 3 × 3 table (m 1,700/2,000/2,350 kg × p0 300/380/690 bar) is computed at load.
+  - **Live closed form:** endurance from `ṁ = m·g/v_e` integrated over the usable air.
+  - **Plot:** altitude and valve command, with the saturation time marked.
   - **Verdict:** about 5.5 s of hover, so hops, not flight.
 - **Scoreboard row:** "It can fly" — hover seconds.
 
-**Hover caveat.** Repeated `Hover()` calls are not identical: in 11 runs the peak altitude was
-2.669, 2.670 or 2.752 m. Others have seen runs that never lift off. Within one build, `remake` is
-repeatable (4 identical runs, hover time 5.49 s). The variation therefore comes from the build,
-and a live grid built at load could inherit a bad build. Until the fix on `feat/roadster-thrust`
-lands, the section reads the snapshot, and a check cell compares the snapshot's default against
-3–8 s. After the fix, the `Select`s become sliders on a `remake`d Hover problem, at 4 ms per move.
+**Hover caveat (resolved).** Repeated `Hover()` calls used to differ in their peak altitude, and
+the plan was a committed snapshot. The Hover analysis now runs without automatic discontinuity
+detection and is deterministic, so the section is live and no snapshot is committed.
 
 ### Optional: kickflip budget
 
@@ -206,7 +216,9 @@ on every section's result. It stays visible in present mode and when scrolling.
   the current model value and a verdict chip.
 - **Verdict chips:** green "possible", red "not on this physics", gray "not reached yet". A row is
   gray until its section's cell has run.
-- **Car sliders:** `m` and the layout sit in the panel header, so one move updates every section.
+- **Car sliders:** `m` and the layout, so one move updates every section. As built they are a
+  separate cell pinned under the scoreboard by CSS on its cell id: inside the scoreboard cell they
+  would form a cycle, because every result the scoreboard shows depends on them.
 - **Mobile width:** not a concern, because this runs on the lecture projector.
 
 ## 5. Notebook mechanics
@@ -217,9 +229,16 @@ on every section's result. It stays visible in present mode and when scrolling.
   heading is a slide. `TableOfContents()` is for scrolling mode only.
 - **Code:** all code cells are committed folded (`# ╟─`), and outputs show.
 - **Headless done-check:** `julia +dyad-3.4.0 --project=. notebooks/roadster/02-is-it-possible.pluto.jl`
-  runs to completion with the slider defaults. Check cells use `@assert` with the band in the
-  message. The defaults are the bands in `docs/roadster-dyad-tasks.md`, and the hover snapshot
-  default is 3–8 s.
+  runs to completion with the slider defaults. The last slide's check cell `@assert`s the default
+  runs against the reference numbers, with the tolerance in the message.
+- **Script mode runs in `Main`.** The setup cell binds the loaded package as `components`, not as
+  `VehicleSystemsComponents`: `setup()` imports that name into `Main`, and a global of the same name
+  in the same block conflicts with it.
+- **Pluto worker mode, as found.** In this environment a Pluto worker process fails inside
+  `setup()` while loading package images (`TypeError: expected Core.CodeInfo, got
+  SynchJulia.DNode`). The lecture 3 notebooks fail the same way, so it is not specific to this
+  notebook. Running Pluto in-process (`workspace_use_distributed = false`) with the packages
+  loaded before the notebook opens works: every cell runs, and every slider re-runs without error.
 - **Thin cells:** a cell is a call and a plot. `notebooks/roadster/support.jl` (module
   `RoadsterSupport`) holds the rigs and plot recipes, the same pattern as
   `notebooks/lecture02/support.jl`. Model assembly stays in `dyad/`. `src/` stays the generated
@@ -227,32 +246,24 @@ on every section's result. It stays visible in present mode and when scrolling.
 
 ## 6. Work needed before the notebook
 
-Each item is a small task.
+Status as built:
 
-1. **`notebooks/roadster/support.jl`:**
-   - A `Rig` that wraps an analysis result: its problem, `symbolic_container` and tolerances.
-   - `run(rig; kwargs...)`, which maps keyword names to tunables and calls `remake` + `solve`. A
-     name the analysis does not expose is an error.
-   - `t60`, `air_used`, `binding_limit`, `blowdown_marks`, `apex_before_landing` and
-     `hover_time`. The last two are lifted from `test/roadster_plausibility.jl`.
-   - `limit_map!`, `scoreboard(rows)` and `show_dyad`, re-exported.
-2. **Expose `CdA` on `RoadsterLaunchTransient`.** It is already a `RoadsterLaunch` parameter.
-3. **Expose the polytropic index** as `tank_n` on `RoadsterLaunch` and its analysis, forwarded to
-   `tank.n`. `remake` can reach `tank.n` now, but the house rule forbids nested overrides in a
-   notebook.
-4. **Expose nozzle `A_t`** on `RoadsterLaunch`, `RoadsterLaunchTransient` and
-   `ColdGasThrustStandTransient`. The "80 kN at any pressure" toggle sets
+1. **`notebooks/roadster/support.jl`:** done. `Rig(name, analysis; kwargs...)`, `solve_with(rig;
+   kwargs...)` (not `run`, and not `simulate`, which DyadInterface exports), `t60`, `air_used`,
+   `binding_limit`, `blowdown_marks`, `hop_apex`, `hover_time`, the closed forms, `limit_map`,
+   `scoreboard`, and `dyad_fold`, which shows a model's Dyad source without diagram metadata
+   under a fold.
+2. **`CdA`, `tank_n` and `A_t` on `RoadsterLaunchTransient`, `A_t` on the stand, Hop and Hover,
+   and `m`/`gap` on `SuctionFanInvertedHoldTransient`:** exposed, and the notebook sets only
+   top-level analysis parameters. The "80 kN at any pressure" toggle sets
    `A_t = 1.286e-3 · 380e5 / p0`.
-5. **Give `SuctionFanInvertedHoldTransient` parameters** `m` and `gap`. Its harness has them, but
-   the analysis exposes none.
-6. **Hop bounce artifact.** For a short burn, the car lands and the ground contact puts energy
-   back, so `maximum(altitude)` reports a later bounce: `t_b = 0.3` gives 12.4 m at t = 8 s, and
-   `t_b = 0.35` gives 24.5 m at t = 10 s. The slider must read the apex before first landing (the
-   support helper). Fixing or stopping the contact's energy gain is a separate Dyad task. The
-   acceptance case `t_b = 0.413` (7.96 m) is unaffected, because its apex comes before landing.
-7. **Hover snapshot script**, `scripts/roadster_hover_snapshot.jl`. It writes
-   `hover_reference.csv`, and it is rerun and the snapshot replaced once the hover fix lands.
-8. **Warm-up data (optional):** frame positions from the ramp clip, if a fit to real data is wanted
+3. **Inverted-hold command:** the harness's `cmd` default, `−m·g / (4 · dp_max)`, does not follow
+   `m`, neither through `remake` nor through `SuctionFanInvertedHoldTransient(m = 2350)`: Δp stays
+   at 4,903 Pa. The notebook passes `cmd = m / 4700` itself.
+4. **Hop ground contact:** fixed. The plain maximum is the apex, and `hop_apex` reads it on a
+   dense grid.
+5. **Hover snapshot:** not needed.
+6. **Warm-up data (optional):** frame positions from the ramp clip, if a fit to real data is wanted
    instead of the stated 2.3 g.
 
 Not needed: a burn-time parameter on the launch. The valve stays open past t60 in every
@@ -262,9 +273,8 @@ configuration, so a cutoff would not change the verdict.
 
 - **Cold start takes about 90 s.** If Pluto restarts mid-session, the audience waits. The mitigation
   is to open the notebook early and keep the committed outputs as a fallback.
-- **Hover nondeterminism** is contained by the snapshot. A wrong snapshot is caught by its check
-  cell only at the default point.
 - **The pressure slider overstates thrust** with a fixed throat: 690 bar gives 148 kN, not 80 kN.
-  The A_t toggle (item 4) is what keeps that honest. Until it exists, the slider needs a note.
-- **Any GR plot re-render adds about 50–150 ms** to a slider move. This was not measured here,
-  because Pluto was not run. Check it on the projector machine.
+  The throat toggle in Simulation 3 keeps that honest.
+- **A slider move costs 40–450 ms in Pluto**, measured in-process: 15–100 ms for the solves and
+  readouts, the rest for the GR re-renders of every dependent plot. The car sliders and the tank
+  sliders re-run the most cells. Check it on the projector machine.
