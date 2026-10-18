@@ -1,0 +1,93 @@
+"""
+Ideal continuously variable transmission with a pedal-scheduled speed controller.
+
+The ratio is total engine-side to wheel-side speed reduction. The controller requests the ratio
+that places the input shaft at a pedal-dependent target speed, then reaches it through a first-order
+lag. The velocity constraint avoids dependence on accumulated absolute shaft angle.
+"""
+component ControlledVariator
+  "Input shaft"
+  spline_a = Spline() {^spline_a}
+  "Output shaft"
+  spline_b = Spline() {^spline_b}
+  "Transmission housing"
+  support = Spline() {^support}
+  "Driver pedal command, 0 closed to 1 fully open"
+  pedal = RealInput() {^pedal}
+  "Launch ratio, including final drive (assumed for a small-car belt CVT)"
+  parameter i_launch::Real = 12.0
+  "Overdrive ratio, including final drive (assumed for a small-car belt CVT)"
+  parameter i_overdrive::Real = 2.8
+  "Closed-pedal target speed [rpm] (assumed above clutch engagement)"
+  parameter target_rpm_min::Real = 1800.0
+  "Wide-open target speed [rpm] (assumed 500 rpm below the rev limiter)"
+  parameter target_rpm_max::Real = 6000.0
+  "Ratio actuator time constant [s] (assumed for a hydraulic belt CVT)"
+  parameter ratio_time::Time(min = eps(Float64)) = 0.5
+  "Regularizing output speed [rpm] (assumed to keep the launch command finite)"
+  parameter output_rpm_floor::Real(min = eps(Float64)) = 50.0
+  "Initial total ratio (assumed launch setting; override for initialized cruise)"
+  parameter ratio_initial::Real = i_launch
+  "Input speed relative to the housing [rad/s]"
+  variable w_a::AngularVelocity
+  "Output speed relative to the housing [rad/s]"
+  variable w_b::AngularVelocity
+  "Input speed [rpm]"
+  variable N_a::Real
+  "Output speed magnitude [rpm]"
+  variable N_b::Real
+  "Scheduled input-speed target [rpm]"
+  variable N_target::Real
+  "Bounded ratio command"
+  variable i_command::Real
+  "Actual total speed ratio"
+  variable ratio::Real
+relations
+  w_a = der(spline_a.phi) - der(support.phi)
+  w_b = der(spline_b.phi) - der(support.phi)
+  N_a = w_a * 30 / pi
+  N_b = sqrt((w_b * 30 / pi)^2 + output_rpm_floor^2)
+  N_target = target_rpm_min + min(max(pedal, 0.0), 1.0) * (target_rpm_max - target_rpm_min)
+  i_command = min(max(N_target / N_b, i_overdrive), i_launch)
+  der(ratio) = (i_command - ratio) / ratio_time
+  w_a = ratio * w_b
+  0 = ratio * spline_a.tau + spline_b.tau
+  support.tau = -spline_a.tau - spline_b.tau
+  initial ratio = ratio_initial
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/IdealGear.svg"}},
+  "_links": {
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "spline_a", "x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 475, "x2": 1025, "y2": 525}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 475, "y1": 975, "x2": 525, "y2": 1025}}}},
+    "pedal": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": -50, "x2": 350, "y2": 50}, "diagram": {"x1": 275, "y1": -25, "x2": 325, "y2": 25}}}}
+  }
+}
+end
+
+test component TestControlledVariator
+  "Drive torque (assumed test stimulus)"
+  drive = RotationalComponents.Sources.ConstantTorque(tau_constant = 100.0)
+  "Input inertia (assumed test fixture)"
+  input_inertia = RotationalComponents.Components.Inertia(J = 0.15)
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator()
+  "Driven inertia (assumed test fixture)"
+  load = RotationalComponents.Components.Inertia(J = 10.0)
+  fixed = RotationalComponents.Components.Fixed()
+  full_pedal = BlockComponents.Sources.Constant(k = 1.0)
+relations
+  connect(drive.spline, input_inertia.spline_a)
+  connect(input_inertia.spline_b, variator.spline_a)
+  connect(variator.spline_b, load.spline_a)
+  connect(drive.support, fixed.spline)
+  connect(variator.support, fixed.spline)
+  connect(full_pedal.y, variator.pedal)
+  initial input_inertia.phi = 0.0
+  initial load.phi = 0.0
+  initial load.w = 1000 * pi / (30 * 12)
+end
+
+analysis ControlledVariatorTransient
+  extends TransientAnalysis(stop = 10.0)
+  model = TestControlledVariator()
+end

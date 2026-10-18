@@ -1,0 +1,79 @@
+"""
+Smooth centrifugal launch clutch.
+
+The torque capacity rises continuously with input-shaft speed. A regularized Coulomb law opposes
+relative motion without a discrete stick/slip event; once the demanded torque is below capacity,
+the small regularization speed makes the two shafts effectively locked.
+"""
+component CentrifugalClutch
+  "Engine-side shaft"
+  spline_a = Spline() {^spline_a}
+  "Transmission-side shaft"
+  spline_b = Spline() {^spline_b}
+  "Clutch housing"
+  support = Spline() {^support}
+  "Center of the centrifugal engagement ramp [rpm] (assumed for a small petrol car)"
+  parameter engage_rpm::Real = 1300.0
+  "Width of the centrifugal engagement ramp [rpm] (assumed)"
+  parameter engage_width_rpm::Real(min = eps(Float64)) = 120.0
+  "Fully engaged torque capacity [N.m] (assumed, about 1.5 times peak engine torque)"
+  parameter tau_max::Torque = 230.0
+  "Slip regularization speed [rad/s] (assumed for continuous near-lock behavior)"
+  parameter w_regularization::AngularVelocity(min = eps(Float64)) = 1.0
+  "Input speed relative to the housing [rad/s]"
+  variable w_a::AngularVelocity
+  "Output speed relative to the housing [rad/s]"
+  variable w_b::AngularVelocity
+  "Input speed relative to the housing [rpm]"
+  variable N_a::Real
+  "Input-to-output slip speed [rad/s]"
+  variable w_slip::AngularVelocity
+  "Available friction torque [N.m]"
+  variable tau_capacity::Torque
+  "Torque transmitted from the input shaft to the output shaft [N.m]"
+  variable tau::Torque
+relations
+  w_a = der(spline_a.phi) - der(support.phi)
+  w_b = der(spline_b.phi) - der(support.phi)
+  N_a = w_a * 30 / pi
+  w_slip = w_a - w_b
+  tau_capacity = tau_max * 0.5 * (1 + tanh((N_a - engage_rpm) / engage_width_rpm))
+  tau = tau_capacity * tanh(w_slip / w_regularization)
+  spline_a.tau = tau
+  spline_b.tau = -tau
+  support.tau = -spline_a.tau - spline_b.tau
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Clutch.svg"}},
+  "_links": {
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "spline_a", "x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 475, "x2": 1025, "y2": 525}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 475, "y1": 975, "x2": 525, "y2": 1025}}}}
+  }
+}
+end
+
+test component TestCentrifugalClutch
+  "Drive torque below the fully engaged clutch capacity (assumed test stimulus)"
+  drive = RotationalComponents.Sources.ConstantTorque(tau_constant = 100.0)
+  "Engine-side flywheel inertia (specified by Hands-on 02)"
+  engine = RotationalComponents.Components.Inertia(J = 0.15)
+  clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch()
+  "Lumped driven inertia (assumed test fixture)"
+  load = RotationalComponents.Components.Inertia(J = 1.5)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(drive.spline, engine.spline_a)
+  connect(engine.spline_b, clutch.spline_a)
+  connect(clutch.spline_b, load.spline_a)
+  connect(drive.support, fixed.spline)
+  connect(clutch.support, fixed.spline)
+  initial engine.phi = 0.0
+  initial engine.w = 900 * pi / 30
+  initial load.phi = 0.0
+  initial load.w = 0.0
+end
+
+analysis CentrifugalClutchTransient
+  extends TransientAnalysis(stop = 5.0)
+  model = TestCentrifugalClutch()
+end
