@@ -28,7 +28,7 @@ begin
     using PlutoUI
     include(joinpath(@__DIR__, "support.jl"))
     using .RoadsterSupport
-    Plots.default(size = (900, 420))
+    Plots.default(size = (1200, 520))
     Roadster = components.Roadster
     nothing
 end
@@ -59,6 +59,14 @@ md"""
 
 # ╔═╡ e3e16d90-e0a7-5499-89ad-ec3ffac00c74
 car_panel_style("8356f8de-1589-5f84-9769-f90f600c385a")
+
+# ╔═╡ 73d1f345-c3c2-4f93-9873-b260ea105299
+# Pluto caps the column at 700 px, which leaves half of a projector empty.
+html"""
+<style>
+main { max-width: min(1300px, 94vw) !important; }
+</style>
+"""
 
 # ╔═╡ 0642455c-1da3-51e6-81ff-e990d6acb591
 begin
@@ -1050,6 +1058,7 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─70ca7453-e2e9-5fa4-a2a9-af10ca7b3eba
 # ╟─8356f8de-1589-5f84-9769-f90f600c385a
 # ╟─e3e16d90-e0a7-5499-89ad-ec3ffac00c74
+# ╟─73d1f345-c3c2-4f93-9873-b260ea105299
 # ╟─0642455c-1da3-51e6-81ff-e990d6acb591
 # ╟─40ef78e6-32c9-5c2d-9f7e-b2839b5a029d
 # ╟─d1e686ea-7b9d-50b5-8585-e5b5bd5a5077
