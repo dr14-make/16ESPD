@@ -124,8 +124,8 @@ Every claim section has the same four parts, in this order:
    axes with units, what each line or color is, what to look at, what it means for the claim,
    and what to try.
 
-Each section closes with a verdict box: green "plausible", amber "only if" or "as a peak", red
-"not plausible". The closing slides are the scoreboard table, the summary, the sources and the
+Each section closes with its own verdict slide: a colored box, green "plausible", amber "only
+if" or "as a peak", red "not plausible". The closing slides are the scoreboard table, the summary, the sources and the
 appendix of checks.
 
 ### Numbers in the text
@@ -167,7 +167,9 @@ that does not exist yet renders as a dashed box naming it, so a slide never show
 - `img/cold-gas-thrust-stand.png` (Claim 3)
 - `img/vertical-hop.png` (Claim 5)
 
-A diagram cell runs once when the notebook opens. An image added later appears after a re-run
+`power-limited-motor.png` and `axle-load.png` show only the block and its connectors, because
+both are pure equations; `traction-control.png` and `suction-fan.png` show their test harnesses.
+The captions say so. A diagram cell runs once when the notebook opens. An image added later appears after a re-run
 of that cell or a reopen.
 
 ### Results the verdicts rest on (baseline car, measured)

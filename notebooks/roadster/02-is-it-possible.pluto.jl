@@ -462,12 +462,13 @@ md"""
 ## Claim 1 · Our model: the launch car
 
 One Dyad model, `RoadsterLaunch`, covers every launch in this notebook. In this section the fan
-and the thrusters are switched off.
+and the thrusters are switched off, so only the bottom-right chain matters: traction control
+sets the torque, the motor delivers it, and the wheel pushes the body.
 """
 
 # ╔═╡ 066d157f-659c-5115-ad05-d595ff52c35c
 diagrams([joinpath(img_dir, "roadster-launch.png") =>
-    "`RoadsterLaunch`: a 1D car driven by its wheels."]; height = "340px")
+    "`RoadsterLaunch`. Top: fan and downforce. Middle left: tank and nozzle. Bottom right: traction control, motor, wheel and body."]; height = "340px")
 
 # ╔═╡ 83b3f4a6-3a68-5399-bba1-ab286974d915
 md"""
@@ -492,11 +493,11 @@ The rest of the car comes from the existing component library.
 # ╔═╡ 10d92e2a-0efa-53cb-908f-508a45c53fad
 diagrams([
     joinpath(img_dir, "power-limited-motor.png") =>
-        "**`PowerLimitedMotor`** delivers the smallest of three torques: the request, 12,000 N·m, and 1 MW divided by the wheel speed.",
+        "**`PowerLimitedMotor`** (equations only, so the picture shows just its connections) delivers the smallest of three torques: the request, 12,000 N·m, and 1 MW divided by the wheel speed.",
     joinpath(img_dir, "axle-load.png") =>
-        "**`AxleLoad`** computes the load on the driven axle: its share of the weight and downforce, plus the load that moves back as the car accelerates. That extra load follows with a 0.1 s delay, like a suspension settling.",
+        "**`AxleLoad`** (equations only) computes the load on the driven axle: its share of the weight and downforce, plus the load that moves back as the car accelerates. That extra load follows with a 0.1 s delay, like a suspension settling.",
     joinpath(img_dir, "traction-control.png") =>
-        "**`TractionControl`** asks for 98 % of the torque the tire can take, `0.98·μ·F_z·r`. If the tire starts to slip past its peak, it cuts the request.",
+        "**`TractionControl`**, shown in its test with a fixed load of 10,000 N and a fixed slip of 0.03, asks for 98 % of the torque the tire can take, `0.98·μ·F_z·r`. If the tire starts to slip past its peak, it cuts the request.",
 ]; height = "300px")
 
 # ╔═╡ abae1e2d-05e7-57ce-94c1-ccf3253dde53
@@ -574,6 +575,9 @@ md"""
 - **What it means:** the tire is the limit for $(fmt(100 * tires.limits.tire, 0)) % of the run.
   A stronger motor would not help.
 """
+
+# ╔═╡ 9dd44b2e-19e5-50f3-8ecd-ca1b60b39231
+md"## Claim 1 · Verdict"
 
 # ╔═╡ 998d436b-2a45-5394-96f2-f88ec80b4ff7
 verdict_box(tires.t60 <= 1.0 ? :yes : :no,
@@ -683,7 +687,7 @@ We added one block, `SuctionFan`, to the launch car.
 
 # ╔═╡ b8dc0784-9c5f-5800-b997-369529968c00
 diagrams([joinpath(img_dir, "suction-fan.png") =>
-    "`SuctionFan`: command in; downforce and fan power out."]; height = "340px")
+    "`SuctionFan` in its upside-down hold test: a constant command drives the fan, which outputs downforce and fan power."]; height = "300px")
 
 # ╔═╡ a0a1a723-c8b2-57e1-99a2-fcf781edb50a
 md"""
@@ -792,6 +796,9 @@ let
     - **Try:** drag the skirt gap to 10 mm and watch the dot climb to about 160 kW.
     """
 end
+
+# ╔═╡ 3fa37ac3-eeae-5b31-8c9d-0ee094052260
+md"## Claim 2 · Verdict"
 
 # ╔═╡ b699e8ab-5de0-5351-b54c-703476a2f793
 let
@@ -995,6 +1002,9 @@ let
     """
 end
 
+# ╔═╡ a1eebfaa-ac28-5511-80f8-83ac87cbd423
+md"## Claim 3 · Verdict"
+
 # ╔═╡ e7533517-ea75-5361-b8a2-bb60c67ca3af
 let
     (; F0, t80, t50) = blowdown.marks
@@ -1068,7 +1078,7 @@ The same `RoadsterLaunch` as in Claim 1, now with the tank and the rear nozzles 
 
 # ╔═╡ 3b0984f3-b69f-54b9-91f1-30fab8cc7881
 diagrams([joinpath(img_dir, "roadster-launch.png") =>
-    "`RoadsterLaunch` with the tank, the nozzles and the force split."]; height = "340px")
+    "`RoadsterLaunch`. Middle row: tank, nozzle, forward gain and forward force. Part of the nozzle's thrust also goes up into the downforce sum."]; height = "340px")
 
 # ╔═╡ 8a7b118f-8b55-51e9-aca7-347662feb106
 md"""
@@ -1244,6 +1254,9 @@ let
     """
 end
 
+# ╔═╡ 9ae7361b-cbcb-5ef8-8f87-8b1b4f5af276
+md"## Claim 4 · Verdict"
+
 # ╔═╡ 92d82a98-af32-53ec-8efc-79ce25173c66
 let
     ok = trims.thrust < 0.9 && trims.rocket < 0.59
@@ -1318,6 +1331,13 @@ pressure falls, even a wide-open valve can no longer carry the weight. Adding up
 that moment gives about **5.4 s** (2,000 kg, 380 bar).
 """
 
+# ╔═╡ 12ebe6b9-cf3d-5ac7-b05d-b34b359fd7d2
+md"""
+## Claim 5 · Physics check: hover time against mass
+
+The same calculation for every mass and three tank pressures.
+"""
+
 # ╔═╡ 65410189-b0b1-5e52-b267-63adb383edc6
 let
     masses = range(1500, 2600; length = 56)
@@ -1350,7 +1370,7 @@ A new model, `VerticalHop`: the car can only move up and down.
 
 # ╔═╡ 14d97564-3dfc-5b16-b9a7-e6437ceee636
 diagrams([joinpath(img_dir, "vertical-hop.png") =>
-    "`VerticalHop`: body, ground contact, tank and the downward nozzles."]; height = "340px")
+    "`VerticalHop`: the command opens the nozzle, the thrust pushes the body up, and the ground contact holds it from below."]; height = "320px")
 
 # ╔═╡ cf43fa07-26f2-5780-88cd-4a4d5d6e5ab5
 md"""
@@ -1520,6 +1540,9 @@ let
     $(fmt(hop_run.air, 0)) kg for the hop. Rotation is cheap; lift is expensive.
     """
 end
+
+# ╔═╡ 1d30f2e4-a668-58d4-8945-17fc3d94ef27
+md"## Claim 5 · Verdict"
 
 # ╔═╡ 4130d78a-3223-5804-899c-07e48ca7ae66
 let
@@ -1701,6 +1724,7 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─44ec27a2-ce80-5e03-af44-7104307276d6
 # ╟─ca0bd79d-2962-5f45-93f1-af7cbd159796
 # ╟─39c8664b-3505-5411-b5c7-87d75a2d2305
+# ╟─9dd44b2e-19e5-50f3-8ecd-ca1b60b39231
 # ╟─998d436b-2a45-5394-96f2-f88ec80b4ff7
 # ╟─51d1218c-32e7-5d65-8a3a-d739ab7262fe
 # ╟─cdb131a1-2d0a-5daa-b6af-25a40c21865a
@@ -1717,6 +1741,7 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─a3d6b00c-9a9c-5405-a396-0c3f88a25de3
 # ╟─c46c6e9a-7269-5b19-8662-d14ef54554ad
 # ╟─691785d8-5309-5564-8bdf-c62da7f64403
+# ╟─3fa37ac3-eeae-5b31-8c9d-0ee094052260
 # ╟─b699e8ab-5de0-5351-b54c-703476a2f793
 # ╟─b6f85d2f-d29d-57a7-8e5a-f88d50751bff
 # ╟─9af7179d-1a05-5fbb-84e8-358e9a628405
@@ -1733,6 +1758,7 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─16a8f827-cd4b-55dc-8b1b-0feb358c99aa
 # ╟─454b7935-c1c3-5914-b6f5-ad13edd86d01
 # ╟─d656e5a8-e471-5ec3-a538-ed704c557b90
+# ╟─a1eebfaa-ac28-5511-80f8-83ac87cbd423
 # ╟─e7533517-ea75-5361-b8a2-bb60c67ca3af
 # ╟─b5dbdf36-0e13-5f76-bf1f-e829202924f3
 # ╟─be9624be-871f-5fd8-a3e7-ee4bf5bc1943
@@ -1753,10 +1779,12 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─e3fe65ed-ec1f-52ef-a417-d8ef143deb5f
 # ╟─0aeb3bc7-8037-575b-ad36-d81a5834ea0c
 # ╟─4e29c85b-03d2-5502-8fed-f7d389f406bc
+# ╟─9ae7361b-cbcb-5ef8-8f87-8b1b4f5af276
 # ╟─92d82a98-af32-53ec-8efc-79ce25173c66
 # ╟─4c7104d2-88a3-5822-a1d7-3b2cba51faea
 # ╟─1a79a088-861a-5983-8a1e-856a5dd2110a
 # ╟─7c3d9060-9dde-5d5c-9c00-5b194e10e521
+# ╟─12ebe6b9-cf3d-5ac7-b05d-b34b359fd7d2
 # ╟─65410189-b0b1-5e52-b267-63adb383edc6
 # ╟─e5e85a35-3f2a-5b7d-a6b2-b0d959c24302
 # ╟─beed5f9f-8952-52ec-99b0-990d9b107f48
@@ -1776,6 +1804,7 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─01e4001b-78f3-53f2-b887-c5730fb68f6e
 # ╟─b05ee7f3-2185-518f-9536-7635c28a8067
 # ╟─efcd227c-be87-5b78-b0a3-49f80f436147
+# ╟─1d30f2e4-a668-58d4-8945-17fc3d94ef27
 # ╟─4130d78a-3223-5804-899c-07e48ca7ae66
 # ╟─4f6ecd1c-90bb-52bd-85da-d989ab7adc4a
 # ╟─4378f115-d8fc-5392-9deb-ead3ccf2eb03
