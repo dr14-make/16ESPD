@@ -126,7 +126,6 @@ have `omega` on top, `p_m` below.
 **Save twice** after the last wire: one <kbd>Ctrl</kbd>+<kbd>S</kbd> can miss it (a known Studio
 bug). Then check the **Problems** tab is empty.
 
-**TODO (screenshot):** `step03-map-engine.png`.
 -->
 
 ---
@@ -191,7 +190,7 @@ pressures are `TestAirPath`'s at 3000 rpm; the torques and fuel are the maps rea
 **The pasted bench carries placement annotations,** so it lays out left to right. Without them
 the parts pile up in one corner.
 
-**TODO (screenshots):** `step03-dyno-bench.png`, `step03-step-plot.png`.
+**TODO (screenshot):** `step03-step-plot.png`.
 -->
 
 ---

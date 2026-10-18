@@ -194,5 +194,4 @@ answers. Build your own.
 **If stuck:** a network error during the add: pair the student with a neighbor; step 01 needs
 only the REPL and the CSV files, which come with the same add.
 
-**TODO (screenshot):** `step00-engine-library.png`, the **+** tree opened at `Vehicle › Engine`.
 -->

@@ -115,12 +115,9 @@ end
 
 **Bench `AirPathStep`** — from **+** → `VehicleSystemsComponents › Vehicle › Engine`:
 
-- `throttle` = `Throttle`, `cylinders` = `CylinderAirflow`, your `Manifold` as `manifold`
-- `throttle_cmd` = `Step` → `throttle.u_thr`
-- `speed` = `Constant(k = 83.776)` → `cylinders.omega` (800 rpm)
-- `no_booster` = `Constant(k = 0)` → `manifold.mdot_bst`
-- flows into `manifold`; `manifold.p_m` back to `throttle` and `cylinders`
-- `initial manifold.p = 101325`
+<img src="/img/step02-airpath-bench.png" class="max-h-72 mx-auto" alt="AirPathStep: throttle_cmd into throttle, no_booster into the manifold, speed into cylinders; both flows into the manifold, and manifold.p_m back to throttle and cylinders.">
+
+*`speed` = `Constant(k = 83.776)`, 800 rpm · `initial manifold.p = 101325`*
 
 </div>
 </div>
@@ -146,8 +143,6 @@ has `u_thr` on top, `p_m` below; `CylinderAirflow` has `p_m` on top, `omega` bel
 **They get wrong:** forgetting the initial line, or putting it after `metadata`. It goes after the
 last `connect`. Without it the solver does not know the manifold starts full of outside air.
 
-**TODO (screenshots):** `step02-manifold-code.png` and `step02-airpath-bench.png`; put the bench
-shot on this slide in place of the bullet list once it exists.
 -->
 
 ---

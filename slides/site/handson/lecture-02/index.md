@@ -48,7 +48,7 @@ A branch for today on your `MyCar`, and the course library beside your own.
 3. <kbd>F1</kbd> → `Dyad: Compile`.
 4. Open any diagram (double-click it in the **Components** tree), click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Engine`. The course library shows under **+**, not in the **Components** tree on the left: that is expected.
 
-<!-- TODO(screenshot): step00-engine-library.png, the + tree at Vehicle › Engine. -->
+[![The diagram toolbar's plus popup opened at VehicleSystemsComponents › Vehicle › Engine: under the folders HandsOn, HandsOn02, Lecture1, Lecture2 and Vehicle › Brake, the Engine folder lists AirPath, CutBlend, CutFuelMap, CutMap, CutTorqueMap, CylinderAirflow, ElectronicThrottle and more, down to MappedEngine, PedalMap and the Test models; Throttle is further down the list.](/handson/lecture-02/img/step00-engine-library.png){style="max-width:324px" width="324" height="878"}](/handson/lecture-02/img/step00-engine-library.png)
 <!-- TODO: pin Pkg.add to a tag once the course library's branch merges. -->
 
 ::: tip Checkpoint
@@ -180,7 +180,7 @@ end
 
 :::
 
-<!-- TODO(screenshot): step02-manifold-code.png. -->
+[![The Manifold component in the code view: the three RealInput ports mdot_thr, mdot_bst and mdot_cyl, the RealOutput p_m, the parameters V_m, T_m and R, the variable p, and the one equation V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl with p_m = p.](/handson/lecture-02/img/step02-manifold-code.png){width="638" height="584"}](/handson/lecture-02/img/step02-manifold-code.png)
 
 #### B · The bench
 
@@ -233,7 +233,7 @@ end
 
 :::
 
-<!-- TODO(screenshot): step02-airpath-bench.png. -->
+[![The AirPathStep diagram: throttle_cmd feeds throttle, no_booster feeds the manifold's middle input and speed feeds cylinders; the throttle and cylinder flows run into the manifold's top and bottom inputs, and the manifold output p_m loops back to both throttle and cylinders.](/handson/lecture-02/img/step02-airpath-bench.png){width="638" height="584"}](/handson/lecture-02/img/step02-airpath-bench.png)
 
 #### C · Run it at idle, then at 3000 rpm
 
@@ -320,7 +320,7 @@ The pedal sets the throttle directly. The manifold pressure comes from `AirPath`
 
 You test the engine on a **dynamometer**: a bench that holds the shaft at a fixed speed whatever the engine does, so a pedal step shows only the engine.
 
-<!-- TODO(screenshot): step03-map-engine.png, the finished MapEngine diagram. -->
+[![The finished MapEngine diagram: pedal and mdot_bst ports on the left feed air; air.p_m fans out to torque_map, fuel_map and the p_m output, and speed.w from the shaft sensor runs over the top to air and both maps; torque_map drives the torque source on the spline and support ports, and fuel_map feeds mdot_fuel and, through the gain co2 with k = 3.09, mdot_co2 on the right edge.](/handson/lecture-02/img/step03-map-engine.png){width="638" height="584"}](/handson/lecture-02/img/step03-map-engine.png)
 
 #### A · Draw the engine
 
@@ -447,7 +447,7 @@ end
 
 :::
 
-<!-- TODO(screenshot): step03-dyno-bench.png. -->
+[![The MapEngineDyno bench left to right: the pedal step and no_booster feed engine; the speed constant k = rpm * pi / 30 drives dyno, which holds the engine shaft; the supports of engine and dyno both go to mounts below.](/handson/lecture-02/img/step03-dyno-bench.png){width="638" height="584"}](/handson/lecture-02/img/step03-dyno-bench.png)
 
 #### C · Run 1: a small pedal step at 90 km/h
 
