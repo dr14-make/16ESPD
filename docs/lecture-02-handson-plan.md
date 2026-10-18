@@ -37,7 +37,9 @@ physics the lecture states and does not teach, and 90 minutes cannot hold them. 
 | `MapEngine` — `AirPath`, a speed sensor, `TorqueMap` (full-load cap inside), `FuelMap`, CO₂ = 3.09·fuel | **built** (drawn in the diagram: 6 given blocks, 15 wires) | The core of the lecture: speed and `p_m` in, torque and fuel out. Drawn, it is the picture of two maps hanging off the same speed and pressure wires; the only number typed is 3.09. |
 | Fuel cut — `FuelCutLogic` (overrun cut and rev limiter), `CutTorqueMap`, `CutFuelMap` | **pasted** into the student's own `MapEngine`: one block, four wires, the two maps retyped (7 lines in two places) | Hysteresis latches are plumbing; what the student needs is what the cut does and when. The maps with a `cut` input keep `TorqueMap`'s and `FuelMap`'s ports, so the paste moves nothing they drew, and the engine with fuel cut is still their own. |
 | `MappedEngine` — fuel cut, pedal curve, throttle actuator lag, crank inertia, λ and emission outputs | given, `Vehicle.Engine`; not used by the students | The library's full engine. Its fuel cut and closed-throttle curve are the same blocks the students paste, so it is the cross-check for step 03 E. |
-| `MappedCar` — Lecture 1's `Car` with the student's `MapEngine` (fuel cut pasted in), a flywheel inertia and later a brake | **built** (diagram edits) | The milestone, as `Car` was in hands-on 1, and both the car and its engine are the student's own. `MapEngine` has no flywheel (the dynamometer set the speed), so the car adds one `Inertia`, J = 0.15 kg·m² as `MappedEngine` assumes, between engine and driveline. |
+| `MappedCar` — Lecture 1's `Car` with the student's `MapEngine` (fuel cut pasted in), a flywheel inertia, the given CVT driveline and later a brake | **built** (diagram edits, one parameter line in code) | The milestone, as `Car` was in hands-on 1, and both the car and its engine are the student's own. `MapEngine` has no flywheel (the dynamometer set the speed), so the car adds one `Inertia`, J = 0.15 kg·m² as `MappedEngine` assumes, between engine and driveline. |
+| `CVTDriveline` — centrifugal launch clutch (engages around 1300 rpm) and a CVT, ratio 12.0–2.8 with final drive, engine speed scheduled from the pedal, 1800–6000 rpm, through a 0.5 s lag | given, `Vehicle` | The fixed 4.0 gear cannot start from rest (the engine would turn at 0 rpm, where it gives no torque) and sits on the rev limiter flat out. A clutch and a ratio controller are plumbing; the lesson is the map. Same four mechanical ports as hands-on 1's `Driveline`, plus `pedal`. |
+| `RoadBrake` — friction force `F_cmd · tanh(v / 0.05 m/s)` between body and road | given, `Vehicle` | A `Force` source pushes the car backwards once it stops, and its sign depends on the wiring. The regularized friction stops the car and holds it, either way round. |
 | Scenario benches | **built** (sources and initial lines) | Same pattern as hands-on 1; each is a few blocks. |
 | WLTC driver and gearbox (scope B) | given, if it exists | Task 6. Not in the 90 minutes. |
 
@@ -45,8 +47,10 @@ Student reference solutions go in the subpackage `dyad/HandsOn02/`, as `dyad/Han
 hands-on 1's. Step 03's `MapEngine`, `MapEngineDyno` and `MapEngineDynoTransient` are there, and so
 are the same two after the fuel-cut paste, `MapEngineFuelCut` and `MapEngineFuelCutDyno` with
 `MapEngineFuelCutDynoTransient`. Students edit their one `MapEngine` in place; the repository keeps
-both states, because runs 1 and 2 must keep reading the engine without the cut. Their checkpoints
-are in `test/engine_plausibility.jl`; the other steps' are still to write.
+both states, because runs 1 and 2 must keep reading the engine without the cut. Steps 04–06 are
+there too: `MappedCar` with `MappedCarWOT`, `MappedCarCruise` and `MappedCarCoast`, and the car
+after step 06 B, `MappedCarWithBrake`, with `MappedCarBrakeStop`. Every step's checkpoints are in
+`test/engine_plausibility.jl`.
 
 ## Steps
 
@@ -211,96 +215,108 @@ written, and how long the step takes, is not yet seen.
 
 ### Step 04 · The car with a mapped engine · 12 min
 
-**Goal.** Your Lecture 1 car with the new engine; full pedal from rest reaches a real top
-speed, not 246 km/h.
+**Goal.** Your Lecture 1 car with the new engine and a CVT; full pedal from rest launches through
+the clutch and reaches a real top speed, not 246 km/h.
 
-**Built / given.** Built: `MappedCar` (duplicate `Car`), bench `MappedCarWOT`. The engine is the
-student's own `MapEngine` from step 03, fuel cut included.
+**Built / given.** Built: `MappedCar` (duplicate `Car`), bench `MappedCarWOT` (pasted). Given:
+`Vehicle.CVTDriveline`. The engine is the student's own `MapEngine` from step 03, fuel cut
+included.
 
 **Actions.** Duplicate `Car` → `MappedCar`; delete `engine`, place the student's `MapEngine` as
-`engine`; rename the input `tau_cmd` → `pedal`; add `flywheel` =
-`RotationalComponents.Components.Inertia(J = 0.15)` and wire `engine.spline` → `flywheel.spline_a`,
-`flywheel.spline_b` → `driveline.spline`; `Constant(0)` → `engine.mdot_bst`; new outputs `p_m`
-(from `engine.p_m`) and `fuel_lph` (`Gain(k = 3600/0.745)` on `engine.mdot_fuel`); bench with
-`Constant(1)` pedal, start at rest, 120 s. The flywheel is the smallest way to give the car the
-crank inertia `MapEngine` lacks: one block on the shaft, and the engine stays as it ran on the
-dynamometer. J = 0.15 kg·m² is `MappedEngine`'s assumed `J_e`.
+`engine`; delete `driveline`, place `Vehicle.CVTDriveline` as `driveline` on the same four
+mechanical ports; rename the input `tau_cmd` → `pedal` and wire it to `engine.pedal` and
+`driveline.pedal`; add `flywheel` = `RotationalComponents.Components.Inertia(J = 0.15)` between
+`engine.spline` and `driveline.spline`; `Constant(0)` → `engine.mdot_bst`; new outputs `p_m`
+(from `engine.p_m`) and `fuel_lph` (`Gain(k = 3600/0.745)` on `engine.mdot_fuel`); in code, a
+`parameter ratio_initial::Real = 12` passed to `CVTDriveline(ratio_initial = ratio_initial)`.
+Bench: `Constant(1)` pedal, car at rest, engine at 900 rpm, 120 s.
 
-**Reference model.** To build: `HandsOn02.MappedCar` (on `HandsOn02.MapEngineFuelCut` with the
-flywheel), `HandsOn02.MappedCarWOT`, `HandsOn02.MappedCarWOTTransient`.
+The bench sets `car.body.mass.s`, `car.body.mass.v`, `car.flywheel.w`, `car.flywheel.phi`,
+`car.driveline.clutch.spline_b.phi` and `car.engine.air.manifold.p`: the clutch lets the engine
+and the wheel turn apart, so each side needs its own speed and angle. `ratio_initial` is a car
+parameter because a nested modifier on the driveline, `MappedCar(driveline(ratio_initial = …))`,
+resolves bench parameters inside the car and fails at setup.
 
-**Checkpoint:**
+**Reference model.** `HandsOn02.MappedCar` (on `HandsOn02.MapEngineFuelCut`),
+`HandsOn02.MappedCarWOT`, `HandsOn02.MappedCarWOTTransient`.
 
-- Top speed about **190 km/h**: drag alone would allow 192 km/h at 6570 rpm (from
-  `full_load.csv` and the hands-on car), but the rev limiter cuts fuel at 6500 rpm =
-  **189.9 km/h** and resumes at 6300 rpm = 184.1 km/h (`FuelCutLogic` defaults, task 3).
-- **TODO** time to 100 km/h, and whether the speed visibly saws between 184 and 190 km/h — read
-  off `HandsOn02.MappedCarWOTTransient`.
-- **TODO** the initial lines the bench needs (the engine shaft and the flywheel are tied to the
-  wheel, so only `body.mass.s`, `body.mass.v` and `engine.air.manifold.p` should be set) — confirm
-  on the reference. A trial of this car found two things the reference must settle: from v = 0 it
-  does not move, because the full-load curve is 0 N·m at 0 rpm and caps the torque; started at
-  2 m/s it reaches 189.9 km/h and the solver then stops with MaxIters at about 87 s on the rev
-  limiter. The same car with `MappedEngine` does both too.
+**Checkpoint** ("Hands-on 02 CVT" testset):
+
+- Launch: the engine flares to **1300 rpm** while the clutch slips; it locks at **1.33 s**,
+  13.7 km/h, 1414 rpm.
+- **0–100 km/h in 10.4 s.** The engine peaks at **6390 rpm** at 6.4 s, under the 6500 rpm
+  limiter (the ratio sits on its 12.0 stop up to about 58 km/h), then settles at 6000 rpm. The
+  fuel is never cut.
+- **197 km/h at 60 s, 205 km/h at 120 s**, 205.3 km/h terminal, ratio 3.41: 126.5 N·m at 6000 rpm
+  and 98.8 kPa, 79.5 kW, equals the road load there.
 
 **Screenshots.** `step04-mapped-car.png`, `step04-wot-plot.png`.
 
 ### Step 05 · Cruise: fuel and CO₂ · 12 min
 
 **Goal.** Hold 50, 90 and 130 km/h, read `fuel_lph`, turn it into L/100 km and g CO₂/km by hand,
-and compare with step 01's prediction.
+and compare with step 01's fixed-gear prediction.
 
-**Built / given.** Built: bench `MappedCarCruise` (one bench, three pedal values).
+**Built / given.** Built: bench `MappedCarCruise` (pasted; one bench, three runs from the REPL).
 
-**Actions.** `Constant(k = pedal)` into `car.pedal`, start at the cruise speed, run 60 s, read
-`car.v_kmh`, `car.fuel_lph`, `car.p_m` at the end; L/100 km = L/h ÷ km/h × 100; g CO₂/km =
-2302 × L/h ÷ km/h (1 L of petrol burns to 2.30 kg CO₂).
+**Actions.** Paste the bench; it starts steady at `speed_kmh`, with the engine at `rpm0`, the CVT
+at the matching ratio and the manifold at `p_m0`, and holds `pedal_cmd`. Run 60 s at the
+defaults (90 km/h) and with the given values for 50 and 130 km/h; read `car.v_kmh`,
+`car.fuel_lph`, `car.p_m` at 60 s; L/100 km = L/h ÷ km/h × 100; g CO₂/km = 2302 × L/h ÷ km/h.
 
-**Reference model.** To build: student `HandsOn02.MappedCarCruise`, on the car with the student's
-engine.
+| km/h | `pedal_cmd` | `rpm0` | `p_m0` |
+|---|---|---|---|
+| 50 | 0.04878 | 1992 | 40100 |
+| 90 | 0.0916 | 2182 | 54420 |
+| 130 | 0.17373 | 3118 | 67220 |
 
-**Checkpoint** (the plan's predicted anchors, reproduced from the CSVs):
+**Reference model.** `HandsOn02.MappedCarCruise`, `HandsOn02.MappedCarCruiseTransient`.
 
-| km/h | rpm | N·m | `p_m` kPa | L/h | L/100 km | g CO₂/km |
-|---|---|---|---|---|---|---|
-| 50 | 1710 | 18.4 | 41.9 | 1.67 | **3.3** | **77** |
-| 90 | 3080 | 31.1 | 47.8 | 4.11 | **4.6** | **105** |
-| 130 | 4450 | 51.0 | 60.8 | 9.14 | **7.0** | **162** |
+**Checkpoint** ("Hands-on 02 CVT cruise" testset; each speed held within 0.25 km/h for 60 s):
 
-**TODO** the pedal values that hold each speed, to three decimals, from
-`HandsOn02.MappedCarCruise`. With them, confirm the speed holds within ±1 km/h over 60 s. The car
-runs the student's `MapEngine`, whose pedal drives the throttle directly, so expect the dynamometer
-values 0.044 / 0.103 / 0.190, not `MappedEngine`'s 0.124 / 0.220 / 0.331; the page's search now
-starts at 0.1.
+| km/h | rpm | ratio | `p_m` kPa | L/h | L/100 km | g CO₂/km | fixed gear (step 01) |
+|---|---|---|---|---|---|---|---|
+| 50 | 1992 | 4.64 | 40.1 | 1.84 | **3.7** | **85** | 3.3 at 1710 rpm |
+| 90 | 2182 | 2.83 | 54.4 | 3.55 | **3.9** | **91** | 4.6 at 3080 rpm |
+| 130 | 3118 | 2.80 | 67.2 | 7.78 | **6.0** | **138** | 7.0 at 4450 rpm |
+
+The fuel map read at the CVT's rpm and `p_m` gives the car's fuel flow to 1 %. The CVT burns
+more at 50 km/h because its schedule never goes below 1800 rpm, where the fixed gear runs
+1710 rpm, and less at 90 and 130 because it runs the engine slower and less throttled. A
+fuel-optimal schedule along the map's lowest-consumption line is an extension, not built.
 
 **Screenshots.** `step05-cruise-bench.png`, `step05-cruise-90-plot.png`.
 
 ### Step 06 · Coast-down and a brake stop · 8 min
 
-**Goal.** Release the pedal at 90 km/h: fuel goes to zero and the engine brakes the car;
-brake to a stop and watch the vacuum the brake booster will draw on.
+**Goal.** Release the pedal at 90 km/h: fuel goes to zero and the engine brakes the car; then
+brake to rest and hold there, and watch the vacuum the brake booster will draw on.
 
-**Built / given.** Built: a `brake` input on `MappedCar` (`TranslationalComponents.Sources.Force`
-between the body and ground) and bench `MappedCarCoast`.
+**Built / given.** Built: bench `MappedCarCoast` (copy of `MappedCarCruise`), then an `F_brake`
+input and `brake` = `Vehicle.RoadBrake` in `MappedCar`, and `brake_cmd` in the bench. Given:
+`Vehicle.RoadBrake`.
 
-**Actions.** Pedal `Step` from the 90 km/h value to 0 at 5 s; run 90 s; plot `fuel_lph`, `p_m`,
-`v_kmh`. Then a brake force `Step` of 4000 N at 5 s; run until the car is below 25 km/h.
+**Actions.** Pedal `Step` from the 90 km/h value to 0 at 5 s; run 100 s; plot `v_kmh`,
+`engine.speed.w`, `fuel_lph`, `p_m`. Then `brake_cmd` = `Step(height = 4000, start_time = 5)` →
+`car.F_brake`, and run 20 s; the other benches get `Constant(0)` into `car.F_brake`.
 
-**Reference model.** To build: student `HandsOn02.MappedCarCoast` with its coast-down and
-brake-stop analyses, on the car with the student's engine.
+**Reference model.** `HandsOn02.MappedCarCoast` and `MappedCarCoastTransient` (part A);
+`HandsOn02.MappedCarWithBrake`, `MappedCarBrakeStop` and `MappedCarBrakeStopTransient` (part B).
 
-**Checkpoint:**
+**Checkpoint** ("Hands-on 02 CVT coast and brake" testset):
 
-- At release: fuel **4.11 → 0 L/h**; `tau_e` ≈ **−19 N·m** (`closed_throttle.csv` at 3080 rpm);
-  deceleration **0.46 m/s²** against 0.29 in neutral (drag + rolling 401 N plus 246 N of engine
-  braking, on 1400 kg).
-- `p_m` falls to about **13.5 kPa** (overrun, `TestAirPath`) and rises as speed falls.
-- Fuel stays cut down to **1000 rpm = 29.2 km/h**, then resumes; cut only arms above 1300 rpm =
-  38.0 km/h (`FuelCutLogic` defaults, task 3).
-- **TODO** `p_m` at fuel resume and during the brake stop, the brake force's sign as wired,
-  and the stop time — from the reference runs.
+- At release: fuel **3.55 → 0 L/h** within 10 ms; `p_m` **17.1 kPa** (the engine turns
+  2150 rpm, not 3000, so not step 02's 13.5); **0.39 m/s²** against 0.29 in neutral.
+- From 70 to 30 km/h the CVT holds the engine at **1730–1780 rpm**, still cut.
+- Clutch open at **66.0 s, 11.2 km/h**, 1140 rpm; fuel back at **66.3 s, 10.8 km/h**, below
+  1000 rpm, `p_m` **27.4 kPa**; idle **775 rpm**, 33.6 kPa, 0.47 L/h; at rest at about 91 s.
+- Brake stop: **3.2 m/s²**; 25 km/h at 10.7 s; **at rest at 12.9 s** and held; `p_m` 17.6–33.7 kPa
+  throughout; fuel back and clutch open at 12.0 s, 10.4 km/h; no stall, idle at 775 rpm.
+- `RoadBrake` slows a 1400 kg mass at 4000 / 1400 m/s² and holds it at rest, wired either way
+  round ("Vehicle road brake" testset).
 
-**Screenshots.** `step06-coast-plot.png`, `step06-brake-plot.png`.
+**Screenshots.** `step06-coast-plot.png`, `step06-mapped-car-brake.png`,
+`step06-brake-plot.png`.
 
 ### Hand in · 3 min
 
@@ -327,12 +343,8 @@ compare against (with its source).
 |---|---|---|
 | Course-library tag to pin | step 00 | the branch merging |
 | Rehearsal of the 15-wire `MapEngine` drawing | step 03 | rehearsal in Studio |
-| Initial lines of the car benches | steps 04–06 | `HandsOn02.MappedCar*` |
-| Time to 100 km/h; rev-limiter sawtooth | step 04 | `HandsOn02.MappedCarWOTTransient` |
-| Pedal values for 50/90/130 km/h | steps 05–06 | `HandsOn02.MappedCarCruise` |
-| `p_m` at resume and under braking; brake sign; stop time | step 06 | `HandsOn02.MappedCarCoast` runs |
 | WLTC numbers and the label | step 07 | task 6 |
-| Every screenshot | all | `docs/lecture-02-handson-screenshots.md` |
+| Screenshots of step 07 | step 07 | task 6 |
 
 ## Settled with the lecturer
 
@@ -342,9 +354,11 @@ compare against (with its source).
   `MapEngine` in step 03 E; the swap to the library `MappedEngine` is dropped.
 - **The car's engine:** the student's own `MapEngine` with the pasted fuel cut, plus a flywheel
   inertia in the car. `MappedEngine` stays in the library as the cross-check.
+- **Fixed gear or clutch:** a clutch and a CVT. The one-gear car could not start from rest and
+  sat on the rev limiter; braking to a stop stalled its engine. The car now carries the given
+  `CVTDriveline`, whose centrifugal clutch opens near idle, so the brake stop runs to rest and
+  the engine idles on. The brake is the given `RoadBrake`, which holds the car at rest.
 
 ## Open questions for the lecturer
 
-- The one-gear car has no clutch: braking to standstill stalls the engine and `p_m` climbs to
-  ambient. Stop the brake run at about 25 km/h, or add a clutch?
 - Do students add the course library by URL (as here), or clone the course repository?

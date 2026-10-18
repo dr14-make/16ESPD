@@ -3,7 +3,7 @@
 The screenshots the Lecture 2 hands-on guide and its projector deck need, one table per step
 of `docs/lecture-02-handson-plan.md`. The diagrams are Studio screenshots of the student
 reference models in `dyad/HandsOn02/`, which hold the components exactly as the guide builds
-them, under the guide's names. Those models are task 4's to write. The list follows the build, so it doubles as a rehearsal
+them, under the guide's names. The list follows the build, so it doubles as a rehearsal
 script. Save the files to `slides/images/handson-02/` under the names given;
 `scripts/images.mjs` copies them into the deck and the guide. The guide shows every image, the
 picture of the finished model at the start of each build; the projector deck shows only that
@@ -62,23 +62,23 @@ Plotly. At 990 × 528, GR clips the axis labels without `margin = 5Plots.mm`.
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step04-mapped-car.png` | `HandsOn02.MappedCar` | `pedal` input → `engine` (the student's `MapEngine`) → `flywheel` → `driveline` → `body`; `no_booster` → `engine.mdot_bst`; outputs `v_kmh`, `p_m`, `fuel_lph` on the right edge; the grounds. Shoot before step 06 adds the brake. |
-| `step04-wot-plot.png` | `HandsOn02.MappedCarWOTTransient` | `car.v_kmh` from rest to about 190 km/h over 120 s, with a dashed line at 246 km/h for Lecture 1's car. |
+| `step04-mapped-car.png` | `HandsOn02.MappedCar` | `pedal` input → `engine` (the student's `MapEngine`) and → `driveline.pedal`; `engine` → `flywheel` → `driveline` (the given `CVTDriveline`) → `body` → `vsensor` → `to_kmh` in one row; `no_booster` → `engine.mdot_bst`; outputs `v_kmh`, `p_m`, `fuel_lph` on the right edge; the grounds. Before step 06 adds the brake. A `dyad render` (dyad-cli 3.4.0), rasterized and trimmed, as step 03 E. |
+| `step04-wot-plot.png` | `HandsOn02.MappedCarWOTTransient` | Two axes over 120 s: `car.v_kmh` from rest to 205 km/h with a dashed line at 246 km/h for hands-on 1's car; engine speed in rpm, held at 1300 rpm while the clutch slips, peaking at 6390 rpm below a dashed 6500 rpm limiter, settling at 6000. |
 
 ## Step 05 — cruise
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step05-cruise-bench.png` | `HandsOn02.MappedCarCruise` | `pedal` constant → `car.pedal`, and the `initial` lines in the code view beside it. |
-| `step05-cruise-90-plot.png` | `HandsOn02.MappedCarCruiseTransient`, 90 km/h | Two axes: `car.v_kmh` flat at 90, `car.fuel_lph` flat at 4.1. |
+| `step05-cruise-bench.png` | `HandsOn02.MappedCarCruise` | `pedal` constant → `car.pedal`. A `dyad render`; the `initial` lines are in the guide's code block. |
+| `step05-cruise-90-plot.png` | `HandsOn02.MappedCarCruiseTransient`, defaults (90 km/h) | Two axes: `car.v_kmh` flat at 90, `car.fuel_lph` flat at 3.55. |
 
 ## Step 06 — coast-down and brake stop
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step06-coast-plot.png` | `HandsOn02.MappedCarCoastTransient`, no brake | Three axes: `car.v_kmh` from 90 down past 29 km/h, `car.fuel_lph` 4.1 → 0 at 5 s and back on at 29 km/h, `car.p_m` dropping to about 13.5 kPa. |
-| `step06-mapped-car-brake.png` | `HandsOn02.MappedCar`, after step 06 B | The car with the `F_brake` input and `brake` between `body.flange` and `trans_ground`. |
-| `step06-brake-plot.png` | `HandsOn02.MappedCarCoastTransient`, with the brake step | `car.v_kmh` and `car.p_m` through the stop, ending before the engine would stall. |
+| `step06-coast-plot.png` | `HandsOn02.MappedCarCoastTransient` | Four axes over 100 s: `car.v_kmh` from 90 to rest at about 91 s; engine rpm held near 1750 by the CVT, then idle at 775 with a dashed line at 1000; `car.fuel_lph` 3.55 → 0 at 5 s and back on at 66.3 s; `car.p_m` down to 17.1 kPa, then 33.6 at idle. |
+| `step06-mapped-car-brake.png` | `HandsOn02.MappedCarWithBrake` | The car with the `F_brake` input and the given `RoadBrake` between `body.flange` and `trans_ground`. A `dyad render`. |
+| `step06-brake-plot.png` | `HandsOn02.MappedCarBrakeStopTransient` | The same four axes over 20 s: the car at rest at 12.9 s and held there, the engine idling at 775 rpm, `car.p_m` between 17.6 and 33.7 kPa. |
 
 ## Step 07 — WLTC (if time allows)
 
@@ -102,5 +102,5 @@ To be listed with task 6.
 | `step05-cruise-bench.png` | `HandsOn02.MappedCarCruise` | — |
 | `step05-cruise-90-plot.png` | — | `HandsOn02.MappedCarCruiseTransient` |
 | `step06-coast-plot.png` | — | `HandsOn02.MappedCarCoastTransient` |
-| `step06-mapped-car-brake.png` | `HandsOn02.MappedCar`, with the brake | — |
-| `step06-brake-plot.png` | — | `HandsOn02.MappedCarCoastTransient`, brake on |
+| `step06-mapped-car-brake.png` | `HandsOn02.MappedCarWithBrake` | — |
+| `step06-brake-plot.png` | — | `HandsOn02.MappedCarBrakeStopTransient` |

@@ -183,20 +183,27 @@ routeAlias: mapped-car
 
 ## The car with a mapped engine
 
-<div class="max-w-200">
+<div class="grid grid-cols-[2fr_3fr] gap-8 items-start">
+<div>
 
-**Goal:** your hands-on 1 car with your own engine, a flywheel and a pedal, floored from rest.
+**Goal:** your hands-on 1 car with your own engine, a flywheel, a pedal and a given CVT, floored from rest.
 
 > **Checkpoint**
 >
-> Top speed about **190 km/h**, not 246:
-> the rev limiter at **6500 rpm**.
+> - clutch slips at **1300 rpm**, locks at **1.33 s**, 13.7 km/h
+> - 0–100 km/h in **10.4 s**
+> - peak **6390 rpm**, under the 6500 limiter; then 6000
+> - top speed **205 km/h**, not 246
 
 [Guide: step 04 →](../handson/lecture-02/#mapped-car)
 
 </div>
+<div>
 
-<!-- TODO(screenshot): step04-mapped-car.png, once HandsOn02.MappedCar exists. -->
+![MappedCar: pedal into engine and driveline; engine, flywheel, CVT driveline, body, vsensor and to_kmh in one row; p_m and fuel_lph outputs along the top; the grounds below.](/img/step04-mapped-car.png)
+
+</div>
+</div>
 
 <!--
 Tutor guide: ../handson/lecture-02/tutor.html#mapped-car
@@ -210,23 +217,28 @@ routeAlias: cruise
 
 ## Cruise: fuel and CO₂
 
-<div class="max-w-200">
+<div class="grid grid-cols-[3fr_1fr] gap-8 items-start">
+<div>
 
 **Goal:** hold 50, 90 and 130 km/h, and read the numbers on a car's sticker.
 
 > **Checkpoint**
 >
-> | km/h | `p_m` kPa | L/h | L/100 km | g CO₂/km |
-> | --: | --: | --: | --: | --: |
-> | 50 | 41.9 | 1.67 | **3.3** | **77** |
-> | 90 | 47.8 | 4.11 | **4.6** | **105** |
-> | 130 | 60.8 | 9.14 | **7.0** | **162** |
+> | km/h | rpm | `p_m` kPa | L/h | L/100 km | g CO₂/km | fixed gear |
+> | --: | --: | --: | --: | --: | --: | --: |
+> | 50 | 1992 | 40.1 | 1.84 | **3.7** | **85** | 3.3 |
+> | 90 | 2182 | 54.4 | 3.55 | **3.9** | **91** | 4.6 |
+> | 130 | 3118 | 67.2 | 7.78 | **6.0** | **138** | 7.0 |
 
 [Guide: step 05 →](../handson/lecture-02/#cruise)
 
 </div>
+<div>
 
-<!-- TODO(screenshot): step05-cruise-bench.png, once HandsOn02.MappedCarCruise exists. -->
+![MappedCarCruise: a constant pedal into the car.](/img/step05-cruise-bench.png)
+
+</div>
+</div>
 
 <!--
 Tutor guide: ../handson/lecture-02/tutor.html#cruise
@@ -240,22 +252,27 @@ routeAlias: coast-brake
 
 ## Coast-down and a brake stop
 
-<div class="max-w-200">
+<div class="grid grid-cols-[2fr_3fr] gap-8 items-start">
+<div>
 
-**Goal:** lift off at 90 km/h and watch the fuel stop; then brake, and read the vacuum.
+**Goal:** lift off at 90 km/h and watch the fuel stop; then brake to rest, and read the vacuum.
 
 > **Checkpoint**
 >
-> - at 5 s: fuel **4.11 → 0 L/h**, *p<sub>m</sub>* ≈ **13.5 kPa**
-> - slowing at **0.46 m/s²** (in neutral 0.29)
-> - fuel back at **29 km/h**
-> - braking: *p<sub>m</sub>* stays deep below 101 kPa
+> - at 5 s: fuel **3.55 → 0 L/h**, *p<sub>m</sub>* **17.1 kPa**, **0.39 m/s²**
+> - fuel back at **11 km/h**, 66 s, below 1000 rpm
+> - braking 4000 N: at rest in **7.9 s**, *p<sub>m</sub>* ≤ 34 kPa
+> - the engine idles at **775 rpm**: no stall
 
 [Guide: step 06 →](../handson/lecture-02/#coast-brake)
 
 </div>
+<div>
 
-<!-- TODO(screenshot): step06-coast-plot.png, once HandsOn02.MappedCarCoast exists. -->
+![MappedCar with the F_brake input and the given RoadBrake between body and trans_ground.](/img/step06-mapped-car-brake.png)
+
+</div>
+</div>
 
 <!--
 Tutor guide: ../handson/lecture-02/tutor.html#coast-brake
@@ -305,16 +322,16 @@ routeAlias: wrap-up
 
 ## What you measured
 
-| Step | What | Predicted | From |
+| Step | What | Number | From |
 | --- | --- | --- | --- |
 | 01 | 90 km/h on the map | 47.8 kPa, 0.85 g/s | the tables, by hand |
 | 02 | manifold at idle, overrun, wide open | 33.0 · 13.5 · 99.9 kPa | mass balance |
 | 03 | full load at 3000 rpm | 148.4 N·m, 3.75 g/s | map, capped |
-| 04 | top speed | ≈ 190 km/h, not 246 | rev limiter |
-| 05 | cruise 50 · 90 · 130 km/h | 3.3 · 4.6 · 7.0 L/100 km | 77 · 105 · 162 g CO₂/km |
-| 06 | lift off at 90 km/h | 0 L/h, 0.46 m/s² | fuel cut |
+| 04 | top speed with a CVT | 205 km/h, not 246 | 79.5 kW at 6000 rpm |
+| 05 | cruise 50 · 90 · 130 km/h | 3.7 · 3.9 · 6.0 L/100 km | 85 · 91 · 138 g CO₂/km |
+| 06 | lift off at 90 km/h | 0 L/h down to 11 km/h | fuel cut, CVT |
 
-Every number was known before the model ran. Where your run agreed, your model is right.
+Steps 01–03 were known before the model ran; from step 04 the car reads the same maps at the CVT's points. Where your run agreed, your model is right.
 
 <!--
 Tutor guide: ../handson/lecture-02/tutor.html#wrap-up
