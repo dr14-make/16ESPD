@@ -1,0 +1,130 @@
+"""Hands-on 02 mapped-engine car with a centrifugal launch clutch and CVT."""
+component MappedCarCVT
+  "Initial total CVT ratio (assumed launch setting; override for initialized cruise)"
+  parameter ratio_initial::Real = 12.0
+  "Pedal, 0 released to 1 floored"
+  pedal = RealInput() {^pedal}
+  "Vehicle speed [km/h]"
+  v_kmh = RealOutput() {^v_kmh}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealOutput() {^p_m}
+  "Fuel volume flow [L/h]"
+  fuel_lph = RealOutput() {^fuel_lph}
+  engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut() {^engine}
+  "Specified Hands-on 02 flywheel inertia"
+  flywheel = RotationalComponents.Components.Inertia(J = 0.15) {^flywheel}
+  driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(ratio_initial = ratio_initial) {^driveline}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  zero_booster = BlockComponents.Sources.Constant(k = 0.0) {^zero_booster}
+  speed_sensor = TranslationalComponents.Sensors.VelocitySensor() {^speed_sensor}
+  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
+  "3600 s/h divided by gasoline density 0.745 kg/L (Hands-on 02)"
+  fuel_to_lph = BlockComponents.Math.Gain(k = 4832.2) {^fuel_to_lph}
+  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  road = TranslationalComponents.Components.Fixed() {^road}
+relations
+  connect(pedal, engine.pedal, driveline.pedal) {^w1}
+  connect(zero_booster.y, engine.mdot_bst) {^w2}
+  connect(engine.spline, flywheel.spline_a) {^w3}
+  connect(flywheel.spline_b, driveline.spline) {^w4}
+  connect(engine.support, rot_ground.spline) {^w5}
+  connect(driveline.support_r, rot_ground.spline) {^w6}
+  connect(driveline.flange, body.flange, speed_sensor.flange) {^w7}
+  connect(driveline.support_t, road.flange) {^w8}
+  connect(speed_sensor.v, to_kmh.u) {^w9}
+  connect(to_kmh.y, v_kmh) {^w10}
+  connect(engine.p_m, p_m) {^w11}
+  connect(engine.mdot_fuel, fuel_to_lph.u) {^w12}
+  connect(fuel_to_lph.y, fuel_lph) {^w13}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/Car.svg"}},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": -25, "y1": 175, "x2": 25, "y2": 225}}}},
+    "v_kmh": {"Dyad": {"placement": {"diagram": {"x1": 1175, "y1": 175, "x2": 1225, "y2": 225}}}},
+    "p_m": {"Dyad": {"placement": {"diagram": {"x1": 1175, "y1": 275, "x2": 1225, "y2": 325}}}},
+    "fuel_lph": {"Dyad": {"placement": {"diagram": {"x1": 1175, "y1": 375, "x2": 1225, "y2": 425}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 120, "y1": 400, "x2": 260, "y2": 540}}}},
+    "flywheel": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 420, "x2": 440, "y2": 520}}}},
+    "driveline": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 400, "x2": 660, "y2": 540}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 790, "y1": 420, "x2": 890, "y2": 520}}}},
+    "zero_booster": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 650, "x2": 120, "y2": 750}}}},
+    "speed_sensor": {"Dyad": {"placement": {"diagram": {"x1": 790, "y1": 180, "x2": 890, "y2": 280}}}},
+    "to_kmh": {"Dyad": {"placement": {"diagram": {"x1": 970, "y1": 180, "x2": 1070, "y2": 280}}}},
+    "fuel_to_lph": {"Dyad": {"placement": {"diagram": {"x1": 970, "y1": 600, "x2": 1070, "y2": 700}}}},
+    "rot_ground": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 760, "x2": 440, "y2": 860}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 590, "y1": 760, "x2": 690, "y2": 860}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 480, "y": 200}], "E": 3}], "junctions": [{"x": 80, "y": 200}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 680}, {"x": 390, "y": 680}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 590, "y": 720}, {"x": 390, "y": 720}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 740, "y": 230}], "E": 3}], "junctions": [{"x": 740, "y": 470}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 300}, {"x": 1140, "y": 300}], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 650}], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1140, "y": 650}, {"x": 1140, "y": 400}], "E": 2}]}}
+  }
+}
+end
+
+
+"""CVT car initialized at a requested steady road speed for cruise measurements."""
+component MappedCarCVTCruise
+  "Road speed [km/h] (test scenario)"
+  parameter speed_kmh::Real = 90.0
+  "Constant pedal setting (test scenario)"
+  parameter pedal_cmd::Real = 0.06
+  "Initial manifold pressure [Pa] (derived steady-state guess)"
+  parameter p_m0::Pressure = 45e3
+  "Initial CVT ratio (derived from target engine speed and road speed)"
+  parameter ratio0::Real = 6.0
+  pedal_source = BlockComponents.Sources.Constant(k = pedal_cmd)
+  car = VehicleSystemsComponents.HandsOn02.MappedCarCVT(ratio_initial = ratio0)
+relations
+  connect(pedal_source.y, car.pedal)
+  initial car.body.mass.s = 0.0
+  initial car.body.mass.v = speed_kmh / 3.6
+  initial car.flywheel.phi = 0.0
+  initial car.driveline.clutch.spline_b.phi = 0.0
+  initial car.engine.air.manifold.p = p_m0
+  initial car.engine.cut_logic.decel.y = 0.0
+end
+
+analysis MappedCarCVTCruiseTransient
+  extends TransientAnalysis(stop = 60.0)
+  parameter speed_kmh::Real = 90.0
+  parameter pedal_cmd::Real = 0.06
+  parameter p_m0::Pressure = 45e3
+  parameter ratio0::Real = 6.0
+  model = MappedCarCVTCruise(speed_kmh = speed_kmh, pedal_cmd = pedal_cmd, p_m0 = p_m0, ratio0 = ratio0)
+end
+
+"""Wide-open acceleration from rest and idle to CVT-car terminal speed."""
+component MappedCarCVTWOT
+  full_pedal = BlockComponents.Sources.Constant(k = 1.0) {^full_pedal}
+  car = VehicleSystemsComponents.HandsOn02.MappedCarCVT() {^car}
+relations
+  connect(full_pedal.y, car.pedal) {^w1}
+  initial car.body.mass.s = 0.0
+  initial car.body.mass.v = 0.0
+  initial car.flywheel.phi = 0.0
+  initial car.flywheel.w = 900 * pi / 30
+  initial car.driveline.clutch.spline_b.phi = 0.0
+  initial car.engine.air.manifold.p = 101325.0
+metadata {
+  "_links": {
+    "full_pedal": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 450, "x2": 280, "y2": 550}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 400, "x2": 660, "y2": 540}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+
+end
+
+analysis MappedCarCVTWOTTransient
+  extends TransientAnalysis(stop = 300.0)
+  model = MappedCarCVTWOT()
+end

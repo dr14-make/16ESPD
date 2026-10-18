@@ -371,3 +371,64 @@ const MapEngineFuelCutDynoTransient = VehicleSystemsComponents.HandsOn02.MapEngi
 
     @info "Hands-on 02 fuel cut" t_cut tau_cut rpm[resume] t[resume] idle
 end
+
+
+
+@testset "Hands-on 02 CVT" begin
+    run = mapped_engine_run(VehicleSystemsComponents.HandsOn02.MappedCarCVTWOTTransient)
+    car, sol = run.model.car, run.sol
+    sample_t = range(0.0, sol.t[end]; length = 30_001)
+    speed = sol(sample_t, idxs = car.v_kmh)
+    rpm = sol(sample_t, idxs = car.flywheel.w) .* 30 ./ pi
+    slip = abs.(sol(sample_t, idxs = car.driveline.clutch.w_slip))
+    capacity = sol(sample_t, idxs = car.driveline.clutch.tau_capacity)
+
+    t100_index = findfirst(>=(100.0), speed)
+    lock_index = findfirst(i -> sample_t[i] > 0.1 && slip[i] < 1.0 &&
+                               capacity[i] > 200.0, eachindex(sample_t))
+
+    @test string(sol.retcode) == "Success"
+    @test sol.t[end] == 300.0
+    @test minimum(rpm) >= 600.0
+    @test t100_index !== nothing
+    @test sample_t[t100_index] ≈ 10.43 atol = 0.05
+    @test speed[end] ≈ 205.33 atol = 0.1
+    @test abs(sol(300.0, idxs = car.body.mass.a)) < 1e-4
+    @test maximum(rpm) < 6500.0
+    @test lock_index !== nothing
+    @test sample_t[lock_index] ≈ 1.33 atol = 0.05
+    @test speed[lock_index] ≈ 13.75 atol = 0.5
+    @test slip[end] < 1.0
+
+    metrics = (; t_0_100 = sample_t[t100_index], top_speed = speed[end],
+               minimum_rpm = minimum(rpm), maximum_rpm = maximum(rpm),
+               clutch_lock_time = sample_t[lock_index],
+               clutch_lock_speed = speed[lock_index])
+    @info "Hands-on 02 CVT" metrics
+end
+
+@testset "Hands-on 02 cruise table" begin
+    analysis = VehicleSystemsComponents.HandsOn02.MappedCarCVTCruiseTransient
+    cases = ((50.0, 0.048779296875, 40.1e3, 4.6544028455, 3.7),
+             (90.0, 0.0916015625, 54.42e3, 2.8309614123, 4.0),
+             (130.0, 0.17373046875, 67.22e3, 2.8, 6.0))
+    measured = NamedTuple[]
+    for (speed, pedal, p_m0, ratio0, expected_l100) in cases
+        run = mapped_engine_run(analysis; speed_kmh = speed, pedal_cmd = pedal,
+                                p_m0 = p_m0, ratio0 = ratio0)
+        car, sol = run.model.car, run.sol
+        t = sol.t[end]
+        actual_speed = sol(t, idxs = car.v_kmh)
+        rpm = sol(t, idxs = car.flywheel.w) * 30 / pi
+        p_kpa = sol(t, idxs = car.p_m) / 1e3
+        fuel_lph = sol(t, idxs = car.fuel_lph)
+        fuel_l100 = fuel_lph / actual_speed * 100
+        push!(measured, (; speed, actual_speed, rpm, p_kpa, fuel_l100))
+
+        @test string(sol.retcode) == "Success"
+        @test actual_speed ≈ speed atol = 0.6
+        @test fuel_l100 ≈ expected_l100 atol = 0.1
+    end
+
+    @info "Hands-on 02 CVT cruise table" measured fixed_gear_l100 = (3.3, 4.6, 7.0)
+end
