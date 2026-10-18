@@ -70,9 +70,10 @@ models, one notebook at a time.
 8. [**The mapped engine**](./lecture-02/index.html#/mapped-engine){target="_self"} — what the hands-on builds
 
 The hands-on that follows the lecture builds that engine into the car. Students follow the
-[hands-on guide](./handson/lecture-02/); present it with the
-[tutor deck](./handson-02/index.html){target="_self"}, whose speaker notes carry what to say, the
-numbers behind every checkpoint, and where students get stuck.
+[hands-on guide](./handson/lecture-02/), which holds every instruction and the theory. Put the
+[projector deck](./handson-02/index.html){target="_self"} on the wall, one slide per step with its
+goal, the finished model and the checkpoint. The [tutor guide](./handson/lecture-02/tutor.html)
+carries what to say, the time per part, where students get stuck, and the answer models.
 
 ## For the lecturer
 

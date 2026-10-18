@@ -2,14 +2,15 @@
 
 One session of about 90 minutes in which students swap Lecture 1's `IdealEngine` for the mapped
 engine of `lecture-02-mapped-engine-plan.md` and read fuel and CO₂ off the car. This file is
-task 5 of that plan: the step plan behind `slides/decks/handson-02/` and
-`slides/site/handson/lecture-02/`. It inherits decisions M1–M7 unchanged and covers scope A
-only; scope B is an optional last step.
+task 5 of that plan: the step plan behind the hands-on guide `slides/site/handson/lecture-02/`,
+which is the one full source, its tutor guide `tutor.md` beside it, and the projector deck
+`slides/decks/handson-02/`, one slide per step. It inherits decisions M1–M7 unchanged and covers
+scope A only; scope B is an optional last step.
 
 Companion documents:
 
 - `docs/lecture-02-mapped-engine-plan.md` — the decisions, the reality anchors and tasks 1–6.
-- `docs/lecture-02-handson-screenshots.md` — the Studio screenshots the deck and the guide need.
+- `docs/lecture-02-handson-screenshots.md` — the Studio screenshots the guide and the deck need.
 - `data/engine/README.md` — the maps, their axes and the fuel-cut requirement.
 
 ## The arc
