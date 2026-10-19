@@ -135,11 +135,18 @@ begin
 
     corner_trace(points, labels) = PP.scatter(;
         x = [round(1e6v; digits = 3) for (v, _) in points], y = [round(p / 1e5; digits = 3) for (_, p) in points],
-        text = labels, mode = "markers+text", textposition = "top right",
+        # The BDC point on the ambient line sits just under the end of expansion; label it below.
+        text = labels, mode = "markers+text",
+        textposition = ["top right", "bottom right", "top right", "top right", "top right"],
         marker = PP.attr(size = 9, color = "black"), showlegend = false, hoverinfo = "skip")
 
-    stroke_note(x, y, text; kwargs...) =
-        PP.attr(; x, y, text, showarrow = false, font = PP.attr(size = 13), kwargs...)
+    # Below about 10 bar the loop is squashed against the axis on a slide, so each stroke label
+    # sits in the empty upper part of the plot and points down at its line.
+    stroke_note(x, y, text; ax = 0, ay = -70) = PP.attr(; x, y, text, ax, ay, showarrow = true,
+        arrowhead = 2, arrowwidth = 1.5, bgcolor = "white", font = PP.attr(size = 16))
+
+    on_compression(c, V) = 1e-5 * P_1 * (c.V[1] / V)^GAMMA
+    on_expansion(c, V) = 1e-5 * c.p[end - 1] * (c.V[1] / V)^GAMMA
 end
 
 # ╔═╡ 8e961556-33b7-4a94-90d8-c1aa2374d526
@@ -170,10 +177,9 @@ let
                 PP.attr(x = 0.97, y = 0.95, xref = "paper", yref = "paper", showarrow = false,
                     xanchor = "right", align = "right",
                     text = "r<sub>c</sub> = $(RC_OTTO)<br>η = 1 − r<sub>c</sub><sup>1−γ</sup> = $(round(100otto.efficiency; digits = 1)) %"),
-                stroke_note((V_tdc + V_bdc) / 2, P_1 / 1e5, "0→1 intake · 1→0 exhaust";
-                    yanchor = "top", yshift = -2),
-                stroke_note(200, 7, "1→2 compression"),
-                stroke_note(130, 40, "3→4 power"; xanchor = "left"),
+                stroke_note(0.8V_bdc, P_1 / 1e5, "0→1 intake · 1→0 exhaust"; ay = -110),
+                stroke_note(0.45V_bdc, on_compression(otto, 0.45V_bdc / 1e6), "1→2 compression"; ax = 40, ay = -150),
+                stroke_note(0.25V_bdc, on_expansion(otto, 0.25V_bdc / 1e6), "3→4 power"; ax = 70, ay = -40),
             ]))
 end
 
@@ -204,8 +210,7 @@ let
         ],
         deck_layout(; xaxis_title = "cylinder volume [cm³]", yaxis_title = "pressure [bar]",
             legend = PP.attr(x = 0.98, xanchor = "right", y = 0.98),
-            annotations = [stroke_note((V_tdc + V_bdc) / 2, P_1 / 1e5, "1→2 suction · 2→1 exhaust";
-                yanchor = "top", yshift = -2)]))
+            annotations = [stroke_note(0.8V_bdc, P_1 / 1e5, "1→2 suction · 2→1 exhaust"; ay = -110)]))
 end
 
 # ╔═╡ a9055122-aff8-4359-814f-8bbd6e45bf38

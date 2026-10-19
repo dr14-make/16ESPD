@@ -122,10 +122,10 @@ PP.plot(
     deck_layout(;
         margin = PP.attr(l = 0, r = 0, t = 0, b = 0),
         scene = PP.attr(
-            xaxis = PP.attr(title = "p_m [kPa]", dtick = 25),
-            yaxis = PP.attr(title = "N [rpm]", dtick = 2000),
-            zaxis = PP.attr(title = "T_e [N·m]", dtick = 50),
-            camera = PP.attr(eye = PP.attr(x = 1.65, y = -1.75, z = 0.9)))))
+            xaxis = PP.attr(title = "manifold pressure [kPa]", dtick = 25),
+            yaxis = PP.attr(title = "engine speed [rpm]", dtick = 2000),
+            zaxis = PP.attr(title = "torque [N·m]", dtick = 50),
+            camera = PP.attr(eye = PP.attr(x = 2.0, y = -2.1, z = 1.05)))))
 
 # ╔═╡ 951025b0-6e13-4223-b802-7600f96078b9
 md"""
