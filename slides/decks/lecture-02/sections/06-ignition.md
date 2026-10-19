@@ -329,17 +329,11 @@ $$
 </div>
 <div>
 
-<div class="grid grid-cols-[1fr_1.4fr] gap-2 stack items-center">
+<div class="grid grid-cols-[1fr_1.4fr] gap-2 items-center">
 
 ![A pencil coil for one cylinder, in section.](/pptx/slide53-coil-section.png)
 
 ![A classic canister ignition coil in cutaway: primary and secondary windings around an iron core.](/pptx/slide53-coil-cutaway.gif)
-
-</div>
-
-<div class="diagram-short">
-
-![Coil ignition circuit: the battery feeds the primary winding L₁ through the ignition switch and a ballast resistor R_v; a transistor switched by the ECU's dwell pulse grounds the primary, current i₁; the secondary winding L₂, about 80 times the turns on the same core, sends up to 30 kV to the spark plug.](/diagrams/06-coil-ignition-circuit.svg)
 
 </div>
 
@@ -357,7 +351,22 @@ wire.
 
 The two formulas: the voltage scales with the turns ratio, and the stored energy is half L I
 squared in the primary. That is why the current at cut-off, and so the dwell, sets the spark energy.
+-->
 
+---
+routeAlias: coil-ignition-circuit
+class: big-figure
+---
+
+## Coil ignition circuit
+
+<div class="diagram-full">
+
+![Coil ignition circuit: the battery feeds the primary winding L₁ through the ignition switch and a ballast resistor R_v; a transistor switched by the ECU's dwell pulse grounds the primary, current i₁; the secondary winding L₂, about 80 times the turns on the same core, sends up to 30 kV to the spark plug.](/diagrams/06-coil-ignition-circuit.svg)
+
+</div>
+
+<!--
 The circuit is redrawn as Dyad task 9's ignition coil will model it: battery, switch, ballast
 resistor, primary, a transistor switched by the ECU's dwell pulse, the secondary and one plug. The
 turns ratio of 1 to 80 is task 9's assumed value. The source deck's version had contact breaker

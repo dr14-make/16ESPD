@@ -92,8 +92,8 @@ routeAlias: otto-cycle
 
 <div class="text-sm">
 
-0–1 intake · 1–2 isentropic compression · 2–3 constant-volume heat addition (combustion) ·
-3–4 isentropic expansion · 4–1 constant-volume heat rejection · 1–0 exhaust.
+1–2 isentropic compression · 2–3 constant-volume heat addition (combustion) ·
+3–4 isentropic expansion · 4–1 constant-volume heat rejection, standing in for exhaust and intake.
 Compression ratio $\varepsilon = V_{\text{bdc}} / V_{\text{tdc}} = (V_{\text{swept}} + V_{\text{tdc}}) / V_{\text{tdc}}$.
 
 </div>

@@ -8,7 +8,7 @@ title: Lecture 2 hands-on — drive a mapped engine
 
 From measured engine maps to the fuel and CO₂ your car burns at 50, 90 and 130 km/h
 
-**Why we build it.** Lecture 1's engine gave 150 N·m at every speed and could not say how much fuel it burned. A real engine control unit reads tables measured on a test bench, at the engine speed and the pressure in the intake manifold. **What you build:** the manifold, whose pressure fills and empties, and a small engine of your own that reads torque and fuel from those tables. Then you paste the course library's fuel cut into your engine, put it into your hands-on 1 car and drive it: flat out, at steady speeds, lifting off and braking. By the end you have your car's fuel consumption in L/100 km and its CO₂ in g/km, the two numbers on a car's sticker.
+**Why we build it.** Lecture 1's engine gave 150 N·m at every speed and could not say how much fuel it burned. A real engine control unit reads tables measured on a test bench, at the engine speed and the pressure in the intake manifold. **What you build:** the manifold, whose pressure fills and empties, and a small engine of your own that reads torque and fuel from those tables. Then you paste the course library's fuel cut into your engine, put it into your hands-on 1 car with a given CVT and drive it: flat out, at steady speeds, lifting off and braking. By the end you have your car's fuel consumption in L/100 km and its CO₂ in g/km, the two numbers on a car's sticker.
 
 ![The mapped engine as a chain: the pedal opens the throttle; the throttle's air flow and the brake booster's fill the intake manifold, whose state is the pressure p_m; the cylinders draw air out; maps read at engine speed and p_m return torque to the crankshaft and the car, and fuel flow to the fuel and CO₂ outputs; engine speed feeds back to the maps and the cylinders.](/handson/lecture-02/img/mapped-engine-overview.svg){style="background:#fff;padding:8px;border-radius:4px"}
 
@@ -139,7 +139,7 @@ Computed from the tables:
 - The map gives **160.3 N·m** at 4000 rpm and 100 kPa, and peaks at **177 N·m** near 3250 rpm and 105 kPa. It is negative at low pressure: the engine pumping against a vacuum.
 - The 3000 rpm row passes 31.1 N·m at about **47.7 kPa** (30.7 N·m at 47.5, 35.6 at 50).
 - Fuel there: about **0.82 g/s** → 4.0 L/h → **4.4 L/100 km**.
-- The 90 km/h point itself, at 3080 rpm between the 3000 and 3250 rpm rows, sits at **47.8 kPa**: 0.850 g/s, 4.11 L/h and **4.6 L/100 km**. Step 05 measures it. Mark your plots there.
+- The 90 km/h point itself, at 3080 rpm between the 3000 and 3250 rpm rows, sits at **47.8 kPa**: 0.850 g/s, 4.11 L/h and **4.6 L/100 km**. Mark your plots there. Step 05 drives 90 km/h with a CVT, which runs the engine slower, and compares.
 - λ is **1** up to about 80 kPa and **0.87** at 3000 rpm, 100 kPa: the engine runs rich only near full load.
 
 The same reading at the other two speeds step 05 drives, from hands-on 1's holding torques:
@@ -560,7 +560,7 @@ With the pedal closed at 3000 rpm your engine still burns 0.097 g/s while making
 
 **Why two speeds.** With one threshold, an engine turning right at it would switch the fuel on and off at every small wobble of speed. Between 1000 and 1300 rpm the logic keeps whatever it last decided. That gap is called hysteresis; a thermostat works the same way.
 
-**The rev limiter.** The same block also cuts the fuel above **6500 rpm**, whatever the pedal, and turns it back on below **6300 rpm**. Your car meets it at full throttle in step 04.
+**The rev limiter.** The same block also cuts the fuel above **6500 rpm**, whatever the pedal, and turns it back on below **6300 rpm**. In step 04 the CVT keeps your car just under it.
 
 **The torque during the cut.** No fuel burns, so the engine makes no combustion torque. The wheels turn it, and it pumps air through the closed throttle. The torque it then takes from the shaft was measured on the test bench with the fuel off, as a curve over speed alone: the **closed-throttle (motoring) curve**. While the cut is on, `CutTorqueMap` gives that curve instead of your torque map, and `CutFuelMap` gives zero fuel. Both switch over about 10 ms, so the solver never sees a jump.
 
@@ -628,44 +628,50 @@ Commit: **Source Control** → message `Step 03: map engine` → **Commit** → 
 
 ## Drive the car
 
-Steps 4–6 · your engine in your hands-on 1 car · 32 min
+Steps 4–6 · your engine and a CVT in your hands-on 1 car · 32 min
 
 ### 04 The car with a mapped engine <Badge type="info" text="12 min" /> {#mapped-car}
 
-Your hands-on 1 car with your own engine and a pedal — and a real top speed.
+Your hands-on 1 car with your own engine, a pedal and a gearbox that lets it start from rest.
 
 #### Where you are, where you are going
 
-Same body, same driveline, same single gear of 4.0. The engine changes to your `MapEngine` from step 03, fuel cut included, and with it the input: a pedal from 0 to 1 instead of a torque. Two new outputs read the manifold pressure and the fuel in liters per hour. Hands-on 1's car reached 246 km/h at 8400 rpm; this engine gives less at high revs, and its rev limiter stops fueling at 6500 rpm.
+Same body as hands-on 1. The engine changes to your `MapEngine` from step 03, fuel cut included, and with it the input: a pedal from 0 to 1 instead of a torque. Two new outputs read the manifold pressure and the fuel in liters per hour.
 
-The car needs one part the dynamometer did not: the inertia of the crankshaft and flywheel. On the bench the dynamometer set the speed, so the engine's own rotating mass did not matter. In the car it resists every change of speed, like 0.15 × (4 / 0.31)² = 25 kg more car. You add it as one block on the shaft between the engine and the driveline, with the value the course library's `MappedEngine` assumes, J = 0.15 kg·m².
+The driveline changes too. Hands-on 1's single gear of 4.0 tied the engine to the wheels, and a mapped engine cannot live with that: at a standstill the engine would turn at 0 rpm, where it gives no torque, so the car never moves; and flat out it would run into the rev limiter at 6500 rpm, 190 km/h. So the car gets the course library's `CVTDriveline`, a launch clutch and a continuously variable transmission. It has the same four mechanical ports as your `Driveline`, plus a `pedal` input.
 
-::: info Why the top speed falls
+The car also needs one part the dynamometer did not: the inertia of the crankshaft and flywheel. On the bench the dynamometer set the speed, so the engine's own rotating mass did not matter. In the car it resists every change of engine speed. You add it as one block on the shaft between the engine and the driveline, with the value the course library's `MappedEngine` assumes, J = 0.15 kg·m².
 
-The force balance is hands-on 1's, but the push now depends on engine speed:
+::: info Why a CVT, and what it does
 
-**T<sub>full</sub>(N) · 4 / 0.31 = 0.378 v² + 165**
+**The launch clutch.** A centrifugal clutch: weights on the engine side are flung outwards and press the linings together, so its grip grows with engine speed. Below about 1100 rpm it is open, and the engine idles while the car stands. Around **1300 rpm** it engages, over about ±120 rpm, up to 230 N·m. Floor the pedal and the engine revs to 1300 rpm and stays there while the clutch slips and pulls the car away; once the car has caught up, the clutch locks.
 
-The engine turns 34.2 rpm per km/h (v / 0.31 × 4 × 60 / 2π), and above its middle the full-load torque falls away. So the push meets the drag well below 246 km/h, and the rev limiter, which is part of your `cut_logic`, comes earlier still. A real car rarely meets its limiter in top gear: this car's one gear, ratio 4, is a second or third gear on a real one.
+**The ratio range.** The CVT turns the engine 12.0 times for every wheel turn at launch and 2.8 times in overdrive, final drive included. Hands-on 1's fixed gear was 4.0. Any ratio in between is available, without steps.
+
+**Pedal-scheduled engine speed.** The CVT's controller reads the pedal and picks the engine speed: **1800 rpm** with the pedal released, **6000 rpm** with it floored, in a straight line between. It then sets the ratio that puts the engine there at the present road speed, within 12.0 to 2.8, and moves to it over about 0.5 s. So the pedal sets the throttle and the engine speed together; the road speed only decides the ratio.
 
 :::
 
 #### Do this
 
-<!-- TODO(screenshot): step04-mapped-car.png, the finished MappedCar, as the goal of this build. -->
+[![MappedCar, the course's layout: the pedal port feeds engine and, along the top, the driveline's pedal input; no_booster into engine.mdot_bst; engine, flywheel, driveline, body, vsensor and to_kmh in one row to the v_kmh output; engine.p_m and engine.mdot_fuel through to_lph run along the top to the p_m and fuel_lph outputs; rot_ground and trans_ground below.](/handson/lecture-02/img/step04-mapped-car.png){width="1065" height="709" style="max-width:min(640px, 100%)"}](/handson/lecture-02/img/step04-mapped-car.png)
 
 1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was.
 2. Open `MappedCar`. Delete `engine`. Click **+** → `MyCar › MapEngine`, your own engine, name it `engine`, and put it where the old one was.
-3. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal`. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench: click just outside the port to select it, then **Edit Parameters** → pencil.
-4. Add `flywheel` = `RotationalComponents › Components › Inertia` with `J = 0.15`, between `engine` and `driveline`. Wire `engine.spline` → `flywheel.spline_a` and `flywheel.spline_b` → `driveline.spline`. Wire `engine.support` → `rot_ground`, as before.
-5. Add `no_booster` = `BlockComponents › Sources › Constant` (`k = 0`) → `engine.mdot_bst`.
-6. Drop two `RealOutput` ports from **+** straight onto the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.
-7. <Badge type="tip" text="New component" /> The bench `MappedCarWOT`: `pedal` = `Constant(k = 1)` → `car.pedal`, with the `initial` lines below. <Badge type="tip" text="New analysis" /> `MappedCarWOTTransient`, `stop = 120`.
+3. Delete `driveline`. Click **+** → `VehicleSystemsComponents › Vehicle › CVTDriveline`, name it `driveline`, and wire its four mechanical ports as the old one's: `spline` from the engine side, `support_r` → `rot_ground`, `flange` → `body.flange`, `support_t` → `trans_ground`.
+4. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal` and to `driveline.pedal`, the input at the top of the driveline's left edge. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench: click just outside the port to select it, then **Edit Parameters** → pencil.
+5. Add `flywheel` = `RotationalComponents › Components › Inertia` with `J = 0.15`, between `engine` and `driveline`. Wire `engine.spline` → `flywheel.spline_a` and `flywheel.spline_b` → `driveline.spline`. Wire `engine.support` → `rot_ground`, as before.
+6. Add `no_booster` = `BlockComponents › Sources › Constant` (`k = 0`) → `engine.mdot_bst`.
+7. Drop two `RealOutput` ports from **+** straight onto the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.
+8. Toggle to code (⇄). Above the `pedal = RealInput()` line, add the two `ratio_initial` lines of the code below, and in the `driveline =` line write `CVTDriveline(ratio_initial = ratio_initial)`. The car starts at the launch ratio, 12; the cruise benches of step 05 start it at their own. Save, twice.
+9. <Badge type="tip" text="New component" /> The bench `MappedCarWOT`: paste it from below. <Badge type="tip" text="New analysis" /> `MappedCarWOTTransient`, `stop = 120`, or paste it.
 
 ::: code-group
 
 ```txt [MappedCar, as code]
 component MappedCar
+  "Initial CVT ratio, engine to wheel"
+  parameter ratio_initial::Real = 12
   pedal = RealInput()
   v_kmh = RealOutput()
   p_m = RealOutput()
@@ -676,7 +682,7 @@ component MappedCar
   no_booster = BlockComponents.Sources.Constant(k = 0)
   "kg/s of petrol to L/h: 3600 / 0.745"
   to_lph = BlockComponents.Math.Gain(k = 4832.2)
-  driveline = Driveline()
+  driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(ratio_initial = ratio_initial)
   body = Body()
   vsensor = TranslationalComponents.Sensors.VelocitySensor()
   to_kmh = BlockComponents.Math.Gain(k = 3.6)
@@ -684,6 +690,7 @@ component MappedCar
   trans_ground = TranslationalComponents.Components.Fixed()
 relations
   connect(pedal, engine.pedal)
+  connect(pedal, driveline.pedal)
   connect(no_booster.y, engine.mdot_bst)
   connect(engine.spline, flywheel.spline_a)
   connect(flywheel.spline_b, driveline.spline)
@@ -703,12 +710,16 @@ end
 ```txt [MappedCarWOT and MappedCarWOTTransient]
 component MappedCarWOT
   "Pedal floored"
-  pedal = BlockComponents.Sources.Constant(k = 1)
-  car = MappedCar()
+  pedal = BlockComponents.Sources.Constant(k = 1) {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 390, "x2": 250, "y2": 490}}}}
+  car = MappedCar() {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}}
 relations
   connect(pedal.y, car.pedal)
   initial car.body.mass.s = 0
   initial car.body.mass.v = 0
+  "Engine idling at 900 rpm"
+  initial car.flywheel.w = 900 * pi / 30
+  initial car.flywheel.phi = 0
+  initial car.driveline.clutch.spline_b.phi = 0
   initial car.engine.air.manifold.p = 101325
 end
 
@@ -720,27 +731,33 @@ end
 
 :::
 
-<!-- TODO(reference): confirm the initial lines on HandsOn02.MappedCarWOT. The engine shaft and the
-flywheel are tied to the wheel through the gear, so they should take no initial speed of their own.
-Two findings from a trial of this car: from v = 0 it does not move, because the full-load curve is
-0 N·m at 0 rpm and caps the torque there; started at 2 m/s it reaches 189.9 km/h, and then the
-solver stops at about 87 s with MaxIters while the rev limiter holds it. The car with MappedEngine
-does the same, so the fix belongs to the bench or the limiter, not to the engine choice. -->
+The bench starts the car at rest and the engine idling at 900 rpm. The clutch lets the engine and the wheels turn at different speeds, so each side needs its own start: the flywheel's speed and angle, and the angle of the clutch's output shaft. The angles' values do not matter; the solver needs one each.
 
-8. Run it and plot the speed:
+10. Run it and plot the road speed and the engine speed:
 
-   ```julia
-   r = MyCar.MappedCarWOTTransient()
-   plot(r; idxs = r."car.v_kmh")
-   ```
+    ```julia
+    r = MyCar.MappedCarWOTTransient()
+    plot(r; idxs = [r."car.v_kmh", r."car.engine.speed.w"], layout = (2, 1))
+    ```
 
-<!-- TODO(screenshot): step04-wot-plot.png. -->
-<!-- TODO(checkpoint): time to 100 km/h, and whether the speed saws between 184 and 190 km/h, from
-HandsOn02.MappedCarWOTTransient. -->
+    The engine speed is in rad/s: 1300 rpm is 136 rad/s, 6000 rpm is 628 rad/s. The picture below shows rpm.
+
+[![MappedCarWOTTransient over 120 s. Speed: from rest to 100 km/h at 10.4 s, 197 km/h at 60 s and 205 km/h at 120 s, below the dashed 246 km/h of hands-on 1's car. Engine: 900 rpm, then held at 1300 rpm while the clutch slips, up to a peak of 6390 rpm at 6.4 s, below the dashed 6500 rpm limiter, then settling at 6000 rpm.](/handson/lecture-02/img/step04-wot-plot.png){width="990" height="528"}](/handson/lecture-02/img/step04-wot-plot.png)
 
 ::: tip Checkpoint
 
-The car tops out at about **190 km/h**, not 246. Drag alone would hold it at 192 km/h, where the engine turns 6570 rpm and gives 96 N·m; but at **6500 rpm = 189.9 km/h** the rev limiter in your `cut_logic` cuts the fuel, and it refuels at 6300 rpm = 184.1 km/h.
+From `HandsOn02.MappedCarWOTTransient`, the course's copy of your bench:
+
+- **Launch.** The engine flares from 900 to **1300 rpm** and stays there while the clutch slips. The clutch locks at **1.33 s**, at **13.7 km/h** and 1414 rpm.
+- **0–100 km/h in 10.4 s.**
+- **The engine peaks at 6390 rpm** at 6.4 s, 110 rpm under the limiter: up to about 58 km/h the ratio sits on its 12.0 stop, so the engine runs past its 6000 rpm target. Then the ratio falls and the engine settles at **6000 rpm**. The fuel is never cut.
+- **197 km/h at 60 s, 205 km/h at 120 s**, ratio 3.41. The top speed is **205.3 km/h**, not hands-on 1's 246 and not the 190 of a fixed gear on the limiter.
+
+:::
+
+::: info Why 205 km/h
+
+At top speed the push equals the drag and the rolling resistance, hands-on 1's balance. With a CVT it is easiest in power: the engine turns at 6000 rpm whatever the speed, and the ratio passes all of its power to the wheels. Wide open at 6000 rpm, the manifold reaches 98.8 kPa and the map gives **126.5 N·m**: 126.5 × 6000 × 2π / 60 = **79.5 kW**. The road takes (0.378 v² + 165) · v; that is 79.5 kW at v = 57.0 m/s, **205 km/h**. Hands-on 1's engine gave 150 N·m up to 8400 rpm, 132 kW, and reached 246.
 
 :::
 
@@ -757,7 +774,7 @@ At a steady speed the fuel flow in L/h, divided by the speed in km/h, is liters 
 - **L/100 km** = L/h ÷ km/h × 100
 - **g CO₂/km** = L/h × 2302 ÷ km/h
 
-2302 g of CO₂ per liter is 745 g of petrol × 3.09. Step 01 predicted 4.6 L/100 km at 90 km/h from the table alone; now the car gives it.
+2302 g of CO₂ per liter is 745 g of petrol × 3.09. Step 01 predicted 4.6 L/100 km at 90 km/h for hands-on 1's fixed gear, at 3080 rpm. Your CVT runs the engine at a different speed for the same speed on the road, so it lands somewhere else on the map.
 
 ::: info Why per kilometer
 
@@ -767,65 +784,102 @@ The engine gives liters per hour, the car covers kilometers per hour: divide, an
 
 #### Do this
 
-<!-- TODO(screenshot): step05-cruise-bench.png, the finished MappedCarCruise, as the goal of this build. -->
+[![MappedCarCruise: a constant pedal, k = pedal_cmd, wired into the car's pedal input.](/handson/lecture-02/img/step05-cruise-bench.png){width="527" height="333" style="max-width:360px"}](/handson/lecture-02/img/step05-cruise-bench.png)
 
-1. <Badge type="tip" text="New component" /> The bench `MappedCarCruise`: `pedal` = `Constant(k = 0.1)` → `car.pedal`, with the `initial` lines below. <Badge type="tip" text="New analysis" /> `MappedCarCruiseTransient`, `stop = 60`.
-2. Run it and plot speed and fuel:
+1. <Badge type="tip" text="New component" /> The bench `MappedCarCruise`: paste it from below. <Badge type="tip" text="New analysis" /> `MappedCarCruiseTransient`, the second block. The bench starts the car steady at one speed: the engine at the speed and the CVT at the ratio its pedal settles them, so the run does not spend a minute getting there. Its defaults hold 90 km/h.
+2. Run it at 90 km/h and plot speed and fuel:
 
    ```julia
    r = MyCar.MappedCarCruiseTransient()
    plot(r; idxs = [r."car.v_kmh", r."car.fuel_lph"], layout = (2, 1))
    ```
 
-3. **Find the pedal that holds 90 km/h.** If `car.v_kmh` creeps up over the 60 s, lower `pedal`'s `k`; if it creeps down, raise it. Steps of 0.01 are fine. The car's own time constant is about a minute, so a wrong pedal shows as a slow drift.
-4. When the speed stays within ±1 km/h, read `car.fuel_lph` and `car.p_m` at 60 s and work out L/100 km and g CO₂/km.
-5. Repeat for **50 km/h** (`car.body.mass.v` = 13.89, manifold 41900) and **130 km/h** (36.11, 60800).
+3. Read the speed, the fuel and the pressure at 60 s, and work out L/100 km and g CO₂/km:
+
+   ```julia
+   r.sol(60, idxs = r."car.v_kmh"), r.sol(60, idxs = r."car.fuel_lph"), r.sol(60, idxs = r."car.p_m")
+   ```
+
+4. Repeat for 50 and 130 km/h, with the values of the table:
+
+   ```julia
+   r = MyCar.MappedCarCruiseTransient(speed_kmh = 50, pedal_cmd = 0.04878, rpm0 = 1992, p_m0 = 40100)
+   r = MyCar.MappedCarCruiseTransient(speed_kmh = 130, pedal_cmd = 0.17373, rpm0 = 3118, p_m0 = 67220)
+   ```
+
+| km/h | `pedal_cmd` | `rpm0` | `p_m0` |
+| --: | --: | --: | --: |
+| 50 | 0.04878 | 1992 | 40100 |
+| 90 | 0.0916 | 2182 | 54420 |
+| 130 | 0.17373 | 3118 | 67220 |
 
 ::: code-group
 
 ```txt [MappedCarCruise and MappedCarCruiseTransient]
 component MappedCarCruise
-  pedal = BlockComponents.Sources.Constant(k = 0.1)
-  car = MappedCar()
+  "Initial road speed [km/h]"
+  parameter speed_kmh::Real = 90
+  "Pedal that holds speed_kmh"
+  parameter pedal_cmd::Real = 0.0916
+  "Initial engine speed [rpm], steady at pedal_cmd"
+  parameter rpm0::Real = 2182
+  "Initial manifold pressure, steady at pedal_cmd"
+  parameter p_m0::Pressure = 54420
+  pedal = BlockComponents.Sources.Constant(k = pedal_cmd) {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 390, "x2": 250, "y2": 490}}}}
+  "Wheel radius 0.31 m"
+  car = MappedCar(ratio_initial = rpm0 * pi / 30 * 0.31 / (speed_kmh / 3.6)) {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}}
 relations
   connect(pedal.y, car.pedal)
   initial car.body.mass.s = 0
-  "90 km/h"
-  initial car.body.mass.v = 25
-  initial car.engine.air.manifold.p = 47800
+  initial car.body.mass.v = speed_kmh / 3.6
+  initial car.flywheel.w = rpm0 * pi / 30
+  initial car.flywheel.phi = 0
+  initial car.driveline.clutch.spline_b.phi = 0
+  initial car.engine.air.manifold.p = p_m0
 end
 
 analysis MappedCarCruiseTransient
   extends TransientAnalysis(stop = 60)
-  model = MappedCarCruise()
+  parameter speed_kmh::Real = 90
+  parameter pedal_cmd::Real = 0.0916
+  parameter rpm0::Real = 2182
+  parameter p_m0::Pressure = 54420
+  model = MappedCarCruise(speed_kmh = speed_kmh, pedal_cmd = pedal_cmd, rpm0 = rpm0, p_m0 = p_m0)
 end
 ```
 
 :::
 
-<!-- TODO(actions): replace the pedal search with the values that hold 50, 90 and 130 km/h, to
-three decimals, from HandsOn02.MappedCarCruise. The car runs the student's MapEngine, whose pedal
-drives the throttle directly: on the dynamometer it holds the three cruise torques at
-0.044 / 0.103 / 0.190 ("Hands-on 02 map engine" testset), not MappedEngine's 0.124 / 0.220 / 0.331. -->
-<!-- TODO(screenshot): step05-cruise-90-plot.png. -->
+[![MappedCarCruiseTransient at the defaults: the speed flat at 90 km/h and the fuel flat at 3.55 L/h for 60 s.](/handson/lecture-02/img/step05-cruise-90-plot.png){width="990" height="528"}](/handson/lecture-02/img/step05-cruise-90-plot.png)
 
 ::: tip Checkpoint
 
-Predicted from the maps for this car, the table of step 01; your table should match to the last digit shown:
+From `HandsOn02.MappedCarCruiseTransient`; each pedal holds its speed within 0.25 km/h for the 60 s. Your table should match to the last digit shown:
 
-| km/h | engine rpm | `p_m` kPa | `fuel_lph` | L/100 km | g CO₂/km |
-| --: | --: | --: | --: | --: | --: |
-| 50 | 1710 | 41.9 | 1.67 | **3.3** | **77** |
-| 90 | 3080 | 47.8 | 4.11 | **4.6** | **105** |
-| 130 | 4450 | 60.8 | 9.14 | **7.0** | **162** |
+| km/h | engine rpm | ratio | `p_m` kPa | `fuel_lph` | L/100 km | g CO₂/km | fixed gear L/100 km |
+| --: | --: | --: | --: | --: | --: | --: | --: |
+| 50 | 1992 | 4.64 | 40.1 | 1.84 | **3.7** | **85** | 3.3 |
+| 90 | 2182 | 2.83 | 54.4 | 3.55 | **3.9** | **91** | 4.6 |
+| 130 | 3118 | 2.80 | 67.2 | 7.78 | **6.0** | **138** | 7.0 |
 
-λ is 1 at all three. These are steady-state, one-gear figures with a warm engine and nothing switched on, so they sit below a real car's label; step 07 makes the fair comparison.
+The fuel map of step 01, read at the CVT's rpm and `p_m`, gives the same fuel flow. λ is 1 at all three. These are steady-state figures with a warm engine, a lossless CVT and nothing switched on, so they sit below a real car's label; step 07 makes the fair comparison.
+
+:::
+
+::: info Why the CVT burns more at 50 km/h and less at 90 and 130
+
+At a steady speed the road asks the same power of both cars: 10.0 kW at 90 km/h. The engine can give it fast and throttled, or slow and with the throttle open wide; the second burns less, because a throttled engine spends work pumping air against the vacuum in its manifold, and a fast one spends more on its own friction.
+
+- **At 90 and 130 km/h** the CVT turns the engine at 2182 and 3118 rpm instead of 3080 and 4450, with the manifold at 54 and 67 kPa instead of 48 and 61: **3.9 instead of 4.6** and **6.0 instead of 7.0 L/100 km**. At 130 the ratio is already on its 2.8 stop.
+- **At 50 km/h** it is the other way round. The CVT's controller never asks for less than 1800 rpm, so it runs the engine at 1992 rpm where the fixed gear ran 1710, and throttles it harder, 40.1 kPa against 41.9: **3.7 instead of 3.3 L/100 km**.
+
+The controller picks the engine speed from the pedal alone; it does not know the map. A fuel-optimal schedule would, for each power the road asks, pick the engine speed where the fuel map is lowest along that power: low speed, throttle wide open. Building that schedule is an extension for the curious, not part of today.
 
 :::
 
 ::: info Why the fuel per kilometer rises with speed
 
-From 50 to 130 km/h the speed grows 2.6 times, the fuel per hour 5.5 times, the fuel per kilometer 2.1 times: the drag grows with v². And even at 130 km/h the manifold sits at only 61 kPa. A cruising petrol engine is throttled hard, and pumping air against that vacuum is part of why it is inefficient at part load.
+From 50 to 130 km/h the speed grows 2.6 times, the fuel per hour 4.2 times, the fuel per kilometer 1.6 times: the drag grows with v². And even at 130 km/h the manifold sits at only 67 kPa. A cruising petrol engine is throttled hard, and pumping air against that vacuum is part of why it is inefficient at part load.
 
 :::
 
@@ -833,15 +887,15 @@ Commit: **Source Control** → message `Step 05: cruise` → **Commit** → **Sy
 
 ### 06 Coast-down and a brake stop <Badge type="info" text="8 min" /> {#coast-brake}
 
-Lift off at 90 km/h and the fuel stops; brake, and read the vacuum the brake booster draws on.
+Lift off at 90 km/h and the fuel stops; brake to a standstill, and read the vacuum the brake booster draws on.
 
 #### Where you are, where you are going
 
-With the pedal up at speed, the throttle closes and the manifold drops to the overrun pressure of step 02. The engine control unit cuts the fuel completely, and the engine, driven by the wheels, pumps air against that vacuum: it brakes the car. A brake booster draws its vacuum from this manifold, so you plot that too.
+With the pedal up at speed, the throttle closes and the manifold empties towards the overrun pressure of step 02. The engine control unit cuts the fuel completely, and the engine, driven by the wheels, pumps air against that vacuum: it brakes the car. A brake booster draws its vacuum from this manifold, so you plot that too. With the pedal up, the CVT asks for its lowest engine speed, 1800 rpm.
 
-::: info Why the fuel comes back at 29 km/h
+::: info Why the fuel comes back only at 11 km/h
 
-The cut ends when the engine falls below 1000 rpm: 1000 / 34.2 rpm per km/h = 29.2 km/h. It starts only above 1300 rpm, 38 km/h, so lifting off at 30 km/h never cuts. Coasting down a long hill in gear therefore burns nothing; in neutral the engine idles on its own fuel, about 0.45 L/h.
+The cut ends when the engine falls below **1000 rpm**. With hands-on 1's single gear that was a road speed, 29 km/h. With the CVT it is not: with the pedal released the controller asks for 1800 rpm, and as the car slows it raises the ratio to keep the engine there, until the ratio reaches its 12.0 stop, near 15 km/h. Only then does the engine slow with the car. Near 1140 rpm the launch clutch lets go, the engine drops under 1000 rpm on its own, and the fuel comes back at about **11 km/h**. Coasting down from 90 km/h burns nothing for a full minute; afterwards the engine idles on its own fuel behind the open clutch, 0.47 L/h, as it would in neutral.
 
 :::
 
@@ -853,36 +907,61 @@ A brake booster is a can of air split by a diaphragm, its vacuum side connected 
 
 #### A · Coast down
 
-1. <Badge type="tip" text="New component" /> Copy `MappedCarCruise` as `MappedCarCoast`. Make `pedal` a `BlockComponents › Sources › Step` with `offset` = your 90 km/h pedal value, `height` = minus it, `start_time = 5`. <Badge type="tip" text="New analysis" /> `MappedCarCoastTransient`, `stop = 90`.
-2. Run it; plot `car.v_kmh`, `car.fuel_lph` and `car.p_m`, one above the other.
+1. <Badge type="tip" text="New component" /> Copy `MappedCarCruise` as `MappedCarCoast`. Make `pedal` a `BlockComponents › Sources › Step` that releases the pedal at 5 s: in code, its line becomes the one below. <Badge type="tip" text="New analysis" /> `MappedCarCoastTransient`, `stop = 100`, with `model = MappedCarCoast()`.
 
-<!-- TODO(screenshot): step06-coast-plot.png. -->
-<!-- TODO(checkpoint): p_m at the fuel-resume instant, from HandsOn02.MappedCarCoastTransient. -->
+   ```txt
+     pedal = BlockComponents.Sources.Step(height = -pedal_cmd, offset = pedal_cmd, start_time = 5)
+   ```
+
+2. Run it and plot four signals:
+
+   ```julia
+   r = MyCar.MappedCarCoastTransient()
+   plot(r; idxs = [r."car.v_kmh", r."car.engine.speed.w", r."car.fuel_lph", r."car.p_m"], layout = (2, 2))
+   ```
+
+[![MappedCarCoastTransient over 100 s, four panels. Speed: 90 km/h, released at 5 s, down to rest at about 91 s. Engine: 2182 rpm, held near 1750 rpm from about 17 s to 60 s, then down to 775 rpm idle at 67 s. Fuel: 3.55 L/h, 0 from 5 s, back on at 66.3 s and 0.47 L/h at idle. Pressure: 54.4 kPa, down to 17.1 kPa at the release, about 19.5 kPa while the engine is held, then 33.6 kPa at idle.](/handson/lecture-02/img/step06-coast-plot.png){width="990" height="528"}](/handson/lecture-02/img/step06-coast-plot.png)
 
 ::: tip Checkpoint
 
-- At 5 s the fuel drops from 4.11 L/h to **0**, and `p_m` falls to about **13.5 kPa**.
-- The car slows at **0.46 m/s²**: 401 N of drag and rolling plus 246 N of engine braking (−19 N·m × 4 / 0.31) on 1400 kg. In neutral it would be 0.29 m/s².
-- The fuel comes back on at **29 km/h**, where the engine drops below 1000 rpm.
+From `HandsOn02.MappedCarCoastTransient`:
+
+- At 5 s the fuel drops from 3.55 L/h to **0**, and `p_m` falls to **17.1 kPa**. The engine turns 2150 rpm, not 3000, so the vacuum is not as deep as step 02's 13.5 kPa.
+- The car slows at **0.39 m/s²**: 401 N of drag and rolling plus about 140 N of engine braking, on 1400 kg. In neutral it would be 0.29 m/s².
+- Below about 75 km/h the ratio climbs from 2.8 towards 12.0; from 70 down to 30 km/h it holds the engine between **1730 and 1780 rpm**, still with no fuel.
+- At **66.0 s, 11.2 km/h** and 1140 rpm the clutch opens. At **66.3 s, 10.8 km/h**, the engine passes 1000 rpm and the fuel comes back, with `p_m` at **27.4 kPa**.
+- The engine settles at **775 rpm** idle, 33.6 kPa, 0.47 L/h, and the car rolls to rest at about **91 s**.
 
 :::
 
 #### B · Brake
 
-<!-- TODO(screenshot): step06-mapped-car-brake.png, MappedCar with F_brake and brake, as the goal of this build. -->
+[![MappedCarWithBrake, the course's layout: MappedCar with an F_brake input at the bottom left, wired along the bottom and up the right into brake; brake sits below body, its flange wired to body.flange and its support to trans_ground.](/handson/lecture-02/img/step06-mapped-car-brake.png){width="1065" height="796" style="max-width:min(640px, 100%)"}](/handson/lecture-02/img/step06-mapped-car-brake.png)
 
-3. In `MappedCar`, add an input `F_brake` and `brake` = `TranslationalComponents › Sources › Force`. Wire `F_brake` → `brake.f`, one flange of `brake` to `body.flange` and the other to `trans_ground`.
-4. In `MappedCarCoast`, add `brake_cmd` = `Step(height = 4000, start_time = 5)` → `car.F_brake`, and set `stop = 10`. Your other car benches now have an input nobody drives: give each a `Constant(k = 0)` into `car.F_brake` before running them again.
-5. Run it and plot `car.v_kmh` and `car.p_m`.
+3. In `MappedCar`, add an input `F_brake` and `brake` = `VehicleSystemsComponents › Vehicle › RoadBrake`. Wire `F_brake` → `brake.F_cmd`, `brake.flange` → `body.flange` and `brake.support` → `trans_ground`.
+4. In `MappedCarCoast`, add `brake_cmd` = `Step(height = 4000, start_time = 5)` → `car.F_brake`: 4000 N from the moment the pedal comes up. Your other car benches now have an input nobody drives: give each a `Constant(k = 0)` into `car.F_brake` before running them again.
+5. Run it for 20 s and plot the same four signals:
 
-<!-- TODO(reference): the brake force's sign as wired, p_m during the stop and the time to 25 km/h,
-from HandsOn02.MappedCarCoast's brake-stop run; then give the one correct flange wiring instead of
-"swap". -->
-<!-- TODO(screenshot): step06-brake-plot.png. -->
+   ```julia
+   r = MyCar.MappedCarCoastTransient(stop = 20)
+   plot(r; idxs = [r."car.v_kmh", r."car.engine.speed.w", r."car.fuel_lph", r."car.p_m"], layout = (2, 2))
+   ```
+
+::: info Why a given brake, and which way round
+
+`RoadBrake` is friction between the body and the road: it pushes against the car's motion with the force `F_brake`, and that force fades to zero as the car stops, over the last 0.05 m/s. So it stops the car and then holds it. A plain force source would keep pushing after the car had stopped and drive it backwards. Like a damper, it brakes whichever way round its two flanges are wired; a positive `F_brake` always slows the car.
+
+:::
+
+[![The brake stop over 20 s, four panels. Speed: 90 km/h, then a straight line down from 5 s to rest at 12.9 s. Engine: 2182 rpm, falling to about 1600 rpm as the ratio climbs, then to 775 rpm idle at 12 s. Fuel: 0 from 5 s, back on at 12.0 s. Pressure: 17.6 kPa after the release, rising to 33.6 kPa at idle.](/handson/lecture-02/img/step06-brake-plot.png){width="990" height="528"}](/handson/lecture-02/img/step06-brake-plot.png)
 
 ::: tip Checkpoint
 
-The car slows far faster than in the coast-down — if it speeds up, swap the two flanges of `brake`. `p_m` stays deep below the outside 101 kPa through the stop: that is the vacuum the brake booster works with. The car has no clutch, so below about 25 km/h, 855 rpm, the engine is dragged toward a stall and `p_m` climbs to the outside pressure, an artifact of the missing clutch; read the plot only down to there. The 4000 N is about 0.3 g on 1400 kg, a firm stop.
+From `HandsOn02.MappedCarBrakeStopTransient`, the course's copy of your bench after this part:
+
+- The car slows at **3.2 m/s²**: 4000 N of brake is about 0.3 g on 1400 kg, a firm stop. It passes **25 km/h at 10.7 s** and is **at rest at 12.9 s**, 7.9 s after the brake.
+- `p_m` stays between **17.6 and 33.7 kPa** through the whole stop, far below the outside 101 kPa: that is the vacuum the brake booster works with.
+- The fuel comes back at 12.0 s, at 10.4 km/h, as the engine passes 1000 rpm, and the clutch opens at the same moment. The engine **does not stall**: it idles at **775 rpm** while the brake holds the car at rest.
 
 :::
 

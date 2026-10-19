@@ -1001,6 +1001,218 @@ let kPa = collect(PSAA_SPAN[1]:0.5:PSAA_SPAN[2])
                     text = "above $(round(hi; digits = 2)) V: fault", font = PP.attr(; size = 13, color = WARN))]))
 end
 
+# ╔═╡ 289a3c09-7501-419d-90b7-87683b1fb60f
+md"""
+## Drive cycles (section 09)
+
+Speed traces read from regulations, not simulated.
+
+- **WLTC class 3b**: `assets/data/drive_cycles/wltc_class3b.csv`, the 1 Hz tables of Regulation
+  (EU) 2017/1151, Annex XXI, Sub-Annex 1 (A1/7, A1/9, A1/11, A1/12), checked below against the
+  regulation's own checksums (Table A1/13). Its README gives the provenance and the attribution.
+- **NEDC**: generated here from UNECE Regulation No 83, Annex 4a, Table 1 (elementary urban cycle,
+  ECE-15, run four times) and Table 2 (extra-urban cycle, EUDC). Each operation is a constant
+  acceleration or a constant speed, so the trace is piecewise linear between the operations'
+  cumulative times. Gear changes hold the speed.
+- **FTP-75, HWFET, US06**: the US EPA's files, public domain, in mph as published.
+
+Statistics, the same way for every cycle: distance is the trapezoid integral of the 1 Hz speed;
+average speed includes the stops; standstill is the time between two consecutive zero samples.
+DieselNet counts the WLTC's stops slightly differently (242 s); both round to 13 %.
+"""
+
+# ╔═╡ c781fef9-227d-4f83-8b3d-9c7999694fa2
+begin
+    const CYCLES = joinpath(@__DIR__, "..", "..", "assets", "data", "drive_cycles")
+    const MPH = 1.609344  # km per mile
+
+    "A 1 Hz trace from `assets/data/drive_cycles/`: time [s] and speed [km/h]."
+    function read_cycle(file)
+        lines = filter(!isempty, readlines(joinpath(CYCLES, file)))
+        column = split(lines[1], ",")[2]
+        scale = column == "v_mph" ? MPH : column == "v_kmh" ? 1.0 : error("unknown column $column")
+        rows = [parse.(Float64, split(l, ",")) for l in lines[2:end]]
+        (; t = first.(rows), v = last.(rows) .* scale)
+    end
+
+    # (cumulative time [s], speed [km/h]) at the end of each operation of R83 Annex 4a. Table 1
+    # lists operation 3 as 9 s, but its cumulative time and its phase say 8 s; the cumulative
+    # times are used.
+    const ECE15 = [(0, 0), (11, 0), (15, 15), (23, 15), (25, 10), (28, 0), (49, 0), (54, 15),
+        (56, 15), (61, 32), (85, 32), (93, 10), (96, 0), (117, 0), (122, 15), (124, 15), (133, 35),
+        (135, 35), (143, 50), (155, 50), (163, 35), (176, 35), (178, 35), (185, 10), (188, 0),
+        (195, 0)]
+    const EUDC = [(0, 0), (20, 0), (25, 15), (27, 15), (36, 35), (38, 35), (46, 50), (48, 50),
+        (61, 70), (111, 70), (119, 50), (188, 50), (201, 70), (251, 70), (286, 100), (316, 100),
+        (336, 120), (346, 120), (362, 80), (370, 50), (380, 0), (400, 0)]
+
+    "Speed at time `t` on a list of (time, speed) knots, linear in between."
+    function on_knots(knots, t)
+        k = findlast(p -> p[1] <= t, knots)
+        k == length(knots) && return float(knots[k][2])
+        (t0, v0), (t1, v1) = knots[k], knots[k + 1]
+        v0 + (v1 - v0) * (t - t0) / (t1 - t0)
+    end
+
+    "The NEDC at 1 Hz: four ECE-15 cycles, then the EUDC, 1180 s."
+    function nedc()
+        knots = vcat([(t + 195k, v) for k in 0:3 for (t, v) in ECE15[(k == 0 ? 1 : 2):end]],
+            [(t + 780, v) for (t, v) in EUDC[2:end]])
+        t = collect(0.0:1180.0)
+        (; t, v = [on_knots(knots, x) for x in t])
+    end
+
+    "Duration [s], distance [km], average and maximum speed [km/h], standstill share."
+    function cycle_stats(c; from = c.t[1], to = c.t[end])
+        k = findfirst(==(from), c.t):findfirst(==(to), c.t)
+        t, v = c.t[k], c.v[k]
+        dt = diff(t)
+        km = sum((v[1:(end - 1)] .+ v[2:end]) ./ 2 .* dt) / 3600
+        T = t[end] - t[1]
+        stopped = sum(dt[j] for j in eachindex(dt) if v[j] == 0 && v[j + 1] == 0; init = 0.0)
+        (; T, km, avg = km / T * 3600, vmax = maximum(v), stop = stopped / T)
+    end
+
+    # Phase limits [s] of class 3b (Sub-Annex 1, Tables A1/7–A1/12): the speed is zero at each.
+    const WLTC_PHASES = (("Low", 0, 589), ("Medium", 589, 1022), ("High", 1022, 1477),
+        ("Extra High", 1477, 1800))
+
+    drive_cycles = (; nedc = nedc(), wltc = read_cycle("wltc_class3b.csv"),
+        ftp75 = read_cycle("ftp75.csv"), hwfet = read_cycle("hwfet.csv"),
+        us06 = read_cycle("us06.csv"))
+end
+
+# ╔═╡ 368a2d98-71d5-430c-8189-29d98b77b727
+# ╠═╡ card = "nedc-vs-wltc"
+let n = drive_cycles.nedc, w = drive_cycles.wltc
+    hover(name) = "%{x:.0f} s: %{y:.1f} km/h<extra>$name</extra>"
+    traces = [
+        PP.scatter(; x = n.t, y = round.(n.v; digits = 3), mode = "lines", name = "NEDC",
+            xaxis = "x1", yaxis = "y1", line = line(WARN; width = 2), hovertemplate = hover("NEDC")),
+        PP.scatter(; x = w.t, y = w.v, mode = "lines", name = "WLTC class 3b", xaxis = "x2",
+            yaxis = "y2", line = line(ACCENT; width = 2), hovertemplate = hover("WLTC 3b")),
+    ]
+    band(ax, x0, x1, k) = PP.attr(; type = "rect", xref = "x$ax", yref = "y$ax", x0, x1, y0 = 0,
+        y1 = 160, fillcolor = isodd(k) ? BLUES[4] : BLUES[5], opacity = 0.18, layer = "below",
+        line = PP.attr(; width = 0))
+    label(ax, x, text) = PP.attr(; xref = "x$ax", yref = "y$ax", x, y = 158, yanchor = "top",
+        showarrow = false, text, font = PP.attr(; size = 13, color = MUTED))
+    note(ax, text; color) = PP.attr(; xref = "x$ax", yref = "y$ax", x = 1790, y = 100,
+        xanchor = "right", yanchor = "top", align = "right", showarrow = false, text,
+        font = PP.attr(; size = 14, color))
+    nedc_parts = ((0, 780, "4 × ECE-15, urban"), (780, 1180, "EUDC"))
+    wltc_parts = [(lo, hi, name) for (name, lo, hi) in WLTC_PHASES]
+    sn, sw = cycle_stats(n), cycle_stats(w)
+    summary(s) = "$(round(Int, s.T)) s · $(round(s.km; digits = 2)) km<br>" *
+                 "average $(round(s.avg; digits = 1)) km/h · max $(round(s.vmax; digits = 1)) km/h"
+    PP.plot(traces, deck_layout(;
+        showlegend = false,
+        margin = PP.attr(l = 70, r = 16, t = 16, b = 56),
+        xaxis = axis(""; range = [0, 1800], dtick = 300, matches = "x2", showticklabels = false,
+            anchor = "y1"),
+        yaxis = axis("NEDC [km/h]"; domain = [0.54, 1], range = [0, 160], dtick = 40,
+            anchor = "x1"),
+        xaxis2 = axis("time [s]"; range = [0, 1800], dtick = 300, anchor = "y2"),
+        yaxis2 = axis("WLTC 3b [km/h]"; domain = [0, 0.46], range = [0, 160], dtick = 40,
+            anchor = "x2"),
+        shapes = vcat([band(1, a, b, k) for (k, (a, b, _)) in enumerate(nedc_parts)],
+            [band(2, a, b, k) for (k, (a, b, _)) in enumerate(wltc_parts)]),
+        annotations = vcat([label(1, (a + b) / 2, t) for (a, b, t) in nedc_parts],
+            [label(2, (a + b) / 2, t) for (a, b, t) in wltc_parts],
+            [note(1, "modal: ramps and plateaus<br>" * summary(sn); color = WARN)])))
+end
+
+# ╔═╡ 6c9e61e2-fbff-49c2-863d-7448b6b03ecb
+# ╠═╡ card = "wltc-3b"
+let w = drive_cycles.wltc
+    km = cumsum(vcat(0.0, (w.v[1:(end - 1)] .+ w.v[2:end]) ./ 2 ./ 3600))
+    ends = [hi for (_, _, hi) in WLTC_PHASES]
+    at_end = [km[findfirst(==(e), w.t)] for e in ends]
+    band(k, x0, x1) = PP.attr(; type = "rect", xref = "x", yref = "y", x0, x1, y0 = 0, y1 = 180,
+        fillcolor = isodd(k) ? BLUES[4] : BLUES[5], opacity = 0.18, layer = "below",
+        line = PP.attr(; width = 0))
+    labels = map(WLTC_PHASES) do (name, lo, hi)
+        s = cycle_stats(w; from = lo, to = hi)
+        PP.attr(; x = (lo + hi) / 2, y = 178, yanchor = "top", showarrow = false,
+            text = "<b>$name</b><br>$(round(Int, s.T)) s · $(round(s.km; digits = 3)) km<br>" *
+                   "average $(round(s.avg; digits = 1)) km/h",
+            font = PP.attr(; size = 13, color = INK))
+    end
+    PP.plot([
+            PP.scatter(; x = w.t, y = w.v, mode = "lines", name = "speed", line = line(ACCENT; width = 2),
+                hovertemplate = "%{x:.0f} s: %{y:.1f} km/h<extra>speed</extra>"),
+            PP.scatter(; x = w.t, y = round.(km; digits = 4), mode = "lines", name = "distance",
+                yaxis = "y2", line = line(MUTED; width = 2, dash = "dash"),
+                hovertemplate = "%{x:.0f} s: %{y:.2f} km<extra>distance</extra>"),
+            PP.scatter(; x = ends, y = round.(at_end; digits = 4), yaxis = "y2", mode = "markers",
+                marker = PP.attr(; size = 8, color = INK), name = "phase end",
+                hovertemplate = "%{x:.0f} s: %{y:.3f} km<extra>phase end</extra>"),
+        ], deck_layout(;
+            showlegend = false,
+            margin = PP.attr(l = 70, r = 70, t = 16, b = 56),
+            xaxis = axis("time [s]"; range = [0, 1800], dtick = 300),
+            yaxis = axis("speed [km/h]"; range = [0, 180], dtick = 30),
+            yaxis2 = axis("distance [km], dashed"; overlaying = "y", side = "right",
+                range = [0, 30], dtick = 5, showgrid = false),
+            shapes = [band(k, lo, hi) for (k, (_, lo, hi)) in enumerate(WLTC_PHASES)],
+            annotations = labels))
+end
+
+# ╔═╡ fdc42e2b-d31a-4d4b-9607-541236c6c02f
+let w = drive_cycles.wltc
+    # Table A1/13 sums the 1 Hz speeds of each table: the phase's own rows, so its first second
+    # after the previous phase's last.
+    rows = [(1, 590), (591, 1023), (1024, 1478), (1479, 1801)]
+    @assert length(w.t) == 1801 && w.t == 0:1800 "the trace must be 0…1800 s at 1 Hz"
+    @assert isapprox([sum(w.v[a:b]) for (a, b) in rows], [11140.3, 17121.2, 25782.2, 29714.9];
+        atol = 0.05) "phase checksums must equal Table A1/13"
+    @assert isapprox(sum(w.v), 83758.6; atol = 0.05) "total checksum must equal Table A1/13"
+    phases = [cycle_stats(w; from = lo, to = hi) for (_, lo, hi) in WLTC_PHASES]
+    @assert round.(Int, 1000 .* getfield.(phases, :km)) == [3095, 4756, 7162, 8254] "phase distances, DieselNet"
+    @assert round.(getfield.(phases, :avg); digits = 1) == [18.9, 39.5, 56.7, 92.0]
+    @assert getfield.(phases, :vmax) == [56.5, 76.6, 97.4, 131.3]
+    @assert getfield.(phases, :T) == [589, 433, 455, 323]
+    # Hardest acceleration over one second: the WLTC's, and the NEDC's (its first ramp).
+    @assert round(maximum(diff(w.v)) / 3.6; digits = 2) == 1.67
+    @assert round(maximum(diff(drive_cycles.nedc.v)) / 3.6; digits = 2) == 1.04
+
+    stats = map(cycle_stats, drive_cycles)
+    table(s) = (round(Int, s.T), round(s.km; digits = 2), round(s.avg; digits = 1),
+        round(s.vmax; digits = 1), round(Int, 100s.stop, RoundNearestTiesAway))
+    @assert table(stats.wltc) == (1800, 23.27, 46.5, 131.3, 13)
+    @assert table(stats.nedc) == (1180, 11.03, 33.6, 120.0, 24)
+    @assert table(stats.ftp75) == (1874, 17.77, 34.1, 91.2, 18)
+    @assert table(stats.hwfet) == (765, 16.51, 77.7, 96.4, 1)
+    @assert table(stats.us06) == (600, 12.89, 77.3, 129.2, 7)
+    @assert round(242 / 1800 * 100) == 13 "DieselNet's 242 s of stops is 13 % too"
+    # R83 states 6.955 km for the EUDC; for ECE-15 it states 1.013 km, the operations give 1.018.
+    eudc = cycle_stats(drive_cycles.nedc; from = 780.0, to = 1180.0)
+    ece = cycle_stats(drive_cycles.nedc; from = 0.0, to = 195.0)
+    @assert round(eudc.km; digits = 3) == 6.955 && round(ece.km; digits = 3) == 1.018
+
+    # Lecture 1's body (dyad/HandsOn/Body.dyad) as WLTP road-load coefficients, v in km/h.
+    f0 = 1400 * 9.80665 * 0.012
+    f2 = 0.5 * 1.2 * 0.63 / 3.6^2
+    @assert round(f0; digits = 1) == 164.8 && round(f2; digits = 4) == 0.0292
+
+    # JC08, DieselNet: average 24.4 km/h with stops, 34.8 km/h without.
+    @assert round(Int, 100 * (1 - 24.4 / 34.8)) == 30
+
+    row(name, s) = "| $name | $(join(table(s), " | ")) |"
+    Markdown.parse("""
+    | Cycle | s | km | average km/h | max km/h | standstill % |
+    |---|---|---|---|---|---|
+    $(row("NEDC", stats.nedc))
+    $(row("WLTC 3b", stats.wltc))
+    $(row("FTP-75", stats.ftp75))
+    $(row("HWFET", stats.hwfet))
+    $(row("US06", stats.us06))
+
+    Road load of Lecture 1's car: f0 = $(round(f0; digits = 1)) N, f1 = 0,
+    f2 = $(round(f2; digits = 4)) N/(km/h)².
+    """)
+end
+
 # ╔═╡ Cell order:
 # ╠═7635b61c-86fb-4a32-99de-86a0c84a2c00
 # ╟─88324f20-40ae-4205-872b-e284cfea7231
@@ -1045,3 +1257,8 @@ end
 # ╟─744b13c3-5c7d-45e1-ac03-e1fb95dc6ebd
 # ╠═4b59056c-86d4-47ee-a13e-e6c5b5b5d47d
 # ╠═7a0ff0b0-36b0-4cd5-aff0-16877e762328
+# ╟─289a3c09-7501-419d-90b7-87683b1fb60f
+# ╠═c781fef9-227d-4f83-8b3d-9c7999694fa2
+# ╠═368a2d98-71d5-430c-8189-29d98b77b727
+# ╠═6c9e61e2-fbff-49c2-863d-7448b6b03ecb
+# ╠═fdc42e2b-d31a-4d4b-9607-541236c6c02f

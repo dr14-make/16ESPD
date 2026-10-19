@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <path fill="#fff" d="M4 4h992v992H4z"/>
+  <path fill="#008a19" d="M992 8v984H8V8zm8-8H0v1000h1000z"/>
+  <g fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 500h180" stroke-width="24"/>
+    <circle cx="260" cy="500" r="80" fill="#c4c6f5"/>
+    <circle cx="260" cy="500" r="28" fill="#fff"/>
+    <path d="M340 500h90"/>
+    <path d="M430 380h260v240H430z" fill="#c4c6f5"/>
+    <path d="M470 560l180-120M470 440l180 120"/>
+    <path d="M690 500h90"/>
+    <circle cx="840" cy="500" r="60" fill="#c4c6f5"/>
+    <circle cx="840" cy="500" r="20" fill="#fff"/>
+    <path d="M900 500h100"/>
+    <path d="M260 580v220h120v200M560 620v180h60v200M840 560v240H620M380 800h240"/>
+    <path d="M0 200h430" stroke="#555"/>
+  </g>
+  <text x="555" y="530" text-anchor="middle" font-family="sans-serif" font-size="92">CVT</text>
+</svg>
