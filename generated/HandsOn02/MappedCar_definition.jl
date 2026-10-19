@@ -5,15 +5,18 @@
 
 
 @doc Markdown.doc"""
-   MappedCarCVT(; name, ratio_initial)
+   MappedCar(; name, ratio_initial)
 
-Hands-on 02 mapped-engine car with a centrifugal launch clutch and CVT.
+Hands-on 02 step 04: the hands-on 1 car with the student's map engine (fuel cut pasted in), a
+flywheel, and the given CVT driveline with its centrifugal launch clutch.
+
+The pedal drives both the engine's throttle and the CVT's engine-speed schedule.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `ratio_initial`         | Initial total CVT ratio (assumed launch setting; override for initialized cruise)                         | --  |   12.0 |
+| `ratio_initial`         | Initial CVT ratio, engine to wheel; 12 is CVTDriveline's launch setting                         | --  |   12 |
 
 ## Connectors
 
@@ -22,12 +25,12 @@ Hands-on 02 mapped-engine car with a centrifugal launch clutch and CVT.
  * `p_m` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `fuel_lph` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function MappedCarCVT(; name = nothing, ratio_initial=Float64(12.0), kwargs...)
+@component function MappedCar(; name = nothing, ratio_initial=Float64(12), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = MappedCarCVT()
+    @named model = MappedCar()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -54,7 +57,7 @@ Hands-on 02 mapped-engine car with a centrifugal launch clutch and CVT.
 
   ### Symbolic Parameters
   __local__ratio_initial = ratio_initial
-  append!(__params, @parameters (ratio_initial::Real), [description = "Initial total CVT ratio (assumed launch setting; override for initialized cruise)"])
+  append!(__params, @parameters (ratio_initial::Real), [description = "Initial CVT ratio, engine to wheel; 12 is CVTDriveline's launch setting"])
   __initial_conditions[ratio_initial] = __local__ratio_initial
 
   ### Final Parameters (assignments)
@@ -79,30 +82,30 @@ Hands-on 02 mapped-engine car with a centrifugal launch clutch and CVT.
   # Subcomponent flywheel of type RotationalComponents.Components.Inertia
   flywheel_overrides = __pop_subcomponent_overrides!(__overrides, "flywheel")
   push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, flywheel_overrides...))
+  # Subcomponent no_booster of type BlockComponents.Sources.Constant
+  no_booster_overrides = __pop_subcomponent_overrides!(__overrides, "no_booster")
+  push!(__systems, @named no_booster = BlockComponents.Sources.Constant(; k=Float64(0), no_booster_overrides...))
+  # Subcomponent to_lph of type BlockComponents.Math.Gain
+  to_lph_overrides = __pop_subcomponent_overrides!(__overrides, "to_lph")
+  push!(__systems, @named to_lph = BlockComponents.Math.Gain(; k=4832.2, to_lph_overrides...))
   # Subcomponent driveline of type VehicleSystemsComponents.Vehicle.CVTDriveline
   driveline_overrides = __pop_subcomponent_overrides!(__overrides, "driveline")
   push!(__systems, @named driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(; ratio_initial=ratio_initial, driveline_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; body_overrides...))
-  # Subcomponent zero_booster of type BlockComponents.Sources.Constant
-  zero_booster_overrides = __pop_subcomponent_overrides!(__overrides, "zero_booster")
-  push!(__systems, @named zero_booster = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_booster_overrides...))
-  # Subcomponent speed_sensor of type TranslationalComponents.Sensors.VelocitySensor
-  speed_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sensor")
-  push!(__systems, @named speed_sensor = TranslationalComponents.Sensors.VelocitySensor(; speed_sensor_overrides...))
+  # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
+  vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
+  push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
   # Subcomponent to_kmh of type BlockComponents.Math.Gain
   to_kmh_overrides = __pop_subcomponent_overrides!(__overrides, "to_kmh")
   push!(__systems, @named to_kmh = BlockComponents.Math.Gain(; k=3.6, to_kmh_overrides...))
-  # Subcomponent fuel_to_lph of type BlockComponents.Math.Gain
-  fuel_to_lph_overrides = __pop_subcomponent_overrides!(__overrides, "fuel_to_lph")
-  push!(__systems, @named fuel_to_lph = BlockComponents.Math.Gain(; k=4832.2, fuel_to_lph_overrides...))
   # Subcomponent rot_ground of type RotationalComponents.Components.Fixed
   rot_ground_overrides = __pop_subcomponent_overrides!(__overrides, "rot_ground")
   push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; rot_ground_overrides...))
-  # Subcomponent road of type TranslationalComponents.Components.Fixed
-  road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = TranslationalComponents.Components.Fixed(; road_overrides...))
+  # Subcomponent trans_ground of type TranslationalComponents.Components.Fixed
+  trans_ground_overrides = __pop_subcomponent_overrides!(__overrides, "trans_ground")
+  push!(__systems, @named trans_ground = TranslationalComponents.Components.Fixed(; trans_ground_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -115,21 +118,23 @@ Hands-on 02 mapped-engine car with a centrifugal launch clutch and CVT.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(pedal, engine.pedal, driveline.pedal))
-  push!(__eqs, connect(zero_booster.y, engine.mdot_bst))
+  push!(__eqs, connect(pedal, engine.pedal))
+  push!(__eqs, connect(pedal, driveline.pedal))
+  push!(__eqs, connect(no_booster.y, engine.mdot_bst))
   push!(__eqs, connect(engine.spline, flywheel.spline_a))
   push!(__eqs, connect(flywheel.spline_b, driveline.spline))
   push!(__eqs, connect(engine.support, rot_ground.spline))
   push!(__eqs, connect(driveline.support_r, rot_ground.spline))
-  push!(__eqs, connect(driveline.flange, body.flange, speed_sensor.flange))
-  push!(__eqs, connect(driveline.support_t, road.flange))
-  push!(__eqs, connect(speed_sensor.v, to_kmh.u))
+  push!(__eqs, connect(driveline.flange, body.flange))
+  push!(__eqs, connect(driveline.support_t, trans_ground.flange))
+  push!(__eqs, connect(vsensor.flange, body.flange))
+  push!(__eqs, connect(vsensor.v, to_kmh.u))
   push!(__eqs, connect(to_kmh.y, v_kmh))
   push!(__eqs, connect(engine.p_m, p_m))
-  push!(__eqs, connect(engine.mdot_fuel, fuel_to_lph.u))
-  push!(__eqs, connect(fuel_to_lph.y, fuel_lph))
+  push!(__eqs, connect(engine.mdot_fuel, to_lph.u))
+  push!(__eqs, connect(to_lph.y, fuel_lph))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export MappedCarCVT
+export MappedCar

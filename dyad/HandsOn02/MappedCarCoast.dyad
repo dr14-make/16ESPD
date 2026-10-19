@@ -1,0 +1,37 @@
+"""
+Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal released at 5 s.
+"""
+component MappedCarCoast
+  "Initial road speed [km/h], 90 km/h cruise (Hands-on 02)"
+  parameter speed_kmh::Real = 90
+  "Pedal that holds speed_kmh until the release (derived)"
+  parameter pedal_cmd::Real = 0.0916
+  "Initial engine speed [rpm], steady at pedal_cmd (derived)"
+  parameter rpm0::Real = 2182
+  "Initial manifold pressure, steady at pedal_cmd (derived)"
+  parameter p_m0::Pressure = 54420
+  "Pedal released at 5 s (assumed)"
+  pedal = BlockComponents.Sources.Step(height = -pedal_cmd, offset = pedal_cmd, start_time = 5) {^pedal}
+  "Wheel radius 0.31 m (hands-on 1 car)"
+  car = MappedCar(ratio_initial = rpm0 * pi / 30 * 0.31 / (speed_kmh / 3.6)) {^car}
+relations
+  connect(pedal.y, car.pedal) {^w1}
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = speed_kmh / 3.6
+  initial car.flywheel.w = rpm0 * pi / 30
+  initial car.flywheel.phi = 0
+  initial car.driveline.clutch.spline_b.phi = 0
+  initial car.engine.air.manifold.p = p_m0
+metadata {
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 390, "x2": 250, "y2": 490}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+analysis MappedCarCoastTransient
+  extends TransientAnalysis(stop = 100)
+  model = MappedCarCoast()
+end

@@ -5,16 +5,17 @@
 
 
 @doc Markdown.doc"""
-   MappedCarCVTWOT(; name)
+   MappedCarWOT(; name)
 
-Wide-open acceleration from rest and idle to CVT-car terminal speed.
+Hands-on 02 step 04 bench: the pedal floored from rest, the engine idling behind the open launch
+clutch.
 """
-@component function MappedCarCVTWOT(; name = nothing, kwargs...)
+@component function MappedCarWOT(; name = nothing, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = MappedCarCVTWOT()
+    @named model = MappedCarWOT()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -53,12 +54,12 @@ Wide-open acceleration from rest and idle to CVT-car terminal speed.
   __constants = Any[]
 
   ### Components
-  # Subcomponent full_pedal of type BlockComponents.Sources.Constant
-  full_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "full_pedal")
-  push!(__systems, @named full_pedal = BlockComponents.Sources.Constant(; k=Float64(1.0), full_pedal_overrides...))
-  # Subcomponent car of type VehicleSystemsComponents.HandsOn02.MappedCarCVT
+  # Subcomponent pedal of type BlockComponents.Sources.Constant
+  pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
+  push!(__systems, @named pedal = BlockComponents.Sources.Constant(; k=Float64(1), pedal_overrides...))
+  # Subcomponent car of type VehicleSystemsComponents.HandsOn02.MappedCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCarCVT(; car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCar(; car_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -66,20 +67,21 @@ Wide-open acceleration from rest and idle to CVT-car terminal speed.
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, car.body.mass.s ~ 0.0)
-  push!(__initialization_eqs, car.body.mass.v ~ 0.0)
-  push!(__initialization_eqs, car.flywheel.phi ~ 0.0)
+  push!(__initialization_eqs, car.body.mass.s ~ 0)
+  push!(__initialization_eqs, car.body.mass.v ~ 0)
+  # Engine idling at 900 rpm (assumed warm idle)
   push!(__initialization_eqs, car.flywheel.w ~ 900 * pi / 30)
-  push!(__initialization_eqs, car.driveline.clutch.spline_b.phi ~ 0.0)
-  push!(__initialization_eqs, car.engine.air.manifold.p ~ 101325.0)
+  push!(__initialization_eqs, car.flywheel.phi ~ 0)
+  push!(__initialization_eqs, car.driveline.clutch.spline_b.phi ~ 0)
+  push!(__initialization_eqs, car.engine.air.manifold.p ~ 101325)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(full_pedal.y, car.pedal))
+  push!(__eqs, connect(pedal.y, car.pedal))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export MappedCarCVTWOT
+export MappedCarWOT

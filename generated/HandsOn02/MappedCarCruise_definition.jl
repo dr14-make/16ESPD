@@ -5,25 +5,28 @@
 
 
 @doc Markdown.doc"""
-   MappedCarCVTCruise(; name, speed_kmh, pedal_cmd, p_m0, ratio0)
+   MappedCarCruise(; name, speed_kmh, pedal_cmd, rpm0, p_m0)
 
-CVT car initialized at a requested steady road speed for cruise measurements.
+Hands-on 02 step 05 bench: the car started in steady cruise at one pedal.
+
+The defaults hold 90 km/h. The engine speed and the CVT ratio start where that pedal settles
+them, so the run starts steady instead of spending a minute getting there.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `speed_kmh`         | Road speed [km/h] (test scenario)                         | --  |   90.0 |
-| `pedal_cmd`         | Constant pedal setting (test scenario)                         | --  |   0.06 |
-| `p_m0`         | Initial manifold pressure [Pa] (derived steady-state guess)                         | Pa  |   45e3 |
-| `ratio0`         | Initial CVT ratio (derived from target engine speed and road speed)                         | --  |   6.0 |
+| `speed_kmh`         | Initial road speed [km/h], 90 km/h cruise (Hands-on 02)                         | --  |   90 |
+| `pedal_cmd`         | Pedal that holds speed_kmh (derived)                         | --  |   0.0916 |
+| `rpm0`         | Initial engine speed [rpm], steady at pedal_cmd (derived)                         | --  |   2182 |
+| `p_m0`         | Initial manifold pressure, steady at pedal_cmd (derived)                         | Pa  |   54420 |
 """
-@component function MappedCarCVTCruise(; name = nothing, speed_kmh=Float64(90.0), pedal_cmd=0.06, p_m0=Float64(45000.0), ratio0=Float64(6.0), kwargs...)
+@component function MappedCarCruise(; name = nothing, speed_kmh=Float64(90), pedal_cmd=0.0916, rpm0=Float64(2182), p_m0=Float64(54420), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
   
-    @named model = MappedCarCVTCruise()
+    @named model = MappedCarCruise()
   """))
 
   __overrides = __build_overrides(kwargs)
@@ -50,17 +53,17 @@ CVT car initialized at a requested steady road speed for cruise measurements.
 
   ### Symbolic Parameters
   __local__speed_kmh = speed_kmh
-  append!(__params, @parameters (speed_kmh::Real), [description = "Road speed [km/h] (test scenario)"])
+  append!(__params, @parameters (speed_kmh::Real), [description = "Initial road speed [km/h], 90 km/h cruise (Hands-on 02)"])
   __initial_conditions[speed_kmh] = __local__speed_kmh
   __local__pedal_cmd = pedal_cmd
-  append!(__params, @parameters (pedal_cmd::Real), [description = "Constant pedal setting (test scenario)"])
+  append!(__params, @parameters (pedal_cmd::Real), [description = "Pedal that holds speed_kmh (derived)"])
   __initial_conditions[pedal_cmd] = __local__pedal_cmd
+  __local__rpm0 = rpm0
+  append!(__params, @parameters (rpm0::Real), [description = "Initial engine speed [rpm], steady at pedal_cmd (derived)"])
+  __initial_conditions[rpm0] = __local__rpm0
   __local__p_m0 = p_m0
-  append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure [Pa] (derived steady-state guess)"])
+  append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure, steady at pedal_cmd (derived)"])
   __initial_conditions[p_m0] = __local__p_m0
-  __local__ratio0 = ratio0
-  append!(__params, @parameters (ratio0::Real), [description = "Initial CVT ratio (derived from target engine speed and road speed)"])
-  __initial_conditions[ratio0] = __local__ratio0
 
   ### Final Parameters (assignments)
 
@@ -74,12 +77,12 @@ CVT car initialized at a requested steady road speed for cruise measurements.
   __constants = Any[]
 
   ### Components
-  # Subcomponent pedal_source of type BlockComponents.Sources.Constant
-  pedal_source_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_source")
-  push!(__systems, @named pedal_source = BlockComponents.Sources.Constant(; k=pedal_cmd, pedal_source_overrides...))
-  # Subcomponent car of type VehicleSystemsComponents.HandsOn02.MappedCarCVT
+  # Subcomponent pedal of type BlockComponents.Sources.Constant
+  pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
+  push!(__systems, @named pedal = BlockComponents.Sources.Constant(; k=pedal_cmd, pedal_overrides...))
+  # Subcomponent car of type VehicleSystemsComponents.HandsOn02.MappedCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCarCVT(; ratio_initial=ratio0, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCar(; ratio_initial=rpm0 * pi / 30 * 0.31 / (speed_kmh / 3.6), car_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -87,20 +90,20 @@ CVT car initialized at a requested steady road speed for cruise measurements.
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, car.body.mass.s ~ 0.0)
+  push!(__initialization_eqs, car.body.mass.s ~ 0)
   push!(__initialization_eqs, car.body.mass.v ~ speed_kmh / 3.6)
-  push!(__initialization_eqs, car.flywheel.phi ~ 0.0)
-  push!(__initialization_eqs, car.driveline.clutch.spline_b.phi ~ 0.0)
+  push!(__initialization_eqs, car.flywheel.w ~ rpm0 * pi / 30)
+  push!(__initialization_eqs, car.flywheel.phi ~ 0)
+  push!(__initialization_eqs, car.driveline.clutch.spline_b.phi ~ 0)
   push!(__initialization_eqs, car.engine.air.manifold.p ~ p_m0)
-  push!(__initialization_eqs, car.engine.cut_logic.decel.y ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(pedal_source.y, car.pedal))
+  push!(__eqs, connect(pedal.y, car.pedal))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
-export MappedCarCVTCruise
+export MappedCarCruise

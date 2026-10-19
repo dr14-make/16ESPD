@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct MappedCarCVTWOTTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :MappedCarCVTWOTTransient
+@kwdef mutable struct RoadBrakeTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :RoadBrakeTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 300.0
+  var"stop"::Float64 = 6.0
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -25,11 +25,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  # Wide-open acceleration from rest and idle to CVT-car terminal speed.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn02.MappedCarCVTWOT(; name=:MappedCarCVTWOT)
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.TestRoadBrake(; name=:TestRoadBrake)
 end
 
-function DyadInterface.run_analysis(spec::MappedCarCVTWOTTransientSpec)
+function DyadInterface.run_analysis(spec::RoadBrakeTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   
@@ -39,5 +38,5 @@ function DyadInterface.run_analysis(spec::MappedCarCVTWOTTransientSpec)
   run_analysis(base_spec)
 end
 
-MappedCarCVTWOTTransient(;kwargs...) = run_analysis(MappedCarCVTWOTTransientSpec(;kwargs...))
-export MappedCarCVTWOTTransient, MappedCarCVTWOTTransientSpec
+RoadBrakeTransient(;kwargs...) = run_analysis(RoadBrakeTransientSpec(;kwargs...))
+export RoadBrakeTransient, RoadBrakeTransientSpec

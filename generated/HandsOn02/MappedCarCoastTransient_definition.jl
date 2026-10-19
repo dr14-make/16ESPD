@@ -8,11 +8,11 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct MappedCarCVTCruiseTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :MappedCarCVTCruiseTransient
+@kwdef mutable struct MappedCarCoastTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :MappedCarCoastTransient
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
-  var"stop"::Float64 = 60.0
+  var"stop"::Float64 = 100
   var"abstol"::Float64 = 0.000001
   var"reltol"::Float64 = 0.000001
   var"saveat"::Float64 = 0
@@ -25,26 +25,19 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  var"speed_kmh"::Float64 = 90.0
-  var"pedal_cmd"::Float64 = 0.06
-  var"p_m0"::Float64 = 45000.0
-  var"ratio0"::Float64 = 6.0
-  # CVT car initialized at a requested steady road speed for cruise measurements.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn02.MappedCarCVTCruise(; name=:MappedCarCVTCruise)
+  # Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal released at 5 s.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn02.MappedCarCoast(; name=:MappedCarCoast)
 end
 
-function DyadInterface.run_analysis(spec::MappedCarCVTCruiseTransientSpec)
+function DyadInterface.run_analysis(spec::MappedCarCoastTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  push!(overrides, no_namespace_model.speed_kmh => spec.var"speed_kmh")
-  push!(overrides, no_namespace_model.pedal_cmd => spec.var"pedal_cmd")
-  push!(overrides, no_namespace_model.p_m0 => spec.var"p_m0")
-  push!(overrides, no_namespace_model.ratio0 => spec.var"ratio0")
+  
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )
   run_analysis(base_spec)
 end
 
-MappedCarCVTCruiseTransient(;kwargs...) = run_analysis(MappedCarCVTCruiseTransientSpec(;kwargs...))
-export MappedCarCVTCruiseTransient, MappedCarCVTCruiseTransientSpec
+MappedCarCoastTransient(;kwargs...) = run_analysis(MappedCarCoastTransientSpec(;kwargs...))
+export MappedCarCoastTransient, MappedCarCoastTransientSpec
