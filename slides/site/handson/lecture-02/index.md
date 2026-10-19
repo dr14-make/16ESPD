@@ -994,42 +994,42 @@ Step 05 gave three numbers at three steady speeds, and none of them is how anyon
 
 :::
 
-#### What you are building
+#### The task
 
-The test driver is your `CruiseController` from Lecture 1, step 6d, with its limiter and clamping. Its output becomes an effort from −1 to +1: the positive part goes to the pedal, the negative part, times a maximum brake force, to the brake you added in step 06. Two integrators add up the fuel in liters and the distance in kilometers.
+Build the bench, a new component `MappedCarWLTC`, yourself: this is the task, so neither this page nor the course library shows the finished model. It has to
 
-[![MappedCarWLTC, the course's layout: trace into driver; the driver's output split into to_pedal, wired to the car's pedal input at the top left, and brake_part, then to_brake into the car's F_brake input at the bottom left. The car's v_kmh output runs back along the bottom into the driver's bottom input and down into dist_km; its fuel_lph output runs down the right into fuel_L.](/handson/lecture-02/img/step07-wltc-bench.png){width="961" height="582" style="max-width:min(640px, 100%)"}](/handson/lecture-02/img/step07-wltc-bench.png)
+- give your `CruiseController` from Lecture 1, step 6d, the trace as its setpoint and your car's speed as its measurement;
+- turn its one output, an effort from −1 to +1, into two commands: the positive part to the pedal, the negative part, times a maximum brake force of 4000 N (step 06's), to the brake;
+- add up the fuel burned in liters and the distance driven in kilometers, over the whole run.
 
-| Name | What | Set |
+The parts you need, all of them ones you have used:
+
+| Part | Where | Hint |
 | --- | --- | --- |
-| `trace` | `VehicleSystemsComponents › Vehicle › DriveCycle` | nothing: its output `y` is the WLTC class 3b trace, target speed in km/h |
-| `driver` | your `CruiseController` | `y_min = -1`, `y_max = 1`; `k = 0.14`, `Ti = 3.5`, `Td = 0.7`; `xd0 = 0`, `xi0 = 0` |
-| `to_pedal` | `BlockComponents › Nonlinear › Limiter` | `y_min = 0`, `y_max = 1` |
-| `brake_part` | `BlockComponents › Nonlinear › Limiter` | `y_min = -1`, `y_max = 0` |
-| `to_brake` | `BlockComponents › Math › Gain` | `k = -4000`: full brake is step 06's 4000 N |
-| `car` | your `MappedCar` from step 06 B | — |
-| `fuel_L` | `BlockComponents › Continuous › Integrator` | `k = 1/3600`: L/h into liters |
-| `dist_km` | `BlockComponents › Continuous › Integrator` | `k = 1/3600`: km/h into kilometers |
+| the trace | `VehicleSystemsComponents › Vehicle › DriveCycle` | given: its output `y` is the WLTC class 3b target speed in km/h |
+| the driver | your `CruiseController` | see **Advice** below for the limits, gains and initial states |
+| the car | your `MappedCar` from step 06 B | it has the `pedal` and `F_brake` inputs and the `v_kmh` and `fuel_lph` outputs you need |
+| the split | `BlockComponents › Nonlinear › Limiter`, `BlockComponents › Math › Gain` | a limiter passes only the part of a signal between its `y_min` and `y_max` |
+| the sums | `BlockComponents › Continuous › Integrator` | an integrator with `k = 1/3600` turns L/h into liters, and km/h into kilometers |
 
-#### Do this
+Name the trace `trace`, the controller `driver`, the car `car`, and the two integrators `fuel_L` and `dist_km`: the snippets below use these names.
 
-1. <Badge type="tip" text="New component" /> `MappedCarWLTC`. Place the parts of the table.
-2. Wire the loop: `trace` → `driver.u_s`, `car.v_kmh` → `driver.u_m`; `driver.y` → `to_pedal.u` and `brake_part.u`; `to_pedal.y` → `car.pedal`; `brake_part.y` → `to_brake.u` → `car.F_brake`.
-3. Wire the accounting: `car.fuel_lph` → `fuel_L.u`, `car.v_kmh` → `dist_km.u`.
-4. Start the car as step 04's bench does: at rest, the engine idling, the angles set. Copy the six `initial` lines of `MappedCarWOT`, then start the engine at the idle step 06 ended in, 775 rpm and 33.6 kPa:
+#### Run it
+
+1. Start the car as step 04's bench does: at rest, the engine idling, the angles set. Copy the six `initial` lines of `MappedCarWOT`, then start the engine at the idle step 06 ended in, 775 rpm and 33.6 kPa:
 
    ```txt
    initial car.flywheel.w = 775 * pi / 30
    initial car.engine.air.manifold.p = 33600
    ```
-5. <Badge type="tip" text="New analysis" /> ▷ → **Create New Analysis** → `TransientAnalysis` → name it `MappedCarWLTCTransient`. Open its code and make the `extends` line:
+2. <Badge type="tip" text="New analysis" /> ▷ → **Create New Analysis** → `TransientAnalysis` → name it `MappedCarWLTCTransient`. Open its code and make the `extends` line:
 
    ```txt
    extends TransientAnalysis(stop = 1800, saveat = 1, alg = ODEAlg.Rodas5P())
    ```
 
    Run it. The first run is mostly compilation, about a minute; every run after it takes 5–10 s. If it is too slow, run `stop = 1022` instead: the Low and Medium phases, 7.85 km, for partial credit.
-6. Plot the speed over the target, and the error:
+3. Plot the speed over the target, and the error:
 
    ```julia
    r = MyCar.MappedCarWLTCTransient()
@@ -1037,7 +1037,7 @@ The test driver is your `CruiseController` from Lecture 1, step 6d, with its lim
    plot(r; idxs = r."driver.error.y")         # target minus speed
    ```
 
-7. Read the label numbers at the end, and the share of the run inside the band:
+4. Read the label numbers at the end, and the share of the run inside the band:
 
    ```julia
    T = 1800
@@ -1054,7 +1054,7 @@ The test driver is your `CruiseController` from Lecture 1, step 6d, with its lim
 
 ::: warning Advice
 
-- **Solver.** Set `alg = ODEAlg.Rodas5P()` in the analysis's `extends` line, as in step 5. With the default solver the full cycle stops at 1190 s with `MaxIters`.
+- **Solver.** Set `alg = ODEAlg.Rodas5P()` in the analysis's `extends` line, as in step 2. With the default solver the full cycle stops at 1190 s with `MaxIters`.
 - **Gains.** Start from `k = 0.14`, `Ti = 3.5`, `Td = 0.7`. Lecture 1's `k = 56` was N·m of torque per km/h; here the output is an effort of ±1, and `k` is 400 times smaller. Keep `Td` above zero: the derivative filter's time constant is `Td / Nd`.
 - **Initial states.** `xd0 = 0` and `xi0 = 0`. Step 6d's `xd0 = -90` was the seed for a 90 km/h cruise; from rest it kicks the derivative at the first instant.
 - **Limits.** `y_min = -1`, `y_max = 1`. Lecture 1's benches set `y_min = 0`: the output then never goes negative and the brake gets no command. On the course's run the effort stays between −0.67 and +0.29.
@@ -1075,7 +1075,7 @@ The trace is 23.27 km, but your car drives its own distance. A car that lags the
 
 ::: tip Checkpoint
 
-From `HandsOn02.MappedCarWLTCTransient`, the course's copy of the bench:
+From the course's own run of this test:
 
 - Distance **23.27 km**, the trace's own: the car keeps up.
 - Inside the ±2 km/h, ±1 s band for **98.5 %** of the run. Inside ±2 km/h alone, for only 86 %: on a steep ramp, a second behind is several km/h.

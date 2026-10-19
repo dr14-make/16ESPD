@@ -5,7 +5,7 @@ The plan behind step 07 of `slides/site/handson/lecture-02/index.md`. It fills s
 `lecture-02-handson-plan.md`.
 
 Every number below is from the reference bench `HandsOn02.MappedCarWLTC` (§3) and its testset
-"Hands-on 02 WLTC bonus" in `test/engine_plausibility.jl`. The student guide, the tutor guide and
+"Hands-on 02 WLTC bonus", both kept off `main` so the installed library does not hold the answer: on branch `feat/handson02-wltc-bonus` only. The student guide, the tutor guide and
 the deck quote the same figures.
 
 ## 1. The decision
@@ -62,8 +62,8 @@ car.v_kmh    ──► Integrator(k = 1/3600) ──► dist_km  [km]
 | Bench `MappedCarWLTC` — trace, controller, output split, two integrators; analysis `MappedCarWLTCTransient`, `stop = 1800` | **built** | The wiring and the fuel accounting are the task. |
 | Plots and the band check | **built**, from a REPL snippet on the page | The band check is a few lines of Julia; the page gives a starting point. |
 
-The reference is `HandsOn02.MappedCarWLTC` (on `MappedCarWithBrake`), built on
-`feat/handson02-wltc-bonus`. It holds the guide's parts under the guide's names (`trace`, `driver`,
+The reference is `HandsOn02.MappedCarWLTC` (on `MappedCarWithBrake`), kept off `main` so the installed library does not hold the answer: on branch `feat/handson02-wltc-bonus` only: this is the task
+students model themselves, so neither the library nor the page holds the finished bench. It holds the guide's parts under the guide's names (`trace`, `driver`,
 `to_pedal`, `brake_part`, `to_brake`, `car`, `fuel_L`, `dist_km`), and its `driver` is
 `Lecture1.Step06d.CruiseController`, the controller students built, not the course's copy with the
 `with_I`/`with_D` switches. Full brake is `F_brake_max = 4000` N, step 06's firm stop.
@@ -236,4 +236,4 @@ What the reference carries, on the Dyad branch:
 - **In this repository:** `dyad/Vehicle/CVTDriveline.dyad`, `RoadBrake.dyad`;
   `dyad/HandsOn02/MappedCarWithBrake.dyad`; `dyad/Lecture1/Step06d/CruiseController.dyad` (the
   controller students built, which the reference uses); `dyad/HandsOn02/MappedCarWLTC.dyad` (the
-  reference bench).
+  reference bench, on `feat/handson02-wltc-bonus` only).

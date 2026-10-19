@@ -334,8 +334,9 @@ label (5.3 L/100 km, 120 g/km).
 `CruiseController(y_min = -1, y_max = 1)` → positive part to `car.pedal`, negative part ×
 `F_brake_max` to `car.F_brake`; integrators for fuel (L) and distance (km).
 
-**Reference model.** `HandsOn02.MappedCarWLTC`, `MappedCarWLTCTransient`, on
-`feat/handson02-wltc-bonus`. Full plan, grading and risks: `lecture-02-handson-step07-wltc-plan.md`.
+**Reference model.** `HandsOn02.MappedCarWLTC`, `MappedCarWLTCTransient`, kept off `main` so the installed library does not hold the answer: on branch `feat/handson02-wltc-bonus` only. Students build
+the bench themselves; the page gives the task, the parts and the advice, not the diagram or the
+wiring. Only `Vehicle.DriveCycle` is in the library. Full plan, grading and risks: `lecture-02-handson-step07-wltc-plan.md`.
 
 **Checkpoint / grading.** Tracking inside ±2 km/h, ±1 s for most of the cycle (plots of speed,
 target and error); L/100 km and g CO₂/km inside a band around the reference; one paragraph on the
@@ -343,7 +344,7 @@ difference from the label. Reference: 23.27 km, 5.22 L/100 km, 120 g/km, 98.5 % 
 proposed marks, for the lecturer to confirm: ≥ 95 % in the band, ±0.25 L/100 km. Fallback for partial
 credit: Low and Medium only, 0–1022 s.
 
-**Screenshots.** `step07-wltc-bench.png`, `step07-wltc-plot.png`.
+**Screenshots.** `step07-wltc-plot.png` only: no picture of the finished bench.
 
 ## TODO slots and what fills each
 
