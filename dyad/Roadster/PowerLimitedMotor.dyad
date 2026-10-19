@@ -1,0 +1,37 @@
+"""
+Electric drive referred to the driven wheels: it delivers the commanded torque up to a torque
+ceiling, and above base speed no more than its rated power allows.
+
+The torque ceiling and the power ceiling meet at base speed `P_max / T_max`. Below it the drive
+is torque-limited, above it the available torque falls as `P_max / w`. `w_eps` keeps the power
+ceiling finite at standstill. This reduced-order source models forward traction only; it does not
+represent reverse drive or regenerative braking.
+"""
+component PowerLimitedMotor
+  extends RotationalComponents.Interfaces.PartialTorque
+  "Requested wheel torque"
+  tau_cmd = RealInput() {^tau_cmd}
+  "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"
+  parameter T_max::Torque = 12000
+  "Rated power; press reports describe the drive as over 1 MW"
+  parameter P_max::Power = 1.0e6
+  "Speed floor for the power ceiling; numerical regularization"
+  parameter w_eps::AngularVelocity = 1.0
+  "Wheel speed"
+  variable w::AngularVelocity
+  "Delivered wheel torque"
+  variable tau::Torque
+  "Delivered mechanical power"
+  variable P::Power
+relations
+  w = der(phi)
+  tau = -spline.tau
+  tau = min(min(tau_cmd, T_max), P_max / max(w, w_eps))
+  P = tau * w
+metadata {
+  "_links": {
+    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
+  },
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": -150, "rot": 0}]}
+}
+end

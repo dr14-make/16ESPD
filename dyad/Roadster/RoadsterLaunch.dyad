@@ -1,0 +1,263 @@
+"Incremental rolling resistance caused by suction downforce."
+component SuctionRollingResistance
+  "Connection to the moving vehicle body"
+  flange = Flange() {^flange}
+  "Suction downforce"
+  downforce = RealInput() {^downforce}
+  "Rolling resistance coefficient; inherited from the baseline vehicle assumption"
+  parameter f_r::Real = 0.012
+  "Speed scale for a continuous force reversal; numerical regularization"
+  parameter v_eps::Velocity = 0.1
+  "Vehicle speed"
+  variable v::Velocity
+relations
+  v = der(flange.s)
+  flange.f = f_r * downforce * tanh(v / v_eps)
+metadata {
+  "_links": {
+    "downforce": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+  }
+}
+end
+
+"""
+Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
+
+The traction control requests the torque that holds the tire just below peak adhesion,
+`grip * mu_A * F_z * radius`, and cuts that request back when the measured slip approaches the
+adhesion peak; the motor delivers it up to its torque and power ceilings. The fan begins at its
+commanded pressure because the car sits on suction before launch.
+
+Suction downforce loads rolling resistance because tire deformation depends on total normal
+load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds
+only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only car exactly.
+"""
+component RoadsterLaunch
+  motor = VehicleSystemsComponents.Roadster.PowerLimitedMotor(T_max = T_max, P_max = P_max) {^motor}
+  wheel_inertia = RotationalComponents.Components.Inertia(J = J_w) {^wheel_inertia}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.LoadedSlipWheel1D(radius = radius, mu_A = mu_A, mu_S = mu_S) {^wheel}
+  body = VehicleSystemsComponents.Vehicle.VehicleBody(m = m, CdA = CdA) {^body}
+  axle = VehicleSystemsComponents.Roadster.AxleLoad(m = m, share = share, h_over_L = h_over_L) {^axle}
+  traction = VehicleSystemsComponents.Roadster.TractionControl(grip = grip, mu_A = mu_A, radius = radius) {^traction}
+  fan_command = BlockComponents.Sources.Constant(k = fan_cmd) {^fan_command}
+  fan = VehicleSystemsComponents.Roadster.SuctionFan(gap = skirt_gap) {^fan}
+  suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance() {^suction_rolling}
+  thrust_command = BlockComponents.Sources.Constant(k = thrust_cmd) {^thrust_command}
+  tank = VehicleSystemsComponents.Roadster.AirTank(V = tank_volume, p0 = tank_pressure, n = tank_n) {^tank}
+  nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(A_t = A_t) {^nozzle}
+  thrust_stand = TranslationalComponents.Components.Fixed() {^thrust_stand}
+  forward_gain = BlockComponents.Math.Gain(k = 1 - down_fraction) {^forward_gain}
+  forward_force = TranslationalComponents.Sources.Force() {^forward_force}
+  force_ground = TranslationalComponents.Components.Fixed() {^force_ground}
+  downforce_sum = BlockComponents.Math.Add(k1 = 1, k2 = down_fraction) {^downforce_sum}
+  flat = BlockComponents.Sources.Constant(k = 0) {^flat}
+  "Motor housing"
+  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  "Vehicle mass; assumed because Tesla has not disclosed it"
+  parameter m::Dyad.Mass = 2000
+  "Aerodynamic drag area, Cd * A; assumed"
+  parameter CdA::Area = 0.6
+  "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"
+  parameter T_max::Torque = 12000
+  "Rated power; press reports describe the drive as over 1 MW"
+  parameter P_max::Power = 1.0e6
+  "Driven road wheels only, without reflected motor rotors; assumed. Rotors would make it about 7-10 kg.m^2 and the rear-wheel-drive t60 about 3.41-3.46 s"
+  parameter J_w::MomentOfInertia = 2.4
+  "Wheel rolling radius; assumed"
+  parameter radius::Length = 0.35
+  "Peak tire adhesion; Tesla's stated tire limit"
+  parameter mu_A::Real = 1.26
+  "Sliding tire friction; assumed"
+  parameter mu_S::Real = 1.0
+  "Fraction of peak adhesion targeted by ideal traction control; assumed margin"
+  parameter grip::Real = 0.98
+  "Static fraction of weight on the driven axle; assumed"
+  parameter share::Real = 0.55
+  "Center-of-mass height over wheelbase; assumed"
+  parameter h_over_L::Real = 0.17
+  "Normalized suction-fan command"
+  parameter fan_cmd::Real = 0.0
+  "Effective skirt gap; assumed"
+  parameter skirt_gap::Length = 0.003
+  "Normalized rear-thrust valve command"
+  parameter thrust_cmd::Real = 0.0
+  "Compressed-air volume; Tesla reports 600 L total and Electrek reports 200 L for the Thrust trim"
+  parameter tank_volume::Volume = 0.6
+  "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"
+  parameter tank_pressure::Pressure = 380e5
+  "Tank polytropic index; 1.4 is the adiabatic-air bound and 1 is isothermal"
+  parameter tank_n::Real = 1.4
+  "Total nozzle throat area, sized for 80 kN at 380 bar"
+  parameter A_t::Area = 1.286e-3
+  "Share of rear thrust directed downward rather than backward"
+  parameter down_fraction::Real(min = 0, max = 1) = 0.0
+  "Vehicle speed"
+  variable v::Velocity
+relations
+  connect(motor.spline, wheel_inertia.spline_a) {^id1}
+  connect(motor.support, rot_ground.spline) {^id2}
+  connect(wheel_inertia.spline_b, wheel.spline) {^id3}
+  connect(wheel.flange, body.flange) {^id4}
+  connect(axle.flange, body.flange) {^id5}
+  connect(suction_rolling.flange, body.flange) {^id12}
+  connect(fan_command.y, fan.cmd) {^id13}
+  connect(thrust_command.y, nozzle.cmd) {^id14}
+  connect(tank.p, nozzle.p) {^id15}
+  connect(tank.T, nozzle.T) {^id16}
+  connect(nozzle.mdot, tank.mdot) {^id17}
+  connect(nozzle.flange, thrust_stand.flange) {^id18}
+  connect(nozzle.thrust, forward_gain.u) {^id19}
+  connect(forward_gain.y, forward_force.f) {^id20}
+  connect(forward_force.flange_a, force_ground.flange) {^id21}
+  connect(forward_force.flange_b, body.flange) {^id22}
+  connect(fan.downforce, downforce_sum.u1) {^id23}
+  connect(nozzle.thrust, downforce_sum.u2) {^id24}
+  connect(downforce_sum.y, axle.downforce) {^id6}
+  connect(downforce_sum.y, suction_rolling.downforce) {^id25}
+  connect(axle.F_z, wheel.F_z) {^id7}
+  connect(axle.F_z, traction.F_z) {^id8}
+  connect(wheel.kappa, traction.kappa) {^id11}
+  connect(traction.tau_cmd, motor.tau_cmd) {^id9}
+  connect(flat.y, body.grade) {^id10}
+  v = axle.v
+  initial wheel_inertia.phi = 0.0
+  initial wheel_inertia.w = 0.0
+  initial body.mass.s = 0.0
+  initial body.mass.v = 0.0
+  initial axle.a_pitch = 0.0
+  initial fan.dp = fan_cmd * fan.dp_max
+metadata {
+  "_links": {
+    "fan_command": {"Dyad": {"placement": {"diagram": {"x1": -350, "x2": -250, "y1": 115, "y2": 215}}}},
+    "fan": {"Dyad": {"placement": {"diagram": {"x1": -150, "x2": -50, "y1": 115, "y2": 215}}}},
+    "thrust_command": {"Dyad": {"placement": {"diagram": {"x1": -350, "x2": -250, "y1": 300, "y2": 400}}}},
+    "tank": {"Dyad": {"placement": {"diagram": {"x1": -350, "x2": -250, "y1": 470, "y2": 570}}}},
+    "nozzle": {"Dyad": {"placement": {"diagram": {"x1": -150, "x2": -50, "y1": 470, "y2": 570}}}},
+    "thrust_stand": {"Dyad": {"placement": {"diagram": {"x1": -70, "x2": 30, "y1": 650, "y2": 750}}}},
+    "downforce_sum": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 130, "y2": 230}}}},
+    "forward_gain": {"Dyad": {"placement": {"diagram": {"x1": 100, "x2": 200, "y1": 450, "y2": 550}}}},
+    "axle": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 130, "y2": 230}}}},
+    "suction_rolling": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 300, "y2": 400}}}},
+    "forward_force": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 400, "y1": 570, "y2": 670}}}},
+    "force_ground": {"Dyad": {"placement": {"diagram": {"x1": 200, "x2": 300, "y1": 700, "y2": 800}}}},
+    "traction": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 600, "y1": 130, "y2": 230}}}},
+    "motor": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 500, "y2": 600}}}},
+    "rot_ground": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 800, "y1": 660, "y2": 760}}}},
+    "wheel_inertia": {"Dyad": {"placement": {"diagram": {"x1": 870, "x2": 970, "y1": 500, "y2": 600}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 1040, "x2": 1140, "y1": 500, "y2": 600}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 1210, "x2": 1310, "y1": 500, "y2": 600, "rot": 180}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 1210, "x2": 1310, "y1": 670, "y2": 770}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 205}, {"x": 450, "y": 890}, {"x": 1175, "y": 890}, {"x": 1175, "y": 550}], "E": 2}], "path": {}}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 425, "y": 160}, {"x": 425, "y": 80}, {"x": 1090, "y": 80}], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 180}, {"x": 650, "y": 550}], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1360, "y": 720}, {"x": 1360, "y": 550}], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1090, "y": 830}, {"x": 480, "y": 830}, {"x": 480, "y": 200}], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 350}, {"x": 450, "y": 890}, {"x": 1175, "y": 890}, {"x": 1175, "y": 550}], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -100, "y": 350}], "E": 2}], "path": {}}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -20, "y": 540}], "E": 2}], "path": {}}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 500}], "E": 2}], "path": {}}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 620}], "E": 2}], "path": {}}},
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 620}, {"x": 450, "y": 890}, {"x": 1175, "y": 890}, {"x": 1175, "y": 550}], "E": 2}], "path": {}}},
+    "id23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 20, "y": 500}, {"x": 20, "y": 210}], "E": 2}], "path": {}}},
+    "id25": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 180}, {"x": 250, "y": 350}], "E": 2}], "path": {}}}
+  }
+}
+end
+
+test component TestRoadsterLaunch
+  launch = VehicleSystemsComponents.Roadster.RoadsterLaunch()
+metadata {
+  "Dyad": {
+    "tests": {
+      "rear_wheel_drive": {
+        "stop": 4,
+        "params": {"launch.share": 0.55, "launch.h_over_L": 0.17},
+        "atol": {"launch.v": 0.02, "launch.wheel.kappa": 0.001},
+        "expect": {
+          "initial": {"launch.v": 0, "launch.wheel.kappa": 0},
+          "final": {"launch.v": 32.18359, "launch.wheel.kappa": 0.034254},
+          "signals": ["launch.v", "launch.wheel.kappa"]
+        }
+      },
+      "all_wheel_drive": {
+        "stop": 4,
+        "params": {"launch.share": 1, "launch.h_over_L": 0},
+        "atol": {"launch.v": 0.02, "launch.wheel.kappa": 0.001},
+        "expect": {
+          "initial": {"launch.v": 0, "launch.wheel.kappa": 0},
+          "final": {"launch.v": 46.44041, "launch.wheel.kappa": 0.026170},
+          "signals": ["launch.v", "launch.wheel.kappa"]
+        }
+      },
+      "suction_rear_wheel_drive": {
+        "stop": 2,
+        "params": {"launch.fan_cmd": 1, "launch.share": 0.55, "launch.h_over_L": 0.17},
+        "expect": {
+          "initial": {"launch.fan.dp": 11522.81375},
+          "final": {"launch.fan.dp": 11522.81375}
+        },
+        "atol": {"launch.fan.dp": 0.1}
+      },
+      "suction_all_wheel_drive": {
+        "stop": 2,
+        "params": {"launch.fan_cmd": 1, "launch.share": 1, "launch.h_over_L": 0},
+        "expect": {
+          "initial": {"launch.fan.dp": 11522.81375},
+          "final": {"launch.fan.dp": 11522.81375}
+        },
+        "atol": {"launch.fan.dp": 0.1}
+      }
+    }
+  }
+}
+end
+
+
+analysis RoadsterLaunchTransient
+  extends TransientAnalysis(stop = 6.0, abstol = 1e-8, reltol = 1e-6)
+  "Vehicle mass"
+  parameter m::Dyad.Mass = 2000
+  "Aerodynamic drag area, Cd * A; assumed"
+  parameter CdA::Area = 0.6
+  "Rated power"
+  parameter P_max::Power = 1.0e6
+  "Peak wheel torque"
+  parameter T_max::Torque = 12000
+  "Normalized suction-fan command"
+  parameter fan_cmd::Real = 0.0
+  "Effective skirt gap; assumed"
+  parameter skirt_gap::Length = 0.003
+  "Normalized rear-thrust valve command"
+  parameter thrust_cmd::Real = 0.0
+  "Compressed-air tank volume"
+  parameter tank_volume::Volume = 0.6
+  "Initial compressed-air pressure"
+  parameter tank_pressure::Pressure = 380e5
+  "Tank polytropic index"
+  parameter tank_n::Real = 1.4
+  "Total nozzle throat area"
+  parameter A_t::Area = 1.286e-3
+  "Share of thrust directed downward"
+  parameter down_fraction::Real = 0.0
+  "Peak tire adhesion"
+  parameter mu_A::Real = 1.26
+  "Static fraction of weight on the driven axle; 1 for all-wheel drive"
+  parameter share::Real = 0.55
+  "Center-of-mass height over wheelbase; 0 for all-wheel drive"
+  parameter h_over_L::Real = 0.17
+  model = VehicleSystemsComponents.Roadster.RoadsterLaunch(m = m, CdA = CdA, P_max = P_max, T_max = T_max, fan_cmd = fan_cmd, skirt_gap = skirt_gap, thrust_cmd = thrust_cmd, tank_volume = tank_volume, tank_pressure = tank_pressure, tank_n = tank_n, A_t = A_t, down_fraction = down_fraction, mu_A = mu_A, share = share, h_over_L = h_over_L)
+relations
+end

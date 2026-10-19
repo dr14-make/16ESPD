@@ -1,0 +1,67 @@
+"""
+One-dimensional tire contact whose normal load is a signal rather than a constant.
+
+Same slip definition, sign conventions and friction curve as `SlipWheel1D`. The normal load
+`F_z` arrives at an input, so weight transfer and aerodynamic or suction downforce can change the
+grip the tire offers while the vehicle moves. The slip ratio leaves at an output, so a traction
+controller can read it.
+"""
+component LoadedSlipWheel1D
+  "Wheel shaft"
+  spline = Spline() {^spline}
+  "Longitudinal connection to the vehicle body"
+  flange = Flange() {^flange}
+  "Normal load on the tire"
+  F_z = RealInput() {^F_z}
+  "Regularized longitudinal slip ratio"
+  kappa = RealOutput() {^kappa}
+  "Friction coefficient against slip"
+  curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {^curve}
+  "Wheel rolling radius; assumed"
+  parameter radius::Length = 0.35
+  "Slip ratio at peak adhesion; assumed from the reusable tire curve"
+  parameter sAdhesion::Real = 0.04
+  "Slip ratio at the sliding plateau; assumed from the reusable tire curve"
+  parameter sSlide::Real = 0.12
+  "Peak adhesion coefficient; Tesla's stated tire limit"
+  parameter mu_A::Real = 1.26
+  "Sliding friction coefficient; assumed"
+  parameter mu_S::Real = 1.0
+  "Low-speed denominator floor that avoids singular standstill slip; numerical regularization"
+  parameter v_eps::Velocity = 0.5
+  "Wheel angular speed"
+  variable omega::AngularVelocity
+  "Vehicle longitudinal speed"
+  variable v::Velocity
+  "Longitudinal tire force"
+  variable F_x::Force
+relations
+  omega = der(spline.phi)
+  v = der(flange.s)
+  kappa = (omega * radius - v) / max(abs(v), v_eps)
+  curve.kappa = kappa
+  F_x = curve.mu * F_z
+  # Flow is positive into this component, so traction on the body appears as a negative flange force.
+  flange.f = -F_x
+  0 = spline.tau + radius * flange.f
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 800, "y": 1100, "rot": 0}]},
+  "_links": {
+    "spline": {
+      "Dyad": {"placement": {"diagram": {"x1": -40, "x2": 60, "y1": 440, "y2": 540}}}
+    },
+    "flange": {
+      "Dyad": {"placement": {"diagram": {"x1": 960, "x2": 1060, "y1": 450, "y2": 550}}}
+    },
+    "F_z": {
+      "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": -50, "y2": 50}}}
+    },
+    "kappa": {
+      "Dyad": {"placement": {"diagram": {"x1": 460, "x2": 560, "y1": 950, "y2": 1050}}}
+    },
+    "curve": {
+      "Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}
+    }
+  }
+}
+end

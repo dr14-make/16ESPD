@@ -11,6 +11,7 @@ end
 
 include("BrakeActuator_experiment.jl")
 include("BrakedWheel_experiment.jl")
+include("LoadedSlipWheel1D_experiment.jl")
 include("SlipWheel1D_experiment.jl")
 include("TestBrakeActuator_experiment.jl")
 include("TestBrakedWheel_experiment.jl")
