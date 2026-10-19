@@ -313,7 +313,7 @@ routeAlias: wltc
 
 > **Hand in** with your pull request
 >
-> - speed over target and the error: inside **±2 km/h, ±1 s** for most of the cycle
+> - speed over target and the error: inside **±2 km/h, ±1 s** for at least 95 % of the cycle
 > - L/100 km and g CO₂/km: fuel ÷ the distance **you** drove
 > - one paragraph: why yours differs from the label
 

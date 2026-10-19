@@ -339,10 +339,11 @@ label (5.3 L/100 km, 120 g/km).
 
 **Checkpoint / grading.** Tracking inside ±2 km/h, ±1 s for most of the cycle (plots of speed,
 target and error); L/100 km and g CO₂/km inside a band around the reference; one paragraph on the
-difference from the label. Numbers: **TODO(wltc-bonus)** from the reference. Fallback for partial
+difference from the label. Reference: 23.27 km, 5.22 L/100 km, 120 g/km, 98.5 % inside the band;
+proposed marks, for the lecturer to confirm: ≥ 95 % in the band, ±0.25 L/100 km. Fallback for partial
 credit: Low and Medium only, 0–1022 s.
 
-**Screenshots.** **TODO(wltc-bonus)**: the bench, the tracking plot.
+**Screenshots.** `step07-wltc-bench.png`, `step07-wltc-plot.png`.
 
 ## TODO slots and what fills each
 
@@ -350,8 +351,6 @@ credit: Low and Medium only, 0–1022 s.
 |---|---|---|
 | Course-library tag to pin | step 00 | the branch merging |
 | Rehearsal of the 15-wire `MapEngine` drawing | step 03 | rehearsal in Studio |
-| WLTC gains, run time, band share, L/100 km, g CO₂/km | step 07 | `TODO(wltc-bonus)`, the reference on `feat/handson02-wltc-bonus` |
-| Screenshots of step 07 | step 07 | the same |
 
 ## Settled with the lecturer
 
