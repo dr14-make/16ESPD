@@ -14,7 +14,7 @@ From measured engine maps to the fuel and CO₂ your car burns at 50, 90 and 130
 
 **How each step works.** It starts with the idea it needs, in a short **Why** box; the *Details* boxes hold the derivations, for when you want them. Each build opens with a picture of the finished model, so you know where you are going. Then you build, and the checkpoint is a number you could have predicted first. **Before this session:** the [engine lecture](../../lecture-02/index.html#/mapped-engine){target="_self"}, whose last section shows what you build here.
 
-You build on your `MyCar` library from [hands-on 1](../lecture-01/). The throttle, the cylinders' air flow, the map tables and the fuel-cut logic come from the course library, `VehicleSystemsComponents`: they are physics the lecture stated, not what this session teaches. The budgets add up to about 90 minutes; step 07 is for when time is left.
+You build on your `MyCar` library from [hands-on 1](../lecture-01/). The throttle, the cylinders' air flow, the map tables and the fuel-cut logic come from the course library, `VehicleSystemsComponents`: they are physics the lecture stated, not what this session teaches. The budgets add up to about 90 minutes; step 07 is a bonus task for extra points, for after the session.
 
 0. [Set up](#setup) — 8 min
 1. [Read the maps](#maps) — 12 min
@@ -26,7 +26,7 @@ You build on your `MyCar` library from [hands-on 1](../lecture-01/). The throttl
 
 - [Hand in: open a pull request](#hand-in) — 3 min
 
-7. [WLTC: the test cycle](#wltc) — if time allows
+7. [Bonus: drive the WLTC](#wltc) — extra points
 
 ## Build the engine
 
@@ -984,14 +984,117 @@ The pull request is open on github.com and its **Commits** tab lists one commit 
 
 :::
 
-### 07 WLTC: the test cycle <Badge type="info" text="if time allows" /> {#wltc}
+### 07 Bonus: drive the WLTC <Badge type="warning" text="extra points" /> {#wltc}
 
-The same engine with a gearbox and a driver, following the 30-minute speed trace a car's label is measured on.
+Your cruise controller from Lecture 1 drives your car over the 30-minute trace a car's label is measured on. For when you have finished step 06; hand it in with your pull request.
 
-Steady cruise is not how anyone drives, and it is not how the label is measured. The WLTC class 3 trace runs 1800 s through town, suburb, road and motorway, up to 131 km/h. To follow it the car needs a gearbox with a shift schedule, so the engine stays near its efficient middle, and a driver: a PI controller from speed error to pedal, Lecture 1's cruise control following a trace instead of a setpoint. Compare your L/100 km and g CO₂/km over the whole cycle with a real 1.5 L petrol car's label. Expect yours a little lower: no cold start, no auxiliaries, no driver who overshoots.
+::: info Why a driving cycle
 
-<!-- TODO(whole step): task 6 (scope B). Model names, actions, the checkpoint numbers, and a real
-1.5 L car's label figure with its source. If task 6 is not ready, link the prepared notebook. -->
+Step 05 gave three numbers at three steady speeds, and none of them is how anyone drives. The label is measured over a fixed speed trace, the WLTC: for a car of this power, class 3b, 1800 s through town, suburb, road and motorway, up to 131.3 km/h, 23.27 km, with 242 s standing still. A test driver follows it within **±2 km/h and ±1 s**; the fuel burned over the whole trace, divided by the distance driven, is the figure on the label. A real 1.5 L petrol car with this engine family, the Mazda2 1.5 Skyactiv-G, reads **5.3 L/100 km, 120 g CO₂/km**.
+
+:::
+
+#### The task
+
+Build the bench, a new component `MappedCarWLTC`, yourself: this is the task, so neither this page nor the course library shows the finished model. It has to
+
+- give your `CruiseController` from Lecture 1, step 6d, the trace as its setpoint and your car's speed as its measurement;
+- turn its one output, an effort from −1 to +1, into two commands: the positive part to the pedal, the negative part, times a maximum brake force of 4000 N (step 06's), to the brake;
+- add up the fuel burned in liters and the distance driven in kilometers, over the whole run.
+
+The parts you need, all of them ones you have used:
+
+| Part | Where | Hint |
+| --- | --- | --- |
+| the trace | `VehicleSystemsComponents › Vehicle › DriveCycle` | given: its output `y` is the WLTC class 3b target speed in km/h |
+| the driver | your `CruiseController` | see **Advice** below for the limits, gains and initial states |
+| the car | your `MappedCar` from step 06 B | it has the `pedal` and `F_brake` inputs and the `v_kmh` and `fuel_lph` outputs you need |
+| the split | `BlockComponents › Nonlinear › Limiter`, `BlockComponents › Math › Gain` | a limiter passes only the part of a signal between its `y_min` and `y_max` |
+| the sums | `BlockComponents › Continuous › Integrator` | an integrator with `k = 1/3600` turns L/h into liters, and km/h into kilometers |
+
+Name the trace `trace`, the controller `driver`, the car `car`, and the two integrators `fuel_L` and `dist_km`: the snippets below use these names.
+
+#### Run it
+
+1. Start the car as step 04's bench does: at rest, the engine idling, the angles set. Copy the six `initial` lines of `MappedCarWOT`, then start the engine at the idle step 06 ended in, 775 rpm and 33.6 kPa:
+
+   ```txt
+   initial car.flywheel.w = 775 * pi / 30
+   initial car.engine.air.manifold.p = 33600
+   ```
+2. <Badge type="tip" text="New analysis" /> ▷ → **Create New Analysis** → `TransientAnalysis` → name it `MappedCarWLTCTransient`. Open its code and make the `extends` line:
+
+   ```txt
+   extends TransientAnalysis(stop = 1800, saveat = 1, alg = ODEAlg.Rodas5P())
+   ```
+
+   Run it. The first run is mostly compilation, about a minute; every run after it takes 5–10 s. If it is too slow, run `stop = 1022` instead: the Low and Medium phases, 7.85 km, for partial credit.
+3. Plot the speed over the target, and the error:
+
+   ```julia
+   r = MyCar.MappedCarWLTCTransient()
+   plot(r; idxs = [r."car.v_kmh", r."trace.y"])
+   plot(r; idxs = r."driver.error.y")         # target minus speed
+   ```
+
+4. Read the label numbers at the end, and the share of the run inside the band:
+
+   ```julia
+   T = 1800
+   L, km = r.sol(T, idxs = r."fuel_L.y"), r.sol(T, idxs = r."dist_km.y")
+   100L / km, 2302L / km                      # L/100 km, g CO₂/km
+
+   ts = 0:0.1:T
+   v  = r.sol(ts, idxs = r."car.v_kmh").u
+   vt = r.sol(ts, idxs = r."trace.y").u
+   w(i) = max(1, i - 10):min(length(ts), i + 10)   # ±1 s
+   inside = [minimum(vt[w(i)]) - 2 <= v[i] <= maximum(vt[w(i)]) + 2 for i in eachindex(ts)]
+   count(inside) / length(ts)                 # share of the run inside ±2 km/h, ±1 s
+   ```
+
+::: warning Advice
+
+- **Solver.** Set `alg = ODEAlg.Rodas5P()` in the analysis's `extends` line, as in step 2. With the default solver the full cycle stops at 1190 s with `MaxIters`.
+- **Gains.** Start from `k = 0.14`, `Ti = 3.5`, `Td = 0.7`. Lecture 1's `k = 56` was N·m of torque per km/h; here the output is an effort of ±1, and `k` is 400 times smaller. Keep `Td` above zero: the derivative filter's time constant is `Td / Nd`.
+- **Initial states.** `xd0 = 0` and `xi0 = 0`. Step 6d's `xd0 = -90` was the seed for a 90 km/h cruise; from rest it kicks the derivative at the first instant.
+- **Limits.** `y_min = -1`, `y_max = 1`. Lecture 1's benches set `y_min = 0`: the output then never goes negative and the brake gets no command. On the course's run the effort stays between −0.67 and +0.29.
+- **Low phase first.** Check the wiring on the first 589 s, `MyCar.MappedCarWLTCTransient(stop = 589)`: 3.10 km at 6.30 L/100 km. The first run of a model is mostly compilation, about a minute; runs after it take seconds.
+- **Divide by `dist_km`,** from the same run, not by the cycle's 23.27 km.
+- **A short lag after each stop.** The brake holds the car at rest, and the integrator keeps a negative value meanwhile, down to −4.8 on the course's run. 2 s into the next launch the car is up to 3.7 km/h behind the trace: inside the ±1 s tolerance, and none of the run's band misses is at a launch. To remove it, an extra: integrate only while the car moves, or reset the integrator at standstill.
+- **Judge the band, not ±2 km/h alone.** The error leaves ±2 km/h for 14 % of the run, at every steep change of the trace; the ±1 s takes most of it back. The 1.5 % left outside the band is 13 short stretches, mostly at 10–25 km/h with the car 2–4 km/h behind.
+
+:::
+
+::: info Why divide by the distance you drove
+
+The trace is 23.27 km, but your car drives its own distance. A car that lags the trace drives less and burns less, and divided by 23.27 km it would look more frugal than it is. Fuel and distance from the same run keep it honest.
+
+:::
+
+[![MappedCarWLTCTransient over 1800 s, two panels, dotted lines at the phase boundaries 589, 1022 and 1477 s. Speed: car.v_kmh dashed over trace.y, the two hard to tell apart, up to 131 km/h in the Extra High phase. Error, driver.error.y: mostly within the dashed ±2 km/h, with spikes to about ±5 km/h at the steepest changes, the largest 6.4 km/h at 961 s; flat near zero through the smooth High phase from 1150 to 1350 s.](/handson/lecture-02/img/step07-wltc-plot.png){width="990" height="528"}](/handson/lecture-02/img/step07-wltc-plot.png)
+
+::: tip Checkpoint
+
+From the course's own run of this test:
+
+- Distance **23.27 km**, the trace's own: the car keeps up.
+- Inside the ±2 km/h, ±1 s band for **98.5 %** of the run. Inside ±2 km/h alone, for only 86 %: on a steep ramp, a second behind is several km/h.
+- **1.214 L** of fuel: **5.22 L/100 km**, **120 g CO₂/km**. By phase: Low 6.30, Medium 5.14, High 4.59, Extra High 5.41 L/100 km.
+- Low and Medium only (`stop = 1022`): **7.85 km**, **5.59 L/100 km**, **129 g CO₂/km**, 98.6 % inside the band.
+
+:::
+
+#### What to hand in
+
+In your pull request's description, under a heading `Bonus: WLTC`:
+
+1. **Tracking.** The speed over the target and the error, as pictures, and the share of the run inside the ±2 km/h, ±1 s band. It counts at **95 %** or more.
+2. **The label numbers.** L/100 km and g CO₂/km, with the fuel in liters and the distance in kilometers you divided. They count inside **±0.25 L/100 km** of the course's figures: 4.97–5.47 L/100 km and 114–126 g CO₂/km for the full cycle, 5.34–5.84 L/100 km for the Low and Medium phases.
+3. **One paragraph:** why your figure differs from the Mazda2's 5.3 L/100 km and 120 g/km. Think of what step 05 showed at 50 km/h, of whose engine the maps are, and of how the real test starts its engine.
+
+Say whether you ran the full 1800 s or the Low and Medium phases only.
+
+Commit: **Source Control** → message `Step 07: WLTC bonus` → **Commit** → **Sync Changes**.
 
 ---
 

@@ -5,7 +5,7 @@ engine of `lecture-02-mapped-engine-plan.md` and read fuel and CO₂ off the car
 task 5 of that plan: the step plan behind the hands-on guide `slides/site/handson/lecture-02/`,
 which is the one full source, its tutor guide `tutor.md` beside it, and the projector deck
 `slides/decks/handson-02/`, one slide per step. It inherits decisions M1–M7 unchanged and covers
-scope A only; scope B is an optional last step.
+scope A only; scope B is step 07, a bonus task for extra points outside the session.
 
 Companion documents:
 
@@ -41,7 +41,8 @@ physics the lecture states and does not teach, and 90 minutes cannot hold them. 
 | `CVTDriveline` — centrifugal launch clutch (engages around 1300 rpm) and a CVT, ratio 12.0–2.8 with final drive, engine speed scheduled from the pedal, 1800–6000 rpm, through a 0.5 s lag | given, `Vehicle` | The fixed 4.0 gear cannot start from rest (the engine would turn at 0 rpm, where it gives no torque) and sits on the rev limiter flat out. A clutch and a ratio controller are plumbing; the lesson is the map. Same four mechanical ports as hands-on 1's `Driveline`, plus `pedal`. |
 | `RoadBrake` — friction force `F_cmd · tanh(v / 0.05 m/s)` between body and road | given, `Vehicle` | A `Force` source pushes the car backwards once it stops, and its sign depends on the wiring. The regularized friction stops the car and holds it, either way round. |
 | Scenario benches | **built** (sources and initial lines) | Same pattern as hands-on 1; each is a few blocks. |
-| WLTC driver and gearbox (scope B) | given, if it exists | Task 6. Not in the 90 minutes. |
+| Step 07 bonus, WLTC: the trace block (working name `Vehicle.DriveCycle`) | given, `Vehicle` | Task 6. A table of 1801 speeds from a regulation. The CVT and the brake are already in the car. |
+| Step 07 bonus: bench `MappedCarWLTC` — trace, the student's Lecture 1 `CruiseController` with limits ±1, the output split to pedal and brake, fuel and distance integrators | **built** | Not in the 90 minutes. The controller and the car are the students' own; the wiring and the fuel accounting are the task. |
 
 Student reference solutions go in the subpackage `dyad/HandsOn02/`, as `dyad/HandsOn/` holds
 hands-on 1's. Step 03's `MapEngine`, `MapEngineDyno` and `MapEngineDynoTransient` are there, and so
@@ -322,20 +323,28 @@ input and `brake` = `Vehicle.RoadBrake` in `MappedCar`, and `brake_cmd` in the b
 
 Pull request `handson-02` → `main`, as in hands-on 1, with the cruise table filled in.
 
-### Step 07 · WLTC (if time allows) · —
+### Step 07 · WLTC bonus task (extra points) · outside the session
 
-**Goal.** The car on the WLTC class 3 trace with a gearbox and a driver; compare L/100 km and
-g CO₂/km with a real 1.5 L car's label.
+**Goal.** The student's own CVT car, driven by the student's own Lecture 1 `CruiseController`
+over the WLTC class 3b trace; L/100 km and g CO₂/km over the cycle, compared with the Mazda2 1.5
+label (5.3 L/100 km, 120 g/km).
 
-**Built / given.** Given: everything (task 6). If task 6 has not landed, it ships as a prepared
-notebook and the step is a demo.
+**Built / given.** Given: the trace block (task 6, working name `Vehicle.DriveCycle`);
+`CVTDriveline` and `RoadBrake`, already in the car. Built: the bench `MappedCarWLTC` — trace →
+`CruiseController(y_min = -1, y_max = 1)` → positive part to `car.pedal`, negative part ×
+`F_brake_max` to `car.F_brake`; integrators for fuel (L) and distance (km).
 
-**Reference model.** To build: task 6.
+**Reference model.** `HandsOn02.MappedCarWLTC`, `MappedCarWLTCTransient`, kept off `main` so the installed library does not hold the answer: on branch `feat/handson02-wltc-bonus` only. Students build
+the bench themselves; the page gives the task, the parts and the advice, not the diagram or the
+wiring. Only `Vehicle.DriveCycle` is in the library. Full plan, grading and risks: `lecture-02-handson-step07-wltc-plan.md`.
 
-**Checkpoint.** **TODO** the WLTC L/100 km and g CO₂/km from task 6, and the label figure to
-compare against (with its source).
+**Checkpoint / grading.** Tracking inside ±2 km/h, ±1 s for most of the cycle (plots of speed,
+target and error); L/100 km and g CO₂/km inside a band around the reference; one paragraph on the
+difference from the label. Reference: 23.27 km, 5.22 L/100 km, 120 g/km, 98.5 % inside the band;
+proposed marks, for the lecturer to confirm: ≥ 95 % in the band, ±0.25 L/100 km. Fallback for partial
+credit: Low and Medium only, 0–1022 s.
 
-**Screenshots.** **TODO** with task 6.
+**Screenshots.** `step07-wltc-plot.png` only: no picture of the finished bench.
 
 ## TODO slots and what fills each
 
@@ -343,8 +352,6 @@ compare against (with its source).
 |---|---|---|
 | Course-library tag to pin | step 00 | the branch merging |
 | Rehearsal of the 15-wire `MapEngine` drawing | step 03 | rehearsal in Studio |
-| WLTC numbers and the label | step 07 | task 6 |
-| Screenshots of step 07 | step 07 | task 6 |
 
 ## Settled with the lecturer
 
@@ -358,6 +365,9 @@ compare against (with its source).
   sat on the rev limiter; braking to a stop stalled its engine. The car now carries the given
   `CVTDriveline`, whose centrifugal clutch opens near idle, so the brake stop runs to rest and
   the engine idles on. The brake is the given `RoadBrake`, which holds the car at rest.
+
+- **Step 07, WLTC:** an extra task for extra points, outside the 90 minutes. Students drive the
+  trace with their own Lecture 1 `CruiseController` and their own car; no driver is given.
 
 ## Open questions for the lecturer
 

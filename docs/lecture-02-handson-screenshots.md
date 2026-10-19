@@ -80,9 +80,11 @@ Plotly. At 990 × 528, GR clips the axis labels without `margin = 5Plots.mm`.
 | `step06-mapped-car-brake.png` | `HandsOn02.MappedCarWithBrake` | The car with the `F_brake` input and the given `RoadBrake` between `body.flange` and `trans_ground`. A `dyad render`. |
 | `step06-brake-plot.png` | `HandsOn02.MappedCarBrakeStopTransient` | The same four axes over 20 s: the car at rest at 12.9 s and held there, the engine idling at 775 rpm, `car.p_m` between 17.6 and 33.7 kPa. |
 
-## Step 07 — WLTC (if time allows)
+## Step 07 — WLTC bonus
 
-To be listed with task 6.
+| File | Model | What must be visible |
+| ---- | ----- | -------------------- |
+| `step07-wltc-plot.png` | `HandsOn02.MappedCarWLTCTransient` | Two axes over 1800 s, dotted lines at 589, 1022 and 1477 s: `car.v_kmh` dashed over `trace.y`; `driver.error.y` with dashed ±2 km/h lines, its largest excursion 6.4 km/h at 961 s. |
 
 ## Where each state lives
 
@@ -104,3 +106,4 @@ To be listed with task 6.
 | `step06-coast-plot.png` | — | `HandsOn02.MappedCarCoastTransient` |
 | `step06-mapped-car-brake.png` | `HandsOn02.MappedCarWithBrake` | — |
 | `step06-brake-plot.png` | — | `HandsOn02.MappedCarBrakeStopTransient` |
+| `step07-wltc-plot.png` | — | `HandsOn02.MappedCarWLTCTransient` |

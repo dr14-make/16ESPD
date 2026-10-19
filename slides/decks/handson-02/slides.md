@@ -303,12 +303,19 @@ Tutor guide: ../handson/lecture-02/tutor.html#hand-in
 routeAlias: wltc
 ---
 
-###### Step 07 · if time allows
+###### Step 07 · bonus, extra points
 
-## WLTC: the test cycle
+## Drive the WLTC
 
-**Goal:** the same engine with a gearbox and a driver, on the 30-minute trace a car's label is
-measured on; compare your L/100 km and g CO₂/km with a real 1.5 L petrol car's.
+**Goal:** your Lecture 1 cruise controller drives your car over the WLTC class 3b trace,
+1800 s and 23.27 km; report L/100 km and g CO₂/km and compare with the Mazda2 1.5's label,
+5.3 L/100 km and 120 g/km.
+
+> **Hand in** with your pull request
+>
+> - speed over target and the error: inside **±2 km/h, ±1 s** for at least 95 % of the cycle
+> - L/100 km and g CO₂/km: fuel ÷ the distance **you** drove
+> - one paragraph: why yours differs from the label
 
 [Guide: step 07 →](../handson/lecture-02/#wltc)
 

@@ -19,7 +19,7 @@ Students follow the [student guide](./): it holds every instruction, the theory 
 
 ### Time
 
-About 90 minutes. Step 07 only if time is left.
+About 90 minutes. Step 07 is a bonus task for after the session.
 
 | Step | Min | Split |
 | --- | --: | --- |
@@ -233,13 +233,34 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 **Where students stall:** a base of `main` while hands-on 1's pull request is still open: the pull request then shows hands-on 1's commits too. The base is the branch `handson-02` was created from.
 
-## 07 WLTC {#wltc}
+## 07 Bonus: drive the WLTC {#wltc}
 
-**Only if time allows.** If the session has no room, point students at the prepared notebook and stop at the hand-in.
+**Not in the session.** An extra task for extra points, done after step 06 and handed in with the same pull request. Announce it at the hand-in and point at the guide; take questions in the next session.
 
-**Say:** three additions, all things they have seen. The driver is the cruise controller of Lecture 1. The gearbox is the driveline of hands-on 1 with a choice of ratios. The trace is a table of speed against time.
+**Say:** the label is not a cruise number, it is a 30-minute trace. Drive it with two things you built: Lecture 1's cruise controller as the driver, your car as the car. The controller's output is an effort from −1 to +1; above zero it is the pedal, below zero the brake.
 
-**Open:** the whole step depends on task 6 (scope B: gearbox, shift schedule, PI driver, WLTC class 3 trace from DieselNet): the model names, the checkpoint over the cycle, and a real 1.5 L car's label figure with its source.
+**How it is graded,** each from the pull request's `Bonus: WLTC` section:
+
+1. **Tracking:** the speed-and-target plot and the error plot, and the share of the run inside ±2 km/h, ±1 s: at least 95 % (the reference: 98.5 %).
+2. **Label numbers:** L/100 km and g CO₂/km within ±0.25 L/100 km of the reference, 4.97–5.47 L/100 km and 114–126 g/km, with fuel and distance stated. The distance should be 23.27 km within about 1 %; far off, criterion 1 cannot hold either.
+3. **The paragraph:** credit for any two of the CVT's 1800 rpm floor (step 05 at 50 km/h: 3.7 against 3.3 L/100 km), maps from another engine, a hot start where the test starts cold; lossless CVT, no auxiliaries and the car's mass are fine extras.
+
+A run of the Low and Medium phases only (`stop = 1022`) earns partial credit, on the same 95 % and 5.34–5.84 L/100 km.
+
+**Proposed, for the lecturer to confirm:** the 95 % and ±0.25 L/100 km marks above. They are not the spread of the reference's own gain sweep (5.16–5.22 L/100 km, 98.5–99.4 % in the band): students' own `MapEngine` and gains move the figure more than that. The lower edge, 4.97, sits just above the 4.93 L/100 km floor below.
+
+**Common failures:**
+
+- **The run stops at 1190 s with `MaxIters`.** The analysis kept the default solver. The page's step 5 puts `alg = ODEAlg.Rodas5P()` in the `extends` line.
+- **No brake path.** Only the positive part wired, or `F_brake` held at `Constant(0)` from step 06. The car cannot slow as fast as the trace (1.5 m/s² at 278 s); it overshoots every deceleration and the error plot shows negative spikes before each stop.
+- **`y_min = 0` from Lecture 1's bench.** The output never goes negative, so the brake path never gets a command: the same symptom as no brake path.
+- **A late start after every stop.** Expected, not a fault: while the brake holds the car at rest the integrator keeps a negative value, down to −4.8 on the reference (an effort of −0.67, about 2700 N), and 2 s into the next launch the car is up to 3.7 km/h behind the trace. It stays inside the ±1 s tolerance: none of the reference's band misses is at a launch. The clamp does not act here, since the effort never reaches −1. Credit conditional integration or an integrator reset at standstill as an extra; do not require it.
+- **Grading themselves on ±2 km/h alone.** The reference is inside ±2 km/h for only 86 % of the run: on the steep ramps a second behind is several km/h. The ±1 s is part of the criterion, and the page's snippet checks both. The reference's 1.5 % outside the band is 13 short stretches, mostly at 10–25 km/h with the car 2–4 km/h behind.
+- **Dividing by 23.27 km** instead of the distance driven. A lagging car drives less and looks more frugal; ask for `dist_km`.
+- **Lecture 1's gains and seeds.** `k = 56` was N·m per km/h; on a ±1 effort it slams pedal and brake. And `xd0 = -90` was the seed for a 90 km/h cruise; from rest it is 0, else the first instant carries a large D kick. `Td` must stay above zero: the filter's time constant is `Td / Nd`.
+- **The sign of the brake gain.** `to_brake` takes the negative part, so its gain is −`F_brake_max`; a positive gain gives a negative force, which `RoadBrake` treats as released.
+
+**Where the numbers come from:** the course's reference bench (not in the library students install, so they build it themselves) on `MappedCarWithBrake`, with the step 6d controller (`Lecture1.Step06d.CruiseController`, `k = 0.14`, `Ti = 3.5`, `Td = 0.7`, `xd0 = xi0 = 0`, limits ±1) and 4000 N of brake, started at 775 rpm and 33.6 kPa; the "Hands-on 02 WLTC bonus" testset. Full cycle: 23.27 km, 1.214 L, 5.22 L/100 km, 120 g/km, 98.5 % inside the band (86 % inside ±2 km/h alone, worst error 6.4 km/h), effort between −0.67 and +0.29. Low and Medium (`stop = 1022`): 7.85 km, 5.59 L/100 km, 98.6 %. Gain sweep, full cycle: `k = 0.07, Ti = 7, Td = 0.3` gives 5.16 and 99.4 %; `0.10, 5, 0.5` gives 5.19 and 99.0 %. Run time in the Julia REPL: about a minute for the first run, mostly compilation, then 5–7 s; the default solver stops with `MaxIters` at 1190 s of the full cycle, hence `alg = ODEAlg.Rodas5P()` on the page (the 1022 s run finishes either way). A quasi-static estimate with an ideal CVT on the minimum-fuel line gives 4.93 L/100 km; a figure below that means the accounting is wrong. Plan: `docs/lecture-02-handson-step07-wltc-plan.md`.
 
 ## Wrap-up {#wrap-up}
 
