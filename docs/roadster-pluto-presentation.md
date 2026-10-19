@@ -17,11 +17,13 @@ the original plan.
   deterministic since it runs without automatic discontinuity detection.
 - **The scoreboard is a fixed panel** in the bottom-right corner, with the two car sliders (mass
   and drive layout) pinned directly under it, so they stay in reach in present mode.
-- **Narrative order:** introduction, the videos, knowns and assumptions, a warm-up, then one
-  section per Tesla claim (claim, physics check, model, simulation, verdict), then the
-  scoreboard and a summary.
-- **Plain language.** Short sentences, every symbol defined where it first appears, one idea per
-  slide, and a reading guide under every plot.
+- **Narrative order:** introduction, the videos, the car in one picture, the words we use, knowns
+  and assumptions, a warm-up, then one section per Tesla claim (claim, physics check, model,
+  simulation, verdict), then the scoreboard and a summary.
+- **Written for beginners.** Short sentences, everyday words, one idea per slide. Every claim
+  opens with an everyday comparison, every formula is said in words first, big numbers are
+  translated into familiar things, and every plot states its answer in a headline and on the
+  plot itself. Longer derivations sit in collapsed "Details" boxes.
 - **Plots.jl with GR**, through `Lecture01Support.setup()`, as in `notebooks/lecture03/`.
 
 ## 1. Interactivity budget (measured)
@@ -96,12 +98,17 @@ Each `##` heading is one slide in present mode, and each slide carries one idea.
 
 1. Title, with the four steps every claim goes through, and the present button.
 2. **What Tesla showed:** the five claims, numbered as the sections that follow.
-3. **The videos:** the two official clips.
-4. **What Tesla said, and what it did not:** each number marked T, P, M or ?.
-5. **What we assume for the unknowns.**
-6. **How the simulations run:** build once, `remake` per slider. The rig, reference, grid and
-   hint cells sit under this slide and show only the build time.
-7. **Warm-up: is the ramp video real time?** k = √(a/g), with the playback slider.
+3. **The videos:** the two official clips, side by side so the slide fits a projector.
+4. **The car in one picture:** a force sketch drawn with Plots.jl shapes: push from the tires,
+   weight, air drag, suction and thrust, each with a plain label.
+5. **Words we use:** μ, g, N and kN, torque and N·m, power, downforce, bar and 60 mph, one line
+   each in everyday language.
+6. **What Tesla said, and what it did not:** each number marked T, P, M or ?.
+7. **What we assume for the unknowns.**
+8. **How the simulations run:** each model is built once; a slider changes numbers in the ready
+   model and runs it again. The rig, reference, grid, hint, `paper` and `everyday` cells sit
+   under this slide and show only the build time.
+9. **Warm-up: is the ramp video real time?** k = √(a/g), with the playback slider.
 
 ### One section per claim
 
@@ -115,28 +122,42 @@ Each `##` heading is one slide in present mode, and each slide carries one idea.
 
 Every claim section has the same four parts, in this order:
 
-1. **Tesla's claim:** what was said, with the number and the source marking.
-2. **Physics check:** a worked example. Formula, numbers in, result with units. Every symbol is
-   defined where it first appears.
-3. **Our model:** the Dyad diagram screenshot from `notebooks/roadster/img/`, a one-line role
-   for each block, and the Dyad source under a fold.
-4. **Simulation:** the sliders, the plot, and a fixed five-line reading guide under each plot:
-   axes with units, what each line or color is, what to look at, what it means for the claim,
-   and what to try.
+1. **Tesla's claim:** opens with the question in everyday words and one real-life comparison
+   (a heavy box on a floor, a vacuum cleaner on a carpet, a released balloon, a shove while
+   sprinting, a heavy bag held at arm's length), then what was said, with the source marking
+   and the big numbers translated (80 kN ≈ the weight of 8 cars of 1,000 kg).
+2. **Physics check:** one formula per slide. The relation in words, then the symbols, then a
+   small table of the numbers in and the result, then one bold **So what?** line. Longer
+   derivations (rear-axle load transfer, nozzle flow, tank emptying, hover time) go into a
+   PlutoUI `details` box, collapsed by default.
+3. **Our model:** a table, Block | in the real car | what it does, for only the blocks that
+   matter in that section, a pointer to the part of the diagram to look at, the Dyad diagram
+   screenshot from `notebooks/roadster/img/`, and the Dyad source under a fold.
+4. **Simulation:** the sliders, a one-line headline that states the conclusion (computed from
+   the current result when it depends on a slider), the plot with the deciding point marked and
+   labeled on it (`mark!` in support: a dot, an arrow and a label), plain axis labels with
+   units, and one **Try this** line that names a slider move and the result it gives.
 
-Each section closes with its own verdict slide: a colored box, green "plausible", amber "only
-if" or "as a peak", red "not plausible". The closing slides are the scoreboard table, the summary, the sources and the
-appendix of checks.
+Each section closes with its own verdict slide: a box in the traffic-light color, one plain
+sentence, and "The number that decides it: …". One `verdicts` cell computes the color, the
+sentence and the number, and both the verdict slides and the scoreboard read from it, so they
+cannot disagree. The closing slides are the scoreboard table, the summary, the sources and the
+appendix of checks, which has a one-line plain introduction.
 
 ### Numbers in the text
 
 Every number in the prose comes from a calculation or a model run, never from memory:
 
-- **Worked examples** are closed forms, computed once and typed in.
+- **Worked examples** come from the `paper` cell, which evaluates the closed forms for the
+  baseline car; the slides interpolate them.
+- **Everyday comparisons** come from the `everyday` cell, which names its reference objects
+  (a 1,000 kg small car, a 70 kg adult, a 2 bar car tire, a 50 kW city-car engine, a 3 m
+  story) and divides.
 - **Readings of a plot** are interpolated from the cell that drew it, so they follow the
   sliders.
-- **"Try" suggestions** quote the `hints` cell, which solves the baseline car (2,000 kg, RWD)
-  with one setting changed when the notebook opens: about 20 extra solves, under a second.
+- **"Try this" lines** quote the `hints` cell, which solves the baseline car (2,000 kg, RWD)
+  with one setting changed when the notebook opens, or a value computed from the current
+  result.
 - **Verdicts** quote the default runs (`reference`, the rigs' `default`) and add the current
   slider value.
 
@@ -188,11 +209,12 @@ of that cell or a reopen.
 A fixed `<aside>` in the bottom-right corner, about 320 px wide, rendered by one cell that depends
 on every section's result. It stays visible in present mode and when scrolling.
 
-- **Rows:** one per claim, top to bottom in story order. Each row shows the claim, Tesla's value,
-  the current model value and a verdict chip.
-- **Verdict chips:** green "yes", red "no", gray "—" for a value that is not finite. As built, the
-  panel starts collapsed to a summary line ("n of m possible") so it does not cover plots; the
-  Scoreboard slide has the same rows in full.
+- **Rows:** one per verdict slide plus the warm-up, top to bottom in story order, from the shared
+  `verdicts` cell. Each row shows the claim, Tesla's value, the current model value and a
+  verdict chip.
+- **Verdict chips:** green "yes", amber "partly", red "no", gray "—" for a value that is not
+  finite. As built, the panel starts collapsed to a summary line that counts each verdict, so it
+  does not cover plots; the Scoreboard slide has the same rows in full.
 - **Car sliders:** `m` and the layout, so one move updates every section. As built they are a
   separate cell pinned under the scoreboard by CSS on its cell id: inside the scoreboard cell they
   would form a cycle, because every result the scoreboard shows depends on them.
@@ -218,6 +240,7 @@ on every section's result. It stays visible in present mode and when scrolling.
   loaded before the notebook opens works: every cell runs, and every slider re-runs without error.
   `notebooks/roadster/present.jl` does exactly that, and the title slide names it:
   `julia +dyad-3.4.0 notebooks/roadster/present.jl`.
+- **Slide height.** Every slide fits about 1,000 px at a 1,300 px column, the projector layout.
 - **Slides show only markdown, sliders, plots and rendered tables.** Every computation cell ends
   in `;` or returns `nothing`, and the rigs are built with `progress = false`.
 - **Tables are HTML** (`html_table` in support), left-aligned in the text font. Pluto styles a

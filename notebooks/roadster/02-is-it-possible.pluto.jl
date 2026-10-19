@@ -20,20 +20,18 @@ end
 md"""
 # Tesla Roadster: is it physically possible?
 
-On 15 October 2026 Tesla showed its new Roadster. It reached 60 mph in under a second, clung to a
-ramp that curled past vertical, and jumped over a row of cars.
+On 15 October 2026 Tesla showed its new Roadster. It reached 60 mph (97 km/h) in under a
+second, drove on a ramp that curled past vertical, and jumped over a row of cars.
 
-We take each claim and ask one question: **does it fit basic physics?** For every claim we do
-four things:
+We take each claim through the same four steps:
 
-1. Write down what Tesla claimed.
-2. Check it on paper with a short calculation.
-3. Build a small model in Dyad.
-4. Simulate the model and compare.
+1. **The claim:** what Tesla said.
+2. **A physics check:** one short calculation on paper.
+3. **Our model:** a small computer model of the car, built in Dyad.
+4. **The simulation:** run the model, and compare it with the claim.
 
-*Start the notebook with `julia +dyad-3.4.0 notebooks/roadster/present.jl`. Pluto's worker
-processes cannot load the Dyad packages with this Julia build, so the launcher runs the notebook
-in its own process.*
+*To start the notebook: `julia +dyad-3.4.0 notebooks/roadster/present.jl`. The launcher runs it
+in its own process, because Pluto's helper processes cannot load Dyad with this Julia build.*
 """
 
 # ╔═╡ c54392d6-d24f-54c8-8e3d-e9c893d7f2b4
@@ -77,6 +75,7 @@ main { max-width: min(1300px, 94vw) !important; }
 begin
     car = (; m = m_car, LAYOUTS[drive_layout]...)
     other_layout = drive_layout == "RWD" ? "AWD" : "RWD"
+    layout_name = Dict("RWD" => "rear-wheel drive", "AWD" => "all-wheel drive")
     nothing
 end
 
@@ -84,17 +83,18 @@ end
 md"""
 ## What Tesla showed
 
-The event took place at SpaceX's test site in McGregor, Texas. We check five claims, one section
-each:
+The event took place at SpaceX's test site in McGregor, Texas. We check five claims, one
+section each:
 
 1. **The tires** grip up to 1.26 g.
-2. **The suction fan** presses the car down with 4,700 kg and gives 0–60 mph in under 1.6 s.
-3. **The cold-gas thrusters** push with over 80 kN, from 600 L of compressed air.
-4. **0–60 mph in under a second:** 1.0 s recorded, 0.81 s live, and under 0.59 s for the top trim.
+2. **The suction fan** presses the car onto the road with 4,700 kg, and gives 0–60 mph in under
+   1.6 s.
+3. **The air thrusters** push with over 80 kN, from 600 L of compressed air.
+4. **0–60 mph in under a second:** 1.0 s recorded, 0.81 s live, and under 0.59 s for the top
+   version.
 5. **"It can fly":** an 8 m hop over a row of cars, and short hovers.
 
-Every section has the same four parts: **Tesla's claim**, a **physics check** on paper, **our
-model** in Dyad, and a **simulation**. Each one ends with a verdict.
+Each section ends with a verdict: green for plausible, amber for partly, red for not plausible.
 """
 
 # ╔═╡ d1e686ea-7b9d-50b5-8585-e5b5bd5a5077
@@ -108,25 +108,80 @@ Tesla's official clips. Offline, follow the links instead:
 
 # ╔═╡ d3171829-f6d6-55d0-b2eb-713d6ad7a265
 html"""
-<div style="display:flex;gap:10px;flex-wrap:wrap">
-<iframe style="flex:1 1 300px;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/7p5LxFdc-Qg" title="The Ramp | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-<iframe style="flex:1 1 300px;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/r5vsHHPVhJg" title="The Kickflip | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<div style="display:flex;gap:12px">
+<iframe style="flex:1 1 0;min-width:0;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/7p5LxFdc-Qg" title="The Ramp | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe style="flex:1 1 0;min-width:0;aspect-ratio:16/9;border:0" src="https://www.youtube-nocookie.com/embed/r5vsHHPVhJg" title="The Kickflip | Roadster" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 </div>
 """
+
+# ╔═╡ 594f15a5-e0fa-48db-90fe-c4e7000f5a53
+md"""
+## The car in one picture
+
+Five forces decide everything in this talk. The car drives to the right.
+"""
+
+# ╔═╡ bba2cff6-1f60-4b91-8e2b-4fd99af262b0
+let
+    plt = plot(; xlims = (-1.5, 13.5), ylims = (-1.9, 4.6), aspect_ratio = :equal,
+        framestyle = :none, legend = false, size = (1200, 520))
+    circle(x, y, r) = Shape(x .+ r .* cos.(range(0, 2π; length = 60)),
+        y .+ r .* sin.(range(0, 2π; length = 60)))
+    arrow!(x0, y0, x1, y1, color) = plot!(plt, [x0, x1], [y0, y1]; arrow = true, lw = 5, color)
+    label!(x, y, s, color; h = :left) = annotate!(plt, x, y, text(s, 15, color, h))
+    plot!(plt, [-1.5, 13.5], [0, 0]; color = :gray, lw = 3)
+    plot!(plt, Shape([1.5, -1.3, -1.3], [1.05, 0.6, 1.5]); color = "#f4c7c7", lw = 0)
+    plot!(plt, Shape([1.5, 9.5, 9.9, 9.5, 7.2, 6.0, 3.6, 1.5],
+        [0.55, 0.55, 0.9, 1.5, 1.6, 2.4, 2.4, 1.5]); color = "#d6dee8", linecolor = :black, lw = 2)
+    for x in (3.0, 8.0)
+        plot!(plt, circle(x, 0.5, 0.5); color = :black)
+    end
+    arrow!(2.2, -0.4, 5.0, -0.4, :seagreen)
+    label!(2.2, -0.95, "push from the tires", :seagreen)
+    arrow!(6.0, 1.3, 6.0, -1.2, :black)
+    label!(6.2, -1.25, "weight", :black)
+    arrow!(12.6, 1.15, 10.1, 1.15, :purple)
+    label!(10.2, 1.7, "air drag", :purple)
+    for x in (3.6, 5.0, 6.4)
+        arrow!(x, 4.1, x, 2.65, :steelblue)
+    end
+    label!(6.9, 3.5, "suction: the air above\npresses the car down", :steelblue)
+    arrow!(1.7, 1.05, 4.6, 1.05, :firebrick)
+    label!(-1.4, 2.7, "thrust: air blows out\nthe back, the car is\npushed forward", :firebrick)
+    label!(10.4, -1.2, "direction of travel →", :gray)
+    plt
+end
+
+# ╔═╡ a7fe0fee-f9f4-42d4-8665-e3e62243f675
+md"""
+## Words we use
+"""
+
+# ╔═╡ e4766715-9580-44d7-8765-673c658347de
+html_table(["Word", "In everyday language"], [
+    ("**μ** (mu), grip", "How hard a tire can push, compared with how hard it is pressed onto the road. Grip 1.26: pressed down by 1 kN, it can push with 1.26 kN."),
+    ("**g**", "The pull of gravity, 9.81 m/s². \"1 g\" of push is a push as strong as the car's own weight."),
+    ("**N, kN**", "Newton, the unit of force. 1 kN is about the weight of $(fmt(everyday.kg_per_kN, 0)) kg."),
+    ("**torque**, **N·m**", "Twisting force. 1 N·m is a push of 1 N on a spanner 1 m long."),
+    ("**power**, **kW**, **MW**", "How fast the motor delivers energy: push × speed. 1 MW is about $(fmt(everyday.hp, 0)) horsepower."),
+    ("**downforce**", "A force that presses the car onto the road, on top of its weight."),
+    ("**bar**", "Pressure. 1 bar is about the air pressure around us. A car tire is pumped to about $(fmt(everyday.tire_bar, 0)) bar."),
+    ("**60 mph**", "$(fmt(3.6 * V60, 1)) km/h, or $(fmt(V60, 1)) m/s."),
+]; widths = ["22%", "78%"])
 
 # ╔═╡ d73c9887-b6d8-5fad-9d96-d7566fc823bb
 md"""
 ## What Tesla said, and what it did not
 
 Each number is marked by how solid it is: **T** Tesla said it · **P** a press report that Tesla
-has not confirmed · **M** measured or estimated by a third party · **?** not known.
+has not confirmed · **M** measured or estimated by someone else · **?** not known.
 """
 
 # ╔═╡ b80af6e2-b5e3-5bdd-97dd-0a6ecf66c074
 html_table(["Item", "Value", "Source"], [
     ("0–60 mph claims", "Performance < 1.6 s, Thrust < 0.9 s, Rocket < 0.59 s", "**T**"),
     ("0–60 mph runs", "1.0 s recorded, 0.81 s live", "**T**"),
-    ("Thrusters", "10 cold-gas thrusters, 600 L of air in COPVs", "**T**"),
+    ("Thrusters", "10 air thrusters, 600 L of air in carbon-wrapped tanks", "**T**"),
     ("Downforce", "4,700 kg readout; holds the car upside down", "**T**"),
     ("Tire grip limit", "1.26 g", "**P**"),
     ("Rear thrust", "over 80 kN from 4 rear nozzles", "**P**"),
@@ -135,41 +190,41 @@ html_table(["Item", "Value", "Source"], [
     ("Drive", "rear-wheel drive, 2 rear motors, over 1 MW, about 1,400 N·m", "**P**"),
     ("Fans", "about 4 × 20 kW", "**M**"),
     ("Mass", "under 1,700 kg (Electrek), about 1,900 kg, about 2,350 kg (CellCog)", "**M**, conflicting"),
-    ("Video fits", "kickflip apex 8.0 m, roll 177 °/s; ramp early fall 2.3 g", "**M**"),
-    ("Not disclosed", "mass, tank pressure, battery capacity, thrust per nozzle, gear ratio", "**?**"),
+    ("Video measurements", "kickflip top height 8.0 m, spin 177° per second; ramp shot falls at 2.3 g", "**M**"),
+    ("Not disclosed", "mass, tank pressure, battery size, thrust per nozzle, gear ratio", "**?**"),
 ]; widths = ["22%", "58%", "20%"])
 
 # ╔═╡ 6db050a1-68fc-5767-abf9-74ddea7261d8
 md"""
 ## What we assume for the unknowns
 
-Where Tesla gave no number, the models use the values below. The panel in the bottom-right corner
-changes the mass and the drive layout for every section.
+Where Tesla gave no number, the models use the values below. The panel in the bottom-right
+corner changes the mass and the drive for every section.
 """
 
 # ╔═╡ 1bf3759a-417c-5ada-8ebd-6a35dad71f88
 html_table(["Unknown", "Model value", "Why"], [
     ("Mass", "**2,000 kg**, panel slider 1,700–2,350", "middle of the estimates"),
-    ("Drive", "at most 12,000 N·m at the wheels and 1 MW; wheel radius 0.35 m", "1,400 N·m × an assumed 8.5:1 gear"),
-    ("Tire", "peak grip `μ = 1.26`; traction control holds 98 % of it", "Tesla's figure, ideal controller"),
-    ("Layout", "RWD: 55 % of the weight on the rear axle, `h/L = 0.17`; AWD for comparison", "assumed geometry"),
-    ("Drag", "`C_dA = 0.6` m²", "assumed"),
-    ("Fan", "4 m² floor, 10 m of skirt, 3 mm gap", "assumed; pressure sized to 4,700 kg"),
-    ("Tank", "600 L at **380 bar** and 20 °C: 271 kg of air", "the cabin readout"),
-    ("Nozzles", "throat area sized for 80 kN at 380 bar", "the press figure"),
+    ("Motor", "at most 12,000 N·m at the wheels and 1 MW; wheel radius 0.35 m", "1,400 N·m × an assumed 8.5:1 gear"),
+    ("Tire", "best grip 1.26; traction control keeps the tire just below it, at 98 %", "Tesla's figure, a perfect controller"),
+    ("Drive", "rear-wheel drive, 55 % of the weight on the rear wheels; all-wheel drive for comparison", "assumed"),
+    ("Air drag", "drag area 0.6 m²", "assumed"),
+    ("Fan", "4 m² floor, 10 m of skirt, 3 mm gap under it", "assumed; suction sized to 4,700 kg"),
+    ("Tank", "600 L at **380 bar** and 20 °C: $(fmt(paper.m_air, 0)) kg of air", "the cabin readout"),
+    ("Nozzles", "opening sized for 80 kN at 380 bar", "the press figure"),
 ]; widths = ["16%", "50%", "34%"])
 
 # ╔═╡ f1ce64c1-2d6f-5c29-9ba3-ed6dbb15ddc3
 md"""
 ## How the simulations run
 
-The simulation results come from Dyad models in `dyad/Roadster/`. Each model is compiled once,
-when the notebook opens. A slider then only changes parameter values and solves the model again,
-which takes milliseconds.
+The results come from models built in Dyad, in `dyad/Roadster/`. Each model is built once, when
+the notebook opens. After that, a slider only changes numbers in a ready model and runs it
+again. That takes a few hundredths of a second, so the plots follow the sliders live.
 
 The panel in the bottom-right corner holds two settings that every section shares: the **car
-mass** and the **drive layout** (RWD is rear-wheel drive, AWD is all-wheel drive). Above it,
-**Claim vs model** collects the verdicts as we go.
+mass** and the **drive** (RWD: rear-wheel drive, AWD: all-wheel drive). Above it, **Claim vs
+model** collects the verdicts as we go.
 """
 
 # ╔═╡ 95427193-c160-57c3-b436-5cf573efc3bc
@@ -227,7 +282,7 @@ hover_grid = let
 end;
 
 # ╔═╡ 9c543dcc-f871-5328-901c-efe1abd6c9de
-# The "Try" lines quote these: the baseline car (2,000 kg, RWD) with one setting changed.
+# The "Try this" lines quote these: the baseline car (2,000 kg, RWD) with one setting changed.
 hints = let
     base = (; m = 2000.0, LAYOUTS["RWD"]...)
     t(; kw...) = t60(solve_with(launch_rig; merge(base, kw)...), launch_rig.sys)
@@ -236,43 +291,67 @@ hints = let
     (
         tires_mu15 = t(mu_A = 1.5),
         tires_P05 = t(P_max = 0.5e6),
-        tires_P05_awd = t(; P_max = 0.5e6, LAYOUTS["AWD"]...),
-        tires_CdA12 = t(CdA = 1.2),
-        tires_m2350 = t(m = 2350.0),
         suction_T20 = t(fan_cmd = 1.0, T_max = 20e3),
-        suction_fan03 = t(fan_cmd = 0.3),
-        suction_m2350 = t(fan_cmd = 1.0, m = 2350.0),
-        stand_690 = marks(p0 = 690e5),
-        stand_690_scaled = marks(p0 = 690e5, A_t = 1.286e-3 * 380 / 690),
-        stand_n1 = marks(n = 1.0),
         stand_200L = marks(V = 0.2),
         thrust_off_suction = t(fan_cmd = 1.0),
-        thrust_200L = t(thrust_cmd = 1.0, tank_volume = 0.2),
         thrust_m2350 = t(thrust_cmd = 1.0, fan_cmd = 1.0, m = 2350.0),
-        thrust_300bar = t(thrust_cmd = 1.0, fan_cmd = 1.0, tank_pressure = 300e5),
-        thrust_300bar_200L = t(thrust_cmd = 1.0, fan_cmd = 1.0, tank_pressure = 300e5,
-            tank_volume = 0.2),
         thrust_all_down = t(thrust_cmd = 1.0, down_fraction = 1.0),
-        hop_03 = apex(t_b = 0.3),
         hop_06 = apex(t_b = 0.6),
-        hop_m2350 = apex(t_b = 0.413, m = 2350.0),
     )
+end;
+
+# ╔═╡ 7780ed0f-6df7-4acc-b67a-4cb4a7c9f608
+# The worked examples on the physics slides, for the baseline car: 2,000 kg, RWD, 380 bar.
+paper = let
+    m, mu, grip, share, h_over_L = 2000.0, 1.26, 0.98, 0.55, 0.17
+    r, T_max, P_max = 0.35, 12_000.0, 1e6
+    W = m * G0
+    rwd_g = grip * mu * share / (1 - grip * mu * h_over_L)
+    D, A = 4700 * G0, 4.0
+    dp = D / A
+    Q = 0.6 * 10.0 * 0.003 * sqrt(2 * dp / 1.2)
+    noz = nozzle_closed_form(380e5, 293.15)
+    m_air = blowdown_closed_form(0.0).m
+    v_hop = sqrt(2 * G0 * 8.0)
+    J = m * v_hop
+    (; m, W, a_1 = V60 / 1.0 / G0, a_081 = V60 / 0.81 / G0,
+        F_mu = mu * W, t_awd = V60 / (mu * G0), rwd_g, t_rwd = V60 / (rwd_g * G0),
+        F_torque = T_max / r, F_power60 = P_max / V60, F_tire = grip * mu * W,
+        D, dp, Fz_suction = W + D, F_tire_suction = grip * mu * (W + D),
+        t_suction = V60 / (T_max / r / m),
+        Q, P_fan = Q * dp / 0.6, P_fan10 = fan_power_closed_form(dp, 0.010),
+        hold_dp = W / A, P_hold = fan_power_closed_form(W / A, 0.003),
+        m_air, mdot = noz.mdot, v_e = noz.v_e, F0 = noz.F, t_empty = m_air / noz.mdot,
+        thrust_g = noz.F / W, rwd_rest_g = grip * mu * share,
+        v_hop, J, air_hop = J / noz.v_e, t_burn = J / (noz.F - W),
+        mdot_hover = W / noz.v_e, t_hover_ideal = m_air * noz.v_e / W,
+        t_hover = hover_closed_form(m))
+end;
+
+# ╔═╡ 81a4f22b-73e4-4385-9c09-5cadf0bdf949
+# Everyday reference objects; each slide that uses one names it.
+everyday = let
+    small_car, adult, tire_bar, city_engine, story = 1000.0, 70.0, 2.0, 50.0, 3.0
+    (; small_car, adult, tire_bar, city_engine, story,
+        cars_80kN = 80e3 / (small_car * G0),
+        adults_air = paper.m_air / adult,
+        tire_x = 380 / tire_bar,
+        engine_x = paper.P_fan / 1e3 / city_engine,
+        hp = 1e6 / 745.7,
+        stories = 8.0 / story,
+        kg_per_kN = 1e3 / G0,
+        hop_kmh = 3.6 * paper.v_hop,
+        weight_x = 4700 / 2000)
 end;
 
 # ╔═╡ 0a85f4c7-90ac-595f-b127-8474860e03df
 md"""
 ## Warm-up: is the ramp video real time?
 
-A falling object is a clock. In free fall it accelerates at ``g = 9.81`` m/s². If a clip plays
-``k`` times too fast, every acceleration on screen looks ``k^2`` times too large. So a fall that
-measures ``a`` on screen gives
-
-```math
-k = \sqrt{a / g}.
-```
-
-Frame-by-frame fits of Tesla's videos (third party, 15–20 % error) give **2.3 g** for the early
-fall in the ramp's main shot and **0.92 g** for the kickflip's flight.
+A falling object is a clock. If a clip plays ``k`` times too fast, a fall on screen looks
+``k^2`` times too quick. **In words:** speed-up of the clip = √(measured fall ÷ real fall),
+``k = \sqrt{a / g}``. Frame-by-frame measurements give a fall of **2.3 g** in the ramp shot and
+**0.92 g** in the kickflip (third party, 15–20 % error).
 
 playback speed-up k $(@bind k_play Slider(0.8:0.02:2.0; default = 1.0, show_value = true))
 """
@@ -280,138 +359,158 @@ playback speed-up k $(@bind k_play Slider(0.8:0.02:2.0; default = 1.0, show_valu
 # ╔═╡ 532b5431-9db1-5e77-b0bc-66f8324ca14c
 warmup = (k_ramp = sqrt(2.3), k_kick = sqrt(0.92));
 
+# ╔═╡ 01c06c4a-585e-4cb2-b4a3-55d129695d50
+headline(abs(k_play - warmup.k_ramp) < 0.015 ?
+    "At k = $(k_play) the lines match: the ramp shot plays $(fmt(warmup.k_ramp, 1))× too fast" :
+    k_play < warmup.k_ramp ?
+    "At k = $(k_play) a real fall is still slower than the ramp shot" :
+    "At k = $(k_play) a real fall is now faster than the ramp shot")
+
 # ╔═╡ 213033f3-32af-536b-a121-8c95e70f4fd0
 let
     tv = range(0, 0.8; length = 100)
-    plt = plot(tv, 0.5 .* 2.3 .* G0 .* tv .^ 2; lw = 3, color = :black,
-        label = "ramp shot, measured 2.3 g", xlabel = "video time [s]",
-        ylabel = "fall distance [m]", legend = :topleft,
-        title = "A real 1 g fall, played $(k_play)× fast")
-    plot!(plt, tv, 0.5 .* G0 .* (k_play .* tv) .^ 2; lw = 3, ls = :dash, color = :steelblue,
-        label = "1 g at k = $(k_play)")
+    measured = 0.5 .* 2.3 .* G0 .* tv .^ 2
+    real = 0.5 .* G0 .* (k_play .* tv) .^ 2
+    plt = plot(tv, measured; lw = 3, color = :black, label = "fall measured in the ramp shot",
+        xlabel = "Time in the video (s)", ylabel = "Distance fallen (m)", legend = :topleft,
+        size = (1200, 400), xlims = (0, 0.95))
+    plot!(plt, tv, real; lw = 3, ls = :dash, color = :steelblue,
+        label = "a real fall, played $(k_play)× fast")
+    mark!(plt, 0.8, measured[end], "ramp shot: $(fmt(measured[end], 1)) m"; valign = :bottom)
+    mark!(plt, 0.8, real[end], "real fall: $(fmt(real[end], 1)) m"; color = :steelblue,
+        valign = :top)
     plt
 end
 
 # ╔═╡ 796e0f71-bc73-545d-8bc1-3375d8be9bcd
 md"""
-- **Axes:** video time [s] across, distance fallen [m] up.
-- **Lines:** black is the fall measured in the ramp shot (2.3 g). Dashed blue is a real fall at
-  1 g, played ``k`` times fast.
-- **Look at:** the two curves lie on top of each other when ``k = \sqrt{2.3} =`` $(fmt(warmup.k_ramp)).
-- **What it means:** the ramp shot plays about 1.5 times too fast. Speeds read from that shot
-  must be divided by 1.5, and accelerations by 2.3. The kickflip gives
-  ``k =`` $(fmt(warmup.k_kick)), close to real time.
-- **Try:** drag ``k`` to 1.52.
+**Try this:** drag ``k`` to $(fmt(warmup.k_ramp)). The lines match, so the ramp shot plays
+$(fmt(warmup.k_ramp, 1))× too fast, and its speeds look $(fmt(warmup.k_ramp, 1))× too high. The
+kickflip gives ``k =`` $(fmt(warmup.k_kick)), close to real time.
 """
 
 # ╔═╡ ca3fab0a-57b4-5859-b505-19746d073c33
 md"""
 ## Claim 1: what can the tires do?
 
-**Tesla's claim.** The tires grip up to **1.26 g** (press report: Electrek, quoting a Tesla
-engineer). The tires are Pirelli P Zero Trofeo RS. The car drives the rear wheels with two
-motors, over 1 MW and about 1,400 N·m in total (press reports).
+**The question:** how hard can the tires push the car forward before they slip?
 
-**What "1.26 g" means.** The tires can push the car forward with at most 1.26 times its weight.
-Here ``g = 9.81`` m/s² is the acceleration of gravity.
+**Like pushing a heavy box across a floor.** Your legs can push only as hard as the floor
+pushes back on your shoes. Push harder, and your shoes slip. A tire has the same limit.
 
-**The question.** With only the tires pushing, how fast can the car reach 60 mph? Tesla's runs
-took 1.0 s (recorded) and 0.81 s (live).
+**Tesla's claim.** The tires grip up to **1.26 g** (press report, Electrek, quoting a Tesla
+engineer). That means: **the tire can push with 1.26 times the car's weight.** Two rear motors
+drive the car: over 1 MW, about $(fmt(everyday.hp, 0)) horsepower (press report).
+
+**To check:** on tires alone, can the car reach 60 mph in 1.0 s, as in Tesla's recorded run?
 """
 
 # ╔═╡ ceba3a95-cacc-5e9b-9677-0c3d0016913f
 md"""
-## Claim 1 · Physics check: the acceleration a 1 s run needs
+## Claim 1 · Physics check: how hard must the car push?
 
-60 mph is ``v_{60} = 26.8`` m/s. A car that speeds up evenly for a time ``t`` has the
-acceleration
-
-```math
-a = \frac{v_{60}}{t}.
-```
-
-For ``t = 1.0`` s:
+**In words:** speed gained = push ÷ mass × time. So the push per kilogram the car needs is
+speed ÷ time.
 
 ```math
-a = \frac{26.8\ \text{m/s}}{1.0\ \text{s}} = 26.8\ \text{m/s}^2 = \frac{26.8}{9.81}\,g = 2.73\,g.
+a = \frac{v_{60}}{t}
 ```
+"""
 
-A 1 s run needs **2.73 g** on average. The live 0.81 s run needs **3.38 g**.
+# ╔═╡ e2facb87-8c7c-4e2b-813e-5b5661d79edd
+html_table(["", "Symbol", "Value"], [
+    ("speed at 60 mph", "v₆₀", "$(fmt(V60, 1)) m/s"),
+    ("time, Tesla's recorded run", "t", "1.0 s"),
+    ("push per kilogram needed", "a", "$(fmt(V60, 1)) m/s² = **$(fmt(paper.a_1)) g**"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ 385f5d07-26a6-4510-a60c-1f78175a3f38
+md"""
+**So what?** A 1 s run needs a push of **$(fmt(paper.a_1)) times the car's weight**, the whole
+way. Tesla's live 0.81 s run needs $(fmt(paper.a_081)) times.
 """
 
 # ╔═╡ 831bd16d-58f9-5236-867e-d5ed00adcf63
 md"""
 ## Claim 1 · Physics check: the most a tire can push
 
-A tire can push forward with at most
+**In words:** most push = grip × how hard the tire is pressed onto the road.
 
 ```math
-F_x \le \mu\, F_z
+F_x \le \mu \, F_z
 ```
 
-- ``F_x``: the forward force of the tire [N]
-- ``F_z``: the normal load, the force that presses the tire onto the road [N]
-- ``\mu``: the peak friction coefficient of the tire, here 1.26
+Take the best case first: all four wheels drive, so the tires carry the whole weight.
+"""
 
-Take all-wheel drive first. All four tires push, and together they carry the whole weight, so
-``F_z = m g``, with ``m`` the mass of the car. Newton's second law, ``m a = F_x``, then gives
+# ╔═╡ eca7b04d-a281-47a3-a911-0678c8510130
+html_table(["", "Symbol", "Value"], [
+    ("grip, Tesla's tire", "μ", "1.26"),
+    ("pressed onto the road: the weight of 2,000 kg", "F_z", "$(fmt(paper.W / 1e3, 1)) kN"),
+    ("most push", "F_x", "$(fmt(paper.F_mu / 1e3, 1)) kN = 1.26 × the weight"),
+    ("fastest 0–60 mph", "t", "$(fmt(V60, 1)) ÷ (1.26 × 9.81) = **$(fmt(paper.t_awd)) s**"),
+]; widths = ["45%", "15%", "40%"])
 
-```math
-a \le \mu\, g = 1.26 \cdot 9.81 = 12.4\ \text{m/s}^2
-\quad\Rightarrow\quad
-t \ge \frac{26.8}{12.4} = 2.17\ \text{s}.
-```
-
-The mass cancels. A heavier car presses harder on the road, but it also needs more force.
+# ╔═╡ 406c6a43-740c-4e56-8a57-35b6a07ba2b7
+md"""
+**So what?** Even with all four wheels driven, the tires cannot beat **$(fmt(paper.t_awd)) s**.
+The mass does not matter: a heavier car presses harder, but also needs more push.
 """
 
 # ╔═╡ 3359a5d2-7aac-5f95-b6cf-d3420dd9d51b
-md"""
-## Claim 1 · Physics check: rear-wheel drive
-
-With rear-wheel drive only the rear tires push. When the car accelerates, it pitches back, and
-the rear tires carry more load:
+details("Details: rear-wheel drive, and the load that moves onto the rear tires", md"""
+With rear-wheel drive only the rear tires push. As the car speeds up it tips back, and the rear
+tires carry more load:
 
 ```math
 F_z = s\, m g + m a\, \frac{h}{L}
 ```
 
-- ``s = 0.55``: the share of the weight on the rear axle at rest
-- ``h/L = 0.17``: the height ``h`` of the center of mass over the wheelbase ``L``
+- ``s = 0.55``: the share of the weight on the rear wheels at rest
+- ``h/L = 0.17``: the height of the center of mass over the wheelbase
 
-The traction control holds the tire at 98 % of its peak, so ``m a = 0.98\, \mu F_z``. Put that
-in and solve for ``a``:
+Traction control keeps the tire at 98 % of its best grip, so ``m a = 0.98\, \mu F_z``. Solved
+for ``a``:
 
 ```math
 \frac{a}{g} = \frac{0.98\, \mu\, s}{1 - 0.98\, \mu\, h/L}
-= \frac{0.98 \cdot 1.26 \cdot 0.55}{1 - 0.98 \cdot 1.26 \cdot 0.17} = 0.86 .
 ```
 
-So ``a = 0.86\,g = 8.4`` m/s² and ``t = 26.8 / 8.4 = 3.18`` s. That is far from the 2.73 g a 1 s
-run needs.
-"""
+With ``\mu = 1.26`` that is ``a/g =`` $(fmt(paper.rwd_g)), and 60 mph takes
+$(fmt(paper.t_rwd)) s.
+""")
 
 # ╔═╡ 330c2302-e7e4-5849-be68-b75c86f3cacb
 md"""
 ## Claim 1 · Physics check: is the motor strong enough?
 
-The drive has two limits of its own.
-
-**Torque.** The most torque at the wheels is ``T_{max} = 12{,}000`` N·m (1,400 N·m times an
-assumed 8.5:1 gear). With wheel radius ``r = 0.35`` m that is a force of
+**In words:** push at the road = twisting force at the wheel ÷ wheel radius.
 
 ```math
-F = \frac{T_{max}}{r} = \frac{12{,}000\ \text{N·m}}{0.35\ \text{m}} = 34.3\ \text{kN},
-\quad\text{which is } 1.75\,g \text{ for } 2{,}000\ \text{kg}.
+F = \frac{T_{max}}{r}
 ```
-
-**Power.** Force times speed cannot exceed the power ``P = 1`` MW, so ``F \le P / v``. At 60 mph
-that is ``1{,}000{,}000 / 26.8 = 37.3`` kN.
-
-**The tires** give at most ``0.98 \cdot 1.26 \cdot 2{,}000 \cdot 9.81 = 24.2`` kN, even with
-all-wheel drive. Both drive limits are higher. Up to 60 mph the tires run out first, not the
-motor.
 """
+
+# ╔═╡ 9713dcda-8181-45e7-8fd5-c62bf9134aa7
+html_table(["", "Symbol", "Value"], [
+    ("twisting force at the wheels: 1,400 N·m × an 8.5:1 gear", "T_max", "12,000 N·m"),
+    ("wheel radius", "r", "0.35 m"),
+    ("most push from the motor", "F", "$(fmt(paper.F_torque / 1e3, 1)) kN = **$(fmt(paper.F_torque / paper.W)) × the weight**"),
+    ("most push from the tires (all-wheel drive, 98 %)", "", "$(fmt(paper.F_tire / 1e3, 1)) kN = $(fmt(paper.F_tire / paper.W)) × the weight"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ 77615046-bbf9-4318-8da9-1d7aca21ca94
+md"""
+**So what?** The motor can push harder than the tires can grip. **The tires run out first, not
+the motor.**
+"""
+
+# ╔═╡ 15a463e7-7217-484f-a1e4-ed198c9b05c7
+details("Details: the power limit", md"""
+Push times speed cannot exceed the motor power ``P = 1`` MW, so ``F \le P / v``. At 60 mph that
+is ``10^6 / 26.8 =`` $(fmt(paper.F_power60 / 1e3, 1)) kN, still above the tires'
+$(fmt(paper.F_tire / 1e3, 1)) kN. Below 60 mph the power never limits.
+""")
 
 # ╔═╡ 0bcfb8b9-0d28-5c3c-baf7-8b3900960826
 grip_need = let
@@ -423,65 +522,60 @@ end;
 
 # ╔═╡ 4920fcd2-add1-5e85-8807-ebc7b0c0798f
 md"""
-## Claim 1 · Physics check: how much grip would a 1 s run need?
+## Claim 1 · Physics check: how much grip would 1 s need?
 
-The same two formulas, now solved for many values of ``\mu``.
+The same formulas as before, for every grip from 0.8 to 3.
 """
+
+# ╔═╡ 92516938-164d-41b8-991e-ca5c4216898c
+headline("A 1 s run needs grip of about $(fmt(max(grip_need.rwd_1, grip_need.awd_1), 1)). Tesla's tire has 1.26.")
 
 # ╔═╡ ed540754-92a5-512d-ad4e-3ffb141b2bf1
 let
     grip = 0.98
     mu = range(0.8, 3.0; length = 200)
-    a_awd = grip .* mu
-    a_rwd = grip .* mu .* 0.55 ./ (1 .- grip .* mu .* 0.17)
-    plt = plot(mu, V60 ./ (a_rwd .* G0); lw = 3, color = :firebrick, label = "RWD",
-        xlabel = "peak friction coefficient μ", ylabel = "time to 60 mph [s]", ylims = (0, 5),
-        legend = :topright,
-        title = "1 s needs μ ≈ $(fmt(grip_need.rwd_1, 1)) (RWD) or $(fmt(grip_need.awd_1, 1)) (AWD)")
-    plot!(plt, mu, V60 ./ (a_awd .* G0); lw = 3, color = :steelblue, label = "AWD")
-    hline!(plt, [1.0]; color = :black, ls = :dash, label = "1 s")
-    hline!(plt, [1.6]; color = :gray, ls = :dot, label = "1.6 s (Performance)")
-    vline!(plt, [1.26]; color = :seagreen, label = "μ = 1.26 (Tesla)")
+    t_awd(μ) = V60 / (grip * μ * G0)
+    t_rwd(μ) = V60 / (grip * μ * 0.55 / (1 - grip * μ * 0.17) * G0)
+    plt = plot(mu, t_rwd.(mu); lw = 3, color = :firebrick, label = "rear-wheel drive",
+        xlabel = "Tire grip μ", ylabel = "Time to 60 mph (s)", ylims = (0, 5),
+        legend = :topright)
+    plot!(plt, mu, t_awd.(mu); lw = 3, color = :steelblue, label = "all-wheel drive")
+    hline!(plt, [1.0]; color = :black, ls = :dash, label = "Tesla's run: 1.0 s")
+    vline!(plt, [1.26]; color = :seagreen, lw = 2, label = "Tesla's tire: grip 1.26")
+    mark!(plt, 1.26, t_rwd(1.26), "rear-wheel drive: $(fmt(t_rwd(1.26))) s"; dx = 0.25, dy = 0.6)
+    mark!(plt, 1.26, t_awd(1.26), "all-wheel drive: $(fmt(t_awd(1.26))) s"; dx = 0.15,
+        dy = -0.75, valign = :top, color = :steelblue)
+    need = max(grip_need.rwd_1, grip_need.awd_1)
+    mark!(plt, need, 1.0, "1 s needs grip $(fmt(need, 1))"; dx = -0.1, dy = 1.2, halign = :right)
     plt
 end
 
 # ╔═╡ 1ce0d1b7-5ec1-580b-b0bd-934fb74a86fc
 md"""
-- **Axes:** the tire's peak friction coefficient ``\mu`` (no unit) across, the time to 60 mph [s]
-  up. No drag and no wheel inertia.
-- **Lines:** red is rear-wheel drive, blue is all-wheel drive. Dashed black marks 1 s, dotted gray
-  1.6 s. The green vertical line is Tesla's tire, ``\mu = 1.26``.
-- **Look at:** where each curve drops below the 1 s line. That happens near ``\mu =``
-  $(fmt(grip_need.rwd_1, 1)) for RWD and $(fmt(grip_need.awd_1, 1)) for AWD.
-- **What it means:** a 1 s run on tires alone needs more than twice the grip of Tesla's own
-  tire. Even 1.6 s needs ``\mu =`` $(fmt(grip_need.awd_16, 2)) (AWD) or $(fmt(grip_need.rwd_16, 2)) (RWD).
+**So what?** A 1 s run on tires alone needs more than twice the grip of Tesla's own tire. Even
+Tesla's 1.6 s needs grip $(fmt(grip_need.awd_16, 2)) with all-wheel drive.
 """
 
 # ╔═╡ 490fee27-240a-52a6-b9cb-9b40cd4d6fb6
 md"""
 ## Claim 1 · Our model: the launch car
 
-One Dyad model, `RoadsterLaunch`, covers every launch in this notebook. In this section the fan
-and the thrusters are switched off, so only the bottom-right chain matters: traction control
-sets the torque, the motor delivers it, and the wheel pushes the body.
+One model, `RoadsterLaunch`, covers every launch in this talk. Here the fan and the air jets are
+off. **Look at the bottom right of the diagram:** traction → motor → wheel → body.
 """
+
+# ╔═╡ 886b889c-74be-46fe-9e2d-db5add63771c
+html_table(["Block", "In the real car", "What it does"], [
+    ("traction", "the traction control in the car's computer", "asks for just under the most the tire can take, so the wheel does not spin"),
+    ("motor", "the two rear motors and their gears", "gives that twisting force, up to 12,000 N·m and 1 MW"),
+    ("wheel", "the rear wheel and tire", "turns the twisting force into a push on the road"),
+    ("axle", "the rear suspension", "works out how hard the tires press on the road"),
+    ("body", "the car itself", "its mass, plus air drag and rolling resistance"),
+]; widths = ["14%", "36%", "50%"])
 
 # ╔═╡ 066d157f-659c-5115-ad05-d595ff52c35c
 diagrams([joinpath(img_dir, "roadster-launch.png") =>
-    "`RoadsterLaunch`. Top: fan and downforce. Middle left: tank and nozzle. Bottom right: traction control, motor, wheel and body."]; height = "340px")
-
-# ╔═╡ 83b3f4a6-3a68-5399-bba1-ab286974d915
-md"""
-- **motor** (`PowerLimitedMotor`): gives the torque that traction control asks for, but never
-  more than 12,000 N·m or 1 MW.
-- **wheel\_inertia** and **wheel** (`LoadedSlipWheel1D`): the spinning wheel and the tire. The
-  tire force depends on the slip, how much faster the tire turns than the car moves, and on the
-  normal load.
-- **body** (`VehicleBody`): the car's mass, air drag and rolling resistance.
-- **axle** (`AxleLoad`) and **traction** (`TractionControl`): the normal load on the driven tires,
-  and the controller that keeps the tire near its peak grip.
-- **fan**, **tank**, **nozzle**: switched off here. Claims 2 to 4 switch them on.
-"""
+    "`RoadsterLaunch`. Top left: the fan. Middle left: the air tank and nozzle. Bottom right: traction, motor, wheel and body."]; height = "300px")
 
 # ╔═╡ 341af294-bb6c-55d2-990c-78bbbe190ade
 md"""
@@ -493,11 +587,11 @@ The rest of the car comes from the existing component library.
 # ╔═╡ 10d92e2a-0efa-53cb-908f-508a45c53fad
 diagrams([
     joinpath(img_dir, "power-limited-motor.png") =>
-        "**`PowerLimitedMotor`** (equations only, so the picture shows just its connections) delivers the smallest of three torques: the request, 12,000 N·m, and 1 MW divided by the wheel speed.",
+        "**`PowerLimitedMotor`**, the motor. It is only equations, so the picture shows its connections. It gives the smallest of: what traction control asks for, 12,000 N·m, and what 1 MW allows at this speed.",
     joinpath(img_dir, "axle-load.png") =>
-        "**`AxleLoad`** (equations only) computes the load on the driven axle: its share of the weight and downforce, plus the load that moves back as the car accelerates. That extra load follows with a 0.1 s delay, like a suspension settling.",
+        "**`AxleLoad`**, the rear suspension. Also only equations. It adds the rear share of the weight, the downforce, and the load that moves back as the car speeds up, with a 0.1 s delay like a settling spring.",
     joinpath(img_dir, "traction-control.png") =>
-        "**`TractionControl`**, shown in its test with a fixed load of 10,000 N and a fixed slip of 0.03, asks for 98 % of the torque the tire can take, `0.98·μ·F_z·r`. If the tire starts to slip past its peak, it cuts the request.",
+        "**`TractionControl`**, shown in its test with a fixed load and slip. It asks for 98 % of the twisting force the tire can take. If the tire starts to spin, it asks for less.",
 ]; height = "300px")
 
 # ╔═╡ abae1e2d-05e7-57ce-94c1-ccf3253dde53
@@ -507,9 +601,9 @@ dyad_fold("AxleLoad", "TractionControl", "PowerLimitedMotor")
 md"""
 ## Claim 1 · Simulation: speed against time
 
-peak tire grip μ $(@bind mu_A Slider(1.0:0.02:1.6; default = 1.26, show_value = true)) ·
+tire grip μ $(@bind mu_A Slider(1.0:0.02:1.6; default = 1.26, show_value = true)) ·
 motor power [MW] $(@bind P_MW Slider(0.5:0.1:2.0; default = 1.0, show_value = true)) ·
-drag area [m²] $(@bind CdA Slider(0.3:0.05:1.2; default = 0.6, show_value = true))
+air drag area [m²] $(@bind CdA Slider(0.3:0.05:1.2; default = 0.6, show_value = true))
 """
 
 # ╔═╡ 112888f3-ea48-57b3-b534-15f0aaf2bb32
@@ -525,180 +619,211 @@ tires = let
         ms = 1000 * (time() - t_start))
 end;
 
+# ╔═╡ 388d7049-aebf-433e-8ff0-870e62b57c74
+headline(tires.t60 <= 1.0 ?
+    "At this grip the tires alone reach 60 mph in $(fmt(tires.t60)) s, as fast as Tesla's run" :
+    "Tires alone: 60 mph after $(fmt(tires.t60)) s. Tesla's run took 1.0 s.")
+
 # ╔═╡ 481ffd01-b7ce-5a10-83be-4a9908d528c4
 let
     sys = launch_rig.sys
     plt = plot(tires.ghost.t, 3.6 .* tires.ghost[sys.v]; lw = 2, color = :gray, alpha = 0.6,
-        label = "$(other_layout): $(fmt(tires.t60_ghost)) s", xlabel = "time [s]",
-        ylabel = "speed [km/h]", xlims = (0, 4), ylims = (0, 130), legend = :bottomright,
-        title = "0–60 mph on tires alone")
+        label = "$(layout_name[other_layout]): $(fmt(tires.t60_ghost)) s",
+        xlabel = "Time since start (s)", ylabel = "Speed (km/h)", xlims = (0, 4),
+        ylims = (0, 130), legend = :bottomright)
     plot!(plt, tires.sol.t, 3.6 .* tires.sol[sys.v]; lw = 3, color = :steelblue,
-        label = "$(drive_layout): $(fmt(tires.t60)) s")
+        label = "$(layout_name[drive_layout]) (the panel's car)")
     hline!(plt, [3.6 * V60]; color = :black, ls = :dot, label = "60 mph")
-    vline!(plt, [1.0]; color = :darkorange, ls = :dash, label = "Tesla, recorded: 1.0 s")
-    vline!(plt, [0.81]; color = :firebrick, ls = :dash, label = "Tesla, live: 0.81 s")
+    vline!(plt, [1.0]; color = :darkorange, ls = :dash, label = "Tesla's recorded run: 1.0 s")
+    tires.t60 < 3.9 && mark!(plt, tires.t60, 3.6 * V60, "60 mph after $(fmt(tires.t60)) s";
+        dx = -0.15, dy = 20, halign = :right)
+    mark!(plt, 1.0, tires.v_at_1s, "at 1.0 s: only $(fmt(tires.v_at_1s, 0)) km/h"; dx = 0.15,
+        dy = 40, color = :darkorange)
     plt
 end
 
 # ╔═╡ ca3eb955-a7dc-5d89-aabc-fdee7a2c596b
 md"""
-- **Axes:** time [s] across, speed [km/h] up.
-- **Lines:** blue is the car set in the panel ($(drive_layout)), gray is the other drive layout.
-  Dotted black is 60 mph (96.6 km/h). The dashed orange and red lines are Tesla's runs.
-- **Look at:** where blue crosses the dotted line. That is the 0–60 time:
-  **$(fmt(tires.t60)) s**. The line is nearly straight, because the tire limit barely changes.
-- **What it means:** at Tesla's 1.0 s mark this car is only at $(fmt(tires.v_at_1s, 0)) km/h.
-- **Try** (2,000 kg, RWD): grip 1.5 gives $(fmt(hints.tires_mu15)) s. Power 0.5 MW gives
-  $(fmt(hints.tires_P05)) s, no change. Drag area 1.2 m² gives $(fmt(hints.tires_CdA12)) s.
-  Only the grip matters. *Re-solved in $(fmt(tires.ms, 0)) ms.*
+**Try this:** set the tire grip to 1.5. The time drops to $(fmt(hints.tires_mu15)) s (2,000 kg,
+RWD). Halve the motor power instead: still $(fmt(hints.tires_P05)) s. Only the grip matters.
 """
 
 # ╔═╡ 44ec27a2-ce80-5e03-af44-7104307276d6
 md"""
 ## Claim 1 · Simulation: which limit holds the car back?
 
-The tire, the torque and the power each cap the force at the wheel. The car gets the lowest cap.
+Three things cap the push at the road: the tires, the motor's twisting force and the motor's
+power. The car gets the lowest of the three.
 """
 
+# ╔═╡ 186bdace-d646-40e4-8269-91a5eb5525a9
+let l = main_limit(tires.limits)
+    headline("$(uppercasefirst(l.name)) $(l.verb) the push for $(fmt(100 * l.share, 0)) % of the run$(l.name == "the tires" ? ": a stronger motor would not help" : "")")
+end
+
 # ╔═╡ ca0bd79d-2962-5f45-93f1-af7cbd159796
-limit_map(tires.sol, launch_rig.sys; until = min(tires.t60, 6.0),
-    title = "Tires only, $(drive_layout): the tire is the limit")
+limit_map(tires.sol, launch_rig.sys; until = min(tires.t60, 6.0))
 
 # ╔═╡ 39c8664b-3505-5411-b5c7-87d75a2d2305
 md"""
-- **Axes:** speed [m/s] across (not time), force at the wheel [kN] up.
-- **Lines:** green is the tire limit ``\mu F_z``. Orange is the torque cap ``T_{max}/r``. Purple
-  is the power cap ``P/v``; it falls as the car speeds up. The thick dark line is the force the
-  tire actually delivers. Dotted gray marks 60 mph.
-- **Look at:** the dark line runs just under green all the way, far below orange and purple.
-  With RWD, green rises at first: load moves onto the rear tires as the car pitches back.
-- **What it means:** the tire is the limit for $(fmt(100 * tires.limits.tire, 0)) % of the run.
-  A stronger motor would not help.
+**Try this:** switch the panel to AWD. All four tires push, the green line rises, and 60 mph
+comes after $(fmt(reference.awd.t60)) s (2,000 kg). The tires still set the limit.
 """
 
 # ╔═╡ 9dd44b2e-19e5-50f3-8ecd-ca1b60b39231
 md"## Claim 1 · Verdict"
 
 # ╔═╡ 998d436b-2a45-5394-96f2-f88ec80b4ff7
-verdict_box(tires.t60 <= 1.0 ? :yes : :no,
-    tires.t60 <= 1.0 ? "Verdict: plausible at this grip" : "Verdict: not plausible on tires alone",
-    """
-    With Tesla's tire (μ = 1.26) the model needs **$(fmt(reference.rwd.t60)) s** with
-    rear-wheel drive and **$(fmt(reference.awd.t60)) s** with all-wheel drive, against Tesla's
-    1.0 s. At the current settings: $(fmt(tires.t60)) s ($(drive_layout)).
-
-    The 1.26 g grip itself is believable. It just cannot give a 1 s run: that needs μ near
-    $(fmt(grip_need.awd_1, 1)). The limit is the tire, not the 1 MW motor.
-
-    **Next:** press the car onto the road with suction.
-    """)
+verdict_box(verdicts.tires.light, verdicts.tires.sentence,
+    "**The number that decides it:** $(verdicts.tires.decides)")
 
 # ╔═╡ 51d1218c-32e7-5d65-8a3a-d739ab7262fe
 md"""
 ## Claim 2: the suction fan
 
+**The question:** if the tires are the limit, can we press them onto the road harder?
+
+**Like a vacuum cleaner that sticks to the carpet.** The fan sucks air from under the car, and
+the air above presses it down. A tire pressed down harder can push harder.
+
 **Tesla's claim.**
-- **Performance trim:** fans only, road legal, 0–60 mph in **under 1.6 s** (Tesla).
-- **Downforce:** an on-screen readout showed **4,700 kg** (Tesla). The fans held the car on a ramp
-  that curled past vertical, so the car hung upside down.
+- **Downforce:** an on-screen readout showed **4,700 kg**, which is
+  **$(fmt(everyday.weight_x)) times the weight** of our 2,000 kg car (Tesla). The car hung
+  upside down on a ramp that curled past vertical.
+- **Performance version:** fans only, 0–60 mph in **under 1.6 s** (Tesla).
 - **Fan power:** about 4 × 20 kW (Electrek's estimate).
 
-**How it works.** Fans pump air out from under the floor. Flexible skirts along the edges keep
-outside air from rushing back in. The pressure under the car drops, and the air above presses the
-car onto the road. Race cars used this in the 1970s (Chaparral 2J, Brabham BT46B). Unlike a wing,
-it works at standstill.
+Flexible skirts along the edges keep outside air from rushing in. Unlike a wing, this works
+while the car stands still.
 """
 
 # ╔═╡ cdb131a1-2d0a-5daa-b6af-25a40c21865a
 md"""
 ## Claim 2 · Physics check: how strong is the suction?
 
-"4,700 kg of downforce" means a force equal to the weight of 4,700 kg:
+**In words:** pressing force = pressure drop under the car × floor area. So the pressure drop
+the fan must make is force ÷ area.
 
 ```math
-D = 4{,}700\ \text{kg} \cdot 9.81\ \text{m/s}^2 = 46.1\ \text{kN}.
+\Delta p = \frac{D}{A}
 ```
+"""
 
-The fan makes this force by lowering the pressure under the floor by ``\Delta p``. With a floor
-area ``A = 4`` m² (assumed):
+# ╔═╡ d6d7070c-88ff-4b93-8093-7fe8baaef3c2
+html_table(["", "Symbol", "Value"], [
+    ("pressing force: the weight of 4,700 kg", "D", "$(fmt(paper.D / 1e3, 1)) kN"),
+    ("floor area (assumed)", "A", "4 m²"),
+    ("pressure drop under the car", "Δp", "$(fmt(paper.dp / 1e3, 1)) kPa = **$(fmt(100 * paper.dp / 101325, 0)) % of the air pressure around us**"),
+]; widths = ["45%", "15%", "40%"])
 
-```math
-\Delta p = \frac{D}{A} = \frac{46{,}100\ \text{N}}{4\ \text{m}^2} = 11.5\ \text{kPa}.
-```
-
-That is about 11 % of the air pressure around us (101 kPa). A small pressure drop over a large
-floor gives a large force: 2.35 times the weight of a 2,000 kg car.
+# ╔═╡ bbb95b6c-ba92-42c0-9122-086a8b11c8f3
+md"""
+**So what?** A small pressure drop over a big floor gives a big force. The fan needs only about
+a tenth of normal air pressure to press the car down with $(fmt(everyday.weight_x)) times its
+weight.
 """
 
 # ╔═╡ 69cf5e21-22ec-5751-802d-b115c54e4080
 md"""
-## Claim 2 · Physics check: the motor becomes the limit
+## Claim 2 · Physics check: now the motor is the limit
 
-The downforce adds to the normal load. With all-wheel drive:
-
-```math
-F_z = m g + D = 19.6\ \text{kN} + 46.1\ \text{kN} = 65.7\ \text{kN}.
-```
-
-The tires could now push ``0.98 \cdot 1.26 \cdot 65.7 = 81.1`` kN, which is **4.1 g**. But the
-motor's torque cap is still ``T_{max}/r = 34.3`` kN, which is **1.75 g**. Now the motor runs out
-first:
+**In words:** time to 60 mph = speed ÷ push per kilogram. With suction, the tires could push
+far harder, so the motor's most push sets the time.
 
 ```math
-t = \frac{v_{60}}{a} = \frac{26.8\ \text{m/s}}{1.75 \cdot 9.81\ \text{m/s}^2} = 1.56\ \text{s}.
+t = \frac{v_{60}}{F_{motor} / m}
 ```
-
-Suction moves the limit from the tire to the motor, and the time lands right at Tesla's
-"under 1.6 s".
 """
+
+# ╔═╡ c4f6c8ba-fbbb-443c-943a-a4ca5ae739e3
+html_table(["", "Symbol", "Value"], [
+    ("most push from the tires, with suction", "", "$(fmt(paper.F_tire_suction / 1e3, 1)) kN = $(fmt(paper.F_tire_suction / paper.W, 1)) × the weight"),
+    ("most push from the motor", "F_motor", "$(fmt(paper.F_torque / 1e3, 1)) kN = $(fmt(paper.F_torque / paper.W)) × the weight"),
+    ("car mass", "m", "2,000 kg"),
+    ("time to 60 mph", "t", "**$(fmt(paper.t_suction)) s**"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ e8497bf1-2a8a-4661-9c06-863a44ed8885
+md"""
+**So what?** Suction moves the limit from the tires to the motor, and the time lands right at
+Tesla's "under 1.6 s".
+"""
+
+# ╔═╡ d72fb098-bed2-4f26-86e7-62ba790df5dd
+details("Details: how hard the tires press with suction", md"""
+The downforce adds to the weight. With all-wheel drive:
+
+```math
+F_z = m g + D
+```
+
+That is $(fmt(paper.W / 1e3, 1)) kN + $(fmt(paper.D / 1e3, 1)) kN =
+$(fmt(paper.Fz_suction / 1e3, 1)) kN, and the tires could push ``0.98 \cdot 1.26 \cdot F_z =`` $(fmt(paper.F_tire_suction / 1e3, 1)) kN.
+The motor's limit is the same as before: ``T_{max}/r = 12{,}000 / 0.35 =``
+$(fmt(paper.F_torque / 1e3, 1)) kN.
+""")
 
 # ╔═╡ b575dc3a-6334-52cd-948f-ec0c294dafc5
 md"""
 ## Claim 2 · Physics check: what does the fan cost?
 
-Air leaks in through the gap under the skirt, and the fan must pump it out again. The leak flow
-``Q`` [m³/s] is
+Air leaks in under the skirt, and the fan must pump it out again. **In words:** fan power =
+air flow × pressure drop ÷ fan efficiency.
+
+```math
+P_{fan} = \frac{Q\, \Delta p}{\eta}
+```
+"""
+
+# ╔═╡ 71b43864-9a54-4b9b-ae1a-671b80c1b95d
+html_table(["", "Symbol", "Value"], [
+    ("air leaking in through a 3 mm gap", "Q", "$(fmt(paper.Q, 2)) m³ per second"),
+    ("pressure drop", "Δp", "$(fmt(paper.dp / 1e3, 1)) kPa"),
+    ("fan efficiency", "η", "0.6"),
+    ("fan power", "P_fan", "**$(fmt(paper.P_fan / 1e3, 0)) kW**, about a small city car's engine ($(fmt(everyday.city_engine, 0)) kW)"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ 467406f3-ce75-421e-9a87-d3559eeb35ee
+md"""
+**So what?** The fan costs about as much power as a small car's engine, in line with Electrek's
+4 × 20 kW. A sloppy 10 mm gap would need $(fmt(paper.P_fan10 / 1e3, 0)) kW.
+"""
+
+# ╔═╡ 86cfa609-8086-426a-b6ce-2e140ecec052
+details("Details: the leak flow, and hanging upside down", md"""
+The air leaking in under the skirt:
 
 ```math
 Q = C_d \cdot \ell \cdot \delta \cdot \sqrt{\frac{2\, \Delta p}{\rho}}
-= 0.6 \cdot 10\ \text{m} \cdot 0.003\ \text{m} \cdot 139\ \text{m/s} = 2.49\ \text{m}^3/\text{s}
 ```
 
 - ``\ell = 10`` m: the length of skirt around the car; ``\delta = 3`` mm: the gap under it
 - ``C_d = 0.6``: the share of the gap that really flows; ``\rho = 1.2`` kg/m³: air density
 
-The fan power is flow times pressure, divided by the fan efficiency ``\eta = 0.6``:
-
-```math
-P_{fan} = \frac{Q\, \Delta p}{\eta} = \frac{2.49 \cdot 11{,}500}{0.6} = 47.9\ \text{kW}.
-```
-
-The power grows in step with the gap: 160 kW at 10 mm. To hang a 2,000 kg car upside down, the
-downforce must at least equal its weight: ``\Delta p \ge 2{,}000 \cdot 9.81 / 4 = 4.9`` kPa,
-which costs 13.3 kW at 3 mm.
-"""
+To hang a 2,000 kg car upside down, the suction must at least carry its weight:
+``\Delta p \ge 2{,}000 \cdot 9.81 / 4 =`` $(fmt(paper.hold_dp / 1e3, 1)) kPa, which costs
+$(fmt(paper.P_hold / 1e3, 1)) kW at 3 mm.
+""")
 
 # ╔═╡ 2afd0c56-0bf0-5b33-ae6d-73199a0b234b
 md"""
 ## Claim 2 · Our model: the suction fan
 
-We added one block, `SuctionFan`, to the launch car.
+We added one block, `SuctionFan`, to the launch car. **Look at the top left of the launch
+diagram** (Claim 1): fan command → fan → downforce sum → axle.
 """
+
+# ╔═╡ bf70bd81-1b6a-4cf9-9dd8-594f92efea16
+html_table(["Block", "In the real car", "What it does"], [
+    ("fan\\_command", "the driver's fan switch", "0 is off, 1 is full power"),
+    ("fan", "the fans and the skirts", "lowers the pressure under the floor, taking 0.3 s to spin up; gives the downforce and the fan power"),
+    ("downforce\\_sum", "nothing; a sum", "adds the fan's downforce to any thrust pointed down"),
+    ("axle", "the rear suspension", "adds the downforce to how hard the tires press on the road"),
+]; widths = ["18%", "30%", "52%"])
 
 # ╔═╡ b8dc0784-9c5f-5800-b997-369529968c00
 diagrams([joinpath(img_dir, "suction-fan.png") =>
-    "`SuctionFan` in its upside-down hold test: a constant command drives the fan, which outputs downforce and fan power."]; height = "300px")
-
-# ╔═╡ a0a1a723-c8b2-57e1-99a2-fcf781edb50a
-md"""
-- **Input:** the fan command, from 0 (off) to 1 (full).
-- **Pressure:** ``\Delta p`` moves toward command × 11.5 kPa with a 0.3 s delay, like a fan
-  spinning up.
-- **Outputs:** the downforce ``\Delta p \cdot A``, and the fan power from the leak formula.
-- **In the launch car:** the downforce feeds `AxleLoad`, so the tires get more load, and adds a
-  little rolling resistance. The fan is at full pressure before the car starts, because the car
-  sits on suction before the launch.
-"""
+    "`SuctionFan` in its upside-down test: a fixed command drives the fan, which gives the downforce and the fan power."]; height = "260px")
 
 # ╔═╡ 68175a2d-7eea-5582-ba04-fe7751ce648d
 dyad_fold("SuctionFan")
@@ -707,9 +832,9 @@ dyad_fold("SuctionFan")
 md"""
 ## Claim 2 · Simulation: the launch with suction
 
-fan command $(@bind fan_cmd Slider(0.0:0.05:1.0; default = 1.0, show_value = true)) ·
+fan setting $(@bind fan_cmd Slider(0.0:0.05:1.0; default = 1.0, show_value = true)) ·
 skirt gap [mm] $(@bind gap_mm Slider(1.0:0.5:10.0; default = 3.0, show_value = true)) ·
-wheel torque cap [kN·m] $(@bind T_kNm Slider(8:1:20; default = 12, show_value = true))
+motor twisting force at the wheels [kN·m] $(@bind T_kNm Slider(8:1:20; default = 12, show_value = true))
 """
 
 # ╔═╡ 3a2db6cd-e77b-548c-b081-6b3feb62e936
@@ -729,31 +854,19 @@ suction = let
         ms = 1000 * (time() - t_start))
 end;
 
+# ╔═╡ ea9d018d-4072-4aa5-985a-ee34fcae04d3
+let l = main_limit(suction.limits)
+    headline("With suction, $(l.name) $(l.verb) the push for $(fmt(100 * l.share, 0)) % of the run: 60 mph in $(fmt(suction.t60)) s")
+end
+
 # ╔═╡ 71b6de44-ece9-5e3f-ad46-e1a5f649b945
-limit_map(suction.sol, launch_rig.sys; until = min(suction.t60, 6.0),
-    title = "Suction, $(drive_layout): 0–60 mph in $(fmt(suction.t60)) s")
+limit_map(suction.sol, launch_rig.sys; until = min(suction.t60, 6.0))
 
 # ╔═╡ 138ea814-3a72-52c2-942f-bbaae57968a0
-let
-    l = suction.limits
-    binding = l.torque >= max(l.tire, l.power) ? "the torque cap (orange)" :
-              l.tire >= l.power ? "the tire (green)" : "the power cap (purple)"
-    md"""
-    - **Axes:** as before: speed [m/s] across, force at the wheel [kN] up.
-    - **Lines:** green, the tire limit, now sits far above the rest: suction has raised it.
-      Orange is the torque cap, $(fmt(T_kNm / 0.35, 1)) kN at this setting.
-    - **Look at:** the dark line, the delivered force, follows $(binding) for most of the run
-      (torque $(fmt(100 * l.torque, 0)) %, tire $(fmt(100 * l.tire, 0)) %, power
-      $(fmt(100 * l.power, 0)) % of the time).
-    - **What it means:** 0–60 mph in **$(fmt(suction.t60)) s**. With suction, the grip no longer
-      matters; the motor does.
-    - **Try** (2,000 kg, RWD): torque cap 20 kN·m gives $(fmt(hints.suction_T20)) s, and the
-      limit moves back to the tire and the power. Fan command 0.3 gives
-      $(fmt(hints.suction_fan03)) s; the tire limits again. Mass 2,350 kg gives
-      $(fmt(hints.suction_m2350)) s, because a torque cap does not grow with mass. The skirt gap
-      does not change the time at all. *Re-solved in $(fmt(suction.ms, 0)) ms.*
-    """
-end
+md"""
+**Try this:** raise the motor's twisting force to 20 kN·m. The time drops to
+$(fmt(hints.suction_T20)) s (2,000 kg, RWD), and the tires and the power become the limit again.
+"""
 
 # ╔═╡ a3d6b00c-9a9c-5405-a396-0c3f88a25de3
 md"""
@@ -762,139 +875,137 @@ md"""
 The skirt gap changes what the fan costs, not how fast the car goes.
 """
 
+# ╔═╡ 80ced0ea-f948-40a3-89e3-42a4f303733c
+headline("At a $(gap_mm) mm gap the fan needs $(fmt(suction.fan_power / 1e3, 0)) kW. Upside down, the suction holds $(fmt(suction.hold_margin))× the car's weight.")
+
 # ╔═╡ c46c6e9a-7269-5b19-8662-d14ef54554ad
 let
     gaps = range(1, 10; length = 100)
     dp = fan_cmd * 4700 * G0 / 4.0
-    plt = plot(gaps, fan_power_closed_form.(dp, gaps ./ 1e3) ./ 1e3; lw = 3, color = :steelblue,
-        label = "formula, Δp = $(fmt(dp / 1e3, 1)) kPa", xlabel = "skirt gap [mm]",
-        ylabel = "fan power [kW]", legend = :topleft, title = "Fan power at launch")
+    power = fan_power_closed_form.(dp, gaps ./ 1e3) ./ 1e3
+    plt = plot(gaps, power; lw = 3, color = :steelblue, label = "fan power at this fan setting",
+        xlabel = "Gap under the skirt (mm)", ylabel = "Fan power (kW)", legend = :topleft,
+        ylims = (0, 1.1 * max(maximum(power), 80)))
     plot!(plt, gaps, fan_power_closed_form.(car.m * G0 / 4.0, gaps ./ 1e3) ./ 1e3; lw = 2,
-        color = :seagreen, label = "least Δp to hang $(car.m) kg upside down")
-    hline!(plt, [80]; color = :gray, ls = :dot, label = "4 × 20 kW (Electrek estimate)")
-    scatter!(plt, [gap_mm], [suction.fan_power / 1e3]; ms = 8, color = :black,
-        label = "launch model: $(fmt(suction.fan_power / 1e3, 1)) kW")
+        color = :seagreen, label = "least power to hang $(car.m) kg upside down")
+    hline!(plt, [80]; color = :gray, ls = :dot, label = "4 × 20 kW (Electrek's estimate)")
+    right = gap_mm < 6
+    mark!(plt, gap_mm, suction.fan_power / 1e3,
+        "the model: $(fmt(suction.fan_power / 1e3, 0)) kW at $(gap_mm) mm";
+        dx = right ? 0.3 : -0.3, dy = (right ? 0.45 : -0.2) * max(maximum(power), 80),
+        halign = right ? :left : :right, valign = right ? :bottom : :top)
     plt
 end
 
 # ╔═╡ 691785d8-5309-5564-8bdf-c62da7f64403
-let
-    margin, mass, gap = fmt(suction.hold_margin), car.m, gap_mm
-    dp, power = fmt(suction.hold_dp, 0), fmt(suction.hold_power / 1e3, 1)
-    md"""
-    - **Axes:** skirt gap [mm] across, fan power [kW] up.
-    - **Lines:** blue is the formula ``Q \Delta p / \eta`` at the current fan command. Green is
-      the least power that keeps the car hanging upside down. Dotted gray is Electrek's 80 kW
-      estimate. The black dot is the power the Dyad launch model reports at the current gap.
-    - **Look at:** both lines are straight: double the gap, double the power. The black dot sits
-      on the blue line, so the model matches the formula.
-    - **What it means:** at 3 mm the fan needs about 48 kW, in line with Electrek's estimate. A
-      sloppy 10 mm seal would need 160 kW.
-    - **Upside down:** at this command the downforce is **$(margin)×** the weight. Hanging
-      $(mass) kg needs at least ``\Delta p =`` $(dp) Pa, which costs $(power) kW at a $(gap) mm
-      gap.
-    - **Try:** drag the skirt gap to 10 mm and watch the dot climb to about 160 kW.
-    """
-end
+md"""
+**Try this:** set the skirt gap to 10 mm. The fan needs
+$(fmt(fan_power_closed_form(fan_cmd * 4700 * G0 / 4.0, 0.010) / 1e3, 0)) kW, and the car is no
+faster.
+"""
 
 # ╔═╡ 3fa37ac3-eeae-5b31-8c9d-0ee094052260
 md"## Claim 2 · Verdict"
 
 # ╔═╡ b699e8ab-5de0-5351-b54c-703476a2f793
-let
-    ok = suction.t60 <= 1.05 * 1.6 && suction.hold_margin >= 1
-    verdict_box(ok ? :yes : :no,
-        ok ? "Verdict: plausible, if the skirt seals well" : "Verdict: not plausible at these settings",
-        """
-        The baseline car with full suction reaches 60 mph in **$(fmt(reference.suction.t60)) s**,
-        within 2 % of Tesla's "under 1.6 s". At the current settings: $(fmt(suction.t60)) s.
-        The limit is the motor's torque, not the tire.
-
-        The downforce is $(fmt(suction.hold_margin))× the weight, so the car can hang upside down,
-        while it stands still on a smooth surface. The fan needs about 48 kW at a 3 mm gap; the
-        gap sets the power bill.
-
-        **Next:** push the body directly with compressed air.
-        """)
-end
+verdict_box(verdicts.suction.light, verdicts.suction.sentence,
+    "**The number that decides it:** $(verdicts.suction.decides)")
 
 # ╔═╡ b6f85d2f-d29d-57a7-8e5a-f88d50751bff
 md"""
-## Claim 3: the cold-gas thrusters
+## Claim 3: the air thrusters
+
+**The question:** how hard can a jet of compressed air push the car, and for how long?
+
+**Like letting go of a blown-up balloon.** The air rushes out the back, and the balloon shoots
+forward. Here the air is at 380 bar, about **$(fmt(everyday.tire_x, 0)) times the pressure in a
+car tire**, which holds about $(fmt(everyday.tire_bar, 0)) bar.
 
 **Tesla's claim** (the "SpaceX package").
-- **10 cold-gas thrusters** run on compressed air stored in **600 L** of tanks, refillable
-  (Tesla).
-- **Over 80 kN** of thrust from 4 rear nozzles (press report).
+- **10 thrusters** run on compressed air in **600 L** of carbon-wrapped tanks (Tesla).
+- **Over 80 kN** from 4 rear nozzles (press report). That is the weight of
+  **$(fmt(everyday.cars_80kN, 0)) small cars** of $(fmt(everyday.small_car, 0)) kg.
 - About **250 kg** of air (press report).
 - The tank pressure was not published. A cabin readout showed **380 bar**; Electrek says
   **690 bar**.
-
-**How it works.** The air sits in composite tanks: a thin liner wrapped in carbon fiber. A valve
-opens, the air rushes out through a nozzle, and the jet pushes the car the other way. Nothing
-burns, so the jet is slow: about 700 m/s, against about 3,000 m/s for a rocket engine.
 """
 
 # ╔═╡ 9af7179d-1a05-5fbb-84e8-358e9a628405
 md"""
 ## Claim 3 · Physics check: how much air is in the tank?
 
-The ideal gas law, ``p V = m R T``, gives the mass of air ``m``:
-
-- ``p = 380`` bar ``= 380 \cdot 10^5`` Pa: the tank pressure
-- ``V = 0.6`` m³: the tank volume
-- ``R = 287`` J/(kg·K): the gas constant of air
-- ``T = 293`` K: the temperature, 20 °C
+**In words:** mass of air = pressure × volume ÷ (gas constant × temperature). This is the ideal
+gas law.
 
 ```math
-m = \frac{p V}{R T} = \frac{380 \cdot 10^5 \cdot 0.6}{287 \cdot 293} = 271\ \text{kg}.
+m = \frac{p V}{R T}
 ```
+"""
 
-That fits the reported 250 kg. Real air at this pressure is slightly stiffer than an ideal gas,
-so the tank holds a little less.
+# ╔═╡ 77381c04-003d-4a68-907f-09a10e7c9cc4
+html_table(["", "Symbol", "Value"], [
+    ("tank pressure", "p", "380 bar = 38,000,000 Pa"),
+    ("tank volume", "V", "600 L = 0.6 m³"),
+    ("gas constant of air", "R", "287 J/(kg·K)"),
+    ("temperature, 20 °C", "T", "293 K"),
+    ("mass of air", "m", "**$(fmt(paper.m_air, 0)) kg**, about $(fmt(everyday.adults_air, 0)) adults of $(fmt(everyday.adult, 0)) kg"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ c5510e19-2ca7-4658-bfb8-21edfae45a79
+md"""
+**So what?** That fits the reported 250 kg. The car carries the weight of about
+$(fmt(everyday.adults_air, 0)) adults in air, and every kilogram it blows out is gone.
 """
 
 # ╔═╡ 4a0da2f8-be59-5215-abc1-0471fdfeb2a1
 md"""
 ## Claim 3 · Physics check: thrust at full pressure
 
-Thrust is mass flow times jet speed:
+**In words:** thrust = air leaving per second × jet speed.
 
 ```math
 F = \dot m \, v_e
 ```
+"""
 
-- ``\dot m`` [kg/s]: air mass leaving per second. In the narrowest part of the nozzle, the
-  throat, the air reaches the speed of sound. Then ``\dot m`` grows in step with the pressure
-  ``p`` and the throat area ``A_t``.
-- ``v_e`` [m/s]: the jet speed after the air has expanded to outside pressure.
+# ╔═╡ ef405783-9048-45f7-93f9-bac786ee13b5
+html_table(["", "Symbol", "Value"], [
+    ("air leaving per second, 4 nozzles of about 20 mm", "ṁ", "$(fmt(paper.mdot, 0)) kg/s"),
+    ("jet speed", "v_e", "$(fmt(paper.v_e, 0)) m/s, about twice the speed of sound"),
+    ("thrust", "F", "**$(fmt(paper.F0 / 1e3, 0)) kN**"),
+]; widths = ["45%", "15%", "40%"])
 
-The full formulas are in the model. With ``A_t = 1{,}286`` mm² (four nozzles of about 20 mm,
-sized for 80 kN) at 380 bar and 20 °C:
+# ╔═╡ 3df111a6-c669-442d-9299-fe480bf3f762
+md"""
+**So what?** 80 kN is possible at 380 bar. But at $(fmt(paper.mdot, 0)) kg per second, the
+$(fmt(paper.m_air, 0)) kg of air would last only $(fmt(paper.t_empty, 1)) s.
+"""
+
+# ╔═╡ 05406320-5e1c-4b2a-9d07-2323b0976b24
+details("Details: the air per second and the jet speed", md"""
+In the narrowest part of the nozzle, the throat, the air reaches the speed of sound and cannot
+go faster. Then the air per second grows in step with the tank pressure ``p`` and the throat
+area ``A_t``:
 
 ```math
-\dot m = 115\ \text{kg/s}, \qquad v_e = 693\ \text{m/s}, \qquad
-F = 115 \cdot 693 = 80\ \text{kN}.
+\dot m = A_t\, p\, \sqrt{\frac{\gamma}{R T}} \left(\frac{2}{\gamma + 1}\right)^{\frac{\gamma + 1}{2(\gamma - 1)}},
+\qquad
+v_e = \sqrt{2 c_p T \left(1 - \left(\frac{p_a}{p}\right)^{\frac{\gamma - 1}{\gamma}}\right)}
 ```
 
-At that rate the 271 kg would last ``271 / 115 = 2.35`` s.
-"""
+with ``A_t = 1{,}286`` mm², ``\gamma = 1.4`` and ``c_p = 1005`` J/(kg·K) for air, and outside
+pressure ``p_a = 1`` bar. After the throat the air expands to outside pressure and speeds up to
+``v_e``.
+""")
 
 # ╔═╡ e2dddf66-0017-55ad-b309-5f9cc11d72ee
 md"""
 ## Claim 3 · Physics check: the tank runs down
 
-As air leaves, the pressure drops, and with it the flow and the thrust. We assume
+**In words:** as air leaves, the pressure in the tank falls, and the thrust falls with it. The
+air also cools as it expands, which lowers the pressure further.
 
-```math
-\frac{p}{p_0} = \Big(\frac{m}{m_0}\Big)^{n}
-```
-
-- ``p_0``, ``m_0``: pressure and air mass at the start; ``p``, ``m``: the same later
-- ``n = 1.4``: the air expands too fast to take heat from the tank walls, so it cools
-- ``n = 1``: the air stays at room temperature
-
-These equations can be solved by hand. With ``n = 1.4`` at 380 bar:
+Worked out by hand for 380 bar:
 """
 
 # ╔═╡ d61b4d3f-20b3-52e0-ba5a-9412c5c0dacf
@@ -910,29 +1021,45 @@ end
 
 # ╔═╡ 269eead9-b7e2-51f8-824a-cf060460e1f5
 md"""
-80 kN is the thrust at the moment the valve opens. Half a second later it is down to 59 kN.
+**So what?** 80 kN is the thrust at the moment the valve opens. Half a second later only
+$(fmt(blowdown_closed_form(0.5).F / 1e3, 0)) kN is left.
 """
+
+# ╔═╡ b6af0980-5e1c-4e9a-bfc5-0c6c33605abc
+details("Details: how fast the pressure falls", md"""
+We assume
+
+```math
+\frac{p}{p_0} = \Big(\frac{m}{m_0}\Big)^{n}
+```
+
+- ``p_0``, ``m_0``: pressure and air mass at the start; ``p``, ``m``: the same later
+- ``n`` says how much the air cools as it expands. ``n = 1.4``: the air leaves too fast to warm
+  up from the tank walls, so it cools as much as it can. ``n = 1``: it stays at room temperature.
+
+With the air per second from the previous slide, this gives an equation for ``m(t)`` that can be
+solved by hand. The table uses ``n = 1.4``.
+""")
 
 # ╔═╡ 7048f135-2533-5d1b-90f4-68eb7f5e573c
 md"""
 ## Claim 3 · Our model: tank and nozzle on a test stand
 
-Before we put the thrusters on the car, we test them on a fixed stand.
+Before we put the thrusters on the car, we test them on a stand bolted to the floor. **Read the
+diagram left to right:** tank → nozzle → stand.
 """
+
+# ╔═╡ 021a90c8-0fd4-456d-bdbb-2e3af63f88d0
+html_table(["Block", "In the real car", "What it does"], [
+    ("command", "the driver's thrust button", "1 opens the valve fully"),
+    ("tank", "the carbon-wrapped air tanks", "holds the air; its pressure and temperature fall as air leaves"),
+    ("nozzle", "the four rear nozzles", "turns the tank pressure into air per second, jet speed and thrust; shuts below 2 bar"),
+    ("fixed", "a test stand bolted to the floor", "holds the nozzle still, so we can read the thrust"),
+]; widths = ["14%", "32%", "54%"])
 
 # ╔═╡ 1ee75699-b8fe-5cad-beb0-d3e0967e7041
 diagrams([joinpath(img_dir, "cold-gas-thrust-stand.png") =>
-    "`TestColdGasThrustStand`: tank, nozzle and a fixed stand, valve wide open."]; height = "340px")
-
-# ╔═╡ ea134b48-2c80-5bff-bb4f-655b714d9049
-md"""
-- **AirTank:** holds the air mass ``m``. Its pressure and temperature follow the rule on the
-  previous slide.
-- **ColdGasNozzle:** computes ``\dot m``, ``v_e`` and ``F`` from the tank's pressure and
-  temperature. The valve command scales the throat area. Below 2 bar the valve closes, because
-  the formulas only hold while the throat runs at the speed of sound.
-- **Fixed stand:** holds the nozzle still, so we measure thrust without anything moving.
-"""
+    "`TestColdGasThrustStand`: tank, nozzle and a fixed stand, valve fully open."]; height = "300px")
 
 # ╔═╡ 6d1930fd-1787-5449-acfa-579396d3b31b
 dyad_fold("AirTank", "ColdGasNozzle")
@@ -943,8 +1070,8 @@ md"""
 
 start pressure [bar] $(@bind p0_bar Slider(300:10:690; default = 380, show_value = true)) ·
 tank [L] $(@bind V_L Slider(200:50:600; default = 600, show_value = true)) ·
-n $(@bind n_poly Slider(1.0:0.05:1.4; default = 1.4, show_value = true)) ·
-throat $(@bind throat Select(["fixed" => "fixed: 80 kN at 380 bar", "scaled" => "scaled: 80 kN at any pressure"]))
+cooling n (1 = stays warm, 1.4 = cools) $(@bind n_poly Slider(1.0:0.05:1.4; default = 1.4, show_value = true)) ·
+nozzle $(@bind throat Select(["fixed" => "fixed: 80 kN at 380 bar", "scaled" => "resized: 80 kN at any pressure"]))
 """
 
 # ╔═╡ 82ddb7df-c1e1-5e05-829e-9a3486abaa4e
@@ -961,6 +1088,9 @@ blowdown = let
         m0 = sol(0.0, idxs = stand_rig.sys.tank.m_g), ms = 1000 * (time() - t_start))
 end;
 
+# ╔═╡ 3e1d4055-ed9a-40be-950b-0b23d345952d
+headline("Thrust starts at $(fmt(blowdown.marks.F0 / 1e3, 0)) kN and falls below 80 % after $(fmt(blowdown.marks.t80)) s")
+
 # ╔═╡ 454b7935-c1c3-5914-b6f5-ad13edd86d01
 let
     sys = stand_rig.sys
@@ -968,129 +1098,132 @@ let
     F(sol) = sol(ts, idxs = sys.nozzle.F).u ./ 1e3
     (; F0, t80, t50) = blowdown.marks
     plt = plot(ts, F(blowdown.ghost); lw = 2, color = :gray, alpha = 0.6,
-        label = "n = $(blowdown.ghost_n)", xlabel = "time [s]", ylabel = "thrust [kN]",
-        legend = :topright, title = "Thrust: $(fmt(F0 / 1e3, 0)) kN at the start")
-    plot!(plt, ts, F(blowdown.sol); lw = 3, color = :black, label = "n = $(n_poly)")
+        label = blowdown.ghost_n == 1.0 ? "same tank, air kept warm" : "same tank, air cooling",
+        xlabel = "Time since the valve opened (s)", ylabel = "Thrust (kN)", legend = :topright)
+    plot!(plt, ts, F(blowdown.sol); lw = 3, color = :black, label = "thrust from the model")
     plot!(plt, ts, [blowdown_closed_form(t; tank_setup...).F / 1e3 for t in ts]; lw = 2,
-        ls = :dot, color = :darkorange, label = "formula")
-    hline!(plt, [0.8, 0.5] .* F0 ./ 1e3; color = :steelblue, ls = :dash, label = "80 % and 50 %")
-    vline!(plt, [t80, t50]; color = :steelblue, ls = :dot, label = "")
+        ls = :dot, color = :darkorange, label = "thrust from the hand formula")
+    isfinite(t80) && mark!(plt, t80, 0.8 * F0 / 1e3, "below 80 % after $(fmt(t80)) s";
+        dx = 0.4, dy = 0.1 * F0 / 1e3)
+    isfinite(t50) && mark!(plt, t50, 0.5 * F0 / 1e3, "half after $(fmt(t50)) s"; dx = 0.4,
+        dy = 0.1 * F0 / 1e3)
     air = twinx(plt)
     plot!(air, ts, blowdown.sol(ts, idxs = sys.tank.m_g).u; lw = 2, color = :seagreen,
-        ylabel = "air in the tank [kg]", label = "", ylims = (0, Inf))
+        ylabel = "Air left in the tank (kg), green", label = "", ylims = (0, Inf))
     plt
 end
 
 # ╔═╡ d656e5a8-e471-5ec3-a538-ed704c557b90
-let
-    (; F0, t80, t50) = blowdown.marks
-    md"""
-    - **Axes:** time [s] across. Left: thrust [kN]. Right, in green: air left in the tank [kg].
-    - **Lines:** black is the Dyad model with your settings. Dotted orange is the formula; it lies
-      on top of black. Gray is the same tank with the other extreme of ``n``. The dashed blue
-      lines mark 80 % and 50 % of the starting thrust, and the dotted blue verticals mark when
-      the thrust falls below them.
-    - **Look at:** the steep drop just after the start. Thrust falls below 80 % after
-      **$(fmt(t80)) s** and below half after $(fmt(t50)) s.
-    - **What it means:** the green line falls slowly, but the thrust falls fast, because pressure
-      and temperature both drop. Full thrust is a short pulse from $(fmt(blowdown.m0, 0)) kg of air.
-    - **Try:** 690 bar with the fixed throat starts at $(fmt(hints.stand_690.F0 / 1e3, 0)) kN.
-      Switch the throat to "scaled": back to $(fmt(hints.stand_690_scaled.F0 / 1e3, 0)) kN, held
-      above 80 % for $(fmt(hints.stand_690_scaled.t80)) s. ``n = 1`` holds 80 % for
-      $(fmt(hints.stand_n1.t80)) s. A 200 L tank only for $(fmt(hints.stand_200L.t80)) s.
-      *Re-solved in $(fmt(blowdown.ms, 0)) ms.*
-    """
-end
+md"""
+**Try this:** set the tank to 200 L. The thrust stays above 80 % for only
+$(fmt(hints.stand_200L.t80)) s.
+"""
 
 # ╔═╡ a1eebfaa-ac28-5511-80f8-83ac87cbd423
 md"## Claim 3 · Verdict"
 
 # ╔═╡ e7533517-ea75-5361-b8a2-bb60c67ca3af
-let
-    (; F0, t80, t50) = blowdown.marks
-    ref = blowdown_marks(stand_rig.default, stand_rig.sys)
-    verdict_box(:partly, "Verdict: plausible as a peak, not as a steady push",
-        """
-        At 380 bar, four nozzles of about 20 mm give **$(fmt(ref.F0 / 1e3, 0)) kN** when the valves
-        open, and 600 L holds 271 kg of air, close to the reported 250 kg. But the thrust falls
-        below 80 % after **$(fmt(ref.t80)) s** and to half after $(fmt(ref.t50)) s. "Over 80 kN"
-        is true only for an instant. At the current settings: $(fmt(F0 / 1e3, 0)) kN, 80 % held
-        for $(fmt(t80)) s.
-
-        **Next:** put the thrusters on the car.
-        """)
-end
+verdict_box(verdicts.thrusters.light, verdicts.thrusters.sentence,
+    "**The number that decides it:** $(verdicts.thrusters.decides)")
 
 # ╔═╡ b5dbdf36-0e13-5f76-bf1f-e829202924f3
 md"""
 ## Claim 4: 0–60 mph in under a second
 
+**The question:** the air jets push the car's body directly. With that extra push, can it beat
+one second?
+
+**Like getting a shove in the back while you sprint.** Your legs still push on the ground, and
+the shove adds to it. The shove does not need grip.
+
 **Tesla's claim.**
 - A recorded run took **1.0 s**. A live run took **0.81 s**; problems with the timer were
   reported.
-- **Thrust trim** (rear thrusters): **under 0.9 s**. Electrek says it carries 200 L of air.
-- **Rocket trim** (10 thrusters, 600 L): **under 0.59 s**.
-- A 0.55 s figure used a "1 ft rollout": the clock starts after the car has rolled 30 cm. That is
-  worth about 0.1 s.
-
-**The question.** The thrust pushes the body directly. With it, are these times possible?
+- **Thrust version** (rear thrusters): **under 0.9 s**. Electrek says it carries 200 L of air.
+- **Rocket version** (10 thrusters, 600 L): **under 0.59 s**.
+- A 0.55 s figure started the clock after the car had rolled 30 cm, which is worth about 0.1 s.
 """
 
 # ╔═╡ be9624be-871f-5fd8-a3e7-ee4bf5bc1943
 md"""
 ## Claim 4 · Physics check: what the times demand
 
-Average acceleration ``a = v_{60} / t``, with ``v_{60} = 26.8`` m/s:
+**In words:** push per kilogram needed = speed ÷ time, as in Claim 1.
+
+```math
+a = \frac{v_{60}}{t}
+```
 """
 
 # ╔═╡ 28d1e0a8-9372-54b2-bad9-020c0efdcf5f
-html_table(["target", "time", "average acceleration"], [
-    ("recorded run", "1.0 s", "$(fmt(V60 / 1.0 / G0)) g"),
-    ("Thrust trim", "0.9 s", "$(fmt(V60 / 0.9 / G0)) g"),
-    ("live run", "0.81 s", "$(fmt(V60 / 0.81 / G0)) g"),
-    ("Rocket trim", "0.59 s", "$(fmt(V60 / 0.59 / G0)) g"),
+html_table(["Target", "Time", "Push needed, in car weights"], [
+    ("recorded run", "1.0 s", "$(fmt(V60 / 1.0 / G0))"),
+    ("Thrust version", "0.9 s", "$(fmt(V60 / 0.9 / G0))"),
+    ("live run", "0.81 s", "$(fmt(V60 / 0.81 / G0))"),
+    ("Rocket version", "0.59 s", "$(fmt(V60 / 0.59 / G0))"),
 ]; widths = ["40%", "25%", "35%"], numeric = 2:3)
+
+# ╔═╡ 84175052-570e-4611-b506-cc1593c6a03d
+md"""
+**So what?** Every one of Tesla's times needs a push of more than
+$(fmt(V60 / 1.0 / G0, 1)) times the car's weight. The tires alone give at most
+$(fmt(paper.F_tire / paper.W)).
+"""
 
 # ╔═╡ 8af337a6-0282-50b5-a98e-142755a66f42
 md"""
 ## Claim 4 · Physics check: what the thrust adds
 
-The thrust pushes the body, not the tires, so it adds to whatever the tires deliver. At the
-start, for 2,000 kg:
+**In words:** extra push, in car weights = thrust ÷ the car's weight.
 
 ```math
-\frac{F}{m g} = \frac{80{,}000\ \text{N}}{2{,}000\ \text{kg} \cdot 9.81\ \text{m/s}^2} = 4.08\,g.
+\frac{F}{m g}
 ```
-
-- **Thrust and tires, RWD:** 4.08 g plus 0.7 g from the rear tires at rest, about **4.8 g**.
-- **Thrust and suction:** 4.08 g plus 1.75 g from the motor's torque cap, **5.8 g**.
-
-Both start well above the 3.38 g that 0.81 s needs. But Claim 3 showed the thrust falling to
-half within about 1.2 s, so only a simulation tells whether the average stays high enough.
 """
+
+# ╔═╡ 5a772d46-7fc0-4baf-bf62-6f59e18c3e19
+html_table(["", "Symbol", "Value"], [
+    ("thrust at the start", "F", "$(fmt(paper.F0 / 1e3, 0)) kN"),
+    ("weight of a 2,000 kg car", "m g", "$(fmt(paper.W / 1e3, 1)) kN"),
+    ("extra push", "F / m g", "**$(fmt(paper.thrust_g)) car weights**"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ 5e0e82fd-9a18-4646-b41e-db24632ba70c
+md"""
+**So what?** At the start, the jets alone push with $(fmt(paper.thrust_g, 1)) car weights, more
+than the $(fmt(paper.a_081)) that 0.81 s needs. But Claim 3 showed the thrust fading fast, so
+only a simulation can tell whether the average stays high enough.
+"""
+
+# ╔═╡ 86a55819-b811-42f1-acfd-9f41bd490ea9
+details("Details: thrust plus tires", md"""
+The thrust pushes the body, not the tires, so it adds to whatever the tires give:
+
+- **Thrust and tires, RWD:** $(fmt(paper.thrust_g)) plus $(fmt(paper.rwd_rest_g)) from the rear
+  tires at rest, about **$(fmt(paper.thrust_g + paper.rwd_rest_g, 1)) car weights**.
+- **Thrust and suction:** $(fmt(paper.thrust_g)) plus $(fmt(paper.F_torque / paper.W)) from the
+  motor, **$(fmt(paper.thrust_g + paper.F_torque / paper.W, 1)) car weights**.
+""")
 
 # ╔═╡ c7f8f3b8-8871-5e02-8132-9b03ce6868af
 md"""
 ## Claim 4 · Our model: the full launch car
 
-The same `RoadsterLaunch` as in Claim 1, now with the tank and the rear nozzles switched on.
+The same `RoadsterLaunch` as in Claim 1, now with the tank and the rear nozzles on. **Look at
+the middle row of the diagram:** tank → nozzle → forward gain → forward force.
 """
+
+# ╔═╡ f44d1e93-7039-49f5-82fb-c3b857140a62
+html_table(["Block", "In the real car", "What it does"], [
+    ("tank, nozzle", "the air tanks and the rear nozzles", "the same as on the test stand; the valves open fully at the start"),
+    ("forward\\_gain", "the direction the nozzles point", "keeps the share of the thrust that points backward"),
+    ("forward\\_force", "the nozzle mounts", "pushes the car body forward with that share"),
+    ("downforce\\_sum", "nothing; a sum", "adds the share pointed down to the fan's downforce"),
+]; widths = ["18%", "32%", "50%"])
 
 # ╔═╡ 3b0984f3-b69f-54b9-91f1-30fab8cc7881
 diagrams([joinpath(img_dir, "roadster-launch.png") =>
-    "`RoadsterLaunch`. Middle row: tank, nozzle, forward gain and forward force. Part of the nozzle's thrust also goes up into the downforce sum."]; height = "340px")
-
-# ╔═╡ 8a7b118f-8b55-51e9-aca7-347662feb106
-md"""
-- **tank** and **nozzle:** the same blocks as on the test stand. The valves open fully at
-  ``t = 0``, with no delay.
-- **forward\_gain** and **forward\_force:** the share ``1 - d`` of the thrust that pushes the car
-  forward.
-- **downforce\_sum:** the share ``d`` of the thrust that points down and presses the car onto the
-  road. It adds to the fan's downforce.
-- ``d`` is `down_fraction`, from 0 (all back) to 1 (all down). The thrust acts at the height of
-  the center of mass, so it does not tip the car.
-"""
+    "`RoadsterLaunch`. Middle row: tank, nozzle, forward gain and forward force. The line from the nozzle up to the downforce sum carries the share pointed down."]; height = "300px")
 
 # ╔═╡ 75e1037e-5a0a-50f2-a755-29e7037ba07e
 dyad_fold("RoadsterLaunch")
@@ -1099,10 +1232,12 @@ dyad_fold("RoadsterLaunch")
 md"""
 ## Claim 4 · Simulation: speed with thrust
 
-thrust $(@bind use_thrust CheckBox(default = true)) ·
-suction $(@bind use_suction CheckBox(default = false)) ·
-tank $(@bind tank_choice Select(["600 L" => "600 L (Tesla, total)", "200 L" => "200 L (Thrust trim, Electrek)"])) ·
-share pushed down d $(@bind down_fraction Slider(0.0:0.05:1.0; default = 0.0, show_value = true))
+air jets $(@bind use_thrust CheckBox(default = true)) ·
+suction fan $(@bind use_suction CheckBox(default = false)) ·
+tank $(@bind tank_choice Select(["600 L" => "600 L (Tesla, total)", "200 L" => "200 L (Thrust version, Electrek)"])) ·
+share of the jet pointed down $(@bind down_fraction Slider(0.0:0.05:1.0; default = 0.0, show_value = true))
+
+*Tank pressure, cooling and nozzle come from the Claim 3 sliders.*
 """
 
 # ╔═╡ ea852136-7152-5722-88c5-d7269a9dcb3e
@@ -1125,51 +1260,60 @@ trims = let
         rocket = t60(solve_with(launch_rig; base..., tank_volume = 0.6), launch_rig.sys))
 end;
 
+# ╔═╡ 77c576de-e638-4bf2-96fa-8892c107d220
+headline(!isfinite(thrust_launch.t60) ? "These settings never reach 60 mph" :
+    "Your settings: 60 mph after $(fmt(thrust_launch.t60)) s, $(thrust_launch.t60 < 0.81 ? "faster" : "slower") than Tesla's live 0.81 s")
+
 # ╔═╡ 309bafac-d1f8-5e0a-b637-83a654847224
 let
     sys = launch_rig.sys
     kmh(sol) = 3.6 .* sol[sys.v]
-    plt = plot(xlabel = "time [s]", ylabel = "speed [km/h]", xlims = (0, 1.6),
-        ylims = (0, 130), legend = :bottomright, title = "0–60 mph with thrust")
-    for (case, name) in ((:tires_thrust, "tires + thrust"),
-                         (:suction_thrust, "suction + thrust"),
-                         (:thrust_200l, "suction + thrust, 200 L"))
+    plt = plot(xlabel = "Time since start (s)", ylabel = "Speed (km/h)", xlims = (0, 1.6),
+        ylims = (0, 130), legend = :bottomright)
+    for (case, name, style) in ((:tires_thrust, "tires + air jets", :solid),
+                                (:suction_thrust, "suction + air jets", :dash),
+                                (:thrust_200l, "suction + air jets, 200 L", :dot))
         r = reference[case]
-        plot!(plt, r.sol.t, kmh(r.sol); lw = 1.5, color = :gray, alpha = 0.5,
-            label = "baseline $(name): $(fmt(r.t60)) s")
+        plot!(plt, r.sol.t, kmh(r.sol); lw = 1.5, color = :gray, ls = style,
+            label = "2,000 kg, $(name): $(fmt(r.t60)) s")
     end
     plot!(plt, thrust_launch.sol.t, kmh(thrust_launch.sol); lw = 3, color = :steelblue,
-        label = "current: $(fmt(thrust_launch.t60)) s")
+        label = "your settings")
     hline!(plt, [3.6 * V60]; color = :black, ls = :dot, label = "60 mph")
-    vline!(plt, [0.81]; color = :firebrick, ls = :dash, label = "Tesla, live: 0.81 s")
-    vline!(plt, [0.59]; color = :purple, ls = :dash, label = "Rocket claim: 0.59 s")
+    vline!(plt, [0.81]; color = :firebrick, ls = :dash, label = "Tesla's live run: 0.81 s")
+    vline!(plt, [0.59]; color = :purple, ls = :dash, label = "Rocket version claim: 0.59 s")
+    thrust_launch.t60 < 1.5 && mark!(plt, thrust_launch.t60, 3.6 * V60,
+        "60 mph after $(fmt(thrust_launch.t60)) s, $(fmt(thrust_launch.air, 0)) kg of air";
+        dx = -0.05, dy = 18, halign = :right, color = :steelblue)
     plt
 end
 
 # ╔═╡ 1c4c5bb1-294b-5030-8745-8fcf24911c6b
-let
-    time60, air = fmt(thrust_launch.t60), fmt(thrust_launch.air, 1)
-    off, small, heavy = fmt(hints.thrust_off_suction), fmt(hints.thrust_200L), fmt(hints.thrust_m2350)
-    low, lowsmall = fmt(hints.thrust_300bar), fmt(hints.thrust_300bar_200L)
-    ms = fmt(thrust_launch.ms, 0)
-    md"""
-    - **Axes:** time [s] across, speed [km/h] up.
-    - **Lines:** blue is your settings; the tank pressure, ``n`` and throat come from the Claim 3
-      sliders. The three gray lines are fixed baselines (2,000 kg, RWD, 380 bar). Dotted black
-      is 60 mph; dashed red is Tesla's live run, dashed purple the Rocket claim.
-    - **Look at:** where blue crosses the dotted line: **$(time60) s**, using **$(air) kg** of
-      air. The line bends over: the push is strongest at the start and fades as the tank empties.
-    - **What it means:** with thrust, the car beats 0.81 s and even 0.59 s.
-    - **Try** (2,000 kg, RWD): untick thrust and tick suction: $(off) s. Thrust alone with
-      200 L: $(small) s. Suction and thrust at 2,350 kg: $(heavy) s, which misses the Rocket
-      claim. At 300 bar: $(low) s, and $(lowsmall) s with 200 L. *Re-solved in $(ms) ms.*
-    """
-end
+md"""
+**Try this:** untick the air jets and tick the suction fan: $(fmt(hints.thrust_off_suction)) s.
+The air jets are what get the car under a second.
+"""
 
 # ╔═╡ 8a0fa3f8-202e-50f4-9581-98cbd5938f11
 md"""
 ## Claim 4 · Simulation: where the push comes from
 """
+
+# ╔═╡ b67d030f-c790-4d9f-a386-9a1033b2bb9f
+push_share = let
+    sys = launch_rig.sys
+    function share(sol, d, t_end)
+        ts = range(0, min(t_end, 3.0); length = 300)
+        tire = sum(sol(ts, idxs = sys.wheel.F_x).u)
+        forward = (1 - d) * sum(sol(ts, idxs = sys.nozzle.F).u)
+        forward / (tire + forward)
+    end
+    (now = share(thrust_launch.sol, down_fraction, thrust_launch.t60),
+        suction = share(reference.suction_thrust.sol, 0.0, reference.suction_thrust.t60))
+end;
+
+# ╔═╡ bb4fc2ab-3377-49fd-917d-f02229d4bd40
+headline("The air jets give $(fmt(100 * push_share.now, 0)) % of the push up to 60 mph")
 
 # ╔═╡ 6a75b042-0d4f-54dc-937d-1f8ecffd98f4
 let
@@ -1180,156 +1324,174 @@ let
     forward = (1 - down_fraction) .* sol(ts, idxs = sys.nozzle.F).u ./ 1e3
     grip = sol.ps[sys.mu_A] .* sol(ts, idxs = sys.axle.F_z).u ./ 1e3
     plt = plot(ts, tire; fillrange = 0, fillalpha = 0.35, lw = 2, color = :steelblue,
-        label = "tire force", xlabel = "time [s]", ylabel = "force on the car [kN]",
-        legend = :topright, title = "Force stack up to 60 mph")
+        label = "push from the tires", xlabel = "Time since start (s)",
+        ylabel = "Push on the car (kN)", legend = :topright)
     plot!(plt, ts, tire .+ forward; fillrange = tire, fillalpha = 0.35, lw = 2,
-        color = :firebrick, label = "+ thrust pushing forward")
-    plot!(plt, ts, grip; lw = 2, ls = :dash, color = :seagreen, label = "tire limit μ·F_z")
+        color = :firebrick, label = "+ push from the air jets")
+    plot!(plt, ts, grip; lw = 2, ls = :dash, color = :seagreen, label = "most the tires can push")
     hline!(plt, [sol.ps[sys.motor.T_max] / sol.ps[sys.radius] / 1e3]; lw = 2, ls = :dash,
-        color = :darkorange, label = "torque cap T_max/r")
+        color = :darkorange, label = "most the motor's torque allows")
+    top = tire[1] + forward[1]
+    forward[1] > 0 && mark!(plt, ts[1], top, "jets strongest at the start: $(fmt(forward[1], 0)) kN";
+        dx = 0.25 * ts[end], dy = 0.05 * top)
     plt
 end
 
 # ╔═╡ 594df3dd-969c-5e42-bbfd-2a5521492f45
-let
-    sys = launch_rig.sys
-    sol = thrust_launch.sol
-    ts = range(0, min(thrust_launch.t60, 3.0); length = 300)
-    tire = sum(sol(ts, idxs = sys.wheel.F_x).u)
-    forward = (1 - down_fraction) * sum(sol(ts, idxs = sys.nozzle.F).u)
-    share = forward / (tire + forward)
-    md"""
-    - **Axes:** time [s] across, up to 60 mph; force on the car [kN] up.
-    - **Areas:** the blue area is the tire force. The red area on top is the forward thrust. The
-      top edge of the red area is the total push.
-    - **Lines:** dashed green is the tire limit ``\mu F_z``, dashed orange the torque cap
-      ``T_{max}/r``.
-    - **Look at:** the red band gets thinner as the tank pressure falls. The blue area stays
-      under both dashed lines.
-    - **What it means:** the thrust gives **$(fmt(100 * share, 0)) %** of the push up to 60 mph.
-      It acts on the body, so it adds speed whichever limit holds the tires back.
-    """
-end
+md"""
+**Try this:** tick the suction fan. The tires push harder, and the jets' share drops to
+$(fmt(100 * push_share.suction, 0)) % (2,000 kg, RWD, 380 bar).
+"""
 
 # ╔═╡ e3fe65ed-ec1f-52ef-a417-d8ef143deb5f
 md"""
 ## Claim 4 · Simulation: push down or push back?
 
-A plume over the roof in the video suggests that some air pushes the car down for grip. Each
-newton pushed down gives at most 0.86 N of tire force with RWD, and 1.23 N with AWD, and only
-until the torque cap is reached. Each newton pushed back is a full newton forward.
+A plume over the roof in the video suggests that some air pushes the car down, for grip. Each
+newton pushed down adds at most 0.86 N of tire push with RWD, and only until the motor's limit.
+Each newton pushed back is a full newton forward.
 """
+
+# ╔═╡ 7964c1c8-d477-4ae5-a695-a05b27451201
+let
+    n_back = count(c -> c.best == 0.0, down_grid.curves)
+    headline("Point the air backward: that is fastest in $(n_back == length(down_grid.curves) ? "every case" : "$(n_back) of $(length(down_grid.curves)) cases")")
+end
 
 # ╔═╡ 0aeb3bc7-8037-575b-ad36-d81a5834ea0c
 let
-    plt = plot(xlabel = "share of the thrust pushed down, d", ylabel = "time to 60 mph [s]",
-        legend = :topleft, title = "Point the air backward")
+    plt = plot(xlabel = "Share of the jet pointed down (0 = all backward, 1 = all down)",
+        ylabel = "Time to 60 mph (s)", legend = :topleft)
     for c in down_grid.curves
         plot!(plt, down_grid.fractions, c.t60; lw = 2, marker = :circle, ms = 3,
-            label = "$(c.layout), fan $(c.fan_cmd == 1 ? "on" : "off"), best at d = $(c.best)")
+            label = "$(layout_name[c.layout]), fan $(c.fan_cmd == 1 ? "on" : "off")")
     end
     scatter!(plt, [down_fraction], [thrust_launch.t60]; ms = 9, marker = :star5,
-        color = :black, label = "current")
+        color = :black, label = "your settings")
+    for c in down_grid.curves
+        c.best > 0 && mark!(plt, c.best, minimum(c.t60),
+            "$(layout_name[c.layout]), fan $(c.fan_cmd == 1 ? "on" : "off"): best at $(c.best)"; dx = 0.05, dy = -0.08,
+            valign = :top)
+    end
     plt
 end
 
 # ╔═╡ 4e29c85b-03d2-5502-8fed-f7d389f406bc
-let
-    awd_off = only(filter(c -> c.layout == "AWD" && c.fan_cmd == 0, down_grid.curves))
-    i_best = argmin(awd_off.t60)
-    md"""
-    - **Axes:** the share of thrust pushed down, ``d``, across (0 is all back, 1 is all down);
-      the time to 60 mph [s] up.
-    - **Lines:** four cases computed at load (2,000 kg, 380 bar): RWD and AWD, each with the fan
-      off and on. The legend gives each case's best ``d``. The black star is your current
-      settings.
-    - **Look at:** every curve rises to the right. Only AWD with the fan off dips, from
-      $(fmt(awd_off.t60[1], 3)) s at ``d = 0`` to $(fmt(awd_off.t60[i_best], 3)) s at
-      ``d =`` $(awd_off.best).
-    - **What it means:** point the air backward. Pushing down pays only for AWD without suction,
-      and only a little: past about 8 kN pushed down, the torque cap is reached and the extra
-      grip is wasted.
-    - **Try:** set ``d = 1``, all air pushing down: $(fmt(hints.thrust_all_down)) s (RWD, fan
-      off), slower than suction alone.
-    """
-end
+md"""
+**Try this:** set the share pointed down to 1, all air pushing down:
+$(fmt(hints.thrust_all_down)) s (RWD, fan off). That is no faster than suction alone, at
+$(fmt(hints.thrust_off_suction)) s.
+"""
 
 # ╔═╡ 9ae7361b-cbcb-5ef8-8f87-8b1b4f5af276
 md"## Claim 4 · Verdict"
 
 # ╔═╡ 92d82a98-af32-53ec-8efc-79ce25173c66
-let
-    ok = trims.thrust < 0.9 && trims.rocket < 0.59
-    verdict_box(ok ? :yes : :partly,
-        ok ? "Verdict: plausible, with a full tank at 380 bar" : "Verdict: only with a lighter car or more pressure",
-        """
-        Baseline car (2,000 kg, RWD, 380 bar): tires and thrust **$(fmt(reference.tires_thrust.t60)) s**,
-        suction and thrust **$(fmt(reference.suction_thrust.t60)) s**, suction and thrust with
-        200 L **$(fmt(reference.thrust_200l.t60)) s**. The run uses about
-        $(fmt(reference.suction_thrust.air, 0)) kg of air, a fifth of the tank.
-
-        At the current panel and tank settings: Thrust trim $(fmt(trims.thrust)) s (claim: under
-        0.9 s), Rocket trim $(fmt(trims.rocket)) s (claim: under 0.59 s).
-
-        This holds only if the valves open fully at the start, the tank is near 380 bar, and the
-        car weighs about 2,000 kg. At 2,350 kg, suction and thrust take
-        $(fmt(hints.thrust_m2350)) s, and the Rocket claim fails.
-
-        **Next:** point the thrust at the ground.
-        """)
-end
+verdict_box(verdicts.subsecond.light, verdicts.subsecond.sentence,
+    "**The number that decides it:** $(verdicts.subsecond.decides)")
 
 # ╔═╡ 4c7104d2-88a3-5822-a1d7-3b2cba51faea
 md"""
 ## Claim 5: "it can fly"
 
-**Tesla's claim.**
-- The event was billed as a car that flies. TechCrunch's headline: "Tesla reveals
-  SpaceX-powered Roadster that flies".
-- **Kickflip:** the car jumped over a row of cars while rolling a full turn. A frame-by-frame fit
-  of the video gives an apex of about **8 m** and a roll rate of 177 °/s (third party).
-- **What was shown:** hops, flips and short hovers. No sustained flight.
-- **Rocket trim:** 4 of its 10 nozzles point down, at the corners.
+**The question:** how high can 600 L of air lift the car, and how long can it stay up?
 
-**The question.** How high can 600 L of air lift the car, and how long can it hover?
+**Like holding a heavy bag at arm's length.** Lifting it once is quick. Holding it up costs
+effort every second. A hover burns air every second, just to stay in place.
+
+**Tesla's claim.**
+- The event was billed as a car that flies. TechCrunch's headline: "Tesla reveals SpaceX-powered
+  Roadster that flies".
+- **Kickflip:** the car jumped over a row of cars while rolling a full turn. Video measurements
+  give a top height of about **8 m**, about $(fmt(everyday.stories, 1)) floors of a house of
+  $(fmt(everyday.story, 0)) m each.
+- **What was shown:** hops, flips and short hovers. No longer flight.
+- **Rocket version:** 4 of its 10 nozzles point down, at the corners.
 """
 
 # ╔═╡ 1a79a088-861a-5983-8a1e-856a5dd2110a
 md"""
 ## Claim 5 · Physics check: an 8 m hop
 
-To coast up to a height ``h``, the car must leave the ground at speed
+**In words:** take-off speed = √(2 × gravity × height). A ball thrown up at that speed just
+reaches that height.
 
 ```math
-v = \sqrt{2 g h} = \sqrt{2 \cdot 9.81 \cdot 8} = 12.5\ \text{m/s}.
+v = \sqrt{2 g h}
 ```
-
-The push it needs is the momentum ``m v``, called the impulse ``J``:
-
-```math
-J = m v = 2{,}000\ \text{kg} \cdot 12.5\ \text{m/s} = 25.1\ \text{kN·s}.
-```
-
-Each kilogram of air leaves at ``v_e = 693`` m/s, so the air needed is about
-``J / v_e = 25{,}100 / 693 = 36`` kg. With 80 kN up and 19.6 kN of weight down, the net push is
-60.4 kN, so the burn lasts about ``25.1 / 60.4 = 0.42`` s. Holding up the weight during the burn
-costs some extra air.
 """
+
+# ╔═╡ de59bdae-32bb-435c-822d-800fcb503940
+html_table(["", "Symbol", "Value"], [
+    ("height of the hop", "h", "8 m"),
+    ("gravity", "g", "9.81 m/s²"),
+    ("take-off speed", "v", "**$(fmt(paper.v_hop, 1)) m/s = $(fmt(everyday.hop_kmh, 0)) km/h**, straight up"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ f24b6a12-205d-47a2-a4e1-eb7db030e8f9
+md"""
+**So what?** The jets must throw a 2,000 kg car upward at $(fmt(everyday.hop_kmh, 0)) km/h. That
+takes about $(fmt(paper.air_hop, 0)) kg of air, plus some more to carry the weight during the
+burn: a small part of the $(fmt(paper.m_air, 0)) kg.
+"""
+
+# ╔═╡ cfb8fca3-eb96-4fb4-8876-497f9dcb5cae
+details("Details: how much air the hop needs", md"""
+To reach that speed, the jets must give the car a push × time of
+
+```math
+m v
+```
+
+That is 2,000 kg × $(fmt(paper.v_hop, 1)) m/s = $(fmt(paper.J / 1e3, 1)) kN·s.
+
+Each kilogram of air leaves at ``v_e =`` $(fmt(paper.v_e, 0)) m/s, so the air needed is about
+$(fmt(paper.J, 0)) ÷ $(fmt(paper.v_e, 0)) = $(fmt(paper.air_hop, 0)) kg. With 80 kN up and
+$(fmt(paper.W / 1e3, 1)) kN of weight down, the burn lasts about $(fmt(paper.t_burn, 2)) s.
+""")
 
 # ╔═╡ 7c3d9060-9dde-5d5c-9c00-5b194e10e521
 md"""
 ## Claim 5 · Physics check: hovering
 
-To hover, the thrust must equal the weight: ``\dot m\, v_e = m g``. So the air flow is
+To hover, the thrust must equal the weight. **In words:** air per second = the car's weight ÷
+jet speed.
 
 ```math
-\dot m = \frac{m g}{v_e} = \frac{2{,}000 \cdot 9.81\ \text{N}}{693\ \text{m/s}} = 28\ \text{kg/s}.
+\dot m = \frac{m g}{v_e}
+```
+"""
+
+# ╔═╡ 7848f4a7-1e17-440d-bc6b-cb8348e8bc73
+html_table(["", "Symbol", "Value"], [
+    ("weight of a 2,000 kg car", "m g", "$(fmt(paper.W / 1e3, 1)) kN"),
+    ("jet speed", "v_e", "$(fmt(paper.v_e, 0)) m/s"),
+    ("air per second", "ṁ", "**$(fmt(paper.mdot_hover, 0)) kg/s**"),
+]; widths = ["45%", "15%", "40%"])
+
+# ╔═╡ 25979fe7-5ceb-4fbc-8947-938728d24341
+let
+    flow, air = fmt(paper.mdot_hover, 0), fmt(paper.m_air, 0)
+    ideal, real = fmt(paper.t_hover_ideal, 1), fmt(paper.t_hover, 1)
+    md"""
+    **So what?** At $(flow) kg per second, the $(air) kg of air would last at most $(ideal) s.
+    In practice it is **$(real) s**: seconds, not minutes.
+    """
+end
+
+# ╔═╡ 610466fd-c56a-459c-bd9c-1fbdd143a007
+details("Details: why the real hover is shorter", md"""
+As the pressure falls, even a fully open valve gives less thrust. Below some pressure it can no
+longer carry the weight, and the car sinks, with air still in the tank. Adding up the air per
+second until that moment gives
+
+```math
+t_{hover} = \frac{m_0}{m g} \int_{x^*}^{1} v_e(x)\, dx
 ```
 
-At that rate 271 kg would last ``271 / 28 = 9.6`` s. The real limit comes sooner: as the
-pressure falls, even a wide-open valve can no longer carry the weight. Adding up the flow until
-that moment gives about **5.4 s** (2,000 kg, 380 bar).
-"""
+where ``x = m / m_0`` is the share of air left and ``x^*`` the share at which full thrust drops
+below the weight. For 2,000 kg at 380 bar that is $(fmt(paper.t_hover, 2)) s.
+""")
 
 # ╔═╡ 12ebe6b9-cf3d-5ac7-b05d-b34b359fd7d2
 md"""
@@ -1338,50 +1500,47 @@ md"""
 The same calculation for every mass and three tank pressures.
 """
 
+# ╔═╡ ace950cb-604f-4e97-80ab-d2b72ba6fa26
+headline("Even a 1,700 kg car at 690 bar hovers only $(fmt(hover_closed_form(1700.0; p0 = 690e5), 1)) s")
+
 # ╔═╡ 65410189-b0b1-5e52-b267-63adb383edc6
 let
     masses = range(1500, 2600; length = 56)
-    plt = plot(xlabel = "car mass [kg]", ylabel = "hover time [s]", legend = :topright,
-        title = "Seconds, not minutes", ylims = (0, 16))
-    vspan!(plt, [1700, 2350]; color = :gray, alpha = 0.15, label = "mass estimates")
+    plt = plot(xlabel = "Car mass (kg)", ylabel = "Time it can hover (s)", legend = :topright,
+        ylims = (0, 16))
+    vspan!(plt, [1700, 2350]; color = :gray, alpha = 0.15, label = "range of mass estimates")
     for (p0, color) in ((300e5, :steelblue), (380e5, :black), (690e5, :firebrick))
         plot!(plt, masses, hover_closed_form.(masses; p0); lw = 3, color,
             label = "600 L at $(round(Int, p0 / 1e5)) bar")
     end
+    mark!(plt, 2000, paper.t_hover, "2,000 kg at 380 bar: $(fmt(paper.t_hover, 1)) s"; dx = 80,
+        dy = -2.5, valign = :top)
+    best = hover_closed_form(1700.0; p0 = 690e5)
+    mark!(plt, 1700, best, "best case: $(fmt(best, 1)) s"; dx = 100, dy = 1.0,
+        color = :firebrick)
     plt
 end
-
-# ╔═╡ e5e85a35-3f2a-5b7d-a6b2-b0d959c24302
-md"""
-- **Axes:** car mass [kg] across, hover time [s] up, from the formula above.
-- **Lines:** one per start pressure: blue 300 bar, black 380 bar, red 690 bar, all 600 L and the
-  same nozzles. The gray band covers the published mass estimates.
-- **Look at:** inside the gray band, every line stays below
-  $(fmt(hover_closed_form(1700.0; p0 = 690e5), 0)) s.
-- **What it means:** hover lasts seconds, not minutes, even for a light car at 690 bar.
-"""
 
 # ╔═╡ beed5f9f-8952-52ec-99b0-990d9b107f48
 md"""
 ## Claim 5 · Our model: the car as a vertical hopper
 
-A new model, `VerticalHop`: the car can only move up and down.
+A new model, `VerticalHop`: the car can only move up and down. **Read the diagram left to
+right:** command → tank → nozzle → thrust → body, with the ground under the body.
 """
+
+# ╔═╡ 190fbe6b-f8d5-4df4-acf7-6184d91aa965
+html_table(["Block", "In the real car", "What it does"], [
+    ("command", "the driver, or the hover controller", "opens the valve: fully for a hop; just enough for a hover, like cruise control for height"),
+    ("tank, nozzle", "the air tanks and the downward nozzles", "the same as on the test stand, now pointing down"),
+    ("thrust", "the nozzle mounts", "pushes the car up"),
+    ("body", "the car", "its mass, pulled down by gravity"),
+    ("ground", "the road", "a stiff spring that can push the car up but never pull it down, so it can take off and land"),
+]; widths = ["16%", "32%", "52%"])
 
 # ╔═╡ 14d97564-3dfc-5b16-b9a7-e6437ceee636
 diagrams([joinpath(img_dir, "vertical-hop.png") =>
-    "`VerticalHop`: the command opens the nozzle, the thrust pushes the body up, and the ground contact holds it from below."]; height = "320px")
-
-# ╔═╡ cf43fa07-26f2-5780-88cd-4a4d5d6e5ab5
-md"""
-- **body:** the car's mass, pulled down by gravity.
-- **ground** (`VerticalGroundContact`): a stiff spring and damper that can push the car up but
-  never pull it down, so the car can leave the ground and land again.
-- **tank** and **nozzle:** the same as in Claim 3, now pointing down.
-- **Hop test:** the valves stay fully open for a burn time ``t_b``, then shut.
-- **Hover test:** a controller sets the valve to hold 2 m. It reacts to the height error and its
-  running sum (a PI controller), and adds the valve opening that would carry the weight.
-"""
+    "`VerticalHop`: the command opens the nozzle, the thrust pushes the body up, and the ground holds it from below."]; height = "260px")
 
 # ╔═╡ 490fbb26-bcc0-5883-9550-6bc4488356da
 dyad_fold("VerticalGroundContact", "VerticalHop", "TestVerticalHop")
@@ -1404,41 +1563,32 @@ hop_run = let
         air = air_used(sol, sys, t_b; tank = "hop.tank"), ms = 1000 * (time() - t_start))
 end;
 
+# ╔═╡ c4612db8-63e1-468b-8af2-f96ea23abbee
+headline("A $(t_b) s burn lifts $(car.m) kg to $(fmt(hop_run.apex.apex, 1)) m, for $(fmt(hop_run.air, 0)) kg of air")
+
 # ╔═╡ 7297e311-1114-51f5-9256-06ee3e0555a4
 let
     sys = hop_rig.sys
     t_end = min(2 * hop_run.apex.t_apex + 0.3, hop_run.sol.t[end])
     ts = range(0, t_end; length = 500)
+    top = max(10, 1.2 * hop_run.apex.apex)
     plt = plot(ts, hop_run.sol(ts, idxs = sys.hop.altitude).u; lw = 3, color = :steelblue,
-        label = "altitude", xlabel = "time [s]", ylabel = "altitude [m]",
-        legend = :topright, ylims = (-0.5, max(10, 1.15 * hop_run.apex.apex)),
-        title = "Apex $(fmt(hop_run.apex.apex, 1)) m for $(fmt(hop_run.air, 1)) kg of air")
+        label = "the car's height (model)", xlabel = "Time since the valves opened (s)",
+        ylabel = "Height (m)", legend = :topright, ylims = (-0.5, top))
     hline!(plt, [hop_run.closed_apex]; color = :darkorange, ls = :dash,
-        label = "formula h(t_b) + v(t_b)²/2g")
-    hline!(plt, [8.0]; color = :gray, ls = :dot, label = "kickflip apex, 8 m")
+        label = "highest point, hand formula")
+    hline!(plt, [8.0]; color = :gray, ls = :dot, label = "kickflip height: 8 m")
     vline!(plt, [t_b]; color = :firebrick, ls = :dot, label = "valves close")
+    mark!(plt, hop_run.apex.t_apex, hop_run.apex.apex,
+        "highest point: $(fmt(hop_run.apex.apex, 1)) m"; dx = 0.25 * t_end, dy = -0.15 * top)
     plt
 end
 
 # ╔═╡ 05e11080-54c1-5b8c-8a82-34521a4482e8
-let
-    burn, mass = fmt(t_b, 3), car.m
-    apex, air = fmt(hop_run.apex.apex, 1), fmt(hop_run.air, 1)
-    short, long, heavy = fmt(hints.hop_03, 1), fmt(hints.hop_06, 1), fmt(hints.hop_m2350, 1)
-    ms = fmt(hop_run.ms, 0)
-    md"""
-    - **Axes:** time [s] across, altitude [m] up.
-    - **Lines:** blue is the car's altitude from the model. Dashed orange is the apex from the
-      formula: the height and speed when the valves close, then a free coast up. Dotted gray is
-      the 8 m kickflip apex. The dotted red vertical marks when the valves close.
-    - **Look at:** blue climbs steeply while the valves are open, then follows a free-fall arc
-      and lands. Its peak touches the orange line, so model and formula agree.
-    - **What it means:** a $(burn) s burn lifts $(mass) kg to **$(apex) m** for
-      **$(air) kg** of air, out of 271 kg.
-    - **Try** (2,000 kg): a 0.3 s burn reaches $(short) m; 0.6 s reaches $(long) m. At 2,350 kg,
-      0.413 s reaches only $(heavy) m. *Re-solved in $(ms) ms.*
-    """
-end
+md"""
+**Try this:** set the burn time to 0.6 s. The car climbs to $(fmt(hints.hop_06, 1)) m
+(2,000 kg).
+"""
 
 # ╔═╡ 0c45b5dd-4778-5b23-867c-ce6b58559e15
 md"""
@@ -1458,49 +1608,42 @@ hover_run = let
         closed = hover_closed_form(car.m; p0 = p0_hover * 1e5), ms = 1000 * (time() - t_start))
 end;
 
+# ╔═╡ 0aea8a28-ea91-4cb3-af7a-5f8a56f400d8
+headline(isfinite(hover_run.time) ?
+    "The car stays up for $(fmt(hover_run.time, 1)) s. Then $(fmt(hover_run.air_left, 0)) kg of air at $(fmt(hover_run.p_left / 1e5, 0)) bar can no longer carry it." :
+    "At these settings the car does not get off the ground")
+
 # ╔═╡ 4ce799f5-e25f-5455-92cf-7868dc713552
 let
     sys = hover_rig.sys
     ts = range(0, 15; length = 1500)
     plt = plot(ts, hover_run.sol(ts, idxs = sys.hover.altitude).u; lw = 3, color = :steelblue,
-        label = "altitude", xlabel = "time [s]", ylabel = "altitude [m]", legend = :topright,
-        ylims = (-0.5, 3.5), title = "Hover: $(fmt(hover_run.time, 2)) s at 2 m")
-    vline!(plt, [hover_run.time]; color = :firebrick, ls = :dash, label = "valves wide open")
+        label = "the car's height", xlabel = "Time since start (s)", ylabel = "Height (m)",
+        legend = :topright, ylims = (-0.5, 3.5))
+    if isfinite(hover_run.time)
+        vline!(plt, [hover_run.time]; color = :firebrick, ls = :dash, label = "valve fully open")
+        h = hover_run.sol(hover_run.time, idxs = sys.hover.altitude)
+        mark!(plt, hover_run.time, h, "valve fully open after $(fmt(hover_run.time, 1)) s: the car sinks";
+            dx = 1.0, dy = 0.9, color = :firebrick)
+    end
     valve = twinx(plt)
     plot!(valve, ts, hover_run.sol(ts, idxs = sys.hover.command).u; lw = 2, color = :darkorange,
-        ylabel = "valve opening (0 to 1)", ylims = (0, 1.1), label = "")
+        ylabel = "Valve opening, orange (0 = shut, 1 = fully open)", ylims = (0, 1.1), label = "")
     plt
 end
 
 # ╔═╡ 1eb22217-6b48-5fd1-bbd0-29ab9b184fdf
-let
-    mass, p0 = car.m, p0_hover
-    hover, closed = fmt(hover_run.time, 2), fmt(hover_run.closed, 2)
-    left, pleft = fmt(hover_run.air_left, 0), fmt(hover_run.p_left / 1e5, 0)
-    high, heavy = fmt(hover_grid.times[2, 3], 1), fmt(hover_grid.times[3, 2], 1)
-    ms = fmt(hover_run.ms, 0)
-    md"""
-    - **Axes:** time [s] across. Left: altitude [m]. Right, in orange: the valve opening, from 0
-      (shut) to 1 (wide open).
-    - **Lines:** blue is the altitude. Orange is the valve. The dashed red vertical marks the
-      moment the valve is wide open.
-    - **Look at:** the car climbs, overshoots a little and settles at 2 m. The orange line creeps
-      up: as the pressure falls, the same weight needs a wider valve. Once it reaches 1, blue
-      drops.
-    - **What it means:** $(mass) kg at $(p0) bar hovers for **$(hover) s** (formula: $(closed) s).
-      The tank still holds $(left) kg at $(pleft) bar, but that pressure can no longer carry the
-      car.
-    - **Try:** 690 bar gives $(high) s at 2,000 kg. A 2,350 kg car at 380 bar: $(heavy) s.
-      *Re-solved in $(ms) ms.*
-    """
-end
+md"""
+**Try this:** set the start pressure to 690 bar. The hover lasts
+$(fmt(hover_grid.times[2, 3], 1)) s (2,000 kg): still seconds.
+"""
 
 # ╔═╡ 915b1cfd-3760-5fcf-8a85-8ed0e1e48109
 md"""
 ## Claim 5 · Simulation: hover time for every mass and pressure
 
-Each cell is one run of the Dyad hover model, done when the notebook opens. Rows are the car
-mass, columns the start pressure of the 600 L tank.
+Each cell is one run of the hover model, done when the notebook opens. Rows are the car mass,
+columns the start pressure of the 600 L tank.
 """
 
 # ╔═╡ 62cc1624-ca88-5b76-9cef-c99bf1e68897
@@ -1510,34 +1653,37 @@ html_table(["hover time [s]", "300 bar", "380 bar", "690 bar"],
 
 # ╔═╡ 01e4001b-78f3-53f2-b887-c5730fb68f6e
 md"""
-The best case, a 1,700 kg car at 690 bar, hovers for $(fmt(maximum(hover_grid.times), 1)) s.
-The worst, 2,350 kg at 300 bar, for $(fmt(minimum(hover_grid.times), 1)) s.
+**So what?** The best case, a 1,700 kg car at 690 bar, hovers for
+$(fmt(maximum(hover_grid.times), 1)) s. The worst, 2,350 kg at 300 bar, for
+$(fmt(minimum(hover_grid.times), 1)) s.
 """
 
 # ╔═╡ b05ee7f3-2185-518f-9536-7635c28a8067
 md"""
 ## Claim 5 · Extra: what does the kickflip roll cost?
 
-Spinning the car is cheap compared with lifting it.
+Spinning the car takes little air compared with lifting it. **In words:** air needed = spin to
+give ÷ (how far the nozzles sit from the middle × jet speed).
 
-- ``I \approx 870`` kg·m²: the car's resistance to rolling (its moment of inertia, estimated)
-- ``\omega``: the roll rate; ``L = I \omega`` is the angular momentum
-- the nozzles sit an arm ``a`` from the roll axis, so they must deliver an impulse ``L / a``
-- the air is impulse over ``v_e = 693`` m/s, and twice that to stop the roll again
+```math
+m_{air} = \frac{I\, \omega}{a\, v_e}
+```
+
+- ``I \approx 870`` kg·m²: how hard the car is to spin (estimated)
+- ``\omega``: how fast it rolls; ``a``: how far the nozzles sit from the roll axis
 
 roll rate [°/s] $(@bind roll_rate Slider(90:1:360; default = 177, show_value = true)) ·
-arm a [m] $(@bind arm Slider(0.6:0.05:1.2; default = 0.9, show_value = true))
+nozzle distance a [m] $(@bind arm Slider(0.6:0.05:1.2; default = 0.9, show_value = true))
 """
 
 # ╔═╡ efcd227c-be87-5b78-b0a3-49f80f436147
 let
-    I_roll, v_e = 870.0, 693.0
-    L = I_roll * deg2rad(roll_rate)
-    air = L / arm / v_e
+    I_roll = 870.0
+    air = I_roll * deg2rad(roll_rate) / arm / paper.v_e
     md"""
-    ``L =`` $(fmt(L / 1e3, 2)) kN·m·s, impulse $(fmt(L / arm / 1e3, 2)) kN·s: **$(fmt(air, 1)) kg**
-    of air to start the roll, **$(fmt(2air, 1)) kg** to start and stop it, against
-    $(fmt(hop_run.air, 0)) kg for the hop. Rotation is cheap; lift is expensive.
+    **So what?** **$(fmt(air, 1)) kg** of air starts the roll, and **$(fmt(2air, 1)) kg** starts
+    and stops it, against $(fmt(hop_run.air, 0)) kg for the hop. Spinning is cheap; lifting is
+    expensive.
     """
 end
 
@@ -1545,84 +1691,104 @@ end
 md"## Claim 5 · Verdict"
 
 # ╔═╡ 4130d78a-3223-5804-899c-07e48ca7ae66
-let
-    hop_air = air_used(hop_rig.default, hop_rig.sys, 0.413; tank = "hop.tank")
-    verdict_box(:partly, "Verdict: the hop is plausible; flying is not",
-        """
-        **Hop:** a 0.413 s burn lifts the 2,000 kg car to $(fmt(hop_apex(hop_rig.default, hop_rig.sys).apex, 1)) m
-        for $(fmt(hop_air, 0)) kg of air, a sixth of the tank. The 8 m kickflip fits. At the current
-        settings: $(fmt(hop_run.apex.apex, 1)) m.
+verdict_box(verdicts.fly.light, verdicts.fly.sentence,
+    "**The number that decides it:** $(verdicts.fly.decides)")
 
-        **Hover:** $(fmt(hover_grid.times[2, 2], 1)) s at 2,000 kg and 380 bar, and at most
-        $(fmt(maximum(hover_grid.times), 1)) s in any case we tried. Then the tank can no longer
-        carry the car. It hops; it does not fly.
-        """)
-end
+# ╔═╡ bf6dd588-2b9e-42d9-a78c-27325c45b5ca
+# One source for the verdict slides and the scoreboard, so the two always agree.
+verdicts = let
+    (; F0, t80) = blowdown.marks
+    tires_ok = tires.t60 <= 1.0
+    suction_ok = suction.t60 <= 1.05 * 1.6 && suction.hold_margin >= 1
+    thrust_ok = F0 >= 0.95 * 80e3
+    n_trims = (trims.thrust < 0.9) + (trims.rocket < 0.59)
+    hop_ok = hop_run.apex.apex >= 7.5
+    flies = isfinite(hover_run.time) && hover_run.time > 60
+    (
+        warmup = (light = :no, claim = "Warm-up: the ramp shot plays in real time",
+            tesla = "shown as footage", model = "$(fmt(warmup.k_ramp, 1))× too fast"),
+        tires = (light = tires_ok ? :yes : :no, claim = "1: 0–60 mph in 1 s on tires",
+            tesla = "1.0 s", model = "$(fmt(tires.t60)) s",
+            sentence = tires_ok ? "At this grip, the tires alone could do it." :
+                       "Tires alone can't do it.",
+            decides = "a 1 s run needs grip $(fmt(max(grip_need.rwd_1, grip_need.awd_1), 1)); real tires have 1.26. On tires alone the model needs $(fmt(tires.t60)) s."),
+        suction = (light = suction_ok ? :yes : :no, claim = "2: suction fan, under 1.6 s, upside down",
+            tesla = "under 1.6 s", model = "$(fmt(suction.t60)) s, holds $(fmt(suction.hold_margin))× weight",
+            sentence = suction_ok ? "Suction can give about 1.6 s and hold the car upside down." :
+                       "At these settings, suction falls short of Tesla's claim.",
+            decides = "with suction the motor sets the pace: $(fmt(suction.t60)) s against Tesla's 1.6 s, and the suction holds $(fmt(suction.hold_margin)) times the car's weight."),
+        thrusters = (light = thrust_ok ? :partly : :no, claim = "3: over 80 kN of thrust",
+            tesla = "over 80 kN", model = "$(fmt(F0 / 1e3, 0)) kN, above 80 % for $(fmt(t80)) s",
+            sentence = thrust_ok ? "80 kN is real, but only for a moment." :
+                       "At this pressure the thrusters do not reach 80 kN.",
+            decides = thrust_ok ? "the thrust stays above 80 % of its start for only $(fmt(t80)) s." :
+                      "$(fmt(F0 / 1e3, 0)) kN at the start."),
+        subsecond = (light = n_trims == 2 ? :yes : n_trims == 1 ? :partly : :no,
+            claim = "4: under 0.59 s with thrust", tesla = "under 0.59 s",
+            model = "$(fmt(trims.rocket)) s",
+            sentence = n_trims == 2 ? "With the air jets, under a second is possible." :
+                       n_trims == 1 ? "With the air jets, under a second works, but not every claimed time." :
+                       "At these settings, the air jets do not reach Tesla's times.",
+            decides = "with suction and air jets the model needs $(fmt(trims.rocket)) s (claim: under 0.59 s), and $(fmt(trims.thrust)) s with 200 L (claim: under 0.9 s). At 2,350 kg: $(fmt(hints.thrust_m2350)) s."),
+        fly = (light = flies ? :yes : hop_ok ? :partly : :no, claim = "5: it can fly",
+            tesla = "8 m hop, \"it can fly\"",
+            model = "hop $(fmt(hop_run.apex.apex, 1)) m, hover $(fmt(hover_run.time, 1)) s",
+            sentence = flies ? "It can fly." : hop_ok ? "It can hop, but it can't fly." :
+                       "At these settings it can't even make the 8 m hop.",
+            decides = "the air lasts $(fmt(hover_run.time, 1)) s of hovering, so it can hop $(fmt(hop_run.apex.apex, 1)) m but not fly."),
+    )
+end;
 
 # ╔═╡ 4f6ecd1c-90bb-52bd-85da-d989ab7adc4a
-score_rows = let
-    (; F0, t80) = blowdown.marks
-    [
-        verdict_row("Warm-up: the ramp shot plays in real time", "shown as footage",
-            "about $(fmt(warmup.k_ramp))× fast", :no),
-        verdict_row("1: 0–60 mph in about 1 s on tires", "1.0 s, 0.81 s live",
-            "$(fmt(tires.t60)) s ($(drive_layout))", tires.t60 <= 1.0 ? :yes : :no),
-        verdict_row("2: Performance trim, fans", "under 1.6 s", "$(fmt(suction.t60)) s",
-            suction.t60 <= 1.05 * 1.6 ? :yes : :no),
-        verdict_row("2: holds the car upside down", "4,700 kg",
-            "$(fmt(suction.hold_margin))× weight", suction.hold_margin >= 1 ? :yes : :no),
-        verdict_row("3: 80 kN rear thrust", "over 80 kN",
-            "$(fmt(F0 / 1e3, 0)) kN, ≥ 80 % for $(fmt(t80)) s", F0 >= 0.95 * 80e3 ? :yes : :no),
-        verdict_row("4: Thrust trim, 200 L", "under 0.9 s", "$(fmt(trims.thrust)) s",
-            trims.thrust < 0.9 ? :yes : :no),
-        verdict_row("4: Rocket trim, 600 L", "under 0.59 s", "$(fmt(trims.rocket)) s",
-            trims.rocket < 0.59 ? :yes : :no),
-        verdict_row("5: 8 m kickflip hop", "about 8 m",
-            "$(fmt(hop_run.apex.apex, 1)) m, $(fmt(hop_run.air, 0)) kg air",
-            isfinite(hop_run.apex.apex) ? :yes : :pending),
-        verdict_row("5: it can fly", "\"it can fly\"", "hovers $(fmt(hover_run.time, 1)) s",
-            isfinite(hover_run.time) && hover_run.time > 60 ? :yes : :no),
-    ]
-end;
+score_rows = [verdict_row(v.claim, v.tesla, v.model, v.light) for v in values(verdicts)];
 
 # ╔═╡ 4378f115-d8fc-5392-9deb-ead3ccf2eb03
 md"""
 ## Scoreboard
 
-One row per claim. The model column follows the panel and the sliders.
+One row per verdict. The model column follows the panel and the sliders.
 """
 
 # ╔═╡ 1a1cf665-5227-5108-b6d8-6a9c8e955454
 let
-    word = Dict(:yes => "plausible", :no => "**not plausible**", :pending => "not reached")
+    word = Dict(:yes => "plausible", :partly => "partly", :no => "**not plausible**",
+        :pending => "not reached")
     html_table(["claim", "Tesla", "model", "verdict"],
         [(r.claim, r.tesla, r.model, word[r.verdict]) for r in score_rows];
-        widths = ["34%", "20%", "28%", "18%"])
+        widths = ["34%", "20%", "30%", "16%"])
 end
 
 # ╔═╡ 14bd41f4-6154-55bd-84db-91319ba078bd
 scoreboard(score_rows)
 
 # ╔═╡ fd52d12c-fa1f-5fc5-bf6c-369a33a56041
-md"""
-## Summary
+let
+    rwd, half = fmt(reference.rwd.t60, 1), fmt(blowdown_marks(stand_rig.default, stand_rig.sys).t50, 1)
+    fast, slow = fmt(reference.suction_thrust.t60), fmt(reference.thrust_200l.t60)
+    air = fmt(reference.suction_thrust.air, 0)
+    hop_air = fmt(air_used(hop_rig.default, hop_rig.sys, 0.413; tank = "hop.tank"), 0)
+    hover = fmt(hover_grid.times[2, 2], 0)
+    md"""
+    ## Summary
 
-- **Tires alone cannot do it.** Tesla's own 1.26 g tire gives 3.3 s with rear-wheel drive.
-- **Suction can give 1.6 s.** It moves the limit from the tire to the motor's torque. The skirt
-  gap sets the fan's power bill.
-- **The thrusters give 80 kN only as a peak.** The thrust halves within about 1.2 s.
-- **With thrust, under a second is possible:** 0.53–0.68 s, for about 50 kg of air.
-- **It hops; it does not fly.** An 8 m hop costs 43 kg of air; hover lasts about 5 s.
+    - **Tires alone cannot do it.** Tesla's own 1.26 g tire gives $(rwd) s with rear-wheel
+      drive.
+    - **Suction can give 1.6 s.** It moves the limit from the tires to the motor. The skirt gap
+      sets the fan's power bill.
+    - **The thrusters give 80 kN only for a moment.** The thrust halves within about $(half) s.
+    - **With the air jets, under a second is possible:** $(fast) to $(slow) s, for about $(air) kg
+      of air.
+    - **It hops; it does not fly.** The 8 m hop costs $(hop_air) kg of air; a hover lasts about
+      $(hover) s.
 
-What to take away:
-- **Write the limit down first.** Every verdict started from one inequality: grip, torque, power,
-  or the air in the tank.
-- **Find which limit is active.** Suction did not add power; it moved the limit.
-- **A peak is not a level.** A tank that blows down gives a pulse, not a steady force.
-- **Check the simulation with a hand calculation.** Each Dyad result matched its formula.
-
-Open questions for the hands-on: what changes at 690 bar, at 2,350 kg, or with a 1 ft rollout?
-"""
+    What to take away:
+    - **Write the limit down first.** Every verdict started from one limit: grip, motor, or the
+      air in the tank.
+    - **Find which limit is active.** Suction did not add power; it moved the limit.
+    - **A peak is not a level.** A tank that empties gives a short burst, not a steady push.
+    - **Check the simulation with a hand calculation.** Each model result matched its formula.
+    """
+end
 
 # ╔═╡ d58a74a2-207c-5a35-a637-ac0ec44ff8b3
 md"""
@@ -1632,7 +1798,7 @@ md"""
   [The Kickflip | Roadster](https://www.youtube.com/watch?v=r5vsHHPVhJg).
 - Electrek: [technical look](https://electrek.co/2026/10/15/an-updated-technical-look-at-teslas-kick-flipping-0-60-in-1s-next-gen-roadster/)
   and [unveil](https://electrek.co/2026/10/15/tesla-unveils-cyberfied-new-roadster-kickflip/).
-- Paul Tan, on-screen telemetry: [article](https://paultan.org/2026/10/16/tesla-roadster-revealed-flies-on-spacex-air-thrusters-0-96-km-h-in-0-81s-production-2028/).
+- Paul Tan, on-screen readouts: [article](https://paultan.org/2026/10/16/tesla-roadster-revealed-flies-on-spacex-air-thrusters-0-96-km-h-in-0-81s-production-2028/).
 - [TechCrunch](https://techcrunch.com/2026/10/15/tesla-reveals-spacex-powered-roadster-that-flies-and-falls-with-style/),
   [Motor1](https://www.motor1.com/news/812195/tesla-roadster-stunt-2028-production/),
   [Teslarati on the fans](https://www.teslarati.com/tesla-roadster-downforce-fan-system/).
@@ -1644,11 +1810,11 @@ reports.
 
 # ╔═╡ a34943ff-7ff3-55a6-9bd4-bca6a4c03be9
 md"""
-## Appendix: checks against the reference runs
+## Appendix: checks against the recorded results
 
-The default runs, independent of the sliders, against the numbers in
-`docs/roadster-dyad-tasks.md` and `test/roadster_plausibility.jl`. A failing check stops the
-headless run.
+*This slide is for checking the notebook, not for the talk.* It runs the default cases again,
+independent of the sliders, and compares them with the numbers in `docs/roadster-dyad-tasks.md`
+and `test/roadster_plausibility.jl`. A failing check stops the headless run.
 """
 
 # ╔═╡ 95229d19-866e-5fbf-952e-52ae748c5604
@@ -1688,6 +1854,10 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─40ef78e6-32c9-5c2d-9f7e-b2839b5a029d
 # ╟─d1e686ea-7b9d-50b5-8585-e5b5bd5a5077
 # ╟─d3171829-f6d6-55d0-b2eb-713d6ad7a265
+# ╟─594f15a5-e0fa-48db-90fe-c4e7000f5a53
+# ╟─bba2cff6-1f60-4b91-8e2b-4fd99af262b0
+# ╟─a7fe0fee-f9f4-42d4-8665-e3e62243f675
+# ╟─e4766715-9580-44d7-8765-673c658347de
 # ╟─d73c9887-b6d8-5fad-9d96-d7566fc823bb
 # ╟─b80af6e2-b5e3-5bdd-97dd-0a6ecf66c074
 # ╟─6db050a1-68fc-5767-abf9-74ddea7261d8
@@ -1698,64 +1868,94 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─bb74c430-4f14-5088-bcf4-a82715e51758
 # ╟─f8dc7c02-1ddb-5ae9-b536-1c2c2679a8fb
 # ╟─9c543dcc-f871-5328-901c-efe1abd6c9de
+# ╟─7780ed0f-6df7-4acc-b67a-4cb4a7c9f608
+# ╟─81a4f22b-73e4-4385-9c09-5cadf0bdf949
 # ╟─0a85f4c7-90ac-595f-b127-8474860e03df
 # ╟─532b5431-9db1-5e77-b0bc-66f8324ca14c
+# ╟─01c06c4a-585e-4cb2-b4a3-55d129695d50
 # ╟─213033f3-32af-536b-a121-8c95e70f4fd0
 # ╟─796e0f71-bc73-545d-8bc1-3375d8be9bcd
 # ╟─ca3fab0a-57b4-5859-b505-19746d073c33
 # ╟─ceba3a95-cacc-5e9b-9677-0c3d0016913f
+# ╟─e2facb87-8c7c-4e2b-813e-5b5661d79edd
+# ╟─385f5d07-26a6-4510-a60c-1f78175a3f38
 # ╟─831bd16d-58f9-5236-867e-d5ed00adcf63
+# ╟─eca7b04d-a281-47a3-a911-0678c8510130
+# ╟─406c6a43-740c-4e56-8a57-35b6a07ba2b7
 # ╟─3359a5d2-7aac-5f95-b6cf-d3420dd9d51b
 # ╟─330c2302-e7e4-5849-be68-b75c86f3cacb
+# ╟─9713dcda-8181-45e7-8fd5-c62bf9134aa7
+# ╟─77615046-bbf9-4318-8da9-1d7aca21ca94
+# ╟─15a463e7-7217-484f-a1e4-ed198c9b05c7
 # ╟─0bcfb8b9-0d28-5c3c-baf7-8b3900960826
 # ╟─4920fcd2-add1-5e85-8807-ebc7b0c0798f
+# ╟─92516938-164d-41b8-991e-ca5c4216898c
 # ╟─ed540754-92a5-512d-ad4e-3ffb141b2bf1
 # ╟─1ce0d1b7-5ec1-580b-b0bd-934fb74a86fc
 # ╟─490fee27-240a-52a6-b9cb-9b40cd4d6fb6
+# ╟─886b889c-74be-46fe-9e2d-db5add63771c
 # ╟─066d157f-659c-5115-ad05-d595ff52c35c
-# ╟─83b3f4a6-3a68-5399-bba1-ab286974d915
 # ╟─341af294-bb6c-55d2-990c-78bbbe190ade
 # ╟─10d92e2a-0efa-53cb-908f-508a45c53fad
 # ╟─abae1e2d-05e7-57ce-94c1-ccf3253dde53
 # ╟─f260e1c6-2e3d-5709-bc2b-16b4bd5a8abf
 # ╟─112888f3-ea48-57b3-b534-15f0aaf2bb32
+# ╟─388d7049-aebf-433e-8ff0-870e62b57c74
 # ╟─481ffd01-b7ce-5a10-83be-4a9908d528c4
 # ╟─ca3eb955-a7dc-5d89-aabc-fdee7a2c596b
 # ╟─44ec27a2-ce80-5e03-af44-7104307276d6
+# ╟─186bdace-d646-40e4-8269-91a5eb5525a9
 # ╟─ca0bd79d-2962-5f45-93f1-af7cbd159796
 # ╟─39c8664b-3505-5411-b5c7-87d75a2d2305
 # ╟─9dd44b2e-19e5-50f3-8ecd-ca1b60b39231
 # ╟─998d436b-2a45-5394-96f2-f88ec80b4ff7
 # ╟─51d1218c-32e7-5d65-8a3a-d739ab7262fe
 # ╟─cdb131a1-2d0a-5daa-b6af-25a40c21865a
+# ╟─d6d7070c-88ff-4b93-8093-7fe8baaef3c2
+# ╟─bbb95b6c-ba92-42c0-9122-086a8b11c8f3
 # ╟─69cf5e21-22ec-5751-802d-b115c54e4080
+# ╟─c4f6c8ba-fbbb-443c-943a-a4ca5ae739e3
+# ╟─e8497bf1-2a8a-4661-9c06-863a44ed8885
+# ╟─d72fb098-bed2-4f26-86e7-62ba790df5dd
 # ╟─b575dc3a-6334-52cd-948f-ec0c294dafc5
+# ╟─71b43864-9a54-4b9b-ae1a-671b80c1b95d
+# ╟─467406f3-ce75-421e-9a87-d3559eeb35ee
+# ╟─86cfa609-8086-426a-b6ce-2e140ecec052
 # ╟─2afd0c56-0bf0-5b33-ae6d-73199a0b234b
+# ╟─bf70bd81-1b6a-4cf9-9dd8-594f92efea16
 # ╟─b8dc0784-9c5f-5800-b997-369529968c00
-# ╟─a0a1a723-c8b2-57e1-99a2-fcf781edb50a
 # ╟─68175a2d-7eea-5582-ba04-fe7751ce648d
 # ╟─d2b00eee-ac62-5585-9237-78aba3ec9489
 # ╟─3a2db6cd-e77b-548c-b081-6b3feb62e936
+# ╟─ea9d018d-4072-4aa5-985a-ee34fcae04d3
 # ╟─71b6de44-ece9-5e3f-ad46-e1a5f649b945
 # ╟─138ea814-3a72-52c2-942f-bbaae57968a0
 # ╟─a3d6b00c-9a9c-5405-a396-0c3f88a25de3
+# ╟─80ced0ea-f948-40a3-89e3-42a4f303733c
 # ╟─c46c6e9a-7269-5b19-8662-d14ef54554ad
 # ╟─691785d8-5309-5564-8bdf-c62da7f64403
 # ╟─3fa37ac3-eeae-5b31-8c9d-0ee094052260
 # ╟─b699e8ab-5de0-5351-b54c-703476a2f793
 # ╟─b6f85d2f-d29d-57a7-8e5a-f88d50751bff
 # ╟─9af7179d-1a05-5fbb-84e8-358e9a628405
+# ╟─77381c04-003d-4a68-907f-09a10e7c9cc4
+# ╟─c5510e19-2ca7-4658-bfb8-21edfae45a79
 # ╟─4a0da2f8-be59-5215-abc1-0471fdfeb2a1
+# ╟─ef405783-9048-45f7-93f9-bac786ee13b5
+# ╟─3df111a6-c669-442d-9299-fe480bf3f762
+# ╟─05406320-5e1c-4b2a-9d07-2323b0976b24
 # ╟─e2dddf66-0017-55ad-b309-5f9cc11d72ee
 # ╟─d61b4d3f-20b3-52e0-ba5a-9412c5c0dacf
 # ╟─269eead9-b7e2-51f8-824a-cf060460e1f5
+# ╟─b6af0980-5e1c-4e9a-bfc5-0c6c33605abc
 # ╟─7048f135-2533-5d1b-90f4-68eb7f5e573c
+# ╟─021a90c8-0fd4-456d-bdbb-2e3af63f88d0
 # ╟─1ee75699-b8fe-5cad-beb0-d3e0967e7041
-# ╟─ea134b48-2c80-5bff-bb4f-655b714d9049
 # ╟─6d1930fd-1787-5449-acfa-579396d3b31b
 # ╟─098ef777-bbf4-5a29-9f6f-e994f3418774
 # ╟─82ddb7df-c1e1-5e05-829e-9a3486abaa4e
 # ╟─16a8f827-cd4b-55dc-8b1b-0feb358c99aa
+# ╟─3e1d4055-ed9a-40be-950b-0b23d345952d
 # ╟─454b7935-c1c3-5914-b6f5-ad13edd86d01
 # ╟─d656e5a8-e471-5ec3-a538-ed704c557b90
 # ╟─a1eebfaa-ac28-5511-80f8-83ac87cbd423
@@ -1763,40 +1963,56 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─b5dbdf36-0e13-5f76-bf1f-e829202924f3
 # ╟─be9624be-871f-5fd8-a3e7-ee4bf5bc1943
 # ╟─28d1e0a8-9372-54b2-bad9-020c0efdcf5f
+# ╟─84175052-570e-4611-b506-cc1593c6a03d
 # ╟─8af337a6-0282-50b5-a98e-142755a66f42
+# ╟─5a772d46-7fc0-4baf-bf62-6f59e18c3e19
+# ╟─5e0e82fd-9a18-4646-b41e-db24632ba70c
+# ╟─86a55819-b811-42f1-acfd-9f41bd490ea9
 # ╟─c7f8f3b8-8871-5e02-8132-9b03ce6868af
+# ╟─f44d1e93-7039-49f5-82fb-c3b857140a62
 # ╟─3b0984f3-b69f-54b9-91f1-30fab8cc7881
-# ╟─8a7b118f-8b55-51e9-aca7-347662feb106
 # ╟─75e1037e-5a0a-50f2-a755-29e7037ba07e
 # ╟─72348138-0b2c-5966-bd28-17c6185490bf
 # ╟─ea852136-7152-5722-88c5-d7269a9dcb3e
 # ╟─c526562d-9690-5b95-b0f9-67f9765b3fdf
+# ╟─77c576de-e638-4bf2-96fa-8892c107d220
 # ╟─309bafac-d1f8-5e0a-b637-83a654847224
 # ╟─1c4c5bb1-294b-5030-8745-8fcf24911c6b
 # ╟─8a0fa3f8-202e-50f4-9581-98cbd5938f11
+# ╟─b67d030f-c790-4d9f-a386-9a1033b2bb9f
+# ╟─bb4fc2ab-3377-49fd-917d-f02229d4bd40
 # ╟─6a75b042-0d4f-54dc-937d-1f8ecffd98f4
 # ╟─594df3dd-969c-5e42-bbfd-2a5521492f45
 # ╟─e3fe65ed-ec1f-52ef-a417-d8ef143deb5f
+# ╟─7964c1c8-d477-4ae5-a695-a05b27451201
 # ╟─0aeb3bc7-8037-575b-ad36-d81a5834ea0c
 # ╟─4e29c85b-03d2-5502-8fed-f7d389f406bc
 # ╟─9ae7361b-cbcb-5ef8-8f87-8b1b4f5af276
 # ╟─92d82a98-af32-53ec-8efc-79ce25173c66
 # ╟─4c7104d2-88a3-5822-a1d7-3b2cba51faea
 # ╟─1a79a088-861a-5983-8a1e-856a5dd2110a
+# ╟─de59bdae-32bb-435c-822d-800fcb503940
+# ╟─f24b6a12-205d-47a2-a4e1-eb7db030e8f9
+# ╟─cfb8fca3-eb96-4fb4-8876-497f9dcb5cae
 # ╟─7c3d9060-9dde-5d5c-9c00-5b194e10e521
+# ╟─7848f4a7-1e17-440d-bc6b-cb8348e8bc73
+# ╟─25979fe7-5ceb-4fbc-8947-938728d24341
+# ╟─610466fd-c56a-459c-bd9c-1fbdd143a007
 # ╟─12ebe6b9-cf3d-5ac7-b05d-b34b359fd7d2
+# ╟─ace950cb-604f-4e97-80ab-d2b72ba6fa26
 # ╟─65410189-b0b1-5e52-b267-63adb383edc6
-# ╟─e5e85a35-3f2a-5b7d-a6b2-b0d959c24302
 # ╟─beed5f9f-8952-52ec-99b0-990d9b107f48
+# ╟─190fbe6b-f8d5-4df4-acf7-6184d91aa965
 # ╟─14d97564-3dfc-5b16-b9a7-e6437ceee636
-# ╟─cf43fa07-26f2-5780-88cd-4a4d5d6e5ab5
 # ╟─490fbb26-bcc0-5883-9550-6bc4488356da
 # ╟─d7234072-bd91-5008-a8c7-bd27bf75fc30
 # ╟─8be17925-68bd-5081-9994-2fa7bc043a49
+# ╟─c4612db8-63e1-468b-8af2-f96ea23abbee
 # ╟─7297e311-1114-51f5-9256-06ee3e0555a4
 # ╟─05e11080-54c1-5b8c-8a82-34521a4482e8
 # ╟─0c45b5dd-4778-5b23-867c-ce6b58559e15
 # ╟─72c966ff-94be-574b-9a41-d1909b728c48
+# ╟─0aea8a28-ea91-4cb3-af7a-5f8a56f400d8
 # ╟─4ce799f5-e25f-5455-92cf-7868dc713552
 # ╟─1eb22217-6b48-5fd1-bbd0-29ab9b184fdf
 # ╟─915b1cfd-3760-5fcf-8a85-8ed0e1e48109
@@ -1806,6 +2022,7 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─efcd227c-be87-5b78-b0a3-49f80f436147
 # ╟─1d30f2e4-a668-58d4-8945-17fc3d94ef27
 # ╟─4130d78a-3223-5804-899c-07e48ca7ae66
+# ╟─bf6dd588-2b9e-42d9-a78c-27325c45b5ca
 # ╟─4f6ecd1c-90bb-52bd-85da-d989ab7adc4a
 # ╟─4378f115-d8fc-5392-9deb-ead3ccf2eb03
 # ╟─1a1cf665-5227-5108-b6d8-6a9c8e955454

@@ -25,7 +25,8 @@ using ..Lecture01Support: dyad_source
 export V60, G0, LAYOUTS, Rig, solve_with, signal_path, first_crossing, t60, air_used,
     binding_limit, blowdown_marks, hop_apex, hover_time, limit_map,
     nozzle_closed_form, blowdown_closed_form, hover_closed_form, fan_power_closed_form,
-    scoreboard, verdict_row, verdict_box, html_table, diagrams, dyad_fold, car_panel_style, fmt
+    scoreboard, verdict_row, verdict_box, html_table, diagrams, dyad_fold, car_panel_style, fmt,
+    headline, mark!, main_limit
 
 "60 mph in m/s."
 const V60 = 26.8224
@@ -130,6 +131,14 @@ function binding_limit(sol, sys; until, samples = 400)
     which = [argmin(c) for c in caps]
     share(k) = count(==(k), which) / samples
     return (tire = share(1), torque = share(2), power = share(3))
+end
+
+"The limit in a [`binding_limit`](@ref) result that holds the car back longest, in words, and its share."
+function main_limit(l)
+    shares = (l.tire, l.torque, l.power)
+    k = argmax(shares)
+    return (name = ("the tires", "the motor's torque", "the motor's power")[k],
+        verb = k == 1 ? "set" : "sets", share = shares[k])
 end
 
 """
@@ -244,14 +253,15 @@ fan_power_closed_form(dp, gap; C_d = 0.6, perimeter = 10.0, rho = 1.2, eta = 0.6
 # ---------------------------------------------------------------------------------------
 
 """
-    limit_map(sol, sys; until, title) -> Plot
+    limit_map(sol, sys; until) -> Plot
 
-Force at the wheel against speed: the tire line `mu_A·F_z`, the torque cap `T_max/r`, the
-power cap `P_max/(ω·r)` and the delivered tire force. The lowest curve is the binding limit.
+Push at the road against speed: the tire limit `mu_A·F_z`, the torque cap `T_max/r`, the power
+cap `P_max/(ω·r)` and the push the tire delivers. The lowest curve is the active limit; a marker
+halfway to the end speed names it on the plot.
 """
-function limit_map(sol, sys; until, title = "Which limit binds?")
+function limit_map(sol, sys; until)
     ts = range(0.0, until; length = 400)
-    v = sol(ts, idxs = sys.v).u
+    v = 3.6 .* sol(ts, idxs = sys.v).u
     Fz = sol(ts, idxs = sys.axle.F_z).u
     Fx = sol(ts, idxs = sys.wheel.F_x).u
     w = sol(ts, idxs = sys.motor.w).u
@@ -259,15 +269,41 @@ function limit_map(sol, sys; until, title = "Which limit binds?")
     mu = sol.ps[sys.mu_A]
     T_max, P_max = sol.ps[sys.motor.T_max], sol.ps[sys.motor.P_max]
     kN(x) = x ./ 1e3
-    p = plot(v, kN(mu .* Fz); lw = 2, color = :seagreen, label = "tire limit μ_A·F_z",
-        xlabel = "speed [m/s]", ylabel = "force at the wheel [kN]", title,
-        legend = :outerright, xlims = (0, V60 * 1.02), ylims = (0, max(60, 1.15 * maximum(kN(mu .* Fz)))))
-    hline!(p, [T_max / r / 1e3]; lw = 2, color = :darkorange, label = "torque cap T_max/r")
-    plot!(p, v, kN(P_max ./ (max.(w, 1.0) .* r)); lw = 2, color = :purple,
-        label = "power cap P_max/(ω·r)")
-    plot!(p, v, kN(Fx); lw = 4, color = :black, alpha = 0.6, label = "delivered")
-    vline!(p, [V60]; color = :gray, ls = :dot, label = "60 mph")
+    tire, torque, power = kN(mu .* Fz), T_max / r / 1e3, kN(P_max ./ (max.(w, 1.0) .* r))
+    top = max(60, 1.15 * maximum(tire))
+    p = plot(v, tire; lw = 2, color = :seagreen, label = "most the tires can push",
+        xlabel = "Speed (km/h)", ylabel = "Push at the road (kN)", legend = :outerright,
+        xlims = (0, 3.6 * V60 * 1.02), ylims = (0, top))
+    hline!(p, [torque]; lw = 2, color = :darkorange, label = "most the motor's torque allows")
+    plot!(p, v, power; lw = 2, color = :purple, label = "most the motor's power allows")
+    plot!(p, v, kN(Fx); lw = 4, color = :black, alpha = 0.6, label = "push the car gets")
+    vline!(p, [3.6 * V60]; color = :gray, ls = :dot, label = "60 mph")
+    i = something(findfirst(>=(v[end] / 2), v), lastindex(v))
+    caps = (tire[i], torque, power[i])
+    says = ("the tires set", "the motor's torque sets", "the motor's power sets")[argmin(caps)]
+    y = kN(Fx[i])
+    y_text = y + 0.22 * top < 0.95 * top ? y + 0.22 * top : y - 0.22 * top
+    plot!(p, [v[i], v[i]], [y_text, y]; arrow = true, color = :black, lw = 1.5, label = "")
+    scatter!(p, [v[i]], [y]; ms = 7, color = :black, label = "")
+    annotate!(p, v[i], y_text, text("here $(says) the push", 13, :center,
+        y_text > y ? :bottom : :top))
     return p
+end
+
+"""
+    mark!(plt, x, y, label; dx = 0, dy = 0, color = :black, halign = :left, valign = :vcenter)
+
+A dot at `(x, y)` with `label` at `(x + dx, y + dy)`, joined by an arrow when the label is offset.
+Call it before `twinx`, which makes the second axis the target of later annotations.
+"""
+function mark!(plt, x, y, label; dx = 0.0, dy = 0.0, color = :black, halign = :left,
+        valign = :vcenter, size = 13)
+    if dx != 0 || dy != 0
+        plot!(plt, [x + dx, x], [y + dy, y]; arrow = true, color, lw = 1.5, label = "")
+    end
+    scatter!(plt, [x], [y]; ms = 7, color, markerstrokewidth = 0, label = "")
+    annotate!(plt, x + dx, y + dy, text(" " * label * " ", size, color, halign, valign))
+    return plt
 end
 
 # ---------------------------------------------------------------------------------------
@@ -276,6 +312,7 @@ end
 
 const CHIP = Dict(
     :yes => ("yes", "#2e7d32"),
+    :partly => ("partly", "#b26a00"),
     :no => ("no", "#c62828"),
     :pending => ("—", "#757575"),
 )
@@ -283,7 +320,7 @@ const CHIP = Dict(
 """
     verdict_row(claim, tesla, model, verdict) -> NamedTuple
 
-One scoreboard row. `verdict` is `:yes`, `:no` or `:pending`.
+One scoreboard row. `verdict` is `:yes`, `:partly`, `:no` or `:pending`.
 """
 verdict_row(claim, tesla, model, verdict::Symbol) = (; claim, tesla, model, verdict)
 
@@ -325,12 +362,11 @@ end
     scoreboard(rows) -> HTML
 
 The claim-against-model panel, fixed in the bottom-right corner so it stays in view in present
-mode. It starts collapsed to its summary line and sits above the car panel, which
+mode. It starts collapsed to its summary line, a count of each verdict, and sits above the car panel, which
 [`car_panel_style`](@ref) pins below it.
 """
 function scoreboard(rows)
-    done = count(r -> r.verdict != :pending, rows)
-    yes = count(r -> r.verdict == :yes, rows)
+    tally(v) = count(r -> r.verdict == v, rows)
     body = join(map(rows) do r
         label, color = CHIP[r.verdict]
         """<tr><td>$(inline_html(r.claim))</td><td>$(inline_html(r.tesla))</td>
@@ -339,7 +375,7 @@ function scoreboard(rows)
     end, "\n")
     return HTML("""
     <aside class="roadster-scoreboard">
-    <details><summary><b>Claim vs model</b> · $yes of $done possible</summary>
+    <details><summary><b>Claim vs model</b> · $(tally(:yes)) yes · $(tally(:partly)) partly · $(tally(:no)) no</summary>
     <table class="roadster-table"><colgroup><col style="width:36%"><col style="width:24%">
     <col style="width:28%"><col style="width:12%"></colgroup>
     <thead><tr><th>claim</th><th>Tesla</th><th>model</th><th></th></tr></thead>
@@ -405,6 +441,9 @@ const FIGURE_STYLE = """
 .roadster-figures figcaption { font-size: 0.95rem; line-height: 1.35; margin-top: 6px; }
 </style>
 """
+
+"The one-line conclusion shown above a plot, as inline Markdown."
+headline(text) = HTML("""<p style="font-size: 1.3rem; font-weight: 700; margin: 0.2em 0 0.3em 0">$(inline_html(text))</p>""")
 
 const VERDICT_COLOR = Dict(:yes => "#2e7d32", :partly => "#b26a00", :no => "#c62828")
 
