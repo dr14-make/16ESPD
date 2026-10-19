@@ -249,8 +249,11 @@ valve closing (assumed).
 
 MBT is the spark that gets the most work out of the closed cycle. It is the one MBT this notebook
 uses at that point: the spark lines of the two figures below are counted back from it. The figure
-also fires 15° earlier and 15° later, beside the motored cylinder. The traces are **idealized, drawn from
-textbook trends**: nothing knocks, so the early spark's peak is smooth where the scan's is ragged.
+also fires 15° earlier and 30° later, beside the motored cylinder. The traces are **idealized, drawn from
+textbook trends**. The early spark's peak carries a drawn knock ring, a decaying oscillation at the
+chamber's first acoustic mode, about 7 kHz: the model itself does not knock, and the work figures
+use the smooth trace. 30° late, the burn starts after TDC, so the pressure first falls away with the
+motored cylinder before the late burn lifts it.
 """
 
 # ╔═╡ 888dda8d-5a7e-4625-8813-1c4c8ae3e51e
@@ -325,7 +328,8 @@ begin
     spark_runs = (
         early = (σ = MBT_CYLINDER + 15, run = cylinder(MBT_CYLINDER + 15)),
         mbt = (σ = MBT_CYLINDER, run = cylinder(MBT_CYLINDER)),
-        late = (σ = MBT_CYLINDER - 15, run = cylinder(MBT_CYLINDER - 15)),
+        # 30° late puts the start of burn after TDC, so the trace first falls with the motored one.
+        late = (σ = MBT_CYLINDER - 30, run = cylinder(MBT_CYLINDER - 30)),
         motored = cylinder(0; fired = false))
 end
 
@@ -337,12 +341,21 @@ let window = -60 .<= spark_runs.motored.θ .<= 90
     deg(σ) = isinteger(σ) ? string(Int(σ)) : string(σ)
     fired = ((spark_runs.early, "early", "#a75d00"), (spark_runs.mbt, "MBT", "#1f5fa8"),
         (spark_runs.late, "late", "#86b6ef"))
+    # Knock is drawn, not modeled: a damped ring at the chamber's first circumferential mode,
+    # f = 1.84 c / (π B) with c ≈ 900 m/s in the hot end gas (textbook), from the early peak on.
+    e = spark_runs.early.run
+    f_knock = 1.84 * 900 / (π * BORE)
+    period = 6RPM_DECK / f_knock
+    ring(θ) = θ < e.θ_peak - 1 ? 0.0 :
+        0.12e.p_peak * exp(-(θ - e.θ_peak + 1) / 10) * sin(2π * (θ - e.θ_peak + 1) / period)
+    knocking = (; e..., p = e.p .+ ring.(e.θ))
     traces = [PP.scatter(; x = θ, y = bar(spark_runs.motored), mode = "lines", name = "motored",
         line = PP.attr(width = 2, dash = "dash", color = "gray"),
         hovertemplate = "motored, %{x:.0f}°: %{y:.1f} bar<extra></extra>")]
     for (s, label, color) in fired
         name = "$label $(deg(s.σ))°"
-        push!(traces, PP.scatter(; x = θ, y = bar(s.run), mode = "lines", name,
+        push!(traces, PP.scatter(; x = θ, y = bar(s === spark_runs.early ? knocking : s.run),
+            mode = "lines", name,
             line = PP.attr(; width = 3, color),
             hovertemplate = "$label, %{x:.0f}°: %{y:.1f} bar<extra></extra>"))
     end
@@ -356,15 +369,18 @@ let window = -60 .<= spark_runs.motored.θ .<= 90
     PP.plot(traces, deck_layout(;
         xaxis = PP.attr(title = "crank angle [° after TDC]", range = [-60, 90], dtick = 15),
         yaxis = PP.attr(title = "pressure [bar]",
-            range = [0, 10 * ceil(1.1 * spark_runs.early.run.p_peak / 1e6)]),
+            range = [0, 10 * ceil(1.1 * maximum(knocking.p) / 1e6)]),
         margin = PP.attr(l = 70, r = 20, t = 76, b = 60),
         legend = PP.attr(orientation = "h", x = 0.5, xanchor = "center", y = 1.02, yanchor = "bottom",
             title = PP.attr(text = "spark, ° BTDC:")),
         shapes = [PP.attr(type = "line", x0 = 0, x1 = 0, yref = "paper", y0 = 0, y1 = 1,
             line = PP.attr(color = "gray", width = 1, dash = "dot"))],
-        annotations = [PP.attr(x = m.θ_peak, y = m.p_peak / 1e5, ax = 80, ay = -6, xanchor = "left",
-            text = "peak at $(round(m.θ_peak; digits = 1))° after TDC",
-            font = PP.attr(color = "#1f5fa8"), arrowcolor = "#1f5fa8")]))
+        annotations = [
+            PP.attr(x = m.θ_peak, y = m.p_peak / 1e5, ax = 50, ay = -6, xanchor = "left",
+                text = "peak $(round(m.θ_peak; digits = 1))°",
+                font = PP.attr(color = "#1f5fa8"), arrowcolor = "#1f5fa8"),
+            PP.attr(x = e.θ_peak + 4, y = maximum(knocking.p) / 1e5, ax = 45, ay = -4, xanchor = "left",
+                text = "knock", font = PP.attr(color = "#a75d00"), arrowcolor = "#a75d00")]))
 end
 
 # ╔═╡ 10c1ba82-7ed5-4802-9297-62be020cde6e
@@ -377,7 +393,7 @@ let (e, m, l) = (spark_runs.early.run, spark_runs.mbt.run, spark_runs.late.run)
     **MBT** at $(MBT_CYLINDER)° BTDC: peak $(round(m.p_peak / 1e5; digits = 1)) bar at
     $(round(m.θ_peak; digits = 1))° after TDC, gross indicated efficiency
     $(round(100m.work / m.heat; digits = 1)) %. **15° early** $(round(e.p_peak / 1e5; digits = 1)) bar at
-    $(round(e.θ_peak; digits = 1))°; **15° late** $(round(l.p_peak / 1e5; digits = 1)) bar at
+    $(round(e.θ_peak; digits = 1))°; **30° late** $(round(l.p_peak / 1e5; digits = 1)) bar at
     $(round(l.θ_peak; digits = 1))°; **motored** $(round(spark_runs.motored.p_peak / 1e5; digits = 1)) bar.
     Each spark gives $(round(100e.work / m.work; digits = 1)) % and $(round(100l.work / m.work; digits = 1)) %
     of MBT's work.
