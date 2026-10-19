@@ -1,0 +1,62 @@
+"""
+Service brake acting between the car body and the road.
+
+A nonnegative command sets the friction force magnitude, applied against the body's motion
+relative to the road. The regularized Coulomb law `tanh(v / v_reg)` makes the force fall to zero
+with the speed, so the brake stops the car and then holds it instead of pushing it backwards.
+Friction acts against relative motion whichever way the two flanges are connected.
+"""
+component RoadBrake
+  "Car body"
+  flange = Flange() {^flange}
+  "Road"
+  support = Flange() {^support}
+  "Brake force command [N], 0 released"
+  F_cmd = RealInput() {^F_cmd}
+  "Slip regularization speed (assumed)"
+  parameter v_reg::Velocity(min = eps(Float64)) = 0.05
+  "Speed of the flange relative to the support"
+  variable v::Velocity
+  "Friction force, signed with v; the flange feels it against its motion"
+  variable f::Dyad.Force
+relations
+  v = der(flange.s) - der(support.s)
+  f = max(F_cmd, 0.0) * tanh(v / v_reg)
+  flange.f = f
+  support.f = -f
+metadata {
+  "Dyad": {"icons": {"default": "dyad://TranslationalComponents/SignForce.svg"}},
+  "_links": {
+    "flange": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -25, "y1": 475, "x2": 25, "y2": 525}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 475, "y1": 975, "x2": 525, "y2": 1025}}}},
+    "F_cmd": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 475, "y1": -25, "x2": 525, "y2": 25}}}}
+  }
+}
+end
+
+test component TestRoadBrake
+  "Brake command, a firm stop (assumed test stimulus)"
+  cmd = BlockComponents.Sources.Constant(k = 4000.0)
+  "Hands-on car mass (Hands-on 1)"
+  body = TranslationalComponents.Components.Mass(m = 1400.0)
+  brake = VehicleSystemsComponents.Vehicle.RoadBrake()
+  "Same mass, brake wired the other way round"
+  swapped_body = TranslationalComponents.Components.Mass(m = 1400.0)
+  swapped = VehicleSystemsComponents.Vehicle.RoadBrake()
+  road = TranslationalComponents.Components.Fixed()
+relations
+  connect(cmd.y, brake.F_cmd, swapped.F_cmd)
+  connect(brake.flange, body.flange_a)
+  connect(brake.support, road.flange)
+  connect(swapped.support, swapped_body.flange_a)
+  connect(swapped.flange, road.flange)
+  initial body.s = 0.0
+  initial body.v = 10.0
+  initial swapped_body.s = 0.0
+  initial swapped_body.v = 10.0
+end
+
+analysis RoadBrakeTransient
+  extends TransientAnalysis(stop = 6.0)
+  model = TestRoadBrake()
+end

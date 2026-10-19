@@ -1,0 +1,85 @@
+"""
+Hands-on 02 step 04: the hands-on 1 car with the student's map engine (fuel cut pasted in), a
+flywheel, and the given CVT driveline with its centrifugal launch clutch.
+
+The pedal drives both the engine's throttle and the CVT's engine-speed schedule.
+"""
+component MappedCar
+  "Initial CVT ratio, engine to wheel; 12 is CVTDriveline's launch setting"
+  parameter ratio_initial::Real = 12
+  "Pedal, 0 released to 1 floored"
+  pedal = RealInput() {^pedal}
+  "Vehicle speed [km/h]"
+  v_kmh = RealOutput() {^v_kmh}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealOutput() {^p_m}
+  "Fuel volume flow [L/h]"
+  fuel_lph = RealOutput() {^fuel_lph}
+  engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut() {^engine}
+  "Crankshaft and flywheel, J as MappedEngine assumes"
+  flywheel = RotationalComponents.Components.Inertia(J = 0.15) {^flywheel}
+  no_booster = BlockComponents.Sources.Constant(k = 0) {^no_booster}
+  "kg/s of petrol to L/h: 3600 s/h / 0.745 kg/L (Hands-on 02)"
+  to_lph = BlockComponents.Math.Gain(k = 4832.2) {^to_lph}
+  driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(ratio_initial = ratio_initial) {^driveline}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  vsensor = TranslationalComponents.Sensors.VelocitySensor() {^vsensor}
+  to_kmh = BlockComponents.Math.Gain(k = 3.6) {^to_kmh}
+  "Engine mounts and gearbox housing"
+  rot_ground = RotationalComponents.Components.Fixed() {^rot_ground}
+  "Road under the wheel"
+  trans_ground = TranslationalComponents.Components.Fixed() {^trans_ground}
+relations
+  connect(pedal, engine.pedal) {^w1}
+  connect(pedal, driveline.pedal) {^w2}
+  connect(no_booster.y, engine.mdot_bst) {^w3}
+  connect(engine.spline, flywheel.spline_a) {^w4}
+  connect(flywheel.spline_b, driveline.spline) {^w5}
+  connect(engine.support, rot_ground.spline) {^w6}
+  connect(driveline.support_r, rot_ground.spline) {^w7}
+  connect(driveline.flange, body.flange) {^w8}
+  connect(driveline.support_t, trans_ground.flange) {^w9}
+  connect(vsensor.flange, body.flange) {^w10}
+  connect(vsensor.v, to_kmh.u) {^w11}
+  connect(to_kmh.y, v_kmh) {^w12}
+  connect(engine.p_m, p_m) {^w13}
+  connect(engine.mdot_fuel, to_lph.u) {^w14}
+  connect(to_lph.y, fuel_lph) {^w15}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/HandsOn/Car.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": -25, "y1": 175, "x2": 25, "y2": 225}}}},
+    "v_kmh": {"Dyad": {"placement": {"diagram": {"x1": 975, "y1": 435, "x2": 1025, "y2": 485}}}},
+    "p_m": {"Dyad": {"placement": {"diagram": {"x1": 975, "y1": 245, "x2": 1025, "y2": 295}}}},
+    "fuel_lph": {"Dyad": {"placement": {"diagram": {"x1": 975, "y1": 305, "x2": 1025, "y2": 355}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 352, "x2": 220, "y2": 472}}}},
+    "flywheel": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 410, "x2": 380, "y2": 510}}}},
+    "driveline": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 410, "x2": 540, "y2": 510}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 410, "x2": 720, "y2": 510}}}},
+    "no_booster": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 520, "x2": 70, "y2": 590}}}},
+    "vsensor": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 425, "x2": 830, "y2": 495}}}},
+    "to_kmh": {"Dyad": {"placement": {"diagram": {"x1": 870, "y1": 425, "x2": 940, "y2": 495}}}},
+    "to_lph": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 295, "x2": 870, "y2": 365}}}},
+    "rot_ground": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 740, "x2": 370, "y2": 820}}}},
+    "trans_ground": {"Dyad": {"placement": {"diagram": {"x1": 780, "y1": 740, "x2": 860, "y2": 820}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 200}, {"x": 60, "y": 388}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 420, "y": 200}, {"x": 420, "y": 430}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 85, "y": 555}, {"x": 85, "y": 436}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 160, "y": 700}, {"x": 330, "y": 700}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 478, "y": 700}, {"x": 330, "y": 700}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 460}, {"x": 560, "y": 390}, {"x": 745, "y": 390}, {"x": 745, "y": 460}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 502, "y": 680}, {"x": 820, "y": 680}], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 240, "y": 364}, {"x": 240, "y": 270}], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 260, "y": 400}, {"x": 260, "y": 330}], "E": 2}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

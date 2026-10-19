@@ -1,0 +1,144 @@
+"""
+Map-based petrol engine assembled as a visible pedal-to-torque signal chain.
+
+The maps are generated from `scripts/alpha_engine_maps.jl`. Small blocks keep engineering-unit
+conversion, interpolation, actuator dynamics, and fuel-cut behavior at their natural boundaries.
+The torque comes from the same `TorqueMap` students draw in Hands-on 02; the fuel and emission
+maps are `CutMap`s, because the fuel cut has to gate them.
+"""
+component MappedEngine
+  extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
+  "Driver pedal command, 0 closed to 1 fully open"
+  pedal = RealInput() {^pedal}
+  "Brake-booster air inflow to the manifold [kg/s]"
+  mdot_bst = RealInput() {^mdot_bst}
+  "Engine output shaft"
+  spline = Spline() {^spline}
+  "Reaction support (engine mounts)"
+  support = Spline() {^support}
+  "Manifold absolute pressure [Pa]"
+  p_m = RealOutput() {^p_m}
+  "Fuel mass flow [kg/s]"
+  mdot_fuel = RealOutput() {^mdot_fuel}
+  "Carbon-dioxide mass flow [kg/s]"
+  mdot_co2 = RealOutput() {^mdot_co2}
+  "Engine-out hydrocarbon mass flow [kg/s] (assumed map)"
+  mdot_hc = RealOutput() {^mdot_hc}
+  "Engine-out carbon-monoxide mass flow [kg/s] (assumed map)"
+  mdot_co = RealOutput() {^mdot_co}
+  "Engine-out nitrogen-oxide mass flow [kg/s] (assumed map)"
+  mdot_nox = RealOutput() {^mdot_nox}
+  "Brake torque [N.m]"
+  tau_e = RealOutput() {^tau_e}
+  "Air-fuel equivalence ratio"
+  lambda = RealOutput() {^lambda}
+
+  "Progressive drive-by-wire pedal exponent (assumed)"
+  parameter pedal_exponent::Real = 1.5
+  "Drive-by-wire throttle actuator time constant (assumed)"
+  parameter throttle_time::Time(min = eps(Float64)) = 0.05
+  "Engine plus flywheel inertia (assumed; lecture-02-dyad-tasks.md)"
+  parameter J_e::MomentOfInertia = 0.15
+  "Closed-pedal threshold for deceleration fuel cut (assumed)"
+  parameter pedal_closed::Real = 1e-4
+  "Deceleration fuel-cut speed [rpm] (assumed)"
+  parameter fuel_cut_rpm::Real = 1300.0
+  "Deceleration fuel-resume speed [rpm] (assumed)"
+  parameter fuel_resume_rpm::Real = 1000.0
+  "Rev-limiter fuel-cut speed [rpm] (assumed)"
+  parameter rev_cut_rpm::Real = 6500.0
+  "Rev-limiter fuel-resume speed [rpm] (assumed)"
+  parameter rev_resume_rpm::Real = 6300.0
+  "Continuous latch transition time (assumed)"
+  parameter latch_time::Time(min = eps(Float64)) = 0.01
+  "Gasoline carbon balance at full oxidation (textbook)"
+  parameter co2_per_fuel::Real = 3.09
+
+  pedal_map = VehicleSystemsComponents.Vehicle.Engine.PedalMap(pedal_exponent = pedal_exponent, throttle_time = throttle_time) {^pedal_map}
+  air = VehicleSystemsComponents.Vehicle.Engine.AirPath() {^air}
+  speed = RotationalComponents.Sensors.VelocitySensor() {^speed}
+  cut_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic(pedal_closed = pedal_closed, fuel_cut_rpm = fuel_cut_rpm, fuel_resume_rpm = fuel_resume_rpm, rev_cut_rpm = rev_cut_rpm, rev_resume_rpm = rev_resume_rpm, latch_time = latch_time) {^cut_logic}
+  torque_map = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, torque_data = torque_data, full_load_rpm = full_load_rpm, full_load_data = full_load_data) {^torque_map}
+  closed_throttle = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(rpm_axis = closed_rpm, data = closed_data) {^closed_throttle}
+  torque_blend = VehicleSystemsComponents.Vehicle.Engine.CutBlend() {^torque_blend}
+  fuel_map = VehicleSystemsComponents.Vehicle.Engine.CutMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = fuel_data, gain = 1e-3) {^fuel_map}
+  lambda_map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = lambda_data) {^lambda_map}
+  hc_map = VehicleSystemsComponents.Vehicle.Engine.CutMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = hc_data, gain = 1e-3) {^hc_map}
+  co_map = VehicleSystemsComponents.Vehicle.Engine.CutMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = co_data, gain = 1e-3) {^co_map}
+  nox_map = VehicleSystemsComponents.Vehicle.Engine.CutMap(rpm_axis = rpm_axis, kpa_axis = kpa_axis, data = nox_data, gain = 1e-3) {^nox_map}
+  co2_gain = BlockComponents.Math.Gain(k = co2_per_fuel) {^co2_gain}
+  torque_source = RotationalComponents.Sources.TorqueSource() {^torque_source}
+  crankshaft = RotationalComponents.Components.Inertia(J = J_e) {^crankshaft}
+  "Engine speed [rpm]"
+  variable N::Real
+relations
+  N = speed.w * 30 / pi
+  connect(pedal, pedal_map.pedal, cut_logic.pedal) {^pedal_wire}
+  connect(pedal_map.u_thr, air.u_thr) {^throttle_wire}
+  connect(mdot_bst, air.mdot_bst) {^booster_wire}
+  connect(air.p_m, p_m, torque_map.p_m, lambda_map.p_m, fuel_map.p_m, hc_map.p_m, co_map.p_m, nox_map.p_m) {^pressure_wire}
+  connect(speed.w, air.omega, cut_logic.omega, torque_map.omega, closed_throttle.omega, lambda_map.omega, fuel_map.omega, hc_map.omega, co_map.omega, nox_map.omega) {^speed_wire}
+  connect(torque_map.y, torque_blend.fired) {^fired_wire}
+  connect(closed_throttle.y, torque_blend.motored) {^motored_wire}
+  connect(cut_logic.cut, torque_blend.cut, fuel_map.cut, hc_map.cut, co_map.cut, nox_map.cut) {^cut_wire}
+  connect(torque_blend.y, torque_source.tau, tau_e) {^torque_wire}
+  connect(fuel_map.y, mdot_fuel, co2_gain.u) {^fuel_wire}
+  connect(co2_gain.y, mdot_co2) {^co2_wire}
+  connect(lambda_map.y, lambda) {^lambda_wire}
+  connect(hc_map.y, mdot_hc) {^hc_wire}
+  connect(co_map.y, mdot_co) {^co_wire}
+  connect(nox_map.y, mdot_nox) {^nox_wire}
+  connect(torque_source.spline, crankshaft.spline_a) {^drive_wire}
+  connect(crankshaft.spline_b, spline, speed.spline) {^shaft_wire}
+  connect(torque_source.support, support) {^support_wire}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 235, "x2": 25, "y2": 285}}}},
+    "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -25, "y1": 375, "x2": 25, "y2": 425}}}},
+    "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": 1375, "y1": 15, "x2": 1425, "y2": 65}}}},
+    "tau_e": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 1375, "y1": 85, "x2": 1425, "y2": 135}}}},
+    "lambda": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}, "diagram": {"x1": 1375, "y1": 555, "x2": 1425, "y2": 605}}}},
+    "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 1375, "y1": 685, "x2": 1425, "y2": 735}}}},
+    "mdot_co2": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1375, "y1": 750, "x2": 1425, "y2": 800}}}},
+    "mdot_hc": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 1375, "y1": 815, "x2": 1425, "y2": 865}}}},
+    "mdot_co": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 1375, "y1": 945, "x2": 1425, "y2": 995}}}},
+    "mdot_nox": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 1375, "y1": 1075, "x2": 1425, "y2": 1125}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"iconName": "spline_b", "x1": 1375, "y1": 185, "x2": 1425, "y2": 235}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 1025, "y1": 305, "x2": 1075, "y2": 355}}}},
+    "pedal_map": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 210, "x2": 180, "y2": 310}}}},
+    "air": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 240, "x2": 340, "y2": 340}}}},
+    "cut_logic": {"Dyad": {"placement": {"diagram": {"x1": 240, "y1": 450, "x2": 340, "y2": 550}}}},
+    "torque_map": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 130, "x2": 580, "y2": 230}}}},
+    "closed_throttle": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 280, "x2": 580, "y2": 380}}}},
+    "lambda_map": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 530, "x2": 580, "y2": 630}}}},
+    "fuel_map": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 660, "x2": 580, "y2": 760}}}},
+    "hc_map": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 790, "x2": 580, "y2": 890}}}},
+    "co_map": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 920, "x2": 580, "y2": 1020}}}},
+    "nox_map": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 1050, "x2": 580, "y2": 1150}}}},
+    "torque_blend": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 160, "x2": 940, "y2": 260}}}},
+    "co2_gain": {"Dyad": {"placement": {"diagram": {"x1": 1000, "y1": 735, "x2": 1080, "y2": 815}}}},
+    "torque_source": {"Dyad": {"placement": {"diagram": {"x1": 1000, "y1": 160, "x2": 1100, "y2": 260}}}},
+    "crankshaft": {"Dyad": {"placement": {"diagram": {"x1": 1160, "y1": 160, "x2": 1260, "y2": 260}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1320, "y1": 380, "x2": 1420, "y2": 480}}}},
+    "pedal_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 40, "y": 480}], "E": 3}], "junctions": [{"x": 40, "y": 260}]}},
+    "throttle_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "booster_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 400}, {"x": 200, "y": 290}], "E": 2}]}},
+    "pressure_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": -2, "M": [{"x": 430, "y": 40}], "E": 2}, {"S": -1, "M": [], "E": -3}, {"S": -3, "M": [], "E": 4}, {"S": -3, "M": [], "E": -4}, {"S": -4, "M": [], "E": 5}, {"S": -4, "M": [], "E": -5}, {"S": -5, "M": [], "E": 6}, {"S": -5, "M": [], "E": -6}, {"S": -6, "M": [], "E": 7}, {"S": -6, "M": [{"x": 430, "y": 1100}], "E": 8}], "junctions": [{"x": 430, "y": 290}, {"x": 430, "y": 200}, {"x": 430, "y": 600}, {"x": 430, "y": 710}, {"x": 430, "y": 840}, {"x": 430, "y": 970}]}},
+    "speed_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1480, "y": 430}, {"x": 1480, "y": 1190}], "E": -1}, {"S": -1, "M": [{"x": 220, "y": 1190}], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": -2, "M": [{"x": 220, "y": 320}], "E": 2}, {"S": -1, "M": [], "E": -3}, {"S": -3, "M": [], "E": 10}, {"S": -3, "M": [], "E": -4}, {"S": -4, "M": [], "E": 9}, {"S": -4, "M": [], "E": -5}, {"S": -5, "M": [], "E": 8}, {"S": -5, "M": [], "E": -6}, {"S": -6, "M": [], "E": 7}, {"S": -6, "M": [], "E": -7}, {"S": -7, "M": [], "E": 6}, {"S": -7, "M": [], "E": -8}, {"S": -8, "M": [], "E": 5}, {"S": -8, "M": [{"x": 410, "y": 160}], "E": 4}], "junctions": [{"x": 410, "y": 1190}, {"x": 220, "y": 520}, {"x": 410, "y": 1075}, {"x": 410, "y": 945}, {"x": 410, "y": 815}, {"x": 410, "y": 685}, {"x": 410, "y": 560}, {"x": 410, "y": 330}]}},
+    "fired_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "motored_wire": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 820, "y": 330}, {"x": 820, "y": 240}], "E": 2}]}},
+    "cut_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 800, "y": 500}, {"x": 800, "y": 210}], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 3}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 4}, {"S": -3, "M": [], "E": -4}, {"S": -4, "M": [], "E": 5}, {"S": -4, "M": [{"x": 450, "y": 1125}], "E": 6}], "junctions": [{"x": 450, "y": 500}, {"x": 450, "y": 735}, {"x": 450, "y": 865}, {"x": 450, "y": 995}]}},
+    "torque_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 970, "y": 110}], "E": 3}], "junctions": [{"x": 970, "y": 210}]}},
+    "fuel_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 960, "y": 775}], "E": 3}], "junctions": [{"x": 960, "y": 710}]}},
+    "co2_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "lambda_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "hc_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "co_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "nox_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "drive_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "shaft_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 1300, "y": 430}], "E": 3}], "junctions": [{"x": 1300, "y": 210}]}},
+    "support_wire": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

@@ -59,7 +59,7 @@ routeAlias: recap-models
 </div>
 </div>
 
-↩ Hands-on: [step 10 and its summary table](../handson-01/index.html#/standing-start) · [hands-on page](../handson/lecture-01/index.html)
+↩ Hands-on: [step 10 and its summary table](../handson-01/index.html#/wrap-up) · [hands-on page](../handson/lecture-01/index.html)
 
 <!--
 This is the hands-on in one table. A bench is a small test model that drives one part with fixed
@@ -81,7 +81,7 @@ becomes `SlipCar`, with a tire whose grip has a peak, on ice.
 The number to remember is 1366 newtons, the pull of a 10 percent hill. That is most of the 1935
 newtons the engine can push. Section 06 is about this case.
 
-The derivations are in the hands-on deck. The link at the bottom goes to its summary table.
+The derivations are in the hands-on guide. The link at the bottom goes to the hands-on summary table.
 -->
 
 ---
@@ -178,7 +178,7 @@ hline!(plt, [v_terminal * 3.6]; ls = :dash, color = :grey,
 > 300 seconds, and the last stretch barely moves. The car's own time constant near 100 km/h
 > is about **67 s**.
 
-*↩ Hands-on step 05: [why it takes so long — the car's time constant](../handson-01/index.html#/time-constant)*
+*↩ Hands-on step 05: [why it takes so long — the car's time constant](../handson/lecture-01/index.html#time-constant)*
 
 </div>
 <div>
@@ -233,7 +233,7 @@ plot_torque(step_test;
 
 **Open in Dyad** `dyad/Lecture1/CarStepTest.dyad`
 
-*↩ Hands-on step 02: [why the engine is late and slow](../handson-01/index.html#/pedal)*
+*↩ Hands-on step 02: [why the engine is late and slow](../handson/lecture-01/index.html#pedal)*
 
 1. Wait until the process is at rest.
 2. Put the controller in manual.
@@ -494,7 +494,7 @@ $$ F_{\text{slope}} = m\,g\,\sin(\arctan \text{grade}) $$
 - One signal tilts the rolling resistance *and* drives the slope force.
 - 10 %: **1366 N** back, against **1935 N** the engine can push.
 
-*↩ Hands-on step 07: [the slope](../handson-01/index.html#/slope)*
+*↩ Hands-on step 07: [the slope](../handson/lecture-01/index.html#slope)*
 
 </div>
 </div>

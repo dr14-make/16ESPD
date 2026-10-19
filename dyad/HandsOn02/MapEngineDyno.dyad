@@ -1,0 +1,64 @@
+"""
+Dynamometer bench for `MapEngine`: the shaft is held at a fixed speed and the pedal steps once.
+
+The defaults hold the 90 km/h cruise point and open the pedal a little, so the torque shows the
+manifold filling.
+"""
+component MapEngineDyno
+  "Held engine speed [rpm], 90 km/h cruise (deck)"
+  parameter rpm::Real = 3080.0
+  "Pedal before the step, holds 31.1 N.m at 3080 rpm (derived)"
+  parameter pedal_initial::Real = 0.1034
+  "Pedal after the step (assumed)"
+  parameter pedal_final::Real = 0.12
+  "Pedal step time (assumed)"
+  parameter t_step::Time = 1.0
+  "Initial manifold pressure, steady at the initial pedal (derived)"
+  parameter p_m0::Pressure = 47829.1
+  pedal = BlockComponents.Sources.Step(height = pedal_final - pedal_initial, offset = pedal_initial, start_time = t_step) {^pedal}
+  no_booster = BlockComponents.Sources.Constant(k = 0) {^no_booster}
+  speed = BlockComponents.Sources.Constant(k = rpm * pi / 30) {^speed}
+  engine = VehicleSystemsComponents.HandsOn02.MapEngine() {^engine}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+relations
+  connect(pedal.y, engine.pedal) {^id1}
+  connect(no_booster.y, engine.mdot_bst) {^id2}
+  connect(speed.y, dyno.w_ref) {^id3}
+  connect(engine.spline, dyno.spline) {^id4}
+  connect(engine.support, mounts.spline) {^id5}
+  connect(dyno.support, mounts.spline) {^id6}
+  initial dyno.phi = 0
+  initial engine.air.manifold.p = p_m0
+metadata {
+  "Dyad": {"tests": {"cruise_step": {"stop": 2.0, "atol": {"engine.p_m": 10.0, "engine.torque_map.y": 0.01, "engine.mdot_fuel": 1e-7}, "expect": {"initial": {"engine.p_m": 47829.1, "engine.torque_map.y": 31.0999}, "final": {"engine.p_m": 52944.0, "engine.torque_map.y": 41.3722, "engine.mdot_fuel": 1.02268e-3}, "signals": ["engine.p_m", "engine.torque_map.y"]}}}},
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "no_booster": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 520, "x2": 200, "y2": 620}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 370, "x2": 800, "y2": 470}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 250, "x2": 550, "y2": 450}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 370, "x2": 1000, "y2": 470}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 650, "x2": 500, "y2": 750}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 350}, {"x": 270, "y": 310}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 280, "y": 570}, {"x": 280, "y": 390}], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 430}, {"x": 600, "y": 300}, {"x": 1050, "y": 300}, {"x": 1050, "y": 420}], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 600}, {"x": 450, "y": 600}], "E": 2}]}}
+  }
+}
+end
+
+"""
+The bench run. The defaults are the part-load pedal step at 90 km/h; with `rpm = 3000`,
+`pedal_initial = 0`, `pedal_final = 1` and `p_m0 = 13482.4` it shows closed pedal, then wide open.
+"""
+analysis MapEngineDynoTransient
+  extends TransientAnalysis(stop = 2.0, saveat = 0.001)
+  parameter rpm::Real = 3080.0
+  parameter pedal_initial::Real = 0.1034
+  parameter pedal_final::Real = 0.12
+  parameter t_step::Time = 1.0
+  parameter p_m0::Pressure = 47829.1
+  model = VehicleSystemsComponents.HandsOn02.MapEngineDyno(rpm = rpm, pedal_initial = pedal_initial, pedal_final = pedal_final, t_step = t_step, p_m0 = p_m0)
+end

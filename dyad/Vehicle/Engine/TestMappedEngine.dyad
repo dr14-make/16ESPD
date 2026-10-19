@@ -1,0 +1,109 @@
+"Free-crank mapped-engine harness for idle and booster-release cases."
+test component TestMappedEngine
+  "Initial engine speed [rpm]"
+  parameter rpm::Real = 800.0
+  "Constant pedal command"
+  parameter pedal_cmd::Real = 0.0
+  "Booster pulse mass flow [kg/s]"
+  parameter booster_flow::Real = 0.0
+  "Start of the booster pulse"
+  parameter t_booster::Time = 1.0
+  "Duration of the booster pulse"
+  parameter booster_duration::Time = 0.5
+  "Initial manifold pressure [Pa]"
+  parameter p_m0::Pressure = 32955.7
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine() {^engine}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+relations
+  engine.pedal = pedal_cmd
+  engine.mdot_bst = ifelse(time > t_booster and time <= t_booster + booster_duration, booster_flow, 0.0)
+  connect(engine.support, fixed.spline) {^id1}
+  initial engine.crankshaft.phi = 0.0
+  initial engine.crankshaft.w = rpm * pi / 30
+  initial engine.air.manifold.p = p_m0
+metadata {
+  "_links": {
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 600, "x2": 550, "y2": 700}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+  }
+}
+end
+
+"Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun."
+test component TestMappedEngineDyno
+  "Scenario: 1 steady, 2 tip-in, 3 overrun speed ramp"
+  parameter scenario::Integer = 1
+  "Held or initial engine speed [rpm]"
+  parameter rpm::Real = 2000.0
+  "Constant pedal command"
+  parameter pedal_cmd::Real = 1.0
+  "Pedal before tip-in"
+  parameter pedal_initial::Real = 0.2
+  "Pedal after tip-in"
+  parameter pedal_final::Real = 1.0
+  "Tip-in time"
+  parameter t_step::Time = 0.5
+  "Initial manifold pressure [Pa]"
+  parameter p_m0::Pressure = 13482.4
+  "End speed for the overrun ramp [rpm]"
+  parameter overrun_end_rpm::Real = 800.0
+  "Start of the overrun speed ramp"
+  parameter t_ramp::Time = 1.0
+  "Duration of the overrun speed ramp"
+  parameter ramp_duration::Time = 3.0
+  engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine() {^engine}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  variable pedal_value::Real
+  variable dyno_rpm::Real
+relations
+  pedal_value = ifelse(scenario == 2, ifelse(time < t_step, pedal_initial, pedal_final), pedal_cmd)
+  dyno_rpm = ifelse(scenario == 3, ifelse(time <= t_ramp, rpm, ifelse(time < t_ramp + ramp_duration, rpm + (overrun_end_rpm - rpm) * (time - t_ramp) / ramp_duration, overrun_end_rpm)), rpm)
+  engine.pedal = pedal_value
+  engine.mdot_bst = 0.0
+  dyno.w_ref = dyno_rpm * pi / 30
+  connect(engine.spline, dyno.spline) {^id1}
+  connect(engine.support, fixed.spline) {^id2}
+  connect(dyno.support, fixed.spline) {^id3}
+  initial engine.crankshaft.phi = 0.0
+  initial engine.air.manifold.p = p_m0
+metadata {
+  "_links": {
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 430, "x2": 850, "y2": 530}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 650, "x2": 550, "y2": 750}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 480}, {"x": 680, "y": 380}, {"x": 900, "y": 380}, {"x": 900, "y": 480}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 600}, {"x": 500, "y": 600}], "E": 2}], "path": {}}}
+  }
+}
+end
+
+analysis MappedEngineTransient
+  extends TransientAnalysis(stop = 5.0, saveat = 0.001)
+  parameter rpm::Real = 800.0
+  parameter pedal_cmd::Real = 0.0
+  parameter booster_flow::Real = 0.0
+  parameter t_booster::Time = 1.0
+  parameter booster_duration::Time = 0.5
+  parameter p_m0::Pressure = 32955.7
+  model = VehicleSystemsComponents.Vehicle.Engine.TestMappedEngine(rpm = rpm, pedal_cmd = pedal_cmd, booster_flow = booster_flow, t_booster = t_booster, booster_duration = booster_duration, p_m0 = p_m0)
+relations
+end
+
+analysis MappedEngineDynoTransient
+  extends TransientAnalysis(stop = 5.0, saveat = 0.001)
+  parameter scenario::Integer = 1
+  parameter rpm::Real = 2000.0
+  parameter pedal_cmd::Real = 1.0
+  parameter pedal_initial::Real = 0.2
+  parameter pedal_final::Real = 1.0
+  parameter t_step::Time = 0.5
+  parameter p_m0::Pressure = 13482.4
+  parameter overrun_end_rpm::Real = 800.0
+  parameter t_ramp::Time = 1.0
+  parameter ramp_duration::Time = 3.0
+  model = VehicleSystemsComponents.Vehicle.Engine.TestMappedEngineDyno(scenario = scenario, rpm = rpm, pedal_cmd = pedal_cmd, pedal_initial = pedal_initial, pedal_final = pedal_final, t_step = t_step, p_m0 = p_m0, overrun_end_rpm = overrun_end_rpm, t_ramp = t_ramp, ramp_duration = ramp_duration)
+relations
+end

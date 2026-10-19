@@ -1,0 +1,155 @@
+"""
+A dual-track throttle position sensor: two potentiometers on the throttle shaft, fed from the
+ECU's 5 V reference, read by the ECU as two voltages.
+
+    5 V -> R_end -> track 1 -> R_end -> ground       V1 rises with the plate angle
+    5 V -> R_end -> track 2 -> R_end -> ground       V2 falls: the track is wired the other way
+
+Both wipers ride on one shaft, so one plate angle moves both. The end resistors are the trimming
+and protective resistors of the circuit on deck slide 34: with them, a wiper can never reach the
+supply or ground, so a healthy track reads between `V_lo` = 0.5 V and `V_hi` = 4.5 V, and a reading
+outside that window means a short or an open circuit, not a throttle position. Because the tracks
+run in opposite directions, `V1 + V2` stays at `V_lo + V_hi` = 5 V at every angle. That sum is
+what the ECU's plausibility check watches: a worn track or a bad contact moves one voltage but
+not the other, and the sum leaves its window.
+
+Each wiper reaches its output through its contact resistance `R_wiper`, into an ECU input that
+loads it with `R_in`. Raising `R_wiper` on one track is how a worn track is simulated. The
+wiper position is the plate angle from the closed stop over `phi_span`, clamped to the track by the
+potentiometer, so beyond the travel the output stays at the end of its range.
+
+All values are assumed: no supplier publishes the resistances of a throttle-body sensor. The
+0.5-4.5 V window is the common automotive convention.
+"""
+component ThrottlePositionSensor
+  "Plate angle from the closed stop [rad]"
+  phi = RealInput() {^phi}
+  "Track 1 voltage, rising with the opening [V]"
+  V1 = RealOutput() {^V1}
+  "Track 2 voltage, falling with the opening [V]"
+  V2 = RealOutput() {^V2}
+  reference_level = BlockComponents.Sources.Constant(k = V_ref) {^reference_level}
+  "ECU sensor supply"
+  reference = ElectricalComponents.Analog.Sources.VoltageSource() {^reference}
+  "Wiper position: 0 at the closed stop, 1 wide open"
+  wiper_drive = BlockComponents.Math.Gain(k = 1 / phi_span) {^wiper_drive}
+  track1 = ElectricalComponents.Analog.Basic.Potentiometer(R = R_track) {^track1}
+  track2 = ElectricalComponents.Analog.Basic.Potentiometer(R = R_track) {^track2}
+  top1 = ElectricalComponents.Analog.Basic.Resistor(R = R_end) {^top1}
+  bottom1 = ElectricalComponents.Analog.Basic.Resistor(R = R_end) {^bottom1}
+  top2 = ElectricalComponents.Analog.Basic.Resistor(R = R_end) {^top2}
+  bottom2 = ElectricalComponents.Analog.Basic.Resistor(R = R_end) {^bottom2}
+  "Wiper 1 contact resistance"
+  wiper1 = ElectricalComponents.Analog.Basic.Resistor(R = R_wiper1) {^wiper1}
+  "Wiper 2 contact resistance"
+  wiper2 = ElectricalComponents.Analog.Basic.Resistor(R = R_wiper2) {^wiper2}
+  "ECU input 1"
+  input1 = ElectricalComponents.Analog.Basic.Resistor(R = R_in) {^input1}
+  "ECU input 2"
+  input2 = ElectricalComponents.Analog.Basic.Resistor(R = R_in) {^input2}
+  sense1 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^sense1}
+  sense2 = ElectricalComponents.Analog.Sensors.VoltageSensor() {^sense2}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  "Sink for the tracks' heat ports"
+  ambient = ThermalComponents.Sources.FixedTemperature(T = 293.15) {^ambient}
+  "ECU sensor reference voltage, 5 V (textbook)"
+  parameter V_ref::Voltage = 5.0
+  "Plate travel from the closed stop to wide open, 83 deg (the Throttle's 7 to 90 deg)"
+  parameter phi_span::Angle = 1.448623
+  "Resistance of one track (assumed)"
+  parameter R_track::Resistance = 2000.0
+  "End resistor at each end of a track, sets the 0.5-4.5 V window (assumed)"
+  parameter R_end::Resistance = 250.0
+  "Wiper 1 contact resistance, healthy (assumed)"
+  parameter R_wiper1::Resistance = 10.0
+  "Wiper 2 contact resistance, healthy (assumed)"
+  parameter R_wiper2::Resistance = 10.0
+  "ECU input resistance (assumed)"
+  parameter R_in::Resistance = 100e3
+  "Lowest voltage a healthy unloaded track reads (derived)"
+  final parameter V_lo::Voltage = V_ref * R_end / (R_track + 2 * R_end)
+  "Highest voltage a healthy unloaded track reads (derived)"
+  final parameter V_hi::Voltage = V_ref * (R_track + R_end) / (R_track + 2 * R_end)
+relations
+  connect(reference_level.y, reference.V) {^id1}
+  connect(reference.n, ground.g) {^id2}
+  connect(phi, wiper_drive.u) {^id3}
+  connect(wiper_drive.y, track1.r) {^id4}
+  connect(wiper_drive.y, track2.r) {^id5}
+  connect(reference.p, top1.p) {^id6}
+  connect(top1.n, track1.pin_p) {^id7}
+  connect(track1.pin_n, bottom1.p) {^id8}
+  connect(bottom1.n, ground.g) {^id9}
+  connect(reference.p, top2.p) {^id10}
+  connect(top2.n, track2.pin_n) {^id11}
+  connect(track2.pin_p, bottom2.p) {^id12}
+  connect(bottom2.n, ground.g) {^id13}
+  connect(track1.contact, wiper1.p) {^id14}
+  connect(wiper1.n, input1.p) {^id15}
+  connect(input1.n, ground.g) {^id16}
+  connect(wiper1.n, sense1.p) {^id17}
+  connect(sense1.n, ground.g) {^id18}
+  connect(track2.contact, wiper2.p) {^id19}
+  connect(wiper2.n, input2.p) {^id20}
+  connect(input2.n, ground.g) {^id21}
+  connect(wiper2.n, sense2.p) {^id22}
+  connect(sense2.n, ground.g) {^id23}
+  connect(sense1.v, V1) {^id24}
+  connect(sense2.v, V2) {^id25}
+  connect(track1.heat_port, ambient.port) {^id26}
+  connect(track2.heat_port, ambient.port) {^id27}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/ThrottlePositionSensor.svg"}
+  },
+  "_links": {
+    "phi": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "V1": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "V2": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 950, "y1": 700, "x2": 1050, "y2": 800}}}},
+    "reference_level": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 100, "x2": 100, "y2": 200}}}},
+    "reference": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 100, "x2": 250, "y2": 200, "rot": 270}}}},
+    "wiper_drive": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 450, "x2": 200, "y2": 550}}}},
+    "top1": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 200, "x2": 400, "y2": 300}}}},
+    "track1": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 200, "x2": 550, "y2": 300}}}},
+    "bottom1": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 200, "x2": 700, "y2": 300}}}},
+    "top2": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 650, "x2": 400, "y2": 750}}}},
+    "track2": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 650, "x2": 550, "y2": 750, "rot": 180}}}},
+    "bottom2": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 650, "x2": 700, "y2": 750}}}},
+    "wiper1": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 350, "x2": 700, "y2": 450}}}},
+    "wiper2": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 520, "x2": 700, "y2": 620}}}},
+    "input1": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 400, "x2": 900, "y2": 500, "rot": 90}}}},
+    "input2": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 570, "x2": 900, "y2": 670, "rot": 90}}}},
+    "sense1": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 250, "x2": 950, "y2": 350, "rot": 270}}}},
+    "sense2": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 700, "x2": 950, "y2": 800, "rot": 270}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 680, "y1": 900, "x2": 780, "y2": 1000}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 425, "x2": 550, "y2": 525, "rot": 180}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 60}, {"x": 730, "y": 60}], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 280, "y": 500}, {"x": 280, "y": 340}, {"x": 450, "y": 340}], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 280, "y": 500}, {"x": 280, "y": 610}, {"x": 550, "y": 610}], "E": 2}], "path": {}}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 230}, {"x": 260, "y": 230}, {"x": 260, "y": 250}], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 730, "y": 250}], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 230}, {"x": 260, "y": 230}, {"x": 260, "y": 700}], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 730, "y": 700}], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 400}], "E": 2}], "path": {}}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 850, "y": 520}, {"x": 730, "y": 520}], "E": 2}], "path": {}}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 775, "y": 400}, {"x": 775, "y": 370}, {"x": 900, "y": 370}], "E": 2}], "path": {}}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 900, "y": 230}, {"x": 730, "y": 230}], "E": 2}], "path": {}}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 570}], "E": 2}], "path": {}}},
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 850, "y": 685}, {"x": 730, "y": 685}], "E": 2}], "path": {}}},
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 775, "y": 570}, {"x": 775, "y": 830}, {"x": 900, "y": 830}], "E": 2}], "path": {}}},
+    "id23": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 900, "y": 685}, {"x": 730, "y": 685}], "E": 2}], "path": {}}},
+    "id24": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id25": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id26": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 501, "y": 360}, {"x": 430, "y": 360}, {"x": 430, "y": 475}], "E": 2}], "path": {}}},
+    "id27": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 499, "y": 630}, {"x": 430, "y": 630}, {"x": 430, "y": 475}], "E": 2}], "path": {}}}
+  }
+}
+end

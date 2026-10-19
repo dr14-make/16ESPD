@@ -10,16 +10,16 @@ Lecture 1 runs as two sessions on the one car, in this order:
 
 | # | Session | Material | Min |
 |---|---|---|---|
-| 1 | Hands-on: understand the car, then build it in Dyad | `docs/handson/lecture-01/`, tutor deck `docs/slides/handson-01/` | ~210 |
+| 1 | Hands-on: understand the car, then build it in Dyad | guide `slides/site/handson/lecture-01/` with its tutor guide, projector deck `slides/decks/handson-01/` | ~210 |
 | 2 | Introduction and PID | `docs/slides/lecture-01/`, the ten notebooks | 90 |
 
 The plant's physics is taught once, in the hands-on, at the step that needs it: the session
-opens with why a controller needs a model and what is being built, and each step opens with its
-theory slides — the engine's delay, lag and ceiling at step 02, F = T·i/r at 03, the forces at
+opens with why a controller needs a model and what is being built, and each step of the guide
+opens with its theory in short Why boxes — the engine's delay, lag and ceiling at step 02, F = T·i/r at 03, the forces at
 04, the force balance and top speed at 05, the wheel's inertia at 06, the slope at 07, slip and
 the friction curve at 08, the engine-vs-tire limits at 10 — then builds the part and checks a
 number predicted on paper. The PID deck does not repeat any of it: its slides carry a
-"↩ Hands-on step NN" link to the exact slide wherever they rely on that physics. Its front matter
+"↩ Hands-on step NN" link to the exact Why box on the guide wherever they rely on that physics. Its front matter
 recaps the built car in one slide, section 01 keeps only the full-throttle run, the step test
 and K, τ, θ, and section 10 treats wheelspin and the friction curve as recaps before the ice
 patch. The notebooks are unchanged.

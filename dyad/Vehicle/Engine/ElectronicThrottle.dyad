@@ -1,0 +1,192 @@
+"""
+An electronic throttle (drive by wire): the ECU positions the throttle plate with a DC motor and
+closes a position loop on the plate's own position sensor.
+
+    u_cmd -> controller (PID) -> H-bridge -> DC motor -> gearbox -> plate
+                  ^                                                  |
+                  +---- u_meas <- ECU estimate <- V1, V2 <- TPS <----+
+
+The motor is a `RotationalEMF` behind its armature resistance and inductance, with its rotor
+inertia. A gearbox multiplies its torque onto the plate shaft, where the plate inertia, the
+`LimpHomeSpring`, the `ThrottleEndStops` and the bearing friction act. The H-bridge is an ideal
+voltage source standing for the averaged PWM output, so the controller output is the motor
+voltage, limited to +/- `U_batt`.
+
+The ECU estimates the opening from both tracks of the `ThrottlePositionSensor`,
+
+    u_meas = 1/2 + (V1 - V2) / (2 V_window)
+
+which is 0 at the closed stop and 1 wide open, and uses half of each track, so a small error on
+one track moves the estimate half as much. `u_cmd` and `u_thr` share the meaning of
+`Throttle.u_thr`, a fraction of the plate's travel from the closed stop, so `u_thr` can drive an
+`AirPath` directly.
+
+Every value is assumed, at the scale of a passenger-car throttle body with a 50 mm bore: no
+supplier publishes its motor and spring data.
+"""
+component ElectronicThrottle
+  "Commanded opening, 0 at the closed stop and 1 wide open"
+  u_cmd = RealInput() {^u_cmd}
+  "Opening the ECU measures through the TPS"
+  u_thr = RealOutput() {^u_thr}
+  "Plate angle from the closed stop [rad]"
+  phi = RealOutput() {^phi}
+  "TPS track 1 voltage [V]"
+  V1 = RealOutput() {^V1}
+  "TPS track 2 voltage [V]"
+  V2 = RealOutput() {^V2}
+  "Motor current [A]"
+  i_motor = RealOutput() {^i_motor}
+  "ECU's position estimate from the two TPS tracks"
+  estimate = BlockComponents.Math.LinearDependency(y0 = 0.5, k1 = 0.5 / V_window, k2 = -0.5 / V_window) {^estimate}
+  controller = BlockComponents.Continuous.LimPID(k = k, Ti = Ti, Td = Td, Nd = Nd, y_max = U_batt, y_min = -U_batt) {^controller}
+  no_feed_forward = BlockComponents.Sources.Constant(k = 0) {^no_feed_forward}
+  "H-bridge, averaged over the PWM period"
+  bridge = ElectricalComponents.Analog.Sources.VoltageSource() {^bridge}
+  armature_R = ElectricalComponents.Analog.Basic.Resistor(R = R_a) {^armature_R}
+  armature_L = ElectricalComponents.Analog.Basic.Inductor(L = L_a, i = initial 0) {^armature_L}
+  current_sensor = ElectricalComponents.Analog.Sensors.CurrentSensor() {^current_sensor}
+  emf = ElectricalComponents.Analog.Basic.RotationalEMF(k = k_m) {^emf}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  rotor = RotationalComponents.Components.Inertia(J = J_m) {^rotor}
+  gearbox = RotationalComponents.Components.IdealGear(ratio = n_gear) {^gearbox}
+  plate = RotationalComponents.Components.Inertia(J = J_p, phi = initial phi_0, w = initial 0) {^plate}
+  return_spring = VehicleSystemsComponents.Vehicle.Engine.LimpHomeSpring(phi_lh = phi_lh, T_pre = T_pre, c = c_spring, eps = eps_lh) {^return_spring}
+  stops = VehicleSystemsComponents.Vehicle.Engine.ThrottleEndStops(phi_max = phi_span) {^stops}
+  bearing = RotationalComponents.Components.Damper(d = d_bearing) {^bearing}
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  angle_sensor = RotationalComponents.Sensors.AngleSensor() {^angle_sensor}
+  tps = VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor(phi_span = phi_span, R_wiper1 = R_wiper1) {^tps}
+  "Plate travel from the closed stop to wide open, 83 deg (the Throttle's 7 to 90 deg)"
+  parameter phi_span::Angle = 1.448623
+  "Window the ECU expects a healthy TPS track to span, V_hi - V_lo = 4.5 - 0.5 V"
+  parameter V_window::Voltage = 4.0
+  "Supply voltage the H-bridge can apply (textbook)"
+  parameter U_batt::Voltage = 14.0
+  "Armature resistance (assumed)"
+  parameter R_a::Resistance = 1.5
+  "Armature inductance (assumed)"
+  parameter L_a::Inductance = 1e-3
+  "Motor torque and back-EMF constant (assumed)"
+  parameter k_m::ElectricalTorqueConstant = 0.01
+  "Motor rotor inertia (assumed)"
+  parameter J_m::MomentOfInertia = 2e-6
+  "Gearbox ratio, motor angle over plate angle (assumed)"
+  parameter n_gear::Real = 20.0
+  "Plate, shaft and sector gear inertia (assumed)"
+  parameter J_p::MomentOfInertia = 5e-5
+  "Limp-home plate angle, 6 deg (assumed)"
+  parameter phi_lh::Angle = 0.10472
+  "Return-spring preload (assumed)"
+  parameter T_pre::Torque = 0.25
+  "Return-spring rate (assumed)"
+  parameter c_spring::RotationalSpringConstant = 0.1
+  "Width over which the spring preload changes sign at limp home (assumed)"
+  parameter eps_lh::Angle = 0.0035
+  "Bearing and seal friction (assumed)"
+  parameter d_bearing::RotationalDampingConstant = 1e-3
+  "Position controller gain [V per unit opening] (assumed, tuned)"
+  parameter k::Real = 40.0
+  "Position controller integral time (assumed, tuned)"
+  parameter Ti::Time = 0.1
+  "Position controller derivative time (assumed, tuned)"
+  parameter Td::Time = 0.02
+  "Derivative filter ratio (assumed)"
+  parameter Nd::Real = 10.0
+  "Plate angle at the start (defaults to limp home)"
+  parameter phi_0::Angle = 0.10472
+  "TPS track 1 wiper contact resistance; raise it to simulate a worn track"
+  parameter R_wiper1::Resistance = 10.0
+relations
+  connect(u_cmd, controller.u_s) {^id1}
+  connect(estimate.y, controller.u_m) {^id2}
+  connect(no_feed_forward.y, controller.u_ff) {^id3}
+  connect(controller.y, bridge.V) {^id4}
+  connect(bridge.p, current_sensor.p) {^id5}
+  connect(current_sensor.n, armature_R.p) {^id6}
+  connect(armature_R.n, armature_L.p) {^id7}
+  connect(armature_L.n, emf.p) {^id8}
+  connect(emf.n, bridge.n) {^id9}
+  connect(bridge.n, ground.g) {^id10}
+  connect(emf.rotor, rotor.spline_a) {^id11}
+  connect(emf.housing, housing.spline) {^id12}
+  connect(rotor.spline_b, gearbox.spline_a) {^id13}
+  connect(gearbox.support, housing.spline) {^id14}
+  connect(gearbox.spline_b, plate.spline_a) {^id15}
+  connect(housing.spline, return_spring.spline_a) {^id16}
+  connect(return_spring.spline_b, plate.spline_b) {^id17}
+  connect(housing.spline, stops.spline_a) {^id18}
+  connect(stops.spline_b, plate.spline_b) {^id19}
+  connect(housing.spline, bearing.spline_a) {^id20}
+  connect(bearing.spline_b, plate.spline_b) {^id21}
+  connect(plate.spline_b, angle_sensor.spline) {^id22}
+  connect(angle_sensor.phi, tps.phi) {^id23}
+  connect(angle_sensor.phi, phi) {^id24}
+  connect(tps.V1, estimate.u1) {^id25}
+  connect(tps.V2, estimate.u2) {^id26}
+  connect(tps.V1, V1) {^id27}
+  connect(tps.V2, V2) {^id28}
+  connect(estimate.y, u_thr) {^id29}
+  connect(current_sensor.i, i_motor) {^id30}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/ElectronicThrottle.svg"}
+  },
+  "_links": {
+    "u_cmd": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "u_thr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 0, "y1": 950, "x2": 100, "y2": 1050, "rot": 90}}}},
+    "phi": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 875, "y1": 950, "x2": 975, "y2": 1050, "rot": 90}}}},
+    "V1": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 320, "y1": 950, "x2": 420, "y2": 1050, "rot": 90}}}},
+    "V2": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 200, "y1": 950, "x2": 300, "y2": 1050, "rot": 90}}}},
+    "i_motor": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 400, "y1": -50, "x2": 500, "y2": 50, "rot": 270}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "no_feed_forward": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 100, "x2": 200, "y2": 200}}}},
+    "estimate": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 750, "x2": 200, "y2": 850, "rot": 180}}}},
+    "bridge": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 300, "x2": 350, "y2": 400, "rot": 90}}}},
+    "current_sensor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250, "rot": 270}}}},
+    "armature_R": {"Dyad": {"placement": {"diagram": {"x1": 325, "y1": 30, "x2": 425, "y2": 130}}}},
+    "armature_L": {"Dyad": {"placement": {"diagram": {"x1": 475, "y1": 30, "x2": 575, "y2": 130}}}},
+    "emf": {"Dyad": {"placement": {"diagram": {"x1": 525, "y1": 300, "x2": 625, "y2": 400}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 450, "x2": 350, "y2": 550}}}},
+    "rotor": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 300, "x2": 740, "y2": 400}}}},
+    "gearbox": {"Dyad": {"placement": {"diagram": {"x1": 755, "y1": 300, "x2": 855, "y2": 400}}}},
+    "plate": {"Dyad": {"placement": {"diagram": {"x1": 870, "y1": 300, "x2": 970, "y2": 400}}}},
+    "return_spring": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 470, "x2": 850, "y2": 570}}}},
+    "stops": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 590, "x2": 850, "y2": 690}}}},
+    "bearing": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 710, "x2": 850, "y2": 810}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 790, "x2": 700, "y2": 890}}}},
+    "angle_sensor": {"Dyad": {"placement": {"diagram": {"x1": 875, "y1": 800, "x2": 975, "y2": 900, "rot": 90}}}},
+    "tps": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 750, "x2": 550, "y2": 900, "rot": 180}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 50, "y": 500}, {"x": 50, "y": 327}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 215, "y": 150}, {"x": 215, "y": 270}, {"x": 150, "y": 270}], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 225, "y": 350}, {"x": 225, "y": 275}, {"x": 370, "y": 275}, {"x": 370, "y": 350}], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 80}], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 575, "y": 425}, {"x": 300, "y": 425}], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 350}, {"x": 500, "y": 440}, {"x": 650, "y": 440}], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 805, "y": 440}, {"x": 650, "y": 440}], "E": 2}], "path": {}}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 520}], "E": 2}], "path": {}}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 985, "y": 520}, {"x": 985, "y": 350}], "E": 2}], "path": {}}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 640}], "E": 2}], "path": {}}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 985, "y": 640}, {"x": 985, "y": 350}], "E": 2}], "path": {}}},
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 760}], "E": 2}], "path": {}}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 985, "y": 760}, {"x": 985, "y": 350}], "E": 2}], "path": {}}},
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 985, "y": 350}, {"x": 985, "y": 780}, {"x": 925, "y": 780}], "E": 2}], "path": {}}},
+    "id23": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 925, "y": 930}, {"x": 575, "y": 930}, {"x": 575, "y": 825}], "E": 2}], "path": {}}},
+    "id24": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id25": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 855}, {"x": 300, "y": 830}], "E": 2}], "path": {}}},
+    "id26": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 795}, {"x": 300, "y": 770}], "E": 2}], "path": {}}},
+    "id27": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 370, "y": 855}], "E": 2}], "path": {}}},
+    "id28": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 795}], "E": 2}], "path": {}}},
+    "id29": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 50, "y": 800}], "E": 2}], "path": {}}},
+    "id30": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 200}], "E": 2}], "path": {}}}
+  }
+}
+end

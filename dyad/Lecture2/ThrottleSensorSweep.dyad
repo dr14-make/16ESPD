@@ -1,0 +1,70 @@
+"""
+The throttle position sensor's characteristic: the plate angle swept slowly past both stops while
+the ECU reads both tracks.
+
+The sweep runs from `phi_from` to `phi_to` over `duration` seconds. The sensor has no dynamics,
+so time only orders the angles; each instant is a static point of the characteristic. Raising
+`R_wiper1` simulates a worn track 1.
+"""
+component ThrottleSensorSweep
+  "Plate angle at the start of the sweep, 5 deg before the closed stop"
+  parameter phi_from::Angle = -0.0872665
+  "Plate angle at the end of the sweep, 5 deg past wide open"
+  parameter phi_to::Angle = 1.535890
+  "Sweep duration"
+  parameter duration::Time = 1.0
+  "Track 1 wiper contact resistance"
+  parameter R_wiper1::Resistance = 10.0
+  angle = BlockComponents.Sources.Ramp(offset = phi_from, height = phi_to - phi_from, duration = duration, start_time = 0) {^angle}
+  tps = VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor(R_wiper1 = R_wiper1) {^tps}
+  "What the ECU's plausibility check compares against 5 V"
+  track_sum = BlockComponents.Math.Add() {^track_sum}
+relations
+  connect(angle.y, tps.phi) {^id1}
+  connect(tps.V1, track_sum.u1) {^id2}
+  connect(tps.V2, track_sum.u2) {^id3}
+metadata {
+  "Dyad": {
+    "tests": {
+      "healthy": {
+        "stop": 1.0,
+        "atol": {"tps.V1": 0.001, "tps.V2": 0.001, "track_sum.y": 0.001},
+        "expect": {
+          "initial": {"tps.V1": 0.4988, "tps.V2": 4.4894, "track_sum.y": 4.9883},
+          "final": {"tps.V1": 4.4894, "tps.V2": 0.4988, "track_sum.y": 4.9883},
+          "signals": ["tps.V1", "tps.V2", "track_sum.y"]
+        }
+      },
+      "worn_track_1": {
+        "stop": 1.0,
+        "params": {"R_wiper1": 50000.0},
+        "atol": {"tps.V1": 0.001, "tps.V2": 0.001, "track_sum.y": 0.001},
+        "expect": {
+          "final": {"tps.V1": 2.9955, "tps.V2": 0.4988, "track_sum.y": 3.4943},
+          "signals": ["tps.V1", "track_sum.y"]
+        }
+      }
+    }
+  },
+  "_links": {
+    "angle": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 400, "x2": 250, "y2": 550}}}},
+    "tps": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 375, "x2": 600, "y2": 575}}}},
+    "track_sum": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 400, "x2": 900, "y2": 550}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 670, "y": 435}, {"x": 670, "y": 430}], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 670, "y": 515}, {"x": 670, "y": 520}], "E": 2}], "path": {}}}
+  }
+}
+end
+
+analysis ThrottleSensorSweepTransient
+  extends TransientAnalysis(stop = 1.0, saveat = 0.001)
+  "Plate angle at the start of the sweep"
+  parameter phi_from::Angle = -0.0872665
+  "Plate angle at the end of the sweep"
+  parameter phi_to::Angle = 1.535890
+  "Track 1 wiper contact resistance"
+  parameter R_wiper1::Resistance = 10.0
+  model = VehicleSystemsComponents.Lecture2.ThrottleSensorSweep(phi_from = phi_from, phi_to = phi_to, R_wiper1 = R_wiper1)
+relations
+end

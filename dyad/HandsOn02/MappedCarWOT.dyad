@@ -1,0 +1,30 @@
+"""
+Hands-on 02 step 04 bench: the pedal floored from rest, the engine idling behind the open launch
+clutch.
+"""
+component MappedCarWOT
+  "Pedal floored"
+  pedal = BlockComponents.Sources.Constant(k = 1) {^pedal}
+  car = MappedCar() {^car}
+relations
+  connect(pedal.y, car.pedal) {^w1}
+  initial car.body.mass.s = 0
+  initial car.body.mass.v = 0
+  "Engine idling at 900 rpm (assumed warm idle)"
+  initial car.flywheel.w = 900 * pi / 30
+  initial car.flywheel.phi = 0
+  initial car.driveline.clutch.spline_b.phi = 0
+  initial car.engine.air.manifold.p = 101325
+metadata {
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 390, "x2": 250, "y2": 490}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 400, "x2": 600, "y2": 600}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+analysis MappedCarWOTTransient
+  extends TransientAnalysis(stop = 120)
+  model = MappedCarWOT()
+end

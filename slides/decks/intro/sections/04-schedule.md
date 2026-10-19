@@ -11,8 +11,8 @@ routeAlias: schedule
 | 1 | Introduction | |
 | 2 | | [Introduction to Dyad: build the car](../handson/lecture-01/index.html) |
 | 3 | [PID controllers and vehicle dynamics](../lecture-01/index.html) | |
-| 4 | Internal combustion engines | |
-| 5 | | Engine modeling |
+| 4 | [Internal combustion engines](../lecture-02/index.html) | |
+| 5 | | [Engine modeling: drive a mapped engine](../handson/lecture-02/index.html) |
 | 6 | Hybrid and electric vehicles | |
 | 7 | | An electric motor and its control |
 | 8 | | Developing the hybrid architecture |

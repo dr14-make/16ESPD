@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .thin { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .fill { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .acc { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .warnline { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .lbl { font-size: 18px; fill: #4a5a6b; }
+    .sm { font-size: 15px; fill: #4a5a6b; }
+    .out { font-size: 20px; font-weight: 600; }
+    .head { font-size: 21px; font-weight: 600; }
+    .warn { font-size: 18px; font-weight: 600; fill: #a75d00; }
+    .accent { font-size: 18px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="ks-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="ks-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+  </defs>
+  <rect x="20" y="250" width="260" height="50" fill="#e6e9ed" stroke="#4a5a6b" stroke-width="2"/>
+  <text x="30" y="282" class="lbl">engine block</text>
+  <rect x="140" y="60" width="20" height="230" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <rect x="122" y="48" width="56" height="16" fill="#16202c"/>
+  <rect x="80" y="216" width="140" height="34" class="box"/>
+  <rect x="80" y="190" width="56" height="26" fill="#1f5fa8"/><rect x="164" y="190" width="56" height="26" fill="#1f5fa8"/>
+  <rect x="80" y="120" width="56" height="70" fill="#4a5a6b"/><rect x="164" y="120" width="56" height="70" fill="#4a5a6b"/>
+  <path class="thin" d="M66 250 V104 H234 V250"/>
+  <path class="wire" d="M234 200 H262 V170"/>
+  <text x="252" y="160" class="sm">signal</text>
+  <text x="4" y="150" class="lbl">seismic</text><text x="4" y="170" class="lbl">mass</text>
+  <text x="4" y="200" class="accent">piezo</text><text x="4" y="220" class="accent">ring</text>
+  <text x="10" y="36" class="lbl">bolted on a flat seat</text>
+  <path class="warnline" d="M300 246 V304" marker-start="url(#ks-w)" marker-end="url(#ks-w)"/>
+  <text x="175" y="336" class="warn" style="font-size: 16px" text-anchor="middle">vibration → force on the ring → charge</text>
+  <rect class="box" x="360" y="20" width="260" height="50" rx="4"/>
+  <text x="490" y="42" class="out" text-anchor="middle">sensor signal</text>
+  <text x="490" y="62" class="sm" text-anchor="middle">engine noise + knock</text>
+  <path class="acc" d="M490 70 V86" marker-end="url(#ks-a)"/>
+  <rect class="fill" x="360" y="88" width="260" height="50" rx="4"/>
+  <text x="490" y="110" class="out" text-anchor="middle">band-pass</text>
+  <text x="490" y="130" class="sm" text-anchor="middle">around the knock frequency</text>
+  <path class="acc" d="M490 138 V154" marker-end="url(#ks-a)"/>
+  <rect class="fill" x="360" y="156" width="260" height="50" rx="4"/>
+  <text x="490" y="178" class="out" text-anchor="middle">crank-angle window</text>
+  <text x="490" y="198" class="sm" text-anchor="middle">after each cylinder's TDC</text>
+  <path class="acc" d="M490 206 V222" marker-end="url(#ks-a)"/>
+  <rect class="fill" x="360" y="224" width="260" height="50" rx="4"/>
+  <text x="490" y="246" class="out" text-anchor="middle">compare</text>
+  <text x="490" y="266" class="sm" text-anchor="middle">with a threshold</text>
+  <path class="acc" d="M490 274 V290" marker-end="url(#ks-a)"/>
+  <rect class="box" x="360" y="292" width="260" height="50" rx="4"/>
+  <text x="490" y="314" class="out" text-anchor="middle">knock: retard the spark</text>
+  <text x="490" y="334" class="sm" text-anchor="middle">section 06</text>
+</svg>

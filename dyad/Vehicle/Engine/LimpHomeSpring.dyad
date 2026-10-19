@@ -1,0 +1,35 @@
+"""
+The return spring of an electronic throttle, with its limp-home position.
+
+    tau = T_pre tanh((phi_rel - phi_lh) / eps) + c (phi_rel - phi_lh)
+
+Unpowered, an electronic throttle must not slam shut, or a motor failure would stall the engine.
+Two preloaded springs therefore hold the plate at the limp-home position `phi_lh`, a few degrees
+open: above it the return spring pulls toward closed, below it the limp-home spring pushes toward
+open, each starting from its preload `T_pre`. The motor works against that preload in both
+directions, which is why the position loop needs integral action. The preload's change of sign
+at `phi_lh` is smoothed over `eps` so the solver never steps across a jump (plan S7).
+
+`phi_rel` is the plate angle from the closed stop, `spline_b` relative to `spline_a`. All values
+are assumed.
+"""
+component LimpHomeSpring
+  extends RotationalComponents.Interfaces.PartialCompliant
+  "Limp-home plate angle from the closed stop, 6 deg (assumed)"
+  parameter phi_lh::Angle = 0.10472
+  "Spring preload at the limp-home position (assumed)"
+  parameter T_pre::Torque = 0.25
+  "Spring rate (assumed)"
+  parameter c::RotationalSpringConstant = 0.1
+  "Width over which the preload changes sign (assumed)"
+  parameter eps::Angle = 0.0035
+relations
+  tau = T_pre * tanh((phi_rel - phi_lh) / eps) + c * (phi_rel - phi_lh)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Spring.svg"}},
+  "_links": {
+    "spline_a": {"Dyad": {"placement": {"icon": {"iconName": "spline_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "spline_b": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

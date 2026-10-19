@@ -1,0 +1,133 @@
+"""
+A port fuel injector: solenoid, needle and spray orifice, from the electrical terminals to the
+fuel mass flow.
+
+    Solenoid -> armature and needle (Mass) <- preloaded return Spring
+                needle between two ElastoGap stops: the seat at lift 0, the armature stop at lift_max
+    A_open  = min(pi d_seat lift, A_orifice)
+    mdot_f  = C_d A_open sqrt(2 rho_f dp_rail)
+
+The needle cannot leave its seat until the magnetic force beats the spring preload, and it stops
+against the armature stop at `lift_max`, the 0.05 mm of deck slide 43. Fuel flows through the
+smaller of the annulus the needle uncovers and the spray orifices, so at full lift the flow is the
+static flow and does not depend on the needle position. `A_orifice` is derived from the Bosch EV14
+static flow, 146 cm3/min at 3 bar, which the full-lift flow therefore reproduces at
+the rated pressure.
+
+The stops are stiff spring-dampers, so a lift trace overshoots the stop by under 1 % on impact. The
+fuel pressure on the closed seat is folded into the spring preload. Every mechanical and magnetic
+value except the coil resistance is assumed and tuned so the dead time, the offset of the
+fuel-per-pulse line, lands in the EV14 table's band.
+"""
+component FuelInjector
+  "Positive electrical terminal"
+  p = Pin() {^p}
+  "Negative electrical terminal"
+  n = Pin() {^n}
+  "Fuel rail pressure above the manifold [Pa]"
+  dp_rail = RealInput() {^dp_rail}
+  "Fuel mass flow through the nozzle [kg/s]"
+  mdot_f = RealOutput() {^mdot_f}
+  "Needle lift off the seat [m]"
+  lift = RealOutput() {^lift}
+  solenoid = VehicleSystemsComponents.Vehicle.Engine.Solenoid(R = R, L_inf = L_inf, L_0 = L_0, g_0 = g_0, g_max = lift_max + g_res, psi = initial 0) {^solenoid}
+  "Armature and needle as one body"
+  needle = TranslationalComponents.Components.Mass(m = m, L = 0, s = initial -F_pre / c_stop, v = initial 0) {^needle}
+  "Return spring, compressed by F_pre with the needle on its seat"
+  spring = TranslationalComponents.Components.Spring(c = c_spring, s_rel0 = -F_pre / c_spring) {^spring}
+  "Valve seat: the needle cannot go below lift 0"
+  seat = TranslationalComponents.Components.ElastoGap(c = c_stop, d = d_stop, s_rel0 = 0) {^seat}
+  "Armature stop: the needle cannot go above lift_max"
+  stop = TranslationalComponents.Components.ElastoGap(c = c_stop, d = d_stop, s_rel0 = -lift_max) {^stop}
+  housing = TranslationalComponents.Components.Fixed() {^housing}
+  lift_sensor = TranslationalComponents.Sensors.PositionSensor() {^lift_sensor}
+  "Sink for the stops' contact losses"
+  ambient = ThermalComponents.Sources.FixedTemperature(T = 293.15) {^ambient}
+  "Winding resistance, 12 ohm (Bosch EV14 datasheet)"
+  parameter R::Resistance = 12.0
+  "Inductance that does not depend on the gap (assumed)"
+  parameter L_inf::Inductance = 2.88e-3
+  "Gap-dependent inductance scale (assumed)"
+  parameter L_0::Inductance = 28.8e-3
+  "Gap length at which the gap-dependent inductance halves (assumed)"
+  parameter g_0::Length = 0.1e-3
+  "Residual air gap with the armature on its stop (assumed)"
+  parameter g_res::Length = 0.1e-3
+  "Needle travel to the armature stop, 0.05 mm (deck slide 43)"
+  parameter lift_max::Length = 0.05e-3
+  "Armature and needle mass (assumed)"
+  parameter m::Dyad.Mass = 3e-3
+  "Return spring rate (assumed)"
+  parameter c_spring::TranslationalSpringConstant = 1e4
+  "Spring preload with the needle seated, including the fuel pressure on the seat (assumed)"
+  parameter F_pre::Dyad.Force = 6.97
+  "Contact stiffness of the seat and the stop (assumed)"
+  parameter c_stop::TranslationalSpringConstant = 1e9
+  "Contact damping of the seat and the stop, near critical for the needle mass (assumed)"
+  parameter d_stop::TranslationalDampingConstant = 3000.0
+  "Seat diameter whose annulus the needle uncovers (assumed)"
+  parameter d_seat::Length = 1.3e-3
+  "Nozzle discharge coefficient (assumed)"
+  parameter C_d::Real = 0.7
+  "Fuel density (textbook)"
+  parameter rho_f::Density = 740.0
+  "Static flow at full lift and the rated pressure, 146 cm3/min (Bosch EV14 datasheet)"
+  parameter q_static::VolumeFlowRate = 146e-6 / 60
+  "Pressure at which q_static is rated, 3 bar (Bosch EV14 datasheet)"
+  parameter dp_rated::Pressure = 3e5
+  "Spray-orifice area that passes q_static at dp_rated (derived)"
+  final parameter A_orifice::Area = rho_f * q_static / (C_d * sqrt(2 * rho_f * dp_rated))
+  "Open flow area"
+  variable A_open::Area
+relations
+  connect(p, solenoid.p) {^id1}
+  connect(solenoid.n, n) {^id2}
+  connect(solenoid.support, housing.flange) {^id3}
+  connect(solenoid.flange, needle.flange_b) {^id4}
+  connect(housing.flange, spring.flange_a) {^id5}
+  connect(spring.flange_b, needle.flange_a) {^id6}
+  connect(housing.flange, seat.flange_a) {^id7}
+  connect(seat.flange_b, needle.flange_a) {^id8}
+  connect(needle.flange_b, stop.flange_a) {^id9}
+  connect(stop.flange_b, housing.flange) {^id10}
+  connect(seat.heat_port, ambient.port) {^id11}
+  connect(stop.heat_port, ambient.port) {^id12}
+  connect(needle.flange_a, lift_sensor.flange) {^id13}
+  connect(lift_sensor.s, lift) {^id14}
+  A_open = min(pi * d_seat * max(lift_sensor.s, 0), A_orifice)
+  mdot_f = C_d * A_open * sqrt(2 * rho_f * max(dp_rail, 0))
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/FuelInjector.svg"}
+  },
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 250, "y1": -50, "x2": 350, "y2": 50}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 650, "y1": -50, "x2": 750, "y2": 50}}}},
+    "dp_rail": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "mdot_f": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}},
+    "lift": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "solenoid": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 150, "x2": 450, "y2": 300}}}},
+    "needle": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 400, "x2": 700, "y2": 550}}}},
+    "spring": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 400, "x2": 450, "y2": 550}}}},
+    "seat": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 600, "x2": 450, "y2": 750}}}},
+    "stop": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 600, "x2": 925, "y2": 750}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 75, "y1": 600, "x2": 225, "y2": 750}}}},
+    "lift_sensor": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 175, "x2": 700, "y2": 325, "rot": 270}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 780, "x2": 700, "y2": 930}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 100}, {"x": 375, "y": 100}], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 375, "y": 340}, {"x": 510, "y": 340}, {"x": 510, "y": 100}, {"x": 700, "y": 100}], "E": 2}], "path": {}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 225}], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 225}, {"x": 480, "y": 370}, {"x": 740, "y": 370}, {"x": 740, "y": 475}], "E": 2}], "path": {}}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 475}], "E": 2}], "path": {}}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 675}], "E": 2}], "path": {}}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 675}, {"x": 500, "y": 475}], "E": 2}], "path": {}}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 760, "y": 475}, {"x": 760, "y": 675}], "E": 2}], "path": {}}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 945, "y": 675}, {"x": 945, "y": 590}, {"x": 150, "y": 590}], "E": 2}], "path": {}}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 975}, {"x": 720, "y": 975}, {"x": 720, "y": 855}], "E": 2}], "path": {}}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 775, "y": 855}], "E": 2}], "path": {}}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 530, "y": 475}, {"x": 530, "y": 350}, {"x": 625, "y": 350}], "E": 2}], "path": {}}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 625, "y": 150}, {"x": 800, "y": 150}, {"x": 800, "y": 300}], "E": 2}], "path": {}}}
+  }
+}
+end

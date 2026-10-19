@@ -1,0 +1,38 @@
+component AirPathStep
+  throttle_cmd = BlockComponents.Sources.Step(offset = 0, height = 0.005, start_time = 1) {^throttle_cmd}
+  "800 rpm"
+  speed = BlockComponents.Sources.Constant(k = 83.776) {^speed}
+  no_booster = BlockComponents.Sources.Constant(k = 0) {^no_booster}
+  throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle() {^throttle}
+  cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow() {^cylinders}
+  manifold = Manifold() {^manifold}
+relations
+  connect(throttle_cmd.y, throttle.u_thr) {^w01}
+  connect(speed.y, cylinders.omega) {^w02}
+  connect(no_booster.y, manifold.mdot_bst) {^w03}
+  connect(throttle.mdot_thr, manifold.mdot_thr) {^w04}
+  connect(cylinders.mdot_cyl, manifold.mdot_cyl) {^w05}
+  connect(manifold.p_m, throttle.p_m, cylinders.p_m) {^w06}
+  initial manifold.p = 101325
+metadata {
+  "_links": {
+    "throttle_cmd": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 130, "x2": 150, "y2": 230}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 740, "x2": 150, "y2": 840}}}},
+    "no_booster": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 450, "x2": 150, "y2": 550}}}},
+    "throttle": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 150, "x2": 450, "y2": 250}}}},
+    "cylinders": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 720, "x2": 450, "y2": 820}}}},
+    "manifold": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 350, "x2": 800, "y2": 650}}}},
+    "w01": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w02": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w03": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w04": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 525, "y": 200}, {"x": 525, "y": 425}], "E": 2}]}},
+    "w05": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 525, "y": 770}, {"x": 525, "y": 575}], "E": 2}]}},
+    "w06": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 900, "y": 300}, {"x": 300, "y": 300}, {"x": 300, "y": 220}], "E": 2}, {"S": -1, "M": [{"x": 900, "y": 705}, {"x": 300, "y": 705}, {"x": 300, "y": 750}], "E": 3}], "junctions": [{"x": 900, "y": 500}]}}
+  }
+}
+end
+
+analysis AirPathStepTransient
+  extends TransientAnalysis(stop = 3)
+  model = AirPathStep()
+end

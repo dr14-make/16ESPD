@@ -21,6 +21,8 @@ include("test_internals.jl")
 include("Hello_test.jl")
 end
 include("HandsOn/tests.jl")
+include("HandsOn02/tests.jl")
 include("Lecture1/tests.jl")
+include("Lecture2/tests.jl")
 include("Roadster/tests.jl")
 include("Vehicle/tests.jl")

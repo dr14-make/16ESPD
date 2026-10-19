@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 470" width="780" height="470">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .group { fill: none; stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 6 5; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .abbr { font-size: 14px; font-weight: 600; fill: #1f5fa8; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-warn { stroke: #a75d00; stroke-width: 2.5; fill: none; stroke-dasharray: 7 5; }
+    .f-lbl { font-size: 18px; font-weight: 600; font-style: italic; fill: #16202c; }
+    .f-lbl-warn { font-size: 18px; font-weight: 600; font-style: italic; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="as-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="as-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <!-- inputs from above -->
+  <text class="lbl" x="200" y="22" text-anchor="middle">other sensors, ECUs</text>
+  <text class="abbr" x="200" y="40" text-anchor="middle">SE / ECU</text>
+  <path class="arrow" d="M200 48 V98 H314" marker-end="url(#as-ink)"/>
+  <text class="lbl" x="390" y="22" text-anchor="middle">switch</text>
+  <text class="abbr" x="390" y="40" text-anchor="middle">SA</text>
+  <path class="arrow" d="M390 48 V76" marker-end="url(#as-ink)"/>
+
+  <!-- ECU -->
+  <rect class="box-accent" x="320" y="82" width="140" height="64" rx="4"/>
+  <text x="390" y="114" text-anchor="middle" font-size="20" font-weight="600">ECU</text>
+  <text class="lbl" x="390" y="134" text-anchor="middle">control unit</text>
+
+  <!-- display -->
+  <path class="arrow" d="M425 146 V184" marker-end="url(#as-ink)"/>
+  <rect class="box" x="370" y="190" width="110" height="42" rx="4"/>
+  <text x="425" y="216" text-anchor="middle" font-size="16">display <tspan class="abbr">DPL</tspan></text>
+
+  <!-- sensor SE: measuring sensor and adapter circuit -->
+  <rect class="group" x="40" y="168" width="220" height="168" rx="6"/>
+  <text class="abbr" x="48" y="356">SE</text>
+  <text class="lbl" x="76" y="356">sensor</text>
+  <rect class="box" x="60" y="184" width="180" height="52" rx="4"/>
+  <text x="150" y="208" text-anchor="middle" font-size="16">adapter circuit</text>
+  <text class="abbr" x="150" y="227" text-anchor="middle">AD</text>
+  <rect class="box" x="60" y="268" width="180" height="52" rx="4"/>
+  <text x="150" y="292" text-anchor="middle" font-size="16">measuring sensor</text>
+  <text class="abbr" x="150" y="311" text-anchor="middle">MS</text>
+  <path class="arrow" d="M150 268 V242" marker-end="url(#as-ink)"/>
+  <path class="arrow" d="M150 184 V124 H314" marker-end="url(#as-ink)"/>
+  <text class="f-lbl" x="160" y="158">E</text>
+  <text class="lbl" x="176" y="158">electrical quantity</text>
+
+  <!-- disturbances -->
+  <path class="arrow-warn" d="M310 210 H248" marker-end="url(#as-warn)"/>
+  <path class="arrow-warn" d="M310 294 H248" marker-end="url(#as-warn)"/>
+  <text class="f-lbl-warn" x="318" y="216">Z</text>
+  <text class="f-lbl-warn" x="318" y="300">Z</text>
+  <text class="lbl" x="338" y="300" fill="#a75d00">disturbance</text>
+
+  <!-- actuator AC: driver and final controlling element -->
+  <rect class="group" x="520" y="168" width="220" height="168" rx="6"/>
+  <text class="abbr" x="528" y="356">AC</text>
+  <text class="lbl" x="556" y="356">actuator</text>
+  <rect class="box" x="540" y="184" width="180" height="52" rx="4"/>
+  <text x="630" y="208" text-anchor="middle" font-size="16">driver</text>
+  <text class="abbr" x="630" y="227" text-anchor="middle">D</text>
+  <rect class="box" x="540" y="268" width="180" height="52" rx="4"/>
+  <text x="630" y="292" text-anchor="middle" font-size="16">final controlling element</text>
+  <text class="abbr" x="630" y="311" text-anchor="middle">FCE</text>
+  <path class="arrow" d="M460 114 H630 V178" marker-end="url(#as-ink)"/>
+  <path class="arrow" d="M630 236 V262" marker-end="url(#as-ink)"/>
+
+  <!-- vehicle closes the loop -->
+  <rect class="box-accent" x="310" y="384" width="160" height="56" rx="28"/>
+  <text x="390" y="418" text-anchor="middle" font-size="20" font-weight="600">vehicle</text>
+  <path class="arrow" d="M630 320 V412 H476" marker-end="url(#as-ink)"/>
+  <path class="arrow" d="M310 412 H150 V326" marker-end="url(#as-ink)"/>
+  <text class="f-lbl" x="160" y="394">Φ</text>
+  <text class="lbl" x="178" y="394">physical quantity</text>
+</svg>
