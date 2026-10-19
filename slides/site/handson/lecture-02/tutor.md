@@ -19,7 +19,7 @@ Students follow the [student guide](./): it holds every instruction, the theory 
 
 ### Time
 
-About 90 minutes. Step 07 only if time is left.
+About 90 minutes. Step 07 is a bonus task for after the session.
 
 | Step | Min | Split |
 | --- | --: | --- |
@@ -233,13 +233,29 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 **Where students stall:** a base of `main` while hands-on 1's pull request is still open: the pull request then shows hands-on 1's commits too. The base is the branch `handson-02` was created from.
 
-## 07 WLTC {#wltc}
+## 07 Bonus: drive the WLTC {#wltc}
 
-**Only if time allows.** If the session has no room, point students at the prepared notebook and stop at the hand-in.
+**Not in the session.** An extra task for extra points, done after step 06 and handed in with the same pull request. Announce it at the hand-in and point at the guide; take questions in the next session.
 
-**Say:** three additions, all things they have seen. The driver is the cruise controller of Lecture 1. The gearbox is the driveline of hands-on 1 with a choice of ratios. The trace is a table of speed against time.
+**Say:** the label is not a cruise number, it is a 30-minute trace. Drive it with two things you built: Lecture 1's cruise controller as the driver, your car as the car. The controller's output is an effort from −1 to +1; above zero it is the pedal, below zero the brake.
 
-**Open:** the whole step depends on task 6 (scope B: gearbox, shift schedule, PI driver, WLTC class 3 trace from DieselNet): the model names, the checkpoint over the cycle, and a real 1.5 L car's label figure with its source.
+**How it is graded,** each from the pull request's `Bonus: WLTC` section:
+
+1. **Tracking:** the speed-and-target plot and the error plot, and the share of the run inside ±2 km/h, ±1 s: at least TODO(wltc-bonus) %.
+2. **Label numbers:** L/100 km and g CO₂/km within TODO(wltc-bonus) of the reference, with fuel and distance stated. The distance should be 23.27 km within about 1 %; far off, criterion 1 cannot hold either.
+3. **The paragraph:** credit for any two of the CVT's 1800 rpm floor (step 05 at 50 km/h: 3.7 against 3.3 L/100 km), maps from another engine, a hot start where the test starts cold; lossless CVT, no auxiliaries and the car's mass are fine extras.
+
+A run of the Low and Medium phases only (`stop = 1022`) earns partial credit.
+
+**Common failures:**
+
+- **No brake path.** Only the positive part wired, or `F_brake` held at `Constant(0)` from step 06. The car cannot slow as fast as the trace (1.5 m/s² at 278 s); it overshoots every deceleration and the error plot shows negative spikes before each stop.
+- **Integrator wind-up at stops.** A controller without step 6d's clamping, or with the limits left at ±1e300: while the brake is saturated the integrator keeps winding negative, and the next launch sits on the brake for seconds. The tracking plot shows the car leaving late after every stop. Fix: limits −1 and 1, and the clamp.
+- **Dividing by 23.27 km** instead of the distance driven. A lagging car drives less and looks more frugal; ask for `dist_km`.
+- **Lecture 1's gains and seeds.** `k = 56` was N·m per km/h; on a ±1 effort it slams pedal and brake. And `xd0 = -90` was the seed for a 90 km/h cruise; from rest it is 0, else the first instant carries a large D kick.
+- **The sign of the brake gain.** `to_brake` takes the negative part, so its gain is −`F_brake_max`; a positive gain gives a negative force, which `RoadBrake` treats as released.
+
+**Where the numbers come from:** `HandsOn02.MappedCarWLTCTransient` on `MappedCarWithBrake`, the "Hands-on 02 WLTC" testset: TODO(wltc-bonus) the reference gains, run time, band share, distance, L/100 km and g CO₂/km, and the Low-and-Medium figures. A quasi-static estimate with an ideal CVT on the minimum-fuel line gives 4.93 L/100 km; a figure below that means the accounting is wrong. Plan: `docs/lecture-02-handson-step07-wltc-plan.md`.
 
 ## Wrap-up {#wrap-up}
 
