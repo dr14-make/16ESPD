@@ -92,8 +92,9 @@ routeAlias: otto-cycle
 
 <div class="text-sm">
 
-1–2 isentropic compression · 2–3 constant-volume heat addition (combustion) ·
-3–4 isentropic expansion · 4–1 constant-volume heat rejection, standing in for exhaust and intake.
+0–1 intake at ambient pressure · 1–2 isentropic compression · 2–3 constant-volume heat addition
+(combustion) · 3–4 isentropic expansion · 4–1 constant-volume heat rejection (exhaust valve opens) ·
+1–0 exhaust at ambient pressure.
 Compression ratio $\varepsilon = V_{\text{bdc}} / V_{\text{tdc}} = (V_{\text{swept}} + V_{\text{tdc}}) / V_{\text{tdc}}$.
 
 </div>
@@ -110,6 +111,11 @@ heating instead of a spark. That is the Diesel cycle, two slides on. The fuel is
 into the cylinder, so combustion happens at roughly constant pressure while the piston moves.
 
 V tdc is the clearance volume, what is left when the piston is at the top.
+
+The dotted line along the bottom is the gas exchange: the intake stroke from 0 to 1 draws fresh
+charge in at ambient pressure, and the exhaust stroke from 1 back to 0 pushes the burned gas out.
+In the ideal cycle both run at the same pressure, so together they do no net work; in a real
+throttled engine the intake runs below ambient, and that pumping loop costs work.
 
 The loop is the ideal air-standard Otto cycle from notebook 02, "The cycle and the spark": a
 compression ratio of 10.5, intake at ambient, and the heat of a stoichiometric charge burned
@@ -181,6 +187,7 @@ routeAlias: diesel-cycle
   the volume grows
 - **4–5** adiabatic expansion: the piston moves from TDC to BDC and delivers power
 - **5–2** isochoric heat rejection at constant volume
+- **2–1** exhaust
 
 </div>
 </div>

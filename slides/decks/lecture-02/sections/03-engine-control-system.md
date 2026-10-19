@@ -35,6 +35,12 @@ routeAlias: ecs-structure
 
 <CardExport notebook="12-mapped-engine" name="torque-map" height="21rem" />
 
+<div class="text-sm">
+
+A calibration map: engine torque over manifold pressure and engine speed (hands-on engine, EPA data).
+
+</div>
+
 </div>
 <div>
 
