@@ -1,83 +1,46 @@
 """
-Bonus bench: the Lecture 1 PID drives the mapped-engine CVT car over a speed trace.
+Bonus bench: the Lecture 1 step 6d PID drives the mapped-engine CVT car over the WLTC trace.
 
-The controller emits one normalized driver demand. Two limiters split positive demand to the
-accelerator and negative demand to a service-brake command, so the actuators cannot overlap.
-The default gains were tuned once against the complete WLTC class 3b cycle: gain was raised
-until hard accelerations stayed near the tolerance band, integral time was shortened to remove
-sustained error, and derivative time was then raised to limit overshoot.
+The driver emits one effort from -1 to +1. Two limiters split it: the positive part goes to the
+pedal, the negative part, times `F_brake_max`, to the brake, so pedal and brake never act
+together. Two integrators add up the fuel in liters and the distance in kilometers; the label
+figures are their ratio at the end of the run.
 """
 component MappedCarWLTC
-  "Controller gain [normalized demand per km/h] (whole-cycle tuning)"
+  "Controller gain [effort per km/h] (tuned once on the full cycle)"
   parameter k::Real = 0.14
-  "Controller integral time (whole-cycle tuning)"
+  "Controller integral time (tuned once on the full cycle)"
   parameter Ti::Time = 3.5
-  "Controller derivative time (whole-cycle tuning)"
+  "Controller derivative time (tuned once on the full cycle)"
   parameter Td::Time = 0.7
-  "Brake force at a normalized demand of -1 [N] (firm 0.3 g stop assumption)"
+  "Brake force at an effort of -1 [N] (firm 0.3 g stop assumption)"
   parameter F_brake_max::Force = 4000
   "Initial idle speed [rpm] (MappedCarBrakeStop reference run)"
   parameter rpm0::Real = 775
   "Initial idle manifold pressure [Pa] (MappedCarBrakeStop reference run)"
   parameter p_m0::Pressure = 33600
 
-  "Prescribed speed [km/h]"
-  v_ref_kmh = RealOutput() {^v_ref_kmh}
-  "Measured speed [km/h]"
-  v_kmh = RealOutput() {^v_kmh}
-  "Signed normalized driver demand"
-  driver_demand = RealOutput() {^driver_demand}
-  "Fuel consumed since cycle start [L]"
-  fuel_l = RealOutput() {^fuel_l}
-  "Distance driven since cycle start [km]"
-  distance_km = RealOutput() {^distance_km}
-  "Cumulative fuel consumption [L/100 km]"
-  fuel_l_per_100km = RealOutput() {^fuel_l_per_100km}
-  "Cumulative carbon dioxide [g/km]"
-  co2_g_per_km = RealOutput() {^co2_g_per_km}
-
   trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
-  controller = VehicleSystemsComponents.Lecture1.CruiseController(k = k, Ti = Ti, Td = Td, y_min = -1, y_max = 1) {^controller}
-  pedal = BlockComponents.Nonlinear.Limiter(y_min = 0, y_max = 1) {^pedal}
+  "The car starts at rest and the derivative acts on the measurement only (wd = 0), so the filter starts at rest"
+  driver = VehicleSystemsComponents.Lecture1.Step06d.CruiseController(k = k, Ti = Ti, Td = Td, xi0 = 0, xd0 = 0, y_min = -1, y_max = 1) {^driver}
+  to_pedal = BlockComponents.Nonlinear.Limiter(y_min = 0, y_max = 1) {^to_pedal}
   brake_part = BlockComponents.Nonlinear.Limiter(y_min = -1, y_max = 0) {^brake_part}
-  brake_gain = BlockComponents.Math.Gain(k = -F_brake_max) {^brake_gain}
-  car = VehicleSystemsComponents.HandsOn02.MappedCarWithBrake(ratio_initial = 12) {^car}
-
-  "L/h to L: the time base is seconds"
-  fuel_integrator = BlockComponents.Continuous.Integrator(k = 1 / 3600, x0 = 0) {^fuel_integrator}
-  "km/h to km: the time base is seconds"
-  distance_integrator = BlockComponents.Continuous.Integrator(k = 1 / 3600, x0 = 0) {^distance_integrator}
-  "Avoid an undefined 0/0 display before the car has moved"
-  distance_floor = BlockComponents.Sources.Constant(k = 1e-9) {^distance_floor}
-  safe_distance = BlockComponents.Math.Max() {^safe_distance}
-  consumption_ratio = BlockComponents.Math.Division() {^consumption_ratio}
-  to_l_per_100km = BlockComponents.Math.Gain(k = 100) {^to_l_per_100km}
-  "2302 g CO2/L petrol (Hands-on 02 step 05)"
-  to_co2 = BlockComponents.Math.Gain(k = 23.02) {^to_co2}
+  to_brake = BlockComponents.Math.Gain(k = -F_brake_max) {^to_brake}
+  car = VehicleSystemsComponents.HandsOn02.MappedCarWithBrake() {^car}
+  "L/h into liters: the time base is seconds"
+  fuel_L = BlockComponents.Continuous.Integrator(k = 1 / 3600, x0 = 0) {^fuel_L}
+  "km/h into kilometers: the time base is seconds"
+  dist_km = BlockComponents.Continuous.Integrator(k = 1 / 3600, x0 = 0) {^dist_km}
 relations
-  connect(trace.y, controller.u_s) {^w1}
-  connect(car.v_kmh, controller.u_m) {^w2}
-  connect(controller.y, pedal.u) {^w3}
-  connect(controller.y, brake_part.u) {^w4}
-  connect(pedal.y, car.pedal) {^w5}
-  connect(brake_part.y, brake_gain.u) {^w6}
-  connect(brake_gain.y, car.F_brake) {^w7}
-
-  connect(trace.y, v_ref_kmh) {^w8}
-  connect(car.v_kmh, v_kmh) {^w9}
-  connect(controller.y, driver_demand) {^w10}
-  connect(car.fuel_lph, fuel_integrator.u) {^w11}
-  connect(fuel_integrator.y, fuel_l) {^w12}
-  connect(car.v_kmh, distance_integrator.u) {^w13}
-  connect(distance_integrator.y, distance_km) {^w14}
-  connect(distance_integrator.y, safe_distance.u1) {^w15}
-  connect(distance_floor.y, safe_distance.u2) {^w16}
-  connect(fuel_integrator.y, consumption_ratio.u1) {^w17}
-  connect(safe_distance.y, consumption_ratio.u2) {^w18}
-  connect(consumption_ratio.y, to_l_per_100km.u) {^w19}
-  connect(to_l_per_100km.y, fuel_l_per_100km) {^w20}
-  connect(to_l_per_100km.y, to_co2.u) {^w21}
-  connect(to_co2.y, co2_g_per_km) {^w22}
+  connect(trace.y, driver.u_s) {^w1}
+  connect(car.v_kmh, driver.u_m) {^w2}
+  connect(driver.y, to_pedal.u) {^w3}
+  connect(driver.y, brake_part.u) {^w4}
+  connect(to_pedal.y, car.pedal) {^w5}
+  connect(brake_part.y, to_brake.u) {^w6}
+  connect(to_brake.y, car.F_brake) {^w7}
+  connect(car.fuel_lph, fuel_L.u) {^w8}
+  connect(car.v_kmh, dist_km.u) {^w9}
 
   initial car.body.mass.s = 0
   initial car.body.mass.v = 0
@@ -88,32 +51,23 @@ relations
 metadata {
   "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
   "_links": {
-    "trace": {"Dyad": {"placement": {"diagram": {"x1": 50, "x2": 150, "y1": 220, "y2": 320}}}},
-    "controller": {"Dyad": {"placement": {"diagram": {"x1": 230, "x2": 350, "y1": 210, "y2": 330}}}},
-    "pedal": {"Dyad": {"placement": {"diagram": {"x1": 410, "x2": 500, "y1": 160, "y2": 250}}}},
-    "brake_part": {"Dyad": {"placement": {"diagram": {"x1": 410, "x2": 500, "y1": 310, "y2": 400}}}},
-    "brake_gain": {"Dyad": {"placement": {"diagram": {"x1": 540, "x2": 630, "y1": 310, "y2": 400}}}},
-    "car": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 850, "y1": 210, "y2": 360}}}},
-    "fuel_integrator": {"Dyad": {"placement": {"diagram": {"x1": 610, "x2": 690, "y1": 500, "y2": 580}}}},
-    "distance_integrator": {"Dyad": {"placement": {"diagram": {"x1": 610, "x2": 690, "y1": 620, "y2": 700}}}},
-    "distance_floor": {"Dyad": {"placement": {"diagram": {"x1": 390, "x2": 470, "y1": 760, "y2": 840}}}},
-    "safe_distance": {"Dyad": {"placement": {"diagram": {"x1": 510, "x2": 590, "y1": 730, "y2": 810}}}},
-    "consumption_ratio": {"Dyad": {"placement": {"diagram": {"x1": 650, "x2": 730, "y1": 750, "y2": 830}}}},
-    "to_l_per_100km": {"Dyad": {"placement": {"diagram": {"x1": 770, "x2": 850, "y1": 750, "y2": 830}}}},
-    "to_co2": {"Dyad": {"placement": {"diagram": {"x1": 880, "x2": 960, "y1": 840, "y2": 920}}}},
-    "v_ref_kmh": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 100, "y2": 180}, "diagram": {"x1": 950, "x2": 1050, "y1": 100, "y2": 180}}}},
-    "v_kmh": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 280}, "diagram": {"x1": 950, "x2": 1050, "y1": 200, "y2": 280}}}},
-    "driver_demand": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 300, "y2": 380}, "diagram": {"x1": 950, "x2": 1050, "y1": 300, "y2": 380}}}},
-    "fuel_l": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 530}, "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 530}}}},
-    "distance_km": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 550, "y2": 630}, "diagram": {"x1": 950, "x2": 1050, "y1": 550, "y2": 630}}}},
-    "fuel_l_per_100km": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 780}, "diagram": {"x1": 950, "x2": 1050, "y1": 700, "y2": 780}}}},
-    "co2_g_per_km": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 820, "y2": 900}, "diagram": {"x1": 950, "x2": 1050, "y1": 820, "y2": 900}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 880, "y": 285}, {"x": 880, "y": 430}, {"x": 290, "y": 430}], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 270}, {"x": 380, "y": 355}], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 180, "y": 270}, {"x": 180, "y": 140}], "E": 2}]}}, "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 370, "y": 270}, {"x": 370, "y": 340}], "E": 2}]}},
-    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 870, "y": 285}, {"x": 870, "y": 660}], "E": 2}]}}, "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 720, "y": 540}, {"x": 720, "y": 730}], "E": 2}]}}, "w18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}, "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 860, "y": 790}, {"x": 860, "y": 880}], "E": 2}]}}, "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+    "trace": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 140, "y1": 250, "y2": 350}}}},
+    "driver": {"Dyad": {"placement": {"diagram": {"x1": 220, "x2": 340, "y1": 240, "y2": 360}}}},
+    "to_pedal": {"Dyad": {"placement": {"diagram": {"x1": 420, "x2": 500, "y1": 180, "y2": 260}}}},
+    "brake_part": {"Dyad": {"placement": {"diagram": {"x1": 420, "x2": 500, "y1": 326, "y2": 406}}}},
+    "to_brake": {"Dyad": {"placement": {"diagram": {"x1": 560, "x2": 640, "y1": 326, "y2": 406}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 900, "y1": 180, "y2": 380}}}},
+    "dist_km": {"Dyad": {"placement": {"diagram": {"x1": 560, "x2": 640, "y1": 500, "y2": 580}}}},
+    "fuel_L": {"Dyad": {"placement": {"diagram": {"x1": 560, "x2": 640, "y1": 620, "y2": 700}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 940, "y": 272}, {"x": 940, "y": 460}, {"x": 280, "y": 460}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 300}, {"x": 380, "y": 220}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 300}, {"x": 380, "y": 366}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 246}, {"x": 970, "y": 600}, {"x": 500, "y": 600}, {"x": 500, "y": 660}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 940, "y": 272}, {"x": 940, "y": 480}, {"x": 520, "y": 480}, {"x": 520, "y": 540}], "E": 2}]}}
   }
 }
 end
@@ -127,7 +81,7 @@ analysis MappedCarWLTCTransient
 end
 
 analysis MappedCarWLTCLowMediumTransient
-  extends TransientAnalysis(stop = 589, saveat = 1.0, alg = ODEAlg.Rodas5P())
+  extends TransientAnalysis(stop = 1022, saveat = 1.0, alg = ODEAlg.Rodas5P())
   parameter k::Real = 0.14
   parameter Ti::Time = 3.5
   parameter Td::Time = 0.7

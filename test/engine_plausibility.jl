@@ -543,18 +543,36 @@ end
 end
 
 
-@testset "Hands-on 02 WLTC bonus" begin
-    run = mapped_engine_run(HandsOn02Car.MappedCarWLTCLowMediumTransient)
-    sol, m = run.sol, run.model
-    t = collect(0.0:0.1:589.0)
-    reference = vec(Array(sol(t, idxs = m.v_ref_kmh)))
-    speed = vec(Array(sol(t, idxs = m.v_kmh)))
-    error = speed .- reference
+# Share of samples inside the WLTC tolerance: ±2 km/h around the trace's extremes within ±1 s.
+function wltc_band_share(sol, m, T)
+    t = 0.0:0.1:T
+    speed = vec(Array(sol(t, idxs = m.car.v_kmh)))
+    target = vec(Array(sol(t, idxs = m.trace.y)))
+    window(i) = max(1, i - 10):min(length(t), i + 10)
+    inside = [minimum(target[window(i)]) - 2 <= speed[i] <= maximum(target[window(i)]) + 2
+              for i in eachindex(t)]
+    return count(inside) / length(t), maximum(abs.(speed .- target))
+end
 
+wltc_label(sol, m, T) = (km = sol(T, idxs = m.dist_km.y),
+                    l_per_100km = 100 * sol(T, idxs = m.fuel_L.y) / sol(T, idxs = m.dist_km.y))
+
+@testset "Hands-on 02 WLTC bonus" begin
+    low_medium = mapped_engine_run(HandsOn02Car.MappedCarWLTCLowMediumTransient)
+    sol, m = low_medium.sol, low_medium.model
     @test string(sol.retcode) == "Success"
-    @test sol(589.0, idxs = m.distance_km) ≈ 3.09604 atol = 5e-4
-    @test sol(589.0, idxs = m.fuel_l_per_100km) ≈ 6.25717 atol = 5e-4
-    @test maximum(abs.(error)) ≈ 2.22198 atol = 5e-3
-    @test sqrt(sum(abs2, error) / length(error)) ≈ 0.43280 atol = 5e-3
-    @test count(abs.(error) .<= 2.0) / length(error) > 0.99
+    @test wltc_label(sol, m, 1022.0).km ≈ 7.853 atol = 5e-3
+    @test wltc_label(sol, m, 1022.0).l_per_100km ≈ 5.593 atol = 5e-3
+    @test wltc_band_share(sol, m, 1022.0)[1] ≈ 0.9858 atol = 2e-3
+
+    full = mapped_engine_run(HandsOn02Car.MappedCarWLTCTransient)
+    sol, m = full.sol, full.model
+    figures = wltc_label(sol, m, 1800.0)
+    band, max_error = wltc_band_share(sol, m, 1800.0)
+    @test string(sol.retcode) == "Success"
+    @test figures.km ≈ 23.270 atol = 5e-3
+    @test figures.l_per_100km ≈ 5.218 atol = 5e-3
+    @test 2302 * figures.l_per_100km / 100 ≈ 120.1 atol = 0.05
+    @test band ≈ 0.9846 atol = 2e-3
+    @info "Hands-on 02 WLTC bonus" figures band max_error
 end

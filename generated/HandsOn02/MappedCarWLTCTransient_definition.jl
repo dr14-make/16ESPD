@@ -28,13 +28,12 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"k"::Float64 = 0.14
   var"Ti"::Float64 = 3.5
   var"Td"::Float64 = 0.7
-  # Bonus bench: the Lecture 1 PID drives the mapped-engine CVT car over a speed trace.
+  # Bonus bench: the Lecture 1 step 6d PID drives the mapped-engine CVT car over the WLTC trace.
   # 
-  # The controller emits one normalized driver demand. Two limiters split positive demand to the
-  # accelerator and negative demand to a service-brake command, so the actuators cannot overlap.
-  # The default gains were tuned once against the complete WLTC class 3b cycle: gain was raised
-  # until hard accelerations stayed near the tolerance band, integral time was shortened to remove
-  # sustained error, and derivative time was then raised to limit overshoot.
+  # The driver emits one effort from -1 to +1. Two limiters split it: the positive part goes to the
+  # pedal, the negative part, times `F_brake_max`, to the brake, so pedal and brake never act
+  # together. Two integrators add up the fuel in liters and the distance in kilometers; the label
+  # figures are their ratio at the end of the run.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn02.MappedCarWLTC(; name=:MappedCarWLTC)
 end
 
