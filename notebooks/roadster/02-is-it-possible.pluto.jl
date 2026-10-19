@@ -190,7 +190,7 @@ html_table(["Item", "Value", "Source"], [
     ("Drive", "rear-wheel drive, 2 rear motors, over 1 MW, about 1,400 N·m", "**P**"),
     ("Fans", "about 4 × 20 kW", "**M**"),
     ("Mass", "under 1,700 kg (Electrek), about 1,900 kg, about 2,350 kg (CellCog)", "**M**, conflicting"),
-    ("Video measurements", "kickflip top height 8.0 m, spin 177° per second; ramp shot falls at 2.3 g", "**M**"),
+    ("Video measurements", "kickflip top height 8.0 m, spin 177° per second", "**M**"),
     ("Not disclosed", "mass, tank pressure, battery size, thrust per nozzle, gear ratio", "**?**"),
 ]; widths = ["22%", "58%", "20%"])
 
@@ -343,51 +343,6 @@ everyday = let
         hop_kmh = 3.6 * paper.v_hop,
         weight_x = 4700 / 2000)
 end;
-
-# ╔═╡ 0a85f4c7-90ac-595f-b127-8474860e03df
-md"""
-## Warm-up: is the ramp video real time?
-
-A falling object is a clock. If a clip plays ``k`` times too fast, a fall on screen looks
-``k^2`` times too quick. **In words:** speed-up of the clip = √(measured fall ÷ real fall),
-``k = \sqrt{a / g}``. Frame-by-frame measurements give a fall of **2.3 g** in the ramp shot and
-**0.92 g** in the kickflip (third party, 15–20 % error).
-
-playback speed-up k $(@bind k_play Slider(0.8:0.02:2.0; default = 1.0, show_value = true))
-"""
-
-# ╔═╡ 532b5431-9db1-5e77-b0bc-66f8324ca14c
-warmup = (k_ramp = sqrt(2.3), k_kick = sqrt(0.92));
-
-# ╔═╡ 01c06c4a-585e-4cb2-b4a3-55d129695d50
-headline(abs(k_play - warmup.k_ramp) < 0.015 ?
-    "At k = $(k_play) the lines match: the ramp shot plays $(fmt(warmup.k_ramp, 1))× too fast" :
-    k_play < warmup.k_ramp ?
-    "At k = $(k_play) a real fall is still slower than the ramp shot" :
-    "At k = $(k_play) a real fall is now faster than the ramp shot")
-
-# ╔═╡ 213033f3-32af-536b-a121-8c95e70f4fd0
-let
-    tv = range(0, 0.8; length = 100)
-    measured = 0.5 .* 2.3 .* G0 .* tv .^ 2
-    real = 0.5 .* G0 .* (k_play .* tv) .^ 2
-    plt = plot(tv, measured; lw = 3, color = :black, label = "fall measured in the ramp shot",
-        xlabel = "Time in the video (s)", ylabel = "Distance fallen (m)", legend = :topleft,
-        size = (1200, 400), xlims = (0, 0.95))
-    plot!(plt, tv, real; lw = 3, ls = :dash, color = :steelblue,
-        label = "a real fall, played $(k_play)× fast")
-    mark!(plt, 0.8, measured[end], "ramp shot: $(fmt(measured[end], 1)) m"; valign = :bottom)
-    mark!(plt, 0.8, real[end], "real fall: $(fmt(real[end], 1)) m"; color = :steelblue,
-        valign = :top)
-    plt
-end
-
-# ╔═╡ 796e0f71-bc73-545d-8bc1-3375d8be9bcd
-md"""
-**Try this:** drag ``k`` to $(fmt(warmup.k_ramp)). The lines match, so the ramp shot plays
-$(fmt(warmup.k_ramp, 1))× too fast, and its speeds look $(fmt(warmup.k_ramp, 1))× too high. The
-kickflip gives ``k =`` $(fmt(warmup.k_kick)), close to real time.
-"""
 
 # ╔═╡ ca3fab0a-57b4-5859-b505-19746d073c33
 md"""
@@ -1470,14 +1425,11 @@ html_table(["", "Symbol", "Value"], [
 ]; widths = ["45%", "15%", "40%"])
 
 # ╔═╡ 25979fe7-5ceb-4fbc-8947-938728d24341
-let
-    flow, air = fmt(paper.mdot_hover, 0), fmt(paper.m_air, 0)
-    ideal, real = fmt(paper.t_hover_ideal, 1), fmt(paper.t_hover, 1)
-    md"""
-    **So what?** At $(flow) kg per second, the $(air) kg of air would last at most $(ideal) s.
-    In practice it is **$(real) s**: seconds, not minutes.
-    """
-end
+md"""
+**So what?** At $(fmt(paper.mdot_hover, 0)) kg per second, the $(fmt(paper.m_air, 0)) kg of air
+would last at most $(fmt(paper.t_hover_ideal, 1)) s. In practice it lasts
+**only $(fmt(paper.t_hover, 1)) s**: seconds, not minutes.
+"""
 
 # ╔═╡ 610466fd-c56a-459c-bd9c-1fbdd143a007
 details("Details: why the real hover is shorter", md"""
@@ -1705,8 +1657,6 @@ verdicts = let
     hop_ok = hop_run.apex.apex >= 7.5
     flies = isfinite(hover_run.time) && hover_run.time > 60
     (
-        warmup = (light = :no, claim = "Warm-up: the ramp shot plays in real time",
-            tesla = "shown as footage", model = "$(fmt(warmup.k_ramp, 1))× too fast"),
         tires = (light = tires_ok ? :yes : :no, claim = "1: 0–60 mph in 1 s on tires",
             tesla = "1.0 s", model = "$(fmt(tires.t60)) s",
             sentence = tires_ok ? "At this grip, the tires alone could do it." :
@@ -1870,11 +1820,6 @@ html_table(["check", "model", "reference", "tolerance"],
 # ╟─9c543dcc-f871-5328-901c-efe1abd6c9de
 # ╟─7780ed0f-6df7-4acc-b67a-4cb4a7c9f608
 # ╟─81a4f22b-73e4-4385-9c09-5cadf0bdf949
-# ╟─0a85f4c7-90ac-595f-b127-8474860e03df
-# ╟─532b5431-9db1-5e77-b0bc-66f8324ca14c
-# ╟─01c06c4a-585e-4cb2-b4a3-55d129695d50
-# ╟─213033f3-32af-536b-a121-8c95e70f4fd0
-# ╟─796e0f71-bc73-545d-8bc1-3375d8be9bcd
 # ╟─ca3fab0a-57b4-5859-b505-19746d073c33
 # ╟─ceba3a95-cacc-5e9b-9677-0c3d0016913f
 # ╟─e2facb87-8c7c-4e2b-813e-5b5661d79edd

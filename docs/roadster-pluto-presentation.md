@@ -18,7 +18,7 @@ the original plan.
 - **The scoreboard is a fixed panel** in the bottom-right corner, with the two car sliders (mass
   and drive layout) pinned directly under it, so they stay in reach in present mode.
 - **Narrative order:** introduction, the videos, the car in one picture, the words we use, knowns
-  and assumptions, a warm-up, then one section per Tesla claim (claim, physics check, model,
+  and assumptions, then one section per Tesla claim (claim, physics check, model,
   simulation, verdict), then the scoreboard and a summary.
 - **Written for beginners.** Short sentences, everyday words, one idea per slide. Every claim
   opens with an everyday comparison, every formula is said in words first, big numbers are
@@ -108,7 +108,6 @@ Each `##` heading is one slide in present mode, and each slide carries one idea.
 8. **How the simulations run:** each model is built once; a slider changes numbers in the ready
    model and runs it again. The rig, reference, grid, hint, `paper` and `everyday` cells sit
    under this slide and show only the build time.
-9. **Warm-up: is the ramp video real time?** k = √(a/g), with the playback slider.
 
 ### One section per claim
 
@@ -167,7 +166,6 @@ The sliders and their ranges are unchanged from the first version. They live in 
 slide of the claim they belong to:
 
 - **Car panel (global):** mass 1,700–2,350 kg, step 50, default 2,000; RWD or AWD.
-- **Warm-up:** playback factor k, 0.8–2.0.
 - **Claim 1:** `mu_A` 1.0–1.6 (1.26), `P_max` 0.5–2.0 MW (1.0), `CdA` 0.3–1.2 m² (0.6).
 - **Claim 2:** `fan_cmd` 0–1 (1), skirt gap 1–10 mm (3), `T_max` 8–20 kN·m (12).
 - **Claim 3:** p0 300–690 bar (380), V 200–600 L (600), n 1.0–1.4 (1.4), throat fixed or scaled.
@@ -209,7 +207,7 @@ of that cell or a reopen.
 A fixed `<aside>` in the bottom-right corner, about 320 px wide, rendered by one cell that depends
 on every section's result. It stays visible in present mode and when scrolling.
 
-- **Rows:** one per verdict slide plus the warm-up, top to bottom in story order, from the shared
+- **Rows:** one per verdict slide, top to bottom in story order, from the shared
   `verdicts` cell. Each row shows the claim, Tesla's value, the current model value and a
   verdict chip.
 - **Verdict chips:** green "yes", amber "partly", red "no", gray "—" for a value that is not
@@ -272,8 +270,6 @@ Status as built:
 4. **Hop ground contact:** fixed. The plain maximum is the apex, and `hop_apex` reads it on a
    dense grid.
 5. **Hover snapshot:** not needed.
-6. **Warm-up data (optional):** frame positions from the ramp clip, if a fit to real data is wanted
-   instead of the stated 2.3 g.
 
 Not needed: a burn-time parameter on the launch. The valve stays open past t60 in every
 configuration, so a cutoff would not change the verdict.
