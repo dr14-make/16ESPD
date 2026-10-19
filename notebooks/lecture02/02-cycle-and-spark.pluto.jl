@@ -125,6 +125,21 @@ begin
     loop_trace(c, name; kwargs...) = PP.scatter(;
         x = round.(1e6 .* c.V; digits = 3), y = round.(c.p ./ 1e5; digits = 3), mode = "lines",
         name, line = PP.attr(width = 3), kwargs...)
+
+    # The ideal loop closes at BDC; the intake and exhaust strokes run along ambient pressure
+    # between TDC and BDC and do no net work.
+    gas_exchange_trace(c; kwargs...) = PP.scatter(;
+        x = round.(1e6 .* [c.V[N_SEGMENT], c.V[1]]; digits = 3), y = round.([P_1, P_1] ./ 1e5; digits = 3),
+        mode = "lines", name = "intake / exhaust", showlegend = false,
+        line = PP.attr(width = 3, dash = "dot"), kwargs...)
+
+    corner_trace(points, labels) = PP.scatter(;
+        x = [round(1e6v; digits = 3) for (v, _) in points], y = [round(p / 1e5; digits = 3) for (_, p) in points],
+        text = labels, mode = "markers+text", textposition = "top right",
+        marker = PP.attr(size = 9, color = "black"), showlegend = false, hoverinfo = "skip")
+
+    stroke_note(x, y, text; kwargs...) =
+        PP.attr(; x, y, text, showarrow = false, font = PP.attr(size = 13), kwargs...)
 end
 
 # ╔═╡ 8e961556-33b7-4a94-90d8-c1aa2374d526
@@ -140,21 +155,26 @@ pressure of a real one; the fired cycle of task 6 will stand beside it.
 # ╔═╡ f51da762-8b3b-41e3-b41a-c8cb8883938e
 # ╠═╡ card = "otto-pv"
 let
+    V_tdc, V_bdc = 1e6 * otto.V[N_SEGMENT], 1e6 * otto.V[1]
     corners = (1, N_SEGMENT, N_SEGMENT + 2, length(otto.V) - 1)
-    labels = [(otto.V[k], otto.p[k], string(n)) for (n, k) in enumerate(corners)]
+    points = vcat([(otto.V[N_SEGMENT], P_1)], [(otto.V[k], otto.p[k]) for k in corners])
     PP.plot(
         [
-            loop_trace(otto, "Otto, r_c = $(RC_OTTO)"),
-            PP.scatter(; x = [round(1e6v; digits = 3) for (v, _, _) in labels],
-                y = [round(p / 1e5; digits = 3) for (_, p, _) in labels],
-                text = [l for (_, _, l) in labels], mode = "markers+text", textposition = "top right",
-                marker = PP.attr(size = 9, color = "black"), showlegend = false, hoverinfo = "skip"),
+            gas_exchange_trace(otto; line = PP.attr(width = 3, dash = "dot", color = "#636efa")),
+            loop_trace(otto, "Otto, r_c = $(RC_OTTO)"; line = PP.attr(width = 3, color = "#636efa")),
+            corner_trace(points, ["0", "1", "2", "3", "4"]),
         ],
         deck_layout(; xaxis_title = "cylinder volume [cm³]", yaxis_title = "pressure [bar]",
             showlegend = false,
-            annotations = [PP.attr(x = 0.97, y = 0.95, xref = "paper", yref = "paper", showarrow = false,
-                xanchor = "right", align = "right",
-                text = "r<sub>c</sub> = $(RC_OTTO)<br>η = 1 − r<sub>c</sub><sup>1−γ</sup> = $(round(100otto.efficiency; digits = 1)) %")]))
+            annotations = [
+                PP.attr(x = 0.97, y = 0.95, xref = "paper", yref = "paper", showarrow = false,
+                    xanchor = "right", align = "right",
+                    text = "r<sub>c</sub> = $(RC_OTTO)<br>η = 1 − r<sub>c</sub><sup>1−γ</sup> = $(round(100otto.efficiency; digits = 1)) %"),
+                stroke_note((V_tdc + V_bdc) / 2, P_1 / 1e5, "0→1 intake · 1→0 exhaust";
+                    yanchor = "top", yshift = -2),
+                stroke_note(200, 7, "1→2 compression"),
+                stroke_note(130, 40, "3→4 power"; xanchor = "left"),
+            ]))
 end
 
 # ╔═╡ f89f72ec-6fd7-4d0b-bd14-9436255e9162
@@ -169,20 +189,23 @@ the piston already moves costs some of what that ratio buys.
 # ╔═╡ 283a705e-5ab0-4310-bf4b-bc0d26b39971
 # ╠═╡ card = "diesel-pv"
 let
-    # Numbered as the deck's Diesel slide numbers them, 1–2 being the suction stroke.
+    # Numbered as the deck's Diesel slide numbers them: 1–2 suction, 2–1 exhaust.
+    V_tdc, V_bdc = 1e6 * diesel.V[N_SEGMENT], 1e6 * diesel.V[1]
     corners = (1, N_SEGMENT, N_SEGMENT + 2, length(diesel.V) - 1)
+    points = vcat([(diesel.V[N_SEGMENT], P_1)], [(diesel.V[k], diesel.p[k]) for k in corners])
     PP.plot(
         [
             loop_trace(otto, "Otto, r_c = $(RC_OTTO): η = $(round(100otto.efficiency; digits = 1)) %";
                 line = PP.attr(width = 2, dash = "dash", color = "gray")),
-            loop_trace(diesel, "Diesel, r_c = $(round(Int, RC_DIESEL)): η = $(round(100diesel.efficiency; digits = 1)) %"),
-            PP.scatter(; x = [round(1e6diesel.V[k]; digits = 3) for k in corners],
-                y = [round(diesel.p[k] / 1e5; digits = 3) for k in corners],
-                text = ["2", "3", "4", "5"], mode = "markers+text", textposition = "top right",
-                marker = PP.attr(size = 9, color = "black"), showlegend = false, hoverinfo = "skip"),
+            gas_exchange_trace(diesel; line = PP.attr(width = 3, dash = "dot", color = "#EF553B")),
+            loop_trace(diesel, "Diesel, r_c = $(round(Int, RC_DIESEL)): η = $(round(100diesel.efficiency; digits = 1)) %";
+                line = PP.attr(width = 3, color = "#EF553B")),
+            corner_trace(points, ["1", "2", "3", "4", "5"]),
         ],
         deck_layout(; xaxis_title = "cylinder volume [cm³]", yaxis_title = "pressure [bar]",
-            legend = PP.attr(x = 0.98, xanchor = "right", y = 0.98)))
+            legend = PP.attr(x = 0.98, xanchor = "right", y = 0.98),
+            annotations = [stroke_note((V_tdc + V_bdc) / 2, P_1 / 1e5, "1→2 suction · 2→1 exhaust";
+                yanchor = "top", yshift = -2)]))
 end
 
 # ╔═╡ a9055122-aff8-4359-814f-8bbd6e45bf38
