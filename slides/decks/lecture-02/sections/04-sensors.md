@@ -806,7 +806,7 @@ routeAlias: sensor-interface
 
 | Signal | Here | ECU check |
 |---|---|---|
-| ratiometric 0.5–4.5 V of a 5 V reference | TPS, MAP, rail | out of range: a short or an open wire |
+| ratiometric 0.5–4.5 V of a 5 V reference | TPS, MAP, fuel rail | out of range: a short or an open wire |
 | resistance in a divider | NTC | out of range; coolant ≈ intake air after a long soak |
 | pulse train, VR or Hall | crank, cam | teeth per turn, the gap where expected, the cam edge in its window |
 | SENT (SAE J2716) or PWM | Hall angle sensors: pedal, throttle | checksum, status, timeout |
@@ -815,6 +815,16 @@ routeAlias: sensor-interface
 
 - **SENT**: one wire, one way; each 4-bit nibble is a time between falling edges, in ticks of
   3–90 µs, with a checksum
+
+<div class="text-xs mt-2 opacity-80">
+
+**TPS** throttle position sensor · **MAP** manifold absolute pressure · **NTC** negative
+temperature coefficient (thermistor) · **VR** variable reluctance (inductive pickup) · **Hall**
+Hall-effect · **SENT** Single Edge Nibble Transmission · **SAE** Society of Automotive Engineers ·
+**PWM** pulse-width modulation · **ADC** analog-to-digital converter · **CAN** Controller Area
+Network
+
+</div>
 
 </div>
 <div>
