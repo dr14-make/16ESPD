@@ -541,3 +541,20 @@ end
                    clutch_opens = (stop.t[release], stop.v[release], stop.rpm[release]))
     @info "Hands-on 02 CVT coast and brake" coast_events stop_events
 end
+
+
+@testset "Hands-on 02 WLTC bonus" begin
+    run = mapped_engine_run(HandsOn02Car.MappedCarWLTCLowMediumTransient)
+    sol, m = run.sol, run.model
+    t = collect(0.0:0.1:589.0)
+    reference = vec(Array(sol(t, idxs = m.v_ref_kmh)))
+    speed = vec(Array(sol(t, idxs = m.v_kmh)))
+    error = speed .- reference
+
+    @test string(sol.retcode) == "Success"
+    @test sol(589.0, idxs = m.distance_km) ≈ 3.09604 atol = 5e-4
+    @test sol(589.0, idxs = m.fuel_l_per_100km) ≈ 6.25717 atol = 5e-4
+    @test maximum(abs.(error)) ≈ 2.22198 atol = 5e-3
+    @test sqrt(sum(abs2, error) / length(error)) ≈ 0.43280 atol = 5e-3
+    @test count(abs.(error) .<= 2.0) / length(error) > 0.99
+end
