@@ -656,14 +656,14 @@ The car also needs one part the dynamometer did not: the inertia of the cranksha
 
 [![MappedCar, the course's layout: the pedal port feeds engine and, along the top, the driveline's pedal input; no_booster into engine.mdot_bst; engine, flywheel, driveline, body, vsensor and to_kmh in one row to the v_kmh output; engine.p_m and engine.mdot_fuel through to_lph run along the top to the p_m and fuel_lph outputs; rot_ground and trans_ground below.](/handson/lecture-02/img/step04-mapped-car.png){width="1065" height="709" style="max-width:min(640px, 100%)"}](/handson/lecture-02/img/step04-mapped-car.png)
 
-1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was.
+1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was. If the copy opens as an empty diagram with a red ⓘ, "Unknown entity", close it, press <kbd>Ctrl</kbd>+<kbd>P</kbd>, open `mappedcar.dyad` once, and then double-click `MappedCar` in **Components**.
 2. Open `MappedCar`. Delete `engine`. Click **+** → `MyCar › MapEngine`, your own engine, name it `engine`, and put it where the old one was.
 3. Delete `driveline`. Click **+** → `VehicleSystemsComponents › Vehicle › CVTDriveline`, name it `driveline`, and wire its four mechanical ports as the old one's: `spline` from the engine side, `support_r` → `rot_ground`, `flange` → `body.flange`, `support_t` → `trans_ground`.
 4. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal` and to `driveline.pedal`, the input at the top of the driveline's left edge. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench: click just outside the port to select it, then **Edit Parameters** → pencil.
 5. Add `flywheel` = `RotationalComponents › Components › Inertia` with `J = 0.15`, between `engine` and `driveline`. Wire `engine.spline` → `flywheel.spline_a` and `flywheel.spline_b` → `driveline.spline`. Wire `engine.support` → `rot_ground`, as before.
 6. Add `no_booster` = `BlockComponents › Sources › Constant` (`k = 0`) → `engine.mdot_bst`.
 7. Drop two `RealOutput` ports from **+** straight onto the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.
-8. Toggle to code (⇄). Above the `pedal = RealInput()` line, add the two `ratio_initial` lines of the code below, and in the `driveline =` line write `CVTDriveline(ratio_initial = ratio_initial)`. The car starts at the launch ratio, 12; the cruise benches of step 05 start it at their own. Save, twice.
+8. Toggle to code (⇄). Above the `pedal = …RealInput()` line the rename kept hands-on 1's description, `"Commanded engine torque"`: replace that line with the two `ratio_initial` lines of the code below, and in the `driveline =` line write `CVTDriveline(ratio_initial = ratio_initial)`. The car starts at the launch ratio, 12; the cruise benches of step 05 start it at their own. Save, twice.
 9. <Badge type="tip" text="New component" /> The bench `MappedCarWOT`: paste it from below. <Badge type="tip" text="New analysis" /> `MappedCarWOTTransient`, `stop = 120`, or paste it.
 
 ::: code-group
@@ -733,7 +733,7 @@ end
 
 The bench starts the car at rest and the engine idling at 900 rpm. The clutch lets the engine and the wheels turn at different speeds, so each side needs its own start: the flywheel's speed and angle, and the angle of the clutch's output shaft. The angles' values do not matter; the solver needs one each.
 
-10. Run it and plot the road speed and the engine speed:
+10. Run `MappedCarWOTTransient` once with ▷ on its analysis tab, as in step 03: that loads your new components into the REPL. Then plot the road speed and the engine speed:
 
     ```julia
     r = MyCar.MappedCarWOTTransient()
@@ -751,7 +751,7 @@ From `HandsOn02.MappedCarWOTTransient`, the course's copy of your bench:
 - **Launch.** The engine flares from 900 to **1300 rpm** and stays there while the clutch slips. The clutch locks at **1.33 s**, at **13.7 km/h** and 1414 rpm.
 - **0–100 km/h in 10.4 s.**
 - **The engine peaks at 6390 rpm** at 6.4 s, 110 rpm under the limiter: up to about 58 km/h the ratio sits on its 12.0 stop, so the engine runs past its 6000 rpm target. Then the ratio falls and the engine settles at **6000 rpm**. The fuel is never cut.
-- **197 km/h at 60 s, 205 km/h at 120 s**, ratio 3.41. The top speed is **205.3 km/h**, not hands-on 1's 246 and not the 190 of a fixed gear on the limiter.
+- **197 km/h at 60 s, 205 km/h at 120 s**. The top speed is **205.3 km/h**, at ratio 3.41, not hands-on 1's 246 and not the 190 of a fixed gear on the limiter.
 
 :::
 
@@ -787,7 +787,7 @@ The engine gives liters per hour, the car covers kilometers per hour: divide, an
 [![MappedCarCruise: a constant pedal, k = pedal_cmd, wired into the car's pedal input.](/handson/lecture-02/img/step05-cruise-bench.png){width="527" height="333" style="max-width:360px"}](/handson/lecture-02/img/step05-cruise-bench.png)
 
 1. <Badge type="tip" text="New component" /> The bench `MappedCarCruise`: paste it from below. <Badge type="tip" text="New analysis" /> `MappedCarCruiseTransient`, the second block. The bench starts the car steady at one speed: the engine at the speed and the CVT at the ratio its pedal settles them, so the run does not spend a minute getting there. Its defaults hold 90 km/h.
-2. Run it at 90 km/h and plot speed and fuel:
+2. Run `MappedCarCruiseTransient` once with ▷, then run it at 90 km/h in the REPL and plot speed and fuel:
 
    ```julia
    r = MyCar.MappedCarCruiseTransient()
@@ -907,13 +907,13 @@ A brake booster is a can of air split by a diaphragm, its vacuum side connected 
 
 #### A · Coast down
 
-1. <Badge type="tip" text="New component" /> Copy `MappedCarCruise` as `MappedCarCoast`. Make `pedal` a `BlockComponents › Sources › Step` that releases the pedal at 5 s: in code, its line becomes the one below. <Badge type="tip" text="New analysis" /> `MappedCarCoastTransient`, `stop = 100`, with `model = MappedCarCoast()`.
+1. <Badge type="tip" text="New component" /> Duplicate `MappedCarCruise` as `MappedCarCoast`, as in step 04. Make `pedal` a `BlockComponents › Sources › Step` that releases the pedal at 5 s: in code, its line becomes the one below. <Badge type="tip" text="New analysis" /> `MappedCarCoastTransient`, `stop = 100`, with `model = MappedCarCoast()`.
 
    ```txt
      pedal = BlockComponents.Sources.Step(height = -pedal_cmd, offset = pedal_cmd, start_time = 5)
    ```
 
-2. Run it and plot four signals:
+2. Run it once with ▷, then plot four signals:
 
    ```julia
    r = MyCar.MappedCarCoastTransient()
@@ -939,8 +939,8 @@ From `HandsOn02.MappedCarCoastTransient`:
 [![MappedCarWithBrake, the course's layout: MappedCar with an F_brake input at the bottom left, wired along the bottom and up the right into brake; brake sits below body, its flange wired to body.flange and its support to trans_ground.](/handson/lecture-02/img/step06-mapped-car-brake.png){width="1065" height="796" style="max-width:min(640px, 100%)"}](/handson/lecture-02/img/step06-mapped-car-brake.png)
 
 3. In `MappedCar`, add an input `F_brake` and `brake` = `VehicleSystemsComponents › Vehicle › RoadBrake`. Wire `F_brake` → `brake.F_cmd`, `brake.flange` → `body.flange` and `brake.support` → `trans_ground`.
-4. In `MappedCarCoast`, add `brake_cmd` = `Step(height = 4000, start_time = 5)` → `car.F_brake`: 4000 N from the moment the pedal comes up. Your other car benches now have an input nobody drives: give each a `Constant(k = 0)` into `car.F_brake` before running them again.
-5. Run it for 20 s and plot the same four signals:
+4. In `MappedCarCoast`, add `brake_cmd` = `Step(height = 4000, start_time = 5)` → `car.F_brake`: 4000 N from the moment the pedal comes up. Your other car benches now have an input nobody drives: give each a `Constant(k = 0)` into `car.F_brake` before running them again. Without it a run stops with "The system is unbalanced".
+5. Run it once with ▷, which loads the `MappedCar` with its brake into the REPL, then run it for 20 s and plot the same four signals:
 
    ```julia
    r = MyCar.MappedCarCoastTransient(stop = 20)
@@ -1016,7 +1016,7 @@ Name the trace `trace`, the controller `driver`, the car `car`, and the two inte
 
 #### Run it
 
-1. Start the car as step 04's bench does: at rest, the engine idling, the angles set. Copy the six `initial` lines of `MappedCarWOT`, then start the engine at the idle step 06 ended in, 775 rpm and 33.6 kPa:
+1. Start the car as step 04's bench does: at rest, the engine idling, the angles set. Copy the six `initial` lines of `MappedCarWOT`, then change two of them to start the engine at the idle step 06 ended in, 775 rpm and 33.6 kPa:
 
    ```txt
    initial car.flywheel.w = 775 * pi / 30
@@ -1029,7 +1029,7 @@ Name the trace `trace`, the controller `driver`, the car `car`, and the two inte
    ```
 
    Run it. The first run is mostly compilation, about a minute; every run after it takes 5–10 s. If it is too slow, run `stop = 1022` instead: the Low and Medium phases, 7.85 km, for partial credit.
-3. Plot the speed over the target, and the error:
+3. Plot the speed over the target, and the error. In a Studio you opened after the session, run `using Plots` first:
 
    ```julia
    r = MyCar.MappedCarWLTCTransient()
@@ -1040,7 +1040,7 @@ Name the trace `trace`, the controller `driver`, the car `car`, and the two inte
 4. Read the label numbers at the end, and the share of the run inside the band:
 
    ```julia
-   T = 1800
+   T = 1800                                   # 1022 if you ran stop = 1022
    L, km = r.sol(T, idxs = r."fuel_L.y"), r.sol(T, idxs = r."dist_km.y")
    100L / km, 2302L / km                      # L/100 km, g CO₂/km
 
