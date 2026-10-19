@@ -13,7 +13,7 @@ hands-on: the WLTC, class 3b.
 <!--
 Section 01 gave the forces. Section 08 gave the engine. A drive cycle is what joins them: a
 prescribed speed against time, the same for every car, so that the numbers on two labels can be
-compared. At the end of the hands-on you drive your own car over the WLTC, 30 minutes of it. This
+compared. The hands-on bonus drives your own car over the WLTC, 30 minutes of it. This
 section says what that trace is, where it comes from, and what else engineers do with traces like it.
 -->
 
@@ -258,7 +258,7 @@ routeAlias: using-cycles
   the car follows the trace.
 - **Forward** (dynamic): a **driver model** compares the car's speed with the trace and sets pedal
   and brake; the powertrain responds. Slower, but the car can fall short of the trace. The
-  hands-on uses this: your car, its engine, a PI driver.
+  hands-on bonus uses this: your car, its engine, your Lecture 1 PID as the driver.
 
 **Uses**: sizing (peak power the trace demands), gear ratios and shift schedules, calibrating on
 the cycle, and comparing powertrains on equal terms.
@@ -266,7 +266,8 @@ the cycle, and comparing powertrains on equal terms.
 </div>
 <div>
 
-**One car, three drivelines over the WLTC** (backward estimate, hot start, lossless driveline)
+**One car, three drivelines over the WLTC** (backward estimate, hot start, lossless driveline; the
+hands-on's forward run below them)
 
 <div class="text-sm">
 
@@ -275,6 +276,7 @@ the cycle, and comparing powertrains on equal terms.
 | One gear, i = 4.0 | 5.63 | 130 |
 | 5-speed manual | 5.26 | 121 |
 | Ideal CVT, minimum-fuel line | 4.93 | 113 |
+| Hands-on CVT, forward with a PID driver | 5.22 | 120 |
 | *Label: Mazda2 1.5 Skyactiv-G* | *5.3* | *120* |
 
 </div>
@@ -306,6 +308,10 @@ is better; an ideal CVT that holds the engine on its best-efficiency line is bet
 liters per 100 kilometers. The real Mazda2 1.5, same engine family, is labeled 5.3 and 120 grams
 (WLTP combined, Autotijd database). The estimate leaves out the cold start, the auxiliaries and the
 driveline losses, which is why it reads low; a real belt CVT loses more than a manual gearbox.
+
+The last row is the hands-on bonus run, forward-facing: the given CVT, which holds the engine at
+1800 rpm or more rather than on the best-efficiency line, and the Lecture 1 PID as the driver. It
+reads 5.22, above the ideal CVT and close to the label, still hot-started and without auxiliaries.
 -->
 
 ---
@@ -326,7 +332,8 @@ class: big-figure
 **Four phases**, each from standstill to standstill: Low, Medium, High, Extra High; 1800 s and
 **23.27 km** in all.
 
-**In the hands-on** your car, with its mapped engine and a CVT, follows the trace with a PI driver.
+**In the hands-on bonus** your car, with its mapped engine and the CVT, follows the trace with your
+Lecture 1 PID as the driver.
 You read off
 
 - the speed error against the trace,
@@ -369,7 +376,7 @@ the stops and the launches; High the best.
   emissions.
 - **07** the λ loop holds the catalyst's window with a switching sensor and a limit cycle.
 - **08** in the hands-on, the mapped engine: pedal, manifold pressure, maps, fuel and CO₂.
-- **09** labels come from fixed drive cycles; the WLTC replaced the gentle NEDC, and you drive it.
+- **09** labels come from fixed drive cycles; the WLTC replaced the gentle NEDC; the bonus drives it.
 
 ### An engine control unit is a stack of control loops wrapped around one nonlinear plant.
 
@@ -379,5 +386,5 @@ maps are how the ECU copes with that. The loops are fuel, spark, idle and lambda
 sensors and actuators.
 
 In the hands-on you build the plant. The notebooks put the loops around it, one at a time. And at
-the end you drive it over the cycle that produces the number on a car's label.
+the bonus you drive it over the cycle that produces the number on a car's label.
 -->

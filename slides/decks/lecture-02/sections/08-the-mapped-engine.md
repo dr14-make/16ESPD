@@ -53,8 +53,8 @@ balance of the two, and it is a state: it takes time to change. That is the lag 
 had as a bare 0.3 second time constant. Here it comes from physics, and it changes with speed.
 
 The maps are tables over speed and manifold pressure. They return brake torque, fuel flow, and
-engine-out emissions. The torque turns the crankshaft and drives the hands-on car through its
-single gear.
+engine-out emissions. The torque turns the crankshaft and drives the hands-on car through a CVT
+with a launch clutch.
 
 The dashed input is the brake booster. It draws its vacuum from this same manifold, and when it
 empties back on brake release the manifold pressure bumps. You will see that in the brake lecture.
@@ -142,13 +142,15 @@ routeAlias: what-you-measure
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-**Scenarios on the hands-on car** (one gear, i = 4.0)
+**Your engine, then your car** (Lecture 1's car, with a given CVT)
 
-- pedal steps: the manifold lag in the torque
-- wide-open-throttle sprint: the real top speed
+- pedal steps on the air path: the manifold lag
+- the engine on a dynamometer, with fuel cut-off pasted in
+- full throttle from rest: launch, 0–100 km/h, the real top speed
 - steady cruise at 50, 90 and 130 km/h
 - coast-down on a closed throttle: fuel cut-off
 - a brake stop, with $p_m$ on the plot
+- **bonus:** your Lecture 1 PID drives the WLTC
 
 </div>
 <div>
@@ -159,18 +161,21 @@ routeAlias: what-you-measure
 - consumption in **L/100 km**
 - **CO₂ in g/km**
 - the manifold pressure $p_m$ that the brake booster will draw on
+- bonus: L/100 km over the WLTC, against the car's label
 
 </div>
 </div>
 
 <!--
-The same car as Lecture 1, the same single gear, with the new engine. Each scenario answers one
-question. A pedal step shows the lag the manifold adds. The sprint shows the top speed with a real
-torque curve, the number Lecture 1 promised to fix. The cruise points give fuel consumption and CO2
-per kilometer, the numbers on a car's sticker. Coast-down shows fuel cut-off. And the brake stop
-records the manifold pressure the booster depends on.
+First the engine alone, then in the car. A pedal step on the air path shows the lag the manifold
+adds. On a dynamometer, the map engine you draw gets fuel cut-off pasted in. Then it goes into
+Lecture 1's car, with a CVT and a launch clutch given: the map engine makes no torque at zero
+speed, so one fixed gear could not pull away. The sprint from rest shows the launch, 0 to 100 and
+the top speed with a real torque curve, the number Lecture 1 promised to fix. The cruise points
+give fuel consumption and CO2 per kilometer, the numbers on a car's sticker. Coast-down shows fuel
+cut-off. And the brake stop records the manifold pressure the booster depends on.
 
-If time allows, the hands-on adds a CVT and a driver following the WLTC cycle, where the
-results can be compared with a real car's label. Section 09 is about that cycle.
+The bonus, for extra points: the PID cruise controller from Lecture 1 drives the car over the
+WLTC, and the result is compared with a real car's label. Section 09 is about that cycle.
 -->
 
