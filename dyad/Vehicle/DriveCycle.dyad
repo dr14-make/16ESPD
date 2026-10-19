@@ -1,0 +1,51 @@
+"""
+Vehicle-speed trace loaded from a two-column time-series CSV.
+
+The default is the WLTC class 3b trace. Linear interpolation follows the prescribed straight
+ramps between its 1 Hz points, while constant extrapolation keeps the endpoint defined.
+"""
+component DriveCycle
+  "Target vehicle speed [km/h]"
+  y = RealOutput() {^y}
+  "Packaged WLTC class 3b trace (Regulation (EU) 2017/1151)"
+  structural parameter file::String = "dyad://VehicleSystemsComponents/data/drive_cycles/wltc_class3b.csv"
+  structural parameter dataset::DyadData.DyadTimeseries = DyadData.DyadTimeseries(file, independent_var = "t_s", dependent_vars = ["v_kmh"])
+  interpolation = BlockComponents.Tables.Interpolation(dataset = dataset, interpolation_type = BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant()) {^interpolation}
+relations
+  interpolation.u = time
+  connect(interpolation.y, y) {^w1}
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://BlockComponents/Interpolation.svg"},
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]
+  },
+  "_links": {
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "interpolation": {"Dyad": {"placement": {"diagram": {"x1": 425, "x2": 575, "y1": 425, "y2": 575}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+test component TestDriveCycle
+  cycle = VehicleSystemsComponents.Vehicle.DriveCycle()
+  sink = BlockComponents.Routing.RealPassThrough()
+relations
+  connect(cycle.y, sink.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "linear_interpolation": {
+        "stop": 12.5,
+        "atol": {"sink.y": 1e-9},
+        "expect": {"initial": {"sink.y": 0.0}, "final": {"sink.y": 0.95}, "signals": ["sink.y"]}
+      }
+    }
+  }
+}
+end
+
+analysis DriveCycleTestTransient
+  extends TransientAnalysis(stop = 12.5)
+  model = TestDriveCycle()
+end
