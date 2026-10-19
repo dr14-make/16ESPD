@@ -188,7 +188,7 @@ routeAlias: ignition-advance
 
 <CardExport notebook="illustrations" name="advance-map" height="14rem" />
 
-<div class="caption">Cylinder pressure for three sparks and motored; the MBT advance map over speed and manifold pressure. Idealized, drawn from textbook trends</div>
+<div class="caption">Cylinder pressure for three sparks and motored, knock drawn on the early one; the MBT advance map over speed and manifold pressure. Idealized, drawn from textbook trends</div>
 
 </div>
 </div>
@@ -198,9 +198,12 @@ The top figure is the key one. Three sparks, three pressure traces, and the moto
 fuel for reference. MBT, the dark blue line: the pressure peaks about 15 degrees after top dead
 center, when the piston can turn it into work. Too early, 15 degrees more advance: the pressure
 rises while the piston is still coming up, so it pushes against the piston; the peak is 69 bar
-instead of 49. In a real engine that peak is ragged: knock, the end gas exploding instead of
-burning. Too late, 15 degrees less: the piston is already moving away, and the pressure peaks at
-31 bar near 30 degrees. Each costs about 7 percent of the work.
+instead of 49. And it is ragged: knock, the end gas exploding instead of burning, rings the
+chamber at about 7 kilohertz. The ringing is drawn on, not computed, but its frequency is the
+chamber's first acoustic mode. Too late, 30 degrees less, 6 before TDC: the burn only starts after
+TDC, so the pressure first falls away with the motored line, down to 10 bar at 20 degrees, and
+the late burn lifts it to only 20 bar near 45 degrees. Early costs about 7 percent of the work,
+late 20.
 
 Between too early and too late there is a spark angle that gives the most torque. It is called
 MBT, minimum advance for best torque. The map below holds it for every speed and manifold
