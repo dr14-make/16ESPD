@@ -1575,12 +1575,16 @@ let
     if isfinite(hover_run.time)
         vline!(plt, [hover_run.time]; color = :firebrick, ls = :dash, label = "valve fully open")
         h = hover_run.sol(hover_run.time, idxs = sys.hover.altitude)
+        # Late saturation would push a right-hand label past the plot edge.
+        late = hover_run.time > 7.5
         mark!(plt, hover_run.time, h, "valve fully open after $(fmt(hover_run.time, 1)) s: the car sinks";
-            dx = 1.0, dy = 0.9, color = :firebrick)
+            dx = late ? -1.0 : 1.0, dy = 0.9, color = :firebrick, halign = late ? :right : :left)
     end
+    # The valve curve lives on the twin axis, which has no legend of its own.
+    plot!(plt, [NaN], [NaN]; lw = 2, color = :darkorange, label = "valve opening (right axis)")
     valve = twinx(plt)
     plot!(valve, ts, hover_run.sol(ts, idxs = sys.hover.command).u; lw = 2, color = :darkorange,
-        ylabel = "Valve opening, orange (0 = shut, 1 = fully open)", ylims = (0, 1.1), label = "")
+        ylabel = "Valve opening (0 = shut, 1 = fully open)", ylims = (0, 1.1), label = "")
     plt
 end
 
