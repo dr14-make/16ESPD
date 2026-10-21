@@ -26,6 +26,10 @@ features:
   - title: "Hands-on: drive a mapped engine"
     details: "Session 4 · about 90 min<br>Read measured engine maps at speed and manifold pressure, build the manifold and a map engine of your own, put the course engine in your car, and read its fuel in L/100 km and its CO₂ in g/km at 50, 90 and 130 km/h. Ends with fuel cut on a coast-down and the vacuum the brake booster draws on."
     link: /handson/lecture-02/
+  - title: "Brakes and Stability Control: ABS, TCS, ESP and torque vectoring"
+    details: "Friction and the tire's slip curve, braking distance, the brake system from pedal to master cylinder, ABS with its sensors, modulator and control cycle, traction control, ESP and its reference model, and torque vectoring. Ties to the ABS and brake-hydraulics notebooks."
+    link: /lecture-03/index.html
+    target: _self
 ---
 
 ## Lecture 1, in two sessions
@@ -76,6 +80,15 @@ The hands-on that follows the lecture builds that engine into the car. Students 
 [projector deck](./handson-02/index.html){target="_self"} on the wall, one slide per step with its
 goal, the finished model and the checkpoint. The [tutor guide](./handson/lecture-02/tutor.html)
 carries what to say, the time per part, where students get stuck, and the answer models.
+
+## Lecture 3: brakes and stability control
+
+1. [**Friction and stopping**](./lecture-03/index.html#/friction-and-stopping){target="_self"} — μ, the slip curve and v²/2gμ
+2. [**How the brakes work**](./lecture-03/index.html#/brakes){target="_self"} — lever, booster, master cylinder and two circuits
+3. [**Anti-lock braking**](./lecture-03/index.html#/abs){target="_self"} — sensors, modulator, the cycle and the model
+4. [**Traction control**](./lecture-03/index.html#/tcs){target="_self"} — brake and engine on a spinning wheel
+5. [**Electronic stability program**](./lecture-03/index.html#/esp){target="_self"} — intention against motion, one wheel braked
+6. [**Torque vectoring**](./lecture-03/index.html#/torque-vectoring){target="_self"} — a yaw moment from drive torque
 
 ## For the lecturer
 
