@@ -1,0 +1,154 @@
+"""
+Planar road wheel combining tire contact, spin inertia, and an in-line brake.
+
+All plant interfaces are physical except the brake actuator command. Normal load enters through
+`load`; the wheel constrains that flange at zero travel and passes its force to the tire joint.
+`F_x`, `F_y`, and `F_z` are diagnostic variables rather than signal ports.
+"""
+component PlanarBrakedWheel
+  "Wheel-center frame, with x along the wheel heading"
+  frame_a = Frame2D() {^frame_a}
+  "Spin shaft downstream of the brake"
+  spin = Spline() {^spin}
+  "Normal-load flange; positive force presses the tire onto the road"
+  load = Flange() {^load}
+  "Requested brake torque"
+  tau_cmd = RealInput() {^tau_cmd}
+  joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(N = 0.0, mu_A = mu_scale * mu_A, mu_S = mu_scale * mu_S, r = [1, 0], render = false, radius = radius, sAdhesion = sAdhesion, sSlide = sSlide, vAdhesion_min = vAdhesion_min, vSlide_min = vSlide_min)
+  inertia = RotationalComponents.Components.Inertia(J = J)
+  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(T = T_brake, tau_max = tau_max, w0 = w0)
+  housing = RotationalComponents.Components.Fixed()
+  "Wheel rolling radius (repository default)"
+  parameter radius::Length = 0.31
+  "One-wheel spin inertia (assumed)"
+  parameter J::MomentOfInertia = 1.0
+  "Peak adhesion coefficient (probe)"
+  parameter mu_A::Real = 1.0
+  "Sliding friction coefficient (probe)"
+  parameter mu_S::Real = 0.8
+  "Per-wheel road-friction multiplier (derived)"
+  parameter mu_scale::Real = 1.0
+  "Slip ratio at peak adhesion (probe)"
+  parameter sAdhesion::Real = 0.12
+  "Slip ratio at the sliding plateau (probe)"
+  parameter sSlide::Real = 3 * sAdhesion
+  "Minimum adhesion velocity (probe)"
+  parameter vAdhesion_min::Velocity = 0.05
+  "Minimum sliding velocity (probe)"
+  parameter vSlide_min::Velocity = 0.15
+  "Hydraulic time constant (probe)"
+  parameter T_brake::Time = 0.03
+  "Maximum brake torque (assumed)"
+  parameter tau_max::Torque = 2500.0
+  "Brake regularization speed (assumed)"
+  parameter w0::AngularVelocity = 1.0
+  "Longitudinal tire force on the vehicle"
+  variable F_x::Force
+  "Lateral tire force on the vehicle"
+  variable F_y::Force
+  "Normal tire load"
+  variable F_z::Force
+relations
+  connect(frame_a, joint.frame_a)
+  connect(joint.flange_a, inertia.spline_a)
+  connect(inertia.spline_b, brake.spline_a)
+  connect(brake.spline_b, spin)
+  connect(brake.support, housing.spline)
+  connect(tau_cmd, brake.tau_cmd)
+  joint.dynamicLoad = load.f
+  load.s = 0.0
+  F_x = -joint.f_long
+  F_y = -joint.f_lat
+  F_z = max(0.0, load.f)
+end
+
+test component TestPlanarWheelRig
+  "Prescribed forward speed"
+  parameter v::Velocity = 20.0
+  "Prescribed lateral speed"
+  parameter vy::Velocity = 0.0
+  "Brake command"
+  parameter tau::Torque = 0.0
+  "Applied normal load"
+  parameter N_load::Force = 4000.0
+  vx_source = BlockComponents.Sources.Constant(k = v)
+  vy_source = BlockComponents.Sources.Constant(k = vy)
+  tau_source = BlockComponents.Sources.Constant(k = tau)
+  load_source = BlockComponents.Sources.Constant(k = N_load)
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity()
+  force = TranslationalComponents.Sources.Force()
+  load_fixed = TranslationalComponents.Components.Fixed()
+  wheel = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(sAdhesion = 0.12, sSlide = 0.36, mu_A = 1.0, mu_S = 0.8, J = 1.0, tau_max = 10000.0)
+  slip = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = 0.31)
+relations
+  connect(vx_source.y, motion.v_x)
+  connect(vy_source.y, motion.v_y)
+  connect(motion.frame_b, wheel.frame_a)
+  connect(load_source.y, force.f)
+  connect(load_fixed.flange, force.flange_a)
+  connect(force.flange_b, wheel.load)
+  connect(tau_source.y, wheel.tau_cmd)
+  connect(wheel.frame_a, slip.frame_a)
+  connect(wheel.spin, slip.spline)
+  initial wheel.inertia.w = (v + 0.01) / 0.31
+  initial wheel.inertia.phi = 0.0
+  initial wheel.brake.tau_actual = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "straight": {
+        "solver": "Tsit5", "stop": 1.0,
+        "atol": {"wheel.F_y": 1.0, "wheel.F_x": 1.0, "slip.kappa": 1e-4},
+        "expect": {"final": {"wheel.F_y": 0.0, "wheel.F_x": 0.0, "slip.kappa": 0.0}, "signals": ["wheel.F_x", "wheel.F_y", "slip.kappa"]}
+      },
+      "half_peak": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"vy": 1.2},
+        "atol": {"wheel.F_y": 5.0, "slip.alpha": 1e-4, "wheel.F_z": 1e-6},
+        "expect": {"final": {"wheel.F_y": -2750.0, "slip.alpha": 0.05993, "wheel.F_z": 4000.0}, "signals": ["wheel.F_y", "slip.alpha"]}
+      },
+      "peak": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"vy": 2.4},
+        "atol": {"wheel.F_y": 5.0}, "expect": {"final": {"wheel.F_y": -3999.8}, "signals": ["wheel.F_y"]}
+      },
+      "sliding": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"vy": 7.2},
+        "atol": {"wheel.F_y": 5.0}, "expect": {"final": {"wheel.F_y": -3200.0}, "signals": ["wheel.F_y"]}
+      },
+      "braking": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"tau": 1000.0},
+        "atol": {"wheel.F_x": 5.0, "slip.kappa": 0.002},
+        "expect": {"final": {"wheel.F_x": -3225.8, "slip.kappa": -0.0688}, "signals": ["wheel.F_x", "slip.kappa"]}
+      },
+      "braking_cornering": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"vy": 1.2, "tau": 1000.0},
+        "atol": {"wheel.F_x": 5.0, "wheel.F_y": 5.0, "slip.kappa": 0.002},
+        "expect": {"final": {"wheel.F_x": -3225.8, "wheel.F_y": -2321.3, "slip.kappa": -0.0834}, "signals": ["wheel.F_x", "wheel.F_y", "slip.kappa"]}
+      },
+      "locked": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"vy": 2.4, "tau": 10000.0},
+        "atol": {"wheel.F_x": 5.0, "wheel.F_y": 5.0, "slip.kappa": 0.003},
+        "expect": {"final": {"wheel.F_x": -3177.2, "wheel.F_y": -381.3, "slip.kappa": -1.0}, "signals": ["wheel.F_x", "wheel.F_y", "slip.kappa"]}
+      },
+      "unloaded": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"vy": 1.2, "N_load": 2000.0},
+        "atol": {"wheel.F_y": 5.0}, "expect": {"final": {"wheel.F_y": -1375.0}, "signals": ["wheel.F_y"]}
+      },
+      "lifted": {
+        "solver": "Tsit5", "stop": 1.0, "params": {"vy": 1.2, "N_load": -1000.0},
+        "atol": {"wheel.F_y": 1.0, "wheel.F_z": 1.0},
+        "expect": {"final": {"wheel.F_y": 0.0, "wheel.F_z": 0.0}, "signals": ["wheel.F_y", "wheel.F_z"]}
+      }
+    }
+  }
+}
+end
+
+analysis PlanarWheelRigTransient
+  extends TransientAnalysis(stop = 1.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  parameter v::Velocity = 20.0
+  parameter vy::Velocity = 0.0
+  parameter tau::Torque = 0.0
+  parameter N_load::Force = 4000.0
+  model = VehicleSystemsComponents.Vehicle.Planar.TestPlanarWheelRig(v = v, vy = vy, tau = tau, N_load = N_load)
+relations
+end

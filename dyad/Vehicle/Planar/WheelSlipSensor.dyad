@@ -1,0 +1,33 @@
+"""
+Ideal wheel-slip sensor using physical frame and spin-shaft ports.
+
+The planar velocity is resolved in the wheel frame, so `v_long` is along the wheel heading and
+positive `alpha` denotes velocity to its left. The slip convention is negative under braking.
+"""
+component WheelSlipSensor
+  "Wheel-center frame, with x along the wheel heading"
+  frame_a = Frame2D() {^frame_a}
+  "Wheel spin shaft"
+  spline = Spline() {^spline}
+  "Longitudinal slip ratio; negative under braking"
+  kappa = RealOutput() {^kappa}
+  "Tire slip angle"
+  alpha = RealOutput() {^alpha}
+  "Measured wheel angular velocity"
+  omega = RealOutput() {^omega}
+  "Measured wheel-center longitudinal velocity"
+  v_long = RealOutput() {^v_long}
+  vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity()
+  spin = RotationalComponents.Sensors.VelocitySensor()
+  "Wheel rolling radius (repository default)"
+  parameter radius::Length = 0.31
+  "Low-speed denominator floor (assumed)"
+  parameter v_eps::Velocity = 0.5
+relations
+  connect(frame_a, vel.frame_a)
+  connect(spline, spin.spline)
+  omega = spin.w
+  v_long = vel.v_x
+  kappa = (radius * spin.w - vel.v_x) / max(abs(vel.v_x), v_eps)
+  alpha = atan(vel.v_y / max(abs(vel.v_x), v_eps))
+end
