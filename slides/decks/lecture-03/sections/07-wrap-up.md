@@ -106,7 +106,9 @@ routeAlias: sources
   SAE 950759 (1995)
 - J. Day, S. Roberts, *A Simulation Model for Vehicle Braking Systems Fitted with ABS*,
   SAE 2002-01-0559
-- R. Rajamani, *Vehicle Dynamics and Control*, 2nd ed., Springer 2012, ch. 8
+- R. Rajamani, *Vehicle Dynamics and Control*, 2nd ed., Springer 2012, ch. 2 and 8
+- T. D. Gillespie, *Fundamentals of Vehicle Dynamics*, SAE 1992, ch. 6 (Ackermann steering)
+- W. F. Milliken, D. L. Milliken, *Race Car Vehicle Dynamics*, SAE 1995 (steering systems)
 - J. C. Gerdes et al., California PATH report UCB-ITS-PRR-97-21 (brake system model)
 
 </div>

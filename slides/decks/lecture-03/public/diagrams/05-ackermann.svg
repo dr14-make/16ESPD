@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" width="680" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .axis { stroke: #16202c; stroke-width: 3; fill: none; }
+    .wheel { fill: #16202c; }
+    .dim { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .guide { stroke: #4a5a6b; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+    .ray { stroke: #1f5fa8; stroke-width: 1.5; fill: none; stroke-dasharray: 6 4; }
+    .head { stroke: #a75d00; stroke-width: 2; fill: none; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .sym { font-size: 18px; font-weight: 600; }
+    .blue { font-size: 18px; font-weight: 600; fill: #1f5fa8; }
+    .warn { font-size: 18px; font-weight: 600; fill: #a75d00; }
+  </style>
+
+  <!-- turn center O on the rear-axle line; drawn with a short radius so the angles show -->
+  <path class="ray" d="M40 340 L325 140"/>
+  <path class="ray" d="M40 340 L435 140"/>
+  <path class="ray" d="M40 340 H325"/>
+  <circle cx="40" cy="340" r="6" fill="#1f5fa8"/>
+  <text x="22" y="372" class="blue">O</text>
+  <text x="48" y="372" class="lbl">turn center</text>
+  <text x="150" y="332" class="blue">R</text>
+
+  <!-- chassis, front at the top, turning left -->
+  <path class="axis" d="M325 140 H435 M325 340 H435 M380 140 V340"/>
+  <rect class="wheel" x="316" y="312" width="18" height="56" rx="4"/>
+  <rect class="wheel" x="426" y="312" width="18" height="56" rx="4"/>
+  <g transform="translate(325 140) rotate(-35)">
+    <rect class="wheel" x="-9" y="-28" width="18" height="56" rx="4"/>
+  </g>
+  <g transform="translate(435 140) rotate(-26.9)">
+    <rect class="wheel" x="-9" y="-28" width="18" height="56" rx="4"/>
+  </g>
+
+  <!-- steer angles: straight ahead vs. wheel heading -->
+  <path class="guide" d="M325 140 V64"/>
+  <path class="head" d="M325 140 L281 77"/>
+  <text x="290" y="58" class="warn">δ<tspan font-size="13" dy="4">i</tspan></text>
+  <path class="guide" d="M435 140 V64"/>
+  <path class="head" d="M435 140 L401 73"/>
+  <text x="406" y="58" class="warn">δ<tspan font-size="13" dy="4">o</tspan></text>
+  <text x="270" y="200" class="lbl">inner</text>
+  <text x="444" y="200" class="lbl">outer</text>
+
+  <!-- dimensions -->
+  <path class="dim" d="M490 140 V340 M482 140 H498 M482 340 H498"/>
+  <text x="500" y="246" class="sym">L</text>
+  <path class="dim" d="M325 395 H435 M325 387 V403 M435 387 V403"/>
+  <text x="375" y="416" class="sym">t</text>
+
+  <text x="530" y="90" class="lbl">every wheel rolls</text>
+  <text x="530" y="110" class="lbl">at right angles</text>
+  <text x="530" y="130" class="lbl">to its ray from O</text>
+  <text x="530" y="300" class="lbl">L, wheelbase</text>
+  <text x="530" y="320" class="lbl">t, track</text>
+  <text x="530" y="340" class="lbl">not to scale</text>
+</svg>

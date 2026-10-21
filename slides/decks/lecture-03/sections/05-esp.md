@@ -114,6 +114,78 @@ system, which regulations allow only under conditions.
 -->
 
 ---
+routeAlias: ackermann
+---
+
+## Steering geometry: Ackermann
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-8">
+<div>
+
+![A car in a left turn, top view: lines from one turn center O on the extended rear-axle line run to each front wheel; each wheel stands at right angles to its line, so the inner front wheel is steered by a larger angle delta i than the outer one, delta o. L is the wheelbase, t the track, R the turn radius.](/diagrams/05-ackermann.svg)
+
+</div>
+<div>
+
+In a slow turn every wheel rolls about **one center** on the rear-axle line, so the **inner**
+front wheel steers more:
+
+$$
+\cot\delta_o - \cot\delta_i \;=\; \frac{t}{L}
+$$
+
+$L = 2.7$ m, $t = 1.55$ m, $R = 10$ m to the rear-axle center:
+
+| | |
+|---|---:|
+| inner, $\arctan\frac{L}{R - t/2}$ | 16.3° |
+| outer, $\arctan\frac{L}{R + t/2}$ | 14.1° |
+| single-track, $\arctan\frac{L}{R}$ | 15.1° |
+
+- without it the front tires **scrub** at parking speed;
+- at speed **slip angles** dominate: cars use partial Ackermann;
+- the single-track model's one front wheel takes the **mean** angle: the $\delta$ of the
+  reference yaw rate.
+
+</div>
+</div>
+
+<!--
+The reference model on the next slide has one front wheel. A real car has two, and they do not
+steer by the same angle. This slide is where the two become one.
+
+Ackermann geometry: at low speed the tires make almost no lateral force, so each wheel rolls in
+the direction it points. For all four to roll without sliding sideways, their axes must meet in
+one point, the turn center. The rear wheels are not steered, so that point lies on the extended
+rear axle. The inner front wheel is closer to it and must steer more. Subtract the two cotangents
+and R drops out: cot delta o minus cot delta i equals track over wheelbase, at every radius.
+
+The worked example, a mid-size car on a 10 meter turn, radius measured to the middle of the rear
+axle. Inner wheel arctan of 2.7 over 9.225: 16.3 degrees. Outer wheel arctan of 2.7 over 10.775:
+14.1 degrees. Check: 3.991 minus 3.417 is 0.574, and 1.55 over 2.7 is 0.574. The difference is
+over 2 degrees, and the single lumped wheel, 15.1 degrees, sits within a tenth of a degree of the
+mean, 15.2. Gillespie writes the same with small angles: delta o about L over R plus t over 2,
+delta i about L over R minus t over 2, and the mean delta about L over R.
+
+Why it matters: with parallel steering the two front tires fight each other at parking speed,
+they scrub and wear, and the steering feels heavy. At speed every tire runs at a slip angle, the
+turn center moves forward of the rear axle, and the more loaded outer tire wants the larger slip
+angle. So real cars use only part of the Ackermann difference, and racing cars sometimes none or
+the reverse. The steering linkage only approximates the formula anyway: the steering arms are
+angled so that, straight ahead, their extensions meet near the middle of the rear axle.
+
+For the model: the planned planar car steers its two front wheels with Ackermann geometry. The
+ESP reference yaw rate comes from the single-track model, which needs one angle, the mean of the
+two. At low speed that model gives yaw rate v over R, which is v delta over L.
+
+History: Georg Lankensperger in Munich, 1816; Rudolph Ackermann patented it for him in England in
+1818. Sources: T. D. Gillespie, Fundamentals of Vehicle Dynamics, SAE 1992, chapter 6, low-speed
+turning; W. F. and D. L. Milliken, Race Car Vehicle Dynamics, SAE 1995, chapter on steering
+systems, for partial and reverse Ackermann; Rajamani, chapter 2, for the kinematic single-track
+model. Cited from the books as I know them; the chapter numbers were not rechecked online.
+-->
+
+---
 routeAlias: reference-model
 ---
 
@@ -295,7 +367,7 @@ The plan in `docs/lecture-03-preparation.md`: a **planar four-wheel car**
 
 - chassis mass and yaw inertia, wheelbase and track;
 - four wheels, each with its own speed and brake;
-- front steering;
+- front steering with Ackermann geometry;
 - **combined slip**: longitudinal and lateral force share one friction limit.
 
 </div>
