@@ -45,13 +45,13 @@ the library, so a student who did not finish hands-on 2 can still do all of it.
 ## The arc
 
 The theory deck's section 03 makes four claims about its ABS model: a locked wheel stops on the
-sliding friction; ABS holds the tire near its peak and stops shorter; the controller must lead
-the 30 ms brake lag; and without the car's speed the controller must estimate it, which costs
-most of the gain on slippery roads. The session tests them in that order, on the student's own
-parts. Students first work out the tire's limit torque and the two bounding distances by hand,
-then build the locked stop, then write the slip controller (first without lead, then with it),
-then swap its true-slip input for a wheel-speed estimate they also write, and finally sweep the
-road surface from the REPL. Every checkpoint is a number from the deck or one they computed in
+sliding friction; ABS holds the tire near its peak and stops shorter; the controller must lead the
+30 ms brake lag; and without the car's speed the controller must estimate it, which costs most of
+the gain on slippery roads. The session tests them in that order, on the student's own parts.
+Students first work out the tire's limit torque and the two bounding distances by hand, then build
+the locked stop, then write the slip controller (first without lead, then with it), then write a
+wheel-speed-only ABS with the dump / hold / build cycle and the estimate it needs, and finally sweep
+the road surface from the REPL. Every checkpoint is a number from the deck or one they computed in
 step 01.
 
 ## Built or given
@@ -59,7 +59,9 @@ step 01.
 The lecture's goal is that a student can explain where on the friction curve an ABS keeps the
 tire and why the hydraulic lag and the missing speed signal make that hard. The pressure-memory
 state machine of the library ABS (`ABSModulatorDiscrete`: four phases, a lock-torque latch, a
-hold timeout) is what a production ECU does, and the deck explains it; 90 minutes cannot build it.
+hold timeout) is what a production ECU does, and the deck explains it; 90 minutes cannot build
+all of it. Step 04 builds its core, three phases and one latch, because without the hold the
+students' wheel-only ABS loses to the locked wheel (see step 04).
 So:
 
 | Part | Built or given | Why |
@@ -68,8 +70,9 @@ So:
 | `Body`, hands-on 1 | the student's own, reused | Same drag, rolling resistance and mass as `Vehicle.VehicleBody` on a flat road, so the deck's distances hold (task H1 confirms to the digit). It keeps "your car" in the session. |
 | Locked-stop bench `LockedStop` | **built** (drawn: 6 blocks, 6 wires, 5 initial lines) | The baseline every later number is compared with. |
 | `SlipABS`: rate law, slip look-ahead, on/off below 1.5 m/s | **built** (code view, about 8 lines) | The core of the lecture: "release when the slip passes the peak", and then "release when it *will* pass it 30 ms from now". |
-| `Vehicle.ABSPressureIntegrator`: integrates a pressure rate, clipped to `[0, demand]`, tracks the demand when inactive | given | Anti-windup plumbing, a nested `ifelse`. It is the modulator's "build / dump" in one block, so the deck's valve slide still maps onto it. |
-| `RefSpeedEstimator`: `v_ref` follows the wheel when the wheel is faster, otherwise falls at `a_ref`; slip from `v_ref` | **built** (code view, about 6 lines) | The reference-speed slide as a component; `a_ref` is the knob the deck's trap is about. |
+| `Vehicle.ABSPressureIntegrator`: integrates a pressure rate, clipped to `[0, demand]`, tracks the demand when inactive | given | Anti-windup plumbing, a nested `ifelse`. It is the modulator's "build / hold / dump" in one block (rate positive, zero, negative), so the deck's valve slide still maps onto it. |
+| `RefSpeedEstimator`: `v_ref` follows the wheel when the wheel is faster, otherwise falls at `a_ref`; slip from `v_ref`; the wheel's filtered acceleration `a_w` | **built** (code view, about 9 lines) | The reference-speed slide as a component; `a_ref` is the knob the deck's trap is about. |
+| `PhaseABS`: dump on `a_w < −a_minus` or slip past `lambda_1`, hold on `a_w > +a_plus`, build slowly otherwise; a latch passes the demand through until the first dump | **built** (code view, a copy of `SlipABS`, about 7 lines) | The modulator's three valve states and the pressure memory, small enough to write; the version that beats the locked wheel on wheel speed alone. |
 | `Vehicle.ABSController` (clocked 5 ms, wheel speed only), `ABSBrakeTransient`, `LockedBrakeTransient`, `IdealBrakeTransient` | given, run from the REPL only | The deck's numbers and the cross-check for the student's models. Its clocked wiring (`PeriodicClock`, three `Sampler`s, `ZeroOrderHold`) is not drawn in Studio. |
 | `Vehicle.braking_distance(sol)` | given (new, task H4) | One definition of "distance" (from brake application until v < 0.5 m/s) shared by the guide, the tests and notebook 01. |
 | Bonus TCS: `TCSSlipCar` and its controller | **built**, outside the session | Hands-on 1's `SlipCar` with a `Vehicle.Wheel.BrakeActuator` in the wheel line, and the slip law turned around. |
@@ -90,7 +93,7 @@ Checkpoints go in `test/abs_handson_plausibility.jl`, in testsets named "Hands-o
 
 ## Steps
 
-Budgets add up to 90 minutes: 8 + 7 + 15 + 25 + 18 + 14 + 3.
+Budgets add up to 90 minutes: 8 + 7 + 15 + 22 + 25 + 10 + 3.
 
 Numbers marked **(deck)** are already in `slides/decks/lecture-03` and come from the library
 analyses; numbers marked **(hand)** follow from the formulas given; **(H2)** and similar mark
@@ -179,7 +182,7 @@ as in hands-on 2 step 04.
 
 **Screenshots.** `step02-locked-bench.png`, `step02-locked-plot.png`.
 
-### Step 03 · An ABS of your own · 25 min
+### Step 03 · An ABS of your own · 22 min
 
 **Goal.** A slip controller that keeps the wheel off the sliding plateau; first on the present
 slip, then on the slip predicted 30 ms ahead, which leads the brake's lag. The second version
@@ -239,67 +242,113 @@ placement and whether a nested `ifelse` survives Studio's formatter.
 **Screenshots.** `step03-slipabs-code.png`, `step03-abs-bench.png`, `step03-torque-plot.png`,
 `step03-mu-kappa-plot.png`.
 
-### Step 04 · Only the wheel speed · 18 min
+### Step 04 · Only the wheel speed · 25 min
 
-**Goal.** The same controller, fed from a wheel-speed sensor only, through a reference-speed
-estimate the student writes. On a dry road it still beats the locked wheel; the estimate's lag
-behind the car shows on the plot.
+**Goal.** An ABS fed from a wheel-speed sensor only, with the three-phase cycle a production ECU
+runs: dump, hold, build slowly from the held level. It beats the locked wheel on every road and
+the library's clocked ECU on all three.
 
-**Built / given.** Built: `RefSpeedEstimator` (code view), bench `ABSStopWheelOnly` (copy of
-`ABSStop`). Nothing new given.
+**Built / given.** Built: `RefSpeedEstimator` and `PhaseABS` (code view), bench
+`ABSStopWheelOnly` (copy of `ABSStop`). Given: `Vehicle.ABSPressureIntegrator` again; its
+`requested_rate = 0` is the hold, so nothing new is given. This keeps D3 (the phase logic is the
+lesson, the clipping is not) and D4 (the estimator is built, the clocked wiring is not).
 
-**Actions.** Write `RefSpeedEstimator`: input `omega`; outputs `kappa_hat`, `v_ref`; parameters
-`radius = 0.31`, `a_ref = 8`, `v0 = 25`, `T_up = 0.01`, `v_eps = 0.5`; `v_w = omega * radius`;
-`initial v_ref = v0`; `der(v_ref) = ifelse(v_w > v_ref, (v_w - v_ref) / T_up, -a_ref)`;
-`kappa_hat = (v_w - v_ref) / max(v_ref, v_eps)`. Duplicate `ABSStop` → `ABSStopWheelOnly`;
-delete the `wheel.kappa` and `speed.v` wires into `abs`; place `wspeed` =
-`RotationalComponents.Sensors.VelocitySensor` on `wheel.spline` and `est` =
-`RefSpeedEstimator`; wire `wspeed.w → est.omega`, `est.kappa_hat → abs.kappa`,
-`est.v_ref → abs.v`. Run 6 s; plot `est.v_ref` against `speed.v`.
+**Actions.**
 
-**Reference model.** `HandsOn03.RefSpeedEstimator`, `HandsOn03.ABSStopWheelOnly`,
-`HandsOn03.ABSStopWheelOnlyTransient` (forwards `road_mu`, `a_ref`, `T_p`, `stop`).
+A · Write `RefSpeedEstimator`: input `omega`; outputs `kappa_hat`, `v_ref`, `a_w`; parameters
+`radius = 0.31`, `a_ref = 8`, `v0 = 25`, `T_up = 0.01`, `v_eps = 0.5`, `T_f = 0.005`;
+`v_w = omega * radius`; `initial v_ref = v0`;
+`der(v_ref) = ifelse(v_w > v_ref, (v_w - v_ref) / T_up, -a_ref)`;
+`kappa_hat = (v_w - v_ref) / max(v_ref, v_eps)`; and the wheel's surface acceleration,
+filtered as step 03's slip rate was: `initial v_f = v0`; `der(v_f) = (v_w - v_f) / T_f`;
+`a_w = (v_w - v_f) / T_f`.
 
-**Checkpoint** (H3, measured; the gate below fired):
+B · Duplicate `SlipABS` → `PhaseABS`; drop the look-ahead; add the input `a_w`; parameters
+`a_minus = 12`, `a_plus = 3`, `lambda_1 = 0.2`, `k_dec = 40000`, `k_inc = 8000`, `v_min = 1.5`,
+`T_latch = 0.001`; variables `phase`, `cycled`. Equations:
 
-- μ = 1, `a_ref = 8`: **46.9 m, longer than the locked 43.7 m**, not between 34.4 and 43.7 m.
-  The library's clocked ECU gives **38.7 m** (deck) on the same plant; the deck quotes both.
-- `est.v_ref` sits *below* the true speed, not above it: during each re-apply the wheel slows
-  at less than 8 m/s², so the estimate rides the slipping wheel down and reads about zero slip
-  while the true slip creeps to 2–3 %; the controller sees the slip only once the wheel dives
-  (to −0.2 and deeper, 28 % of the time past −0.12, about 3.3 Hz).
-- No `a_ref` fixes it on a dry road: 2.4 / 4 / 6 / 8 / 10 / 12 / 15 m/s² give 124.6 / 75.6 /
-  51.5 / 46.9 / 48.8 / 50.1 / 51.2 m. The cause is the slow re-apply from almost nothing at a
-  fixed 20 000 N·m/s, not the estimator's knob; the library modulator re-applies fast to a
-  remembered fraction of the lock pressure, which is what its pressure memory is for. The deck
-  says this, and it gives the theory deck's state-machine slide a reason students have seen.
-- `T_p = 0` with the estimator: 53.6 m, so the look-ahead helps little here.
+    phase = ifelse(a_w > a_plus, 0, ifelse(a_w < -a_minus or kappa < -lambda_1, -1, 1))
+    initial cycled = 0
+    der(cycled) = ifelse(phase < -0.5, (1 - cycled) / T_latch, 0)
+    connect(demand, pressure.demand)
+    pressure.requested_rate = ifelse(phase < -0.5, -k_dec, ifelse(phase < 0.5, 0, k_inc))
+    pressure.active = ifelse(v > v_min and cycled > 0.5, 1.0, 0.0)
+    connect(pressure.tau_cmd, tau_cmd)
 
-**Gate for H3.** If the continuous estimator does not land between 34.4 and 43.7 m at μ = 1, or
-does not lose the gain at μ = 0.3 in step 05, the step keeps the build and the guide quotes the
-library's clocked numbers beside the student's. The plan does not tune the estimator to hit the
-deck's numbers. **Both conditions fired** (46.9 m dry; 129.6 m at μ 0.3, under locked). The
-sentence the guide gives is about the missing pressure memory (above), not the 5 ms sampling:
-the measured gap is not a sampling effect.
+C · Duplicate `ABSStop` → `ABSStopWheelOnly`; set `abs` to `PhaseABS`; delete the `wheel.kappa`
+and `speed.v` wires into `abs`; place `wspeed` = `RotationalComponents.Sensors.VelocitySensor`
+on `wheel.spline` and `est` = `RefSpeedEstimator`; wire `wspeed.w → est.omega`,
+`est.kappa_hat → abs.kappa`, `est.a_w → abs.a_w`, `est.v_ref → abs.v`. Run 6 s; plot
+`abs.phase`, `abs.tau_cmd` and `wheel.brake.tau_actual`; then at `road_mu = 0.5`.
 
-**Deck.** `wheel-speed-sensors` ("the ABS measures only this"), `reference-speed`, `abs-distance`.
+**Why three phases.** The first version of this step fed step 03's `SlipABS` from the
+estimator. It stopped in 46.9 m dry, 90.7 m wet and 129.6 m on snow, longer than the locked wheel
+on a dry road, and no `a_ref` from 2.4 to 15 m/s² brought it under 43.7 m (best 46.9 m at 8).
+Its estimate rode the slipping wheel down and read about zero slip, so the law dumped only once
+the wheel dived to −0.2 and deeper, and then rebuilt at a fixed 20 000 N·m/s from almost nothing:
+the slip grew unseen during every slow rebuild. `PhaseABS` changes two things. It dumps on the
+wheel's own deceleration, which needs no estimate of the car's speed: a rolling wheel cannot
+decelerate faster than the car, at most about 9.8 m/s² on a dry road, so past 12 m/s² the tire
+has gone over its peak. And it holds: once the wheel spins back up past +3 m/s² the pressure stops
+where the dump left it, just under the level that was too much, and the slow build starts there.
+The hold is the pressure memory of the theory deck's state-machine slide, and it is what a
+hydraulic modulator does with its two valves per wheel: inlet open is build, both shut is hold,
+outlet open is dump. The estimated slip only catches a wheel that is already locked (`a_w` = 0
+there). `cycled` is a one-line latch: until the first dump the integrator is inactive and passes
+the demand through, which is the fast first build; afterwards builds are slow.
 
-**Screenshots.** `step04-estimator-code.png`, `step04-wheel-only-bench.png`,
-`step04-vref-plot.png`.
+A hydraulic version, with valves in place of the rate integrator, is a stretch goal for whoever
+finishes early; `docs/brake-system-implementation-plan.md` step 3 plans it for the library.
 
-### Step 05 · Across road surfaces · 14 min
+**Reference model.** `HandsOn03.RefSpeedEstimator`, `HandsOn03.PhaseABS`,
+`HandsOn03.ABSStopWheelOnly`, `HandsOn03.ABSStopWheelOnlyTransient` (forwards `road_mu`,
+`a_ref`, `stop`).
+
+**Checkpoint** (H3, measured):
+
+- μ = 1: **35.5 m**, shorter than the locked 43.7 m and the library's clocked ECU's 38.7 m
+  (deck), 1.1 m from the true-slip 34.4 m. μ 0.5: **69.8 m**; μ 0.3: **119.6 m**.
+- μ = 0.5: the cycle runs build → dump → hold → build, 4.7 dumps a second over the stop
+  (14 % dump, 14 % hold, 71 % build, from 1 s until 3 m/s); `abs.pressure.p` does not move in a
+  hold; the torque at the wheel stays between about 2000 and 2300 N·m early in the stop.
+- μ = 1: the dump ends before the wheel turns round, so HOLD never comes: dump and slow build at
+  10 dumps a second, the true slip never past −0.043. From about 1.9 s `a_ref = 8`, below the
+  car's deceleration, has let `est.v_ref` run 2 m/s above the car, the estimated slip passes
+  `lambda_1` while the tire sits at its peak, and the controller dumps on that phantom slip. It
+  costs about 2 m: `a_ref = 10` gives 33.6 m.
+- On wet and snow `a_ref = 8` is above the car's deceleration, and `est.v_ref` rides the wheel,
+  below the car (up to 0.95 m/s at μ 0.5).
+- `abs.tau_cmd ≤ demand` throughout. With a 2000 N·m demand, below the tire's limit, the
+  controller never dumps.
+
+Tuning: only the parameters students are given were varied, against Tsit5 at `dtmax = 1e-3`.
+`a_minus` sets the low-μ result (16 / 14 / 12 / 10 m/s²: 132.3 / 127.4 / 121.3 / 116.1 m at
+μ 0.3, dry within 0.5 m); 12 is the lowest with a margin over the dry-road 9.8 m/s². `k_dec`
+40 000 (step 03's) beats 80 000 and 120 000; `k_inc` from 5000 to 16 000 and `a_plus` from 1 to 6
+move the distances by under 2 m. The wheel-acceleration filter is the sensitive one: at
+`T_f = 10 ms` the snow stop grows to 137.8 m, longer than locked, the filter lag playing the part
+the brake lag played in step 03 A.
+
+**Deck.** `wheel-speed-sensors` ("the ABS measures only this"), `reference-speed`, `modulator`
+and the state-machine slide, `abs-distance`.
+
+**Screenshots.** `step04-estimator-code.png`, `step04-phaseabs-code.png`,
+`step04-wheel-only-bench.png`, `step04-phase-plot.png`.
+
+### Step 05 · Across road surfaces · 10 min
 
 **Goal.** One table from the REPL: locked, ABS on true slip and ABS on wheel speed only, at road
 μ 1.0, 0.5 and 0.3. Then the `a_ref` trap: on μ 0.3 an `a_ref` of 8 m/s² is almost three times
-what the road allows.
+what the road allows, which the library ECU falls into; and what `a_ref` does to the students'
+own ABS.
 
 **Built / given.** Built: a 10-line REPL loop over the three analyses (the guide gives its
 skeleton). Given: `Vehicle.braking_distance`; `ABSBrakeTransient` for the library column.
 
 **Actions.** For μ in (1.0, 0.5, 0.3), run `LockedStopTransient`, `ABSStopTransient`,
 `ABSStopWheelOnlyTransient` with `road_mu = μ` and `stop = 0.5 + 1.5·25/(0.7·μ·g) + 1` (the
-notebook's rule, about 20 s at 0.3); fill the table. Rerun μ 0.3 wheel-only with
-`a_ref = 0.8·μ·g ≈ 2.4`.
+notebook's rule, about 20 s at 0.3); fill the table. Rerun wheel-only with
+`a_ref = 0.8·μ·g ≈ 2.4` at μ 0.3, and with the same `a_ref` at μ 1.
 
 **Reference model.** The three analyses of steps 02–04; the library's `ABSBrakeTransient`,
 `IdealBrakeTransient`, `LockedBrakeTransient` for the cross-check.
@@ -308,16 +357,20 @@ notebook's rule, about 20 s at 0.3); fill the table. Rerun μ 0.3 wheel-only wit
 
 | road μ | locked | ABS, true slip | ABS, wheel only (yours) | ABS, wheel only (library, 5 ms) |
 |---:|---:|---:|---:|---:|
-| 1.0 | **43.7 m** | **34.4 m** | 46.9 m | 38.7 m |
-| 0.5 | **85.1 m** | **63.4 m** | 90.7 m | 83.2 m |
-| 0.3 | **136.8 m** | **102.2 m** | 129.6 m | **141.3 m**, longer than locked |
+| 1.0 | **43.7 m** | **34.4 m** | 35.5 m | 38.7 m |
+| 0.5 | **85.1 m** | **63.4 m** | 69.8 m | 83.2 m |
+| 0.3 | **136.8 m** | **102.2 m** | 119.6 m | **141.3 m**, longer than locked |
 
 The first two columns are the deck's (`abs-surfaces`) and are what the student's models must
-give; the third is measured (H3). With `a_ref = 2.4` at μ 0.3: **127.0 m** (yours) and
-**128.4 m** (library), both shorter than locked. The trap at `a_ref = 8` on snow shows on the
-library ECU only; the students' continuous estimator is pulled back up to the wheel whenever
-the wheel is faster, so it does not under-read the slip the same way. All library numbers are
-reproduced with Tsit5 at `dtmax = 1e-3`.
+give; the third is measured (H3). The wheel-only ABS keeps most of the gain on a dry road (8.2 of
+9.3 m) and about half of it on snow (17.2 of 34.6 m). The trap at `a_ref = 8` on snow shows on the
+library ECU only, which acts on its slip estimate; with `a_ref = 2.4` it stops in **128.4 m**.
+The students' `PhaseABS` dumps on the wheel's deceleration and does not fall into it. Their
+`a_ref = 2.4` rerun shows the other side of the same knob instead: an `a_ref` below the car's
+real deceleration (about 0.9 μ g with ABS) lets the estimate run above the car, and the slip
+trigger dumps on slip that is not there: **124.1 m** at μ 0.3, longer than the 119.6 m at
+`a_ref = 8` though still under locked, and **105.4 m** at μ 1. All library numbers are reproduced
+with Tsit5 at `dtmax = 1e-3`.
 
 **Deck.** `abs-surfaces`, `reference-speed` (the trap).
 
@@ -325,8 +378,8 @@ reproduced with Tsit5 at `dtmax = 1e-3`.
 
 ### Hand in · 3 min
 
-Pull request `handson-03` → `main` with the step 05 table and one sentence on why the wheel-only
-ABS loses its gain on snow.
+Pull request `handson-03` → `main` with the step 05 table and one sentence on why the library's
+wheel-only ABS loses its gain on snow and the student's does not.
 
 ### Step 06 · Traction control, bonus task (extra points) · outside the session
 
@@ -390,19 +443,19 @@ format of that brief (each task ends in a check). It touches nothing under `dyad
 |---|---|---|
 | H1 | `HandsOn03.LockedStop` + transient, on `HandsOn.Body` | **done**: equals `LockedBrakeTransient` to machine precision at μ 1.0, 0.5, 0.3; 43.7 m |
 | H2 | `HandsOn03.SlipABS`, `ABSStop` + transient | **done**: `T_p = 0.03` equals `IdealBrakeTransient` to machine precision; A 53.8 m, 26 % sliding, 2.6 Hz |
-| H3 | `HandsOn03.RefSpeedEstimator`, `ABSStopWheelOnly` + transient | **done, gate fired**: 46.9 / 90.7 / 129.6 m; `a_ref = 2.4` at μ 0.3: 127.0 m |
+| H3 | `HandsOn03.RefSpeedEstimator`, `PhaseABS`, `ABSStopWheelOnly` + transient | **done**: 35.5 / 69.8 / 119.6 m, all under locked; `a_ref = 2.4`: 124.1 m at μ 0.3, 105.4 m at μ 1. (The first version, `SlipABS` on the estimate, gave 46.9 / 90.7 / 129.6 m.) |
 | H4 | `Vehicle.braking_distance(result; t_brake = 0.5, v_stop = 0.5)` (also `(t, s, v; …)`) in `dyad/Vehicle/module.jl`, the notebook's `braking` rule as one function; notebook 01 switched to it | **done**: unit test on a synthetic constant-deceleration trace; notebook 01 prints the same numbers |
 | H5 | merge PR #90 to `main`, tag it, and pin the tag in step 00 | open (the lecturer's call); a fresh `MyCar` clone with `Pkg.add(…, rev = tag)` runs steps 02–05 |
 | H6 | bonus TCS reference on `feat/handson03-tcs-bonus` | open; the task is on the deck, the reference and its figures are not built |
 
-Every reference analysis sets `alg = Tsit5` explicitly, with `dtmax = 1e-3`, and forwards every
-knob the guide varies by a short name (`road_mu`, `T_p`, `lambda_target`, `a_ref`, and the base
-`stop`), so the guide never uses nested `a__b__c` overrides. The Dyad test cases cannot set
-`dtmax`, so their expected final positions come from Tsit5 runs without it (59.424 m against
-59.411 m for the wheel-only bench). A docstring-only fix is still worth taking along but was not
-made, since existing components stay unchanged in this work: `ABSPressureIntegrator`'s docstring
-("retained for the continuous ideal benchmark") is what students read under **+**, and should
-state its contract instead.
+Every reference analysis sets `alg = Tsit5` explicitly, with `dtmax = 1e-3`, and forwards every knob
+the guide varies by a short name (`road_mu`, `T_p`, `lambda_target`, `a_ref`, and the base `stop`),
+so the guide never uses nested `a__b__c` overrides. The Dyad test cases cannot set `dtmax`, so their
+expected final positions come from Tsit5 runs without it (47.98 m for the wheel-only bench, with a
+0.05 m tolerance because its phases switch on thresholds). A docstring-only fix is still worth
+taking along but was not made, since existing components stay unchanged in this work:
+`ABSPressureIntegrator`'s docstring ("retained for the continuous ideal benchmark") is what students
+read under **+**, and should state its contract instead.
 
 Already planned elsewhere and needed only for the ESP demo: `lecture-03-esp-dyad-tasks.md` tasks
 0–5 and 9 (6–7 for split-µ and load transfer).
@@ -415,16 +468,17 @@ each carrying the goal, the checkpoint and a guide link, and its tutor notes in 
 (decision D1). A `handson-03` deck is needed; the theory deck is not split.
 
 The deck is built: title, steps 00–05, hand-in, the step 06 bonus and a wrap-up table, each step
-slide with the goal, what is given and built, the code typed, a checkpoint figure from the
-reference runs and the measured numbers, and the tutor notes (where students stall, the H3
-divergence) in the speaker notes. It is on the landing page. The four theory-deck changes below
-are not made here: that deck is edited separately.
+slide with the goal, what is given and built, the code typed, a checkpoint figure from the reference
+runs and the measured numbers, and the tutor notes (where students stall, why step 04 needs the
+hold) in the speaker notes. Step 04 has two slides: the state diagram with the code, then the dump /
+hold / build figure with its checkpoint. It is on the landing page. The four theory-deck changes
+below are not made here: that deck is edited separately.
 
 Each hands-on step puts into practice the theory slides listed under it above. The theory deck
 needs four small changes:
 
 - `00-front-matter.md`, "The models behind this lecture": add the hands-on's three student models
-  (`LockedStop`, `SlipABS`, `RefSpeedEstimator`) beside notebook 01.
+  (`LockedStop`, `SlipABS`, `RefSpeedEstimator`, `PhaseABS`) beside notebook 01.
 - `abs-model`: one line in the slide or notes, "you write this controller in the hands-on,
   step 03", as lecture 2's section 08 is the bridge to its hands-on.
 - `abs-surfaces`: the closing exercise ("make `a_ref` adapt") points at the hands-on step 05
@@ -435,13 +489,14 @@ needs four small changes:
 
 | Risk | Where | Mitigation |
 |---|---|---|
-| Studio's code view reformats or drops the `pressure` placement, or a nested `ifelse` | 03, 04 | rehearse; a "Stuck?" block with the full `SlipABS` and `RefSpeedEstimator` source on the guide |
+| Studio's code view reformats or drops the `pressure` placement, or a nested `ifelse` | 03, 04 | rehearse; a "Stuck?" block with the full `SlipABS`, `RefSpeedEstimator` and `PhaseABS` source on the guide |
 | Initial conditions on the bench (five lines) mistyped or forgotten; the wheel starts at 0 rad/s and the run is a wheel spinning up, not a stop | 02 | the guide gives the lines to paste; the checkpoint plot shows wheel and car speed together |
 | Compile time: `MyCar` recompiles hands-on 1, 2 and 3 on every `Dyad: Compile` | all | rehearse on a student-spec laptop; compile once per step, not per edit |
 | Solver: the bang-bang rate law switches every few milliseconds behind a 30 ms lag | 03–05 | Tsit5 with a `dtmax`, set in every reference analysis and on the guide; never FBDF, which steps over switching inputs and reports a wrong `Success` |
 | Too short a `stop` on low μ: the car is still moving and the distance is undefined | 05 | the notebook's stop-time rule in the loop skeleton; `braking_distance` errors with the speed it ended at |
 | Run A loses to the locked wheel | 03 | not a failure: the guide states it and step C fixes it |
-| The continuous estimator does not reproduce the clocked ECU's trap | 04, 05 | the H3 gate: quote the library column beside the student's |
+| Step 04 overruns: two components to write | 04 | the guide's "Stuck?" block hands out `PhaseABS`; the students then write only the estimator's three `a_w` lines |
+| A student filters `a_w` more heavily to smooth the plot | 04 | the checkpoint states `T_f = 5 ms`; at 10 ms the snow stop is longer than locked |
 | The branch pin in students' `Manifest.toml` (`feat/lecture02-theory-deck`) gives a library without the Lecture 3 parts | 00 | H5: a tag, `rev =` in step 00 |
 | `MultibodyComponents` arrives with the tag | 00 | D7 |
 
@@ -455,7 +510,7 @@ needs four small changes:
 | TCS figures | step 06 | H6 |
 | Screenshots (`step00-wheel-library.png` and the benches) | deck, guide | rehearsal in Studio |
 | The guide and tutor guide; the deck's guide links point there | `slides/site/handson/lecture-03/` | not written |
-| Rehearsal of the drawing (02) and the two code-view pastes (03, 04) | steps 02–04 | rehearsal in Studio, with the screenshots |
+| Rehearsal of the drawing (02) and the three code-view pastes (03, 04 twice) | steps 02–04 | rehearsal in Studio, with the screenshots |
 
 ## Open decisions
 
@@ -465,7 +520,7 @@ Each has a recommended default; the plan above runs on the defaults.
 |---|---|---|---|
 | D1 | Session format | a separate 90-minute hands-on after the theory, Lecture 2 style / a live build inside the lecture, Lecture 1 style | **separate session**, with the `handson-03` deck and guide; the theory deck's ABS results slides then serve as the checkpoints |
 | D2 | Body | the student's hands-on 1 `Body` / `Vehicle.VehicleBody` | **the student's `Body`**: identical physics on a flat road (H1 proves it), and the car stays theirs |
-| D3 | How the controller is built | code view, about 8 lines, integrator given / drawn from `BlockComponents` / given `ABSIdealController`, only wired | **code view with the integrator given**: the rate law and the look-ahead are the lesson; the clipping is not |
+| D3 | How the controller is built | code view, about 8 lines, integrator given / drawn from `BlockComponents` / given `ABSIdealController`, only wired | **code view with the integrator given**: the rate law and the look-ahead are the lesson; the clipping is not. Step 04's `PhaseABS` follows the same rule |
 | D4 | Wheel-speed-only step | build a continuous `RefSpeedEstimator` / wire the library's clocked `ABSController` in Studio | **build the estimator**; the clocked wiring (a three-way connect with the clock, three samplers) is GUI risk with no lesson in it. The library column in step 05 covers sampling |
 | D5 | ESP in the session | demo only / a REPL-only run at the end / build | **demo only**, in the theory session from notebook `03-esp` |
 | D6 | TCS | bonus outside the session / an in-session step | **bonus**, brake in the wheel line of hands-on 1's `SlipCar`; no session time is left |
