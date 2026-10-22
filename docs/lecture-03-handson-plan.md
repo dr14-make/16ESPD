@@ -1,23 +1,26 @@
-# Lecture 3 hands-on — step plan
+# Lecture 3 live build — step plan
 
-One session of about 90 minutes in which students brake a car hard on one lumped wheel, watch the
-wheel lock, write an ABS slip controller of their own, then take away its knowledge of the car's
-speed and see what that costs on a slippery road. Traction control is a bonus task outside the
-session. ESP stays a lecturer demo on the planar car.
+The build inside Lecture 3's 3-hour block, in the Lecture 1 format (decision D1): students brake a
+car hard on one lumped wheel, watch the wheel lock, write an ABS slip controller of their own,
+then take away its knowledge of the car's speed and see what that costs on a slippery road, each
+step along with the lecturer in the section whose theory it puts into practice. Traction control
+is a take-home bonus. ESP stays a lecturer demo on the planar car.
 
-This file is the plan behind three artifacts, in the same split as hands-on 2: the guide
-`slides/site/handson/lecture-03/` (`index.md`, the one full source, and `tutor.md`; not written
-yet), the projector deck `slides/decks/handson-03/` (one slide per step, built, with its figures
-from `scripts/export_handson03_figures.jl`, `mise run figures:handson-03`), and the reference
-solutions in `dyad/HandsOn03/` (built; checkpoints in `test/abs_handson_plausibility.jl`).
+This file is the plan behind three artifacts, in the same split as Lecture 1: the build slides in
+the lecture deck `slides/decks/lecture-03/` (one per step, the lecturer's instructions in the
+speaker notes, figures from `scripts/export_lecture03_build_figures.jl`, `mise run
+figures:lecture-03-build`), the build guide `slides/site/lecture/lecture-03/` (one anchored
+section per step, with the code to paste), and the reference solutions in `dyad/HandsOn03/`
+(built; checkpoints in `test/abs_handson_plausibility.jl`). The models keep the `HandsOn03` name.
 
 Companion documents:
 
 - `docs/abs-controller-spec.md`, `docs/abs-braking-distance-findings.md`: the library ABS and how
   it got to 38.7 m.
 - `docs/lecture-03-esp-dyad-tasks.md`: the planar car and ESP, tasks 0–9, for the demo.
-- `docs/lecture-02-handson-plan.md`: the format this plan copies.
-- To write once the reference models exist: `docs/lecture-03-handson-screenshots.md`.
+- `docs/lecture-01-live-build-plan.md`: the format the lecture copies.
+- `docs/lecture-03-run-sheet.md`: the time budget of the whole block, theory and build.
+- `docs/lecture-03-screenshots.md`: the Studio screenshots the build still needs.
 
 ## Where the students' car stands after Lecture 2
 
@@ -39,7 +42,7 @@ After hands-on 2 a student also has, on a merged `handson-02` branch:
   the brake acts on the body, not on a wheel.
 
 So the hands-on-2 car cannot lock a wheel, and giving it one means a new driveline with a wheel
-shaft out. This session does not do that (decision D8). It needs only hands-on 1's `Body` and
+shaft out. This build does not do that (decision D8). It needs only hands-on 1's `Body` and
 the library, so a student who did not finish hands-on 2 can still do all of it.
 
 ## The arc
@@ -47,7 +50,7 @@ the library, so a student who did not finish hands-on 2 can still do all of it.
 The theory deck's section 03 makes four claims about its ABS model: a locked wheel stops on the
 sliding friction; ABS holds the tire near its peak and stops shorter; the controller must lead the
 30 ms brake lag; and without the car's speed the controller must estimate it, which costs most of
-the gain on slippery roads. The session tests them in that order, on the student's own parts.
+the gain on slippery roads. The build tests them in that order, on the student's own parts.
 Students first work out the tire's limit torque and the two bounding distances by hand, then build
 the locked stop, then write the slip controller (first without lead, then with it), then write a
 wheel-speed-only ABS with the dump / hold / build cycle and the estimate it needs, and finally sweep
@@ -59,7 +62,7 @@ step 01.
 The lecture's goal is that a student can explain where on the friction curve an ABS keeps the
 tire and why the hydraulic lag and the missing speed signal make that hard. The pressure-memory
 state machine of the library ABS (`ABSModulatorDiscrete`: four phases, a lock-torque latch, a
-hold timeout) is what a production ECU does, and the deck explains it; 90 minutes cannot build
+hold timeout) is what a production ECU does, and the deck explains it; a lecture cannot build
 all of it. Step 04 builds its core, three phases and one latch, because without the hold the
 students' wheel-only ABS loses to the locked wheel (see step 04).
 So:
@@ -75,7 +78,7 @@ So:
 | `PhaseABS`: dump on `a_w < −a_minus` or slip past `lambda_1`, hold on `a_w > +a_plus`, build slowly otherwise; a latch passes the demand through until the first dump | **built** (code view, a copy of `SlipABS`, about 7 lines) | The modulator's three valve states and the pressure memory, small enough to write; the version that beats the locked wheel on wheel speed alone. |
 | `Vehicle.ABSController` (clocked 5 ms, wheel speed only), `ABSBrakeTransient`, `LockedBrakeTransient`, `IdealBrakeTransient` | given, run from the REPL only | The deck's numbers and the cross-check for the student's models. Its clocked wiring (`PeriodicClock`, three `Sampler`s, `ZeroOrderHold`) is not drawn in Studio. |
 | `Vehicle.braking_distance(sol)` | given (new, task H4) | One definition of "distance" (from brake application until v < 0.5 m/s) shared by the guide, the tests and notebook 01. |
-| Bonus TCS: `TCSSlipCar` and its controller | **built**, outside the session | Hands-on 1's `SlipCar` with a `Vehicle.Wheel.BrakeActuator` in the wheel line, and the slip law turned around. |
+| Bonus TCS: `TCSSlipCar` and its controller | **built**, at home | Hands-on 1's `SlipCar` with a `Vehicle.Wheel.BrakeActuator` in the wheel line, and the slip law turned around. |
 | Planar car, ESP (`Vehicle.Planar.*`, `Lecture3.*`) | lecturer demo only | See § ESP. |
 
 The hands-on keeps the physical-connector rule of `lecture-03-esp-dyad-tasks.md` wherever it
@@ -93,7 +96,9 @@ Checkpoints go in `test/abs_handson_plausibility.jl`, in testsets named "Hands-o
 
 ## Steps
 
-Budgets add up to 90 minutes: 8 + 7 + 15 + 22 + 25 + 10 + 3.
+Budgets add up to 83 minutes of building inside the 176-minute block: 6 + 5 + 15 + 22 + 25 + 10.
+Each step lists, under **Deck**, the build slide that introduces it and the theory slides it puts
+into practice; `docs/lecture-03-run-sheet.md` places them on the clock.
 
 Numbers marked **(deck)** are already in `slides/decks/lecture-03` and come from the library
 analyses; numbers marked **(hand)** follow from the formulas given; **(H2)** and similar mark
@@ -101,15 +106,15 @@ numbers the reference task of that name measured. All reference runs use Tsit5 w
 `dtmax = 1e-3`; the library analyses run with the same settings agree with the deck's numbers
 to 0.1 m.
 
-### Step 00 · Set up · 8 min
+### Step 00 · Set up · 6 min
 
-**Goal.** A `handson-03` branch on `MyCar`, with the Lecture 3 library, so `Vehicle.Wheel` and
+**Goal.** A `lecture-03` branch on `MyCar`, with the Lecture 3 library, so `Vehicle.Wheel` and
 `Vehicle.ABSPressureIntegrator` appear under **+**.
 
-**Built / given.** Given: the course library, pinned to the tag the session was rehearsed on
+**Built / given.** Given: the course library, pinned to the tag the lecture was rehearsed on
 (task H5).
 
-**Actions.** Branch `handson-03` from `main` (after hands-on 2's PR, or from hands-on 1's `main`
+**Actions.** Branch `lecture-03` from `main` (after hands-on 2's PR, or from hands-on 1's `main`
 for a student who missed it); `Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "<tag>")`
 (replaces the branch pin); <kbd>F1</kbd> → `Dyad: Compile`.
 
@@ -117,11 +122,11 @@ for a student who missed it); `Pkg.add(url = "https://github.com/dr14-make/16ESP
 `Vehicle` → `Wheel` lists `BrakedWheel`, `BrakeActuator`, `TireFrictionCurve`; `Vehicle` lists
 `ABSPressureIntegrator`.
 
-**Deck.** None.
+**Deck.** Build slide `build-setup`, the last slide of the front matter.
 
 **Screenshots.** `step00-wheel-library.png`.
 
-### Step 01 · The tire's limit, by hand · 7 min
+### Step 01 · The tire's limit, by hand · 5 min
 
 **Goal.** Know the three numbers every later run is judged by, before anything runs: the brake
 torque at which the tire is at its peak, and the stopping distances at the peak and sliding.
@@ -376,12 +381,13 @@ with Tsit5 at `dtmax = 1e-3`.
 
 **Screenshots.** `step05-surface-table.png` (REPL output).
 
-### Hand in · 3 min
+### No hand-in
 
-Pull request `handson-03` → `main` with the step 05 table and one sentence on why the library's
-wheel-only ABS loses its gain on snow and the student's does not.
+A live build has no hand-in, as in Lecture 1: students commit their steps on the `lecture-03`
+branch, and the section 03 summary and the wrap-up's "What you measured" slide carry the sentence
+the hand-in asked for. Only the bonus is handed in.
 
-### Step 06 · Traction control, bonus task (extra points) · outside the session
+### Step 06 · Traction control, bonus task (extra points) · take-home
 
 **Goal.** Hands-on 1's `SlipCar` on a snowy road, full torque from rest: without TCS the wheel
 spins up as in Lecture 1; with a brake-based TCS the wheel holds near the peak and the car
@@ -413,7 +419,7 @@ ESP stays a lecturer demo and a notebook. Reasons:
 - **It is not built.** Of `lecture-03-esp-dyad-tasks.md`, tasks 0–1 are committed and task 2 is
   built but uncommitted on `feat/lecture-03-planar-car`; the ESP itself is task 5, the notebook
   task 9.
-- **The plant is too large to draw in 90 minutes.** A harness is `PlanarCar`, `PlanarCarSensors`
+- **The plant is too large to draw in a lecture.** A harness is `PlanarCar`, `PlanarCarSensors`
   (eleven connects), a steering `Position` source on a `Fixed`, a profile, the ESP and a dozen
   initial conditions, before a single run.
 - **Cost on student machines.** Task 0 makes `MultibodyComponents` a dependency of the library;
@@ -462,40 +468,40 @@ Already planned elsewhere and needed only for the ESP demo: `lecture-03-esp-dyad
 
 ## Deck: theory and practice
 
-Lecture 3 follows Lecture 2's format: the theory session on `slides/decks/lecture-03`, then a
-separate 90-minute hands-on with its own deck `slides/decks/handson-03/`, one slide per step,
-each carrying the goal, the checkpoint and a guide link, and its tutor notes in the speaker notes
-(decision D1). A `handson-03` deck is needed; the theory deck is not split.
+Lecture 3 follows Lecture 1's format (decision D1): one deck, `slides/decks/lecture-03`, with
+each build step as one slide inside the section it belongs to, and the build guide on the course
+site. The separate `handson-03` projector deck that an earlier version of this plan called for was
+built and then folded into the lecture deck; its figures moved to `slides/images/lecture-03/`.
 
-The deck is built: title, steps 00–05, hand-in, the step 06 bonus and a wrap-up table, each step
-slide with the goal, what is given and built, the code typed, a checkpoint figure from the reference
-runs and the measured numbers, and the tutor notes (where students stall, why step 04 needs the
-hold) in the speaker notes. Step 04 has two slides: the state diagram with the code, then the dump /
-hold / build figure with its checkpoint. It is on the landing page. The four theory-deck changes
-below are not made here: that deck is edited separately.
+Where each step sits in the deck:
 
-Each hands-on step puts into practice the theory slides listed under it above. The theory deck
-needs four small changes:
+| Step | Build slide | Section | Placed after |
+|---|---|---|---|
+| 00 | `build-setup` | 00 front matter | "The models behind this lecture" |
+| 01 | `build-limits` | 01 friction and stopping | `braking-distance` |
+| 02 | `build-locked` | 03 ABS | `what-abs-does`, so the locked wheel is on screen before the hardware |
+| 03 | `build-slip-abs` | 03 ABS | `abs-model`; checkpoints `one-stop`, `on-the-curve` follow, then the break |
+| 04 | `build-wheel-only`, `build-wheel-only-cycle` | 03 ABS | `reference-speed`, moved to just after the break; checkpoint `abs-distance` follows |
+| 05 | `build-surfaces` | 03 ABS | `abs-surfaces`, the library sweep it extends |
+| 06 | `bonus-tcs` | 04 TCS | `tcs-and-lecture-1` |
 
-- `00-front-matter.md`, "The models behind this lecture": add the hands-on's three student models
-  (`LockedStop`, `SlipABS`, `RefSpeedEstimator`, `PhaseABS`) beside notebook 01.
-- `abs-model`: one line in the slide or notes, "you write this controller in the hands-on,
-  step 03", as lecture 2's section 08 is the bridge to its hands-on.
-- `abs-surfaces`: the closing exercise ("make `a_ref` adapt") points at the hands-on step 05
-  and its `a_ref` rerun.
-- `esp-model`: rewritten when the planar demo exists (§ ESP).
+Each build slide carries the code or a placeholder for the Studio screenshot, a one-line recipe,
+the reference run's figure and numbers, and a link to its anchor on the guide (`#step-00` to
+`#step-06`); its speaker notes carry the lecturer's full instructions and where students stall.
+The library's ABS result slides stay the checkpoints, with green cues naming the students'
+numbers. The hand-over slide became "What you measured", one row per step.
 
 ## Risks
 
 | Risk | Where | Mitigation |
 |---|---|---|
-| Studio's code view reformats or drops the `pressure` placement, or a nested `ifelse` | 03, 04 | rehearse; a "Stuck?" block with the full `SlipABS`, `RefSpeedEstimator` and `PhaseABS` source on the guide |
+| Studio's code view reformats or drops the `pressure` placement, or a nested `ifelse` | 03, 04 | rehearse; a "Fell behind?" block with the full `SlipABS`, `RefSpeedEstimator` and `PhaseABS` source on the guide |
 | Initial conditions on the bench (five lines) mistyped or forgotten; the wheel starts at 0 rad/s and the run is a wheel spinning up, not a stop | 02 | the guide gives the lines to paste; the checkpoint plot shows wheel and car speed together |
 | Compile time: `MyCar` recompiles hands-on 1, 2 and 3 on every `Dyad: Compile` | all | rehearse on a student-spec laptop; compile once per step, not per edit |
 | Solver: the bang-bang rate law switches every few milliseconds behind a 30 ms lag | 03–05 | Tsit5 with a `dtmax`, set in every reference analysis and on the guide; never FBDF, which steps over switching inputs and reports a wrong `Success` |
 | Too short a `stop` on low μ: the car is still moving and the distance is undefined | 05 | the notebook's stop-time rule in the loop skeleton; `braking_distance` errors with the speed it ended at |
 | Run A loses to the locked wheel | 03 | not a failure: the guide states it and step C fixes it |
-| Step 04 overruns: two components to write | 04 | the guide's "Stuck?" block hands out `PhaseABS`; the students then write only the estimator's three `a_w` lines |
+| Step 04 overruns: two components to write | 04 | the guide's "Fell behind?" block hands out `PhaseABS`; the students then write only the estimator |
 | A student filters `a_w` more heavily to smooth the plot | 04 | the checkpoint states `T_f = 5 ms`; at 10 ms the snow stop is longer than locked |
 | The branch pin in students' `Manifest.toml` (`feat/lecture02-theory-deck`) gives a library without the Lecture 3 parts | 00 | H5: a tag, `rev =` in step 00 |
 | `MultibodyComponents` arrives with the tag | 00 | D7 |
@@ -504,26 +510,26 @@ needs four small changes:
 
 | Slot | Where | Filled by |
 |---|---|---|
-| Course-library tag | step 00 (`TODO-TAG` on the deck) | H5 |
+| Course-library tag | step 00 (`TODO-TAG` on the deck and the guide) | H5 |
 | ~~Run A distance, sliding share, cycle frequency; run C cycle frequency~~ | step 03 | H2, filled |
 | ~~Wheel-only column and the `a_ref = 2.4` run~~ | steps 04, 05 | H3, filled |
 | TCS figures | step 06 | H6 |
-| Screenshots (`step00-wheel-library.png` and the benches) | deck, guide | rehearsal in Studio |
-| The guide and tutor guide; the deck's guide links point there | `slides/site/handson/lecture-03/` | not written |
+| Screenshots, listed in `docs/lecture-03-screenshots.md` | deck, guide | rehearsal in Studio |
+| ~~The guide; the deck's guide links point there~~ | `slides/site/lecture/lecture-03/` | written; no tutor guide, the speaker notes and the run sheet carry it |
 | Rehearsal of the drawing (02) and the three code-view pastes (03, 04 twice) | steps 02–04 | rehearsal in Studio, with the screenshots |
 
 ## Open decisions
 
-Each has a recommended default; the plan above runs on the defaults.
+Each has a recommended default; the plan above runs on the defaults. D1 is decided.
 
 | # | Decision | Options | Recommended default |
 |---|---|---|---|
-| D1 | Session format | a separate 90-minute hands-on after the theory, Lecture 2 style / a live build inside the lecture, Lecture 1 style | **separate session**, with the `handson-03` deck and guide; the theory deck's ABS results slides then serve as the checkpoints |
+| D1 | Session format | a separate 90-minute hands-on after the theory, Lecture 2 style / a live build inside the lecture, Lecture 1 style | **decided: a live build inside the lecture, Lecture 1 style.** One 3-hour deck with a build slide per step and the build guide on the course site; the `handson-03` deck is gone. The library's ABS result slides serve as the checkpoints |
 | D2 | Body | the student's hands-on 1 `Body` / `Vehicle.VehicleBody` | **the student's `Body`**: identical physics on a flat road (H1 proves it), and the car stays theirs |
 | D3 | How the controller is built | code view, about 8 lines, integrator given / drawn from `BlockComponents` / given `ABSIdealController`, only wired | **code view with the integrator given**: the rate law and the look-ahead are the lesson; the clipping is not. Step 04's `PhaseABS` follows the same rule |
 | D4 | Wheel-speed-only step | build a continuous `RefSpeedEstimator` / wire the library's clocked `ABSController` in Studio | **build the estimator**; the clocked wiring (a three-way connect with the clock, three samplers) is GUI risk with no lesson in it. The library column in step 05 covers sampling |
-| D5 | ESP in the session | demo only / a REPL-only run at the end / build | **demo only**, in the theory session from notebook `03-esp` |
-| D6 | TCS | bonus outside the session / an in-session step | **bonus**, brake in the wheel line of hands-on 1's `SlipCar`; no session time is left |
-| D7 | Library tag and `MultibodyComponents` | tag before the planar car merges / tag after it, with setup done before the session | **tag what was rehearsed**; if the planar car is in it, ask students to run step 00 before the session and measure the install time in rehearsal |
+| D5 | ESP in the lecture | demo only / a REPL-only run at the end / build | **demo only**, in section 05 from notebook `03-esp` |
+| D6 | TCS | take-home bonus / a step in the lecture | **bonus**, brake in the wheel line of hands-on 1's `SlipCar`; no lecture time is left |
+| D7 | Library tag and `MultibodyComponents` | tag before the planar car merges / tag after it, with setup done before the lecture | **tag what was rehearsed**; if the planar car is in it, ask students to run step 00 before the lecture and measure the install time in rehearsal |
 | D8 | ABS on the student's `MappedCar` | no / a new `CVTDriveline` variant with a wheel shaft out, `BrakedWheel` on it | **no**: the engine and clutch add compile time and nothing to the ABS lesson; it would also leave out students who did not finish hands-on 2 |
 | D9 | Reference solutions on `main` | `dyad/HandsOn03/` on `main` like `HandsOn02` / off `main` | **on `main`**, except the TCS bonus |
