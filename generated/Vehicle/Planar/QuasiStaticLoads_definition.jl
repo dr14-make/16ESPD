@@ -5,22 +5,27 @@
 
 
 @doc Markdown.doc"""
-   QuasiStaticLoads(; name, m, a, b, tw, g)
+   QuasiStaticLoads(; name, load_transfer, m, a, b, tw, g, h, T_lt)
 
-Static axle-load distribution delivered through four translational flanges.
+Quasi-static wheel loads from filtered chassis acceleration.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `load_transfer`         | Enable acceleration filtering and load transfer (derived)                         | --  |   false |
 | `m`         | Vehicle mass (probe)                         | kg  |   1500.0 |
 | `a`         | CG distance to front axle (probe)                         | m  |   1.2 |
 | `b`         | CG distance to rear axle (probe)                         | m  |   1.5 |
 | `tw`         | Track width (probe)                         | m  |   1.55 |
 | `g`         | Gravitational acceleration used for vertical loads (probe)                         | m/s2  |   9.81 |
+| `h`         | CG height above the road (NHTSA)                         | m  |   0.0 |
+| `T_lt`         | Load-transfer lag time constant (assumed)                         | s  |   0.05 |
 
 ## Connectors
 
+ * `chassis` - Coordinate system (2-dim.) fixed to the component with one cut-force and cut-torque.
+All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `fl` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `fr` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `rl` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
@@ -32,8 +37,15 @@ Static axle-load distribution delivered through four translational flanges.
 | ------------ | ----------------------------------- | ------ |
 | `Nf`         | Static normal load on each front wheel (derived)                         | N  |
 | `Nr`         | Static normal load on each rear wheel (derived)                         | N  |
+| `axf`         | Filtered longitudinal acceleration (assumed)                         | m/s2  |
+| `ayf`         | Filtered lateral acceleration (assumed)                         | m/s2  |
+| `d_long`         |                          | N  |
+| `dN_fl`         |                          | N  |
+| `dN_fr`         |                          | N  |
+| `dN_rl`         |                          | N  |
+| `dN_rr`         |                          | N  |
 """
-@component function QuasiStaticLoads(; name = nothing, m=Float64(1500.0), a=1.2, b=1.5, tw=1.55, g=9.81, kwargs...)
+@component function QuasiStaticLoads(; name = nothing, load_transfer=false, m=Float64(1500.0), a=1.2, b=1.5, tw=1.55, g=9.81, h=Float64(0.0), T_lt=0.05, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -80,6 +92,12 @@ Static axle-load distribution delivered through four translational flanges.
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration used for vertical loads (probe)"])
   __initial_conditions[g] = __local__g
+  __local__h = h
+  append!(__params, @parameters (h::Real), [description = "CG height above the road (NHTSA)"])
+  __initial_conditions[h] = __local__h
+  __local__T_lt = T_lt
+  append!(__params, @parameters (T_lt::Real), [description = "Load-transfer lag time constant (assumed)"])
+  __initial_conditions[T_lt] = __local__T_lt
 
   ### Final Parameters (assignments)
   __bindings[L] = a + b
@@ -89,6 +107,13 @@ Static axle-load distribution delivered through four translational flanges.
   ### Variables (declarations)
   append!(__vars, @variables (Nf(t)::Real), [description = "Static normal load on each front wheel (derived)"])
   append!(__vars, @variables (Nr(t)::Real), [description = "Static normal load on each rear wheel (derived)"])
+  append!(__vars, @variables (axf(t)::Real), [description = "Filtered longitudinal acceleration (assumed)"])
+  append!(__vars, @variables (ayf(t)::Real), [description = "Filtered lateral acceleration (assumed)"])
+  append!(__vars, @variables (d_long(t)::Real))
+  append!(__vars, @variables (dN_fl(t)::Real))
+  append!(__vars, @variables (dN_fr(t)::Real))
+  append!(__vars, @variables (dN_rl(t)::Real))
+  append!(__vars, @variables (dN_rr(t)::Real))
 
   ### Variables (assignments)
   __ovr_Nf = pop!(__overrides, "Nf", nothing); isnothing(__ovr_Nf) || push!(__eqs, Nf ~ __ovr_Nf)
@@ -97,15 +122,40 @@ Static axle-load distribution delivered through four translational flanges.
   __ovr_Nr = pop!(__overrides, "Nr", nothing); isnothing(__ovr_Nr) || push!(__eqs, Nr ~ __ovr_Nr)
   __ovr_Nr__initial = pop!(__overrides, "Nr__initial", nothing); isnothing(__ovr_Nr__initial) || (__initial_conditions[Nr] = __ovr_Nr__initial)
   __ovr_Nr__guess = pop!(__overrides, "Nr__guess", nothing)
+  __ovr_axf = pop!(__overrides, "axf", nothing); isnothing(__ovr_axf) || push!(__eqs, axf ~ __ovr_axf)
+  __ovr_axf__initial = pop!(__overrides, "axf__initial", nothing); isnothing(__ovr_axf__initial) || (__initial_conditions[axf] = __ovr_axf__initial)
+  __ovr_axf__guess = pop!(__overrides, "axf__guess", nothing)
+  __ovr_ayf = pop!(__overrides, "ayf", nothing); isnothing(__ovr_ayf) || push!(__eqs, ayf ~ __ovr_ayf)
+  __ovr_ayf__initial = pop!(__overrides, "ayf__initial", nothing); isnothing(__ovr_ayf__initial) || (__initial_conditions[ayf] = __ovr_ayf__initial)
+  __ovr_ayf__guess = pop!(__overrides, "ayf__guess", nothing)
+  __ovr_d_long = pop!(__overrides, "d_long", nothing); isnothing(__ovr_d_long) || push!(__eqs, d_long ~ __ovr_d_long)
+  __ovr_d_long__initial = pop!(__overrides, "d_long__initial", nothing); isnothing(__ovr_d_long__initial) || (__initial_conditions[d_long] = __ovr_d_long__initial)
+  __ovr_d_long__guess = pop!(__overrides, "d_long__guess", nothing)
+  __ovr_dN_fl = pop!(__overrides, "dN_fl", nothing); isnothing(__ovr_dN_fl) || push!(__eqs, dN_fl ~ __ovr_dN_fl)
+  __ovr_dN_fl__initial = pop!(__overrides, "dN_fl__initial", nothing); isnothing(__ovr_dN_fl__initial) || (__initial_conditions[dN_fl] = __ovr_dN_fl__initial)
+  __ovr_dN_fl__guess = pop!(__overrides, "dN_fl__guess", nothing)
+  __ovr_dN_fr = pop!(__overrides, "dN_fr", nothing); isnothing(__ovr_dN_fr) || push!(__eqs, dN_fr ~ __ovr_dN_fr)
+  __ovr_dN_fr__initial = pop!(__overrides, "dN_fr__initial", nothing); isnothing(__ovr_dN_fr__initial) || (__initial_conditions[dN_fr] = __ovr_dN_fr__initial)
+  __ovr_dN_fr__guess = pop!(__overrides, "dN_fr__guess", nothing)
+  __ovr_dN_rl = pop!(__overrides, "dN_rl", nothing); isnothing(__ovr_dN_rl) || push!(__eqs, dN_rl ~ __ovr_dN_rl)
+  __ovr_dN_rl__initial = pop!(__overrides, "dN_rl__initial", nothing); isnothing(__ovr_dN_rl__initial) || (__initial_conditions[dN_rl] = __ovr_dN_rl__initial)
+  __ovr_dN_rl__guess = pop!(__overrides, "dN_rl__guess", nothing)
+  __ovr_dN_rr = pop!(__overrides, "dN_rr", nothing); isnothing(__ovr_dN_rr) || push!(__eqs, dN_rr ~ __ovr_dN_rr)
+  __ovr_dN_rr__initial = pop!(__overrides, "dN_rr__initial", nothing); isnothing(__ovr_dN_rr__initial) || (__initial_conditions[dN_rr] = __ovr_dN_rr__initial)
+  __ovr_dN_rr__guess = pop!(__overrides, "dN_rr__guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
+  push!(__systems, @named chassis = __Dyad__Frame2D())
   push!(__systems, @named fl = __Dyad__Flange())
   push!(__systems, @named fr = __Dyad__Flange())
   push!(__systems, @named rl = __Dyad__Flange())
   push!(__systems, @named rr = __Dyad__Flange())
+  # Subcomponent acc of type MultibodyComponents.PlanarMechanics.AbsoluteAcceleration
+  acc_overrides = __pop_subcomponent_overrides!(__overrides, "acc")
+  push!(__systems, @named acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration(; acc_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -113,6 +163,13 @@ Static axle-load distribution delivered through four translational flanges.
   ### Guesses
   isnothing(__ovr_Nf__guess) || (__guesses[Nf] = __ovr_Nf__guess)
   isnothing(__ovr_Nr__guess) || (__guesses[Nr] = __ovr_Nr__guess)
+  isnothing(__ovr_axf__guess) || (__guesses[axf] = __ovr_axf__guess)
+  isnothing(__ovr_ayf__guess) || (__guesses[ayf] = __ovr_ayf__guess)
+  isnothing(__ovr_d_long__guess) || (__guesses[d_long] = __ovr_d_long__guess)
+  isnothing(__ovr_dN_fl__guess) || (__guesses[dN_fl] = __ovr_dN_fl__guess)
+  isnothing(__ovr_dN_fr__guess) || (__guesses[dN_fr] = __ovr_dN_fr__guess)
+  isnothing(__ovr_dN_rl__guess) || (__guesses[dN_rl] = __ovr_dN_rl__guess)
+  isnothing(__ovr_dN_rr__guess) || (__guesses[dN_rr] = __ovr_dN_rr__guess)
 
   ### Initialization Equations
 
@@ -122,10 +179,25 @@ Static axle-load distribution delivered through four translational flanges.
   ### Equations
   push!(__eqs, Nf ~ m * g * b / (2 * L))
   push!(__eqs, Nr ~ m * g * a / (2 * L))
-  push!(__eqs, fl.f ~ -Nf)
-  push!(__eqs, fr.f ~ -Nf)
-  push!(__eqs, rl.f ~ -Nr)
-  push!(__eqs, rr.f ~ -Nr)
+  push!(__eqs, d_long ~ -m * axf * h / (2 * L))
+  push!(__eqs, dN_fl ~ d_long - m * ayf * h * (b / L) / tw)
+  push!(__eqs, dN_fr ~ d_long + m * ayf * h * (b / L) / tw)
+  push!(__eqs, dN_rl ~ -d_long - m * ayf * h * (a / L) / tw)
+  push!(__eqs, dN_rr ~ -d_long + m * ayf * h * (a / L) / tw)
+  push!(__eqs, fl.f ~ -(Nf + dN_fl))
+  push!(__eqs, fr.f ~ -(Nf + dN_fr))
+  push!(__eqs, rl.f ~ -(Nr + dN_rl))
+  push!(__eqs, rr.f ~ -(Nr + dN_rr))
+  push!(__eqs, connect(chassis, acc.frame_a))
+
+  ### Control Structures
+  if load_transfer == false
+    push!(__eqs, axf ~ 0.0)
+    push!(__eqs, ayf ~ 0.0)
+  else
+    push!(__eqs, ModelingToolkit.D_nounits(axf) ~ (acc.a_x - axf) / T_lt)
+    push!(__eqs, ModelingToolkit.D_nounits(ayf) ~ (acc.a_y - ayf) / T_lt)
+  end
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

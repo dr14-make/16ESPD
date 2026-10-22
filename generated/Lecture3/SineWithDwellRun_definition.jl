@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SineWithDwellRun(; name, A_sw, v0, radius)
+   SineWithDwellRun(; name, load_transfer, A_sw, v0, radius, h_cg)
 
 Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
 
@@ -13,11 +13,13 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `load_transfer`         |                          | --  |   true |
 | `A_sw`         | Steering-wheel amplitude                         | rad  |   0.5585053606381855 |
 | `v0`         | Initial vehicle speed (FMVSS 126)                         | m/s  |   22.22222222222222 |
 | `radius`         | Wheel radius (repository default)                         | m  |   0.31 |
+| `h_cg`         |                          | m  |   0.0 |
 """
-@component function SineWithDwellRun(; name = nothing, A_sw=0.5585053606381855, v0=22.22222222222222, radius=0.31, kwargs...)
+@component function SineWithDwellRun(; name = nothing, load_transfer=true, A_sw=0.5585053606381855, v0=22.22222222222222, radius=0.31, h_cg=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -57,6 +59,9 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (repository default)"])
   __initial_conditions[radius] = __local__radius
+  __local__h_cg = h_cg
+  append!(__params, @parameters (h_cg::Real))
+  __initial_conditions[h_cg] = __local__h_cg
 
   ### Final Parameters (assignments)
 
@@ -81,7 +86,7 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; steering_fixed_overrides...))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
@@ -108,6 +113,8 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
+  push!(__initialization_eqs, car.loads.axf ~ 0.0)
+  push!(__initialization_eqs, car.loads.ayf ~ 0.0)
   push!(__initialization_eqs, wheel_pos.w ~ 0.0)
 
   ### Assertions

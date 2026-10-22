@@ -171,12 +171,16 @@ end
     brake_sol, brake = planar_open_loop_case(
         stop = 3.0, T_cmd = 500.0,
         brake_fl = 1.0, brake_fr = 1.0, brake_rl = 1.0, brake_rr = 1.0)
+    brake_lt_sol, brake_lt = planar_open_loop_case(
+        stop = 3.0, T_cmd = 500.0, h_cg = 0.55,
+        brake_fl = 1.0, brake_fr = 1.0, brake_rl = 1.0, brake_rr = 1.0)
     right_sol, right = planar_open_loop_case(
         stop = 3.0, T_cmd = 500.0, brake_fr = 1.0, brake_rr = 1.0)
 
     @test maximum(abs.(coast_sol[coast.sensors.r])) < 1e-6
     @test maximum(abs.(brake_sol[brake.sensors.r])) < 1e-6
     @test brake_sol(2.0, idxs = brake.sensors.ax) ≈ -4.185 rtol = 0.01
+    @test brake_lt_sol(2.0, idxs = brake_lt.car.loads.dN_fl) ≈ 640.0 atol = 10.0
     @test right_sol[right.sensors.psi][end] < 0.0
 end
 
@@ -230,6 +234,21 @@ end
 
     @info "Task 3 cornering measurements" steady_runs amplitude_deg = rad2deg(amplitude) max_lateral_g = maximum(abs.(lateral_acceleration)) / 9.81 ack_alpha_fl = ack_sol(4.0, idxs = ack.sensors.alpha_fl) ack_alpha_fr = ack_sol(4.0, idxs = ack.sensors.alpha_fr) ack_difference ack_speed parallel_alpha_fl = parallel_sol(4.0, idxs = parallel.sensors.alpha_fl) parallel_alpha_fr = parallel_sol(4.0, idxs = parallel.sensors.alpha_fr) parallel_difference parallel_speed
 end
+
+@testset "Quasi-static load-transfer plausibility" begin
+    sol, model = planar_open_loop_case(stop = 4.0, delta_sw_final = 0.48, h_cg = 0.55)
+    dN = [sol(t; idxs = load) for t in sol.t, load in
+          (model.car.loads.dN_fl, model.car.loads.dN_fr,
+           model.car.loads.dN_rl, model.car.loads.dN_rr)]
+    Fz = [sol(t; idxs = load) for t in sol.t, load in
+          (model.car.fl.F_z, model.car.fr.F_z, model.car.rl.F_z, model.car.rr.F_z)]
+    @test maximum(abs, vec(sum(dN; dims = 2))) <= 1e-6
+    @test maximum(abs, vec(sum(Fz; dims = 2)) .- 1500.0 * 9.81) <= 1e-6
+    @test vec(dN[end, :]) ≈ [-1134.0, 1153.0, -924.0, 905.0] atol = 2.0
+    @info "Task 7 steady load-transfer measurements" dN = vec(dN[end, :]) F_z = vec(Fz[end, :])
+end
+
+
 
 
 

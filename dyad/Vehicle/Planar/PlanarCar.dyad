@@ -54,6 +54,12 @@ component PlanarCar
   parameter t_k::Length = tw
   "Ackermann fraction (assumed)"
   parameter ackermann::Real = 1.0
+  "CG height above the road (NHTSA)"
+  parameter h_cg::Length = 0.0
+  "Enable acceleration filtering and load transfer (derived)"
+  structural parameter load_transfer::Boolean = false
+  "Load-transfer lag time constant (assumed)"
+  parameter T_lt::Time = 0.05
   world = MultibodyComponents.PlanarMechanics.World(g = 0.0)
   body = MultibodyComponents.PlanarMechanics.Body(m = m, I = Iz, render = false, linearStatePriority = 2)
   tf = MultibodyComponents.PlanarMechanics.FixedTranslation(r = [a, 0])
@@ -67,13 +73,13 @@ component PlanarCar
   column = RotationalComponents.Components.IdealGear(ratio = i_s)
   linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(L = a + b, t_k = t_k, ackermann = ackermann)
   housing = RotationalComponents.Components.Fixed()
-  loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(m = m, a = a, b = b, tw = tw)
+  loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(m = m, a = a, b = b, tw = tw, h = h_cg, load_transfer = load_transfer, T_lt = T_lt)
   fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fl, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max)
   fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fr, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max)
   rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rl, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max)
   rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rr, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max)
 relations
-  connect(body.frame_a, tf.frame_a, tr.frame_a, chassis)
+  connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis)
   connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a)
   connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a)
   connect(fl_arm.frame_b, steerL.frame_a)

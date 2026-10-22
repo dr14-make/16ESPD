@@ -8,12 +8,14 @@ test component ABSStraightStop
   parameter k_dec::Real = 40000.0
   parameter k_inc_fast::Real = 160000.0
   parameter k_inc_slow::Real = 16000.0
+  parameter h_cg::Length = 0.0
+  structural parameter load_transfer::Boolean = true
   steer = BlockComponents.Sources.Constant(k = 0.0)
   demand = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = brake_time)
   zero = BlockComponents.Sources.Constant(k = 0.0)
   wheel_pos = RotationalComponents.Sources.Position()
   steering_fixed = RotationalComponents.Components.Fixed()
-  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius)
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer)
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
   clock = DiscreteComponents.PeriodicClock(dt = 0.005)
   demand_sampler = DiscreteComponents.Sampler()
@@ -86,12 +88,15 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
+  initial car.loads.axf = 0.0
+  initial car.loads.ayf = 0.0
   initial wheel_pos.w = 0.0
 metadata {
   "Dyad": {
     "tests": {
       "dry_stop": {
         "solver": "Tsit5", "stop": 6.0,
+        "params": {"load_transfer": false},
         "atol": {"sensors.x": 0.5, "sensors.vx": 0.05},
         "expect": {"final": {"sensors.x": 47.182, "sensors.vx": 0.0}, "signals": ["sensors.x", "sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl", "hold_fl.y", "hold_rl.y"]}
       }
@@ -108,6 +113,7 @@ analysis ABSStraightStopTransient
   parameter k_dec::Real = 40000.0
   parameter k_inc_fast::Real = 160000.0
   parameter k_inc_slow::Real = 16000.0
-  model = VehicleSystemsComponents.Lecture3.ABSStraightStop(v0 = v0, T_cmd = T_cmd, select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow)
+  parameter h_cg::Length = 0.0
+  model = VehicleSystemsComponents.Lecture3.ABSStraightStop(v0 = v0, T_cmd = T_cmd, select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, h_cg = h_cg)
 relations
 end

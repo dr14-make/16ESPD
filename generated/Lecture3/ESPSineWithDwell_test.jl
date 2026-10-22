@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; A_sw=0.5585053606381855),
+  params=(; load_transfer=false, A_sw=0.5585053606381855),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[],

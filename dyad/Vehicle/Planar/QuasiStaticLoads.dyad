@@ -1,5 +1,6 @@
-"""Static axle-load distribution delivered through four translational flanges."""
+"""Quasi-static wheel loads from filtered chassis acceleration."""
 component QuasiStaticLoads
+  chassis = Frame2D() {^chassis}
   fl = Flange() {^fl}
   fr = Flange() {^fr}
   rl = Flange() {^rl}
@@ -14,16 +15,97 @@ component QuasiStaticLoads
   parameter tw::Length = 1.55
   "Gravitational acceleration used for vertical loads (probe)"
   parameter g::Acceleration = 9.81
+  "CG height above the road (NHTSA)"
+  parameter h::Length = 0.0
+  "Enable acceleration filtering and load transfer (derived)"
+  structural parameter load_transfer::Boolean = false
+  "Load-transfer lag time constant (assumed)"
+  parameter T_lt::Time = 0.05
   final parameter L::Length = a + b
   "Static normal load on each front wheel (derived)"
   variable Nf::Force
   "Static normal load on each rear wheel (derived)"
   variable Nr::Force
+  "Filtered longitudinal acceleration (assumed)"
+  variable axf::Acceleration
+  "Filtered lateral acceleration (assumed)"
+  variable ayf::Acceleration
+  variable d_long::Force
+  variable dN_fl::Force
+  variable dN_fr::Force
+  variable dN_rl::Force
+  variable dN_rr::Force
+  acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration()
 relations
+  connect(chassis, acc.frame_a)
   Nf = m * g * b / (2 * L)
   Nr = m * g * a / (2 * L)
-  fl.f = -Nf
-  fr.f = -Nf
-  rl.f = -Nr
-  rr.f = -Nr
+  if load_transfer == false
+    axf = 0.0
+    ayf = 0.0
+  else
+    der(axf) = (acc.a_x - axf) / T_lt
+    der(ayf) = (acc.a_y - ayf) / T_lt
+  end
+  d_long = -m * axf * h / (2 * L)
+  dN_fl = d_long - m * ayf * h * (b / L) / tw
+  dN_fr = d_long + m * ayf * h * (b / L) / tw
+  dN_rl = -d_long - m * ayf * h * (a / L) / tw
+  dN_rr = -d_long + m * ayf * h * (a / L) / tw
+  fl.f = -(Nf + dN_fl)
+  fr.f = -(Nf + dN_fr)
+  rl.f = -(Nr + dN_rl)
+  rr.f = -(Nr + dN_rr)
+end
+
+"""Prescribed-acceleration rig for quasi-static wheel-load transfer."""
+test component TestQuasiStaticLoads
+  parameter ax::Acceleration = -4.0
+  parameter ay::Acceleration = 0.0
+  parameter h::Length = 0.55
+  vx = BlockComponents.Sources.Ramp(offset = 0.0, height = 2 * ax, duration = 2.0, start_time = 0.0)
+  vy = BlockComponents.Sources.Ramp(offset = 0.0, height = 2 * ay, duration = 2.0, start_time = 0.0)
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(fixed_orientation = true)
+  loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(h = h, load_transfer = true)
+  fixed_fl = TranslationalComponents.Components.Fixed()
+  fixed_fr = TranslationalComponents.Components.Fixed()
+  fixed_rl = TranslationalComponents.Components.Fixed()
+  fixed_rr = TranslationalComponents.Components.Fixed()
+relations
+  connect(vx.y, motion.v_x)
+  connect(vy.y, motion.v_y)
+  connect(motion.frame_b, loads.chassis)
+  connect(loads.fl, fixed_fl.flange)
+  connect(loads.fr, fixed_fr.flange)
+  connect(loads.rl, fixed_rl.flange)
+  connect(loads.rr, fixed_rr.flange)
+  initial loads.axf = 0.0
+  initial loads.ayf = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "longitudinal": {
+        "solver": "Tsit5", "stop": 1.0,
+        "params": {"ax": -4.0, "ay": 0.0, "h": 0.55},
+        "atol": {"loads.dN_fl": 0.1, "loads.dN_fr": 0.1, "loads.dN_rl": 0.1, "loads.dN_rr": 0.1},
+        "expect": {"final": {"loads.dN_fl": 611.1, "loads.dN_fr": 611.1, "loads.dN_rl": -611.1, "loads.dN_rr": -611.1}, "signals": ["loads.dN_fl", "loads.dN_fr", "loads.dN_rl", "loads.dN_rr"]}
+      },
+      "lateral": {
+        "solver": "Tsit5", "stop": 1.0,
+        "params": {"ax": 0.0, "ay": 3.873, "h": 0.55},
+        "atol": {"loads.dN_fl": 0.5, "loads.dN_fr": 0.5, "loads.dN_rl": 0.5, "loads.dN_rr": 0.5},
+        "expect": {"final": {"loads.dN_fl": -1145.2, "loads.dN_fr": 1145.2, "loads.dN_rl": -916.2, "loads.dN_rr": 916.2}, "signals": ["loads.dN_fl", "loads.dN_fr", "loads.dN_rl", "loads.dN_rr"]}
+      }
+    }
+  }
+}
+end
+
+analysis QuasiStaticLoadsTransient
+  extends TransientAnalysis(stop = 1.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  parameter ax::Acceleration = -4.0
+  parameter ay::Acceleration = 0.0
+  parameter h::Length = 0.55
+  model = VehicleSystemsComponents.Vehicle.Planar.TestQuasiStaticLoads(ax = ax, ay = ay, h = h)
+relations
 end

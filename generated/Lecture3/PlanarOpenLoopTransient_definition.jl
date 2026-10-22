@@ -39,6 +39,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"mu_scale_rl"::Float64 = 1.0
   var"mu_scale_rr"::Float64 = 1.0
   var"ackermann"::Float64 = 1.0
+  var"h_cg"::Float64 = 0.0
   # Open-loop planar-car harness with steering-wheel position and selectable wheel braking.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture3.PlanarOpenLoop(; name=:PlanarOpenLoop)
 end
@@ -60,6 +61,7 @@ function DyadInterface.run_analysis(spec::PlanarOpenLoopTransientSpec)
   push!(overrides, no_namespace_model.mu_scale_rl => spec.var"mu_scale_rl")
   push!(overrides, no_namespace_model.mu_scale_rr => spec.var"mu_scale_rr")
   push!(overrides, no_namespace_model.ackermann => spec.var"ackermann")
+  push!(overrides, no_namespace_model.h_cg => spec.var"h_cg")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

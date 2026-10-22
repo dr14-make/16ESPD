@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarCar(; name, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann)
+   PlanarCar(; name, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt)
 
 Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 
@@ -13,6 +13,7 @@ Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `load_transfer`         | Enable acceleration filtering and load transfer (derived)                         | --  |   false |
 | `m`         | Vehicle mass (probe)                         | kg  |   1500.0 |
 | `Iz`         | Yaw inertia (probe)                         | kg.m2  |   2500.0 |
 | `a`         | CG distance to front axle (probe)                         | m  |   1.2 |
@@ -33,6 +34,8 @@ Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 | `i_s`         | Steering ratio (assumed)                         | --  |   16.0 |
 | `t_k`         | Kingpin track (probe)                         | m  |   tw |
 | `ackermann`         | Ackermann fraction (assumed)                         | --  |   1.0 |
+| `h_cg`         | CG height above the road (NHTSA)                         | m  |   0.0 |
+| `T_lt`         | Load-transfer lag time constant (assumed)                         | s  |   0.05 |
 
 ## Connectors
 
@@ -56,7 +59,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `tau_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function PlanarCar(; name = nothing, m=Float64(1500.0), Iz=Float64(2500.0), a=1.2, b=1.5, tw=1.55, radius=0.31, J=Float64(1.0), mu_A=Float64(1.0), mu_S=0.8, sAdhesion_f=0.12, sAdhesion_r=0.09, mu_scale_fl=Float64(1.0), mu_scale_fr=Float64(1.0), mu_scale_rl=Float64(1.0), mu_scale_rr=Float64(1.0), T_brake=0.03, tau_max=Float64(2500.0), i_s=Float64(16.0), ackermann=Float64(1.0), t_k=tw, kwargs...)
+@component function PlanarCar(; name = nothing, load_transfer=false, m=Float64(1500.0), Iz=Float64(2500.0), a=1.2, b=1.5, tw=1.55, radius=0.31, J=Float64(1.0), mu_A=Float64(1.0), mu_S=0.8, sAdhesion_f=0.12, sAdhesion_r=0.09, mu_scale_fl=Float64(1.0), mu_scale_fr=Float64(1.0), mu_scale_rl=Float64(1.0), mu_scale_rr=Float64(1.0), T_brake=0.03, tau_max=Float64(2500.0), i_s=Float64(16.0), ackermann=Float64(1.0), h_cg=Float64(0.0), T_lt=0.05, t_k=tw, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -147,6 +150,12 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __local__ackermann = ackermann
   append!(__params, @parameters (ackermann::Real), [description = "Ackermann fraction (assumed)"])
   __initial_conditions[ackermann] = __local__ackermann
+  __local__h_cg = h_cg
+  append!(__params, @parameters (h_cg::Real), [description = "CG height above the road (NHTSA)"])
+  __initial_conditions[h_cg] = __local__h_cg
+  __local__T_lt = T_lt
+  append!(__params, @parameters (T_lt::Real), [description = "Load-transfer lag time constant (assumed)"])
+  __initial_conditions[T_lt] = __local__T_lt
 
   ### Final Parameters (assignments)
 
@@ -215,7 +224,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named housing = RotationalComponents.Components.Fixed(; housing_overrides...))
   # Subcomponent loads of type VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads
   loads_overrides = __pop_subcomponent_overrides!(__overrides, "loads")
-  push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, loads_overrides...))
+  push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, h=h_cg, load_transfer=load_transfer, T_lt=T_lt, loads_overrides...))
   # Subcomponent fl of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
   push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fl, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, fl_overrides...))
@@ -240,7 +249,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(body.frame_a, tf.frame_a, tr.frame_a, chassis))
+  push!(__eqs, connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis))
   push!(__eqs, connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a))
   push!(__eqs, connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a))
   push!(__eqs, connect(fl_arm.frame_b, steerL.frame_a))

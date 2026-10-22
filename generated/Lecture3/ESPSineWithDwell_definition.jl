@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPSineWithDwell(; name, A_sw, v0, esp_on, abs_on, Kp, Ki, T_build, radius, select_low, mu_scale_right, T_cmd, k_dec, k_inc_fast, k_inc_slow)
+   ESPSineWithDwell(; name, load_transfer, A_sw, v0, esp_on, abs_on, Kp, Ki, T_build, radius, select_low, mu_scale_right, T_cmd, k_dec, k_inc_fast, k_inc_slow, h_cg)
 
 Planar car with ESP and an optional sampled four-channel ABS path.
 
@@ -13,6 +13,7 @@ Planar car with ESP and an optional sampled four-channel ABS path.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `load_transfer`         |                          | --  |   true |
 | `A_sw`         |                          | rad  |   0.5585053606381855 |
 | `v0`         |                          | m/s  |   22.22222222222222 |
 | `esp_on`         |                          | --  |   1.0 |
@@ -27,8 +28,9 @@ Planar car with ESP and an optional sampled four-channel ABS path.
 | `k_dec`         |                          | --  |   40000.0 |
 | `k_inc_fast`         |                          | --  |   160000.0 |
 | `k_inc_slow`         |                          | --  |   16000.0 |
+| `h_cg`         |                          | m  |   0.0 |
 """
-@component function ESPSineWithDwell(; name = nothing, A_sw=0.5585053606381855, v0=22.22222222222222, esp_on=Float64(1.0), abs_on=Float64(0.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, radius=0.31, select_low=Float64(1.0), mu_scale_right=Float64(1.0), T_cmd=Float64(0.0), k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), kwargs...)
+@component function ESPSineWithDwell(; name = nothing, load_transfer=true, A_sw=0.5585053606381855, v0=22.22222222222222, esp_on=Float64(1.0), abs_on=Float64(0.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, radius=0.31, select_low=Float64(1.0), mu_scale_right=Float64(1.0), T_cmd=Float64(0.0), k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), h_cg=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -101,6 +103,9 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
   __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __local__h_cg = h_cg
+  append!(__params, @parameters (h_cg::Real))
+  __initial_conditions[h_cg] = __local__h_cg
 
   ### Final Parameters (assignments)
 
@@ -128,7 +133,7 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; steering_fixed_overrides...))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fr=mu_scale_right, mu_scale_rr=mu_scale_right, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fr=mu_scale_right, mu_scale_rr=mu_scale_right, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
@@ -206,6 +211,8 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
+  push!(__initialization_eqs, car.loads.axf ~ 0.0)
+  push!(__initialization_eqs, car.loads.ayf ~ 0.0)
   push!(__initialization_eqs, wheel_pos.w ~ 0.0)
 
   ### Assertions

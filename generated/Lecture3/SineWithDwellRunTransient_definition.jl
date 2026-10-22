@@ -27,6 +27,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"log_file"::String = ""
   var"A_sw"::Float64 = 0.5585053606381855
   var"v0"::Float64 = 22.22222222222222
+  var"h_cg"::Float64 = 0.0
   # Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture3.SineWithDwellRun(; name=:SineWithDwellRun)
 end
@@ -36,6 +37,7 @@ function DyadInterface.run_analysis(spec::SineWithDwellRunTransientSpec)
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.A_sw => spec.var"A_sw")
   push!(overrides, no_namespace_model.v0 => spec.var"v0")
+  push!(overrides, no_namespace_model.h_cg => spec.var"h_cg")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

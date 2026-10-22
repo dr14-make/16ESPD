@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarOpenLoop(; name, v0, delta_sw_final, t_ramp, t_steer, T_cmd, brake_fl, brake_fr, brake_rl, brake_rr, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, ackermann, radius)
+   PlanarOpenLoop(; name, load_transfer, v0, delta_sw_final, t_ramp, t_steer, T_cmd, brake_fl, brake_fr, brake_rl, brake_rr, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, ackermann, radius, h_cg)
 
 Open-loop planar-car harness with steering-wheel position and selectable wheel braking.
 
@@ -13,6 +13,7 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `load_transfer`         |                          | --  |   true |
 | `v0`         |                          | m/s  |   22.22222222222222 |
 | `delta_sw_final`         |                          | rad  |   0.0 |
 | `t_ramp`         |                          | s  |   0.2 |
@@ -28,8 +29,9 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
 | `mu_scale_rr`         |                          | --  |   1.0 |
 | `ackermann`         |                          | --  |   1.0 |
 | `radius`         |                          | m  |   0.31 |
+| `h_cg`         |                          | m  |   0.0 |
 """
-@component function PlanarOpenLoop(; name = nothing, v0=22.22222222222222, delta_sw_final=Float64(0.0), t_ramp=0.2, t_steer=Float64(0.0), T_cmd=Float64(0.0), brake_fl=Float64(0.0), brake_fr=Float64(0.0), brake_rl=Float64(0.0), brake_rr=Float64(0.0), mu_scale_fl=Float64(1.0), mu_scale_fr=Float64(1.0), mu_scale_rl=Float64(1.0), mu_scale_rr=Float64(1.0), ackermann=Float64(1.0), radius=0.31, kwargs...)
+@component function PlanarOpenLoop(; name = nothing, load_transfer=true, v0=22.22222222222222, delta_sw_final=Float64(0.0), t_ramp=0.2, t_steer=Float64(0.0), T_cmd=Float64(0.0), brake_fl=Float64(0.0), brake_fr=Float64(0.0), brake_rl=Float64(0.0), brake_rr=Float64(0.0), mu_scale_fl=Float64(1.0), mu_scale_fr=Float64(1.0), mu_scale_rl=Float64(1.0), mu_scale_rr=Float64(1.0), ackermann=Float64(1.0), radius=0.31, h_cg=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -105,6 +107,9 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
   __initial_conditions[radius] = __local__radius
+  __local__h_cg = h_cg
+  append!(__params, @parameters (h_cg::Real))
+  __initial_conditions[h_cg] = __local__h_cg
 
   ### Final Parameters (assignments)
 
@@ -132,7 +137,7 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; steering_fixed_overrides...))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_fl, mu_scale_fr=mu_scale_fr, mu_scale_rl=mu_scale_rl, mu_scale_rr=mu_scale_rr, ackermann=ackermann, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_fl, mu_scale_fr=mu_scale_fr, mu_scale_rl=mu_scale_rl, mu_scale_rr=mu_scale_rr, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
@@ -159,6 +164,8 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
+  push!(__initialization_eqs, car.loads.axf ~ 0.0)
+  push!(__initialization_eqs, car.loads.ayf ~ 0.0)
   push!(__initialization_eqs, wheel_pos.w ~ 0.0)
 
   ### Assertions

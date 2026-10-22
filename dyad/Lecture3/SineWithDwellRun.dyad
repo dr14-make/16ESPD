@@ -6,10 +6,12 @@ test component SineWithDwellRun
   parameter v0::Velocity = 22.22222222222222
   "Wheel radius (repository default)"
   parameter radius::Length = 0.31
+  parameter h_cg::Length = 0.0
+  structural parameter load_transfer::Boolean = true
   steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = A_sw)
   wheel_pos = RotationalComponents.Sources.Position()
   steering_fixed = RotationalComponents.Components.Fixed()
-  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius)
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer)
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
 relations
   connect(steer.y, wheel_pos.phi_ref)
@@ -45,19 +47,21 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
+  initial car.loads.axf = 0.0
+  initial car.loads.ayf = 0.0
   initial wheel_pos.w = 0.0
 metadata {
   "Dyad": {
     "tests": {
       "swd_32deg": {
         "solver": "Tsit5", "stop": 6.0,
-        "params": {"A_sw": 0.5585053606381855},
+        "params": {"load_transfer": false, "A_sw": 0.5585053606381855},
         "atol": {"sensors.vx": 0.1, "sensors.psi": 0.02},
         "expect": {"final": {"sensors.vx": 22.0753, "sensors.psi": -0.1039}, "signals": ["sensors.vx", "sensors.r", "sensors.y", "sensors.psi", "sensors.beta", "sensors.delta_sw"]}
       },
       "swd_270deg": {
         "solver": "Tsit5", "stop": 6.0,
-        "params": {"A_sw": 4.71238898038469},
+        "params": {"load_transfer": false, "A_sw": 4.71238898038469},
         "atol": {"sensors.vx": 0.1, "sensors.psi": 0.02},
         "expect": {"final": {"sensors.vx": 19.6498, "sensors.psi": -0.2229}, "signals": ["sensors.vx", "sensors.r", "sensors.y", "sensors.psi", "sensors.beta", "sensors.delta_sw"]}
       }
@@ -70,6 +74,7 @@ analysis SineWithDwellRunTransient
   extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
   parameter A_sw::Angle = 0.5585053606381855
   parameter v0::Velocity = 22.22222222222222
-  model = VehicleSystemsComponents.Lecture3.SineWithDwellRun(A_sw = A_sw, v0 = v0)
+  parameter h_cg::Length = 0.0
+  model = VehicleSystemsComponents.Lecture3.SineWithDwellRun(A_sw = A_sw, v0 = v0, h_cg = h_cg)
 relations
 end

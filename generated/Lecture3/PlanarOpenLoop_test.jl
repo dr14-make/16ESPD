@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(;),
+  params=(; load_transfer=false),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -42,7 +42,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; T_cmd=500, brake_fl=1, brake_fr=1, brake_rl=1, brake_rr=1),
+  params=(; load_transfer=false, T_cmd=500, brake_fl=1, brake_fr=1, brake_rl=1, brake_rr=1),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -69,7 +69,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; delta_sw_final=0.08),
+  params=(; load_transfer=false, delta_sw_final=0.08),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -92,7 +92,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; delta_sw_final=0.16),
+  params=(; load_transfer=false, delta_sw_final=0.16),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -115,7 +115,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; delta_sw_final=0.32),
+  params=(; load_transfer=false, delta_sw_final=0.32),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -138,7 +138,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; delta_sw_final=0.48),
+  params=(; load_transfer=false, delta_sw_final=0.48),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -153,6 +153,34 @@ __dyad_run_test_case!(
 )
 __dyad_run_test_case!(
   VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "steady_4_lt for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="steady_4_lt",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=4e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; delta_sw_final=0.48, h_cg=0.55, load_transfer=true),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.sensors.ay, "sensors.ay", 3.865, 0.01, 1e-5),
+    (m -> m.sensors.r, "sensors.r", 0.17692, 0.001, 1e-5),
+    (m -> m.car.fl.F_z, "car.fl.F_z", 2953, 5, 1e-5),
+  ],
+  signals=Tuple[
+    (m -> m.sensors.ay, "sensors.ay", 0.01, 1e-5),
+    (m -> m.sensors.r, "sensors.r", 0.001, 1e-5),
+    (m -> m.car.fl.F_z, "car.fl.F_z", 5, 1e-5),
+    (m -> m.car.fr.F_z, "car.fr.F_z", 1e-5, 1e-5),
+    (m -> m.car.rl.F_z, "car.rl.F_z", 1e-5, 1e-5),
+    (m -> m.car.rr.F_z, "car.rr.F_z", 1e-5, 1e-5),
+  ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
   "steer_ramp for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
   case_name="steer_ramp",
   component_stem="PlanarOpenLoop",
@@ -162,7 +190,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; delta_sw_final=1.7671458676442586, t_ramp=7.5, t_steer=0.5),
+  params=(; load_transfer=false, delta_sw_final=1.7671458676442586, t_ramp=7.5, t_steer=0.5),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[],
@@ -183,7 +211,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; v0=3, delta_sw_final=3.2, ackermann=1),
+  params=(; load_transfer=false, v0=3, delta_sw_final=3.2, ackermann=1),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -210,7 +238,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; v0=3, delta_sw_final=3.2, ackermann=0),
+  params=(; load_transfer=false, v0=3, delta_sw_final=3.2, ackermann=0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[

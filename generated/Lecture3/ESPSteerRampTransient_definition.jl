@@ -34,6 +34,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"Kp"::Float64 = 40000.0
   var"Ki"::Float64 = 0.0
   var"T_build"::Float64 = 0.1
+  var"h_cg"::Float64 = 0.0
   # Steering ramp with reduced front friction for continuous-ESP understeer checks.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture3.ESPSteerRamp(; name=:ESPSteerRamp)
 end
@@ -50,6 +51,7 @@ function DyadInterface.run_analysis(spec::ESPSteerRampTransientSpec)
   push!(overrides, no_namespace_model.Kp => spec.var"Kp")
   push!(overrides, no_namespace_model.Ki => spec.var"Ki")
   push!(overrides, no_namespace_model.T_build => spec.var"T_build")
+  push!(overrides, no_namespace_model.h_cg => spec.var"h_cg")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )
