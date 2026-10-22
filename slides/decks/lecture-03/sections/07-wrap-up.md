@@ -10,10 +10,10 @@ layout: section
 What each system measures, what it controls, and what it acts on.
 
 <!--
-Budget: 4 minutes for the section: the table 1, the summary 1, the hand-over 2. The sources slide is
-for the handout; skip it in the room.
+Budget: 3 minutes for the section: the table 1, the summary 1, what you measured 1. The sources
+slide is for the handout; skip it in the room.
 
-One table for the whole lecture, the summary, the hand-over to the hands-on, and the sources.
+One table for the whole lecture, the summary, the numbers the students measured, and the sources.
 -->
 
 ---
@@ -56,7 +56,7 @@ falls. The same family of cascade loops Lecture 1 ended on.
   without it, our planar car spins in the sine-with-dwell.
 - **06** torque vectoring makes the same yaw moment with drive torque instead of brakes.
 
-### Next: the hands-on, ABS on your own car. <Link to="handover">→</Link>
+### Next: what you measured on your own car. <Link to="what-you-measured">→</Link>
 
 <!--
 If you take one picture away from today, take the friction curve with the ABS dots crowded at its
@@ -71,61 +71,44 @@ Lecture 4 with the rest of active and passive safety.
 -->
 
 ---
-routeAlias: handover
+routeAlias: what-you-measured
 ---
 
-## Next: the hands-on, ABS on your own car
+## What you measured
 
-<div class="grid grid-cols-[1.25fr_1fr] gap-8">
-<div>
+| Build | What | Number | Why |
+| --- | --- | --- | --- |
+| 01 | the tire's limit | 4256 N·m · 31.9 to 45.5 m | by hand |
+| 02 | the locked wheel | 43.7 m, at rest at 4.0 s | your `Body`, the library wheel |
+| 03 A | ABS on the present slip | 53.8 m, longer than locked | 30 ms too late each cycle |
+| 03 C | ABS with a 30 ms look-ahead | 34.4 m, 21 % shorter | the lag led |
+| 04 | ABS on the wheel speed only | 35.5 m yours · 38.7 m library | dump, hold, build slowly |
+| 05 | on snow, μ 0.3 | 136.8 · 102.2 · 119.6 · 141.3 m | locked · true slip · yours · library |
 
-| Step | | min | theory |
-|---|---|---:|---|
-| 00 | Set up | 8 | |
-| 01 | The tire's limit, by hand | 7 | <Link to="braking-distance">01</Link> |
-| 02 | Lock the wheel | 15 | <Link to="one-stop">03, one stop</Link> |
-| 03 | An ABS of your own | 25 | <Link to="abs-model">03, the model</Link> |
-| 04 | Only the wheel speed | 18 | <Link to="reference-speed">03, reference speed</Link> |
-| 05 | Across road surfaces | 14 | <Link to="abs-surfaces">03, surfaces</Link> |
-| | Hand in: a pull request | 3 | |
-
-Bonus, after the session: **traction control** on your `SlipCar` (step 06).
-
-</div>
-<div>
-
-**Have open**
-
-- **Dyad Studio** with your `MyCar`, on a new branch `handson-03` from `main`
-- the **guide**: [handson/lecture-03](../handson/lecture-03/index.html)
-- **this deck, section 03**: its result slides are the checkpoints
-- paper or the Julia REPL for step 01
-
-**Bring from earlier**: hands-on 1's `Body` and `TireFrictionCurve`. Hands-on 2 is not needed.
+The controller that knows the slip wins on every road. Without the car's speed, an ABS trusts
+the wheel's own deceleration and remembers the pressure; where it trusts a poor guess of the
+speed instead, it can stop longer than a locked wheel.
 
 <div class="text-sm opacity-70 mt-4">
 
-Next lecture: active and passive safety, including the restraint systems (airbags, belt
-pretensioners).
+Take home: traction control on your `SlipCar`, <Link to="bonus-tcs">the bonus task</Link>, for
+extra points. Next lecture: active and passive safety, including the restraint systems (airbags,
+belt pretensioners).
 
-</div>
-</div>
 </div>
 
 <!--
-Budget: 2 minutes. Leave it on the projector while the room switches over, so laptops are open on
-the right things when the hands-on starts.
+Budget: 1 minute. The section 03 claims, each tested on your own parts: a locked wheel stops on
+the sliding friction, build 02; ABS holds the tire near its peak and stops shorter, build 03 C;
+the controller must lead the 30 millisecond lag, build 03 A against C; without the car's speed
+it must estimate it, and an estimate it trusts too much can cost the whole gain, builds 04 and
+05.
 
-The hands-on has its own deck, `handson-03`, one slide per step, and its guide on the course site.
-Step 00 adds the course library at the tag the session was rehearsed on; the guide gives the exact
-`Pkg.add` line, so do not dictate it from here.
+Commit your work on the `lecture-03` branch: one commit per build is a good habit. The bonus goes
+in as a pull request from that branch; the guide page says what it must contain.
 
-Every number a step checks against is on a slide of section 03: the locked stop's 43.7 meters,
-the true-slip ABS's 34.4, the wheel-speed-only ABS's 38.7, the surface table. The green cues on
-those slides say which step uses which.
-
-A student who did not finish hands-on 2 can still do all of it: the session needs only hands-on
-1's `Body` and the course library.
+The notebooks are in the repository, and the reference answers to every build are in
+`dyad/HandsOn03/`.
 -->
 
 ---

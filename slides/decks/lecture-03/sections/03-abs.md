@@ -12,14 +12,17 @@ Keep every wheel rolling, near the peak of its friction curve, however hard the 
 `notebooks/lecture03/01-abs.pluto.jl`
 
 <!--
-Budget: 23 minutes, 14 slides, then the break. Hardware 9 (what 1, history 1, sensors 2,
-modulator 2, channels 1.5, cycle 1.5), estimation 2, model and results 10 (model 3, one stop 2,
-curve 2, distance 1.5, surfaces 1.5), summary 1, plus cover and slack 1. The four result slides are
-the hands-on checkpoints: point at the green cues, the students will come back to them.
+Budget: 97 minutes, with the 10-minute break in the middle: 55 before it, 42 after.
+Before: cover and what ABS does 2, build 02 15, hardware 9 (history 1, sensors 2, modulator 2,
+channels 2, cycle 2), the model 3, build 03 22, one stop and on the curve 4. After: reference speed
+2, build 04 with its checkpoint 25, braking distance 2, surfaces 2, build 05 10, summary 1.
 
-The center of the lecture. First the system as it is built: history, sensors, valves, layouts and
-the control cycle. Then the model in the repository: a wheel-speed-only ABS controller, run on
-one braking wheel, against a locked wheel.
+The center of the lecture, and where the building happens. First a locked wheel on your own car,
+so the problem is on your screen before the solution is. Then the system as it is built:
+history, sensors, valves, layouts and the control cycle. Then the model in the repository, and
+your own slip controller beside it. After the break: an ABS that sees only the wheel speed, and
+the same stop on three roads. The four result slides of the library model are the checkpoints for
+your builds: the green cues say which number is yours.
 -->
 
 ---
@@ -66,6 +69,82 @@ deep snow a locked wheel can stop shorter, because it builds a wedge of material
 tire. Some off-road vehicles therefore have an ABS mode for loose surfaces.
 
 The image is the source deck's, a 1990s layout.
+
+Before any of the hardware, you see the problem on your own car: the next slide brakes it with
+no ABS at all.
+-->
+
+---
+routeAlias: build-locked
+---
+
+## Build 02: lock the wheel
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
+<div>
+
+<div class="placeholder">Screenshot to come: <code>step02-locked-bench.png</code>, the
+<code>LockedStop</code> diagram: <code>demand</code>, <code>road</code>, <code>wheel</code>,
+<code>fixed</code>, <code>body</code>, <code>speed</code></div>
+
+*New `LockedStop`: `wheel` BrakedWheel · your `body` · `fixed` · `speed` · `demand`
+Step(6000 at 0.5 s) → `wheel.tau_cmd` · `road` Constant(1) → `wheel.mu_scale` · five `initial`
+lines · run `LockedStopTransient`, 6 s, Tsit5*
+
+```julia
+using Plots; plotly()
+r = MyCar.LockedStopTransient()
+plot(r; idxs = [r."speed.v", r."wheel.kappa"], layout = (2, 1))
+VehicleSystemsComponents.Vehicle.braking_distance(r)
+```
+
+[page: step 02](../lecture/lecture-03/#step-02) · reference `dyad/HandsOn03/LockedStop.dyad`
+
+</div>
+<div>
+
+![Two panels against time. Top: car speed falls in a straight line from 90 km/h at 0.5 s to zero at about 4 s, while the wheel's surface speed drops to zero within 0.17 s. Bottom: wheel slip goes from 0 to -1 at about 0.67 s and stays there until the car stops. Title: locked stop, 43.7 m from 90 km/h.](/img/lecture-03/step02-locked-stop.svg)
+
+<div class="handson">✓ <code>wheel.kappa</code> = −1 by 0.67 s · at rest at 4.0 s · <b>43.7 m</b>, just
+short of the 45.5 m sliding bound</div>
+
+</div>
+</div>
+
+<!--
+Your first build of the day: a bench that brakes your car with no ABS at all. The wheel is given,
+the body is yours.
+
+In the Components tree, right-click `MyCar`, Add Component, and name it `LockedStop`. Click plus
+and place, from VehicleSystemsComponents, Vehicle, Wheel, a `BrakedWheel`; name it `wheel`. It is
+the wheel's inertia, a brake with a 30 millisecond lag, and the tire you built in hands-on 1, with
+the whole car's weight on it. Place your own `Body` from hands-on 1 and name it `body`. From
+RotationalComponents, Components, a `Fixed`, named `fixed`: the brake's housing pushes against it.
+From TranslationalComponents, Sensors, a `VelocitySensor`, named `speed`. From BlockComponents,
+Sources, a `Step` named `demand`, height 6000, start time 0.5: the driver stamps on the pedal at
+half a second. And a `Constant` named `road`, k equals 1: a dry road.
+
+Five wires. `demand.y` to `wheel.tau_cmd`. `road.y` to `wheel.mu_scale`. `wheel.support` to
+`fixed.spline`. `wheel.flange` to `body.flange`, and `speed.flange` to the same `body.flange`.
+
+Now the step where everyone stalls: the starting state. Toggle to code and add five initial lines
+at the end of relations, from the guide page. The brake starts at zero torque; the wheel at angle
+zero and turning at 25 over 0.31 radians per second, so it rolls at the car's speed; the body at
+position zero and 25 meters per second. Without them the wheel starts at rest and the run shows a
+wheel spinning up, not a stop.
+
+Run Analysis, TransientAnalysis, name it `LockedStopTransient`, stop 6 seconds, solver Tsit5. Not
+FBDF: it steps over the brake's switching and reports a wrong success. Run it and paste the code.
+
+What you should see: the wheel's slip goes to minus one within about 0.17 seconds of the step, at
+0.67 seconds, and stays there. The car slows in a straight line and is at rest at about 4 seconds.
+`braking_distance` prints 43.7 meters. That is just short of the 45.5 meter sliding bound from
+step 01: the wheel is not locked for the first 0.17 seconds, and drag and rolling resistance help.
+Remember 43.7: every ABS today is measured against it.
+
+If the wheel speed climbs instead of falling: the initial lines are missing. If the distance is
+off by a lot: check that `road.k` is 1 and the demand starts at 0.5. The reference bench is
+`HandsOn03.LockedStop`; it equals the library's `LockedBrakeTransient` to the digit.
 -->
 
 ---
@@ -180,7 +259,7 @@ routeAlias: modulator
 
 Bosch: ABS "reduces brake pressure then increases it again **up to 40 times a second**".
 
-<div class="handson">→ Hands-on step 03: build and dump become the two signs of one pressure rate</div>
+<div class="handson">→ Build 03: build and dump become the two signs of one pressure rate</div>
 
 </div>
 </div>
@@ -327,6 +406,233 @@ The video in the source deck showed the cycle on a test car; it is not reproduce
 -->
 
 ---
+routeAlias: abs-model
+---
+
+## The model: one wheel, one ABS
+
+![The ABS loop. Inside an ECU sampled every 5 ms: a speed estimator, ABSWheelOnlyEstimatorDiscrete, which lets v_ref fall at most at a_ref and computes slip lambda; then a modulator, ABSModulatorDiscrete, build, hold, dump, remembering the lock torque, which also takes the driver's demand. Its torque command goes to the brake actuator, BrakeActuator, a 30 ms first-order lag, then to the wheel, tire and car, BrakedWheel and TireFrictionCurve. The wheel speed omega is fed back to the estimator: the only thing it measures.](/diagrams/03-abs-loop.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
+
+**Plant.** 1400 kg on one lumped wheel, $J_w$ = 4 kg·m², $r$ = 0.31 m, 90 km/h, driver demand
+6000 N·m from 0.5 s: 1.4× what the tire can carry.
+
+</div>
+<div>
+
+**Release** on *predicted* slip $\lambda + T_p \dot\lambda$, $T_p$ = 30 ms, past the 4 % peak,
+or on slip past 20 %. Release to 60 % of the lock torque.
+
+</div>
+<div>
+
+**Reapply** fast to 85 % of the lock torque, then slowly. Off below 1.5 m/s. Also run: the same
+logic on the **true** slip, and the **locked** wheel.
+
+</div>
+</div>
+
+<div class="handson">→ Build 03, next: a simpler controller of your own, <code>SlipABS</code>: release on the
+predicted slip, without the pressure memory</div>
+
+<!--
+The model in `dyad/Vehicle/ABSController.dyad` and its test benches in `ABSBrakeTest.dyad`. It is
+a compressed version of the Bosch cycle on the previous slides, with three phases, decrease, hold
+and increase, and an off state below 1.5 meters per second.
+
+The key design choice is the predicted slip. The brake hydraulics take 30 milliseconds to respond,
+so by the time a release command takes effect the wheel has dived further. The controller looks
+30 milliseconds ahead, slip plus 30 milliseconds times its rate of change, and releases when that
+predicted slip passes the peak. That is the lead that covers the actuator lag.
+
+The second choice is pressure memory, from the Bosch cycle: release to 60 percent of the torque at
+which the wheel started to lock, reapply quickly to 85 percent, then creep up.
+
+Getting here took several iterations: an earlier version that released on present slip and
+dumped the brake almost to zero each cycle stopped longer than the locked wheel. The record is in
+`docs/abs-braking-distance-findings.md` and `docs/abs-frequency-research.md`. The controller was
+rewritten in commit c960b11; the numbers on the next slides are from running notebook 01 on it.
+
+Three benches: `ABSBrakeTransient` with the wheel-speed-only controller, `IdealBrakeTransient`
+with the same kind of logic on the true slip and speed, and `LockedBrakeTransient` with the full
+demand and no ABS. Your `LockedStop` from build 02 is the third one, on your own body.
+
+On the next slide you write the release rule yourself, on the true slip and without the pressure
+memory: the idea of this slide in eight lines.
+-->
+
+---
+routeAlias: build-slip-abs
+---
+
+## Build 03: an ABS of your own
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
+<div>
+
+<div class="text-sm">
+
+```txt
+# SlipABS, in code. Inputs kappa, v, demand; output tau_cmd
+pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01)
+# A: dump past the peak, build otherwise
+pressure.requested_rate = ifelse(kappa_pred < -lambda_target, -k_dec, k_inc)
+pressure.active = ifelse(v > v_min, 1.0, 0.0)
+# C: look T_p = 30 ms ahead
+der(kappa_f) = (kappa - kappa_f) / T_f
+kappa_dot = (kappa - kappa_f) / T_f
+kappa_pred = kappa + T_p * kappa_dot
+```
+
+</div>
+
+*`ABSStop` = `LockedStop` + `abs` between `demand` and `wheel` · `wheel.kappa` → `abs.kappa` ·
+`speed.v` → `abs.v` · run A (`T_p = 0`), then C (`T_p = 0.03`)*
+
+[page: step 03](../lecture/lecture-03/#step-03) · reference `dyad/HandsOn03/SlipABS.dyad`
+
+</div>
+<div>
+
+![Two panels against time for the two ABS runs. Top, brake torque: without look-ahead it saws between about 600 and 4700 N·m roughly every 0.38 s; with the 30 ms look-ahead it holds near 4300 to 4400 N·m, just above the dotted 4256 N·m tire peak, until 3 s, then goes to 6000. Bottom, slip: without look-ahead each cycle dives past the -0.12 sliding line to -0.2 and deeper; with it the slip sits on the -0.04 peak line until the ABS switches off near 3 s.](/img/lecture-03/step03-abs-torque-slip.svg)
+
+<div class="handson">✓ A, <code>T_p = 0</code>: <b>53.8 m</b>, <i>longer</i> than locked, 2.6 Hz ·
+C, <code>T_p = 0.03</code>: <b>34.4 m</b>, 21 % shorter, slip at −0.04, 31 Hz</div>
+
+</div>
+</div>
+
+<!--
+The release rule from the last slide, written by you. Twenty-two minutes, in three parts.
+
+A, the controller. Right-click `MyCar`, Add Component, `SlipABS`, and toggle to code. Its ports:
+three inputs, `kappa` the wheel's slip, `v` the car's speed, `demand` the driver's torque; one
+output, `tau_cmd`, the torque command to the brake. Parameters: `lambda_target` 0.04, the peak;
+`k_inc` 20,000 and `k_dec` 40,000 newton-meters per second, how fast the pressure builds and
+dumps; `v_min` 1.5 meters per second, below which the ABS switches off. Place the given
+`ABSPressureIntegrator` as `pressure`, with `T_track` 0.01. It integrates a pressure rate and
+keeps the result between zero and the driver's demand: build is a positive rate, dump a negative
+one, hold is zero. That is the modulator slide in one block.
+
+The equations: connect `demand` to `pressure.demand`. The rate: if the slip is past minus
+`lambda_target`, dump at `k_dec`, else build at `k_inc`. Active only above `v_min`. Connect
+`pressure.tau_cmd` to `tau_cmd`. For part A write `kappa` where the slide says `kappa_pred`. The
+whole source is on the guide page.
+
+B, the bench. Duplicate `LockedStop` and name it `ABSStop`. Place your `SlipABS` as `abs`. Move the
+`demand` wire: `demand.y` into `abs.demand`, `abs.tau_cmd` into `wheel.tau_cmd`. Two more wires:
+`wheel.kappa` into `abs.kappa`, `speed.v` into `abs.v`. Run it, `ABSStopTransient`, 6 seconds,
+Tsit5 with a maximum step of a millisecond.
+
+Run A stops in 53.8 meters. Longer than the locked wheel. That is not a mistake in your model. The
+law reacts to the slip now, but the brake follows 30 milliseconds later. By then the wheel is past
+the 12 percent sliding point, every cycle: a quarter of the stop is spent sliding, and the torque
+saws at 2.6 per second between 600 and 4700.
+
+C, the look-ahead. Add parameters `T_p` 0.03 and `T_f` 0.003, three variables, and the three
+lines on the slide: a filtered slip rate, and the slip predicted 30 milliseconds ahead. The rate
+line now reads `kappa_pred`. Run again: 34.4 meters, 21 percent shorter than locked. The torque
+holds at 4300 to 4400, a little above the 4256 of step 01, because the brake also decelerates the
+wheel's own inertia. The slip sits at minus 0.04, the peak. Below 1.5 meters per second the ABS
+switches off and the wheel locks just before standstill, as a real one does.
+
+C is the library's `ABSIdealController` equation for equation: your 34.4 is the "ABS on the true
+slip" row on the braking-distance slide. Where students stall: the code view. If Studio drops the
+`pressure` line or reformats the ifelse, paste the full source from the guide's "Fell
+behind?" block. Reference: `HandsOn03.SlipABS` and `HandsOn03.ABSStop`.
+-->
+
+---
+routeAlias: one-stop
+---
+
+## One stop from 90 km/h, dry road
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+![Vehicle and wheel speed against time: braking starts at 0.5 s; the ABS car's wheel surface speed ripples just under its vehicle speed all the way down, and the ABS car stops at about 3.6 s; the car with a locked wheel decelerates less steeply and stops at about 4 s.](/figures/03-vehicle-and-wheel-speed.svg)
+
+</div>
+<div>
+
+![Brake torque at the caliper against time: without ABS it rises to 6000 N·m and stays; with ABS it peaks near 4600 N·m and then oscillates between about 3000 and 4000 N·m, below the dotted tire limit of 4256 N·m, until it goes to 6000 N·m near standstill.](/figures/03-brake-torque.svg)
+
+</div>
+</div>
+
+<div class="caption">Notebook 01 at road μ = 1.0, a_ref = 8 m/s². Left: speeds. Right: brake torque at the caliper.</div>
+
+<div class="handson">✓ Build 02: your locked car is at rest at about 4 s, as the red curve here · build 03 C:
+your torque holds just above 4256 N·m instead of cycling below it, because it knows the true slip</div>
+
+<!--
+Both from notebook 01, cells "What the wheel is doing", at the defaults.
+
+Left: the wheel surface speed, omega times r, light blue, stays just under the car's speed: the
+wheel keeps rolling with a few percent of slip all the way down. The locked car, red dashed,
+decelerates at the sliding friction and stops later.
+
+Right: the torque at the caliper. Without ABS it goes to the driver's 6000 newton meters and stays
+there; the wheel is locked within about a tenth of a second. With ABS it overshoots once, then
+cycles between about 3000 and 4000 newton meters, just under the dotted line: 4256 newton meters,
+the torque at which the tire is at its peak. That is the ABS doing its job: braking at the edge of
+what the tire can carry.
+
+The cycle here is faster than a production ABS's, about eight to nine per second read off the
+trace, against 2 to 6 measured. The model's tire curve is sharper than a real tire's, which makes
+the cycle faster. Near standstill the ABS switches off and the wheel locks, as a real ABS does
+below a few kilometers per hour.
+
+Compare with your build 03 C. Yours holds the torque almost flat, just above 4256, at 31 Hz: it
+reads the true slip. The library controller here sees only the wheel speed and cycles deeper.
+After the break you build one that sees only the wheel speed too.
+-->
+
+---
+routeAlias: on-the-curve
+---
+
+## Where on the tire curve the wheel works
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-6">
+<div>
+
+![Friction coefficient against slip, from 0 to -0.3: the tire curve, drawn with braking's negative sign, reaches its peak magnitude of 1.0 at -0.04 and settles at 0.7 from -0.12; the ABS run's samples cluster tightly around the peak. Title: 90 percent of the stop near the peak, 4 percent sliding.](/figures/03-where-on-the-curve.svg)
+
+</div>
+<div>
+
+![Wheel slip against time: without ABS the slip goes to -1 within about 0.1 s of braking and stays there; with ABS it hovers just past the -0.04 adhesion peak until the ABS switches off near standstill.](/figures/03-wheel-slip.svg)
+
+**90 %** of the stop near the peak ($0.02 \le |\kappa| \le 0.08$), **4 %** sliding.
+
+<div class="handson">✓ Builds 02–03: your locked wheel reaches κ = −1 by 0.67 s; your ABS's slip stays
+near −0.04</div>
+
+</div>
+</div>
+
+<!--
+The left plot is the most important one for understanding ABS. Each dot is one millisecond of the
+stop. The gray line is the model's tire curve, with braking slip negative. The ABS dots crowd
+around the peak at minus 0.04. The locked wheel's dots all sit at minus 1, off the left edge, at
+the sliding friction of 0.7.
+
+Right: slip over time. The locked wheel goes to minus one within a tenth of a second and stays.
+The ABS wheel hovers just on the far side of the peak, with small excursions.
+
+The percentages are computed in the notebook cell "Where on the tire curve the wheel operates"
+from one-millisecond samples of the run.
+
+Check your neighbor's screen: a locked wheel at minus one, an ABS wheel at minus 0.04. Then the
+break, ten minutes. Anyone without a working `ABSStop` pastes the step 03 code from the guide page
+before we go on: after the break the next build is a copy of it.
+-->
+
+---
 routeAlias: reference-speed
 ---
 
@@ -359,7 +665,7 @@ $$
 
 Production systems **learn** the road's deceleration, and some use a longitudinal accelerometer.
 
-<div class="handson">→ Hands-on step 04: you write this estimator and feed your ABS from the wheel speed alone</div>
+<div class="handson">→ Build 04, next: you write this estimator and feed your ABS from the wheel speed alone</div>
 
 </div>
 </div>
@@ -378,141 +684,178 @@ has a slider for a_ref. Move it to 10 or more and watch the ABS lose on wet and 
 
 With four wheels, the ABS releases one wheel briefly now and then to let it spin up and measure
 the car's speed again. A single wheel model cannot do that.
+
+Budget: 2 minutes. This is the first slide after the break; recap in one sentence where the room
+stands: a locked stop and an ABS on the true slip, 43.7 and 34.4 meters.
 -->
 
 ---
-routeAlias: abs-model
+routeAlias: build-wheel-only
 ---
 
-## The model: one wheel, one ABS
+## Build 04: only the wheel speed
 
-![The ABS loop. Inside an ECU sampled every 5 ms: a speed estimator, ABSWheelOnlyEstimatorDiscrete, which lets v_ref fall at most at a_ref and computes slip lambda; then a modulator, ABSModulatorDiscrete, build, hold, dump, remembering the lock torque, which also takes the driver's demand. Its torque command goes to the brake actuator, BrakeActuator, a 30 ms first-order lag, then to the wheel, tire and car, BrakedWheel and TireFrictionCurve. The wheel speed omega is fed back to the estimator: the only thing it measures.](/diagrams/03-abs-loop.svg)
-
-<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div class="grid grid-cols-[1fr_1.1fr] gap-8 items-start">
 <div>
 
-**Plant.** 1400 kg on one lumped wheel, $J_w$ = 4 kg·m², $r$ = 0.31 m, 90 km/h, driver demand
-6000 N·m from 0.5 s: 1.4× what the tire can carry.
+<svg viewBox="0 0 520 250" class="w-full" role="img" aria-label="State diagram of the three phases. Build, slowly at 8000 N·m/s, goes to dump when the wheel decelerates faster than 12 m/s² or the estimated slip passes 0.2. Dump, at 40000 N·m/s, goes to hold when the wheel accelerates faster than 3 m/s², or back to build once neither dump condition holds. Hold, rate zero, goes to build when the wheel acceleration falls below 3 m/s². Before the first dump the demand passes straight through.">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g text-anchor="middle" fill="currentColor" style="font-size:15px">
+    <text x="18" y="22" text-anchor="start" opacity="0.7" style="font-size:13px">start: demand passes through</text>
+    <line x1="78" y1="30" x2="78" y2="58" stroke="currentColor" marker-end="url(#arr)"/>
+    <rect x="18" y="60" width="120" height="54" rx="10" fill="#2e8b57" fill-opacity="0.25" stroke="#2e8b57" stroke-width="2"/>
+    <text x="78" y="84" font-weight="bold">BUILD</text>
+    <text x="78" y="103" style="font-size:13px">+k_inc, slow</text>
+    <rect x="382" y="60" width="120" height="54" rx="10" fill="#b22222" fill-opacity="0.25" stroke="#b22222" stroke-width="2"/>
+    <text x="442" y="84" font-weight="bold">DUMP</text>
+    <text x="442" y="103" style="font-size:13px">−k_dec</text>
+    <rect x="200" y="182" width="120" height="54" rx="10" fill="#daa520" fill-opacity="0.25" stroke="#daa520" stroke-width="2"/>
+    <text x="260" y="206" font-weight="bold">HOLD</text>
+    <text x="260" y="225" style="font-size:13px">rate 0</text>
+    <line x1="140" y1="74" x2="380" y2="74" stroke="currentColor" marker-end="url(#arr)"/>
+    <text x="260" y="66" style="font-size:13px">a_w &lt; −a_minus  or  kappa &lt; −lambda_1</text>
+    <line x1="380" y1="102" x2="140" y2="102" stroke="currentColor" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+    <text x="260" y="120" opacity="0.8" style="font-size:13px">no dump condition (dry road)</text>
+    <line x1="430" y1="116" x2="322" y2="196" stroke="currentColor" marker-end="url(#arr)"/>
+    <text x="432" y="168" style="font-size:13px">a_w &gt; +a_plus</text>
+    <line x1="198" y1="196" x2="90" y2="116" stroke="currentColor" marker-end="url(#arr)"/>
+    <text x="88" y="168" style="font-size:13px">a_w &lt; +a_plus</text>
+  </g>
+</svg>
 
-</div>
-<div>
+*`RefSpeedEstimator` and `PhaseABS` in code · `ABSStopWheelOnly` = `ABSStop` with `abs` =
+`PhaseABS` · `wspeed` on `wheel.spline` → `est.omega` · `est` → `abs` for `kappa`, `a_w`, `v`*
 
-**Release** on *predicted* slip $\lambda + T_p \dot\lambda$, $T_p$ = 30 ms, past the 4 % peak,
-or on slip past 20 %. Release to 60 % of the lock torque.
-
-</div>
-<div>
-
-**Reapply** fast to 85 % of the lock torque, then slowly. Off below 1.5 m/s. Also run: the same
-logic on the **true** slip, and the **locked** wheel.
-
-</div>
-</div>
-
-<div class="handson">→ Hands-on steps 02–03: you build the locked bench, then write a simpler controller, <code>SlipABS</code>:
-release on the predicted slip, without the pressure memory</div>
-
-<!--
-The model in `dyad/Vehicle/ABSController.dyad` and its test benches in `ABSBrakeTest.dyad`. It is
-a compressed version of the Bosch cycle on the previous slides, with three phases, decrease, hold
-and increase, and an off state below 1.5 meters per second.
-
-The key design choice is the predicted slip. The brake hydraulics take 30 milliseconds to respond,
-so by the time a release command takes effect the wheel has dived further. The controller looks
-30 milliseconds ahead, slip plus 30 milliseconds times its rate of change, and releases when that
-predicted slip passes the peak. That is the lead that covers the actuator lag.
-
-The second choice is pressure memory, from the Bosch cycle: release to 60 percent of the torque at
-which the wheel started to lock, reapply quickly to 85 percent, then creep up.
-
-Getting here took several iterations: an earlier version that released on present slip and
-dumped the brake almost to zero each cycle stopped longer than the locked wheel. The record is in
-`docs/abs-braking-distance-findings.md` and `docs/abs-frequency-research.md`. The controller was
-rewritten in commit c960b11; the numbers on the next slides are from running notebook 01 on it.
-
-Three benches: `ABSBrakeTransient` with the wheel-speed-only controller, `IdealBrakeTransient`
-with the same kind of logic on the true slip and speed, and `LockedBrakeTransient` with the full
-demand and no ABS.
--->
-
----
-routeAlias: one-stop
----
-
-## One stop from 90 km/h, dry road
-
-<div class="grid grid-cols-2 gap-6">
-<div>
-
-![Vehicle and wheel speed against time: braking starts at 0.5 s; the ABS car's wheel surface speed ripples just under its vehicle speed all the way down, and the ABS car stops at about 3.6 s; the car with a locked wheel decelerates less steeply and stops at about 4 s.](/figures/03-vehicle-and-wheel-speed.svg)
+[page: step 04](../lecture/lecture-03/#step-04) · reference `dyad/HandsOn03/PhaseABS.dyad`
 
 </div>
 <div>
 
-![Brake torque at the caliper against time: without ABS it rises to 6000 N·m and stays; with ABS it peaks near 4600 N·m and then oscillates between about 3000 and 4000 N·m, below the dotted tire limit of 4256 N·m, until it goes to 6000 N·m near standstill.](/figures/03-brake-torque.svg)
+<div class="text-sm">
+
+```txt
+# RefSpeedEstimator: input omega; outputs kappa_hat, v_ref, a_w
+v_w = omega * radius
+der(v_ref) = ifelse(v_w > v_ref, (v_w - v_ref) / T_up, -a_ref)
+kappa_hat = (v_w - v_ref) / max(v_ref, v_eps)
+der(v_f) = (v_w - v_f) / T_f        # T_f = 0.005
+a_w = (v_w - v_f) / T_f
+
+# PhaseABS: inputs kappa, a_w, v, demand; output tau_cmd
+phase = ifelse(a_w > a_plus, 0,
+               ifelse(a_w < -a_minus or kappa < -lambda_1, -1, 1))
+der(cycled) = ifelse(phase < -0.5, (1 - cycled) / T_latch, 0)
+pressure.requested_rate = ifelse(phase < -0.5, -k_dec,
+                                 ifelse(phase < 0.5, 0, k_inc))
+pressure.active = ifelse(v > v_min and cycled > 0.5, 1.0, 0.0)
+```
 
 </div>
-</div>
 
-<div class="caption">Notebook 01 at road μ = 1.0, a_ref = 8 m/s². Left: speeds. Right: brake torque at the caliper.</div>
-
-<div class="handson">✓ Checkpoint, hands-on steps 02–03: the locked car is at rest at about 4 s; your ABS's torque
-cycles below the 4256 N·m tire limit</div>
-
-<!--
-Both from notebook 01, cells "What the wheel is doing", at the defaults.
-
-Left: the wheel surface speed, omega times r, light blue, stays just under the car's speed: the
-wheel keeps rolling with a few percent of slip all the way down. The locked car, red dashed,
-decelerates at the sliding friction and stops later.
-
-Right: the torque at the caliper. Without ABS it goes to the driver's 6000 newton meters and stays
-there; the wheel is locked within about a tenth of a second. With ABS it overshoots once, then
-cycles between about 3000 and 4000 newton meters, just under the dotted line: 4256 newton meters,
-the torque at which the tire is at its peak. That is the ABS doing its job: braking at the edge of
-what the tire can carry.
-
-The cycle here is faster than a production ABS's, about eight to nine per second read off the
-trace, against 2 to 6 measured. The model's tire curve is sharper than a real tire's, which makes
-the cycle faster. Near standstill the ABS switches off and the wheel locks, as a real ABS does
-below a few kilometers per hour.
--->
-
----
-routeAlias: on-the-curve
----
-
-## Where on the tire curve the wheel works
-
-<div class="grid grid-cols-[1.2fr_1fr] gap-6">
-<div>
-
-![Friction coefficient against slip, from 0 to -0.3: the tire curve, drawn with braking's negative sign, reaches its peak magnitude of 1.0 at -0.04 and settles at 0.7 from -0.12; the ABS run's samples cluster tightly around the peak. Title: 90 percent of the stop near the peak, 4 percent sliding.](/figures/03-where-on-the-curve.svg)
-
-</div>
-<div>
-
-![Wheel slip against time: without ABS the slip goes to -1 within about 0.1 s of braking and stays there; with ABS it hovers just past the -0.04 adhesion peak until the ABS switches off near standstill.](/figures/03-wheel-slip.svg)
-
-**90 %** of the stop near the peak ($0.02 \le |\kappa| \le 0.08$), **4 %** sliding.
-
-<div class="handson">✓ Checkpoint, steps 02–03: the locked wheel reaches κ = −1 within 0.1 s; yours stays
-near −0.04</div>
+**HOLD is the pressure memory:** after a dump the pressure stays just under the level that was
+too much, and the next build starts there, not from zero.
 
 </div>
 </div>
 
 <!--
-The left plot is the most important one for understanding ABS. Each dot is one millisecond of the
-stop. The gray line is the model's tire curve, with braking slip negative. The ABS dots crowd
-around the peak at minus 0.04. The locked wheel's dots all sit at minus 1, off the left edge, at
-the sliding friction of 0.7.
+The longest build of the day, 25 minutes: an ABS that knows only what a real one knows, the
+wheel speed. Two components in code and one bench.
 
-Right: slip over time. The locked wheel goes to minus one within a tenth of a second and stays.
-The ABS wheel hovers just on the far side of the peak, with small excursions.
+First the estimator, the reference-speed slide as a component. Add Component, `RefSpeedEstimator`,
+code view. One input, `omega`, the wheel's angular speed from a sensor. Three outputs: `kappa_hat`
+the estimated slip, `v_ref` the estimated car speed, `a_w` the wheel's own acceleration.
+Parameters from the guide: radius 0.31, `a_ref` 8, `v0` 25, `T_up` 0.01, `v_eps` 0.5, `T_f`
+0.005. The lines: the wheel's surface speed is omega times r. The estimate follows the wheel up
+within 10 milliseconds when the wheel is faster, and otherwise falls at `a_ref`. The slip is the
+wheel against the estimate. And the wheel's acceleration, filtered over 5 milliseconds, the same
+trick as the slip rate in build 03. Two initial lines: `v_ref` and `v_f` start at 25.
 
-The percentages are computed in the notebook cell "Where on the tire curve the wheel operates"
-from one-millisecond samples of the run.
+Then the controller. Duplicate `SlipABS` and name it `PhaseABS`. Drop the look-ahead and add the
+input `a_w`. Parameters: `a_minus` 12, `a_plus` 3, `lambda_1` 0.2, `k_dec` 40,000, `k_inc` 8000,
+`v_min` 1.5, `T_latch` 0.001. Two variables, `phase` and `cycled`, with `cycled` starting at zero.
+
+Read the phase line against the state diagram. If the wheel accelerates faster than 3 meters per
+second squared, hold: rate zero. If it decelerates faster than 12, or the estimated slip passes
+20 percent, dump. Otherwise build, slowly. Why 12: a rolling wheel cannot decelerate faster than
+the car, and the car manages at most about 9.8 on a dry road. A wheel decelerating at 12 has gone
+past the tire's peak, and the controller needs no estimate of the car's speed to see it. The slip
+condition only catches a wheel that is already locked.
+
+`cycled` is a latch. Until the first dump the integrator is inactive and passes the driver's
+demand straight through: the fast first build. After it, the builds are slow and start from
+where the hold left the pressure. That is the pressure memory of the control-cycle slide, and it
+is what the modulator's two valves do: inlet open is build, both shut is hold, outlet open is
+dump.
+
+The bench: duplicate `ABSStop`, name it `ABSStopWheelOnly`. Swap `abs` for a `PhaseABS`. Delete
+the `wheel.kappa` and `speed.v` wires into `abs`. Place a RotationalComponents `VelocitySensor`
+named `wspeed` on `wheel.spline`, and your `RefSpeedEstimator` named `est`. Wire `wspeed.w` to
+`est.omega`, and `est.kappa_hat`, `est.a_w`, `est.v_ref` to the three matching inputs of `abs`.
+Run 6 seconds, Tsit5.
+
+Why not build 03's controller on the estimate? It was tried: 46.9 meters, longer than locked, at
+any `a_ref`. After each dump it rebuilt from almost nothing, and the slip crept up unseen until
+the wheel dived. The deceleration trigger and the hold fix both.
+
+Where students stall: two components in 25 minutes. If the room is behind at the halfway mark,
+hand out `PhaseABS` from the guide's "Fell behind?" block and let them write only the estimator.
+Reference: `HandsOn03.RefSpeedEstimator`, `HandsOn03.PhaseABS`, `HandsOn03.ABSStopWheelOnly`.
+-->
+
+---
+routeAlias: build-wheel-only-cycle
+---
+
+## Build 04 checkpoint: dump, hold, build
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
+<div>
+
+![Two panels from 0.9 to 1.45 s of the wheel-speed-only stop at road mu 0.5. Top, brake torque: the command climbs slowly in the green build phases from about 1800 to 2500 N·m, drops in the short red dump phases, and stays flat in the amber hold phases; the torque at the wheel follows it smoothly between 2000 and 2300 N·m. Bottom, speed: the car falls steadily from 82 to 72 km/h, the wheel runs about 3 km/h below it with small dips, and the estimate rides the wheel. Title: your three-phase ABS, wheel speed only, mu 0.5, 69.8 m.](/img/lecture-03/step04-phase-cycle.svg)
+
+</div>
+<div>
+
+```julia
+r = MyCar.ABSStopWheelOnlyTransient(road_mu = 0.5,
+                                    stop = 10)
+plot(r; idxs = [r."abs.phase", r."abs.tau_cmd",
+     r."wheel.brake.tau_actual"], layout = (3, 1))
+```
+
+<div class="handson">✓ μ 1: <b>35.5 m</b>, shorter than locked (43.7 m) and than the library's
+clocked ECU (38.7 m) · μ 0.5: <b>69.8 m</b> against 85.1 m locked, build → dump → hold about 5
+times a second, <code>abs.pressure.p</code> flat in every hold</div>
+
+On a dry road the dump ends before the wheel turns round: dump and build only, 10 a second.
+
+</div>
+</div>
+
+<!--
+Run the dry road first: 35.5 meters. Shorter than your locked wheel, 43.7, and shorter than the
+library's wheel-speed-only ECU, 38.7, and only a meter from your true-slip ABS's 34.4. With the
+wheel speed alone.
+
+Then the wet road, road_mu 0.5, with a stop time of 10 seconds: 69.8 meters, against 85.1 locked.
+Plot the phase and the two torques together. The figure is the reference run, zoomed to half a
+second: green build, red dump, amber hold. In every hold the command is flat: that is the pressure
+memory. The hold shows on wet and snow, where a dump lets the wheel spin back up past plus 3. On a
+dry road it is so short that the wheel only stops decelerating, so the cycle is dump and slow
+build, about ten times a second.
+
+One subtlety for the curious. On a dry road `a_ref` 8 is below the car's real deceleration, so
+the estimate runs above the car; from about 1.9 seconds the estimated slip passes 0.2 although
+the tire is at its peak, and the slip trigger dumps on slip that is not there. It costs about two
+meters: `a_ref` 10 gives 33.6. Build 05 comes back to this knob.
+
+Whoever finishes early: a hydraulic version, with inlet and outlet valves in place of the rate
+integrator. The library plan for it is `docs/brake-system-implementation-plan.md`, step 3.
 -->
 
 ---
@@ -541,8 +884,8 @@ From 90 km/h, dry road (μ = 1.0):
 
 ABS stops **11 % shorter** than the locked wheel. NHTSA measured **10–13 %** on dry pavement.
 
-<div class="handson">✓ Checkpoint: step 02 locked 43.7 m · step 03 your ABS on true slip 34.4 m ·
-step 04 wheel speed only, between the two (library: 38.7 m)</div>
+<div class="handson">✓ Yours: build 02 locked 43.7 m · build 03 on the true slip 34.4 m · build 04 on the
+wheel speed only 35.5 m, ahead of the library's 38.7 m</div>
 
 </div>
 </div>
@@ -563,6 +906,11 @@ tenth of a second, and drag and rolling resistance help.
 An earlier version of this controller stopped longer than the locked wheel, 55.7 against 43.7
 meters; `docs/abs-braking-distance-findings.md` records that diagnosis. These numbers are after
 the fix in commit c960b11.
+
+Your three builds sit on this table: the locked row, the true-slip row, and your wheel-speed-only
+ABS at 35.5 meters, between the true-slip row and the library's. Yours beats the library's clocked
+ECU because it dumps on the wheel's deceleration and holds; the library's acts on its slip
+estimate. The next slide shows where that difference matters most.
 -->
 
 ---
@@ -589,7 +937,7 @@ routeAlias: abs-surfaces
 
 On slippery roads the **speed estimate** costs most of the gain; at μ = 0.3 this ABS loses.
 
-<div class="handson">✓ Hands-on step 05: this table from your own models at μ 1.0, 0.5, 0.3; then μ 0.3 again
+<div class="handson">→ Build 05, next: this table from your own models at μ 1.0, 0.5, 0.3; then μ 0.3 again
 with a_ref ≈ 2.4</div>
 
 </div>
@@ -608,12 +956,81 @@ slip.
 
 This is the model's honest result, not a property of real ABS. Real ABS learns the road's
 deceleration, and some systems add an accelerometer. Adaptive a_ref is the stretch goal in
-`docs/abs-controller-spec.md`. The hands-on's step 05 does the first half of that exercise by
-hand: it reruns mu 0.3 with a_ref set to about 0.8 mu g, 2.4, the value an adaptive estimate
-would converge to. Making a_ref adapt on its own is left as an exercise.
+`docs/abs-controller-spec.md`. Build 05, next, does the first half of that exercise by hand: it
+reruns mu 0.3 with a_ref set to about 0.8 mu g, 2.4, the value an adaptive estimate would
+converge to. Making a_ref adapt on its own is left as an exercise.
 
 And remember the first benefit: even where the distance is no shorter, the ABS wheel still rolls,
 and the car can still be steered.
+-->
+
+---
+routeAlias: build-surfaces
+---
+
+## Build 05: across road surfaces
+
+<div class="grid grid-cols-[1fr_1.25fr] gap-8 items-start">
+<div>
+
+<div class="text-sm">
+
+```julia
+using VehicleSystemsComponents: Vehicle
+stop(μ; a = Inf) = 0.5 + 1.5 * 25 / min(0.7μ * 9.81, a) + 1
+d(run) = round(Vehicle.braking_distance(run); digits = 1)
+for μ in (1.0, 0.5, 0.3)
+    println(μ, "  ",
+        d(MyCar.LockedStopTransient(road_mu = μ, stop = stop(μ))), "  ",
+        d(MyCar.ABSStopTransient(road_mu = μ, stop = stop(μ))), "  ",
+        d(MyCar.ABSStopWheelOnlyTransient(road_mu = μ,
+                                          stop = stop(μ; a = 8))))
+end
+```
+
+</div>
+
+*One table from the REPL · then μ 0.3 with `a_ref = 0.8 μ g ≈ 2.4`, and the same `a_ref` on a
+dry road*
+
+[page: step 05](../lecture/lecture-03/#step-05)
+
+</div>
+<div>
+
+![Grouped bars of braking distance from 90 km/h at road mu 1.0, 0.5 and 0.3. Locked: 43.7, 85.1, 136.8 m. ABS on true slip: 34.4, 63.4, 102.2 m. ABS on wheel speed only, yours: 35.5, 69.8, 119.6 m. ABS on wheel speed only, the library's clocked ECU: 38.7, 83.2, 141.3 m, the last longer than locked.](/img/lecture-03/step05-surfaces.svg)
+
+<div class="handson">✓ Both your ABS columns beat locked everywhere · on snow the library ECU loses,
+<b>141.3 vs 136.8 m</b> · yours with <code>a_ref = 2.4</code>: <b>124.1 m</b> on snow, <i>longer</i> than
+at 8, and <b>105.4 m</b> on a dry road</div>
+
+</div>
+</div>
+
+<!--
+The last build: no new blocks, a table. Ten minutes.
+
+Open the REPL and paste the loop from the guide page. It runs your three benches at road factor
+1, 0.5 and 0.3, each long enough for the car to stop: the stop-time rule gives about 20 seconds
+on snow. Read the table against the bars. Your locked and true-slip columns must match the
+previous slide's locked and ideal-ABS columns to the decimal: 43.7, 85.1, 136.8 and 34.4, 63.4,
+102.2. Your wheel-speed-only column: 35.5, 69.8, 119.6. All under locked.
+
+The fourth column is the library's clocked ECU, `Vehicle.ABSBrakeTransient`, from the previous
+slide. On snow it loses to the locked wheel, 141.3 against 136.8. That is the trap: `a_ref` 8 is
+almost three times what mu 0.3 allows, 2.9, so its estimate falls too fast, it under-reads the
+slip and lets the wheel slide. Your `PhaseABS` does not fall into it: it dumps on the wheel's own
+deceleration, which needs no estimate of the car's speed.
+
+Then the rerun. `MyCar.ABSStopWheelOnlyTransient(road_mu = 0.3, a_ref = 2.4, stop = 25)`, and the
+same `a_ref` at road_mu 1. On snow: 124.1 meters, longer than at 8. On a dry road: 105.4. The
+other side of the same knob: an `a_ref` below the car's real deceleration lets the estimate run
+above the car, the estimated slip passes 0.2 although the tire is at its peak, and your
+controller dumps on slip that is not there. The library ECU with 2.4 on snow: 128.4 meters.
+
+The sentence to take away: an ABS can only be as good as its guess of the car's speed, so a
+wheel-speed-only ECU leans on the wheel's deceleration and uses the guess only to catch a locked
+wheel.
 -->
 
 ---
@@ -628,10 +1045,15 @@ and the car can still be steered.
   hydraulic lag.
 - In the model: 90 % of a dry stop near the peak, 11 % shorter than locked; on slippery roads
   a fixed $a_{ref}$ throws the gain away.
+- On your car: 43.7 m locked, 34.4 m on the true slip, 35.5 m on the wheel speed alone, by
+  dumping on the wheel's deceleration and **holding** the pressure.
 
 ### Next: the same idea for a wheel that is driven, not braked. <Link to="tcs">→ 04, traction control</Link>
 
 <!--
 ABS controls slip on the braking side of the curve. The driving side has the same peak and the
 same runaway: you saw it at the end of Lecture 1.
+
+Then a 5-minute break. The building is done for today; after the break come traction control,
+with one bonus task to take home, and the ESP demo.
 -->

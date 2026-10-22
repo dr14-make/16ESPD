@@ -10,8 +10,8 @@ layout: section
 Modern systems do not only brake a wheel: they **add** torque to one and take it from the other.
 
 <!--
-Budget: 4 minutes, 4 slides. If the ESP demo ran long, take it from here: the summary slide alone
-carries the idea.
+Budget: 3 minutes, 4 slides. If the ESP demo or the builds ran long, take it from here: the
+summary slide alone carries the idea.
 
 The source deck ended with a note in Czech: "moderní přidávají kroutící moment… pokud najdeš info"
 — modern systems add torque, if you find information. This section is that information.

@@ -10,7 +10,8 @@ layout: section
 ABS turned around: keep a **driven** wheel from spinning, with the brakes and the engine.
 
 <!--
-Budget: 5 minutes, 5 slides, after the break.
+Budget: 6 minutes, 6 slides, after the short break: what 1.5, actuators 1.5, Lecture 1 link 1,
+take-home bonus 1, summary 1.
 
 Traction control, TCS, or ASR in Bosch's and the German makers' naming, from
 Antriebsschlupfregelung, drive slip control. It is the positive side of the friction curve.
@@ -134,7 +135,7 @@ while asking for a fifth of the torque.
 A TCS does this properly: a **slip loop inside the speed loop**, limiting the torque to what the
 road can carry **now**.
 
-<div class="handson">→ Bonus after the hands-on (step 06): a brake-based TCS on your <code>SlipCar</code></div>
+<div class="handson">→ Take-home bonus, next: a brake-based TCS on your <code>SlipCar</code></div>
 
 </div>
 <div>
@@ -157,7 +158,53 @@ intervenes, because the two act on the same engine torque.
 
 In the repository the pieces exist: `SlipWheel1D`, `TireFrictionCurve` and the slip estimate the
 ABS uses. A traction controller on the slipping car is a natural exercise: the same modulator
-logic with the signs reversed and engine torque as the actuator.
+logic with the signs reversed. The next slide makes it your take-home bonus.
+-->
+
+---
+routeAlias: bonus-tcs
+---
+
+## Take home: traction control on your `SlipCar`
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
+<div>
+
+Hands-on 1's `SlipCar` on snow (`mu_scale = 0.2`), full torque from rest. Without TCS the wheel
+spins up as in Lecture 1; with a brake-based TCS it holds near the peak, and the car is faster
+after 10 s.
+
+*`TCSSlipCar`: your `SlipCar` with a `Vehicle.Wheel.BrakeActuator` between `wheel_inertia` and
+`wheel`, its support on `rot_ground`, a `tau_tcs` input · `TCS`: build 03's law turned round,
+pressure builds while `kappa_pred > lambda_target`, clipped to [0, `tau_tcs_max`]*
+
+[page: step 06](../lecture/lecture-03/#step-06)
+
+</div>
+<div>
+
+> **Hand in, for extra points**, as a pull request from your `lecture-03` branch
+>
+> - wheel slip and car speed over 10 s, with and without TCS; by hand, the traction limit is
+>   0.2 × 6865 N = **1373 N** at the peak against **961 N** spinning, about **8.5 against
+>   5.7 m/s** after 10 s
+> - one paragraph: why a production TCS cuts engine torque when both driven wheels spin, what
+>   `SlipCar`'s 0.3 s engine delay would do to that loop, and why the brake works on one wheel
+>   only through an open differential
+
+</div>
+</div>
+
+<!--
+Budget: 1 minute. Not built in the room: a bonus task for home, for extra points.
+
+The parts are all ones you have now: your `SlipCar` from hands-on 1, the given `BrakeActuator`
+and `ABSPressureIntegrator`, and your `SlipABS` from build 03, with the sign of the slip turned
+round. The guide page has the task, the parts and the advice, not the diagram.
+
+The reference solution is kept off main, on branch feat/handson03-tcs-bonus (not built yet), as
+the hands-on 2 WLTC bonus was. The 8.5 and 5.7 meters per second are hand estimates: net of
+resistance, about 0.85 against 0.57 meters per second squared.
 -->
 
 ---

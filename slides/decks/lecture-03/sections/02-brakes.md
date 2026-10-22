@@ -13,8 +13,9 @@ the calipers.
 `notebooks/lecture03/02-brake-hydraulics.pluto.jl`
 
 <!--
-Budget: 11 minutes, 7 slides: lever 2, force chain 2, pedal to pressure 2, master cylinder 2,
-the rest of the system 2, summary 1. Section 02 is not in the hands-on; keep it moving.
+Budget: 10 minutes, 7 slides: lever 2, force chain 2, pedal to pressure 2, master cylinder 1.5,
+the rest of the system 1.5, summary 1. Nothing to build here: the build gives the brake as a
+given part. Keep it moving; the next section is the longest of the day.
 
 The brakes transmit the force the driver applies to the pedal to the wheels using friction, at the
 pads, and the tires pass it to the road using friction again. Three pieces of physics sit in

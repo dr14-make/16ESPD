@@ -11,8 +11,8 @@ What the road can give back: the friction coefficient, how a tire differs from a
 and the shortest stop physics allows.
 
 <!--
-Budget: 9 minutes for the section, 6 slides: friction 2, tire curve 2, braking distance 2,
-cornering 2, summary 1.
+Budget: 14 minutes for the section, 7 slides: friction 2, tire curve 2, braking distance 2,
+build 01 by hand 5, cornering 2, summary 1.
 
 Every brake, however strong, ends at the same place: the contact patch, about the size of a hand
 per wheel. Whatever the brakes do, the car decelerates only as hard as friction there allows. So
@@ -107,7 +107,7 @@ so its force depends on **slip** $\kappa$:
 
 **Braking well means holding the tire near its peak.**
 
-<div class="handson">→ Hands-on step 01: the brake torque that holds the tire at this peak, by hand</div>
+<div class="handson">→ Build 01: the brake torque that holds the tire at this peak, by hand</div>
 
 </div>
 <div>
@@ -163,7 +163,7 @@ From **90 km/h = 25 m/s**:
 | 0.3 | snow, at the peak | 106.2 m |
 | 0.2 | snow, sliding | 159.3 m |
 
-<div class="handson">→ Hands-on step 01: the peak and sliding bounds for the ABS car, by hand</div>
+<div class="handson">→ Build 01, next: the peak and sliding bounds for your ABS car, by hand</div>
 
 </div>
 <div>
@@ -200,6 +200,65 @@ mu 1.
 
 The source slide wrote the formula as d equals V squared over 2 g mu with "Vmax" and "r" in the
 legend. Those two belong to the next slide, the cornering limit.
+-->
+
+---
+routeAlias: build-limits
+---
+
+## Build 01: the tire's limit, by hand
+
+<div class="grid grid-cols-[1fr_1fr] gap-10 items-start">
+<div>
+
+The car you brake today: **1400 kg** on one lumped wheel, *r* = **0.31 m**, from **90 km/h** =
+25 m/s. Its tire: peak *μ*<sub>A</sub> = **1.0** at 4 % slip, sliding *μ*<sub>S</sub> = **0.7**
+from 12 %.
+
+$$
+F_z = m g \qquad T_{peak} = \mu_A F_z\, r \qquad d = \frac{v^2}{2\,\mu\, g}
+$$
+
+*On paper or in the REPL: F<sub>z</sub>, T<sub>peak</sub>, and d at the peak and sliding, on dry
+road and on snow (road factor 0.3)*
+
+[page: step 01](../lecture/lecture-03/#step-01)
+
+</div>
+<div>
+
+> **Expected**
+>
+> - *F*<sub>z</sub> = **13 729 N**, *T*<sub>peak</sub> = **4256 N·m**
+> - the driver's 6000 N·m is 1.4 × that: the wheel **must** lock
+>
+> | road | at the peak | sliding |
+> | --- | --: | --: |
+> | dry, *μ* 1.0 | **31.9 m** | **45.5 m** |
+> | snow, *μ* 0.3 | **106.2 m** | **151.7 m** |
+
+</div>
+</div>
+
+<!--
+Before anything runs, the three numbers every later run is judged by. Five minutes, on paper or in
+the Julia REPL.
+
+The car is the one in the ABS model: 1400 kilograms, all of it on one lumped wheel of radius 0.31
+meters, braking from 90 kilometers per hour, 25 meters per second. The tire is the same
+`TireFrictionCurve` you built in hands-on 1: peak 1.0 at 4 percent slip, 0.7 once it slides.
+
+First the normal force: m times g, 1400 times 9.81, about 13,700 newtons. The tire can carry at
+most mu A times that, and the brake torque that asks for exactly that force is the force times the
+radius: 4256 newton-meters. Remember it. The driver today asks for 6000, 1.4 times as much, so
+without ABS the wheel must lock.
+
+Then the two distances from the formula on the last slide. At the peak, mu 1.0: 31.9 meters. That
+is the floor no ABS beats. Sliding, mu 0.7: 45.5 meters, roughly what a locked wheel gives. On
+snow, a road factor of 0.3 scales both: 106 and 152 meters.
+
+In the REPL: 25 squared over 2 times 1.0 times 9.81, and so on. Wait until most of the room has
+4256 before moving on; it comes back on the ABS slides.
 -->
 
 ---

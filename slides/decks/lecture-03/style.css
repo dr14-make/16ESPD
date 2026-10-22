@@ -45,7 +45,7 @@ html.dark .slidev-layout img[src^="data:image/svg+xml"] {
   padding: 0.5rem;
 }
 
-/* A cue that the hands-on puts this slide into practice, or checks a number on it. */
+/* A cue that a build step puts this slide into practice, or checks a number on it. */
 .slidev-layout .handson {
   font-size: 0.8rem;
   line-height: 1.2rem;
@@ -53,4 +53,14 @@ html.dark .slidev-layout img[src^="data:image/svg+xml"] {
   padding: 0.2rem 0.6rem;
   border-left: 4px solid #2e8b57;
   background: rgba(46, 139, 87, 0.08);
+}
+
+/* A Studio screenshot not yet captured: names the file and what it must show. */
+.slidev-layout .placeholder {
+  border: 2px dashed #b8860b;
+  border-radius: 6px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.8;
 }

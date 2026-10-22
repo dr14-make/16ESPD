@@ -11,9 +11,10 @@ Compare where the driver steers with where the car goes, and brake single wheels
 gap.
 
 <!--
-Budget: 19 minutes, 13 slides, demo included. Theory 12 (what 2, sensors 1.5, Ackermann 2,
-reference model 2.5, yaw correction 2, evidence and the test 2), demo 6 (planar car 1.5,
-passive run 2.5, ESP on 2), summary 1.
+Budget: 18 minutes, 13 slides, demo included. Theory 11 (what 2, sensors 1, Ackermann 2,
+reference model 2.5, yaw correction 2, evidence and the test 1.5), demo 6 (planar car 1.5,
+passive run 2.5, ESP on 2), summary 1. Nothing to build: the students watch the demo; the planar
+car is too large to draw in a lecture.
 
 ESP is Bosch's and Mercedes' name; the generic name is ESC, electronic stability control, which is
 what the regulations use. Others call it VSC, DSC, VDC or StabiliTrak. Same function.
