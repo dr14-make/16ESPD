@@ -28,10 +28,17 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"A_sw"::Float64 = 0.5585053606381855
   var"v0"::Float64 = 22.22222222222222
   var"esp_on"::Float64 = 1.0
+  var"abs_on"::Float64 = 0.0
   var"Kp"::Float64 = 40000.0
   var"Ki"::Float64 = 0.0
   var"T_build"::Float64 = 0.1
-  # Planar car with continuous ESP in the FMVSS 126 sine-with-dwell maneuver.
+  var"select_low"::Float64 = 1.0
+  var"mu_scale_right"::Float64 = 1.0
+  var"T_cmd"::Float64 = 0.0
+  var"k_dec"::Float64 = 40000.0
+  var"k_inc_fast"::Float64 = 160000.0
+  var"k_inc_slow"::Float64 = 16000.0
+  # Planar car with ESP and an optional sampled four-channel ABS path.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture3.ESPSineWithDwell(; name=:ESPSineWithDwell)
 end
 
@@ -41,9 +48,16 @@ function DyadInterface.run_analysis(spec::ESPSineWithDwellTransientSpec)
   push!(overrides, no_namespace_model.A_sw => spec.var"A_sw")
   push!(overrides, no_namespace_model.v0 => spec.var"v0")
   push!(overrides, no_namespace_model.esp_on => spec.var"esp_on")
+  push!(overrides, no_namespace_model.abs_on => spec.var"abs_on")
   push!(overrides, no_namespace_model.Kp => spec.var"Kp")
   push!(overrides, no_namespace_model.Ki => spec.var"Ki")
   push!(overrides, no_namespace_model.T_build => spec.var"T_build")
+  push!(overrides, no_namespace_model.select_low => spec.var"select_low")
+  push!(overrides, no_namespace_model.mu_scale_right => spec.var"mu_scale_right")
+  push!(overrides, no_namespace_model.T_cmd => spec.var"T_cmd")
+  push!(overrides, no_namespace_model.k_dec => spec.var"k_dec")
+  push!(overrides, no_namespace_model.k_inc_fast => spec.var"k_inc_fast")
+  push!(overrides, no_namespace_model.k_inc_slow => spec.var"k_inc_slow")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

@@ -16,8 +16,10 @@ end
 
 
 @testset "`VehicleSystemsComponents.Lecture3`" begin
+include("ABSStraightStop_test.jl")
 include("ESPSineWithDwell_test.jl")
 include("ESPSteerRamp_test.jl")
 include("PlanarOpenLoop_test.jl")
 include("SineWithDwellRun_test.jl")
+include("SplitMuStop_test.jl")
 end

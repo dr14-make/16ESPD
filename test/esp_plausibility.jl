@@ -39,8 +39,10 @@ trapezoidal_integral(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
     amplitudes = (32.0, 76.0, 97.0, 141.0, 180.0, 220.0, 270.0)
     measurements = map(amplitudes) do amplitude
         sol, model = esp_sine_with_dwell_case(A_sw = deg2rad(amplitude))
+        metric_times = collect(0.0:0.002:6.0)
         metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            sol.t, sol[model.sensors.delta_sw], sol[model.sensors.r], sol[model.sensors.y];
+            metric_times, sol(metric_times; idxs = model.sensors.delta_sw),
+            sol(metric_times; idxs = model.sensors.r), sol(metric_times; idxs = model.sensors.y);
             A = deg2rad(21.63))
         beta_max = maximum(abs, sol[model.sensors.beta])
         min_kappa = minimum(vcat(sol[model.sensors.kappa_fl], sol[model.sensors.kappa_fr],
@@ -70,12 +72,15 @@ trapezoidal_integral(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
         off_sol, off = esp_sine_with_dwell_case(
             A_sw = deg2rad(amplitude), esp_on = 0.0, reltol = 1e-12, abstol = 1e-14,
             dtmax = 0.001, saveat = 0.001)
+        metric_times = collect(0.0:0.001:6.0)
         passive_metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            passive_sol.t, passive_sol[passive.sensors.delta_sw], passive_sol[passive.sensors.r],
-            passive_sol[passive.sensors.y]; A = deg2rad(21.63))
+            metric_times, passive_sol(metric_times; idxs = passive.sensors.delta_sw),
+            passive_sol(metric_times; idxs = passive.sensors.r),
+            passive_sol(metric_times; idxs = passive.sensors.y); A = deg2rad(21.63))
         off_metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            off_sol.t, off_sol[off.sensors.delta_sw], off_sol[off.sensors.r], off_sol[off.sensors.y];
-            A = deg2rad(21.63))
+            metric_times, off_sol(metric_times; idxs = off.sensors.delta_sw),
+            off_sol(metric_times; idxs = off.sensors.r),
+            off_sol(metric_times; idxs = off.sensors.y); A = deg2rad(21.63))
         @test off_metrics.yrr_1_00 ≈ passive_metrics.yrr_1_00 atol = 1e-6
         @test off_metrics.yrr_1_75 ≈ passive_metrics.yrr_1_75 atol = 1e-6
         @test off_metrics.y_bos_1_07 ≈ passive_metrics.y_bos_1_07 atol = 1e-6
@@ -245,4 +250,76 @@ end
     @test locked_lateral_ratio ≈ 381.3 / 3999.8 atol = 0.001
     @test friction_circle_ratio ≈ 3974.0 / 4000.0 atol = 0.001
     @test friction_circle_ratio <= 1.0
+end
+
+
+@testset "Four-channel ABS plausibility" begin
+    straight_result = VehicleSystemsComponents.Lecture3.ABSStraightStopTransient()
+    straight = symbolic_container(straight_result)
+    straight_sol = straight_result.sol
+    straight_t = collect(range(0.5, 6.0; length = 1101))
+    straight_v = straight_sol(straight_t; idxs = straight.sensors.vx)
+    stop_index = findfirst(<(0.5), straight_v)
+    @test !isnothing(stop_index)
+    stop_time = straight_t[stop_index]
+    stop_distance = straight_sol(stop_time; idxs = straight.sensors.x) -
+                    straight_sol(0.5; idxs = straight.sensors.x)
+    moving = straight_v .> 3.0
+    straight_min_kappa = minimum(vcat([
+        straight_sol(straight_t[moving]; idxs = kappa) for kappa in
+        (straight.sensors.kappa_fl, straight.sensors.kappa_fr,
+         straight.sensors.kappa_rl, straight.sensors.kappa_rr)]...))
+    @test_broken stop_distance <= 32.0
+    @test straight_min_kappa >= -0.2
+    @test maximum(abs, straight_sol[straight.sensors.r]) < 1e-8
+
+    amplitudes = (32.0, 97.0, 141.0, 180.0, 270.0)
+    abs_measurements = map(amplitudes) do amplitude
+        result = VehicleSystemsComponents.Lecture3.ESPSineWithDwellTransient(
+            A_sw = deg2rad(amplitude), abs_on = 1.0, Ki = 1e5)
+        model = symbolic_container(result)
+        sol = result.sol
+        times = collect(0.0:0.002:6.0)
+        metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
+            times, sol(times; idxs = model.sensors.delta_sw),
+            sol(times; idxs = model.sensors.r), sol(times; idxs = model.sensors.y);
+            A = deg2rad(21.63))
+        moving_times = times[sol(times; idxs = model.sensors.vx) .> 3.0]
+        min_kappa = minimum(vcat([
+            sol(moving_times; idxs = kappa) for kappa in
+            (model.sensors.kappa_fl, model.sensors.kappa_fr,
+             model.sensors.kappa_rl, model.sensors.kappa_rr)]...))
+        @test metrics.passes_stability
+        amplitude >= 108.15 && @test metrics.y_bos_1_07 >= 1.83
+        @test min_kappa >= -0.2
+        task5_speed = Dict(32.0 => 21.4071, 97.0 => 14.5723, 141.0 => 13.6283,
+                           180.0 => 13.3570, 270.0 => 13.3900)[amplitude]
+        amplitude >= 97.0 && @test sol[model.sensors.vx][end] >= task5_speed + 2.0
+        (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
+           beta_max_deg = rad2deg(maximum(abs, sol[model.sensors.beta])),
+           end_speed = sol[model.sensors.vx][end], min_kappa)
+    end
+
+    function split_measurement(; select_low, esp_on)
+        result = VehicleSystemsComponents.Lecture3.SplitMuStopTransient(
+            select_low = select_low, esp_on = esp_on)
+        model = symbolic_container(result)
+        sol = result.sol
+        times = collect(range(0.0, 6.0; length = 1201))
+        speeds = sol(times; idxs = model.sensors.vx)
+        index = something(findfirst(<(3.0), speeds), length(times))
+        t_metric = times[index]
+        (; heading_deg = rad2deg(sol(t_metric; idxs = model.sensors.psi)),
+           offset = sol(t_metric; idxs = model.sensors.y),
+           distance = sol(t_metric; idxs = model.sensors.x),
+           end_speed = speeds[end])
+    end
+    abs_only = split_measurement(select_low = 0.0, esp_on = 0.0)
+    select_low = split_measurement(select_low = 1.0, esp_on = 0.0)
+    esp_pi = split_measurement(select_low = 1.0, esp_on = 1.0)
+    @test abs_only.heading_deg > 15.0
+    @test abs(select_low.heading_deg) < abs(abs_only.heading_deg)
+    @test abs(esp_pi.heading_deg) < 5.0
+    @test esp_pi.distance > select_low.distance
+    @info "Task 6 ABS measurements" stop_distance straight_min_kappa abs_measurements abs_only select_low esp_pi
 end

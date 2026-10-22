@@ -203,6 +203,8 @@ component.
 end
 
 
+include("ABSStraightStopTransient_definition.jl")
+include("ABSStraightStop_definition.jl")
 include("ESPSineWithDwellTransient_definition.jl")
 include("ESPSineWithDwell_definition.jl")
 include("ESPSteerRampTransient_definition.jl")
@@ -211,3 +213,5 @@ include("PlanarOpenLoopTransient_definition.jl")
 include("PlanarOpenLoop_definition.jl")
 include("SineWithDwellRunTransient_definition.jl")
 include("SineWithDwellRun_definition.jl")
+include("SplitMuStopTransient_definition.jl")
+include("SplitMuStop_definition.jl")
