@@ -9,6 +9,11 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 
+include("AckermannSteering_experiment.jl")
 include("PlanarBrakedWheel_experiment.jl")
+include("PlanarCarSensors_experiment.jl")
+include("PlanarCar_experiment.jl")
+include("QuasiStaticLoads_experiment.jl")
+include("TestAckermannSteering_experiment.jl")
 include("TestPlanarWheelRig_experiment.jl")
 include("WheelSlipSensor_experiment.jl")

@@ -16,7 +16,12 @@ end
 
 
 @testset "`VehicleSystemsComponents.Vehicle.Planar`" begin
+include("AckermannSteering_test.jl")
 include("PlanarBrakedWheel_test.jl")
+include("PlanarCarSensors_test.jl")
+include("PlanarCar_test.jl")
+include("QuasiStaticLoads_test.jl")
+include("TestAckermannSteering_test.jl")
 include("TestPlanarWheelRig_test.jl")
 include("WheelSlipSensor_test.jl")
 end

@@ -203,7 +203,12 @@ component.
 end
 
 
+include("AckermannSteering_definition.jl")
 include("PlanarBrakedWheel_definition.jl")
+include("PlanarCarSensors_definition.jl")
+include("PlanarCar_definition.jl")
 include("PlanarWheelRigTransient_definition.jl")
+include("QuasiStaticLoads_definition.jl")
+include("TestAckermannSteering_definition.jl")
 include("TestPlanarWheelRig_definition.jl")
 include("WheelSlipSensor_definition.jl")

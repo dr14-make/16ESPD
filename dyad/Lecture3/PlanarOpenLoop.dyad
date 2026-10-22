@@ -1,0 +1,96 @@
+"""Open-loop planar-car harness with steering-wheel position and selectable wheel braking."""
+test component PlanarOpenLoop
+  parameter v0::Velocity = 22.22222222222222
+  parameter delta_sw_final::Angle = 0.0
+  parameter t_ramp::Time = 0.2
+  parameter t_steer::Time = 0.0
+  parameter T_cmd::Torque = 0.0
+  parameter brake_fl::Real = 0.0
+  parameter brake_fr::Real = 0.0
+  parameter brake_rl::Real = 0.0
+  parameter brake_rr::Real = 0.0
+  parameter mu_scale_fl::Real = 1.0
+  parameter mu_scale_fr::Real = 1.0
+  parameter mu_scale_rl::Real = 1.0
+  parameter mu_scale_rr::Real = 1.0
+  parameter ackermann::Real = 1.0
+  parameter radius::Length = 0.31
+  steer_ramp = BlockComponents.Sources.Ramp(offset = 0.0, height = delta_sw_final, duration = t_ramp, start_time = t_steer)
+  brake_step = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = 0.5)
+  wheel_pos = RotationalComponents.Sources.Position()
+  steering_fixed = RotationalComponents.Components.Fixed()
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, mu_scale_fl = mu_scale_fl, mu_scale_fr = mu_scale_fr, mu_scale_rl = mu_scale_rl, mu_scale_rr = mu_scale_rr, ackermann = ackermann)
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
+relations
+  connect(steer_ramp.y, wheel_pos.phi_ref)
+  connect(wheel_pos.spline, car.steering)
+  connect(wheel_pos.support, steering_fixed.spline)
+  connect(car.chassis, sensors.chassis)
+  connect(car.steering, sensors.steering)
+  connect(car.wheel_fl, sensors.wheel_fl)
+  connect(car.wheel_fr, sensors.wheel_fr)
+  connect(car.wheel_rl, sensors.wheel_rl)
+  connect(car.wheel_rr, sensors.wheel_rr)
+  connect(car.spin_fl, sensors.spin_fl)
+  connect(car.spin_fr, sensors.spin_fr)
+  connect(car.spin_rl, sensors.spin_rl)
+  connect(car.spin_rr, sensors.spin_rr)
+  car.tau_fl = brake_fl * brake_step.y
+  car.tau_fr = brake_fr * brake_step.y
+  car.tau_rl = brake_rl * brake_step.y
+  car.tau_rr = brake_rr * brake_step.y
+  initial car.body.r = [0, 0]
+  initial car.body.v = [v0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = (v0 + 0.01) / radius
+  initial car.fr.inertia.w = (v0 + 0.01) / radius
+  initial car.rl.inertia.w = (v0 + 0.01) / radius
+  initial car.rr.inertia.w = (v0 + 0.01) / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial wheel_pos.w = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "coast": {
+        "solver": "Tsit5", "stop": 5.0,
+        "atol": {"sensors.vx": 1e-4, "sensors.r": 1e-8, "sensors.vy": 1e-8, "sensors.y": 1e-6},
+        "expect": {"final": {"sensors.vx": 22.222492, "sensors.r": 0.0, "sensors.vy": 0.0, "sensors.y": 0.0}, "signals": ["sensors.vx", "sensors.r", "sensors.vy", "sensors.y"]}
+      },
+      "straight_brake": {
+        "solver": "Tsit5", "stop": 3.0,
+        "params": {"T_cmd": 500.0, "brake_fl": 1.0, "brake_fr": 1.0, "brake_rl": 1.0, "brake_rr": 1.0},
+        "atol": {"sensors.vx": 0.02, "sensors.r": 1e-6, "sensors.kappa_fl": 0.002, "sensors.kappa_rl": 0.002},
+        "expect": {"final": {"sensors.vx": 11.895, "sensors.r": 0.0, "sensors.kappa_fl": -0.0305, "sensors.kappa_rl": -0.0291}, "signals": ["sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl"]}
+      }
+    }
+  }
+}
+end
+
+analysis PlanarOpenLoopTransient
+  extends TransientAnalysis(stop = 5.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  parameter v0::Velocity = 22.22222222222222
+  parameter delta_sw_final::Angle = 0.0
+  parameter t_ramp::Time = 0.2
+  parameter t_steer::Time = 0.0
+  parameter T_cmd::Torque = 0.0
+  parameter brake_fl::Real = 0.0
+  parameter brake_fr::Real = 0.0
+  parameter brake_rl::Real = 0.0
+  parameter brake_rr::Real = 0.0
+  parameter mu_scale_fl::Real = 1.0
+  parameter mu_scale_fr::Real = 1.0
+  parameter mu_scale_rl::Real = 1.0
+  parameter mu_scale_rr::Real = 1.0
+  parameter ackermann::Real = 1.0
+  model = VehicleSystemsComponents.Lecture3.PlanarOpenLoop(v0 = v0, delta_sw_final = delta_sw_final, t_ramp = t_ramp, t_steer = t_steer, T_cmd = T_cmd, brake_fl = brake_fl, brake_fr = brake_fr, brake_rl = brake_rl, brake_rr = brake_rr, mu_scale_fl = mu_scale_fl, mu_scale_fr = mu_scale_fr, mu_scale_rl = mu_scale_rl, mu_scale_rr = mu_scale_rr, ackermann = ackermann)
+relations
+end

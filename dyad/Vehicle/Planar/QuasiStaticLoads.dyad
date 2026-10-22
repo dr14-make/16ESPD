@@ -1,0 +1,29 @@
+"""Static axle-load distribution delivered through four translational flanges."""
+component QuasiStaticLoads
+  fl = Flange() {^fl}
+  fr = Flange() {^fr}
+  rl = Flange() {^rl}
+  rr = Flange() {^rr}
+  "Vehicle mass (probe)"
+  parameter m::Mass = 1500.0
+  "CG distance to front axle (probe)"
+  parameter a::Length = 1.2
+  "CG distance to rear axle (probe)"
+  parameter b::Length = 1.5
+  "Track width (probe)"
+  parameter tw::Length = 1.55
+  "Gravitational acceleration used for vertical loads (probe)"
+  parameter g::Acceleration = 9.81
+  final parameter L::Length = a + b
+  "Static normal load on each front wheel (derived)"
+  variable Nf::Force
+  "Static normal load on each rear wheel (derived)"
+  variable Nr::Force
+relations
+  Nf = m * g * b / (2 * L)
+  Nr = m * g * a / (2 * L)
+  fl.f = -Nf
+  fr.f = -Nf
+  rl.f = -Nr
+  rr.f = -Nr
+end

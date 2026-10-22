@@ -1,0 +1,78 @@
+"""Ideal planar-car sensor cluster attached only through physical ports."""
+component PlanarCarSensors
+  chassis = Frame2D() {^chassis}
+  steering = Spline() {^steering}
+  wheel_fl = Frame2D() {^wheel_fl}
+  wheel_fr = Frame2D() {^wheel_fr}
+  wheel_rl = Frame2D() {^wheel_rl}
+  wheel_rr = Frame2D() {^wheel_rr}
+  spin_fl = Spline() {^spin_fl}
+  spin_fr = Spline() {^spin_fr}
+  spin_rl = Spline() {^spin_rl}
+  spin_rr = Spline() {^spin_rr}
+  vx = RealOutput() {^vx}
+  vy = RealOutput() {^vy}
+  r = RealOutput() {^r}
+  ax = RealOutput() {^ax}
+  ay = RealOutput() {^ay}
+  x = RealOutput() {^x}
+  y = RealOutput() {^y}
+  psi = RealOutput() {^psi}
+  beta = RealOutput() {^beta}
+  delta_sw = RealOutput() {^delta_sw}
+  kappa_fl = RealOutput() {^kappa_fl}
+  kappa_fr = RealOutput() {^kappa_fr}
+  kappa_rl = RealOutput() {^kappa_rl}
+  kappa_rr = RealOutput() {^kappa_rr}
+  alpha_fl = RealOutput() {^alpha_fl}
+  alpha_fr = RealOutput() {^alpha_fr}
+  alpha_rl = RealOutput() {^alpha_rl}
+  alpha_rr = RealOutput() {^alpha_rr}
+  omega_fl = RealOutput() {^omega_fl}
+  omega_fr = RealOutput() {^omega_fr}
+  omega_rl = RealOutput() {^omega_rl}
+  omega_rr = RealOutput() {^omega_rr}
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity()
+  acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration()
+  pos = MultibodyComponents.PlanarMechanics.AbsolutePosition(resolve_in_frame = MultibodyComponents.ResolveInFrame.World())
+  swa = RotationalComponents.Sensors.AngleSensor()
+  slip_fl = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = radius)
+  slip_fr = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = radius)
+  slip_rl = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = radius)
+  slip_rr = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = radius)
+relations
+  connect(chassis, vel.frame_a, acc.frame_a, pos.frame_a)
+  connect(steering, swa.spline)
+  connect(wheel_fl, slip_fl.frame_a)
+  connect(wheel_fr, slip_fr.frame_a)
+  connect(wheel_rl, slip_rl.frame_a)
+  connect(wheel_rr, slip_rr.frame_a)
+  connect(spin_fl, slip_fl.spline)
+  connect(spin_fr, slip_fr.spline)
+  connect(spin_rl, slip_rl.spline)
+  connect(spin_rr, slip_rr.spline)
+  vx = vel.v_x
+  vy = vel.v_y
+  r = vel.w
+  ax = acc.a_x
+  ay = acc.a_y
+  x = pos.x
+  y = pos.y
+  psi = pos.phi
+  beta = atan(vy / max(vx, 1.0))
+  delta_sw = swa.phi
+  kappa_fl = slip_fl.kappa
+  kappa_fr = slip_fr.kappa
+  kappa_rl = slip_rl.kappa
+  kappa_rr = slip_rr.kappa
+  alpha_fl = slip_fl.alpha
+  alpha_fr = slip_fr.alpha
+  alpha_rl = slip_rl.alpha
+  alpha_rr = slip_rr.alpha
+  omega_fl = slip_fl.omega
+  omega_fr = slip_fr.omega
+  omega_rl = slip_rl.omega
+  omega_rr = slip_rr.omega
+end

@@ -1,0 +1,94 @@
+"""
+Massless Ackermann steering linkage with physical rotational shafts.
+
+The input is the virtual center-wheel angle. Output angles follow signed Ackermann geometry, and
+shaft torques satisfy virtual work so steering reactions propagate back through the column.
+"""
+component AckermannSteering
+  "Virtual center-wheel input shaft"
+  spline_in = Spline() {^spline_in}
+  "Left road-wheel output shaft"
+  spline_left = Spline() {^spline_left}
+  "Right road-wheel output shaft"
+  spline_right = Spline() {^spline_right}
+  "Linkage housing"
+  support = Spline() {^support}
+  "Wheelbase (probe)"
+  parameter L::Length = 2.7
+  "Kingpin track (probe)"
+  parameter t_k::Length = 1.55
+  "Ackermann fraction (assumed)"
+  parameter ackermann::Real = 1.0
+  "Signed Ackermann geometry factor"
+  final parameter k::Real = ackermann * t_k / (2 * L)
+  "Left road-wheel angle"
+  variable delta_left::Angle
+  "Right road-wheel angle"
+  variable delta_right::Angle
+  variable g_left::Real
+  variable g_right::Real
+relations
+  delta_left = atan(tan(spline_in.phi - support.phi) / (1 - k * tan(spline_in.phi - support.phi)))
+  delta_right = atan(tan(spline_in.phi - support.phi) / (1 + k * tan(spline_in.phi - support.phi)))
+  spline_left.phi = support.phi + delta_left
+  spline_right.phi = support.phi + delta_right
+  g_left = (1 + tan(spline_in.phi - support.phi)^2) / ((1 - k * tan(spline_in.phi - support.phi))^2 + tan(spline_in.phi - support.phi)^2)
+  g_right = (1 + tan(spline_in.phi - support.phi)^2) / ((1 + k * tan(spline_in.phi - support.phi))^2 + tan(spline_in.phi - support.phi)^2)
+  0 = spline_in.tau + g_left * spline_left.tau + g_right * spline_right.tau
+  0 = support.tau + spline_in.tau + spline_left.tau + spline_right.tau
+end
+
+test component TestAckermannSteering
+  "Commanded virtual center-wheel angle"
+  parameter delta_in::Angle = 0.1
+  "Ackermann fraction"
+  parameter ackermann::Real = 1.0
+  "Torque applied to each output shaft"
+  parameter tau_load::Torque = 0.0
+  command = BlockComponents.Sources.Constant(k = delta_in)
+  source = RotationalComponents.Sources.Position()
+  torque_sensor = RotationalComponents.Sensors.TorqueSensor()
+  linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(ackermann = ackermann)
+  load_left = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load)
+  load_right = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load)
+  fixed = RotationalComponents.Components.Fixed()
+relations
+  connect(command.y, source.phi_ref)
+  connect(source.spline, torque_sensor.spline_a)
+  connect(torque_sensor.spline_b, linkage.spline_in)
+  connect(linkage.spline_left, load_left.spline)
+  connect(linkage.spline_right, load_right.spline)
+  connect(source.support, linkage.support, load_left.support, load_right.support, fixed.spline)
+  initial source.w = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "left_turn": {
+        "solver": "Rodas5P", "stop": 1.0,
+        "atol": {"linkage.delta_left": 1e-6, "linkage.delta_right": 1e-6},
+        "expect": {"final": {"linkage.delta_left": 0.1029448, "linkage.delta_right": 0.0972185}, "signals": ["linkage.delta_left", "linkage.delta_right"]}
+      },
+      "right_turn": {
+        "solver": "Rodas5P", "stop": 1.0, "params": {"delta_in": -0.1},
+        "atol": {"linkage.delta_left": 1e-6, "linkage.delta_right": 1e-6},
+        "expect": {"final": {"linkage.delta_left": -0.0972185, "linkage.delta_right": -0.1029448}, "signals": ["linkage.delta_left", "linkage.delta_right"]}
+      },
+      "tight": {
+        "solver": "Rodas5P", "stop": 1.0, "params": {"delta_in": 0.2},
+        "atol": {"linkage.delta_left": 1e-6, "linkage.delta_right": 1e-6},
+        "expect": {"final": {"linkage.delta_left": 0.2119993, "linkage.delta_right": 0.1892709}, "signals": ["linkage.delta_left", "linkage.delta_right"]}
+      },
+      "parallel": {
+        "solver": "Rodas5P", "stop": 1.0, "params": {"ackermann": 0.0},
+        "atol": {"linkage.delta_left": 1e-9, "linkage.delta_right": 1e-9},
+        "expect": {"final": {"linkage.delta_left": 0.1, "linkage.delta_right": 0.1}, "signals": ["linkage.delta_left", "linkage.delta_right"]}
+      },
+      "torque": {
+        "solver": "Rodas5P", "stop": 1.0, "params": {"tau_load": 10.0},
+        "atol": {"torque_sensor.tau": 1e-3},
+        "expect": {"final": {"torque_sensor.tau": -20.0487}, "signals": ["torque_sensor.tau"]}
+      }
+    }
+  }
+}
+end
