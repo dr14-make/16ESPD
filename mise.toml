@@ -9,3 +9,7 @@ run = "julia +dyad-3.4.0 --project=. scripts/export_deck_cards.jl"
 [tasks."figures:lecture-03"]
 description = "Run the Lecture 3 notebooks and write their figures into the theory deck's public/figures/"
 run = "julia +dyad-3.4.0 --project=. scripts/export_lecture03_figures.jl"
+
+[tasks."figures:handson-03"]
+description = "Run the Lecture 3 hands-on reference models and write their figures into slides/images/handson-03/"
+run = "julia +dyad-3.4.0 --project=. scripts/export_handson03_figures.jl"
