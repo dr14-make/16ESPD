@@ -1,0 +1,70 @@
+"""Continuous ESP composed from yaw reference, yaw control, and brake allocation."""
+component ESPController
+  delta_sw = RealInput(units = "rad")
+  r = RealInput(units = "rad/s")
+  vx = RealInput(units = "m/s")
+  dT_fl = RealOutput(units = "N.m")
+  dT_fr = RealOutput(units = "N.m")
+  dT_rl = RealOutput(units = "N.m")
+  dT_rr = RealOutput(units = "N.m")
+  parameter L::Length = 2.7
+  parameter K_us::Real = 2.0387e-3
+  parameter i_s::Real = 16.0
+  parameter mu_est::Real = 1.0
+  parameter g::Acceleration = 9.81
+  parameter k_lim::Real = 0.85
+  parameter v_floor::Velocity = 1.0
+  parameter Kp::Real = 40000.0
+  parameter Ki::Real = 0.0
+  parameter deadband::AngularVelocity = 0.03
+  parameter v_on::Velocity = 5.0
+  parameter Mz_max::Torque = 10000.0
+  parameter tw::Length = 1.55
+  parameter radius::Length = 0.31
+  parameter T_max::Torque = 2500.0
+  parameter T_build::Time = 0.1
+  variable Mz::Torque
+  variable r_ref::AngularVelocity
+  variable oversteer::Real
+  reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor)
+  yaw = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max)
+  allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(tw = tw, radius = radius, T_max = T_max, T_build = T_build)
+relations
+  connect(delta_sw, reference.delta_sw)
+  connect(vx, reference.vx)
+  connect(r, yaw.r)
+  connect(reference.r_ref, yaw.r_ref)
+  connect(vx, yaw.vx)
+  connect(yaw.Mz, allocator.Mz)
+  connect(yaw.oversteer, allocator.oversteer)
+  connect(allocator.dT_fl, dT_fl)
+  connect(allocator.dT_fr, dT_fr)
+  connect(allocator.dT_rl, dT_rl)
+  connect(allocator.dT_rr, dT_rr)
+  Mz = yaw.Mz
+  r_ref = reference.r_ref
+  oversteer = yaw.oversteer
+end
+
+"Composition check for the continuous ESP."
+test component TestESPController
+  steer = BlockComponents.Sources.Constant(k = 0.5624768)
+  measured = BlockComponents.Sources.Constant(k = 0.30)
+  speed = BlockComponents.Sources.Constant(k = 20.0)
+  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController()
+relations
+  connect(steer.y, esp.delta_sw)
+  connect(measured.y, esp.r)
+  connect(speed.y, esp.vx)
+metadata {
+  "Dyad": {
+    "tests": {
+      "oversteer": {
+        "solver": "Tsit5", "stop": 1.0,
+        "expect": {"final": {"esp.r_ref": 0.20, "esp.Mz": -2800.0, "esp.oversteer": 1.0, "esp.dT_fr": 1120.0}},
+        "atol": {"esp.r_ref": 1e-5, "esp.Mz": 1e-3, "esp.oversteer": 1e-6, "esp.dT_fr": 1.0}
+      }
+    }
+  }
+}
+end

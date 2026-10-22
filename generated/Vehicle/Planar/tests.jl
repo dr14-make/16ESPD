@@ -17,13 +17,21 @@ end
 
 @testset "`VehicleSystemsComponents.Vehicle.Planar`" begin
 include("AckermannSteering_test.jl")
+include("BrakeAllocator_test.jl")
+include("ESPController_test.jl")
 include("PlanarBrakedWheel_test.jl")
 include("PlanarCarSensors_test.jl")
 include("PlanarCar_test.jl")
 include("QuasiStaticLoads_test.jl")
 include("SineWithDwell_test.jl")
 include("TestAckermannSteering_test.jl")
+include("TestBrakeAllocator_test.jl")
+include("TestESPController_test.jl")
 include("TestPlanarWheelRig_test.jl")
 include("TestSineWithDwell_test.jl")
+include("TestYawMomentController_test.jl")
+include("TestYawReference_test.jl")
 include("WheelSlipSensor_test.jl")
+include("YawMomentController_test.jl")
+include("YawReference_test.jl")
 end

@@ -23,6 +23,78 @@ function sine_with_dwell_case(; A_sw, stop = 6.0, kwargs...)
     return result.sol, symbolic_container(result)
 end
 
+function esp_sine_with_dwell_case(; A_sw, stop = 6.0, kwargs...)
+    result = VehicleSystemsComponents.Lecture3.ESPSineWithDwellTransient(; A_sw, stop, kwargs...)
+    return result.sol, symbolic_container(result)
+end
+
+function esp_steer_ramp_case(; stop = 8.0, kwargs...)
+    result = VehicleSystemsComponents.Lecture3.ESPSteerRampTransient(; stop, kwargs...)
+    return result.sol, symbolic_container(result)
+end
+
+trapezoidal_integral(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
+
+@testset "Continuous ESP plausibility" begin
+    amplitudes = (32.0, 76.0, 97.0, 141.0, 180.0, 220.0, 270.0)
+    measurements = map(amplitudes) do amplitude
+        sol, model = esp_sine_with_dwell_case(A_sw = deg2rad(amplitude))
+        metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
+            sol.t, sol[model.sensors.delta_sw], sol[model.sensors.r], sol[model.sensors.y];
+            A = deg2rad(21.63))
+        beta_max = maximum(abs, sol[model.sensors.beta])
+        min_kappa = minimum(vcat(sol[model.sensors.kappa_fl], sol[model.sensors.kappa_fr],
+                                  sol[model.sensors.kappa_rl], sol[model.sensors.kappa_rr]))
+        @test metrics.passes_stability
+        amplitude >= 108.15 && @test metrics.passes_responsiveness
+        @test rad2deg(beta_max) < 10.0
+        amplitude >= 97.0 && @test 12.0 <= sol[model.sensors.vx][end] <= 16.0
+        amplitude >= 97.0 && @test min_kappa < -0.9
+        if amplitude == 180.0
+            t_start = 1.0 + 0.5 / 0.7
+            t_end = 1.0 + 1.0 / 0.7 + 0.5 + 1.5
+            t_int = collect(range(t_start, t_end; length = 1001))
+            integrals = [trapezoidal_integral(t_int, sol(t_int; idxs = tau)) for tau in
+                         (model.car.tau_fl, model.car.tau_fr, model.car.tau_rl, model.car.tau_rr)]
+            @test argmax(integrals) == 1
+            @info "Task 5 oversteer torque integrals" integrals
+        end
+        (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
+           beta_max_deg = rad2deg(beta_max), end_speed = sol[model.sensors.vx][end], min_kappa)
+    end
+
+    for amplitude in amplitudes
+        passive_sol, passive = sine_with_dwell_case(
+            A_sw = deg2rad(amplitude), reltol = 1e-12, abstol = 1e-14,
+            dtmax = 0.001, saveat = 0.001)
+        off_sol, off = esp_sine_with_dwell_case(
+            A_sw = deg2rad(amplitude), esp_on = 0.0, reltol = 1e-12, abstol = 1e-14,
+            dtmax = 0.001, saveat = 0.001)
+        passive_metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
+            passive_sol.t, passive_sol[passive.sensors.delta_sw], passive_sol[passive.sensors.r],
+            passive_sol[passive.sensors.y]; A = deg2rad(21.63))
+        off_metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
+            off_sol.t, off_sol[off.sensors.delta_sw], off_sol[off.sensors.r], off_sol[off.sensors.y];
+            A = deg2rad(21.63))
+        @test off_metrics.yrr_1_00 ≈ passive_metrics.yrr_1_00 atol = 1e-6
+        @test off_metrics.yrr_1_75 ≈ passive_metrics.yrr_1_75 atol = 1e-6
+        @test off_metrics.y_bos_1_07 ≈ passive_metrics.y_bos_1_07 atol = 1e-6
+    end
+
+    ramp_on_sol, ramp_on = esp_steer_ramp_case()
+    ramp_off_sol, ramp_off = esp_steer_ramp_case(esp_on = 0.0)
+    t_int = collect(range(0.0, 8.0; length = 1601))
+    ramp_integrals = [trapezoidal_integral(t_int, ramp_on_sol(t_int; idxs = tau)) for tau in
+                      (ramp_on.car.tau_fl, ramp_on.car.tau_fr, ramp_on.car.tau_rl, ramp_on.car.tau_rr)]
+    shortfall_on = minimum(ramp_on_sol[ramp_on.sensors.r] .- ramp_on_sol[ramp_on.esp.r_ref])
+    shortfall_off = minimum(ramp_off_sol[ramp_off.sensors.r] .- ramp_off_sol[ramp_off.esp.r_ref])
+    @test ramp_integrals[3] > 10.0 * maximum(ramp_integrals[[1, 2, 4]])
+    @test abs(shortfall_on) <= 0.7 * abs(shortfall_off)
+    @info "Task 5 continuous ESP measurements" measurements ramp_integrals shortfall_on shortfall_off
+end
+
+
+
 @testset "FMVSS 126 metric helper" begin
     t = collect(0.0:0.01:5.0)
     swa = [ti < 1.0 ? 0.0 : min(0.2 * (ti - 1.0), 0.5) for ti in t]

@@ -203,6 +203,10 @@ component.
 end
 
 
+include("ESPSineWithDwellTransient_definition.jl")
+include("ESPSineWithDwell_definition.jl")
+include("ESPSteerRampTransient_definition.jl")
+include("ESPSteerRamp_definition.jl")
 include("PlanarOpenLoopTransient_definition.jl")
 include("PlanarOpenLoop_definition.jl")
 include("SineWithDwellRunTransient_definition.jl")

@@ -1,0 +1,56 @@
+"""Friction-limited bicycle-model yaw-rate reference for the continuous ESP."""
+component YawReference
+  "Measured steering-wheel angle"
+  delta_sw = RealInput(units = "rad")
+  "Measured longitudinal speed"
+  vx = RealInput(units = "m/s")
+  "Reference yaw rate"
+  r_ref = RealOutput(units = "rad/s")
+  "Wheelbase (probe)"
+  parameter L::Length = 2.7
+  "Understeer gradient (derived)"
+  parameter K_us::Real = 2.0387e-3
+  "Steering ratio (assumed)"
+  parameter i_s::Real = 16.0
+  "Estimated road friction (assumed)"
+  parameter mu_est::Real = 1.0
+  "Gravity used by the probe"
+  parameter g::Acceleration = 9.81
+  "Fraction of estimated friction used by the reference limit (derived)"
+  parameter k_lim::Real = 0.85
+  "Low-speed denominator floor (assumed)"
+  parameter v_floor::Velocity = 1.0
+  variable r_nom::AngularVelocity
+  variable r_limit::AngularVelocity
+relations
+  r_nom = vx * (delta_sw / i_s) / (L + K_us * vx ^ 2)
+  r_limit = k_lim * mu_est * g / max(abs(vx), v_floor)
+  r_ref = min(max(r_nom, -r_limit), r_limit)
+end
+
+"Yaw-reference checks below and at the friction limit."
+test component TestYawReference
+  steer = BlockComponents.Sources.Constant(k = 0.32)
+  speed = BlockComponents.Sources.Constant(k = 22.222)
+  reference = VehicleSystemsComponents.Vehicle.Planar.YawReference()
+relations
+  connect(steer.y, reference.delta_sw)
+  connect(speed.y, reference.vx)
+metadata {
+  "Dyad": {
+    "tests": {
+      "linear": {
+        "solver": "Tsit5", "stop": 1.0,
+        "expect": {"final": {"reference.r_ref": 0.119900}},
+        "atol": {"reference.r_ref": 1e-5}
+      },
+      "limited": {
+        "solver": "Tsit5", "stop": 1.0,
+        "params": {"steer.k": 1.6},
+        "expect": {"final": {"reference.r_ref": 0.375233}},
+        "atol": {"reference.r_ref": 1e-5}
+      }
+    }
+  }
+}
+end

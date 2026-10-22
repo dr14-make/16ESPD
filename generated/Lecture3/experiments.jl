@@ -9,5 +9,7 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "Lecture3
 end
 
 
+include("ESPSineWithDwell_experiment.jl")
+include("ESPSteerRamp_experiment.jl")
 include("PlanarOpenLoop_experiment.jl")
 include("SineWithDwellRun_experiment.jl")

@@ -16,6 +16,8 @@ end
 
 
 @testset "`VehicleSystemsComponents.Lecture3`" begin
+include("ESPSineWithDwell_test.jl")
+include("ESPSteerRamp_test.jl")
 include("PlanarOpenLoop_test.jl")
 include("SineWithDwellRun_test.jl")
 end

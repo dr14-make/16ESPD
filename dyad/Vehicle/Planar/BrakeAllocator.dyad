@@ -1,0 +1,75 @@
+"""Signed single-wheel yaw-moment allocation with pressure-build dynamics."""
+component BrakeAllocator
+  "Requested corrective yaw moment"
+  Mz = RealInput(units = "N.m")
+  "One for oversteer, zero for understeer"
+  oversteer = RealInput()
+  "Signed left-front torque change"
+  dT_fl = RealOutput(units = "N.m")
+  "Signed right-front torque change"
+  dT_fr = RealOutput(units = "N.m")
+  "Signed left-rear torque change"
+  dT_rl = RealOutput(units = "N.m")
+  "Signed right-rear torque change"
+  dT_rr = RealOutput(units = "N.m")
+  "Track width (probe)"
+  parameter tw::Length = 1.55
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Maximum wheel torque request (assumed)"
+  parameter T_max::Torque = 2500.0
+  "Pressure build lag (assumed)"
+  parameter T_build::Time = 0.1
+  variable T::Torque
+  variable req_fl::Torque
+  variable req_fr::Torque
+  variable req_rl::Torque
+  variable req_rr::Torque
+relations
+  T = min(abs(Mz) * radius / (tw / 2), T_max)
+  req_fl = ifelse(oversteer > 0.5, ifelse(Mz > 0, T, -T), 0.0)
+  req_fr = ifelse(oversteer > 0.5, ifelse(Mz > 0, -T, T), 0.0)
+  req_rl = ifelse(oversteer <= 0.5, ifelse(Mz > 0, T, -T), 0.0)
+  req_rr = ifelse(oversteer <= 0.5, ifelse(Mz > 0, -T, T), 0.0)
+  initial dT_fl = 0.0
+  initial dT_fr = 0.0
+  initial dT_rl = 0.0
+  initial dT_rr = 0.0
+  der(dT_fl) = (req_fl - dT_fl) / T_build
+  der(dT_fr) = (req_fr - dT_fr) / T_build
+  der(dT_rl) = (req_rl - dT_rl) / T_build
+  der(dT_rr) = (req_rr - dT_rr) / T_build
+end
+
+"Brake-allocation checks for oversteer, understeer, and saturation."
+test component TestBrakeAllocator
+  moment = BlockComponents.Sources.Constant(k = -2800.0)
+  mode = BlockComponents.Sources.Constant(k = 1.0)
+  allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator()
+relations
+  connect(moment.y, allocator.Mz)
+  connect(mode.y, allocator.oversteer)
+metadata {
+  "Dyad": {
+    "tests": {
+      "oversteer": {
+        "solver": "Tsit5", "stop": 1.0,
+        "expect": {"final": {"allocator.dT_fl": -1120.0, "allocator.dT_fr": 1120.0, "allocator.dT_rl": 0.0, "allocator.dT_rr": 0.0}},
+        "atol": {"allocator.dT_fl": 1.0, "allocator.dT_fr": 1.0, "allocator.dT_rl": 1.0, "allocator.dT_rr": 1.0}
+      },
+      "understeer": {
+        "solver": "Tsit5", "stop": 1.0,
+        "params": {"moment.k": 2800.0, "mode.k": 0.0},
+        "expect": {"final": {"allocator.dT_fl": 0.0, "allocator.dT_fr": 0.0, "allocator.dT_rl": 1120.0, "allocator.dT_rr": -1120.0}},
+        "atol": {"allocator.dT_fl": 1.0, "allocator.dT_fr": 1.0, "allocator.dT_rl": 1.0, "allocator.dT_rr": 1.0}
+      },
+      "saturated": {
+        "solver": "Tsit5", "stop": 1.0,
+        "params": {"moment.k": -20000.0},
+        "expect": {"final": {"allocator.dT_fr": 2500.0}},
+        "atol": {"allocator.dT_fr": 1.0}
+      }
+    }
+  }
+}
+end

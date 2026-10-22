@@ -1,0 +1,77 @@
+"""Planar car with continuous ESP in the FMVSS 126 sine-with-dwell maneuver."""
+test component ESPSineWithDwell
+  parameter A_sw::Angle = 0.5585053606381855
+  parameter v0::Velocity = 22.22222222222222
+  parameter esp_on::Real = 1.0
+  parameter Kp::Real = 40000.0
+  parameter Ki::Real = 0.0
+  parameter T_build::Time = 0.1
+  parameter radius::Length = 0.31
+  steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = A_sw)
+  wheel_pos = RotationalComponents.Sources.Position()
+  steering_fixed = RotationalComponents.Components.Fixed()
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius)
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
+  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(Kp = Kp, Ki = Ki, T_build = T_build, radius = radius)
+relations
+  connect(steer.y, wheel_pos.phi_ref)
+  connect(wheel_pos.spline, car.steering)
+  connect(wheel_pos.support, steering_fixed.spline)
+  connect(car.chassis, sensors.chassis)
+  connect(car.steering, sensors.steering)
+  connect(car.wheel_fl, sensors.wheel_fl)
+  connect(car.wheel_fr, sensors.wheel_fr)
+  connect(car.wheel_rl, sensors.wheel_rl)
+  connect(car.wheel_rr, sensors.wheel_rr)
+  connect(car.spin_fl, sensors.spin_fl)
+  connect(car.spin_fr, sensors.spin_fr)
+  connect(car.spin_rl, sensors.spin_rl)
+  connect(car.spin_rr, sensors.spin_rr)
+  connect(sensors.delta_sw, esp.delta_sw)
+  connect(sensors.r, esp.r)
+  connect(sensors.vx, esp.vx)
+  car.tau_fl = esp_on * max(0.0, esp.dT_fl)
+  car.tau_fr = esp_on * max(0.0, esp.dT_fr)
+  car.tau_rl = esp_on * max(0.0, esp.dT_rl)
+  car.tau_rr = esp_on * max(0.0, esp.dT_rr)
+  initial car.body.r = [0, 0]
+  initial car.body.v = [v0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = (v0 + 0.01) / radius
+  initial car.fr.inertia.w = (v0 + 0.01) / radius
+  initial car.rl.inertia.w = (v0 + 0.01) / radius
+  initial car.rr.inertia.w = (v0 + 0.01) / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial wheel_pos.w = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "esp_32deg": {
+        "solver": "Tsit5", "stop": 6.0,
+        "params": {"A_sw": 0.5585053606381855},
+        "expect": {"signals": ["sensors.vx", "sensors.r", "sensors.y", "sensors.beta", "esp.r_ref", "car.tau_fl", "car.tau_fr", "car.tau_rl", "car.tau_rr"]}
+      }
+    }
+  }
+}
+end
+
+analysis ESPSineWithDwellTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  parameter A_sw::Angle = 0.5585053606381855
+  parameter v0::Velocity = 22.22222222222222
+  parameter esp_on::Real = 1.0
+  parameter Kp::Real = 40000.0
+  parameter Ki::Real = 0.0
+  parameter T_build::Time = 0.1
+  model = VehicleSystemsComponents.Lecture3.ESPSineWithDwell(A_sw = A_sw, v0 = v0, esp_on = esp_on, Kp = Kp, Ki = Ki, T_build = T_build)
+relations
+end
