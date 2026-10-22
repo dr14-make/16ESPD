@@ -1,0 +1,132 @@
+# Hands-on 03 checkpoints: the students' reference models against the library analyses the
+# Lecture 3 deck quotes, and the numbers the hands-on deck states.
+
+using DyadInterface: symbolic_container, ODEAlg
+
+const _V = VehicleSystemsComponents.Vehicle
+const _H3 = VehicleSystemsComponents.HandsOn03
+const _G = 9.80665
+
+# The notebook's rule: the slowest stop it can be, the locked one or one at `a_max`, plus margin.
+_stop_time(mu, a_max = Inf) = 0.5 + 1.5 * 25 / min(0.7 * mu * _G, a_max) + 1.0
+
+# The library analyses default to an automatic solver; the hands-on ones run Tsit5 at dtmax 1 ms.
+_tsit5 = (alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+
+function _max_speed_gap(a, b, stop)
+    ma, mb = symbolic_container(a), symbolic_container(b)
+    ts = range(0, stop, length = 2001)
+    va = a.sol(ts, idxs = ma.body.mass.v).u
+    vb = b.sol(ts, idxs = mb.body.mass.v).u
+    return maximum(abs.(va .- vb))
+end
+
+@testset "Hands-on 03 braking_distance" begin
+    # 25 m/s, 0.5 s of coasting at constant speed, then 8 m/s² to rest: 25²/16 = 39.0625 m.
+    t = collect(range(0, 4, length = 400_001))
+    v = [ti < 0.5 ? 25.0 : max(25.0 - 8.0 * (ti - 0.5), 0.0) for ti in t]
+    s = [0.0; cumsum((v[1:end-1] .+ v[2:end]) ./ 2 .* diff(t))]
+    # Stops counting at 0.5 m/s, (0.5)²/16 short of the full stop.
+    @test _V.braking_distance(t, s, v) ≈ 25^2 / 16 - 0.5^2 / 16 atol = 1e-3
+    @test _V.braking_distance(t, s, v; v_stop = 1e-9) ≈ 25^2 / 16 atol = 1e-3
+    # Counted from t_brake: starting 0.25 s earlier adds 0.25 s at 25 m/s.
+    @test _V.braking_distance(t, s, v; t_brake = 0.25) - _V.braking_distance(t, s, v) ≈ 6.25 atol = 1e-6
+    @test_throws ErrorException _V.braking_distance(t[1:1000], s[1:1000], v[1:1000])
+end
+
+@testset "Hands-on 03 step 02: locked stop" begin
+    for (mu, expected) in ((1.0, 43.7), (0.5, 85.1), (0.3, 136.8))
+        stop = _stop_time(mu)
+        mine = _H3.LockedStopTransient(road_mu = mu, stop = stop)
+        lib = _V.LockedBrakeTransient(; road_mu = mu, stop, _tsit5...)
+        @test _max_speed_gap(mine, lib, stop) < 1e-6
+        @test _V.braking_distance(mine) ≈ _V.braking_distance(lib) atol = 1e-6
+        @test _V.braking_distance(mine) ≈ expected atol = 0.05
+    end
+    run = _H3.LockedStopTransient()
+    m = symbolic_container(run)
+    t, kappa, v = run.sol.t, run.sol[m.wheel.kappa], run.sol[m.body.mass.v]
+    # Locked within 0.2 s of the 0.5 s step: the 30 ms brake lag, then the wheel's spin-down.
+    @test t[findfirst(<(-0.99), kappa)] - 0.5 < 0.2
+    @test 3.9 < t[findfirst(i -> t[i] > 0.5 && v[i] < 0.5, eachindex(t))] < 4.0
+end
+
+@testset "Hands-on 03 step 03: slip ABS" begin
+    for (mu, expected) in ((1.0, 34.4), (0.5, 63.4), (0.3, 102.2))
+        stop = _stop_time(mu)
+        mine = _H3.ABSStopTransient(road_mu = mu, stop = stop)
+        lib = _V.IdealBrakeTransient(; road_mu = mu, stop, _tsit5...)
+        @test _max_speed_gap(mine, lib, stop) < 1e-6
+        @test _V.braking_distance(mine) ≈ _V.braking_distance(lib) atol = 1e-6
+        @test _V.braking_distance(mine) ≈ expected atol = 0.05
+    end
+
+    # Without the look-ahead the controller dumps 30 ms late, overshoots into sliding and stops
+    # longer than the locked wheel.
+    present = _H3.ABSStopTransient(T_p = 0.0)
+    ahead = _H3.ABSStopTransient()
+    @test _V.braking_distance(present) ≈ 53.8 atol = 0.05
+    for (run, slide_share, f_cycle) in ((present, 0.26, 2.6), (ahead, 0.0, 31.0))
+        m = symbolic_container(run)
+        t, kappa = run.sol.t, run.sol[m.wheel.kappa]
+        tau, v = run.sol[m.wheel.brake.tau_actual], run.sol[m.body.mass.v]
+        win = (t .>= 1.0) .& (v .> 3.0)
+        dt = diff(t[win])
+        @test sum(dt[kappa[win][1:end-1] .< -0.12]) / sum(dt) ≈ slide_share atol = 0.01
+        @test cycle_frequency(t[win], tau[win]) ≈ f_cycle atol = 0.2
+        cmd, demand = run.sol[m.abs.tau_cmd], run.sol[m.demand.y]
+        @test all(cmd .<= demand .+ 1e-6)
+    end
+end
+
+@testset "Hands-on 03 steps 04-05: wheel speed only" begin
+    for (mu, mine_expected, lib_expected) in ((1.0, 35.5, 38.7), (0.5, 69.8, 83.2), (0.3, 119.6, 141.3))
+        stop = _stop_time(mu, 8.0)
+        mine = _V.braking_distance(_H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = stop))
+        lib = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = mu, stop, _tsit5...))
+        locked = _V.braking_distance(_H3.LockedStopTransient(road_mu = mu, stop = _stop_time(mu)))
+        # The controller switches on thresholds every few milliseconds; 0.1 m absorbs solver drift.
+        @test mine ≈ mine_expected atol = 0.1
+        @test lib ≈ lib_expected atol = 0.05
+        @test mine < locked
+    end
+    # The trap is the library ECU's: on snow, a_ref = 8 makes it stop longer than the locked
+    # wheel, and a_ref = 0.8 μ g brings it back under. The students' ABS dumps on the wheel's
+    # deceleration, which needs no speed estimate, so a_ref = 8 does not trap it.
+    locked = _V.braking_distance(_H3.LockedStopTransient(road_mu = 0.3, stop = _stop_time(0.3)))
+    lib_trap = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = 0.3, stop = _stop_time(0.3, 8.0), _tsit5...))
+    lib_fixed = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = 0.3, a_ref = 2.4, stop = _stop_time(0.3, 2.4), _tsit5...))
+    mine_fixed = _V.braking_distance(_H3.ABSStopWheelOnlyTransient(road_mu = 0.3, a_ref = 2.4, stop = _stop_time(0.3, 2.4)))
+    @test lib_trap > locked
+    @test lib_fixed ≈ 128.4 atol = 0.05
+    @test mine_fixed ≈ 124.1 atol = 0.1
+    @test mine_fixed < locked
+    # An a_ref below the car's real deceleration lets the estimate run above the car, and the
+    # slip trigger dumps on slip that is not there.
+    @test _V.braking_distance(_H3.ABSStopWheelOnlyTransient(a_ref = 2.4, stop = _stop_time(1.0, 2.4))) ≈ 105.4 atol = 0.1
+
+    for (mu, phases, f_dump) in ((1.0, (-1, 1), 10.0), (0.5, (-1, 0, 1), 4.7))
+        run = _H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = _stop_time(mu, 8.0))
+        m = symbolic_container(run)
+        t, v, phase, p = run.sol.t, run.sol[m.body.mass.v], run.sol[m.abs.phase], run.sol[m.abs.pressure.p]
+        win = (t .>= 1.0) .& (v .> 3.0)
+        # On a dry road the dump ends before the wheel turns round, so it never reaches HOLD.
+        @test Set(round.(Int, phase[win])) == Set(phases)
+        dumps = count(i -> win[i] && phase[i] < -0.5 && phase[i-1] > -0.5, 2:length(t))
+        @test dumps / (t[win][end] - t[win][1]) ≈ f_dump atol = 0.3
+        held = [win[i] && win[i-1] && abs(phase[i]) < 0.5 && abs(phase[i-1]) < 0.5 for i in 2:length(t)]
+        @test maximum(abs.(diff(p)[held]); init = 0.0) < 1e-9
+        cmd, demand = run.sol[m.abs.tau_cmd], run.sol[m.demand.y]
+        @test all(cmd .<= demand .+ 1e-6)
+    end
+
+    # On a dry road a_ref = 8 is below the car's deceleration, so the estimate runs above the car;
+    # on a wet one it is above it, and the estimate rides the slipping wheel down below the car.
+    for (mu, above) in ((1.0, true), (0.5, false))
+        run = _H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = _stop_time(mu, 8.0))
+        m = symbolic_container(run)
+        t, v_ref, v = run.sol.t, run.sol[m.est.v_ref], run.sol[m.body.mass.v]
+        win = (t .>= 1.0) .& (v .> 3.0)
+        @test all(above ? v_ref[win] .> v[win] : v_ref[win] .<= v[win] .+ 1e-6)
+    end
+end
