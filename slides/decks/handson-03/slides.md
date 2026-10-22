@@ -29,7 +29,7 @@ Runs after the 90-minute theory session on the lecture-03 deck. Every checkpoint
 from that deck or one the students compute in step 01; the theory slide each step puts into
 practice is named in its notes.
 
-Budget: 8 + 7 + 15 + 25 + 18 + 14 + 3 = 90 min. If the room is behind at 45 min, skip step 03 A
+Budget: 8 + 7 + 15 + 22 + 25 + 10 + 3 = 90 min. If the room is behind at 45 min, skip step 03 A
 (go straight to the look-ahead) and run step 05 from the reference models.
 
 Reference solutions: dyad/HandsOn03/ in the course repository. Checkpoint tests:
@@ -193,7 +193,7 @@ resistance help. The reference equals Vehicle.LockedBrakeTransient to 1e-6 at μ
 routeAlias: slip-abs
 ---
 
-###### Step 03 · 25 min
+###### Step 03 · 22 min
 
 ## An ABS of your own
 
@@ -260,72 +260,158 @@ whether Studio keeps the pressure placement and the nested ifelse.
 routeAlias: wheel-only
 ---
 
-###### Step 04 · 18 min
+###### Step 04 · 25 min
 
 ## Only the wheel speed
 
-<div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1.1fr] gap-8 items-start">
 <div>
 
-**Goal:** the same controller, fed only from a wheel-speed sensor, through a reference speed you
-write.
+**Goal:** an ABS fed only from a wheel-speed sensor, with the cycle a real ECU runs: dump, hold,
+build slowly from where the hold left the pressure.
 
-**Built:** `RefSpeedEstimator` in code; bench `ABSStopWheelOnly` = `ABSStop` without the
-`wheel.kappa` and `speed.v` wires, plus `wspeed` (rotational `VelocitySensor` on
-`wheel.spline`) → `est.omega`, `est.kappa_hat` → `abs.kappa`, `est.v_ref` → `abs.v`.
+**Built:** `RefSpeedEstimator` and `PhaseABS` (a copy of `SlipABS`) in code; bench
+`ABSStopWheelOnly` = `ABSStop` with `abs` = `PhaseABS`, a `wspeed` sensor on `wheel.spline`
+→ `est`, and `est` → `abs` for `kappa`, `a_w`, `v`.
+
+<svg viewBox="0 0 520 250" class="w-full" role="img" aria-label="State diagram of the three phases. Build, slowly at 8000 N·m/s, goes to dump when the wheel decelerates faster than 12 m/s² or the estimated slip passes 0.2. Dump, at 40000 N·m/s, goes to hold when the wheel accelerates faster than 3 m/s², or back to build once neither dump condition holds. Hold, rate zero, goes to build when the wheel acceleration falls below 3 m/s². Before the first dump the demand passes straight through.">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <g text-anchor="middle" fill="currentColor" style="font-size:15px">
+    <text x="18" y="22" text-anchor="start" opacity="0.7" style="font-size:13px">start: demand passes through</text>
+    <line x1="78" y1="30" x2="78" y2="58" stroke="currentColor" marker-end="url(#arr)"/>
+    <rect x="18" y="60" width="120" height="54" rx="10" fill="#2e8b57" fill-opacity="0.25" stroke="#2e8b57" stroke-width="2"/>
+    <text x="78" y="84" font-weight="bold">BUILD</text>
+    <text x="78" y="103" style="font-size:13px">+k_inc, slow</text>
+    <rect x="382" y="60" width="120" height="54" rx="10" fill="#b22222" fill-opacity="0.25" stroke="#b22222" stroke-width="2"/>
+    <text x="442" y="84" font-weight="bold">DUMP</text>
+    <text x="442" y="103" style="font-size:13px">−k_dec</text>
+    <rect x="200" y="182" width="120" height="54" rx="10" fill="#daa520" fill-opacity="0.25" stroke="#daa520" stroke-width="2"/>
+    <text x="260" y="206" font-weight="bold">HOLD</text>
+    <text x="260" y="225" style="font-size:13px">rate 0</text>
+    <line x1="140" y1="74" x2="380" y2="74" stroke="currentColor" marker-end="url(#arr)"/>
+    <text x="260" y="66" style="font-size:13px">a_w &lt; −a_minus  or  kappa &lt; −lambda_1</text>
+    <line x1="380" y1="102" x2="140" y2="102" stroke="currentColor" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+    <text x="260" y="120" opacity="0.8" style="font-size:13px">no dump condition (dry road)</text>
+    <line x1="430" y1="116" x2="322" y2="196" stroke="currentColor" marker-end="url(#arr)"/>
+    <text x="432" y="168" style="font-size:13px">a_w &gt; +a_plus</text>
+    <line x1="198" y1="196" x2="90" y2="116" stroke="currentColor" marker-end="url(#arr)"/>
+    <text x="88" y="168" style="font-size:13px">a_w &lt; +a_plus</text>
+  </g>
+</svg>
+
+</div>
+<div>
 
 <div class="text-sm">
 
 ```txt
-# input omega; outputs kappa_hat, v_ref
-# radius 0.31, a_ref 8, v0 25, T_up 0.01, v_eps 0.5
-v_w = omega * radius
-initial v_ref = v0
-der(v_ref) = ifelse(v_w > v_ref, (v_w - v_ref) / T_up, -a_ref)
-kappa_hat = (v_w - v_ref) / max(v_ref, v_eps)
+# RefSpeedEstimator: add output a_w; T_f = 0.005
+initial v_f = v0
+der(v_f) = (v_w - v_f) / T_f
+a_w = (v_w - v_f) / T_f
+
+# PhaseABS: inputs kappa, a_w, v, demand; output tau_cmd
+# a_minus 12, a_plus 3, lambda_1 0.2,
+# k_dec 40000, k_inc 8000, v_min 1.5, T_latch 0.001
+phase = ifelse(a_w > a_plus, 0,
+               ifelse(a_w < -a_minus or kappa < -lambda_1, -1, 1))
+initial cycled = 0
+der(cycled) = ifelse(phase < -0.5, (1 - cycled) / T_latch, 0)
+pressure.requested_rate = ifelse(phase < -0.5, -k_dec,
+                                 ifelse(phase < 0.5, 0, k_inc))
+pressure.active = ifelse(v > v_min and cycled > 0.5, 1.0, 0.0)
 ```
 
 </div>
 
+HOLD is the pressure memory: after a dump the pressure stays just under the level that was too
+much, and the next build starts there, not from zero.
+
 [Guide: step 04 →](../handson/lecture-03/#wheel-only)
-
-</div>
-<div>
-
-![Speed against time from 0.4 to 2.6 s for the wheel-speed-only ABS. The car's speed falls in steps from 90 to 40 km/h; the wheel's surface speed dives below it five times, each dive deeper; the estimate, dashed, rides the wheel down below the car's speed between dives and drops only at a_ref. Title: wheel speed only, a_ref 8 m/s², 46.9 m.](/img/step04-vref.svg)
-
-> **Checkpoint** · **46.9 m**, longer than locked · `est.v_ref` *below* the car: it rides the
-> wheel down, reads ~0 slip while the real slip creeps up, and dumps only once the wheel dives ·
-> the library's clocked ECU: **38.7 m**
 
 </div>
 </div>
 
 <!--
-Theory: wheel-speed-sensors ("the ABS measures only this"), reference-speed, abs-distance.
+Theory: wheel-speed-sensors ("the ABS measures only this"), reference-speed, the modulator and
+state-machine slides (the inlet and outlet valve: both open is build, both shut is hold, outlet
+open is dump), abs-distance.
 
-The plan expected this estimator to land between 34.4 and 43.7 m. It does not: 46.9 m, and
-no a_ref from 2.4 to 15 brings it under the locked 43.7 m on a dry road (best 46.9 at 8). So the
-step keeps the build and quotes the library beside it. Say why the library does better: its
-modulator re-applies fast to a remembered fraction of the lock pressure (pressure memory, the
-4-phase state machine of the theory deck), so the build phase in which the slip creeps unseen
-is short. This controller rebuilds at a fixed 20 000 N·m/s from almost nothing every cycle.
+Why this controller and not step 03's on an estimated slip: fed from the estimator, the step 03
+law stops in 46.9 m, longer than locked, at any a_ref. After each dump it rebuilt from almost
+nothing at a fixed rate, so the slip crept up unseen until the wheel dived. Two changes fix it.
+The dump is triggered by the wheel's own deceleration, which needs no estimate of the car's
+speed: a rolling wheel cannot decelerate faster than the car, about 9.8 m/s² on a dry road, so
+12 m/s² means the tire has gone past its peak. And the hold keeps the pressure where the dump
+left it, so the slow build starts close to the right level.
 
-Plot est.v_ref against speed.v and the wheel speed: the estimate sits under the car.
+The estimated slip only catches a wheel that is already locked (a_w = 0 there). cycled is a
+latch: until the first dump the integrator is inactive and passes the demand through, which is
+the fast first build; after it, builds are slow.
+
+Students who are behind: give them PhaseABS from the guide's "Stuck?" block and let them write
+only the estimator lines.
+-->
+
+---
+routeAlias: wheel-only-cycle
+---
+
+###### Step 04 · checkpoint
+
+## Dump, hold, build
+
+<div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
+<div>
+
+![Two panels from 0.9 to 1.45 s of the wheel-speed-only stop at road mu 0.5. Top, brake torque: the command climbs slowly in the green build phases from about 1800 to 2500 N·m, drops in the short red dump phases, and stays flat in the amber hold phases; the torque at the wheel follows it smoothly between 2000 and 2300 N·m. Bottom, speed: the car falls steadily from 82 to 72 km/h, the wheel runs about 3 km/h below it with small dips, and the estimate rides the wheel. Title: your three-phase ABS, wheel speed only, mu 0.5, 69.8 m.](/img/step04-phase-cycle.svg)
+
+</div>
+<div>
+
+> **Checkpoint** · μ 1: **35.5 m**, shorter than locked (43.7 m) and than the library's
+> clocked ECU (38.7 m), 1 m from the true-slip 34.4 m · μ 0.5: **69.8 m** against 85.1 locked
+>
+> On μ 0.5 the cycle runs build → dump → hold, about 5 dumps a second; `abs.pressure.p` is flat
+> in every hold · on a dry road the dump ends before the wheel turns round: dump and build only,
+> 10 a second
+
+Plot `abs.phase`, `abs.tau_cmd` and `wheel.brake.tau_actual` together.
+
+</div>
+</div>
+
+<!--
+The hold shows on wet and snow, where a dump lets the wheel spin back up past +3 m/s². On a dry
+road it is so short that the wheel only stops decelerating, so the cycle is dump and slow build.
+Both are the pressure memory: the build starts from the held level.
+
+On a dry road a_ref = 8 is below the car's deceleration, so est.v_ref runs above the car; from
+about 1.9 s the estimated slip passes 0.2 although the true slip is 4 %, and the slip trigger
+dumps. That costs about 2 m (a_ref = 10 gives 33.6 m). On wet and snow a_ref = 8 is above the
+car's deceleration and the estimate rides the wheel, below the car. Step 05 picks this up.
+
+A hydraulic version, with the inlet and outlet valves of a real modulator in place of the rate
+integrator, is a stretch goal for whoever finishes early; the library plan for it is
+docs/brake-system-implementation-plan.md, step 3.
 -->
 
 ---
 routeAlias: surfaces
 ---
 
-###### Step 05 · 14 min
+###### Step 05 · 10 min
 
 ## Across road surfaces
 
 <div class="grid grid-cols-[1fr_1.25fr] gap-8 items-start">
 <div>
 
-**Goal:** one table from the REPL; then the `a_ref` trap on snow.
+**Goal:** one table from the REPL; then the `a_ref` trap on snow, and what `a_ref` does to yours.
 
 <div class="text-sm">
 
@@ -343,18 +429,19 @@ end
 
 </div>
 
-Then μ 0.3 with `a_ref = 0.8 μ g ≈ 2.4`.
+Then μ 0.3 with `a_ref = 0.8 μ g ≈ 2.4`, and the same `a_ref` on a dry road.
 
 [Guide: step 05 →](../handson/lecture-03/#surfaces)
 
 </div>
 <div>
 
-![Grouped bars of braking distance from 90 km/h at road mu 1.0, 0.5 and 0.3. Locked: 43.7, 85.1, 136.8 m. ABS on true slip: 34.4, 63.4, 102.2 m. ABS on wheel speed only, yours: 46.9, 90.7, 129.6 m. ABS on wheel speed only, the library's clocked ECU: 38.7, 83.2, 141.3 m, the last longer than locked.](/img/step05-surfaces.svg)
+![Grouped bars of braking distance from 90 km/h at road mu 1.0, 0.5 and 0.3. Locked: 43.7, 85.1, 136.8 m. ABS on true slip: 34.4, 63.4, 102.2 m. ABS on wheel speed only, yours: 35.5, 69.8, 119.6 m. ABS on wheel speed only, the library's clocked ECU: 38.7, 83.2, 141.3 m, the last longer than locked.](/img/step05-surfaces.svg)
 
-> **Checkpoint** · true slip beats locked everywhere · on snow the library ECU loses to the
-> locked wheel, **141.3 vs 136.8 m**; with `a_ref = 2.4` it stops in **128.4 m**, yours in
-> **127.0 m**
+> **Checkpoint** · both ABS columns of yours beat locked everywhere · on snow the library ECU
+> loses to the locked wheel, **141.3 vs 136.8 m**; with `a_ref = 2.4` it stops in **128.4 m** ·
+> yours, with `a_ref = 2.4`: **124.1 m** on snow, *longer* than at 8, and **105.4 m** on a dry
+> road
 
 </div>
 </div>
@@ -367,9 +454,15 @@ library column comes from Vehicle.ABSBrakeTransient(road_mu = μ, stop = …), r
 
 The trap is the clocked ECU's: a_ref = 8 m/s² is almost three times what μ 0.3 allows (2.9),
 so its estimate falls too fast, it under-reads the slip and lets the wheel slide. The students'
-continuous estimator does not show it at a_ref = 8 (129.6 m, under the locked 136.8): its
-estimate is pulled up to the wheel whenever the wheel is faster. Both get better with
-a_ref = 2.4. One sentence on why: an ABS can only be as good as its guess of the car's speed.
+PhaseABS does not fall into it (119.6 m, under the locked 136.8): it dumps on the wheel's own
+deceleration, which needs no estimate of the car's speed.
+
+Their a_ref = 2.4 rerun shows the other side of the same knob: an a_ref below the car's real
+deceleration (about 0.9 μ g with ABS) lets the estimate run above the car, the estimated slip
+passes lambda_1 although the tire is at its peak, and the controller dumps on slip that is not
+there: 124.1 m on snow, 105.4 m on a dry road. One sentence on why: an ABS can only be as good as
+its guess of the car's speed, so a wheel-speed-only ECU leans on the wheel's deceleration and
+uses the guess only to catch a locked wheel.
 -->
 
 ---
@@ -381,7 +474,8 @@ routeAlias: hand-in
 ## Hand in: a pull request
 
 **Goal:** a pull request from `handson-03` into the branch you started from, with your step 05
-table in its description and one sentence on why the wheel-speed-only ABS loses its gain on snow.
+table in its description and one sentence on why the library's wheel-speed-only ABS loses its
+gain on snow and yours does not.
 Do *not* merge it.
 
 > **Checkpoint**
@@ -392,8 +486,9 @@ Do *not* merge it.
 
 <!--
 The sentence to look for: the controller does not know the car's speed, it assumes the car slows
-at a_ref; on snow the car cannot, so the estimate runs away from the truth and the slip it acts
-on is wrong.
+at a_ref; when the road does not match that guess the estimate runs away from the truth and the
+slip it acts on is wrong. The library ECU acts on that slip; theirs mostly on the wheel's
+deceleration, which is why it keeps its gain on snow.
 -->
 
 ---
@@ -444,15 +539,16 @@ routeAlias: wrap-up
 | 02 | the locked wheel | 43.7 m, at rest at 4.0 s | your `Body`, the library wheel |
 | 03 | ABS on the present slip | 53.8 m, longer than locked | 30 ms too late each cycle |
 | 03 | ABS with a 30 ms look-ahead | 34.4 m, 21 % shorter | the lag led |
-| 04 | ABS on the wheel speed only | 46.9 m yours · 38.7 m library | the speed guessed |
-| 05 | on snow, μ 0.3 | 136.8 · 102.2 · 129.6 · 141.3 m | locked · true slip · yours · library |
+| 04 | ABS on the wheel speed only | 35.5 m yours · 38.7 m library | dump, hold, build slowly |
+| 05 | on snow, μ 0.3 | 136.8 · 102.2 · 119.6 · 141.3 m | locked · true slip · yours · library |
 
-The controller that knows the slip wins on every road. Without the car's speed, everything rests
-on the guess: where the guess is poor, the ABS can stop longer than a locked wheel.
+The controller that knows the slip wins on every road. Without the car's speed, an ABS trusts
+the wheel's own deceleration and remembers the pressure; where it trusts a poor guess of the
+speed instead, it can stop longer than a locked wheel.
 
 <!--
 The deck's four claims, each tested on the students' own parts: a locked wheel stops on the
 sliding friction (02); ABS holds the tire near its peak and stops shorter (03 C); the controller
 must lead the 30 ms lag (03 A against C); without the car's speed it must estimate it, which
-costs most of the gain (04, 05).
+costs little on a dry road and about half the gain on snow (04, 05).
 -->
