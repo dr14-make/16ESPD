@@ -58,3 +58,171 @@ __dyad_run_test_case!(
     (m -> m.sensors.kappa_rl, "sensors.kappa_rl", 0.002, 1e-5),
   ],
 )
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "steady_1 for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="steady_1",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=4e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; delta_sw_final=0.08),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.02996, 0.0003, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 22.211, 0.02, 1e-5),
+  ],
+  signals=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.0003, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
+  ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "steady_2 for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="steady_2",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=4e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; delta_sw_final=0.16),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.05985, 0.0006, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 22.177, 0.02, 1e-5),
+  ],
+  signals=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.0006, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
+  ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "steady_3 for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="steady_3",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=4e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; delta_sw_final=0.32),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.1191, 0.0012, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 22.04, 0.02, 1e-5),
+  ],
+  signals=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.0012, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
+  ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "steady_4 for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="steady_4",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=4e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; delta_sw_final=0.48),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.17716, 0.0018, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 21.814, 0.02, 1e-5),
+  ],
+  signals=Tuple[
+    (m -> m.sensors.r, "sensors.r", 0.0018, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
+    (m -> m.sensors.beta, "sensors.beta", 1e-5, 1e-5),
+  ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "steer_ramp for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="steer_ramp",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=8e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; delta_sw_final=1.7671458676442586, t_ramp=7.5, t_steer=0.5),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[],
+  signals=Tuple[
+    (m -> m.sensors.r, "sensors.r", 1e-5, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 1e-5, 1e-5),
+    (m -> m.sensors.delta_sw, "sensors.delta_sw", 1e-5, 1e-5),
+  ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "low_speed_ackermann for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="low_speed_ackermann",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=4e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; v0=3, delta_sw_final=3.2, ackermann=1),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", -0.00573, 0.0003, 1e-5),
+    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", -0.00498, 0.0003, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 2.95, 0.005, 1e-5),
+    (m -> m.sensors.r, "sensors.r", 0.21976, 0.0005, 1e-5),
+  ],
+  signals=Tuple[
+    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", 0.0003, 1e-5),
+    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", 0.0003, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 0.005, 1e-5),
+    (m -> m.sensors.r, "sensors.r", 0.0005, 1e-5),
+  ],
+)
+__dyad_run_test_case!(
+  VehicleSystemsComponents.Lecture3.PlanarOpenLoop,
+  "low_speed_parallel for VehicleSystemsComponents.Lecture3.PlanarOpenLoop";
+  case_name="low_speed_parallel",
+  component_stem="PlanarOpenLoop",
+  module_path=String["Lecture3"],
+  start=0e+0,
+  stop=4e+0,
+  abstol=1e-6,
+  reltol=1e-6,
+  solver=ODEAlg.Tsit5(),
+  params=(; v0=3, delta_sw_final=3.2, ackermann=0),
+  initial_conditions=Tuple[],
+  expected_initial=Tuple[],
+  expected_final=Tuple[
+    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", 0.00493, 0.0003, 1e-5),
+    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", -0.01672, 0.0003, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 2.919, 0.005, 1e-5),
+    (m -> m.sensors.r, "sensors.r", 0.21535, 0.0005, 1e-5),
+  ],
+  signals=Tuple[
+    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", 0.0003, 1e-5),
+    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", 0.0003, 1e-5),
+    (m -> m.sensors.vx, "sensors.vx", 0.005, 1e-5),
+    (m -> m.sensors.r, "sensors.r", 0.0005, 1e-5),
+  ],
+)

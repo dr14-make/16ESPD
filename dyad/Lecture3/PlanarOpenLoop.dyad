@@ -69,6 +69,47 @@ metadata {
         "params": {"T_cmd": 500.0, "brake_fl": 1.0, "brake_fr": 1.0, "brake_rl": 1.0, "brake_rr": 1.0},
         "atol": {"sensors.vx": 0.02, "sensors.r": 1e-6, "sensors.kappa_fl": 0.002, "sensors.kappa_rl": 0.002},
         "expect": {"final": {"sensors.vx": 11.895, "sensors.r": 0.0, "sensors.kappa_fl": -0.0305, "sensors.kappa_rl": -0.0291}, "signals": ["sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl"]}
+      },
+      "steady_1": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"delta_sw_final": 0.08},
+        "atol": {"sensors.r": 3e-4, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.02996, "sensors.vx": 22.211}, "signals": ["sensors.r", "sensors.vx"]}
+      },
+      "steady_2": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"delta_sw_final": 0.16},
+        "atol": {"sensors.r": 6e-4, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.05985, "sensors.vx": 22.177}, "signals": ["sensors.r", "sensors.vx"]}
+      },
+      "steady_3": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"delta_sw_final": 0.32},
+        "atol": {"sensors.r": 1.2e-3, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.11910, "sensors.vx": 22.040}, "signals": ["sensors.r", "sensors.vx"]}
+      },
+      "steady_4": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"delta_sw_final": 0.48},
+        "atol": {"sensors.r": 1.8e-3, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.17716, "sensors.vx": 21.814}, "signals": ["sensors.r", "sensors.vx", "sensors.beta"]}
+      },
+      "steer_ramp": {
+        "solver": "Tsit5", "stop": 8.0,
+        "params": {"delta_sw_final": 1.7671458676442586, "t_ramp": 7.5, "t_steer": 0.5},
+        "expect": {"signals": ["sensors.r", "sensors.vx", "sensors.delta_sw"]}
+      },
+      "low_speed_ackermann": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"v0": 3.0, "delta_sw_final": 3.2, "ackermann": 1.0},
+        "atol": {"sensors.alpha_fl": 3e-4, "sensors.alpha_fr": 3e-4, "sensors.vx": 0.005, "sensors.r": 5e-4},
+        "expect": {"final": {"sensors.alpha_fl": -0.00573, "sensors.alpha_fr": -0.00498, "sensors.vx": 2.950, "sensors.r": 0.21976}, "signals": ["sensors.alpha_fl", "sensors.alpha_fr", "sensors.vx", "sensors.r"]}
+      },
+      "low_speed_parallel": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"v0": 3.0, "delta_sw_final": 3.2, "ackermann": 0.0},
+        "atol": {"sensors.alpha_fl": 3e-4, "sensors.alpha_fr": 3e-4, "sensors.vx": 0.005, "sensors.r": 5e-4},
+        "expect": {"final": {"sensors.alpha_fl": 0.00493, "sensors.alpha_fr": -0.01672, "sensors.vx": 2.919, "sensors.r": 0.21535}, "signals": ["sensors.alpha_fl", "sensors.alpha_fr", "sensors.vx", "sensors.r"]}
       }
     }
   }

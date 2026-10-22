@@ -46,6 +46,58 @@ end
 end
 
 
+@testset "Steady-state cornering and low-speed Ackermann plausibility" begin
+    L = 2.7
+    K_us = 2.0387e-3
+    steady_delta = (0.005, 0.010, 0.020, 0.030)
+    steady_runs = map(steady_delta) do delta
+        sol, model = planar_open_loop_case(stop = 4.0, delta_sw_final = 16.0 * delta)
+        r = sol(4.0, idxs = model.sensors.r)
+        vx = sol(4.0, idxs = model.sensors.vx)
+        beta = sol(4.0, idxs = model.sensors.beta)
+        r_formula = vx * delta / (L + K_us * vx^2)
+        (; delta, r, vx, beta, r_formula,
+           relative_error = r / r_formula - 1.0,
+           K_fit = (vx * delta / r - L) / vx^2)
+    end
+
+    for run in steady_runs
+        @test abs(run.relative_error) < 0.02
+    end
+    @test steady_runs[1].K_fit ≈ K_us rtol = 0.10
+    @test steady_runs[2].K_fit ≈ K_us rtol = 0.10
+    @test rad2deg(steady_runs[4].beta) ≈ -0.69 atol = 0.05
+
+    ramp_sol, ramp = planar_open_loop_case(
+        stop = 8.0, delta_sw_final = deg2rad(13.5) * 7.5,
+        t_ramp = 7.5, t_steer = 0.5)
+    lateral_acceleration = ramp_sol[ramp.sensors.vx] .* ramp_sol[ramp.sensors.r]
+    crossing = findfirst(>=(0.3 * 9.81), lateral_acceleration)
+    @test !isnothing(crossing)
+    amplitude = ramp_sol[ramp.sensors.delta_sw][crossing]
+    @test rad2deg(amplitude) ≈ 21.6 atol = 1.0
+    @test maximum(abs.(lateral_acceleration)) <= 1.01 * 9.81
+
+    ack_sol, ack = planar_open_loop_case(
+        stop = 4.0, v0 = 3.0, delta_sw_final = 3.2, ackermann = 1.0)
+    parallel_sol, parallel = planar_open_loop_case(
+        stop = 4.0, v0 = 3.0, delta_sw_final = 3.2, ackermann = 0.0)
+    ack_difference = abs(ack_sol(4.0, idxs = ack.sensors.alpha_fl) -
+                         ack_sol(4.0, idxs = ack.sensors.alpha_fr))
+    parallel_difference = abs(parallel_sol(4.0, idxs = parallel.sensors.alpha_fl) -
+                              parallel_sol(4.0, idxs = parallel.sensors.alpha_fr))
+    ack_speed = ack_sol(4.0, idxs = ack.sensors.vx)
+    parallel_speed = parallel_sol(4.0, idxs = parallel.sensors.vx)
+
+    @test ack_difference < 0.002
+    @test parallel_difference > 0.018
+    @test ack_speed - parallel_speed >= 0.02
+
+    @info "Task 3 cornering measurements" steady_runs amplitude_deg = rad2deg(amplitude) max_lateral_g = maximum(abs.(lateral_acceleration)) / 9.81 ack_alpha_fl = ack_sol(4.0, idxs = ack.sensors.alpha_fl) ack_alpha_fr = ack_sol(4.0, idxs = ack.sensors.alpha_fr) ack_difference ack_speed parallel_alpha_fl = parallel_sol(4.0, idxs = parallel.sensors.alpha_fl) parallel_alpha_fr = parallel_sol(4.0, idxs = parallel.sensors.alpha_fr) parallel_difference parallel_speed
+end
+
+
+
 function planar_wheel_case(; kwargs...)
     result = VehicleSystemsComponents.Vehicle.Planar.PlanarWheelRigTransient(; kwargs...)
     return result.sol, symbolic_container(result)
