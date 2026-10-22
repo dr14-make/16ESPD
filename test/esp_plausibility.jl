@@ -17,6 +17,64 @@ function planar_open_loop_case(; stop = 5.0, kwargs...)
     return result.sol, symbolic_container(result)
 end
 
+
+function sine_with_dwell_case(; A_sw, stop = 6.0, kwargs...)
+    result = VehicleSystemsComponents.Lecture3.SineWithDwellRunTransient(; A_sw, stop, kwargs...)
+    return result.sol, symbolic_container(result)
+end
+
+@testset "FMVSS 126 metric helper" begin
+    t = collect(0.0:0.01:5.0)
+    swa = [ti < 1.0 ? 0.0 : min(0.2 * (ti - 1.0), 0.5) for ti in t]
+    r = [ti <= 2.0 ? exp(2.0 * (ti - 2.0)) : exp(-log(2.0) * (ti - 2.0)) for ti in t]
+    y = 2.0 .* t
+    metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
+        t, swa, r, y; A = 0.1)
+    expected_bos = 1.0 + deg2rad(5.0) / 0.2
+    @test metrics.t_bos ≈ expected_bos atol = 1e-12
+    @test metrics.t_cos ≈ 2.9285714285714284 atol = 1e-12
+    @test metrics.r_peak ≈ 1.0 atol = 1e-12
+    @test metrics.yrr_1_00 ≈ exp(-log(2.0) * (metrics.t_cos + 1.0 - 2.0)) atol = 1e-5
+    @test metrics.yrr_1_75 ≈ exp(-log(2.0) * (metrics.t_cos + 1.75 - 2.0)) atol = 1e-5
+    @test metrics.y_bos_1_07 ≈ 2.0 * (expected_bos + 1.07) atol = 1e-12
+    @test metrics.passes_stability
+    @test metrics.passes_responsiveness
+end
+
+@testset "Passive sine-with-dwell plausibility" begin
+    expected = Dict(
+        32.0 => (0.00, 0.00, 1.15),
+        76.0 => (0.00, 0.00, 2.53),
+        97.0 => (1.37, 1.37, 3.08),
+        141.0 => (1.01, 1.01, 3.69),
+        180.0 => (0.93, 0.93, 3.73),
+        220.0 => (0.85, 0.85, 3.63),
+        270.0 => (0.00, 0.00, 3.45),
+    )
+    measurements = map(sort(collect(keys(expected)))) do amplitude
+        sol, model = sine_with_dwell_case(A_sw = deg2rad(amplitude))
+        metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
+            sol.t, sol[model.sensors.delta_sw], sol[model.sensors.r], sol[model.sensors.y];
+            A = deg2rad(21.63))
+        beta_max = maximum(abs, sol[model.sensors.beta])
+        target = expected[amplitude]
+        @test metrics.yrr_1_00 ≈ target[1] atol = 0.05
+        @test metrics.yrr_1_75 ≈ target[2] atol = 0.05
+        @test metrics.y_bos_1_07 ≈ target[3] atol = 0.1
+        if amplitude in (32.0, 76.0, 270.0)
+            @test metrics.passes_stability
+        elseif amplitude in (97.0, 141.0, 180.0)
+            @test !metrics.passes_stability
+            @test rad2deg(beta_max) > 45.0
+        end
+        amplitude == 270.0 && @test rad2deg(beta_max) < 10.0
+        (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
+           beta_max_deg = rad2deg(beta_max), end_speed = sol[model.sensors.vx][end])
+    end
+    @info "Task 4 passive sine-with-dwell measurements" measurements
+end
+
+
 @testset "Ackermann steering plausibility" begin
     left_sol, left = ackermann_case()
     tight_sol, tight = ackermann_case(delta_in = 0.2)

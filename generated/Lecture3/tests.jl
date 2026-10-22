@@ -17,4 +17,5 @@ end
 
 @testset "`VehicleSystemsComponents.Lecture3`" begin
 include("PlanarOpenLoop_test.jl")
+include("SineWithDwellRun_test.jl")
 end

@@ -1,0 +1,61 @@
+"""FMVSS 126 sine-with-dwell steering-wheel command."""
+component SineWithDwell
+  "Steering-wheel angle command"
+  y = RealOutput()
+  "Steering-wheel amplitude (probe)"
+  parameter A::Angle = 0.3775147179563736
+  "Steering frequency (FMVSS 126)"
+  parameter f::Frequency = 0.7
+  "Beginning of the sine input (assumed)"
+  parameter t0::Time = 1.0
+  "Duration at the second peak (FMVSS 126)"
+  parameter T_dwell::Time = 0.5
+  "Maneuver direction (assumed)"
+  parameter sign::Real = 1.0
+  variable tau::Time
+relations
+  tau = time - t0
+  y = sign * ifelse(tau < 0.0,
+    0.0,
+    ifelse(tau < 0.75 / f,
+      A * sin(2.0 * π * f * tau),
+      ifelse(tau < 0.75 / f + T_dwell,
+        -A,
+        ifelse(tau < 1.0 / f + T_dwell,
+          A * sin(2.0 * π * f * (tau - T_dwell)),
+          0.0))))
+end
+
+test component TestSineWithDwell
+  profile = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = 1.0)
+  sink = BlockComponents.Routing.RealPassThrough()
+relations
+  connect(profile.y, sink.u)
+metadata {
+  "Dyad": {
+    "tests": {
+      "finished": {
+        "solver": "Tsit5", "stop": 4.0,
+        "atol": {"sink.y": 1e-9},
+        "expect": {"final": {"sink.y": 0.0}, "signals": ["sink.y"]}
+      },
+      "dwell": {
+        "solver": "Tsit5", "stop": 2.321428571428571,
+        "atol": {"sink.y": 1e-6},
+        "expect": {"final": {"sink.y": -1.0}}
+      },
+      "completion_of_steer": {
+        "solver": "Tsit5", "stop": 2.928571428571429,
+        "atol": {"sink.y": 1e-6},
+        "expect": {"final": {"sink.y": 0.0}}
+      }
+    }
+  }
+}
+end
+
+analysis TestSineWithDwellTransient
+  extends TransientAnalysis(stop = 4.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  model = VehicleSystemsComponents.Vehicle.Planar.TestSineWithDwell()
+relations
+end

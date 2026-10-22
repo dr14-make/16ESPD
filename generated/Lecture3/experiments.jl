@@ -10,3 +10,4 @@ end
 
 
 include("PlanarOpenLoop_experiment.jl")
+include("SineWithDwellRun_experiment.jl")

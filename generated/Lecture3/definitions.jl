@@ -205,3 +205,5 @@ end
 
 include("PlanarOpenLoopTransient_definition.jl")
 include("PlanarOpenLoop_definition.jl")
+include("SineWithDwellRunTransient_definition.jl")
+include("SineWithDwellRun_definition.jl")
