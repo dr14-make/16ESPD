@@ -5,11 +5,12 @@
 
 
 @doc Markdown.doc"""
-   RefSpeedEstimator(; name, radius, a_ref, v0, T_up, v_eps)
+   RefSpeedEstimator(; name, radius, a_ref, v0, T_up, v_eps, T_f)
 
-Hands-on 03 step 04: the car's speed and the wheel's slip estimated from the wheel speed alone.
-While the wheel turns faster than the estimate, the estimate follows it within `T_up`; otherwise
-it falls at `a_ref`, the deceleration the controller assumes the car can reach.
+Hands-on 03 step 04: what an ECU reads from a wheel-speed sensor. The car's speed: while the
+wheel turns faster than the estimate, the estimate follows it within `T_up`; otherwise it falls
+at `a_ref`, the deceleration the controller assumes the car can reach. From it, the wheel's slip.
+And the wheel's own acceleration, a derivative filtered over `T_f`, which needs no car speed.
 
 ## Parameters:
 
@@ -20,20 +21,23 @@ it falls at `a_ref`, the deceleration the controller assumes the car can reach.
 | `v0`         | Speed at the start                         | m/s  |   25 |
 | `T_up`         | Time constant of following the wheel up                         | s  |   0.01 |
 | `v_eps`         | Floor on the speed the slip is divided by                         | m/s  |   0.5 |
+| `T_f`         | Wheel-acceleration filter                         | s  |   0.005 |
 
 ## Connectors
 
  * `omega` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa_hat` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v_ref` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `a_w` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
 | `v_w`         |                          | m/s  |
+| `v_f`         |                          | m/s  |
 """
-@component function RefSpeedEstimator(; name = nothing, radius=0.31, a_ref=Float64(8), v0=Float64(25), T_up=0.01, v_eps=0.5, kwargs...)
+@component function RefSpeedEstimator(; name = nothing, radius=0.31, a_ref=Float64(8), v0=Float64(25), T_up=0.01, v_eps=0.5, T_f=0.005, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -79,6 +83,9 @@ it falls at `a_ref`, the deceleration the controller assumes the car can reach.
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [description = "Floor on the speed the slip is divided by"])
   __initial_conditions[v_eps] = __local__v_eps
+  __local__T_f = T_f
+  append!(__params, @parameters (T_f::Real), [description = "Wheel-acceleration filter"])
+  __initial_conditions[T_f] = __local__T_f
 
   ### Final Parameters (assignments)
 
@@ -86,14 +93,19 @@ it falls at `a_ref`, the deceleration the controller assumes the car can reach.
   append!(__vars, @variables (omega(t)::Real), [input = true])
   append!(__vars, @variables (kappa_hat(t)::Real), [output = true])
   append!(__vars, @variables (v_ref(t)::Real), [output = true])
+  append!(__vars, @variables (a_w(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (v_w(t)::Real))
+  append!(__vars, @variables (v_f(t)::Real))
 
   ### Variables (assignments)
   __ovr_v_w = pop!(__overrides, "v_w", nothing); isnothing(__ovr_v_w) || push!(__eqs, v_w ~ __ovr_v_w)
   __ovr_v_w__initial = pop!(__overrides, "v_w__initial", nothing); isnothing(__ovr_v_w__initial) || (__initial_conditions[v_w] = __ovr_v_w__initial)
   __ovr_v_w__guess = pop!(__overrides, "v_w__guess", nothing)
+  __ovr_v_f = pop!(__overrides, "v_f", nothing); isnothing(__ovr_v_f) || push!(__eqs, v_f ~ __ovr_v_f)
+  __ovr_v_f__initial = pop!(__overrides, "v_f__initial", nothing); isnothing(__ovr_v_f__initial) || (__initial_conditions[v_f] = __ovr_v_f__initial)
+  __ovr_v_f__guess = pop!(__overrides, "v_f__guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -105,9 +117,11 @@ it falls at `a_ref`, the deceleration the controller assumes the car can reach.
 
   ### Guesses
   isnothing(__ovr_v_w__guess) || (__guesses[v_w] = __ovr_v_w__guess)
+  isnothing(__ovr_v_f__guess) || (__guesses[v_f] = __ovr_v_f__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, v_ref ~ v0)
+  push!(__initialization_eqs, v_f ~ v0)
 
   ### Assertions
   __assertions = []
@@ -116,6 +130,8 @@ it falls at `a_ref`, the deceleration the controller assumes the car can reach.
   push!(__eqs, v_w ~ omega * radius)
   push!(__eqs, ModelingToolkit.D_nounits(v_ref) ~ ifelse(v_w > v_ref, (v_w - v_ref) / T_up, -a_ref))
   push!(__eqs, kappa_hat ~ (v_w - v_ref) / max(v_ref, v_eps))
+  push!(__eqs, ModelingToolkit.D_nounits(v_f) ~ (v_w - v_f) / T_f)
+  push!(__eqs, a_w ~ (v_w - v_f) / T_f)
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

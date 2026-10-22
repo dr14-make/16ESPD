@@ -27,9 +27,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"log_file"::String = ""
   var"road_mu"::Float64 = 1.0
   var"a_ref"::Float64 = 8
-  var"T_p"::Float64 = 0.03
-  # Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor. `RefSpeedEstimator` turns
-  # the wheel speed into the slip and the vehicle speed the controller reads.
+  # Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor and the three-phase
+  # `PhaseABS` in place of `SlipABS`. `RefSpeedEstimator` turns the wheel speed into the slip, the
+  # vehicle speed and the wheel acceleration the controller reads.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.ABSStopWheelOnly(; name=:ABSStopWheelOnly)
 end
 
@@ -38,7 +38,6 @@ function DyadInterface.run_analysis(spec::ABSStopWheelOnlyTransientSpec)
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
   push!(overrides, no_namespace_model.a_ref => spec.var"a_ref")
-  push!(overrides, no_namespace_model.T_p => spec.var"T_p")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

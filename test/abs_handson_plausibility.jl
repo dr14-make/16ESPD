@@ -80,28 +80,53 @@ end
 end
 
 @testset "Hands-on 03 steps 04-05: wheel speed only" begin
-    for (mu, mine_expected, lib_expected) in ((1.0, 46.9, 38.7), (0.5, 90.7, 83.2), (0.3, 129.6, 141.3))
+    for (mu, mine_expected, lib_expected) in ((1.0, 35.5, 38.7), (0.5, 69.8, 83.2), (0.3, 119.6, 141.3))
         stop = _stop_time(mu, 8.0)
         mine = _V.braking_distance(_H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = stop))
         lib = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = mu, stop, _tsit5...))
-        @test mine ≈ mine_expected atol = 0.05
+        locked = _V.braking_distance(_H3.LockedStopTransient(road_mu = mu, stop = _stop_time(mu)))
+        # The controller switches on thresholds every few milliseconds; 0.1 m absorbs solver drift.
+        @test mine ≈ mine_expected atol = 0.1
         @test lib ≈ lib_expected atol = 0.05
+        @test mine < locked
     end
     # The trap is the library ECU's: on snow, a_ref = 8 makes it stop longer than the locked
-    # wheel, and a_ref = 0.8 μ g brings it back under.
+    # wheel, and a_ref = 0.8 μ g brings it back under. The students' ABS dumps on the wheel's
+    # deceleration, which needs no speed estimate, so a_ref = 8 does not trap it.
     locked = _V.braking_distance(_H3.LockedStopTransient(road_mu = 0.3, stop = _stop_time(0.3)))
     lib_trap = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = 0.3, stop = _stop_time(0.3, 8.0), _tsit5...))
     lib_fixed = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = 0.3, a_ref = 2.4, stop = _stop_time(0.3, 2.4), _tsit5...))
     mine_fixed = _V.braking_distance(_H3.ABSStopWheelOnlyTransient(road_mu = 0.3, a_ref = 2.4, stop = _stop_time(0.3, 2.4)))
     @test lib_trap > locked
     @test lib_fixed ≈ 128.4 atol = 0.05
-    @test mine_fixed ≈ 127.0 atol = 0.05
+    @test mine_fixed ≈ 124.1 atol = 0.1
     @test mine_fixed < locked
+    # An a_ref below the car's real deceleration lets the estimate run above the car, and the
+    # slip trigger dumps on slip that is not there.
+    @test _V.braking_distance(_H3.ABSStopWheelOnlyTransient(a_ref = 2.4, stop = _stop_time(1.0, 2.4))) ≈ 105.4 atol = 0.1
 
-    run = _H3.ABSStopWheelOnlyTransient()
-    m = symbolic_container(run)
-    t, v_ref, v = run.sol.t, run.sol[m.est.v_ref], run.sol[m.body.mass.v]
-    # Between dumps the estimate rides the slipping wheel down, below the car's true speed.
-    win = (t .>= 1.0) .& (v .> 3.0)
-    @test all(v_ref[win] .<= v[win] .+ 1e-6)
+    for (mu, phases, f_dump) in ((1.0, (-1, 1), 10.0), (0.5, (-1, 0, 1), 4.7))
+        run = _H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = _stop_time(mu, 8.0))
+        m = symbolic_container(run)
+        t, v, phase, p = run.sol.t, run.sol[m.body.mass.v], run.sol[m.abs.phase], run.sol[m.abs.pressure.p]
+        win = (t .>= 1.0) .& (v .> 3.0)
+        # On a dry road the dump ends before the wheel turns round, so it never reaches HOLD.
+        @test Set(round.(Int, phase[win])) == Set(phases)
+        dumps = count(i -> win[i] && phase[i] < -0.5 && phase[i-1] > -0.5, 2:length(t))
+        @test dumps / (t[win][end] - t[win][1]) ≈ f_dump atol = 0.3
+        held = [win[i] && win[i-1] && abs(phase[i]) < 0.5 && abs(phase[i-1]) < 0.5 for i in 2:length(t)]
+        @test maximum(abs.(diff(p)[held]); init = 0.0) < 1e-9
+        cmd, demand = run.sol[m.abs.tau_cmd], run.sol[m.demand.y]
+        @test all(cmd .<= demand .+ 1e-6)
+    end
+
+    # On a dry road a_ref = 8 is below the car's deceleration, so the estimate runs above the car;
+    # on a wet one it is above it, and the estimate rides the slipping wheel down below the car.
+    for (mu, above) in ((1.0, true), (0.5, false))
+        run = _H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = _stop_time(mu, 8.0))
+        m = symbolic_container(run)
+        t, v_ref, v = run.sol.t, run.sol[m.est.v_ref], run.sol[m.body.mass.v]
+        win = (t .>= 1.0) .& (v .> 3.0)
+        @test all(above ? v_ref[win] .> v[win] : v_ref[win] .<= v[win] .+ 1e-6)
+    end
 end

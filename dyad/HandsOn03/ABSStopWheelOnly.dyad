@@ -1,18 +1,17 @@
 """
-Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor. `RefSpeedEstimator` turns
-the wheel speed into the slip and the vehicle speed the controller reads.
+Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor and the three-phase
+`PhaseABS` in place of `SlipABS`. `RefSpeedEstimator` turns the wheel speed into the slip, the
+vehicle speed and the wheel acceleration the controller reads.
 """
 component ABSStopWheelOnly
   "Road-friction multiplier (1 dry, 0.5 wet, 0.3 snow)"
   parameter road_mu::Real = 1.0
   "Deceleration the estimator assumes while the wheel slips"
   parameter a_ref::Acceleration = 8
-  "Look-ahead"
-  parameter T_p::Time = 0.03
   "Driver's brake demand, 6000 N·m from 0.5 s"
   demand = BlockComponents.Sources.Step(height = 6000, start_time = 0.5) {^demand}
   road = BlockComponents.Sources.Constant(k = road_mu) {^road}
-  abs = SlipABS(T_p = T_p) {^abs}
+  abs = PhaseABS() {^abs}
   est = RefSpeedEstimator(a_ref = a_ref) {^est}
   wspeed = RotationalComponents.Sensors.VelocitySensor() {^wspeed}
   wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel() {^wheel}
@@ -26,6 +25,7 @@ relations
   connect(wspeed.w, est.omega) {^id7}
   connect(est.kappa_hat, abs.kappa) {^id8}
   connect(est.v_ref, abs.v) {^id9}
+  connect(est.a_w, abs.a_w) {^id10}
   connect(road.y, wheel.mu_scale) {^id2}
   connect(wheel.support, fixed.spline) {^id3}
   connect(wheel.flange, body.flange, speed.flange) {^id4}
@@ -40,10 +40,10 @@ metadata {
       "dry": {
         "stop": 6.0,
         "solver": "Tsit5",
-        "atol": {"body.mass.s": 0.01, "speed.v": 0.01},
+        "atol": {"body.mass.s": 0.05, "speed.v": 0.01},
         "expect": {
           "initial": {"speed.v": 25.0, "est.v_ref": 25.0},
-          "final": {"body.mass.s": 59.424, "speed.v": 0.0},
+          "final": {"body.mass.s": 47.98, "speed.v": 0.0},
           "signals": ["speed.v", "est.v_ref", "wheel.brake.tau_actual"]
         }
       }
@@ -65,6 +65,7 @@ metadata {
     "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -150, "y": 500}, {"x": -150, "y": 350}], "E": 2}]}},
     "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 325}, {"x": 60, "y": 137}], "E": 2}]}},
     "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 375}, {"x": 80, "y": 175}], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 40, "y": 380}, {"x": 40, "y": 158}], "E": 2}]}},
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 514, "y": 650}], "E": 2}]}},
     "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "id4": {
@@ -83,12 +84,11 @@ end
 
 """
 The ABS stop on the wheel speed only. `a_ref` is the estimator's assumed deceleration, the knob of
-step 05's trap; `road_mu` and `stop` are the sweep's.
+step 05's rerun; `road_mu` and `stop` are the sweep's.
 """
 analysis ABSStopWheelOnlyTransient
   extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
   parameter road_mu::Real = 1.0
   parameter a_ref::Acceleration = 8
-  parameter T_p::Time = 0.03
-  model = ABSStopWheelOnly(road_mu = road_mu, a_ref = a_ref, T_p = T_p)
+  model = ABSStopWheelOnly(road_mu = road_mu, a_ref = a_ref)
 end

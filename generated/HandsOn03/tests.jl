@@ -19,6 +19,7 @@ end
 include("ABSStopWheelOnly_test.jl")
 include("ABSStop_test.jl")
 include("LockedStop_test.jl")
+include("PhaseABS_test.jl")
 include("RefSpeedEstimator_test.jl")
 include("SlipABS_test.jl")
 end

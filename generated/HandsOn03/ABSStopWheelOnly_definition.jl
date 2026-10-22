@@ -5,10 +5,11 @@
 
 
 @doc Markdown.doc"""
-   ABSStopWheelOnly(; name, road_mu, a_ref, T_p)
+   ABSStopWheelOnly(; name, road_mu, a_ref)
 
-Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor. `RefSpeedEstimator` turns
-the wheel speed into the slip and the vehicle speed the controller reads.
+Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor and the three-phase
+`PhaseABS` in place of `SlipABS`. `RefSpeedEstimator` turns the wheel speed into the slip, the
+vehicle speed and the wheel acceleration the controller reads.
 
 ## Parameters:
 
@@ -16,9 +17,8 @@ the wheel speed into the slip and the vehicle speed the controller reads.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `road_mu`         | Road-friction multiplier (1 dry, 0.5 wet, 0.3 snow)                         | --  |   1.0 |
 | `a_ref`         | Deceleration the estimator assumes while the wheel slips                         | m/s2  |   8 |
-| `T_p`         | Look-ahead                         | s  |   0.03 |
 """
-@component function ABSStopWheelOnly(; name = nothing, road_mu=Float64(1.0), a_ref=Float64(8), T_p=0.03, kwargs...)
+@component function ABSStopWheelOnly(; name = nothing, road_mu=Float64(1.0), a_ref=Float64(8), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -55,9 +55,6 @@ the wheel speed into the slip and the vehicle speed the controller reads.
   __local__a_ref = a_ref
   append!(__params, @parameters (a_ref::Real), [description = "Deceleration the estimator assumes while the wheel slips"])
   __initial_conditions[a_ref] = __local__a_ref
-  __local__T_p = T_p
-  append!(__params, @parameters (T_p::Real), [description = "Look-ahead"])
-  __initial_conditions[T_p] = __local__T_p
 
   ### Final Parameters (assignments)
 
@@ -77,9 +74,9 @@ the wheel speed into the slip and the vehicle speed the controller reads.
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
   push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, road_overrides...))
-  # Subcomponent abs of type VehicleSystemsComponents.HandsOn03.SlipABS
+  # Subcomponent abs of type VehicleSystemsComponents.HandsOn03.PhaseABS
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.HandsOn03.SlipABS(; T_p=T_p, abs_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.HandsOn03.PhaseABS(; abs_overrides...))
   # Subcomponent est of type VehicleSystemsComponents.HandsOn03.RefSpeedEstimator
   est_overrides = __pop_subcomponent_overrides!(__overrides, "est")
   push!(__systems, @named est = VehicleSystemsComponents.HandsOn03.RefSpeedEstimator(; a_ref=a_ref, est_overrides...))
@@ -121,6 +118,7 @@ the wheel speed into the slip and the vehicle speed the controller reads.
   push!(__eqs, connect(wspeed.w, est.omega))
   push!(__eqs, connect(est.kappa_hat, abs.kappa))
   push!(__eqs, connect(est.v_ref, abs.v))
+  push!(__eqs, connect(est.a_w, abs.a_w))
   push!(__eqs, connect(road.y, wheel.mu_scale))
   push!(__eqs, connect(wheel.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange, speed.flange))

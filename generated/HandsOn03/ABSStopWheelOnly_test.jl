@@ -22,7 +22,7 @@ __dyad_run_test_case!(
     (m -> m.est.v_ref, "est.v_ref", 25, 1e-5, 1e-5),
   ],
   expected_final=Tuple[
-    (m -> m.body.mass.s, "body.mass.s", 59.424, 0.01, 1e-5),
+    (m -> m.body.mass.s, "body.mass.s", 47.98, 0.05, 1e-5),
     (m -> m.speed.v, "speed.v", 0, 0.01, 1e-5),
   ],
   signals=Tuple[
