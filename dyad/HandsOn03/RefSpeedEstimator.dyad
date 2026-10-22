@@ -1,0 +1,36 @@
+"""
+Hands-on 03 step 04: the car's speed and the wheel's slip estimated from the wheel speed alone.
+While the wheel turns faster than the estimate, the estimate follows it within `T_up`; otherwise
+it falls at `a_ref`, the deceleration the controller assumes the car can reach.
+"""
+component RefSpeedEstimator
+  "Wheel speed from a sensor on the wheel shaft"
+  omega = RealInput() {^omega}
+  "Estimated wheel slip"
+  kappa_hat = RealOutput() {^kappa_hat}
+  "Estimated vehicle speed"
+  v_ref = RealOutput() {^v_ref}
+  "Wheel rolling radius"
+  parameter radius::Length = 0.31
+  "Assumed deceleration while the wheel slips"
+  parameter a_ref::Acceleration = 8
+  "Speed at the start"
+  parameter v0::Velocity = 25
+  "Time constant of following the wheel up"
+  parameter T_up::Time = 0.01
+  "Floor on the speed the slip is divided by"
+  parameter v_eps::Velocity = 0.5
+  variable v_w::Velocity
+relations
+  v_w = omega * radius
+  initial v_ref = v0
+  der(v_ref) = ifelse(v_w > v_ref, (v_w - v_ref) / T_up, -a_ref)
+  kappa_hat = (v_w - v_ref) / max(v_ref, v_eps)
+metadata {
+  "_links": {
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "kappa_hat": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}},
+    "v_ref": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
+  }
+}
+end
