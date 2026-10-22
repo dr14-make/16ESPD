@@ -319,6 +319,29 @@ end
            end_speed = sol[model.sensors.vx][end], min_kappa)
     end
 
+    load_transfer_amplitudes = (97.0, 180.0, 270.0)
+    load_transfer_measurements = map(load_transfer_amplitudes) do amplitude
+        result = VehicleSystemsComponents.Lecture3.ESPSineWithDwellTransient(
+            A_sw = deg2rad(amplitude), esp_on = 1.0, abs_on = 1.0,
+            Ki = 1e5, h_cg = 0.55)
+        model = symbolic_container(result)
+        sol = result.sol
+        times = collect(0.0:0.002:6.0)
+        metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
+            times, sol(times; idxs = model.sensors.delta_sw),
+            sol(times; idxs = model.sensors.r), sol(times; idxs = model.sensors.y);
+            A = deg2rad(21.63))
+        min_kappa = minimum(vcat([
+            sol(times; idxs = kappa) for kappa in
+            (model.sensors.kappa_fl, model.sensors.kappa_fr,
+             model.sensors.kappa_rl, model.sensors.kappa_rr)]...))
+        @test metrics.passes_stability
+        @test metrics.passes_responsiveness
+        @test min_kappa >= -0.2
+        (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
+           end_speed = sol[model.sensors.vx][end], min_kappa)
+    end
+
     function split_measurement(; select_low, esp_on)
         result = VehicleSystemsComponents.Lecture3.SplitMuStopTransient(
             select_low = select_low, esp_on = esp_on)
@@ -340,5 +363,5 @@ end
     @test abs(select_low.heading_deg) < abs(abs_only.heading_deg)
     @test abs(esp_pi.heading_deg) < 5.0
     @test esp_pi.distance > select_low.distance
-    @info "Task 6 ABS measurements" stop_distance straight_min_kappa abs_measurements abs_only select_low esp_pi
+    @info "Task 6 ABS measurements" stop_distance straight_min_kappa abs_measurements load_transfer_measurements abs_only select_low esp_pi
 end
