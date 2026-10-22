@@ -27,13 +27,12 @@ features:
     details: "Session 4 · about 90 min<br>Read measured engine maps at speed and manifold pressure, build the manifold and a map engine of your own, put the course engine in your car, and read its fuel in L/100 km and its CO₂ in g/km at 50, 90 and 130 km/h. Ends with fuel cut on a coast-down and the vacuum the brake booster draws on."
     link: /handson/lecture-02/
   - title: "Brakes and Stability Control: ABS, TCS, ESP and torque vectoring"
-    details: "Friction and the tire's slip curve, braking distance, the brake system from pedal to master cylinder, ABS with its sensors, modulator and control cycle, traction control, ESP and its reference model, and torque vectoring. Ties to the ABS and brake-hydraulics notebooks."
+    details: "180 min, built along in Dyad Studio<br>Friction and the tire's slip curve, braking distance, the brake system from pedal to master cylinder, ABS with its sensors, modulator and control cycle, traction control, ESP and its reference model, and torque vectoring. Ties to the ABS and brake-hydraulics notebooks."
     link: /lecture-03/index.html
     target: _self
-  - title: "Hands-on: stop without locking"
-    details: "After the theory, same block · about 90 min<br>Brake your car on one wheel and watch it lock, write a slip ABS of your own and make it lead the brake's 30 ms lag, then feed it from the wheel speed alone through a reference-speed estimate you write. Ends with braking distances on dry, wet and snowy roads, and the a_ref trap."
-    link: /handson-03/index.html
-    target: _self
+  - title: "Lecture 3 build guide: an ABS of your own"
+    details: "Alongside the lecture<br>What you build on your own car while the lecture runs: a locked stop on one wheel, a slip ABS that leads the brake's 30 ms lag, then an ABS on the wheel speed alone that dumps, holds and builds. Ends with braking distances on dry, wet and snowy roads, the a_ref trap, and traction control as a take-home bonus."
+    link: /lecture/lecture-03/
 ---
 
 ## Lecture 1, in two sessions
@@ -94,11 +93,9 @@ carries what to say, the time per part, where students get stuck, and the answer
 5. [**Electronic stability program**](./lecture-03/index.html#/esp){target="_self"} — intention against motion, one wheel braked
 6. [**Torque vectoring**](./lecture-03/index.html#/torque-vectoring){target="_self"} — a yaw moment from drive torque
 
-The hands-on that follows the lecture tests its ABS claims on the students' own car: a locked
-stop, a slip ABS of their own, and the same ABS on the wheel speed alone. Put the
-[projector deck](./handson-03/index.html){target="_self"} on the wall, one slide per step with its
-goal, what to build, the checkpoint and the tutor notes in the speaker notes. The hands-on guide
-is still to be written.
+As in Lecture 1, the students build along with the lecture: a locked stop, a slip ABS of their
+own, and an ABS on the wheel speed alone, each checked against section 03's result slides. They
+follow the [build guide](./lecture/lecture-03/); each build slide links to its step.
 
 ## For the lecturer
 

@@ -1,10 +1,11 @@
 """
-Writes the Lecture 3 hands-on deck's checkpoint figures into `slides/images/handson-03/`.
+Writes the checkpoint figures of the Lecture 3 live build into `slides/images/lecture-03/`.
 
-    julia +dyad-3.4.0 --project=. scripts/export_handson03_figures.jl
+    julia +dyad-3.4.0 --project=. scripts/export_lecture03_build_figures.jl
 
 Runs the reference solutions in `dyad/HandsOn03/` and the library analyses beside them, and
-saves one SVG per step. `slides/scripts/images.mjs` copies the folder into the deck.
+saves one SVG per build step. `slides/scripts/images.mjs` copies the folder into the lecture-03
+deck and the build guide page.
 """
 
 using VehicleSystemsComponents, Plots
@@ -12,7 +13,7 @@ using DyadInterface: symbolic_container, ODEAlg
 
 const V = VehicleSystemsComponents.Vehicle
 const H = VehicleSystemsComponents.HandsOn03
-const OUT = normpath(@__DIR__, "..", "slides", "images", "handson-03")
+const OUT = normpath(@__DIR__, "..", "slides", "images", "lecture-03")
 const G = 9.80665
 const T_PEAK = 1.0 * 1400 * G * 0.31
 
