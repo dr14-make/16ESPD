@@ -5,10 +5,11 @@ wheel lock, write an ABS slip controller of their own, then take away its knowle
 speed and see what that costs on a slippery road. Traction control is a bonus task outside the
 session. ESP stays a lecturer demo on the planar car.
 
-This file is the plan behind three artifacts that do not exist yet, in the same split as hands-on 2:
-the guide `slides/site/handson/lecture-03/` (`index.md`, the one full source, and `tutor.md`), the
-projector deck `slides/decks/handson-03/` (one slide per step), and the reference solutions in
-`dyad/HandsOn03/`.
+This file is the plan behind three artifacts, in the same split as hands-on 2: the guide
+`slides/site/handson/lecture-03/` (`index.md`, the one full source, and `tutor.md`; not written
+yet), the projector deck `slides/decks/handson-03/` (one slide per step, built, with its figures
+from `scripts/export_handson03_figures.jl`, `mise run figures:handson-03`), and the reference
+solutions in `dyad/HandsOn03/` (built; checkpoints in `test/abs_handson_plausibility.jl`).
 
 Companion documents:
 
@@ -93,7 +94,9 @@ Budgets add up to 90 minutes: 8 + 7 + 15 + 25 + 18 + 14 + 3.
 
 Numbers marked **(deck)** are already in `slides/decks/lecture-03` and come from the library
 analyses; numbers marked **(hand)** follow from the formulas given; **(H2)** and similar mark
-numbers the reference task of that name must measure before the guide is written.
+numbers the reference task of that name measured. All reference runs use Tsit5 with
+`dtmax = 1e-3`; the library analyses run with the same settings agree with the deck's numbers
+to 0.1 m.
 
 ### Step 00 · Set up · 8 min
 
@@ -160,10 +163,14 @@ in the REPL, `Vehicle.braking_distance(sol)`.
 
 **Checkpoint.**
 
-- `wheel.kappa` reaches **−1** within about **0.1 s** of the step (deck: `on-the-curve`).
-- Braking distance **43.7 m** (deck), between the step-01 bounds and just short of the sliding
-  bound 45.5 m (the wheel is not locked for the first 0.1 s; drag helps).
-- At rest at about **4 s** (deck: `one-stop`).
+- `wheel.kappa` reaches **−1** at **0.67 s**, 0.17 s after the step (H1; the deck's
+  `on-the-curve` says about 0.1 s).
+- Braking distance **43.7 m** (deck; H1 43.704 m), between the step-01 bounds and just short of
+  the sliding bound 45.5 m (the wheel is not locked for the first 0.17 s; drag helps).
+- At rest (below 0.5 m/s) at **3.96 s** (deck: `one-stop`).
+
+**Measured (H1).** `HandsOn03.LockedStopTransient` equals `Vehicle.LockedBrakeTransient` (same
+Tsit5 settings) to machine precision at μ 1.0, 0.5, 0.3: 43.7, 85.1, 136.8 m.
 
 **Deck.** `braking-distance`, `one-stop`.
 
@@ -208,15 +215,20 @@ equal `Vehicle.IdealBrakeTransient` to 1e-6 (task H2).
 
 **Checkpoint.**
 
-- A, no look-ahead: the wheel does not stay locked; distance **(H2)**; slip excursions past the
-  12 % sliding point **(H2)**. Whatever the number, the guide states it. If A loses to the locked
-  wheel, that is the findings document's result: a slip law that ignores the 30 ms lag dumps too
-  late and overshoots into sliding.
-- C, look-ahead 30 ms: **34.4 m** (deck, "ABS on the true slip"), 21 % shorter than 43.7 m;
-  `wheel.brake.tau_actual` cycles below the 4256 N·m of step 01; `wheel.kappa` stays near −0.04;
-  cycle frequency **(H2)**.
-- `abs.tau_cmd ≤ demand` throughout; the ABS switches off below 1.5 m/s and the wheel locks just
-  before standstill, as a real ABS does.
+- A, no look-ahead: the wheel does not stay locked; distance **53.8 m (H2), longer than the
+  locked 43.7 m**; 26 % of the time (from 1 s until 3 m/s) past the 12 % sliding point, slip
+  dives to −0.2 and deeper; the torque saws between about 600 and 4700 N·m at **2.6 Hz**. That is
+  the findings document's result: a slip law that ignores the 30 ms lag dumps too late and
+  overshoots into sliding. At μ 0.5 and 0.3: 97.2 and 145.9 m.
+- C, look-ahead 30 ms: **34.4 m** (deck, "ABS on the true slip"; H2 34.445 m), 21 % shorter than
+  43.7 m; `wheel.brake.tau_actual` holds at 4300–4400 N·m with a small **31 Hz** ripple, just
+  *above* the 4256 N·m of step 01 (the brake also decelerates the wheel's inertia), not below
+  it; `wheel.kappa` stays near −0.04, never past −0.12; at μ 0.5 and 0.3: 26 and 23 Hz.
+- `abs.tau_cmd ≤ demand` throughout; the ABS switches off below 1.5 m/s (at 3.0 s) and the wheel
+  locks just before standstill, as a real ABS does.
+
+**Measured (H2).** `ABSStopTransient` equals `Vehicle.IdealBrakeTransient` to machine precision
+at μ 1.0, 0.5, 0.3: 34.4, 63.4, 102.2 m.
 
 **Deck.** `modulator` (build and dump are the two signs of the rate), `abs-cycle`, `abs-model`
 (look-ahead), `one-stop`, `on-the-curve`.
@@ -248,17 +260,27 @@ delete the `wheel.kappa` and `speed.v` wires into `abs`; place `wspeed` =
 **Reference model.** `HandsOn03.RefSpeedEstimator`, `HandsOn03.ABSStopWheelOnly`,
 `HandsOn03.ABSStopWheelOnlyTransient` (forwards `road_mu`, `a_ref`, `T_p`, `stop`).
 
-**Checkpoint** (H3):
+**Checkpoint** (H3, measured; the gate below fired):
 
-- μ = 1, `a_ref = 8`: distance between 34.4 and 43.7 m; the library's clocked ECU gives
-  **38.7 m** (deck) on the same plant.
-- `est.v_ref` trails the true speed: on a dry road the car decelerates faster than 8 m/s², so
-  `v_ref` sits above it and the controller over-reads the slip.
+- μ = 1, `a_ref = 8`: **46.9 m, longer than the locked 43.7 m**, not between 34.4 and 43.7 m.
+  The library's clocked ECU gives **38.7 m** (deck) on the same plant; the deck quotes both.
+- `est.v_ref` sits *below* the true speed, not above it: during each re-apply the wheel slows
+  at less than 8 m/s², so the estimate rides the slipping wheel down and reads about zero slip
+  while the true slip creeps to 2–3 %; the controller sees the slip only once the wheel dives
+  (to −0.2 and deeper, 28 % of the time past −0.12, about 3.3 Hz).
+- No `a_ref` fixes it on a dry road: 2.4 / 4 / 6 / 8 / 10 / 12 / 15 m/s² give 124.6 / 75.6 /
+  51.5 / 46.9 / 48.8 / 50.1 / 51.2 m. The cause is the slow re-apply from almost nothing at a
+  fixed 20 000 N·m/s, not the estimator's knob; the library modulator re-applies fast to a
+  remembered fraction of the lock pressure, which is what its pressure memory is for. The deck
+  says this, and it gives the theory deck's state-machine slide a reason students have seen.
+- `T_p = 0` with the estimator: 53.6 m, so the look-ahead helps little here.
 
 **Gate for H3.** If the continuous estimator does not land between 34.4 and 43.7 m at μ = 1, or
 does not lose the gain at μ = 0.3 in step 05, the step keeps the build and the guide quotes the
-library's clocked numbers beside the student's, with one sentence on the 5 ms sampling. The
-plan does not tune the estimator to hit the deck's numbers.
+library's clocked numbers beside the student's. The plan does not tune the estimator to hit the
+deck's numbers. **Both conditions fired** (46.9 m dry; 129.6 m at μ 0.3, under locked). The
+sentence the guide gives is about the missing pressure memory (above), not the 5 ms sampling:
+the measured gap is not a sampling effect.
 
 **Deck.** `wheel-speed-sensors` ("the ABS measures only this"), `reference-speed`, `abs-distance`.
 
@@ -286,12 +308,16 @@ notebook's rule, about 20 s at 0.3); fill the table. Rerun μ 0.3 wheel-only wit
 
 | road μ | locked | ABS, true slip | ABS, wheel only (yours) | ABS, wheel only (library, 5 ms) |
 |---:|---:|---:|---:|---:|
-| 1.0 | **43.7 m** | **34.4 m** | (H3) | 38.7 m |
-| 0.5 | **85.1 m** | **63.4 m** | (H3) | 83.2 m |
-| 0.3 | **136.8 m** | **102.2 m** | (H3) | **141.3 m**, longer than locked |
+| 1.0 | **43.7 m** | **34.4 m** | 46.9 m | 38.7 m |
+| 0.5 | **85.1 m** | **63.4 m** | 90.7 m | 83.2 m |
+| 0.3 | **136.8 m** | **102.2 m** | 129.6 m | **141.3 m**, longer than locked |
 
 The first two columns are the deck's (`abs-surfaces`) and are what the student's models must
-give. With `a_ref ≈ 2.4` at μ 0.3: **(H3)**; expected shorter than locked.
+give; the third is measured (H3). With `a_ref = 2.4` at μ 0.3: **127.0 m** (yours) and
+**128.4 m** (library), both shorter than locked. The trap at `a_ref = 8` on snow shows on the
+library ECU only; the students' continuous estimator is pulled back up to the wheel whenever
+the wheel is faster, so it does not under-read the slip the same way. All library numbers are
+reproduced with Tsit5 at `dtmax = 1e-3`.
 
 **Deck.** `abs-surfaces`, `reference-speed` (the trap).
 
@@ -318,7 +344,7 @@ torque step on `tau_cmd` and `mu_scale = 0.2`.
 bonus was: on branch `feat/handson03-tcs-bonus` only. Students get the task, the parts and the
 advice, not the diagram.
 
-**Checkpoint / grading** (hand estimate; H6 measures): the traction limit is
+**Checkpoint / grading** (hand estimate; H6 would measure it, not built yet): the traction limit is
 0.2 × 6865 N = 1373 N at the peak against 961 N spinning, so roughly 0.85 against 0.57 m/s² net
 of resistance, about 8.5 against 5.7 m/s after 10 s. One paragraph on why a production TCS
 cuts engine torque when both driven wheels spin (and what the 0.3 s engine delay of `SlipCar`
@@ -362,18 +388,21 @@ format of that brief (each task ends in a check). It touches nothing under `dyad
 
 | Task | What | Check |
 |---|---|---|
-| H1 | `HandsOn03.LockedStop` + transient, on `HandsOn.Body` | equals `LockedBrakeTransient` to 1e-6 at μ 1.0, 0.5, 0.3; 43.7 m |
-| H2 | `HandsOn03.SlipABS`, `ABSStop` + transient | `T_p = 0.03` equals `IdealBrakeTransient` to 1e-6; record A's distance, sliding share and cycle frequency |
-| H3 | `HandsOn03.RefSpeedEstimator`, `ABSStopWheelOnly` + transient | the step 04 gate; record the step 05 column and the `a_ref = 2.4` run |
-| H4 | `Vehicle.braking_distance(sol; t_brake = 0.5, v_stop = 0.5)` in `dyad/Vehicle/module.jl`, the notebook's `braking` rule as one function; notebook 01 switched to it | unit test on a synthetic constant-deceleration trace; notebook 01 prints the same numbers |
-| H5 | merge PR #90 to `main`, tag it, and pin the tag in step 00 | a fresh `MyCar` clone with `Pkg.add(…, rev = tag)` runs steps 02–05 |
-| H6 | bonus TCS reference on `feat/handson03-tcs-bonus` | the step 06 figures |
+| H1 | `HandsOn03.LockedStop` + transient, on `HandsOn.Body` | **done**: equals `LockedBrakeTransient` to machine precision at μ 1.0, 0.5, 0.3; 43.7 m |
+| H2 | `HandsOn03.SlipABS`, `ABSStop` + transient | **done**: `T_p = 0.03` equals `IdealBrakeTransient` to machine precision; A 53.8 m, 26 % sliding, 2.6 Hz |
+| H3 | `HandsOn03.RefSpeedEstimator`, `ABSStopWheelOnly` + transient | **done, gate fired**: 46.9 / 90.7 / 129.6 m; `a_ref = 2.4` at μ 0.3: 127.0 m |
+| H4 | `Vehicle.braking_distance(result; t_brake = 0.5, v_stop = 0.5)` (also `(t, s, v; …)`) in `dyad/Vehicle/module.jl`, the notebook's `braking` rule as one function; notebook 01 switched to it | **done**: unit test on a synthetic constant-deceleration trace; notebook 01 prints the same numbers |
+| H5 | merge PR #90 to `main`, tag it, and pin the tag in step 00 | open (the lecturer's call); a fresh `MyCar` clone with `Pkg.add(…, rev = tag)` runs steps 02–05 |
+| H6 | bonus TCS reference on `feat/handson03-tcs-bonus` | open; the task is on the deck, the reference and its figures are not built |
 
-Every reference analysis sets `alg = Tsit5` explicitly (with a `dtmax` the agent picks and
-records) and forwards every knob the guide varies by a short name, so the guide never uses nested
-`a__b__c` overrides. A docstring-only fix is worth taking along: `ABSPressureIntegrator`'s
-docstring ("retained for the continuous ideal benchmark") is what students read under **+**, and
-should state its contract instead.
+Every reference analysis sets `alg = Tsit5` explicitly, with `dtmax = 1e-3`, and forwards every
+knob the guide varies by a short name (`road_mu`, `T_p`, `lambda_target`, `a_ref`, and the base
+`stop`), so the guide never uses nested `a__b__c` overrides. The Dyad test cases cannot set
+`dtmax`, so their expected final positions come from Tsit5 runs without it (59.424 m against
+59.411 m for the wheel-only bench). A docstring-only fix is still worth taking along but was not
+made, since existing components stay unchanged in this work: `ABSPressureIntegrator`'s docstring
+("retained for the continuous ideal benchmark") is what students read under **+**, and should
+state its contract instead.
 
 Already planned elsewhere and needed only for the ESP demo: `lecture-03-esp-dyad-tasks.md` tasks
 0–5 and 9 (6–7 for split-µ and load transfer).
@@ -384,6 +413,12 @@ Lecture 3 follows Lecture 2's format: the theory session on `slides/decks/lectur
 separate 90-minute hands-on with its own deck `slides/decks/handson-03/`, one slide per step,
 each carrying the goal, the checkpoint and a guide link, and its tutor notes in the speaker notes
 (decision D1). A `handson-03` deck is needed; the theory deck is not split.
+
+The deck is built: title, steps 00–05, hand-in, the step 06 bonus and a wrap-up table, each step
+slide with the goal, what is given and built, the code typed, a checkpoint figure from the
+reference runs and the measured numbers, and the tutor notes (where students stall, the H3
+divergence) in the speaker notes. It is on the landing page. The four theory-deck changes below
+are not made here: that deck is edited separately.
 
 Each hands-on step puts into practice the theory slides listed under it above. The theory deck
 needs four small changes:
@@ -414,10 +449,12 @@ needs four small changes:
 
 | Slot | Where | Filled by |
 |---|---|---|
-| Course-library tag | step 00 | H5 |
-| Run A distance, sliding share, cycle frequency; run C cycle frequency | step 03 | H2 |
-| Wheel-only column and the `a_ref = 2.4` run | steps 04, 05 | H3 |
+| Course-library tag | step 00 (`TODO-TAG` on the deck) | H5 |
+| ~~Run A distance, sliding share, cycle frequency; run C cycle frequency~~ | step 03 | H2, filled |
+| ~~Wheel-only column and the `a_ref = 2.4` run~~ | steps 04, 05 | H3, filled |
 | TCS figures | step 06 | H6 |
+| Screenshots (`step00-wheel-library.png` and the benches) | deck, guide | rehearsal in Studio |
+| The guide and tutor guide; the deck's guide links point there | `slides/site/handson/lecture-03/` | not written |
 | Rehearsal of the drawing (02) and the two code-view pastes (03, 04) | steps 02–04 | rehearsal in Studio, with the screenshots |
 
 ## Open decisions
