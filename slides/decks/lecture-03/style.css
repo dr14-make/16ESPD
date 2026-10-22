@@ -44,3 +44,13 @@ html.dark .slidev-layout img[src^="data:image/svg+xml"] {
   border-radius: 6px;
   padding: 0.5rem;
 }
+
+/* A cue that the hands-on puts this slide into practice, or checks a number on it. */
+.slidev-layout .handson {
+  font-size: 0.8rem;
+  line-height: 1.2rem;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-left: 4px solid #2e8b57;
+  background: rgba(46, 139, 87, 0.08);
+}

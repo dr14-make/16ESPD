@@ -10,6 +10,8 @@ layout: section
 ABS turned around: keep a **driven** wheel from spinning, with the brakes and the engine.
 
 <!--
+Budget: 5 minutes, 5 slides, after the break.
+
 Traction control, TCS, or ASR in Bosch's and the German makers' naming, from
 Antriebsschlupfregelung, drive slip control. It is the positive side of the friction curve.
 -->
@@ -131,6 +133,8 @@ while asking for a fifth of the torque.
 
 A TCS does this properly: a **slip loop inside the speed loop**, limiting the torque to what the
 road can carry **now**.
+
+<div class="handson">→ Bonus after the hands-on (step 06): a brake-based TCS on your <code>SlipCar</code></div>
 
 </div>
 <div>

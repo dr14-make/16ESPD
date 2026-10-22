@@ -12,6 +12,11 @@ Keep every wheel rolling, near the peak of its friction curve, however hard the 
 `notebooks/lecture03/01-abs.pluto.jl`
 
 <!--
+Budget: 23 minutes, 14 slides, then the break. Hardware 9 (what 1, history 1, sensors 2,
+modulator 2, channels 1.5, cycle 1.5), estimation 2, model and results 10 (model 3, one stop 2,
+curve 2, distance 1.5, surfaces 1.5), summary 1, plus cover and slack 1. The four result slides are
+the hands-on checkpoints: point at the green cues, the students will come back to them.
+
 The center of the lecture. First the system as it is built: history, sensors, valves, layouts and
 the control cycle. Then the model in the repository: a wheel-speed-only ABS controller, run on
 one braking wheel, against a locked wheel.
@@ -174,6 +179,8 @@ routeAlias: modulator
 ![An ABS hydraulic modulator: an aluminum block with brake lines entering the top and an electric connector on the side.](/pptx/slide09-abs-modulator.jpg)
 
 Bosch: ABS "reduces brake pressure then increases it again **up to 40 times a second**".
+
+<div class="handson">→ Hands-on step 03: build and dump become the two signs of one pressure rate</div>
 
 </div>
 </div>
@@ -352,6 +359,8 @@ $$
 
 Production systems **learn** the road's deceleration, and some use a longitudinal accelerometer.
 
+<div class="handson">→ Hands-on step 04: you write this estimator and feed your ABS from the wheel speed alone</div>
+
 </div>
 </div>
 
@@ -400,6 +409,9 @@ logic on the **true** slip, and the **locked** wheel.
 </div>
 </div>
 
+<div class="handson">→ Hands-on steps 02–03: you build the locked bench, then write a simpler controller, <code>SlipABS</code>:
+release on the predicted slip, without the pressure memory</div>
+
 <!--
 The model in `dyad/Vehicle/ABSController.dyad` and its test benches in `ABSBrakeTest.dyad`. It is
 a compressed version of the Bosch cycle on the previous slides, with three phases, decrease, hold
@@ -444,6 +456,9 @@ routeAlias: one-stop
 
 <div class="caption">Notebook 01 at road μ = 1.0, a_ref = 8 m/s². Left: speeds. Right: brake torque at the caliper.</div>
 
+<div class="handson">✓ Checkpoint, hands-on steps 02–03: the locked car is at rest at about 4 s; your ABS's torque
+cycles below the 4256 N·m tire limit</div>
+
 <!--
 Both from notebook 01, cells "What the wheel is doing", at the defaults.
 
@@ -480,6 +495,9 @@ routeAlias: on-the-curve
 ![Wheel slip against time: without ABS the slip goes to -1 within about 0.1 s of braking and stays there; with ABS it hovers just past the -0.04 adhesion peak until the ABS switches off near standstill.](/figures/03-wheel-slip.svg)
 
 **90 %** of the stop near the peak ($0.02 \le |\kappa| \le 0.08$), **4 %** sliding.
+
+<div class="handson">✓ Checkpoint, steps 02–03: the locked wheel reaches κ = −1 within 0.1 s; yours stays
+near −0.04</div>
 
 </div>
 </div>
@@ -522,6 +540,9 @@ From 90 km/h, dry road (μ = 1.0):
 | sliding bound, $v^2 / 2\mu_S g$ | 45.5 m |
 
 ABS stops **11 % shorter** than the locked wheel. NHTSA measured **10–13 %** on dry pavement.
+
+<div class="handson">✓ Checkpoint: step 02 locked 43.7 m · step 03 your ABS on true slip 34.4 m ·
+step 04 wheel speed only, between the two (library: 38.7 m)</div>
 
 </div>
 </div>
@@ -568,6 +589,9 @@ routeAlias: abs-surfaces
 
 On slippery roads the **speed estimate** costs most of the gain; at μ = 0.3 this ABS loses.
 
+<div class="handson">✓ Hands-on step 05: this table from your own models at μ 1.0, 0.5, 0.3; then μ 0.3 again
+with a_ref ≈ 2.4</div>
+
 </div>
 </div>
 
@@ -584,7 +608,9 @@ slip.
 
 This is the model's honest result, not a property of real ABS. Real ABS learns the road's
 deceleration, and some systems add an accelerometer. Adaptive a_ref is the stretch goal in
-`docs/abs-controller-spec.md`. A good exercise: make a_ref adapt, and rerun the sweep.
+`docs/abs-controller-spec.md`. The hands-on's step 05 does the first half of that exercise by
+hand: it reruns mu 0.3 with a_ref set to about 0.8 mu g, 2.4, the value an adaptive estimate
+would converge to. Making a_ref adapt on its own is left as an exercise.
 
 And remember the first benefit: even where the distance is no shorter, the ABS wheel still rolls,
 and the car can still be steered.

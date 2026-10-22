@@ -10,7 +10,10 @@ layout: section
 What each system measures, what it controls, and what it acts on.
 
 <!--
-One table for the whole lecture, the summary, and the sources.
+Budget: 4 minutes for the section: the table 1, the summary 1, the hand-over 2. The sources slide is
+for the handout; skip it in the room.
+
+One table for the whole lecture, the summary, the hand-over to the hands-on, and the sources.
 -->
 
 ---
@@ -49,10 +52,11 @@ falls. The same family of cascade loops Lecture 1 ended on.
 - **03** ABS holds each wheel near its peak with only wheel speeds to go on; the car stays
   steerable and stops shorter. In the model: 11 % shorter on a dry road.
 - **04** TCS does the same for a driven wheel, with the brakes and the engine.
-- **05** ESP compares the driver's intention with the car's yaw rate and brakes single wheels.
+- **05** ESP compares the driver's intention with the car's yaw rate and brakes single wheels;
+  without it, our planar car spins in the sine-with-dwell.
 - **06** torque vectoring makes the same yaw moment with drive torque instead of brakes.
 
-### Next lecture: active and passive safety, including the restraint systems (airbags, belt pretensioners).
+### Next: the hands-on, ABS on your own car. <Link to="handover">→</Link>
 
 <!--
 If you take one picture away from today, take the friction curve with the ABS dots crowded at its
@@ -64,6 +68,64 @@ the first, booster vacuum in the second.
 
 The source deck's title also named SRS, the supplemental restraint system. It is covered in
 Lecture 4 with the rest of active and passive safety.
+-->
+
+---
+routeAlias: handover
+---
+
+## Next: the hands-on, ABS on your own car
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-8">
+<div>
+
+| Step | | min | theory |
+|---|---|---:|---|
+| 00 | Set up | 8 | |
+| 01 | The tire's limit, by hand | 7 | <Link to="braking-distance">01</Link> |
+| 02 | Lock the wheel | 15 | <Link to="one-stop">03, one stop</Link> |
+| 03 | An ABS of your own | 25 | <Link to="abs-model">03, the model</Link> |
+| 04 | Only the wheel speed | 18 | <Link to="reference-speed">03, reference speed</Link> |
+| 05 | Across road surfaces | 14 | <Link to="abs-surfaces">03, surfaces</Link> |
+| | Hand in: a pull request | 3 | |
+
+Bonus, after the session: **traction control** on your `SlipCar` (step 06).
+
+</div>
+<div>
+
+**Have open**
+
+- **Dyad Studio** with your `MyCar`, on a new branch `handson-03` from `main`
+- the **guide**: [handson/lecture-03](../handson/lecture-03/index.html)
+- **this deck, section 03**: its result slides are the checkpoints
+- paper or the Julia REPL for step 01
+
+**Bring from earlier**: hands-on 1's `Body` and `TireFrictionCurve`. Hands-on 2 is not needed.
+
+<div class="text-sm opacity-70 mt-4">
+
+Next lecture: active and passive safety, including the restraint systems (airbags, belt
+pretensioners).
+
+</div>
+</div>
+</div>
+
+<!--
+Budget: 2 minutes. Leave it on the projector while the room switches over, so laptops are open on
+the right things when the hands-on starts.
+
+The hands-on has its own deck, `handson-03`, one slide per step, and its guide on the course site.
+Step 00 adds the course library at the tag the session was rehearsed on; the guide gives the exact
+`Pkg.add` line, so do not dictate it from here.
+
+Every number a step checks against is on a slide of section 03: the locked stop's 43.7 meters,
+the true-slip ABS's 34.4, the wheel-speed-only ABS's 38.7, the surface table. The green cues on
+those slides say which step uses which.
+
+A student who did not finish hands-on 2 can still do all of it: the session needs only hands-on
+1's `Body` and the course library.
 -->
 
 ---
@@ -82,6 +144,8 @@ routeAlias: sources
 - `docs/reports/Passenger car brake system modeling.md` and its research notes
 - `docs/abs-frequency-research.md`, `docs/abs-braking-distance-findings.md`,
   `docs/abs-controller-spec.md`, `docs/lecture-03-preparation.md`
+- `docs/lecture-03-esp-research.md`, `docs/lecture-03-esp-dyad-tasks.md`: the planar car and
+  the sine-with-dwell runs
 
 **Standards and agencies**
 

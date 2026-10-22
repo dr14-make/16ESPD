@@ -20,6 +20,10 @@ presenter mode from the nav bar, bottom left
 </div>
 
 <!--
+Budget for the front matter: 4 minutes, cover to the models slide. The deck is the theory half of
+a 3-hour block: about 90 minutes here, then the 90-minute ABS hands-on with its own deck,
+`handson-03`. Timing and setup are in `docs/lecture-03-run-sheet.md`.
+
 Today is about the four systems between the driver and the road: the brakes themselves, the
 anti-lock braking system, traction control and the electronic stability program. At the end, the
 newest addition: systems that add torque to a wheel instead of only taking it away.
@@ -90,10 +94,14 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 | <Link to="tcs">04</Link> | Traction control | ABS turned around: brake and engine intervention on a spinning wheel |
 | <Link to="esp">05</Link> | Electronic stability program | sensors, the reference model, understeer and oversteer, selective braking |
 | <Link to="torque-vectoring">06</Link> | Torque vectoring | adding torque instead of only braking: differentials and electric motors |
-| <Link to="wrap-up">07</Link> | Wrap-up | what each system controls, and the sources |
+| <Link to="wrap-up">07</Link> | Wrap-up | what each system controls, and the hand-over to the hands-on |
+| then | **Hands-on 03** | lock a wheel, write your own ABS, take away its speed signal |
 
 <!--
-Seven sections. The first two are physics: what the tire can give, and how the brake system turns
+Seven sections, about 90 minutes with a 10-minute break after section 03, then the 90-minute
+hands-on. Budgets per section are on each section's cover and in `docs/lecture-03-run-sheet.md`.
+
+The first two are physics: what the tire can give, and how the brake system turns
 a foot into pressure and torque. Section 03 is the center of the lecture and ties to the ABS model
 and notebook in the repository. Sections 04 to 06 build on the same hardware: TCS adds engine
 control, ESP adds three sensors, torque vectoring adds an actuator that can push as well as brake.
@@ -105,10 +113,12 @@ layout: center
 
 ## The models behind this lecture
 
-<div class="grid grid-cols-2 gap-10 text-left">
+<div class="grid grid-cols-3 gap-8 text-left text-[0.9rem]">
 <div>
 
-### `notebooks/lecture03/01-abs.pluto.jl`
+### Notebook 01, ABS
+
+`notebooks/lecture03/01-abs.pluto.jl`
 
 One wheel braking a 1400 kg car from 90 km/h, with and without ABS.
 
@@ -119,7 +129,9 @@ One wheel braking a 1400 kg car from 90 km/h, with and without ABS.
 </div>
 <div>
 
-### `notebooks/lecture03/02-brake-hydraulics.pluto.jl`
+### Notebook 02, brakes
+
+`notebooks/lecture03/02-brake-hydraulics.pluto.jl`
 
 The driver's foot to master-cylinder pressure.
 
@@ -129,6 +141,19 @@ The driver's foot to master-cylinder pressure.
 - `Vehicle.Brake.ForceChainTransient`: a 0–500 N pedal ramp
 
 </div>
+<div>
+
+### Yours, in the hands-on
+
+Your `MyCar` library, on the given `Vehicle.Wheel.BrakedWheel` and your hands-on 1 `Body`.
+
+- `LockedStop`: the locked-wheel bench
+- `SlipABS`: your slip controller
+- `RefSpeedEstimator`: slip from wheel speed only
+
+ESP demo: `Vehicle.Planar.PlanarCar`.
+
+</div>
 </div>
 
 <!--
@@ -136,7 +161,11 @@ Like Lecture 2, the theory here is tied to models you can run. Two Pluto noteboo
 repository. Every plot in sections 02 and 03 marked as a figure comes from running one of them; the
 speaker notes say which cell.
 
-Neither model is a car yet. The ABS model is a single lumped wheel carrying the whole car: no load
+The third column is what you build in the hands-on session: three small models
+in your own library, each checked against the numbers of section 03. The ESP demo runs on a fourth
+model, a planar four-wheel car, which section 05 introduces.
+
+Neither notebook model is a car yet. The ABS model is a single lumped wheel carrying the whole car: no load
 transfer, no steering, no yaw. That is enough for ABS, not for ESP; the ESP section says what the
 model would need. The brake model stops at master-cylinder pressure: lines and calipers are the
 next increment of the brake plan.

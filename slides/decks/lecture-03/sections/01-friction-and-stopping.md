@@ -11,6 +11,9 @@ What the road can give back: the friction coefficient, how a tire differs from a
 and the shortest stop physics allows.
 
 <!--
+Budget: 9 minutes for the section, 6 slides: friction 2, tire curve 2, braking distance 2,
+cornering 2, summary 1.
+
 Every brake, however strong, ends at the same place: the contact patch, about the size of a hand
 per wheel. Whatever the brakes do, the car decelerates only as hard as friction there allows. So
 we start with friction.
@@ -20,12 +23,12 @@ we start with friction.
 routeAlias: friction
 ---
 
-## Friction: static and kinetic
+## Friction: static, kinetic, and how much
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-8">
+<div class="grid grid-cols-[1fr_1.15fr] gap-8">
 <div>
 
-Friction is a force between two surfaces in contact that resists their **relative motion**.
+Friction resists the **relative motion** of two surfaces in contact:
 
 $$
 F_f \;=\; \mu\,F_N
@@ -33,44 +36,15 @@ $$
 
 $F_f$ friction force [N], $F_N$ normal force [N], $\mu$ the coefficient of friction [–].
 
-- **Static friction** $\mu_s$: the surfaces do not move relative to each other. $\mu_s F_N$ is
-  the most it can hold before they start to slide.
-- **Kinetic (sliding) friction** $\mu_k$: the surfaces slide over each other.
-- For the same pair of surfaces, $\mu_k \le \mu_s$: once it slides, it holds less.
+- **Static** $\mu_s$: no relative motion; $\mu_s F_N$ is the most it holds before sliding.
+- **Kinetic** $\mu_k$: the surfaces slide.
+- For one pair of surfaces $\mu_k \le \mu_s$: **once it slides, it holds less.**
+
+The tire rows are typical, not exact: they vary with the tire, its temperature, the speed, the
+water depth and the road. The repository's tire uses **1.0 at the peak**, **0.7 sliding**, scaled
+by a road factor: 1.0 dry, about 0.5 wet, 0.2 snow, 0.05 ice.
 
 </div>
-<div>
-
-![A block on a surface with four forces: weight F_g down, normal force F_N up, applied force F_a to the right and friction F_f to the left.](/pptx/slide03-friction-forces.jpg)
-
-![Friction force against applied force: it rises with the applied force in the static region up to a peak, then drops to a lower, ragged level in the kinetic region.](/pptx/slide03-static-kinetic.jpg)
-
-</div>
-</div>
-
-<!--
-Coulomb's model, the one from school physics. Push a block. As long as it does not move, friction
-matches your push exactly: that is the rising line on the right. At some force, mu s times the
-normal force, the block breaks loose. Then the friction drops to mu k times the normal force, and
-stays there, roughly, while it slides.
-
-Why friction works the way it does is still an open research question. The two classic
-explanations from the source deck: microscopic roughness interlocking, and molecular adhesion
-between the surfaces. For rubber on a road both matter, plus a third: rubber deforming over the
-road's texture and losing energy, called hysteresis friction. That is why a tire's grip depends on
-temperature and on the road's texture, not only on the materials.
-
-The source deck wrote "nobody is exactly sure why friction acts the way it does". That is fair
-for the microscopic picture. The macroscopic numbers are well measured, as the next slide shows.
--->
-
----
-routeAlias: mu-table
----
-
-## Friction coefficients
-
-<div class="grid grid-cols-[1.2fr_1fr] gap-8">
 <div>
 
 | Surfaces | μ static | μ kinetic |
@@ -85,25 +59,26 @@ routeAlias: mu-table
 | **Tire on snow** | **0.30** | **0.20** |
 
 </div>
-<div>
-
-> **Typical, not exact**
->
-> The first rows are textbook values for clean, dry surfaces. The tire rows vary with the tire,
-> its temperature, the speed, the water depth and the road texture.
->
-> Use them for orders of magnitude.
-
-The repository's tire model uses **1.0 at the peak** and **0.7 when sliding**, scaled by a road
-factor: 1.0 dry, about 0.5 wet, 0.2 snow, 0.05 ice.
-
-</div>
 </div>
 
 <!--
-The source deck's table. The first five rows match the usual university physics textbook table,
-Serway's, which lists rubber on concrete as 1.0 static and 0.8 kinetic; the wet and snow rows are
-typical values from the same family of tables, not one measured tire.
+Budget: 2 minutes. Coulomb's model is school physics; say it once and move to the table.
+
+Push a block. As long as it does not move, friction matches your push exactly. At some force, mu s
+times the normal force, the block breaks loose. Then the friction drops to mu k times the normal
+force, and stays there, roughly, while it slides. The source deck drew this as a block with four
+forces and a friction-against-push curve, `public/pptx/slide03-friction-forces.jpg` and
+`slide03-static-kinetic.jpg`; draw the curve on the board if the room needs it.
+
+Why friction works the way it does is still an open research question. The two classic
+explanations from the source deck: microscopic roughness interlocking, and molecular adhesion
+between the surfaces. For rubber on a road both matter, plus a third: rubber deforming over the
+road's texture and losing energy, called hysteresis friction. That is why a tire's grip depends on
+temperature and on the road's texture, not only on the materials.
+
+The table is the source deck's. The first five rows match the usual university physics textbook
+table, Serway's, which lists rubber on concrete as 1.0 static and 0.8 kinetic; the wet and snow
+rows are typical values from the same family of tables, not one measured tire.
 
 Two things to notice. Teflon is the only pair whose static and kinetic values match. And for a
 tire the gap between them is 20 to 33 percent. That gap is the prize ABS goes after.
@@ -131,6 +106,8 @@ so its force depends on **slip** $\kappa$:
 - **Locked wheel**, $\kappa = -1$: the tread slides, $\mu_S$. This is the "kinetic" end.
 
 **Braking well means holding the tire near its peak.**
+
+<div class="handson">→ Hands-on step 01: the brake torque that holds the tire at this peak, by hand</div>
 
 </div>
 <div>
@@ -185,6 +162,8 @@ From **90 km/h = 25 m/s**:
 | 0.4 | wet, sliding | 79.7 m |
 | 0.3 | snow, at the peak | 106.2 m |
 | 0.2 | snow, sliding | 159.3 m |
+
+<div class="handson">→ Hands-on step 01: the peak and sliding bounds for the ABS car, by hand</div>
 
 </div>
 <div>

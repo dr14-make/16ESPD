@@ -13,6 +13,9 @@ the calipers.
 `notebooks/lecture03/02-brake-hydraulics.pluto.jl`
 
 <!--
+Budget: 11 minutes, 7 slides: lever 2, force chain 2, pedal to pressure 2, master cylinder 2,
+the rest of the system 2, summary 1. Section 02 is not in the hands-on; keep it moving.
+
 The brakes transmit the force the driver applies to the pedal to the wheels using friction, at the
 pads, and the tires pass it to the road using friction again. Three pieces of physics sit in
 between: leverage, hydraulics and friction. This section follows a foot's force through them, with
