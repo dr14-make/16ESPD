@@ -18,8 +18,8 @@ const T_PEAK = 1.0 * 1400 * G * 0.31
 
 stop_time(mu, a_max = Inf) = 0.5 + 1.5 * 25 / min(0.7 * mu * G, a_max) + 1.0
 # A 2 ms grid resolves the 30 Hz ABS cycle and keeps each SVG a few hundred kB.
-function trace(run, f; dt = 0.002)
-    ts = collect(0:dt:run.sol.t[end])
+function trace(run, f; dt = 0.002, from = 0.0, to = run.sol.t[end])
+    ts = collect(from:dt:to)
     return ts, run.sol(ts, idxs = f(symbolic_container(run))).u
 end
 
@@ -65,16 +65,36 @@ let
     save(plot(p1, p2; layout = (2, 1), size = (900, 620), xlims = (0, 4.5)), "step03-abs-torque-slip")
 end
 
-wheel_only = H.ABSStopWheelOnlyTransient()
-let (t, v) = trace(wheel_only, m -> m.body.mass.v), (_, v_ref) = trace(wheel_only, m -> m.est.v_ref),
-    (_, v_w) = trace(wheel_only, m -> m.est.v_w)
-    d = V.braking_distance(wheel_only)
-    p = plot(t, 3.6 .* v; label = "car (speed.v)", color = :black,
-        xlabel = "time [s]", ylabel = "speed [km/h]", xlims = (0.4, 2.6), ylims = (40, 92),
-        title = "Wheel speed only, a_ref = 8 m/s²: $(round(d; digits = 1)) m")
-    plot!(p, t, 3.6 .* v_w; label = "wheel (ω·r)", color = :gray, lw = 1.5)
-    plot!(p, t, 3.6 .* v_ref; label = "estimate (est.v_ref)", color = :purple, ls = :dash)
-    save(p, "step04-vref")
+# The wet road, where the dump overshoots far enough for the wheel to spin back up: all three
+# phases show. On a dry road the cycle is dump and build only.
+wet = H.ABSStopWheelOnlyTransient(road_mu = 0.5, stop = stop_time(0.5, 8.0))
+let win = (0.9, 1.45), zoom(f) = trace(wet, f; dt = 5e-4, from = win[1], to = win[2]),
+    (t, phase) = zoom(m -> m.abs.phase), (_, p) = zoom(m -> m.abs.tau_cmd),
+    (_, tau) = zoom(m -> m.wheel.brake.tau_actual), (_, v) = zoom(m -> m.body.mass.v),
+    (_, v_w) = zoom(m -> m.est.v_w), (_, v_ref) = zoom(m -> m.est.v_ref)
+    d = V.braking_distance(wet)
+    p1 = plot(; ylabel = "brake torque [N·m]", ylims = (0, 2800), legend = :bottomright,
+        title = "Your three-phase ABS, wheel speed only, μ = 0.5: $(round(d; digits = 1)) m")
+    # One shaded span per phase run; the colors match the state diagram on the slide.
+    shades = Dict(-1 => (:firebrick, "dump"), 0 => (:goldenrod, "hold"), 1 => (:seagreen, "build"))
+    seen = Set{Int}()
+    k = 1
+    while k !== nothing
+        ph = round(Int, phase[k])
+        e = something(findnext(x -> round(Int, x) != ph, phase, k), length(t))
+        color, name = shades[ph]
+        vspan!(p1, [t[k], t[e]]; color, alpha = 0.18, lw = 0,
+            label = ph in seen ? "" : name)
+        push!(seen, ph)
+        k = e < length(t) ? e : nothing
+    end
+    plot!(p1, t, p; label = "command (abs.tau_cmd)", color = :black, lw = 2)
+    plot!(p1, t, tau; label = "at the wheel", color = :steelblue, lw = 1.5, ls = :dash)
+    p2 = plot(; ylabel = "speed [km/h]", xlabel = "time [s]", legend = :bottomleft)
+    plot!(p2, t, 3.6 .* v; label = "car (speed.v)", color = :black)
+    plot!(p2, t, 3.6 .* v_w; label = "wheel (ω·r)", color = :gray, lw = 1.5)
+    plot!(p2, t, 3.6 .* v_ref; label = "estimate (est.v_ref)", color = :purple, ls = :dash)
+    save(plot(p1, p2; layout = (2, 1), size = (900, 620), xlims = win), "step04-phase-cycle")
 end
 
 let mus = [1.0, 0.5, 0.3]
