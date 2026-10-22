@@ -30,6 +30,10 @@ features:
     details: "Friction and the tire's slip curve, braking distance, the brake system from pedal to master cylinder, ABS with its sensors, modulator and control cycle, traction control, ESP and its reference model, and torque vectoring. Ties to the ABS and brake-hydraulics notebooks."
     link: /lecture-03/index.html
     target: _self
+  - title: "Hands-on: stop without locking"
+    details: "After the theory, same block · about 90 min<br>Brake your car on one wheel and watch it lock, write a slip ABS of your own and make it lead the brake's 30 ms lag, then feed it from the wheel speed alone through a reference-speed estimate you write. Ends with braking distances on dry, wet and snowy roads, and the a_ref trap."
+    link: /handson-03/index.html
+    target: _self
 ---
 
 ## Lecture 1, in two sessions
@@ -89,6 +93,12 @@ carries what to say, the time per part, where students get stuck, and the answer
 4. [**Traction control**](./lecture-03/index.html#/tcs){target="_self"} — brake and engine on a spinning wheel
 5. [**Electronic stability program**](./lecture-03/index.html#/esp){target="_self"} — intention against motion, one wheel braked
 6. [**Torque vectoring**](./lecture-03/index.html#/torque-vectoring){target="_self"} — a yaw moment from drive torque
+
+The hands-on that follows the lecture tests its ABS claims on the students' own car: a locked
+stop, a slip ABS of their own, and the same ABS on the wheel speed alone. Put the
+[projector deck](./handson-03/index.html){target="_self"} on the wall, one slide per step with its
+goal, what to build, the checkpoint and the tutor notes in the speaker notes. The hands-on guide
+is still to be written.
 
 ## For the lecturer
 
