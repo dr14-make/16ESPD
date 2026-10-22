@@ -11,6 +11,10 @@ Compare where the driver steers with where the car goes, and brake single wheels
 gap.
 
 <!--
+Budget: 19 minutes, 12 slides, demo included. Theory 12 (what 2, sensors 1.5, Ackermann 2,
+reference model 2.5, yaw correction 2, evidence and the test 2), demo 6 (planar car 2,
+passive run 3, ESP on pending 1), summary 1.
+
 ESP is Bosch's and Mercedes' name; the generic name is ESC, electronic stability control, which is
 what the regulations use. Others call it VSC, DSC, VDC or StabiliTrak. Same function.
 -->
@@ -265,40 +269,16 @@ on a Bosch web page.
 
 This is also why ESP needs the extra valves from the TCS slide: the driver is not braking, so the
 modulator must build pressure at one wheel on its own.
--->
 
----
-routeAlias: esp-examples
----
-
-## Examples
-
-<div class="grid grid-cols-2 gap-6">
-<div>
-
-![Understeer: a car without ESP runs wide off the outside of the bend; beside it, a car with ESP braking its inner rear wheel to stay on the road.](/pptx/slide19-understeer.png)
-
-</div>
-<div>
-
-![Oversteer: a car without ESP spins out of the bend; beside it, a car with ESP braking its outer front wheel to stay on the road.](/pptx/slide19-oversteer.png)
-
-</div>
-</div>
-
-<!--
-The source deck's two Renault illustrations of the same two cases. In each, the car on the left
-without ESP leaves the road: wide on understeer, spinning on oversteer. On the right the braked
-wheel is marked.
-
-The source deck also had a video of an ESP demonstration; it is not reproduced here.
-
-The source deck's description of the logic, for reference: the ECU determines the car's speed
-from the wheel-speed sensors, checks that the difference in speed between the left and right
-wheels matches the bend, and refines the picture with the yaw-rate sensor and the lateral
-accelerometer. Any discrepancy between the real trajectory and the one the driver wants makes it
-brake one or more wheels; if that is not enough, it reduces engine torque. Bosch's own description
-puts the engine torque reduction first.
+The source deck showed the same two cases as Renault illustrations, a car without ESP leaving the
+road beside one with the braked wheel marked: `public/pptx/slide19-understeer.png` and
+`slide19-oversteer.png`. They are left out to make room for the demo; the diagram says the same.
+Its description of the logic, for reference: the ECU determines the car's speed from the
+wheel-speed sensors, checks that the left-right wheel speed difference matches the bend, and
+refines the picture with the yaw-rate sensor and the lateral accelerometer. Any discrepancy
+between the real trajectory and the one the driver wants makes it brake one or more wheels; if that
+is not enough, it reduces engine torque. Bosch's own description puts the engine torque reduction
+first.
 -->
 
 ---
@@ -355,48 +335,187 @@ through FMVSS 126, which R140 is derived from.
 routeAlias: esp-model
 ---
 
-## What a model of ESP needs
+## The planar car
 
 <div class="grid grid-cols-[1fr_1fr] gap-8">
 <div>
 
-The ABS model is **one lumped wheel on a straight line**. It has no lateral force, no steering
-and no yaw: ESP cannot be shown on it.
+The ABS model is **one lumped wheel on a straight line**: no lateral force, no steering, no yaw.
+For ESP the repository has a **planar four-wheel car**, `Vehicle.Planar.PlanarCar`:
 
-The plan in `docs/lecture-03-preparation.md`: a **planar four-wheel car**
-
-- chassis mass and yaw inertia, wheelbase and track;
+- chassis mass and yaw inertia, wheelbase 2.7 m, track 1.55 m;
 - four wheels, each with its own speed and brake;
-- front steering with Ackermann geometry;
+- front steering through an **Ackermann linkage**;
 - **combined slip**: longitudinal and lateral force share one friction limit.
 
 </div>
 <div>
 
-Then, in order:
+**Checked before the demo:**
 
-1. four-channel ABS: brake in a turn, with and without ABS;
-2. a reference yaw rate from steering angle and speed;
-3. a yaw-moment controller;
-4. selective wheel braking;
-5. understeer and oversteer manoeuvres.
+| | model |
+|---|---:|
+| steady cornering vs. the single-track formula | within 0.65 % |
+| understeer gradient $K_{us}$ | 2.04·10⁻³ rad/(m/s²) |
+| front slip-angle difference at 3 m/s, Ackermann | 0.0007 rad |
+| the same, parallel steering | 0.0216 rad |
 
-Each step is validated before the next.
+Built through task 4 of `docs/lecture-03-esp-dyad-tasks.md`; the **ESP** itself is task 5,
+**not built yet**.
 
 </div>
 </div>
 
 <!--
-An honest boundary. The ESP slides are theory only; the repository cannot simulate them yet.
+Budget: 2 minutes. This is the bridge from the theory to the demo.
 
-The preparation document proposes building the car from MultibodyComponents' PlanarMechanics: its
-slip-based wheel joint already has longitudinal and lateral slip and a combined friction limit.
-The first result it targets is the one from section 01: a locked front wheel loses its lateral
-force, and the car stops following the steering. With ABS the tires stay near the peak and keep
-turning the car.
+The car is built from MultibodyComponents' PlanarMechanics: a planar rigid body for the chassis,
+and its slip-based wheel joint at each corner, which already has longitudinal and lateral slip
+and a combined friction limit. It is not the ABS lecture's car: 1500 kilograms, yaw inertia 2500
+kilogram square meters, center of gravity 1.2 meters behind the front axle, peak friction 1.0 and
+sliding 0.8, steering ratio 16. The values are the research probe's, listed in the task brief's
+"Vehicle constants".
 
-Only after that does ESP come: the reference model from two slides back, a controller on the yaw
-rate error, and the wheel choice from the understeer and oversteer slide.
+The table is what was checked before trusting it in a spin, from the plausibility tests on
+branch feat/lecture-03-planar-car, commits 350db9d to 126ee69. In a steady turn at small steering
+angles the yaw rate matches v delta over L plus K us v squared, the formula of the reference-model
+slide, to within 0.65 percent. The understeer gradient is 2.04 times ten to the minus three
+radians per meter per second squared: 1.15 degrees of road-wheel angle per g, a mildly
+understeering car, with a characteristic speed of 131 kilometers per hour.
+
+The last two rows are the Ackermann slide, measured: driving a tight turn at 3 meters per second,
+the two front tires' slip angles differ by 0.0007 radians with Ackermann steering and by 0.0216,
+about 1.2 degrees, with the wheels parallel. That difference is the scrub.
+
+ESP itself is task 5 of the brief: a yaw-rate reference, a yaw-moment controller, and an allocator
+that picks the wheel. When it lands, the "pending" slide after the demo gets its figure.
+-->
+
+---
+routeAlias: esp-demo-passive
+class: big-figure
+---
+
+## Demo: the test on our car, without ESP
+
+![Top view of three runs of the sine-with-dwell from 80 km/h, the car drawn every 0.4 s. At 76 degrees of steering-wheel angle the car follows a smooth lane change and drives on. At 180 degrees it swings out, turns broadside and spins, stopping near x 92 m pointing backward. At 270 degrees it runs wider and straighter than asked, the nose plowing, but stays pointing forward.](/figures/05-swd-path.svg)
+
+<div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
+<div>
+
+| steering wheel | 32° | 76° | 97° | 141° | 180° | 220° | 270° |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| yaw-rate ratio, +1.00 s | 0.00 | 0.00 | 1.37 | 1.01 | 0.93 | 0.85 | 0.00 |
+| largest sideslip $\beta$ | 0.9° | 3.2° | 84° | 83° | 83° | 61° | 5.9° |
+| verdict | pass | pass | **spins** | **spins** | **spins** | **spins** | plows |
+
+</div>
+<div>
+
+`Lecture3.SineWithDwellRunTransient`, Tsit5.
+
+The test needs **≤ 0.35**.
+
+</div>
+</div>
+
+<!--
+Budget: 3 minutes, with the next slide. The figure is a real run. A live run,
+`Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))`, needs the planar-car branch compiled
+and warmed up before class; see the run sheet.
+
+This is the planar car with no controller, driven through the FMVSS 126 maneuver from the
+previous slide: 80 kilometers per hour, a 0.7 hertz sine on the steering wheel, half a second of
+dwell at the second peak. The test scales the amplitude by A, the steering-wheel angle that gives
+0.3 g in a slow ramp: 21.6 degrees on this car. It runs from 1.5 A, 32 degrees, upward, to 6.5 A
+or 270 degrees, whichever is larger.
+
+At 76 degrees the car changes lanes and drives on. From 97 to 220 degrees the rear lets go at the
+reversal and the car spins: the sideslip reaches 61 to 84 degrees, and at 97 to 180 degrees it
+ends sliding backward. At 270 degrees it does not spin: the front tires saturate first and the
+car plows, understeer, with a sideslip of only 5.9 degrees. Real test data show the same
+non-monotonic pattern. That 270-degree pass does not save the car: one failed amplitude fails the
+test.
+
+The figure is the 76, 180 and 270 degree runs, made with `scripts/export_lecture03_esp_figures.jl`
+against the planar-car branch at 126ee69. The table is the task 4 plausibility test on the same
+branch; the figure's run gives a lateral displacement 1.07 seconds after the start of steering of
+2.54 meters at 76 degrees and 3.76 at 180, both above the 1.83 meters the test asks for.
+-->
+
+---
+routeAlias: esp-demo-yaw
+class: big-figure
+---
+
+## Why it fails: the yaw rate does not die out
+
+![Two panels over 6 s. Top: steering-wheel angle, a sine of 76, 180 and 270 degrees amplitude that dwells at its negative peak and returns to zero at 2.93 s; dotted lines mark 1.00 s and 1.75 s after that. Bottom: yaw rate. At 76 degrees it follows the steering and returns to zero by 3.3 s. At 270 degrees it also returns to zero. At 180 degrees it falls to about minus 50 degrees per second at the reversal and stays at minus 48 until near the end: the car keeps rotating after the steering is straight.](/figures/05-swd-yaw-rate.svg)
+
+<div class="caption">FMVSS 126: 1.00 s after the steering ends the yaw rate must be ≤ 35 % of its peak, after 1.75 s ≤ 20 %</div>
+
+<!--
+Read the bottom panel at the two dotted lines. The stable car's yaw rate is back at zero long
+before them: ratio 0.00. The 180-degree car is still rotating at 48 degrees per second, the same
+as its peak after the reversal: ratio 0.93 at both instants. The steering wheel has been straight
+for a second and the car does not respond to it any more, because the rear tires are sliding.
+
+This is what ESP is for. At the reversal the measured yaw rate overshoots the reference from the
+single-track model; ESP sees the oversteer and brakes the outer front wheel, the left front here,
+since the car is turning right after the reversal.
+-->
+
+---
+routeAlias: esp-demo-on
+---
+
+## With ESP: pending task 5
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-8 items-center">
+<div class="border-2 border-dashed border-gray-400 rounded-lg p-8 text-center opacity-80">
+
+**Figure slot: pending task 5**
+
+The 180° run of the last two slides with **ESP on**,
+`Lecture3.ESPSineWithDwell(A_sw = 180°, esp_on = 1)`, beside the passive run.
+
+`public/figures/05-swd-esp-on.svg`
+
+</div>
+<div>
+
+**What to expect** (the research probe, not this car yet):
+
+| 180°, ESP on | |
+|---|---:|
+| yaw-rate ratio, +1.00 s | 0.00 |
+| largest sideslip $\beta$ | 7° |
+| lateral displacement | 2.6 m |
+| most brake work | **outer front** wheel |
+
+The car **passes** at every amplitude, but slower: the braked wheel locks until four-channel
+ABS is under the ESP (task 6).
+
+</div>
+</div>
+
+<!--
+Budget: 1 minute. Say plainly that this part is not built yet.
+
+The numbers on the right are the expected results in the task brief,
+`docs/lecture-03-esp-dyad-tasks.md`, task 5: a ModelingToolkit probe of the same car with a
+proportional yaw-rate controller and a 0.1 second build lag, not the Dyad model. At 180 degrees
+it gives a yaw-rate ratio of 0.00, a sideslip of 7.0 degrees, a lateral displacement of 2.63
+meters, comfortably above 1.83, and an end speed of 13.5 meters per second against the passive
+car's spin. Of the brake work, the left front wheel, the outer front after the reversal, takes the
+most: 1600 newton meter seconds against 970 for the right rear and less for the others.
+
+Its known flaw: the braked wheel locks, because this ESP brakes without ABS underneath. Task 6
+puts the ESP's requests through four ABS channels, which is exactly the hardware story of the
+modulator and channel slides.
+
+When task 5 lands: replace the dashed box with the figure, from the export script, and the right
+column with the Dyad run's numbers.
 -->
 
 ---
@@ -408,7 +527,8 @@ rate error, and the wheel choice from the understeer and oversteer slide.
 - The reference is the **single-track model**, limited by $\mu g / v$.
 - It corrects by braking single wheels, **inner rear** on understeer, **outer front** on
   oversteer, and by reducing engine torque.
-- Since 2011–2014 it is mandatory on new cars in the US and the EU.
+- Since 2011–2014 it is mandatory on new cars in the US and the EU; the test is the
+  sine-with-dwell, and our planar car **without** ESP spins in it from 97° up.
 
 ### Next: adding torque instead of only taking it away. <Link to="torque-vectoring">→ 06, torque vectoring</Link>
 
