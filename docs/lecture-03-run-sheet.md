@@ -18,7 +18,7 @@ hands-on** on its own deck, `slides/decks/handson-03/`, and its guide. The hands
 | 03 Anti-lock braking | 14 | 23 |
 | Break | | 10 |
 | 04 Traction control | 5 | 5 |
-| 05 Electronic stability program, demo included | 12 | 19 |
+| 05 Electronic stability program, demo included | 13 | 19 |
 | 06 Torque vectoring | 4 | 4 |
 | 07 Wrap-up and hand-over | 5 | 4 |
 
@@ -33,8 +33,9 @@ Running clock: 01 starts at 4, 02 at 13, 03 at 24, break at 47, 04 at 57, 05 at 
   question about `a_ref` (its slider).
 - The ESP demo figures are committed too. A live run needs the planar car, which is not on the
   integration branch yet: check out `feat/lecture-03-planar-car`, run
-  `Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))` once before class so it is compiled,
-  and keep the REPL open. Without that, show the figures.
+  `Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))` and
+  `Lecture3.ESPSineWithDwellTransient(A_sw = deg2rad(180))` once before class so they are
+  compiled, and keep the REPL open. Without that, show the figures.
 - Handout: `handout.pdf`, published next to the deck, one slide per page, notes excluded.
 
 ## Throughout
@@ -89,14 +90,16 @@ After the ABS summary. The theory half is front-loaded so the break falls near t
 
 - Theory 12: what ESP does 2, sensors 1.5, Ackermann 2, reference model 2.5, braking one wheel 2,
   does it work and the test 2.
-- Demo 6: the planar car 2, the passive run 3 (both figure slides), ESP on 1.
+- Demo 6: the planar car 1.5, the passive run 2.5 (both figure slides), ESP on 2 (path and
+  table, then yaw rate and brake torque).
 - The "Examples" slide (Renault pictures) was cut: the yaw-correction diagram says the same.
-- **ESP on is pending task 5** of `docs/lecture-03-esp-dyad-tasks.md`. Say so. The right column
-  of that slide is the research probe's expectation, not a Dyad run.
-- Figures: `public/figures/05-swd-path.svg`, `05-swd-yaw-rate.svg`, from
-  `scripts/export_lecture03_esp_figures.jl` run against the planar-car branch at 126ee69 (the
-  script's docstring has the command). When task 5 lands, add the ESP-on run to that script as
-  `05-swd-esp-on.svg` and fill the dashed slot.
+- ESP on passes the test at every amplitude, but say the cost: the braked wheels lock and the car
+  leaves at 48 km/h. ESP through four ABS channels is task 6 of
+  `docs/lecture-03-esp-dyad-tasks.md`, not built yet.
+- Figures: `public/figures/05-swd-path.svg`, `05-swd-yaw-rate.svg`, `05-swd-esp-path.svg`,
+  `05-swd-esp-yaw.svg`, from `scripts/export_lecture03_esp_figures.jl` run against the planar-car
+  branch at 0c3bf74 (the script's docstring has the command). The numbers on the slides are what
+  it prints.
 
 ## 06 Torque vectoring — 4 min
 
