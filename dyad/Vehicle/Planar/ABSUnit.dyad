@@ -1,0 +1,142 @@
+"""
+Sampled four-channel ABS with continuous sensor and brake-command ports.
+
+Sampling and zero-order holds represent the ECU boundary. Setting `abs_on` below 0.5 bypasses the
+sampled modulator while retaining the nonnegative ESP brake increments.
+"""
+component ABSUnit
+  demand = RealInput(units = "N.m") {^demand}
+  dT_fl = RealInput(units = "N.m") {^dT_fl}
+  dT_fr = RealInput(units = "N.m") {^dT_fr}
+  dT_rl = RealInput(units = "N.m") {^dT_rl}
+  dT_rr = RealInput(units = "N.m") {^dT_rr}
+  kappa_fl = RealInput() {^kappa_fl}
+  kappa_fr = RealInput() {^kappa_fr}
+  kappa_rl = RealInput() {^kappa_rl}
+  kappa_rr = RealInput() {^kappa_rr}
+  vx = RealInput(units = "m/s") {^vx}
+  tau_fl = RealOutput(units = "N.m") {^tau_fl}
+  tau_fr = RealOutput(units = "N.m") {^tau_fr}
+  tau_rl = RealOutput(units = "N.m") {^tau_rl}
+  tau_rr = RealOutput(units = "N.m") {^tau_rr}
+  structural parameter dt::Time = 0.005
+  parameter abs_on::Real = 1.0
+  parameter select_low::Real = 1.0
+  parameter T_p::Time = 0.03
+  parameter lambda_1_f::Real = 0.08
+  parameter lambda_1_r::Real = 0.06
+  parameter lambda_lock::Real = 0.20
+  parameter alpha_rel::Real = 0.6
+  parameter beta_reapply::Real = 0.85
+  parameter l_rec::Real = 0.03
+  parameter T_hold_max::Time = 0.06
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_slow::Real = 16000.0
+  parameter v_min::Velocity = 1.5
+  clock = DiscreteComponents.PeriodicClock(dt = dt) {^clock}
+  demand_sampler = DiscreteComponents.Sampler() {^demand_sampler}
+  speed_sampler = DiscreteComponents.Sampler() {^speed_sampler}
+  dT_fl_sampler = DiscreteComponents.Sampler() {^dT_fl_sampler}
+  dT_fr_sampler = DiscreteComponents.Sampler() {^dT_fr_sampler}
+  dT_rl_sampler = DiscreteComponents.Sampler() {^dT_rl_sampler}
+  dT_rr_sampler = DiscreteComponents.Sampler() {^dT_rr_sampler}
+  kappa_fl_sampler = DiscreteComponents.Sampler() {^kappa_fl_sampler}
+  kappa_fr_sampler = DiscreteComponents.Sampler() {^kappa_fr_sampler}
+  kappa_rl_sampler = DiscreteComponents.Sampler() {^kappa_rl_sampler}
+  kappa_rr_sampler = DiscreteComponents.Sampler() {^kappa_rr_sampler}
+  abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(dt = dt, T_p = T_p, lambda_1_f = lambda_1_f, lambda_1_r = lambda_1_r, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min, select_low = select_low) {^abs}
+  hold_fl = DiscreteComponents.ZeroOrderHold() {^hold_fl}
+  hold_fr = DiscreteComponents.ZeroOrderHold() {^hold_fr}
+  hold_rl = DiscreteComponents.ZeroOrderHold() {^hold_rl}
+  hold_rr = DiscreteComponents.ZeroOrderHold() {^hold_rr}
+relations
+  connect(demand, demand_sampler.u) {^w1}
+  connect(vx, speed_sampler.u) {^w2}
+  connect(dT_fl, dT_fl_sampler.u) {^w3}
+  connect(dT_fr, dT_fr_sampler.u) {^w4}
+  connect(dT_rl, dT_rl_sampler.u) {^w5}
+  connect(dT_rr, dT_rr_sampler.u) {^w6}
+  connect(kappa_fl, kappa_fl_sampler.u) {^w7}
+  connect(kappa_fr, kappa_fr_sampler.u) {^w8}
+  connect(kappa_rl, kappa_rl_sampler.u) {^w9}
+  connect(kappa_rr, kappa_rr_sampler.u) {^w10}
+  connect(demand_sampler.y, abs.demand, clock.y) {^w11}
+  connect(speed_sampler.y, abs.v_ref) {^w12}
+  connect(dT_fl_sampler.y, abs.dT_fl) {^w13}
+  connect(dT_fr_sampler.y, abs.dT_fr) {^w14}
+  connect(dT_rl_sampler.y, abs.dT_rl) {^w15}
+  connect(dT_rr_sampler.y, abs.dT_rr) {^w16}
+  connect(kappa_fl_sampler.y, abs.kappa_fl) {^w17}
+  connect(kappa_fr_sampler.y, abs.kappa_fr) {^w18}
+  connect(kappa_rl_sampler.y, abs.kappa_rl) {^w19}
+  connect(kappa_rr_sampler.y, abs.kappa_rr) {^w20}
+  connect(abs.tau_fl, hold_fl.u) {^w21}
+  connect(abs.tau_fr, hold_fr.u) {^w22}
+  connect(abs.tau_rl, hold_rl.u) {^w23}
+  connect(abs.tau_rr, hold_rr.u) {^w24}
+  tau_fl = ifelse(abs_on > 0.5, hold_fl.y, demand + max(0.0, dT_fl))
+  tau_fr = ifelse(abs_on > 0.5, hold_fr.y, demand + max(0.0, dT_fr))
+  tau_rl = ifelse(abs_on > 0.5, hold_rl.y, demand + max(0.0, dT_rl))
+  tau_rr = ifelse(abs_on > 0.5, hold_rr.y, demand + max(0.0, dT_rr))
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/CascadeServoController.svg"}},
+  "_links": {
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 50, "x2": 50, "y2": 150}}}},
+    "dT_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "dT_fr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "dT_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 350, "x2": 50, "y2": 450}}}},
+    "dT_rr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 550, "x2": 50, "y2": 650}}}},
+    "kappa_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "kappa_fr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "kappa_rl": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": 950, "x2": 250, "y2": 1050, "rot": 270}}}},
+    "kappa_rr": {"Dyad": {"placement": {"icon": {"x1": 350, "y1": 950, "x2": 450, "y2": 1050, "rot": 270}}}},
+    "tau_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "tau_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "tau_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "tau_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}},
+    "clock": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 50, "x2": 500, "y2": 150}}}},
+    "demand_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 50, "x2": 250, "y2": 150}}}},
+    "speed_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 150, "x2": 250, "y2": 250}}}},
+    "dT_fl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 250, "x2": 250, "y2": 350}}}},
+    "dT_fr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 350, "x2": 250, "y2": 450}}}},
+    "dT_rl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 450, "x2": 250, "y2": 550}}}},
+    "dT_rr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 550, "x2": 250, "y2": 650}}}},
+    "kappa_fl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 650, "x2": 250, "y2": 750}}}},
+    "kappa_fr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 750, "x2": 250, "y2": 850}}}},
+    "kappa_rl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 850, "x2": 250, "y2": 950}}}},
+    "kappa_rr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 950, "x2": 250, "y2": 1050}}}},
+    "abs": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 350, "x2": 650, "y2": 650}}}},
+    "hold_fl": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 150, "x2": 850, "y2": 250}}}},
+    "hold_fr": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 350, "x2": 850, "y2": 450}}}},
+    "hold_rl": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 550, "x2": 850, "y2": 650}}}},
+    "hold_rr": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 750, "x2": 850, "y2": 850}}}}
+  }
+}
+end
+
+"Continuous-boundary ABS composition check."
+test component TestABSUnit
+  demand = BlockComponents.Sources.Constant(k = 1000.0)
+  speed = BlockComponents.Sources.Constant(k = 20.0)
+  zero = BlockComponents.Sources.Constant(k = 0.0)
+  cut = BlockComponents.Sources.Constant(k = -200.0)
+  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 1.0)
+relations
+  connect(demand.y, abs.demand)
+  connect(speed.y, abs.vx)
+  connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.kappa_fl, abs.kappa_fr, abs.kappa_rl, abs.kappa_rr)
+  connect(cut.y, abs.dT_rr)
+metadata {
+  "Dyad": {
+    "tests": {
+      "rear_select_low": {
+        "solver": "Tsit5", "stop": 0.02,
+        "atol": {"abs.tau_rl": 1e-8, "abs.tau_rr": 1e-8},
+        "expect": {"final": {"abs.tau_rl": 800.0, "abs.tau_rr": 800.0}, "signals": ["abs.tau_rl", "abs.tau_rr"]}
+      }
+    }
+  }
+}
+end
