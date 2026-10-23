@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .line { stroke: #16202c; stroke-width: 4; fill: none; }
+    .ret { stroke: #a75d00; stroke-width: 4; fill: none; stroke-dasharray: 9 5; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .th { font-size: 15px; font-weight: 600; }
+    .td { font-size: 15px; }
+    .ok { fill: #1f5fa8; font-weight: 600; }
+    .warn { fill: #a75d00; font-weight: 600; }
+  </style>
+  <defs>
+    <marker id="ac-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="ac-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <!-- hydraulic channel -->
+  <rect class="box" x="20" y="40" width="130" height="60" rx="4"/>
+  <text x="85" y="66" text-anchor="middle" class="t">master</text>
+  <text x="85" y="88" text-anchor="middle" class="t">cylinder</text>
+  <path class="line" d="M150 70 H226" marker-end="url(#ac-ink)"/>
+
+  <rect class="box-accent" x="230" y="40" width="140" height="60" rx="4"/>
+  <text x="300" y="66" text-anchor="middle" class="t">inlet valve</text>
+  <text x="300" y="88" text-anchor="middle" class="lbl">normally open</text>
+  <path class="line" d="M370 70 H446" marker-end="url(#ac-ink)"/>
+
+  <rect class="box" x="450" y="40" width="120" height="60" rx="4"/>
+  <text x="510" y="66" text-anchor="middle" class="t">caliper</text>
+  <text x="510" y="88" text-anchor="middle" class="lbl">p_wheel</text>
+  <path class="line" d="M570 70 H610"/>
+  <circle cx="640" cy="70" r="30" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <text x="640" y="76" text-anchor="middle" font-size="15">wheel</text>
+  <text x="640" y="122" text-anchor="middle" class="lbl">speed sensor → ECU</text>
+
+  <path class="line" d="M510 100 V156" marker-end="url(#ac-ink)"/>
+  <rect class="box-accent" x="440" y="160" width="140" height="60" rx="4"/>
+  <text x="510" y="186" text-anchor="middle" class="t">outlet valve</text>
+  <text x="510" y="208" text-anchor="middle" class="lbl">normally closed</text>
+  <path class="ret" d="M440 190 H376" marker-end="url(#ac-warn)"/>
+
+  <rect class="box" x="236" y="160" width="136" height="60" rx="4"/>
+  <text x="304" y="186" text-anchor="middle" class="t">low-pressure</text>
+  <text x="304" y="208" text-anchor="middle" class="t">accumulator</text>
+  <path class="ret" d="M236 190 H156" marker-end="url(#ac-warn)"/>
+
+  <rect class="box" x="40" y="160" width="112" height="60" rx="4"/>
+  <text x="96" y="186" text-anchor="middle" class="t">return</text>
+  <text x="96" y="208" text-anchor="middle" class="t">pump</text>
+  <path class="ret" d="M96 160 V104" marker-end="url(#ac-warn)"/>
+  <text x="104" y="136" class="lbl">back to the master side</text>
+
+  <!-- valve states -->
+  <text x="40" y="266" class="th">phase</text>
+  <text x="240" y="266" class="th">inlet</text>
+  <text x="380" y="266" class="th">outlet</text>
+  <text x="520" y="266" class="th">wheel pressure</text>
+  <line x1="40" y1="276" x2="860" y2="276" stroke="#16202c" stroke-width="1.5"/>
+  <text x="40" y="304" class="td ok">build</text>
+  <text x="240" y="304" class="td">open</text>
+  <text x="380" y="304" class="td">closed</text>
+  <text x="520" y="304" class="td">follows the master cylinder (the driver)</text>
+  <text x="40" y="336" class="td">hold</text>
+  <text x="240" y="336" class="td">closed</text>
+  <text x="380" y="336" class="td">closed</text>
+  <text x="520" y="336" class="td">frozen, whatever the driver does</text>
+  <text x="40" y="368" class="td warn">dump</text>
+  <text x="240" y="368" class="td">closed</text>
+  <text x="380" y="368" class="td">open</text>
+  <text x="520" y="368" class="td">falls into the accumulator</text>
+  <text x="40" y="394" class="lbl">One channel of a return-flow ABS unit. The valves can only build, hold or dump: never more pressure than the driver asks for.</text>
+</svg>

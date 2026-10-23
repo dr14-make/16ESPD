@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 400" width="360" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .body { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .wheel { fill: #16202c; }
+    .drive { stroke: #1f5fa8; stroke-width: 5; fill: none; }
+    .brake { stroke: #a75d00; stroke-width: 5; fill: none; }
+    .yaw { stroke: #16202c; stroke-width: 3; fill: none; }
+    .dim { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .t { font-size: 19px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .blue { font-size: 16px; font-weight: 600; fill: #1f5fa8; }
+    .warn { font-size: 16px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="tv-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="tv-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="tv-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <rect class="body" x="140" y="80" width="120" height="240" rx="30"/>
+  <rect class="wheel" x="122" y="104" width="18" height="44" rx="4"/>
+  <rect class="wheel" x="260" y="104" width="18" height="44" rx="4"/>
+  <rect class="wheel" x="122" y="250" width="18" height="44" rx="4"/>
+  <rect class="wheel" x="260" y="250" width="18" height="44" rx="4"/>
+
+  <path class="drive" d="M269 272 V196" marker-end="url(#tv-blue)"/>
+  <text x="286" y="214" class="blue">+ΔF</text>
+  <text x="286" y="234" class="lbl">outer rear</text>
+  <path class="brake" d="M131 272 V330" marker-end="url(#tv-warn)"/>
+  <text x="40" y="320" class="warn">−ΔF</text>
+  <text x="40" y="340" class="lbl">inner rear</text>
+
+  <path class="yaw" d="M250 50 A 70 70 0 0 0 150 50" marker-end="url(#tv-ink)"/>
+  <text x="200" y="66" text-anchor="middle" class="lbl">M_z</text>
+  <text x="200" y="22" text-anchor="middle" class="lbl">left-hand bend, top view</text>
+
+  <path class="dim" d="M131 370 H269 M131 362 V378 M269 362 V378"/>
+  <text x="200" y="392" text-anchor="middle" class="lbl">track t</text>
+
+
+
+</svg>

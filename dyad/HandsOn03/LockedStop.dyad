@@ -1,0 +1,73 @@
+"""
+Hands-on 03 step 02 bench: the hands-on 1 `Body` on the library's braked wheel, a 6000 N·m brake
+step at 0.5 s from 90 km/h. The demand is 1.4 times the tire's peak torque, so the wheel locks
+and the car stops on the sliding friction.
+"""
+component LockedStop
+  "Road-friction multiplier (1 dry, 0.5 wet, 0.3 snow)"
+  parameter road_mu::Real = 1.0
+  "Driver's brake demand, 6000 N·m from 0.5 s"
+  demand = BlockComponents.Sources.Step(height = 6000, start_time = 0.5) {^demand}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel() {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
+relations
+  connect(demand.y, wheel.tau_cmd) {^id1}
+  connect(road.y, wheel.mu_scale) {^id2}
+  connect(wheel.support, fixed.spline) {^id3}
+  connect(wheel.flange, body.flange, speed.flange) {^id4}
+  initial wheel.brake.tau_actual = 0
+  initial wheel.inertia.phi = 0
+  initial wheel.inertia.w = 25 / 0.31
+  initial body.mass.s = 0
+  initial body.mass.v = 25
+metadata {
+  "Dyad": {
+    "tests": {
+      "dry": {
+        "stop": 6.0,
+        "solver": "Tsit5",
+        "atol": {"body.mass.s": 0.01, "speed.v": 0.01, "wheel.kappa": 1e-3},
+        "expect": {
+          "initial": {"speed.v": 25.0, "wheel.kappa": 0.0},
+          "final": {"body.mass.s": 56.187, "speed.v": 0.0},
+          "signals": ["speed.v", "wheel.kappa", "body.mass.s"]
+        }
+      }
+    }
+  },
+  "_links": {
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 200, "x2": 200, "y2": 300}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 600, "x2": 200, "y2": 700}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 350, "x2": 550, "y2": 550}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 400, "x2": 850, "y2": 500}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 700, "x2": 500, "y2": 800}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 200, "x2": 850, "y2": 300}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 250}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 514, "y": 650}], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [], "E": -1},
+          {"S": -1, "M": [], "E": 2},
+          {"S": -1, "M": [{"x": 650, "y": 250}], "E": 3}
+        ],
+        "junctions": [{"x": 650, "y": 450}]
+      }
+    }
+  }
+}
+end
+
+"""
+The locked stop. `road_mu` sets the surface; `stop` must outlast the stop, about 20 s at 0.3.
+Tsit5 with `dtmax` 1 ms keeps the step size below the brake's 30 ms lag.
+"""
+analysis LockedStopTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter road_mu::Real = 1.0
+  model = LockedStop(road_mu = road_mu)
+end

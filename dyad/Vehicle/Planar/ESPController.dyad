@@ -1,0 +1,103 @@
+"""Continuous ESP composed from yaw reference, yaw control, and brake allocation."""
+component ESPController
+  delta_sw = RealInput(units = "rad") {^delta_sw}
+  r = RealInput(units = "rad/s") {^r}
+  vx = RealInput(units = "m/s") {^vx}
+  dT_fl = RealOutput(units = "N.m") {^dT_fl}
+  dT_fr = RealOutput(units = "N.m") {^dT_fr}
+  dT_rl = RealOutput(units = "N.m") {^dT_rl}
+  dT_rr = RealOutput(units = "N.m") {^dT_rr}
+  parameter L::Length = 2.7
+  parameter K_us::Real = 2.0387e-3
+  parameter i_s::Real = 16.0
+  parameter mu_est::Real = 1.0
+  parameter g::Acceleration = 9.81
+  parameter k_lim::Real = 0.85
+  parameter v_floor::Velocity = 1.0
+  parameter Kp::Real = 40000.0
+  parameter Ki::Real = 0.0
+  parameter deadband::AngularVelocity = 0.03
+  parameter v_on::Velocity = 5.0
+  parameter Mz_max::Torque = 10000.0
+  parameter tw::Length = 1.55
+  parameter radius::Length = 0.31
+  parameter T_max::Torque = 2500.0
+  parameter T_build::Time = 0.1
+  "ESP enable; outputs are zero below 0.5"
+  parameter esp_on::Real = 1.0
+  variable Mz::Torque
+  variable r_ref::AngularVelocity
+  variable oversteer::Real
+  reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor) {^reference}
+  yaw = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max) {^yaw}
+  allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(tw = tw, radius = radius, T_max = T_max, T_build = T_build) {^allocator}
+relations
+  connect(delta_sw, reference.delta_sw) {^w1}
+  connect(vx, reference.vx) {^w2}
+  connect(r, yaw.r) {^w3}
+  connect(reference.r_ref, yaw.r_ref) {^w4}
+  connect(vx, yaw.vx) {^w5}
+  connect(yaw.Mz, allocator.Mz) {^w6}
+  connect(yaw.oversteer, allocator.oversteer) {^w7}
+  dT_fl = esp_on * allocator.dT_fl
+  dT_fr = esp_on * allocator.dT_fr
+  dT_rl = esp_on * allocator.dT_rl
+  dT_rr = esp_on * allocator.dT_rr
+  Mz = yaw.Mz
+  r_ref = reference.r_ref
+  oversteer = yaw.oversteer
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Lecture1/CruiseController.svg"}},
+  "_links": {
+    "delta_sw": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -50, "y1": 300, "x2": 50, "y2": 400}}}},
+    "r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 550, "x2": 50, "y2": 650}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}, "diagram": {"x1": -50, "y1": 100, "x2": 50, "y2": 200}}}},
+    "dT_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 1070, "y1": 220, "x2": 1130, "y2": 280}}}},
+    "dT_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 1070, "y1": 370, "x2": 1130, "y2": 430}}}},
+    "dT_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 1070, "y1": 520, "x2": 1130, "y2": 580}}}},
+    "dT_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 1070, "y1": 670, "x2": 1130, "y2": 730}}}},
+    "reference": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 250, "x2": 300, "y2": 450}}}},
+    "yaw": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 296, "x2": 620, "y2": 496}}}},
+    "allocator": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 362, "x2": 960, "y2": 562}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 150}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 360, "y": 600}, {"x": 360, "y": 442}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 520, "y": 150}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"Composition check for the continuous ESP."
+test component TestESPController
+  steer = BlockComponents.Sources.Constant(k = 0.5624768) {^steer}
+  measured = BlockComponents.Sources.Constant(k = 0.30) {^measured}
+  speed = BlockComponents.Sources.Constant(k = 20.0) {^speed}
+  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController() {^esp}
+relations
+  connect(steer.y, esp.delta_sw) {^w1}
+  connect(measured.y, esp.r) {^w2}
+  connect(speed.y, esp.vx) {^w3}
+metadata {
+  "Dyad": {
+    "tests": {
+      "oversteer": {
+        "solver": "Tsit5", "stop": 1.0,
+        "expect": {"final": {"esp.r_ref": 0.20, "esp.Mz": -2800.0, "esp.oversteer": 1.0, "esp.dT_fr": 1120.0}},
+        "atol": {"esp.r_ref": 1e-5, "esp.Mz": 1e-3, "esp.oversteer": 1e-6, "esp.dT_fr": 1.0}
+      }
+    }
+  },
+  "_links": {
+    "steer": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 30, "x2": 150, "y2": 130}}}},
+    "measured": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 180, "x2": 150, "y2": 280}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 330, "x2": 150, "y2": 430}}}},
+    "esp": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 50, "x2": 600, "y2": 350}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 227.5, "y": 80}, {"x": 227.5, "y": 125}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 227.5, "y": 230}, {"x": 227.5, "y": 200}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 227.5, "y": 380}, {"x": 227.5, "y": 275}], "E": 2}]}}
+  }
+}
+end

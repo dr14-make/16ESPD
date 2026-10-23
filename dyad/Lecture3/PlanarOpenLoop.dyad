@@ -1,0 +1,177 @@
+"""Open-loop planar-car harness with steering-wheel position and selectable wheel braking."""
+test component PlanarOpenLoop
+  parameter v0::Velocity = 22.22222222222222
+  parameter delta_sw_final::Angle = 0.0
+  parameter t_ramp::Time = 0.2
+  parameter t_steer::Time = 0.0
+  parameter T_cmd::Torque = 0.0
+  parameter brake_fl::Real = 0.0
+  parameter brake_fr::Real = 0.0
+  parameter brake_rl::Real = 0.0
+  parameter brake_rr::Real = 0.0
+  parameter mu_scale_fl::Real = 1.0
+  parameter mu_scale_fr::Real = 1.0
+  parameter mu_scale_rl::Real = 1.0
+  parameter mu_scale_rr::Real = 1.0
+  parameter ackermann::Real = 1.0
+  parameter radius::Length = 0.31
+  parameter h_cg::Length = 0.0
+  structural parameter load_transfer::Boolean = true
+  steer_ramp = BlockComponents.Sources.Ramp(offset = 0.0, height = delta_sw_final, duration = t_ramp, start_time = t_steer) {^steer_ramp}
+  brake_step = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = 0.5) {^brake_step}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
+  gain_fl = BlockComponents.Math.Gain(k = brake_fl) {^gain_fl}
+  gain_fr = BlockComponents.Math.Gain(k = brake_fr) {^gain_fr}
+  gain_rl = BlockComponents.Math.Gain(k = brake_rl) {^gain_rl}
+  gain_rr = BlockComponents.Math.Gain(k = brake_rr) {^gain_rr}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, mu_scale_fl = mu_scale_fl, mu_scale_fr = mu_scale_fr, mu_scale_rl = mu_scale_rl, mu_scale_rr = mu_scale_rr, ackermann = ackermann, h_cg = h_cg, load_transfer = load_transfer) {^car}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+relations
+  connect(steer_ramp.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
+  connect(car.chassis, sensors.chassis) {^w4}
+  connect(car.steering, sensors.steering) {^w5}
+  connect(car.wheel_fl, sensors.wheel_fl) {^w6}
+  connect(car.wheel_fr, sensors.wheel_fr) {^w7}
+  connect(car.wheel_rl, sensors.wheel_rl) {^w8}
+  connect(car.wheel_rr, sensors.wheel_rr) {^w9}
+  connect(car.spin_fl, sensors.spin_fl) {^w10}
+  connect(car.spin_fr, sensors.spin_fr) {^w11}
+  connect(car.spin_rl, sensors.spin_rl) {^w12}
+  connect(car.spin_rr, sensors.spin_rr) {^w13}
+  connect(brake_step.y, gain_fl.u, gain_fr.u, gain_rl.u, gain_rr.u) {^w14}
+  connect(gain_fl.y, car.tau_fl) {^w15}
+  connect(gain_fr.y, car.tau_fr) {^w16}
+  connect(gain_rl.y, car.tau_rl) {^w17}
+  connect(gain_rr.y, car.tau_rr) {^w18}
+  initial car.body.r = [0, 0]
+  initial car.body.v = [v0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = (v0 + 0.01) / radius
+  initial car.fr.inertia.w = (v0 + 0.01) / radius
+  initial car.rl.inertia.w = (v0 + 0.01) / radius
+  initial car.rr.inertia.w = (v0 + 0.01) / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "coast": {
+        "solver": "Tsit5", "stop": 5.0,
+        "params": {"load_transfer": false},
+        "atol": {"sensors.vx": 1e-4, "sensors.r": 1e-8, "sensors.vy": 1e-8, "sensors.y": 1e-6},
+        "expect": {"final": {"sensors.vx": 22.222492, "sensors.r": 0.0, "sensors.vy": 0.0, "sensors.y": 0.0}, "signals": ["sensors.vx", "sensors.r", "sensors.vy", "sensors.y"]}
+      },
+      "straight_brake": {
+        "solver": "Tsit5", "stop": 3.0,
+        "params": {"load_transfer": false, "T_cmd": 500.0, "brake_fl": 1.0, "brake_fr": 1.0, "brake_rl": 1.0, "brake_rr": 1.0},
+        "atol": {"sensors.vx": 0.02, "sensors.r": 1e-6, "sensors.kappa_fl": 0.002, "sensors.kappa_rl": 0.002},
+        "expect": {"final": {"sensors.vx": 11.895, "sensors.r": 0.0, "sensors.kappa_fl": -0.0305, "sensors.kappa_rl": -0.0291}, "signals": ["sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl"]}
+      },
+      "steady_1": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"load_transfer": false, "delta_sw_final": 0.08},
+        "atol": {"sensors.r": 3e-4, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.02996, "sensors.vx": 22.211}, "signals": ["sensors.r", "sensors.vx"]}
+      },
+      "steady_2": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"load_transfer": false, "delta_sw_final": 0.16},
+        "atol": {"sensors.r": 6e-4, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.05985, "sensors.vx": 22.177}, "signals": ["sensors.r", "sensors.vx"]}
+      },
+      "steady_3": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"load_transfer": false, "delta_sw_final": 0.32},
+        "atol": {"sensors.r": 1.2e-3, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.11910, "sensors.vx": 22.040}, "signals": ["sensors.r", "sensors.vx"]}
+      },
+      "steady_4": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"load_transfer": false, "delta_sw_final": 0.48},
+        "atol": {"sensors.r": 1.8e-3, "sensors.vx": 0.02},
+        "expect": {"final": {"sensors.r": 0.17716, "sensors.vx": 21.814}, "signals": ["sensors.r", "sensors.vx", "sensors.beta"]}
+      },
+      "steady_4_lt": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"delta_sw_final": 0.48, "h_cg": 0.55, "load_transfer": true},
+        "atol": {"sensors.ay": 0.01, "sensors.r": 1e-3, "car.fl.F_z": 5.0},
+        "expect": {"final": {"sensors.ay": 3.865, "sensors.r": 0.17692, "car.fl.F_z": 2953.0}, "signals": ["sensors.ay", "sensors.r", "car.fl.F_z", "car.fr.F_z", "car.rl.F_z", "car.rr.F_z"]}
+      },
+      "steer_ramp": {
+        "solver": "Tsit5", "stop": 8.0,
+        "params": {"load_transfer": false, "delta_sw_final": 1.7671458676442586, "t_ramp": 7.5, "t_steer": 0.5},
+        "expect": {"signals": ["sensors.r", "sensors.vx", "sensors.delta_sw"]}
+      },
+      "low_speed_ackermann": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"load_transfer": false, "v0": 3.0, "delta_sw_final": 3.2, "ackermann": 1.0},
+        "atol": {"sensors.alpha_fl": 3e-4, "sensors.alpha_fr": 3e-4, "sensors.vx": 0.005, "sensors.r": 5e-4},
+        "expect": {"final": {"sensors.alpha_fl": -0.00573, "sensors.alpha_fr": -0.00498, "sensors.vx": 2.950, "sensors.r": 0.21976}, "signals": ["sensors.alpha_fl", "sensors.alpha_fr", "sensors.vx", "sensors.r"]}
+      },
+      "low_speed_parallel": {
+        "solver": "Tsit5", "stop": 4.0,
+        "params": {"load_transfer": false, "v0": 3.0, "delta_sw_final": 3.2, "ackermann": 0.0},
+        "atol": {"sensors.alpha_fl": 3e-4, "sensors.alpha_fr": 3e-4, "sensors.vx": 0.005, "sensors.r": 5e-4},
+        "expect": {"final": {"sensors.alpha_fl": 0.00493, "sensors.alpha_fr": -0.01672, "sensors.vx": 2.919, "sensors.r": 0.21535}, "signals": ["sensors.alpha_fl", "sensors.alpha_fr", "sensors.vx", "sensors.r"]}
+      }
+    }
+  },
+  "_links": {
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 380, "x2": 640, "y2": 580}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 380, "x2": 900, "y2": 580}}}},
+    "steer_ramp": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 210, "x2": 110, "y2": 290}}}},
+    "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 200, "x2": 280, "y2": 300}}}},
+    "brake_step": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 440, "x2": 230, "y2": 520}}}},
+    "gain_fl": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 315, "x2": 380, "y2": 345}}}},
+    "gain_fr": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 415, "x2": 380, "y2": 445}}}},
+    "gain_rl": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 515, "x2": 380, "y2": 545}}}},
+    "gain_rr": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 615, "x2": 380, "y2": 645}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 250.0}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 340}, {"x": 800.0, "y": 340}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 300, "y": 330.0}], "E": 2}, {"S": -1, "M": [{"x": 300, "y": 430.0}], "E": 3}, {"S": -1, "M": [{"x": 300, "y": 530.0}], "E": 4}, {"S": -1, "M": [{"x": 300, "y": 630.0}], "E": 5}], "junctions": [{"x": 300, "y": 480.0}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 330.0}, {"x": 415, "y": 420.0}], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 430.0}, {"x": 415, "y": 460.0}], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 530.0}, {"x": 415, "y": 500.0}], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 630.0}, {"x": 415, "y": 540.0}], "E": 2}]}}
+  }
+}
+end
+
+analysis PlanarOpenLoopTransient
+  extends TransientAnalysis(stop = 5.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  parameter v0::Velocity = 22.22222222222222
+  parameter delta_sw_final::Angle = 0.0
+  parameter t_ramp::Time = 0.2
+  parameter t_steer::Time = 0.0
+  parameter T_cmd::Torque = 0.0
+  parameter brake_fl::Real = 0.0
+  parameter brake_fr::Real = 0.0
+  parameter brake_rl::Real = 0.0
+  parameter brake_rr::Real = 0.0
+  parameter mu_scale_fl::Real = 1.0
+  parameter mu_scale_fr::Real = 1.0
+  parameter mu_scale_rl::Real = 1.0
+  parameter mu_scale_rr::Real = 1.0
+  parameter ackermann::Real = 1.0
+  parameter h_cg::Length = 0.0
+  model = VehicleSystemsComponents.Lecture3.PlanarOpenLoop(v0 = v0, delta_sw_final = delta_sw_final, t_ramp = t_ramp, t_steer = t_steer, T_cmd = T_cmd, brake_fl = brake_fl, brake_fr = brake_fr, brake_rl = brake_rl, brake_rr = brake_rr, mu_scale_fl = mu_scale_fl, mu_scale_fr = mu_scale_fr, mu_scale_rl = mu_scale_rl, mu_scale_rr = mu_scale_rr, ackermann = ackermann, h_cg = h_cg)
+relations
+end

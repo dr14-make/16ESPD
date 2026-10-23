@@ -96,7 +96,7 @@ begin
         i_stop = findfirst(i -> braking_phase[i] && v[i] < V_STOP, eachindex(t))
         isnothing(i_stop) && error("vehicle still at $(round(v[end]; digits=2)) m/s when the run ended")
         (; model, sol,
-            distance=s[i_stop] - s_brake,
+            distance=VehicleSystemsComponents.Vehicle.braking_distance(run; t_brake=BRAKE_TIME, v_stop=V_STOP),
             time=t[i_stop] - BRAKE_TIME,
             s=s[braking_phase] .- s_brake,
             v=v[braking_phase])

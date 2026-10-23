@@ -21,6 +21,7 @@ import DyadData
 import DyadInterface
 import ElectricalComponents
 import HydraulicComponents
+import MultibodyComponents
 import RotationalComponents
 import ThermalComponents
 import TranslationalComponents

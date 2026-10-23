@@ -1,0 +1,80 @@
+"""
+Hands-on 03 step 03: a slip ABS of your own. It dumps brake pressure while the wheel slips past
+`lambda_target` and builds it back otherwise; the given `ABSPressureIntegrator` keeps the command
+between zero and the driver's demand. The slip it judges is the slip predicted `T_p` ahead, which
+leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
+"""
+component SlipABS
+  "Wheel slip, negative while braking"
+  kappa = RealInput() {^kappa}
+  "Vehicle speed"
+  v = RealInput() {^v}
+  "Driver's brake demand"
+  demand = RealInput() {^demand}
+  "Brake torque command to the wheel"
+  tau_cmd = RealOutput() {^tau_cmd}
+  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01) {^pressure}
+  "Slip held, just past the tire's peak"
+  parameter lambda_target::Real = 0.04
+  "Pressure build rate [N·m/s]"
+  parameter k_inc::Real = 20000
+  "Pressure dump rate [N·m/s]"
+  parameter k_dec::Real = 40000
+  "ABS off below this speed"
+  parameter v_min::Velocity = 1.5
+  "Look-ahead, the brake's lag"
+  parameter T_p::Time = 0.03
+  "Slip-rate filter"
+  parameter T_f::Time = 0.003
+  variable kappa_f::Real
+  variable kappa_dot::Real
+  variable kappa_pred::Real
+relations
+  initial kappa_f = 0
+  der(kappa_f) = (kappa - kappa_f) / T_f
+  kappa_dot = (kappa - kappa_f) / T_f
+  kappa_pred = kappa + T_p * kappa_dot
+  connect(demand, pressure.demand) {^id1}
+  pressure.requested_rate = ifelse(kappa_pred < -lambda_target, -k_dec, k_inc)
+  pressure.active = ifelse(v > v_min, 1.0, 0.0)
+  connect(pressure.tau_cmd, tau_cmd) {^id2}
+metadata {
+  "_links": {
+    "kappa": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300},
+          "diagram": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}
+        }
+      }
+    },
+    "v": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+          "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "demand": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800},
+          "diagram": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}
+        }
+      }
+    },
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 750}, {"x": 200, "y": 450}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

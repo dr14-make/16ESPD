@@ -1,0 +1,102 @@
+"""
+One sampled wheel-brake channel combining driver demand, ESP allocation, and ABS.
+
+Positive ESP demand enters before ABS. A negative ESP request cuts pressure after ABS so
+it remains effective when driver demand exceeds available tire friction.
+"""
+component BrakeChannel@[input clk extends Discrete]
+  demand = RealInput@[clk]() {^demand}
+  dT = RealInput@[clk]() {^dT}
+  kappa = RealInput@[clk]() {^kappa}
+  v_ref = RealInput@[clk]() {^v_ref}
+  tau_cmd = RealOutput@[clk]() {^tau_cmd}
+  modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt, T_p = T_p, lambda_1 = lambda_1, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^modulator}
+  parameter dt::Time(min = eps(Float64)) = 0.005
+  parameter T_p::Time(min = 0.0) = 0.03
+  parameter lambda_1::Real = 0.08
+  parameter lambda_lock::Real = 0.20
+  parameter alpha_rel::Real = 0.6
+  parameter beta_reapply::Real = 0.85
+  parameter l_rec::Real = 0.03
+  parameter T_hold_max::Time(min = eps(Float64)) = 0.06
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_slow::Real = 16000.0
+  parameter v_min::Velocity = 1.5
+relations
+  modulator.demand = demand + max(dT, 0.0)
+  connect(kappa, modulator.lambda) {^w1}
+  connect(v_ref, modulator.v_ref) {^w2}
+  tau_cmd = max(modulator.tau_cmd - max(-dT, 0.0), 0.0)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Brake.svg"}},
+  "_links": {
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+    "dT": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+    "kappa": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050, "rot": 270}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "v_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "modulator": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 200}, {"x": 200, "y": 350}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 500}, {"x": 200, "y": 400}], "E": 2}]}}
+  }
+}
+end
+
+"Sampled channel wiring check with held output."
+test component TestBrakeChannel
+  clock = DiscreteComponents.PeriodicClock(dt = 0.005) {^clock}
+  demand = BlockComponents.Sources.Constant(k = 1000.0) {^demand}
+  correction = BlockComponents.Sources.Constant(k = -200.0) {^correction}
+  slip = BlockComponents.Sources.Constant(k = 0.0) {^slip}
+  speed = BlockComponents.Sources.Constant(k = 20.0) {^speed}
+  demand_sampler = DiscreteComponents.Sampler() {^demand_sampler}
+  correction_sampler = DiscreteComponents.Sampler() {^correction_sampler}
+  slip_sampler = DiscreteComponents.Sampler() {^slip_sampler}
+  speed_sampler = DiscreteComponents.Sampler() {^speed_sampler}
+  channel = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel() {^channel}
+  hold = DiscreteComponents.ZeroOrderHold() {^hold}
+relations
+  connect(demand.y, demand_sampler.u) {^w1}
+  connect(correction.y, correction_sampler.u) {^w2}
+  connect(slip.y, slip_sampler.u) {^w3}
+  connect(speed.y, speed_sampler.u) {^w4}
+  connect(demand_sampler.y, channel.demand, clock.y) {^w5}
+  connect(correction_sampler.y, channel.dT) {^w6}
+  connect(slip_sampler.y, channel.kappa) {^w7}
+  connect(speed_sampler.y, channel.v_ref) {^w8}
+  connect(channel.tau_cmd, hold.u) {^w9}
+metadata {
+  "Dyad": {
+    "tests": {
+      "post_abs_cut": {
+        "solver": "Tsit5", "stop": 0.02,
+        "atol": {"hold.y": 1e-8},
+        "expect": {"final": {"hold.y": 800.0}, "signals": ["hold.y"]}
+      }
+    }
+  },
+  "_links": {
+    "clock": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 380, "x2": 300, "y2": 480}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 250, "x2": 150, "y2": 350}}}},
+    "correction": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 50, "x2": 150, "y2": 150}}}},
+    "slip": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 670, "x2": 150, "y2": 770}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 520, "x2": 150, "y2": 620}}}},
+    "demand_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
+    "correction_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 50, "x2": 350, "y2": 150}}}},
+    "slip_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 670, "x2": 350, "y2": 770}}}},
+    "speed_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 520, "x2": 350, "y2": 620}}}},
+    "channel": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 250, "x2": 650, "y2": 350}}}},
+    "hold": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 250, "x2": 850, "y2": 350}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 450, "y": 280}], "E": 2}, {"S": -1, "M": [{"x": 450, "y": 430}], "E": 3}], "junctions": [{"x": 450, "y": 300}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 100}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 720}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 570}, {"x": 500, "y": 320}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

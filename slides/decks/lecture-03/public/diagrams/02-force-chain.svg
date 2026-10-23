@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 330" width="1000" height="330">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-todo { fill: #fff; stroke: #4a5a6b; stroke-width: 2; stroke-dasharray: 7 5; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-todo { stroke: #4a5a6b; stroke-width: 3; fill: none; stroke-dasharray: 7 5; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .code { font-size: 13px; font-family: monospace; fill: #1f5fa8; }
+    .gain { font-size: 15px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="fc-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="fc-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+  </defs>
+
+  <text x="40" y="96" text-anchor="middle" class="t">foot</text>
+  <text x="40" y="118" text-anchor="middle" class="lbl">F_ped</text>
+  <text x="40" y="138" text-anchor="middle" class="lbl">≤ 500 N</text>
+  <path class="arrow" d="M70 110 H108" marker-end="url(#fc-ink)"/>
+
+  <rect class="box-accent" x="112" y="70" width="150" height="80" rx="4"/>
+  <text x="187" y="102" text-anchor="middle" class="t">pedal lever</text>
+  <text x="187" y="128" text-anchor="middle" class="gain">× 3.5</text>
+  <text x="187" y="172" text-anchor="middle" class="code">BrakePedal</text>
+  <path class="arrow" d="M262 110 H300" marker-end="url(#fc-ink)"/>
+  <text x="281" y="98" text-anchor="middle" class="lbl">F_rod</text>
+
+  <rect class="box-accent" x="304" y="70" width="170" height="80" rx="4"/>
+  <text x="389" y="102" text-anchor="middle" class="t">vacuum booster</text>
+  <text x="389" y="128" text-anchor="middle" class="gain">× 5 to run-out</text>
+  <text x="389" y="172" text-anchor="middle" class="code">StaticBooster</text>
+  <path class="arrow" d="M474 110 H512" marker-end="url(#fc-ink)"/>
+  <text x="493" y="98" text-anchor="middle" class="lbl">F_out</text>
+
+  <rect class="box-accent" x="516" y="70" width="180" height="80" rx="4"/>
+  <text x="606" y="100" text-anchor="middle" class="t">tandem master</text>
+  <text x="606" y="120" text-anchor="middle" class="t">cylinder</text>
+  <text x="606" y="142" text-anchor="middle" class="gain">p = F / A_mc</text>
+  <text x="606" y="172" text-anchor="middle" class="code">TandemMasterCylinder</text>
+
+  <path class="arrow-todo" d="M696 92 H760 V60 H794" marker-end="url(#fc-gray)"/>
+  <path class="arrow-todo" d="M696 128 H760 V200 H794" marker-end="url(#fc-gray)"/>
+  <text x="726" y="84" text-anchor="middle" class="lbl">circuit 1</text>
+  <text x="726" y="150" text-anchor="middle" class="lbl">circuit 2</text>
+
+  <rect class="box-todo" x="798" y="30" width="180" height="60" rx="4"/>
+  <text x="888" y="56" text-anchor="middle" class="t">lines + calipers</text>
+  <text x="888" y="78" text-anchor="middle" class="lbl">front axle 49 N·m/bar</text>
+  <rect class="box-todo" x="798" y="170" width="180" height="60" rx="4"/>
+  <text x="888" y="196" text-anchor="middle" class="t">lines + calipers</text>
+  <text x="888" y="218" text-anchor="middle" class="lbl">rear axle 20 N·m/bar</text>
+
+  <text x="500" y="268" text-anchor="middle" class="lbl">Solid: built and simulated (notebook 02). Dashed: brake plan increment 1b, not built yet.</text>
+  <text x="500" y="296" text-anchor="middle" class="lbl">Gains are the model's defaults: lever and servo ratio assumed, 25 mm bore and booster from the PATH test car.</text>
+</svg>
