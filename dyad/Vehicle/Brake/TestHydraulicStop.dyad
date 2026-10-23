@@ -1,0 +1,40 @@
+test component TestHydraulicStop
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5)
+  road = BlockComponents.Sources.Constant(k = road_mu)
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal()
+  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster()
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder()
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine()
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0)
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel()
+  body = TranslationalComponents.Components.Mass(m = 1400.0)
+  fixed_t = TranslationalComponents.Components.Fixed()
+  fixed_r = RotationalComponents.Components.Fixed()
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(command.y, pedal_unit.u)
+  connect(pedal_unit.rod, booster.input)
+  connect(booster.rod_out, master.pushrod)
+  connect(pedal_unit.support, booster.support, master.support, fixed_t.flange)
+  connect(master.front, line_f.port_a)
+  connect(line_f.port_b, wheel.front)
+  connect(master.rear, line_r.port_a)
+  connect(line_r.port_b, wheel.rear)
+  continuity(medium, master.front.medium)
+  connect(road.y, wheel.mu_scale)
+  connect(wheel.support, fixed_r.spline)
+  connect(wheel.flange, body.flange_a)
+  initial wheel.inertia.phi = 0.0
+  initial wheel.inertia.w = 25.0 / 0.31
+  initial body.s = 0.0
+  initial body.v = 25.0
+end
+
+analysis HydraulicStopTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  model = VehicleSystemsComponents.Vehicle.Brake.TestHydraulicStop(pedal = pedal, road_mu = road_mu)
+end

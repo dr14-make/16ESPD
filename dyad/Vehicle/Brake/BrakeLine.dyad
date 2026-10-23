@@ -1,0 +1,15 @@
+"""
+Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a positive pressure drop.
+"""
+component BrakeLine
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Internal diameter"
+  parameter D::Length = 3e-3
+  "Line length"
+  parameter L::Length = 1.5
+  "Brake-fluid kinematic viscosity; DOT 4 at 20 °C (1800e-6 m²/s at -40 °C)"
+  parameter nu::KinematicViscosity = 10e-6
+relations
+  m_flow = port_a.m_flow
+  Δp = 128 * nu * L * m_flow / (π * D ^ 4)
+end

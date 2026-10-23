@@ -9,8 +9,11 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 
+include("BrakeCaliper_experiment.jl")
+include("BrakeLine_experiment.jl")
 include("BrakePedal_experiment.jl")
 include("ClosedHydraulicPort_experiment.jl")
 include("StaticBooster_experiment.jl")
 include("TandemMasterCylinder_experiment.jl")
 include("TestForceChain_experiment.jl")
+include("TestHydraulicStop_experiment.jl")

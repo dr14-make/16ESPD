@@ -7,8 +7,9 @@
 @doc Markdown.doc"""
    TestForceChain(; name, p_vac)
 
-Increment 1a force-chain demonstration. A controlled translational source ramps pedal force from
-0 to 500 N in 5 s, while closed front and rear hydraulic connectors hold both circuit flows at zero.
+Increment 1a force-chain demonstration. The pedal command ramps from 0 to 1 in 5 s, which is
+0 to 500 N of foot force, while closed front and rear hydraulic connectors hold both circuit flows
+at zero.
 
 ## Parameters:
 
@@ -66,10 +67,7 @@ Increment 1a force-chain demonstration. A controlled translational source ramps 
   ### Components
   # Subcomponent pedal_force of type BlockComponents.Sources.Ramp
   pedal_force_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_force")
-  push!(__systems, @named pedal_force = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=Float64(500.0), duration=Float64(5.0), start_time=Float64(0.0), pedal_force_overrides...))
-  # Subcomponent driver of type TranslationalComponents.Sources.Force
-  driver_overrides = __pop_subcomponent_overrides!(__overrides, "driver")
-  push!(__systems, @named driver = TranslationalComponents.Sources.Force(; driver_overrides...))
+  push!(__systems, @named pedal_force = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=Float64(1.0), duration=Float64(5.0), start_time=Float64(0.0), pedal_force_overrides...))
   # Subcomponent pedal of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
   push!(__systems, @named pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; pedal_overrides...))
@@ -78,7 +76,7 @@ Increment 1a force-chain demonstration. A controlled translational source ramps 
   push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster(; p_vac=p_vac, booster_overrides...))
   # Subcomponent master of type VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder
   master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
-  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, continuity__graph1=medium, master_overrides...))
+  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; fixed_overrides...))
@@ -100,11 +98,9 @@ Increment 1a force-chain demonstration. A controlled translational source ramps 
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(pedal_force.y, driver.f))
-  push!(__eqs, connect(driver.flange_a, pedal.pedal))
+  push!(__eqs, connect(pedal_force.y, pedal.u))
   push!(__eqs, connect(pedal.rod, booster.input))
   push!(__eqs, connect(booster.rod_out, master.pushrod))
-  push!(__eqs, connect(driver.flange_b, fixed.flange))
   push!(__eqs, connect(pedal.support, fixed.flange))
   push!(__eqs, connect(booster.support, fixed.flange))
   push!(__eqs, connect(master.support, fixed.flange))

@@ -37,12 +37,12 @@ end
 
 mkpath(OUT)
 
-locked = H.LockedStopTransient()
-let (t, v) = trace(locked, m -> m.body.mass.v), (_, w) = trace(locked, m -> m.wheel.inertia.w),
-    (_, kappa) = trace(locked, m -> m.wheel.kappa)
-    d = V.braking_distance(locked)
+pedal_stop = H.PedalStopTransient()
+let (t, v) = trace(pedal_stop, m -> m.body.mass.v), (_, w) = trace(pedal_stop, m -> m.wheel.inertia.w),
+    (_, kappa) = trace(pedal_stop, m -> m.wheel.kappa)
+    d = V.braking_distance(pedal_stop)
     p1 = plot(t, 3.6 .* v; label = "car", color = :firebrick, ylabel = "speed [km/h]",
-        title = "Locked stop: $(round(d; digits = 1)) m from 90 km/h")
+        title = "Hydraulic pedal stop: $(round(d; digits = 1)) m from 90 km/h")
     plot!(p1, t, 3.6 .* 0.31 .* w; label = "wheel (ω·r)", color = :black, ls = :dash)
     p2 = plot(t, kappa; label = "wheel.kappa", color = :firebrick, ylabel = "slip [–]",
         xlabel = "time [s]", ylims = (-1.05, 0.05), legend = :right)
@@ -100,14 +100,14 @@ end
 
 let mus = [1.0, 0.5, 0.3]
     rows = map(mus) do mu
-        [V.braking_distance(H.LockedStopTransient(road_mu = mu, stop = stop_time(mu))),
+        [V.braking_distance(H.PedalStopTransient(road_mu = mu, stop = stop_time(mu))),
          V.braking_distance(H.ABSStopTransient(road_mu = mu, stop = stop_time(mu))),
          V.braking_distance(H.ABSStopWheelOnlyTransient(road_mu = mu, stop = stop_time(mu, 8.0))),
          V.braking_distance(V.ABSBrakeTransient(road_mu = mu, stop = stop_time(mu, 8.0),
              alg = ODEAlg.Tsit5(), dtmax = 1e-3))]
     end
     table = permutedims(reduce(hcat, rows))
-    labels = ["locked" "ABS, true slip" "ABS, wheel only (yours)" "ABS, wheel only (library, 5 ms)"]
+    labels = ["hydraulic pedal" "ABS, true slip" "ABS, wheel only (yours)" "ABS, wheel only (library, 5 ms)"]
     groups = ["μ = 1.0", "μ = 0.5", "μ = 0.3"]
     p = plot(; xlabel = "", ylabel = "braking distance [m]", legend = :topleft,
         title = "Braking distance from 90 km/h", xticks = (1:3, groups), ylims = (0, 165))

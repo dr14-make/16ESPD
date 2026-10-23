@@ -1,12 +1,11 @@
 """
-Increment 1a force-chain demonstration. A controlled translational source ramps pedal force from
-0 to 500 N in 5 s, while closed front and rear hydraulic connectors hold both circuit flows at zero.
+Increment 1a force-chain demonstration. The pedal command ramps from 0 to 1 in 5 s, which is
+0 to 500 N of foot force, while closed front and rear hydraulic connectors hold both circuit flows
+at zero.
 """
 test component TestForceChain
-  "Driver pedal-force ramp [N]"
-  pedal_force = BlockComponents.Sources.Ramp(offset = 0.0, height = 500.0, duration = 5.0, start_time = 0.0) {^pedal_force}
-  "Controlled mechanical source applying driver force"
-  driver = TranslationalComponents.Sources.Force() {^driver}
+  "Pedal command ramp, 0 to 1"
+  pedal_force = BlockComponents.Sources.Ramp(offset = 0.0, height = 1.0, duration = 5.0, start_time = 0.0) {^pedal_force}
   "Pedal lever"
   pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal}
   "Static vacuum booster"
@@ -21,21 +20,19 @@ test component TestForceChain
   rear_closed = VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort() {^rear_closed}
   "Vacuum-chamber absolute pressure [Pa] (PATH)"
   parameter p_vac::Pressure = 33e3
-  "Brake-fluid medium with 1.4 GPa bulk modulus and 1045 kg/m^3 density (derived from cited DOT 4 data)"
   path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+
 relations
-  connect(pedal_force.y, driver.f) {^id9}
-  connect(driver.flange_a, pedal.pedal) {^id10}
+  connect(pedal_force.y, pedal.u) {^id9}
   connect(pedal.rod, booster.input) {^id17}
   connect(booster.rod_out, master.pushrod) {^id18}
-  connect(driver.flange_b, fixed.flange) {^id11}
   connect(pedal.support, fixed.flange) {^id12}
   connect(booster.support, fixed.flange) {^id13}
   connect(master.support, fixed.flange) {^id14}
+  continuity(medium, master.front.medium)
+
   connect(master.front, front_closed.port) {^id15}
   connect(master.rear, rear_closed.port) {^id16}
-  continuity(medium, master.front.medium)
-  continuity(medium, master.rear.medium)
 metadata {
   "Dyad": {
     "tests": {
@@ -46,7 +43,7 @@ metadata {
           "initial": {"master.p_mc": 0, "pedal.x_ped": 0.00875},
           "final": {"master.p_mc": 10340000, "pedal.x_ped": 0.00875},
           "signals": [
-            "pedal_force.y",
+            "pedal.F_ped",
             "pedal.F_rod",
             "booster.F_out",
             "master.p_mc",
@@ -60,11 +57,6 @@ metadata {
   "_links": {
     "pedal_force": {
       "Dyad": {"placement": {"diagram": {"x1": -70, "x2": 30, "y1": 450, "y2": 550}}}
-    },
-    "driver": {
-      "Dyad": {
-        "placement": {"diagram": {"x1": 240, "x2": 140, "y1": 450, "y2": 550, "rot": 270}}
-      }
     },
     "pedal": {
       "Dyad": {"placement": {"diagram": {"x1": 330, "x2": 430, "y1": 450, "y2": 550}}}
@@ -85,24 +77,6 @@ metadata {
       "Dyad": {"placement": {"diagram": {"x1": 850, "x2": 950, "y1": 600, "y2": 700}}}
     },
     "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
-    "id10": {
-      "Dyad": {
-        "edges": [
-          {
-            "S": 1,
-            "M": [{"x": 190, "y": 330}, {"x": 310, "y": 330}, {"x": 310, "y": 499}],
-            "E": 2
-          }
-        ],
-        "path": {}
-      }
-    },
-    "id11": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 190, "y": 620}, {"x": 470, "y": 620}], "E": 2}],
-        "path": {}
-      }
-    },
     "id12": {
       "Dyad": {
         "edges": [{"S": 1, "M": [{"x": 380, "y": 620}, {"x": 470, "y": 620}], "E": 2}],

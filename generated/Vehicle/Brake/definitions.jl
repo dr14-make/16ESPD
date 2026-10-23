@@ -203,9 +203,13 @@ component.
 end
 
 
+include("BrakeCaliper_definition.jl")
+include("BrakeLine_definition.jl")
 include("BrakePedal_definition.jl")
 include("ClosedHydraulicPort_definition.jl")
 include("ForceChainTransient_definition.jl")
+include("HydraulicStopTransient_definition.jl")
 include("StaticBooster_definition.jl")
 include("TandemMasterCylinder_definition.jl")
 include("TestForceChain_definition.jl")
+include("TestHydraulicStop_definition.jl")

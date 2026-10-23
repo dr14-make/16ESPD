@@ -5,22 +5,25 @@
 
 
 @doc Markdown.doc"""
-   BrakePedal(; name, i_p)
+   BrakePedal(; name, i_p, F_max)
 
-Ideal, massless brake-pedal lever with physical translational connectors.
+Ideal, massless brake-pedal lever driven by a 0–1 pedal command.
 
-The pedal and pushrod displacements are measured from the fixed pivot support. The lever multiplies
-pushrod force and pedal travel by `i_p` while conserving mechanical power.
+The command is the driver's foot force as a fraction of `F_max`, clamped to 0–1, the way a
+throttle command is a fraction of full throttle. The foot pushes against the car, so its reaction
+goes into `support` with the pivot's. Pedal travel is measured from the pivot and is `i_p` times
+the pushrod travel; the lever multiplies the foot force by `i_p`.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `i_p`         | Pedal lever ratio (assumed; cited OEM boosted range 3.2–5)                         | --  |   3.5 |
+| `F_max`         | Foot force at full pedal [N]: the 500 N ceiling of a brake test (FMVSS 135)                         | N  |   500.0 |
 
 ## Connectors
 
- * `pedal` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
+ * `u` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `rod` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `support` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
 
@@ -33,7 +36,7 @@ pushrod force and pedal travel by `i_p` while conserving mechanical power.
 | `x_ped`         | Pedal travel relative to the pivot [m]                         | m  |
 | `x_rod`         | Pushrod travel relative to the pivot [m]                         | m  |
 """
-@component function BrakePedal(; name = nothing, i_p=3.5, kwargs...)
+@component function BrakePedal(; name = nothing, i_p=3.5, F_max=Float64(500.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -67,10 +70,14 @@ pushrod force and pedal travel by `i_p` while conserving mechanical power.
   __local__i_p = i_p
   append!(__params, @parameters (i_p::Real), [description = "Pedal lever ratio (assumed; cited OEM boosted range 3.2–5)"])
   __initial_conditions[i_p] = __local__i_p
+  __local__F_max = F_max
+  append!(__params, @parameters (F_max::Real), [description = "Foot force at full pedal [N]: the 500 N ceiling of a brake test (FMVSS 135)"])
+  __initial_conditions[F_max] = __local__F_max
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (u(t)::Real), [input = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (F_ped(t)::Real), [description = "Driver pedal-force magnitude [N]"])
@@ -96,7 +103,6 @@ pushrod force and pedal travel by `i_p` while conserving mechanical power.
   __constants = Any[]
 
   ### Components
-  push!(__systems, @named pedal = __Dyad__Flange())
   push!(__systems, @named rod = __Dyad__Flange())
   push!(__systems, @named support = __Dyad__Flange())
 
@@ -115,13 +121,12 @@ pushrod force and pedal travel by `i_p` while conserving mechanical power.
   __assertions = []
 
   ### Equations
-  push!(__eqs, x_ped ~ pedal.s - support.s)
   push!(__eqs, x_rod ~ rod.s - support.s)
   push!(__eqs, x_ped ~ i_p * x_rod)
-  push!(__eqs, F_ped ~ -pedal.f)
+  push!(__eqs, F_ped ~ min(max(u, 0.0), 1.0) * F_max)
   push!(__eqs, F_rod ~ rod.f)
   push!(__eqs, F_rod ~ i_p * F_ped)
-  push!(__eqs, pedal.f + rod.f + support.f ~ 0.0)
+  push!(__eqs, rod.f + support.f ~ 0.0)
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

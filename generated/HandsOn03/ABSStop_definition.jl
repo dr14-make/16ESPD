@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    ABSStop(; name, road_mu, T_p, lambda_target)
 
-Hands-on 03 step 03 bench: `LockedStop` with `SlipABS` between the driver's demand and the wheel.
+Hands-on 03 step 03 torque-command ABS bench, compared with the `PedalStop` hydraulic baseline.
 The controller reads the wheel's true slip and the car's speed from a sensor on the body.
 
 ## Parameters:

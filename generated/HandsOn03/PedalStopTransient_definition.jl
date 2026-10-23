@@ -8,8 +8,8 @@ using DyadInterface
 using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
 using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct LockedStopTransientSpec <: AbstractTransientAnalysisSpec
-  name::Symbol = :LockedStopTransient
+@kwdef mutable struct PedalStopTransientSpec <: AbstractTransientAnalysisSpec
+  name::Symbol = :PedalStopTransient
   var"alg"::ODEAlg.Type = ODEAlg.Tsit5()
   var"start"::Float64 = 0
   var"stop"::Float64 = 6.0
@@ -25,16 +25,17 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
+  var"pedal"::Float64 = 0.6
   var"road_mu"::Float64 = 1.0
-  # Hands-on 03 step 02 bench: the hands-on 1 `Body` on the library's braked wheel, a 6000 N·m brake
-  # step at 0.5 s from 90 km/h. The demand is 1.4 times the tire's peak torque, so the wheel locks
-  # and the car stops on the sliding friction.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.LockedStop(; name=:LockedStop)
+  # Hands-on 03 step 02 bench: pedal, booster, tandem master cylinder, two brake lines, and a
+  # hydraulically braked wheel stopping the hands-on vehicle body.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.PedalStop(; name=:PedalStop)
 end
 
-function DyadInterface.run_analysis(spec::LockedStopTransientSpec)
+function DyadInterface.run_analysis(spec::PedalStopTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
+  push!(overrides, no_namespace_model.pedal => spec.var"pedal")
   push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
@@ -42,5 +43,5 @@ function DyadInterface.run_analysis(spec::LockedStopTransientSpec)
   run_analysis(base_spec)
 end
 
-LockedStopTransient(;kwargs...) = run_analysis(LockedStopTransientSpec(;kwargs...))
-export LockedStopTransient, LockedStopTransientSpec
+PedalStopTransient(;kwargs...) = run_analysis(PedalStopTransientSpec(;kwargs...))
+export PedalStopTransient, PedalStopTransientSpec

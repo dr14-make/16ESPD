@@ -1,0 +1,72 @@
+"""
+Hands-on 03 step 02 bench: pedal, booster, tandem master cylinder, two brake lines, and a
+hydraulically braked wheel stopping the hands-on vehicle body.
+"""
+component PedalStop
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5) {^command}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
+  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster() {^booster}
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel() {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  fixed_hydraulic = TranslationalComponents.Components.Fixed() {^fixed_hydraulic}
+  speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(command.y, pedal_unit.u) {^id1}
+  connect(pedal_unit.rod, booster.input) {^id2}
+  connect(booster.rod_out, master.pushrod) {^id3}
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange) {^id4}
+  connect(master.front, line_f.port_a) {^id5}
+  connect(line_f.port_b, wheel.front) {^id6}
+  connect(master.rear, line_r.port_a) {^id7}
+  connect(line_r.port_b, wheel.rear) {^id8}
+  continuity(medium, master.front.medium)
+  connect(road.y, wheel.mu_scale) {^id9}
+  connect(wheel.support, fixed.spline) {^id10}
+  connect(wheel.flange, body.flange, speed.flange) {^id11}
+  initial wheel.inertia.phi = 0
+  initial wheel.inertia.w = 25 / 0.31
+  initial body.mass.s = 0
+  initial body.mass.v = 25
+metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": -150, "y1": 150, "x2": -50, "y2": 250}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 150, "x2": 150, "y2": 250}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 220, "y1": 150, "x2": 320, "y2": 250}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 390, "y1": 150, "x2": 490, "y2": 250}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 80, "x2": 660, "y2": 180}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 250, "x2": 660, "y2": 350}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 730, "y1": 130, "x2": 930, "y2": 330}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 1050, "y1": 180, "x2": 1150, "y2": 280}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1050, "y1": 20, "x2": 1150, "y2": 120}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 500, "x2": 660, "y2": 600}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 500, "x2": 860, "y2": 600}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 500, "x2": 350, "y2": 600}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 420}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 300, "y": 420}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 525, "y": 175}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 695, "y": 130}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 525, "y": 300}], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 695, "y": 300}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 810, "y": 550}], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 990, "y": 70}], "E": 3}], "junctions": [{"x": 990, "y": 230}]}}
+  }
+}
+end
+
+analysis PedalStopTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  model = PedalStop(pedal = pedal, road_mu = road_mu)
+end

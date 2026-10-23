@@ -28,7 +28,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"road_mu"::Float64 = 1.0
   var"T_p"::Float64 = 0.03
   var"lambda_target"::Float64 = 0.04
-  # Hands-on 03 step 03 bench: `LockedStop` with `SlipABS` between the driver's demand and the wheel.
+  # Hands-on 03 step 03 torque-command ABS bench, compared with the `PedalStop` hydraulic baseline.
   # The controller reads the wheel's true slip and the car's speed from a sensor on the body.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.ABSStop(; name=:ABSStop)
 end

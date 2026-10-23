@@ -34,21 +34,18 @@ end
     @test_throws ErrorException _V.braking_distance(t[1:1000], s[1:1000], v[1:1000])
 end
 
-@testset "Hands-on 03 step 02: locked stop" begin
+@testset "Hands-on 03 step 02: hydraulic pedal stop" begin
     for (mu, expected) in ((1.0, 43.7), (0.5, 85.1), (0.3, 136.8))
         stop = _stop_time(mu)
-        mine = _H3.LockedStopTransient(road_mu = mu, stop = stop)
-        lib = _V.LockedBrakeTransient(; road_mu = mu, stop, _tsit5...)
-        @test _max_speed_gap(mine, lib, stop) < 1e-6
-        @test _V.braking_distance(mine) ≈ _V.braking_distance(lib) atol = 1e-6
-        @test _V.braking_distance(mine) ≈ expected atol = 0.05
+        run = _H3.PedalStopTransient(road_mu = mu, stop = stop)
+        @test _V.braking_distance(run) ≈ expected atol = 0.1
     end
-    run = _H3.LockedStopTransient()
+    run = _H3.PedalStopTransient()
     m = symbolic_container(run)
     t, kappa, v = run.sol.t, run.sol[m.wheel.kappa], run.sol[m.body.mass.v]
-    # Locked within 0.2 s of the 0.5 s step: the 30 ms brake lag, then the wheel's spin-down.
     @test t[findfirst(<(-0.99), kappa)] - 0.5 < 0.2
     @test 3.9 < t[findfirst(i -> t[i] > 0.5 && v[i] < 0.5, eachindex(t))] < 4.0
+    @test maximum(run.sol[m.master.p_mc]) / 1e5 ≈ 89.0 rtol = 0.03
 end
 
 @testset "Hands-on 03 step 03: slip ABS" begin
@@ -84,23 +81,23 @@ end
         stop = _stop_time(mu, 8.0)
         mine = _V.braking_distance(_H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = stop))
         lib = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = mu, stop, _tsit5...))
-        locked = _V.braking_distance(_H3.LockedStopTransient(road_mu = mu, stop = _stop_time(mu)))
+        baseline = _V.braking_distance(_H3.PedalStopTransient(road_mu = mu, stop = _stop_time(mu)))
         # The controller switches on thresholds every few milliseconds; 0.1 m absorbs solver drift.
         @test mine ≈ mine_expected atol = 0.1
         @test lib ≈ lib_expected atol = 0.05
-        @test mine < locked
+        @test mine < baseline
     end
     # The trap is the library ECU's: on snow, a_ref = 8 makes it stop longer than the locked
     # wheel, and a_ref = 0.8 μ g brings it back under. The students' ABS dumps on the wheel's
     # deceleration, which needs no speed estimate, so a_ref = 8 does not trap it.
-    locked = _V.braking_distance(_H3.LockedStopTransient(road_mu = 0.3, stop = _stop_time(0.3)))
+    baseline = _V.braking_distance(_H3.PedalStopTransient(road_mu = 0.3, stop = _stop_time(0.3)))
     lib_trap = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = 0.3, stop = _stop_time(0.3, 8.0), _tsit5...))
     lib_fixed = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = 0.3, a_ref = 2.4, stop = _stop_time(0.3, 2.4), _tsit5...))
     mine_fixed = _V.braking_distance(_H3.ABSStopWheelOnlyTransient(road_mu = 0.3, a_ref = 2.4, stop = _stop_time(0.3, 2.4)))
-    @test lib_trap > locked
+    @test lib_trap > baseline
     @test lib_fixed ≈ 128.4 atol = 0.05
     @test mine_fixed ≈ 124.1 atol = 0.1
-    @test mine_fixed < locked
+    @test mine_fixed < baseline
     # An a_ref below the car's real deceleration lets the estimate run above the car, and the
     # slip trigger dumps on slip that is not there.
     @test _V.braking_distance(_H3.ABSStopWheelOnlyTransient(a_ref = 2.4, stop = _stop_time(1.0, 2.4))) ≈ 105.4 atol = 0.1

@@ -1,18 +1,22 @@
 """
-Ideal, massless brake-pedal lever with physical translational connectors.
+Ideal, massless brake-pedal lever driven by a 0–1 pedal command.
 
-The pedal and pushrod displacements are measured from the fixed pivot support. The lever multiplies
-pushrod force and pedal travel by `i_p` while conserving mechanical power.
+The command is the driver's foot force as a fraction of `F_max`, clamped to 0–1, the way a
+throttle command is a fraction of full throttle. The foot pushes against the car, so its reaction
+goes into `support` with the pivot's. Pedal travel is measured from the pivot and is `i_p` times
+the pushrod travel; the lever multiplies the foot force by `i_p`.
 """
 component BrakePedal
-  "Driver-side pedal connection"
-  pedal = Flange() {^pedal}
+  "Pedal command: foot force as a fraction of F_max, 0 to 1"
+  u = RealInput() {^u}
   "Booster pushrod connection"
   rod = Flange() {^rod}
   "Pedal pivot and housing reaction"
   support = Flange() {^support}
   "Pedal lever ratio (assumed; cited OEM boosted range 3.2–5)"
   parameter i_p::Real = 3.5
+  "Foot force at full pedal [N]: the 500 N ceiling of a brake test (FMVSS 135)"
+  parameter F_max::Force = 500.0
   "Driver pedal-force magnitude [N]"
   variable F_ped::Force
   "Force delivered at the pushrod [N]"
@@ -22,18 +26,17 @@ component BrakePedal
   "Pushrod travel relative to the pivot [m]"
   variable x_rod::Length
 relations
-  x_ped = pedal.s - support.s
   x_rod = rod.s - support.s
   x_ped = i_p * x_rod
-  F_ped = -pedal.f
+  F_ped = min(max(u, 0.0), 1.0) * F_max
   F_rod = rod.f
   F_rod = i_p * F_ped
-  pedal.f + rod.f + support.f = 0.0
+  rod.f + support.f = 0.0
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/BrakePedal.svg"}},
   "_links": {
-    "pedal": {
-      "Dyad": {"placement": {"icon": {"iconName": "flange_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
+    "u": {
+      "Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}
     },
     "rod": {
       "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}
