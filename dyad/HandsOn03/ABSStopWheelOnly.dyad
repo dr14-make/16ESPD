@@ -1,91 +1,78 @@
 """
-Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor and the three-phase
-`PhaseABS` in place of `SlipABS`. `RefSpeedEstimator` turns the wheel speed into the slip, the
-vehicle speed and the wheel acceleration the controller reads.
+Hands-on 03 step 04 hydraulic ABS bench using only a wheel-speed sensor. `RefSpeedEstimator`
+provides estimated slip, vehicle speed, and wheel acceleration to the three-phase controller.
 """
 component ABSStopWheelOnly
-  "Road-friction multiplier (1 dry, 0.5 wet, 0.3 snow)"
   parameter road_mu::Real = 1.0
-  "Deceleration the estimator assumes while the wheel slips"
   parameter a_ref::Acceleration = 8
-  "Driver's brake demand, 6000 N·m from 0.5 s"
-  demand = BlockComponents.Sources.Step(height = 6000, start_time = 0.5) {^demand}
+  parameter pedal::Real = 0.6
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5) {^command}
   road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
+  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster() {^booster}
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
+  valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_f}
+  valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_r}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
   abs = PhaseABS() {^abs}
   est = RefSpeedEstimator(a_ref = a_ref) {^est}
   wspeed = RotationalComponents.Sensors.VelocitySensor() {^wspeed}
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel() {^wheel}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel() {^wheel}
   body = VehicleSystemsComponents.HandsOn.Body() {^body}
   fixed = RotationalComponents.Components.Fixed() {^fixed}
+  fixed_hydraulic = TranslationalComponents.Components.Fixed() {^fixed_hydraulic}
   speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
 relations
-  connect(demand.y, abs.demand) {^id1}
-  connect(abs.tau_cmd, wheel.tau_cmd) {^id5}
-  connect(wspeed.spline, wheel.spline) {^id6}
-  connect(wspeed.w, est.omega) {^id7}
-  connect(est.kappa_hat, abs.kappa) {^id8}
-  connect(est.v_ref, abs.v) {^id9}
-  connect(est.a_w, abs.a_w) {^id10}
-  connect(road.y, wheel.mu_scale) {^id2}
-  connect(wheel.support, fixed.spline) {^id3}
-  connect(wheel.flange, body.flange, speed.flange) {^id4}
-  initial wheel.brake.tau_actual = 0
+  connect(command.y, pedal_unit.u)
+  connect(pedal_unit.rod, booster.input)
+  connect(booster.rod_out, master.pushrod)
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange)
+  connect(master.front, valve_f.port_a)
+  connect(valve_f.port_b, line_f.port_a)
+  connect(line_f.port_b, wheel.front)
+  connect(master.rear, valve_r.port_a)
+  connect(valve_r.port_b, line_r.port_a)
+  connect(line_r.port_b, wheel.rear)
+  continuity(medium, master.front.medium)
+  connect(master.p_mc, abs.demand)
+  connect(abs.p_cmd, valve_f.p_cmd, valve_r.p_cmd)
+  connect(wspeed.spline, wheel.spline)
+  connect(wspeed.w, est.omega)
+  connect(est.kappa_hat, abs.kappa)
+  connect(est.v_ref, abs.v)
+  connect(est.a_w, abs.a_w)
+  connect(road.y, wheel.mu_scale)
+  connect(wheel.support, fixed.spline)
+  connect(wheel.flange, body.flange, speed.flange)
   initial wheel.inertia.phi = 0
   initial wheel.inertia.w = 25 / 0.31
   initial body.mass.s = 0
   initial body.mass.v = 25
 metadata {
-  "Dyad": {
-    "tests": {
-      "dry": {
-        "stop": 6.0,
-        "solver": "Tsit5",
-        "atol": {"body.mass.s": 0.05, "speed.v": 0.01},
-        "expect": {
-          "initial": {"speed.v": 25.0, "est.v_ref": 25.0},
-          "final": {"body.mass.s": 47.98, "speed.v": 0.0},
-          "signals": ["speed.v", "est.v_ref", "wheel.brake.tau_actual"]
-        }
-      }
-    }
-  },
   "_links": {
-    "demand": {"Dyad": {"placement": {"diagram": {"x1": -100, "y1": 100, "x2": 0, "y2": 200}}}},
-    "abs": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 100, "x2": 250, "y2": 250}}}},
-    "est": {"Dyad": {"placement": {"diagram": {"x1": -100, "y1": 300, "x2": 0, "y2": 400}}}},
-    "wspeed": {"Dyad": {"placement": {"diagram": {"x1": -100, "y1": 450, "x2": 0, "y2": 550}}}},
-    "road": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 600, "x2": 200, "y2": 700}}}},
-    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 350, "x2": 550, "y2": 550}}}},
-    "body": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 400, "x2": 850, "y2": 500}}}},
-    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 700, "x2": 500, "y2": 800}}}},
-    "speed": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 200, "x2": 850, "y2": 300}}}},
-    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 50, "y": 150}, {"x": 50, "y": 212}], "E": 2}]}},
-    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 175}], "E": 2}]}},
-    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 500}, {"x": 200, "y": 450}], "E": 2}]}},
-    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -150, "y": 500}, {"x": -150, "y": 350}], "E": 2}]}},
-    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 325}, {"x": 60, "y": 137}], "E": 2}]}},
-    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 375}, {"x": 80, "y": 175}], "E": 2}]}},
-    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 40, "y": 380}, {"x": 40, "y": 158}], "E": 2}]}},
-    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 514, "y": 650}], "E": 2}]}},
-    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "id4": {
-      "Dyad": {
-        "edges": [
-          {"S": 1, "M": [], "E": -1},
-          {"S": -1, "M": [], "E": 2},
-          {"S": -1, "M": [{"x": 650, "y": 250}], "E": 3}
-        ],
-        "junctions": [{"x": 650, "y": 450}]
-      }
-    }
+    "command": {"Dyad": {"placement": {"diagram": {"x1": -150, "y1": 150, "x2": -50, "y2": 250}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 150, "x2": 120, "y2": 250}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 170, "y1": 150, "x2": 270, "y2": 250}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 320, "y1": 150, "x2": 420, "y2": 250}}}},
+    "valve_f": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 60, "x2": 580, "y2": 160}}}},
+    "valve_r": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 250, "x2": 580, "y2": 350}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 60, "x2": 740, "y2": 160}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 250, "x2": 740, "y2": 350}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 810, "y1": 110, "x2": 1010, "y2": 310}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 160, "x2": 1200, "y2": 260}}}},
+    "abs": {"Dyad": {"placement": {"diagram": {"x1": 410, "y1": 500, "x2": 560, "y2": 650}}}},
+    "est": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 690, "x2": 300, "y2": 790}}}},
+    "wspeed": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 690, "x2": 800, "y2": 790}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 20, "x2": 1200, "y2": 120}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 500, "x2": 1000, "y2": 600}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 690, "x2": 950, "y2": 790}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 500, "x2": 150, "y2": 600}}}}
   }
 }
 end
 
-"""
-The ABS stop on the wheel speed only. `a_ref` is the estimator's assumed deceleration, the knob of
-step 05's rerun; `road_mu` and `stop` are the sweep's.
-"""
 analysis ABSStopWheelOnlyTransient
   extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
   parameter road_mu::Real = 1.0

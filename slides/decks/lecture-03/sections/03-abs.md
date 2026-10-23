@@ -15,7 +15,8 @@ Keep every wheel rolling, near the peak of its friction curve, however hard the 
 Budget: 88 minutes, with the 10-minute break in the middle: 46 before it, 42 after.
 Before: cover and what ABS does 2, hardware 9 (history 1, sensors 2, modulator 2, channels 2,
 cycle 2), the model 3, build 03 28, one stop and on the curve 4. After: reference speed 2, build
-04 with its checkpoint 25, braking distance 2, surfaces 2, build 05 10, summary 1.
+04 with its checkpoint 25, braking distance 2, surfaces 2, against measured cars 1.5, why ABS
+can stop longer 1.5, build 05 7, summary 1.
 
 The center of the lecture, and where most of the building happens. The room arrives with a locked
 wheel on its own car from build 02, so the problem is on screen before the solution is. Then the
@@ -187,7 +188,9 @@ routeAlias: modulator
 
 Bosch: ABS "reduces brake pressure then increases it again **up to 40 times a second**".
 
-<div class="handson">→ Build 03: build and dump become the two signs of one pressure rate</div>
+<div class="handson">→ Build 03 uses an <b>ideal</b> modulator, <code>ABSValve</code>: the ECU sends the wheel
+pressure it allows and the valve sets it. No inlet or outlet valve, no accumulator, no pump, so
+<b>no pedal pulse</b>. Build and dump become the two signs of one pressure rate.</div>
 
 </div>
 </div>
@@ -202,6 +205,13 @@ Position one, open: build. Position two, line blocked: hold, so pressure cannot 
 driver pushes harder. Position three, release: dump, the outlet valve lets fluid out into a small
 spring-loaded accumulator. The pump returns it to the master-cylinder side, which is what the
 driver feels as pulsing in the pedal.
+
+Say clearly what the build uses instead. `ABSValve` is the result of this hardware, not the
+hardware: the controller sends an allowed wheel pressure, and the valve makes the caliper follow
+it, never above the master cylinder and 30 milliseconds late. A command held steady is hold, a
+falling one is dump, a rising one is build. The dumped fluid leaves the model, and the pedal is a
+force command, so the pulse the driver feels cannot appear. A model with real inlet and outlet
+valves, accumulator and return pump is in preparation.
 
 The important property: ABS can only take pressure away from what the driver commands. It cannot
 build more than the master cylinder supplies. ESP, later, needs two more valves per circuit to do
@@ -881,7 +891,7 @@ routeAlias: abs-surfaces
 
 On slippery roads the **speed estimate** costs most of the gain; at μ = 0.3 this ABS loses.
 
-<div class="handson">→ Build 05, next: this table from your own models at μ 1.0, 0.5, 0.3; then μ 0.3 again
+<div class="handson">→ Build 05: this table from your own models at μ 1.0, 0.5, 0.3; then μ 0.3 again
 with a_ref ≈ 2.4</div>
 
 </div>
@@ -898,14 +908,147 @@ slide: an a_ref of 8 meters per second squared is far more than a road with mu 0
 2.9, so the estimated vehicle speed falls faster than the car and the controller under-reads the
 slip.
 
-This is the model's honest result, not a property of real ABS. Real ABS learns the road's
-deceleration, and some systems add an accelerometer. Adaptive a_ref is the stretch goal in
-`docs/abs-controller-spec.md`. Build 05, next, does the first half of that exercise by hand: it
-reruns mu 0.3 with a_ref set to about 0.8 mu g, 2.4, the value an adaptive estimate would
-converge to. Making a_ref adapt on its own is left as an exercise.
+Real ABS learns the road's deceleration, and some systems add an accelerometer. Adaptive a_ref is
+the stretch goal in `docs/abs-controller-spec.md`. Build 05 does the first half of that exercise
+by hand: it reruns mu 0.3 with a_ref set to about 0.8 mu g, 2.4, the value an adaptive estimate
+would converge to. Making a_ref adapt on its own is left as an exercise. But a small or negative
+gain on snow is not only a model artifact: real cars show it too, the next two slides.
 
 And remember the first benefit: even where the distance is no shorter, the ABS wheel still rolls,
 and the car can still be steered.
+-->
+
+---
+routeAlias: abs-measured
+---
+
+## Against measured cars
+
+<div class="grid grid-cols-[1.2fr_1fr] gap-6 items-start">
+<div class="text-[0.9rem]">
+
+ABS against locked wheels, instrumented tests:
+
+| surface | ABS stop |
+|---|---:|
+| wet, very slick (Jennite) | 41 % shorter |
+| wet asphalt | 11–17 % shorter\* |
+| dry concrete | 10–13 % shorter\* |
+| packed snow and ice | 0–11 % shorter |
+| fresh snow on pavement | about 15 % longer |
+| loose gravel | 25–30 % longer |
+
+<div class="text-xs opacity-70">* against the driver's best stop without ABS, not a locked wheel:
+the gain over locking is larger</div>
+
+</div>
+<div>
+
+**The standard does not ask for a shorter stop.** UN R13-H: the ABS must use at least **75 %** of
+the tire's peak friction, $\varepsilon = z_{ABS} / k \ge 0.75$, tested near μ 0.8 and at μ ≤ 0.3.
+
+**Our models.** Dry 11–12 % shorter: in the measured range. On snow the true-slip ABS gains
+22–25 %, **more than any car measured**: our snow tire is the dry curve scaled down, peak at 4 %
+slip, locked at 70 % of the peak. Real packed snow peaks at 20–40 % slip and keeps 85–100 % when
+locked.
+
+<div class="handson">✓ Yours on the wheel speed alone: ε ≈ 0.81–0.83 on every road, above the
+0.75 line</div>
+
+</div>
+</div>
+
+<!--
+Budget: 1.5 minutes. Read the table top to bottom: the slicker and the more solid the road, the
+more ABS gains; on loose surfaces it loses.
+
+Sources, all in `docs/abs-efficiency-research.md` with the full citations:
+- wet Jennite, packed snow and ice 11 %, gravel 25 %: the 1969 Chrysler four-wheel ABS against
+  fully locked wheels, quoted by Clemett and Moules (Ford), Highway Research Record 477, 1973.
+- dry concrete 10–13 %, wet asphalt 11–17 %, loose gravel 25–30 % longer: NHTSA, Forkenbrock,
+  Flick and Garrott, SAE 1999-01-1287, nine production cars of the 1990s. On paved surfaces the
+  baseline was the driver's best modulated stop, because locked stops wore the tires out; on gravel
+  it was full-pedal locked.
+- packed snow and ice 0 %: Strandberg, VTI/VETA 1995, Volvo 850 with 66 ordinary drivers: ABS won
+  on average in all 24 tire-surface combinations, but many single locked runs on loose snow beat
+  it.
+- fresh snow about 15 % longer: Sokolovskij and Pečeliūnas, 2007, 3.0 against 2.6 m/s². Two
+  different cars, so read it as a direction, not a number. SAE 940724 (Eddie, 1994) reports the
+  same for fresh snow on pavement just below freezing; only its abstract was available.
+
+UN Regulation 13-H, Annex 6: epsilon is the deceleration with ABS cycling, between 45 and 15
+km/h, divided by the best deceleration without locking a wheel. So the yardstick is the peak of
+the curve, not the locked wheel. Our tire locks at 0.7 of its peak, just under the line, which is
+why a locked wheel fails it and an ABS that barely beats locking can still pass.
+
+The epsilon on the cue is a rough one, the ideal distance v squared over 2 g mu divided by the
+measured distance. It counts the first tenth of a second before the brake builds, which pulls it
+down, and credits drag to the brakes, which pushes it up.
+
+Our snow tire: Ichihara and Mizoguchi, HRB Special Report 115, 1970, measured the peak on
+compacted snow at 20 to 40 percent slip and found the locked value only a little below it. A
+variable-slip tester (Fleege, Wambold and Rado, TRB 1996) puts the winter peak near 30 percent,
+against 18 percent dry. A Dyad run with a snow-shaped tire, locked at 0.9 to 0.95 of the peak,
+shortens the locked stop to 103–109 meters, and our wheel-speed ABS then stops 5 to 8 percent
+longer than locked: the real fresh-snow result, for the real reason.
+-->
+
+---
+routeAlias: abs-loses
+---
+
+## Why ABS can stop longer
+
+<div class="grid grid-cols-2 gap-8 text-[0.95rem]">
+<div>
+
+**A wedge ahead of the tire.** On gravel and loose snow a locked tire plows the surface into a
+wedge in front of it and digs down to firmer ground. A rolling ABS tire rides on top.
+
+**No peak to find.** On packed snow and ice the curve is flat: the locked tire keeps nearly all of
+the peak. *"In the absence of a distinct peak at low slip … no improvement over locked-wheel
+stopping distance can be expected"* (Ford, 1973).
+
+</div>
+<div>
+
+**The cycle costs grip.** Every dump drops the pressure below the lock level. On ice a real ABS
+dumps almost to zero, four to six times a second. Rates tuned for a dry road dump too deep on
+snow: **yours does**.
+
+**A wrong speed guess.** With $a_{ref}$ too high the slip is under-read and the wheel slides;
+too low and the ECU dumps on slip that is not there.
+
+</div>
+</div>
+
+<div class="mt-6">
+
+What ABS never loses: **the wheel keeps rolling, so the car still steers**. That is why it stays on
+in snow even where the stop is longer.
+
+</div>
+
+<!--
+Budget: 1.5 minutes. Four reasons, two from the road, two from the controller.
+
+The wedge: the RACV review (Burton et al., Monash, 2004) and Strandberg's ice and snow tests; the
+locked tire on loose snow "digs itself down" to a layer with more grip. NHTSA measured 25 to 30
+percent longer stops with ABS on loose gravel.
+
+No peak: the quotation is Clemett and Moules, Ford, Highway Research Record 477, 1973. ABS earns
+its gain from the drop between the peak and the sliding value. Where the curve has no drop, there
+is nothing to earn, only the cycle to pay for.
+
+The cycle: Day and Roberts, SAE 2002-01-0559, from Bosch test data: on ice the wheel pressure
+swings between about 5 and 35 bar, four to six cycles a second. Your PhaseABS has build and dump
+rates in bar per second set for the dry lock pressure, 62 bar. On snow the lock pressure is about
+19 bar, and one 30-millisecond valve lag at the dump rate already takes 17 bar. Scaling the rates
+and thresholds by the road, 0.3, takes your snow stop from about 131 to 113 meters. Production
+ECUs learn the lock pressure and rebuild from it.
+
+The speed guess: the reference-speed slide and build 05.
+
 -->
 
 ---
@@ -952,7 +1095,7 @@ at 8, and <b>105.4 m</b> on a dry road</div>
 </div>
 
 <!--
-The last build: no new blocks, a table. Ten minutes.
+The last build: no new blocks, a table. Seven minutes.
 
 Open the REPL and paste the loop from the guide page. It runs your three benches at road factor
 1, 0.5 and 0.3, each long enough for the car to stop: the stop-time rule gives about 20 seconds

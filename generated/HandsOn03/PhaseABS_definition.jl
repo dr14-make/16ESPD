@@ -7,10 +7,9 @@
 @doc Markdown.doc"""
    PhaseABS(; name, a_minus, a_plus, lambda_1, k_dec, k_inc, v_min, T_latch)
 
-Hands-on 03 step 04: the ABS cycle a wheel-speed-only ECU runs. It dumps pressure while the wheel
-decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel spins back up past
-`a_plus`, and otherwise rebuilds it slowly from the held level. Until the first dump the given
-`ABSPressureIntegrator` passes the driver's demand straight through.
+Hands-on 03 step 04 wheel-speed-only ABS controller. It dumps allowed hydraulic pressure while
+the wheel decelerates past `a_minus` or slips past `lambda_1`, holds while the wheel spins back up
+past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
 
 ## Parameters:
 
@@ -19,8 +18,8 @@ decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel sp
 | `a_minus`         | Wheel deceleration that starts a dump (-a)                         | m/s2  |   12 |
 | `a_plus`         | Wheel acceleration that holds the pressure (+a)                         | m/s2  |   3 |
 | `lambda_1`         | Estimated slip that starts a dump                         | --  |   0.2 |
-| `k_dec`         | Dump rate [N·m/s]                         | --  |   40000 |
-| `k_inc`         | Rebuild rate after the first dump [N·m/s]                         | --  |   8000 |
+| `k_dec`         | Dump rate [Pa/s]                         | --  |   5.8e7 |
+| `k_inc`         | Rebuild rate after the first dump [Pa/s]                         | --  |   1.16e7 |
 | `v_min`         | ABS off below this speed                         | m/s  |   1.5 |
 | `T_latch`         | Time constant of the cycled latch                         | s  |   0.001 |
 
@@ -30,7 +29,7 @@ decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel sp
  * `a_w` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `v` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `demand` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `tau_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `p_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -39,7 +38,7 @@ decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel sp
 | `phase`         | -1 decrease, 0 hold, 1 increase                         | --  |
 | `cycled`         | 1 once the first dump has happened                         | --  |
 """
-@component function PhaseABS(; name = nothing, a_minus=Float64(12), a_plus=Float64(3), lambda_1=0.2, k_dec=Float64(40000), k_inc=Float64(8000), v_min=1.5, T_latch=0.001, kwargs...)
+@component function PhaseABS(; name = nothing, a_minus=Float64(12), a_plus=Float64(3), lambda_1=0.2, k_dec=Float64(58000000.0), k_inc=Float64(11600000.0), v_min=1.5, T_latch=0.001, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -80,10 +79,10 @@ decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel sp
   append!(__params, @parameters (lambda_1::Real), [description = "Estimated slip that starts a dump"])
   __initial_conditions[lambda_1] = __local__lambda_1
   __local__k_dec = k_dec
-  append!(__params, @parameters (k_dec::Real), [description = "Dump rate [N·m/s]"])
+  append!(__params, @parameters (k_dec::Real), [description = "Dump rate [Pa/s]"])
   __initial_conditions[k_dec] = __local__k_dec
   __local__k_inc = k_inc
-  append!(__params, @parameters (k_inc::Real), [description = "Rebuild rate after the first dump [N·m/s]"])
+  append!(__params, @parameters (k_inc::Real), [description = "Rebuild rate after the first dump [Pa/s]"])
   __initial_conditions[k_inc] = __local__k_inc
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real), [description = "ABS off below this speed"])
@@ -99,7 +98,7 @@ decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel sp
   append!(__vars, @variables (a_w(t)::Real), [input = true])
   append!(__vars, @variables (v(t)::Real), [input = true])
   append!(__vars, @variables (demand(t)::Real), [input = true])
-  append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
+  append!(__vars, @variables (p_cmd(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (phase(t)::Real), [description = "-1 decrease, 0 hold, 1 increase"])
@@ -139,8 +138,8 @@ decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel sp
   push!(__eqs, ModelingToolkit.D_nounits(cycled) ~ ifelse(phase < -0.5, (1 - cycled) / T_latch, 0))
   push!(__eqs, pressure.requested_rate ~ ifelse(phase < -0.5, -k_dec, ifelse(phase < 0.5, 0, k_inc)))
   push!(__eqs, pressure.active ~ ifelse((v > v_min) & (cycled > 0.5), 1.0, 0.0))
+  push!(__eqs, p_cmd ~ ifelse(cycled > 0.5, pressure.cmd, demand))
   push!(__eqs, connect(demand, pressure.demand))
-  push!(__eqs, connect(pressure.tau_cmd, tau_cmd))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

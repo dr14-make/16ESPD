@@ -5,20 +5,21 @@
 
 
 @doc Markdown.doc"""
-   ABSStop(; name, road_mu, T_p, lambda_target)
+   ABSStop(; name, road_mu, T_p, lambda_target, pedal)
 
-Hands-on 03 step 03 torque-command ABS bench, compared with the `PedalStop` hydraulic baseline.
-The controller reads the wheel's true slip and the car's speed from a sensor on the body.
+Hands-on 03 step 03 hydraulic ABS bench. The driver holds the pedal while the slip controller
+modulates the pressure admitted to both brake circuits.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `road_mu`         | Road-friction multiplier (1 dry, 0.5 wet, 0.3 snow)                         | --  |   1.0 |
-| `T_p`         | Look-ahead; 0 is step 03 A                         | s  |   0.03 |
-| `lambda_target`         | Slip the ABS holds                         | --  |   0.04 |
+| `road_mu`         |                          | --  |   1.0 |
+| `T_p`         |                          | s  |   0.03 |
+| `lambda_target`         |                          | --  |   0.04 |
+| `pedal`         |                          | --  |   0.6 |
 """
-@component function ABSStop(; name = nothing, road_mu=Float64(1.0), T_p=0.03, lambda_target=0.04, kwargs...)
+@component function ABSStop(; name = nothing, road_mu=Float64(1.0), T_p=0.03, lambda_target=0.04, pedal=0.6, medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -43,6 +44,7 @@ The controller reads the wheel's true slip and the car's speed from a sensor on 
   ### Path Parameters (functions)
 
   ### Path Parameters (non-final)
+  append!(__params, @parameters (medium::HydraulicComponents.Interfaces.AbstractMedium = medium))
 
   ### Final Parameters (declarations)
 
@@ -50,14 +52,17 @@ The controller reads the wheel's true slip and the car's speed from a sensor on 
 
   ### Symbolic Parameters
   __local__road_mu = road_mu
-  append!(__params, @parameters (road_mu::Real), [description = "Road-friction multiplier (1 dry, 0.5 wet, 0.3 snow)"])
+  append!(__params, @parameters (road_mu::Real))
   __initial_conditions[road_mu] = __local__road_mu
   __local__T_p = T_p
-  append!(__params, @parameters (T_p::Real), [description = "Look-ahead; 0 is step 03 A"])
+  append!(__params, @parameters (T_p::Real))
   __initial_conditions[T_p] = __local__T_p
   __local__lambda_target = lambda_target
-  append!(__params, @parameters (lambda_target::Real), [description = "Slip the ABS holds"])
+  append!(__params, @parameters (lambda_target::Real))
   __initial_conditions[lambda_target] = __local__lambda_target
+  __local__pedal = pedal
+  append!(__params, @parameters (pedal::Real))
+  __initial_conditions[pedal] = __local__pedal
 
   ### Final Parameters (assignments)
 
@@ -71,24 +76,48 @@ The controller reads the wheel's true slip and the car's speed from a sensor on 
   __constants = Any[]
 
   ### Components
-  # Subcomponent demand of type BlockComponents.Sources.Step
-  demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; height=Float64(6000), start_time=0.5, demand_overrides...))
+  # Subcomponent command of type BlockComponents.Sources.Step
+  command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
+  push!(__systems, @named command = BlockComponents.Sources.Step(; height=pedal, offset=Float64(0.0), start_time=0.5, command_overrides...))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
   push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, road_overrides...))
+  # Subcomponent pedal_unit of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
+  pedal_unit_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_unit")
+  push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; pedal_unit_overrides...))
+  # Subcomponent booster of type VehicleSystemsComponents.Vehicle.Brake.StaticBooster
+  booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster(; booster_overrides...))
+  # Subcomponent master of type VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder
+  master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
+  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
+  # Subcomponent valve_f of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
+  valve_f_overrides = __pop_subcomponent_overrides!(__overrides, "valve_f")
+  push!(__systems, @named valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, valve_f_overrides...))
+  # Subcomponent valve_r of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
+  valve_r_overrides = __pop_subcomponent_overrides!(__overrides, "valve_r")
+  push!(__systems, @named valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, valve_r_overrides...))
+  # Subcomponent line_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
+  line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
+  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, line_f_overrides...))
+  # Subcomponent line_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
+  line_r_overrides = __pop_subcomponent_overrides!(__overrides, "line_r")
+  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, line_r_overrides...))
   # Subcomponent abs of type VehicleSystemsComponents.HandsOn03.SlipABS
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
   push!(__systems, @named abs = VehicleSystemsComponents.HandsOn03.SlipABS(; T_p=T_p, lambda_target=lambda_target, abs_overrides...))
-  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel
+  # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; continuity__graph0=medium, continuity__graph1=medium, wheel_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; body_overrides...))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  # Subcomponent fixed_hydraulic of type TranslationalComponents.Components.Fixed
+  fixed_hydraulic_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_hydraulic")
+  push!(__systems, @named fixed_hydraulic = TranslationalComponents.Components.Fixed(; fixed_hydraulic_overrides...))
   # Subcomponent speed of type TranslationalComponents.Sensors.VelocitySensor
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
   push!(__systems, @named speed = TranslationalComponents.Sensors.VelocitySensor(; speed_overrides...))
@@ -99,7 +128,6 @@ The controller reads the wheel's true slip and the car's speed from a sensor on 
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, wheel.brake.tau_actual ~ 0)
   push!(__initialization_eqs, wheel.inertia.phi ~ 0)
   push!(__initialization_eqs, wheel.inertia.w ~ 25 / 0.31)
   push!(__initialization_eqs, body.mass.s ~ 0)
@@ -109,10 +137,20 @@ The controller reads the wheel's true slip and the car's speed from a sensor on 
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(demand.y, abs.demand))
-  push!(__eqs, connect(abs.tau_cmd, wheel.tau_cmd))
+  push!(__eqs, connect(command.y, pedal_unit.u))
+  push!(__eqs, connect(pedal_unit.rod, booster.input))
+  push!(__eqs, connect(booster.rod_out, master.pushrod))
+  push!(__eqs, connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange))
+  push!(__eqs, connect(master.front, valve_f.port_a))
+  push!(__eqs, connect(valve_f.port_b, line_f.port_a))
+  push!(__eqs, connect(line_f.port_b, wheel.front))
+  push!(__eqs, connect(master.rear, valve_r.port_a))
+  push!(__eqs, connect(valve_r.port_b, line_r.port_a))
+  push!(__eqs, connect(line_r.port_b, wheel.rear))
+  push!(__eqs, connect(master.p_mc, abs.demand))
   push!(__eqs, connect(wheel.kappa, abs.kappa))
   push!(__eqs, connect(speed.v, abs.v))
+  push!(__eqs, connect(abs.p_cmd, valve_f.p_cmd, valve_r.p_cmd))
   push!(__eqs, connect(road.y, wheel.mu_scale))
   push!(__eqs, connect(wheel.support, fixed.spline))
   push!(__eqs, connect(wheel.flange, body.flange, speed.flange))

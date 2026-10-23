@@ -126,7 +126,10 @@ step 03 code from the guide page.
 After the break, 42 min:
 
 - Reference speed 2, **build 04** with its checkpoint slide 25, braking distance 2, surfaces 2,
-  **build 05** 10, summary 1.
+  against measured cars 1.5, why ABS can stop longer 1.5, **build 05** 7, summary 1.
+- "Against measured cars" and "Why ABS can stop longer" answer the question the snow numbers
+  raise. Real ABS gains little on packed snow and loses on loose snow and gravel; the sources are
+  in `docs/abs-efficiency-research.md`.
 - Reference speed: plant the question "what would `a_ref` be on snow?" and leave it open; build 05
   answers it.
 - Build 04 is the longest: two components in code and a bench. If the room is behind at the

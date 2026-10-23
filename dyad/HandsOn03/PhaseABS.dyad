@@ -1,8 +1,7 @@
 """
-Hands-on 03 step 04: the ABS cycle a wheel-speed-only ECU runs. It dumps pressure while the wheel
-decelerates past `a_minus` or slips past `lambda_1`, holds it while the wheel spins back up past
-`a_plus`, and otherwise rebuilds it slowly from the held level. Until the first dump the given
-`ABSPressureIntegrator` passes the driver's demand straight through.
+Hands-on 03 step 04 wheel-speed-only ABS controller. It dumps allowed hydraulic pressure while
+the wheel decelerates past `a_minus` or slips past `lambda_1`, holds while the wheel spins back up
+past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
 """
 component PhaseABS
   "Estimated wheel slip, negative while braking"
@@ -11,10 +10,10 @@ component PhaseABS
   a_w = RealInput() {^a_w}
   "Estimated vehicle speed"
   v = RealInput() {^v}
-  "Driver's brake demand"
+  "Master-cylinder pressure demand [Pa]"
   demand = RealInput() {^demand}
-  "Brake torque command to the wheel"
-  tau_cmd = RealOutput() {^tau_cmd}
+  "Allowed wheel-circuit pressure [Pa]"
+  p_cmd = RealOutput() {^p_cmd}
   pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01) {^pressure}
   "Wheel deceleration that starts a dump (-a)"
   parameter a_minus::Acceleration = 12
@@ -22,10 +21,10 @@ component PhaseABS
   parameter a_plus::Acceleration = 3
   "Estimated slip that starts a dump"
   parameter lambda_1::Real = 0.2
-  "Dump rate [N·m/s]"
-  parameter k_dec::Real = 40000
-  "Rebuild rate after the first dump [N·m/s]"
-  parameter k_inc::Real = 8000
+  "Dump rate [Pa/s]"
+  parameter k_dec::Real = 5.8e7
+  "Rebuild rate after the first dump [Pa/s]"
+  parameter k_inc::Real = 1.16e7
   "ABS off below this speed"
   parameter v_min::Velocity = 1.5
   "Time constant of the cycled latch"
@@ -41,7 +40,7 @@ relations
   connect(demand, pressure.demand) {^id1}
   pressure.requested_rate = ifelse(phase < -0.5, -k_dec, ifelse(phase < 0.5, 0, k_inc))
   pressure.active = ifelse(v > v_min and cycled > 0.5, 1.0, 0.0)
-  connect(pressure.tau_cmd, tau_cmd) {^id2}
+  p_cmd = ifelse(cycled > 0.5, pressure.cmd, demand)
 metadata {
   "_links": {
     "kappa": {
@@ -76,7 +75,7 @@ metadata {
         }
       }
     },
-    "tau_cmd": {
+    "p_cmd": {
       "Dyad": {
         "placement": {
           "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},

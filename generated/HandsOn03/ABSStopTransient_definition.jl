@@ -28,8 +28,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"road_mu"::Float64 = 1.0
   var"T_p"::Float64 = 0.03
   var"lambda_target"::Float64 = 0.04
-  # Hands-on 03 step 03 torque-command ABS bench, compared with the `PedalStop` hydraulic baseline.
-  # The controller reads the wheel's true slip and the car's speed from a sensor on the body.
+  var"pedal"::Float64 = 0.6
+  # Hands-on 03 step 03 hydraulic ABS bench. The driver holds the pedal while the slip controller
+  # modulates the pressure admitted to both brake circuits.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.ABSStop(; name=:ABSStop)
 end
 
@@ -39,6 +40,7 @@ function DyadInterface.run_analysis(spec::ABSStopTransientSpec)
   push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
   push!(overrides, no_namespace_model.T_p => spec.var"T_p")
   push!(overrides, no_namespace_model.lambda_target => spec.var"lambda_target")
+  push!(overrides, no_namespace_model.pedal => spec.var"pedal")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )

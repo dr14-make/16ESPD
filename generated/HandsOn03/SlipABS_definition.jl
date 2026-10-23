@@ -7,18 +7,17 @@
 @doc Markdown.doc"""
    SlipABS(; name, lambda_target, k_inc, k_dec, v_min, T_p, T_f)
 
-Hands-on 03 step 03: a slip ABS of your own. It dumps brake pressure while the wheel slips past
-`lambda_target` and builds it back otherwise; the given `ABSPressureIntegrator` keeps the command
-between zero and the driver's demand. The slip it judges is the slip predicted `T_p` ahead, which
-leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
+Hands-on 03 step 03 slip controller. It dumps allowed hydraulic pressure while predicted wheel
+slip is past `lambda_target` and builds pressure otherwise. The command remains between zero and
+the driver's master-cylinder pressure.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `lambda_target`         | Slip held, just past the tire's peak                         | --  |   0.04 |
-| `k_inc`         | Pressure build rate [N·m/s]                         | --  |   20000 |
-| `k_dec`         | Pressure dump rate [N·m/s]                         | --  |   40000 |
+| `k_inc`         | Pressure build rate [Pa/s]                         | --  |   2.9e7 |
+| `k_dec`         | Pressure dump rate [Pa/s]                         | --  |   5.8e7 |
 | `v_min`         | ABS off below this speed                         | m/s  |   1.5 |
 | `T_p`         | Look-ahead, the brake's lag                         | s  |   0.03 |
 | `T_f`         | Slip-rate filter                         | s  |   0.003 |
@@ -28,7 +27,7 @@ leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
  * `kappa` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `v` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `demand` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `tau_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `p_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -37,8 +36,9 @@ leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
 | `kappa_f`         |                          | --  |
 | `kappa_dot`         |                          | --  |
 | `kappa_pred`         |                          | --  |
+| `cycled`         |                          | --  |
 """
-@component function SlipABS(; name = nothing, lambda_target=0.04, k_inc=Float64(20000), k_dec=Float64(40000), v_min=1.5, T_p=0.03, T_f=0.003, kwargs...)
+@component function SlipABS(; name = nothing, lambda_target=0.04, k_inc=Float64(29000000.0), k_dec=Float64(58000000.0), v_min=1.5, T_p=0.03, T_f=0.003, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -73,10 +73,10 @@ leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
   append!(__params, @parameters (lambda_target::Real), [description = "Slip held, just past the tire's peak"])
   __initial_conditions[lambda_target] = __local__lambda_target
   __local__k_inc = k_inc
-  append!(__params, @parameters (k_inc::Real), [description = "Pressure build rate [N·m/s]"])
+  append!(__params, @parameters (k_inc::Real), [description = "Pressure build rate [Pa/s]"])
   __initial_conditions[k_inc] = __local__k_inc
   __local__k_dec = k_dec
-  append!(__params, @parameters (k_dec::Real), [description = "Pressure dump rate [N·m/s]"])
+  append!(__params, @parameters (k_dec::Real), [description = "Pressure dump rate [Pa/s]"])
   __initial_conditions[k_dec] = __local__k_dec
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real), [description = "ABS off below this speed"])
@@ -94,12 +94,13 @@ leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
   append!(__vars, @variables (kappa(t)::Real), [input = true])
   append!(__vars, @variables (v(t)::Real), [input = true])
   append!(__vars, @variables (demand(t)::Real), [input = true])
-  append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
+  append!(__vars, @variables (p_cmd(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (kappa_f(t)::Real))
   append!(__vars, @variables (kappa_dot(t)::Real))
   append!(__vars, @variables (kappa_pred(t)::Real))
+  append!(__vars, @variables (cycled(t)::Real))
 
   ### Variables (assignments)
   __ovr_kappa_f = pop!(__overrides, "kappa_f", nothing); isnothing(__ovr_kappa_f) || push!(__eqs, kappa_f ~ __ovr_kappa_f)
@@ -111,6 +112,9 @@ leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
   __ovr_kappa_pred = pop!(__overrides, "kappa_pred", nothing); isnothing(__ovr_kappa_pred) || push!(__eqs, kappa_pred ~ __ovr_kappa_pred)
   __ovr_kappa_pred__initial = pop!(__overrides, "kappa_pred__initial", nothing); isnothing(__ovr_kappa_pred__initial) || (__initial_conditions[kappa_pred] = __ovr_kappa_pred__initial)
   __ovr_kappa_pred__guess = pop!(__overrides, "kappa_pred__guess", nothing)
+  __ovr_cycled = pop!(__overrides, "cycled", nothing); isnothing(__ovr_cycled) || push!(__eqs, cycled ~ __ovr_cycled)
+  __ovr_cycled__initial = pop!(__overrides, "cycled__initial", nothing); isnothing(__ovr_cycled__initial) || (__initial_conditions[cycled] = __ovr_cycled__initial)
+  __ovr_cycled__guess = pop!(__overrides, "cycled__guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -127,9 +131,11 @@ leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
   isnothing(__ovr_kappa_f__guess) || (__guesses[kappa_f] = __ovr_kappa_f__guess)
   isnothing(__ovr_kappa_dot__guess) || (__guesses[kappa_dot] = __ovr_kappa_dot__guess)
   isnothing(__ovr_kappa_pred__guess) || (__guesses[kappa_pred] = __ovr_kappa_pred__guess)
+  isnothing(__ovr_cycled__guess) || (__guesses[cycled] = __ovr_cycled__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, kappa_f ~ 0)
+  push!(__initialization_eqs, cycled ~ 0)
 
   ### Assertions
   __assertions = []
@@ -138,10 +144,11 @@ leads the brake's 30 ms lag; `T_p = 0` judges the present slip (step 03 A).
   push!(__eqs, ModelingToolkit.D_nounits(kappa_f) ~ (kappa - kappa_f) / T_f)
   push!(__eqs, kappa_dot ~ (kappa - kappa_f) / T_f)
   push!(__eqs, kappa_pred ~ kappa + T_p * kappa_dot)
+  push!(__eqs, ModelingToolkit.D_nounits(cycled) ~ ifelse(((v > v_min) & (kappa < -lambda_target)) & (kappa_pred < -lambda_target), 1000 * (1 - cycled), 0))
   push!(__eqs, pressure.requested_rate ~ ifelse(kappa_pred < -lambda_target, -k_dec, k_inc))
-  push!(__eqs, pressure.active ~ ifelse(v > v_min, 1.0, 0.0))
+  push!(__eqs, pressure.active ~ ifelse((v > v_min) & (cycled > 0.5), 1.0, 0.0))
+  push!(__eqs, p_cmd ~ ifelse(cycled > 0.5, pressure.cmd, demand))
   push!(__eqs, connect(demand, pressure.demand))
-  push!(__eqs, connect(pressure.tau_cmd, tau_cmd))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -16,6 +16,7 @@ end
 
 
 @testset "`VehicleSystemsComponents.Vehicle.Brake`" begin
+include("ABSValve_test.jl")
 include("BrakeCaliper_test.jl")
 include("BrakeLine_test.jl")
 include("BrakePedal_test.jl")

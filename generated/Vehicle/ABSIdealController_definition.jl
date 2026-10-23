@@ -149,7 +149,7 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
   push!(__eqs, pressure.requested_rate ~ rate)
   push!(__eqs, pressure.active ~ ifelse(v > v_min, 1.0, 0.0))
   push!(__eqs, connect(demand, pressure.demand))
-  push!(__eqs, connect(pressure.tau_cmd, tau_cmd))
+  push!(__eqs, connect(pressure.cmd, tau_cmd))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

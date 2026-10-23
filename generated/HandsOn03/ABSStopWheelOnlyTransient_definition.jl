@@ -27,9 +27,8 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"log_file"::String = ""
   var"road_mu"::Float64 = 1.0
   var"a_ref"::Float64 = 8
-  # Hands-on 03 step 04 bench: `ABSStop` with only a wheel-speed sensor and the three-phase
-  # `PhaseABS` in place of `SlipABS`. `RefSpeedEstimator` turns the wheel speed into the slip, the
-  # vehicle speed and the wheel acceleration the controller reads.
+  # Hands-on 03 step 04 hydraulic ABS bench using only a wheel-speed sensor. `RefSpeedEstimator`
+  # provides estimated slip, vehicle speed, and wheel acceleration to the three-phase controller.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.ABSStopWheelOnly(; name=:ABSStopWheelOnly)
 end
 
