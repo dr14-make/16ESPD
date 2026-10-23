@@ -124,6 +124,19 @@ fed into a fixed test volume. Expected values, hand-computed from the defaults (
 
 ### 1b. Calipers, lines and torque (3 hydraulic states)
 
+**Status: built** in 43817f4, with physical ports in place of the signal-level `CaliperTorque`
+and `HydraulicBrakeSystem` below: `BrakeLine` (laminar, `nu` a parameter), `BrakeCaliper` (one
+axle's P–V curve and friction torque between two splines, on a hydraulic port) and
+`Vehicle.Wheel.HydraulicBrakedWheel` (inertia, front and rear caliper, tire; ports `front` and
+`rear`). `BrakePedal` takes a 0–1 command, the foot force over `F_max` = 500 N. The stop is
+`Vehicle.Brake.TestHydraulicStop` / `HydraulicStopTransient`, checked in
+`test/brake_plausibility.jl`: pedal 0.3 (150 N) about 55 bar, 3760 N·m, no lock; pedal 0.6
+(300 N) about 89 bar, 6100 N·m, locked; 3–5 cm³ displaced. Front caliper 10–90 % rise 4.4 ms.
+On the Lecture 3 bench `HandsOn03.PedalStop` the two stops are 36.0 and 43.7 m. Each bench
+declares the brake fluid itself: Dyad 3.4 rejects a medium declared inside a component that
+connects to outside ports. `TestCaliperPV`, `TestLineStep` and the cold-fluid comparison are not
+separate tests.
+
 **Build:**
 - `CaliperNode` (front axle, rear axle): piecewise P–V, state `V`, publishes `p`.
 - `BrakeLine`: laminar `R(ν)` with `ν` as a parameter, so temperature is chosen by passing ν.

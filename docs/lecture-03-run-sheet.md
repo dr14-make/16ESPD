@@ -9,14 +9,16 @@ building along in Dyad Studio on their own `MyCar`. Each build step has one slid
 it belongs to and an anchored section on the build guide (`lecture/lecture-03/` on the course
 site). The plan behind the steps is `docs/lecture-03-handson-plan.md`.
 
-**Total: 176 minutes**, including a 10-minute and a 5-minute break and the ESP demo.
+**Total: 183 minutes**, including a 10-minute and a 5-minute break and the ESP demo: 3 minutes
+over the 3-hour block. Two cuts from "If behind" below take it back under 180: section 06 down to
+its summary slide (2 min) and the channels slide in 03 (2 min).
 
 | Section | Builds | Minutes |
 |---|---|---:|
 | 00 Front matter | 00 set up | 10 |
 | 01 Friction and stopping | 01 the tire's limit, by hand | 14 |
-| 02 How the brakes work | | 10 |
-| 03 Anti-lock braking, to the break | 02 lock the wheel, 03 an ABS of your own | 55 |
+| 02 How the brakes work | 02 pedal to wheel | 26 |
+| 03 Anti-lock braking, to the break | 03 an ABS of your own | 46 |
 | Break | | 10 |
 | 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 42 |
 | Break | | 5 |
@@ -25,8 +27,8 @@ site). The plan behind the steps is `docs/lecture-03-handson-plan.md`.
 | 06 Torque vectoring | | 3 |
 | 07 Wrap-up | | 3 |
 
-Running clock: 01 starts at 10, 02 at 24, 03 at 34, the first break at 89, 03 resumes at 99, the
-second break at 141, 04 at 146, 05 at 152, 06 at 170, 07 at 173, end at 176.
+Running clock: 01 starts at 10, 02 at 24, 03 at 50, the first break at 96, 03 resumes at 106,
+the second break at 148, 04 at 153, 05 at 159, 06 at 177, 07 at 180, end at 183.
 
 ## Before class
 
@@ -35,7 +37,7 @@ second break at 141, 04 at 146, 05 at 152, 06 at 170, 07 at 173, end at 176.
 - Three windows: the deck; Dyad Studio with your own `MyCar` on a fresh `lecture-03` branch,
   which you build on live exactly as the students do; the Julia REPL for the plots and
   `braking_distance`.
-- Run steps 02–04 once before class from the reference (`HandsOn03.LockedStopTransient`,
+- Run steps 02–04 once before class from the reference (`HandsOn03.PedalStopTransient`,
   `ABSStopTransient`, `ABSStopWheelOnlyTransient`) so the library is compiled, and keep the REPL
   open.
 - Step 00 needs the course-library tag (`TODO-TAG` on the build 00 slide and the guide page). A tag
@@ -76,6 +78,8 @@ second break at 141, 04 at 146, 05 at 152, 06 at 170, 07 at 173, end at 176.
 ## 00 Front matter — 10 min
 
 - Cover 0.5, from Lecture 1 1.5, the sections 1, the models 1, build 00 6.
+- Build 00 adds `HydraulicComponents` next to the course library; a student without it gets a
+  compile error in build 02, at the brake fluid.
 - "The sections": the right column says which section each build sits in; walk it once.
 - Build 00: wait until most laptops list `BrakedWheel` under **+**. A student without hands-on 2
   branches from `main`; today needs only hands-on 1's `Body`.
@@ -89,20 +93,27 @@ second break at 141, 04 at 146, 05 at 152, 06 at 170, 07 at 173, end at 176.
 - Build 01 is paper or REPL. Wait for 4256 N·m from most of the room: it comes back on every
   ABS slide.
 
-## 02 How the brakes work — 10 min
+## 02 How the brakes work — 26 min
 
 - Lever and hydraulics 2, force chain 2, pedal to pressure 2, master cylinder 1.5, the rest of the
-  system 1.5, summary 1.
-- Nothing to build. Keep it moving; the pedal-to-pressure figure is the one to linger on.
+  system 1.5, **build 02** 16, summary 1.
+- Keep the theory moving; the pedal-to-pressure figure is the one to linger on: build 02's two
+  runs sit on it, 150 N below run-out and 300 N past it.
+- Build 02 is the largest drawing of the day: twelve blocks, eleven wires. The two code pastes
+  are the stall: the brake fluid (`path medium` and `continuity`) and the four `initial` lines. A
+  compile error about the medium means the fluid lines are missing; a wheel speed that climbs
+  means the initial lines are. Expected at pedal 0.3: 55 bar, no lock, 36.0 m; at 0.6: 89 bar,
+  `wheel.kappa` −1, 43.7 m.
 
-## 03 Anti-lock braking — 97 min, the break inside it
+## 03 Anti-lock braking — 88 min, the break inside it
 
-Before the break, 55 min:
+Before the break, 46 min:
 
-- Cover and what ABS does 2, **build 02** 15, history 1, sensors 2, modulator 2, channels 2,
-  control cycle 2, the model 3, **build 03** 22, one stop and on the curve 4.
-- Build 02: the five `initial` lines are the stall. A wheel speed that climbs instead of falling
-  means they are missing. Expected 43.7 m, `wheel.kappa` −1 by 0.67 s.
+- Cover and what ABS does 2, history 1, sensors 2, modulator 2, channels 2, control cycle 2, the
+  model 3, **build 03** 28, one stop and on the curve 4.
+- Build 03 builds its bench new, on the torque-level `BrakedWheel`, with five `initial` lines.
+  Say once that the ABS commands torque while build 02's baseline is hydraulic, and that pedal
+  0.6 (6109 N·m) and the 6000 N·m demand both lock at 43.7 m.
 - Build 03: run A loses to the locked wheel (53.8 m): say it is the point, not a mistake, before
   anyone starts debugging. C gives 34.4 m. Rehearse whether Studio's code view keeps the
   `pressure` line and the `ifelse`; the guide's "Fell behind?" block has the full source.

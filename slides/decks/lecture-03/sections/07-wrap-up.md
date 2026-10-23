@@ -79,7 +79,7 @@ routeAlias: what-you-measured
 | Build | What | Number | Why |
 | --- | --- | --- | --- |
 | 01 | the tire's limit | 4256 N·m · 31.9 to 45.5 m | by hand |
-| 02 | the locked wheel | 43.7 m, at rest at 4.0 s | your `Body`, the library wheel |
+| 02 | your brake system, pedal to wheel | 36.0 m at pedal 0.3 · 43.7 m at 0.6, locked | past the tire's 4256 N·m the wheel locks |
 | 03 A | ABS on the present slip | 53.8 m, longer than locked | 30 ms too late each cycle |
 | 03 C | ABS with a 30 ms look-ahead | 34.4 m, 21 % shorter | the lag led |
 | 04 | ABS on the wheel speed only | 35.5 m yours · 38.7 m library | dump, hold, build slowly |

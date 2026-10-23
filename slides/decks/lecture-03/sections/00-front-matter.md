@@ -32,9 +32,9 @@ The sentence on the slide is the whole lecture. ABS keeps a braking tire near it
 Traction control does the same for a driven tire. ESP does it for the car as a whole, by braking
 single wheels to steer the car's rotation. Torque vectoring does it with drive torque.
 
-You do not only listen. In sections 01 and 03 you build an ABS on your own car in Dyad Studio,
-along with me: first a locked wheel, then a slip controller of your own, then one that sees only
-the wheel speed. Every build step has one slide: a screenshot, a one-line recipe and a "page:
+You do not only listen. In sections 01 to 03 you build on your own car in Dyad Studio, along
+with me: first a brake system from pedal to wheel, pressed hard enough to lock the wheel, then a
+slip controller of your own, then one that sees only the wheel speed. Every build step has one slide: a screenshot, a one-line recipe and a "page:
 step" link to the build guide on the course site, which has every block, line of code and number
 to expect. If you fall behind, the guide has each step's finished code to paste.
 
@@ -96,8 +96,8 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 |---|---|---|---|
 | | Set up | | 00 the course library in your `MyCar` |
 | <Link to="friction-and-stopping">01</Link> | Friction and stopping | the friction coefficient, the tire's slip curve, braking distance and the cornering limit | 01 the tire's limit, by hand |
-| <Link to="brakes">02</Link> | How the brakes work | lever, hydraulics, the booster, the tandem master cylinder and the two circuits | |
-| <Link to="abs">03</Link> | Anti-lock braking | history, wheel-speed sensors, the modulator, channel layouts, the control cycle, the model | 02 a locked stop · 03 your own ABS · 04 on the wheel speed only · 05 across road surfaces |
+| <Link to="brakes">02</Link> | How the brakes work | lever, hydraulics, the booster, the tandem master cylinder and the two circuits | 02 your brake system, pedal to wheel |
+| <Link to="abs">03</Link> | Anti-lock braking | history, wheel-speed sensors, the modulator, channel layouts, the control cycle, the model | 03 your own ABS · 04 on the wheel speed only · 05 across road surfaces |
 | <Link to="tcs">04</Link> | Traction control | ABS turned around: brake and engine intervention on a spinning wheel | 06 take-home bonus: TCS |
 | <Link to="esp">05</Link> | Electronic stability program | sensors, the reference model, understeer and oversteer, selective braking, ESP through ABS, split-µ | demo only |
 | <Link to="torque-vectoring">06</Link> | Torque vectoring | adding torque instead of only braking: differentials and electric motors | |
@@ -109,8 +109,9 @@ one after it. Budgets per section are on each section's cover and in
 `docs/lecture-03-run-sheet.md`.
 
 The first two sections are physics: what the tire can give, and how the brake system turns a foot
-into pressure and torque. Section 03 is the center of the lecture, and most of the building
-happens there: four steps on your own car. Sections 04 to 06 build on the same hardware: TCS adds
+into pressure and torque. Section 02 ends with your car stopped by a brake system you wire
+yourself. Section 03 is the center of the lecture, and most of the building happens there: three
+steps on your own car. Sections 04 to 06 build on the same hardware: TCS adds
 engine control, ESP adds three sensors, torque vectoring adds an actuator that can push as well as
 brake. Traction control is a bonus task for home; ESP is a demo on a planar car.
 -->
@@ -143,7 +144,7 @@ One wheel braking a 1400 kg car from 90 km/h, with and without ABS.
 
 The driver's foot to master-cylinder pressure.
 
-- `Vehicle.Brake.BrakePedal`: the lever
+- `Vehicle.Brake.BrakePedal`: the lever, on a 0–1 pedal command
 - `Vehicle.Brake.StaticBooster`: the vacuum booster's characteristic
 - `Vehicle.Brake.TandemMasterCylinder`: two circuits from one bore
 - `Vehicle.Brake.ForceChainTransient`: a 0–500 N pedal ramp
@@ -153,9 +154,9 @@ The driver's foot to master-cylinder pressure.
 
 ### Yours, built along
 
-Your `MyCar` library, on the given `Vehicle.Wheel.BrakedWheel` and your hands-on 1 `Body`.
+Your `MyCar` library, on the given brake parts and wheels and your hands-on 1 `Body`.
 
-- `LockedStop`: the locked-wheel bench
+- `PedalStop`: pedal to wheel, through lines and calipers
 - `SlipABS`: your slip controller
 - `RefSpeedEstimator`, `PhaseABS`: an ABS on the wheel speed alone
 
@@ -172,14 +173,15 @@ repository. Every plot in sections 02 and 03 marked as a figure comes from runni
 speaker notes say which cell.
 
 The third column is what you build today, along with me: four small models in your own
-library, each checked against the numbers of section 03. The course repository has the reference
+library, each checked against a number on its build slide. The course repository has the reference
 answers in `dyad/HandsOn03/`, under the same names. The ESP demo runs on a fourth
 model, a planar four-wheel car, which section 05 introduces.
 
 Neither notebook model is a car yet. The ABS model is a single lumped wheel carrying the whole car: no load
 transfer, no steering, no yaw. That is enough for ABS, not for ESP; the ESP section brings in the
-planar car. The brake model stops at master-cylinder pressure: lines and calipers are the
-next increment of the brake plan.
+planar car. Notebook 02 stops at master-cylinder pressure. The brake lines and the calipers that
+carry it to the wheel are library parts too: `BrakeLine`, `BrakeCaliper` and
+`HydraulicBrakedWheel`, which you wire in build 02.
 -->
 
 ---
@@ -196,12 +198,14 @@ routeAlias: build-setup
 using Pkg
 Pkg.add(url = "https://github.com/dr14-make/16ESPD",
         rev = "TODO-TAG")   # tag not cut yet
+Pkg.add("HydraulicComponents")
 ```
 
 Then <kbd>F1</kbd> → **Dyad: Compile**.
 
-*Branch `lecture-03` · move the course library to the Lecture 3 tag · compile · **+** →
-`VehicleSystemsComponents › Vehicle › Wheel` lists `BrakedWheel`*
+*Branch `lecture-03` · move the course library to the Lecture 3 tag · add `HydraulicComponents`
+· compile · **+** → `VehicleSystemsComponents › Vehicle › Wheel` lists `BrakedWheel` and
+`HydraulicBrakedWheel`*
 
 [page: step 00](../lecture/lecture-03/#step-00)
 
@@ -217,22 +221,25 @@ popup open at <code>VehicleSystemsComponents › Vehicle › Wheel</code></div>
 </div>
 
 <!--
-Before the first build, the course library. Today's parts, the braked wheel and the pressure
-integrator, live in the course library, and your `MyCar` needs a version that has them.
+Before the first build, the course library. Today's parts, the brake system, the braked wheels
+and the pressure integrator, live in the course library, and your `MyCar` needs a version that
+has them.
 
 In the status bar at the bottom, click the branch name and create a new branch, `lecture-03`, from
 `main`. If you finished hands-on 2, branch from where it left you; if not, `main` is enough,
 because today needs only the `Body` from hands-on 1.
 
 Open the Julia REPL: click Dyad: Open Julia REPL in the Actions panel's title bar. Paste the
-three lines on the slide. You added the course library in hands-on 2, but your manifest still
-holds the version from that day, which has none of today's parts. These lines move it to a fixed
-tag, the version this lecture was rehearsed on. If you skipped hands-on 2, the same lines add it.
-Then F1, Dyad: Compile.
+lines on the slide. You added the course library in hands-on 2, but your manifest still holds the
+version from that day, which has none of today's parts. The first `Pkg.add` moves it to a fixed
+tag, the version this lecture was rehearsed on. If you skipped hands-on 2, the same line adds it.
+The second adds `HydraulicComponents`, the fluid library: in build 02 your own bench declares the
+brake fluid, and that needs the package in `MyCar` itself. Then F1, Dyad: Compile.
 
 Check: open any diagram, click plus, and open VehicleSystemsComponents, Vehicle, Wheel. You should
-see `BrakedWheel`, `BrakeActuator` and `TireFrictionCurve`. One level up, `Vehicle` lists
-`ABSPressureIntegrator`. In the REPL, `using VehicleSystemsComponents` runs without an error.
+see `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator` and `TireFrictionCurve`. Next to it,
+`Brake` lists `BrakePedal`, `StaticBooster`, `TandemMasterCylinder`, `BrakeLine` and
+`BrakeCaliper`. One level up, `Vehicle` lists `ABSPressureIntegrator`. In the REPL, `using VehicleSystemsComponents` runs without an error.
 
 Under plus there is also a `HandsOn03` folder: those are the reference answers to today's steps.
 Build your own; open them only to compare.

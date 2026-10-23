@@ -8,7 +8,7 @@ title: Lecture 3 — build an ABS of your own
 
 From a car whose wheel locks under a panic stop to an ABS that sees only the wheel speed, tested on dry, wet and snowy roads
 
-**What you build.** Your `MyCar` from the [hands-on](../../handson/lecture-01/) has a `Body`. In this lecture you put it on the course library's braked wheel and brake it from 90 km/h, along with the lecturer: first with no ABS, then with a slip controller of your own, then with an ABS that knows only the wheel speed. Every number the lecture's ABS slides show comes out of a model on your own screen. Step 01 is on paper; steps 02–04 each add one bench or controller; step 05 is a table from the REPL. Traction control is a bonus task to take home. ESP is a demo: nothing to build.
+**What you build.** Your `MyCar` from the [hands-on](../../handson/lecture-01/) has a `Body`. In this lecture you put it on the course library's brakes and brake it from 90 km/h, along with the lecturer: first through a brake system you wire from the pedal to the wheel, with no ABS, then with a slip controller of your own, then with an ABS that knows only the wheel speed. Every number the lecture's ABS slides show comes out of a model on your own screen. Step 01 is on paper; step 02 wires the brake system; steps 03–04 each add a controller and its bench; step 05 is a table from the REPL. Traction control is a bonus task to take home. ESP is a demo: nothing to build.
 
 **How each step works.** The slide that introduces a step shows the finished diagram or code and links here. Each step below lists the blocks to place with their library path, instance name and values, every wire and line of code, and what the plot and the braking distance must show before you go on. Use the names given here: the steps after it read signal paths like `abs.tau_cmd` and `est.v_ref`, and the REPL loop of step 05 calls your analyses by name.
 
@@ -28,9 +28,12 @@ Every number in an expected result is a test expectation or a measured run of th
 
 - [01 · The tire's limit, by hand](#step-01)
 
+**02 — How the brakes work**
+
+- [02 · Pedal to wheel](#step-02)
+
 **03 — Anti-lock braking**
 
-- [02 · Lock the wheel](#step-02)
 - [03 · An ABS of your own](#step-03)
 - [04 · Only the wheel speed](#step-04)
 - [05 · Across road surfaces](#step-05)
@@ -45,16 +48,17 @@ Lecture deck: [front matter](../../lecture-03/index.html#/build-setup){target="_
 
 ### 00 · Set up: the course library {#step-00}
 
-Today's parts, the braked wheel and the pressure integrator, are in the course library. Your `MyCar` needs a version that has them.
+Today's parts, the brake system, the braked wheels and the pressure integrator, are in the course library. Your `MyCar` needs a version that has them, and the fluid library `HydraulicComponents`.
 
 #### Do this
 
 1. In the status bar, click the branch name → **Create new branch…** → `lecture-03`, from `main`. If you finished hands-on 2, branch from where it left you. If not, `main` is enough: today needs only hands-on 1's `Body`.
-2. Open the Julia REPL and move the course library to the Lecture 3 version: the tag this lecture was rehearsed on. You added the library in hands-on 2, and your `Manifest.toml` still holds the version from that day, without today's parts. Skipped hands-on 2? The same line adds it.
+2. Open the Julia REPL and move the course library to the Lecture 3 version: the tag this lecture was rehearsed on. You added the library in hands-on 2, and your `Manifest.toml` still holds the version from that day, without today's parts. Skipped hands-on 2? The same line adds it. The second line adds `HydraulicComponents`: in step 02 your own bench declares the brake fluid, so `MyCar` needs the package itself.
 
    ```julia
    using Pkg
    Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "TODO-TAG")
+   Pkg.add("HydraulicComponents")
    ```
 
    <!-- TODO: replace TODO-TAG with the tag cut from main, here and on the deck's build 00 slide. -->
@@ -64,13 +68,13 @@ Today's parts, the braked wheel and the pressure integrator, are in the course l
 
 ::: info Screenshot to come
 
-`step00-wheel-library.png`: the **+** popup open at `VehicleSystemsComponents › Vehicle › Wheel`, listing `BrakedWheel`, `BrakeActuator` and `TireFrictionCurve`.
+`step00-wheel-library.png`: the **+** popup open at `VehicleSystemsComponents › Vehicle › Wheel`, listing `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator` and `TireFrictionCurve`.
 
 :::
 
 ::: tip Expected result
 
-`using VehicleSystemsComponents` runs in the REPL without an error. Under **+**, `Vehicle › Wheel` lists `BrakedWheel`, `BrakeActuator` and `TireFrictionCurve`, and `Vehicle` lists `ABSPressureIntegrator`.
+`using VehicleSystemsComponents` and `using HydraulicComponents` run in the REPL without an error. Under **+**, `Vehicle › Wheel` lists `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator` and `TireFrictionCurve`; `Vehicle › Brake` lists `BrakePedal`, `StaticBooster`, `TandemMasterCylinder`, `BrakeLine` and `BrakeCaliper`; and `Vehicle` lists `ABSPressureIntegrator`.
 
 :::
 
@@ -115,44 +119,66 @@ The peak distance is the floor no ABS beats. The sliding distance is roughly wha
 
 :::
 
-## 03 Anti-lock braking
+## 02 How the brakes work
 
-Lecture deck: [anti-lock braking](../../lecture-03/index.html#/abs){target="_self"}
+Lecture deck: [how the brakes work](../../lecture-03/index.html#/brakes){target="_self"}
 
-### 02 · Lock the wheel {#step-02}
+### 02 · Pedal to wheel {#step-02}
 
-A braking bench with your own `Body` on the library's braked wheel. A 6000 N·m step at 0.5 s locks the wheel, and the car stops on the sliding friction.
+The brake system of section 02, wired by you: pedal, booster, tandem master cylinder, two brake lines and a wheel with a front and a rear caliper, stopping your own `Body` from 90 km/h. Pressed firmly, it stops the car hard without locking the wheel; pressed harder, it locks it. The hard stop is the no-ABS baseline of steps 03–05.
 
 #### Parts
 
-New component `LockedStop` in `MyCar`:
+New component `PedalStop` in `MyCar`:
 
 | Name | Library path | Set |
 | --- | --- | --- |
+| `pedal` | parameter `Real` | `0.6` — pedal command, the foot force as a fraction of 500 N |
 | `road_mu` | parameter `Real` | `1.0` — road-friction multiplier |
-| `wheel` | VehicleSystemsComponents › Vehicle › Wheel › BrakedWheel | defaults |
+| `command` | BlockComponents › Sources › Step | `height = pedal`, `start_time = 0.5` |
+| `pedal_unit` | VehicleSystemsComponents › Vehicle › Brake › BrakePedal | defaults |
+| `booster` | VehicleSystemsComponents › Vehicle › Brake › StaticBooster | defaults |
+| `master` | VehicleSystemsComponents › Vehicle › Brake › TandemMasterCylinder | defaults |
+| `line_f` | VehicleSystemsComponents › Vehicle › Brake › BrakeLine | defaults (1.5 m) |
+| `line_r` | VehicleSystemsComponents › Vehicle › Brake › BrakeLine | `L = 4.0` |
+| `wheel` | VehicleSystemsComponents › Vehicle › Wheel › HydraulicBrakedWheel | defaults |
 | `body` | your `Body` (hands-on 1) | — |
+| `fixed_hydraulic` | TranslationalComponents › Components › Fixed | — |
 | `fixed` | RotationalComponents › Components › Fixed | — |
 | `speed` | TranslationalComponents › Sensors › VelocitySensor | — |
-| `demand` | BlockComponents › Sources › Step | `height = 6000`, `start_time = 0.5` |
 | `road` | BlockComponents › Sources › Constant | `k = road_mu` |
 
-`BrakedWheel` is the wheel's inertia (4 kg·m²), a brake that follows its torque command with a 30 ms lag, and the tire curve, with the whole car's weight on it. Its `tau_cmd` input is the brake torque asked for; its output `kappa` is the wheel's true slip.
+`BrakePedal` takes a command `u` from 0 to 1: the foot force as a fraction of 500 N, the FMVSS 135 ceiling, the way a throttle command is a fraction of full throttle. Its lever multiplies the force by 3.5; `StaticBooster` multiplies it again by 5 up to run-out at 232 N of foot; `TandemMasterCylinder` turns it into the same pressure `p_mc` in its `front` and `rear` circuits. `BrakeLine` is a laminar line with a 3 mm bore. `HydraulicBrakedWheel` is the wheel's inertia (4 kg·m²), a front-axle and a rear-axle `BrakeCaliper` (49.0 and 19.9 N·m per bar above 0.5 bar pad contact) and the tire curve, with the whole car's weight on it. Its output `kappa` is the wheel's true slip.
 
 #### Do this
 
-1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `LockedStop`. Click an empty spot of the canvas → **Add parameter** `road_mu`, type `Real`, value `1.0`. Place the six blocks from the table.
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `PedalStop`. Click an empty spot of the canvas → **Add parameter** `pedal`, type `Real`, value `0.6`, and `road_mu`, type `Real`, value `1.0`. Place the twelve blocks from the table.
 2. Wire:
-   - `demand.y → wheel.tau_cmd`
+   - `command.y → pedal_unit.u`
+   - `pedal_unit.rod → booster.input`, `booster.rod_out → master.pushrod`
+   - `pedal_unit.support`, `booster.support` and `master.support → fixed_hydraulic.flange`
+   - `master.front → line_f.port_a`, `line_f.port_b → wheel.front`
+   - `master.rear → line_r.port_a`, `line_r.port_b → wheel.rear`
    - `road.y → wheel.mu_scale`
    - `wheel.support → fixed.spline`
    - `wheel.flange → body.flange`, and `speed.flange → body.flange`
-3. Toggle to code (⇄) and add the starting state at the end of `relations`: the brake at zero torque, the wheel rolling at the car's speed, the car at 25 m/s.
+3. Toggle to code (⇄) and paste the brake fluid: the `path medium` line among the declarations, above `relations`, and the `continuity` line inside `relations`. Dyad cannot declare a fluid inside a library part, so the bench that assembles the circuit declares it; the connections carry it from `master.front` to every port of both circuits. Without these two lines the bench does not compile.
+
+   ::: code-group
+
+   ```txt [Brake fluid]
+     path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+   relations
+     continuity(medium, master.front.medium)
+   ```
+
+   :::
+
+   Then add the starting state at the end of `relations`: the wheel rolling at the car's speed, the car at 25 m/s.
 
    ::: code-group
 
    ```txt [Initial state]
-     initial wheel.brake.tau_actual = 0
      initial wheel.inertia.phi = 0
      initial wheel.inertia.w = 25 / 0.31
      initial body.mass.s = 0
@@ -163,80 +189,113 @@ New component `LockedStop` in `MyCar`:
 
    Forget them and the wheel starts at rest: the run then shows a wheel spinning up, not a stop.
 
-4. <Badge type="tip" text="New analysis" /> Add the analysis in code, below the component, so it sets the solver and passes `road_mu` through for step 05:
+4. <Badge type="tip" text="New analysis" /> Add the analysis in code, below the component, so it sets the solver and passes `pedal` and `road_mu` through:
 
    ```txt
-   analysis LockedStopTransient
+   analysis PedalStopTransient
      extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+     parameter pedal::Real = 0.6
      parameter road_mu::Real = 1.0
-     model = LockedStop(road_mu = road_mu)
+     model = PedalStop(pedal = pedal, road_mu = road_mu)
    end
    ```
 
-5. Run it, plot the speed and the slip, and read the braking distance. `braking_distance` measures from the brake application at 0.5 s until the car is below 0.5 m/s.
+5. Run it twice. First a firm stop, `pedal = 0.3`: plot the master-cylinder pressure, the speed and the slip, and read the braking distance. `braking_distance` measures from the pedal at 0.5 s until the car is below 0.5 m/s.
 
    ```julia
    using Plots; plotly()
-   r = MyCar.LockedStopTransient()
-   plot(r; idxs = [r."speed.v", r."wheel.kappa"], layout = (2, 1))
+   r = MyCar.PedalStopTransient(pedal = 0.3)
+   plot(r; idxs = [r."master.p_mc", r."speed.v", r."wheel.kappa"], layout = (3, 1))
+   VehicleSystemsComponents.Vehicle.braking_distance(r)
+   ```
+
+   Then the panic stop, the default `pedal = 0.6`:
+
+   ```julia
+   r = MyCar.PedalStopTransient()
+   plot(r; idxs = [r."master.p_mc", r."speed.v", r."wheel.kappa"], layout = (3, 1))
    VehicleSystemsComponents.Vehicle.braking_distance(r)
    ```
 
 ::: info Screenshot to come
 
-`step02-locked-bench.png`: the finished `LockedStop` diagram, `demand` and `road` on the left, `wheel` in the middle with `fixed` under it, `body` and `speed` on the right.
+`step02-pedal-bench.png`: the finished `PedalStop` diagram, the chain `command` → `pedal_unit` → `booster` → `master` from the left, `fixed_hydraulic` under the three housings, `line_f` and `line_r` into `wheel`, `road` and `fixed` under the wheel, `body` and `speed` on the right.
 
 :::
 
-[![Two panels against time. Top: car speed falls in a straight line from 90 km/h at 0.5 s to zero at about 4 s, while the wheel's surface speed drops to zero within 0.17 s. Bottom: wheel slip goes from 0 to -1 at about 0.67 s and stays there. Title: locked stop, 43.7 m from 90 km/h.](/lecture/lecture-03/img/step02-locked-stop.svg)](/lecture/lecture-03/img/step02-locked-stop.svg)
+[![Two panels against time at pedal 0.6. Top: car speed falls in a straight line from 90 km/h at 0.5 s to zero just before 4 s, while the wheel's surface speed drops to zero within 0.2 s. Bottom: wheel slip goes from 0 to -1 within 0.2 s of the pedal and stays there. Title: hydraulic pedal stop, 43.7 m from 90 km/h.](/lecture/lecture-03/img/step02-locked-stop.svg)](/lecture/lecture-03/img/step02-locked-stop.svg)
 
 ::: tip Expected result
 
-`wheel.kappa` reaches **−1** at **0.67 s**, 0.17 s after the step, and stays there. The car is at rest at **4.0 s**. `braking_distance` gives **43.7 m**: just short of the 45.5 m sliding bound of step 01, because the wheel is not locked for the first 0.17 s, and drag and rolling resistance help. At `road_mu` 0.5 and 0.3: 85.1 and 136.8 m.
+**Pedal 0.3, 150 N of foot:** `master.p_mc` peaks at **55.2 bar** and the calipers hold **3765 N·m**, under the 4256 N·m of step 01. The wheel never locks: `wheel.kappa` stays above −0.03. The car decelerates at about 0.87 g, and `braking_distance` gives **36.0 m**. The front caliper's pressure rises from 10 to 90 % in 4.4 ms, and the master cylinder pushes 3.5 cm³ of fluid into the two circuits.
 
-Reference: `HandsOn03.LockedStop`, `HandsOn03.LockedStopTransient`. It equals the library's `Vehicle.LockedBrakeTransient` to machine precision.
+**Pedal 0.6, 300 N**, past the booster's run-out: **89.2 bar** and **6109 N·m**, 1.4 times what the tire can carry. `wheel.kappa` reaches **−1** within 0.2 s of the pedal and stays there; the car is at rest just before **4 s**. `braking_distance` gives **43.7 m**: just short of the 45.5 m sliding bound of step 01, because the wheel is not locked at once, and drag and rolling resistance help. At `road_mu` 0.5 and 0.3: 85.1 and 136.8 m.
+
+The harder foot stops 7.7 m longer. Steps 03–05 measure every ABS against the 43.7 m of pedal 0.6.
+
+Reference: `HandsOn03.PedalStop`, `HandsOn03.PedalStopTransient`.
 
 :::
 
 :::: warning Fell behind?
 
-Right-click `MyCar` → **Add Component**, name it `LockedStop`, toggle to code (⇄) and paste this over its contents. It needs your `Body` from hands-on 1.
+Right-click `MyCar` → **Add Component**, name it `PedalStop`, toggle to code (⇄) and paste this over its contents. It needs your `Body` from hands-on 1, and `HydraulicComponents` in `MyCar` from step 00.
 
 ::: code-group
 
-```txt [LockedStop]
-component LockedStop
+```txt [PedalStop]
+component PedalStop
+  "Pedal command: foot force as a fraction of 500 N"
+  parameter pedal::Real = 0.6
   "Road-friction multiplier (1 dry, 0.5 wet, 0.3 snow)"
   parameter road_mu::Real = 1.0
-  "Driver's brake demand, 6000 N·m from 0.5 s"
-  demand = BlockComponents.Sources.Step(height = 6000, start_time = 0.5)
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5)
   road = BlockComponents.Sources.Constant(k = road_mu)
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel()
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal()
+  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster()
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder()
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine()
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0)
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel()
   body = Body()
   fixed = RotationalComponents.Components.Fixed()
+  fixed_hydraulic = TranslationalComponents.Components.Fixed()
   speed = TranslationalComponents.Sensors.VelocitySensor()
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
 relations
-  connect(demand.y, wheel.tau_cmd)
+  connect(command.y, pedal_unit.u)
+  connect(pedal_unit.rod, booster.input)
+  connect(booster.rod_out, master.pushrod)
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange)
+  connect(master.front, line_f.port_a)
+  connect(line_f.port_b, wheel.front)
+  connect(master.rear, line_r.port_a)
+  connect(line_r.port_b, wheel.rear)
+  continuity(medium, master.front.medium)
   connect(road.y, wheel.mu_scale)
   connect(wheel.support, fixed.spline)
   connect(wheel.flange, body.flange, speed.flange)
-  initial wheel.brake.tau_actual = 0
   initial wheel.inertia.phi = 0
   initial wheel.inertia.w = 25 / 0.31
   initial body.mass.s = 0
   initial body.mass.v = 25
 end
 
-analysis LockedStopTransient
+analysis PedalStopTransient
   extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.6
   parameter road_mu::Real = 1.0
-  model = LockedStop(road_mu = road_mu)
+  model = PedalStop(pedal = pedal, road_mu = road_mu)
 end
 ```
 
 :::
 
 ::::
+
+## 03 Anti-lock braking
+
+Lecture deck: [anti-lock braking](../../lecture-03/index.html#/abs){target="_self"}
 
 ### 03 · An ABS of your own {#step-03}
 
@@ -271,11 +330,52 @@ New component `SlipABS`, written in code:
 
    Slip is negative while braking: past −0.04 the wheel is beyond the peak, so dump; otherwise build.
 
-2. <Badge type="tip" text="New component" /> **B · the bench.** Right-click `LockedStop` → **Duplicate**, name it `ABSStop`. Place your `SlipABS` as `abs`. Delete the wire `demand.y → wheel.tau_cmd` and wire instead:
+2. <Badge type="tip" text="New component" /> **B · the bench.** Right-click `MyCar` → **Add Component**, name it `ABSStop`. Add the parameter `road_mu`, type `Real`, value `1.0`, and place:
+
+   | Name | Library path | Set |
+   | --- | --- | --- |
+   | `demand` | BlockComponents › Sources › Step | `height = 6000`, `start_time = 0.5` |
+   | `abs` | your `SlipABS` | — |
+   | `wheel` | VehicleSystemsComponents › Vehicle › Wheel › BrakedWheel | defaults |
+   | `body` | your `Body` (hands-on 1) | — |
+   | `fixed` | RotationalComponents › Components › Fixed | — |
+   | `speed` | TranslationalComponents › Sensors › VelocitySensor | — |
+   | `road` | BlockComponents › Sources › Constant | `k = road_mu` |
+
+   `BrakedWheel` is step 02's wheel inertia and tire with a brake that follows a torque command `tau_cmd` with a 30 ms lag, in place of the hydraulic ports. Your ABS commands that torque directly, while the step 02 baseline is hydraulic. The two line up: pedal 0.6 puts 6109 N·m on the wheel, about the 6000 N·m `demand` here, and without ABS both stop in 43.7 m. An ABS that drives valves in the hydraulic circuit is [issue #92](https://github.com/dr14-make/16ESPD/issues/92).
+
+   Wire:
    - `demand.y → abs.demand`, `abs.tau_cmd → wheel.tau_cmd`
    - `wheel.kappa → abs.kappa`, `speed.v → abs.v`
+   - `road.y → wheel.mu_scale`
+   - `wheel.support → fixed.spline`
+   - `wheel.flange → body.flange`, and `speed.flange → body.flange`
 
-   Add the analysis `ABSStopTransient` below it, as in step 02 but with `model = ABSStop(road_mu = road_mu)`. Run it and plot the torque at the wheel and the slip:
+   Toggle to code (⇄) and add the starting state at the end of `relations`: step 02's four lines, and the brake at zero torque.
+
+   ::: code-group
+
+   ```txt [Initial state]
+     initial wheel.brake.tau_actual = 0
+     initial wheel.inertia.phi = 0
+     initial wheel.inertia.w = 25 / 0.31
+     initial body.mass.s = 0
+     initial body.mass.v = 25
+   ```
+
+   :::
+
+   Add the analysis below the component:
+
+   ```txt
+   analysis ABSStopTransient
+     extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+     parameter road_mu::Real = 1.0
+     model = ABSStop(road_mu = road_mu)
+   end
+   ```
+
+   Run it and plot the torque at the wheel and the slip:
 
    ```julia
    using Plots; plotly()
@@ -636,7 +736,7 @@ end
 
 ### 05 · Across road surfaces {#step-05}
 
-One table from the REPL: your locked wheel, your ABS on the true slip and your ABS on the wheel speed only, on dry, wet and snowy roads. Then the `a_ref` knob.
+One table from the REPL: your step 02 stop at pedal 0.6, which locks the wheel, your ABS on the true slip and your ABS on the wheel speed only, on dry, wet and snowy roads. Then the `a_ref` knob.
 
 #### Do this
 
@@ -648,7 +748,7 @@ One table from the REPL: your locked wheel, your ABS on the true slip and your A
    d(run) = round(Vehicle.braking_distance(run); digits = 1)
    for μ in (1.0, 0.5, 0.3)
        println(μ, "  ",
-           d(MyCar.LockedStopTransient(road_mu = μ, stop = stop(μ))), "  ",
+           d(MyCar.PedalStopTransient(road_mu = μ, stop = stop(μ))), "  ",
            d(MyCar.ABSStopTransient(road_mu = μ, stop = stop(μ))), "  ",
            d(MyCar.ABSStopWheelOnlyTransient(road_mu = μ, stop = stop(μ; a = 8))))
    end
@@ -679,13 +779,13 @@ One table from the REPL: your locked wheel, your ABS on the true slip and your A
 
 ::: tip Expected result
 
-| road μ | locked | ABS, true slip | ABS, wheel only (yours) | ABS, wheel only (library, 5 ms) |
+| road μ | locked, pedal 0.6 | ABS, true slip | ABS, wheel only (yours) | ABS, wheel only (library, 5 ms) |
 |---:|---:|---:|---:|---:|
 | 1.0 | **43.7 m** | **34.4 m** | **35.5 m** | 38.7 m |
 | 0.5 | **85.1 m** | **63.4 m** | **69.8 m** | 83.2 m |
 | 0.3 | **136.8 m** | **102.2 m** | **119.6 m** | 141.3 m, longer than locked |
 
-Your first two columns must match the lecture's surface table to the decimal. Your wheel-speed-only ABS keeps most of the gain on a dry road and about half of it on snow. The library ECU falls into the `a_ref` trap on snow: `a_ref = 8` is almost three times what the road allows, so its estimate falls too fast, it under-reads the slip and lets the wheel slide. With `a_ref = 2.4` it stops in 128.4 m. Yours does not fall into it: it dumps on the wheel's own deceleration.
+Your first two columns must match the lecture's surface table: the locked column within 0.1 m, since your stop brakes through the hydraulics, the true-slip column to the decimal. Your wheel-speed-only ABS keeps most of the gain on a dry road and about half of it on snow. The library ECU falls into the `a_ref` trap on snow: `a_ref = 8` is almost three times what the road allows, so its estimate falls too fast, it under-reads the slip and lets the wheel slide. With `a_ref = 2.4` it stops in 128.4 m. Yours does not fall into it: it dumps on the wheel's own deceleration.
 
 Your `a_ref = 2.4` reruns: **124.1 m** on snow, *longer* than at 8, and **105.4 m** on a dry road. The other side of the same knob: an `a_ref` below the car's real deceleration lets the estimate run above the car, the estimated slip passes `lambda_1` while the tire sits at its peak, and the controller dumps on slip that is not there. An ABS can only be as good as its guess of the car's speed.
 
@@ -693,7 +793,7 @@ Your `a_ref = 2.4` reruns: **124.1 m** on snow, *longer* than at 8, and **105.4 
 
 ::: warning Fell behind?
 
-The loop needs the three analyses of steps 02–04 under exactly these names, each passing `road_mu` through. The reference analyses are `VehicleSystemsComponents.HandsOn03.LockedStopTransient`, `ABSStopTransient` and `ABSStopWheelOnlyTransient`: put `VehicleSystemsComponents.HandsOn03.` in place of `MyCar.` to run the loop on them.
+The loop needs the three analyses of steps 02–04 under exactly these names, each passing `road_mu` through. The reference analyses are `VehicleSystemsComponents.HandsOn03.PedalStopTransient`, `ABSStopTransient` and `ABSStopWheelOnlyTransient`: put `VehicleSystemsComponents.HandsOn03.` in place of `MyCar.` to run the loop on them.
 
 :::
 

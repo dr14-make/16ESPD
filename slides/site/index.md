@@ -31,7 +31,7 @@ features:
     link: /lecture-03/index.html
     target: _self
   - title: "Lecture 3 build guide: an ABS of your own"
-    details: "Alongside the lecture<br>What you build on your own car while the lecture runs: a locked stop on one wheel, a slip ABS that leads the brake's 30 ms lag, then an ABS on the wheel speed alone that dumps, holds and builds. Ends with braking distances on dry, wet and snowy roads, the a_ref trap, and traction control as a take-home bonus."
+    details: "Alongside the lecture<br>What you build on your own car while the lecture runs: a brake system from pedal to wheel that locks the wheel when pressed hard, a slip ABS that leads the brake's 30 ms lag, then an ABS on the wheel speed alone that dumps, holds and builds. Ends with braking distances on dry, wet and snowy roads, the a_ref trap, and traction control as a take-home bonus."
     link: /lecture/lecture-03/
 ---
 
@@ -93,8 +93,9 @@ carries what to say, the time per part, where students get stuck, and the answer
 5. [**Electronic stability program**](./lecture-03/index.html#/esp){target="_self"} — intention against motion, one wheel braked
 6. [**Torque vectoring**](./lecture-03/index.html#/torque-vectoring){target="_self"} — a yaw moment from drive torque
 
-As in Lecture 1, the students build along with the lecture: a locked stop, a slip ABS of their
-own, and an ABS on the wheel speed alone, each checked against section 03's result slides. They
+As in Lecture 1, the students build along with the lecture: a brake system from pedal to wheel,
+a slip ABS of their own, and an ABS on the wheel speed alone, each checked against the lecture's
+result slides. They
 follow the [build guide](./lecture/lecture-03/); each build slide links to its step.
 
 ## For the lecturer

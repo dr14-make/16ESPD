@@ -24,17 +24,17 @@ The hands-on deck's conventions apply to every diagram:
 
 | File | Step | From |
 | ---- | ---- | ---- |
-| `step02-locked-stop.svg` | 02 | `HandsOn03.LockedStopTransient` |
+| `step02-locked-stop.svg` | 02 | `HandsOn03.PedalStopTransient`, pedal 0.6 (stale until re-run: still drawn from the torque-level bench) |
 | `step03-abs-torque-slip.svg` | 03 | `HandsOn03.ABSStopTransient`, `T_p` 0 and 0.03 |
 | `step04-phase-cycle.svg` | 04 | `HandsOn03.ABSStopWheelOnlyTransient`, `road_mu = 0.5` |
-| `step05-surfaces.svg` | 05 | the three reference analyses and `Vehicle.ABSBrakeTransient` at μ 1.0, 0.5, 0.3 |
+| `step05-surfaces.svg` | 05 | the three reference analyses, `PedalStopTransient` first, and `Vehicle.ABSBrakeTransient` at μ 1.0, 0.5, 0.3 (stale until re-run: its first series is still the torque-level bench) |
 
 ## To capture
 
 | File | Step | Model | What must be visible | Used on |
 | ---- | ---- | ----- | -------------------- | ------- |
-| `step00-wheel-library.png` | 00 | any diagram | The **+** popup open at `VehicleSystemsComponents › Vehicle › Wheel`, listing `BrakedWheel`, `BrakeActuator`, `TireFrictionCurve`; `HandsOn03` visible one level up. | deck build 00, guide 00 |
-| `step02-locked-bench.png` | 02 | `HandsOn03.LockedStop` | The finished bench: `demand` and `road` on the left, `wheel` in the middle with `fixed` under it, `body` and `speed` on the right; the three-way junction on `body.flange`. | deck build 02, guide 02 |
+| `step00-wheel-library.png` | 00 | any diagram | The **+** popup open at `VehicleSystemsComponents › Vehicle › Wheel`, listing `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator`, `TireFrictionCurve`; `HandsOn03` visible one level up. | deck build 00, guide 00 |
+| `step02-pedal-bench.png` | 02 | `HandsOn03.PedalStop` | The finished hydraulic chain: `command` → `pedal_unit` → `booster` → `master` from the left, `fixed_hydraulic` under the three housings, `line_f` and `line_r` into `wheel`, `road` and `fixed` under the wheel, `body` and `speed` on the right; the three-way junction on `body.flange`. | deck build 02, guide 02 |
 | `step03-slipabs-code.png` | 03 | `HandsOn03.SlipABS` | The code view: the `pressure` line, the rate `ifelse` and the three look-ahead lines. | guide 03 |
 | `step03-abs-bench.png` | 03 | `HandsOn03.ABSStop` | `abs` between `demand` and `wheel`, the `wheel.kappa` and `speed.v` wires back into it. | guide 03 |
 | `step04-estimator-code.png` | 04 | `HandsOn03.RefSpeedEstimator` | The code view, all seven relations. | guide 04 |
@@ -45,4 +45,4 @@ The hands-on deck's conventions apply to every diagram:
 
 The rehearsal that captures them also settles the two open questions of the plan's risk table:
 whether Studio's code view keeps the `pressure` placement and the nested `ifelse` (steps 03 and
-04), and whether build 02's drawing fits its 15 minutes.
+04), and whether build 02's drawing and its two code pastes fit their 16 minutes.
