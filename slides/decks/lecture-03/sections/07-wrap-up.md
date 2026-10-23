@@ -53,7 +53,7 @@ falls. The same family of cascade loops Lecture 1 ended on.
   steerable and stops shorter. In the model: 11 % shorter on a dry road.
 - **04** TCS does the same for a driven wheel, with the brakes and the engine.
 - **05** ESP compares the driver's intention with the car's yaw rate and brakes single wheels;
-  without it, our planar car spins in the sine-with-dwell.
+  without it, our planar car spins in the sine-with-dwell; through ABS, no braked wheel locks.
 - **06** torque vectoring makes the same yaw moment with drive torque instead of brakes.
 
 ### Next: what you measured on your own car. <Link to="what-you-measured">→</Link>

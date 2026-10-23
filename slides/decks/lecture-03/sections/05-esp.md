@@ -11,10 +11,10 @@ Compare where the driver steers with where the car goes, and brake single wheels
 gap.
 
 <!--
-Budget: 18 minutes, 13 slides, demo included. Theory 11 (what 2, sensors 1, Ackermann 2,
-reference model 2.5, yaw correction 2, evidence and the test 1.5), demo 6 (planar car 1.5,
-passive run 2.5, ESP on 2), summary 1. Nothing to build: the students watch the demo; the planar
-car is too large to draw in a lecture.
+Budget: 18 minutes, 15 slides, demo included. Theory 9 (what 1.5, sensors 1, Ackermann 1,
+reference model 2, yaw correction 2, evidence and the test 1.5), demo 8 (planar car 1, passive
+run 2, ESP on 1.5, ESP through ABS 1.5, split-µ 2), summary 1. Nothing to build: the students
+watch the demo; the planar car is too large to draw in a lecture.
 
 ESP is Bosch's and Mercedes' name; the generic name is ESC, electronic stability control, which is
 what the regulations use. Others call it VSC, DSC, VDC or StabiliTrak. Same function.
@@ -179,7 +179,7 @@ angle. So real cars use only part of the Ackermann difference, and racing cars s
 the reverse. The steering linkage only approximates the formula anyway: the steering arms are
 angled so that, straight ahead, their extensions meet near the middle of the rear axle.
 
-For the model: the planned planar car steers its two front wheels with Ackermann geometry. The
+For the model: the planar car steers its two front wheels with Ackermann geometry. The
 ESP reference yaw rate comes from the single-track model, which needs one angle, the mean of the
 two. At low speed that model gives yaw rate v over R, which is v delta over L.
 
@@ -347,7 +347,8 @@ For ESP the repository has a **planar four-wheel car**, `Vehicle.Planar.PlanarCa
 - chassis mass and yaw inertia, wheelbase 2.7 m, track 1.55 m;
 - four wheels, each with its own speed and brake;
 - front steering through an **Ackermann linkage**;
-- **combined slip**: longitudinal and lateral force share one friction limit.
+- **combined slip**: longitudinal and lateral force share one friction limit;
+- **four ABS channels**, one per wheel, on a 5 ms clock.
 
 </div>
 <div>
@@ -362,13 +363,13 @@ For ESP the repository has a **planar four-wheel car**, `Vehicle.Planar.PlanarCa
 | the same, parallel steering | 0.0216 rad |
 
 The **ESP** on top of it: a yaw-rate reference, a yaw-moment controller and a brake allocator,
-`Vehicle.Planar.ESPController`.
+`Vehicle.Planar.ESPController`. It brakes the wheels directly, or through the ABS channels.
 
 </div>
 </div>
 
 <!--
-Budget: 1.5 minutes. This is the bridge from the theory to the demo.
+Budget: 1 minute. This is the bridge from the theory to the demo.
 
 The car is built from MultibodyComponents' PlanarMechanics: a planar rigid body for the chassis,
 and its slip-based wheel joint at each corner, which already has longitudinal and lateral slip
@@ -377,8 +378,9 @@ kilogram square meters, center of gravity 1.2 meters behind the front axle, peak
 sliding 0.8, steering ratio 16. The values are the research probe's, listed in the task brief's
 "Vehicle constants".
 
-The table is what was checked before trusting it in a spin, from the plausibility tests on
-branch feat/lecture-03-planar-car, commits 350db9d to 126ee69. In a steady turn at small steering
+The table is what was checked before trusting it in a spin, from `test/esp_plausibility.jl` and
+notebook `notebooks/lecture03/03-esp.pluto.jl`, which recomputes every number of this section
+with its band. In a steady turn at small steering
 angles the yaw rate matches v delta over L plus K us v squared, the formula of the reference-model
 slide, to within 0.65 percent. The understeer gradient is 2.04 times ten to the minus three
 radians per meter per second squared: 1.15 degrees of road-wheel angle per g, a mildly
@@ -388,12 +390,22 @@ The last two rows are the Ackermann slide, measured: driving a tight turn at 3 m
 the two front tires' slip angles differ by 0.0007 radians with Ackermann steering and by 0.0216,
 about 1.2 degrees, with the wheels parallel. That difference is the scrub.
 
-The ESP is task 5 of `docs/lecture-03-esp-dyad-tasks.md`, on the same branch at 0c3bf74. Its
+The ESP is task 5 of `docs/lecture-03-esp-dyad-tasks.md`, the ABS channels task 6. The ESP's
 reference is the single-track formula of the reference-model slide with the 0.85 margin on mu g
 over v; its controller turns the yaw-rate error into a yaw moment, proportional, 40 000 newton
 meter seconds per radian, with a 0.03 radian per second deadband; its allocator picks the outer
 front wheel on oversteer and the inner rear on understeer, as on the yaw-correction slide, and
-builds brake torque with a 0.1 second lag, up to 2500 newton meters.
+builds brake torque with a 0.1 second lag, up to 2500 newton meters. Each ABS channel is the
+section 03 modulator on its own wheel, releasing at a slip of 0.08 front and 0.06 rear, about
+three quarters of this tire's peak.
+
+If asked about load transfer: the car has it (task 7), off in every run shown here. With the
+center of gravity 0.55 meters high, a steady 0.39 g left turn moves 1134 newtons off the left
+front and 924 off the left rear onto the right wheels, and the yaw rate changes by only
+0.14 percent, because a tire's cornering stiffness grows with its load. Near the
+limit it matters: the passive car then spins at 270 degrees and plows only at 280. The
+spin-or-plow boundary sits at the top of the test, so the passive 270-degree verdict is not a
+robust number. ESP through ABS passes either way.
 -->
 
 ---
@@ -425,9 +437,9 @@ The test needs **≤ 0.35**.
 </div>
 
 <!--
-Budget: 2.5 minutes, with the next slide. The figure is a real run. A live run,
-`Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))`, needs the planar-car branch compiled
-and warmed up before class; see the run sheet.
+Budget: 2 minutes, with the next slide. The figure is a real run. A live run,
+`Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))`, needs the planar car compiled and
+warmed up before class; see the run sheet.
 
 This is the planar car with no controller, driven through the FMVSS 126 maneuver from the
 previous slide: 80 kilometers per hour, a 0.7 hertz sine on the steering wheel, half a second of
@@ -442,9 +454,8 @@ car plows, understeer, with a sideslip of only 5.9 degrees. Real test data show 
 non-monotonic pattern. That 270-degree pass does not save the car: one failed amplitude fails the
 test.
 
-The figure is the 76, 180 and 270 degree runs, made with `scripts/export_lecture03_esp_figures.jl`
-against the planar-car branch at 126ee69. The table is the task 4 plausibility test on the same
-branch; the figure's run gives a lateral displacement 1.07 seconds after the start of steering of
+The figure is the 76, 180 and 270 degree runs and the table every amplitude, from
+`scripts/export_lecture03_esp_figures.jl` at 23bd4bb, with no load transfer. The same runs give a lateral displacement 1.07 seconds after the start of steering of
 2.54 meters at 76 degrees and 3.76 at 180, both above the 1.83 meters the test asks for.
 -->
 
@@ -501,7 +512,7 @@ class: big-figure
 </div>
 
 <!--
-Budget: 2 minutes, with the next slide. The figure is a real run: the same car and maneuver as
+Budget: 1.5 minutes, with the next slide. The figure is a real run: the same car and maneuver as
 the last two slides, 180 degrees, with the ESP controller on and off. A live run is
 `Lecture3.ESPSineWithDwellTransient(A_sw = deg2rad(180))`, with `esp_on = 0` for the passive car.
 
@@ -538,7 +549,7 @@ The **outer front** wheel does most.
 <div>
 
 From 97° up the braked wheels **lock**: slip −0.996. The car slows from 80 to **48 km/h**.
-Next: ESP through **four ABS channels** (task 6).
+Next: the same ESP through **four ABS channels**.
 
 </div>
 </div>
@@ -564,11 +575,125 @@ halves the yaw-rate shortfall, from 0.145 to 0.071 radians per second.
 The cost, said plainly: this ESP asks for brake torque without ABS underneath. From 97 degrees up
 the braked wheels lock, the longitudinal slip reaches minus 0.996, and a locked tire gives little
 lateral force. The car still passes, but it leaves the maneuver at 13 to 15 meters per second
-instead of 22. Task 6 of the brief sends the ESP's requests through four ABS channels, one per
-wheel, which is the modulator and channel slides of section 03 put to work.
+instead of 22. The next slide sends the ESP's requests through four ABS channels, one per wheel,
+which is the modulator and channel slides of section 03 put to work.
 
-Figures: `scripts/export_lecture03_esp_figures.jl` against the planar-car branch at 0c3bf74; the
-numbers on both slides are what it prints, and match the branch's task 5 plausibility test.
+Figures: `scripts/export_lecture03_esp_figures.jl` at 23bd4bb; the numbers on both slides are
+what it prints, and match the task 5 plausibility test and notebook 03.
+-->
+
+---
+routeAlias: esp-through-abs
+class: big-figure
+---
+
+## ESP through ABS: the braked wheel keeps rolling
+
+![Two panels. Left: the lowest slip of the four wheels over 6 s at 180 degrees. With ESP braking directly, dashed red, it drops to minus 1, a locked wheel, again and again between 1.2 and 3.6 s. With ESP through ABS, solid blue, it never goes below minus 0.08. Right: speed at 6 s against steering-wheel amplitude, from an entry speed of 22.2 m/s. Braking directly, the car keeps 21.4 m/s at 32 degrees but only 13.4 to 14.6 from 97 degrees up. Through ABS it keeps 18.4 to 19.6 m/s from 76 degrees up.](/figures/05-esp-abs.svg)
+
+<div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
+<div>
+
+| steering wheel | 32° | 76° | 97° | 141° | 180° | 220° | 270° |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| end speed, braking directly [m/s] | 21.4 | 18.6 | 14.6 | 13.6 | 13.4 | 13.5 | 13.4 |
+| end speed, through ABS [m/s] | 21.0 | 19.6 | 19.1 | 18.4 | 18.9 | 19.0 | 19.3 |
+| lowest slip $\kappa$, through ABS | −0.04 | −0.06 | −0.06 | −0.07 | −0.08 | −0.08 | −0.09 |
+
+</div>
+<div>
+
+A locked tire has **no lateral force** left.
+
+Still **passes** everywhere:
+ratio within ±0.05, ≥ 2.87 m.
+
+</div>
+</div>
+
+<!--
+Budget: 1.5 minutes. The same ESP, the same car, the same test; only the path of the brake
+request changes. It now goes through the car's four ABS channels, one per wheel, the section 03
+modulator on a 5 millisecond clock, releasing at a slip of 0.08 on the front wheels and 0.06 on
+the rear. The controller also gains an integral term, 100 000 newton meters per radian, so that
+the yaw moment it asks for is not lost when ABS takes torque away. A live run is
+`Lecture3.ESPSineWithDwellTransient(A_sw = deg2rad(180), abs_on = 1.0, Ki = 1e5)`.
+
+Left panel, 180 degrees, the lowest slip of the four wheels at each instant. Braking directly, a
+wheel locks every time ESP brakes hard, and a locked tire slides almost straight backward: it
+gives up the lateral force it had, which is the friction-circle slide of section 01. Through ABS
+the slip never goes below minus 0.08, near the tire's peak, so the braked wheel keeps both its
+braking force and its cornering force.
+
+Right panel and the table, every amplitude. From 97 degrees up the car leaves the maneuver 4.5 to
+5.9 meters per second faster, about 19 meters per second instead of 13 to 15. At 32 degrees it is
+0.4 slower: the integral term brakes a little where the proportional ESP did not need to. The
+test is still passed at every amplitude: the yaw-rate ratio is at most 0.042 in magnitude at both
+instants, and the lateral displacement is 2.87 to 3.44 meters from 97 degrees up, more than the
+2.45 to 2.58 of the ESP braking directly, because a rolling front wheel still steers.
+
+This is why the wrap-up says ESP is impossible without four-channel ABS: the modulator that lets
+ESP build pressure at one wheel is the same one that keeps that wheel from locking.
+
+Figure and numbers: `scripts/export_lecture03_esp_figures.jl` at 23bd4bb; notebook 03, section 5,
+shows the four wheels' slip separately.
+-->
+
+---
+routeAlias: split-mu
+class: big-figure
+---
+
+## Split-µ: braking with one side on ice
+
+![Two panels. Left, top view: full braking from 80 km/h with the left wheels on dry asphalt and the right wheels on ice, the car drawn every 0.5 s. ABS only, red, turns left toward the dry side, more and more broadside, and stops at x 66 m, y 21 m. ABS with rear select-low, orange, and select-low with a proportional ESP, dashed purple, drift left to about y 15 m at x 87 to 90 m. Select-low with a PI ESP, blue, runs almost straight, to y 5 m at x 108 m. Right: heading over 6 s. ABS only climbs to 129 degrees by 4.5 s; the select-low runs reach 23 and 25 degrees by 6 s; the PI ESP stays near 3 degrees.](/figures/05-split-mu.svg)
+
+<div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
+<div>
+
+| µ 1.0 left, 0.3 right | heading | to the side | distance | read at |
+|---|---:|---:|---:|---:|
+| ABS only | **129°** | 21.1 m | 65.7 m | 4.5 s, stopped |
+| + rear select-low | 22.7° | 14.4 m | 89.5 m | 6 s |
+| + ESP, P | 24.6° | 14.6 m | 86.8 m | 6 s |
+| + ESP, PI | **3.2°** | 4.6 m | 108 m | 6 s |
+
+</div>
+<div>
+
+`Lecture3.SplitMuStop`, steering wheel held straight.
+
+Holding the heading **costs stopping distance**.
+
+</div>
+</div>
+
+<!--
+Budget: 2 minutes. The classic case where ABS alone is not enough. Full braking from 80
+kilometers per hour, 2500 newton meters asked at every wheel, the left wheels on dry asphalt and
+the right ones on ice at 30 percent of the grip, and the steering wheel held straight: the robot
+does not countersteer, as a driver would.
+
+ABS only: every wheel keeps rolling, as section 03 promised, but the left wheels brake three
+times harder than the right ones. That difference is a yaw moment toward the dry side, and with
+no one steering against it the car turns 129 degrees, past broadside, before it stops after
+66 meters.
+
+Rear select-low: both rear wheels get the smaller of their two ABS torques, so the rear axle
+brakes evenly and adds no yaw moment. The heading falls to 23 degrees, and the car is still
+rolling at 6 seconds: the dry rear wheel gave up braking force.
+
+ESP, proportional: almost no change, 25 degrees. It reacts to the yaw rate, and the yaw rate here
+is small; the heading lost is the integral of the yaw-rate error, and a P controller does not see
+it. ESP with the integral term cuts brake torque on the dry side while the error persists, and
+holds the heading at 3 degrees, at the price of a stop still unfinished at 108 meters.
+
+Every ESP calibration makes this trade between heading and distance. Production systems also
+delay the pressure build-up on the high-µ front wheel, the yaw-moment build-up delay, to give the
+driver time to countersteer; I know it from the Bosch handbook and did not model it.
+
+Figure and numbers: `scripts/export_lecture03_esp_figures.jl` at 23bd4bb, read when the car falls
+below 3 meters per second or at 6 seconds; notebook 03, section 6.
 -->
 
 ---
@@ -582,7 +707,9 @@ numbers on both slides are what it prints, and match the branch's task 5 plausib
   oversteer, and by reducing engine torque.
 - Since 2011–2014 it is mandatory on new cars in the US and the EU; the test is the
   sine-with-dwell. Our planar car **without** ESP spins in it from 97° up; **with** ESP it passes
-  at every amplitude, at the price of locked wheels until ABS sits under it.
+  at every amplitude.
+- ESP brakes **through ABS**: no wheel locks, the car keeps ~5 m/s more speed. On split-µ it holds
+  the heading, at the cost of stopping distance.
 
 ### Next: adding torque instead of only taking it away. <Link to="torque-vectoring">→ 06, torque vectoring</Link>
 

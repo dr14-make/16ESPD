@@ -38,16 +38,18 @@ second break at 141, 04 at 146, 05 at 152, 06 at 170, 07 at 173, end at 176.
 - Run steps 02–04 once before class from the reference (`HandsOn03.LockedStopTransient`,
   `ABSStopTransient`, `ABSStopWheelOnlyTransient`) so the library is compiled, and keep the REPL
   open.
-- Step 00 needs the course-library tag (`TODO-TAG` on the build 00 slide and the guide page). If
-  the tag carries the planar car's `MultibodyComponents`, ask the students to run step 00 before
-  the lecture: the first compile then takes about a minute longer.
+- Step 00 needs the course-library tag (`TODO-TAG` on the build 00 slide and the guide page). A tag
+  cut from this branch carries the planar car's `MultibodyComponents`, so ask the students to run
+  step 00 before the lecture: the first compile then takes about a minute longer.
 - The ABS figures are committed; nothing in the theory has to run. Notebook 01 open in Pluto is
   optional, for a question about `a_ref` (its slider).
-- The ESP demo figures are committed too. A live run needs the planar car, which is not on the
-  integration branch yet: check out `feat/lecture-03-planar-car`, run
-  `Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))` and
-  `Lecture3.ESPSineWithDwellTransient(A_sw = deg2rad(180))` once before class so they are
-  compiled, and keep that REPL open too. Without that, show the figures.
+- The ESP demo figures are committed too. For a live run, in the same REPL run
+  `Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))`,
+  `Lecture3.ESPSineWithDwellTransient(A_sw = deg2rad(180), abs_on = 1.0, Ki = 1e5)` and
+  `Lecture3.SplitMuStopTransient(select_low = 1.0, esp_on = 1.0)` once before class so they are
+  compiled. The clocked ones still take about 30 s each when warm: start one, keep talking over the
+  committed figure, show the result. Notebook `notebooks/lecture03/03-esp.pluto.jl` has every
+  section 05 number with its band. Without the REPL, show the figures.
 - Handout: `handout.pdf`, published next to the deck, one slide per page, notes excluded.
 
 ## Throughout
@@ -140,17 +142,22 @@ After the section 03 summary. The building is done for the day.
 
 ## 05 Electronic stability program — 18 min
 
-- Theory 11: what ESP does 2, sensors 1, Ackermann 2, reference model 2.5, braking one wheel 2,
-  does it work and the test 1.5.
-- Demo 6: the planar car 1.5, the passive run 2.5 (both figure slides), ESP on 2 (path and
-  table, then yaw rate and brake torque). Students watch; nothing to build.
-- ESP on passes the test at every amplitude, but say the cost: the braked wheels lock and the car
-  leaves at 48 km/h. ESP through four ABS channels is task 6 of
-  `docs/lecture-03-esp-dyad-tasks.md`, not built yet.
+- Theory 9: what ESP does 1.5, sensors 1, Ackermann 1, reference model 2, braking one wheel 2,
+  does it work and the test 1.5. Ackermann is the slide to shorten: the table, not the
+  derivation.
+- Demo 8: the planar car 1, the passive run 2 (both figure slides), ESP on 1.5 (path and table,
+  then yaw rate and brake torque), ESP through ABS 1.5, split-µ 2. Students watch; nothing to
+  build.
+- ESP braking directly passes at every amplitude but locks the braked wheel and leaves at
+  48 km/h; say it, then show the fix on the next slide: through ABS the slip stays above −0.09
+  and the car leaves at about 19 m/s.
+- Split-µ: stress that the steering wheel is held straight. ABS alone turns the car 129°; the
+  P controller barely helps, the PI holds 3° at the cost of stopping distance.
+- If short of time, take the split-µ slide down to its table (1 min).
 - Figures: `public/figures/05-swd-path.svg`, `05-swd-yaw-rate.svg`, `05-swd-esp-path.svg`,
-  `05-swd-esp-yaw.svg`, from `scripts/export_lecture03_esp_figures.jl` run against the planar-car
-  branch at 0c3bf74 (the script's docstring has the command). The numbers on the slides are what
-  it prints.
+  `05-swd-esp-yaw.svg`, `05-esp-abs.svg`, `05-split-mu.svg`, from
+  `scripts/export_lecture03_esp_figures.jl` at 23bd4bb (the script's docstring has the command;
+  about ten minutes). The numbers on the slides are what it prints.
 
 ## 06 Torque vectoring — 3 min
 

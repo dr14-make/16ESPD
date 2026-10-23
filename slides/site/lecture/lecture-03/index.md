@@ -727,7 +727,7 @@ A pull request from your `lecture-03` branch into the branch you started from, n
 
 Lecture deck: [ESP](../../lecture-03/index.html#/esp){target="_self"}
 
-A demo on the course library's planar car: nothing to build. The lecturer runs the sine-with-dwell test without and with ESP.
+A demo on the course library's planar car: nothing to build. The lecturer runs the sine-with-dwell test without ESP, with ESP braking the wheels directly and with ESP through four ABS channels, then a split-µ stop with one side on ice. Every number is recomputed in `notebooks/lecture03/03-esp.pluto.jl`.
 
 ---
 

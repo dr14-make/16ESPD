@@ -99,7 +99,7 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 | <Link to="brakes">02</Link> | How the brakes work | lever, hydraulics, the booster, the tandem master cylinder and the two circuits | |
 | <Link to="abs">03</Link> | Anti-lock braking | history, wheel-speed sensors, the modulator, channel layouts, the control cycle, the model | 02 a locked stop · 03 your own ABS · 04 on the wheel speed only · 05 across road surfaces |
 | <Link to="tcs">04</Link> | Traction control | ABS turned around: brake and engine intervention on a spinning wheel | 06 take-home bonus: TCS |
-| <Link to="esp">05</Link> | Electronic stability program | sensors, the reference model, understeer and oversteer, selective braking | demo only |
+| <Link to="esp">05</Link> | Electronic stability program | sensors, the reference model, understeer and oversteer, selective braking, ESP through ABS, split-µ | demo only |
 | <Link to="torque-vectoring">06</Link> | Torque vectoring | adding torque instead of only braking: differentials and electric motors | |
 | <Link to="wrap-up">07</Link> | Wrap-up | what each system controls, and what you measured | |
 
@@ -161,7 +161,7 @@ Your `MyCar` library, on the given `Vehicle.Wheel.BrakedWheel` and your hands-on
 
 Reference answers: `dyad/HandsOn03/`.
 
-ESP demo: `Vehicle.Planar.PlanarCar`.
+ESP demo: `Vehicle.Planar.PlanarCar`, notebook `03-esp.pluto.jl`.
 
 </div>
 </div>
@@ -177,8 +177,8 @@ answers in `dyad/HandsOn03/`, under the same names. The ESP demo runs on a fourt
 model, a planar four-wheel car, which section 05 introduces.
 
 Neither notebook model is a car yet. The ABS model is a single lumped wheel carrying the whole car: no load
-transfer, no steering, no yaw. That is enough for ABS, not for ESP; the ESP section says what the
-model would need. The brake model stops at master-cylinder pressure: lines and calipers are the
+transfer, no steering, no yaw. That is enough for ABS, not for ESP; the ESP section brings in the
+planar car. The brake model stops at master-cylinder pressure: lines and calipers are the
 next increment of the brake plan.
 -->
 
