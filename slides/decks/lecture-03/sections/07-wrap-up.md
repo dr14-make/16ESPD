@@ -3,7 +3,7 @@ routeAlias: wrap-up
 layout: section
 ---
 
-###### Section 07
+###### Section 06
 
 # Wrap-up
 
@@ -20,14 +20,13 @@ One table for the whole lecture, the summary, the numbers the students measured,
 routeAlias: systems-table
 ---
 
-## One idea, four systems
+## One idea, three systems
 
 | System | Measures | Keeps near the peak | Acts on |
 |---|---|---|---|
 | **ABS** | wheel speeds | braking slip of each wheel | brake pressure: build, hold, dump |
 | **TCS** | wheel speeds | driving slip of each driven wheel | brake on one wheel, engine torque |
 | **ESP** | + steering angle, yaw rate, lateral acceleration | the car's yaw rate and sideslip | brake on single wheels, engine torque |
-| **Torque vectoring** | the same as ESP | the car's yaw response, all the time | drive torque per wheel |
 
 Each one builds on the hardware of the one before: ESP is impossible without four-channel ABS.
 
@@ -35,7 +34,7 @@ Each one builds on the hardware of the one before: ESP is impossible without fou
 Read the table top to bottom. Each system adds either a sensor or an actuator to the one before.
 ABS needs wheel speeds and valves that can take pressure away. TCS adds the engine as an actuator
 and valves that can build pressure. ESP adds three sensors that tell it what the driver wants and
-what the car does. Torque vectoring adds an actuator that can push as well as brake.
+what the car does.
 
 And each is a controller around the same nonlinear plant: the tire, whose force peaks and then
 falls. The same family of cascade loops Lecture 1 ended on.
@@ -54,7 +53,6 @@ falls. The same family of cascade loops Lecture 1 ended on.
 - **04** TCS does the same for a driven wheel, with the brakes and the engine.
 - **05** ESP compares the driver's intention with the car's yaw rate and brakes single wheels;
   without it, our planar car spins in the sine-with-dwell; through ABS, no braked wheel locks.
-- **06** torque vectoring makes the same yaw moment with drive torque instead of brakes.
 
 ### Next: what you measured on your own car. <Link to="what-you-measured">→</Link>
 

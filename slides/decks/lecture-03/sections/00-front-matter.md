@@ -5,7 +5,7 @@ layout: cover
 
 # Brakes and Stability Control
 
-<h1 class="!text-5xl !-mt-4 opacity-70">ABS, TCS, ESP and torque vectoring</h1>
+<h1 class="!text-5xl !-mt-4 opacity-70">ABS, TCS and ESP</h1>
 
 Vehicle Systems &amp; Components — Lecture 3
 
@@ -25,12 +25,11 @@ The lecture is one 3-hour block: the theory and a live build on the students' ow
 section, as in Lecture 1. Timing and setup are in `docs/lecture-03-run-sheet.md`.
 
 Today is about the four systems between the driver and the road: the brakes themselves, the
-anti-lock braking system, traction control and the electronic stability program. At the end, the
-newest addition: systems that add torque to a wheel instead of only taking it away.
+anti-lock braking system, traction control and the electronic stability program.
 
 The sentence on the slide is the whole lecture. ABS keeps a braking tire near its friction peak.
 Traction control does the same for a driven tire. ESP does it for the car as a whole, by braking
-single wheels to steer the car's rotation. Torque vectoring does it with drive torque.
+single wheels to steer the car's rotation.
 
 You do not only listen. In sections 01 to 03 you build on your own car in Dyad Studio, along
 with me: first a brake system from pedal to wheel, pressed hard enough to lock the wheel, then a
@@ -100,8 +99,7 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 | <Link to="abs">03</Link> | Anti-lock braking | history, wheel-speed sensors, the modulator, channel layouts, the control cycle, the model | 03 your own ABS · 04 on the wheel speed only · 05 across road surfaces |
 | <Link to="tcs">04</Link> | Traction control | ABS turned around: brake and engine intervention on a spinning wheel | 06 take-home bonus: TCS |
 | <Link to="esp">05</Link> | Electronic stability program | sensors, the reference model, understeer and oversteer, selective braking, ESP through ABS, split-µ | demo only |
-| <Link to="torque-vectoring">06</Link> | Torque vectoring | adding torque instead of only braking: differentials and electric motors | |
-| <Link to="wrap-up">07</Link> | Wrap-up | what each system controls, and what you measured | |
+| <Link to="wrap-up">06</Link> | Wrap-up | what each system controls, and what you measured | |
 
 <!--
 Seven sections in three hours, with a 10-minute break in the middle of section 03 and a 5-minute
@@ -111,9 +109,8 @@ one after it. Budgets per section are on each section's cover and in
 The first two sections are physics: what the tire can give, and how the brake system turns a foot
 into pressure and torque. Section 02 ends with your car stopped by a brake system you wire
 yourself. Section 03 is the center of the lecture, and most of the building happens there: three
-steps on your own car. Sections 04 to 06 build on the same hardware: TCS adds
-engine control, ESP adds three sensors, torque vectoring adds an actuator that can push as well as
-brake. Traction control is a bonus task for home; ESP is a demo on a planar car.
+steps on your own car. Sections 04 and 05 build on the same hardware: TCS adds
+engine control, ESP adds three sensors. Traction control is a bonus task for home; ESP is a demo on a planar car.
 -->
 
 ---

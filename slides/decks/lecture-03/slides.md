@@ -29,9 +29,5 @@ src: ./sections/05-esp.md
 ---
 
 ---
-src: ./sections/06-torque-vectoring.md
----
-
----
 src: ./sections/07-wrap-up.md
 ---

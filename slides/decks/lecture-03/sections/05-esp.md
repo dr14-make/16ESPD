@@ -711,9 +711,9 @@ below 3 meters per second or at 6 seconds; notebook 03, section 6.
 - ESP brakes **through ABS**: no wheel locks, the car keeps ~5 m/s more speed. On split-µ it holds
   the heading, at the cost of stopping distance.
 
-### Next: adding torque instead of only taking it away. <Link to="torque-vectoring">→ 06, torque vectoring</Link>
+### Next: the whole lecture on one page. <Link to="wrap-up">→ 06, wrap-up</Link>
 
 <!--
-ESP steers the car with the brakes. Every intervention costs speed. The newest systems do the same
-with drive torque.
+ESP steers the car with the brakes, and every intervention costs speed. Doing the same with drive
+torque, one electric motor per wheel, comes with the electric and hybrid drives.
 -->

@@ -9,9 +9,8 @@ building along in Dyad Studio on their own `MyCar`. Each build step has one slid
 it belongs to and an anchored section on the build guide (`lecture/lecture-03/` on the course
 site). The plan behind the steps is `docs/lecture-03-handson-plan.md`.
 
-**Total: 183 minutes**, including a 10-minute and a 5-minute break and the ESP demo: 3 minutes
-over the 3-hour block. Two cuts from "If behind" below take it back under 180: section 06 down to
-its summary slide (2 min) and the channels slide in 03 (2 min).
+**Total: 180 minutes**, including a 10-minute and a 5-minute break and the ESP demo. Torque
+vectoring is not in this lecture: it belongs with the electric and hybrid drives.
 
 | Section | Builds | Minutes |
 |---|---|---:|
@@ -24,11 +23,10 @@ its summary slide (2 min) and the channels slide in 03 (2 min).
 | Break | | 5 |
 | 04 Traction control | 06 take-home bonus (slide only) | 6 |
 | 05 Electronic stability program, demo included | | 18 |
-| 06 Torque vectoring | | 3 |
-| 07 Wrap-up | | 3 |
+| 06 Wrap-up | | 3 |
 
 Running clock: 01 starts at 10, 02 at 24, 03 at 50, the first break at 96, 03 resumes at 106,
-the second break at 148, 04 at 153, 05 at 159, 06 at 177, 07 at 180, end at 183.
+the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
 
 ## Before class
 
@@ -70,8 +68,8 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, 07 at 180, end at 183.
   "success": that is the first thing to check when a number is off.
 - **If a solve stalls in front of the room:** show the committed figure on the build slide and
   keep talking. Do not debug live.
-- **If behind,** cut in this order: the sources slide (always skipped in the room), section 06 down
-  to its summary slide, the channels slide in 03, the history slide in 03, the hydraulic stretch
+- **If behind,** cut in this order: the sources slide (always skipped in the room), the channels
+  slide in 03, the history slide in 03, the hydraulic stretch
   goal. Then hand out `PhaseABS` in step 04 so students write only the estimator. Do not cut the
   four ABS result slides, any build slide or the ESP demo.
 
@@ -170,11 +168,7 @@ After the section 03 summary. The building is done for the day.
   `scripts/export_lecture03_esp_figures.jl` at 23bd4bb (the script's docstring has the command;
   about ten minutes). The numbers on the slides are what it prints.
 
-## 06 Torque vectoring — 3 min
-
-- Yaw moment 1, three ways 1, summary 1. First to shrink if the builds or the demo ran long.
-
-## 07 Wrap-up — 3 min
+## 06 Wrap-up — 3 min
 
 - The table 1, summary 1, what you measured 1. Skip the sources slide.
 - "What you measured" closes the build: one row per step, each a number the students have on

@@ -99,7 +99,7 @@ Checkpoints go in `test/abs_handson_plausibility.jl`, in testsets named "Hands-o
 
 ## Steps
 
-Budgets add up to 90 minutes of building inside the 183-minute block: 6 + 5 + 16 + 28 + 25 + 10.
+Budgets add up to 90 minutes of building inside the 180-minute block: 6 + 5 + 16 + 28 + 25 + 10.
 Each step lists, under **Deck**, the build slide that introduces it and the theory slides it puts
 into practice; `docs/lecture-03-run-sheet.md` places them on the clock.
 

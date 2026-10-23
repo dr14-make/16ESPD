@@ -26,8 +26,8 @@ features:
   - title: "Hands-on: drive a mapped engine"
     details: "Session 4 · about 90 min<br>Read measured engine maps at speed and manifold pressure, build the manifold and a map engine of your own, put the course engine in your car, and read its fuel in L/100 km and its CO₂ in g/km at 50, 90 and 130 km/h. Ends with fuel cut on a coast-down and the vacuum the brake booster draws on."
     link: /handson/lecture-02/
-  - title: "Brakes and Stability Control: ABS, TCS, ESP and torque vectoring"
-    details: "180 min, built along in Dyad Studio<br>Friction and the tire's slip curve, braking distance, the brake system from pedal to master cylinder, ABS with its sensors, modulator and control cycle, traction control, ESP and its reference model, and torque vectoring. Ties to the ABS and brake-hydraulics notebooks."
+  - title: "Brakes and Stability Control: ABS, TCS and ESP"
+    details: "180 min, built along in Dyad Studio<br>Friction and the tire's slip curve, braking distance, the brake system from pedal to master cylinder, ABS with its sensors, modulator and control cycle, traction control, and ESP and its reference model. Ties to the ABS and brake-hydraulics notebooks."
     link: /lecture-03/index.html
     target: _self
   - title: "Lecture 3 build guide: an ABS of your own"
@@ -91,7 +91,6 @@ carries what to say, the time per part, where students get stuck, and the answer
 3. [**Anti-lock braking**](./lecture-03/index.html#/abs){target="_self"} — sensors, modulator, the cycle and the model
 4. [**Traction control**](./lecture-03/index.html#/tcs){target="_self"} — brake and engine on a spinning wheel
 5. [**Electronic stability program**](./lecture-03/index.html#/esp){target="_self"} — intention against motion, one wheel braked
-6. [**Torque vectoring**](./lecture-03/index.html#/torque-vectoring){target="_self"} — a yaw moment from drive torque
 
 As in Lecture 1, the students build along with the lecture: a brake system from pedal to wheel,
 a slip ABS of their own, and an ABS on the wheel speed alone, each checked against the lecture's
