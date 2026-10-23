@@ -36,6 +36,15 @@ relations
   g_right = (1 + tan(spline_in.phi - support.phi)^2) / ((1 + k * tan(spline_in.phi - support.phi))^2 + tan(spline_in.phi - support.phi)^2)
   0 = spline_in.tau + g_left * spline_left.tau + g_right * spline_right.tau
   0 = support.tau + spline_in.tau + spline_left.tau + spline_right.tau
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/DifferentialGear.svg"}},
+  "_links": {
+    "spline_in": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": -50, "x2": 750, "y2": 50}, "diagram": {"x1": 650, "y1": -50, "x2": 750, "y2": 50}}}},
+    "spline_left": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "spline_right": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "support": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": -50, "x2": 350, "y2": 50}, "diagram": {"x1": 250, "y1": -50, "x2": 350, "y2": 50}}}}
+  }
+}
 end
 
 test component TestAckermannSteering
@@ -45,20 +54,20 @@ test component TestAckermannSteering
   parameter ackermann::Real = 1.0
   "Torque applied to each output shaft"
   parameter tau_load::Torque = 0.0
-  command = BlockComponents.Sources.Constant(k = delta_in)
-  source = RotationalComponents.Sources.Position()
-  torque_sensor = RotationalComponents.Sensors.TorqueSensor()
-  linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(ackermann = ackermann)
-  load_left = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load)
-  load_right = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load)
-  fixed = RotationalComponents.Components.Fixed()
+  command = BlockComponents.Sources.Constant(k = delta_in) {^command}
+  source = RotationalComponents.Sources.Position() {^source}
+  torque_sensor = RotationalComponents.Sensors.TorqueSensor() {^torque_sensor}
+  linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(ackermann = ackermann) {^linkage}
+  load_left = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load) {^load_left}
+  load_right = RotationalComponents.Sources.ConstantTorque(tau_constant = tau_load) {^load_right}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
 relations
-  connect(command.y, source.phi_ref)
-  connect(source.spline, torque_sensor.spline_a)
-  connect(torque_sensor.spline_b, linkage.spline_in)
-  connect(linkage.spline_left, load_left.spline)
-  connect(linkage.spline_right, load_right.spline)
-  connect(source.support, linkage.support, load_left.support, load_right.support, fixed.spline)
+  connect(command.y, source.phi_ref) {^w1}
+  connect(source.spline, torque_sensor.spline_a) {^w2}
+  connect(torque_sensor.spline_b, linkage.spline_in) {^w3}
+  connect(linkage.spline_left, load_left.spline) {^w4}
+  connect(linkage.spline_right, load_right.spline) {^w5}
+  connect(source.support, linkage.support, load_left.support, load_right.support, fixed.spline) {^w6}
   initial source.w = 0.0
 metadata {
   "Dyad": {
@@ -89,6 +98,21 @@ metadata {
         "expect": {"final": {"torque_sensor.tau": -20.0487}, "signals": ["torque_sensor.tau"]}
       }
     }
+  },
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 150, "x2": 150, "y2": 250}}}},
+    "source": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
+    "torque_sensor": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 150, "x2": 550, "y2": 250}}}},
+    "linkage": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 450, "x2": 700, "y2": 550}}}},
+    "load_left": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 450, "x2": 500, "y2": 550}}}},
+    "load_right": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 450, "x2": 800, "y2": 550}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 700, "x2": 700, "y2": 800}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 670, "y": 200}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 650}], "E": -1}, {"S": -1, "M": [{"x": 580, "y": 650}, {"x": 580, "y": 420}, {"x": 630, "y": 420}], "E": 2}, {"S": -1, "M": [{"x": 450, "y": 650}], "E": 3}, {"S": -1, "M": [{"x": 850, "y": 650}], "E": 4}, {"S": -1, "M": [], "E": 5}], "junctions": [{"x": 650, "y": 650}]}}
   }
 }
 end
