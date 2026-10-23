@@ -104,66 +104,18 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
   push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
-  # Subcomponent wheel_pos of type RotationalComponents.Sources.Position
-  wheel_pos_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_pos")
-  push!(__systems, @named wheel_pos = RotationalComponents.Sources.Position(; wheel_pos_overrides...))
-  # Subcomponent steering_fixed of type RotationalComponents.Components.Fixed
-  steering_fixed_overrides = __pop_subcomponent_overrides!(__overrides, "steering_fixed")
-  push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; steering_fixed_overrides...))
+  # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
+  steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
-  # Subcomponent clock of type DiscreteComponents.PeriodicClock
-  clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
-  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, clock_overrides...))
-  # Subcomponent demand_sampler of type DiscreteComponents.Sampler
-  demand_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "demand_sampler")
-  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; demand_sampler_overrides...))
-  # Subcomponent speed_sampler of type DiscreteComponents.Sampler
-  speed_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sampler")
-  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; speed_sampler_overrides...))
-  # Subcomponent kappa_fl_sampler of type DiscreteComponents.Sampler
-  kappa_fl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_fl_sampler")
-  push!(__systems, @named kappa_fl_sampler = DiscreteComponents.Sampler(; kappa_fl_sampler_overrides...))
-  # Subcomponent kappa_fr_sampler of type DiscreteComponents.Sampler
-  kappa_fr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_fr_sampler")
-  push!(__systems, @named kappa_fr_sampler = DiscreteComponents.Sampler(; kappa_fr_sampler_overrides...))
-  # Subcomponent kappa_rl_sampler of type DiscreteComponents.Sampler
-  kappa_rl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_rl_sampler")
-  push!(__systems, @named kappa_rl_sampler = DiscreteComponents.Sampler(; kappa_rl_sampler_overrides...))
-  # Subcomponent kappa_rr_sampler of type DiscreteComponents.Sampler
-  kappa_rr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_rr_sampler")
-  push!(__systems, @named kappa_rr_sampler = DiscreteComponents.Sampler(; kappa_rr_sampler_overrides...))
-  # Subcomponent dT_fl_sampler of type DiscreteComponents.Sampler
-  dT_fl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_fl_sampler")
-  push!(__systems, @named dT_fl_sampler = DiscreteComponents.Sampler(; dT_fl_sampler_overrides...))
-  # Subcomponent dT_fr_sampler of type DiscreteComponents.Sampler
-  dT_fr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_fr_sampler")
-  push!(__systems, @named dT_fr_sampler = DiscreteComponents.Sampler(; dT_fr_sampler_overrides...))
-  # Subcomponent dT_rl_sampler of type DiscreteComponents.Sampler
-  dT_rl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_rl_sampler")
-  push!(__systems, @named dT_rl_sampler = DiscreteComponents.Sampler(; dT_rl_sampler_overrides...))
-  # Subcomponent dT_rr_sampler of type DiscreteComponents.Sampler
-  dT_rr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_rr_sampler")
-  push!(__systems, @named dT_rr_sampler = DiscreteComponents.Sampler(; dT_rr_sampler_overrides...))
-  # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.FourChannelABS
+  # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(; select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, abs_overrides...))
-  # Subcomponent hold_fl of type DiscreteComponents.ZeroOrderHold
-  hold_fl_overrides = __pop_subcomponent_overrides!(__overrides, "hold_fl")
-  push!(__systems, @named hold_fl = DiscreteComponents.ZeroOrderHold(; hold_fl_overrides...))
-  # Subcomponent hold_fr of type DiscreteComponents.ZeroOrderHold
-  hold_fr_overrides = __pop_subcomponent_overrides!(__overrides, "hold_fr")
-  push!(__systems, @named hold_fr = DiscreteComponents.ZeroOrderHold(; hold_fr_overrides...))
-  # Subcomponent hold_rl of type DiscreteComponents.ZeroOrderHold
-  hold_rl_overrides = __pop_subcomponent_overrides!(__overrides, "hold_rl")
-  push!(__systems, @named hold_rl = DiscreteComponents.ZeroOrderHold(; hold_rl_overrides...))
-  # Subcomponent hold_rr of type DiscreteComponents.ZeroOrderHold
-  hold_rr_overrides = __pop_subcomponent_overrides!(__overrides, "hold_rr")
-  push!(__systems, @named hold_rr = DiscreteComponents.ZeroOrderHold(; hold_rr_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, abs_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -187,15 +139,13 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, wheel_pos.w ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(steer.y, wheel_pos.phi_ref))
-  push!(__eqs, connect(wheel_pos.spline, car.steering))
-  push!(__eqs, connect(wheel_pos.support, steering_fixed.spline))
+  push!(__eqs, connect(steer.y, steering_robot.delta_sw_ref))
+  push!(__eqs, connect(steering_robot.steering, car.steering))
   push!(__eqs, connect(car.chassis, sensors.chassis))
   push!(__eqs, connect(car.steering, sensors.steering))
   push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
@@ -206,31 +156,17 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
   push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
   push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
-  push!(__eqs, connect(demand.y, demand_sampler.u))
-  push!(__eqs, connect(sensors.vx, speed_sampler.u))
-  push!(__eqs, connect(sensors.kappa_fl, kappa_fl_sampler.u))
-  push!(__eqs, connect(sensors.kappa_fr, kappa_fr_sampler.u))
-  push!(__eqs, connect(sensors.kappa_rl, kappa_rl_sampler.u))
-  push!(__eqs, connect(sensors.kappa_rr, kappa_rr_sampler.u))
-  push!(__eqs, connect(zero.y, dT_fl_sampler.u, dT_fr_sampler.u, dT_rl_sampler.u, dT_rr_sampler.u))
-  push!(__eqs, connect(demand_sampler.y, abs.demand, clock.y))
-  push!(__eqs, connect(speed_sampler.y, abs.v_ref))
-  push!(__eqs, connect(kappa_fl_sampler.y, abs.kappa_fl))
-  push!(__eqs, connect(kappa_fr_sampler.y, abs.kappa_fr))
-  push!(__eqs, connect(kappa_rl_sampler.y, abs.kappa_rl))
-  push!(__eqs, connect(kappa_rr_sampler.y, abs.kappa_rr))
-  push!(__eqs, connect(dT_fl_sampler.y, abs.dT_fl))
-  push!(__eqs, connect(dT_fr_sampler.y, abs.dT_fr))
-  push!(__eqs, connect(dT_rl_sampler.y, abs.dT_rl))
-  push!(__eqs, connect(dT_rr_sampler.y, abs.dT_rr))
-  push!(__eqs, connect(abs.tau_fl, hold_fl.u))
-  push!(__eqs, connect(abs.tau_fr, hold_fr.u))
-  push!(__eqs, connect(abs.tau_rl, hold_rl.u))
-  push!(__eqs, connect(abs.tau_rr, hold_rr.u))
-  push!(__eqs, connect(hold_fl.y, car.tau_fl))
-  push!(__eqs, connect(hold_fr.y, car.tau_fr))
-  push!(__eqs, connect(hold_rl.y, car.tau_rl))
-  push!(__eqs, connect(hold_rr.y, car.tau_rr))
+  push!(__eqs, connect(demand.y, abs.demand))
+  push!(__eqs, connect(sensors.vx, abs.vx))
+  push!(__eqs, connect(sensors.kappa_fl, abs.kappa_fl))
+  push!(__eqs, connect(sensors.kappa_fr, abs.kappa_fr))
+  push!(__eqs, connect(sensors.kappa_rl, abs.kappa_rl))
+  push!(__eqs, connect(sensors.kappa_rr, abs.kappa_rr))
+  push!(__eqs, connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr))
+  push!(__eqs, connect(abs.tau_fl, car.tau_fl))
+  push!(__eqs, connect(abs.tau_fr, car.tau_fr))
+  push!(__eqs, connect(abs.tau_rl, car.tau_rl))
+  push!(__eqs, connect(abs.tau_rr, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

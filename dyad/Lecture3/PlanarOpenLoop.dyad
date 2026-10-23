@@ -19,14 +19,16 @@ test component PlanarOpenLoop
   structural parameter load_transfer::Boolean = true
   steer_ramp = BlockComponents.Sources.Ramp(offset = 0.0, height = delta_sw_final, duration = t_ramp, start_time = t_steer) {^steer_ramp}
   brake_step = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = 0.5) {^brake_step}
-  wheel_pos = RotationalComponents.Sources.Position() {^wheel_pos}
-  steering_fixed = RotationalComponents.Components.Fixed() {^steering_fixed}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
+  gain_fl = BlockComponents.Math.Gain(k = brake_fl) {^gain_fl}
+  gain_fr = BlockComponents.Math.Gain(k = brake_fr) {^gain_fr}
+  gain_rl = BlockComponents.Math.Gain(k = brake_rl) {^gain_rl}
+  gain_rr = BlockComponents.Math.Gain(k = brake_rr) {^gain_rr}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, mu_scale_fl = mu_scale_fl, mu_scale_fr = mu_scale_fr, mu_scale_rl = mu_scale_rl, mu_scale_rr = mu_scale_rr, ackermann = ackermann, h_cg = h_cg, load_transfer = load_transfer) {^car}
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
 relations
-  connect(steer_ramp.y, wheel_pos.phi_ref) {^w1}
-  connect(wheel_pos.spline, car.steering) {^w2}
-  connect(wheel_pos.support, steering_fixed.spline) {^w3}
+  connect(steer_ramp.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
   connect(car.chassis, sensors.chassis) {^w4}
   connect(car.steering, sensors.steering) {^w5}
   connect(car.wheel_fl, sensors.wheel_fl) {^w6}
@@ -37,10 +39,11 @@ relations
   connect(car.spin_fr, sensors.spin_fr) {^w11}
   connect(car.spin_rl, sensors.spin_rl) {^w12}
   connect(car.spin_rr, sensors.spin_rr) {^w13}
-  car.tau_fl = brake_fl * brake_step.y
-  car.tau_fr = brake_fr * brake_step.y
-  car.tau_rl = brake_rl * brake_step.y
-  car.tau_rr = brake_rr * brake_step.y
+  connect(brake_step.y, gain_fl.u, gain_fr.u, gain_rl.u, gain_rr.u) {^w14}
+  connect(gain_fl.y, car.tau_fl) {^w15}
+  connect(gain_fr.y, car.tau_fr) {^w16}
+  connect(gain_rl.y, car.tau_rl) {^w17}
+  connect(gain_rr.y, car.tau_rr) {^w18}
   initial car.body.r = [0, 0]
   initial car.body.v = [v0, 0]
   initial car.body.phi = 0.0
@@ -57,7 +60,6 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
-  initial wheel_pos.w = 0.0
 metadata {
   "Dyad": {
     "tests": {
@@ -123,17 +125,19 @@ metadata {
     }
   },
   "_links": {
-    "steer_ramp": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 250, "x2": 200, "y2": 350}}}},
-    "brake_step": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 600, "x2": 500, "y2": 700}}}},
-    "wheel_pos": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 250, "x2": 400, "y2": 350}}}},
-    "steering_fixed": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 400, "x2": 400, "y2": 500}}}},
-    "car": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 500, "x2": 950, "y2": 800}}}},
-    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 500, "x2": 1400, "y2": 800}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 380, "x2": 640, "y2": 580}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 380, "x2": 900, "y2": 580}}}},
+    "steer_ramp": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 210, "x2": 110, "y2": 290}}}},
+    "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 200, "x2": 280, "y2": 300}}}},
+    "brake_step": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 440, "x2": 230, "y2": 520}}}},
+    "gain_fl": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 315, "x2": 380, "y2": 345}}}},
+    "gain_fr": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 415, "x2": 380, "y2": 445}}}},
+    "gain_rl": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 515, "x2": 380, "y2": 545}}}},
+    "gain_rr": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 615, "x2": 380, "y2": 645}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 300}], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 250.0}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 340}, {"x": 800.0, "y": 340}], "E": 2}]}},
     "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 460}, {"x": 1250, "y": 460}], "E": 2}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
@@ -141,7 +145,12 @@ metadata {
     "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 300, "y": 330.0}], "E": 2}, {"S": -1, "M": [{"x": 300, "y": 430.0}], "E": 3}, {"S": -1, "M": [{"x": 300, "y": 530.0}], "E": 4}, {"S": -1, "M": [{"x": 300, "y": 630.0}], "E": 5}], "junctions": [{"x": 300, "y": 480.0}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 330.0}, {"x": 415, "y": 420.0}], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 430.0}, {"x": 415, "y": 460.0}], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 530.0}, {"x": 415, "y": 500.0}], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 630.0}, {"x": 415, "y": 540.0}], "E": 2}]}}
   }
 }
 end

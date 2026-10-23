@@ -46,7 +46,7 @@ function sine_with_dwell(analysis; kwargs...)
     data = (; t = T, x = get(s.x), y = get(s.y), psi = get(s.psi), r = get(s.r),
         beta = get(s.beta), swa = get(s.delta_sw), vx = get(s.vx), kappa,
         kappa_min = minimum(minimum, kappa),
-        r_ref = has_esp ? get(model.esp.r_ref) : nothing,
+        r_ref = has_esp ? get(model.ecu.esp.r_ref) : nothing,
         tau = has_esp ?
             [get(model.car.tau_fl), get(model.car.tau_fr), get(model.car.tau_rl),
              get(model.car.tau_rr)] : nothing)

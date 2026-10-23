@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPController(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build)
+   ESPController(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, esp_on)
 
 Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 
@@ -29,6 +29,7 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 | `radius`         |                          | m  |   0.31 |
 | `T_max`         |                          | N.m  |   2500.0 |
 | `T_build`         |                          | s  |   0.1 |
+| `esp_on`         | ESP enable; outputs are zero below 0.5                         | --  |   1.0 |
 
 ## Connectors
 
@@ -48,7 +49,7 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 | `r_ref`         |                          | rad/s  |
 | `oversteer`         |                          | --  |
 """
-@component function ESPController(; name = nothing, L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, kwargs...)
+@component function ESPController(; name = nothing, L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, esp_on=Float64(1.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -127,6 +128,9 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
   __initial_conditions[T_build] = __local__T_build
+  __local__esp_on = esp_on
+  append!(__params, @parameters (esp_on::Real), [description = "ESP enable; outputs are zero below 0.5"])
+  __initial_conditions[esp_on] = __local__esp_on
 
   ### Final Parameters (assignments)
 
@@ -183,6 +187,10 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   __assertions = []
 
   ### Equations
+  push!(__eqs, dT_fl ~ esp_on * allocator.dT_fl)
+  push!(__eqs, dT_fr ~ esp_on * allocator.dT_fr)
+  push!(__eqs, dT_rl ~ esp_on * allocator.dT_rl)
+  push!(__eqs, dT_rr ~ esp_on * allocator.dT_rr)
   push!(__eqs, Mz ~ yaw.Mz)
   push!(__eqs, r_ref ~ reference.r_ref)
   push!(__eqs, oversteer ~ yaw.oversteer)
@@ -193,10 +201,6 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   push!(__eqs, connect(vx, yaw.vx))
   push!(__eqs, connect(yaw.Mz, allocator.Mz))
   push!(__eqs, connect(yaw.oversteer, allocator.oversteer))
-  push!(__eqs, connect(allocator.dT_fl, dT_fl))
-  push!(__eqs, connect(allocator.dT_fr, dT_fr))
-  push!(__eqs, connect(allocator.dT_rl, dT_rl))
-  push!(__eqs, connect(allocator.dT_rr, dT_rr))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

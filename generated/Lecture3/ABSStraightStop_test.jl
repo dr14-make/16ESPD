@@ -28,7 +28,7 @@ __dyad_run_test_case!(
     (m -> m.sensors.r, "sensors.r", 1e-5, 1e-5),
     (m -> m.sensors.kappa_fl, "sensors.kappa_fl", 1e-5, 1e-5),
     (m -> m.sensors.kappa_rl, "sensors.kappa_rl", 1e-5, 1e-5),
-    (m -> m.hold_fl.y, "hold_fl.y", 1e-5, 1e-5),
-    (m -> m.hold_rl.y, "hold_rl.y", 1e-5, 1e-5),
+    (m -> m.abs.hold_fl.y, "abs.hold_fl.y", 1e-5, 1e-5),
+    (m -> m.abs.hold_rl.y, "abs.hold_rl.y", 1e-5, 1e-5),
   ],
 )

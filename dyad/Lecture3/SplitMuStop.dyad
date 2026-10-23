@@ -15,31 +15,13 @@ test component SplitMuStop
   structural parameter load_transfer::Boolean = true
   steer = BlockComponents.Sources.Constant(k = 0.0) {^steer}
   demand = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = 0.5) {^demand}
-  wheel_pos = RotationalComponents.Sources.Position() {^wheel_pos}
-  steering_fixed = RotationalComponents.Components.Fixed() {^steering_fixed}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, mu_scale_fr = mu_scale_right, mu_scale_rr = mu_scale_right, h_cg = h_cg, load_transfer = load_transfer) {^car}
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
-  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(Kp = Kp, Ki = Ki, radius = radius) {^esp}
-  clock = DiscreteComponents.PeriodicClock(dt = 0.005) {^clock}
-  demand_sampler = DiscreteComponents.Sampler() {^demand_sampler}
-  speed_sampler = DiscreteComponents.Sampler() {^speed_sampler}
-  kappa_fl_sampler = DiscreteComponents.Sampler() {^kappa_fl_sampler}
-  kappa_fr_sampler = DiscreteComponents.Sampler() {^kappa_fr_sampler}
-  kappa_rl_sampler = DiscreteComponents.Sampler() {^kappa_rl_sampler}
-  kappa_rr_sampler = DiscreteComponents.Sampler() {^kappa_rr_sampler}
-  dT_fl_sampler = DiscreteComponents.Sampler() {^dT_fl_sampler}
-  dT_fr_sampler = DiscreteComponents.Sampler() {^dT_fr_sampler}
-  dT_rl_sampler = DiscreteComponents.Sampler() {^dT_rl_sampler}
-  dT_rr_sampler = DiscreteComponents.Sampler() {^dT_rr_sampler}
-  abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow) {^abs}
-  hold_fl = DiscreteComponents.ZeroOrderHold() {^hold_fl}
-  hold_fr = DiscreteComponents.ZeroOrderHold() {^hold_fr}
-  hold_rl = DiscreteComponents.ZeroOrderHold() {^hold_rl}
-  hold_rr = DiscreteComponents.ZeroOrderHold() {^hold_rr}
+  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(esp_on = esp_on, Kp = Kp, Ki = Ki, radius = radius, select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow) {^ecu}
 relations
-  connect(steer.y, wheel_pos.phi_ref) {^w1}
-  connect(wheel_pos.spline, car.steering) {^w2}
-  connect(wheel_pos.support, steering_fixed.spline) {^w3}
+  connect(steer.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
   connect(car.chassis, sensors.chassis) {^w4}
   connect(car.steering, sensors.steering) {^w5}
   connect(car.wheel_fl, sensors.wheel_fl) {^w6}
@@ -50,37 +32,18 @@ relations
   connect(car.spin_fr, sensors.spin_fr) {^w11}
   connect(car.spin_rl, sensors.spin_rl) {^w12}
   connect(car.spin_rr, sensors.spin_rr) {^w13}
-  connect(sensors.delta_sw, esp.delta_sw) {^w14}
-  connect(sensors.r, esp.r) {^w15}
-  connect(sensors.vx, esp.vx) {^w16}
-  connect(demand.y, demand_sampler.u) {^w17}
-  connect(sensors.vx, speed_sampler.u) {^w18}
-  connect(sensors.kappa_fl, kappa_fl_sampler.u) {^w19}
-  connect(sensors.kappa_fr, kappa_fr_sampler.u) {^w20}
-  connect(sensors.kappa_rl, kappa_rl_sampler.u) {^w21}
-  connect(sensors.kappa_rr, kappa_rr_sampler.u) {^w22}
-  dT_fl_sampler.u = esp_on * esp.dT_fl
-  dT_fr_sampler.u = esp_on * esp.dT_fr
-  dT_rl_sampler.u = esp_on * esp.dT_rl
-  dT_rr_sampler.u = esp_on * esp.dT_rr
-  connect(demand_sampler.y, abs.demand, clock.y) {^w23}
-  connect(speed_sampler.y, abs.v_ref) {^w24}
-  connect(kappa_fl_sampler.y, abs.kappa_fl) {^w25}
-  connect(kappa_fr_sampler.y, abs.kappa_fr) {^w26}
-  connect(kappa_rl_sampler.y, abs.kappa_rl) {^w27}
-  connect(kappa_rr_sampler.y, abs.kappa_rr) {^w28}
-  connect(dT_fl_sampler.y, abs.dT_fl) {^w29}
-  connect(dT_fr_sampler.y, abs.dT_fr) {^w30}
-  connect(dT_rl_sampler.y, abs.dT_rl) {^w31}
-  connect(dT_rr_sampler.y, abs.dT_rr) {^w32}
-  connect(abs.tau_fl, hold_fl.u) {^w33}
-  connect(abs.tau_fr, hold_fr.u) {^w34}
-  connect(abs.tau_rl, hold_rl.u) {^w35}
-  connect(abs.tau_rr, hold_rr.u) {^w36}
-  connect(hold_fl.y, car.tau_fl) {^w37}
-  connect(hold_fr.y, car.tau_fr) {^w38}
-  connect(hold_rl.y, car.tau_rl) {^w39}
-  connect(hold_rr.y, car.tau_rr) {^w40}
+  connect(demand.y, ecu.demand) {^w14}
+  connect(sensors.delta_sw, ecu.delta_sw) {^w15}
+  connect(sensors.r, ecu.r) {^w16}
+  connect(sensors.vx, ecu.vx) {^w17}
+  connect(sensors.kappa_fl, ecu.kappa_fl) {^w18}
+  connect(sensors.kappa_fr, ecu.kappa_fr) {^w19}
+  connect(sensors.kappa_rl, ecu.kappa_rl) {^w20}
+  connect(sensors.kappa_rr, ecu.kappa_rr) {^w21}
+  connect(ecu.tau_fl, car.tau_fl) {^w22}
+  connect(ecu.tau_fr, car.tau_fr) {^w23}
+  connect(ecu.tau_rl, car.tau_rl) {^w24}
+  connect(ecu.tau_rr, car.tau_rr) {^w25}
   initial car.body.r = [0, 0]
   initial car.body.v = [v0, 0]
   initial car.body.phi = 0.0
@@ -97,46 +60,27 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
-  initial wheel_pos.w = 0.0
 metadata {
   "Dyad": {
     "tests": {
       "abs_only": {
         "solver": "Tsit5", "stop": 6.0,
         "params": {"load_transfer": false},
-        "expect": {"signals": ["sensors.x", "sensors.y", "sensors.psi", "sensors.vx", "sensors.kappa_fl", "sensors.kappa_fr", "hold_fl.y", "hold_fr.y"]}
+        "expect": {"signals": ["sensors.x", "sensors.y", "sensors.psi", "sensors.vx", "sensors.kappa_fl", "sensors.kappa_fr", "ecu.abs.hold_fl.y", "ecu.abs.hold_fr.y"]}
       }
     }
   },
   "_links": {
-    "steer": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
-    "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 495, "x2": 200, "y2": 595}}}},
-    "wheel_pos": {"Dyad": {"placement": {"diagram": {"x1": 1150, "y1": 250, "x2": 1250, "y2": 350}}}},
-    "steering_fixed": {"Dyad": {"placement": {"diagram": {"x1": 1150, "y1": 400, "x2": 1250, "y2": 500}}}},
-    "car": {"Dyad": {"placement": {"diagram": {"x1": 1500, "y1": 500, "x2": 1800, "y2": 800}}}},
-    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 1950, "y1": 500, "x2": 2250, "y2": 800}}}},
-    "esp": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 100, "x2": 450, "y2": 400}}}},
-    "clock": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 330, "x2": 580, "y2": 430}}}},
-    "demand_sampler": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 495, "x2": 400, "y2": 595}}}},
-    "speed_sampler": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 1540, "x2": 1000, "y2": 1640}}}},
-    "kappa_fl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 1420, "x2": 1000, "y2": 1520}}}},
-    "kappa_fr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 1300, "x2": 1000, "y2": 1400}}}},
-    "kappa_rl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 1180, "x2": 1000, "y2": 1280}}}},
-    "kappa_rr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 1060, "x2": 1000, "y2": 1160}}}},
-    "dT_fl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 630, "x2": 400, "y2": 730}}}},
-    "dT_fr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 750, "x2": 400, "y2": 850}}}},
-    "dT_rl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 870, "x2": 400, "y2": 970}}}},
-    "dT_rr_sampler": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 990, "x2": 400, "y2": 1090}}}},
-    "abs": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 500, "x2": 1000, "y2": 800}}}},
-    "hold_fl": {"Dyad": {"placement": {"diagram": {"x1": 1250, "y1": 540, "x2": 1350, "y2": 640}}}},
-    "hold_fr": {"Dyad": {"placement": {"diagram": {"x1": 1250, "y1": 660, "x2": 1350, "y2": 760}}}},
-    "hold_rl": {"Dyad": {"placement": {"diagram": {"x1": 1250, "y1": 780, "x2": 1350, "y2": 880}}}},
-    "hold_rr": {"Dyad": {"placement": {"diagram": {"x1": 1250, "y1": 900, "x2": 1350, "y2": 1000}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 380, "x2": 640, "y2": 580}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 380, "x2": 900, "y2": 580}}}},
+    "steer": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 210, "x2": 110, "y2": 290}}}},
+    "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 200, "x2": 280, "y2": 300}}}},
+    "ecu": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 380, "x2": 380, "y2": 580}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 370, "x2": 90, "y2": 430}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1650, "y": 300}], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 250.0}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 340}, {"x": 800.0, "y": 340}], "E": 2}]}},
     "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1650, "y": 460}, {"x": 2100, "y": 460}], "E": 2}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
@@ -145,33 +89,18 @@ metadata {
     "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2290, "y": 530}, {"x": 2290, "y": 60}, {"x": 120, "y": 60}, {"x": 120, "y": 175}], "E": 2}]}},
-    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2320, "y": 560}, {"x": 2320, "y": 30}, {"x": 90, "y": 30}, {"x": 90, "y": 250}], "E": 2}]}},
-    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2350, "y": 590}, {"x": 2350, "y": 0}, {"x": 60, "y": 0}, {"x": 60, "y": 325}], "E": 2}]}},
-    "w17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2400, "y": 590}, {"x": 2400, "y": 1590}], "E": 2}]}},
-    "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2370, "y": 620}, {"x": 2370, "y": 1470}], "E": 2}]}},
-    "w20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2340, "y": 650}, {"x": 2340, "y": 1350}], "E": 2}]}},
-    "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2310, "y": 680}, {"x": 2310, "y": 1230}], "E": 2}]}},
-    "w22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 2280, "y": 710}, {"x": 2280, "y": 1110}], "E": 2}]}},
-    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 450, "y": 380}], "E": 3}], "junctions": [{"x": 450, "y": 545}]}},
-    "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 700, "y": 1590}, {"x": 700, "y": 800}], "E": 2}]}},
-    "w25": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 790, "y": 1470}], "E": 2}]}},
-    "w26": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 850, "y": 1350}], "E": 2}]}},
-    "w27": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 910, "y": 1230}], "E": 2}]}},
-    "w28": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 984.5, "y": 1110}, {"x": 984.5, "y": 800}], "E": 2}]}},
-    "w29": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 680}, {"x": 560, "y": 605}], "E": 2}]}},
-    "w30": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 590, "y": 800}, {"x": 590, "y": 650}], "E": 2}]}},
-    "w31": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 620, "y": 920}, {"x": 620, "y": 695}], "E": 2}]}},
-    "w32": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 1040}, {"x": 650, "y": 740}], "E": 2}]}},
-    "w33": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1160, "y": 560}, {"x": 1160, "y": 590}], "E": 2}]}},
-    "w34": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1130, "y": 620}, {"x": 1130, "y": 710}], "E": 2}]}},
-    "w35": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1100, "y": 680}, {"x": 1100, "y": 830}], "E": 2}]}},
-    "w36": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1070, "y": 740}, {"x": 1070, "y": 950}], "E": 2}]}},
-    "w37": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1390, "y": 590}, {"x": 1390, "y": 560}], "E": 2}]}},
-    "w38": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1420, "y": 710}, {"x": 1420, "y": 620}], "E": 2}]}},
-    "w39": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1450, "y": 830}, {"x": 1450, "y": 680}], "E": 2}]}},
-    "w40": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1480, "y": 950}, {"x": 1480, "y": 740}], "E": 2}]}}
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 915, "y": 520.0}, {"x": 915, "y": 630}, {"x": 250.0, "y": 630}], "E": 2}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 925, "y": 500.0}, {"x": 925, "y": 640}, {"x": 220.0, "y": 640}], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 935, "y": 480.0}, {"x": 935, "y": 650}, {"x": 150, "y": 650}, {"x": 150, "y": 550.0}], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 945, "y": 460.0}, {"x": 945, "y": 660}, {"x": 140, "y": 660}, {"x": 140, "y": 520.0}], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 955, "y": 440.0}, {"x": 955, "y": 670}, {"x": 130, "y": 670}, {"x": 130, "y": 490.0}], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 965, "y": 420.0}, {"x": 965, "y": 680}, {"x": 120, "y": 680}, {"x": 120, "y": 460.0}], "E": 2}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 975, "y": 400.0}, {"x": 975, "y": 690}, {"x": 110, "y": 690}, {"x": 110, "y": 430.0}], "E": 2}]}},
+    "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w24": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w25": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end

@@ -23,6 +23,8 @@ component ESPController
   parameter radius::Length = 0.31
   parameter T_max::Torque = 2500.0
   parameter T_build::Time = 0.1
+  "ESP enable; outputs are zero below 0.5"
+  parameter esp_on::Real = 1.0
   variable Mz::Torque
   variable r_ref::AngularVelocity
   variable oversteer::Real
@@ -37,10 +39,10 @@ relations
   connect(vx, yaw.vx) {^w5}
   connect(yaw.Mz, allocator.Mz) {^w6}
   connect(yaw.oversteer, allocator.oversteer) {^w7}
-  connect(allocator.dT_fl, dT_fl) {^w8}
-  connect(allocator.dT_fr, dT_fr) {^w9}
-  connect(allocator.dT_rl, dT_rl) {^w10}
-  connect(allocator.dT_rr, dT_rr) {^w11}
+  dT_fl = esp_on * allocator.dT_fl
+  dT_fr = esp_on * allocator.dT_fr
+  dT_rl = esp_on * allocator.dT_rl
+  dT_rr = esp_on * allocator.dT_rr
   Mz = yaw.Mz
   r_ref = reference.r_ref
   oversteer = yaw.oversteer
@@ -63,11 +65,7 @@ metadata {
     "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 520, "y": 150}], "E": 2}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1020, "y": 394}, {"x": 1020, "y": 250}], "E": 2}]}},
-    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1035, "y": 438}, {"x": 1035, "y": 400}], "E": 2}]}},
-    "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1035, "y": 486}, {"x": 1035, "y": 550}], "E": 2}]}},
-    "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1020, "y": 530}, {"x": 1020, "y": 700}], "E": 2}]}}
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end
