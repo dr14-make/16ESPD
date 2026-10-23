@@ -129,12 +129,21 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   # Subcomponent brake_step of type BlockComponents.Sources.Step
   brake_step_overrides = __pop_subcomponent_overrides!(__overrides, "brake_step")
   push!(__systems, @named brake_step = BlockComponents.Sources.Step(; offset=Float64(0.0), height=T_cmd, start_time=0.5, brake_step_overrides...))
-  # Subcomponent wheel_pos of type RotationalComponents.Sources.Position
-  wheel_pos_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_pos")
-  push!(__systems, @named wheel_pos = RotationalComponents.Sources.Position(; wheel_pos_overrides...))
-  # Subcomponent steering_fixed of type RotationalComponents.Components.Fixed
-  steering_fixed_overrides = __pop_subcomponent_overrides!(__overrides, "steering_fixed")
-  push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; steering_fixed_overrides...))
+  # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
+  steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
+  # Subcomponent gain_fl of type BlockComponents.Math.Gain
+  gain_fl_overrides = __pop_subcomponent_overrides!(__overrides, "gain_fl")
+  push!(__systems, @named gain_fl = BlockComponents.Math.Gain(; k=brake_fl, gain_fl_overrides...))
+  # Subcomponent gain_fr of type BlockComponents.Math.Gain
+  gain_fr_overrides = __pop_subcomponent_overrides!(__overrides, "gain_fr")
+  push!(__systems, @named gain_fr = BlockComponents.Math.Gain(; k=brake_fr, gain_fr_overrides...))
+  # Subcomponent gain_rl of type BlockComponents.Math.Gain
+  gain_rl_overrides = __pop_subcomponent_overrides!(__overrides, "gain_rl")
+  push!(__systems, @named gain_rl = BlockComponents.Math.Gain(; k=brake_rl, gain_rl_overrides...))
+  # Subcomponent gain_rr of type BlockComponents.Math.Gain
+  gain_rr_overrides = __pop_subcomponent_overrides!(__overrides, "gain_rr")
+  push!(__systems, @named gain_rr = BlockComponents.Math.Gain(; k=brake_rr, gain_rr_overrides...))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_fl, mu_scale_fr=mu_scale_fr, mu_scale_rl=mu_scale_rl, mu_scale_rr=mu_scale_rr, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
@@ -164,19 +173,13 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, wheel_pos.w ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, car.tau_fl ~ brake_fl * brake_step.y)
-  push!(__eqs, car.tau_fr ~ brake_fr * brake_step.y)
-  push!(__eqs, car.tau_rl ~ brake_rl * brake_step.y)
-  push!(__eqs, car.tau_rr ~ brake_rr * brake_step.y)
-  push!(__eqs, connect(steer_ramp.y, wheel_pos.phi_ref))
-  push!(__eqs, connect(wheel_pos.spline, car.steering))
-  push!(__eqs, connect(wheel_pos.support, steering_fixed.spline))
+  push!(__eqs, connect(steer_ramp.y, steering_robot.delta_sw_ref))
+  push!(__eqs, connect(steering_robot.steering, car.steering))
   push!(__eqs, connect(car.chassis, sensors.chassis))
   push!(__eqs, connect(car.steering, sensors.steering))
   push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
@@ -187,6 +190,11 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
   push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
   push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
+  push!(__eqs, connect(brake_step.y, gain_fl.u, gain_fr.u, gain_rl.u, gain_rr.u))
+  push!(__eqs, connect(gain_fl.y, car.tau_fl))
+  push!(__eqs, connect(gain_fr.y, car.tau_fr))
+  push!(__eqs, connect(gain_rl.y, car.tau_rl))
+  push!(__eqs, connect(gain_rr.y, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

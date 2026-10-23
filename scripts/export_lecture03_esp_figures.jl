@@ -107,7 +107,7 @@ function run_esp(amplitude, esp_on)
     t = collect(range(0.0, 6.0; length = 1201))
     get(x) = sol(t, idxs = x).u
     data = (; t, x = get(s.x), y = get(s.y), psi = get(s.psi), r = get(s.r),
-        r_ref = get(model.esp.r_ref), beta = get(s.beta), vx = get(s.vx),
+        r_ref = get(model.ecu.esp.r_ref), beta = get(s.beta), vx = get(s.vx),
         tau = [get(c.tau_fl), get(c.tau_fr), get(c.tau_rl), get(c.tau_rr)],
         kappa_min = minimum(minimum(sol[k]) for k in (s.kappa_fl, s.kappa_fr, s.kappa_rl,
             s.kappa_rr)))

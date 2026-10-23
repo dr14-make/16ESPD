@@ -106,12 +106,21 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   # Subcomponent steer of type BlockComponents.Sources.Ramp
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
   push!(__systems, @named steer = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=delta_sw_final, duration=t_ramp, start_time=t_steer, steer_overrides...))
-  # Subcomponent wheel_pos of type RotationalComponents.Sources.Position
-  wheel_pos_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_pos")
-  push!(__systems, @named wheel_pos = RotationalComponents.Sources.Position(; wheel_pos_overrides...))
-  # Subcomponent steering_fixed of type RotationalComponents.Components.Fixed
-  steering_fixed_overrides = __pop_subcomponent_overrides!(__overrides, "steering_fixed")
-  push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; steering_fixed_overrides...))
+  # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
+  steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
+  # Subcomponent limit_fl of type BlockComponents.Nonlinear.Limiter
+  limit_fl_overrides = __pop_subcomponent_overrides!(__overrides, "limit_fl")
+  push!(__systems, @named limit_fl = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_fl_overrides...))
+  # Subcomponent limit_fr of type BlockComponents.Nonlinear.Limiter
+  limit_fr_overrides = __pop_subcomponent_overrides!(__overrides, "limit_fr")
+  push!(__systems, @named limit_fr = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_fr_overrides...))
+  # Subcomponent limit_rl of type BlockComponents.Nonlinear.Limiter
+  limit_rl_overrides = __pop_subcomponent_overrides!(__overrides, "limit_rl")
+  push!(__systems, @named limit_rl = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_rl_overrides...))
+  # Subcomponent limit_rr of type BlockComponents.Nonlinear.Limiter
+  limit_rr_overrides = __pop_subcomponent_overrides!(__overrides, "limit_rr")
+  push!(__systems, @named limit_rr = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_rr_overrides...))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_front, mu_scale_fr=mu_scale_front, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
@@ -120,7 +129,7 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
   # Subcomponent esp of type VehicleSystemsComponents.Vehicle.Planar.ESPController
   esp_overrides = __pop_subcomponent_overrides!(__overrides, "esp")
-  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; Kp=Kp, Ki=Ki, T_build=T_build, radius=radius, esp_overrides...))
+  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, Kp=Kp, Ki=Ki, T_build=T_build, radius=radius, esp_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -144,19 +153,13 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, wheel_pos.w ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, car.tau_fl ~ esp_on * max(0.0, esp.dT_fl))
-  push!(__eqs, car.tau_fr ~ esp_on * max(0.0, esp.dT_fr))
-  push!(__eqs, car.tau_rl ~ esp_on * max(0.0, esp.dT_rl))
-  push!(__eqs, car.tau_rr ~ esp_on * max(0.0, esp.dT_rr))
-  push!(__eqs, connect(steer.y, wheel_pos.phi_ref))
-  push!(__eqs, connect(wheel_pos.spline, car.steering))
-  push!(__eqs, connect(wheel_pos.support, steering_fixed.spline))
+  push!(__eqs, connect(steer.y, steering_robot.delta_sw_ref))
+  push!(__eqs, connect(steering_robot.steering, car.steering))
   push!(__eqs, connect(car.chassis, sensors.chassis))
   push!(__eqs, connect(car.steering, sensors.steering))
   push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
@@ -170,6 +173,14 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   push!(__eqs, connect(sensors.delta_sw, esp.delta_sw))
   push!(__eqs, connect(sensors.r, esp.r))
   push!(__eqs, connect(sensors.vx, esp.vx))
+  push!(__eqs, connect(esp.dT_fl, limit_fl.u))
+  push!(__eqs, connect(esp.dT_fr, limit_fr.u))
+  push!(__eqs, connect(esp.dT_rl, limit_rl.u))
+  push!(__eqs, connect(esp.dT_rr, limit_rr.u))
+  push!(__eqs, connect(limit_fl.y, car.tau_fl))
+  push!(__eqs, connect(limit_fr.y, car.tau_fr))
+  push!(__eqs, connect(limit_rl.y, car.tau_rl))
+  push!(__eqs, connect(limit_rr.y, car.tau_rr))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

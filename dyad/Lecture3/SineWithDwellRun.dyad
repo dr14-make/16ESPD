@@ -9,14 +9,13 @@ test component SineWithDwellRun
   parameter h_cg::Length = 0.0
   structural parameter load_transfer::Boolean = true
   steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = A_sw) {^steer}
-  wheel_pos = RotationalComponents.Sources.Position() {^wheel_pos}
-  steering_fixed = RotationalComponents.Components.Fixed() {^steering_fixed}
+  zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer) {^car}
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
 relations
-  connect(steer.y, wheel_pos.phi_ref) {^w1}
-  connect(wheel_pos.spline, car.steering) {^w2}
-  connect(wheel_pos.support, steering_fixed.spline) {^w3}
+  connect(steer.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
   connect(car.chassis, sensors.chassis) {^w4}
   connect(car.steering, sensors.steering) {^w5}
   connect(car.wheel_fl, sensors.wheel_fl) {^w6}
@@ -27,10 +26,7 @@ relations
   connect(car.spin_fr, sensors.spin_fr) {^w11}
   connect(car.spin_rl, sensors.spin_rl) {^w12}
   connect(car.spin_rr, sensors.spin_rr) {^w13}
-  car.tau_fl = 0.0
-  car.tau_fr = 0.0
-  car.tau_rl = 0.0
-  car.tau_rr = 0.0
+  connect(zero.y, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr) {^w14}
   initial car.body.r = [0, 0]
   initial car.body.v = [v0, 0]
   initial car.body.phi = 0.0
@@ -47,7 +43,6 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
-  initial wheel_pos.w = 0.0
 metadata {
   "Dyad": {
     "tests": {

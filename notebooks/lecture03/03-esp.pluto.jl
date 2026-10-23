@@ -436,7 +436,7 @@ yaw_plot = let run = esp[detail_amplitude], ref = passive[detail_amplitude]
         label = "ESP off: yaw rate", xlabel = "time [s]", ylabel = "yaw rate [°/s]",
         title = "Yaw rate at $(round(Int, detail_amplitude))° SWA", legend = :bottomleft,
         ylims = (-60, 60))
-    plot!(p, run.sol.t, rad2deg.(signal(run, run.m.esp.r_ref)); lw = 1.5, color = :black,
+    plot!(p, run.sol.t, rad2deg.(signal(run, run.m.ecu.esp.r_ref)); lw = 1.5, color = :black,
         ls = :dot, label = "ESP reference r_ref")
     plot!(p, run.sol.t, rad2deg.(signal(run, s.r)); lw = 2, color = :steelblue, label = "ESP on: yaw rate")
     vline!(p, [T_COS]; color = :gray, ls = :dot, label = "steering back at zero")

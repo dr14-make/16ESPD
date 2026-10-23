@@ -13,30 +13,13 @@ test component ABSStraightStop
   steer = BlockComponents.Sources.Constant(k = 0.0) {^steer}
   demand = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = brake_time) {^demand}
   zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
-  wheel_pos = RotationalComponents.Sources.Position() {^wheel_pos}
-  steering_fixed = RotationalComponents.Components.Fixed() {^steering_fixed}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer) {^car}
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
-  clock = DiscreteComponents.PeriodicClock(dt = 0.005) {^clock}
-  demand_sampler = DiscreteComponents.Sampler() {^demand_sampler}
-  speed_sampler = DiscreteComponents.Sampler() {^speed_sampler}
-  kappa_fl_sampler = DiscreteComponents.Sampler() {^kappa_fl_sampler}
-  kappa_fr_sampler = DiscreteComponents.Sampler() {^kappa_fr_sampler}
-  kappa_rl_sampler = DiscreteComponents.Sampler() {^kappa_rl_sampler}
-  kappa_rr_sampler = DiscreteComponents.Sampler() {^kappa_rr_sampler}
-  dT_fl_sampler = DiscreteComponents.Sampler() {^dT_fl_sampler}
-  dT_fr_sampler = DiscreteComponents.Sampler() {^dT_fr_sampler}
-  dT_rl_sampler = DiscreteComponents.Sampler() {^dT_rl_sampler}
-  dT_rr_sampler = DiscreteComponents.Sampler() {^dT_rr_sampler}
-  abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow) {^abs}
-  hold_fl = DiscreteComponents.ZeroOrderHold() {^hold_fl}
-  hold_fr = DiscreteComponents.ZeroOrderHold() {^hold_fr}
-  hold_rl = DiscreteComponents.ZeroOrderHold() {^hold_rl}
-  hold_rr = DiscreteComponents.ZeroOrderHold() {^hold_rr}
+  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow) {^abs}
 relations
-  connect(steer.y, wheel_pos.phi_ref) {^w1}
-  connect(wheel_pos.spline, car.steering) {^w2}
-  connect(wheel_pos.support, steering_fixed.spline) {^w3}
+  connect(steer.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
   connect(car.chassis, sensors.chassis) {^w4}
   connect(car.steering, sensors.steering) {^w5}
   connect(car.wheel_fl, sensors.wheel_fl) {^w6}
@@ -47,31 +30,17 @@ relations
   connect(car.spin_fr, sensors.spin_fr) {^w11}
   connect(car.spin_rl, sensors.spin_rl) {^w12}
   connect(car.spin_rr, sensors.spin_rr) {^w13}
-  connect(demand.y, demand_sampler.u) {^w14}
-  connect(sensors.vx, speed_sampler.u) {^w15}
-  connect(sensors.kappa_fl, kappa_fl_sampler.u) {^w16}
-  connect(sensors.kappa_fr, kappa_fr_sampler.u) {^w17}
-  connect(sensors.kappa_rl, kappa_rl_sampler.u) {^w18}
-  connect(sensors.kappa_rr, kappa_rr_sampler.u) {^w19}
-  connect(zero.y, dT_fl_sampler.u, dT_fr_sampler.u, dT_rl_sampler.u, dT_rr_sampler.u) {^w20}
-  connect(demand_sampler.y, abs.demand, clock.y) {^w21}
-  connect(speed_sampler.y, abs.v_ref) {^w22}
-  connect(kappa_fl_sampler.y, abs.kappa_fl) {^w23}
-  connect(kappa_fr_sampler.y, abs.kappa_fr) {^w24}
-  connect(kappa_rl_sampler.y, abs.kappa_rl) {^w25}
-  connect(kappa_rr_sampler.y, abs.kappa_rr) {^w26}
-  connect(dT_fl_sampler.y, abs.dT_fl) {^w27}
-  connect(dT_fr_sampler.y, abs.dT_fr) {^w28}
-  connect(dT_rl_sampler.y, abs.dT_rl) {^w29}
-  connect(dT_rr_sampler.y, abs.dT_rr) {^w30}
-  connect(abs.tau_fl, hold_fl.u) {^w31}
-  connect(abs.tau_fr, hold_fr.u) {^w32}
-  connect(abs.tau_rl, hold_rl.u) {^w33}
-  connect(abs.tau_rr, hold_rr.u) {^w34}
-  connect(hold_fl.y, car.tau_fl) {^w35}
-  connect(hold_fr.y, car.tau_fr) {^w36}
-  connect(hold_rl.y, car.tau_rl) {^w37}
-  connect(hold_rr.y, car.tau_rr) {^w38}
+  connect(demand.y, abs.demand) {^w14}
+  connect(sensors.vx, abs.vx) {^w15}
+  connect(sensors.kappa_fl, abs.kappa_fl) {^w16}
+  connect(sensors.kappa_fr, abs.kappa_fr) {^w17}
+  connect(sensors.kappa_rl, abs.kappa_rl) {^w18}
+  connect(sensors.kappa_rr, abs.kappa_rr) {^w19}
+  connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr) {^w20}
+  connect(abs.tau_fl, car.tau_fl) {^w35}
+  connect(abs.tau_fr, car.tau_fr) {^w36}
+  connect(abs.tau_rl, car.tau_rl) {^w37}
+  connect(abs.tau_rr, car.tau_rr) {^w38}
   initial car.body.r = [0, 0]
   initial car.body.v = [v0, 0]
   initial car.body.phi = 0.0
@@ -88,7 +57,6 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
-  initial wheel_pos.w = 0.0
 metadata {
   "Dyad": {
     "tests": {
@@ -96,7 +64,7 @@ metadata {
         "solver": "Tsit5", "stop": 6.0,
         "params": {"load_transfer": false},
         "atol": {"sensors.x": 0.5, "sensors.vx": 0.05},
-        "expect": {"final": {"sensors.x": 47.182, "sensors.vx": 0.0}, "signals": ["sensors.x", "sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl", "hold_fl.y", "hold_rl.y"]}
+        "expect": {"final": {"sensors.x": 47.182, "sensors.vx": 0.0}, "signals": ["sensors.x", "sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl", "abs.hold_fl.y", "abs.hold_rl.y"]}
       }
     }
   },
@@ -104,10 +72,10 @@ metadata {
     "steer": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
     "demand": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 495, "x2": 200, "y2": 595}}}},
     "zero": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 860, "x2": 200, "y2": 960}}}},
-    "wheel_pos": {"Dyad": {"placement": {"diagram": {"x1": 1150, "y1": 250, "x2": 1250, "y2": 350}}}},
+    "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 400, "y2": 300}}}},
     "steering_fixed": {"Dyad": {"placement": {"diagram": {"x1": 1150, "y1": 400, "x2": 1250, "y2": 500}}}},
-    "car": {"Dyad": {"placement": {"diagram": {"x1": 1500, "y1": 500, "x2": 1800, "y2": 800}}}},
-    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 1950, "y1": 500, "x2": 2250, "y2": 800}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 350, "x2": 650, "y2": 550}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 350, "x2": 900, "y2": 550}}}},
     "clock": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 330, "x2": 580, "y2": 430}}}},
     "demand_sampler": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 495, "x2": 400, "y2": 595}}}},
     "speed_sampler": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 1540, "x2": 1000, "y2": 1640}}}},
