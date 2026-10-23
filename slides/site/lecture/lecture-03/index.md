@@ -50,14 +50,14 @@ Today's parts, the braked wheel and the pressure integrator, are in the course l
 #### Do this
 
 1. In the status bar, click the branch name → **Create new branch…** → `lecture-03`, from `main`. If you finished hands-on 2, branch from where it left you. If not, `main` is enough: today needs only hands-on 1's `Body`.
-2. Open the Julia REPL and add the course library at the tag this lecture was rehearsed on. If you added it in hands-on 2, this replaces that branch pin.
+2. Open the Julia REPL and move the course library to the Lecture 3 version: the tag this lecture was rehearsed on. You added the library in hands-on 2, and your `Manifest.toml` still holds the version from that day, without today's parts. Skipped hands-on 2? The same line adds it.
 
    ```julia
    using Pkg
    Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "TODO-TAG")
    ```
 
-   <!-- TODO: replace TODO-TAG with the rehearsed tag, here and on the deck's build 00 slide. -->
+   <!-- TODO: replace TODO-TAG with the tag cut from main, here and on the deck's build 00 slide. -->
 
 3. <kbd>F1</kbd> → **Dyad: Compile**.
 4. Open any diagram, click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Wheel`.

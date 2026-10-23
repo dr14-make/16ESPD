@@ -200,7 +200,7 @@ Pkg.add(url = "https://github.com/dr14-make/16ESPD",
 
 Then <kbd>F1</kbd> → **Dyad: Compile**.
 
-*Branch `lecture-03` · `Pkg.add` the course library at the tag · compile · **+** →
+*Branch `lecture-03` · move the course library to the Lecture 3 tag · compile · **+** →
 `VehicleSystemsComponents › Vehicle › Wheel` lists `BrakedWheel`*
 
 [page: step 00](../lecture/lecture-03/#step-00)
@@ -225,9 +225,10 @@ In the status bar at the bottom, click the branch name and create a new branch, 
 because today needs only the `Body` from hands-on 1.
 
 Open the Julia REPL: click Dyad: Open Julia REPL in the Actions panel's title bar. Paste the
-three lines on the slide. They add the course library at a fixed tag, the version this lecture
-was rehearsed on. If you added the library in hands-on 2, this replaces its branch pin. Then F1,
-Dyad: Compile.
+three lines on the slide. You added the course library in hands-on 2, but your manifest still
+holds the version from that day, which has none of today's parts. These lines move it to a fixed
+tag, the version this lecture was rehearsed on. If you skipped hands-on 2, the same lines add it.
+Then F1, Dyad: Compile.
 
 Check: open any diagram, click plus, and open VehicleSystemsComponents, Vehicle, Wheel. You should
 see `BrakedWheel`, `BrakeActuator` and `TireFrictionCurve`. One level up, `Vehicle` lists
@@ -236,7 +237,7 @@ see `BrakedWheel`, `BrakeActuator` and `TireFrictionCurve`. One level up, `Vehic
 Under plus there is also a `HandsOn03` folder: those are the reference answers to today's steps.
 Build your own; open them only to compare.
 
-TODO before the lecture: replace TODO-TAG with the rehearsed tag, here and on the guide page, and
+TODO before the lecture: replace TODO-TAG with the tag cut from main, here and on the guide page, and
 capture step00-wheel-library.png. If the tag carries the planar car's MultibodyComponents, ask the
 students to run this step before the lecture: the first compile then takes about a minute longer.
 -->
