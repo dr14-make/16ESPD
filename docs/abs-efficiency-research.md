@@ -265,8 +265,9 @@ paper (re-read for this note).
 - **True-slip ABS** (26 Hz, ±0.5 bar around 63.6 bar, about 1.6 % of level): a continuous slip
   regulator. That suits an ideal benchmark, but it is not what a production ABS looks like. A
   production ABS runs about 10× slower with about 10× larger relative swings.
-- **Wheel-speed ABS** (9.2 Hz dry, 4.1 Hz at µ 0.5, per the plausibility test): closer to the
-  measured range.
+- **Wheel-speed ABS** (front pressure, t ≥ 1 s, v > 3 m/s): 1.6 Hz between 24 and 65 bar dry,
+  3.7 Hz between 1.6 and 22 bar at µ 0.3. The snow cycle sits in the measured range; the dry one
+  is a little slow and dumps to about 40 % of its level, where Bosch dumps 15–25 %.
 - **Snow.** Real ice cycles dump almost fully, as ours do. But the real ones keep 4–6 Hz with a
   learned reapply level [9], so they lose less time rebuilding.
 

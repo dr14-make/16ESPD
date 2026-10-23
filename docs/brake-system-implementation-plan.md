@@ -25,8 +25,10 @@ Background documents:
 3. **Use physical connectors so the diagram looks like the real system.** Mechanical parts
    (pedal, booster pushrods, master-cylinder piston) use translational `Flange`s. Fluid parts
    use `HydraulicComponents.Interfaces.Port` with the brake-fluid medium set once per harness
-   through `continuity`, as `TestForceChain` does. The stdlib has no orifice, line, caliper,
-   valve, check valve, accumulator or pump, so each one is a custom component on those ports.
+   through `continuity`, as `TestForceChain` does. HydraulicComponents 2.0.4 has no orifice,
+   caliper, valve, check valve, accumulator or pump, and its one line, `Pipes.TubeBase`, has a
+   discontinuous friction law at low flow, so each one is a custom component on those ports.
+   Custom parts extend `Interfaces.TwoPorts` and use `HydraulicComponents.density`.
    Keep the R–C split inside them: capacitance components (caliper, accumulator) own a volume
    state and set port pressure, and resistance components (line, valve, orifice) set mass flow
    from the pressure difference. RealInput/RealOutput is used only for true signals: driver

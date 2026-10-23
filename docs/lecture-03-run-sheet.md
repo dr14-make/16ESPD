@@ -17,15 +17,15 @@ vectoring is not in this lecture: it belongs with the electric and hybrid drives
 | 00 Front matter | 00 set up | 10 |
 | 01 Friction and stopping | 01 the tire's limit, by hand | 14 |
 | 02 How the brakes work | 02 pedal to wheel | 26 |
-| 03 Anti-lock braking, to the break | 03 an ABS of your own | 46 |
+| 03 Anti-lock braking, to the break | 03 an ABS of your own | 40 |
 | Break | | 10 |
-| 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 42 |
+| 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 48 |
 | Break | | 5 |
 | 04 Traction control | 06 take-home bonus (slide only) | 6 |
 | 05 Electronic stability program, demo included | | 18 |
 | 06 Wrap-up | | 3 |
 
-Running clock: 01 starts at 10, 02 at 24, 03 at 50, the first break at 96, 03 resumes at 106,
+Running clock: 01 starts at 10, 02 at 24, 03 at 50, the first break at 90, 03 resumes at 100,
 the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
 
 ## Before class
@@ -69,7 +69,7 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
 - **If a solve stalls in front of the room:** show the committed figure on the build slide and
   keep talking. Do not debug live.
 - **If behind,** cut in this order: the sources slide (always skipped in the room), the channels
-  slide in 03, the history slide in 03, the hydraulic stretch
+  slide in 03, the history slide in 03, the valve-level stretch
   goal. Then hand out `PhaseABS` in step 04 so students write only the estimator. Do not cut the
   four ABS result slides, any build slide or the ESP demo.
 
@@ -105,42 +105,52 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
 
 ## 03 Anti-lock braking — 88 min, the break inside it
 
-Before the break, 46 min:
+Before the break, 40 min:
 
 - Cover and what ABS does 2, history 1, sensors 2, modulator 2, channels 2, control cycle 2, the
-  model 3, **build 03** 28, one stop and on the curve 4.
-- Build 03 builds its bench new, on the torque-level `BrakedWheel`, with five `initial` lines.
-  Say once that the ABS commands torque while build 02's baseline is hydraulic, and that pedal
-  0.6 (6109 N·m) and the 6000 N·m demand both lock at 43.7 m.
-- Build 03: run A loses to the locked wheel (53.8 m): say it is the point, not a mistake, before
-  anyone starts debugging. C gives 34.4 m. Rehearse whether Studio's code view keeps the
-  `pressure` line and the `ifelse`; the guide's "Fell behind?" block has the full source.
+  model 3, **build 03** 22, one stop and on the curve 4.
+- Build 03 copies `PedalStop` to `ABSStop` and puts one `ABSValve` per circuit between the master
+  cylinder and the lines: three blocks, nine wires, two deleted; the fluid and the initial lines
+  come with the copy. That is why it is 22 minutes, not 28. Say once, in one line, that
+  `ABSValve` is ideal: no accumulator, no return pump, so no pedal pulse.
+- The stall is the `SlipABS` latch: before the first dump `p_cmd` is the driver's own pressure.
+  A student who outputs `pressure.cmd` from the start puts the valve's 30 ms lag on every stop; the
+  check is pedal 0.3, which must give 35.95 m, build 02's stop.
+- Build 03: run A loses to the locked wheel (53.4 m): say it is the point, not a mistake, before
+  anyone starts debugging. C gives 34.2 m, front pressure 63.6 bar with a 1 bar ripple at 26 Hz.
+  Rehearse whether Studio's code view keeps the `pressure` line and the `ifelse`; the guide's
+  "Fell behind?" block has the full source.
 - "One stop" and "on the curve" are the checkpoints for 02 and 03. Check the neighbor's screen,
   then release the room.
 
 ## Break — 10 min
 
 Everyone needs a working `ABSStop` before it ends: build 04 is a copy of it. Stragglers paste the
-step 03 code from the guide page.
+step 03 code from the guide page; `ABSStop` is the step 02 bench with the valves, so its block
+pastes on its own, without a working `PedalStop`.
 
-After the break, 42 min:
+After the break, 48 min:
 
-- Reference speed 2, **build 04** with its checkpoint slide 25, braking distance 2, surfaces 2,
-  against measured cars 1.5, why ABS can stop longer 1.5, **build 05** 7, summary 1.
+- Reference speed 2, **build 04** with its checkpoint slide 28, braking distance 2, surfaces 2,
+  against measured cars 1.5, why ABS can stop longer 1.5, **build 05** 10, summary 1. The six
+  minutes build 03 no longer needs went to builds 04 (3) and 05 (3).
 - "Against measured cars" and "Why ABS can stop longer" answer the question the snow numbers
   raise. Real ABS gains little on packed snow and loses on loose snow and gravel; the sources are
   in `docs/abs-efficiency-research.md`.
 - Reference speed: plant the question "what would `a_ref` be on snow?" and leave it open; build 05
   answers it.
 - Build 04 is the longest: two components in code and a bench. If the room is behind at the
-  halfway mark, hand out `PhaseABS` from the guide and let them write only the estimator. A
-  student who filters `a_w` more heavily than `T_f = 5 ms` gets a snow stop longer than locked.
-  Expected 35.5 m dry, 69.8 m wet.
-- "Braking distance" is the checkpoint for 02–04: 43.7, 34.4, 35.5 m against the library's 38.7.
-- Build 05 is a REPL loop: the first two columns must match the "Across road surfaces" table to
-  the decimal. The `a_ref = 2.4` reruns give 124.1 m on snow and 105.4 m dry.
-- The hydraulic version of step 04 is a stretch goal for whoever finishes early
-  (`docs/brake-system-implementation-plan.md`, step 3); never wait for it.
+  halfway mark, hand out `PhaseABS` from the guide and let them write only the estimator. Keep
+  `T_f = 5 ms` on `a_w`. Expected 38.5 m dry, 130.6 m on snow; the checkpoint plot is on snow:
+  front pressure 1.6–22 bar at 3.7 Hz, against 24–65 bar at 1.6 Hz dry. Set it against the
+  measured Bosch cycle on the slide: a little slow, and deep dumps on a dry road, because the
+  rates are fixed for one road.
+- "Braking distance" is the checkpoint for 02–04: 43.7, 34.2, 38.5 m against the library's 38.7.
+- Build 05 is a REPL loop: the locked column must match the "Across road surfaces" table within
+  0.1 m; the true-slip column is close to it, not equal (34.2, 64.6, 106.1 m). The `a_ref = 2.4`
+  reruns give 130.9 m on snow, no better than at 8, and 106.3 m dry.
+- A valve-level modulator in place of the ideal `ABSValve` is a stretch goal for whoever finishes
+  early (`docs/brake-system-implementation-plan.md`, step 3); never wait for it.
 
 ## Break — 5 min
 

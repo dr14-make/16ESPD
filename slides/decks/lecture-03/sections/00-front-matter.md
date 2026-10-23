@@ -154,7 +154,7 @@ The driver's foot to master-cylinder pressure.
 Your `MyCar` library, on the given brake parts and wheels and your hands-on 1 `Body`.
 
 - `PedalStop`: pedal to wheel, through lines and calipers
-- `SlipABS`: your slip controller
+- `SlipABS`: your slip controller, on your brake through `ABSValve`
 - `RefSpeedEstimator`, `PhaseABS`: an ABS on the wheel speed alone
 
 Reference answers: `dyad/HandsOn03/`.

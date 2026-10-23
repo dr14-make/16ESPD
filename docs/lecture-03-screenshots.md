@@ -25,8 +25,8 @@ The hands-on deck's conventions apply to every diagram:
 | File | Step | From |
 | ---- | ---- | ---- |
 | `step02-locked-stop.svg` | 02 | `HandsOn03.PedalStopTransient`, pedal 0.6 (stale until re-run: still drawn from the torque-level bench) |
-| `step03-abs-torque-slip.svg` | 03 | `HandsOn03.ABSStopTransient`, `T_p` 0 and 0.03 |
-| `step04-phase-cycle.svg` | 04 | `HandsOn03.ABSStopWheelOnlyTransient`, `road_mu = 0.5` |
+| `step03-abs-torque-slip.svg` | 03 | `HandsOn03.ABSStopTransient`, `T_p` 0 and 0.03 (stale until re-run: still drawn from the torque-level bench; the script now plots front wheel pressure) |
+| `step04-phase-cycle.svg` | 04 | `HandsOn03.ABSStopWheelOnlyTransient`, `road_mu = 0.3`, 1.0–2.5 s (stale until re-run: still the torque-level bench at `road_mu = 0.5`) |
 | `step05-surfaces.svg` | 05 | the three reference analyses, `PedalStopTransient` first, and `Vehicle.ABSBrakeTransient` at μ 1.0, 0.5, 0.3 (stale until re-run: its first series is still the torque-level bench) |
 
 ## To capture
@@ -35,12 +35,12 @@ The hands-on deck's conventions apply to every diagram:
 | ---- | ---- | ----- | -------------------- | ------- |
 | `step00-wheel-library.png` | 00 | any diagram | The **+** popup open at `VehicleSystemsComponents › Vehicle › Wheel`, listing `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator`, `TireFrictionCurve`; `HandsOn03` visible one level up. | deck build 00, guide 00 |
 | `step02-pedal-bench.png` | 02 | `HandsOn03.PedalStop` | The finished hydraulic chain: `command` → `pedal_unit` → `booster` → `master` from the left, `fixed_hydraulic` under the three housings, `line_f` and `line_r` into `wheel`, `road` and `fixed` under the wheel, `body` and `speed` on the right; the three-way junction on `body.flange`. | deck build 02, guide 02 |
-| `step03-slipabs-code.png` | 03 | `HandsOn03.SlipABS` | The code view: the `pressure` line, the rate `ifelse` and the three look-ahead lines. | guide 03 |
-| `step03-abs-bench.png` | 03 | `HandsOn03.ABSStop` | `abs` between `demand` and `wheel`, the `wheel.kappa` and `speed.v` wires back into it. | guide 03 |
+| `step03-slipabs-code.png` | 03 | `HandsOn03.SlipABS` | The code view: the `pressure` line, the rate `ifelse`, the `cycled` latch, the `p_cmd` line and the three look-ahead lines. | guide 03 |
+| `step03-abs-bench.png` | 03 | `HandsOn03.ABSStop` | Build 02's chain with `valve_f` and `valve_r` between `master` and the lines; `abs` below, `master.p_mc`, `wheel.kappa` and `speed.v` into it, `abs.p_cmd` out to both valves. | guide 03 |
 | `step04-estimator-code.png` | 04 | `HandsOn03.RefSpeedEstimator` | The code view, all seven relations. | guide 04 |
 | `step04-phaseabs-code.png` | 04 | `HandsOn03.PhaseABS` | The code view: the `phase` line, the `cycled` latch and the nested rate `ifelse`. | guide 04 |
 | `step04-wheel-only-bench.png` | 04 | `HandsOn03.ABSStopWheelOnly` | `wspeed` on `wheel.spline`, `est` with its three outputs into `abs`; no wire from `wheel.kappa` or `speed.v` into `abs`. | guide 04 |
-| `step04-phase-plot.png` | 04 | `HandsOn03.ABSStopWheelOnlyTransient(road_mu = 0.5, stop = 10)` | The guide's REPL plot of `abs.phase`, `abs.tau_cmd` and `wheel.brake.tau_actual` from 0.9 to 1.45 s, as a student sees it. | guide 04 |
+| `step04-phase-plot.png` | 04 | `HandsOn03.ABSStopWheelOnlyTransient(road_mu = 0.3, stop = 20)` | The guide's REPL plot of `abs.phase`, `abs.p_cmd` and `wheel.caliper_f.p` from 1.0 to 2.5 s, as a student sees it. | guide 04 |
 | `step05-surface-table.png` | 05 | the REPL | The step 05 loop's three printed rows. | guide 05 |
 
 The rehearsal that captures them also settles the two open questions of the plan's risk table:
