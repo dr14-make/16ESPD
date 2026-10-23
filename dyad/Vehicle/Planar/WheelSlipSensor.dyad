@@ -1,0 +1,48 @@
+"""
+Ideal wheel-slip sensor using physical frame and spin-shaft ports.
+
+The planar velocity is resolved in the wheel frame, so `v_long` is along the wheel heading and
+positive `alpha` denotes velocity to its left. The slip convention is negative under braking.
+"""
+component WheelSlipSensor
+  "Wheel-center frame, with x along the wheel heading"
+  frame_a = Frame2D() {^frame_a}
+  "Wheel spin shaft"
+  spline = Spline() {^spline}
+  "Longitudinal slip ratio; negative under braking"
+  kappa = RealOutput() {^kappa}
+  "Tire slip angle"
+  alpha = RealOutput() {^alpha}
+  "Measured wheel angular velocity"
+  omega = RealOutput() {^omega}
+  "Measured wheel-center longitudinal velocity"
+  v_long = RealOutput() {^v_long}
+  vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {^vel}
+  spin = RotationalComponents.Sensors.VelocitySensor() {^spin}
+  "Wheel rolling radius (repository default)"
+  parameter radius::Length = 0.31
+  "Low-speed denominator floor (assumed)"
+  parameter v_eps::Velocity = 0.5
+relations
+  connect(frame_a, vel.frame_a) {^w1}
+  connect(spline, spin.spline) {^w2}
+  omega = spin.w
+  v_long = vel.v_x
+  kappa = (radius * spin.w - vel.v_x) / max(abs(vel.v_x), v_eps)
+  alpha = atan(vel.v_y / max(abs(vel.v_x), v_eps))
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/OneFrameSensor.svg"}},
+  "_links": {
+    "frame_a": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "kappa": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "alpha": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "omega": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "v_long": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}},
+    "vel": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 250, "x2": 500, "y2": 350}}}},
+    "spin": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 650, "x2": 500, "y2": 750}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

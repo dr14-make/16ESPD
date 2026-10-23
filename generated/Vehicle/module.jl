@@ -16,6 +16,7 @@ include("definitions.jl")
 include("experiments.jl")
 include("Brake/module.jl")
 include("Engine/module.jl")
+include("Planar/module.jl")
 include("Wheel/module.jl")
 include("precompilation.jl")
 

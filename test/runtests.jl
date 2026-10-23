@@ -7,6 +7,7 @@ using Test
     
 include("tuning_tables.jl")
 include("plausibility_helpers.jl")
+include("esp_plausibility.jl")
 include("brake_plausibility.jl")
 include("engine_plausibility.jl")
 include("actuator_plausibility.jl")

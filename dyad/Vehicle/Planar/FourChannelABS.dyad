@@ -1,0 +1,149 @@
+"""Four independently modulated sampled ABS channels with optional rear select-low."""
+component FourChannelABS@[input clk extends Discrete]
+  demand = RealInput@[clk]() {^demand}
+  v_ref = RealInput@[clk]() {^v_ref}
+  dT_fl = RealInput@[clk]() {^dT_fl}
+  dT_fr = RealInput@[clk]() {^dT_fr}
+  dT_rl = RealInput@[clk]() {^dT_rl}
+  dT_rr = RealInput@[clk]() {^dT_rr}
+  kappa_fl = RealInput@[clk]() {^kappa_fl}
+  kappa_fr = RealInput@[clk]() {^kappa_fr}
+  kappa_rl = RealInput@[clk]() {^kappa_rl}
+  kappa_rr = RealInput@[clk]() {^kappa_rr}
+  tau_fl = RealOutput@[clk]() {^tau_fl}
+  tau_fr = RealOutput@[clk]() {^tau_fr}
+  tau_rl = RealOutput@[clk]() {^tau_rl}
+  tau_rr = RealOutput@[clk]() {^tau_rr}
+  fl = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(dt = dt, T_p = T_p, lambda_1 = lambda_1_f, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^fl}
+  fr = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(dt = dt, T_p = T_p, lambda_1 = lambda_1_f, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^fr}
+  rl = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(dt = dt, T_p = T_p, lambda_1 = lambda_1_r, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^rl}
+  rr = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(dt = dt, T_p = T_p, lambda_1 = lambda_1_r, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^rr}
+  parameter dt::Time(min = eps(Float64)) = 0.005
+  parameter T_p::Time(min = 0.0) = 0.03
+  parameter lambda_1_f::Real = 0.08
+  parameter lambda_1_r::Real = 0.06
+  parameter lambda_lock::Real = 0.20
+  parameter alpha_rel::Real = 0.6
+  parameter beta_reapply::Real = 0.85
+  parameter l_rec::Real = 0.03
+  parameter T_hold_max::Time(min = eps(Float64)) = 0.06
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_slow::Real = 16000.0
+  parameter v_min::Velocity = 1.5
+  parameter select_low::Real = 1.0
+  variable rear_low::Torque
+relations
+  connect(demand, fl.demand, fr.demand, rl.demand, rr.demand) {^w1}
+  connect(v_ref, fl.v_ref, fr.v_ref, rl.v_ref, rr.v_ref) {^w2}
+  connect(dT_fl, fl.dT) {^w3}
+  connect(dT_fr, fr.dT) {^w4}
+  connect(dT_rl, rl.dT) {^w5}
+  connect(dT_rr, rr.dT) {^w6}
+  connect(kappa_fl, fl.kappa) {^w7}
+  connect(kappa_fr, fr.kappa) {^w8}
+  connect(kappa_rl, rl.kappa) {^w9}
+  connect(kappa_rr, rr.kappa) {^w10}
+  connect(fl.tau_cmd, tau_fl) {^w11}
+  connect(fr.tau_cmd, tau_fr) {^w12}
+  rear_low = min(rl.tau_cmd, rr.tau_cmd)
+  tau_rl = ifelse(select_low > 0.5, rear_low, rl.tau_cmd)
+  tau_rr = ifelse(select_low > 0.5, rear_low, rr.tau_cmd)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/CascadeServoController.svg"}},
+  "_links": {
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 100, "x2": 50, "y2": 200}, "diagram": {"x1": 390, "y1": -50, "x2": 490, "y2": 50, "rot": 90}}}},
+    "v_ref": {"Dyad": {"placement": {"icon": {"x1": 50, "y1": 950, "x2": 150, "y2": 1050, "rot": 270}, "diagram": {"x1": 350, "y1": 1000, "x2": 450, "y2": 1100, "rot": 270}}}},
+    "dT_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 300, "x2": 50, "y2": 400}, "diagram": {"x1": -30, "y1": 30, "x2": 30, "y2": 90}}}},
+    "dT_fr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -30, "y1": 280, "x2": 30, "y2": 340}}}},
+    "dT_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 600, "x2": 50, "y2": 700}, "diagram": {"x1": -30, "y1": 530, "x2": 30, "y2": 590}}}},
+    "dT_rr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"x1": -30, "y1": 780, "x2": 30, "y2": 840}}}},
+    "kappa_fl": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 270}, "diagram": {"x1": -30, "y1": 210, "x2": 30, "y2": 270}}}},
+    "kappa_fr": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050, "rot": 270}, "diagram": {"x1": -30, "y1": 460, "x2": 30, "y2": 520}}}},
+    "kappa_rl": {"Dyad": {"placement": {"icon": {"x1": 650, "y1": 950, "x2": 750, "y2": 1050, "rot": 270}, "diagram": {"x1": -30, "y1": 710, "x2": 30, "y2": 770}}}},
+    "kappa_rr": {"Dyad": {"placement": {"icon": {"x1": 850, "y1": 950, "x2": 950, "y2": 1050, "rot": 270}, "diagram": {"x1": -30, "y1": 960, "x2": 30, "y2": 1020}}}},
+    "tau_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 950, "y1": 100, "x2": 1050, "y2": 200}}}},
+    "tau_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "tau_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 950, "y1": 600, "x2": 1050, "y2": 700}}}},
+    "tau_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 950, "y1": 850, "x2": 1050, "y2": 950}}}},
+    "fl": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 100, "x2": 600, "y2": 200}}}},
+    "fr": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 350, "x2": 600, "y2": 450}}}},
+    "rl": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 600, "x2": 600, "y2": 700}}}},
+    "rr": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 850, "x2": 600, "y2": 950}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 440, "y": 380}], "E": 3}, {"S": -1, "M": [{"x": 440, "y": 630}], "E": 4}, {"S": -1, "M": [{"x": 440, "y": 880}], "E": 5}], "junctions": [{"x": 440, "y": 130}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 400, "y": 170}], "E": 2}, {"S": -1, "M": [{"x": 400, "y": 420}], "E": 3}, {"S": -1, "M": [{"x": 400, "y": 670}], "E": 4}, {"S": -1, "M": [], "E": 5}], "junctions": [{"x": 400, "y": 920}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 60}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 310}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 560}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 810}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 240}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 490}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 740}], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 990}], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"Rear select-low wiring check."
+test component TestFourChannelABS
+  clock = DiscreteComponents.PeriodicClock(dt = 0.005) {^clock}
+  demand = BlockComponents.Sources.Constant(k = 1000.0) {^demand}
+  speed = BlockComponents.Sources.Constant(k = 20.0) {^speed}
+  zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+  cut = BlockComponents.Sources.Constant(k = -200.0) {^cut}
+  demand_sampler = DiscreteComponents.Sampler() {^demand_sampler}
+  speed_sampler = DiscreteComponents.Sampler() {^speed_sampler}
+  zero_sampler = DiscreteComponents.Sampler() {^zero_sampler}
+  cut_sampler = DiscreteComponents.Sampler() {^cut_sampler}
+  abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(select_low = 1.0) {^abs}
+  hold_rl = DiscreteComponents.ZeroOrderHold() {^hold_rl}
+  hold_rr = DiscreteComponents.ZeroOrderHold() {^hold_rr}
+relations
+  connect(demand.y, demand_sampler.u) {^w1}
+  connect(speed.y, speed_sampler.u) {^w2}
+  connect(zero.y, zero_sampler.u) {^w3}
+  connect(cut.y, cut_sampler.u) {^w4}
+  connect(demand_sampler.y, abs.demand, clock.y) {^w5}
+  connect(speed_sampler.y, abs.v_ref) {^w6}
+  connect(zero_sampler.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.kappa_fl, abs.kappa_fr, abs.kappa_rl, abs.kappa_rr) {^w7}
+  connect(cut_sampler.y, abs.dT_rr) {^w8}
+  connect(abs.tau_rl, hold_rl.u) {^w9}
+  connect(abs.tau_rr, hold_rr.u) {^w10}
+metadata {
+  "Dyad": {
+    "tests": {
+      "rear_select_low": {
+        "solver": "Tsit5", "stop": 0.02,
+        "atol": {"hold_rl.y": 1e-8, "hold_rr.y": 1e-8},
+        "expect": {"final": {"hold_rl.y": 800.0, "hold_rr.y": 800.0}, "signals": ["hold_rl.y", "hold_rr.y"]}
+      }
+    }
+  },
+  "_links": {
+    "clock": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 50, "x2": 600, "y2": 150}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 195, "x2": 150, "y2": 295}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 630, "x2": 150, "y2": 730}}}},
+    "zero": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 510, "x2": 150, "y2": 610}}}},
+    "cut": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 390, "x2": 150, "y2": 490}}}},
+    "demand_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 195, "x2": 350, "y2": 295}}}},
+    "speed_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 630, "x2": 350, "y2": 730}}}},
+    "zero_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 510, "x2": 350, "y2": 610}}}},
+    "cut_sampler": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 390, "x2": 350, "y2": 490}}}},
+    "abs": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 200, "x2": 900, "y2": 500}}}},
+    "hold_rl": {"Dyad": {"placement": {"diagram": {"x1": 1000, "y1": 280, "x2": 1100, "y2": 380}}}},
+    "hold_rr": {"Dyad": {"placement": {"diagram": {"x1": 1000, "y1": 420, "x2": 1100, "y2": 520}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 450, "y": 100}], "E": 3}], "junctions": [{"x": 450, "y": 245}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 490.5, "y": 680}, {"x": 490.5, "y": 500}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 460, "y": 305}], "E": 2}, {"S": -1, "M": [{"x": 460, "y": 350}], "E": 3}, {"S": -1, "M": [{"x": 460, "y": 395}], "E": 4}, {"S": -1, "M": [{"x": 690, "y": 560}], "E": 5}, {"S": -1, "M": [{"x": 750, "y": 560}], "E": 6}, {"S": -1, "M": [{"x": 810, "y": 560}], "E": 7}, {"S": -1, "M": [{"x": 460, "y": 500}], "E": 8}], "junctions": [{"x": 460, "y": 560}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 380}, {"x": 950, "y": 330}], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 950, "y": 440}, {"x": 950, "y": 470}], "E": 2}]}}
+  }
+}
+end
