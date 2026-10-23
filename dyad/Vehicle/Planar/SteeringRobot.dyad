@@ -1,0 +1,45 @@
+"""Steering robot that converts a steering-wheel reference signal into a physical shaft angle."""
+component SteeringRobot
+  delta_sw_ref = RealInput(units = "rad") {^delta_sw_ref}
+  steering = Spline() {^steering}
+  wheel_pos = RotationalComponents.Sources.Position() {^wheel_pos}
+  steering_fixed = RotationalComponents.Components.Fixed() {^steering_fixed}
+relations
+  connect(delta_sw_ref, wheel_pos.phi_ref) {^w1}
+  connect(wheel_pos.spline, steering) {^w2}
+  connect(wheel_pos.support, steering_fixed.spline) {^w3}
+  initial wheel_pos.w = 0.0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://RotationalComponents/Position.svg"}},
+  "_links": {
+    "delta_sw_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "steering": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "wheel_pos": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 350, "x2": 550, "y2": 550}}}},
+    "steering_fixed": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 550, "y2": 900}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+"Steering robot position check."
+test component TestSteeringRobot
+  command = BlockComponents.Sources.Constant(k = 0.2)
+  robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot()
+  sensor = RotationalComponents.Sensors.AngleSensor()
+relations
+  connect(command.y, robot.delta_sw_ref)
+  connect(robot.steering, sensor.spline)
+metadata {
+  "Dyad": {
+    "tests": {
+      "constant_angle": {
+        "solver": "Tsit5", "stop": 0.2,
+        "expect": {"final": {"sensor.phi": 0.2}},
+        "atol": {"sensor.phi": 1e-4}
+      }
+    }
+  }
+}
+end
