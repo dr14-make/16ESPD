@@ -14,8 +14,8 @@ metadata {
   "_links": {
     "delta_sw_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "steering": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "wheel_pos": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 350, "x2": 550, "y2": 550}}}},
-    "steering_fixed": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 550, "y2": 900}}}},
+    "wheel_pos": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 400, "x2": 550, "y2": 600}}}},
+    "steering_fixed": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 750, "x2": 550, "y2": 950}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
