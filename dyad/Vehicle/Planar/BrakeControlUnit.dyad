@@ -1,0 +1,112 @@
+"""Electronic brake control unit combining continuous ESP and sampled four-channel ABS."""
+component BrakeControlUnit
+  demand = RealInput(units = "N.m") {^demand}
+  delta_sw = RealInput(units = "rad") {^delta_sw}
+  r = RealInput(units = "rad/s") {^r}
+  vx = RealInput(units = "m/s") {^vx}
+  kappa_fl = RealInput() {^kappa_fl}
+  kappa_fr = RealInput() {^kappa_fr}
+  kappa_rl = RealInput() {^kappa_rl}
+  kappa_rr = RealInput() {^kappa_rr}
+  tau_fl = RealOutput(units = "N.m") {^tau_fl}
+  tau_fr = RealOutput(units = "N.m") {^tau_fr}
+  tau_rl = RealOutput(units = "N.m") {^tau_rl}
+  tau_rr = RealOutput(units = "N.m") {^tau_rr}
+  parameter esp_on::Real = 1.0
+  parameter abs_on::Real = 1.0
+  parameter L::Length = 2.7
+  parameter K_us::Real = 2.0387e-3
+  parameter i_s::Real = 16.0
+  parameter mu_est::Real = 1.0
+  parameter g::Acceleration = 9.81
+  parameter k_lim::Real = 0.85
+  parameter v_floor::Velocity = 1.0
+  parameter Kp::Real = 40000.0
+  parameter Ki::Real = 0.0
+  parameter deadband::AngularVelocity = 0.03
+  parameter v_on::Velocity = 5.0
+  parameter Mz_max::Torque = 10000.0
+  parameter tw::Length = 1.55
+  parameter radius::Length = 0.31
+  parameter T_max::Torque = 2500.0
+  parameter T_build::Time = 0.1
+  structural parameter dt::Time = 0.005
+  parameter select_low::Real = 1.0
+  parameter T_p::Time = 0.03
+  parameter lambda_1_f::Real = 0.08
+  parameter lambda_1_r::Real = 0.06
+  parameter lambda_lock::Real = 0.20
+  parameter alpha_rel::Real = 0.6
+  parameter beta_reapply::Real = 0.85
+  parameter l_rec::Real = 0.03
+  parameter T_hold_max::Time = 0.06
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_slow::Real = 16000.0
+  parameter v_min::Velocity = 1.5
+  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(esp_on = esp_on, L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor, Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max, tw = tw, radius = radius, T_max = T_max, T_build = T_build) {^esp}
+  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(abs_on = abs_on, dt = dt, select_low = select_low, T_p = T_p, lambda_1_f = lambda_1_f, lambda_1_r = lambda_1_r, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^abs}
+relations
+  connect(demand, abs.demand) {^w1}
+  connect(delta_sw, esp.delta_sw) {^w2}
+  connect(r, esp.r) {^w3}
+  connect(vx, esp.vx, abs.vx) {^w4}
+  connect(kappa_fl, abs.kappa_fl) {^w5}
+  connect(kappa_fr, abs.kappa_fr) {^w6}
+  connect(kappa_rl, abs.kappa_rl) {^w7}
+  connect(kappa_rr, abs.kappa_rr) {^w8}
+  connect(esp.dT_fl, abs.dT_fl) {^w9}
+  connect(esp.dT_fr, abs.dT_fr) {^w10}
+  connect(esp.dT_rl, abs.dT_rl) {^w11}
+  connect(esp.dT_rr, abs.dT_rr) {^w12}
+  connect(abs.tau_fl, tau_fl) {^w13}
+  connect(abs.tau_fr, tau_fr) {^w14}
+  connect(abs.tau_rl, tau_rl) {^w15}
+  connect(abs.tau_rr, tau_rr) {^w16}
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/CascadeServoController.svg"}},
+  "_links": {
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 50, "x2": 50, "y2": 150}}}},
+    "delta_sw": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}}}},
+    "r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 350, "x2": 50, "y2": 450}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 500, "x2": 50, "y2": 600}}}},
+    "kappa_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "kappa_fr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 800, "x2": 50, "y2": 900}}}},
+    "kappa_rl": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 270}}}},
+    "kappa_rr": {"Dyad": {"placement": {"icon": {"x1": 500, "y1": 950, "x2": 600, "y2": 1050, "rot": 270}}}},
+    "tau_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "tau_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "tau_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "tau_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}},
+    "esp": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 150, "x2": 450, "y2": 400}}}},
+    "abs": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 350, "x2": 850, "y2": 650}}}}
+  }
+}
+end
+
+"Composition check for the continuous ECU boundary."
+test component TestBrakeControlUnit
+  demand = BlockComponents.Sources.Constant(k = 0.0)
+  steer = BlockComponents.Sources.Constant(k = 0.5624768)
+  measured = BlockComponents.Sources.Constant(k = 0.30)
+  speed = BlockComponents.Sources.Constant(k = 20.0)
+  zero = BlockComponents.Sources.Constant(k = 0.0)
+  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(abs_on = 0.0)
+relations
+  connect(demand.y, ecu.demand)
+  connect(steer.y, ecu.delta_sw)
+  connect(measured.y, ecu.r)
+  connect(speed.y, ecu.vx)
+  connect(zero.y, ecu.kappa_fl, ecu.kappa_fr, ecu.kappa_rl, ecu.kappa_rr)
+metadata {
+  "Dyad": {
+    "tests": {
+      "oversteer": {
+        "solver": "Tsit5", "stop": 1.0,
+        "expect": {"final": {"ecu.esp.r_ref": 0.20, "ecu.esp.Mz": -2800.0, "ecu.tau_fr": 1120.0}},
+        "atol": {"ecu.esp.r_ref": 1e-5, "ecu.esp.Mz": 1e-3, "ecu.tau_fr": 1.0}
+      }
+    }
+  }
+}
+end
