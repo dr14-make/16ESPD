@@ -197,6 +197,8 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   else
     push!(__eqs, ModelingToolkit.D_nounits(axf) ~ (acc.a_x - axf) / T_lt)
     push!(__eqs, ModelingToolkit.D_nounits(ayf) ~ (acc.a_y - ayf) / T_lt)
+    push!(__initialization_eqs, axf ~ 0.0)
+    push!(__initialization_eqs, ayf ~ 0.0)
   end
 
   # Return completely constructed System

@@ -164,8 +164,6 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   push!(__initialization_eqs, car.fr.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rl.brake.tau_actual ~ 0.0)
   push!(__initialization_eqs, car.rr.brake.tau_actual ~ 0.0)
-  push!(__initialization_eqs, car.loads.axf ~ 0.0)
-  push!(__initialization_eqs, car.loads.ayf ~ 0.0)
   push!(__initialization_eqs, wheel_pos.w ~ 0.0)
 
   ### Assertions

@@ -46,6 +46,8 @@ relations
   else
     der(axf) = (acc.a_x - axf) / T_lt
     der(ayf) = (acc.a_y - ayf) / T_lt
+    initial axf = 0.0
+    initial ayf = 0.0
   end
   d_long = -m * axf * h / (2 * L)
   dN_fl = d_long - m * ayf * h * (b / L) / tw
@@ -79,8 +81,6 @@ relations
   connect(loads.fr, fixed_fr.flange)
   connect(loads.rl, fixed_rl.flange)
   connect(loads.rr, fixed_rr.flange)
-  initial loads.axf = 0.0
-  initial loads.ayf = 0.0
 metadata {
   "Dyad": {
     "tests": {

@@ -101,8 +101,6 @@ Prescribed-acceleration rig for quasi-static wheel-load transfer.
   ### Guesses
 
   ### Initialization Equations
-  push!(__initialization_eqs, loads.axf ~ 0.0)
-  push!(__initialization_eqs, loads.ayf ~ 0.0)
 
   ### Assertions
   __assertions = []

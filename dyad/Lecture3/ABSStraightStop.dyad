@@ -88,8 +88,6 @@ relations
   initial car.fr.brake.tau_actual = 0.0
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
-  initial car.loads.axf = 0.0
-  initial car.loads.ayf = 0.0
   initial wheel_pos.w = 0.0
 metadata {
   "Dyad": {
