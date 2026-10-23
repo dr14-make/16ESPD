@@ -8,25 +8,25 @@ test component SineWithDwellRun
   parameter radius::Length = 0.31
   parameter h_cg::Length = 0.0
   structural parameter load_transfer::Boolean = true
-  steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = A_sw)
-  wheel_pos = RotationalComponents.Sources.Position()
-  steering_fixed = RotationalComponents.Components.Fixed()
-  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer)
-  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
+  steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = A_sw) {^steer}
+  wheel_pos = RotationalComponents.Sources.Position() {^wheel_pos}
+  steering_fixed = RotationalComponents.Components.Fixed() {^steering_fixed}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer) {^car}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
 relations
-  connect(steer.y, wheel_pos.phi_ref)
-  connect(wheel_pos.spline, car.steering)
-  connect(wheel_pos.support, steering_fixed.spline)
-  connect(car.chassis, sensors.chassis)
-  connect(car.steering, sensors.steering)
-  connect(car.wheel_fl, sensors.wheel_fl)
-  connect(car.wheel_fr, sensors.wheel_fr)
-  connect(car.wheel_rl, sensors.wheel_rl)
-  connect(car.wheel_rr, sensors.wheel_rr)
-  connect(car.spin_fl, sensors.spin_fl)
-  connect(car.spin_fr, sensors.spin_fr)
-  connect(car.spin_rl, sensors.spin_rl)
-  connect(car.spin_rr, sensors.spin_rr)
+  connect(steer.y, wheel_pos.phi_ref) {^w1}
+  connect(wheel_pos.spline, car.steering) {^w2}
+  connect(wheel_pos.support, steering_fixed.spline) {^w3}
+  connect(car.chassis, sensors.chassis) {^w4}
+  connect(car.steering, sensors.steering) {^w5}
+  connect(car.wheel_fl, sensors.wheel_fl) {^w6}
+  connect(car.wheel_fr, sensors.wheel_fr) {^w7}
+  connect(car.wheel_rl, sensors.wheel_rl) {^w8}
+  connect(car.wheel_rr, sensors.wheel_rr) {^w9}
+  connect(car.spin_fl, sensors.spin_fl) {^w10}
+  connect(car.spin_fr, sensors.spin_fr) {^w11}
+  connect(car.spin_rl, sensors.spin_rl) {^w12}
+  connect(car.spin_rr, sensors.spin_rr) {^w13}
   car.tau_fl = 0.0
   car.tau_fr = 0.0
   car.tau_rl = 0.0
@@ -64,6 +64,26 @@ metadata {
         "expect": {"final": {"sensors.vx": 19.6498, "sensors.psi": -0.2229}, "signals": ["sensors.vx", "sensors.r", "sensors.y", "sensors.psi", "sensors.beta", "sensors.delta_sw"]}
       }
     }
+  },
+  "_links": {
+    "steer": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 250, "x2": 200, "y2": 350}}}},
+    "wheel_pos": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 250, "x2": 400, "y2": 350}}}},
+    "steering_fixed": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 400, "x2": 400, "y2": 500}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 500, "x2": 950, "y2": 800}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 500, "x2": 1400, "y2": 800}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 300}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 460}, {"x": 1250, "y": 460}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end

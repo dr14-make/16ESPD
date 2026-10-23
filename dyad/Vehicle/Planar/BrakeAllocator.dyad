@@ -1,17 +1,17 @@
 """Signed single-wheel yaw-moment allocation with pressure-build dynamics."""
 component BrakeAllocator
   "Requested corrective yaw moment"
-  Mz = RealInput(units = "N.m")
+  Mz = RealInput(units = "N.m") {^Mz}
   "One for oversteer, zero for understeer"
-  oversteer = RealInput()
+  oversteer = RealInput() {^oversteer}
   "Signed left-front torque change"
-  dT_fl = RealOutput(units = "N.m")
+  dT_fl = RealOutput(units = "N.m") {^dT_fl}
   "Signed right-front torque change"
-  dT_fr = RealOutput(units = "N.m")
+  dT_fr = RealOutput(units = "N.m") {^dT_fr}
   "Signed left-rear torque change"
-  dT_rl = RealOutput(units = "N.m")
+  dT_rl = RealOutput(units = "N.m") {^dT_rl}
   "Signed right-rear torque change"
-  dT_rr = RealOutput(units = "N.m")
+  dT_rr = RealOutput(units = "N.m") {^dT_rr}
   "Track width (probe)"
   parameter tw::Length = 1.55
   "Wheel radius (repository default)"
@@ -39,16 +39,27 @@ relations
   der(dT_fr) = (req_fr - dT_fr) / T_build
   der(dT_rl) = (req_rl - dT_rl) / T_build
   der(dT_rr) = (req_rr - dT_rr) / T_build
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/ControlMixer.svg"}},
+  "_links": {
+    "Mz": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 120, "x2": 50, "y2": 220}, "diagram": {"x1": -50, "y1": 120, "x2": 50, "y2": 220}}}},
+    "oversteer": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "dT_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 110, "x2": 1050, "y2": 210}, "diagram": {"x1": 950, "y1": 110, "x2": 1050, "y2": 210}}}},
+    "dT_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 330, "x2": 1050, "y2": 430}, "diagram": {"x1": 950, "y1": 330, "x2": 1050, "y2": 430}}}},
+    "dT_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 570, "x2": 1050, "y2": 670}, "diagram": {"x1": 950, "y1": 570, "x2": 1050, "y2": 670}}}},
+    "dT_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 790, "x2": 1050, "y2": 890}, "diagram": {"x1": 950, "y1": 790, "x2": 1050, "y2": 890}}}}
+  }
+}
 end
 
 "Brake-allocation checks for oversteer, understeer, and saturation."
 test component TestBrakeAllocator
-  moment = BlockComponents.Sources.Constant(k = -2800.0)
-  mode = BlockComponents.Sources.Constant(k = 1.0)
-  allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator()
+  moment = BlockComponents.Sources.Constant(k = -2800.0) {^moment}
+  mode = BlockComponents.Sources.Constant(k = 1.0) {^mode}
+  allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator() {^allocator}
 relations
-  connect(moment.y, allocator.Mz)
-  connect(mode.y, allocator.oversteer)
+  connect(moment.y, allocator.Mz) {^w1}
+  connect(mode.y, allocator.oversteer) {^w2}
 metadata {
   "Dyad": {
     "tests": {
@@ -70,6 +81,13 @@ metadata {
         "atol": {"allocator.dT_fr": 1.0}
       }
     }
+  },
+  "_links": {
+    "moment": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 100, "x2": 150, "y2": 200}}}},
+    "mode": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 300, "x2": 150, "y2": 400}}}},
+    "allocator": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 150, "x2": 550, "y2": 350}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 252.5, "y": 150}, {"x": 252.5, "y": 184}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 252.5, "y": 350}, {"x": 252.5, "y": 250}], "E": 2}]}}
   }
 }
 end

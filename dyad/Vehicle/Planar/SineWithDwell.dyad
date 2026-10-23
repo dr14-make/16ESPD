@@ -1,7 +1,7 @@
 """FMVSS 126 sine-with-dwell steering-wheel command."""
 component SineWithDwell
   "Steering-wheel angle command"
-  y = RealOutput()
+  y = RealOutput() {^y}
   "Steering-wheel amplitude (probe)"
   parameter A::Angle = 0.3775147179563736
   "Steering frequency (FMVSS 126)"
@@ -24,13 +24,19 @@ relations
         ifelse(tau < 1.0 / f + T_dwell,
           A * sin(2.0 * π * f * (tau - T_dwell)),
           0.0))))
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/Sine.svg"}},
+  "_links": {
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
 end
 
 test component TestSineWithDwell
-  profile = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = 1.0)
-  sink = BlockComponents.Routing.RealPassThrough()
+  profile = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(A = 1.0) {^profile}
+  sink = BlockComponents.Routing.RealPassThrough() {^sink}
 relations
-  connect(profile.y, sink.u)
+  connect(profile.y, sink.u) {^w1}
 metadata {
   "Dyad": {
     "tests": {
@@ -50,6 +56,11 @@ metadata {
         "expect": {"final": {"sink.y": 0.0}}
       }
     }
+  },
+  "_links": {
+    "profile": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 100, "x2": 200, "y2": 200}}}},
+    "sink": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 100, "x2": 400, "y2": 200}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end

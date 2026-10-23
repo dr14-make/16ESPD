@@ -14,10 +14,10 @@ component PlanarBrakedWheel
   load = Flange() {^load}
   "Requested brake torque"
   tau_cmd = RealInput() {^tau_cmd}
-  joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(N = 0.0, mu_A = mu_scale * mu_A, mu_S = mu_scale * mu_S, r = [1, 0], render = false, radius = radius, sAdhesion = sAdhesion, sSlide = sSlide, vAdhesion_min = vAdhesion_min, vSlide_min = vSlide_min)
-  inertia = RotationalComponents.Components.Inertia(J = J)
-  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(T = T_brake, tau_max = tau_max, w0 = w0)
-  housing = RotationalComponents.Components.Fixed()
+  joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(N = 0.0, mu_A = mu_scale * mu_A, mu_S = mu_scale * mu_S, r = [1, 0], render = false, radius = radius, sAdhesion = sAdhesion, sSlide = sSlide, vAdhesion_min = vAdhesion_min, vSlide_min = vSlide_min) {^joint}
+  inertia = RotationalComponents.Components.Inertia(J = J) {^inertia}
+  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(T = T_brake, tau_max = tau_max, w0 = w0) {^brake}
+  housing = RotationalComponents.Components.Fixed() {^housing}
   "Wheel rolling radius (repository default)"
   parameter radius::Length = 0.31
   "One-wheel spin inertia (assumed)"
@@ -49,17 +49,36 @@ component PlanarBrakedWheel
   "Normal tire load"
   variable F_z::Force
 relations
-  connect(frame_a, joint.frame_a)
-  connect(joint.flange_a, inertia.spline_a)
-  connect(inertia.spline_b, brake.spline_a)
-  connect(brake.spline_b, spin)
-  connect(brake.support, housing.spline)
-  connect(tau_cmd, brake.tau_cmd)
+  connect(frame_a, joint.frame_a) {^w1}
+  connect(joint.flange_a, inertia.spline_a) {^w2}
+  connect(inertia.spline_b, brake.spline_a) {^w3}
+  connect(brake.spline_b, spin) {^w4}
+  connect(brake.support, housing.spline) {^w5}
+  connect(tau_cmd, brake.tau_cmd) {^w6}
   joint.dynamicLoad = load.f
   load.s = 0.0
   F_x = -joint.f_long
   F_y = -joint.f_lat
   F_z = max(0.0, load.f)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/SlipBasedWheelJoint.svg"}},
+  "_links": {
+    "frame_a": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}, "diagram": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "spin": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 400, "x2": 50, "y2": 500}}}},
+    "load": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}},
+    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 150, "y1": 50, "x2": 250, "y2": 150, "rot": 90}}}},
+    "joint": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 400, "x2": 550, "y2": 500}}}},
+    "inertia": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 350, "y2": 500}}}},
+    "brake": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 400, "x2": 150, "y2": 500}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 600, "x2": 250, "y2": 700}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 300}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
 end
 
 test component TestPlanarWheelRig
@@ -71,25 +90,25 @@ test component TestPlanarWheelRig
   parameter tau::Torque = 0.0
   "Applied normal load"
   parameter N_load::Force = 4000.0
-  vx_source = BlockComponents.Sources.Constant(k = v)
-  vy_source = BlockComponents.Sources.Constant(k = vy)
-  tau_source = BlockComponents.Sources.Constant(k = tau)
-  load_source = BlockComponents.Sources.Constant(k = N_load)
-  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity()
-  force = TranslationalComponents.Sources.Force()
-  load_fixed = TranslationalComponents.Components.Fixed()
-  wheel = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(sAdhesion = 0.12, sSlide = 0.36, mu_A = 1.0, mu_S = 0.8, J = 1.0, tau_max = 10000.0)
-  slip = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = 0.31)
+  vx_source = BlockComponents.Sources.Constant(k = v) {^vx_source}
+  vy_source = BlockComponents.Sources.Constant(k = vy) {^vy_source}
+  tau_source = BlockComponents.Sources.Constant(k = tau) {^tau_source}
+  load_source = BlockComponents.Sources.Constant(k = N_load) {^load_source}
+  motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity() {^motion}
+  force = TranslationalComponents.Sources.Force() {^force}
+  load_fixed = TranslationalComponents.Components.Fixed() {^load_fixed}
+  wheel = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(sAdhesion = 0.12, sSlide = 0.36, mu_A = 1.0, mu_S = 0.8, J = 1.0, tau_max = 10000.0) {^wheel}
+  slip = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(radius = 0.31) {^slip}
 relations
-  connect(vx_source.y, motion.v_x)
-  connect(vy_source.y, motion.v_y)
-  connect(motion.frame_b, wheel.frame_a)
-  connect(load_source.y, force.f)
-  connect(load_fixed.flange, force.flange_a)
-  connect(force.flange_b, wheel.load)
-  connect(tau_source.y, wheel.tau_cmd)
-  connect(wheel.frame_a, slip.frame_a)
-  connect(wheel.spin, slip.spline)
+  connect(vx_source.y, motion.v_x) {^w1}
+  connect(vy_source.y, motion.v_y) {^w2}
+  connect(motion.frame_b, wheel.frame_a) {^w3}
+  connect(load_source.y, force.f) {^w4}
+  connect(load_fixed.flange, force.flange_a) {^w5}
+  connect(force.flange_b, wheel.load) {^w6}
+  connect(tau_source.y, wheel.tau_cmd) {^w7}
+  connect(wheel.frame_a, slip.frame_a) {^w8}
+  connect(wheel.spin, slip.spline) {^w9}
   initial wheel.inertia.w = (v + 0.01) / 0.31
   initial wheel.inertia.phi = 0.0
   initial wheel.brake.tau_actual = 0.0
@@ -139,6 +158,26 @@ metadata {
         "expect": {"final": {"wheel.F_y": 0.0, "wheel.F_z": 0.0}, "signals": ["wheel.F_y", "wheel.F_z"]}
       }
     }
+  },
+  "_links": {
+    "vx_source": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 50, "x2": 150, "y2": 150}}}},
+    "vy_source": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 200, "x2": 150, "y2": 300}}}},
+    "tau_source": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": -30, "x2": 550, "y2": 70}}}},
+    "load_source": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 330, "x2": 200, "y2": 430}}}},
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 100, "x2": 350, "y2": 200}}}},
+    "force": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 400, "x2": 350, "y2": 500}}}},
+    "load_fixed": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 520, "x2": 200, "y2": 620}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 150, "x2": 550, "y2": 250}}}},
+    "slip": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 150, "x2": 950, "y2": 250}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 202.5, "y": 100}, {"x": 202.5, "y": 130}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 202.5, "y": 250}, {"x": 202.5, "y": 170}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 447.5, "y": 150}, {"x": 447.5, "y": 180}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 380}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 450}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 450}, {"x": 450, "y": 220}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 20}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 520, "y": 180}, {"x": 520, "y": 110}, {"x": 800, "y": 110}, {"x": 800, "y": 180}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 750, "y": 200}, {"x": 750, "y": 220}], "E": 2}]}}
   }
 }
 end

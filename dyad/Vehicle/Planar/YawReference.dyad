@@ -1,11 +1,11 @@
 """Friction-limited bicycle-model yaw-rate reference for the continuous ESP."""
 component YawReference
   "Measured steering-wheel angle"
-  delta_sw = RealInput(units = "rad")
+  delta_sw = RealInput(units = "rad") {^delta_sw}
   "Measured longitudinal speed"
-  vx = RealInput(units = "m/s")
+  vx = RealInput(units = "m/s") {^vx}
   "Reference yaw rate"
-  r_ref = RealOutput(units = "rad/s")
+  r_ref = RealOutput(units = "rad/s") {^r_ref}
   "Wheelbase (probe)"
   parameter L::Length = 2.7
   "Understeer gradient (derived)"
@@ -26,16 +26,24 @@ relations
   r_nom = vx * (delta_sw / i_s) / (L + K_us * vx ^ 2)
   r_limit = k_lim * mu_est * g / max(abs(vx), v_floor)
   r_ref = min(max(r_nom, -r_limit), r_limit)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/Limiter.svg"}},
+  "_links": {
+    "delta_sw": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+    "r_ref": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
 end
 
 "Yaw-reference checks below and at the friction limit."
 test component TestYawReference
-  steer = BlockComponents.Sources.Constant(k = 0.32)
-  speed = BlockComponents.Sources.Constant(k = 22.222)
-  reference = VehicleSystemsComponents.Vehicle.Planar.YawReference()
+  steer = BlockComponents.Sources.Constant(k = 0.32) {^steer}
+  speed = BlockComponents.Sources.Constant(k = 22.222) {^speed}
+  reference = VehicleSystemsComponents.Vehicle.Planar.YawReference() {^reference}
 relations
-  connect(steer.y, reference.delta_sw)
-  connect(speed.y, reference.vx)
+  connect(steer.y, reference.delta_sw) {^w1}
+  connect(speed.y, reference.vx) {^w2}
 metadata {
   "Dyad": {
     "tests": {
@@ -51,6 +59,13 @@ metadata {
         "atol": {"reference.r_ref": 1e-5}
       }
     }
+  },
+  "_links": {
+    "steer": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 200, "x2": 200, "y2": 300}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 50, "x2": 200, "y2": 150}}}},
+    "reference": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 200, "x2": 450, "y2": 300}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 100}], "E": 2}]}}
   }
 }
 end
