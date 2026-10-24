@@ -351,10 +351,14 @@ accumulator and a return pump, is a stretch goal for whoever finishes early;
 
 - μ = 1: **38.5 m**, shorter than the locked 43.7 m and level with the library's clocked ECU's
   38.7 m (deck). μ 0.5: **78.0 m**; μ 0.3: **130.6 m**, about 5 % under the locked 136.7 m.
-- Front pressure cycle: dry **1.6 Hz, 24–65 bar**; μ 0.3 **3.7 Hz, 1.6–22 bar** (near-full
-  dumps). Measured Bosch ABS: 2–4 Hz on asphalt with 15–30 bar swings, 4–6 Hz on ice with
-  near-full dumps (Day & Roberts, SAE 2002-01-0559). Ours is a little slow and dumps deep on a
-  dry road because the rates are fixed for one road: one 30 ms valve lag at 580 bar/s is 17 bar,
+- Front caliper pressure cycle, counted as dump onsets: μ 0.3, the checkpoint plot's 1.0–2.5 s,
+  **about 6/s, 14.5–22.1 bar**; over t ≥ 1 s, v > 3 m/s (1.0–10.5 s), **4.2/s, 1.6–22.3 bar**,
+  slowing to about 3/s and dumping to about 2.6 bar late in the stop. Dry, t ≥ 1 s, v > 3 m/s
+  (1.0–3.3 s): **24.3–64.9 bar**, 21 dumps, a 2–3 bar ripple near 63 bar at about 14/s until
+  2.2 s, then four deep dumps to 24–36 bar. Measured Bosch ABS: 2–4 Hz on asphalt with 15–30 bar
+  swings, 4–6 Hz on ice with near-full dumps (Day & Roberts, SAE 2002-01-0559). Ours sits in the
+  ice range on snow; on a dry road it ripples fast and shallow at speed and dumps deep at the end,
+  because the rates are fixed for one road: one 30 ms valve lag at 580 bar/s is 17 bar,
   most of the snow lock pressure. `docs/abs-efficiency-research.md` §3 has the runs; scaling the
   rates and thresholds by the road takes the snow stop to 113 m.
 - `abs.pressure.p` does not move in a hold. The wheel pressure never exceeds `master.p_mc`.
@@ -512,8 +516,10 @@ Where each step sits in the deck:
 | 06 | `bonus-tcs` | 04 TCS | `tcs-and-lecture-1` |
 
 Each build slide carries the code or a placeholder for the Studio screenshot, a one-line recipe,
-the reference run's figure and numbers, and a link to its anchor on the guide (`#step-00` to
-`#step-06`); its speaker notes carry the lecturer's full instructions and where students stall.
+a **Given:** line naming the library parts it uses, the reference run's figure and numbers, and a
+link to its anchor on the guide (`#step-00` to `#step-06`); its speaker notes carry the lecturer's
+full instructions, where students stall and where the numbers come from. A slide "The parts you
+are given" sits just before build 02.
 The library's ABS result slides stay the checkpoints, with green cues naming the students'
 numbers. The hand-over slide became "What you measured", one row per step.
 

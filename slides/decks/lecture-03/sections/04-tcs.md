@@ -178,6 +178,8 @@ after 10 s.
 `wheel`, its support on `rot_ground`, a `tau_tcs` input · `TCS`: build 03's law turned round,
 pressure builds while `kappa_pred > lambda_target`, clipped to [0, `tau_tcs_max`]*
 
+**Given:** `BrakeActuator`, a brake with a 30 ms lag · `ABSPressureIntegrator`
+
 [page: step 06](../lecture/lecture-03/#step-06)
 
 </div>

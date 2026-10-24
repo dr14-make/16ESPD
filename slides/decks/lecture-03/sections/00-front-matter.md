@@ -33,7 +33,8 @@ single wheels to steer the car's rotation.
 
 You do not only listen. In sections 01 to 03 you build on your own car in Dyad Studio, along
 with me: first a brake system from pedal to wheel, pressed hard enough to lock the wheel, then a
-slip controller of your own, then one that sees only the wheel speed. Every build step has one slide: a screenshot, a one-line recipe and a "page:
+slip controller of your own, then one that sees only the wheel speed. Every build step has one
+slide: a screenshot, a one-line recipe, the code to paste, the library parts it uses and a "page:
 step" link to the build guide on the course site, which has every block, line of code and number
 to expect. If you fall behind, the guide has each step's finished code to paste.
 
@@ -104,7 +105,8 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 <!--
 Seven sections in three hours, with a 10-minute break in the middle of section 03 and a 5-minute
 one after it. Budgets per section are on each section's cover and in
-`docs/lecture-03-run-sheet.md`.
+`docs/lecture-03-run-sheet.md`. 87 of the 180 minutes are building: builds 00 to 05 take 6, 5,
+16, 22, 28 and 10; each build slide's note opens with its own budget and split.
 
 The first two sections are physics: what the tire can give, and how the brake system turns a foot
 into pressure and torque. Section 02 ends with your car stopped by a brake system you wire
@@ -187,40 +189,39 @@ routeAlias: build-setup
 
 ## Build 00: set up
 
-<div class="grid grid-cols-[1.2fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-start">
 <div>
 
+![The + library panel open at VehicleSystemsComponents › Vehicle › Wheel, listing BrakeActuator, BrakedWheel, HydraulicBrakedWheel and TireFrictionCurve; HandsOn03 one level up.](/img/lecture-03/step00-wheel-library.png)
+
+> **No hands-on 2 branch?** Start from `main`: today needs only hands-on 1's `Body`.
+
+</div>
+<div>
+
+*Branch `lecture-03` from `main` · in the REPL, move the course library to the Lecture 3 tag and
+add `HydraulicComponents` · <kbd>F1</kbd> → **Dyad: Restart Language Server**, then
+**Dyad: Compile** · **+** → `VehicleSystemsComponents › Vehicle › Wheel` lists `BrakedWheel` and `HydraulicBrakedWheel`*
+
 ```julia
-# in MyCar, on a new branch lecture-03 from main
 using Pkg
 Pkg.add(url = "https://github.com/dr14-make/16ESPD",
         rev = "TODO-TAG")   # tag not cut yet
 Pkg.add("HydraulicComponents")
 ```
 
-Then <kbd>F1</kbd> → **Dyad: Compile**.
-
-*Branch `lecture-03` · move the course library to the Lecture 3 tag · add `HydraulicComponents`
-· compile · **+** → `VehicleSystemsComponents › Vehicle › Wheel` lists `BrakedWheel` and
-`HydraulicBrakedWheel`*
+**Given:** the course library at the Lecture 3 tag · `HydraulicComponents`, the brake fluid's
+library
 
 [page: step 00](../lecture/lecture-03/#step-00)
-
-</div>
-<div>
-
-<div class="placeholder">Screenshot to come: <code>step00-wheel-library.png</code>, the <b>+</b>
-popup open at <code>VehicleSystemsComponents › Vehicle › Wheel</code></div>
-
-> **No hands-on 2 branch?** Start from `main`: today needs only hands-on 1's `Body`.
 
 </div>
 </div>
 
 <!--
-Before the first build, the course library. Today's parts, the brake system, the braked wheels
-and the pressure integrator, live in the course library, and your `MyCar` needs a version that
-has them.
+Six minutes. Before the first build, the course library. Today's parts, the brake system, the
+braked wheels and the pressure integrator, live in the course library, and your `MyCar` needs a
+version that has them.
 
 In the status bar at the bottom, click the branch name and create a new branch, `lecture-03`, from
 `main`. If you finished hands-on 2, branch from where it left you; if not, `main` is enough,
@@ -231,17 +232,24 @@ lines on the slide. You added the course library in hands-on 2, but your manifes
 version from that day, which has none of today's parts. The first `Pkg.add` moves it to a fixed
 tag, the version this lecture was rehearsed on. If you skipped hands-on 2, the same line adds it.
 The second adds `HydraulicComponents`, the fluid library: in build 02 your own bench declares the
-brake fluid, and that needs the package in `MyCar` itself. Then F1, Dyad: Compile.
+brake fluid, and that needs the package in `MyCar` itself. Then F1, Dyad: Restart Language
+Server: the language server read the project when Studio started, and until it restarts the
+compile flags every library part as "not a direct dependency". Then F1, Dyad: Compile.
 
 Check: open any diagram, click plus, and open VehicleSystemsComponents, Vehicle, Wheel. You should
 see `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator` and `TireFrictionCurve`. Next to it,
-`Brake` lists `BrakePedal`, `StaticBooster`, `TandemMasterCylinder`, `BrakeLine` and
-`BrakeCaliper`. One level up, `Vehicle` lists `ABSPressureIntegrator`. In the REPL, `using VehicleSystemsComponents` runs without an error.
+`Brake` lists `BrakePedal`, `StaticBooster`, `TandemMasterCylinder`, `BrakeLine`, `BrakeCaliper`
+and `ABSValve`. One level up, `Vehicle` lists `ABSPressureIntegrator`. In the REPL,
+`using VehicleSystemsComponents` runs without an error. Wait until most laptops list
+`BrakedWheel` under plus.
 
 Under plus there is also a `HandsOn03` folder: those are the reference answers to today's steps.
 Build your own; open them only to compare.
 
-TODO before the lecture: replace TODO-TAG with the tag cut from main, here and on the guide page, and
-capture step00-wheel-library.png. If the tag carries the planar car's MultibodyComponents, ask the
+The common mistake is skipping the second line. Nothing fails yet; build 02 then gives a compile
+error at the brake fluid, because `HydraulicComponents` is not in `MyCar`. A compile that flags
+every library part `missing-direct-dependency` means the language server was not restarted.
+
+TODO before the lecture: replace TODO-TAG with the tag cut from main, here and on the guide page. If the tag carries the planar car's MultibodyComponents, ask the
 students to run this step before the lecture: the first compile then takes about a minute longer.
 -->

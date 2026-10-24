@@ -10,11 +10,13 @@ From a car whose wheel locks under a panic stop to an ABS that sees only the whe
 
 **What you build.** Your `MyCar` from the [hands-on](../../handson/lecture-01/) has a `Body`. In this lecture you put it on the course library's brakes and brake it from 90 km/h, along with the lecturer: first through a brake system you wire from the pedal to the wheel, with no ABS, then with a slip controller of your own, then with an ABS that knows only the wheel speed. Every number the lecture's ABS slides show comes out of a model on your own screen. Step 01 is on paper; step 02 wires the brake system; steps 03–04 each add a controller and its bench; step 05 is a table from the REPL. Traction control is a bonus task to take home. ESP is a demo: nothing to build.
 
-**How each step works.** The slide that introduces a step shows the finished diagram or code and links here. Each step below lists the blocks to place with their library path, instance name and values, every wire and line of code, and what the plot and the braking distance must show before you go on. Use the names given here: the steps after it read signal paths like `abs.p_cmd` and `est.v_ref`, and the REPL loop of step 05 calls your analyses by name.
+**How each step works.** The slide that introduces a step shows the finished diagram or code, names the library parts it uses, and links here. Each step below lists the blocks to place with their library path, instance name and values, every wire and line of code, and what the plot and the braking distance must show before you go on. Use the names given here: the steps after it read signal paths like `abs.p_cmd` and `est.v_ref`, and the REPL loop of step 05 calls your analyses by name.
+
+**Given parts.** You build the benches and the controllers; the brake system, the wheel, the valves and the pressure integrator come finished from the course library. The step where a part first appears has a **Given parts** box: what the part models, its ports, the parameters that matter and where their values come from.
 
 **Fell behind?** Every step ends with a **Fell behind?** block: the finished code of that step, to paste. The course repository has the same components as the reference answers in `dyad/HandsOn03/`, under the same names; under **+** they show as `VehicleSystemsComponents › HandsOn03`. Build your own; open them only to compare.
 
-**Plotting.** Every plot is drawn in the Julia REPL: click **Dyad: Open Julia REPL** in the **Actions** panel's title bar. Each snippet starts with `using Plots; plotly()`, which switches Plots to its interactive backend. Snippets do not load `MyCar`: the REPL that runs your analyses has already included it.
+**Plotting.** Every plot is drawn in the Julia REPL: click **Dyad: Open Julia REPL** in the **Actions** panel's title bar. Each snippet starts with `using Plots; plotly()`, which switches Plots to its interactive backend. Snippets do not load `MyCar`: the REPL reloads it when you run an analysis from Studio. So each time you add an analysis, click ▷ **Run Analysis** and pick it once before you paste a snippet that calls it; until then the snippet fails with ``UndefVarError: `PedalStopTransient` not defined in `Main.MyCar` ``. The plots show pressures in Pa: 1 bar is 10⁵ Pa, so 89 bar reads 8.9×10⁶.
 
 **Solver.** Every analysis today runs **Tsit5** with a maximum step of 1 ms (`dtmax = 1e-3`). The ABS switches the brake every few milliseconds behind a 30 ms lag; a stiff solver such as FBDF steps over the switching and reports a wrong success.
 
@@ -63,14 +65,11 @@ Today's parts, the brake system, the braked wheels and the pressure integrator, 
 
    <!-- TODO: replace TODO-TAG with the tag cut from main, here and on the deck's build 00 slide. -->
 
-3. <kbd>F1</kbd> → **Dyad: Compile**.
-4. Open any diagram, click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Wheel`.
+3. <kbd>F1</kbd> → **Dyad: Restart Language Server**. The language server read your `Project.toml` when Studio started; until it restarts, the next compile flags every library part with `missing-direct-dependency … not a direct dependency`.
+4. <kbd>F1</kbd> → **Dyad: Compile**.
+5. Open any diagram, click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Wheel`.
 
-::: info Screenshot to come
-
-`step00-wheel-library.png`: the **+** popup open at `VehicleSystemsComponents › Vehicle › Wheel`, listing `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator` and `TireFrictionCurve`.
-
-:::
+[![The + library panel open at VehicleSystemsComponents › Vehicle › Wheel, listing BrakeActuator, BrakedWheel, HydraulicBrakedWheel and TireFrictionCurve among the test benches; HandsOn03 and the other folders one level up.](/lecture/lecture-03/img/step00-wheel-library.png)](/lecture/lecture-03/img/step00-wheel-library.png)
 
 ::: tip Expected result
 
@@ -148,21 +147,86 @@ New component `PedalStop` in `MyCar`:
 | `speed` | TranslationalComponents › Sensors › VelocitySensor | — |
 | `road` | BlockComponents › Sources › Constant | `k = road_mu` |
 
-`BrakePedal` takes a command `u` from 0 to 1: the foot force as a fraction of 500 N, the FMVSS 135 ceiling, the way a throttle command is a fraction of full throttle. Its lever multiplies the force by 3.5; `StaticBooster` multiplies it again by 5 up to run-out at 232 N of foot; `TandemMasterCylinder` turns it into the same pressure `p_mc` in its `front` and `rear` circuits. `BrakeLine` is a laminar line with a 3 mm bore. `HydraulicBrakedWheel` is the wheel's inertia (4 kg·m²), a front-axle and a rear-axle `BrakeCaliper` (49.0 and 19.9 N·m per bar above 0.5 bar pad contact) and the tire curve, with the whole car's weight on it. Its output `kappa` is the wheel's true slip.
+In one line: `BrakePedal` multiplies the foot by 3.5, `StaticBooster` by 5 more up to run-out, `TandemMasterCylinder` turns the force into one pressure `p_mc` in two circuits, each `BrakeLine` carries it to the wheel, and `HydraulicBrakedWheel`'s two calipers turn it into torque on a wheel that carries the whole car. The box below says what each part is.
+
+:::: info Given parts: the brake system, the wheel and the blocks around them
+
+Library parts are under **+** → `VehicleSystemsComponents › Vehicle › Brake` and `› Wheel`. Values marked *PATH* are from the California PATH brake test car (Gerdes et al., report UCB-ITS-PRR-97-21); *assumed* values have no primary source and are the course's choice. The derivations are in the course repository's `docs/reports/Passenger car brake system modeling.md`.
+
+**`BrakePedal`** (`pedal_unit`): an ideal, massless pedal lever. The input `u` is the pedal command, the driver's foot force as a fraction of `F_max`, clamped to 0–1, the way a throttle command is a fraction of full throttle. The flange `rod` pushes the booster's input; `support` is the pivot, which takes the reaction. The lever multiplies the force by `i_p` and costs travel by the same factor: the pedal moves `i_p` times as far as the rod.
+
+- `i_p = 3.5`, the lever ratio: assumed, inside the 3.2–5 range cited for boosted cars.
+- `F_max = 500` N, the foot force at `u = 1`: the ceiling a brake test may use (FMVSS 135). Pedal 0.3 is 150 N, pedal 0.6 is 300 N.
+
+**`StaticBooster`** (`booster`): the vacuum booster as its force characteristic. Engine vacuum on one side of a diaphragm, atmosphere let in behind it when the driver pushes, adds force to the rod. *Static* means no chamber dynamics: the assist appears at once, with no pneumatic lag and no hysteresis. Flanges `input` (from the pedal's `rod`), `rod_out` (to the master cylinder's `pushrod`) and `support` (the housing, which takes the assist's reaction); the rod is rigid, so `input` and `rod_out` move together. Below the cut-in force the output is zero; at cut-in it jumps to the jump-in force; then every newton in gives `SR` newtons out; at run-out the rear chamber is at full atmosphere, the assist cannot grow, and past it only the foot adds.
+
+- `SR = 5`, the servo ratio; `F_cut = 40` N cut-in and `F_jump = 500` N jump-in, at the rod: assumed, since no primary source gave production values.
+- `A_d = 0.0533` m² diaphragm area, `p_vac = 33` kPa absolute vacuum (an idle manifold, as in hands-on 2), `F_rs0 = 97` N return-spring preload: PATH. `p_atm = 101325` Pa.
+- What they give, in foot force: cut-in at 11.4 N (5.7 bar), 0.357 bar per newton boosted, run-out at **232 N** and 84.3 bar, 0.071 bar per newton past it. Without vacuum, 500 N makes 29.2 bar. These are the deck's *Pedal force to line pressure* figure.
+
+**`TandemMasterCylinder`** (`master`): two pistons in one bore, quasi-static: the pressure follows the rod force at once, `p_mc = max(0, F_rod − F_cs0 − F_cf) / A_mc`, the same in both circuits. Flanges `pushrod` and `support`; hydraulic ports `front` and `rear`, one per circuit; outputs `p_mc`, the pressure in Pa, and `x_rod`, the rod travel. It counts the fluid it pushes out, and the rod travel is a dead stroke plus that volume over the bore area. It does not model a failed circuit.
+
+- `A_mc` = 4.91 cm², a 25 mm bore; `F_cs0 = 138` N spring preload; `F_cf = 80` N seal friction: PATH.
+- `s_dead` = 2.5 mm, the dead stroke before the compensating ports close: assumed, inside the 1.5–3.5 mm textbook range.
+
+**`BrakeLine`** (`line_f`, `line_r`): a laminar (Hagen–Poiseuille) line, a pure resistance: pressure drop proportional to flow, Δ*p* = 128 *ν L ṁ* / (π *D*⁴). No compliance, no fluid inertia. Ports `port_a`, toward the master cylinder, and `port_b`, toward the wheel.
+
+- `D = 3` mm bore, `L = 1.5` m; the rear line is set to `L = 4.0` m because it runs the length of the car: assumed.
+- `nu` = 10 mm²/s, DOT 4 at 20 °C. At −40 °C DOT 4 may reach 1800 mm²/s, and the line's lag grows 180-fold. At 20 °C it is milliseconds.
+
+**`HydraulicBrakedWheel`** (`wheel`): an equivalent road wheel. All four wheels are lumped into one that carries the whole car, with one caliper per axle. Inside: `inertia`, `caliper_f`, `caliper_r` and `tire`, in that order along the shaft. Ports: `spline`, the inboard shaft, free here (step 04's wheel-speed sensor goes on it); `support`, the brake housing, to ground; `flange`, to the body; `front` and `rear`, the two circuits; input `mu_scale`, the road factor; output `kappa`, the wheel's **true** slip, negative while braking. Steps 02–03 use `kappa` as an ideal slip sensor; a real ABS has none, which is step 04.
+
+- `J_w = 4` kg·m², the four wheels' inertia; `radius = 0.31` m; `F_z = 13729.31` N, 1400 kg × 9.80665 m/s², step 01's *F*<sub>z</sub>.
+- The tire: `sAdhesion = 0.04`, `sSlide = 0.12`, `mu_A = 1.0`, `mu_S = 0.7`, the curve of step 01.
+- The calipers' values below. Your initial lines and plots read inside it: `wheel.inertia.w`, `wheel.caliper_f.p`.
+
+**`BrakeCaliper`** (inside the wheel, `caliper_f` and `caliper_r`): one axle's disc brakes. The fluid that enters first takes up the pad clearance, the pressure rising to the pad-contact pressure `p0`; beyond it the caliper stiffens as it fills, *p* = *p*₀ + *K*₁*u* + *K*₃*u*³ in the volume *u* past the clearance. The torque is `K · max(0, p − p0)`, against the wheel's rotation; below `w0` = 0.2 rad/s its sign ramps smoothly through zero, so the solver can cross standstill. It is not stiction.
+
+- `K` = 49.0 N·m/bar front, 19.9 N·m/bar rear, 68.9 in all: from 57 mm and 38 mm pistons, pad friction 0.40, effective radii 0.12 and 0.11 m. Textbook values, unverified. So a 1 g stop, 4256 N·m, needs 61.8 bar.
+- `p0` = 0.5 bar; clearance volume 0.5 cm³ front, 0.3 cm³ rear; `K1` = 1e12 and 2.5e12 Pa/m³, `K3` = 4.8e23 and 7.5e24 Pa/m⁹, front and rear: shaped to textbook magnitudes and assumed. No verified production caliper curve was found.
+
+**`TireFrictionCurve`** (inside the wheel's `tire`): the friction coefficient against slip, the curve you built in hands-on 1, with the same defaults. It rises from zero to `mu_A` at a slip of `sAdhesion`, falls to `mu_S` at `sSlide` and stays there up to a locked wheel; it is point-symmetric, so braking is the same curve with the sign turned. The tire around it computes the slip *κ* = (*ωr* − *v*) / max(|*v*|, 0.5 m/s) and the force `mu_scale · μ · F_z`. Its tests: *κ* −0.04 gives *μ* −1, −0.08 gives −0.85, −0.3 and −1 give −0.7. The road factor scales the whole curve, so on snow the peak is 0.3, still at 4 % slip.
+
+**The brake fluid** (two code lines): `HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)`, an isothermal, slightly compressible liquid. DOT 4 has a density of about 1.045 kg/L and a bulk modulus of about 1.4 GPa at room temperature; `let_gas = false` leaves out gas in the fluid. Dyad cannot declare a fluid inside a library part that connects to outside ports, so the bench declares it once; `continuity(medium, master.front.medium)` hands it to the master cylinder, which passes it to `rear`, and every connection carries it on to the lines, the calipers and, in step 03, the valves. The lines' viscosity is `BrakeLine`'s `nu`, not the medium's.
+
+**The standard blocks.** `BlockComponents › Sources › Step` (`command`): its output `y` is `offset` until `start_time`, then `offset + height`: here 0, then `pedal` at 0.5 s, the foot pressed at once. `BlockComponents › Sources › Constant` (`road`): `y = k`, the road factor. `TranslationalComponents › Components › Fixed` (`fixed_hydraulic`): a flange held still, ground for the pedal pivot and the booster and master-cylinder housings. `RotationalComponents › Components › Fixed` (`fixed`): a shaft held still, what the calipers push against. `TranslationalComponents › Sensors › VelocitySensor` (`speed`): its output `v` is the speed of the flange it sits on, here the car's, measured exactly.
+
+**Your `Body`** (`body`): not given, yours from hands-on 1: 1400 kg, drag area 0.63 m², rolling resistance 0.012, on a flat road. It is the same physics as the library's `Vehicle.VehicleBody`, so the lecture's distances hold for your car. Its `flange` takes the tire's force; the initial lines set `body.mass.s` and `body.mass.v`.
+
+**`Vehicle.braking_distance(r)`**, in the REPL: the distance from the pedal at 0.5 s until the car is below 0.5 m/s. One definition for the guide, the tests and the lecture's notebook.
+
+::::
 
 #### Do this
 
-1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `PedalStop`. Click an empty spot of the canvas → **Add parameter** `pedal`, type `Real`, value `0.6`, and `road_mu`, type `Real`, value `1.0`. Place the twelve blocks from the table.
-2. Wire:
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `PedalStop`. With nothing selected, click **Edit Parameters** in the diagram toolbar → **Add parameter**: `pedal`, type `Real`, value `0.6`, and `road_mu`, type `Real`, value `1.0`. Place the twelve blocks from the table.
+
+   [![PedalStop's parameter panel with nothing selected, over the finished bench: pedal 0.6 and road_mu 1.0, and the Add parameter button.](/lecture/lecture-03/img/step02-params.png)](/lecture/lecture-03/img/step02-params.png)
+
+   [![The finished PedalStop with command selected: its parameter panel shows height = pedal, start_time 0.5 and offset 0.0.](/lecture/lecture-03/img/step02-command-params.png)](/lecture/lecture-03/img/step02-command-params.png)
+
+   [![The finished PedalStop with line_r selected: its parameter panel shows D 3e-3 m, L 4.0 m and nu 10e-6 m2/s.](/lecture/lecture-03/img/step02-line-r-params.png)](/lecture/lecture-03/img/step02-line-r-params.png)
+
+2. Rename every block to the name in the table: select it → **Edit Parameters** → the pencil next to its name. Studio names a placed block after its part (`step`, `brakepedal`, `tandemmastercylinder`, `fixed` and `fixed1`, `constant1`, …), and the code you paste below and every snippet use the table's names. The two `Fixed` blocks: rename the translational one, whose port is a green square, to `fixed_hydraulic` first, and only then the rotational one, whose port is a gray circle, to `fixed`; a name that is still taken cannot be given.
+3. Wire:
    - `command.y → pedal_unit.u`
    - `pedal_unit.rod → booster.input`, `booster.rod_out → master.pushrod`
+
+   [![PedalStop with all twelve blocks placed and the force chain wired: command into pedal_unit, pedal_unit.rod into booster, booster.rod_out into master.pushrod; nothing else wired yet.](/lecture/lecture-03/img/step02-force-chain.png)](/lecture/lecture-03/img/step02-force-chain.png)
+
    - `pedal_unit.support`, `booster.support` and `master.support → fixed_hydraulic.flange`
    - `master.front → line_f.port_a`, `line_f.port_b → wheel.front`
    - `master.rear → line_r.port_a`, `line_r.port_b → wheel.rear`
-   - `road.y → wheel.mu_scale`
    - `wheel.support → fixed.spline`
+
+   [![PedalStop with the hydraulic half wired too: the three housings onto fixed_hydraulic, master.front and master.rear through line_f and line_r into wheel.front and wheel.rear, wheel.support onto fixed; road, body and speed not yet wired.](/lecture/lecture-03/img/step02-hydraulics.png)](/lecture/lecture-03/img/step02-hydraulics.png)
+
+   - `road.y → wheel.mu_scale`
    - `wheel.flange → body.flange`, and `speed.flange → body.flange`
-3. Toggle to code (⇄) and paste the brake fluid: the `path medium` line among the declarations, above `relations`, and the `continuity` line inside `relations`. Dyad cannot declare a fluid inside a library part, so the bench that assembles the circuit declares it; the connections carry it from `master.front` to every port of both circuits. Without these two lines the bench does not compile.
+
+   [![The finished PedalStop diagram: the chain command, pedal_unit, booster and master from the left, fixed_hydraulic under the three housings, line_f and line_r into wheel, road and fixed under the wheel, speed and body on the right.](/lecture/lecture-03/img/step02-pedal-bench.png)](/lecture/lecture-03/img/step02-pedal-bench.png)
+
+4. Toggle to code (⇄) and paste the brake fluid: the `path medium` line among the declarations, above `relations`, and the `continuity` line inside `relations`. Dyad cannot declare a fluid inside a library part, so the bench that assembles the circuit declares it; the connections carry it from `master.front` to every port of both circuits. Without these two lines the bench does not compile: Studio reports `Invalid common set: In component PedalStop, no local specification or external connectors on which to determine value for the following common variables: master.front.medium, master.rear.medium, line_f.port_a.medium, …`, and the command-line compiler `Expected to find line_f.port_a.medium in at least one continuity graph for PedalStop`.
 
    ::: code-group
 
@@ -189,7 +253,9 @@ New component `PedalStop` in `MyCar`:
 
    Forget them and the wheel starts at rest: the run then shows a wheel spinning up, not a stop.
 
-4. <Badge type="tip" text="New analysis" /> Add the analysis in code, below the component, so it sets the solver and passes `pedal` and `road_mu` through:
+   [![PedalStop in the code view: the twelve instances, the path medium line above relations, the fourteen connects, the continuity line and the four initial lines.](/lecture/lecture-03/img/step02-fluid-code.png)](/lecture/lecture-03/img/step02-fluid-code.png)
+
+5. <Badge type="tip" text="New analysis" /> Add the analysis in code, below the component, so it sets the solver and passes `pedal` and `road_mu` through:
 
    ```txt
    analysis PedalStopTransient
@@ -200,34 +266,33 @@ New component `PedalStop` in `MyCar`:
    end
    ```
 
-5. Run it twice. First a firm stop, `pedal = 0.3`: plot the master-cylinder pressure, the speed and the slip, and read the braking distance. `braking_distance` measures from the pedal at 0.5 s until the car is below 0.5 m/s.
+6. Click ▷ **Run Analysis → PedalStopTransient** once, so the REPL loads it, then run it twice from the REPL. First a firm stop, `pedal = 0.3`: plot the master-cylinder pressure, the speed and the slip, and read the braking distance. `braking_distance` measures from the pedal at 0.5 s until the car is below 0.5 m/s.
 
    ```julia
    using Plots; plotly()
-   r = MyCar.PedalStopTransient(pedal = 0.3)
+   using VehicleSystemsComponents: Vehicle
+   r = MyCar.PedalStopTransient(pedal = 0.3);
    plot(r; idxs = [r."master.p_mc", r."speed.v", r."wheel.kappa"], layout = (3, 1))
-   VehicleSystemsComponents.Vehicle.braking_distance(r)
+   Vehicle.braking_distance(r)
    ```
+
+   [![The snippet's plot at pedal 0.3 in three panels: master.p_mc steps to about 5.5 times 10 to the 6 Pa at 0.5 s; speed.v falls in a straight line from 25 m/s to zero at about 3.4 s; wheel.kappa drops to about -0.027 and stays there until the car stops.](/lecture/lecture-03/img/step02-pedal03-plot.png)](/lecture/lecture-03/img/step02-pedal03-plot.png)
 
    Then the panic stop, the default `pedal = 0.6`:
 
    ```julia
-   r = MyCar.PedalStopTransient()
+   r = MyCar.PedalStopTransient();
    plot(r; idxs = [r."master.p_mc", r."speed.v", r."wheel.kappa"], layout = (3, 1))
-   VehicleSystemsComponents.Vehicle.braking_distance(r)
+   Vehicle.braking_distance(r)
    ```
 
-::: info Screenshot to come
-
-`step02-pedal-bench.png`: the finished `PedalStop` diagram, the chain `command` → `pedal_unit` → `booster` → `master` from the left, `fixed_hydraulic` under the three housings, `line_f` and `line_r` into `wheel`, `road` and `fixed` under the wheel, `body` and `speed` on the right.
-
-:::
+   [![The same plot at pedal 0.6: master.p_mc steps to about 8.9 times 10 to the 6 Pa; speed.v reaches zero just before 4 s; wheel.kappa goes to -1 within 0.2 s of the pedal and stays there: the wheel is locked.](/lecture/lecture-03/img/step02-pedal06-plot.png)](/lecture/lecture-03/img/step02-pedal06-plot.png)
 
 [![Two panels against time at pedal 0.6. Top: car speed falls in a straight line from 90 km/h at 0.5 s to zero just before 4 s, while the wheel's surface speed drops to zero within 0.2 s. Bottom: wheel slip goes from 0 to -1 within 0.2 s of the pedal and stays there. Title: hydraulic pedal stop, 43.7 m from 90 km/h.](/lecture/lecture-03/img/step02-locked-stop.svg)](/lecture/lecture-03/img/step02-locked-stop.svg)
 
 ::: tip Expected result
 
-**Pedal 0.3, 150 N of foot:** `master.p_mc` peaks at **55.2 bar** and the calipers hold **3765 N·m**, under the 4256 N·m of step 01. The wheel never locks: `wheel.kappa` stays above −0.03. The car decelerates at about 0.87 g, and `braking_distance` gives **36.0 m**. The front caliper's pressure rises from 10 to 90 % in 4.4 ms, and the master cylinder pushes 3.5 cm³ of fluid into the two circuits.
+**Pedal 0.3, 150 N of foot:** `master.p_mc` peaks at **55.2 bar**, 5.52×10⁶ on the plot's Pa axis, and the calipers hold **3765 N·m**, under the 4256 N·m of step 01. The wheel never locks: `wheel.kappa` stays above −0.03. The car decelerates at about 0.87 g, and `braking_distance` gives **36.0 m**. The front caliper's pressure rises from 10 to 90 % in 4.4 ms, and the master cylinder pushes 3.5 cm³ of fluid into the two circuits.
 
 **Pedal 0.6, 300 N**, past the booster's run-out: **89.2 bar** and **6109 N·m**, 1.4 times what the tire can carry. `wheel.kappa` reaches **−1** within 0.2 s of the pedal and stays there; the car is at rest just before **4 s**. `braking_distance` gives **43.7 m**: just short of the 45.5 m sliding bound of step 01, because the wheel is not locked at once, and drag and rolling resistance help. At `road_mu` 0.5 and 0.3: 85.1 and 136.7 m.
 
@@ -315,11 +380,49 @@ New component `SlipABS`, written in code:
 | `v_min` | parameter | `1.5` m/s — ABS off below this speed |
 | `T_p`, `T_f` | parameters (part C) | `0.03` s look-ahead, `0.003` s slip-rate filter |
 
-`ABSPressureIntegrator` is given: it integrates `requested_rate` into its output `cmd` and keeps it between zero and `demand`; while `active` is 0 it tracks the demand within `T_track`. A positive rate is the modulator's build, a negative one its dump, zero its hold.
+:::: info Given parts: the pressure integrator and the valve
+
+**`ABSPressureIntegrator`** (`pressure`, inside your `SlipABS`; under **+** at `VehicleSystemsComponents › Vehicle`): the modulator's build, hold and dump as one block. Inputs `demand`, the driver's pressure; `requested_rate`, the rate your law asks for; `active`, on above 0.5. Output `cmd`. While `active` is off, its state follows `demand` with the time constant `T_track`. While it is on, the state integrates `requested_rate`: a positive rate builds, zero holds, a negative one dumps. It stops at zero when dumping and at `demand` when building, and if the driver's pressure falls below it, it comes down with the demand. `cmd` is the state clipped to [0, `demand`], so the ABS can only take pressure away. It is unit-neutral: pascals here, newton meters in the library's own ABS, which uses the same block.
+
+- `T_track = 0.01` s, set on the `pressure` line: the course's choice; the file gives no source.
+
+**`ABSValve`** (`valve_f`, `valve_r`, placed in part B; under `Vehicle › Brake`): an **ideal** modulator for one circuit, between the master cylinder and the line. Ports `port_a`, the master-cylinder side, and `port_b`, the line and caliper side; input `p_cmd`, the wheel pressure the ECU allows, in Pa. While `p_cmd` is at or above the master-cylinder pressure the inlet is open: the caliper side carries the master cylinder's pressure, with no lag. Below it the caliper-side pressure follows `p_cmd`, clipped to [0, `p_mc`], after a first-order lag `T_v`. It never rises above the master cylinder.
+
+- `T_v = 0.03` s, the electronics and solenoid reaction time: the same 30 ms brake lag the lecture's ABS model is built around, and the 30 ms your look-ahead in part C leads.
+
+What it is **not**: the real modulator of the lecture's *build, hold, dump* slide. A real channel has a normally open inlet valve, a normally closed outlet valve, a low-pressure accumulator and a return pump; the build and dump rates come from the valves' orifices, and the pump's return is the pulse the driver feels in the pedal. `ABSValve` is the result of that hardware, not the hardware: your controller sets the rates, the fluid it dumps leaves the model, and there is no accumulator, no pump and no pedal pulse. A valve-level model is planned for the library (`docs/brake-system-implementation-plan.md`, step 3).
+
+::::
 
 #### Do this
 
-1. <Badge type="tip" text="New component" /> **A · the controller.** Right-click `MyCar` → **Add Component**, name it `SlipABS`, toggle to code (⇄) and write the ports, parameters and `pressure` from the table, and a variable `cycled::Real`. The relations, for part A:
+1. <Badge type="tip" text="New component" /> **A · the controller.** Right-click `MyCar` → **Add Component**, name it `SlipABS`, toggle to code (⇄) and paste the ports, `pressure` and their placements over its contents. A port written in code has no place on the block's outline until the `{^…}` marker and the `metadata` block give it one; without them all four ports sit on top of each other at the block's center, and the bench cannot wire them.
+
+   ```txt
+   component SlipABS
+     "Wheel slip, negative while braking"
+     kappa = RealInput() {^kappa}
+     "Vehicle speed"
+     v = RealInput() {^v}
+     "Master-cylinder pressure demand [Pa]"
+     demand = RealInput() {^demand}
+     "Allowed wheel-circuit pressure [Pa]"
+     p_cmd = RealOutput() {^p_cmd}
+     pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01) {^pressure}
+   relations
+   metadata {
+     "_links": {
+       "kappa": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}, "diagram": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}}}},
+       "v": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}, "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+       "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}, "diagram": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}}}},
+       "p_cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+       "pressure": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}}
+     }
+   }
+   end
+   ```
+
+   Then write the parameters from the table and a variable `cycled::Real` above `relations`, and the relations for part A below it, above `metadata`. If the ports still sit at the block's center on the bench, open `SlipABS`'s diagram and drag each port to the edge of the outline: the inputs left, `p_cmd` right.
 
    ```txt
      initial cycled = 0
@@ -332,7 +435,13 @@ New component `SlipABS`, written in code:
 
    Slip is negative while braking: past −0.04 the wheel is beyond the peak, so dump; otherwise build. `cycled` is a latch that flips to 1 the first time the wheel goes past the peak. Until then `p_cmd` is the driver's own pressure: a command at or above the master-cylinder pressure leaves the valve's inlet open with no lag, so a stop that never locks the wheel is exactly step 02's stop.
 
-2. <Badge type="tip" text="New component" /> **B · the bench, a copy of step 02's.** Right-click `PedalStop` → **Duplicate**, name it `ABSStop`. Add the parameters `T_p`, type `Time`, value `0.03`, and `lambda_target`, type `Real`, value `0.04`. Delete the two wires `master.front → line_f.port_a` and `master.rear → line_r.port_a`, and place:
+   [![SlipABS's own diagram: the inputs kappa, v and demand on the left edge of the outline, p_cmd on the right, the pressure block in the middle, and demand wired to pressure.demand.](/lecture/lecture-03/img/step03-slipabs-diagram.png)](/lecture/lecture-03/img/step03-slipabs-diagram.png)
+
+2. <Badge type="tip" text="New component" /> **B · the bench, a copy of step 02's.** Right-click `PedalStop` → **Duplicate**, name it `ABSStop`. With nothing selected, **Edit Parameters** → **Add parameter**: `T_p`, type `Real` with unit `s`, value `0.03`, and `lambda_target`, type `Real`, value `0.04`. The form offers no `Time` type; `Real` in seconds is the same.
+
+   [![ABSStop's parameter panel with nothing selected: pedal 0.6, road_mu 1.0, T_p 0.03 s and lambda_target 0.04, over the finished bench.](/lecture/lecture-03/img/step03-params.png)](/lecture/lecture-03/img/step03-params.png)
+
+   Delete the two wires `master.front → line_f.port_a` and `master.rear → line_r.port_a`, and place:
 
    | Name | Library path | Set |
    | --- | --- | --- |
@@ -340,16 +449,21 @@ New component `SlipABS`, written in code:
    | `valve_r` | VehicleSystemsComponents › Vehicle › Brake › ABSValve | defaults |
    | `abs` | your `SlipABS` | `lambda_target = lambda_target`; `T_p = T_p` follows in part C |
 
-   `ABSValve` is an **ideal** modulator for one circuit: the ECU sends the wheel pressure it allows on `p_cmd`, and the caliper follows it after a 30 ms solenoid lag, never above the master-cylinder pressure at `port_a`. The fluid it dumps leaves the model; there is no accumulator or return pump, so the pedal does not pulse.
+   `ABSValve` is the ideal modulator of the **Given parts** box above: the caliper follows `p_cmd` 30 ms late, never above the master-cylinder pressure, and the pedal does not pulse.
 
    Wire:
    - `master.front → valve_f.port_a`, `valve_f.port_b → line_f.port_a`
    - `master.rear → valve_r.port_a`, `valve_r.port_b → line_r.port_a`
+
+   [![ABSStop mid-build: step 02's chain with valve_f and valve_r between master and the lines, both ports wired, the valves' p_cmd inputs still open; abs not yet placed.](/lecture/lecture-03/img/step03-valves.png)](/lecture/lecture-03/img/step03-valves.png)
+
    - `master.p_mc → abs.demand`
    - `abs.p_cmd → valve_f.p_cmd`, and `abs.p_cmd → valve_r.p_cmd`
    - `wheel.kappa → abs.kappa`, `speed.v → abs.v`
 
-   The brake fluid, the four initial lines and every other wire came with the copy. In the code view, rename the analysis and forward the new parameters:
+   [![The ABSStop diagram: step 02's chain with valve_f and valve_r between master and the lines, abs below them, master.p_mc, wheel.kappa and speed.v wired into it and abs.p_cmd out to both valves.](/lecture/lecture-03/img/step03-abs-bench.png)](/lecture/lecture-03/img/step03-abs-bench.png)
+
+   The brake fluid, the four initial lines and every other wire came with the copy; the analysis did not, since **Duplicate** copies the component only. In the code view, add this analysis below the component:
 
    ```txt
    analysis ABSStopTransient
@@ -362,14 +476,17 @@ New component `SlipABS`, written in code:
    end
    ```
 
-   Run it and plot the front wheel pressure beside the master cylinder's, and the slip:
+   Click ▷ **Run Analysis → ABSStopTransient** once, then plot the front wheel pressure beside the master cylinder's, and the slip:
 
    ```julia
    using Plots; plotly()
-   r = MyCar.ABSStopTransient()
+   using VehicleSystemsComponents: Vehicle
+   r = MyCar.ABSStopTransient();
    plot(r; idxs = [r."master.p_mc", r."wheel.caliper_f.p", r."wheel.kappa"], layout = (3, 1))
-   VehicleSystemsComponents.Vehicle.braking_distance(r)
+   Vehicle.braking_distance(r)
    ```
+
+   [![Run A, no look-ahead, in three panels: master.p_mc at about 8.9 times 10 to the 6 Pa; wheel.caliper_f.p saws between about 1 and 7 times 10 to the 6 Pa; wheel.kappa dives deeper on every cycle, to -1 near the end.](/lecture/lecture-03/img/step03-runA-plot.png)](/lecture/lecture-03/img/step03-runA-plot.png)
 
 3. **C · the look-ahead.** In `SlipABS` add the parameters `T_p = 0.03` and `T_f = 0.003`, three variables, and three lines; the rate line and the latch now read `kappa_pred`:
 
@@ -386,13 +503,13 @@ New component `SlipABS`, written in code:
      pressure.requested_rate = ifelse(kappa_pred < -lambda_target, -k_dec, k_inc)
    ```
 
-   `kappa_f` follows the slip 3 ms late, so `kappa_dot` is the slip's rate of change, filtered. In `ABSStop`, set `abs` to `T_p = T_p` as well, so the bench's `T_p` reaches it. Run `ABSStopTransient` again. With the full code below, `MyCar.ABSStopTransient(T_p = 0)` is run A again.
+   `kappa_f` follows the slip 3 ms late, so `kappa_dot` is the slip's rate of change, filtered. In `ABSStop`, set `abs` to `T_p = T_p` as well, so the bench's `T_p` reaches it. Click ▷ **Run Analysis → ABSStopTransient** again, which also brings the REPL's `MyCar` up to date, and rerun the snippet. With the full code below, `MyCar.ABSStopTransient(T_p = 0)` is run A again.
 
-::: info Screenshots to come
+   [![SlipABS in the code view: the four ports and the pressure line with their placement markers, the parameters, the look-ahead variables, the latch, the rate ifelse and the p_cmd line, and the metadata block with the ports' placements.](/lecture/lecture-03/img/step03-slipabs-code.png)](/lecture/lecture-03/img/step03-slipabs-code.png)
 
-`step03-slipabs-code.png`: `SlipABS` in the code view, the `pressure` line, the latch and the three look-ahead lines visible. `step03-abs-bench.png`: the `ABSStop` diagram, `valve_f` and `valve_r` between `master` and the lines, `abs` below them with `master.p_mc`, `wheel.kappa` and `speed.v` into it and `p_cmd` out to both valves.
+   [![The finished ABSStop with abs selected: MyCar.SlipABS's parameter panel shows lambda_target = lambda_target, k_inc 2.9e7, k_dec 5.8e7, v_min 1.5 m/s, T_p = T_p and T_f 0.003 s.](/lecture/lecture-03/img/step03-abs-params.png)](/lecture/lecture-03/img/step03-abs-params.png)
 
-:::
+   [![Run C, 30 ms look-ahead: after one dip, wheel.caliper_f.p holds near 6.4 times 10 to the 6 Pa with a fine ripple until about 3 s; wheel.kappa sits just below zero near -0.04, then locks briefly as the ABS switches off just before standstill.](/lecture/lecture-03/img/step03-runC-plot.png)](/lecture/lecture-03/img/step03-runC-plot.png)
 
 [![Two panels against time for the two ABS runs. Top, front wheel pressure beside the master cylinder's: without look-ahead it saws deep below it; with the 30 ms look-ahead it holds near 63.6 bar with a ripple of about 1 bar. Bottom, slip: without look-ahead each cycle dives past the -0.12 sliding line; with it the slip sits on the -0.04 peak line.](/lecture/lecture-03/img/step03-abs-torque-slip.svg)](/lecture/lecture-03/img/step03-abs-torque-slip.svg)
 
@@ -417,14 +534,14 @@ Add components `SlipABS` and `ABSStop` in `MyCar`, toggle each to code (⇄) and
 ```txt [SlipABS]
 component SlipABS
   "Wheel slip, negative while braking"
-  kappa = RealInput()
+  kappa = RealInput() {^kappa}
   "Vehicle speed"
-  v = RealInput()
+  v = RealInput() {^v}
   "Master-cylinder pressure demand [Pa]"
-  demand = RealInput()
+  demand = RealInput() {^demand}
   "Allowed wheel-circuit pressure [Pa]"
-  p_cmd = RealOutput()
-  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01)
+  p_cmd = RealOutput() {^p_cmd}
+  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01) {^pressure}
   "Slip held, just past the tire's peak"
   parameter lambda_target::Real = 0.04
   "Pressure build rate [Pa/s]"
@@ -448,10 +565,49 @@ relations
   kappa_pred = kappa + T_p * kappa_dot
   initial cycled = 0
   der(cycled) = ifelse(v > v_min and kappa < -lambda_target and kappa_pred < -lambda_target, 1000 * (1 - cycled), 0)
-  connect(demand, pressure.demand)
+  connect(demand, pressure.demand) {^id1}
   pressure.requested_rate = ifelse(kappa_pred < -lambda_target, -k_dec, k_inc)
   pressure.active = ifelse(v > v_min and cycled > 0.5, 1.0, 0.0)
   p_cmd = ifelse(cycled > 0.5, pressure.cmd, demand)
+metadata {
+  "_links": {
+    "kappa": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300},
+          "diagram": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}
+        }
+      }
+    },
+    "v": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+          "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "demand": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800},
+          "diagram": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}
+        }
+      }
+    },
+    "p_cmd": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 750}, {"x": 200, "y": 450}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
 end
 ```
 
@@ -554,9 +710,43 @@ New component `PhaseABS`, a duplicate of `SlipABS`:
 | `v_min` | parameter | `1.5` m/s |
 | `T_latch` | parameter | `0.001` s |
 
+:::: info Given parts: the wheel-speed sensor
+
+**`RotationalComponents › Sensors › VelocitySensor`** (`wspeed`, placed in part C): its output `w` is the angular speed of the shaft it sits on, in rad/s, measured exactly; its port `spline` goes on `wheel.spline`. It is the ABS's wheel-speed sensor, and from this step on the only thing your ABS measures: `wheel.kappa` and `speed.v` are no longer wired to it. A real sensor counts the teeth of a ring turning with the wheel, and the ECU computes the speed from the pulse timing; this one reads the speed directly.
+
+`ABSPressureIntegrator` and `ABSValve` are step 03's; in `PhaseABS` a `requested_rate` of zero is the hold.
+
+::::
+
 #### Do this
 
-1. <Badge type="tip" text="New component" /> **A · the estimator.** Add `RefSpeedEstimator`, toggle to code (⇄), write the ports and parameters, two variables `v_w::Velocity` and `v_f::Velocity`, and the relations:
+1. <Badge type="tip" text="New component" /> **A · the estimator.** Add `RefSpeedEstimator`, toggle to code (⇄) and paste the ports and their placements over its contents, as for `SlipABS` in step 03:
+
+   ```txt
+   component RefSpeedEstimator
+     "Wheel speed from a sensor on the wheel shaft"
+     omega = RealInput() {^omega}
+     "Estimated wheel slip"
+     kappa_hat = RealOutput() {^kappa_hat}
+     "Estimated vehicle speed"
+     v_ref = RealOutput() {^v_ref}
+     "Wheel surface acceleration"
+     a_w = RealOutput() {^a_w}
+   relations
+   metadata {
+     "_links": {
+       "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+       "kappa_hat": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}},
+       "v_ref": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+       "a_w": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
+     }
+   }
+   end
+   ```
+
+   [![RefSpeedEstimator's own diagram: the input omega on the left edge of the outline, and the outputs kappa_hat, v_ref and a_w on the right.](/lecture/lecture-03/img/step04-estimator-diagram.png)](/lecture/lecture-03/img/step04-estimator-diagram.png)
+
+   Then write the parameters from the table and two variables `v_w::Velocity` and `v_f::Velocity` above `relations`, and the relations below it:
 
    ```txt
      v_w = omega * radius
@@ -570,7 +760,9 @@ New component `PhaseABS`, a duplicate of `SlipABS`:
 
    While the wheel turns faster than the estimate, the estimate follows it; otherwise it falls at `a_ref`. `a_w` is the wheel's own acceleration, filtered as step 03's slip rate was: it needs no estimate of the car's speed.
 
-2. <Badge type="tip" text="New component" /> **B · the controller.** Right-click `SlipABS` → **Duplicate**, name it `PhaseABS`. Delete the look-ahead (its two parameters, three variables and four lines). Add the input `a_w`, the parameters from the table, and a variable `phase::Real`; `cycled` stays. The relations:
+   [![RefSpeedEstimator in the code view: the input omega and the three outputs with their placement markers, the six parameters, the two variables and the seven relations.](/lecture/lecture-03/img/step04-estimator-code.png)](/lecture/lecture-03/img/step04-estimator-code.png)
+
+2. <Badge type="tip" text="New component" /> **B · the controller.** Add `PhaseABS`, toggle to code (⇄) and paste the `PhaseABS` block of **Fell behind?** below over its contents: five ports with their placements, the parameters from the table, the variables `phase` and `cycled`. Do not duplicate `SlipABS` and edit it: the copy writes its types as `Dyad.RealInput` and `Dyad.Time`, keeps the description `"short SlipABS component description"`, and any port declaration you retype loses its `{^…}` marker, so the port stacks at the block's center again. The relations to read:
 
    ```txt
      phase = ifelse(a_w > a_plus, 0, ifelse(a_w < -a_minus or kappa < -lambda_1, -1, 1))
@@ -584,38 +776,68 @@ New component `PhaseABS`, a duplicate of `SlipABS`:
 
    `phase` is −1 dump, 0 hold, 1 build. A rolling wheel cannot decelerate faster than the car, at most about 9.8 m/s² on a dry road, so a wheel decelerating past 12 m/s² has gone over the tire's peak. The estimated slip only catches a wheel that is already locked. `cycled` is step 03's latch, now set by the first dump: until then `p_cmd` is the driver's own pressure and the valve stays open, the fast first build; afterwards every build is slow and starts from where the hold left the pressure.
 
-3. <Badge type="tip" text="New component" /> **C · the bench.** Right-click `ABSStop` → **Duplicate**, name it `ABSStopWheelOnly`. Replace `abs` with a `PhaseABS` named `abs`, and wire `master.p_mc → abs.demand` and `abs.p_cmd → valve_f.p_cmd`, `valve_r.p_cmd` again if the swap dropped them. Delete the `wheel.kappa` and `speed.v` wires into `abs`. Replace the bench parameters `T_p` and `lambda_target` with `a_ref`, and place:
+   [![PhaseABS's own diagram: the inputs kappa, a_w, v and demand on the left edge, p_cmd on the right, the pressure block in the middle with demand wired to it.](/lecture/lecture-03/img/step04-phaseabs-diagram.png)](/lecture/lecture-03/img/step04-phaseabs-diagram.png)
+
+   [![PhaseABS in the code view: five ports and pressure with their placement markers, the parameters, the phase line, the cycled latch and the nested rate ifelse.](/lecture/lecture-03/img/step04-phaseabs-code.png)](/lecture/lecture-03/img/step04-phaseabs-code.png)
+
+3. <Badge type="tip" text="New component" /> **C · the bench.** Right-click `ABSStop` → **Duplicate**, name it `ABSStopWheelOnly`. Replace `abs` with a `PhaseABS` named `abs`, and wire `master.p_mc → abs.demand` and `abs.p_cmd → valve_f.p_cmd`, `valve_r.p_cmd` again if the swap dropped them. Delete the `wheel.kappa` and `speed.v` wires into `abs`. Replace the bench parameters `T_p` and `lambda_target` with `a_ref`: **Edit Parameters** → **Add parameter**, type `Real` with unit `m/s2`, value `8`, since the form has no `Acceleration` type. Place:
 
    | Name | Library path | Set |
    | --- | --- | --- |
    | `wspeed` | RotationalComponents › Sensors › VelocitySensor | — |
    | `est` | your `RefSpeedEstimator` | `a_ref = a_ref` |
-   | `a_ref` | parameter `Acceleration` on the bench | `8` |
+   | `a_ref` | parameter `Real`, unit `m/s2`, on the bench | `8` |
 
-   Wire `wspeed.spline → wheel.spline`, `wspeed.w → est.omega`, `est.kappa_hat → abs.kappa`, `est.a_w → abs.a_w`, `est.v_ref → abs.v`. Change the analysis to `ABSStopWheelOnlyTransient`, passing `road_mu` and `a_ref` (see the code below). Run it, then the snowy road:
+   Wire `wspeed.spline → wheel.spline` and `wspeed.w → est.omega`.
+
+   [![ABSStopWheelOnly mid-build, shown with the old abs deleted and PhaseABS not yet placed in its stead: wspeed on wheel.spline, wspeed.w into est.omega, est's three outputs still open; no wire from wheel.kappa or speed.v.](/lecture/lecture-03/img/step04-wheel-only-midbuild.png)](/lecture/lecture-03/img/step04-wheel-only-midbuild.png)
+
+   Then wire est's outputs into abs: `est.kappa_hat → abs.kappa`, `est.a_w → abs.a_w`, `est.v_ref → abs.v`.
+
+   [![The ABSStopWheelOnly diagram: wspeed on the wheel shaft, its output into est, and est's three outputs into abs; nothing from wheel.kappa or speed.v into abs.](/lecture/lecture-03/img/step04-wheel-only-bench.png)](/lecture/lecture-03/img/step04-wheel-only-bench.png)
+
+   The copy has no analysis: add this one below the component, then click ▷ **Run Analysis → ABSStopWheelOnlyTransient** once before the snippet.
+
+   ```txt
+   analysis ABSStopWheelOnlyTransient
+     extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+     parameter road_mu::Real = 1.0
+     parameter a_ref::Acceleration = 8
+     model = ABSStopWheelOnly(road_mu = road_mu, a_ref = a_ref)
+   end
+   ```
+
+   Run it, then the snowy road:
 
    ```julia
    using Plots; plotly()
-   r = MyCar.ABSStopWheelOnlyTransient()
-   VehicleSystemsComponents.Vehicle.braking_distance(r)
-   r = MyCar.ABSStopWheelOnlyTransient(road_mu = 0.3, stop = 20)
+   using VehicleSystemsComponents: Vehicle
+   r = MyCar.ABSStopWheelOnlyTransient();
+   Vehicle.braking_distance(r)
+   r = MyCar.ABSStopWheelOnlyTransient(road_mu = 0.3, stop = 20);
    plot(r; idxs = [r."abs.phase", r."abs.p_cmd", r."wheel.caliper_f.p"],
         layout = (3, 1), xlims = (1.0, 2.5))
    ```
 
-::: info Screenshots to come
+   [![The snippet's plot on snow from 1.0 to 2.5 s, in three panels: abs.phase switching between 1, 0 and -1; abs.p_cmd sawing between about 1.3 and 2.6 times 10 to the 6 Pa; wheel.caliper_f.p following it, smoother, between about 1.5 and 2.2 times 10 to the 6 Pa.](/lecture/lecture-03/img/step04-phase-plot.png)](/lecture/lecture-03/img/step04-phase-plot.png)
 
-`step04-estimator-code.png` and `step04-phaseabs-code.png`: the two components in the code view. `step04-wheel-only-bench.png`: the `ABSStopWheelOnly` diagram with `wspeed` on the wheel shaft and `est` feeding `abs`. `step04-phase-plot.png`: the student's own phase plot at `road_mu = 0.3`.
+   The pressure panels are in Pa: 2×10⁶ is 20 bar. The legend lists all three series in one box at the top. The same plot of the dry run, from 1.0 to 3.3 s:
 
-:::
+   ```julia
+   r = MyCar.ABSStopWheelOnlyTransient();
+   plot(r; idxs = [r."abs.phase", r."abs.p_cmd", r."wheel.caliper_f.p"],
+        layout = (3, 1), xlims = (1.0, 3.3))
+   ```
 
-[![Two panels from 1.0 to 2.5 s of the wheel-speed-only stop on snow, road mu 0.3. Top, pressure: the allowed pressure climbs slowly in green build phases, falls nearly to zero in red dump phases and stays flat in amber hold phases; the front caliper follows it between about 1.6 and 22 bar. Bottom, speed: the car falls steadily, the wheel dips below it in every dump, and the estimate rides the wheel. Title: 130.6 m.](/lecture/lecture-03/img/step04-phase-cycle.svg)](/lecture/lecture-03/img/step04-phase-cycle.svg)
+   [![The same plot on a dry road, the first run with road_mu left at 1.0, from 1.0 to 3.3 s: abs.phase switching between 1 and -1 about 14 times a second at speed; abs.p_cmd and wheel.caliper_f.p rippling near 6.3 times 10 to the 6 Pa until about 2.2 s, then deep dumps, the caliper down to between about 3.6 and 2.5 times 10 to the 6 Pa, as the car slows.](/lecture/lecture-03/img/step04-dry-plot.png)](/lecture/lecture-03/img/step04-dry-plot.png)
+
+[![Two panels from 1.0 to 2.5 s of the wheel-speed-only stop on snow, road mu 0.3. Top, pressure: the allowed pressure climbs slowly in green build phases, drops in red dump phases and stays flat in amber hold phases; the front caliper follows it between 14.5 and 22.1 bar, about six dumps a second. Bottom, speed: the car falls steadily, the wheel dips below it in every dump, and the estimate rides the wheel. Title: 130.6 m.](/lecture/lecture-03/img/step04-phase-cycle.svg)](/lecture/lecture-03/img/step04-phase-cycle.svg)
 
 ::: tip Expected result
 
 **Dry road: 38.5 m**, shorter than your locked wheel (43.7 m) and level with the library's clocked wheel-speed-only ECU (38.7 m). **Wet, μ 0.5: 78.0 m** against 85.1 m locked; **snow, μ 0.3: 130.6 m** against 136.7 m, only about 5 % shorter.
 
-On snow the front pressure cycles **3.7 times a second between 1.6 and 22 bar**: build → dump → hold → build, each dump almost emptying the caliper, and `abs.pressure.p` flat in every hold. On a dry road it cycles **1.6 times a second between 24 and 65 bar**. A measured Bosch ABS cycles 2–4 times a second on asphalt with 15–30 bar swings, and 4–6 times on ice with near-full dumps (Day & Roberts, SAE 2002-01-0559). Yours is a little slow, and dumps deep on a dry road: its rates are fixed in bar per second for one road, and one 30 ms valve lag at 580 bar/s is 17 bar. `docs/abs-efficiency-research.md` §3 has the runs. The wheel pressure never exceeds `master.p_mc`.
+On snow, in the plot's window from 1.0 to 2.5 s, the front caliper cycles **about 6 times a second between 14.5 and 22.1 bar** (`wheel.caliper_f.p`, 1.45–2.21×10⁶ Pa on the plot): build → dump → hold → build, with `abs.pressure.p` flat in every hold. Over the whole stop the dumps deepen and slow down as the car slows: from 1 s until the car is below 3 m/s, 40 dumps in 9.5 s, about **4 a second, between 1.6 and 22.3 bar**, and only about 3 a second near the end. On a dry road, over the same span (1.0–3.3 s), **24.3 to 64.9 bar**: at speed a ripple of 2–3 bar around 63 bar, about 14 dumps a second, then four deep dumps, to 24–36 bar, as the car slows. A measured Bosch ABS cycles 2–4 times a second on asphalt with 15–30 bar swings, and 4–6 times on ice with near-full dumps (Day & Roberts, SAE 2002-01-0559). On snow yours is in that range; on a dry road it ripples faster and shallower at speed and dumps deeper near the end: its rates are fixed in bar per second for one road, and one 30 ms valve lag at 580 bar/s is 17 bar. `docs/abs-efficiency-research.md` §3 has the runs. The wheel pressure never exceeds `master.p_mc`.
 
 Keep `T_f` at 5 ms: a heavier filter delays `a_w`, and that lag plays the part the valve lag played in step 03 A.
 
@@ -632,13 +854,13 @@ Add the three components in `MyCar`, toggle each to code (⇄) and paste. Short 
 ```txt [RefSpeedEstimator]
 component RefSpeedEstimator
   "Wheel speed from a sensor on the wheel shaft"
-  omega = RealInput()
+  omega = RealInput() {^omega}
   "Estimated wheel slip"
-  kappa_hat = RealOutput()
+  kappa_hat = RealOutput() {^kappa_hat}
   "Estimated vehicle speed"
-  v_ref = RealOutput()
+  v_ref = RealOutput() {^v_ref}
   "Wheel surface acceleration"
-  a_w = RealOutput()
+  a_w = RealOutput() {^a_w}
   "Wheel rolling radius"
   parameter radius::Length = 0.31
   "Assumed deceleration while the wheel slips"
@@ -661,22 +883,30 @@ relations
   initial v_f = v0
   der(v_f) = (v_w - v_f) / T_f
   a_w = (v_w - v_f) / T_f
+metadata {
+  "_links": {
+    "omega": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "kappa_hat": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 200, "y2": 300}}}},
+    "v_ref": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "a_w": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
+  }
+}
 end
 ```
 
 ```txt [PhaseABS]
 component PhaseABS
   "Estimated wheel slip, negative while braking"
-  kappa = RealInput()
+  kappa = RealInput() {^kappa}
   "Wheel surface acceleration"
-  a_w = RealInput()
+  a_w = RealInput() {^a_w}
   "Estimated vehicle speed"
-  v = RealInput()
+  v = RealInput() {^v}
   "Master-cylinder pressure demand [Pa]"
-  demand = RealInput()
+  demand = RealInput() {^demand}
   "Allowed wheel-circuit pressure [Pa]"
-  p_cmd = RealOutput()
-  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01)
+  p_cmd = RealOutput() {^p_cmd}
+  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01) {^pressure}
   "Wheel deceleration that starts a dump (-a)"
   parameter a_minus::Acceleration = 12
   "Wheel acceleration that holds the pressure (+a)"
@@ -699,10 +929,57 @@ relations
   phase = ifelse(a_w > a_plus, 0, ifelse(a_w < -a_minus or kappa < -lambda_1, -1, 1))
   initial cycled = 0
   der(cycled) = ifelse(phase < -0.5, (1 - cycled) / T_latch, 0)
-  connect(demand, pressure.demand)
+  connect(demand, pressure.demand) {^id1}
   pressure.requested_rate = ifelse(phase < -0.5, -k_dec, ifelse(phase < 0.5, 0, k_inc))
   pressure.active = ifelse(v > v_min and cycled > 0.5, 1.0, 0.0)
   p_cmd = ifelse(cycled > 0.5, pressure.cmd, demand)
+metadata {
+  "_links": {
+    "kappa": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 100, "y2": 200},
+          "diagram": {"x1": -50, "x2": 50, "y1": 100, "y2": 200}
+        }
+      }
+    },
+    "a_w": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 330, "y2": 430},
+          "diagram": {"x1": -50, "x2": 50, "y1": 330, "y2": 430}
+        }
+      }
+    },
+    "v": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 570, "y2": 670},
+          "diagram": {"x1": -50, "x2": 50, "y1": 570, "y2": 670}
+        }
+      }
+    },
+    "demand": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 800, "y2": 900},
+          "diagram": {"x1": -50, "x2": 50, "y1": 800, "y2": 900}
+        }
+      }
+    },
+    "p_cmd": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 850}, {"x": 200, "y": 450}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
 end
 ```
 
@@ -777,6 +1054,8 @@ end
 
 One table from the REPL: your step 02 stop at pedal 0.6, which locks the wheel, your ABS on the true slip and your ABS on the wheel speed only, on dry, wet and snowy roads. Then the `a_ref` knob.
 
+**Given:** `Vehicle.braking_distance`, step 02's, and `Vehicle.ABSBrakeTransient`, the lecture's own ABS model: the wheel-speed-only `Vehicle.ABSController`, clocked every 5 ms, on the library's `BrakedWheel`, a torque-level brake with a 30 ms lag. It is the deck's ABS column, run from the REPL for your table's fourth column; nothing to place.
+
 #### Do this
 
 1. Paste the loop into the REPL. The stop time grows on slippery roads so every car comes to rest; on snow it is about 20 s.
@@ -808,11 +1087,13 @@ One table from the REPL: your step 02 stop at pedal 0.6, which locks the wheel, 
    d(MyCar.ABSStopWheelOnlyTransient(road_mu = 1.0, a_ref = 2.4, stop = 15))
    ```
 
-::: info Screenshot to come
+   And the library ECU with the same `a_ref` on snow:
 
-`step05-surface-table.png`: the REPL after the loop, the three rows of distances.
+   ```julia
+   d(Vehicle.ABSBrakeTransient(road_mu = 0.3, a_ref = 2.4, stop = stop(0.3; a = 2.4)))
+   ```
 
-:::
+[![The Julia REPL after the loop: three rows, 1.0 43.7 34.2 38.5, 0.5 85.1 64.6 78.0 and 0.3 136.7 106.1 130.6.](/lecture/lecture-03/img/step05-surface-table.png)](/lecture/lecture-03/img/step05-surface-table.png)
 
 [![Grouped bars of braking distance from 90 km/h at road mu 1.0, 0.5 and 0.3. Locked, pedal 0.6: 43.7, 85.1, 136.7 m. ABS on true slip: 34.2, 64.6, 106.1 m. ABS on wheel speed only, yours: 38.5, 78.0, 130.6 m. The library's clocked ECU: 38.7, 83.2, 141.3 m, the last longer than locked.](/lecture/lecture-03/img/step05-surfaces.svg)](/lecture/lecture-03/img/step05-surfaces.svg)
 

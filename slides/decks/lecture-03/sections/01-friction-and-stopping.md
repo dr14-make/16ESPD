@@ -222,6 +222,8 @@ $$
 *On paper or in the REPL: F<sub>z</sub>, T<sub>peak</sub>, and d at the peak and sliding, on dry
 road and on snow (road factor 0.3)*
 
+**Given:** no parts to place: the car and its tire, above
+
 [page: step 01](../lecture/lecture-03/#step-01)
 
 </div>
@@ -258,7 +260,9 @@ is the floor no ABS beats. Sliding, mu 0.7: 45.5 meters, roughly what a locked w
 snow, a road factor of 0.3 scales both: 106 and 152 meters.
 
 In the REPL: 25 squared over 2 times 1.0 times 9.81, and so on. Wait until most of the room has
-4256 before moving on; it comes back on the ABS slides.
+4256 before moving on; it comes back on every ABS slide.
+
+The guide uses g = 9.80665, the library's value; 9.81 on paper is close enough.
 -->
 
 ---

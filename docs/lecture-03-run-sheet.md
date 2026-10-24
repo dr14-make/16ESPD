@@ -77,7 +77,9 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
 
 - Cover 0.5, from Lecture 1 1.5, the sections 1, the models 1, build 00 6.
 - Build 00 adds `HydraulicComponents` next to the course library; a student without it gets a
-  compile error in build 02, at the brake fluid.
+  compile error in build 02, at the brake fluid. After the two `Pkg` lines, **Dyad: Restart
+  Language Server**: a compile without it flags every library part
+  `missing-direct-dependency … not a direct dependency`.
 - "The sections": the right column says which section each build sits in; walk it once.
 - Build 00: wait until most laptops list `BrakedWheel` under **+**. A student without hands-on 2
   branches from `main`; today needs only hands-on 1's `Body`.
@@ -94,13 +96,21 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
 ## 02 How the brakes work — 26 min
 
 - Lever and hydraulics 2, force chain 2, pedal to pressure 2, master cylinder 1.5, the rest of the
-  system 1.5, **build 02** 16, summary 1.
+  system 1.5, **the parts you are given and build 02** 16, summary 1. The parts slide takes about
+  a minute of build 02's 16; leave it up while the room places the blocks.
 - Keep the theory moving; the pedal-to-pressure figure is the one to linger on: build 02's two
   runs sit on it, 150 N below run-out and 300 N past it.
 - Build 02 is the largest drawing of the day: twelve blocks, eleven wires. The two code pastes
-  are the stall: the brake fluid (`path medium` and `continuity`) and the four `initial` lines. A
-  compile error about the medium means the fluid lines are missing; a wheel speed that climbs
-  means the initial lines are. Expected at pedal 0.3: 55 bar, no lock, 36.0 m; at 0.6: 89 bar,
+  are the stall: the brake fluid (`path medium` and `continuity`) and the four `initial` lines.
+  Without the fluid lines Studio reports `Invalid common set: In component PedalStop, no local
+  specification or external connectors … master.front.medium, master.rear.medium,
+  line_f.port_a.medium, …` (the CLI: `Expected to find line_f.port_a.medium in at least one
+  continuity graph for PedalStop`); a wheel speed that climbs means the initial lines are missing.
+  Before that, the renames: placed blocks come out as `step`, `brakepedal`, `fixed`/`fixed1`,
+  `constant1`…, and the pastes need the guide's names (translational `Fixed` to `fixed_hydraulic`
+  first, then the rotational one to `fixed`). A snippet that fails with `UndefVarError:
+  PedalStopTransient not defined in Main.MyCar` needs one ▷ **Run Analysis** first; the same
+  holds for every new analysis in 03 and 04. Expected at pedal 0.3: 55 bar, no lock, 36.0 m; at 0.6: 89 bar,
   `wheel.kappa` −1, 43.7 m.
 
 ## 03 Anti-lock braking — 88 min, the break inside it
@@ -108,11 +118,15 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
 Before the break, 40 min:
 
 - Cover and what ABS does 2, history 1, sensors 2, modulator 2, channels 2, control cycle 2, the
-  model 3, **build 03** 22, one stop and on the curve 4.
+  model 3, **build 03** with its result slide 22, one stop and on the curve 4.
 - Build 03 copies `PedalStop` to `ABSStop` and puts one `ABSValve` per circuit between the master
   cylinder and the lines: three blocks, nine wires, two deleted; the fluid and the initial lines
   come with the copy. That is why it is 22 minutes, not 28. Say once, in one line, that
   `ABSValve` is ideal: no accumulator, no return pump, so no pedal pulse.
+- Ports written in code need their `{^…}` markers and the `metadata` placements, pasted from the
+  guide; without them the ports of `SlipABS`, `RefSpeedEstimator` and `PhaseABS` stack at the
+  block's center on the bench and cannot be wired. Fallback: open the component's diagram and drag
+  each port to the outline. `PhaseABS` is pasted whole, not duplicated from `SlipABS`.
 - The stall is the `SlipABS` latch: before the first dump `p_cmd` is the driver's own pressure.
   A student who outputs `pressure.cmd` from the start puts the valve's 30 ms lag on every stop; the
   check is pedal 0.3, which must give 35.95 m, build 02's stop.
@@ -142,9 +156,11 @@ After the break, 48 min:
 - Build 04 is the longest: two components in code and a bench. If the room is behind at the
   halfway mark, hand out `PhaseABS` from the guide and let them write only the estimator. Keep
   `T_f = 5 ms` on `a_w`. Expected 38.5 m dry, 130.6 m on snow; the checkpoint plot is on snow:
-  front pressure 1.6–22 bar at 3.7 Hz, against 24–65 bar at 1.6 Hz dry. Set it against the
-  measured Bosch cycle on the slide: a little slow, and deep dumps on a dry road, because the
-  rates are fixed for one road.
+  front caliper 14.5–22.1 bar at about 6 dumps/s in the plotted 1.0–2.5 s; over the stop
+  (t ≥ 1 s, v > 3 m/s) about 4/s and 1.6–22.3 bar, the dumps deepening as the car slows. Dry, the
+  same span: 24.3–64.9 bar, a 2–3 bar ripple at about 14/s at speed, then four deep dumps. Set it
+  against the measured Bosch cycle on the slide: snow in range, dry fast and shallow at speed and
+  deep at the end, because the rates are fixed for one road. The plots are in Pa.
 - "Braking distance" is the checkpoint for 02–04: 43.7, 34.2, 38.5 m against the library's 38.7.
 - Build 05 is a REPL loop: the locked column must match the "Across road surfaces" table within
   0.1 m; the true-slip column is close to it, not equal (34.2, 64.6, 106.1 m). The `a_ref = 2.4`
