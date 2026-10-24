@@ -11,6 +11,7 @@ end
 
 include("ABSStopWheelOnly_experiment.jl")
 include("ABSStop_experiment.jl")
+include("HydraulicABSStop_experiment.jl")
 include("PedalStop_experiment.jl")
 include("PhaseABS_experiment.jl")
 include("RefSpeedEstimator_experiment.jl")

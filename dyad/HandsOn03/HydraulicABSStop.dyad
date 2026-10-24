@@ -1,0 +1,73 @@
+"Hydraulic ABS stop with physical two-solenoid modulators and return pumps."
+component HydraulicABSStop
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  parameter a_ref::Acceleration = 8.0 * road_mu
+  parameter pump_enabled::Real = 1.0
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5)
+  road = BlockComponents.Sources.Constant(k = road_mu)
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal()
+  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster()
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder()
+  modulator_f = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator()
+  modulator_r = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator()
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine()
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0)
+  controller = VehicleSystemsComponents.Vehicle.ABSValveController()
+  est = RefSpeedEstimator(a_ref = a_ref)
+  wspeed = RotationalComponents.Sensors.VelocitySensor()
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel()
+  body = VehicleSystemsComponents.HandsOn.Body()
+  fixed = RotationalComponents.Components.Fixed()
+  fixed_hydraulic = TranslationalComponents.Components.Fixed()
+  speed = TranslationalComponents.Sensors.VelocitySensor()
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(command.y, pedal_unit.u)
+  connect(pedal_unit.rod, booster.input)
+  connect(booster.rod_out, master.pushrod)
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange)
+  connect(master.front, modulator_f.port_a)
+  connect(modulator_f.port_b, line_f.port_a)
+  connect(line_f.port_b, wheel.front)
+  connect(master.rear, modulator_r.port_a)
+  connect(modulator_r.port_b, line_r.port_a)
+  connect(line_r.port_b, wheel.rear)
+  continuity(medium, master.front.medium)
+  connect(wspeed.spline, wheel.spline)
+  connect(wspeed.w, est.omega)
+  connect(est.kappa_hat, controller.kappa)
+  connect(est.v_ref, controller.v_ref)
+  connect(est.a_w, controller.a_w)
+  connect(master.p_mc, controller.p_mc)
+  connect(controller.inlet, modulator_f.inlet, modulator_r.inlet)
+  connect(controller.outlet, modulator_f.outlet, modulator_r.outlet)
+  modulator_f.motor = pump_enabled * controller.motor
+  modulator_r.motor = pump_enabled * controller.motor
+  connect(road.y, wheel.mu_scale)
+  connect(wheel.support, fixed.spline)
+  connect(wheel.flange, body.flange, speed.flange)
+  initial wheel.inertia.phi = 0
+  initial wheel.inertia.w = 25 / 0.31
+  initial body.mass.s = 0
+  initial body.mass.v = 25
+  initial modulator_f.gallery.V = 0
+  initial modulator_r.gallery.V = 0
+end
+
+analysis HydraulicABSStopTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Rodas5P(), dtmax = 1e-3, saveat = 0.001, tstops = [0.5], abstol = 1e-5, reltol = 1e-5)
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  parameter pump_enabled::Real = 1.0
+  model = HydraulicABSStop(pedal = pedal, road_mu = road_mu, pump_enabled = pump_enabled)
+end
+
+analysis HydraulicABSStopReportTransient
+  extends TransientAnalysis(stop = 11.0, alg = ODEAlg.Rodas5P(), dtmax = 1e-3, saveat = 0.001, tstops = [0.5], abstol = 1e-5, reltol = 1e-5)
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 0.3
+  parameter pump_enabled::Real = 1.0
+  model = HydraulicABSStop(pedal = pedal, road_mu = road_mu, pump_enabled = pump_enabled)
+end
+

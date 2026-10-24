@@ -1,0 +1,85 @@
+"""
+One-channel ABS hydraulic control unit with inlet and outlet solenoids, low-pressure
+accumulator, and return pump.
+
+Defaults: 0.49 mm equivalent valve seats (derived from the 580 bar/s target), 3 ms valve
+lags (assumed), 5–10 bar and 5.3 cm³ accumulator (US5015043), and 10 cm³/s return-pump
+flow (assumed). The master-cylinder side is `port_a`; the wheel side is `port_b`.
+"""
+component HydraulicModulator
+  "Master-cylinder-side connection"
+  port_a = HydraulicComponents.Interfaces.Port() {^port_a}
+  "Wheel-side connection"
+  port_b = HydraulicComponents.Interfaces.Port() {^port_b}
+  "Inlet-valve command, 1 open"
+  inlet = RealInput() {^inlet}
+  "Outlet-valve command, 1 open"
+  outlet = RealInput() {^outlet}
+  "Return-pump motor command, 1 on"
+  motor = RealInput() {^motor}
+  "Accumulator pressure diagnostic"
+  p_lpa = RealOutput() {^p_lpa}
+  "Accumulator stored-volume diagnostic"
+  V_lpa = RealOutput() {^V_lpa}
+  "Equivalent valve-seat diameter (derived)"
+  parameter d_seat::Length = 0.49e-3
+  inlet_valve = InletValve(d_seat = d_seat)
+  outlet_valve = OutletValve(d_seat = d_seat)
+  accumulator = LowPressureAccumulator()
+  gallery = ValveBlockVolume()
+
+  pump = ReturnPump()
+  "Outlet restriction opening over the last 5% of accumulator capacity (assumed)"
+  variable accumulator_acceptance::Real
+  "First-order restriction motion prevents an algebraic closure at full volume (assumed)"
+  variable accumulator_acceptance_filtered::Real
+relations
+  connect(port_a, inlet_valve.port_a)
+  connect(inlet_valve.port_b, port_b, outlet_valve.port_a, gallery.port)
+  connect(outlet_valve.port_b, accumulator.port, pump.port_a)
+  connect(pump.port_b, port_a)
+  connect(inlet, inlet_valve.command)
+  accumulator_acceptance = min(max((accumulator.V_max - accumulator.V) / (0.05 * accumulator.V_max), 0.0), 1.0)
+  initial accumulator_acceptance_filtered = 1.0
+  der(accumulator_acceptance_filtered) = (accumulator_acceptance - accumulator_acceptance_filtered) / 0.001
+  outlet_valve.command = outlet * accumulator_acceptance_filtered
+  connect(motor, pump.motor)
+  p_lpa = accumulator.port.p
+  V_lpa = accumulator.V
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/HydraulicModulator.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "inlet": {"Dyad": {"placement": {"icon": {"x1": 100, "x2": 200, "y1": -50, "y2": 50, "rot": 270}}}},
+    "outlet": {"Dyad": {"placement": {"icon": {"x1": 300, "x2": 400, "y1": -50, "y2": 50, "rot": 270}}}},
+    "motor": {"Dyad": {"placement": {"icon": {"x1": 500, "x2": 600, "y1": -50, "y2": 50, "rot": 270}}}},
+    "p_lpa": {"Dyad": {"placement": {"icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050, "rot": 90}}}},
+    "V_lpa": {"Dyad": {"placement": {"icon": {"x1": 800, "x2": 900, "y1": 950, "y2": 1050, "rot": 90}}}}
+  }
+}
+end
+
+"Open-loop build, hold, dump, slow-build, and full-build sequence."
+test component TestModulatorOpenLoop
+  parameter pump_enabled::Real = 1.0
+  source = HydraulicComponents.Sources.BoundaryPressure()
+  pressure = BlockComponents.Sources.Constant(k = 60e5)
+  modulator = HydraulicModulator(inlet_valve(x_start = 0.0, R_service = 1e30))
+  wheel = ValveTestVolume(C = 2.16e-13)
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(pressure.y, source.p)
+  connect(source.port, modulator.port_a)
+  connect(modulator.port_b, wheel.port)
+  continuity(medium, source.port.medium)
+  modulator.inlet = ifelse(time < 0.20, 1.0, ifelse(time < 0.28, 0.0, ifelse(time < 0.38, 0.0, ifelse(time < 0.46, 0.0, ifelse(time < 0.66, 0.2, 1.0)))))
+  modulator.outlet = ifelse(time >= 0.28 and time < 0.38, 1.0, 0.0)
+  modulator.motor = pump_enabled
+end
+
+analysis TestModulatorOpenLoopTransient
+  extends TransientAnalysis(stop = 0.75, alg = ODEAlg.Tsit5(), dtmax = 1e-4)
+  parameter pump_enabled::Real = 1.0
+  model = TestModulatorOpenLoop(pump_enabled = pump_enabled)
+end

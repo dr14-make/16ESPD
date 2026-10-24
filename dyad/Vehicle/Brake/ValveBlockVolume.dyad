@@ -1,0 +1,27 @@
+"""
+Compressible fluid trapped in an ABS valve-block gallery.
+
+The 5 mm³ gallery volume is a geometric estimate for the drilled passage between valve seats
+(assumed). Its pressure state removes the algebraic junction between the inlet, outlet, and line.
+"""
+component ValveBlockVolume
+  port = HydraulicComponents.Interfaces.Port()
+  "Trapped gallery volume (assumed)"
+  parameter V_block::Volume = 5e-9
+  "Initial gallery pressure"
+  parameter p0::Pressure = 0.0
+  "Brake-fluid bulk modulus (plant medium default)"
+  parameter B::Pressure = 1.4e9
+  "Fluid density"
+  variable rho::Density
+  "Fluid volume admitted relative to initial pressure"
+  variable V::Volume
+  "Gallery pressure"
+  variable p::Pressure
+relations
+  rho = HydraulicComponents.density(port.medium, p)
+  p = p0 + B * V / V_block
+  der(V) = port.m_flow / rho
+  port.p = p
+  guess V = 0.0
+end

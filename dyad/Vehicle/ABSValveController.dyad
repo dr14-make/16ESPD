@@ -1,0 +1,94 @@
+"""
+Wheel-speed-only ABS phase controller for hydraulic solenoid valves.
+
+It uses wheel deceleration and estimated slip to select dump, hold, and build. Rebuild duty
+scales with the estimated road deceleration so low-friction operation does not use a fixed
+dry-road pressure rate. Defaults for phase thresholds follow HandsOn03.PhaseABS (derived from
+EDC behavior); 1 ms latch dynamics and 0.2 nominal slow-build duty are assumed.
+"""
+component ABSValveController
+  "Estimated wheel slip, negative while braking"
+  kappa = RealInput() {^kappa}
+  "Wheel surface acceleration"
+  a_w = RealInput() {^a_w}
+  "Estimated vehicle speed"
+  v_ref = RealInput() {^v_ref}
+  "Master-cylinder pressure"
+  p_mc = RealInput() {^p_mc}
+  "Inlet-valve command"
+  inlet = RealOutput() {^inlet}
+  "Outlet-valve command"
+  outlet = RealOutput() {^outlet}
+  "Return-pump command"
+  motor = RealOutput() {^motor}
+  "Phase diagnostic: -1 dump, 0 hold, 1 build, 2 inactive"
+  phase_out = RealOutput() {^phase_out}
+  "Wheel deceleration threshold at dry-road scale (derived)"
+  parameter a_minus::Acceleration = 12.0
+  "Wheel recovery acceleration threshold (derived)"
+  parameter a_plus::Acceleration = 3.0
+  "Slip threshold that starts a dump (derived)"
+  parameter lambda_1::Real = 0.12
+  "ABS-off vehicle speed (assumed)"
+  parameter v_min::Velocity = 1.5
+  "ABS-off master pressure (EDC)"
+  parameter p_on::Pressure = 0.7e5
+  "Minimum master pressure for first activation (assumed, separates normal braking)"
+  parameter p_activate::Pressure = 70e5
+  "Continuous latch time constant (assumed)"
+  parameter T_latch::Time(min = 0.001) = 0.001
+  "Nominal slow-build inlet duty (derived)"
+  parameter duty_nominal::Real = 0.2
+  "Dry-road reference deceleration (derived)"
+  parameter a_dry::Acceleration = 8.0
+  "Current phase"
+  variable phase::Real
+  "Continuous active latch"
+  variable active::Real
+  "Continuous recovering latch"
+  variable recovering::Real
+  "Road-scaled slow-build duty"
+  variable duty::Real
+  "Estimated road-deceleration scale"
+  variable mu_hat::Real
+relations
+  initial active = 0.0
+  initial recovering = 0.0
+  der(active) = ifelse(v_ref < v_min or p_mc < p_on, -active / T_latch, ifelse(p_mc > p_activate and (a_w < -a_minus or kappa < -lambda_1), (1.0 - active) / T_latch, 0.0))
+  der(recovering) = ifelse(active < 0.5, -recovering / T_latch, ifelse(a_w < -a_minus or kappa < -lambda_1, (1.0 - recovering) / T_latch, ifelse(a_w > -a_plus and kappa > -0.5 * lambda_1, -recovering / T_latch, 0.0)))
+  phase = ifelse(active < 0.5, 2.0, ifelse(recovering > 0.5, -1.0, ifelse(a_w > a_plus, 0.0, 1.0)))
+  mu_hat = min(max(abs(a_w) / a_dry, 0.25), 1.0)
+  duty = min(max(duty_nominal * mu_hat, 0.05), duty_nominal)
+  inlet = ifelse(phase > 1.5, 1.0, ifelse(phase < 0.5, 0.0, duty))
+  outlet = ifelse(phase < -0.5, 1.0, 0.0)
+  motor = ifelse(active > 0.5, 1.0, 0.0)
+  phase_out = phase
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/ABSValveController.svg"}},
+  "_links": {
+    "kappa": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 100, "y2": 200}}}},
+    "a_w": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 300, "y2": 400}}}},
+    "v_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 500, "y2": 600}}}},
+    "p_mc": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}}}},
+    "inlet": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 100, "y2": 200}}}},
+    "outlet": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 300, "y2": 400}}}},
+    "motor": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 500, "y2": 600}}}},
+    "phase_out": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 700, "y2": 800}}}}
+  }
+}
+end
+
+"Controller check that ABS returns to normal braking below the low-speed threshold."
+test component TestABSValveControllerLowSpeed
+  controller = ABSValveController()
+relations
+  controller.kappa = ifelse(time < 0.02, -0.3, 0.0)
+  controller.a_w = ifelse(time < 0.02, -15.0, 0.0)
+  controller.v_ref = ifelse(time < 0.10, 10.0, 1.0)
+  controller.p_mc = 80e5
+end
+
+analysis TestABSValveControllerLowSpeedTransient
+  extends TransientAnalysis(stop = 0.15, alg = ODEAlg.Tsit5(), dtmax = 1e-4, saveat = 1e-4, tstops = [0.02, 0.10])
+  model = TestABSValveControllerLowSpeed()
+end

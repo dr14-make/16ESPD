@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <rect x="120" y="100" width="760" height="800" rx="80" fill="#e3f2fd" stroke="#263238" stroke-width="34"/>
+  <g fill="none" stroke="#263238" stroke-width="26" stroke-linecap="round">
+    <path d="M0 150 H120 M0 350 H120 M0 550 H120 M0 750 H120"/>
+    <path d="M880 150 H1000 M880 350 H1000 M880 550 H1000 M880 750 H1000"/>
+  </g>
+  <g fill="#263238" font-family="sans-serif" text-anchor="middle">
+    <text x="500" y="290" font-size="100">ABS</text>
+    <text x="500" y="430" font-size="64">VALVE</text>
+    <text x="500" y="530" font-size="64">CONTROL</text>
+    <text x="500" y="700" font-size="46">DUMP • HOLD • BUILD</text>
+  </g>
+</svg>

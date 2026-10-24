@@ -1,0 +1,58 @@
+"""
+Averaged ABS return pump moving fluid from the accumulator side to the master-cylinder side.
+
+Defaults: 10 cm³/s maximum displacement flow (assumed), sized to empty the 5.3 cm³
+accumulator in under one second; 5–10 bar suction-pressure range (US5015043). The ideal
+averaged pump represents a motor and check valves able to return fluid against 100 bar.
+"""
+component ReturnPump
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Motor command, 1 on"
+  motor = RealInput() {^motor}
+  "Maximum volume flow (assumed)"
+  parameter q_max::VolumeFlowRate = 10e-6
+  "Accumulator preload pressure (US5015043)"
+  parameter p_pre::Pressure = 5e5
+  "Accumulator full pressure (US5015043)"
+  parameter p_full::Pressure = 10e5
+  "Fluid density on the suction side"
+  variable rho::Density
+  "Averaged pump volume flow"
+  variable q::VolumeFlowRate
+  "Available-fluid fraction inferred from accumulator pressure; 2% fade band (assumed)"
+  variable availability::Real
+relations
+  rho = HydraulicComponents.density(port_a.medium, port_a.p)
+  availability = min(max((port_a.p - p_pre) / (0.02 * (p_full - p_pre)), 0.0), 1.0)
+  q = q_max * min(max(motor, 0.0), 1.0) * availability
+  m_flow = port_a.m_flow
+  m_flow = rho * q
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/ReturnPump.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "motor": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}}
+  }
+}
+end
+
+"Return-pump component check against a 100 bar delivery boundary."
+test component TestReturnPump
+  accumulator = LowPressureAccumulator(V_start = 5.3e-6)
+  pump = ReturnPump()
+  boundary = HydraulicComponents.Sources.BoundaryPressure()
+  pressure = BlockComponents.Sources.Constant(k = 100e5)
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(accumulator.port, pump.port_a)
+  connect(pump.port_b, boundary.port)
+  connect(pressure.y, boundary.p)
+  continuity(medium, accumulator.port.medium)
+  pump.motor = 1.0
+end
+
+analysis TestReturnPumpTransient
+  extends TransientAnalysis(stop = 1.0, alg = ODEAlg.Tsit5(), dtmax = 1e-4)
+  model = TestReturnPump()
+end

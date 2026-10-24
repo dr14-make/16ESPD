@@ -1,0 +1,61 @@
+"""
+Spring-loaded low-pressure ABS accumulator.
+
+Defaults: 5 bar preload and 10 bar at 5.3 cm³ (US5015043); 5.3 cm³ capacity
+(US5015043). A stiff end-stop spring (assumed) limits overfill without an event.
+"""
+component LowPressureAccumulator
+  port = HydraulicComponents.Interfaces.Port() {^port}
+  "Preload pressure (US5015043)"
+  parameter p_pre::Pressure = 5e5
+  "Pressure at full volume (US5015043)"
+  parameter p_full::Pressure = 10e5
+  "Usable fluid volume (US5015043)"
+  parameter V_max::Volume = 5.3e-6
+  "End-stop stiffness relative to the working spring (assumed)"
+  parameter stop_ratio::Real(min = 1.0) = 100.0
+  "Initial stored volume (assumed empty)"
+  parameter V_start::Volume = 0.0
+  "Stored fluid volume"
+  variable V::Volume
+  "Fluid density"
+  variable rho::Density
+  "Volume flow into the accumulator"
+  variable q_in::VolumeFlowRate
+relations
+  port.p = p_pre + (p_full - p_pre) * V / V_max + stop_ratio * (p_full - p_pre) * max(V - V_max, 0.0) / V_max
+  rho = HydraulicComponents.density(port.medium, port.p)
+  q_in = port.m_flow / rho
+  der(V) = q_in
+  initial V = V_start
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/LowPressureAccumulator.svg"}},
+  "_links": {
+    "port": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
+  }
+}
+end
+
+"Prescribed mass-flow source for hydraulic component tests."
+component TestMassFlowSource
+  port = HydraulicComponents.Interfaces.Port()
+  command = RealInput()
+relations
+  port.m_flow = -command
+end
+
+"Accumulator fill check at a prescribed inflow."
+test component TestLowPressureAccumulator
+  accumulator = LowPressureAccumulator()
+  source = TestMassFlowSource()
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(source.port, accumulator.port)
+  continuity(medium, accumulator.port.medium)
+  source.command = ifelse(time < 0.6, 1045.0 * 10e-6, 0.0)
+end
+
+analysis TestLowPressureAccumulatorTransient
+  extends TransientAnalysis(stop = 0.8, alg = ODEAlg.Tsit5(), dtmax = 1e-4)
+  model = TestLowPressureAccumulator()
+end

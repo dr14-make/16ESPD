@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <rect x="120" y="130" width="760" height="740" rx="70" fill="#eceff1" stroke="#263238" stroke-width="34"/>
+  <g fill="none" stroke="#0277bd" stroke-width="30" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 500 H230 M770 500 H1000"/>
+    <path d="M230 500 H770"/>
+    <path d="M500 500 V700 H700 V500"/>
+    <circle cx="360" cy="500" r="70" fill="#fff"/>
+    <circle cx="640" cy="500" r="70" fill="#fff"/>
+    <path d="M430 700 H570"/>
+  </g>
+  <g fill="#263238" font-family="sans-serif" text-anchor="middle">
+    <text x="500" y="260" font-size="80">ABS HCU</text>
+    <text x="360" y="525" font-size="45">IN</text>
+    <text x="640" y="525" font-size="45">OUT</text>
+    <text x="500" y="785" font-size="48">LPA + PUMP</text>
+  </g>
+</svg>

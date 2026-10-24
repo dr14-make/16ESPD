@@ -1,0 +1,59 @@
+"""
+Normally-closed ABS outlet solenoid from the wheel circuit to the accumulator.
+
+Defaults: 3 ms actuation lag (assumed); 1 bar laminar transition (assumed); discharge
+coefficient 0.65 (assumed); 0.49 mm equivalent seat diameter (derived from the 580 bar/s
+reference valve rate with the installed caliper compliance). The command is 1 open and 0 closed.
+"""
+component OutletValve
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Solenoid command, 1 open"
+  command = RealInput() {^command}
+  "Valve actuation time constant (assumed)"
+  parameter T_v::Time(min = 0.001) = 0.003
+  "Equivalent seat diameter (derived)"
+  parameter d_seat::Length(min = eps(Float64)) = 0.49e-3
+  "Discharge coefficient (assumed)"
+  parameter C_d::Real(min = eps(Float64)) = 0.65
+  "Laminar-transition pressure difference (assumed)"
+  parameter dp_cr::Pressure(min = eps(Float64)) = 1e5
+  "Actual outlet opening"
+  variable x::Real
+  "Fluid density"
+  variable rho::Density
+  "Seat area"
+  variable A::Area
+relations
+  initial x = 0.0
+  der(x) = (min(max(command, 0.0), 1.0) - x) / T_v
+  A = π * d_seat ^ 2 / 4
+  rho = HydraulicComponents.density(port_a.medium, max(port_a.p, port_b.p))
+  m_flow = port_a.m_flow
+  m_flow = x * C_d * A * sqrt(2 * rho) * Δp / (Δp ^ 2 + dp_cr ^ 2) ^ 0.25
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/OutletValve.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "command": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}}
+  }
+}
+end
+
+"Outlet-valve component check between wheel and accumulator storage."
+test component TestOutletValve
+  wheel = ValveTestVolume(C = 5.0e-13, V_start = 3.0e-6)
+  accumulator = ValveTestVolume(C = 1.0e-12, V_start = 0.5e-6)
+  valve = OutletValve()
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(wheel.port, valve.port_a)
+  connect(valve.port_b, accumulator.port)
+  continuity(medium, wheel.port.medium)
+  valve.command = ifelse(time < 0.01, 0.0, 1.0)
+end
+
+analysis TestOutletValveTransient
+  extends TransientAnalysis(stop = 0.05, alg = ODEAlg.Tsit5(), dtmax = 1e-4)
+  model = TestOutletValve()
+end
