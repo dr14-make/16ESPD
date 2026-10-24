@@ -400,7 +400,7 @@ steps with every line of code; its "Do this" numbers are in brackets.
    - The wheel under the car: `road.y` → `wheel.mu_scale`, `wheel.flange` → `body.flange`, and
      `speed.flange` → the same `body.flange`.
    Check against the slide: the green tree under the three housings, the two blue circuits
-   through the lines, the gray wire down to `fixed`, the three-way junction on `body.flange`.
+   through the lines, the gray wire down to `fixed`, the three-way junction on the `wheel.flange` wire, left of `body`.
 
 5. The brake fluid [4]. Toggle to code (⇄) and paste from the guide: the `path medium` line
    above relations, the `continuity` line inside them. Dyad cannot declare a fluid inside a

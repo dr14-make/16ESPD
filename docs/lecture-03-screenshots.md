@@ -7,7 +7,9 @@ copies that folder into the deck and the guide page. Step numbers match
 `docs/lecture-03-handson-plan.md`.
 
 The three bench diagrams (`step02-pedal-bench`, `step03-abs-bench`, `step04-wheel-only-bench`)
-are screenshots of the `dyad/HandsOn03/` reference diagrams, whose layout is in their metadata.
+are screenshots of the `dyad/HandsOn03/` reference diagrams, whose layout and orthogonal wire routes
+are in their metadata. The three share one layout: the ABS benches only add blocks, so the shared
+blocks sit in the same place in all three shots, and each shot is cropped to the same region.
 The three code views, the phase plot and the REPL table come from the rehearsal's own `MyCar`,
 as a student sees them; the code views therefore show Studio's `"short … component description"`
 and diagram-only port placements, not the reference files' text. The plots in SVG are not
@@ -35,12 +37,12 @@ The conventions for a re-capture:
 | File | Step | Model | What it shows | Used on | Status |
 | ---- | ---- | ----- | ------------- | ------- | ------ |
 | `step00-wheel-library.png` | 00 | any diagram | The **+** library panel open at `VehicleSystemsComponents › Vehicle › Wheel`, listing `BrakedWheel`, `HydraulicBrakedWheel`, `BrakeActuator`, `TireFrictionCurve`; `HandsOn03` visible one level up. | deck build 00, guide 00 | done, rehearsal `MyCar` |
-| `step02-pedal-bench.png` | 02 | `HandsOn03.PedalStop` | The finished hydraulic chain: `command` → `pedal_unit` → `booster` → `master` from the left, `fixed_hydraulic` under the three housings, `line_f` and `line_r` into `wheel`, `road` and `fixed` under the wheel, `body` and `speed` on the right; the three-way junction on `body.flange`. | guide 02 | done, reference diagram, full window |
+| `step02-pedal-bench.png` | 02 | `HandsOn03.PedalStop` | The finished hydraulic chain: `command` → `pedal_unit` → `booster` → `master` from the left, `fixed_hydraulic` under the three housings, `line_f` and `line_r` into `wheel`, `road` and `fixed` under the wheel, `body` and `speed` stacked on the right, with the three-way junction on the `wheel.flange` wire between them. | guide 02 | done, reference diagram, cropped to the diagram, routed wires |
 | `step03-slipabs-code.png` | 03 | `HandsOn03.SlipABS` | The code view: the `pressure` line, the rate `ifelse`, the `cycled` latch, the `p_cmd` line and the three look-ahead lines. | guide 03 | done, rehearsal `MyCar` |
-| `step03-abs-bench.png` | 03 | `HandsOn03.ABSStop` | Build 02's chain with `valve_f` and `valve_r` between `master` and the lines; `abs` below, `master.p_mc`, `wheel.kappa` and `speed.v` into it, `abs.p_cmd` out to both valves. | guide 03 | done, reference diagram, full window |
+| `step03-abs-bench.png` | 03 | `HandsOn03.ABSStop` | Build 02's chain with `valve_f` and `valve_r` between `master` and the lines; `abs` below, `master.p_mc`, `wheel.kappa` and `speed.v` into it, `abs.p_cmd` out to both valves. | guide 03 | done, reference diagram, cropped to the diagram, routed wires |
 | `step04-estimator-code.png` | 04 | `HandsOn03.RefSpeedEstimator` | The code view, all seven relations. | guide 04 | done, rehearsal `MyCar` |
 | `step04-phaseabs-code.png` | 04 | `HandsOn03.PhaseABS` | The code view: the `phase` line, the `cycled` latch and the nested rate `ifelse`. | guide 04 | done, rehearsal `MyCar` |
-| `step04-wheel-only-bench.png` | 04 | `HandsOn03.ABSStopWheelOnly` | `wspeed` on `wheel.spline`, `est` with its three outputs into `abs`; no wire from `wheel.kappa` or `speed.v` into `abs`. | guide 04 | done, reference diagram, full window |
+| `step04-wheel-only-bench.png` | 04 | `HandsOn03.ABSStopWheelOnly` | `wspeed` on `wheel.spline`, `est` with its three outputs into `abs`; no wire from `wheel.kappa` or `speed.v` into `abs`. | guide 04 | done, reference diagram, cropped to the diagram, routed wires |
 | `step04-phase-plot.png` | 04 | `HandsOn03.ABSStopWheelOnlyTransient(road_mu = 0.3, stop = 20)` | The guide's REPL plot of `abs.phase`, `abs.p_cmd` and `wheel.caliper_f.p` from 1.0 to 2.5 s, as a student sees it. | guide 04 | done, rehearsal `MyCar` |
 | `step05-surface-table.png` | 05 | the REPL | The step 05 loop's three printed rows. | guide 05 | done, rehearsal `MyCar` |
 
@@ -48,7 +50,7 @@ The conventions for a re-capture:
 
 Eighteen shots of the build in progress, captured from the student project `~/TMP/MyCar`
 (scratch branch `lecture-03-shots`) in Dyad Studio web in a 1600 × 1000 window. Each is cropped
-to the pane, like Lecture 1's, unlike the three full-window bench diagrams above. The diagrams
+to the pane, like Lecture 1's and like the three bench diagrams above. The diagrams
 have a tidied layout and wire routes; model behavior is unchanged. The plots come from the guide's
 own REPL snippets, with the Plotly backend in the Julia Plots tab, at the size of
 `step04-phase-plot.png`. The distances read from the same runs match the guide: 35.96 m (pedal
