@@ -12,11 +12,11 @@ Keep every wheel rolling, near the peak of its friction curve, however hard the 
 `notebooks/lecture03/01-abs.pluto.jl`
 
 <!--
-Budget: 88 minutes, with the 10-minute break in the middle: 40 before it, 48 after.
+Budget: 91 minutes, with the 10-minute break in the middle: 40 before it, 51 after.
 Before: cover and what ABS does 2, hardware 9 (history 1, sensors 2, modulator 2, channels 2,
 cycle 2), the model 3, build 03 and its result slide 22, one stop and on the curve 4. After: reference speed 2, build
 04 with its checkpoint 28, braking distance 2, surfaces 2, against measured cars 1.5, why ABS
-can stop longer 1.5, build 05 10, summary 1.
+can stop longer 1.5, build 05 10, the planar car 1, braking and steering 2, summary 1.
 
 The center of the lecture, and where most of the building happens. The room arrives with a locked
 wheel on its own car from build 02, so the problem is on screen before the solution is. Then the
@@ -24,7 +24,7 @@ system as it is built:
 history, sensors, valves, layouts and the control cycle. Then the model in the repository, and
 your own slip controller beside it, put between the master cylinder and the lines of build 02's
 brake. After the break: an ABS that sees only the wheel speed, and
-the same stop on three roads. The four result slides of the library model are the checkpoints for
+the same stop on three roads; then a planar car shows the steering a one-wheel bench cannot. The four result slides of the library model are the checkpoints for
 your builds: the green cues say which number is yours.
 -->
 
@@ -1341,6 +1341,140 @@ rule covers it.
 Where the numbers come from: the three analyses and `Vehicle.ABSBrakeTransient`, with Tsit5 at a
 maximum step of a millisecond, in the testset "Hands-on 03 steps 04-05: wheel speed only",
 including 128.4, 130.9 and 106.3 meters.
+-->
+
+---
+routeAlias: planar-car
+---
+
+## The planar car
+
+<div class="grid grid-cols-[1fr_1.05fr] gap-8 items-start">
+<div>
+
+Your ABS acts on **one lumped wheel on a straight line**: no lateral force, no steering, no yaw.
+That bench cannot show what ABS is mostly for, so the repository has a **planar four-wheel car**,
+`Vehicle.Planar.PlanarCar`:
+
+- **four wheels**, each with its own speed and brake;
+- front **steering** through an Ackermann linkage, steering ratio 16;
+- **combined slip**: longitudinal and lateral force share one friction limit;
+- the chassis can **yaw**, so the car can turn, or spin;
+- **four ABS channels**, one per wheel, on a 5 ms clock: `Vehicle.Planar.ABSUnit`.
+
+| | 1D bench | planar car |
+|---|---|---|
+| wheels | 1 | 4 |
+| forces | longitudinal | longitudinal + lateral |
+| driver input | brake | brake + steering wheel |
+| motion | x | x, y, yaw |
+
+</div>
+<div>
+
+![Inside Vehicle.Planar.PlanarCar in Studio: the four wheels fl, fr, rl and rr at the corners, each with its torque input tau and spin output, joined by the arms fl_arm, fr_arm, rl_arm and rr_arm and the axles tf and tr to the body in the middle; the loads block beside the body; at the top the steering input, the column gear, its housing and the linkage that turns the front wheels through steerL and steerR.](/img/lecture-03/planar-car-inside.png)
+
+</div>
+</div>
+
+<!--
+Budget: 1 minute. This slide only introduces the car; the next one uses it.
+
+1. Point at the left column: what the one-wheel bench of builds 02 to 05 cannot do. It has no
+   lateral force, so no steering, so it cannot show the first benefit on the "What ABS does"
+   slide.
+2. Point at the picture, the inside of `Vehicle.Planar.PlanarCar` as Studio draws it: the four
+   wheels at the corners, the body in the middle, the steering column and linkage at the top.
+   Nobody builds this today; it is too large to draw in a lecture.
+
+The car is built from MultibodyComponents' PlanarMechanics: a planar rigid body for the chassis,
+and its slip-based wheel joint at each corner, which has longitudinal and lateral slip and a
+combined friction limit. It is not the bench car of the builds: 1500 kilograms, yaw inertia 2500
+kilogram square meters, wheelbase 2.7 meters, track 1.55 meters, center of gravity 1.2 meters
+behind the front axle, peak friction 1.0 and sliding 0.8, steering ratio 16.
+
+Combined slip is the point. A tire has one friction budget, mu times its load. Braking spends
+some of it; what is left can push sideways. A locked tire slides, and its whole budget goes into
+a force opposite to the sliding, along the car's path, whichever way the wheel points.
+
+Each ABS channel is this section's modulator on its own wheel, releasing at a slip of 0.08 at
+the front and 0.06 at the rear. If asked about distance: straight, the four channels stop it
+from 80 kilometers per hour in 36.1 meters (`Lecture3.ABSStraightStopTransient`), and a locked
+stop is shorter, 31.6 meters, because the planar ABS channels hold slip and are not tuned for
+distance. Your 1D ABS is the one for distance. Section 05 uses the same car for ESP.
+-->
+
+---
+routeAlias: brake-steer-demo
+class: big-figure
+---
+
+## Braking and steering
+
+![Top view of two runs of the planar car from 80 km/h, the car drawn every 0.5 s. Both brake fully at 0.5 s, x 11 m, and steer the wheel 90 degrees to the left at 0.8 s. An obstacle stands in the lane at x 36 m. With ABS, solid blue, the car curves left, passes the obstacle 3.0 m to its side and stops at x 46 m, y 10.9 m, turned 49 degrees. With the wheels locked, dashed red, it slides straight on through the obstacle and stops at x 43 m, y 0.](/figures/03-brake-steer-path.svg)
+
+<div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
+<div>
+
+| full braking from 80 km/h, wheel 90° left | ABS off, locked | ABS on |
+|---|---:|---:|
+| sideways at the obstacle, 25 m after braking | 0.00 m | **3.02 m** |
+| peak yaw rate | 0.2 °/s | **27.9 °/s** |
+| front slip | −1.0 | ≥ −0.105 |
+
+</div>
+<div>
+
+<img src="/img/lecture-03/planar-brake-steer-bench.png" class="h-40" alt="The BrakeAndSteer bench in Studio: a steering ramp into steering_robot, which turns the car's steering; demand and a zero into abs, abs's four torques into car, car's frames and wheel spins into sensors, and the speed and four slips from sensors back into abs.">
+
+`Lecture3.BrakeAndSteerTransient`, `abs_on = 1.0` or `0.0`
+
+</div>
+</div>
+
+<!--
+Budget: 2 minutes. The figure is a real run, from `scripts/export_lecture03_steer_figures.jl`.
+
+Narration. 80 kilometers per hour on a dry road, something in the lane ahead. At half a second
+the driver brakes fully; 0.3 seconds later they steer left, 90 degrees on the steering wheel,
+about 5.6 degrees at the road wheels, and hold it. Same car, same pedal, same steering, twice:
+once with ABS, once with the wheels free to lock. The small picture is the bench both runs use.
+
+Read the dashed red line first. The wheels lock within a tenth of a second, slip minus 1.0, and
+the car goes straight on, its steering wheel turned. Sideways at the obstacle: zero; peak yaw
+rate: 0.2 degrees per second. Then the blue line: ABS holds the front slip between minus 0.03
+and minus 0.105, the tires keep rolling, and the car turns: 3 meters to the side when it passes
+the obstacle, 28 degrees per second of yaw at the peak.
+
+Why: a locked tire spends its whole friction budget on sliding, along the path. The front axle's
+lateral force is 0.65 kilonewtons locked, against 3.9 kilonewtons on average with ABS, 6.5 at the
+peak. That is the second figure, `03-brake-steer-forces.svg`, if a question needs it.
+
+Why the slide has no stopping distance: on this planar car the locked wheels stop shorter, 31.6
+meters against 38.2 with ABS. Part of it is the turn: the same ABS stops in 36.1 meters straight,
+because a tire that pushes sideways has less left for braking. The rest is the planar ABS
+channels, which hold slip but are not tuned for distance; `docs/abs-braking-distance-findings.md`
+has the diagnosis of the same effect on the 1D model. The ABS you built is the one for distance:
+it beat the locked wheel on every road. If asked, say so in one line: the locked car stops
+sooner, but in the obstacle, at 37 kilometers per hour.
+
+How the angle was chosen: the smallest steering-wheel angle, in steps of 30 degrees, that takes
+the ABS car about 3 meters sideways before the obstacle, enough to clear a 1.8-meter-wide car
+past it. 30, 60, 90, 120 degrees give 1.07, 2.11, 3.02, 3.57 meters, the largest sideslip
+1.0 to 3.9 degrees: no spin at any of them.
+
+Live run, if there is time (the planar car compiled and warmed up before class, see the run
+sheet):
+
+1. In the Studio Julia REPL:
+   `using VehicleSystemsComponents, Plots; using DyadInterface: symbolic_container`.
+2. Run `r = VehicleSystemsComponents.Lecture3.BrakeAndSteerTransient(abs_on = 0.0)`, about 30
+   seconds once warm.
+3. Plot the path: `s = symbolic_container(r).sensors; plot(r.sol[s.x], r.sol[s.y];
+   aspect_ratio = :equal, label = "ABS off")`. The line stays on zero.
+4. Run `r = VehicleSystemsComponents.Lecture3.BrakeAndSteerTransient(abs_on = 1.0)`.
+5. Add it to the plot: `s = symbolic_container(r).sensors; plot!(r.sol[s.x], r.sol[s.y];
+   label = "ABS on")`. The car curves left, 3 meters sideways at x 36.
 -->
 
 ---

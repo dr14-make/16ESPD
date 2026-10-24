@@ -205,6 +205,8 @@ end
 
 include("ABSStraightStopTransient_definition.jl")
 include("ABSStraightStop_definition.jl")
+include("BrakeAndSteerTransient_definition.jl")
+include("BrakeAndSteer_definition.jl")
 include("ESPSineWithDwellTransient_definition.jl")
 include("ESPSineWithDwell_definition.jl")
 include("ESPSteerRampTransient_definition.jl")

@@ -19,14 +19,14 @@ vectoring is not in this lecture: it belongs with the electric and hybrid drives
 | 02 How the brakes work | 02 pedal to wheel | 26 |
 | 03 Anti-lock braking, to the break | 03 an ABS of your own | 40 |
 | Break | | 10 |
-| 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 48 |
+| 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 51 |
 | Break | | 5 |
 | 04 Traction control | 06 take-home bonus (slide only) | 6 |
-| 05 Electronic stability program, demo included | | 18 |
+| 05 Electronic stability program, demo included | | 15 |
 | 06 Wrap-up | | 3 |
 
 Running clock: 01 starts at 10, 02 at 24, 03 at 50, the first break at 90, 03 resumes at 100,
-the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
+the second break at 151, 04 at 156, 05 at 162, 06 at 177, end at 180.
 
 ## Before class
 
@@ -47,7 +47,8 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
   `Lecture3.SineWithDwellRunTransient(A_sw = deg2rad(180))`,
   `Lecture3.ESPSineWithDwellTransient(A_sw = deg2rad(180), abs_on = 1.0, Ki = 1e5)` and
   `Lecture3.SplitMuStopTransient(select_low = 1.0, esp_on = 1.0)` once before class so they are
-  compiled. The clocked ones still take about 30 s each when warm: start one, keep talking over the
+  compiled, and `Lecture3.BrakeAndSteerTransient(abs_on = 1.0)` for section 03's braking and
+  steering slide. The clocked ones still take about 30 s each when warm: start one, keep talking over the
   committed figure, show the result. Notebook `notebooks/lecture03/03-esp.pluto.jl` has every
   section 05 number with its band. Without the REPL, show the figures.
 - Handout: `handout.pdf`, published next to the deck, one slide per page, notes excluded.
@@ -113,7 +114,7 @@ the second break at 148, 04 at 153, 05 at 159, 06 at 177, end at 180.
   holds for every new analysis in 03 and 04. Expected at pedal 0.3: 55 bar, no lock, 36.0 m; at 0.6: 89 bar,
   `wheel.kappa` −1, 43.7 m.
 
-## 03 Anti-lock braking — 88 min, the break inside it
+## 03 Anti-lock braking — 91 min, the break inside it
 
 Before the break, 40 min:
 
@@ -143,11 +144,12 @@ Everyone needs a working `ABSStop` before it ends: build 04 is a copy of it. Str
 step 03 code from the guide page; `ABSStop` is the step 02 bench with the valves, so its block
 pastes on its own, without a working `PedalStop`.
 
-After the break, 48 min:
+After the break, 51 min:
 
 - Reference speed 2, **build 04** with its checkpoint slide 28, braking distance 2, surfaces 2,
-  against measured cars 1.5, why ABS can stop longer 1.5, **build 05** 10, summary 1. The six
-  minutes build 03 no longer needs went to builds 04 (3) and 05 (3).
+  against measured cars 1.5, why ABS can stop longer 1.5, **build 05** 10, the planar car 1,
+  braking and steering 2, summary 1. The six minutes build 03 no longer needs went to builds 04
+  (3) and 05 (3); the planar car's three came out of section 05.
 - "Against measured cars" and "Why ABS can stop longer" answer the question the snow numbers
   raise. Real ABS gains little on packed snow and loses on loose snow and gravel; the sources are
   in `docs/abs-efficiency-research.md`.
@@ -167,6 +169,13 @@ After the break, 48 min:
   reruns give 130.9 m on snow, no better than at 8, and 106.3 m dry.
 - A valve-level modulator in place of the ideal `ABSValve` is a stretch goal for whoever finishes
   early (`docs/brake-system-implementation-plan.md`, step 3); never wait for it.
+- "The planar car" and "Braking and steering" close the section: the one-wheel bench has no
+  lateral force, so the steering benefit needs the planar car. The slide shows only steering:
+  3.02 m to the side of the obstacle with ABS, 0.00 m locked. It leaves the stopping distance out
+  on purpose: on this car the locked wheels stop shorter (31.6 m against 38.2 m), because the
+  planar ABS channels hold slip and are not tuned for distance. If asked, the students' 1D ABS is
+  the one for distance. Figures: `public/figures/03-brake-steer-path.svg` and
+  `03-brake-steer-forces.svg`, from `scripts/export_lecture03_steer_figures.jl`.
 
 ## Break — 5 min
 
@@ -178,20 +187,21 @@ After the section 03 summary. The building is done for the day.
 - The bonus is step 06 on the guide page: a brake-based TCS on hands-on 1's `SlipCar`, handed in
   as a pull request for extra points. Its reference (`feat/handson03-tcs-bonus`) is not built yet.
 
-## 05 Electronic stability program — 18 min
+## 05 Electronic stability program — 15 min
 
 - Theory 9: what ESP does 1.5, sensors 1, Ackermann 1, reference model 2, braking one wheel 2,
   does it work and the test 1.5. Ackermann is the slide to shorten: the table, not the
   derivation.
-- Demo 8: the planar car 1, the passive run 2 (both figure slides), ESP on 1.5 (path and table,
-  then yaw rate and brake torque), ESP through ABS 1.5, split-µ 2. Students watch; nothing to
-  build.
+- Demo 5: the passive run 2 (both figure slides), ESP on 1.5 (path and table, then yaw rate and
+  brake torque), ESP through ABS 1.5. The planar car slide is one sentence: the car was introduced
+  in section 03. Split-µ is its table only, in passing. Students watch; nothing to build.
 - ESP braking directly passes at every amplitude but locks the braked wheel and leaves at
   48 km/h; say it, then show the fix on the next slide: through ABS the slip stays above −0.09
   and the car leaves at about 19 m/s.
 - Split-µ: stress that the steering wheel is held straight. ABS alone turns the car 129°; the
   P controller barely helps, the PI holds 3° at the cost of stopping distance.
-- If short of time, take the split-µ slide down to its table (1 min).
+- Split-µ is budgeted at its table only: ABS alone 129°, the PI ESP 3°. Read the figure and the
+  four rows (2 min) only if ahead of the clock.
 - Figures: `public/figures/05-swd-path.svg`, `05-swd-yaw-rate.svg`, `05-swd-esp-path.svg`,
   `05-swd-esp-yaw.svg`, `05-esp-abs.svg`, `05-split-mu.svg`, from
   `scripts/export_lecture03_esp_figures.jl` at 23bd4bb (the script's docstring has the command;
