@@ -4,23 +4,23 @@ component HydraulicABSStop
   parameter road_mu::Real = 1.0
   parameter a_ref::Acceleration = 8.0 * road_mu
   parameter pump_enabled::Real = 1.0
-  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5)
-  road = BlockComponents.Sources.Constant(k = road_mu)
-  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal()
-  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster()
-  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder()
-  modulator_f = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator()
-  modulator_r = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator()
-  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine()
-  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0)
-  controller = VehicleSystemsComponents.Vehicle.ABSValveController()
-  est = RefSpeedEstimator(a_ref = a_ref)
-  wspeed = RotationalComponents.Sensors.VelocitySensor()
-  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel()
-  body = VehicleSystemsComponents.HandsOn.Body()
-  fixed = RotationalComponents.Components.Fixed()
-  fixed_hydraulic = TranslationalComponents.Components.Fixed()
-  speed = TranslationalComponents.Sensors.VelocitySensor()
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5) {^command}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
+  booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster() {^booster}
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
+  modulator_f = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator() {^modulator_f}
+  modulator_r = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator() {^modulator_r}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
+  controller = VehicleSystemsComponents.Vehicle.ABSValveController() {^controller}
+  est = RefSpeedEstimator(a_ref = a_ref) {^est}
+  wspeed = RotationalComponents.Sensors.VelocitySensor() {^wspeed}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel() {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  fixed_hydraulic = TranslationalComponents.Components.Fixed() {^fixed_hydraulic}
+  speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
   path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
 relations
   connect(command.y, pedal_unit.u)
@@ -53,6 +53,27 @@ relations
   initial body.mass.v = 25
   initial modulator_f.gallery.V = 0
   initial modulator_r.gallery.V = 0
+metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": -120, "x2": -20, "y1": 120, "y2": 220}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 140, "y1": 120, "y2": 220}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 190, "x2": 290, "y1": 120, "y2": 220}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 340, "x2": 460, "y1": 110, "y2": 230}}}},
+    "modulator_f": {"Dyad": {"placement": {"diagram": {"x1": 530, "x2": 680, "y1": 20, "y2": 170}}}},
+    "modulator_r": {"Dyad": {"placement": {"diagram": {"x1": 530, "x2": 680, "y1": 230, "y2": 380}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 45, "y2": 145}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 255, "y2": 355}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 930, "x2": 1100, "y1": 100, "y2": 270}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 1190, "x2": 1290, "y1": 135, "y2": 235}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1190, "x2": 1290, "y1": -20, "y2": 80}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 400, "y2": 500}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 700, "y1": 560, "y2": 760}}}},
+    "est": {"Dyad": {"placement": {"diagram": {"x1": 230, "x2": 380, "y1": 570, "y2": 720}}}},
+    "wspeed": {"Dyad": {"placement": {"diagram": {"x1": 900, "x2": 1000, "y1": 650, "y2": 750}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 1150, "y1": 650, "y2": 750}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 140, "y1": 400, "y2": 500}}}}
+  }
+}
 end
 
 analysis HydraulicABSStopTransient

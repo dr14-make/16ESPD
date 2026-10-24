@@ -1,0 +1,43 @@
+{
+  "schema": 3,
+  "subjects": [
+    {
+      "id": "run-b95219d7-25dc-4755-ae39-26864f72b2c3",
+      "name": "Run 1",
+      "outcome": "failed",
+      "provider": "julia",
+      "runnable": {
+        "name": "Vehicle.Planar.TestSineWithDwellTransient",
+        "parameters": {}
+      },
+      "type": "dyad:solution/2",
+      "diagnosis": {
+        "title": "Cannot resolve analysis spec type for \"Vehicle.Planar.TestSineWithDwellTransient\"",
+        "detail": "Cannot resolve analysis spec type for \"Vehicle.Planar.TestSineWithDwellTransient\"",
+        "reporter": "julia"
+      }
+    },
+    {
+      "id": "run-14eae27c-5a05-424c-8503-3b6adaa7eb5e",
+      "name": "Run 2",
+      "provider": "julia",
+      "runnable": {
+        "name": "Lecture3.PlanarOpenLoopTransient",
+        "parameters": {}
+      },
+      "type": "dyad:solution/2",
+      "outcome": "failed",
+      "diagnosis": {
+        "title": "Cannot resolve analysis spec type for \"Lecture3.PlanarOpenLoopTransient\"",
+        "detail": "Cannot resolve analysis spec type for \"Lecture3.PlanarOpenLoopTransient\"",
+        "reporter": "julia"
+      }
+    }
+  ],
+  "decks": [
+    {
+      "title": "Deck 1",
+      "cards": []
+    }
+  ]
+}

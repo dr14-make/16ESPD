@@ -21,52 +21,164 @@ component HydraulicModulator
   p_lpa = RealOutput() {^p_lpa}
   "Accumulator stored-volume diagnostic"
   V_lpa = RealOutput() {^V_lpa}
+  inlet_valve = InletValve(d_seat = d_seat) {^inlet_valve}
+  outlet_valve = OutletValve(d_seat = d_seat) {^outlet_valve}
+  accumulator = LowPressureAccumulator() {^accumulator}
+  gallery = ValveBlockVolume() {^gallery}
+  pump = ReturnPump() {^pump}
   "Equivalent valve-seat diameter (derived)"
   parameter d_seat::Length = 0.49e-3
-  inlet_valve = InletValve(d_seat = d_seat)
-  outlet_valve = OutletValve(d_seat = d_seat)
-  accumulator = LowPressureAccumulator()
-  gallery = ValveBlockVolume()
-
-  pump = ReturnPump()
   "Outlet restriction opening over the last 5% of accumulator capacity (assumed)"
   variable accumulator_acceptance::Real
   "First-order restriction motion prevents an algebraic closure at full volume (assumed)"
   variable accumulator_acceptance_filtered::Real
 relations
-  connect(port_a, inlet_valve.port_a)
-  connect(inlet_valve.port_b, port_b, outlet_valve.port_a, gallery.port)
-  connect(outlet_valve.port_b, accumulator.port, pump.port_a)
-  connect(pump.port_b, port_a)
-  connect(inlet, inlet_valve.command)
+  connect(port_a, inlet_valve.port_a) {^id13}
+  connect(inlet_valve.port_b, port_b, outlet_valve.port_a, gallery.port) {^id14}
+  connect(outlet_valve.port_b, accumulator.port, pump.port_a) {^id15}
+  connect(pump.port_b, port_a) {^id16}
+  connect(inlet, inlet_valve.command) {^id17}
   accumulator_acceptance = min(max((accumulator.V_max - accumulator.V) / (0.05 * accumulator.V_max), 0.0), 1.0)
   initial accumulator_acceptance_filtered = 1.0
   der(accumulator_acceptance_filtered) = (accumulator_acceptance - accumulator_acceptance_filtered) / 0.001
   outlet_valve.command = outlet * accumulator_acceptance_filtered
-  connect(motor, pump.motor)
+  connect(motor, pump.motor) {^id18}
   p_lpa = accumulator.port.p
   V_lpa = accumulator.V
 metadata {
-  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/HydraulicModulator.svg"}},
+  "Dyad": {
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/Brake/HydraulicModulator.svg"
+    }
+  },
   "_links": {
-    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
-    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
-    "inlet": {"Dyad": {"placement": {"icon": {"x1": 100, "x2": 200, "y1": -50, "y2": 50, "rot": 270}}}},
-    "outlet": {"Dyad": {"placement": {"icon": {"x1": 300, "x2": 400, "y1": -50, "y2": 50, "rot": 270}}}},
-    "motor": {"Dyad": {"placement": {"icon": {"x1": 500, "x2": 600, "y1": -50, "y2": 50, "rot": 270}}}},
-    "p_lpa": {"Dyad": {"placement": {"icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050, "rot": 90}}}},
-    "V_lpa": {"Dyad": {"placement": {"icon": {"x1": 800, "x2": 900, "y1": 950, "y2": 1050, "rot": 90}}}}
+    "port_a": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "port_b": {
+      "Dyad": {
+        "placement": {
+          "icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "inlet": {
+      "Dyad": {"placement": {"icon": {"x1": 100, "x2": 200, "y1": -50, "y2": 50, "rot": 270}}}
+    },
+    "outlet": {
+      "Dyad": {"placement": {"icon": {"x1": 300, "x2": 400, "y1": -50, "y2": 50, "rot": 270}}}
+    },
+    "motor": {
+      "Dyad": {"placement": {"icon": {"x1": 500, "x2": 600, "y1": -50, "y2": 50, "rot": 270}}}
+    },
+    "p_lpa": {
+      "Dyad": {
+        "placement": {"icon": {"x1": 650, "x2": 750, "y1": 950, "y2": 1050, "rot": 90}}
+      }
+    },
+    "V_lpa": {
+      "Dyad": {
+        "placement": {"icon": {"x1": 800, "x2": 900, "y1": 950, "y2": 1050, "rot": 90}}
+      }
+    },
+    "inlet_valve": {
+      "Dyad": {"placement": {"diagram": {"x1": 240, "x2": 390, "y1": 180, "y2": 330}}}
+    },
+    "outlet_valve": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 480, "x2": 630, "y1": 450, "y2": 600, "rot": 90}}
+      }
+    },
+    "accumulator": {
+      "Dyad": {"placement": {"diagram": {"x1": 730, "x2": 870, "y1": 440, "y2": 580}}}
+    },
+    "gallery": {
+      "Dyad": {"placement": {"diagram": {"x1": 500, "x2": 620, "y1": 90, "y2": 210}}}
+    },
+    "pump": {
+      "Dyad": {
+        "placement": {"diagram": {"x1": 250, "x2": 400, "y1": 690, "y2": 840, "rot": 180}}
+      }
+    },
+    "id13": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 120, "y": 500}, {"x": 120, "y": 255}], "E": 2}],
+        "renderStyle": "standard"
+      }
+    },
+    "id14": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [{"x": 450, "y": 255}], "E": -1},
+          {"S": -1, "M": [{"x": 920, "y": 255}, {"x": 920, "y": 500}], "E": 2},
+          {"S": -1, "M": [{"x": 560, "y": 430}, {"x": 555, "y": 430}], "E": 3},
+          {"S": -1, "M": [], "E": 4}
+        ],
+        "junctions": [{"x": 560, "y": 255}],
+        "path": {}
+      }
+    },
+    "id15": {
+      "Dyad": {
+        "edges": [
+          {"S": 1, "M": [{"x": 555, "y": 660}], "E": -1},
+          {"S": -1, "M": [{"x": 720, "y": 660}, {"x": 720, "y": 510}], "E": 2},
+          {"S": -1, "M": [{"x": 640, "y": 765}], "E": 3}
+        ],
+        "junctions": [{"x": 640, "y": 660}],
+        "path": {}
+      }
+    },
+    "id16": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [{"x": 190, "y": 765}, {"x": 120, "y": 765}, {"x": 120, "y": 500}],
+            "E": 2
+          }
+        ],
+        "renderStyle": "standard"
+      }
+    },
+    "id17": {
+      "Dyad": {
+        "edges": [{"S": 1, "M": [{"x": 150, "y": 100}, {"x": 315, "y": 100}], "E": 2}],
+        "renderStyle": "standard"
+      }
+    },
+    "id18": {
+      "Dyad": {
+        "edges": [
+          {
+            "S": 1,
+            "M": [
+              {"x": 550, "y": 40},
+              {"x": 1130, "y": 40},
+              {"x": 1130, "y": 900},
+              {"x": 325, "y": 900}
+            ],
+            "E": 2
+          }
+        ],
+        "path": {}
+      }
+    }
   }
 }
 end
 
 "Open-loop build, hold, dump, slow-build, and full-build sequence."
 test component TestModulatorOpenLoop
-  parameter pump_enabled::Real = 1.0
   source = HydraulicComponents.Sources.BoundaryPressure()
   pressure = BlockComponents.Sources.Constant(k = 60e5)
   modulator = HydraulicModulator(inlet_valve(x_start = 0.0, R_service = 1e30))
   wheel = ValveTestVolume(C = 2.16e-13)
+  parameter pump_enabled::Real = 1.0
   path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
 relations
   connect(pressure.y, source.p)
@@ -80,6 +192,7 @@ end
 
 analysis TestModulatorOpenLoopTransient
   extends TransientAnalysis(stop = 0.75, alg = ODEAlg.Tsit5(), dtmax = 1e-4)
-  parameter pump_enabled::Real = 1.0
   model = TestModulatorOpenLoop(pump_enabled = pump_enabled)
+  parameter pump_enabled::Real = 1.0
+relations
 end
