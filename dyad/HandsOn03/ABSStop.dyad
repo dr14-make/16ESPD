@@ -24,45 +24,62 @@ component ABSStop
   speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
   path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
 relations
-  connect(command.y, pedal_unit.u)
-  connect(pedal_unit.rod, booster.input)
-  connect(booster.rod_out, master.pushrod)
-  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange)
-  connect(master.front, valve_f.port_a)
-  connect(valve_f.port_b, line_f.port_a)
-  connect(line_f.port_b, wheel.front)
-  connect(master.rear, valve_r.port_a)
-  connect(valve_r.port_b, line_r.port_a)
-  connect(line_r.port_b, wheel.rear)
+  connect(command.y, pedal_unit.u) {^id1}
+  connect(pedal_unit.rod, booster.input) {^id2}
+  connect(booster.rod_out, master.pushrod) {^id3}
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange) {^id4}
+  connect(master.front, valve_f.port_a) {^id5}
+  connect(valve_f.port_b, line_f.port_a) {^id6}
+  connect(line_f.port_b, wheel.front) {^id7}
+  connect(master.rear, valve_r.port_a) {^id8}
+  connect(valve_r.port_b, line_r.port_a) {^id9}
+  connect(line_r.port_b, wheel.rear) {^id10}
   continuity(medium, master.front.medium)
-  connect(master.p_mc, abs.demand)
-  connect(wheel.kappa, abs.kappa)
-  connect(speed.v, abs.v)
-  connect(abs.p_cmd, valve_f.p_cmd, valve_r.p_cmd)
-  connect(road.y, wheel.mu_scale)
-  connect(wheel.support, fixed.spline)
-  connect(wheel.flange, body.flange, speed.flange)
+  connect(master.p_mc, abs.demand) {^id11}
+  connect(wheel.kappa, abs.kappa) {^id12}
+  connect(speed.v, abs.v) {^id13}
+  connect(abs.p_cmd, valve_f.p_cmd, valve_r.p_cmd) {^id14}
+  connect(road.y, wheel.mu_scale) {^id15}
+  connect(wheel.support, fixed.spline) {^id16}
+  connect(wheel.flange, body.flange, speed.flange) {^id17}
   initial wheel.inertia.phi = 0
   initial wheel.inertia.w = 25 / 0.31
   initial body.mass.s = 0
   initial body.mass.v = 25
 metadata {
   "_links": {
-    "command": {"Dyad": {"placement": {"diagram": {"x1": -150, "y1": 150, "x2": -50, "y2": 250}}}},
-    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 150, "x2": 120, "y2": 250}}}},
-    "booster": {"Dyad": {"placement": {"diagram": {"x1": 170, "y1": 150, "x2": 270, "y2": 250}}}},
-    "master": {"Dyad": {"placement": {"diagram": {"x1": 320, "y1": 150, "x2": 420, "y2": 250}}}},
-    "valve_f": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 60, "x2": 580, "y2": 160}}}},
-    "valve_r": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 250, "x2": 580, "y2": 350}}}},
-    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 60, "x2": 740, "y2": 160}}}},
-    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 250, "x2": 740, "y2": 350}}}},
-    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 810, "y1": 110, "x2": 1010, "y2": 310}}}},
-    "body": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 160, "x2": 1200, "y2": 260}}}},
-    "abs": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 500, "x2": 570, "y2": 650}}}},
-    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 20, "x2": 1200, "y2": 120}}}},
-    "road": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 500, "x2": 800, "y2": 600}}}},
-    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 500, "x2": 950, "y2": 600}}}},
-    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 220, "y1": 500, "x2": 320, "y2": 600}}}}
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 235, "x2": 80, "y2": 315}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 725, "x2": 700, "y2": 805}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 235, "x2": 185, "y2": 315}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 235, "x2": 290, "y2": 315}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 235, "x2": 410, "y2": 315}}}},
+    "valve_f": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 155, "x2": 550, "y2": 235}}}},
+    "valve_r": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 315, "x2": 550, "y2": 395}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 155, "x2": 680, "y2": 235}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 315, "x2": 680, "y2": 395}}}},
+    "abs": {"Dyad": {"placement": {"diagram": {"x1": 472, "y1": 475, "x2": 572, "y2": 575}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 730, "y1": 215, "x2": 870, "y2": 355}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 245, "x2": 985, "y2": 325}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 770, "y1": 585, "x2": 830, "y2": 645}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 665, "x2": 290, "y2": 745}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 385, "x2": 985, "y2": 465}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 415}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 370, "y": 415}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 250, "y": 415}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 255}, {"x": 440, "y": 195}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 779, "y": 195}], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 295}, {"x": 440, "y": 355}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 694, "y": 355}, {"x": 694, "y": 180}, {"x": 821, "y": 180}], "E": 2}]}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 220}, {"x": 310, "y": 220}, {"x": 310, "y": 550}], "E": 2}]}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 712, "y": 229}, {"x": 712, "y": 450}, {"x": 445, "y": 450}, {"x": 445, "y": 500}], "E": 2}]}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 997, "y": 425}, {"x": 997, "y": 845}, {"x": 458, "y": 845}, {"x": 458, "y": 525}], "E": 2}]}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 586, "y": 525}], "E": -1}, {"S": -1, "M": [{"x": 586, "y": 275}, {"x": 510, "y": 275}], "E": 2}, {"S": -1, "M": [{"x": 510, "y": 440}], "E": 3}], "junctions": [{"x": 586, "y": 440}]}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 842, "y": 765}], "E": 2}]}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 890, "y": 230}, {"x": 997, "y": 230}, {"x": 997, "y": 285}], "E": 2}, {"S": -1, "M": [{"x": 890, "y": 425}], "E": 3}], "junctions": [{"x": 890, "y": 285}]}}
   }
 }
 end
