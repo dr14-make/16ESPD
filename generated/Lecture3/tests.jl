@@ -23,4 +23,5 @@ include("ESPSteerRamp_test.jl")
 include("PlanarOpenLoop_test.jl")
 include("SineWithDwellRun_test.jl")
 include("SplitMuStop_test.jl")
+include("VacuumPedalStop_test.jl")
 end
