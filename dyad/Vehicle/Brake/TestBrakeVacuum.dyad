@@ -1,0 +1,118 @@
+"""
+Brake plan increment 2c: the vacuum booster on a real vacuum source, the engine's air path or an
+electric pump, pushing a master cylinder into both axles' calipers with the wheels held still.
+
+The pedal is applied `n_cyc` times at `pedal` for `T_on`, once every `T_cyc`, from `t0`. The air
+path runs at the prescribed throttle `u_thr` and engine speed `omega`; `omega = 0` with the
+manifold starting at ambient is an engine that is off. With `ev_pump = 1` the booster's check
+valve feeds the pump instead and the manifold is cut off.
+"""
+test component TestBrakeVacuum
+  "Pedal command while applied, 0 to 1 (0.8 is 400 N)"
+  parameter pedal::Real = 0.8
+  "Number of applications"
+  parameter n_cyc::Real = 1.0
+  "First application"
+  parameter t0::Time = 1.0
+  "Length of each application"
+  parameter T_on::Time = 2.0
+  "Time from one application to the next"
+  parameter T_cyc::Time = 4.0
+  "Throttle position: 0 closed, 1 wide open"
+  parameter u_thr::Real = 0.0
+  "Engine speed, 83.776 rad/s = 800 rpm"
+  parameter omega::AngularVelocity = 83.776
+  "Initial manifold pressure, the idle value at 800 rpm"
+  parameter p_m0::Pressure = 32955.7
+  "Initial booster chamber pressure [Pa]"
+  parameter p_init::Pressure = 33e3
+  "Vacuum source: 0 the intake manifold, 1 the electric pump"
+  parameter ev_pump::Real = 0.0
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal()
+  booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(p_init = p_init)
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder()
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine()
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0)
+  caliper_f = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper()
+  caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(K = 19.9e-5, V0 = 0.3e-6, K1 = 2.5e12, K3 = 7.5e24)
+  air = VehicleSystemsComponents.Vehicle.Engine.AirPath()
+  pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(p_init = p_init)
+  throttle = BlockComponents.Sources.Constant(k = u_thr)
+  speed = BlockComponents.Sources.Constant(k = omega)
+  fixed_t = TranslationalComponents.Components.Fixed()
+  fixed_r = RotationalComponents.Components.Fixed()
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  pedal_unit.u = ifelse(time >= t0 and time < t0 + n_cyc * T_cyc and mod(time - t0, T_cyc) < T_on, pedal, 0.0)
+  connect(pedal_unit.rod, booster.input)
+  connect(booster.rod_out, master.pushrod)
+  connect(pedal_unit.support, booster.support, master.support, fixed_t.flange)
+  connect(master.front, line_f.port_a)
+  connect(line_f.port_b, caliper_f.port)
+  connect(master.rear, line_r.port_a)
+  connect(line_r.port_b, caliper_r.port)
+  continuity(medium, master.front.medium)
+  connect(caliper_f.spline_a, caliper_f.support, caliper_r.spline_a, caliper_r.support, fixed_r.spline)
+  connect(throttle.y, air.u_thr)
+  connect(speed.y, air.omega)
+  connect(booster.p_vac, pump.p_sense)
+  booster.p_src = ifelse(ev_pump > 0.5, pump.p, air.p_m)
+  air.mdot_bst = ifelse(ev_pump > 0.5, 0.0, booster.mdot_out)
+  pump.mdot_in = ifelse(ev_pump > 0.5, booster.mdot_out, 0.0)
+  initial air.manifold.p = p_m0
+end
+
+"""
+Engine idling at 800 rpm: one full application at 400 N and its release.
+"""
+analysis BrakeVacuumIdleTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.8
+  model = VehicleSystemsComponents.Vehicle.Brake.TestBrakeVacuum(pedal = pedal, n_cyc = 1.0, t0 = 1.0, T_on = 2.0, T_cyc = 4.0)
+end
+
+"""
+Engine off, manifold at ambient, booster starting at 33 kPa: five full applications at 400 N.
+"""
+analysis BrakeVacuumReserveTransient
+  extends TransientAnalysis(stop = 21.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.8
+  model = VehicleSystemsComponents.Vehicle.Brake.TestBrakeVacuum(pedal = pedal, n_cyc = 5.0, t0 = 1.0, T_on = 2.0, T_cyc = 4.0, omega = 0.0, p_m0 = 101325.0, p_init = 33e3)
+end
+
+"""
+Throttle held wide open at 3000 rpm, booster starting at 33 kPa: five full applications at 400 N.
+"""
+analysis BrakeVacuumWOTTransient
+  extends TransientAnalysis(stop = 21.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.8
+  model = VehicleSystemsComponents.Vehicle.Brake.TestBrakeVacuum(pedal = pedal, n_cyc = 5.0, t0 = 1.0, T_on = 2.0, T_cyc = 4.0, u_thr = 1.0, omega = 314.159, p_m0 = 99889.9, p_init = 33e3)
+end
+
+"""
+No engine: the electric pump evacuates the booster from ambient, then three applications at
+400 N from 40 s make it cycle between its switch points.
+"""
+analysis EVVacuumPumpTransient
+  extends TransientAnalysis(stop = 70.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.8
+  model = VehicleSystemsComponents.Vehicle.Brake.TestBrakeVacuum(pedal = pedal, n_cyc = 3.0, t0 = 40.0, T_on = 2.0, T_cyc = 4.0, omega = 0.0, p_m0 = 101325.0, p_init = 101325.0, ev_pump = 1.0)
+end
+
+"""
+The 2c rig with every knob exposed, for figures and notebooks.
+"""
+analysis BrakeVacuumTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.8
+  parameter n_cyc::Real = 1.0
+  parameter t0::Time = 1.0
+  parameter T_on::Time = 2.0
+  parameter T_cyc::Time = 4.0
+  parameter u_thr::Real = 0.0
+  parameter omega::AngularVelocity = 83.776
+  parameter p_m0::Pressure = 32955.7
+  parameter p_init::Pressure = 33e3
+  parameter ev_pump::Real = 0.0
+  model = VehicleSystemsComponents.Vehicle.Brake.TestBrakeVacuum(pedal = pedal, n_cyc = n_cyc, t0 = t0, T_on = T_on, T_cyc = T_cyc, u_thr = u_thr, omega = omega, p_m0 = p_m0, p_init = p_init, ev_pump = ev_pump)
+end

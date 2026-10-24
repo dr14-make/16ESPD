@@ -14,5 +14,5 @@ include("actuator_plausibility.jl")
 include("roadster_plausibility.jl")
 include("abs_handson_plausibility.jl")
 include("hydraulic_abs_valves.jl")
-
+include("vacuum_booster_plausibility.jl")
 include("../generated/tests.jl")

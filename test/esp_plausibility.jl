@@ -365,3 +365,31 @@ end
     @test esp_pi.distance > select_low.distance
     @info "Task 6 ABS measurements" stop_distance straight_min_kappa abs_measurements load_transfer_measurements abs_only select_low esp_pi
 end
+
+@testset "Brake and steer: ABS keeps the car steerable" begin
+    function brake_and_steer_case(abs_on)
+        result = VehicleSystemsComponents.Lecture3.BrakeAndSteerTransient(abs_on = abs_on)
+        model = symbolic_container(result)
+        sol = result.sol
+        times = collect(0.0:0.002:6.0)
+        x = sol(times; idxs = model.sensors.x).u
+        y = sol(times; idxs = model.sensors.y).u
+        speed = hypot.(sol(times; idxs = model.sensors.vx).u, sol(times; idxs = model.sensors.vy).u)
+        moving = (speed .> 3.0) .& (times .> 0.5)
+        x_obstacle = sol(0.5; idxs = model.sensors.x) + 25.0
+        front_kappa = min.(sol(times; idxs = model.sensors.kappa_fl).u,
+                           sol(times; idxs = model.sensors.kappa_fr).u)
+        (; y_obstacle = y[findfirst(>=(x_obstacle), x)],
+           y_stop = y[something(findfirst(i -> times[i] > 0.5 && speed[i] < 0.05,
+                                          eachindex(times)), length(times))],
+           kappa_min = minimum(front_kappa[moving]))
+    end
+    with_abs = brake_and_steer_case(1.0)
+    locked = brake_and_steer_case(0.0)
+    @test with_abs.y_obstacle >= 5 * abs(locked.y_obstacle)
+    @test with_abs.y_stop >= 5 * abs(locked.y_stop)
+    @test with_abs.y_obstacle > 2.5
+    @test locked.kappa_min < -0.95
+    @test with_abs.kappa_min > -0.2
+    @info "Brake and steer measurements" with_abs locked
+end

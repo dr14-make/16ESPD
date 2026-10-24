@@ -25,8 +25,10 @@ Background documents:
 3. **Use physical connectors so the diagram looks like the real system.** Mechanical parts
    (pedal, booster pushrods, master-cylinder piston) use translational `Flange`s. Fluid parts
    use `HydraulicComponents.Interfaces.Port` with the brake-fluid medium set once per harness
-   through `continuity`, as `TestForceChain` does. The stdlib has no orifice, line, caliper,
-   valve, check valve, accumulator or pump, so each one is a custom component on those ports.
+   through `continuity`, as `TestForceChain` does. HydraulicComponents 2.0.4 has no orifice,
+   caliper, valve, check valve, accumulator or pump, and its one line, `Pipes.TubeBase`, has a
+   discontinuous friction law at low flow, so each one is a custom component on those ports.
+   Custom parts extend `Interfaces.TwoPorts` and use `HydraulicComponents.density`.
    Keep the R–C split inside them: capacitance components (caliper, accumulator) own a volume
    state and set port pressure, and resistance components (line, valve, orifice) set mass flow
    from the pressure difference. RealInput/RealOutput is used only for true signals: driver
@@ -248,7 +250,9 @@ compositions if a runtime switch is awkward.
 **Tests:**
 - `TestBoosterPATH`: vacuum source held at 33 kPa, slow pushrod-force ramp to 375 N and back.
 - `TestBoosterCharacteristic`: slow triangle ramp. Plot `F_out` against `F_in`.
-- `TestBoosterStep`: 200 N step. Measure the rear-chamber 10–90 % rise time.
+- `TestBoosterStep`: 200 N step at the pedal (700 N at the pushrod). Measure the rear-chamber
+  10–90 % rise time. PATH's step is a pedal force; 200 N at the pushrod asks for only 20 kPa and
+  closes the valve before the fill slows.
 
 **Done when:**
 - Both chambers start at 33 kPa (±1).
@@ -256,7 +260,8 @@ compositions if a runtime switch is awkward.
   are PATH's measured values.
 - The rear-chamber rise time is 0.1–0.4 s.
 - The slow-ramp characteristic matches `StaticBooster` within 5 % in the boosted region, with a
-  hysteresis loop that stays open on release.
+  hysteresis loop that stays open on release. This needs a valve dead band of about 10 N
+  (`F_app = F_rel`, assumed): PATH's 50 N puts the apply branch SR·50 = 250 N under `StaticBooster`.
 - Run-out lands at 80–100 bar master-cylinder pressure.
 
 ### 2c. Manifold + booster + check valve, and vacuum reserve
@@ -273,7 +278,10 @@ compositions if a runtime switch is awkward.
 
 **Done when:**
 - On release at idle, `p_m` shows a visible bump and returns to idle ±2 kPa within 2 s.
-- Engine off: peak assist falls 3.6 → 2.4 → 1.6 → 1.0 kN (±15 %), giving 2–3 useful stops.
+- Engine off: the assist available before each application falls 3.5 → 2.2 → 1.0 kN (±15 %), then
+  below 0.5 kN, giving 2–3 useful stops. The mass balance `Δ' = (V_f0·Δ − p_atm·A_d·x)/(V_f0 + V_r0)`
+  with `Δ = p_atm − p_f` and x = 8 mm gives it; the earlier 3.6 → 2.4 → 1.6 → 1.0 let the front
+  chamber's compressed air escape, which the shut check valve does not allow.
 - WOT behaves like engine off while the throttle stays open.
 - The EV pump takes the 2.83 L booster to 50 kPa in 5–7.5 s (6.3 s predicted) and cycles
   between its thresholds.
@@ -449,7 +457,7 @@ only as real as their assumptions.
   - electric pump 6.3 s to 50 kPa
   - manifold time constant 0.125 s at 800 rpm
   - idle air area 13 mm²
-  - booster reserve 3.6 / 2.4 / 1.6 / 1.0 kN
+  - booster reserve 3.5 / 2.2 / 1.0 / 0 kN
   - ideal stopping distances from `v²/(2µg)` with the tire's µ_A = 1.0 and µ_S = 0.7: 31.9 and
     45.5 m from 25 m/s, 39.3 and 56.2 m from 100 km/h
   - valve-rate equivalents of the spec's torque rates: 580 and 116 bar/s

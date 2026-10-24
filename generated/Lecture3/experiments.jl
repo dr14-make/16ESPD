@@ -10,8 +10,10 @@ end
 
 
 include("ABSStraightStop_experiment.jl")
+include("BrakeAndSteer_experiment.jl")
 include("ESPSineWithDwell_experiment.jl")
 include("ESPSteerRamp_experiment.jl")
 include("PlanarOpenLoop_experiment.jl")
 include("SineWithDwellRun_experiment.jl")
 include("SplitMuStop_experiment.jl")
+include("VacuumPedalStop_experiment.jl")

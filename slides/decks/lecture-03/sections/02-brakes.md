@@ -13,8 +13,9 @@ the calipers.
 `notebooks/lecture03/02-brake-hydraulics.pluto.jl`
 
 <!--
-Budget: 26 minutes, 8 slides: lever 2, force chain 2, pedal to pressure 2, master cylinder 1.5,
-the rest of the system 1.5, build 02 16, summary 1. Keep the theory moving: the section ends with
+Budget: 26 minutes, 9 slides: lever 2, force chain 2, pedal to pressure 2, master cylinder 1.5,
+the rest of the system 1.5, the parts you are given and build 02 16, summary 1. Keep the theory
+moving: the section ends with
 build 02, where the students wire the whole chain, pedal to wheel, and stop their car with it.
 
 The brakes transmit the force the driver applies to the pedal to the wheels using friction, at the
@@ -260,6 +261,49 @@ distribution plot to the model.
 -->
 
 ---
+routeAlias: given-parts
+---
+
+## The parts you are given
+
+<div class="text-[0.85rem]">
+
+| Part | In `PedalStop` | What it does |
+| --- | --- | --- |
+| `Brake.BrakePedal` | `pedal_unit` | a lever, × 3.5; the command 0–1 is the foot force over 500 N |
+| `Brake.StaticBooster` | `booster` | vacuum assist, × 5 up to run-out at 232 N of foot; no chamber dynamics |
+| `Brake.TandemMasterCylinder` | `master` | 25 mm bore: pushrod force to one pressure `p_mc` in `front` and `rear` |
+| `Brake.BrakeLine` | `line_f`, `line_r` | a laminar line, 3 mm bore; 1.5 m front, 4 m rear |
+| `Wheel.HydraulicBrakedWheel` | `wheel` | the four wheels as one: 4 kg·m², a `BrakeCaliper` per axle, 49.0 and 19.9 N·m/bar, and the `TireFrictionCurve` under the whole 13 729 N; out: the true slip `kappa` |
+| `path medium` | in code | the brake fluid, DOT 4: 1045 kg/m³, 1.4 GPa; declared once, on the bench |
+| `Step` | `command` | the driver's foot: 0 to `pedal` at 0.5 s |
+| `Constant` | `road` | the road factor into `wheel.mu_scale` |
+| `Fixed`, translational | `fixed_hydraulic` | ground for the pedal pivot and the two housings |
+| `Fixed`, rotational | `fixed` | what the calipers push against |
+| `VelocitySensor`, translational | `speed` | the car's speed, on `body.flange` |
+| your `Body` | `body` | hands-on 1's: 1400 kg, drag and rolling resistance |
+
+</div>
+
+<div class="handson">→ Build 02 wires these; the guide's <b>Given parts</b> box at step 02 says what
+each one models, its ports and where its numbers come from</div>
+
+<!--
+About a minute of build 02's sixteen. Every block in build 02 is a library part; the wiring is
+yours. One line each, in the order the force goes: the lever, the booster, the master cylinder,
+the two lines, the wheel with its two calipers and the tire. Then the fluid, the supports and the
+sensor. Leave the slide up while the room places the blocks.
+
+Where the values come from, if asked: the pedal lever, the booster's servo ratio, cut-in and
+jump-in, the master cylinder's dead stroke and the line sizes are assumed, the course's choice.
+The booster's diaphragm, vacuum and return spring, and the master cylinder's bore, spring and seal
+friction, are from the California PATH brake test car, report UCB-ITS-PRR-97-21. The 500 newton
+ceiling is FMVSS 135's. The caliper gains are textbook values, unverified: 57 and 38 millimeter
+pistons, pad friction 0.40. The fluid is DOT 4 at room temperature. The derivations are in
+`docs/reports/Passenger car brake system modeling.md`.
+-->
+
+---
 routeAlias: build-pedal-stop
 ---
 
@@ -268,37 +312,34 @@ routeAlias: build-pedal-stop
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">Screenshot to come: <code>step02-pedal-bench.png</code>, the
-<code>PedalStop</code> diagram: <code>command</code> → <code>pedal_unit</code> →
-<code>booster</code> → <code>master</code>, two lines into <code>wheel</code>, <code>body</code>
-and <code>speed</code> on the right</div>
+![The finished PedalStop diagram: command, pedal_unit, booster and master from the left, fixed_hydraulic under the three housings, line_f and line_r into wheel, road and fixed under the wheel, speed and body on the right; the parameter panel shows pedal 0.6 and road_mu 1.0.](/img/lecture-03/step02-params.png)
 
 *New `PedalStop`: `command` Step(`pedal` at 0.5 s) → `pedal_unit` BrakePedal → `booster` →
 `master` → `line_f`, `line_r` (4 m) → `wheel` HydraulicBrakedWheel ← your `body` ·
-`fixed_hydraulic` under the housings · `fixed`, `speed`, `road` · in code, the fluid and four
-`initial` lines · run `pedal = 0.3`, then 0.6*
+`fixed_hydraulic` under the housings · `fixed`, `speed`, `road` · rename each block · in code,
+the fluid and four `initial` lines · ▷ once, then run `pedal = 0.3` and 0.6*
 
-<div class="text-sm">
-
-```txt
-# above relations, one line:
-path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(…)
-# in relations:
-continuity(medium, master.front.medium)
-```
-
-</div>
+**Given:** the previous slide's parts · your `Body`
 
 [page: step 02](../lecture/lecture-03/#step-02) · reference `dyad/HandsOn03/PedalStop.dyad`
 
 </div>
-<div>
+<div class="stack">
+
+```txt
+# above relations, one line:
+path medium::HydraulicComponents.Interfaces.AbstractMedium =
+    HydraulicComponents.IsothermalCompressible(…)
+# in relations:
+continuity(medium, master.front.medium)
+```
 
 ```julia
-r = MyCar.PedalStopTransient(pedal = 0.3)  # then ()
+using VehicleSystemsComponents: Vehicle
+r = MyCar.PedalStopTransient(pedal = 0.3);  # then ()
 plot(r; idxs = [r."master.p_mc", r."wheel.kappa"],
-     layout = (2, 1))
-VehicleSystemsComponents.Vehicle.braking_distance(r)
+     layout = (2, 1))   # p_mc in Pa
+Vehicle.braking_distance(r)
 ```
 
 ![Two panels against time at pedal 0.6. Top: car speed falls in a straight line from 90 km/h at 0.5 s to zero just before 4 s, while the wheel's surface speed drops to zero within 0.2 s. Bottom: wheel slip goes from 0 to -1 within 0.2 s of the pedal and stays there until the car stops. Title: hydraulic pedal stop, 43.7 m from 90 km/h.](/img/lecture-03/step02-locked-stop.svg)
@@ -310,62 +351,116 @@ VehicleSystemsComponents.Vehicle.braking_distance(r)
 </div>
 
 <!--
-Your first build of the day with a simulation in it: the brake system of this section, from the
-pedal to the wheel, stopping your own car. Every block is a library part; the wiring is yours.
+Sixteen minutes, the parts slide included: the largest drawing of the day, twelve blocks and
+eleven wires, then two code pastes, the analysis and two runs. Your first build of the day with a
+simulation in it: the brake system of this section, from the pedal to the wheel, stopping your own
+car. Every block is a library part; the wiring is yours. The guide page, step 02, has the same
+steps with every line of code; its "Do this" numbers are in brackets.
 
-In the Components tree, right-click `MyCar`, Add Component, and name it `PedalStop`. Two
-parameters: `pedal`, Real, 0.6, and `road_mu`, Real, 1.
+1. New component [1]. In the Components tree, right-click `MyCar`, Add Component, name it
+   `PedalStop`. With nothing selected, click Edit Parameters in the diagram toolbar, Add
+   parameter: `pedal`, Real, 0.6, the pedal command; `road_mu`, Real, 1.0, the road-friction
+   multiplier. Right-clicking the canvas offers only a label, so use the toolbar.
+   Check: the panel on the slide, `pedal` 0.6 and `road_mu` 1.0.
 
-Place the chain left to right. From BlockComponents, Sources, a `Step` named `command`, height
-`pedal`, start time 0.5: the driver's foot. The pedal command runs from 0 to 1, the foot force as
-a fraction of the 500 newton ceiling, the way a throttle command is a fraction of full throttle.
-From VehicleSystemsComponents, Vehicle, Brake: a `BrakePedal` named `pedal_unit`, a
-`StaticBooster` named `booster`, a `TandemMasterCylinder` named `master`, and two `BrakeLine`s,
-`line_f` with its defaults and `line_r` with a length of 4 meters, because the rear line runs the
-length of the car. From Vehicle, Wheel, a `HydraulicBrakedWheel` named `wheel`: the wheel's
-inertia, a front-axle and a rear-axle `BrakeCaliper`, and the tire, with the whole car's weight
-on it. Your own `Body` from hands-on 1, named `body`. Then the supports and the rest: a
-TranslationalComponents `Fixed` named `fixed_hydraulic`, for the pedal pivot and the booster and
-master-cylinder housings; a RotationalComponents `Fixed` named `fixed`, which the calipers push
-against; a TranslationalComponents `VelocitySensor` named `speed`; and a `Constant` named `road`,
-k equals `road_mu`.
+2. Place the twelve blocks, left to right [1]. Through +:
+   - BlockComponents › Sources › `Step` → `command`: height `pedal`, start time 0.5, offset 0.
+     The driver's foot. The pedal command runs from 0 to 1, the foot force as a fraction of the
+     500 newton ceiling, the way a throttle command is a fraction of full throttle.
+   - VehicleSystemsComponents › Vehicle › Brake › `BrakePedal` → `pedal_unit`, defaults.
+   - … › Brake › `StaticBooster` → `booster`, defaults.
+   - … › Brake › `TandemMasterCylinder` → `master`, defaults.
+   - … › Brake › `BrakeLine` → `line_f`, defaults, 1.5 meters.
+   - … › Brake › `BrakeLine` → `line_r`, L = 4.0: the rear line runs the length of the car.
+   - VehicleSystemsComponents › Vehicle › Wheel › `HydraulicBrakedWheel` → `wheel`, defaults:
+     the wheel's inertia, a front-axle and a rear-axle `BrakeCaliper`, and the tire, with the
+     whole car's weight on it.
+   - your own `Body` from hands-on 1 → `body`.
+   - TranslationalComponents › Components › `Fixed` → `fixed_hydraulic`: ground for the pedal
+     pivot and the booster and master-cylinder housings.
+   - RotationalComponents › Components › `Fixed` → `fixed`: what the calipers push against.
+   - TranslationalComponents › Sensors › `VelocitySensor` → `speed`.
+   - BlockComponents › Sources › `Constant` → `road`, k = `road_mu`.
+   Leave the parts slide up while the room places them.
 
-Wires along the chain: `command.y` to `pedal_unit.u`, `pedal_unit.rod` to `booster.input`,
-`booster.rod_out` to `master.pushrod`. The three housings, `pedal_unit.support`,
-`booster.support` and `master.support`, all to `fixed_hydraulic.flange`. The hydraulics:
-`master.front` through `line_f` to `wheel.front`, `master.rear` through `line_r` to `wheel.rear`.
-Then the wheel: `road.y` to `wheel.mu_scale`, `wheel.support` to `fixed.spline`, `wheel.flange`
-to `body.flange`, and `speed.flange` to the same `body.flange`.
+3. Rename every block [2]. Studio names each block after its part, `step`, `brakepedal`,
+   `tandemmastercylinder`, `fixed` and `fixed1`, `constant1`; rename each to the name above:
+   select it, Edit Parameters, the pencil by the name. The code pastes and the snippets read
+   these names. The two `Fixed` blocks in order: the translational one, with the green square
+   port, to `fixed_hydraulic` first; only then the rotational one, the gray circle, to `fixed`,
+   because a name still taken cannot be given.
 
-Now the code view, two pastes from the guide page. First the brake fluid: Dyad cannot declare a
-fluid inside a library part, so the bench that assembles the circuit declares it. One `path
-medium` line above relations, one `continuity` line inside them; the connections carry the fluid
-to both circuits. Second, the starting state, four initial lines: the wheel at angle zero,
-turning at 25 over 0.31 radians per second so it rolls at the car's speed; the body at position
-zero and 25 meters per second. Without them the wheel starts at rest.
+4. Wire [3], eleven wires in three groups.
+   - The force chain: `command.y` → `pedal_unit.u`, `pedal_unit.rod` → `booster.input`,
+     `booster.rod_out` → `master.pushrod`.
+   - The housings and the two circuits: `pedal_unit.support`, `booster.support` and
+     `master.support` → `fixed_hydraulic.flange`; `master.front` → `line_f.port_a`,
+     `line_f.port_b` → `wheel.front`; `master.rear` → `line_r.port_a`, `line_r.port_b` →
+     `wheel.rear`; `wheel.support` → `fixed.spline`.
+   - The wheel under the car: `road.y` → `wheel.mu_scale`, `wheel.flange` → `body.flange`, and
+     `speed.flange` → the same `body.flange`.
+   Check against the slide: the green tree under the three housings, the two blue circuits
+   through the lines, the gray wire down to `fixed`, the three-way junction on the `wheel.flange` wire, left of `body`.
 
-Add the analysis from the guide, `PedalStopTransient`: 6 seconds, Tsit5 with a maximum step of a
-millisecond, passing `pedal` and `road_mu` through.
+5. The brake fluid [4]. Toggle to code (⇄) and paste from the guide: the `path medium` line
+   above relations, the `continuity` line inside them. Dyad cannot declare a fluid inside a
+   library part, so the bench that assembles the circuit declares it; the connections carry the
+   fluid from `master.front` to every port of both circuits. The slide shortens the medium's
+   arguments; the guide has them in full: bulk modulus 1.4e9, density 1045, `let_gas = false`,
+   DOT 4.
+   Stall: "Invalid common set: In component PedalStop, no local specification or external
+   connectors on which to determine value for the following common variables:
+   master.front.medium, master.rear.medium, line_f.port_a.medium, …" means the fluid lines are
+   missing; the command line says "Expected to find line_f.port_a.medium in at least one
+   continuity graph". A compile error at the `path medium` line itself means
+   `HydraulicComponents` was not added in build 00.
 
-Run it twice. First `pedal = 0.3`, 150 newtons of foot. The master cylinder reaches 55 bar and
-the calipers 3765 newton meters, under the 4256 the tire can carry from step 01. The wheel never
-locks; its slip stays above minus 0.03. The car decelerates at about 0.87 g and stops 36.0 meters
-after the pedal. The front caliper's pressure rises from 10 to 90 percent in 4.4 milliseconds,
-and the master cylinder pushes 3.5 cubic centimeters of fluid into the two circuits.
+6. The starting state [4], four initial lines at the end of relations, from the guide: the wheel
+   at angle zero, turning at 25 over 0.31 radians per second so it rolls at the car's speed; the
+   body at position zero and 25 meters per second. Without them the wheel starts at rest.
+   Stall: a wheel speed that climbs instead of falling means the initial lines are missing.
 
-Then the default, 0.6: 300 newtons, past the booster's run-out at 232. 89 bar, 6109 newton meters,
-1.4 times what the tire can carry. The wheel locks within two tenths of a second and the car
-slides to rest just before 4 seconds: 43.7 meters, just short of step 01's 45.5 meter sliding
-bound, because the wheel is not locked for the first moments and drag and rolling resistance
-help. Remember 43.7: it is the no-ABS baseline every ABS today is measured against.
+7. The analysis [5]. Below the component, in code, `PedalStopTransient` from the guide: 6
+   seconds, Tsit5 with a maximum step of a millisecond, passing `pedal` and `road_mu` through.
+   Stall: odd numbers or a suspicious success mean the analysis is not on Tsit5 with a maximum
+   step of a millisecond. A stiff solver such as FBDF steps over the switching; it is the first
+   thing to check whenever a number today is off.
+
+8. Click ▷, Run Analysis, `PedalStopTransient`, once [6]: that loads `MyCar` into the REPL.
+   Until then the snippet fails with "UndefVarError: PedalStopTransient not defined in
+   Main.MyCar".
+
+9. First run, `pedal = 0.3`, 150 newtons of foot, with the snippet on the slide [6]. The guide's
+   version also plots `speed.v`. The plot's pressure axis is in pascals: 5.5 times ten to the six
+   is 55 bar. The master cylinder reaches 55 bar and the calipers 3765 newton meters, under the
+   4256 the tire can carry from step 01. The wheel never locks; its slip stays above minus 0.03.
+   The car decelerates at about 0.87 g and stops 36.0 meters after the pedal; `braking_distance`
+   measures from the pedal at 0.5 seconds until the car is below 0.5 meters per second. The front
+   caliper's pressure rises from 10 to 90 percent in 4.4 milliseconds, and the master cylinder
+   pushes 3.5 cubic centimeters of fluid into the two circuits.
+   Stall: a pressure that stays at zero means a housing not on `fixed_hydraulic`, or the
+   `command` wire on the wrong port.
+
+10. Second run, the default, 0.6 [6]: `MyCar.PedalStopTransient()`. 300 newtons, past the
+    booster's run-out at 232. 8.9 times ten to the six pascals, 89 bar, 6109 newton meters, 1.4
+    times what the tire can carry. The wheel locks within two tenths of a second and the car
+    slides to rest just before 4 seconds: 43.7 meters, just short of step 01's 45.5 meter sliding
+    bound, because the wheel is not locked for the first moments and drag and rolling resistance
+    help. The figure on the slide is this run. Remember 43.7: it is the no-ABS baseline every ABS
+    today is measured against.
 
 Put the two side by side: the harder foot stopped 7.7 meters longer. In a panic the driver presses
 as hard as they can, and the wheel locks. That is the problem ABS solves, next section.
 
-Where students stall: the two pastes. A compile error about the medium or the hydraulic ports
-means the fluid lines are missing. A wheel speed that climbs instead of falling means the initial
-lines are missing. A pressure that stays at zero: a housing not on `fixed_hydraulic`, or the
-`command` wire on the wrong port. Reference: `HandsOn03.PedalStop`.
+If the room runs long, hand out the guide's "Fell behind?" block and keep the two runs.
+
+Expected, from `HandsOn03.PedalStopTransient`: at pedal 0.3, a peak master-cylinder pressure of
+55.15 bar, 3765 newton meters, a minimum slip of minus 0.027, 35.97 meters and 3.51 cubic
+centimeters. At 0.6, 89.16 bar, 6109 newton meters and 43.73 meters, at rest between 3.9 and 4.0
+seconds. At road factors 0.5 and 0.3: 85.1 and 136.7 meters. The testset is "Hands-on 03 step 02:
+hydraulic pedal stop" in `test/abs_handson_plausibility.jl`. The library twin, on a plain 1400
+kilogram mass, is `Vehicle.Brake.TestHydraulicStop`. Reference: `HandsOn03.PedalStop`,
+`dyad/HandsOn03/PedalStop.dyad`.
 -->
 
 ---

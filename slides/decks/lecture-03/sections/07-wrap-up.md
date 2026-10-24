@@ -78,14 +78,14 @@ routeAlias: what-you-measured
 | --- | --- | --- | --- |
 | 01 | the tire's limit | 4256 N·m · 31.9 to 45.5 m | by hand |
 | 02 | your brake system, pedal to wheel | 36.0 m at pedal 0.3 · 43.7 m at 0.6, locked | past the tire's 4256 N·m the wheel locks |
-| 03 A | ABS on the present slip | 53.8 m, longer than locked | 30 ms too late each cycle |
-| 03 C | ABS with a 30 ms look-ahead | 34.4 m, 21 % shorter | the lag led |
-| 04 | ABS on the wheel speed only | 35.5 m yours · 38.7 m library | dump, hold, build slowly |
-| 05 | on snow, μ 0.3 | 136.8 · 102.2 · 119.6 · 141.3 m | locked · true slip · yours · library |
+| 03 A | ABS on the present slip | 53.4 m, longer than locked | 30 ms too late each cycle |
+| 03 C | ABS with a 30 ms look-ahead | 34.2 m, 22 % shorter | the lag led |
+| 04 | ABS on the wheel speed only | 38.5 m yours · 38.7 m library | dump, hold, build slowly |
+| 05 | on snow, μ 0.3 | 136.7 · 106.1 · 130.6 · 141.3 m | locked · true slip · yours · library |
 
 The controller that knows the slip wins on every road. Without the car's speed, an ABS trusts
-the wheel's own deceleration and remembers the pressure; where it trusts a poor guess of the
-speed instead, it can stop longer than a locked wheel.
+the wheel's own deceleration and remembers the pressure; on snow that gains only 5 %, as on real
+cars. Where it trusts a poor guess of the speed instead, it can stop longer than a locked wheel.
 
 <div class="text-sm opacity-70 mt-4">
 
@@ -96,11 +96,12 @@ belt pretensioners).
 </div>
 
 <!--
-Budget: 1 minute. The section 03 claims, each tested on your own parts: a locked wheel stops on
-the sliding friction, build 02; ABS holds the tire near its peak and stops shorter, build 03 C;
-the controller must lead the 30 millisecond lag, build 03 A against C; without the car's speed
-it must estimate it, and an estimate it trusts too much can cost the whole gain, builds 04 and
-05.
+Budget: 1 minute. The section 03 claims, each tested on your own parts and your own brake: a
+locked wheel stops on the sliding friction, build 02; ABS holds the tire near its peak and stops
+shorter, build 03 C; the controller must lead the 30 millisecond lag, build 03 A against C;
+without the car's speed it must estimate it, and an estimate it trusts too much can cost the
+whole gain, builds 04 and 05. Yours on the wheel speed matches the library's ECU on a dry road,
+and on snow gains little over a locked wheel, as measured cars do.
 
 Commit your work on the `lecture-03` branch: one commit per build is a good habit. The bonus goes
 in as a pull request from that branch; the guide page says what it must contain.

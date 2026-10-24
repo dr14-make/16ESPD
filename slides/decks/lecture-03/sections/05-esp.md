@@ -11,9 +11,9 @@ Compare where the driver steers with where the car goes, and brake single wheels
 gap.
 
 <!--
-Budget: 18 minutes, 15 slides, demo included. Theory 9 (what 1.5, sensors 1, Ackermann 1,
-reference model 2, yaw correction 2, evidence and the test 1.5), demo 8 (planar car 1, passive
-run 2, ESP on 1.5, ESP through ABS 1.5, split-µ 2), summary 1. Nothing to build: the students
+Budget: 15 minutes, 15 slides, demo included. Theory 9 (what 1.5, sensors 1, Ackermann 1,
+reference model 2, yaw correction 2, evidence and the test 1.5), demo 5 (passive run 2, ESP on
+1.5, ESP through ABS 1.5; the planar car and split-µ in passing, its table only), summary 1. Nothing to build: the students
 watch the demo; the planar car is too large to draw in a lecture.
 
 ESP is Bosch's and Mercedes' name; the generic name is ESC, electronic stability control, which is
@@ -336,19 +336,16 @@ through FMVSS 126, which R140 is derived from.
 routeAlias: esp-model
 ---
 
-## The planar car
+## The planar car, with ESP on top
 
 <div class="grid grid-cols-[1fr_1fr] gap-8">
 <div>
 
-The ABS model is **one lumped wheel on a straight line**: no lateral force, no steering, no yaw.
-For ESP the repository has a **planar four-wheel car**, `Vehicle.Planar.PlanarCar`:
+The car from section 03: four wheels, combined slip, steering, yaw, four ABS channels,
+`Vehicle.Planar.PlanarCar`.
 
-- chassis mass and yaw inertia, wheelbase 2.7 m, track 1.55 m;
-- four wheels, each with its own speed and brake;
-- front steering through an **Ackermann linkage**;
-- **combined slip**: longitudinal and lateral force share one friction limit;
-- **four ABS channels**, one per wheel, on a 5 ms clock.
+The **ESP** on top of it: a yaw-rate reference, a yaw-moment controller and a brake allocator,
+`Vehicle.Planar.ESPController`. It brakes the wheels directly, or through the ABS channels.
 
 </div>
 <div>
@@ -362,29 +359,20 @@ For ESP the repository has a **planar four-wheel car**, `Vehicle.Planar.PlanarCa
 | front slip-angle difference at 3 m/s, Ackermann | 0.0007 rad |
 | the same, parallel steering | 0.0216 rad |
 
-The **ESP** on top of it: a yaw-rate reference, a yaw-moment controller and a brake allocator,
-`Vehicle.Planar.ESPController`. It brakes the wheels directly, or through the ABS channels.
-
 </div>
 </div>
 
 <!--
-Budget: 1 minute. This is the bridge from the theory to the demo.
+No minute of its own: its minute went to the planar car in section 03. One sentence, the car
+from section 03 with ESP on top, then the passive run. Read the table only if asked: it is what
+was checked before trusting the car in a spin.
 
-The car is built from MultibodyComponents' PlanarMechanics: a planar rigid body for the chassis,
-and its slip-based wheel joint at each corner, which already has longitudinal and lateral slip
-and a combined friction limit. It is not the ABS lecture's car: 1500 kilograms, yaw inertia 2500
-kilogram square meters, center of gravity 1.2 meters behind the front axle, peak friction 1.0 and
-sliding 0.8, steering ratio 16. The values are the research probe's, listed in the task brief's
-"Vehicle constants".
-
-The table is what was checked before trusting it in a spin, from `test/esp_plausibility.jl` and
-notebook `notebooks/lecture03/03-esp.pluto.jl`, which recomputes every number of this section
-with its band. In a steady turn at small steering
-angles the yaw rate matches v delta over L plus K us v squared, the formula of the reference-model
-slide, to within 0.65 percent. The understeer gradient is 2.04 times ten to the minus three
-radians per meter per second squared: 1.15 degrees of road-wheel angle per g, a mildly
-understeering car, with a characteristic speed of 131 kilometers per hour.
+The table is from `test/esp_plausibility.jl` and notebook `notebooks/lecture03/03-esp.pluto.jl`,
+which recomputes every number of this section with its band. In a steady turn at small steering
+angles the yaw rate matches v delta over L plus K us v squared, the formula of the
+reference-model slide, to within 0.65 percent. The understeer gradient is 2.04 times ten to the
+minus three radians per meter per second squared: 1.15 degrees of road-wheel angle per g, a
+mildly understeering car, with a characteristic speed of 131 kilometers per hour.
 
 The last two rows are the Ackermann slide, measured: driving a tight turn at 3 meters per second,
 the two front tires' slip angles differ by 0.0007 radians with Ackermann steering and by 0.0216,
@@ -395,9 +383,7 @@ reference is the single-track formula of the reference-model slide with the 0.85
 over v; its controller turns the yaw-rate error into a yaw moment, proportional, 40 000 newton
 meter seconds per radian, with a 0.03 radian per second deadband; its allocator picks the outer
 front wheel on oversteer and the inner rear on understeer, as on the yaw-correction slide, and
-builds brake torque with a 0.1 second lag, up to 2500 newton meters. Each ABS channel is the
-section 03 modulator on its own wheel, releasing at a slip of 0.08 front and 0.06 rear, about
-three quarters of this tire's peak.
+builds brake torque with a 0.1 second lag, up to 2500 newton meters.
 
 If asked about load transfer: the car has it (task 7), off in every run shown here. With the
 center of gravity 0.55 meters high, a steady 0.39 g left turn moves 1134 newtons off the left
@@ -669,10 +655,13 @@ Holding the heading **costs stopping distance**.
 </div>
 
 <!--
-Budget: 2 minutes. The classic case where ABS alone is not enough. Full braking from 80
-kilometers per hour, 2500 newton meters asked at every wheel, the left wheels on dry asphalt and
-the right ones on ice at 30 percent of the grip, and the steering wheel held straight: the robot
-does not countersteer, as a driver would.
+Budget: in passing, the table only: ABS alone turns the car 129°, the PI ESP holds 3° and costs
+distance. The full read below is 2 minutes, only if ahead.
+
+The classic case where ABS alone is not enough. Full braking from 80 kilometers per hour, 2500
+newton meters asked at every wheel, the left wheels on dry asphalt and the right ones on ice at
+30 percent of the grip, and the steering wheel held straight: the robot does not countersteer, as
+a driver would.
 
 ABS only: every wheel keeps rolling, as section 03 promised, but the left wheels brake three
 times harder than the right ones. That difference is a yaw moment toward the dry side, and with
