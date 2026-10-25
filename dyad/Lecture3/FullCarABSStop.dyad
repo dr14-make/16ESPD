@@ -1,0 +1,199 @@
+"""
+Lecture 3 whole-car stop: the Hands-on 02 map engine with fuel cut, its flywheel and the CVT
+(centrifugal clutch and pedal-scheduled variator) drive the hydraulic braked wheel, while the
+`FullBrakeABSStop` brake chain stops it. The booster draws its vacuum from that engine's intake
+manifold, so the store refills as the closed throttle pulls the manifold down on overrun.
+
+The car cruises steadily at `speed_kmh` with the throttle pedal at `pedal_cmd` (the
+`MappedCarBrakeStop` operating point). At `brake_time` the throttle pedal is released and the
+brake pedal steps to `pedal`. While the clutch holds, the engine and flywheel inertia, reflected
+through the variator ratio squared, and the closed-throttle motoring torque sit on the braked
+wheel; the clutch opens once the engine falls toward its 1300 rpm engagement speed.
+
+`p_vac0` defaults to the cruise manifold pressure: through a long cruise the front-chamber leak
+brings the store up to the manifold, where the check valve holds it. `abs_on = 0` holds the inlet
+valves open and the outlet valves and return pumps off; `ev_pump = 1` swaps the manifold for an
+electric vacuum pump.
+"""
+component FullCarABSStop
+  "Brake pedal command after brake_time, 0 released to 1 floored"
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  "Vacuum source: 0 the intake manifold, 1 an electric pump"
+  parameter ev_pump::Real = 0.0
+  "ABS: 1 active, 0 valves held at build with the pumps off"
+  parameter abs_on::Real = 1.0
+  "Throttle released and brake applied at [s]"
+  parameter brake_time::Time = 0.5
+  "Initial road speed [km/h], 90 km/h cruise (Hands-on 02)"
+  parameter speed_kmh::Real = 90
+  "Throttle pedal that holds speed_kmh (MappedCarBrakeStop, derived)"
+  parameter pedal_cmd::Real = 0.0916
+  "Initial engine speed [rpm], steady at pedal_cmd (MappedCarBrakeStop, derived)"
+  parameter rpm0::Real = 2182
+  "Initial manifold pressure, steady at pedal_cmd (MappedCarBrakeStop, derived)"
+  parameter p_m0::Pressure = 54420
+  "Booster front-chamber pressure at the start [Pa], the cruise manifold"
+  parameter p_vac0::Pressure = p_m0
+  parameter a_ref::Acceleration = 8.0 * road_mu
+  final parameter r_w::Length = 0.31
+  "Driver's throttle pedal, released at brake_time"
+  throttle_pedal = BlockComponents.Sources.Step(height = -pedal_cmd, offset = pedal_cmd, start_time = brake_time) {^throttle_pedal}
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = brake_time) {^command}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut() {^engine}
+  "Crankshaft and flywheel, J as MappedEngine assumes"
+  flywheel = RotationalComponents.Components.Inertia(J = 0.15) {^flywheel}
+  clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch() {^clutch}
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator(ratio_initial = rpm0 * pi / 30 * r_w / (speed_kmh / 3.6)) {^variator}
+  "Engine mounts and gearbox housing"
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(p_init = p_vac0) {^pump}
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
+  booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(p_init = p_vac0) {^booster}
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
+  modulator_f = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator() {^modulator_f}
+  modulator_r = VehicleSystemsComponents.Vehicle.Brake.HydraulicModulator() {^modulator_r}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
+  controller = VehicleSystemsComponents.Vehicle.ABSValveController() {^controller}
+  est = VehicleSystemsComponents.HandsOn03.RefSpeedEstimator(a_ref = a_ref, v0 = speed_kmh / 3.6) {^est}
+  wspeed = RotationalComponents.Sensors.VelocitySensor() {^wspeed}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(radius = r_w) {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  fixed_hydraulic = TranslationalComponents.Components.Fixed() {^fixed_hydraulic}
+  speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(throttle_pedal.y, engine.pedal, variator.pedal) {^id23}
+  connect(engine.spline, flywheel.spline_a) {^id24}
+  connect(flywheel.spline_b, clutch.spline_a) {^id25}
+  connect(clutch.spline_b, variator.spline_a) {^id26}
+  connect(variator.spline_b, wheel.spline, wspeed.spline) {^id14}
+  connect(engine.support, clutch.support, variator.support, housing.spline) {^id27}
+  connect(command.y, pedal_unit.u) {^id1}
+  connect(pedal_unit.rod, booster.input) {^id2}
+  connect(booster.rod_out, master.pushrod) {^id3}
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange) {^id4}
+  connect(master.front, modulator_f.port_a) {^id5}
+  connect(modulator_f.port_b, line_f.port_a) {^id6}
+  connect(line_f.port_b, wheel.front) {^id7}
+  connect(master.rear, modulator_r.port_a) {^id8}
+  connect(modulator_r.port_b, line_r.port_a) {^id9}
+  connect(line_r.port_b, wheel.rear) {^id10}
+  continuity(medium, master.front.medium)
+  connect(booster.p_vac, pump.p_sense) {^id13}
+  booster.p_src = ifelse(ev_pump > 0.5, pump.p, engine.p_m)
+  engine.mdot_bst = ifelse(ev_pump > 0.5, 0.0, booster.mdot_out)
+  pump.mdot_in = ifelse(ev_pump > 0.5, booster.mdot_out, 0.0)
+  connect(wspeed.w, est.omega) {^id15}
+  connect(est.kappa_hat, controller.kappa) {^id16}
+  connect(est.v_ref, controller.v_ref) {^id17}
+  connect(est.a_w, controller.a_w) {^id18}
+  connect(master.p_mc, controller.p_mc) {^id19}
+  modulator_f.inlet = ifelse(abs_on > 0.5, controller.inlet, 1.0)
+  modulator_r.inlet = ifelse(abs_on > 0.5, controller.inlet, 1.0)
+  modulator_f.outlet = abs_on * controller.outlet
+  modulator_r.outlet = abs_on * controller.outlet
+  modulator_f.motor = abs_on * controller.motor
+  modulator_r.motor = abs_on * controller.motor
+  connect(road.y, wheel.mu_scale) {^id20}
+  connect(wheel.support, fixed.spline) {^id21}
+  connect(wheel.flange, body.flange, speed.flange) {^id22}
+  initial engine.air.manifold.p = p_m0
+  initial flywheel.w = rpm0 * pi / 30
+  initial flywheel.phi = 0
+  initial clutch.spline_b.phi = 0
+  initial wheel.inertia.phi = 0
+  initial wheel.inertia.w = speed_kmh / 3.6 / r_w
+  initial body.mass.s = 0
+  initial body.mass.v = speed_kmh / 3.6
+  initial modulator_f.gallery.V = 0
+  initial modulator_r.gallery.V = 0
+metadata {
+  "_links": {
+    "throttle_pedal": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 35, "x2": 80, "y2": 115}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 35, "x2": 185, "y2": 115}}}},
+    "flywheel": {"Dyad": {"placement": {"diagram": {"x1": 215, "y1": 67, "x2": 295, "y2": 147}}}},
+    "clutch": {"Dyad": {"placement": {"diagram": {"x1": 325, "y1": 67, "x2": 405, "y2": 147}}}},
+    "variator": {"Dyad": {"placement": {"diagram": {"x1": 435, "y1": 67, "x2": 515, "y2": 147}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 390, "y1": 200, "x2": 450, "y2": 260}}}},
+    "id23": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 94, "y": 75}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 94, "y": 20}, {"x": 459, "y": 20}], "E": 3}], "junctions": [{"x": 94, "y": 59}]}},
+    "id24": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id25": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id26": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 712, "y": 107}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 712, "y": 650}, {"x": 600, "y": 650}, {"x": 600, "y": 715}], "E": 3}], "junctions": [{"x": 712, "y": 485}]}},
+    "id27": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 175}], "E": -1}, {"S": 2, "M": [{"x": 365, "y": 175}], "E": -1}, {"S": 3, "M": [{"x": 475, "y": 175}], "E": -1}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 420, "y": 175}]}},
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 435, "x2": 80, "y2": 515}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 925, "x2": 700, "y2": 1005}}}},
+    "pump": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 295, "x2": 410, "y2": 375}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 435, "x2": 185, "y2": 515}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 435, "x2": 290, "y2": 515}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 435, "x2": 410, "y2": 515}}}},
+    "modulator_f": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 355, "x2": 550, "y2": 435}}}},
+    "modulator_r": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 515, "x2": 550, "y2": 595}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 355, "x2": 680, "y2": 435}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 515, "x2": 680, "y2": 595}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 472, "y1": 675, "x2": 572, "y2": 775}}}},
+    "est": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 670, "x2": 410, "y2": 750}}}},
+    "wspeed": {"Dyad": {"placement": {"diagram": {"x1": 610, "y1": 675, "x2": 690, "y2": 755}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 730, "y1": 415, "x2": 870, "y2": 555}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 445, "x2": 985, "y2": 525}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 770, "y1": 785, "x2": 830, "y2": 845}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 865, "x2": 290, "y2": 945}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 585, "x2": 985, "y2": 665}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 615}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 370, "y": 615}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 250, "y": 615}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 455}, {"x": 440, "y": 395}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 779, "y": 395}], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 495}, {"x": 440, "y": 555}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 694, "y": 555}, {"x": 694, "y": 380}, {"x": 821, "y": 380}], "E": 2}]}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 280}, {"x": 370, "y": 280}], "E": 2}]}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 702, "y": 715}, {"x": 702, "y": 815}, {"x": 320, "y": 815}, {"x": 320, "y": 710}], "E": 2}]}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 710}, {"x": 440, "y": 730}], "E": 2}]}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 428, "y": 730}, {"x": 428, "y": 720}, {"x": 456, "y": 720}, {"x": 456, "y": 710}], "E": 2}]}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 420}, {"x": 310, "y": 420}, {"x": 310, "y": 790}, {"x": 460, "y": 790}, {"x": 460, "y": 750}], "E": 2}]}},
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 842, "y": 965}], "E": 2}]}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 890, "y": 430}, {"x": 997, "y": 430}, {"x": 997, "y": 485}], "E": 2}, {"S": -1, "M": [{"x": 890, "y": 625}], "E": 3}], "junctions": [{"x": 890, "y": 485}]}}
+  }
+}
+end
+
+"""
+Dry-road stop of `FullCarABSStop` from the 90 km/h cruise.
+
+Rodas5P: the hydraulic lines, valve flows and booster chambers make the system stiff, and Tsit5
+goes unstable on it; dtmax 1 ms resolves the valve cycling. The car is at rest by 3.8 s (4.1 s with
+`abs_on = 0`). About a second into standstill the reference-speed estimator's `ifelse` chatters
+about zero and the step count climbs steeply, so the run ends shortly after the stop.
+"""
+analysis FullCarABSStopTransient
+  extends TransientAnalysis(stop = 4.5, alg = ODEAlg.Rodas5P(), dtmax = 1e-3, saveat = 0.001, tstops = [0.5], abstol = 1e-5, reltol = 1e-5)
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  parameter ev_pump::Real = 0.0
+  parameter p_vac0::Pressure = 54420
+  parameter abs_on::Real = 1.0
+  model = FullCarABSStop(pedal = pedal, road_mu = road_mu, ev_pump = ev_pump, p_vac0 = p_vac0, abs_on = abs_on)
+end
+
+"""
+Low-µ (0.3) stop of `FullCarABSStop` for the report: at rest by 10.2 s with ABS, 11.5 s with
+`abs_on = 0` (pass a longer `stop`). Rodas5P for the same stiffness as `FullCarABSStopTransient`.
+"""
+analysis FullCarABSStopReportTransient
+  extends TransientAnalysis(stop = 11.0, alg = ODEAlg.Rodas5P(), dtmax = 1e-3, saveat = 0.001, tstops = [0.5], abstol = 1e-5, reltol = 1e-5)
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 0.3
+  parameter ev_pump::Real = 0.0
+  parameter p_vac0::Pressure = 54420
+  parameter abs_on::Real = 1.0
+  model = FullCarABSStop(pedal = pedal, road_mu = road_mu, ev_pump = ev_pump, p_vac0 = p_vac0, abs_on = abs_on)
+end
