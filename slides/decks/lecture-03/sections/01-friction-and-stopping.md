@@ -135,6 +135,73 @@ the tire through the curve; or let a controller hold the tire there. The third i
 -->
 
 ---
+routeAlias: tire-models
+---
+
+## Slip, and how simulators model it
+
+<div class="grid grid-cols-[1fr_1.25fr] gap-6 text-sm">
+<div>
+
+| Model | Captures | Cost | Used for |
+|---|---|---|---|
+| Linear, $C_\alpha$ | the slope only | none | bicycle model, ESP reference |
+| Brush, Fiala, Dugoff | tread bristles, saturation | closed form | insight, control design |
+| Burckhardt | μ(slip) per road, 3 numbers | none | ABS/TCS design |
+| Magic Formula | fit to measured $F_x$, $F_y$, $M_z$ | cheap, many params | industry handling sims |
+| TMeasy | a few physical points | cheap | handling, real time |
+| LuGre | friction dynamics | one ODE | standstill, control |
+| FTire, CDTire, SWIFT | belt, patch, road | 5–20 × real time | ride, durability, cleats |
+
+</div>
+<div>
+
+**Longitudinal slip** $\kappa = (\Omega r - v_x)/|v_x|$: 0 rolling, −1 locked.
+**Slip angle** $\alpha$: between the wheel's heading and its travel.
+
+![Two panels. Left: friction coefficient against braking slip from 0 to 1 for five models, all with a peak of 1. Ours peaks at 0.04 and falls to 0.7; the planar car's peaks at 0.11 and falls to 0.8; the Magic Formula for dry tarmac peaks at 0.18 and ends at 0.92; Burckhardt's dry asphalt peaks at 0.17 and falls to 0.65; the brush model rises to 1 at 0.14 and stays there. Right: lateral friction against slip angle from 0 to 20 degrees: a straight cornering-stiffness line, the planar car peaking at 6.8 degrees, a Magic Formula fit peaking at 15 degrees and a Fiala brush saturating at 13.5 degrees.](/figures/01-tire-models.svg)
+
+<div class="caption">Same peak, published shapes: the peak's slip and the drop after it differ</div>
+
+**Ours:** one triple-S cubic, a peak and a sliding level; the planar car applies it to the
+combined slip, the force against the slip velocity. **Enough for ABS and ESP**: the peak, the
+drop, and the shared budget.
+
+</div>
+</div>
+
+<!--
+Budget: 3 minutes. Figures from `scripts/export_lecture03_tire_figures.jl`; facts and sources in
+`docs/lecture-03-tire-models-research.md`.
+
+Two numbers describe how a tire slips. Kappa, the longitudinal slip: the wheel's rim speed
+against the car's speed, over the car's speed. Zero when it rolls freely, minus one when it is
+locked, negative whenever we brake; that is Pacejka's convention and our models'.
+And alpha, the slip angle: the angle between where the wheel points and where it actually goes.
+A tire pushes sideways only when there is such an angle.
+
+How do simulators turn slip into force? The table goes from cheap to expensive. A straight line,
+the cornering stiffness, is what the bicycle model and ESP's reference use. The brush model, Fiala
+1954 and Dugoff 1970, imagines the tread as bristles and gives the saturation in closed form.
+Burckhardt fitted three numbers per road surface; that is the classic curve for ABS design. The
+Magic Formula, Bakker, Nyborg and Pacejka 1987, is a fit to measured tire data and the industry
+standard; a full parameter file has over a hundred coefficients. TMeasy builds each curve from a
+few physical points. LuGre adds friction dynamics for standstill. And FTire, CDTire, SWIFT model
+the belt and the contact patch, for ride comfort and potholes, at several times real time.
+
+The left plot: five curves, all scaled to the same peak. Look at where the peak sits and what
+happens after it. Ours, solid blue, peaks at 4 percent and drops to 0.7: harsher than the
+measured shapes, which peak around 17 to 18 percent and keep 0.65 to 0.9 locked. The brush model
+with one friction coefficient has no drop at all. The right plot is the lateral side: the line,
+our planar car, a Magic Formula fit and Fiala, all with the same initial slope.
+
+Ours is the simplest curve with a peak and a drop. In the planar car the same curve takes the
+combined slip, longitudinal and lateral together, and the force points against the slip velocity.
+That is the friction circle, and it is all ABS and ESP need: a peak to hold, a drop to avoid, a
+budget to share. A Magic Formula would change the numbers, not the mechanism.
+-->
+
+---
 routeAlias: braking-distance
 ---
 
@@ -283,9 +350,8 @@ $$
 
 On a 50 m radius: **80 km/h** dry, **62 km/h** wet, **44 km/h** on snow.
 
-**One budget for two jobs.** A tire's grip is shared between braking and cornering, roughly a
-circle of radius $\mu F_z$. Brake hard in a bend and less is left for turning; a **locked** wheel
-has nothing left for turning, so the car **cannot be steered**.
+**One budget for two jobs.** The same contact patch gives the braking and the cornering force:
+brake hard in a bend and less is left for turning.
 
 </div>
 <div>
@@ -302,11 +368,61 @@ same g, now the force points sideways, toward the center of the curve.
 The numbers: square root of mu times 9.81 times 50, in kilometers per hour.
 
 The important sentence is the last one. Longitudinal and lateral force come out of the same
-contact patch. The usual picture is the friction circle, or more accurately an ellipse: the vector
-sum of the two cannot exceed about mu times the normal load. A sliding tire's force points along
-its sliding direction, which for a locked wheel is the direction of travel. It gives no
-sideways force where the driver needs it. That, more than the shorter stop, is why ABS exists:
-the driver can still steer around the obstacle while braking fully.
+contact patch, so braking and cornering draw on one budget. The next slide draws that budget and
+what happens to it when the wheel locks.
+-->
+
+---
+routeAlias: locked-wheel-steer
+class: big-figure
+---
+
+## Why a locked wheel does not steer
+
+![Three top views of a front wheel turned 4 degrees left of its travel, which points straight up the page, each over a dashed friction circle of radius mu A times F z and a dotted inner circle at mu S. (a) Rolling: in the contact patch the tread is drawn deflected to the left, more and more toward the rear, a shaded triangle that flattens where the rear starts to slide; the lateral force F y, 0.64 mu F z, points left across the wheel and acts a trail t, 0.16 of the patch half-length, behind the center. (b) Braking at the peak with ABS, slip minus 0.08: dashed components F x 0.75 back along the heading and F y 0.66 to the left, their resultant 1.00 F z at the circle's edge, pointing back and left. (c) The same wheel locked: the force, 0.80 F z on the inner circle, points straight back along the travel, not across it, though the wheel is turned.](/figures/01-locked-wheel-forces.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm text-center">
+<div>Rolling, the tread <b>sticks and bends</b>: the slip angle α makes a force across the wheel.</div>
+<div>Braking and cornering share one <b>friction circle</b>, radius μ F<sub>z</sub>; ABS keeps both.</div>
+<div>Locked, the patch <b>slides along the travel</b>: the force points back along −v. Nothing turns the car.</div>
+</div>
+
+<!--
+Budget: 2 minutes. From `scripts/export_lecture03_tire_figures.jl`: case (a) is Pacejka's brush
+model with our planar tire's cornering stiffness, cases (b) and (c) are the planar car's tire at
+20 meters per second; the numbers are in `docs/lecture-03-tire-models-research.md`.
+
+Three times the same front wheel, seen from above, turned 4 degrees to the left of where it
+travels; the car moves straight up the page. Under each, the friction circle: the tire's force can
+point anywhere, but it cannot leave the dashed circle, mu times the normal load. The dotted one
+inside is the sliding level.
+
+Left: the wheel rolls. Each tread element enters the contact patch at the front, undeflected, and
+sticks to the road. The road moves back along the travel, the wheel's rim back along the heading,
+so the further back an element gets, the more it is bent sideways: the green triangle,
+exaggerated. Near the rear the pressure runs out, the elements can no longer hold and slide back.
+The bent tread is the lateral force, 0.64 of the load here, across the wheel, toward the turn.
+And since most of the bending sits behind the center, the force acts behind it, by the
+pneumatic trail t: one third of the half-length at small angles, 0.16 here where the rear already
+slides. That offset is the aligning torque the driver feels in the steering wheel. No angle
+between heading and travel, no bending, no force.
+
+Middle: the driver brakes and ABS holds the slip at about minus 0.08. Now the force has two parts,
+0.75 braking and 0.66 sideways, together the whole circle. The car slows and still turns: braking
+takes a share of the budget, not all of it.
+
+Right: the same wheel, locked. Now no element sticks: the whole patch slides over the road at the
+car's velocity, along the travel, whatever way the wheel points. The triangle is gone, and a
+sliding surface's friction points against its sliding velocity: 0.8 of the load, straight back
+along the path. In the wheel's own axes there is a sideways part, 0.06, only because the wheel is
+turned; across the path it is exactly zero. The steering wheel can turn as far as it likes;
+nothing pushes the car sideways. That, more than the shorter stop, is why ABS exists. The model's
+combined-slip curve, `public/figures/01-combined-slip.svg`, shows the same at this slip angle:
+lateral force 0.78 rolling, 0.54 at the peak slip, 0.06 locked.
+
+We will see this on the whole car in section 03, on the slide `brake-steer-demo`, "Braking and
+steering": with the wheels locked, the car slides straight into the obstacle with the steering
+turned 90 degrees.
 
 That also sets up ESP: it uses the same budget, braking one wheel on purpose to turn the car.
 -->
