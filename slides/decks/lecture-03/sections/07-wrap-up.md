@@ -146,6 +146,8 @@ routeAlias: sources
 - Bosch press archive: "Staying on track", 25 years of ESP
 - Mercedes-Benz: 40 years of ABS (1978)
 - Volkswagen newsroom: XDS; Honda: SH-AWD (2004)
+- Allegro MicroSystems, A19302 datasheet (wheel-speed IC: current levels, PW and AK protocols);
+  Infineon, TLE5041plusC product brief (2013); SKF, patent US 11041875 B2 (encoder ring)
 
 **Papers and books**
 
@@ -173,8 +175,9 @@ Where each fact came from. The speaker notes on each slide name the source for t
 and say when something could not be verified.
 
 Not verified from a primary source: Voisin's date, around 1920, from secondary sources only; the
-classification of three- and one-channel ABS; the 7 and 14 milliamp levels of active wheel-speed
-sensors; the margin factor on the reference yaw rate in Rajamani; the engine interventions of a
-particular TCS product. The 2 to 6 per second ABS slip cycle is cited from Day and Roberts by the
-repository's frequency research; the paper itself is paywalled.
+classification of three- and one-channel ABS; the margin factor on the reference yaw rate in
+Rajamani; the engine interventions of a particular TCS product. The 7 and 14 milliamp levels of
+active wheel-speed sensors come from an Allegro datasheet, not a Bosch one; the VDA AK-protocol
+specification itself was not opened. The 2 to 6 per second ABS slip cycle is cited from Day and
+Roberts by the repository's frequency research; the paper itself is paywalled.
 -->
