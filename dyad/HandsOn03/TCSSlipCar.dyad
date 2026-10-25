@@ -1,0 +1,63 @@
+"""Hands-on 1's slipping-wheel car with an in-line brake for traction control."""
+component TCSSlipCar
+  "Commanded engine torque"
+  tau_cmd = RealInput()
+  "Commanded TCS brake torque"
+  tau_tcs = RealInput()
+  "Road gradient, tan(alpha)"
+  grade = RealInput()
+  "Road-friction multiplier"
+  mu_scale = RealInput()
+  "Vehicle speed in km/h"
+  v_kmh = RealOutput()
+  "Wheel surface speed, omega * radius, in km/h"
+  wheel_kmh = RealOutput()
+  "Longitudinal tire slip"
+  kappa = RealOutput()
+  engine = VehicleSystemsComponents.HandsOn.Engine(theta_e = theta_e, T_max = T_max)
+  gear = RotationalComponents.Components.IdealGear(ratio = i)
+  wheel_inertia = RotationalComponents.Components.Inertia(J = J_w)
+  brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator()
+  wheel = VehicleSystemsComponents.HandsOn.SlipWheel1D(radius = r, F_z = m * g / 2)
+  body = VehicleSystemsComponents.HandsOn.GradeBody(m = m, CdA = CdA, g = g)
+  vsensor = TranslationalComponents.Sensors.VelocitySensor()
+  to_kmh = BlockComponents.Math.Gain(k = 3.6)
+  wsensor = RotationalComponents.Sensors.VelocitySensor()
+  wheel_to_kmh = BlockComponents.Math.Gain(k = r * 3.6)
+  "Engine, gearbox, and brake housing"
+  rot_ground = RotationalComponents.Components.Fixed()
+  "Injection-to-torque transport delay"
+  structural parameter theta_e::Time = 0.3
+  "Peak deliverable torque"
+  parameter T_max::Torque = 150
+  "Gear ratio"
+  parameter i::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Wheel rolling radius"
+  parameter r::Length = 0.31
+  "Vehicle mass; the driven axle carries half of it"
+  parameter m::Dyad.Mass = 1400
+  "Aerodynamic drag area, Cd * A"
+  parameter CdA::Area = 0.63
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+relations
+  connect(tau_cmd, engine.tau_cmd)
+  connect(tau_tcs, brake.tau_cmd)
+  connect(engine.spline, gear.spline_a)
+  connect(gear.spline_b, wheel_inertia.spline_a)
+  connect(wheel_inertia.spline_b, brake.spline_a)
+  connect(brake.spline_b, wheel.spline)
+  connect(engine.support, gear.support, brake.support, rot_ground.spline)
+  connect(wheel.flange, body.flange)
+  connect(grade, body.grade)
+  connect(mu_scale, wheel.mu_scale)
+  connect(vsensor.flange, wheel.flange)
+  connect(vsensor.v, to_kmh.u)
+  connect(to_kmh.y, v_kmh)
+  connect(wsensor.spline, wheel.spline)
+  connect(wsensor.w, wheel_to_kmh.u)
+  connect(wheel_to_kmh.y, wheel_kmh)
+  kappa = wheel.kappa
+end

@@ -1,0 +1,31 @@
+"""Full-torque standing start on snow, with traction control selectable by parameter."""
+component TCSStart
+  "Set to one to enable traction control, zero for the uncontrolled run"
+  parameter tcs_enabled::Real = 1.0
+  "Maximum TCS brake torque"
+  parameter tau_tcs_max::Torque = 2000.0
+  "Full torque from rest"
+  command = BlockComponents.Sources.Step(height = 150.0, offset = 0.0, start_time = 0.0)
+  road = BlockComponents.Sources.Constant(k = 0.0)
+  friction = BlockComponents.Sources.Constant(k = 0.2)
+  car = TCSSlipCar()
+  tcs = TCS(tau_tcs_max = tau_tcs_max)
+relations
+  connect(command.y, car.tau_cmd)
+  connect(road.y, car.grade)
+  connect(friction.y, car.mu_scale)
+  connect(car.kappa, tcs.kappa)
+  car.tau_tcs = ifelse(tcs_enabled > 0.5, tcs.tau_cmd, 0.0)
+  initial car.body.mass.s = 0.0
+  initial car.body.mass.v = 0.0
+  initial car.engine.lag.x = 0.0
+  initial car.wheel_inertia.phi = 0.0
+  initial car.wheel_inertia.w = 0.0
+  initial car.brake.tau_actual = 0.0
+end
+
+analysis TCSStartTransient
+  extends TransientAnalysis(stop = 10.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter tcs_enabled::Real = 1.0
+  model = TCSStart(tcs_enabled = tcs_enabled)
+end
