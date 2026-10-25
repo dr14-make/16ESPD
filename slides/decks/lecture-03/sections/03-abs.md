@@ -258,6 +258,132 @@ break needs only its last line.
 -->
 
 ---
+routeAlias: abs-system
+class: big-figure
+---
+
+## The whole ABS: parts and plumbing
+
+![The whole ABS of a car with an X split. Pedal, booster and tandem master cylinder feed two circuits into the hydraulic unit, one aluminum block with the ECU on it. Circuit 1 serves the front-left and rear-right calipers, circuit 2 the front-right and rear-left. Each wheel has a normally open inlet valve with a check valve back to the master side, and a normally closed outlet valve. The outlet valves of a circuit drain into its low-pressure accumulator; its pump element returns the fluid through a damper to the master side, drawn as a dashed orange return path. One motor with an eccentric drives both pump elements. Thin blue signal lines: an active wheel-speed sensor at each wheel reports to the ECU, and the ECU drives the eight valve coils, the motor and the ABS warning lamp.](/diagrams/03-abs-system.svg)
+
+<div class="text-sm text-center">
+
+Per **wheel** two valves, per **circuit** an accumulator and a pump element, **one** motor and **one**
+ECU. Without power the unit is a plain pipe: the driver's brakes, and the lamp on.
+
+</div>
+
+<!--
+The whole system before we zoom into one channel on the next slides.
+
+1. Start at the driver: pedal, booster, tandem master cylinder, as in section 02. The master
+   cylinder has two chambers, so two independent circuits leave it. This car has an X split: each
+   circuit brakes one front wheel and the diagonally opposite rear wheel, so a leak in one still
+   leaves a front brake.
+2. The hydraulic unit, the aluminum block in the photo two slides on. Each circuit enters a
+   rail and splits to its two wheels. On the way to each caliper sits an inlet valve, open when
+   unpowered, with a small check valve around it: when the driver lets go, caliper fluid can
+   always flow back to the master cylinder, even with the inlet closed. Between each caliper and
+   the circuit's return path sits an outlet valve, closed when unpowered.
+3. The return path, dashed orange: the outlet valves of a circuit drain into one low-pressure
+   accumulator, a spring-loaded piston of a few cubic centimeters. One pump element per circuit
+   empties it and pushes the fluid back to the master side through a damper chamber with an
+   orifice, which smooths the pump's pressure pulses and its noise. One electric motor, through an
+   eccentric, drives both pump elements. This is the pedal pulse the driver feels.
+4. The electronics, thin blue: four active wheel-speed sensors in, eight valve coils and the
+   motor out. The ECU is bolted onto the block, the coils plug straight into it, so there is no
+   wiring harness between them.
+5. Fail-safe. The valves are chosen so that no power means normal brakes: inlet open, outlet
+   closed, the master cylinder straight to the calipers. When the ECU finds a fault, a sensor, a
+   coil, the supply, it switches the ABS off and lights the lamp; the car brakes like one without
+   ABS. FMVSS 135 requires that lamp for any electrical failure of the antilock system, and that
+   the brakes still stop the car after it.
+
+ESP, only so the room knows: an ESP unit adds two valves per circuit, a switch-over valve
+between the master cylinder and the inlet valves, open when unpowered, and a high-pressure
+valve, closed when unpowered, that lets the pump draw from the master cylinder. Closing the
+first and opening the second lets the pump build pressure with no pedal: twelve valves in all.
+Section 05 needs exactly that.
+
+Sources (opened): Bosch Mobility, antilock braking system page (hydraulic unit with valves,
+return pump and the ECU on it; one sensor per wheel; up to 40 pressure cycles a second); Bosch
+Mobility, ESP page (builds pressure independently of the pedal); Bosch patent US 5080450 (X split,
+two pump elements on one motor, low-pressure reservoirs, check valves around the front-wheel
+valves); Bosch patent US 6846050 B2 (diagonal split, an inlet and an outlet valve per wheel, an
+accumulator and a return pump per circuit, one motor with an eccentric); Nissin Kogyo patent
+US 8678521 B2 (normally open inlet with its parallel check valve, normally closed outlet,
+reservoir, pump, damper and orifice against pulsation and noise; a cut valve and a suction valve,
+the roles of ESP's two extra valves); 49 CFR 571.135, S5.5.1(b) and S7.8; the Ram 2022 owner's
+manual on the ABS warning light. Notes in
+`docs/research_notes/Passenger car brake system modeling/abs_hydraulic_modulator.md`, section 7.
+Not opened: the Bosch Automotive Handbook, Reif's *Brakes, Brake Control and Driver Assistance
+Systems* and Breuer and Bill's *Brake Technology Handbook*, which describe the same layout.
+
+Budget: 3 minutes, with the next slide.
+-->
+
+---
+routeAlias: abs-system-models
+---
+
+## What our models stand in for
+
+<div class="text-sm">
+
+| part of the real ABS | builds 03 and 04 | library bench (`ABSBrakeTest`) | planar car (`ABSUnit`) |
+|---|---|---|---|
+| **pedal, booster, master cylinder** | build 02's chain: `BrakePedal`, `StaticBooster`, `TandemMasterCylinder` | none: a 6000 N·m torque step | none: one torque step for all four wheels |
+| **two circuits** | a front and a rear `BrakeLine`: an II split | none | none |
+| **valves, accumulator, pump** | one ideal `ABSValve` per circuit, both on one command: the wheel follows it 30 ms late, never above the master cylinder; dumped fluid leaves the model | none: the ECU commands torque, and `BrakeActuator`'s 30 ms lag stands for valves and caliper | the same per wheel: four `BrakeActuator`s, 30 ms, at most 2500 N·m |
+| **calipers, wheels** | two `BrakeCaliper`s on **one** lumped wheel, `HydraulicBrakedWheel` | `BrakedWheel`: one lumped wheel | four `PlanarBrakedWheel`s with combined slip |
+| **wheel-speed sensors** | 03: none, the true slip and speed; 04: one ideal wheel speed | one ideal wheel speed | none: each wheel's true slip and the true speed |
+| **ECU** | continuous: `SlipABS` (03); `RefSpeedEstimator` and `PhaseABS` (04) | `ABSControllerWheelOnly`, clocked every 5 ms | four `BrakeChannel`s clocked every 5 ms, rear select-low |
+| **lamp, fail-safe** | none | none | `abs_on = 0`: the demand goes straight through |
+
+</div>
+
+<div class="handson">→ Every model keeps the ECU's logic and drops the valve hardware: the modulator
+becomes an ideal pressure or torque command with a 30 ms lag. Only builds 03 and 04 keep the
+pedal's hydraulics.</div>
+
+<!--
+Read the table by columns, one per model the lecture runs.
+
+1. Builds 03 and 04, `HandsOn03.ABSStop` and `ABSStopWheelOnly`: the room's own car from build
+   02, the real pedal, booster and tandem master cylinder, then a front and a rear brake line, so
+   an II split, onto one lumped wheel that carries a front and a rear caliper. Between the master
+   cylinder and each line sits one `ABSValve`, and both valves get the same command: one channel
+   for the whole car, select-low in effect. The whole hydraulic unit of the previous slide becomes
+   that valve: the ECU sends an allowed pressure, the caliper follows it 30 milliseconds late,
+   never above the master cylinder. In build 03 `SlipABS` reads the wheel's true slip and the
+   car's true speed; in build 04 `RefSpeedEstimator` sees only the wheel's angular velocity, the
+   one thing a real sensor gives, and `PhaseABS` acts on its estimate.
+2. The library bench, `Vehicle.ABSBrakeTest`, behind the model, braking-distance and
+   road-surface slides: no pedal and no fluid at all. A torque demand goes into
+   `ABSControllerWheelOnly`, a 5 millisecond clocked estimator and modulator, and its torque
+   command into `BrakeActuator`, a 30 millisecond first-order lag. That lag is the valves, the
+   fluid and the caliper in one.
+3. The planar car's `Vehicle.Planar.ABSUnit`, in the braking-and-steering run and inside section
+   05's `BrakeControlUnit`: four channels at last, one `BrakeChannel` each with the library's
+   modulator, sampled every 5 milliseconds, the rear pair select-low. It is torque-level like the
+   library bench, a `BrakeActuator` in each `PlanarBrakedWheel`. Its sensors are ideal: each
+   wheel's true slip and the car's true speed, no estimator.
+
+None of them models the warning lamp or a fault. The nearest thing is `ABSUnit`'s `abs_on`
+switch: set to zero, the driver's torque goes straight to the wheels, the ABS-off car of the
+braking-and-steering run.
+
+A valve-level model with real inlet and outlet valves, accumulator and return pump,
+`Vehicle.Brake.HydraulicModulator`, exists on the `feat/lecture-03-abs-valves` branch. It is
+not part of this deck; with it the pedal pulse would appear.
+
+Sources: the models in `dyad/HandsOn03/`, `dyad/Vehicle/Brake/ABSValve.dyad`,
+`dyad/Vehicle/ABSBrakeTest.dyad`, `dyad/Vehicle/ABSController.dyad` and `dyad/Vehicle/Planar/`.
+
+Budget: inside the previous slide's 3 minutes.
+-->
+
+---
 routeAlias: modulator
 ---
 
@@ -283,26 +409,21 @@ pressure it allows and the valve sets it. No inlet or outlet valve, no accumulat
 </div>
 
 <!--
-The source deck's three valve positions, mapped onto how a modern unit is built. Each wheel channel
-has two solenoid valves rather than one three-position valve: an inlet valve that is open when
-unpowered and an outlet valve that is closed when unpowered. So if the electronics fail, the
-brakes work as if there were no ABS.
+One channel of the overview, zoomed in: the source deck's three valve positions, mapped onto the
+inlet and outlet valve pair that a modern unit has instead of one three-position valve.
 
 Position one, open: build. Position two, line blocked: hold, so pressure cannot rise even if the
 driver pushes harder. Position three, release: dump, the outlet valve lets fluid out into a small
 spring-loaded accumulator. The pump returns it to the master-cylinder side, which is what the
 driver feels as pulsing in the pedal.
 
-Say clearly what the build uses instead. `ABSValve` is the result of this hardware, not the
-hardware: the controller sends an allowed wheel pressure, and the valve makes the caliper follow
-it, never above the master cylinder and 30 milliseconds late. A command held steady is hold, a
-falling one is dump, a rising one is build. The dumped fluid leaves the model, and the pedal is a
-force command, so the pulse the driver feels cannot appear. A model with real inlet and outlet
-valves, accumulator and return pump is in preparation.
+The green box, in terms of these three states: `ABSValve`, from the table two slides back, has no
+valve positions. A command held steady is hold, a falling one is dump, a rising one is build.
+The dumped fluid leaves the model, so the pulse the driver feels cannot appear.
 
 The important property: ABS can only take pressure away from what the driver commands. It cannot
-build more than the master cylinder supplies. ESP, later, needs two more valves per circuit to do
-exactly that.
+build more than the master cylinder supplies; that is what ESP's two extra valves per circuit
+are for.
 
 Bosch's "up to 40 times a second" counts pressure modulation steps. The full slip cycle, one
 release and reapply of the wheel, is slower: 2 to 6 cycles per second measured on a production
