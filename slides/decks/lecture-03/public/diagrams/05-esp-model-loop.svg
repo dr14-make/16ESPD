@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 420" width="1000" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .gap { fill: none; stroke: #9aa5b1; stroke-width: 2; stroke-dasharray: 6 4; }
+    .gap-t { font-size: 17px; font-weight: 600; fill: #7b8794; }
+    .gap-l { font-size: 14px; fill: #7b8794; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .arrow-gap { stroke: #9aa5b1; stroke-width: 3; fill: none; stroke-dasharray: 6 4; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .sig { font-size: 15px; font-weight: 600; }
+    .code { font-size: 12px; font-family: monospace; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="em-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="em-gap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#9aa5b1"/></marker>
+  </defs>
+
+  <rect class="box" x="20" y="44" width="180" height="94" rx="4"/>
+  <text x="110" y="36" text-anchor="middle" class="code">SteeringRobot</text>
+  <text x="110" y="72" text-anchor="middle" class="t">steering robot</text>
+  <text x="110" y="94" text-anchor="middle" class="lbl">sine with dwell</text>
+  <text x="110" y="114" text-anchor="middle" class="lbl">no brake pedal</text>
+
+  <rect class="box-accent" x="250" y="44" width="200" height="94" rx="4"/>
+  <text x="350" y="36" text-anchor="middle" class="code">YawReference</text>
+  <text x="350" y="72" text-anchor="middle" class="t">yaw reference</text>
+  <text x="350" y="94" text-anchor="middle" class="lbl">v (δ_sw / i_s) / (L + K_us v²)</text>
+  <text x="350" y="114" text-anchor="middle" class="lbl">clipped at 0.85 μ g / v</text>
+
+  <rect class="box-accent" x="520" y="44" width="200" height="94" rx="4"/>
+  <text x="620" y="36" text-anchor="middle" class="code">YawMomentController</text>
+  <text x="620" y="72" text-anchor="middle" class="t">yaw-moment control</text>
+  <text x="620" y="94" text-anchor="middle" class="lbl">e = r − r_ref, deadband</text>
+  <text x="620" y="114" text-anchor="middle" class="lbl">M_z = −K_p e − K_i ∫e</text>
+  <text x="620" y="132" text-anchor="middle" class="lbl">off below 5 m/s</text>
+
+  <rect class="box-accent" x="790" y="44" width="190" height="94" rx="4"/>
+  <text x="885" y="36" text-anchor="middle" class="code">BrakeAllocator</text>
+  <text x="885" y="72" text-anchor="middle" class="t">one wheel</text>
+  <text x="885" y="94" text-anchor="middle" class="lbl">over: outer front</text>
+  <text x="885" y="114" text-anchor="middle" class="lbl">under: inner rear</text>
+  <text x="885" y="132" text-anchor="middle" class="lbl">torque, 0.1 s lag</text>
+
+  <rect class="box" x="20" y="194" width="180" height="94" rx="4"/>
+  <text x="110" y="186" text-anchor="middle" class="code">PlanarCarSensors</text>
+  <text x="110" y="222" text-anchor="middle" class="t">ideal sensors</text>
+  <text x="110" y="244" text-anchor="middle" class="lbl">v_x, r, δ_sw exact</text>
+  <text x="110" y="264" text-anchor="middle" class="lbl">slip κ_i exact</text>
+
+  <rect class="gap" x="250" y="194" width="200" height="94" rx="4"/>
+  <text x="350" y="222" text-anchor="middle" class="gap-t">no estimator</text>
+  <text x="350" y="244" text-anchor="middle" class="gap-l">β is not used</text>
+  <text x="350" y="264" text-anchor="middle" class="gap-l">μ_est = 1, assumed</text>
+
+  <rect class="gap" x="520" y="194" width="200" height="94" rx="4"/>
+  <text x="620" y="222" text-anchor="middle" class="gap-t">no hydraulics</text>
+  <text x="620" y="244" text-anchor="middle" class="gap-l">brake torque</text>
+  <text x="620" y="264" text-anchor="middle" class="gap-l">commanded directly</text>
+
+  <rect class="box-accent" x="790" y="194" width="190" height="94" rx="4"/>
+  <text x="885" y="310" text-anchor="middle" class="code">BrakeChannel × 4</text>
+  <text x="885" y="222" text-anchor="middle" class="t">ABS, every 5 ms</text>
+  <text x="885" y="244" text-anchor="middle" class="lbl">ESP torque added</text>
+  <text x="885" y="264" text-anchor="middle" class="lbl">ABS caps the slip</text>
+
+  <rect class="gap" x="790" y="336" width="190" height="64" rx="4"/>
+  <text x="885" y="362" text-anchor="middle" class="gap-t">no engine cut</text>
+  <text x="885" y="384" text-anchor="middle" class="gap-l">coasting</text>
+
+  <rect class="box" x="250" y="336" width="470" height="64" rx="4"/>
+  <text x="485" y="328" text-anchor="middle" class="code">PlanarCar</text>
+  <text x="485" y="362" text-anchor="middle" class="t">planar car</text>
+  <text x="485" y="384" text-anchor="middle" class="lbl">4 wheels, combined slip, Ackermann</text>
+
+  <path class="arrow" d="M200 91 H246" marker-end="url(#em-ink)"/>
+  <text x="223" y="83" text-anchor="middle" class="sig">δ_sw</text>
+  <path class="arrow" d="M450 91 H516" marker-end="url(#em-ink)"/>
+  <text x="483" y="83" text-anchor="middle" class="sig">r_ref</text>
+  <path class="arrow" d="M720 91 H786" marker-end="url(#em-ink)"/>
+  <text x="753" y="83" text-anchor="middle" class="sig">M_z</text>
+  <path class="arrow-gap" d="M200 241 H246" marker-end="url(#em-gap)"/>
+  <path class="arrow" d="M200 210 H226 V166 H485 V124 H516" marker-end="url(#em-ink)"/>
+  <text x="300" y="158" class="sig">r, v_x</text>
+  <path class="arrow" d="M885 138 V190" marker-end="url(#em-ink)"/>
+  <text x="893" y="170" class="sig">ΔT_i</text>
+  <path class="arrow" d="M790 241 H724" marker-end="url(#em-ink)"/>
+  <text x="757" y="233" text-anchor="middle" class="sig">T_i</text>
+  <path class="arrow" d="M620 288 V332" marker-end="url(#em-ink)"/>
+  <path class="arrow" d="M250 368 H110 V292" marker-end="url(#em-ink)"/>
+</svg>

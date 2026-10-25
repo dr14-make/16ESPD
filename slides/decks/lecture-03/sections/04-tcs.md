@@ -61,6 +61,100 @@ some acting only on the engine, two combining brake and throttle, per SAE paper 
 -->
 
 ---
+routeAlias: differential-film
+---
+
+## Around the corner: why a car needs a differential
+
+<div class="flex justify-center mt-4">
+<Youtube id="yYAw79386WI" width="740" height="416" />
+</div>
+
+<div class="caption">"Around the Corner", Jam Handy Organization for Chevrolet, 1937; public domain in the US,
+via the <a href="https://archive.org/details/Aroundth1937">Prelinger Archives</a></div>
+
+<!--
+Play from the start; the whole film is about 9.5 minutes, so stop once the spider gears have been
+shown, or play it all if there is time. It answers the speed half of the next slide: in a bend
+the outer wheel turns faster, a solid axle would scrub one tire, and the bevel gears in the
+carrier let the two wheels turn at different speeds with the carrier at their mean. The next slide
+adds what the film leaves out, the torque: a differential that frees the speeds must split the
+torque equally.
+
+The embed needs internet in the room. The link above is the Internet Archive original; the video
+embedded here is a YouTube re-upload, https://www.youtube.com/watch?v=yYAw79386WI. Wikimedia
+Commons lists the film as public domain in the US: published 1929 to 1963 without a copyright
+renewal.
+-->
+
+---
+routeAlias: open-differential
+---
+
+## The open differential
+
+<div class="grid grid-cols-[1fr_1fr] gap-6">
+<div>
+
+![Top view of a driven axle. The engine and gearbox feed torque T_in into an open differential, drawn as a carrier with four bevel gears. Two side shafts carry T_L equal to T_in over 2 to the left wheel, on ice with mu 0.1, and T_R equal to T_in over 2 to the right wheel, on dry road with mu 1.0. A red TCS brake T_b sits on the left wheel. The wheel speeds obey omega_L plus omega_R equals twice the carrier speed.](/diagrams/04-open-differential.svg)
+
+</div>
+<div>
+
+It lets the wheels turn at **different speeds** in a bend, and so it splits the **torque
+equally**:
+
+$$
+T_L = T_R = \tfrac12 T_{in}, \qquad \omega_L + \omega_R = 2\,\omega_{carrier}
+$$
+
+So the wheel with **less grip sets the torque of both**. With $F_z = 4$ kN, $r = 0.31$ m:
+
+<div class="text-sm">
+
+| N·m | left, ice | right, dry | force |
+|---|---:|---:|---:|
+| no TCS | 124, spins | 124 | **0.8 kN** |
+| $T_b = 600$ | 724 − 600 | 724 | **2.7 kN** |
+
+</div>
+
+The brake stands in for the grip the ice lacks: a **brake-based differential lock**.
+
+</div>
+</div>
+
+<!--
+Budget: 1.5 minutes. The equal split first, then the table, then why it is only a low-speed trick.
+
+Why a differential at all: in a bend the outer wheel travels farther, so the two driven wheels
+must turn at different speeds. The open differential allows it: the carrier turns at the mean of
+the two wheel speeds. The price is in the torque. The small bevel gears in the carrier are a
+balance beam, and a balance beam pushes equally on both ends. So both wheels always get the same
+torque, and that torque can be no larger than the wheel with less grip can carry. On ice the
+left wheel can carry 0.1 times 4000 newtons times 0.31 meters, 124 newton meters; the right wheel
+gets the same 124, whatever its grip, and the car pulls with 800 newtons. The engine has nowhere
+to put more torque: the left wheel just spins up. That is the classic car stuck with one wheel on
+ice.
+
+Brake the spinning wheel with 600 newton meters. The differential still splits equally, but now
+the left side resists with its brake plus the ice, 724 newton meters, so the differential can pass
+724 to each side. The right wheel puts its 724 into the dry road, and the drive force is 124 plus
+724 over 0.31, 2.7 kilonewtons, more than three times as much. The engine must supply the extra
+1448 newton meters at the axle, and the 600 at the brake become heat: at 20 kilometers per hour
+that is about 11 kilowatts in one brake disc. That is why brake-based TCS is a drive-off aid: a
+Bosch patent switches it off above about 40 kilometers per hour (US 4,971,400; in
+docs/esp-tcs-plausibility-research.md). Above that, and whenever both wheels spin, only cutting the
+engine torque helps; braking both wheels would just fight the engine.
+
+A mechanical limited-slip or locking differential does the same job without the heat; the brake
+version is cheaper because the hardware is already in the car.
+
+The take-home bonus has a single wheel and no differential, so braking there just takes torque
+off that wheel, like an engine cut. The differential effect needs two driven wheels.
+-->
+
+---
 routeAlias: tcs-actuators
 ---
 
@@ -98,12 +192,8 @@ The driver may feel the accelerator pedal pulse.
 The source deck said TCS "pumps" the brake on the spinning wheel and that some systems also
 reduce engine power.
 
-The brake side works because of the open differential. An open differential delivers the same
-torque to both wheels, limited by the wheel with less grip. If the left wheel is on ice and can
-carry only 100 newton meters, the right wheel also gets only 100, however good its grip. Braking
-the spinning left wheel adds resistance on that side, so the differential can deliver more torque
-to both, and the right wheel's share goes into the road. That is what is sometimes called an
-electronic or brake-based differential lock.
+The brake side is the previous slide: braking the spinning wheel lets the open differential pass
+more torque to the wheel with grip.
 
 To brake without the driver pressing the pedal, the modulator needs to build pressure on its own.
 An ABS-only unit cannot: its pump only returns fluid. A TCS or ESP unit adds a switchover valve and
@@ -179,6 +269,9 @@ after 10 s.
 pressure builds while `kappa_pred > lambda_target`, clipped to [0, `tau_tcs_max`]*
 
 **Given:** `BrakeActuator`, a brake with a 30 ms lag · `ABSPressureIntegrator`
+
+The brake torque is commanded directly; a real car builds that pressure with the ABS pump, through
+the switchover and high-pressure valves.
 
 [page: step 06](../lecture/lecture-03/#step-06)
 

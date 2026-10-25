@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .frame { fill: #f4f6f8; stroke: #16202c; stroke-width: 2; }
+    .mass { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .spring { stroke: #4a5a6b; stroke-width: 2.5; fill: none; }
+    .finger { fill: #1f5fa8; }
+    .fixed { fill: #c9a227; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .t { font-size: 20px; font-weight: 600; }
+    .lbl { font-size: 18px; fill: #4a5a6b; }
+    .sig { font-size: 19px; font-weight: 600; }
+  </style>
+  <defs>
+    <marker id="ac-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <rect class="frame" x="40" y="40" width="420" height="300" rx="6"/>
+  <text x="50" y="64" class="lbl">chip, fixed to the car</text>
+
+  <rect x="210" y="76" width="80" height="8" fill="#16202c"/>
+  <rect x="210" y="306" width="80" height="8" fill="#16202c"/>
+  <path class="spring" d="M250 84 L250 96 L235 102 L265 110 L235 118 L265 126 L250 132 L250 140"/>
+  <path class="spring" d="M250 306 L250 294 L235 288 L265 280 L235 272 L265 264 L250 258 L250 250"/>
+
+  <rect class="mass" x="190" y="140" width="120" height="110" rx="4"/>
+  <text x="250" y="200" text-anchor="middle" class="t">mass m</text>
+
+  <rect class="finger" x="110" y="160" width="80" height="10"/>
+  <rect class="finger" x="110" y="220" width="80" height="10"/>
+  <rect class="finger" x="310" y="160" width="80" height="10"/>
+  <rect class="finger" x="310" y="220" width="80" height="10"/>
+  <rect class="fixed" x="90" y="178" width="80" height="10"/>
+  <rect class="fixed" x="90" y="238" width="80" height="10"/>
+  <rect class="fixed" x="330" y="142" width="80" height="10"/>
+  <rect class="fixed" x="330" y="202" width="80" height="10"/>
+  <text x="60" y="290" class="lbl">C₁</text>
+  <text x="420" y="290" class="lbl">C₂</text>
+
+  <path class="arrow" d="M500 290 V110" marker-end="url(#ac-ink)"/>
+  <text x="512" y="206" class="sig">a_y</text>
+  <text x="250" y="370" text-anchor="middle" class="sig">mass lags behind: x = m a_y / k,  C₁ − C₂ ∝ x</text>
+</svg>

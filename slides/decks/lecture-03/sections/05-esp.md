@@ -119,6 +119,182 @@ system, which regulations allow only under conditions.
 -->
 
 ---
+routeAlias: esp-sensor-principles
+---
+
+## Sensors: how each one measures
+
+| sensor | where | how it measures | gives |
+|---|---|---|---|
+| **wheel speed** × 4 | at each hub | active Hall or magnetoresistive element over a magnetic encoder ring | $\omega_i$ |
+| **steering angle** | steering column | magnetic or optical code disc, absolute over several turns | $\delta_{sw}$ |
+| **yaw rate** | near the center of gravity | micromechanical gyroscope: a vibrating mass feels the Coriolis force | $\dot\psi$ |
+| **lateral acceleration** | same housing | micromechanical, capacitive | $a_y$ |
+| **brake pressure** | hydraulic unit | pressure sensor on the master-cylinder circuit | $p_{MC}$ |
+
+<div class="grid grid-cols-2 gap-8 mt-4">
+<div>
+
+**Not measured, estimated:**
+
+- car speed $v$, from the four wheel speeds; hard when all four slip;
+- sideslip angle $\beta$, from $a_y$, $\dot\psi$ and $v$;
+- road friction $\mu$, from how much grip the car is using.
+
+</div>
+<div>
+
+**In our model:** ideal sensors, `PlanarCarSensors`. The ESP reads the exact $v_x$, $\dot\psi$ and
+$\delta_{sw}$; it uses neither $\beta$ nor an estimated $\mu$.
+
+</div>
+</div>
+
+<!--
+Budget: 1 minute. Read the table by its last column, then the estimated list; it is the honest
+gap of our model, and the next two slides come back to it.
+
+The wheel-speed sensors are the ABS ones from section 03: today active sensors, a Hall or
+magnetoresistive element reading a ring of alternating magnetic poles in the wheel bearing seal,
+which works down to standstill, unlike the older passive inductive sensors on a toothed ring. The
+steering-angle sensor must know the absolute angle over the wheel's full travel, about one and a
+half turns each way, so it counts turns as well as reading the angle. The yaw-rate sensor and the
+lateral accelerometer share one housing near the center of gravity; both are micromechanical, the
+gyroscope a vibrating structure whose Coriolis deflection is proportional to the rotation. The
+pressure sensor in the hydraulic unit tells the ECU how hard the driver brakes, so ESP adds to
+the driver's braking instead of fighting it.
+
+The estimated list is where the real engineering is. Speed from the wheel speeds fails when every
+wheel slips, under ABS braking or wheelspin on all four, so the estimate leans on the longitudinal
+acceleration and the model. Sideslip cannot be integrated from a y and yaw rate for long, it drifts,
+so it is estimated with a model. Road friction is known only once the car uses it.
+
+Our planar car skips all three: its sensors are exact, ESP takes the true speed, and it controls
+the yaw rate only. The sensor principles are from the Bosch Automotive Handbook as I know it; I
+did not re-read it for this slide.
+-->
+
+---
+routeAlias: yaw-rate-sensor
+---
+
+## The yaw-rate sensor: a vibrating mass
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-6">
+<div>
+
+![A micromechanical yaw-rate sensor, schematic. On a chip fixed to the car, a mass m hangs between two springs and is driven to vibrate left and right at kilohertz, with velocity v_d. When the car turns at the yaw rate Omega, the Coriolis force F_c equal to 2 m v_d Omega pushes the mass across the drive direction, toward one sense plate and then the other, in the rhythm of the drive.](/diagrams/05-yaw-rate-sensor.svg)
+
+</div>
+<div>
+
+- A mass on springs is **driven to vibrate**, thousands of times a second.
+- When the car turns, the **Coriolis force** pushes it **sideways**:
+  $F_c = 2\,m\,v_d\,\Omega$
+- Sense plates measure the sideways motion as a **capacitance**. It swings with the drive, so the
+  electronics demodulate it with the drive signal: the result is $\Omega$.
+- **Two masses** vibrating in opposite directions: a lateral acceleration pushes both the same way,
+  the Coriolis force pushes them opposite ways. Subtract, and only the rotation is left.
+
+A Bosch inertial unit, MM5.10: **±160 °/s**, **±4.2 g**, filtered at 15 to 60 Hz.
+
+</div>
+</div>
+
+<!--
+Budget: 1.5 minutes. The idea in one sentence: a moving mass on a turning table feels a sideways
+force, and that force is proportional to the rotation.
+
+The Coriolis force: a body moving at velocity v in a frame that rotates at Omega feels a force
+2 m v cross Omega. A child walking outward on a merry-go-round feels pushed sideways. The sensor
+makes its own walking child: a mass driven back and forth. Because the drive reverses every
+half-period, the Coriolis force reverses too, so the sideways motion is an oscillation at the
+drive frequency whose amplitude is proportional to the yaw rate. Multiplying by the drive signal
+and filtering, demodulation, turns it into a steady number.
+
+How small: with an assumed drive velocity of about 1 meter per second and a brisk 0.5 radians per
+second, 29 degrees per second, the Coriolis acceleration is 2 times 1 times 0.5, 1 meter per second
+squared, on a mass of micrograms. The deflection is nanometers. That is why the readout is
+capacitive and why the sensor sits in a vacuum package: the drive must ring with almost no damping.
+The 1 meter per second is my illustration, not a datasheet number.
+
+Two masses in anti-phase, a tuning fork, are how the sensor rejects linear acceleration: a
+cornering or bump acceleration moves both masses the same way, the Coriolis force moves them
+opposite ways (the principle in Bosch patent US 8,683,863 and others).
+
+Error sources: the zero point, the offset, drifts with temperature and age. ESP re-learns it when
+the car stands still or drives straight, judged from the wheel speeds and the steering angle.
+
+The ranges are from the Bosch Motorsport MM5.10 data sheet (±160 degrees per second measuring
+range, ±4.2 g, 15, 30 or 60 Hz cut-off). Its PDF link now returns a 404; the numbers are from its
+indexed text. The production ESP sensors are not documented publicly in that detail.
+-->
+
+---
+routeAlias: lateral-acceleration
+---
+
+## Lateral acceleration, and what ESP does with both signals
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-6">
+<div>
+
+![A micromechanical accelerometer, schematic. On a chip fixed to the car, a mass m hangs on two springs. Comb fingers on the mass, blue, sit between fixed electrodes, yellow, forming capacitances C1 and C2. Under a lateral acceleration a_y the mass lags behind by x equal to m a_y over k, and the difference C1 minus C2 is proportional to x.](/diagrams/05-accelerometer.svg)
+
+</div>
+<div>
+
+The mass **lags behind**, $x = m\,a_y / k$; comb fingers turn $x$ into $C_1 - C_2$.
+
+It feels gravity too: on a road **banked** 10° it reads about **0.17 g** standing still.
+
+**What ESP does with the two:**
+
+- $a_y = v\,(\dot\psi + \dot\beta)$, so $\dot\beta = a_y / v - \dot\psi$: the **sideslip rate is the
+  gap** between the two sensors;
+- integrating it drifts with offsets and banking, so $\beta$ comes from a **model-based
+  estimator**;
+- **cross-checks**: $\dot\psi$ against $a_y / v$, the rear wheel-speed difference and the steering
+  angle. A sensor that disagrees is switched out, and ESP with it.
+
+**In our model:** exact $\dot\psi$ and $a_y$; no offset, no noise, a flat road.
+
+</div>
+</div>
+
+<!--
+Budget: 1.5 minutes. The equation in the middle is the point: ESP sees a skid as the two sensors
+disagreeing.
+
+The accelerometer is the simpler device: a mass on springs, which lags behind when the chip
+accelerates, like a passenger pressed into the door. Comb fingers on the mass between fixed
+fingers make two capacitors; the mass moving one way closes one gap and opens the other, so the
+difference of the two capacitances is proportional to the displacement. In practice the
+electronics hold the mass in place with an electrostatic force and read out how much force that
+takes, which keeps it linear.
+
+It measures specific force, acceleration minus gravity, along its axis. On a road banked by 10
+degrees, standing still, it reads g sin 10 degrees, 0.17 g, as if the car were cornering. Body
+roll tilts it the same way. ESP has to estimate the bank angle or it would see a phantom corner.
+
+The kinematics: in a turn the car's velocity rotates at yaw rate plus sideslip rate, so the
+lateral acceleration is v times the sum. In a steady turn the sideslip is constant and a y over v
+equals the yaw rate. When the car starts to slide, the yaw rate runs ahead of a y over v; the
+difference is the sideslip rate. Integrating it gives beta, but every offset in either sensor, and
+every degree of bank, integrates into a growing error, so production systems estimate beta with a
+vehicle model and correct it with the sensors, an observer.
+
+Cross-checks: four independent views of the same turn, the yaw-rate sensor, the lateral
+acceleration over speed, the speed difference of the free-rolling rear wheels over the track,
+and the steering angle through the single-track model. A sensor that disagrees with the others
+is declared faulty, ESP switches off and the warning lamp comes on. That is general practice as I
+know it from the Bosch handbook; I did not find it stated on a public Bosch page.
+
+Our planar car has ideal sensors: PlanarCarSensors reads the yaw rate and acceleration straight
+from the body, with no offset, noise, bank or roll, and the ESP does not use a y at all.
+-->
+
+---
 routeAlias: ackermann
 ---
 
@@ -283,6 +459,62 @@ first.
 -->
 
 ---
+routeAlias: esp-algorithm
+---
+
+## The ESP algorithm: two levels
+
+![The ESP control structure. Driver inputs, steering angle and brake pressure, feed a reference, the single-track yaw rate limited by mu g over v with sideslip kept small. Sensors, yaw rate, lateral acceleration and wheel speeds, feed a state estimator for speed, sideslip and friction. At the vehicle level a yaw and sideslip controller compares the two and asks for a yaw moment; wheel selection turns it into a slip target change per wheel and an engine torque cut. At the wheel level the ABS and TCS slip controllers hold each wheel's slip through the hydraulic unit, which builds, holds and dumps pressure, and can build without the pedal with its pump. The car closes the loop back to the sensors.](/diagrams/05-esp-cascade.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
+
+**Vehicle level** decides *what the car should do*: a yaw moment, from the yaw-rate error and
+the sideslip.
+
+</div>
+<div>
+
+**Wheel level** is ABS and TCS: ESP hands them a new **slip target**, never a raw pressure, so
+the braked wheel keeps rolling and steering.
+
+</div>
+<div>
+
+**Engine** torque is cut when the brakes are not enough, or when a driven wheel spins.
+
+</div>
+</div>
+
+<!--
+Budget: 1.5 minutes. One pass left to right along the top, down the right side, back along the
+bottom.
+
+This is the structure Bosch published for its first ESP, then called VDC, in 1995: van Zanten,
+Erhardt and Pfaff, SAE 950759, in the sources. It is a cascade.
+
+Top row, the vehicle level. The reference is the previous slide's single-track yaw rate, clipped
+by the friction limit; sideslip is kept small as a second target, because a car at large sideslip
+answers the steering wheel badly even if its yaw rate looks right. The controller compares the
+reference with the estimated state and asks for a yaw moment. Wheel selection is the
+yaw-correction slide: which wheel, and how much.
+
+Right column down, the wheel level. ESP does not command a brake pressure. It shifts the slip
+target of the chosen wheel's ABS or TCS controller, and that controller does the rest. That is
+why ESP is built on top of ABS, and why the braked wheel never locks: a locked wheel would lose
+the lateral force the car needs.
+
+Bottom row: the hydraulic unit, ABS's valves plus the two extra ones and the pump from the TCS
+slide, so it can build pressure the driver did not ask for. The engine torque cut runs in
+parallel.
+
+Left column, the estimator: speed, sideslip and friction, none of which is measured. It is the
+largest part of the real software. The structure is from the paper as I know it; I could not
+re-read it for this slide, and the research note docs/esp-tcs-plausibility-research.md lists it
+as not accessible.
+-->
+
+---
 routeAlias: esp-evidence
 ---
 
@@ -392,6 +624,119 @@ front and 924 off the left rear onto the right wheels, and the yaw rate changes 
 limit it matters: the passive car then spins at 270 degrees and plows only at 280. The
 spin-or-plow boundary sits at the top of the test, so the passive 270-degree verdict is not a
 robust number. ESP through ABS passes either way.
+-->
+
+---
+routeAlias: esp-model-loop
+---
+
+## Our ESP, block by block
+
+![Our ESP, laid out like the algorithm slide. A steering robot drives the sine with dwell, with no brake pedal. YawReference: v times delta_sw over i_s, over L plus K_us v squared, clipped at 0.85 mu g over v. YawMomentController: error e is r minus r_ref with a deadband, M_z is minus K_p e minus K_i times the integral of e, off below 5 m/s. BrakeAllocator: one wheel, outer front on oversteer, inner rear on understeer, a torque with a 0.1 s lag. BrakeChannel times four: the ABS every 5 ms, the ESP torque added to the driver's demand and the ABS caps the slip. Ideal sensors, PlanarCarSensors, give exact v_x, r, delta_sw and slip to the controller. Dashed, missing: no estimator, beta unused and mu_est equal to 1; no hydraulics, brake torque commanded directly; no engine cut, the car coasts. The PlanarCar closes the loop.](/diagrams/05-esp-model-loop.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
+
+**Same structure:** reference, yaw-moment controller, wheel selection, ABS underneath.
+`Vehicle.Planar.ESPController`, inside `BrakeControlUnit`.
+
+</div>
+<div>
+
+**Simpler:** yaw rate only, one wheel at a time, a brake **torque** rather than a slip target.
+`abs_on = 0` sends it straight to the brake, `abs_on = 1` through the ABS channel.
+
+</div>
+<div>
+
+**Dashed:** what a production ESP has and ours does not. The 0.1 s lag is about **3× faster**
+than a pump-based unit builds pressure.
+
+</div>
+</div>
+
+<!--
+Budget: 1 minute. Point at the boxes in the same order as on the algorithm slide; the dashed ones
+are the honest part.
+
+Top row. The reference is the single-track formula from the reference-model slide, the steering
+wheel angle divided by the steering ratio, 16, and clipped at 0.85 mu g over v with mu assumed 1.
+The controller takes the yaw-rate error, removes a deadband of 0.03 radians per second so it does
+not act on every small error, and asks for a yaw moment: proportional gain 40 000 newton meter
+seconds per radian, the integral gain zero for the P runs and 10 to the 5 for the PI runs, off
+below 5 meters per second, at most 10 kilonewton meters. The allocator turns the moment into a
+brake torque at one wheel, moment times wheel radius over half the track, at most 2500 newton
+meters, the outer front wheel if the car turns faster than the reference, the inner rear if
+slower; it builds with a first-order lag of 0.1 seconds.
+
+Right column. Every wheel has a BrakeChannel, the section 03 ABS modulator sampled every 5 ms.
+A positive ESP torque is added to the driver's demand before the ABS, so with abs_on the ABS caps
+the slip of the braked wheel; that is the ESP-through-ABS run. A real ESP shifts the slip target
+instead; adding torque before an ABS that holds slip near its peak comes to much the same thing.
+
+Dashed boxes. No estimator: the sensors are exact, sideslip is not controlled, and mu is assumed,
+so on ice the reference would ask for more yaw than the road gives. No hydraulics: the brake is a
+torque with a lag, and the research note docs/esp-tcs-plausibility-research.md puts that lag at
+roughly three times faster than a conventional pump-based unit; the ESP active-build bench
+shows where a real build time comes from. No engine: the sine-with-dwell is driven coasting
+anyway, as the regulation requires.
+-->
+
+---
+routeAlias: esp-ours-vs-real
+---
+
+## Our ESP against a production ESP
+
+<div class="text-sm">
+
+| | production ESP | ours | so what |
+|---|---|---|---|
+| **speed** $v$ | estimated from four wheel speeds | exact $v_x$ | the real estimate suffers when every wheel slips |
+| **sideslip** $\beta$ | estimated, controlled with $\dot\psi$ | not used | a slow slide at the right $\dot\psi$ goes unnoticed |
+| **road** $\mu$ | estimated, limits the reference | assumed 1 | on ice our reference asks for more yaw than the road gives |
+| **reference** | single-track, limited by $\mu g / v$ | the same, with 0.85 | — |
+| **control law** | yaw rate and $\beta$, gains calibrated per car, speed and $\mu$ | P, or PI, fixed gains, deadband | split-µ needs the I term; ours has one tuning |
+| **command** | a new **slip target** for the wheel's ABS / TCS loop | a **brake torque**, added before the ABS | with `abs_on = 1` close; without, the wheel locks |
+| **wheels** | one or several, plus an engine torque cut | one wheel, no engine | the test is coasting; a driven car would need the cut |
+| **actuator** | pump build, about 0.3 s to lock | 0.1 s lag on 2500 N·m, lock in about 0.1 s | ours brakes about 3× too fast |
+| **sensors** | offsets, noise, bank, cross-checked | ideal | no fault handling to show |
+
+</div>
+
+<!--
+Budget: 1.5 minutes. Read the "so what" column, top to bottom; the first three rows are the
+estimator our model does not have, the next four the controller, the last two the hardware.
+
+Speed: with every wheel braked or spinning, no wheel shows the car's speed, and production
+systems lean on the longitudinal acceleration and the model. Ours reads the true speed, so its
+slip and reference are always right.
+
+Sideslip: the production controller watches beta as well as the yaw rate, because a car can
+drift sideways at a yaw rate that looks plausible, on ice for example. Ours controls the yaw rate
+only.
+
+Friction: the reference yaw rate is clipped at mu g over v. A production ESP estimates mu from the
+grip the car has been using; ours assumes 1, so on a slippery road it would ask for a yaw rate the
+road cannot give and brake harder than needed.
+
+Control law: van Zanten's 1995 paper describes a controller on yaw rate and sideslip whose gains
+are calibrated per car model; ours is one proportional gain, 40 000 newton meter seconds per
+radian, with an integral term of 10 to the 5 switched on for the PI runs, and a 0.03 radian per
+second deadband.
+
+Command: the production ESP never commands a pressure; it moves the slip target of the wheel's
+own ABS or TCS controller, so the wheel cannot lock. Ours adds a torque to the driver's demand
+before the ABS, which with the ABS on has much the same effect, and without it locks the wheel, as
+the "which wheel" slide shows.
+
+Actuator: the research note puts a pump-based build to lock pressure at roughly 0.3 seconds; our
+allocator asks for 2500 newton meters, about twice the front lock torque, through a 0.1 second
+lag, and so reaches lock in about 0.1 second. The active-build bench, Lecture3.ESPActiveBuildBench,
+gives the hydraulic picture: 0.34 seconds to lock pressure with a fitted pump.
+
+Sources: van Zanten, Erhardt and Pfaff, SAE 950759, as I know it; docs/esp-tcs-plausibility-
+research.md for the build time; the planar model's parameters from ESPController.
 -->
 
 ---

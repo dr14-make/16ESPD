@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .frame { fill: #f4f6f8; stroke: #16202c; stroke-width: 2; }
+    .mass { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2.5; }
+    .spring { stroke: #4a5a6b; stroke-width: 2.5; fill: none; }
+    .plate { fill: #c9a227; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .drive { stroke: #1f5fa8; stroke-width: 3.5; fill: none; }
+    .cor { stroke: #c0392b; stroke-width: 3.5; fill: none; }
+    .t { font-size: 20px; font-weight: 600; }
+    .lbl { font-size: 18px; fill: #4a5a6b; }
+    .blue { font-size: 19px; font-weight: 600; fill: #1f5fa8; }
+    .red { font-size: 19px; font-weight: 600; fill: #c0392b; }
+  </style>
+  <defs>
+    <marker id="yr-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="yr-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="yr-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#c0392b"/></marker>
+  </defs>
+
+  <rect class="frame" x="40" y="60" width="440" height="280" rx="6"/>
+  <text x="50" y="84" class="lbl">chip, fixed to the car</text>
+
+  <rect class="plate" x="200" y="110" width="120" height="10"/>
+  <rect class="plate" x="200" y="280" width="120" height="10"/>
+  <text x="330" y="120" class="lbl">sense plate</text>
+  <text x="330" y="290" class="lbl">sense plate</text>
+
+  <path class="spring" d="M60 200 L80 200 L88 185 L104 215 L120 185 L136 215 L152 185 L168 215 L176 200 L200 200"/>
+  <path class="spring" d="M320 200 L344 200 L352 185 L368 215 L384 185 L400 215 L416 185 L432 215 L440 200 L460 200"/>
+  <rect x="52" y="180" width="8" height="40" fill="#16202c"/>
+  <rect x="460" y="180" width="8" height="40" fill="#16202c"/>
+
+  <rect class="mass" x="200" y="150" width="120" height="100" rx="4"/>
+  <text x="260" y="207" text-anchor="middle" class="t">mass m</text>
+
+  <path class="drive" d="M215 236 H305" marker-start="url(#yr-blue)" marker-end="url(#yr-blue)"/>
+  <text x="260" y="374" text-anchor="middle" class="blue">driven to vibrate: velocity v_d, kHz</text>
+  <path class="arrow" d="M260 340 V258" stroke-dasharray="4 4"/>
+
+  <path class="cor" d="M260 146 V128" marker-end="url(#yr-red)"/>
+  <path class="cor" d="M260 254 V272" marker-end="url(#yr-red)"/>
+  <text x="496" y="240" class="red">F_c = 2 m v_d Ω</text>
+  <text x="496" y="264" class="lbl">across the drive,</text>
+  <text x="496" y="284" class="lbl">at the drive rhythm</text>
+
+  <path class="arrow" d="M640 60 A34 34 0 1 1 606 94" marker-end="url(#yr-ink)"/>
+  <text x="600" y="150" class="t">Ω, yaw</text>
+</svg>
