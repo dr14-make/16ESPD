@@ -108,10 +108,15 @@ section, runs all of it on your car.
 
 The three numbers come from running notebook 02, cells "Why brakes need help" and the pressure
 table. To stop at 1 g, the tire must push back with the car's weight, about 13 700 newtons; at
-the 0.31 meter wheel radius that is 4256 newton meters. The report's caliper sizes, 57 millimeter
+the 0.31 meter wheel radius that is 4256 newton meters. The brake report's caliper sizes
+(`docs/reports/Passenger car brake system modeling.md`), 57 millimeter
 front and 38 millimeter rear pistons with a pad mu of 0.40, give 68.9 newton meters per bar,
 49.0 front and 19.9 rear. The report marks these caliper values as textbook, unverified. So 1 g
-needs 61.8 bar.
+needs 4256 over 68.9, 61.8 bar.
+
+In the diagram, F ped is the foot's force on the pedal in newtons and A mc the area of the master
+cylinder bore: 25 millimeters across, 4.91 square centimeters. The master cylinder's pressure is
+the pushrod force over that area.
 
 FMVSS 135, the US light-vehicle brake standard, caps the pedal force a test may use at 500
 newtons. Through the 3.5 lever and the 25 millimeter master cylinder bore, with no booster, 500
@@ -155,11 +160,21 @@ driver pushes.
 The figure is the pressure plot of notebook 02, "Experiment: pedal force to line pressure", at
 the default idle vacuum of 33 kilopascal absolute, with the no-vacuum curve dashed.
 
-Read it left to right. Below the cut-in the booster's valve stays closed and nothing happens. At
-cut-in the output jumps: the reaction disc has not touched the driver's plunger yet. Then every
-newton of foot gives five newtons more at the master cylinder: the boosted slope. At run-out the
-rear chamber is at full atmosphere and the diaphragm cannot push harder; past the knee only the
-foot adds, at one fifth of the slope.
+The axes: pedal force in newtons across, master-cylinder pressure in bar up. The solid curve has
+engine vacuum, the dashed one none; the dotted line is the 61.8 bar a 1 g stop needs.
+
+How the booster works: the front chamber of the diaphragm holds vacuum. When the driver pushes, a
+valve lets outside air into the rear chamber, and the pressure difference pushes the diaphragm,
+and so the pushrod, forward.
+
+Read it left to right. Below the cut-in, 11.4 newtons, the booster's valve stays closed and
+nothing happens. At cut-in the output jumps to 5.7 bar: the reaction disc, the rubber disc that
+feeds part of the output force back to the driver's foot, has not touched the driver's plunger
+yet. Then the booster multiplies the force from the lever by five: the boosted slope. Where 0.357
+bar per newton comes from: 3.5 for the lever times 5 for the booster, over the bore area of 4.91
+square centimeters, is 0.357 bar for each newton of foot. At run-out, 232 newtons and 84.3 bar,
+the rear chamber is at full atmosphere and the diaphragm cannot push harder; past the knee only
+the foot adds, at one fifth of the slope, 0.071 bar per newton.
 
 Where does the vacuum come from? A throttled petrol engine makes it for free in the intake
 manifold, the same manifold pressure you met in Lecture 2. Diesels and turbo engines need a vacuum
@@ -211,7 +226,11 @@ capability, but braking one front wheel pulls the car toward that side. Front-wh
 with a negative scrub radius in the steering geometry use the X split because the geometry
 counters that pull.
 
-In the model, `TandemMasterCylinder` uses the quasi-static form on the slide, with a 25 millimeter
+Read the formula: the pressure p mc, in pascals, is the pushrod force F rod, minus the return
+spring's force F spring and the seal friction F seal, all in newtons, divided by the bore area A
+mc in square meters. It holds in steady state, when the pistons are not accelerating.
+
+In the model, `TandemMasterCylinder` uses this quasi-static form, with a 25 millimeter
 bore from the PATH test car. Before pressure rises, each piston covers a dead stroke, 2.5
 millimeters assumed, closing its compensating port to the reservoir.
 
@@ -256,8 +275,9 @@ safer failure. Every brake system is therefore designed so the front locks first
 proportioning valve gets this right for one load; EBD, using the ABS hardware and wheel-speed
 sensors, gets it right for any load. That is the first sign that ABS hardware does more than ABS.
 
-The brake plan's increment 1c adds the proportioning valve and the ideal-against-installed brake
-distribution plot to the model.
+The course model has no proportioning valve and no EBD: its single lumped wheel carries both
+axles' calipers under one tire, so no axle can lock first. The brake plan,
+`docs/brake-system-implementation-plan.md`, lists the valve as a later step.
 -->
 
 ---
@@ -352,7 +372,7 @@ Vehicle.braking_distance(r)
 
 <!--
 Sixteen minutes, the parts slide included: the largest drawing of the day, twelve blocks and
-eleven wires, then two code pastes, the analysis and two runs. Your first build of the day with a
+fourteen wires, then two code pastes, the analysis and two runs. Your first build of the day with a
 simulation in it: the brake system of this section, from the pedal to the wheel, stopping your own
 car. Every block is a library part; the wiring is yours. The guide page, step 02, has the same
 steps with every line of code; its "Do this" numbers are in brackets.
@@ -390,7 +410,7 @@ steps with every line of code; its "Do this" numbers are in brackets.
    port, to `fixed_hydraulic` first; only then the rotational one, the gray circle, to `fixed`,
    because a name still taken cannot be given.
 
-4. Wire [3], eleven wires in three groups.
+4. Wire [3], fourteen wires in three groups. The reference file writes them as eleven `connect` lines, because two of them join several ports: the three housings to ground, and the wheel, body and speed sensor.
    - The force chain: `command.y` → `pedal_unit.u`, `pedal_unit.rod` → `booster.input`,
      `booster.rod_out` → `master.pushrod`.
    - The housings and the two circuits: `pedal_unit.support`, `booster.support` and

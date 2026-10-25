@@ -403,6 +403,17 @@ ESP acts on the error $\dot\psi_{ref} - \dot\psi$, and on the sideslip angle $\b
 The source deck said ESP compares the sensor data with a reference model of the vehicle's behavior
 stored in its memory. This is that reference model, in its textbook form.
 
+Units: psi dot ref, the reference yaw rate, in radians per second; v the speed in meters per
+second; L the wheelbase in meters; delta the road-wheel angle in radians, the steering-wheel angle
+over the steering ratio; K us in radians per meter per second squared. In the diagram, l f and l r
+are the distances from the center of gravity to the front and rear axle; their sum is L.
+
+A number, on the planar car of the demo: L 2.7 meters, K us 2.04 times ten to the minus three, at
+80 kilometers per hour, 22.2 meters per second. K us times v squared is 1.0, so the denominator is
+3.7 meters. A road-wheel angle of 0.02 radians, about 18 degrees on the steering wheel, asks for
+22.2 times 0.02 over 3.7, 0.12 radians per second, 7 degrees per second. The friction limit at
+that speed, 9.81 over 22.2, is 0.44 radians per second.
+
 The single-track or bicycle model lumps each axle into one wheel. In a steady turn at low speed,
 the car turns at v times delta over L: pure geometry. At higher speed the tires need slip angles
 to make lateral force, and a normally understeering car turns less than the geometry says. The
@@ -746,7 +757,7 @@ class: big-figure
 
 ## Demo: the test on our car, without ESP
 
-![Top view of three runs of the sine-with-dwell from 80 km/h, the car drawn every 0.4 s. At 76 degrees of steering-wheel angle the car follows a smooth lane change and drives on. At 180 degrees it swings out, turns broadside and spins, stopping near x 92 m pointing backward. At 270 degrees it runs wider and straighter than asked, the nose plowing, but stays pointing forward.](/figures/05-swd-path.svg)
+![Top view of three runs of the sine-with-dwell from 80 km/h, the car drawn every 0.4 s. At 76 degrees of steering-wheel angle the car follows a smooth lane change and drives on. At 180 degrees it swings out, turns broadside and spins, its path ending near x 94 m, y −9 m, pointing backward. At 270 degrees it runs wider and straighter than asked, the nose plowing, but stays pointing forward.](/figures/05-swd-path.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -819,7 +830,7 @@ class: big-figure
 
 ## With ESP: the car stops rotating, and has turned
 
-![Top view of the 180-degree sine-with-dwell from 80 km/h, the car drawn every 0.4 s. Without ESP, dashed red, the car swings out to y 5.5 m, turns broadside and spins, stopping near x 95 m. With ESP, solid blue, it changes lanes less sharply, to y 3 m, and drives on pointing along its path, still going at x 100 m.](/figures/05-swd-esp-path.svg)
+![Top view of the 180-degree sine-with-dwell from 80 km/h, the car drawn every 0.4 s. Without ESP, dashed red, the car swings out to y 5.5 m, turns broadside and spins, its path ending near x 94 m, y −9 m. With ESP, solid blue, it changes lanes less sharply, to y 3 m, and drives on pointing along its path, still moving when the run ends near x 97 m.](/figures/05-swd-esp-path.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -975,9 +986,9 @@ routeAlias: split-mu
 class: big-figure
 ---
 
-## Split-µ: braking with one side on ice
+## Split-µ: braking with one side on snow
 
-![Two panels. Left, top view: full braking from 80 km/h with the left wheels on dry asphalt and the right wheels on ice, the car drawn every 0.5 s. ABS only, red, turns left toward the dry side, more and more broadside, and stops at x 66 m, y 21 m. ABS with rear select-low, orange, and select-low with a proportional ESP, dashed purple, drift left to about y 15 m at x 87 to 90 m. Select-low with a PI ESP, blue, runs almost straight, to y 5 m at x 108 m. Right: heading over 6 s. ABS only climbs to 129 degrees by 4.5 s; the select-low runs reach 23 and 25 degrees by 6 s; the PI ESP stays near 3 degrees.](/figures/05-split-mu.svg)
+![Two panels. Left, top view: full braking from 80 km/h with the left wheels on dry asphalt and the right wheels on snow, road factor 0.3, the car drawn every 0.5 s. ABS only, red, turns left toward the dry side, more and more broadside, and stops at x 66 m, y 21 m. ABS with rear select-low, orange, and select-low with a proportional ESP, dashed purple, drift left to about y 15 m at x 87 to 90 m. Select-low with a PI ESP, blue, runs almost straight, to y 5 m at x 108 m. Right: heading over 6 s. ABS only climbs to 129 degrees by 4.5 s; the select-low runs reach 23 and 25 degrees by 6 s; the PI ESP stays near 3 degrees.](/figures/05-split-mu.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -1004,7 +1015,7 @@ Budget: in passing, the table only: ABS alone turns the car 129°, the PI ESP ho
 distance. The full read below is 2 minutes, only if ahead.
 
 The classic case where ABS alone is not enough. Full braking from 80 kilometers per hour, 2500
-newton meters asked at every wheel, the left wheels on dry asphalt and the right ones on ice at
+newton meters asked at every wheel, the left wheels on dry asphalt and the right ones on the low-µ side, snow at
 30 percent of the grip, and the steering wheel held straight: the robot does not countersteer, as
 a driver would.
 

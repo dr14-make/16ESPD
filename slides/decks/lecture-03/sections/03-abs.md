@@ -45,7 +45,7 @@ Two benefits, in order of importance:
 1. **The car can still be steered**: a rolling tire gives lateral force, a locked one almost none.
 2. **A shorter stop on most roads**: the tire works near its peak instead of sliding.
 
-Four parts:
+Its parts:
 
 - **wheel-speed sensors**, usually one per wheel
 - **valves** and a **return pump**, in one hydraulic modulator
@@ -417,7 +417,7 @@ driver pushes harder. Position three, release: dump, the outlet valve lets fluid
 spring-loaded accumulator. The pump returns it to the master-cylinder side, which is what the
 driver feels as pulsing in the pedal.
 
-The green box, in terms of these three states: `ABSValve`, from the table two slides back, has no
+The green box, in terms of these three states: `ABSValve`, from the previous slide's table, has no
 valve positions. A command held steady is hold, a falling one is dump, a rising one is build.
 The dumped fluid leaves the model, so the pulse the driver feels cannot appear.
 
@@ -589,10 +589,23 @@ The model in `dyad/Vehicle/ABSController.dyad` and its test benches in `ABSBrake
 a compressed version of the Bosch cycle on the previous slides, with three phases, decrease, hold
 and increase, and an off state below 1.5 meters per second.
 
+Symbols on the slide: J w is the wheel's rotational inertia, 4 kilogram square meters for the four
+wheels lumped into one; r the wheel radius. Lambda is the slip, the same quantity as kappa on
+earlier slides; the library's controller names it lambda. Lambda dot is its rate of change, per
+second, and T p the look-ahead time, 30 milliseconds. "Lock torque" is the brake torque at which
+the wheel last started to lock.
+
+Read the diagram along the arrows: the ECU, sampled every 5 milliseconds, first estimates the car's
+speed and the slip from the wheel speed, then the modulator decides build, hold or dump and sends
+a torque command; the brake actuator follows it 30 milliseconds late; the wheel, tire and car
+respond; the wheel speed omega goes back to the estimator.
+
 The key design choice is the predicted slip. The brake hydraulics take 30 milliseconds to respond,
 so by the time a release command takes effect the wheel has dived further. The controller looks
 30 milliseconds ahead, slip plus 30 milliseconds times its rate of change, and releases when that
-predicted slip passes the peak. That is the lead that covers the actuator lag.
+predicted slip passes the peak. A number: a slip of minus 0.03 that falls at 0.5 per second
+predicts minus 0.03 minus 0.015, minus 0.045, already past the 4 percent peak, so the controller
+releases now. That is the lead that covers the actuator lag.
 
 The second choice is pressure memory, from the Bosch cycle: release to 60 percent of the torque at
 which the wheel started to lock, reapply quickly to 85 percent, then creep up.
@@ -952,6 +965,11 @@ Production systems **learn** the road's deceleration, and some use a longitudina
 <!--
 This is the hardest part of a real ABS, and the reason the model in the repository has two
 versions of its controller.
+
+Symbols: omega i is the angular speed of wheel i, in radians per second, and omega r the speed of
+its tread in meters per second. v ref is the estimated car speed, a ref the fastest deceleration
+the estimate is allowed, in meters per second squared. Lambda is the slip computed from the
+estimate instead of the true speed: the wheel's tread speed minus v ref, over v ref.
 
 When all four wheels brake at once, none of them rolls freely, so none tells you the car's speed.
 The ABS assumes the car cannot decelerate faster than some limit and lets its estimate fall no
@@ -1387,7 +1405,9 @@ Sources, all in `docs/abs-efficiency-research.md` with the full citations:
   same for fresh snow on pavement just below freezing; only its abstract was available.
 
 UN Regulation 13-H, Annex 6: epsilon is the deceleration with ABS cycling, between 45 and 15
-km/h, divided by the best deceleration without locking a wheel. So the yardstick is the peak of
+km/h, divided by the best deceleration without locking a wheel. On the slide, z ABS is that ABS
+deceleration as a fraction of g, and k the highest one the tire reaches without locking, the
+peak friction coefficient. So the yardstick is the peak of
 the curve, not the locked wheel. Our tire locks at 0.7 of its peak, just under the line, which is
 why a locked wheel fails it and an ABS that barely beats locking can still pass.
 
@@ -1514,13 +1534,13 @@ reruns.
 Open the REPL and paste the loop from the guide page. It runs your three benches at road factor
 1, 0.5 and 0.3, each long enough for the car to stop: the stop-time rule gives about 20 seconds
 on snow. Read the table against the bars. The first column is your build 02 bench at its default
-pedal, 0.6: 43.7, 85.1, 136.7, the previous slide's locked column within a tenth of a meter. Your
+pedal, 0.6: 43.7, 85.1, 136.7, the locked column of "Across road surfaces" within a tenth of a meter. Your
 true-slip column: 34.2, 64.6, 106.1. Close to the library's ideal ABS, not equal to it: yours
 brakes through the valves, lines and calipers of build 02. Your wheel-speed-only column: 38.5,
 78.0, 130.6. All under locked, but on snow by only 5 percent.
 
-The fourth column is the library's clocked ECU, `Vehicle.ABSBrakeTransient`, from the previous
-slide. On snow it loses to the locked wheel, 141.3. That is the trap: `a_ref` 8 is almost three
+The fourth bar is the library's clocked ECU, `Vehicle.ABSBrakeTransient`, the ABS column of
+"Across road surfaces". On snow it loses to the locked wheel, 141.3. That is the trap: `a_ref` 8 is almost three
 times what mu 0.3 allows, 2.9, so its estimate falls too fast, it under-reads the slip and lets
 the wheel slide. Your `PhaseABS` does not fall into it: it dumps on the wheel's own deceleration,
 which needs no estimate of the car's speed. Its small gain on snow has another cause, the deep
@@ -1698,7 +1718,7 @@ sheet):
   a fixed $a_{ref}$ throws the gain away.
 - On your car, through your own brake: 43.7 m locked, 34.2 m on the true slip, 38.5 m on the
   wheel speed alone, by dumping on the wheel's deceleration and **holding** the pressure. On
-  snow only 5 % shorter than locked, as real cars.
+  snow only 5 % shorter than locked, as on real cars.
 
 ### Next: the same idea for a wheel that is driven, not braked. <Link to="tcs">→ 04, traction control</Link>
 
