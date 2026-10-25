@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SplitMuStop(; name, load_transfer, v0, T_cmd, mu_scale_right, select_low, esp_on, Kp, Ki, radius, k_dec, k_inc_fast, k_inc_slow, h_cg)
+   SplitMuStop(; name, load_transfer, v0, T_cmd, mu_scale_right, select_low, esp_on, Kp, Ki, radius, k_dec, k_inc_fast, k_inc_slow, h_cg, R_build)
 
 Split-friction straight stop with four-channel ABS and optional yaw-control braking.
 
@@ -26,8 +26,9 @@ Split-friction straight stop with four-channel ABS and optional yaw-control brak
 | `k_inc_fast`         |                          | --  |   160000.0 |
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `h_cg`         |                          | m  |   0.0 |
+| `R_build`         |                          | --  |   1.0e9 |
 """
-@component function SplitMuStop(; name = nothing, load_transfer=true, v0=22.22222222222222, T_cmd=Float64(2500.0), mu_scale_right=0.3, select_low=Float64(0.0), esp_on=Float64(0.0), Kp=Float64(40000.0), Ki=Float64(100000.0), radius=0.31, k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), h_cg=Float64(0.0), kwargs...)
+@component function SplitMuStop(; name = nothing, load_transfer=true, v0=22.22222222222222, T_cmd=Float64(2500.0), mu_scale_right=0.3, select_low=Float64(0.0), esp_on=Float64(0.0), Kp=Float64(40000.0), Ki=Float64(100000.0), radius=0.31, k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), h_cg=Float64(0.0), R_build=Float64(1000000000.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -94,6 +95,9 @@ Split-friction straight stop with four-channel ABS and optional yaw-control brak
   __local__h_cg = h_cg
   append!(__params, @parameters (h_cg::Real))
   __initial_conditions[h_cg] = __local__h_cg
+  __local__R_build = R_build
+  append!(__params, @parameters (R_build::Real))
+  __initial_conditions[R_build] = __local__R_build
 
   ### Final Parameters (assignments)
 
@@ -124,7 +128,7 @@ Split-friction straight stop with four-channel ABS and optional yaw-control brak
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, Kp=Kp, Ki=Ki, radius=radius, select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, ecu_overrides...))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; R_build=R_build, esp_on=esp_on, Kp=Kp, Ki=Ki, radius=radius, select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, ecu_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

@@ -32,6 +32,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"Kp"::Float64 = 40000.0
   var"Ki"::Float64 = 0.0
   var"T_build"::Float64 = 0.1
+  var"R_build"::Float64 = 1000000000.0
   var"select_low"::Float64 = 1.0
   var"mu_scale_right"::Float64 = 1.0
   var"T_cmd"::Float64 = 0.0
@@ -53,6 +54,7 @@ function DyadInterface.run_analysis(spec::ESPSineWithDwellTransientSpec)
   push!(overrides, no_namespace_model.Kp => spec.var"Kp")
   push!(overrides, no_namespace_model.Ki => spec.var"Ki")
   push!(overrides, no_namespace_model.T_build => spec.var"T_build")
+  push!(overrides, no_namespace_model.R_build => spec.var"R_build")
   push!(overrides, no_namespace_model.select_low => spec.var"select_low")
   push!(overrides, no_namespace_model.mu_scale_right => spec.var"mu_scale_right")
   push!(overrides, no_namespace_model.T_cmd => spec.var"T_cmd")

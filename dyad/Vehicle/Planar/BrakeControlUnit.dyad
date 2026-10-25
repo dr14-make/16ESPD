@@ -30,6 +30,7 @@ component BrakeControlUnit
   parameter radius::Length = 0.31
   parameter T_max::Torque = 2500.0
   parameter T_build::Time = 0.1
+  parameter R_build::Real = 1.0e9
   structural parameter dt::Time = 0.005
   parameter select_low::Real = 1.0
   parameter T_p::Time = 0.03
@@ -44,7 +45,7 @@ component BrakeControlUnit
   parameter k_inc_fast::Real = 160000.0
   parameter k_inc_slow::Real = 16000.0
   parameter v_min::Velocity = 1.5
-  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(esp_on = esp_on, L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor, Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max, tw = tw, radius = radius, T_max = T_max, T_build = T_build) {^esp}
+  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(esp_on = esp_on, L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor, Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max, tw = tw, radius = radius, T_max = T_max, T_build = T_build, R_build = R_build) {^esp}
   abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(abs_on = abs_on, dt = dt, select_low = select_low, T_p = T_p, lambda_1_f = lambda_1_f, lambda_1_r = lambda_1_r, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^abs}
 relations
   connect(demand, abs.demand) {^w1}

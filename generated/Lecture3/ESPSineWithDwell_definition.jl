@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPSineWithDwell(; name, load_transfer, A_sw, v0, esp_on, abs_on, Kp, Ki, T_build, radius, select_low, mu_scale_right, T_cmd, k_dec, k_inc_fast, k_inc_slow, h_cg)
+   ESPSineWithDwell(; name, load_transfer, A_sw, v0, esp_on, abs_on, Kp, Ki, T_build, R_build, radius, select_low, mu_scale_right, T_cmd, k_dec, k_inc_fast, k_inc_slow, h_cg)
 
 Planar car with ESP and an optional sampled four-channel ABS path.
 
@@ -21,6 +21,7 @@ Planar car with ESP and an optional sampled four-channel ABS path.
 | `Kp`         |                          | --  |   40000.0 |
 | `Ki`         |                          | --  |   0.0 |
 | `T_build`         |                          | s  |   0.1 |
+| `R_build`         |                          | --  |   1.0e9 |
 | `radius`         |                          | m  |   0.31 |
 | `select_low`         |                          | --  |   1.0 |
 | `mu_scale_right`         |                          | --  |   1.0 |
@@ -30,7 +31,7 @@ Planar car with ESP and an optional sampled four-channel ABS path.
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function ESPSineWithDwell(; name = nothing, load_transfer=true, A_sw=0.5585053606381855, v0=22.22222222222222, esp_on=Float64(1.0), abs_on=Float64(0.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, radius=0.31, select_low=Float64(1.0), mu_scale_right=Float64(1.0), T_cmd=Float64(0.0), k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), h_cg=Float64(0.0), kwargs...)
+@component function ESPSineWithDwell(; name = nothing, load_transfer=true, A_sw=0.5585053606381855, v0=22.22222222222222, esp_on=Float64(1.0), abs_on=Float64(0.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, R_build=Float64(1000000000.0), radius=0.31, select_low=Float64(1.0), mu_scale_right=Float64(1.0), T_cmd=Float64(0.0), k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), h_cg=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -82,6 +83,9 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
   __initial_conditions[T_build] = __local__T_build
+  __local__R_build = R_build
+  append!(__params, @parameters (R_build::Real))
+  __initial_conditions[R_build] = __local__R_build
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
   __initial_conditions[radius] = __local__radius
@@ -136,7 +140,7 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, abs_on=abs_on, Kp=Kp, Ki=Ki, T_build=T_build, radius=radius, select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, ecu_overrides...))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, abs_on=abs_on, Kp=Kp, Ki=Ki, T_build=T_build, R_build=R_build, radius=radius, select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, ecu_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

@@ -36,6 +36,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"k_inc_fast"::Float64 = 160000.0
   var"k_inc_slow"::Float64 = 16000.0
   var"h_cg"::Float64 = 0.0
+  var"R_build"::Float64 = 1000000000.0
   # Split-friction straight stop with four-channel ABS and optional yaw-control braking.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture3.SplitMuStop(; name=:SplitMuStop)
 end
@@ -43,6 +44,7 @@ end
 function DyadInterface.run_analysis(spec::SplitMuStopTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
+  push!(overrides, no_namespace_model.R_build => spec.var"R_build")
   push!(overrides, no_namespace_model.v0 => spec.var"v0")
   push!(overrides, no_namespace_model.T_cmd => spec.var"T_cmd")
   push!(overrides, no_namespace_model.mu_scale_right => spec.var"mu_scale_right")

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPSteerRamp(; name, load_transfer, v0, delta_sw_final, t_ramp, t_steer, mu_scale_front, esp_on, Kp, Ki, T_build, radius, h_cg)
+   ESPSteerRamp(; name, load_transfer, v0, delta_sw_final, t_ramp, t_steer, mu_scale_front, esp_on, Kp, Ki, T_build, R_build, radius, h_cg)
 
 Steering ramp with reduced front friction for continuous-ESP understeer checks.
 
@@ -23,10 +23,11 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
 | `Kp`         |                          | --  |   40000.0 |
 | `Ki`         |                          | --  |   0.0 |
 | `T_build`         |                          | s  |   0.1 |
+| `R_build`         |                          | --  |   1.0e9 |
 | `radius`         |                          | m  |   0.31 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function ESPSteerRamp(; name = nothing, load_transfer=true, v0=22.22222222222222, delta_sw_final=1.7671458676442586, t_ramp=7.5, t_steer=0.5, mu_scale_front=0.7, esp_on=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, radius=0.31, h_cg=Float64(0.0), kwargs...)
+@component function ESPSteerRamp(; name = nothing, load_transfer=true, v0=22.22222222222222, delta_sw_final=1.7671458676442586, t_ramp=7.5, t_steer=0.5, mu_scale_front=0.7, esp_on=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, R_build=Float64(1000000000.0), radius=0.31, h_cg=Float64(0.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -84,6 +85,9 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
   __initial_conditions[T_build] = __local__T_build
+  __local__R_build = R_build
+  append!(__params, @parameters (R_build::Real))
+  __initial_conditions[R_build] = __local__R_build
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
   __initial_conditions[radius] = __local__radius
@@ -129,7 +133,7 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
   # Subcomponent esp of type VehicleSystemsComponents.Vehicle.Planar.ESPController
   esp_overrides = __pop_subcomponent_overrides!(__overrides, "esp")
-  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, Kp=Kp, Ki=Ki, T_build=T_build, radius=radius, esp_overrides...))
+  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, Kp=Kp, Ki=Ki, T_build=T_build, R_build=R_build, radius=radius, esp_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

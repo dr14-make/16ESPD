@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPController(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, esp_on)
+   ESPController(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, esp_on)
 
 Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 
@@ -29,6 +29,7 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 | `radius`         |                          | m  |   0.31 |
 | `T_max`         |                          | N.m  |   2500.0 |
 | `T_build`         |                          | s  |   0.1 |
+| `R_build`         |                          | --  |   1.0e9 |
 | `esp_on`         | ESP enable; outputs are zero below 0.5                         | --  |   1.0 |
 
 ## Connectors
@@ -49,7 +50,7 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 | `r_ref`         |                          | rad/s  |
 | `oversteer`         |                          | --  |
 """
-@component function ESPController(; name = nothing, L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, esp_on=Float64(1.0), kwargs...)
+@component function ESPController(; name = nothing, L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, R_build=Float64(1000000000.0), esp_on=Float64(1.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -128,6 +129,9 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
   __initial_conditions[T_build] = __local__T_build
+  __local__R_build = R_build
+  append!(__params, @parameters (R_build::Real))
+  __initial_conditions[R_build] = __local__R_build
   __local__esp_on = esp_on
   append!(__params, @parameters (esp_on::Real), [description = "ESP enable; outputs are zero below 0.5"])
   __initial_conditions[esp_on] = __local__esp_on
@@ -171,7 +175,7 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   push!(__systems, @named yaw = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(; Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, yaw_overrides...))
   # Subcomponent allocator of type VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator
   allocator_overrides = __pop_subcomponent_overrides!(__overrides, "allocator")
-  push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; tw=tw, radius=radius, T_max=T_max, T_build=T_build, allocator_overrides...))
+  push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, allocator_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))

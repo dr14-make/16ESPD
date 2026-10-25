@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeAllocator(; name, tw, radius, T_max, T_build)
+   BrakeAllocator(; name, tw, radius, T_max, T_build, R_build)
 
 Signed single-wheel yaw-moment allocation with pressure-build dynamics.
 
@@ -17,6 +17,7 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
 | `radius`         | Wheel radius (repository default)                         | m  |   0.31 |
 | `T_max`         | Maximum wheel torque request (assumed)                         | N.m  |   2500.0 |
 | `T_build`         | Pressure build lag (assumed)                         | s  |   0.1 |
+| `R_build`         | Maximum rate of brake-torque increase in N.m/s; a pump-based unit builds front-lock torque in about 0.34 s                         | --  |   1.0e9 |
 
 ## Connectors
 
@@ -37,7 +38,7 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
 | `req_rl`         |                          | N.m  |
 | `req_rr`         |                          | N.m  |
 """
-@component function BrakeAllocator(; name = nothing, tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, kwargs...)
+@component function BrakeAllocator(; name = nothing, tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, R_build=Float64(1000000000.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -80,6 +81,9 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real), [description = "Pressure build lag (assumed)"])
   __initial_conditions[T_build] = __local__T_build
+  __local__R_build = R_build
+  append!(__params, @parameters (R_build::Real), [description = "Maximum rate of brake-torque increase in N.m/s; a pump-based unit builds front-lock torque in about 0.34 s"])
+  __initial_conditions[R_build] = __local__R_build
 
   ### Final Parameters (assignments)
 
@@ -145,10 +149,10 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
   push!(__eqs, req_fr ~ ifelse(oversteer > 0.5, ifelse(Mz > 0, -T, T), 0.0))
   push!(__eqs, req_rl ~ ifelse(oversteer <= 0.5, ifelse(Mz > 0, T, -T), 0.0))
   push!(__eqs, req_rr ~ ifelse(oversteer <= 0.5, ifelse(Mz > 0, -T, T), 0.0))
-  push!(__eqs, ModelingToolkit.D_nounits(dT_fl) ~ (req_fl - dT_fl) / T_build)
-  push!(__eqs, ModelingToolkit.D_nounits(dT_fr) ~ (req_fr - dT_fr) / T_build)
-  push!(__eqs, ModelingToolkit.D_nounits(dT_rl) ~ (req_rl - dT_rl) / T_build)
-  push!(__eqs, ModelingToolkit.D_nounits(dT_rr) ~ (req_rr - dT_rr) / T_build)
+  push!(__eqs, ModelingToolkit.D_nounits(dT_fl) ~ min((req_fl - dT_fl) / T_build, R_build))
+  push!(__eqs, ModelingToolkit.D_nounits(dT_fr) ~ min((req_fr - dT_fr) / T_build, R_build))
+  push!(__eqs, ModelingToolkit.D_nounits(dT_rl) ~ min((req_rl - dT_rl) / T_build, R_build))
+  push!(__eqs, ModelingToolkit.D_nounits(dT_rr) ~ min((req_rr - dT_rr) / T_build, R_build))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

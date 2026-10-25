@@ -23,6 +23,7 @@ component ESPController
   parameter radius::Length = 0.31
   parameter T_max::Torque = 2500.0
   parameter T_build::Time = 0.1
+  parameter R_build::Real = 1.0e9
   "ESP enable; outputs are zero below 0.5"
   parameter esp_on::Real = 1.0
   variable Mz::Torque
@@ -30,7 +31,7 @@ component ESPController
   variable oversteer::Real
   reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(L = L, K_us = K_us, i_s = i_s, mu_est = mu_est, g = g, k_lim = k_lim, v_floor = v_floor) {^reference}
   yaw = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(Kp = Kp, Ki = Ki, deadband = deadband, v_on = v_on, Mz_max = Mz_max) {^yaw}
-  allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(tw = tw, radius = radius, T_max = T_max, T_build = T_build) {^allocator}
+  allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(tw = tw, radius = radius, T_max = T_max, T_build = T_build, R_build = R_build) {^allocator}
 relations
   connect(delta_sw, reference.delta_sw) {^w1}
   connect(vx, reference.vx) {^w2}

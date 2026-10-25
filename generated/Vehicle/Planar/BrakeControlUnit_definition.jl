@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeControlUnit(; name, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min)
+   BrakeControlUnit(; name, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min)
 
 Electronic brake control unit combining continuous ESP and sampled four-channel ABS.
 
@@ -32,6 +32,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
 | `radius`         |                          | m  |   0.31 |
 | `T_max`         |                          | N.m  |   2500.0 |
 | `T_build`         |                          | s  |   0.1 |
+| `R_build`         |                          | --  |   1.0e9 |
 | `select_low`         |                          | --  |   1.0 |
 | `T_p`         |                          | s  |   0.03 |
 | `lambda_1_f`         |                          | --  |   0.08 |
@@ -61,7 +62,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function BrakeControlUnit(; name = nothing, dt=0.005, esp_on=Float64(1.0), abs_on=Float64(1.0), L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, select_low=Float64(1.0), T_p=0.03, lambda_1_f=0.08, lambda_1_r=0.06, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), v_min=1.5, kwargs...)
+@component function BrakeControlUnit(; name = nothing, dt=0.005, esp_on=Float64(1.0), abs_on=Float64(1.0), L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, R_build=Float64(1000000000.0), select_low=Float64(1.0), T_p=0.03, lambda_1_f=0.08, lambda_1_r=0.06, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), v_min=1.5, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -146,6 +147,9 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
   __initial_conditions[T_build] = __local__T_build
+  __local__R_build = R_build
+  append!(__params, @parameters (R_build::Real))
+  __initial_conditions[R_build] = __local__R_build
   __local__select_low = select_low
   append!(__params, @parameters (select_low::Real))
   __initial_conditions[select_low] = __local__select_low
@@ -212,7 +216,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   ### Components
   # Subcomponent esp of type VehicleSystemsComponents.Vehicle.Planar.ESPController
   esp_overrides = __pop_subcomponent_overrides!(__overrides, "esp")
-  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, tw=tw, radius=radius, T_max=T_max, T_build=T_build, esp_overrides...))
+  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, esp_overrides...))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
   push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; abs_on=abs_on, dt=dt, select_low=select_low, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, abs_overrides...))
