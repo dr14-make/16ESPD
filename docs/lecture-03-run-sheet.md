@@ -196,7 +196,8 @@ After the section 03 summary. The building is done for the day.
 - What it does 1.5, the differential film 2.5 (stop once the spider gears are shown), the open
   differential 1.5, two actuators 1.5, Lecture 1 link 1, take-home bonus 1, summary 1.
 - The bonus is step 06 on the guide page: a brake-based TCS on hands-on 1's `SlipCar`, handed in
-  as a pull request for extra points. Its reference (`feat/handson03-tcs-bonus`) is not built yet.
+  as a pull request for extra points. Its reference is `HandsOn03.TCSStartTransient` on
+  `feat/handson03-tcs-bonus`: 8.0 against 5.6 m/s at 10 s, against the guide's hand 8.5 and 5.7.
 
 ## 05 Electronic stability program — 23 min
 

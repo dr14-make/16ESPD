@@ -266,7 +266,7 @@ after 10 s.
 
 *`TCSSlipCar`: your `SlipCar` with a `Vehicle.Wheel.BrakeActuator` between `wheel_inertia` and
 `wheel`, its support on `rot_ground`, a `tau_tcs` input · `TCS`: build 03's law turned round,
-pressure builds while `kappa_pred > lambda_target`, clipped to [0, `tau_tcs_max`]*
+brake torque builds while `kappa_pred > lambda_target`, clipped to [0, `tau_tcs_max`]*
 
 **Given:** `BrakeActuator`, a brake with a 30 ms lag · `ABSPressureIntegrator`
 
@@ -297,9 +297,12 @@ The parts are all ones you have now: your `SlipCar` from hands-on 1, the given `
 and `ABSPressureIntegrator`, and your `SlipABS` from build 03, with the sign of the slip turned
 round. The guide page has the task, the parts and the advice, not the diagram.
 
-The reference solution is kept off main, on branch feat/handson03-tcs-bonus (not built yet), as
-the hands-on 2 WLTC bonus was. The 8.5 and 5.7 meters per second are hand estimates: net of
-resistance, about 0.85 against 0.57 meters per second squared.
+The reference solution is kept off main, on branch feat/handson03-tcs-bonus, as the hands-on 2
+WLTC bonus was: `HandsOn03.TCSStartTransient`, with `tcs_enabled` 1 or 0. The 8.5 and 5.7 meters
+per second are hand estimates: net of resistance, about 0.85 against 0.57 meters per second
+squared. The reference gives 8.0 against 5.6 at 10 seconds, the slip held at 0.036: the estimate
+assumes peak traction throughout and leaves out the engine delay, the brake lag and the slip
+cycling.
 -->
 
 ---

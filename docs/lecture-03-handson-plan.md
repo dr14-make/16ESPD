@@ -425,15 +425,16 @@ gains more speed in 10 s.
 
 **Built / given.** Given: `Vehicle.Wheel.BrakeActuator`, `Vehicle.ABSPressureIntegrator`. Built:
 `TCSSlipCar` (duplicate `SlipCar`, brake between `wheel_inertia` and `wheel`, its `support` on
-`rot_ground`, a `tau_tcs` input); `TCS`, the step 03 law turned round: the pressure builds while
+`rot_ground`, a `tau_tcs` input); `TCS`, the step 03 law turned round: the brake torque builds while
 `kappa_pred > lambda_target` and falls otherwise, clipped to `[0, tau_tcs_max]`; the bench, a
 torque step on `tau_cmd` and `mu_scale = 0.2`.
 
-**Reference model.** `HandsOn03.TCSSlipCar`, `HandsOn03.TCSStart`, kept off `main` as the WLTC
+**Reference model.** `HandsOn03.TCSSlipCar`, `HandsOn03.TCS`, `HandsOn03.TCSStart`, kept off `main` as the WLTC
 bonus was: on branch `feat/handson03-tcs-bonus` only. Students get the task, the parts and the
 advice, not the diagram.
 
-**Checkpoint / grading** (hand estimate; H6 would measure it, not built yet): the traction limit is
+**Checkpoint / grading** (hand estimate; the H6 reference measures 8.0 against 5.6 m/s, slip 0.036,
+in `test/tcs_bonus.jl` on its branch): the traction limit is
 0.2 × 6865 N = 1373 N at the peak against 961 N spinning, so roughly 0.85 against 0.57 m/s² net
 of resistance, about 8.5 against 5.7 m/s after 10 s. One paragraph on why a production TCS
 cuts engine torque when both driven wheels spin (and what the 0.3 s engine delay of `SlipCar`
@@ -482,7 +483,7 @@ format of that brief (each task ends in a check). It touches nothing under `dyad
 | H3 | `HandsOn03.RefSpeedEstimator`, `PhaseABS`, `ABSStopWheelOnly` + transient | **done**: 38.5 / 78.0 / 130.6 m, all under locked; `a_ref = 2.4`: 130.9 m at μ 0.3, 106.3 m at μ 1 |
 | H4 | `Vehicle.braking_distance(result; t_brake = 0.5, v_stop = 0.5)` (also `(t, s, v; …)`) in `dyad/Vehicle/module.jl`, the notebook's `braking` rule as one function; notebook 01 switched to it | **done**: unit test on a synthetic constant-deceleration trace; notebook 01 prints the same numbers |
 | H5 | merge PR #90 to `main`, tag it, and pin the tag in step 00 | open (the lecturer's call); a fresh `MyCar` clone with `Pkg.add(…, rev = tag)` and `Pkg.add("HydraulicComponents")` runs steps 02–05 |
-| H6 | bonus TCS reference on `feat/handson03-tcs-bonus` | open; the task is on the deck, the reference and its figures are not built |
+| H6 | bonus TCS reference on `feat/handson03-tcs-bonus` | **done** (a3b165b): 8.0 / 5.6 m/s at 10 s, slip 0.036; its figures are not made |
 
 Every reference analysis sets `alg = Tsit5` explicitly, with `dtmax = 1e-3`, and forwards every knob
 the guide varies by a short name (`road_mu`, `T_p`, `lambda_target`, `a_ref`, and the base `stop`),
