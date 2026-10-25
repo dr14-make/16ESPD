@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 466" width="1200" height="466">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .block { fill: #f3f6fa; stroke: #8a99a8; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .line { stroke: #16202c; stroke-width: 4; fill: none; }
+    .chk { stroke: #16202c; stroke-width: 2; fill: none; }
+    .ret { stroke: #a75d00; stroke-width: 4; fill: none; stroke-dasharray: 9 5; }
+    .sig { stroke: #1f5fa8; stroke-width: 1.5; fill: none; }
+    .shaft { stroke: #4a5a6b; stroke-width: 3; fill: none; }
+    .sensor { fill: #1f5fa8; }
+    .t { font-size: 17px; font-weight: 600; }
+    .v { font-size: 14px; font-weight: 600; }
+    .s { font-size: 11px; fill: #4a5a6b; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .blk { font-size: 14px; fill: #4a5a6b; font-style: italic; }
+  </style>
+  <defs>
+    <marker id="as-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="as-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="3.5" markerHeight="3.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <rect class="block" x="414" y="14" width="520" height="414" rx="10"/>
+  <text x="580" y="422" class="blk">hydraulic unit: one aluminum block</text>
+  <!-- pedal, booster, tandem master cylinder -->
+  <rect class="box" x="12" y="110" width="74" height="50" rx="4"/>
+  <text x="49" y="141" text-anchor="middle" class="t">pedal</text>
+  <path class="line" d="M86 135 H102" marker-end="url(#as-ink)"/>
+  <rect class="box" x="106" y="105" width="100" height="60" rx="4"/>
+  <text x="156" y="141" text-anchor="middle" class="t">booster</text>
+  <path class="line" d="M206 135 H222" marker-end="url(#as-ink)"/>
+  <rect class="box" x="226" y="80" width="120" height="110" rx="4"/>
+  <text x="286" y="118" text-anchor="middle" class="t">tandem</text>
+  <text x="286" y="140" text-anchor="middle" class="t">master</text>
+  <text x="286" y="162" text-anchor="middle" class="t">cylinder</text>
+  <path class="line" d="M346 105 H430"/>
+  <path class="line" d="M346 165 H410 V335 H430"/>
+  <text x="352" y="96" class="lbl">circuit 1</text>
+  <text x="352" y="186" class="lbl">circuit 2</text>
+  <path class="line" d="M430 40 V170"/>
+  <path class="line" d="M430 270 V400"/>
+  <!-- FL -->
+  <path class="line" d="M430 40 H470"/>
+  <rect class="box-accent" x="470" y="20" width="80" height="40" rx="4"/>
+  <text x="510" y="38" text-anchor="middle" class="v">inlet</text>
+  <text x="510" y="53" text-anchor="middle" class="s">NO</text>
+  <path class="chk" d="M560 40 V70 H460 V40"/>
+  <path d="M504 70 L516 64 L516 76 z" fill="#16202c"/>
+  <path class="chk" d="M503 63 V77"/>
+  <path class="line" d="M550 40 H1000"/>
+  <rect class="box" x="1000" y="24" width="94" height="32" rx="4"/>
+  <text x="1047" y="45" text-anchor="middle" class="v">caliper</text>
+  <circle cx="1124" cy="40" r="20" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <text x="1124" y="45" text-anchor="middle" class="v">FL</text>
+  <rect class="sensor" x="1148" y="34" width="12" height="12" rx="2"/>
+  <path class="sig" d="M1160 40 H1186"/>
+  <path class="line" d="M880 40 V58"/>
+  <rect class="box-accent" x="844" y="58" width="72" height="34" rx="4"/>
+  <text x="880" y="74" text-anchor="middle" class="v">outlet</text>
+  <text x="880" y="87" text-anchor="middle" class="s">NC</text>
+  <path class="ret" d="M880 92 V105"/>
+  <!-- RR -->
+  <path class="line" d="M430 170 H470"/>
+  <rect class="box-accent" x="470" y="150" width="80" height="40" rx="4"/>
+  <text x="510" y="168" text-anchor="middle" class="v">inlet</text>
+  <text x="510" y="183" text-anchor="middle" class="s">NO</text>
+  <path class="chk" d="M560 170 V140 H460 V170"/>
+  <path d="M504 140 L516 134 L516 146 z" fill="#16202c"/>
+  <path class="chk" d="M503 133 V147"/>
+  <path class="line" d="M550 170 H1000"/>
+  <rect class="box" x="1000" y="154" width="94" height="32" rx="4"/>
+  <text x="1047" y="175" text-anchor="middle" class="v">caliper</text>
+  <circle cx="1124" cy="170" r="20" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <text x="1124" y="175" text-anchor="middle" class="v">RR</text>
+  <rect class="sensor" x="1148" y="164" width="12" height="12" rx="2"/>
+  <path class="sig" d="M1160 170 H1186"/>
+  <path class="line" d="M880 170 V152"/>
+  <rect class="box-accent" x="844" y="118" width="72" height="34" rx="4"/>
+  <text x="880" y="134" text-anchor="middle" class="v">outlet</text>
+  <text x="880" y="147" text-anchor="middle" class="s">NC</text>
+  <path class="ret" d="M880 118 V105"/>
+  <!-- FR -->
+  <path class="line" d="M430 270 H470"/>
+  <rect class="box-accent" x="470" y="250" width="80" height="40" rx="4"/>
+  <text x="510" y="268" text-anchor="middle" class="v">inlet</text>
+  <text x="510" y="283" text-anchor="middle" class="s">NO</text>
+  <path class="chk" d="M560 270 V300 H460 V270"/>
+  <path d="M504 300 L516 294 L516 306 z" fill="#16202c"/>
+  <path class="chk" d="M503 293 V307"/>
+  <path class="line" d="M550 270 H1000"/>
+  <rect class="box" x="1000" y="254" width="94" height="32" rx="4"/>
+  <text x="1047" y="275" text-anchor="middle" class="v">caliper</text>
+  <circle cx="1124" cy="270" r="20" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <text x="1124" y="275" text-anchor="middle" class="v">FR</text>
+  <rect class="sensor" x="1148" y="264" width="12" height="12" rx="2"/>
+  <path class="sig" d="M1160 270 H1186"/>
+  <path class="line" d="M880 270 V288"/>
+  <rect class="box-accent" x="844" y="288" width="72" height="34" rx="4"/>
+  <text x="880" y="304" text-anchor="middle" class="v">outlet</text>
+  <text x="880" y="317" text-anchor="middle" class="s">NC</text>
+  <path class="ret" d="M880 322 V335"/>
+  <!-- RL -->
+  <path class="line" d="M430 400 H470"/>
+  <rect class="box-accent" x="470" y="380" width="80" height="40" rx="4"/>
+  <text x="510" y="398" text-anchor="middle" class="v">inlet</text>
+  <text x="510" y="413" text-anchor="middle" class="s">NO</text>
+  <path class="chk" d="M560 400 V370 H460 V400"/>
+  <path d="M504 370 L516 364 L516 376 z" fill="#16202c"/>
+  <path class="chk" d="M503 363 V377"/>
+  <path class="line" d="M550 400 H1000"/>
+  <rect class="box" x="1000" y="384" width="94" height="32" rx="4"/>
+  <text x="1047" y="405" text-anchor="middle" class="v">caliper</text>
+  <circle cx="1124" cy="400" r="20" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <text x="1124" y="405" text-anchor="middle" class="v">RL</text>
+  <rect class="sensor" x="1148" y="394" width="12" height="12" rx="2"/>
+  <path class="sig" d="M1160 400 H1186"/>
+  <path class="line" d="M880 400 V382"/>
+  <rect class="box-accent" x="844" y="348" width="72" height="34" rx="4"/>
+  <text x="880" y="364" text-anchor="middle" class="v">outlet</text>
+  <text x="880" y="377" text-anchor="middle" class="s">NC</text>
+  <path class="ret" d="M880 348 V335"/>
+  <!-- return path, circuit at 105 -->
+  <path class="ret" d="M880 105 H846" marker-end="url(#as-warn)"/>
+  <rect class="box" x="726" y="88" width="116" height="34" rx="4"/>
+  <text x="784" y="110" text-anchor="middle" class="v">accumulator</text>
+  <path class="ret" d="M726 105 H698" marker-end="url(#as-warn)"/>
+  <rect class="box" x="610" y="88" width="84" height="34" rx="4"/>
+  <text x="652" y="110" text-anchor="middle" class="v">pump</text>
+  <path class="ret" d="M610 105 H580" marker-end="url(#as-warn)"/>
+  <rect class="box" x="496" y="88" width="80" height="34" rx="4"/>
+  <text x="536" y="110" text-anchor="middle" class="v">damper</text>
+  <path class="ret" d="M496 105 H436" marker-end="url(#as-warn)"/>
+  <!-- return path, circuit at 335 -->
+  <path class="ret" d="M880 335 H846" marker-end="url(#as-warn)"/>
+  <rect class="box" x="726" y="318" width="116" height="34" rx="4"/>
+  <text x="784" y="340" text-anchor="middle" class="v">accumulator</text>
+  <path class="ret" d="M726 335 H698" marker-end="url(#as-warn)"/>
+  <rect class="box" x="610" y="318" width="84" height="34" rx="4"/>
+  <text x="652" y="340" text-anchor="middle" class="v">pump</text>
+  <path class="ret" d="M610 335 H580" marker-end="url(#as-warn)"/>
+  <rect class="box" x="496" y="318" width="80" height="34" rx="4"/>
+  <text x="536" y="340" text-anchor="middle" class="v">damper</text>
+  <path class="ret" d="M496 335 H436" marker-end="url(#as-warn)"/>
+  <!-- motor -->
+  <path class="shaft" d="M652 122 V198 M652 242 V318"/>
+  <circle cx="652" cy="220" r="22" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <text x="652" y="226" text-anchor="middle" class="t">M</text>
+  <text x="682" y="198" class="s">one motor, an eccentric</text>
+  <text x="682" y="210" class="s">drives both pump elements</text>
+  <!-- ECU, lamp -->
+  <rect class="box-accent" x="236" y="296" width="134" height="76" rx="4"/>
+  <text x="303" y="328" text-anchor="middle" class="t">ECU</text>
+  <text x="303" y="350" text-anchor="middle" class="lbl">on the block</text>
+  <path class="sig" d="M236 334 H176"/>
+  <circle cx="160" cy="334" r="16" fill="#fff3d6" stroke="#a75d00" stroke-width="2"/>
+  <text x="160" y="338" text-anchor="middle" font-size="10" font-weight="700" fill="#a75d00">ABS</text>
+  <text x="160" y="368" text-anchor="middle" class="lbl">warning lamp</text>
+  <!-- signal lines: ECU to the valve coils and the motor -->
+  <path class="sig" d="M370 310 H384 V6 H880"/>
+  <path class="sig" d="M510 6 V20 M880 6 V58"/>
+  <path class="sig" d="M370 320 H392 V220 H630 M674 220 H880"/>
+  <path class="sig" d="M510 220 V190 M510 220 V250 M880 220 V152 M880 220 V288"/>
+  <path class="sig" d="M370 358 H392 V442 H880"/>
+  <path class="sig" d="M510 442 V420 M880 442 V382"/>
+  <path class="sig" d="M1186 40 V458 H303 V372"/>
+  <text x="1196" y="12" text-anchor="end" class="lbl">active wheel-speed sensor at each wheel</text>
+  <!-- legend -->
+  <path class="line" d="M12 404 H52"/>
+  <text x="60" y="409" class="lbl">brake fluid</text>
+  <path class="ret" d="M12 426 H52"/>
+  <text x="60" y="431" class="lbl">return flow</text>
+  <path class="sig" d="M12 448 H52"/>
+  <text x="60" y="453" class="lbl">signal</text>
+  <text x="12" y="250" class="s">NO, NC: open, closed</text>
+  <text x="12" y="264" class="s">without power</text>
+  <path class="chk" d="M12 284 H48"/>
+  <path d="M24 284 L36 278 L36 290 z" fill="#16202c"/>
+  <path class="chk" d="M23 277 V291"/>
+  <text x="56" y="288" class="s">check valve</text>
+</svg>

@@ -146,6 +146,8 @@ routeAlias: sources
 - Bosch press archive: "Staying on track", 25 years of ESP
 - Mercedes-Benz: 40 years of ABS (1978)
 - Volkswagen newsroom: XDS; Honda: SH-AWD (2004)
+- Patents on the hydraulic unit: Bosch US 5080450 and US 6846050 B2; Nissin Kogyo US 8678521 B2
+- Ram 2022 owner's manual: the ABS warning light
 - Allegro MicroSystems, A19302 datasheet (wheel-speed IC: current levels, PW and AK protocols);
   Infineon, TLE5041plusC product brief (2013); SKF, patent US 11041875 B2 (encoder ring)
 
