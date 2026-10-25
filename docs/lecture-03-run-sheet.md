@@ -119,6 +119,10 @@ the second break at 161, 04 at 166, 05 at 176, 06 at 199, end at 202.
   holds for every new analysis in 03 and 04. Expected at pedal 0.3: 55 bar, no lock, 36.0 m; at 0.6: 89 bar,
   `wheel.kappa` −1, 43.7 m.
 
+- "Where the assist comes from" (`vacuum-booster`, after build 02) is optional and outside the
+  minutes, 3 min: `Lecture3.VacuumPedalStop` on manifold vacuum, the store and the electric pump.
+  Show it only if ahead; its live run is in the slide's note.
+
 ## 03 Anti-lock braking — 96 min, the break inside it
 
 Before the break, 45 min:
