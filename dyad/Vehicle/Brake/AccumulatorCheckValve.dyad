@@ -1,0 +1,38 @@
+"""
+One-way valve from the low-pressure accumulator to the return-pump suction.
+
+`available` is the fraction of the accumulator's stroke that still holds fluid. It closes the
+valve when the accumulator piston reaches its empty stop, because `LowPressureAccumulator` keeps
+reporting its preload there and would otherwise feed the suction fluid it does not hold.
+
+Defaults: 1.0 mm equivalent seat (assumed); 0.65 discharge coefficient and 1 bar laminar
+transition as the ABS valves (assumed).
+"""
+component AccumulatorCheckValve
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Fraction of the accumulator stroke holding fluid, 0 at the empty stop"
+  available = RealInput() {^available}
+  "Equivalent seat diameter (assumed)"
+  parameter d_seat::Length(min = eps(Float64)) = 1.0e-3
+  "Discharge coefficient (assumed)"
+  parameter C_d::Real(min = eps(Float64)) = 0.65
+  "Laminar-transition pressure difference (assumed)"
+  parameter dp_cr::Pressure(min = eps(Float64)) = 1e5
+  "Fluid density"
+  variable rho::Density
+  "Seat area"
+  variable A::Area
+relations
+  A = π * d_seat ^ 2 / 4
+  rho = HydraulicComponents.density(port_a.medium, max(max(port_a.p, port_b.p), 0.0))
+  m_flow = port_a.m_flow
+  m_flow = min(max(available, 0.0), 1.0) * C_d * A * sqrt(2 * rho) * max(Δp, 0.0) / ((max(Δp, 0.0)) ^ 2 + dp_cr ^ 2) ^ 0.25
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/OutletValve.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "available": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}}
+  }
+}
+end

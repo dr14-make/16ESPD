@@ -1,0 +1,107 @@
+"""
+One wheel of an ESP/TCS hydraulic control unit: the ABS inlet and outlet valves, low-pressure
+accumulator and return pump, plus the switchover valve and the high-pressure valve that let the
+pump build wheel pressure with the pedal released.
+
+The pump discharges between the switchover valve and the inlet valve. Its suction joins the
+accumulator (through a check valve) and the high-pressure valve from the master-cylinder side.
+De-energized (switchover 1, high-pressure 0, inlet 1, outlet 0) this is the ABS circuit, and
+the pump finds no fluid unless the accumulator holds some. The master-cylinder side is `port_a`;
+the wheel side is `port_b`.
+
+Defaults: as `HydraulicModulator` for the inlet, outlet and accumulator; the switchover valve,
+high-pressure valve and pump defaults are in their own components.
+"""
+component ESPHydraulicCircuit
+  "Master-cylinder-side connection"
+  port_a = HydraulicComponents.Interfaces.Port() {^port_a}
+  "Wheel-side connection"
+  port_b = HydraulicComponents.Interfaces.Port() {^port_b}
+  "Switchover-valve command, 1 open (de-energized)"
+  switchover = RealInput() {^switchover}
+  "High-pressure-valve command, 1 open (energized)"
+  hpv = RealInput() {^hpv}
+  "Inlet-valve command, 1 open"
+  inlet = RealInput() {^inlet}
+  "Outlet-valve command, 1 open"
+  outlet = RealInput() {^outlet}
+  "Return-pump motor command, 1 on"
+  motor = RealInput() {^motor}
+  "Pump-discharge (inlet-valve supply) pressure diagnostic"
+  p_supply = RealOutput() {^p_supply}
+  "Pump-suction pressure diagnostic"
+  p_suction = RealOutput() {^p_suction}
+  "Accumulator stored-volume diagnostic"
+  V_lpa = RealOutput() {^V_lpa}
+  switchover_valve = SwitchoverValve() {^switchover_valve}
+  high_pressure_valve = HighPressureValve() {^high_pressure_valve}
+  supply = ValveBlockVolume() {^supply}
+  inlet_valve = InletValve(d_seat = d_seat) {^inlet_valve}
+  gallery = ValveBlockVolume() {^gallery}
+  outlet_valve = OutletValve(d_seat = d_seat) {^outlet_valve}
+  accumulator = LowPressureAccumulator() {^accumulator}
+  accumulator_check = AccumulatorCheckValve() {^accumulator_check}
+  suction = ValveBlockVolume() {^suction}
+  pump = PrimingReturnPump() {^pump}
+  "Equivalent inlet and outlet seat diameter (derived)"
+  parameter d_seat::Length = 0.49e-3
+  "Outlet restriction opening over the last 5% of accumulator capacity (assumed)"
+  variable accumulator_acceptance::Real
+  "Accumulator stroke holding fluid, over the first 2% of capacity (assumed)"
+  variable accumulator_available::Real
+  "First-order restriction motion prevents an algebraic closure at either accumulator stop"
+  variable accumulator_acceptance_filtered::Real
+  variable accumulator_available_filtered::Real
+  "Outlet opening for flow into the accumulator; flow out of it needs stored fluid"
+  variable outlet_direction::Real
+relations
+  connect(port_a, switchover_valve.port_a, high_pressure_valve.port_a) {^w1}
+  connect(switchover_valve.port_b, supply.port, inlet_valve.port_a, pump.port_b) {^w2}
+  connect(inlet_valve.port_b, gallery.port, outlet_valve.port_a, port_b) {^w3}
+  connect(outlet_valve.port_b, accumulator.port, accumulator_check.port_a) {^w4}
+  connect(accumulator_check.port_b, high_pressure_valve.port_b, suction.port, pump.port_a) {^w5}
+  connect(switchover, switchover_valve.command) {^w6}
+  connect(hpv, high_pressure_valve.command) {^w7}
+  connect(inlet, inlet_valve.command) {^w8}
+  connect(motor, pump.motor) {^w9}
+  accumulator_acceptance = min(max((accumulator.V_max - accumulator.V) / (0.05 * accumulator.V_max), 0.0), 1.0)
+  accumulator_available = min(max(accumulator.V / (0.02 * accumulator.V_max), 0.0), 1.0)
+  initial accumulator_acceptance_filtered = 1.0
+  initial accumulator_available_filtered = 0.0
+  der(accumulator_acceptance_filtered) = (accumulator_acceptance - accumulator_acceptance_filtered) / 0.001
+  der(accumulator_available_filtered) = (accumulator_available - accumulator_available_filtered) / 0.001
+  outlet_direction = max(min(max((gallery.p - accumulator.port.p) / 1e5, 0.0), 1.0), accumulator_available_filtered)
+  outlet_valve.command = outlet * accumulator_acceptance_filtered * outlet_direction
+  accumulator_check.available = accumulator_available_filtered
+  initial supply.V = 0.0
+  initial gallery.V = 0.0
+  initial suction.V = 0.0
+  p_supply = supply.p
+  p_suction = suction.p
+  V_lpa = accumulator.V
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/HydraulicModulator.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}, "diagram": {"x1": -50, "x2": 50, "y1": 250, "y2": 350}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 1150, "x2": 1250, "y1": 250, "y2": 350}}}},
+    "switchover": {"Dyad": {"placement": {"icon": {"x1": 50, "x2": 150, "y1": -50, "y2": 50, "rot": 270}, "diagram": {"x1": 200, "x2": 300, "y1": -150, "y2": -50, "rot": 270}}}},
+    "hpv": {"Dyad": {"placement": {"icon": {"x1": 250, "x2": 350, "y1": -50, "y2": 50, "rot": 270}, "diagram": {"x1": 200, "x2": 300, "y1": 950, "y2": 1050, "rot": 90}}}},
+    "inlet": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}, "diagram": {"x1": 650, "x2": 750, "y1": -150, "y2": -50, "rot": 270}}}},
+    "outlet": {"Dyad": {"placement": {"icon": {"x1": 650, "x2": 750, "y1": -50, "y2": 50, "rot": 270}, "diagram": {"x1": 1150, "x2": 1250, "y1": 500, "y2": 600, "rot": 180}}}},
+    "motor": {"Dyad": {"placement": {"icon": {"x1": 850, "x2": 950, "y1": -50, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}},
+    "p_supply": {"Dyad": {"placement": {"icon": {"x1": 200, "x2": 300, "y1": 950, "y2": 1050, "rot": 90}, "diagram": {"x1": 1150, "x2": 1250, "y1": -50, "y2": 50}}}},
+    "p_suction": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}, "diagram": {"x1": 1150, "x2": 1250, "y1": 900, "y2": 1000}}}},
+    "V_lpa": {"Dyad": {"placement": {"icon": {"x1": 700, "x2": 800, "y1": 950, "y2": 1050, "rot": 90}, "diagram": {"x1": 1150, "x2": 1250, "y1": 750, "y2": 850}}}},
+    "switchover_valve": {"Dyad": {"placement": {"diagram": {"x1": 175, "x2": 325, "y1": 75, "y2": 225}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 430, "x2": 530, "y1": 0, "y2": 100}}}},
+    "inlet_valve": {"Dyad": {"placement": {"diagram": {"x1": 625, "x2": 775, "y1": 75, "y2": 225}}}},
+    "gallery": {"Dyad": {"placement": {"diagram": {"x1": 880, "x2": 980, "y1": 0, "y2": 100}}}},
+    "outlet_valve": {"Dyad": {"placement": {"diagram": {"x1": 855, "x2": 1005, "y1": 375, "y2": 525, "rot": 90}}}},
+    "accumulator": {"Dyad": {"placement": {"diagram": {"x1": 1000, "x2": 1120, "y1": 640, "y2": 760}}}},
+    "accumulator_check": {"Dyad": {"placement": {"diagram": {"x1": 800, "x2": 900, "y1": 750, "y2": 850, "rot": 180}}}},
+    "suction": {"Dyad": {"placement": {"diagram": {"x1": 600, "x2": 700, "y1": 900, "y2": 1000}}}},
+    "pump": {"Dyad": {"placement": {"diagram": {"x1": 425, "x2": 575, "y1": 625, "y2": 775, "rot": 270}}}},
+    "high_pressure_valve": {"Dyad": {"placement": {"diagram": {"x1": 175, "x2": 325, "y1": 725, "y2": 875}}}}
+  }
+}
+end

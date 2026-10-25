@@ -1,0 +1,60 @@
+"""
+Normally-open ESP/TCS switchover valve between the master cylinder and the inlet valves, with a
+pressure-limiting seat and a reverse check valve.
+
+Energized (command 0), the seat stays shut until the inlet-valve side exceeds the
+master-cylinder side by `dp_limit`, so the return pump cannot build more than that. The check
+valve always lets the driver's master-cylinder pressure through to the wheels.
+
+Defaults: 140 bar limit (Bosch US 8,579,385, the pressure an ESP regulation can set); 5 bar
+regulation band (assumed); 1.0 mm equivalent seat, twice the inlet seat because the open valve
+carries the driver's flow to two wheels (assumed); 3 ms lag, 0.65 discharge coefficient and 1 bar
+laminar transition as the ABS inlet valve (assumed). The command is 1 open and 0 closed.
+"""
+component SwitchoverValve
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Solenoid command, 1 open (de-energized)"
+  command = RealInput() {^command}
+  "Valve actuation time constant (assumed)"
+  parameter T_v::Time(min = 0.001) = 0.003
+  "Equivalent seat diameter (assumed)"
+  parameter d_seat::Length(min = eps(Float64)) = 1.0e-3
+  "Discharge coefficient (assumed)"
+  parameter C_d::Real(min = eps(Float64)) = 0.65
+  "Laminar-transition pressure difference (assumed)"
+  parameter dp_cr::Pressure(min = eps(Float64)) = 1e5
+  "Pressure-limiting setting, inlet side over master-cylinder side (US 8,579,385)"
+  parameter dp_limit::Pressure = 140e5
+  "Pressure rise above the setting that lifts the seat fully (assumed)"
+  parameter dp_reg::Pressure(min = eps(Float64)) = 5e5
+  "Actual solenoid opening"
+  variable x::Real
+  "Pressure-limiting seat lift"
+  variable y::Real
+  "Fluid density"
+  variable rho::Density
+  "Seat area"
+  variable A::Area
+  "Flow through the seat"
+  variable m_seat::MassFlowRate
+  "Check-valve flow toward the inlet valves"
+  variable m_check::MassFlowRate
+relations
+  initial x = 1.0
+  der(x) = (min(max(command, 0.0), 1.0) - x) / T_v
+  A = π * d_seat ^ 2 / 4
+  rho = HydraulicComponents.density(port_a.medium, max(port_a.p, port_b.p))
+  y = min(max((-Δp - dp_limit) / dp_reg, 0.0), 1.0)
+  m_seat = (x + (1.0 - x) * y) * C_d * A * sqrt(2 * rho) * Δp / (Δp ^ 2 + dp_cr ^ 2) ^ 0.25
+  m_check = (1.0 - x) * C_d * A * sqrt(2 * rho) * max(Δp, 0.0) / ((max(Δp, 0.0)) ^ 2 + dp_cr ^ 2) ^ 0.25
+  m_flow = port_a.m_flow
+  m_flow = m_seat + m_check
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/InletValve.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "command": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}}
+  }
+}
+end

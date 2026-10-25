@@ -1,0 +1,51 @@
+"""
+Averaged ESP/TCS return pump that primes through the suction line instead of drawing on an
+accumulator above preload.
+
+The motor speed runs up with time constant `T_motor`. The delivered flow is the displacement flow
+times a fill fraction that falls to zero as the suction pressure approaches `p_cav`, where the
+inlet stroke stops filling and the fluid outgasses, so a restrictive or cold suction path limits
+the flow rather than the displacement.
+
+Defaults: 4 cm³/s displacement flow, fitted so a front caliper reaches lock pressure in the
+300–360 ms derived for conventional ESP (`docs/lecture-03-esp-active-build.md`), which is about
+0.04 cm³ per revolution at 6000 rpm (assumed); 40 ms motor run-up (assumed); fill lost between
+-0.7 and -0.8 bar gauge (assumed). Pressures are gauge, so the reservoir is at 0.
+"""
+component PrimingReturnPump
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Motor command, 1 on"
+  motor = RealInput() {^motor}
+  "Displacement volume flow at full motor speed (fitted)"
+  parameter q_max::VolumeFlowRate = 4e-6
+  "Motor run-up time constant (assumed)"
+  parameter T_motor::Time(min = 0.001) = 0.04
+  "Suction pressure at which the inlet stroke stops filling, gauge (assumed)"
+  parameter p_cav::Pressure = -0.8e5
+  "Suction-pressure margin over which the fill recovers (assumed)"
+  parameter dp_fill::Pressure(min = eps(Float64)) = 0.1e5
+  "Motor speed relative to full speed"
+  variable n::Real
+  "Fraction of the displacement the suction stroke fills"
+  variable fill::Real
+  "Fluid density on the suction side"
+  variable rho::Density
+  "Averaged pump volume flow"
+  variable q::VolumeFlowRate
+relations
+  initial n = 0.0
+  der(n) = (min(max(motor, 0.0), 1.0) - n) / T_motor
+  fill = min(max((port_a.p - p_cav) / dp_fill, 0.0), 1.0)
+  rho = HydraulicComponents.density(port_a.medium, max(port_a.p, 0.0))
+  q = q_max * n * fill
+  m_flow = port_a.m_flow
+  m_flow = rho * q
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/ReturnPump.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "motor": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}}
+  }
+}
+end

@@ -1,0 +1,153 @@
+"""
+Open-loop ESP/TCS valve schedule: build from `t_build`, hold from `t_hold`, release from
+`t_release`, everything de-energized again from `t_off`.
+
+Build closes the switchover valve, opens the high-pressure valve and runs the pump. Hold closes
+the inlet valve and stops the pump. Release opens the outlet valve into the accumulator, reopens
+the switchover valve and runs the pump to empty the accumulator. With `energize_valves = 0` the
+valves stay de-energized and only the pump command follows the schedule. All commands are 1 open
+(or on) and 0 closed (or off).
+"""
+component ESPActiveBuildProfile
+  "Switchover-valve command"
+  switchover = RealOutput() {^switchover}
+  "High-pressure-valve command"
+  hpv = RealOutput() {^hpv}
+  "Inlet-valve command"
+  inlet = RealOutput() {^inlet}
+  "Outlet-valve command"
+  outlet = RealOutput() {^outlet}
+  "Return-pump motor command"
+  motor = RealOutput() {^motor}
+  parameter t_build::Time = 0.05
+  parameter t_hold::Time = 0.75
+  parameter t_release::Time = 1.0
+  parameter t_off::Time = 1.4
+  "1 follows the schedule, 0 leaves every valve de-energized"
+  parameter energize_valves::Real = 1.0
+  variable building::Real
+  variable holding::Real
+  variable releasing::Real
+relations
+  building = ifelse(time >= t_build and time < t_hold, 1.0, 0.0)
+  holding = ifelse(time >= t_hold and time < t_release, 1.0, 0.0)
+  releasing = ifelse(time >= t_release and time < t_off, 1.0, 0.0)
+  switchover = 1.0 - energize_valves * (building + holding)
+  hpv = energize_valves * building
+  inlet = 1.0 - energize_valves * (holding + releasing)
+  outlet = energize_valves * releasing
+  motor = building + releasing
+metadata {
+  "_links": {
+    "switchover": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 50, "y2": 150}}}},
+    "hpv": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 250, "y2": 350}}}},
+    "inlet": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "outlet": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 650, "y2": 750}}}},
+    "motor": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 850, "y2": 950}}}}
+  }
+}
+end
+
+"""
+How ESP brakes a wheel nobody is braking: one ESP/TCS circuit and one front caliper, with the
+pedal released so the master cylinder is open to the reservoir at 0 bar gauge.
+
+The control unit closes the switchover valve, opens the high-pressure valve and runs the return
+pump, which draws fluid from the reservoir through the master cylinder and its line and pushes it
+into the caliper. Then the inlet valve holds the pressure, and the outlet valve releases it into
+the accumulator. TCS uses the same hardware on a driven wheel.
+
+`nu` is the fluid viscosity in both lines: DOT 4 at 20 °C by default, up to 1800e-6 m²/s at
+−40 °C (FMVSS 116 S5.1.3). `p_lock` is the caliper pressure whose torque reaches the peak road
+force of a statically loaded `Planar.PlanarCar` front wheel. `ESPActiveBuildColdTransient` runs
+the same plant at 1800e-6 m²/s, with the schedule stretched so the slower build completes.
+"""
+component ESPActiveBuildBench
+  "Brake-fluid kinematic viscosity; DOT 4 at 20 °C (1800e-6 m²/s at −40 °C, FMVSS 116)"
+  parameter nu::KinematicViscosity = 10e-6
+  "Master-cylinder-to-control-unit line length (assumed)"
+  parameter L_mc::Length = 0.5
+  "Control-unit-to-front-caliper line length (BrakeLine default)"
+  parameter L_wheel::Length = 1.5
+  parameter t_build::Time = 0.05
+  parameter t_hold::Time = 0.75
+  parameter t_release::Time = 1.0
+  parameter t_off::Time = 1.4
+  parameter energize_valves::Real = 1.0
+  "One front caliper's torque gain, half of HydraulicBrakedWheel's K_f [N·m/Pa] (derived)"
+  parameter K_w::Real = 24.5e-5
+  "Pad-contact pressure (HydraulicBrakedWheel)"
+  parameter p0::Pressure = 0.5e5
+  "Planar-car mass (PlanarCar)"
+  parameter m_car::Mass = 1500.0
+  "Planar-car CG to front axle (PlanarCar)"
+  parameter a::Length = 1.2
+  "Planar-car CG to rear axle (PlanarCar)"
+  parameter b::Length = 1.5
+  "Planar-car wheel radius (PlanarCar)"
+  parameter radius::Length = 0.31
+  "Planar-car peak adhesion (PlanarCar)"
+  parameter mu_A::Real = 1.0
+  "Front-wheel static load, as QuasiStaticLoads with h = 0"
+  final parameter N_front::Force = m_car * 9.81 * b / (2 * (a + b))
+  "Brake torque that reaches the front wheel's peak road force"
+  final parameter tau_lock::Torque = mu_A * N_front * radius
+  "Caliper pressure for tau_lock"
+  final parameter p_lock::Pressure = p0 + tau_lock / K_w
+  profile = ESPActiveBuildProfile(t_build = t_build, t_hold = t_hold, t_release = t_release, t_off = t_off, energize_valves = energize_valves) {^profile}
+  reservoir_pressure = BlockComponents.Sources.Constant(k = 0.0) {^reservoir_pressure}
+  reservoir = HydraulicComponents.Sources.BoundaryPressure() {^reservoir}
+  line_mc = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = L_mc, nu = nu) {^line_mc}
+  circuit = VehicleSystemsComponents.Vehicle.Brake.ESPHydraulicCircuit() {^circuit}
+  line_wheel = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = L_wheel, nu = nu) {^line_wheel}
+  "One front caliper: half the axle's torque gain and take-up volume, so twice K1 and 8× K3"
+  caliper = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(K = K_w, p0 = p0, V0 = 0.25e-6, K1 = 2.0e12, K3 = 3.84e24) {^caliper}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+  "Caliper pressure [bar]"
+  variable p_wheel_bar::Real
+relations
+  connect(reservoir_pressure.y, reservoir.p) {^w1}
+  connect(reservoir.port, line_mc.port_a) {^w2}
+  connect(line_mc.port_b, circuit.port_a) {^w3}
+  connect(circuit.port_b, line_wheel.port_a) {^w4}
+  connect(line_wheel.port_b, caliper.port) {^w5}
+  connect(caliper.spline_a, caliper.support, fixed.spline) {^w6}
+  connect(profile.switchover, circuit.switchover) {^w7}
+  connect(profile.hpv, circuit.hpv) {^w8}
+  connect(profile.inlet, circuit.inlet) {^w9}
+  connect(profile.outlet, circuit.outlet) {^w10}
+  connect(profile.motor, circuit.motor) {^w11}
+  continuity(medium, reservoir.port.medium)
+  p_wheel_bar = caliper.p / 1e5
+metadata {
+  "_links": {
+    "profile": {"Dyad": {"placement": {"diagram": {"x1": 300, "x2": 450, "y1": -250, "y2": -100}}}},
+    "reservoir_pressure": {"Dyad": {"placement": {"diagram": {"x1": -250, "x2": -150, "y1": 100, "y2": 200}}}},
+    "reservoir": {"Dyad": {"placement": {"diagram": {"x1": -100, "x2": 0, "y1": 100, "y2": 200}}}},
+    "line_mc": {"Dyad": {"placement": {"diagram": {"x1": 75, "x2": 175, "y1": 100, "y2": 200}}}},
+    "circuit": {"Dyad": {"placement": {"diagram": {"x1": 275, "x2": 475, "y1": 50, "y2": 250}}}},
+    "line_wheel": {"Dyad": {"placement": {"diagram": {"x1": 575, "x2": 675, "y1": 100, "y2": 200}}}},
+    "caliper": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 900, "y1": 75, "y2": 225}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 775, "x2": 875, "y1": 325, "y2": 425}}}}
+  }
+}
+end
+
+analysis ESPActiveBuildTransient
+  extends TransientAnalysis(stop = 1.6, alg = ODEAlg.Rodas5P(), dtmax = 1e-3, saveat = 0.0005, tstops = [0.05, 0.75, 1.0, 1.4], abstol = 1e-6, reltol = 1e-6)
+  parameter nu::KinematicViscosity = 10e-6
+  parameter t_build::Time = 0.05
+  parameter t_hold::Time = 0.75
+  parameter t_release::Time = 1.0
+  parameter t_off::Time = 1.4
+  parameter energize_valves::Real = 1.0
+  model = ESPActiveBuildBench(nu = nu, t_build = t_build, t_hold = t_hold, t_release = t_release, t_off = t_off, energize_valves = energize_valves)
+end
+
+analysis ESPActiveBuildColdTransient
+  extends TransientAnalysis(stop = 16.0, alg = ODEAlg.Rodas5P(), dtmax = 1e-3, saveat = 0.0005, tstops = [0.05, 14.0, 14.25, 14.65], abstol = 1e-6, reltol = 1e-6)
+  parameter nu::KinematicViscosity = 1800e-6
+  parameter energize_valves::Real = 1.0
+  model = ESPActiveBuildBench(nu = nu, t_build = 0.05, t_hold = 14.0, t_release = 14.25, t_off = 14.65, energize_valves = energize_valves)
+end

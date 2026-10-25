@@ -1,0 +1,45 @@
+"""
+Normally-closed ESP/TCS high-pressure (suction, priming) valve from the master-cylinder side to
+the return-pump suction.
+
+Opened, it lets the pump draw fluid from the reservoir through the released master cylinder.
+Its seat is wide because the pump suction has less than one bar to spend on it.
+
+Defaults: 1.5 mm equivalent seat (assumed); 0.1 bar laminar transition, a tenth of the ABS
+valves' because the whole suction budget is below 1 bar (assumed); 3 ms lag and 0.65 discharge
+coefficient as the ABS valves (assumed). The command is 1 open and 0 closed.
+"""
+component HighPressureValve
+  extends HydraulicComponents.Interfaces.TwoPorts
+  "Solenoid command, 1 open (energized)"
+  command = RealInput() {^command}
+  "Valve actuation time constant (assumed)"
+  parameter T_v::Time(min = 0.001) = 0.003
+  "Equivalent seat diameter (assumed)"
+  parameter d_seat::Length(min = eps(Float64)) = 1.5e-3
+  "Discharge coefficient (assumed)"
+  parameter C_d::Real(min = eps(Float64)) = 0.65
+  "Laminar-transition pressure difference (assumed)"
+  parameter dp_cr::Pressure(min = eps(Float64)) = 0.1e5
+  "Actual opening"
+  variable x::Real
+  "Fluid density"
+  variable rho::Density
+  "Seat area"
+  variable A::Area
+relations
+  initial x = 0.0
+  der(x) = (min(max(command, 0.0), 1.0) - x) / T_v
+  A = π * d_seat ^ 2 / 4
+  rho = HydraulicComponents.density(port_a.medium, max(port_a.p, port_b.p))
+  m_flow = port_a.m_flow
+  m_flow = x * C_d * A * sqrt(2 * rho) * Δp / (Δp ^ 2 + dp_cr ^ 2) ^ 0.25
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Brake/OutletValve.svg"}},
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "command": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}}
+  }
+}
+end
