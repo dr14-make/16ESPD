@@ -10,8 +10,8 @@ layout: section
 ABS turned around: keep a **driven** wheel from spinning, with the brakes and the engine.
 
 <!--
-Budget: 6 minutes, 6 slides, after the short break: what 1.5, actuators 1.5, Lecture 1 link 1,
-take-home bonus 1, summary 1.
+Budget: 10 minutes, after the short break: what 1.5, the differential film 2.5, the open
+differential 1.5, actuators 1.5, Lecture 1 link 1, take-home bonus 1, summary 1.
 
 Traction control, TCS, or ASR in Bosch's and the German makers' naming, from
 Antriebsschlupfregelung, drive slip control. It is the positive side of the friction curve.

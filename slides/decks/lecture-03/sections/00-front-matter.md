@@ -105,7 +105,8 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 <!--
 Seven sections in three hours, with a 10-minute break in the middle of section 03 and a 5-minute
 one after it. Budgets per section are on each section's cover and in
-`docs/lecture-03-run-sheet.md`. 87 of the 180 minutes are building: builds 00 to 05 take 6, 5,
+`docs/lecture-03-run-sheet.md`: 202 minutes planned for the 180-minute block, its cut order
+takes back the rest. 87 of them are building: builds 00 to 05 take 6, 5,
 16, 22, 28 and 10; each build slide's note opens with its own budget and split.
 
 The first two sections are physics: what the tire can give, and how the brake system turns a foot

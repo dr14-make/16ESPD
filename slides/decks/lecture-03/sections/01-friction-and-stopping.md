@@ -11,8 +11,8 @@ What the road can give back: the friction coefficient, how a tire differs from a
 and the shortest stop physics allows.
 
 <!--
-Budget: 14 minutes for the section, 7 slides: friction 2, tire curve 2, braking distance 2,
-build 01 by hand 5, cornering 2, summary 1.
+Budget: 19 minutes for the section: friction 2, tire curve 2, tire models 3, braking distance 2,
+build 01 by hand 5, cornering 2, a locked wheel does not steer 2, summary 1.
 
 Every brake, however strong, ends at the same place: the contact patch, about the size of a hand
 per wheel. Whatever the brakes do, the car decelerates only as hard as friction there allows. So

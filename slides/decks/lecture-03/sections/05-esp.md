@@ -11,8 +11,10 @@ Compare where the driver steers with where the car goes, and brake single wheels
 gap.
 
 <!--
-Budget: 15 minutes, 15 slides, demo included. Theory 9 (what 1.5, sensors 1, Ackermann 1,
-reference model 2, yaw correction 2, evidence and the test 1.5), demo 5 (passive run 2, ESP on
+Budget: 23 minutes, demo included. Theory 17 (what 1.5, sensors 1, how each measures 1,
+yaw-rate sensor 1.5, lateral acceleration 1.5, Ackermann 1, reference model 2, yaw correction 2,
+the algorithm 1.5, evidence and the test 1.5, our ESP block by block 1, against a production ESP
+1.5), demo 5 (passive run 2, ESP on
 1.5, ESP through ABS 1.5; the planar car and split-µ in passing, its table only), summary 1. Nothing to build: the students
 watch the demo; the planar car is too large to draw in a lecture.
 

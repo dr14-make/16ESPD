@@ -12,9 +12,9 @@ Keep every wheel rolling, near the peak of its friction curve, however hard the 
 `notebooks/lecture03/01-abs.pluto.jl`
 
 <!--
-Budget: 91 minutes, with the 10-minute break in the middle: 40 before it, 51 after.
-Before: cover and what ABS does 2, hardware 9 (history 1, sensors 2, modulator 2, channels 2,
-cycle 2), the model 3, build 03 and its result slide 22, one stop and on the curve 4. After: reference speed 2, build
+Budget: 96 minutes, with the 10-minute break in the middle: 45 before it, 51 after.
+Before: cover and what ABS does 2, hardware 14 (history 1, sensors 2, the active sensor 2,
+optional, the system and our models 3, modulator 2, channels 2, cycle 2), the model 3, build 03 and its result slide 22, one stop and on the curve 4. After: reference speed 2, build
 04 with its checkpoint 28, braking distance 2, surfaces 2, against measured cars 1.5, why ABS
 can stop longer 1.5, build 05 10, the planar car 1, braking and steering 2, summary 1.
 

@@ -9,24 +9,25 @@ building along in Dyad Studio on their own `MyCar`. Each build step has one slid
 it belongs to and an anchored section on the build guide (`lecture/lecture-03/` on the course
 site). The plan behind the steps is `docs/lecture-03-handson-plan.md`.
 
-**Total: 180 minutes**, including a 10-minute and a 5-minute break and the ESP demo. Torque
-vectoring is not in this lecture: it belongs with the electric and hybrid drives.
+**Total: 202 minutes**, including a 10-minute and a 5-minute break and the ESP demo: 22 more than
+the block. The deck is planned at its full length; the "If behind" cut order below is how it fits
+the room. Torque vectoring is not in this lecture: it belongs with the electric and hybrid drives.
 
 | Section | Builds | Minutes |
 |---|---|---:|
 | 00 Front matter | 00 set up | 10 |
-| 01 Friction and stopping | 01 the tire's limit, by hand | 14 |
+| 01 Friction and stopping | 01 the tire's limit, by hand | 19 |
 | 02 How the brakes work | 02 pedal to wheel | 26 |
-| 03 Anti-lock braking, to the break | 03 an ABS of your own | 40 |
+| 03 Anti-lock braking, to the break | 03 an ABS of your own | 45 |
 | Break | | 10 |
 | 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 51 |
 | Break | | 5 |
-| 04 Traction control | 06 take-home bonus (slide only) | 6 |
-| 05 Electronic stability program, demo included | | 15 |
+| 04 Traction control | 06 take-home bonus (slide only) | 10 |
+| 05 Electronic stability program, demo included | | 23 |
 | 06 Wrap-up | | 3 |
 
-Running clock: 01 starts at 10, 02 at 24, 03 at 50, the first break at 90, 03 resumes at 100,
-the second break at 151, 04 at 156, 05 at 162, 06 at 177, end at 180.
+Running clock: 01 starts at 10, 02 at 29, 03 at 55, the first break at 100, 03 resumes at 110,
+the second break at 161, 04 at 166, 05 at 176, 06 at 199, end at 202.
 
 ## Before class
 
@@ -70,9 +71,13 @@ the second break at 151, 04 at 156, 05 at 162, 06 at 177, end at 180.
 - **If a solve stalls in front of the room:** show the committed figure on the build slide and
   keep talking. Do not debug live.
 - **If behind,** cut in this order: the sources slide (always skipped in the room), the channels
-  slide in 03, the history slide in 03, the valve-level stretch
-  goal. Then hand out `PhaseABS` in step 04 so students write only the estimator. Do not cut the
-  four ABS result slides, any build slide or the ESP demo.
+  slide in 03, the history slide in 03, the valve-level stretch goal, the active wheel-speed
+  sensor in 03, the locked wheel that does not steer in 01 (section 03's braking and steering
+  shows it on the planar car), the differential film in 04, our ESP against a production ESP in
+  05, then 05's sensor principles (how each sensor measures, the yaw-rate sensor, lateral
+  acceleration) down to the sensors slide alone. That is about 15 of the 22 minutes. Then hand
+  out `PhaseABS` in step 04 so students write only the estimator. Do not cut the four ABS result
+  slides, any build slide or the ESP demo.
 
 ## 00 Front matter — 10 min
 
@@ -85,10 +90,10 @@ the second break at 151, 04 at 156, 05 at 162, 06 at 177, end at 180.
 - Build 00: wait until most laptops list `BrakedWheel` under **+**. A student without hands-on 2
   branches from `main`; today needs only hands-on 1's `Body`.
 
-## 01 Friction and stopping — 14 min
+## 01 Friction and stopping — 19 min
 
-- Friction and the table 2, tire curve 2, braking distance 2, build 01 5, cornering limit 2,
-  summary 1.
+- Friction and the table 2, tire curve 2, tire models 3, braking distance 2, build 01 5,
+  cornering limit 2, a locked wheel does not steer 2, summary 1.
 - The static/kinetic block pictures were folded out; draw the friction-against-push curve on the
   board only if asked.
 - Build 01 is paper or REPL. Wait for 4256 N·m from most of the room: it comes back on every
@@ -114,11 +119,12 @@ the second break at 151, 04 at 156, 05 at 162, 06 at 177, end at 180.
   holds for every new analysis in 03 and 04. Expected at pedal 0.3: 55 bar, no lock, 36.0 m; at 0.6: 89 bar,
   `wheel.kappa` −1, 43.7 m.
 
-## 03 Anti-lock braking — 91 min, the break inside it
+## 03 Anti-lock braking — 96 min, the break inside it
 
-Before the break, 40 min:
+Before the break, 45 min:
 
-- Cover and what ABS does 2, history 1, sensors 2, modulator 2, channels 2, control cycle 2, the
+- Cover and what ABS does 2, history 1, sensors 2, the active sensor 2 (optional), the system at
+  a glance and what our models stand in for 3, modulator 2, channels 2, control cycle 2, the
   model 3, **build 03** with its result slide 22, one stop and on the curve 4.
 - Build 03 copies `PedalStop` to `ABSStop` and puts one `ABSValve` per circuit between the master
   cylinder and the lines: three blocks, nine wires, two deleted; the fluid and the initial lines
@@ -181,17 +187,19 @@ After the break, 51 min:
 
 After the section 03 summary. The building is done for the day.
 
-## 04 Traction control — 6 min
+## 04 Traction control — 10 min
 
-- What it does 1.5, two actuators 1.5, Lecture 1 link 1, take-home bonus 1, summary 1.
+- What it does 1.5, the differential film 2.5 (stop once the spider gears are shown), the open
+  differential 1.5, two actuators 1.5, Lecture 1 link 1, take-home bonus 1, summary 1.
 - The bonus is step 06 on the guide page: a brake-based TCS on hands-on 1's `SlipCar`, handed in
   as a pull request for extra points. Its reference (`feat/handson03-tcs-bonus`) is not built yet.
 
-## 05 Electronic stability program — 15 min
+## 05 Electronic stability program — 23 min
 
-- Theory 9: what ESP does 1.5, sensors 1, Ackermann 1, reference model 2, braking one wheel 2,
-  does it work and the test 1.5. Ackermann is the slide to shorten: the table, not the
-  derivation.
+- Theory 17: what ESP does 1.5, sensors 1, how each measures 1, the yaw-rate sensor 1.5, lateral
+  acceleration 1.5, Ackermann 1, reference model 2, braking one wheel 2, the algorithm 1.5, does
+  it work and the test 1.5, our ESP block by block 1, against a production ESP 1.5. Ackermann is
+  the slide to shorten: the table, not the derivation.
 - Demo 5: the passive run 2 (both figure slides), ESP on 1.5 (path and table, then yaw rate and
   brake torque), ESP through ABS 1.5. The planar car slide is one sentence: the car was introduced
   in section 03. Split-µ is its table only, in passing. Students watch; nothing to build.
