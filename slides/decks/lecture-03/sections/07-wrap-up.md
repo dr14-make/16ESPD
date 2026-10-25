@@ -30,8 +30,15 @@ routeAlias: systems-table
 
 Each one builds on the hardware of the one before: ESP is impossible without four-channel ABS.
 
+<div class="diagram-systems">
+
+![Three nested boxes. ABS, innermost: wheel-speed sensors and valves that hold and dump; holds a braked wheel's slip. TCS or ASR around it adds valves and a pump that build pressure, and the engine torque; holds a driven wheel's slip. ESP or ESC around both adds the steering angle, the yaw rate and the lateral acceleration; holds the car's yaw rate and sideslip.](/diagrams/04-abs-tcs-esp.svg)
+
+</div>
+
 <!--
-Read the table top to bottom. Each system adds either a sensor or an actuator to the one before.
+Read the table top to bottom; the picture under it is the same three rows as nested boxes,
+the one from the traction-control section. Each system adds either a sensor or an actuator to the one before.
 ABS needs wheel speeds and valves that can take pressure away. TCS adds the engine as an actuator
 and valves that can build pressure. ESP adds three sensors that tell it what the driver wants and
 what the car does.
@@ -121,7 +128,7 @@ routeAlias: sources
 
 **Course and repository**
 
-- Source deck: *3. ABS, ESP, SRS* (course materials); figures from HowStuffWorks and Renault as
+- Source deck: *3. ABS, ESP, SRS* (course materials); figures from HowStuffWorks as
   credited there
 - `docs/reports/Passenger car brake system modeling.md` and its research notes
 - `docs/abs-frequency-research.md`, `docs/abs-braking-distance-findings.md`,

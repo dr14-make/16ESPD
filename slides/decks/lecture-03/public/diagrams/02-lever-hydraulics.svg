@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" width="1000" height="340">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .bar { fill: #16202c; }
+    .fluid { fill: #eaf1fa; stroke: none; }
+    .wall { stroke: #16202c; stroke-width: 2; fill: none; }
+    .line { stroke: #16202c; stroke-width: 4; fill: none; }
+    .force { stroke: #a75d00; stroke-width: 4; fill: none; }
+    .travel { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .t { font-size: 18px; font-weight: 600; }
+    .v { font-size: 15px; font-weight: 600; }
+    .warn { font-size: 15px; font-weight: 600; fill: #a75d00; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .code { font-size: 13px; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="lh-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="lh-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+  </defs>
+
+  <!-- 1 lever -->
+  <text x="160" y="26" text-anchor="middle" class="t">Lever: × 3.5</text>
+  <rect class="bar" x="20" y="150" width="280" height="8" rx="2"/>
+  <path d="M238 158 L258 196 L218 196 z" fill="#8a99a8" stroke="#16202c" stroke-width="2"/>
+  <text x="238" y="214" text-anchor="middle" class="lbl">pivot</text>
+  <path class="force" d="M28 76 V142" marker-end="url(#lh-warn)"/>
+  <text x="38" y="92" class="warn">foot 100 N</text>
+  <path class="force" d="M294 216 V166" marker-end="url(#lh-warn)"/>
+  <text x="292" y="236" text-anchor="end" class="warn">rod 350 N</text>
+  <path class="travel" d="M24 248 H234"/>
+  <path class="travel" d="M24 242 V254 M234 242 V254 M298 242 V254"/>
+  <path class="travel" d="M242 248 H298"/>
+  <text x="129" y="270" text-anchor="middle" class="lbl">arm 3.5 a</text>
+  <text x="270" y="270" text-anchor="middle" class="lbl">arm a</text>
+  <text x="160" y="300" text-anchor="middle" class="lbl">foot moves 35 mm, rod 10 mm</text>
+  <text x="160" y="326" text-anchor="middle" class="code">BrakePedal, i_p = 3.5</text>
+
+  <!-- 2 Pascal -->
+  <text x="500" y="26" text-anchor="middle" class="t">Pascal: × 5.2</text>
+  <rect class="fluid" x="378" y="110" width="30" height="130"/>
+  <rect class="fluid" x="378" y="226" width="200" height="22"/>
+  <rect class="fluid" x="556" y="150" width="72" height="98"/>
+  <path class="wall" d="M378 70 V248 H628 V110 M408 70 V226 H556 V110"/>
+  <rect class="box" x="380" y="100" width="26" height="12"/>
+  <rect class="box" x="558" y="140" width="68" height="12"/>
+  <path class="line" d="M393 100 V66"/>
+  <path class="line" d="M592 140 V104"/>
+  <path class="force" d="M393 40 V92" marker-end="url(#lh-warn)"/>
+  <text x="403" y="56" class="warn">350 N</text>
+  <path class="force" d="M592 96 V46" marker-end="url(#lh-warn)"/>
+  <text x="602" y="62" class="warn">1820 N</text>
+  <text x="393" y="272" text-anchor="middle" class="v">25 mm</text>
+  <text x="592" y="272" text-anchor="middle" class="v">57 mm</text>
+  <text x="492" y="200" text-anchor="middle" class="lbl">p = 7.1 bar</text>
+  <text x="492" y="216" text-anchor="middle" class="lbl">everywhere</text>
+  <text x="500" y="300" text-anchor="middle" class="lbl">area 5.2 ×: rod 10 mm, piston 1.9 mm</text>
+  <text x="500" y="326" text-anchor="middle" class="code">TandemMasterCylinder 25 mm · front piston 57 mm</text>
+
+  <!-- 3 together -->
+  <text x="840" y="26" text-anchor="middle" class="t">Together: × 18</text>
+  <rect class="bar" x="700" y="56" width="8" height="120" rx="2"/>
+  <circle cx="704" cy="56" r="6" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <rect x="690" y="172" width="30" height="10" rx="2" fill="#16202c"/>
+  <path class="force" d="M672 176 H686" marker-end="url(#lh-warn)"/>
+  <text x="694" y="206" text-anchor="middle" class="warn">100 N</text>
+  <path class="line" d="M708 86 H748"/>
+  <rect class="box-accent" x="748" y="70" width="70" height="32" rx="4"/>
+  <text x="783" y="91" text-anchor="middle" class="v">MC</text>
+  <text x="783" y="62" text-anchor="middle" class="warn">350 N</text>
+  <path class="line" d="M818 86 H900 V150"/>
+  <text x="856" y="78" text-anchor="middle" class="lbl">7.1 bar</text>
+  <rect x="922" y="120" width="14" height="110" rx="2" fill="#8a99a8" stroke="#16202c" stroke-width="2"/>
+  <rect class="box" x="884" y="150" width="36" height="50" rx="3"/>
+  <rect class="box" x="938" y="150" width="20" height="50" rx="3"/>
+  <path class="force" d="M868 175 H912" marker-end="url(#lh-warn)"/>
+  <text x="900" y="250" text-anchor="middle" class="warn">1820 N</text>
+  <text x="929" y="112" text-anchor="middle" class="lbl">disc</text>
+  <text x="840" y="300" text-anchor="middle" class="lbl">3.5 × 5.2 = 18, paid in travel</text>
+  <text x="840" y="326" text-anchor="middle" class="lbl">no booster, no springs</text>
+</svg>

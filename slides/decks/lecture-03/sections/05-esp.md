@@ -77,7 +77,7 @@ routeAlias: esp-sensors
 <div class="grid grid-cols-[1.2fr_1fr] gap-6">
 <div>
 
-![ESP components on a car's plan view: hydraulic links in purple to the four wheel brakes, electric links in green; a sensor combining lateral acceleration and yaw rate, a steering-wheel angle sensor, a disconnection switch, and engine torque management.](/pptx/slide16-esp-components.png)
+![An ESP car from above, front at the top. Orange, the driver's intention: a steering-angle sensor on the steering column, the brake and accelerator pedals, and a brake-pressure sensor on the hydraulic unit. Blue, the car's motion: a yaw-rate and lateral-acceleration sensor near the center of gravity, and a wheel-speed sensor at each of the four wheels. The master cylinder feeds the hydraulic unit with its ECU, HU + ECU, which has a brake line to each wheel and sends a torque request to the engine.](/diagrams/05-esp-components.svg)
 
 </div>
 <div>
@@ -94,12 +94,6 @@ routeAlias: esp-sensors
 - **lateral acceleration** $a_y$
 - wheel speeds
 
-<div class="stack">
-
-![A yaw-rate sensor: a small black plastic housing with a connector.](/pptx/slide17-yaw-rate-sensor.jpg)
-
-</div>
-
 </div>
 </div>
 
@@ -114,8 +108,12 @@ The source deck called the yaw-rate sensor a gyrometer, which is fair: it is a v
 micromechanical gyroscope. Bosch's micromechanical yaw-rate sensor arrived in 1998; the first ESP
 used a different design.
 
-The figure is from the source deck, a Renault diagram. Item 3 there is a switch to disable the
-system, which regulations allow only under conditions.
+The figure sorts the parts the same way as the two lists. Orange is the driver's intention: the
+steering-angle sensor on the column, the brake and accelerator pedals, and the brake-pressure
+sensor on the hydraulic unit, HU, which reads the master cylinder, MC. Blue is the car's motion:
+the yaw-rate and lateral-acceleration sensor, psi-dot and a y, near the center of gravity, and a
+wheel-speed sensor at each wheel. The thick lines are the four brake lines from the hydraulic
+unit; its ECU sends the engine a torque request, the dashed line.
 -->
 
 ---
