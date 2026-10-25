@@ -464,6 +464,64 @@ kilogram mass, is `Vehicle.Brake.TestHydraulicStop`. Reference: `HandsOn03.Pedal
 -->
 
 ---
+routeAlias: vacuum-booster
+---
+
+## Where the assist comes from
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-6 items-start">
+<div>
+
+![The VacuumPedalStop bench in Studio: build 02's chain of command, pedal_unit, booster, master, line_f and line_r into wheel, with body and speed on the right; above the pedal, throttle and speed into the engine's air path, air; above the master, the electric vacuum pump, its p_sense input wired from the booster's p_vac.](/img/lecture-03/vacuum-pedal-bench.png)
+
+</div>
+<div>
+
+![Stopping distance from 25 m/s at a 150 N pedal, by vacuum source: idle 38.4 m, wide-open throttle with a fresh reserve 39.5 m, wide-open throttle with the reserve spent 329 m, engine off with the reserve spent 435 m, electric pump starting from 40 kPa 39.3 m.](/figures/02-vacuum-stopping.svg)
+
+The booster borrows **manifold vacuum**: 33 kPa at idle, almost none at wide-open throttle.
+A **check valve** keeps the stored vacuum, about **two** assisted stops once the source is gone.
+
+</div>
+</div>
+
+<!--
+Optional, 3 minutes. A lecturer demo from the valve branch, not in the 180-minute plan.
+
+This is `Lecture3.VacuumPedalStop`: build 02's `PedalStop` with `Vehicle.Brake.VacuumBooster` in
+place of the static booster, its front chamber fed by the engine's `Vehicle.Engine.AirPath` at a
+prescribed throttle and engine speed, or by `Vehicle.Brake.ElectricVacuumPump`. The hose is two
+equations, not a wire: `ev_pump` picks the source. Same pedal every time, 0.3, 150 newtons, from
+25 meters per second.
+
+1. Idle: 38.4 meters, 56 bar, against 36.0 for the static booster of build 02. The extra 2.4
+   meters are the booster filling its rear chamber, about 0.2 seconds.
+2. Wide-open throttle, fresh store: the manifold is near ambient and the check valve shuts, but
+   the booster still holds the 33 kPa it stored at idle: 39.5 meters, almost normal.
+3. Store used up: each full application lets rear-chamber air into the front chamber. After the
+   engine stops, four 400-newton applications leave 3.5, 2.1, 1.0 and 0.2 kilonewtons of assist,
+   the service manuals' "two or three assisted stops". With none left, 150 newtons makes 4 bar
+   instead of 56, and the car needs 435 meters with the engine off, 329 at wide-open throttle.
+4. Electric pump, starting at its 40 kPa switch-on point: 39.3 meters. That is why diesels,
+   hybrids and EVs carry one; Hella's UP28 pulls a 2.8-liter booster to 50 kPa in 6.7 seconds.
+
+Live, if there is time, in the Studio REPL (compiled before class):
+
+1. `using VehicleSystemsComponents: Lecture3, Vehicle`
+2. `Vehicle.braking_distance(Lecture3.VacuumPedalStopTransient())`: 38.4.
+3. `Vehicle.braking_distance(Lecture3.VacuumPedalStopTransient(engine_on = 0.0, n_apply = 4.0,
+   stop = 60.0))`: 435, the reserve spent. A minute of simulated time; give it a moment.
+
+At pedal 0.6 the wheel locks whatever the source while the store holds: 44.1 meters at idle,
+against 43.7 for build 02.
+
+The booster's geometry, valve thresholds and flow coefficients are PATH's, UCB-ITS-PRR-97-21.
+The servo ratio, jump-in, cut-in and the valve's 10-newton dead band are assumed: PATH's 50
+newtons would leave the booster 250 newtons short of the static characteristic. Figure:
+`scripts/export_lecture03_vacuum_figures.jl`.
+-->
+
+---
 
 ## Summary of section 02
 

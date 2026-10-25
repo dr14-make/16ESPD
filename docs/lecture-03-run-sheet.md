@@ -212,3 +212,21 @@ After the section 03 summary. The building is done for the day.
 - The table 1, summary 1, what you measured 1. Skip the sources slide.
 - "What you measured" closes the build: one row per step, each a number the students have on
   their own screen. Remind them to commit their `lecture-03` branch.
+
+## Demo slides on the valve branch
+
+Four optional slides that exist only on `feat/lecture-03-abs-valves`. They are not in the
+180 minutes above, and the totals leave them out: each one shown costs its minutes, so cut
+elsewhere or skip them.
+
+| Slide | Section | Minutes |
+|---|---|---:|
+| Where the assist comes from (`vacuum-booster`) | 02, before the summary | 3 |
+| The real valves (`real-valves`) | 03, after braking and steering | 3 |
+| The whole brake, from engine to wheel (`whole-brake`) | 03 | 2 |
+| How the models compare (`model-comparison`) | 03, before the summary | 3 |
+| **All four** | | **11** |
+
+For a live run, compile before class in the same REPL: `Lecture3.VacuumPedalStopTransient()`,
+`HandsOn03.HydraulicABSStopReportTransient()` and `Lecture3.FullBrakeABSStopTransient()`. The
+first call of the full bench takes about a minute; warm it is 2.6 s.

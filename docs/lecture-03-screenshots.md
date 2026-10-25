@@ -81,3 +81,19 @@ The rehearsal settled the first of the plan's two open questions: Studio's code 
 `pressure` placement and the nested `ifelse`, but ports written in code get no placement unless the pasted
 code carries their `{^…}` markers and `metadata`, which the guide's code now does. Whether build 02 fits its 16
 minutes is still open.
+
+## Captured: the demo benches on the valve branch
+
+Four shots for the lecturer demo slides, taken in Dyad Studio web (1600 × 1000 window) from the
+library tree, with `~/TMP/MyCar`'s manifest pointed at the `feat-lecture-03-abs-valves` worktree
+for the session. Like the three bench diagrams above, they show the library's own diagrams, with
+the same block positions as `PedalStop`, `ABSStop` and `ABSStopWheelOnly`, routed wires, and the
+crop of `step04-wheel-only-bench.png`. `VacuumBooster` is written in equations and has no inside
+diagram, so it has no shot.
+
+| File | Model | What it shows | Used on | Status |
+| ---- | ----- | ------------- | ------- | ------ |
+| `vacuum-pedal-bench.png` | `Lecture3.VacuumPedalStop` | Build 02's chain with the `VacuumBooster`; `throttle` and `speed` into `air` above the pedal, `booster.p_vac` into the `pump`'s `p_sense` above the master. The hose itself (`booster.p_src`, `booster.mdot_out`) is a pair of equations, not a wire. | deck 02, "Where the assist comes from" | done, library diagram, routed wires |
+| `hydraulic-modulator-inside.png` | `Vehicle.Brake.HydraulicModulator` | Inside one channel: `port_a` → `inlet_valve` → gallery → `port_b`, the `outlet_valve` below the gallery into the accumulator, and the return `pump` back to `port_a`; `inlet` and `motor` wired from the top edge, `outlet` set in an equation. Stitched from two shots of the same view. | deck 03, "The real valves" | done, library diagram, routed wires |
+| `hydraulic-abs-bench.png` | `HandsOn03.HydraulicABSStop` | Build 04's bench with `modulator_f` and `modulator_r` where the valves sat and `ABSValveController` where `abs` sat; `controller.inlet` and `controller.outlet` up to both modulators. | deck 03, "The real valves" | done, library diagram, routed wires |
+| `full-brake-abs-bench.png` | `Lecture3.FullBrakeABSStop` | The vacuum bench's air path and pump over the hydraulic ABS bench. The modulator commands are equations here (`abs_on` switches them), so no wires run to the modulators. | deck 03, "The whole brake, from engine to wheel" | done, library diagram, routed wires |

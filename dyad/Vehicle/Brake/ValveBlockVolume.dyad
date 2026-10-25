@@ -5,7 +5,7 @@ The 5 mm³ gallery volume is a geometric estimate for the drilled passage betwee
 (assumed). Its pressure state removes the algebraic junction between the inlet, outlet, and line.
 """
 component ValveBlockVolume
-  port = HydraulicComponents.Interfaces.Port()
+  port = HydraulicComponents.Interfaces.Port() {^port}
   "Trapped gallery volume (assumed)"
   parameter V_block::Volume = 5e-9
   "Initial gallery pressure"
@@ -24,4 +24,9 @@ relations
   der(V) = port.m_flow / rho
   port.p = p
   guess V = 0.0
+metadata {
+  "_links": {
+    "port": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}}
+  }
+}
 end

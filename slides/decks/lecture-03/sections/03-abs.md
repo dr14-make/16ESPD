@@ -1478,6 +1478,197 @@ sheet):
 -->
 
 ---
+routeAlias: real-valves
+---
+
+## The real valves
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-5 items-start">
+<div>
+
+![One valve-level ABS stop on a dry road, pedal 0.6, from 0 to 3.8 s with the brake at 0.5 s, in three stacked panels. Top: the master-cylinder pressure flat at 89 bar while the front wheel pressure saws between about 24 and 61 bar. Middle: the inlet, outlet and pump-motor commands; the outlet opens 23 times, 7.4 a second, and the pump runs from the first dump to the end. Bottom: the master-cylinder rod travel x_rod rippling between 7.5 and 10.1 mm with every dump and rebuild.](/figures/03-valve-abs-cycle.svg)
+
+</div>
+<div class="text-[0.9rem]">
+
+<img src="/img/lecture-03/hydraulic-modulator-inside.png" class="h-48" alt="Inside Vehicle.Brake.HydraulicModulator in Studio: port_a on the left through the inlet_valve to the gallery and port_b on the right; below the gallery the outlet_valve into the accumulator, and the return pump from there back to port_a; the inlet and motor commands wired from the top edge.">
+
+**Build**: inlet open. **Hold**: both shut. **Dump**: outlet open into the accumulator; the pump
+returns the fluid to the master cylinder.
+
+That fluid pushes the rod back: **x_rod swings 2.5 mm** while $p_{mc}$ holds 89 bar. The
+**kickback** an ideal `ABSValve` cannot show.
+
+<img src="/img/lecture-03/hydraulic-abs-bench.png" class="h-36" alt="The HydraulicABSStop bench in Studio: build 04's layout with modulator_f and modulator_r where the ABS valves sat and the valve controller where abs sat; the controller's inlet and outlet commands run up to both modulators.">
+
+</div>
+</div>
+
+<!--
+Optional, 3 minutes. A lecturer demo from the valve branch, not in the 180-minute plan.
+
+The top picture on the right is one `Vehicle.Brake.HydraulicModulator`, one channel: the
+normally open inlet valve from the master-cylinder side, port_a, to the gallery and the wheel,
+port_b; the normally closed outlet valve from the gallery into the low-pressure accumulator; the
+return pump from the accumulator back to port_a. The bottom picture is the bench,
+`HandsOn03.HydraulicABSStop`: build 04's bench with a modulator in place of each `ABSValve` and
+`Vehicle.ABSValveController` in place of `PhaseABS`, on the same wheel-speed estimate.
+
+Read the figure top to bottom.
+
+1. Pressures. The master cylinder is a force balance in this model, so it sits at 89 bar the
+   whole stop. The front wheel saws between about 24 and 61 bar: never above the master
+   cylinder, because an inlet valve can only let pressure through.
+2. Commands. Inlet open is build; inlet shut with the outlet shut is hold; the outlet open is
+   dump. 23 dumps in 3.1 seconds, 7.4 a second, a little faster than the 2 to 6 cycles a second
+   measured on a production Bosch unit. The pump switches on at the first dump and runs to the end.
+3. x_rod. Each dump fills the accumulator and the pump sends the fluid back, so the master
+   cylinder's piston is pushed back and forth: 7.5 to 10.1 mm. Times the pedal ratio, 3.5, that
+   is about 9 mm at the pedal: the pulsing a driver feels. Build 03's `ABSValve` throws the
+   dumped fluid away, so its rod never moves back.
+
+The stop: 39.1 meters, against 38.5 for build 04's ideal valve on the same estimate. ABS first
+acts 5 milliseconds after the pedal, as with the ideal valve: the static booster gives the full
+pressure at once.
+
+Live, if there is time (compiled before class; the dry run takes about 35 seconds warm, snow
+about 3):
+
+1. `using VehicleSystemsComponents, Plots; using DyadInterface: symbolic_container`
+2. `r = VehicleSystemsComponents.HandsOn03.HydraulicABSStopReportTransient()`: snow, µ 0.3.
+3. `m = symbolic_container(r); plot(r.sol; idxs = [m.wheel.caliper_f.p], xlims = (0.4, 3.0))`:
+   the sawtooth, in pascals.
+4. `plot(r.sol; idxs = [m.master.x_rod], xlims = (0.4, 3.0))`: the kickback.
+
+Figure: `scripts/export_lecture03_valve_figures.jl`, which prints every number above. Defaults
+of the modulator: 0.49 mm equivalent seats, 3 ms valve lags, a 5.3 cm³ accumulator, 10 cm³/s of
+pump flow; the seat is derived from a 580 bar/s target, the rest partly assumed.
+-->
+
+---
+routeAlias: whole-brake
+class: big-figure
+---
+
+## The whole brake, from engine to wheel
+
+<div class="grid grid-cols-[1.35fr_1fr] gap-6 items-start">
+<div>
+
+![The FullBrakeABSStop bench in Studio: the vacuum bench's throttle, engine speed, air path and vacuum pump above the hydraulic ABS bench: command, pedal_unit, booster and master; modulator_f and modulator_r into line_f and line_r and the wheel; body and speed on the right; est and controller below, fed by wspeed on the wheel; fixed_hydraulic, fixed and road at the bottom.](/img/lecture-03/full-brake-abs-bench.png)
+
+</div>
+<div class="text-[0.9rem]">
+
+- **Air path**: the manifold the engine pulls down, or an electric pump.
+- **Vacuum booster**: assist from that vacuum, kept by its check valve.
+- **Master cylinder**: force to pressure in two circuits.
+- **Modulators**: build, hold, dump, one per circuit.
+- **Lines, calipers, wheel**: pressure to torque against the tire.
+- **Wheel speed → estimate → controller**: the valve commands.
+
+| pedal 0.6 | μ 1.0 | μ 0.5 | μ 0.3 |
+|---|---:|---:|---:|
+| idle | 41.8 m | 77.8 m | 116.6 m |
+| store used up | 138 m | 138 m | 138 m |
+
+ABS first acts **0.34 s** after the pedal; on the static booster, 5 ms.
+
+</div>
+</div>
+
+<!--
+Optional, 2 minutes. A lecturer demo from the valve branch, not in the 180-minute plan.
+
+`Lecture3.FullBrakeABSStop`: every brake part of this lecture in one bench, on the one wheel of
+the builds. One line per block row, left to right, then the table.
+
+1. Idle, store full: 41.8, 77.8 and 116.6 meters at µ 1.0, 0.5 and 0.3. Dry, that is 2.7 meters
+   longer than the valve bench on the static booster, 39.1. The booster needs time to fill its
+   rear chamber: the master cylinder reaches half its peak 0.18 seconds after the pedal and 90
+   percent after 0.42, and the controller's 70-bar activation is crossed at 0.34 seconds.
+2. Store used up, `p_vac0 = 100e3`: the master cylinder gets only the driver's unassisted force,
+   about 15 bar. The wheel never locks, so ABS never acts, and the stop is about 138 meters on
+   every road. With the engine off as well, about 144.
+3. The point to make: the ABS can only work with the pressure the booster delivers. A dead
+   booster leaves the car stopping on 15 bar, ABS or not.
+
+Live, if there is time: `Lecture3.FullBrakeABSStopTransient()`, 2.6 seconds warm, but the first
+call in a fresh process takes about a minute, so run it once before class.
+`Lecture3.FullBrakeABSStopTransient(p_vac0 = 100e3, u_thr = 1.0, stop = 13.0)` is the store used
+up at wide-open throttle; past about 23 seconds that run stalls at standstill, so keep
+`stop = 13.0`.
+
+Not on the slide: at µ 0.5 the idle stop, 77.8 meters, is 18 percent longer than the valve bench
+on the static booster, 65.8. The booster's lag alone does not explain it; the testset that checks
+it is marked broken and the cause is open. Do not quote the µ 0.5 number as settled.
+
+Numbers: `docs/lecture-03-brake-model-comparison.md`, table 3.
+-->
+
+---
+routeAlias: model-comparison
+---
+
+## How the models compare
+
+<div class="text-[0.85rem]">
+
+| model | what it adds | μ 1.0 | μ 0.3 | states | warm run | solver |
+|---|---|---:|---:|---:|---:|---|
+| `PedalStop` | pedal to wheel, no ABS | 43.7 m | 136.7 m | 7 | 0.14 s | Tsit5 |
+| `VacuumPedalStop` | vacuum booster on the manifold | 44.1 m | 136.9 m | 12 | 0.22 s | Tsit5 |
+| `ABSStop` | ideal ABS valve, true slip | 34.2 m | 106.1 m | 12 | 0.17 s | Tsit5 |
+| `ABSStopWheelOnly` | wheel speed only | 38.5 m | 130.6 m | 13 | 0.58 s | Tsit5 |
+| `HydraulicABSStop` | inlet, outlet, accumulator, pump | 39.1 m | 108.7 m | 21 | 33.5 s\* | Rodas5P |
+| `FullBrakeABSStop` | engine vacuum and the valves | 41.8 m | 116.6 m | 26 | 2.6 s\*\* | Rodas5P |
+| `Vehicle.ABSBrakeTransient` | torque-level ABS, 5 ms clock | 38.7 m | 141.3 m | 5 | 17.2 s | default |
+
+<div class="text-xs opacity-70">From 25 m/s, pedal 0.6 · * µ 0.5 and 0.3: about 3 s · ** the
+first call in a fresh process: 61 s</div>
+
+</div>
+
+<div class="mt-5">
+
+Each level buys one effect you can see, the pedal kickback or the booster's lag, and costs states
+and a stiff solver: **a tenth of a second on Tsit5** becomes **seconds on Rodas5P**.
+
+</div>
+
+<!--
+Optional, 3 minutes. A lecturer demo from the valve branch, not in the 180-minute plan.
+
+1. Read the first column down: PedalStop is build 02, ABSStop build 03, ABSStopWheelOnly build
+   04; VacuumPedalStop, HydraulicABSStop and FullBrakeABSStop are the demo benches of the
+   previous slides; the last row is the library's clocked ECU of the "Braking distance" slide.
+2. The distances. The vacuum booster changes nothing while its store is full: 44.1 against
+   43.7, both locked. The valves cost little dry, 39.1 against build 04's 38.5. The full chain
+   adds the booster's lag, 41.8.
+3. The cost. States double from the ideal benches to the valve ones, and the valves need a stiff
+   solver: Tsit5 fails on them even with 5 mm³ valve-block volumes. A model is worth its detail
+   only when the question needs it: the stopping distance does not, the pedal feel and a dead
+   booster do.
+
+Two oddities to admit if asked. The dry HydraulicABSStop run takes 200 thousand steps and 33.5
+seconds, where µ 0.5 and 0.3 take 15 and 18 thousand, about 3 seconds; the cause has not been
+investigated. And the torque-level ECU, 5 states, takes 17 seconds: its 5 ms clock events
+dominate, not the states.
+
+The snow caveat, from issue 92: on µ 0.3 the valve ABS stops 20 percent shorter than locked,
+108.7 against 136.7 meters, and the full chain 15 percent; measured packed-snow gains are 0 to 11
+percent (the "Against measured cars" slide). The cause is the model, not a better ABS: our snow
+tire is the dry curve scaled down, so it rewards slip that a real snow tire would punish, and the
+valve controller spends 30 percent of the stop beyond the sliding slip, against 7 percent for the
+ideal valve. Its reference speed also drifts low enough to switch ABS off at 3.9 m/s. Do not sell
+the snow column as a result.
+
+States are the unknowns after `mtkcompile`; warm run is the fastest of three calls in a process
+that has run the analysis once, problem build included. All in
+`docs/lecture-03-brake-model-comparison.md`.
+-->
+
+---
 
 ## Summary of section 03
 

@@ -23,30 +23,30 @@ component HydraulicABSStop
   speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
   path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
 relations
-  connect(command.y, pedal_unit.u)
-  connect(pedal_unit.rod, booster.input)
-  connect(booster.rod_out, master.pushrod)
-  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange)
-  connect(master.front, modulator_f.port_a)
-  connect(modulator_f.port_b, line_f.port_a)
-  connect(line_f.port_b, wheel.front)
-  connect(master.rear, modulator_r.port_a)
-  connect(modulator_r.port_b, line_r.port_a)
-  connect(line_r.port_b, wheel.rear)
+  connect(command.y, pedal_unit.u) {^id1}
+  connect(pedal_unit.rod, booster.input) {^id2}
+  connect(booster.rod_out, master.pushrod) {^id3}
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange) {^id4}
+  connect(master.front, modulator_f.port_a) {^id5}
+  connect(modulator_f.port_b, line_f.port_a) {^id6}
+  connect(line_f.port_b, wheel.front) {^id7}
+  connect(master.rear, modulator_r.port_a) {^id8}
+  connect(modulator_r.port_b, line_r.port_a) {^id9}
+  connect(line_r.port_b, wheel.rear) {^id10}
   continuity(medium, master.front.medium)
-  connect(wspeed.spline, wheel.spline)
-  connect(wspeed.w, est.omega)
-  connect(est.kappa_hat, controller.kappa)
-  connect(est.v_ref, controller.v_ref)
-  connect(est.a_w, controller.a_w)
-  connect(master.p_mc, controller.p_mc)
-  connect(controller.inlet, modulator_f.inlet, modulator_r.inlet)
-  connect(controller.outlet, modulator_f.outlet, modulator_r.outlet)
+  connect(wspeed.spline, wheel.spline) {^id11}
+  connect(wspeed.w, est.omega) {^id12}
+  connect(est.kappa_hat, controller.kappa) {^id13}
+  connect(est.v_ref, controller.v_ref) {^id14}
+  connect(est.a_w, controller.a_w) {^id15}
+  connect(master.p_mc, controller.p_mc) {^id16}
+  connect(controller.inlet, modulator_f.inlet, modulator_r.inlet) {^id17}
+  connect(controller.outlet, modulator_f.outlet, modulator_r.outlet) {^id18}
   modulator_f.motor = pump_enabled * controller.motor
   modulator_r.motor = pump_enabled * controller.motor
-  connect(road.y, wheel.mu_scale)
-  connect(wheel.support, fixed.spline)
-  connect(wheel.flange, body.flange, speed.flange)
+  connect(road.y, wheel.mu_scale) {^id19}
+  connect(wheel.support, fixed.spline) {^id20}
+  connect(wheel.flange, body.flange, speed.flange) {^id21}
   initial wheel.inertia.phi = 0
   initial wheel.inertia.w = 25 / 0.31
   initial body.mass.s = 0
@@ -55,23 +55,44 @@ relations
   initial modulator_r.gallery.V = 0
 metadata {
   "_links": {
-    "command": {"Dyad": {"placement": {"diagram": {"x1": -120, "x2": -20, "y1": 120, "y2": 220}}}},
-    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 140, "y1": 120, "y2": 220}}}},
-    "booster": {"Dyad": {"placement": {"diagram": {"x1": 190, "x2": 290, "y1": 120, "y2": 220}}}},
-    "master": {"Dyad": {"placement": {"diagram": {"x1": 340, "x2": 460, "y1": 110, "y2": 230}}}},
-    "modulator_f": {"Dyad": {"placement": {"diagram": {"x1": 530, "x2": 680, "y1": 20, "y2": 170}}}},
-    "modulator_r": {"Dyad": {"placement": {"diagram": {"x1": 530, "x2": 680, "y1": 230, "y2": 380}}}},
-    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 45, "y2": 145}}}},
-    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 255, "y2": 355}}}},
-    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 930, "x2": 1100, "y1": 100, "y2": 270}}}},
-    "body": {"Dyad": {"placement": {"diagram": {"x1": 1190, "x2": 1290, "y1": 135, "y2": 235}}}},
-    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1190, "x2": 1290, "y1": -20, "y2": 80}}}},
-    "road": {"Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 400, "y2": 500}}}},
-    "controller": {"Dyad": {"placement": {"diagram": {"x1": 500, "x2": 700, "y1": 560, "y2": 760}}}},
-    "est": {"Dyad": {"placement": {"diagram": {"x1": 230, "x2": 380, "y1": 570, "y2": 720}}}},
-    "wspeed": {"Dyad": {"placement": {"diagram": {"x1": 900, "x2": 1000, "y1": 650, "y2": 750}}}},
-    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 1050, "x2": 1150, "y1": 650, "y2": 750}}}},
-    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 140, "y1": 400, "y2": 500}}}}
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 235, "x2": 80, "y2": 315}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 725, "x2": 700, "y2": 805}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 235, "x2": 185, "y2": 315}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 235, "x2": 290, "y2": 315}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 235, "x2": 410, "y2": 315}}}},
+    "modulator_f": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 155, "x2": 550, "y2": 235}}}},
+    "modulator_r": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 315, "x2": 550, "y2": 395}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 155, "x2": 680, "y2": 235}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 315, "x2": 680, "y2": 395}}}},
+    "controller": {"Dyad": {"placement": {"diagram": {"x1": 472, "y1": 475, "x2": 572, "y2": 575}}}},
+    "est": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 470, "x2": 410, "y2": 550}}}},
+    "wspeed": {"Dyad": {"placement": {"diagram": {"x1": 610, "y1": 475, "x2": 690, "y2": 555}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 730, "y1": 215, "x2": 870, "y2": 355}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 245, "x2": 985, "y2": 325}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 770, "y1": 585, "x2": 830, "y2": 645}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 665, "x2": 290, "y2": 745}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 385, "x2": 985, "y2": 465}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 415}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 370, "y": 415}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 250, "y": 415}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 255}, {"x": 440, "y": 195}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 779, "y": 195}], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 295}, {"x": 440, "y": 355}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 694, "y": 355}, {"x": 694, "y": 180}, {"x": 821, "y": 180}], "E": 2}]}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 515}, {"x": 600, "y": 450}, {"x": 712, "y": 450}, {"x": 712, "y": 285}], "E": 2}]}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 702, "y": 515}, {"x": 702, "y": 615}, {"x": 320, "y": 615}, {"x": 320, "y": 510}], "E": 2}]}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 510}, {"x": 440, "y": 530}], "E": 2}]}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 428, "y": 530}, {"x": 428, "y": 520}, {"x": 456, "y": 520}, {"x": 456, "y": 510}], "E": 2}]}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 220}, {"x": 310, "y": 220}, {"x": 310, "y": 590}, {"x": 460, "y": 590}, {"x": 460, "y": 550}], "E": 2}]}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 580, "y": 490}, {"x": 580, "y": 440}, {"x": 455, "y": 440}], "E": -1}, {"S": -1, "M": [{"x": 455, "y": 125}, {"x": 482, "y": 125}], "E": 2}, {"S": -1, "M": [{"x": 482, "y": 285}], "E": 3}], "junctions": [{"x": 455, "y": 285}]}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 588, "y": 510}], "E": -1}, {"S": -1, "M": [{"x": 588, "y": 135}, {"x": 498, "y": 135}], "E": 2}, {"S": -1, "M": [{"x": 498, "y": 295}], "E": 3}], "junctions": [{"x": 588, "y": 295}]}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 842, "y": 765}], "E": 2}]}},
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 890, "y": 230}, {"x": 997, "y": 230}, {"x": 997, "y": 285}], "E": 2}, {"S": -1, "M": [{"x": 890, "y": 425}], "E": 3}], "junctions": [{"x": 890, "y": 285}]}}
   }
 }
 end
