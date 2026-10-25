@@ -138,6 +138,10 @@ below a few km/h.
 **0.1 km/h** and send **current pulses** on a two-wire interface, so the signal does not depend on
 the amplitude. Magnetoresistive versions also report the direction of rotation.
 
+<p class="text-sm">→ Both principles in Lecture 2:
+<a href="../lecture-02/#/magnetic-sensors">Hall and MR</a> ·
+<a href="../lecture-02/#/crank-signals">VR against Hall on one wheel</a></p>
+
 </div>
 <div>
 
@@ -160,15 +164,97 @@ The passive sensor needs no supply, but its voltage falls with speed, so it give
 at a crawl, a few kilometers per hour. That was acceptable for ABS, which switches off near
 standstill anyway. Hill-hold, parking and stability functions need the speed down to zero, so
 modern cars use active sensors. Bosch's active sensor has the sensing element, an amplifier and
-the signal processing on one chip, and sends constant-amplitude current pulses: two current
-levels, around 7 and 14 milliamps in trade literature, though I could not find that number in a
-Bosch specification.
+the signal processing on one chip, and sends constant-amplitude current pulses; the next slide shows that interface from a
+datasheet.
 
 The source deck said the ECU compares the sensor signals to values stored in its memory. More
 precisely: it computes wheel speed and wheel deceleration from the pulse timing, every few
 milliseconds, and compares the wheels with each other and with an estimate of the car's speed.
 
 Source: Bosch Mobility, wheel-speed sensor page.
+-->
+
+---
+routeAlias: active-wheel-speed-sensor
+---
+
+## The active wheel-speed sensor
+
+<div class="grid grid-cols-[1fr_1fr] gap-6 text-sm">
+<div>
+
+- **What it reads**: a steel tone wheel, with a magnet behind the chip (*back-biased*), or a
+  **multipole encoder ring** in the wheel-bearing seal: 48 N–S pole pairs on a 70 mm ring, a pole
+  every 2.3 mm. The field falls fast with the **air gap**.
+- **Two wires, current pulses**: supply and signal share the pair. The chip draws **7 mA**, and
+  **14 mA** for a short pulse at each pole edge; the ECU reads the current across a resistor.
+  - a cable's resistance or a ground offset does not change a current
+  - **0 mA** is an open wire, too much a short: the ECU sees a broken sensor
+- **More than speed**: the pulse width gives the **direction** (90 or 180 µs); extra pulses warn
+  of a growing air gap or mark standstill. The **AK protocol** (VDA) follows each 28 mA speed
+  pulse with 9 bits: direction, air-gap reserve, status, parity.
+- **The ECU** times the edges: speed $= (2\pi r / 96) / T$
+
+| $r$ = 0.31 m, 96 pulses per turn | pulses/s | per 10 ms | period |
+|---|---|---|---|
+| 5 km/h | 68 | **0.7** | 14.6 ms |
+| 100 km/h | 1370 | 13.7 | 0.73 ms |
+
+At a crawl a 10 ms cycle sees **one pulse or none**: the speed is up to 15 ms old and its
+derivative is noise, so $v_{ref}$ and the slip are least sure where the wheel locks.
+
+</div>
+<div>
+
+![An encoder ring, unrolled, with alternating north and south poles, passes under a Hall or MR chip across an air gap; field lines arc from each pole to the next. Below, the chip's supply current against time: a 7 mA floor with a short 14 mA pulse at each pole edge, one pole period T apart. Below 7 mA means an open wire or a fault.](/diagrams/03-active-wheel-sensor.svg)
+
+<div class="caption">Levels and protocols: Allegro A19302 datasheet; ring: SKF patent US 11 041 875</div>
+
+</div>
+</div>
+
+<!--
+What is specific to the wheel. The physics is Lecture 2's: a Hall plate or a magnetoresistive
+film on a chip. What it reads here is either the old steel tone wheel, with a magnet behind the
+chip so the teeth modulate its field, or, on many cars, a ferrite ring with alternating poles in
+the seal of the wheel bearing. SKF's patent gives 48 pole pairs on a 70 millimeter ring as the
+most a ring that size can carry; that puts a pole every 2.3 millimeters. Infineon sells GMR wheel
+chips made for these "pole wheels", and notes that a back-biased MR sensor for a steel wheel is
+harder to build than a Hall one. The field of such small poles dies within a few millimeters, so
+the air gap matters, and sensors report it.
+
+The interface: two wires only, and both carry the supply. The chip draws a steady 7 milliamps and
+lets that rise to 14 for each pole edge. The ECU puts a resistor in the return line and reads the
+voltage across it: with 100 ohms, 0.7 and 1.4 volts. Why a current: the sensor sits at the wheel,
+a meter or two of cable from the ECU, past the brake and the motor. Cable resistance and the
+voltage difference between the two grounds do not change a current, and the low-ohm receiver
+gives interference little to work with. And there is no legal zero: a current under 7 milliamps
+means an open wire or a dead chip, one far above 14 a short. The current argument is my own
+reasoning, not quoted from a datasheet.
+
+The extra information: in the pulse-width protocol a forward pulse is 90 microseconds, a reverse
+pulse 180. Some variants add warning pulses when the field gets weak and a standstill pulse every
+0.7 seconds, so the ECU knows the sensor is alive at zero speed. The AK protocol, a VDA
+specification, sends a 28 milliamp speed pulse and then nine 50-microsecond bits at 14: air-gap
+reserve, status, overtemperature, direction valid, direction, three bits of air-gap range,
+parity.
+
+What the ECU does with it: it timestamps each edge and takes the speed from the period. One pole
+is 2 pi r over 96, about 20 millimeters of road. At 100 km/h that is 1370 pulses a second, 14 in
+every 10 millisecond cycle, fine. At 5 km/h it is 68 a second: less than one per cycle, the
+newest period is up to 15 milliseconds old, and a deceleration from two such periods is mostly
+noise. The 5 millisecond loop of our model halves those counts. That is where the reference
+speed and the slip are least trustworthy, and one reason ABS hands over near standstill. Same
+check at the top: the A19302 is rated to 3.9 kHz forward, about 285 km/h on this wheel.
+
+Sources (opened): Allegro A19302 datasheet, rev. 9 (supply-current levels, pulse widths, AK bit
+table, standstill and warning pulses); SKF patent US 11041875 B2 (48 pole pairs on a 70 mm
+encoder); Infineon TLE5041plusC product brief, 2013 (GMR for magnetic-encoder "pole wheels",
+back-biased MR is harder). The VDA AK-protocol specification itself, version 4.0, is
+named by the A19302 datasheet; I did not open it.
+
+Budget: 2 minutes, optional. Skip it if the hour runs long; the reference-speed slide after the
+break needs only its last line.
 -->
 
 ---

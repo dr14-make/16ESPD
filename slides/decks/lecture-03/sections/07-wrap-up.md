@@ -128,6 +128,7 @@ routeAlias: sources
   `docs/abs-controller-spec.md`, `docs/lecture-03-preparation.md`
 - `docs/lecture-03-esp-research.md`, `docs/lecture-03-esp-dyad-tasks.md`: the planar car and
   the sine-with-dwell runs
+- `docs/lecture-03-tire-models-research.md`: slip, the tire-model family, the locked wheel
 
 **Standards and agencies**
 
@@ -145,6 +146,8 @@ routeAlias: sources
 - Bosch press archive: "Staying on track", 25 years of ESP
 - Mercedes-Benz: 40 years of ABS (1978)
 - Volkswagen newsroom: XDS; Honda: SH-AWD (2004)
+- Allegro MicroSystems, A19302 datasheet (wheel-speed IC: current levels, PW and AK protocols);
+  Infineon, TLE5041plusC product brief (2013); SKF, patent US 11041875 B2 (encoder ring)
 
 **Papers and books**
 
@@ -156,6 +159,13 @@ routeAlias: sources
 - T. D. Gillespie, *Fundamentals of Vehicle Dynamics*, SAE 1992, ch. 6 (Ackermann steering)
 - W. F. Milliken, D. L. Milliken, *Race Car Vehicle Dynamics*, SAE 1995 (steering systems)
 - J. C. Gerdes et al., California PATH report UCB-ITS-PRR-97-21 (brake system model)
+- H. B. Pacejka, *Tire and Vehicle Dynamics*, 3rd ed., Elsevier 2012 (slip, brush model,
+  Magic Formula); E. Bakker, L. Nyborg, H. B. Pacejka, SAE 870421 (1987)
+- E. Fiala, VDI-Z 96 (1954); H. Dugoff, P. Fancher, L. Segel, SAE 700377 (1970); M. Burckhardt,
+  *Radschlupf-Regelsysteme*, Vogel 1993
+- W. Hirschberg, G. Rill, H. Weinfurter, *Tire model TMeasy*, VSD 45 (2007); C. Canudas de Wit
+  et al., IEEE TAC 40(3) (1995), LuGre; M. Gipser, *The FTire Tire Model Family* (cosin)
+- MathWorks, Simscape Driveline *Tire-Road Interaction (Magic Formula)*: typical coefficients
 
 </div>
 </div>
@@ -165,8 +175,9 @@ Where each fact came from. The speaker notes on each slide name the source for t
 and say when something could not be verified.
 
 Not verified from a primary source: Voisin's date, around 1920, from secondary sources only; the
-classification of three- and one-channel ABS; the 7 and 14 milliamp levels of active wheel-speed
-sensors; the margin factor on the reference yaw rate in Rajamani; the engine interventions of a
-particular TCS product. The 2 to 6 per second ABS slip cycle is cited from Day and Roberts by the
-repository's frequency research; the paper itself is paywalled.
+classification of three- and one-channel ABS; the margin factor on the reference yaw rate in
+Rajamani; the engine interventions of a particular TCS product. The 7 and 14 milliamp levels of
+active wheel-speed sensors come from an Allegro datasheet, not a Bosch one; the VDA AK-protocol
+specification itself was not opened. The 2 to 6 per second ABS slip cycle is cited from Day and
+Roberts by the repository's frequency research; the paper itself is paywalled.
 -->
