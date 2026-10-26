@@ -2,9 +2,9 @@
 Brake plan increment 2a: the air path under prescribed throttle, speed and booster inflow.
 
 The throttle steps from `u0` by `du` at `t_step`, the speed is held at `omega`, and the booster
-pushes `mdot_bst` into the manifold for `d_bst` seconds from `t_bst`. The test cases are the 2a
-scenarios: idle pull-down from ambient, tip-in to wide open at 3000 rpm, overrun at 3000 rpm, a
-small throttle step at idle for the time constant, and a booster release at idle.
+pushes `mdot_bst` into the manifold's `vacuum` hose for `d_bst` seconds from `t_bst`. The test
+cases are the 2a scenarios: idle pull-down from ambient, tip-in to wide open at 3000 rpm, overrun
+at 3000 rpm, a small throttle step at idle for the time constant, and a booster release at idle.
 """
 test component TestAirPath
   "Throttle position before the step"
@@ -26,11 +26,14 @@ test component TestAirPath
   throttle_cmd = BlockComponents.Sources.Step(offset = u0, height = du, start_time = t_step) {^throttle_cmd}
   speed = BlockComponents.Sources.Constant(k = omega) {^speed}
   booster = BlockComponents.Sources.Pulse(amplitude = mdot_bst, duty_cycle = 1.0, period = d_bst, start_time = t_bst, offset = 0.0) {^booster}
+  "Booster air pushed into the manifold"
+  booster_flow = VehicleSystemsComponents.Vehicle.GasMassFlowSource() {^booster_flow}
   air = VehicleSystemsComponents.Vehicle.Engine.AirPath() {^air}
 relations
   connect(throttle_cmd.y, air.u_thr) {^id1}
   connect(speed.y, air.omega) {^id2}
-  connect(booster.y, air.mdot_bst) {^id3}
+  connect(booster.y, booster_flow.mdot) {^id3}
+  connect(booster_flow.port, air.vacuum) {^id4}
   initial air.manifold.p = p_m0
 metadata {
   "Dyad": {
@@ -82,19 +85,21 @@ metadata {
         "expect": {
           "initial": {"air.p_m": 32955.7},
           "final": {"air.p_m": 32955.7},
-          "signals": ["air.p_m", "air.mdot_bst", "air.mdot_cyl"]
+          "signals": ["air.p_m", "air.vacuum.mdot", "air.mdot_cyl"]
         }
       }
     }
   },
   "_links": {
     "throttle_cmd": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 200, "x2": 250, "y2": 300}}}},
-    "booster": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 400, "x2": 250, "y2": 500}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 400, "x2": 200, "y2": 500}}}},
+    "booster_flow": {"Dyad": {"placement": {"diagram": {"x1": 270, "y1": 400, "x2": 370, "y2": 500}}}},
     "speed": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 600, "x2": 250, "y2": 700}}}},
     "air": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 350, "x2": 650, "y2": 550}}}},
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 250}, {"x": 350, "y": 390}], "E": 2}], "path": {}}},
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 650}, {"x": 350, "y": 510}], "E": 2}], "path": {}}},
-    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
   }
 }
 end

@@ -1,0 +1,19 @@
+"""
+Ideal pressure reservoir on a gas hose: holds the hose at `p` whatever air flows in or out. A
+bench stand-in for a vacuum source too large to be drawn down, such as an engine manifold at a
+fixed operating point.
+"""
+component GasPressureSource
+  "Absolute pressure the source holds [Pa]"
+  p = RealInput() {^p}
+  "Hose connection"
+  port = VehicleSystemsComponents.Vehicle.GasPort() {^port}
+relations
+  port.p = p
+metadata {
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "port": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

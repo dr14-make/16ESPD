@@ -132,6 +132,9 @@ valve feeds the pump instead and the manifold is cut off.
   # Subcomponent pump of type VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump
   pump_overrides = __pop_subcomponent_overrides!(__overrides, "pump")
   push!(__systems, @named pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(; p_init=p_init, pump_overrides...))
+  # Subcomponent source of type VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector
+  source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
+  push!(__systems, @named source = VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector(; use_pump=ev_pump, source_overrides...))
   # Subcomponent throttle of type BlockComponents.Sources.Constant
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
   push!(__systems, @named throttle = BlockComponents.Sources.Constant(; k=u_thr, throttle_overrides...))
@@ -158,9 +161,6 @@ valve feeds the pump instead and the manifold is cut off.
 
   ### Equations
   push!(__eqs, pedal_unit.u ~ ifelse(((t >= t0) & (t < t0 + n_cyc * T_cyc)) & (mod(t - t0, T_cyc) < T_on), pedal, 0.0))
-  push!(__eqs, booster.p_src ~ ifelse(ev_pump > 0.5, pump.p, air.p_m))
-  push!(__eqs, air.mdot_bst ~ ifelse(ev_pump > 0.5, 0.0, booster.mdot_out))
-  push!(__eqs, pump.mdot_in ~ ifelse(ev_pump > 0.5, booster.mdot_out, 0.0))
   push!(__eqs, connect(pedal_unit.rod, booster.input))
   push!(__eqs, connect(booster.rod_out, master.pushrod))
   push!(__eqs, connect(pedal_unit.support, booster.support, master.support, fixed_t.flange))
@@ -172,6 +172,9 @@ valve feeds the pump instead and the manifold is cut off.
   push!(__eqs, connect(throttle.y, air.u_thr))
   push!(__eqs, connect(speed.y, air.omega))
   push!(__eqs, connect(booster.p_vac, pump.p_sense))
+  push!(__eqs, connect(booster.vacuum, source.booster))
+  push!(__eqs, connect(source.manifold, air.vacuum))
+  push!(__eqs, connect(source.pump, pump.vacuum))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

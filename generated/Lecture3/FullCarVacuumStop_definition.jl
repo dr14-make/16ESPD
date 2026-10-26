@@ -10,8 +10,8 @@
 Lecture 3 whole-car vacuum stop: the Hands-on 02 map engine with fuel cut, its flywheel and the
 CVT (centrifugal clutch and pedal-scheduled variator) drive the hydraulic braked wheel, and build
 02's brake chain, with `Vehicle.Brake.VacuumBooster` in place of the static booster, stops it.
-The booster draws its vacuum from that engine's intake manifold, and the air it draws flows back
-into the manifold.
+One hose joins the booster to that engine's intake manifold: the booster sees the manifold
+pressure, and the air it draws flows back into the manifold.
 
 The car cruises steadily at `speed_kmh` with the throttle pedal at `pedal_cmd`. At `brake_time`
 the driver lifts off, so the throttle closes and the manifold falls toward full vacuum, and the
@@ -186,8 +186,7 @@ brings the store up to the manifold, where the check valve holds it.
   push!(__eqs, connect(clutch.spline_b, variator.spline_a))
   push!(__eqs, connect(variator.spline_b, wheel.spline))
   push!(__eqs, connect(engine.support, clutch.support, variator.support, housing.spline))
-  push!(__eqs, connect(engine.p_m, booster.p_src))
-  push!(__eqs, connect(booster.mdot_out, engine.mdot_bst))
+  push!(__eqs, connect(engine.vacuum, booster.vacuum))
   push!(__eqs, connect(command.y, pedal_unit.u))
   push!(__eqs, connect(pedal_unit.rod, booster.input))
   push!(__eqs, connect(booster.rod_out, master.pushrod))

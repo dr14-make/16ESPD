@@ -501,7 +501,7 @@ routeAlias: vacuum-booster
 <div class="grid grid-cols-[1fr_1.15fr] gap-6 items-start">
 <div>
 
-![The VacuumPedalStop bench in Studio: build 02's chain of command, pedal_unit, booster, master, line_f and line_r into wheel, with body and speed on the right; above the pedal, throttle and speed into the engine's air path, air; above the master, the electric vacuum pump, its p_sense input wired from the booster's p_vac.](/img/lecture-03/vacuum-pedal-bench.png)
+![The VacuumPedalStop bench in Studio: build 02's chain of command, pedal_unit, booster, master, line_f and line_r into wheel, with body and speed on the right; above the pedal, throttle and speed into the engine's air path, air; above the master, the electric vacuum pump, its p_sense input wired from the booster's p_vac; between them the hose junction source, one hose each to air, the pump and the booster.](/img/lecture-03/vacuum-pedal-bench.png)
 
 </div>
 <div>
@@ -528,6 +528,7 @@ The bench in the picture: `Lecture3.VacuumPedalStop`. It is build 02's `PedalSto
 `Vehicle.Brake.VacuumBooster` in place of the static booster. Its "engine" is only the air path,
 `Vehicle.Engine.AirPath`, held at a fixed throttle and a fixed engine speed. The switch `ev_pump`
 picks the source: 0 the engine's manifold, 1 an electric pump, `Vehicle.Brake.ElectricVacuumPump`.
+A small hose junction, `source`, joins the booster's hose to the one it picks and caps the other.
 Every run uses the same brake pedal, `pedal = 0.3`, which is 150 newtons of foot force, from 25
 meters per second, which is 90 kilometers per hour. The chart on the right comes from this bench.
 
@@ -544,9 +545,9 @@ meters per second, which is 90 kilometers per hour. The chart on the right comes
 
 The whole car: `Lecture3.FullCarVacuumStop`. Here the Hands-on 02 engine,
 `HandsOn02.MapEngineFuelCut`, really drives the wheel, through its flywheel, the centrifugal
-clutch and the CVT. Two wires join the engine to the booster: the manifold pressure `p_m` is the
-booster's vacuum source, and the air the booster draws out, `mdot_out`, flows back into the
-manifold. The story: the car cruises at 90 kilometers per hour with the throttle pedal at 0.0916,
+clutch and the CVT. One hose joins the engine to the booster, a `vacuum` port on each (next
+slide): through it the booster sees the manifold pressure, and the air the booster draws out of
+its front chamber flows back into the manifold. The story: the car cruises at 90 kilometers per hour with the throttle pedal at 0.0916,
 about 9 percent; the engine turns 2182 rpm and the manifold sits at 54 kPa. At 0.5 seconds the
 driver lifts off, so the throttle closes, and presses the brake with the same 150 newtons.
 
@@ -579,6 +580,80 @@ The servo ratio, jump-in, cut-in and the valve's 10-newton dead band are assumed
 newtons would leave the booster 250 newtons short of the static characteristic. Figure:
 `scripts/export_lecture03_vacuum_figures.jl`. The whole-car numbers are checked in
 `test/vacuum_full_car.jl`.
+-->
+
+---
+routeAlias: vacuum-port
+---
+
+## One hose, one connector
+
+![Before and after. Before: the engine and the booster joined by two signal wires, the manifold pressure p_m into the booster's p_src one way, and the booster's air flow mdot_out back into the engine's mdot_bst; two wires for one hose, and the sign is yours to write. Now: one hose between a vacuum port on each, carrying the pressure p, the same at both ends, and the mass flow m-dot, counted into each part; connect(engine.vacuum, booster.vacuum) gives p_engine = p_booster and m-dot_engine + m-dot_booster = 0.](/diagrams/02-vacuum-port.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
+
+**Before:** two signal wires, the manifold pressure `p_m` to the booster and its air flow
+`mdot_out` back. Each points one way, and the minus sign between "out" and "in" was ours to write.
+
+</div>
+<div>
+
+**Now:** one connector, `Vehicle.GasPort`, as the brake line's hydraulic port and the spline:
+a **potential** $p$, absolute pressure in Pa, and a **flow** $\dot m$, air in kg/s, counted
+into each part.
+
+</div>
+<div>
+
+**Why a flow:** a hose joint stores no air, so at every connection $\sum \dot m = 0$. One
+`connect` writes that and $p_1 = p_2$; the physics, and the 39.2 m stop, are unchanged.
+
+</div>
+</div>
+
+<!--
+Optional, 2 minutes. A lecturer demo like the vacuum-booster slide, outside the run sheet's
+minutes: show it right after that slide, and only if ahead.
+
+Budget: 2 minutes, not counted in the section's 26.
+
+What changed in the library. In a car one rubber hose joins the engine's intake manifold to the
+vacuum booster. The model used to join them with two signal wires. The first carried `p_m`, the
+manifold's absolute pressure in pascals, from the engine into the booster's input `p_src`: the
+pressure on the far side of the booster's check valve. The second carried `mdot_out`, the air
+mass flow in kilograms per second that the check valve lets out of the booster's front chamber,
+back into the engine's input `mdot_bst`, where it adds to the air in the manifold. On the diagram
+of `FullCarVacuumStop` that was two wires looping between engine and booster.
+
+Now the manifold and the booster each have one port, `vacuum`, of the connector type
+`Vehicle.GasPort`, and one line joins them: `connect(engine.vacuum, booster.vacuum)`. The
+connector carries two variables. `p` is the absolute pressure at the end of the hose, in pascals.
+It is a potential variable: every port on one connection has the same `p`, as both ends of a
+short hose share one pressure. `mdot` is the air mass flow through the port in kilograms per
+second, counted positive into the part that owns the port. It is a flow variable. The brake line's
+hydraulic port is the same idea with pressure and mass flow of brake fluid; the spline is the
+same idea with angle and torque.
+
+Why the flow needs the sum-to-zero rule. For a flow variable, `connect` writes that all the flows
+at the joint add up to zero. With each `mdot` counted into its own part, that says the air the
+booster gives up is exactly the air the manifold takes in: a joint stores no air, so none is lost
+or made there. If `connect` only made the two flows equal, both ends would say "in", and air would
+appear from nothing. With signals, we wrote the minus sign ourselves, by calling one variable
+`mdot_out` and the other `mdot_bst`. The connector writes it at every joint, also where three
+hoses meet: the bench with the electric pump has a small junction with three ports, and the same
+rule holds there.
+
+Inside the parts nothing changed. The booster still computes `mdot_out = C_vm · max(0, p_f − p)`,
+where `p_f` is its front-chamber pressure and `C_vm` the check valve's flow coefficient, and
+sets its port's flow to minus that. The manifold sets its port's pressure to its own and adds the
+port's flow to its mass balance. The whole car still stops in 39.2 meters, checked in
+`test/vacuum_full_car.jl`. A port with nothing connected carries no flow, a capped hose: that is
+why hands-on 2's engine simply leaves it open.
+
+Ask the room, if there is time: why is pressure the potential and air flow the flow, and not the
+other way round? *(Pressure is a level, the same on both sides of a joint; air flow is an amount
+that moves through it and has to be conserved.)*
 -->
 
 ---

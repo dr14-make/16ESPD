@@ -10,9 +10,9 @@
 Brake plan increment 2a: the air path under prescribed throttle, speed and booster inflow.
 
 The throttle steps from `u0` by `du` at `t_step`, the speed is held at `omega`, and the booster
-pushes `mdot_bst` into the manifold for `d_bst` seconds from `t_bst`. The test cases are the 2a
-scenarios: idle pull-down from ambient, tip-in to wide open at 3000 rpm, overrun at 3000 rpm, a
-small throttle step at idle for the time constant, and a booster release at idle.
+pushes `mdot_bst` into the manifold's `vacuum` hose for `d_bst` seconds from `t_bst`. The test
+cases are the 2a scenarios: idle pull-down from ambient, tip-in to wide open at 3000 rpm, overrun
+at 3000 rpm, a small throttle step at idle for the time constant, and a booster release at idle.
 
 ## Parameters:
 
@@ -104,6 +104,9 @@ small throttle step at idle for the time constant, and a booster release at idle
   # Subcomponent booster of type BlockComponents.Sources.Pulse
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
   push!(__systems, @named booster = BlockComponents.Sources.Pulse(; amplitude=mdot_bst, duty_cycle=Float64(1.0), period=d_bst, start_time=t_bst, offset=Float64(0.0), booster_overrides...))
+  # Subcomponent booster_flow of type VehicleSystemsComponents.Vehicle.GasMassFlowSource
+  booster_flow_overrides = __pop_subcomponent_overrides!(__overrides, "booster_flow")
+  push!(__systems, @named booster_flow = VehicleSystemsComponents.Vehicle.GasMassFlowSource(; booster_flow_overrides...))
   # Subcomponent air of type VehicleSystemsComponents.Vehicle.Engine.AirPath
   air_overrides = __pop_subcomponent_overrides!(__overrides, "air")
   push!(__systems, @named air = VehicleSystemsComponents.Vehicle.Engine.AirPath(; air_overrides...))
@@ -122,7 +125,8 @@ small throttle step at idle for the time constant, and a booster release at idle
   ### Equations
   push!(__eqs, connect(throttle_cmd.y, air.u_thr))
   push!(__eqs, connect(speed.y, air.omega))
-  push!(__eqs, connect(booster.y, air.mdot_bst))
+  push!(__eqs, connect(booster.y, booster_flow.mdot))
+  push!(__eqs, connect(booster_flow.port, air.vacuum))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -9,8 +9,8 @@ Students paste this into their own `MapEngine`; `MapEngine` stays the engine bef
 component MapEngineFuelCut
   "Pedal, 0 released to 1 floored"
   pedal = RealInput() {^pedal}
-  "Brake-booster air flow into the manifold [kg/s]"
-  mdot_bst = RealInput() {^mdot_bst}
+  "Vacuum take-off: the hose to the brake booster, at manifold pressure"
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Output shaft"
   spline = Spline() {^spline}
   "Engine mounts"
@@ -32,7 +32,7 @@ component MapEngineFuelCut
   torque = RotationalComponents.Sources.TorqueSource() {^torque}
 relations
   connect(pedal, air.u_thr) {^w01}
-  connect(mdot_bst, air.mdot_bst) {^w02}
+  connect(vacuum, air.vacuum) {^w02}
   connect(speed.w, air.omega) {^w03}
   connect(speed.w, torque_map.omega) {^w04}
   connect(speed.w, fuel_map.omega) {^w05}
@@ -54,7 +54,7 @@ metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 175, "x2": 25, "y2": 225}}}},
-    "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -25, "y1": 275, "x2": 25, "y2": 325}}}},
+    "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}, "diagram": {"iconName": "gas_port_a", "x1": -25, "y1": 275, "x2": 25, "y2": 325}}}},
     "spline": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 185, "x2": 1025, "y2": 235}}}},
     "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 975, "y1": 305, "x2": 1025, "y2": 355}}}},
     "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 975, "y1": 455, "x2": 1025, "y2": 505}}}},

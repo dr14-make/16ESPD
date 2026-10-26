@@ -37,6 +37,7 @@ test component TestBrakeVacuum
   caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(K = 19.9e-5, V0 = 0.3e-6, K1 = 2.5e12, K3 = 7.5e24)
   air = VehicleSystemsComponents.Vehicle.Engine.AirPath()
   pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(p_init = p_init)
+  source = VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector(use_pump = ev_pump)
   throttle = BlockComponents.Sources.Constant(k = u_thr)
   speed = BlockComponents.Sources.Constant(k = omega)
   fixed_t = TranslationalComponents.Components.Fixed()
@@ -56,9 +57,9 @@ relations
   connect(throttle.y, air.u_thr)
   connect(speed.y, air.omega)
   connect(booster.p_vac, pump.p_sense)
-  booster.p_src = ifelse(ev_pump > 0.5, pump.p, air.p_m)
-  air.mdot_bst = ifelse(ev_pump > 0.5, 0.0, booster.mdot_out)
-  pump.mdot_in = ifelse(ev_pump > 0.5, booster.mdot_out, 0.0)
+  connect(booster.vacuum, source.booster)
+  connect(source.manifold, air.vacuum)
+  connect(source.pump, pump.vacuum)
   initial air.manifold.p = p_m0
 end
 

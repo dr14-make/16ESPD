@@ -14,10 +14,13 @@ test component TestMappedEngine
   parameter p_m0::Pressure = 32955.7
   engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine() {^engine}
   fixed = RotationalComponents.Components.Fixed() {^fixed}
+  "Booster air pushed into the manifold"
+  booster = VehicleSystemsComponents.Vehicle.GasMassFlowSource() {^booster}
 relations
   engine.pedal = pedal_cmd
-  engine.mdot_bst = ifelse(time > t_booster and time <= t_booster + booster_duration, booster_flow, 0.0)
+  booster.mdot = ifelse(time > t_booster and time <= t_booster + booster_duration, booster_flow, 0.0)
   connect(engine.support, fixed.spline) {^id1}
+  connect(booster.port, engine.vacuum) {^id2}
   initial engine.crankshaft.phi = 0.0
   initial engine.crankshaft.w = rpm * pi / 30
   initial engine.air.manifold.p = p_m0
@@ -25,7 +28,9 @@ metadata {
   "_links": {
     "engine": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
     "fixed": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 600, "x2": 550, "y2": 700}}}},
-    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}}
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 510, "x2": 250, "y2": 610}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}], "path": {}}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 560}], "E": 2}], "path": {}}}
   }
 }
 end
@@ -61,7 +66,6 @@ relations
   pedal_value = ifelse(scenario == 2, ifelse(time < t_step, pedal_initial, pedal_final), pedal_cmd)
   dyno_rpm = ifelse(scenario == 3, ifelse(time <= t_ramp, rpm, ifelse(time < t_ramp + ramp_duration, rpm + (overrun_end_rpm - rpm) * (time - t_ramp) / ramp_duration, overrun_end_rpm)), rpm)
   engine.pedal = pedal_value
-  engine.mdot_bst = 0.0
   dyno.w_ref = dyno_rpm * pi / 30
   connect(engine.spline, dyno.spline) {^id1}
   connect(engine.support, fixed.spline) {^id2}
