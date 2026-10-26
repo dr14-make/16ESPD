@@ -45,7 +45,11 @@ maps are `CutMap`s, because the fuel cut has to gate them.
 ## Connectors
 
  * `pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `mdot_bst` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `vacuum` - One end of a gas hose: absolute pressure across it, air mass flow through it.
+
+Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
+the other end receives. `mdot` is positive into the component that owns the port. A port left
+unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `p_m` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
@@ -129,7 +133,6 @@ maps are `CutMap`s, because the fuel cut has to gate them.
 
   ### Final Path Parameters
   append!(__vars, @variables (pedal(t)::Real), [input = true])
-  append!(__vars, @variables (mdot_bst(t)::Real), [input = true])
   append!(__vars, @variables (p_m(t)::Real), [output = true])
   append!(__vars, @variables (mdot_fuel(t)::Real), [output = true])
   append!(__vars, @variables (mdot_co2(t)::Real), [output = true])
@@ -151,6 +154,7 @@ maps are `CutMap`s, because the fuel cut has to gate them.
   __constants = Any[]
 
   ### Components
+  push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
   push!(__systems, @named spline = __Dyad__Spline())
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent pedal_map of type VehicleSystemsComponents.Vehicle.Engine.PedalMap
@@ -214,7 +218,7 @@ maps are `CutMap`s, because the fuel cut has to gate them.
   push!(__eqs, N ~ speed.w * 30 / pi)
   push!(__eqs, connect(pedal, pedal_map.pedal, cut_logic.pedal))
   push!(__eqs, connect(pedal_map.u_thr, air.u_thr))
-  push!(__eqs, connect(mdot_bst, air.mdot_bst))
+  push!(__eqs, connect(vacuum, air.vacuum))
   push!(__eqs, connect(air.p_m, p_m, torque_map.p_m, lambda_map.p_m, fuel_map.p_m, hc_map.p_m, co_map.p_m, nox_map.p_m))
   push!(__eqs, connect(speed.w, air.omega, cut_logic.omega, torque_map.omega, closed_throttle.omega, lambda_map.omega, fuel_map.omega, hc_map.omega, co_map.omega, nox_map.omega))
   push!(__eqs, connect(torque_map.y, torque_blend.fired))

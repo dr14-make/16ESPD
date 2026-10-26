@@ -31,8 +31,8 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # Lecture 3 whole-car vacuum stop: the Hands-on 02 map engine with fuel cut, its flywheel and the
   # CVT (centrifugal clutch and pedal-scheduled variator) drive the hydraulic braked wheel, and build
   # 02's brake chain, with `Vehicle.Brake.VacuumBooster` in place of the static booster, stops it.
-  # The booster draws its vacuum from that engine's intake manifold, and the air it draws flows back
-  # into the manifold.
+  # One hose joins the booster to that engine's intake manifold: the booster sees the manifold
+  # pressure, and the air it draws flows back into the manifold.
   # 
   # The car cruises steadily at `speed_kmh` with the throttle pedal at `pedal_cmd`. At `brake_time`
   # the driver lifts off, so the throttle closes and the manifold falls toward full vacuum, and the

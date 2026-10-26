@@ -1,0 +1,18 @@
+"""
+Ideal mass-flow source on a gas hose: pushes `mdot` out of its port into whatever is connected,
+at whatever pressure that sets.
+"""
+component GasMassFlowSource
+  "Air mass flow pushed out into the connected component [kg/s]"
+  mdot = RealInput() {^mdot}
+  "Hose connection"
+  port = VehicleSystemsComponents.Vehicle.GasPort() {^port}
+relations
+  port.mdot = -mdot
+metadata {
+  "_links": {
+    "mdot": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "port": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

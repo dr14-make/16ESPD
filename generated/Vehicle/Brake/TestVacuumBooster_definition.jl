@@ -120,6 +120,9 @@ lever is set to a ratio of 1, so its force is the pushrod force.
   # Subcomponent vacuum of type BlockComponents.Sources.Constant
   vacuum_overrides = __pop_subcomponent_overrides!(__overrides, "vacuum")
   push!(__systems, @named vacuum = BlockComponents.Sources.Constant(; k=p_vac, vacuum_overrides...))
+  # Subcomponent source of type VehicleSystemsComponents.Vehicle.GasPressureSource
+  source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
+  push!(__systems, @named source = VehicleSystemsComponents.Vehicle.GasPressureSource(; source_overrides...))
   # Subcomponent fixed_t of type TranslationalComponents.Components.Fixed
   fixed_t_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_t")
   push!(__systems, @named fixed_t = TranslationalComponents.Components.Fixed(; fixed_t_overrides...))
@@ -142,7 +145,8 @@ lever is set to a ratio of 1, so its force is the pushrod force.
   push!(__eqs, connect(pedal.rod, booster.input))
   push!(__eqs, connect(booster.rod_out, master.pushrod))
   push!(__eqs, connect(pedal.support, booster.support, master.support, fixed_t.flange))
-  push!(__eqs, connect(vacuum.y, booster.p_src))
+  push!(__eqs, connect(vacuum.y, source.p))
+  push!(__eqs, connect(source.port, booster.vacuum))
   push!(__eqs, connect(master.front, line_f.port_a))
   push!(__eqs, connect(line_f.port_b, caliper_f.port))
   push!(__eqs, connect(master.rear, line_r.port_a))

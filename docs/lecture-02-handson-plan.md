@@ -122,7 +122,7 @@ there; convert to L/h and L/100 km with ρ = 0.745 kg/L; look at λ.
 `Vehicle.Engine.CylinderAirflow`.
 
 **Actions.** Paste `Manifold`; draw the bench: `Step` → `throttle.u_thr`, `Constant` speed →
-`cylinders.omega`, `Constant(0)` → `manifold.mdot_bst`, wire the three flows and `p_m`;
+`cylinders.omega`, leave the hose port `manifold.vacuum` capped, wire the two flows and `p_m`;
 `initial manifold.p = 101325`; run 3 s at 800 rpm closed; then a small step at idle; then 3000
 rpm closed and wide open.
 
@@ -156,14 +156,14 @@ cut, pasted into `MapEngine`. Given: `Vehicle.Engine.AirPath`, `TorqueMap`, `Fue
 
 **Actions.** Draw `MapEngine`. Place `air` = `Engine.AirPath`, `speed` = `VelocitySensor`,
 `torque_map` = `Engine.TorqueMap`, `fuel_map` = `Engine.FuelMap`, `co2` = `Gain(k = 3.09)`,
-`torque` = `TorqueSource`; add the ports `pedal`, `mdot_bst` (inputs), `spline`, `support`,
-`p_m`, `mdot_fuel`, `mdot_co2` (outputs). Draw the 15 wires: `pedal` → `air.u_thr`;
-`mdot_bst` → `air.mdot_bst`; `speed.w` → `air.omega`, `torque_map.omega`, `fuel_map.omega`;
+`torque` = `TorqueSource`; add the ports `pedal` (input), `vacuum` (`Vehicle.GasPort`, the
+booster hose), `spline`, `support`, `p_m`, `mdot_fuel`, `mdot_co2` (outputs). Draw the 15 wires:
+`pedal` → `air.u_thr`; `vacuum` → `air.vacuum`; `speed.w` → `air.omega`, `torque_map.omega`, `fuel_map.omega`;
 `air.p_m` → `torque_map.p_m`, `fuel_map.p_m`, `p_m`; `torque_map.y` → `torque.tau`;
 `fuel_map.y` → `co2.u`, `mdot_fuel`; `co2.y` → `mdot_co2`; `torque.spline` → `spline`;
 `speed.spline` → `spline`; `torque.support` → `support`. The pedal drives the throttle directly,
 so the only lag between pedal and torque is the manifold's. Paste `MapEngineDyno` (pedal `Step`,
-`Constant(0)` → `mdot_bst`, a `VelocitySource` holding `rpm`, mounts) and its analysis. First run,
+`engine.vacuum` left capped, a `VelocitySource` holding `rpm`, mounts) and its analysis. First run,
 the defaults: hold 3080 rpm at the 90 km/h pedal, step the pedal 0.1034 → 0.12 at 1 s, run 2 s,
 plot `engine.p_m` and `engine.torque_map.y`. Second run: 3000 rpm, pedal 0 → 1. Then E, the
 fuel-cut paste, in two places of `MapEngine`'s code: the `torque_map` and `fuel_map` lines are
@@ -227,7 +227,7 @@ included.
 `engine`; delete `driveline`, place `Vehicle.CVTDriveline` as `driveline` on the same four
 mechanical ports; rename the input `tau_cmd` → `pedal` and wire it to `engine.pedal` and
 `driveline.pedal`; add `flywheel` = `RotationalComponents.Components.Inertia(J = 0.15)` between
-`engine.spline` and `driveline.spline`; `Constant(0)` → `engine.mdot_bst`; new outputs `p_m`
+`engine.spline` and `driveline.spline`; `engine.vacuum` left capped; new outputs `p_m`
 (from `engine.p_m`) and `fuel_lph` (`Gain(k = 3600/0.745)` on `engine.mdot_fuel`); in code, a
 `parameter ratio_initial::Real = 12` passed to `CVTDriveline(ratio_initial = ratio_initial)`.
 Bench: `Constant(1)` pedal, car at rest, engine at 900 rpm, 120 s.

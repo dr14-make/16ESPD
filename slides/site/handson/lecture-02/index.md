@@ -164,7 +164,7 @@ The manifold is a box of air between the throttle and the cylinders. Air comes i
 
 **V<sub>m</sub> / (R T<sub>m</sub>) · dp<sub>m</sub>/dt = ṁ<sub>thr</sub> + ṁ<sub>bst</sub> − ṁ<sub>cyl</sub>**
 
-You write this equation as a component, then put it on a bench between two given parts: the `Throttle`, whose flow the pedal sets, and `CylinderAirflow`, which draws more air the higher the pressure and the faster the engine turns. The brake booster's flow `ṁ_bst` is zero today.
+You write this equation as a component, then put it on a bench between two given parts: the `Throttle`, whose flow the pedal sets, and `CylinderAirflow`, which draws more air the higher the pressure and the faster the engine turns. The brake booster's flow `ṁ_bst` comes in through a hose port, `vacuum`, that you leave unconnected today: a hose port with nothing on it is capped, so `ṁ_bst` is zero.
 
 ::: info Why the pressure settles, and why it lags
 
@@ -185,12 +185,14 @@ A closed throttle does not give 0 kPa. It still leaks a little air, and the cyli
 
 #### A · Paste the manifold
 
-[![The Manifold component in the code view: the three RealInput ports mdot_thr, mdot_bst and mdot_cyl, the RealOutput p_m, the parameters V_m, T_m and R, the variable p, and the one equation V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl with p_m = p.](/handson/lecture-02/img/step02-manifold-code.png){width="638" height="584"}](/handson/lecture-02/img/step02-manifold-code.png)
+[![The Manifold component in the code view: the RealInput ports mdot_thr and mdot_cyl, the GasPort vacuum, the RealOutput p_m, the parameters V_m, T_m and R, the variable p, and the one equation V_m / (R * T_m) * der(p) = mdot_thr + vacuum.mdot - mdot_cyl with vacuum.p = p and p_m = p.](/handson/lecture-02/img/step02-manifold-code.png){width="638" height="584"}](/handson/lecture-02/img/step02-manifold-code.png)
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `Manifold`.
 2. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save. This also replaces the template's `metadata` block: that is fine.
 
-The `{"Dyad": …}` annotation after each port only places it on the block's edge: three flows in on the left, `p_m` out on the right.
+The `{"Dyad": …}` annotation after each port only places it on the block's edge: the two flows and the hose on the left, `p_m` out on the right.
+
+`vacuum` is not a signal but a hose end, a `GasPort` from the course library. It carries two numbers: the pressure `vacuum.p`, the same at both ends of the hose, and the air flow `vacuum.mdot`, counted positive into the manifold. That is why the code has `vacuum.mdot` where the equation above has ṁ<sub>bst</sub>, and why one more line, `vacuum.p = p`, says the hose sits at manifold pressure.
 
 ::: code-group
 
@@ -201,8 +203,8 @@ Intake manifold as one isothermal receiver: the pressure is its only state.
 component Manifold
   "Air flow in through the throttle [kg/s]"
   mdot_thr = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}}}}
-  "Air flow in from the brake booster [kg/s]"
-  mdot_bst = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
+  "Hose to the brake booster: manifold pressure out, the booster's air in"
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort() {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "gas_port_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
   "Air flow out into the cylinders [kg/s]"
   mdot_cyl = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}, "diagram": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}}}}
   "Manifold absolute pressure [Pa]"
@@ -216,7 +218,8 @@ component Manifold
   "Manifold absolute pressure"
   variable p::Pressure
 relations
-  V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
+  V_m / (R * T_m) * der(p) = mdot_thr + vacuum.mdot - mdot_cyl
+  vacuum.p = p
   p_m = p
 end
 ```
@@ -225,23 +228,22 @@ end
 
 #### B · The bench
 
-[![The AirPathStep diagram: throttle_cmd feeds throttle, no_booster feeds the manifold's middle input and speed feeds cylinders; the throttle and cylinder flows run into the manifold's top and bottom inputs, and the manifold output p_m loops back to both throttle and cylinders.](/handson/lecture-02/img/step02-airpath-bench.png){width="638" height="584"}](/handson/lecture-02/img/step02-airpath-bench.png)
+[![The AirPathStep diagram: throttle_cmd feeds throttle and speed feeds cylinders; the throttle and cylinder flows run into the manifold's top and bottom inputs, the manifold's square vacuum port in between stays unconnected, and the manifold output p_m loops back to both throttle and cylinders.](/handson/lecture-02/img/step02-airpath-bench.png){width="638" height="584"}](/handson/lecture-02/img/step02-airpath-bench.png)
 
 | Name | Library path | Set |
 | --- | --- | --- |
 | `throttle_cmd` | BlockComponents › Sources › Step | `offset = 0`, `height = 0.005`, `start_time = 1` |
 | `speed` | BlockComponents › Sources › Constant | `k = 83.776` (800 rpm in rad/s) |
-| `no_booster` | BlockComponents › Sources › Constant | `k = 0` |
 | `throttle` | VehicleSystemsComponents › Vehicle › Engine › Throttle | — |
 | `cylinders` | VehicleSystemsComponents › Vehicle › Engine › CylinderAirflow | — |
 | `manifold` | your `Manifold` | — |
 
-3. <Badge type="tip" text="New component" /> Add a component `AirPathStep` and place the six parts of the table: **+** → type the name in the search box → drag the result onto the canvas.
+3. <Badge type="tip" text="New component" /> Add a component `AirPathStep` and place the five parts of the table: **+** → type the name in the search box → drag the result onto the canvas.
    - Search "Manifold" also offers `IntakeManifold` from the course library: take your own `MyCar › Manifold`.
    - Search "Throttle" offers four throttles: take the plain `Vehicle › Engine › Throttle`, not `ElectronicThrottle`, `ThrottleEndStops` or `ThrottlePositionSensor`.
-   - The parts arrive as `step`, `constant1`, `constant2`, `throttle`, `cylinderairflow` and `manifold`. Rename each to the **Name** column: select it → **Edit Parameters** → the pencil next to its name. Set its parameters first, then rename.
+   - The parts arrive with default names such as `step`, `constant1`, `throttle`, `cylinderairflow` and `manifold`. Rename each to the **Name** column: select it → **Edit Parameters** → the pencil next to its name. Set its parameters first, then rename.
    - To set a parameter, click its field, <kbd>End</kbd>, <kbd>Shift</kbd>+<kbd>Home</kbd> to select the old value, type the new one, <kbd>Enter</kbd>. Not <kbd>Ctrl</kbd>+<kbd>A</kbd>: in Studio it selects the whole page.
-4. Wire `throttle_cmd` → `throttle.u_thr`, `speed` → `cylinders.omega`, `no_booster` → `manifold.mdot_bst`. The icons do not say which input is which: hover a port to read its name before you wire it. On `Throttle` the top input is `u_thr` and the bottom one `p_m`; on `CylinderAirflow` the top input is `p_m` and the bottom one `omega`.
+4. Wire `throttle_cmd` → `throttle.u_thr`, `speed` → `cylinders.omega`. Leave `manifold.vacuum`, the square port in the middle of the manifold's left edge, unconnected: the hose to the brake booster, capped today. The icons do not say which input is which: hover a port to read its name before you wire it. On `Throttle` the top input is `u_thr` and the bottom one `p_m`; on `CylinderAirflow` the top input is `p_m` and the bottom one `omega`.
 5. Wire the flows: `throttle.mdot_thr` → `manifold.mdot_thr`, `cylinders.mdot_cyl` → `manifold.mdot_cyl`.
 6. Wire the pressure back: `manifold.p_m` → `throttle.p_m` and → `cylinders.p_m`. Both flows depend on it; this loop is what makes the pressure settle.
 7. Toggle to code and add `initial manifold.p = 101325` after the last `connect`, before `metadata`: the manifold starts full of outside air.
@@ -254,14 +256,12 @@ component AirPathStep
   throttle_cmd = BlockComponents.Sources.Step(offset = 0, height = 0.005, start_time = 1)
   "800 rpm"
   speed = BlockComponents.Sources.Constant(k = 83.776)
-  no_booster = BlockComponents.Sources.Constant(k = 0)
   throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle()
   cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow()
   manifold = Manifold()
 relations
   connect(throttle_cmd.y, throttle.u_thr)
   connect(speed.y, cylinders.omega)
-  connect(no_booster.y, manifold.mdot_bst)
   connect(throttle.mdot_thr, manifold.mdot_thr)
   connect(cylinders.mdot_cyl, manifold.mdot_cyl)
   connect(manifold.p_m, throttle.p_m, cylinders.p_m)
@@ -311,7 +311,7 @@ From `dyad/HandsOn02/Manifold.dyad` and `dyad/HandsOn02/AirPathStep.dyad`, diagr
 ```txt
 component Manifold
   mdot_thr = RealInput()
-  mdot_bst = RealInput()
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort()
   mdot_cyl = RealInput()
   p_m = RealOutput()
   parameter V_m::Volume = 1.0e-3
@@ -319,21 +319,20 @@ component Manifold
   parameter R::Real = 287.05
   variable p::Pressure
 relations
-  V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
+  V_m / (R * T_m) * der(p) = mdot_thr + vacuum.mdot - mdot_cyl
+  vacuum.p = p
   p_m = p
 end
 
 component AirPathStep
   throttle_cmd = BlockComponents.Sources.Step(offset = 0, height = 0.005, start_time = 1)
   speed = BlockComponents.Sources.Constant(k = 83.776)
-  no_booster = BlockComponents.Sources.Constant(k = 0)
   throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle()
   cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow()
   manifold = Manifold()
 relations
   connect(throttle_cmd.y, throttle.u_thr)
   connect(speed.y, cylinders.omega)
-  connect(no_booster.y, manifold.mdot_bst)
   connect(throttle.mdot_thr, manifold.mdot_thr)
   connect(cylinders.mdot_cyl, manifold.mdot_cyl)
   connect(manifold.p_m, throttle.p_m, cylinders.p_m)
@@ -367,14 +366,14 @@ The pedal sets the throttle directly. The manifold pressure comes from `AirPath`
 
 You test the engine on a **dynamometer**: a bench that holds the shaft at a fixed speed whatever the engine does, so a pedal step shows only the engine.
 
-[![The finished MapEngine diagram: pedal and mdot_bst ports on the left feed air; air.p_m fans out to torque_map, fuel_map and the p_m output, and speed.w from the shaft sensor runs over the top to air and both maps; torque_map drives the torque source on the spline and support ports, and fuel_map feeds mdot_fuel and, through the gain co2 with k = 3.09, mdot_co2 on the right edge.](/handson/lecture-02/img/step03-map-engine.png){width="638" height="584"}](/handson/lecture-02/img/step03-map-engine.png)
+[![The finished MapEngine diagram: the pedal port and the square vacuum hose port on the left feed air; air.p_m fans out to torque_map, fuel_map and the p_m output, and speed.w from the shaft sensor runs over the top to air and both maps; torque_map drives the torque source on the spline and support ports, and fuel_map feeds mdot_fuel and, through the gain co2 with k = 3.09, mdot_co2 on the right edge.](/handson/lecture-02/img/step03-map-engine.png){width="638" height="584"}](/handson/lecture-02/img/step03-map-engine.png)
 
 #### A · Draw the engine
 
 | Name | Library path | Set |
 | --- | --- | --- |
 | `pedal` | Dyad › RealInput | port, left edge |
-| `mdot_bst` | Dyad › RealInput | port, left edge, below `pedal`: the brake booster's air, zero today |
+| `vacuum` | VehicleSystemsComponents › Vehicle › GasPort | port, left edge, below `pedal`: the hose to the brake booster, capped today |
 | `spline` | Dyad › Spline | port, right edge: the output shaft |
 | `support` | Dyad › Spline | port, right edge, below `spline`: the engine mounts |
 | `mdot_fuel`, `mdot_co2`, `p_m` | Dyad › RealOutput | ports, right edge, below `support` |
@@ -387,9 +386,9 @@ You test the engine on a **dynamometer**: a bench that holds the shaft at a fixe
 
 1. <Badge type="tip" text="New component" /> In the **Components** tree, right-click `MyCar` → **Add Component** and name it `MapEngine`. It opens as an empty diagram.
 2. With **+**, place the six parts of the table and rename each. Set `co2`'s `k` to `3.09`. Arrange them as the picture above: `air` on the left; `torque_map` above `fuel_map` to its right; `torque` right of `torque_map`, `co2` right of `fuel_map`; `speed` above `torque`.
-3. Place the seven ports from the `Dyad` library: drag each from **+** and drop it straight onto the dashed outline, on the edge the table says. Place and name ports here, in `MapEngine`'s own diagram, never on an instance of it in another diagram. To grab a port, click just outside its triangle or circle, not on it: a click on the port itself starts a wire. Then drag it to move it, or **Edit Parameters** → pencil to rename it.
-4. Draw the 15 wires. Hover a port to read its name. `air`'s inputs are, from the top, `u_thr`, `mdot_bst`, `omega`, and its outputs `mdot_thr`, `p_m`, `mdot_cyl`. On `torque_map` and `fuel_map`, `omega` is the top input and `p_m` the one below. Each wire starts at the port named first:
-   - **Air in:** `pedal` → `air.u_thr`; `mdot_bst` → `air.mdot_bst`.
+3. Place the seven ports, six from the `Dyad` library and `vacuum` from the course library: drag each from **+** and drop it straight onto the dashed outline, on the edge the table says. If **+** does not offer `GasPort` as a port, toggle to code and add the line `vacuum = VehicleSystemsComponents.Vehicle.GasPort()` below `pedal = RealInput()` instead. Place and name ports here, in `MapEngine`'s own diagram, never on an instance of it in another diagram. To grab a port, click just outside its triangle, circle or square, not on it: a click on the port itself starts a wire. Then drag it to move it, or **Edit Parameters** → pencil to rename it.
+4. Draw the 15 wires. Hover a port to read its name. `air` has, down its left edge, the input `u_thr`, the square hose port `vacuum` and the input `omega`, and its outputs `mdot_thr`, `p_m`, `mdot_cyl`. On `torque_map` and `fuel_map`, `omega` is the top input and `p_m` the one below. Each wire starts at the port named first:
+   - **Air in:** `pedal` → `air.u_thr`; the hose `vacuum` → `air.vacuum`. A hose has no direction, so either end can start this wire.
    - **Speed**, three wires from `speed.w`: → `air.omega`, → `torque_map.omega`, → `fuel_map.omega`.
    - **Pressure**, three wires from `air.p_m`: → `torque_map.p_m`, → `fuel_map.p_m`, → the `p_m` port.
    - **Torque:** `torque_map.y` → `torque.tau`; `torque`'s right-hand circle → `spline`; `torque`'s bottom circle → `support`.
@@ -410,7 +409,7 @@ From `dyad/HandsOn02/MapEngine.dyad`, diagram annotations omitted.
 ```txt
 component MapEngine
   pedal = RealInput()
-  mdot_bst = RealInput()
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort()
   spline = Spline()
   support = Spline()
   p_m = RealOutput()
@@ -424,7 +423,7 @@ component MapEngine
   torque = RotationalComponents.Sources.TorqueSource()
 relations
   connect(pedal, air.u_thr)
-  connect(mdot_bst, air.mdot_bst)
+  connect(vacuum, air.vacuum)
   connect(speed.w, air.omega)
   connect(speed.w, torque_map.omega)
   connect(speed.w, fuel_map.omega)
@@ -447,9 +446,9 @@ end
 
 The bench is given as code: paste it. Its parameters are the knobs of the two runs below.
 
-[![The MapEngineDyno bench left to right: the pedal step and no_booster feed engine; the speed constant k = rpm * pi / 30 drives dyno, which holds the engine shaft; the supports of engine and dyno both go to mounts below.](/handson/lecture-02/img/step03-dyno-bench.png){width="638" height="584"}](/handson/lecture-02/img/step03-dyno-bench.png)
+[![The MapEngineDyno bench left to right: the pedal step feeds engine, whose vacuum port stays unconnected; the speed constant k = rpm * pi / 30 drives dyno, which holds the engine shaft; the supports of engine and dyno both go to mounts below.](/handson/lecture-02/img/step03-dyno-bench.png){width="638" height="584"}](/handson/lecture-02/img/step03-dyno-bench.png)
 
-6. <Badge type="tip" text="New component" /> Add a component `MapEngineDyno`, toggle to code, select everything, paste the block below and save. Toggle back to see it, left to right: `pedal` and `no_booster` feed the engine, `speed` drives the `dyno`, and both supports go to `mounts`. The `{"Dyad": …}` annotations only place the parts in the diagram.
+6. <Badge type="tip" text="New component" /> Add a component `MapEngineDyno`, toggle to code, select everything, paste the block below and save. Toggle back to see it, left to right: `pedal` feeds the engine, `speed` drives the `dyno`, and both supports go to `mounts`. The engine's `vacuum` port stays unconnected, so no air comes from a booster. The `{"Dyad": …}` annotations only place the parts in the diagram.
 7. <Badge type="tip" text="New analysis" /> Create `MapEngineDynoTransient` as in step 02, or paste the `analysis` block below into its own file.
 
 ::: code-group
@@ -467,14 +466,12 @@ component MapEngineDyno
   "Initial manifold pressure"
   parameter p_m0::Pressure = 47829.1
   pedal = BlockComponents.Sources.Step(height = pedal_final - pedal_initial, offset = pedal_initial, start_time = t_step) {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 250, "x2": 150, "y2": 350}}}}
-  no_booster = BlockComponents.Sources.Constant(k = 0) {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 550, "x2": 150, "y2": 650}}}}
   engine = MapEngine() {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 300, "x2": 500, "y2": 500}}}}
   mounts = RotationalComponents.Components.Fixed() {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 750, "x2": 650, "y2": 850}}}}
   dyno = RotationalComponents.Sources.VelocitySource() {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 350, "x2": 750, "y2": 450}}}}
   speed = BlockComponents.Sources.Constant(k = rpm * pi / 30) {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 350, "x2": 950, "y2": 450}}}}
 relations
   connect(pedal.y, engine.pedal)
-  connect(no_booster.y, engine.mdot_bst)
   connect(speed.y, dyno.w_ref)
   connect(engine.spline, dyno.spline)
   connect(engine.support, mounts.spline)
@@ -654,14 +651,14 @@ The car also needs one part the dynamometer did not: the inertia of the cranksha
 
 #### Do this
 
-[![MappedCar, the course's layout: the pedal port feeds engine and, along the top, the driveline's pedal input; no_booster into engine.mdot_bst; engine, flywheel, driveline, body, vsensor and to_kmh in one row to the v_kmh output; engine.p_m and engine.mdot_fuel through to_lph run along the top to the p_m and fuel_lph outputs; rot_ground and trans_ground below.](/handson/lecture-02/img/step04-mapped-car.png){width="1065" height="709" style="max-width:min(640px, 100%)"}](/handson/lecture-02/img/step04-mapped-car.png)
+[![MappedCar, the course's layout: the pedal port feeds engine and, along the top, the driveline's pedal input; engine.vacuum unconnected; engine, flywheel, driveline, body, vsensor and to_kmh in one row to the v_kmh output; engine.p_m and engine.mdot_fuel through to_lph run along the top to the p_m and fuel_lph outputs; rot_ground and trans_ground below.](/handson/lecture-02/img/step04-mapped-car.png){width="1065" height="709" style="max-width:min(640px, 100%)"}](/handson/lecture-02/img/step04-mapped-car.png)
 
 1. In **Components**, right-click your `Car` → **Duplicate**, and name the copy `MappedCar`. Your hands-on 1 car stays as it was.
 2. Open `MappedCar`. Delete `engine`. Click **+** → `MyCar › MapEngine`, your own engine, name it `engine`, and put it where the old one was.
 3. Delete `driveline`. Click **+** → `VehicleSystemsComponents › Vehicle › CVTDriveline`, name it `driveline`, and wire its four mechanical ports as the old one's: `spline` from the engine side, `support_r` → `rot_ground`, `flange` → `body.flange`, `support_t` → `trans_ground`.
 4. Rename the input port `tau_cmd` to `pedal`, and wire it to `engine.pedal` and to `driveline.pedal`, the input at the top of the driveline's left edge. Rename and place `MappedCar`'s ports here, in its own diagram, not on a `car` instance in a bench: click just outside the port to select it, then **Edit Parameters** → pencil.
 5. Add `flywheel` = `RotationalComponents › Components › Inertia` with `J = 0.15`, between `engine` and `driveline`. Wire `engine.spline` → `flywheel.spline_a` and `flywheel.spline_b` → `driveline.spline`. Wire `engine.support` → `rot_ground`, as before.
-6. Add `no_booster` = `BlockComponents › Sources › Constant` (`k = 0`) → `engine.mdot_bst`.
+6. Leave `engine.vacuum`, the square port on the engine's left edge, unconnected: the hose to the brake booster stays capped until the brake lecture.
 7. Drop two `RealOutput` ports from **+** straight onto the right edge, `p_m` and `fuel_lph`. Wire `engine.p_m` → `p_m`. Add `to_lph` = `BlockComponents › Math › Gain` with `k = 4832.2` between `engine.mdot_fuel` and `fuel_lph`: × 3600 s/h ÷ 0.745 kg/L turns kg/s of petrol into L/h.
 8. Toggle to code (⇄). Above the `pedal = RealInput()` line, add the two `ratio_initial` lines of the code below, and in the `driveline =` line write `CVTDriveline(ratio_initial = ratio_initial)`. The car starts at the launch ratio, 12; the cruise benches of step 05 start it at their own. Save, twice.
 9. <Badge type="tip" text="New component" /> The bench `MappedCarWOT`: paste it from below. <Badge type="tip" text="New analysis" /> `MappedCarWOTTransient`, `stop = 120`, or paste it.
@@ -679,7 +676,6 @@ component MappedCar
   engine = MapEngine()
   "Crankshaft and flywheel, J as MappedEngine assumes"
   flywheel = RotationalComponents.Components.Inertia(J = 0.15)
-  no_booster = BlockComponents.Sources.Constant(k = 0)
   "kg/s of petrol to L/h: 3600 / 0.745"
   to_lph = BlockComponents.Math.Gain(k = 4832.2)
   driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(ratio_initial = ratio_initial)
@@ -691,7 +687,6 @@ component MappedCar
 relations
   connect(pedal, engine.pedal)
   connect(pedal, driveline.pedal)
-  connect(no_booster.y, engine.mdot_bst)
   connect(engine.spline, flywheel.spline_a)
   connect(flywheel.spline_b, driveline.spline)
   connect(engine.support, rot_ground.spline)
@@ -901,7 +896,7 @@ The cut ends when the engine falls below **1000 rpm**. With hands-on 1's single 
 
 ::: info Why the brake needs the vacuum
 
-A brake booster is a can of air split by a diaphragm, its vacuum side connected to this manifold. The deeper the vacuum while you brake, the harder the booster helps your foot. In the brake lecture its own air flows back into the manifold, through the `mdot_bst` input you hold at zero today.
+A brake booster is a can of air split by a diaphragm, its vacuum side connected to this manifold. The deeper the vacuum while you brake, the harder the booster helps your foot. In the brake lecture one hose joins the booster to the engine's `vacuum` port: the booster feels the manifold pressure through it, and its own air flows back into the manifold. Today that port is capped.
 
 :::
 
