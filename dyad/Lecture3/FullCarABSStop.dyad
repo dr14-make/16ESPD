@@ -71,8 +71,7 @@ relations
   connect(clutch.spline_b, variator.spline_a) {^id4}
   connect(variator.spline_b, wheel.spline) {^id5}
   connect(engine.support, clutch.support, variator.support, housing.spline) {^id6}
-  connect(engine.p_m, booster.p_src) {^id7}
-  connect(booster.mdot_out, engine.mdot_bst) {^id8}
+  connect(engine.vacuum, booster.vacuum) {^id7}
   connect(command.y, pedal_unit.u) {^id9}
   connect(pedal_unit.rod, booster.input) {^id10}
   connect(booster.rod_out, master.pushrod) {^id11}
@@ -132,8 +131,7 @@ metadata {
     "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 712, "y": 107}, {"x": 712, "y": 385}], "E": 2}]}},
     "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 175}], "E": -1}, {"S": 2, "M": [{"x": 365, "y": 175}], "E": -1}, {"S": 3, "M": [{"x": 475, "y": 175}], "E": -1}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 420, "y": 175}]}},
-    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 43}, {"x": 200, "y": 300}, {"x": 230, "y": 300}], "E": 2}]}},
-    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 315}, {"x": 97, "y": 315}, {"x": 97, "y": 91}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 121, "y": 300}, {"x": 230, "y": 300}], "E": 2}]}},
     "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
