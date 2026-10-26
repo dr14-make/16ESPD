@@ -104,7 +104,7 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 | # | Section | What it covers | You build |
 |---|---|---|---|
 | | Set up | | 00 the course library in your `MyCar` |
-| <Link to="friction-and-stopping">01</Link> | Friction and stopping | the friction coefficient, the tire's slip curve, braking distance and the cornering limit | 01 the tire's limit, by hand |
+| <Link to="friction-and-stopping">01</Link> | Friction and stopping | the friction coefficient, the tire's slip curve, braking distance, the slip angle and the cornering limit | 01 the tire's limit, by hand |
 | <Link to="brakes">02</Link> | How the brakes work | lever, hydraulics, the booster, the tandem master cylinder and the two circuits | 02 your brake system, pedal to wheel |
 | <Link to="abs">03</Link> | Anti-lock braking | history, wheel-speed sensors, the modulator, channel layouts, the control cycle, the model | 03 your own ABS · 04 on the wheel speed only · 05 across road surfaces |
 | <Link to="tcs">04</Link> | Traction control | ABS turned around: brake and engine intervention on a spinning wheel | 06 take-home bonus: TCS |
@@ -114,7 +114,7 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 <!--
 Seven sections in three hours, with a 10-minute break in the middle of section 03 and a 5-minute
 one after it. Budgets per section are on each section's cover and in
-`docs/lecture-03-run-sheet.md`: 202 minutes planned for the 180-minute block, its cut order
+`docs/lecture-03-run-sheet.md`: 210 minutes planned for the 180-minute block, its cut order
 takes back the rest. 87 of them are building: builds 00 to 05 take 6, 5,
 16, 22, 28 and 10; each build slide's note opens with its own budget and split.
 

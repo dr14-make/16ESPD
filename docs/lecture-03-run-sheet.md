@@ -9,15 +9,15 @@ building along in Dyad Studio on their own `MyCar`. Each build step has one slid
 it belongs to and an anchored section on the build guide (`lecture/lecture-03/` on the course
 site). The plan behind the steps is `docs/lecture-03-handson-plan.md`.
 
-**Total: 204 minutes**, including a 10-minute and a 5-minute break and the ESP demo: 24 more than
+**Total: 210 minutes**, including a 10-minute and a 5-minute break and the ESP demo: 30 more than
 the block. The deck is planned at its full length; the "If behind" cut order below is how it fits
 the room. Torque vectoring is not in this lecture: it belongs with the electric and hybrid drives.
 
 | Section | Builds | Minutes |
 |---|---|---:|
 | 00 Front matter | 00 set up | 10 |
-| 01 Friction and stopping | 01 the tire's limit, by hand | 19 |
-| 02 How the brakes work | 02 pedal to wheel | 26 |
+| 01 Friction and stopping | 01 the tire's limit, by hand | 21 |
+| 02 How the brakes work | 02 pedal to wheel | 30 |
 | 03 Anti-lock braking, to the break | 03 an ABS of your own | 45 |
 | Break | | 10 |
 | 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 51 |
@@ -26,8 +26,8 @@ the room. Torque vectoring is not in this lecture: it belongs with the electric 
 | 05 Electronic stability program, demo included | | 23 |
 | 06 Wrap-up | | 3 |
 
-Running clock: 01 starts at 10, 02 at 29, 03 at 55, the first break at 100, 03 resumes at 110,
-the second break at 161, 04 at 166, 05 at 178, 06 at 201, end at 204.
+Running clock: 01 starts at 10, 02 at 31, 03 at 61, the first break at 106, 03 resumes at 116,
+the second break at 167, 04 at 172, 05 at 184, 06 at 207, end at 210.
 
 ## Before class
 
@@ -75,7 +75,7 @@ the second break at 161, 04 at 166, 05 at 178, 06 at 201, end at 204.
   sensor in 03, the locked wheel that does not steer in 01 (section 03's braking and steering
   shows it on the planar car), the differential film in 04, our ESP against a production ESP in
   05, then 05's sensor principles (how each sensor measures, the yaw-rate sensor, lateral
-  acceleration) down to the sensors slide alone. That is about 15 of the 24 minutes. Then hand
+  acceleration) down to the sensors slide alone. That is about 15 of the 30 minutes. Then hand
   out `PhaseABS` in step 04 so students write only the estimator. Do not cut the four ABS result
   slides, any build slide or the ESP demo.
 
@@ -90,10 +90,10 @@ the second break at 161, 04 at 166, 05 at 178, 06 at 201, end at 204.
 - Build 00: wait until most laptops list `BrakedWheel` under **+**. A student without hands-on 2
   branches from `main`; today needs only hands-on 1's `Body`.
 
-## 01 Friction and stopping — 19 min
+## 01 Friction and stopping — 21 min
 
 - Friction and the table 2, tire curve 2, tire models 3, braking distance 2, build 01 5,
-  cornering limit 2, a locked wheel does not steer 2, summary 1.
+  slip angle 2, cornering limit 2, a locked wheel does not steer 2, summary 1.
 - The static/kinetic block pictures were folded out; draw the friction-against-push curve on the
   board only if asked.
 - The tire curve (`tire-is-not-a-block`): lead with $F_x = \mu(\kappa)\,F_z$. The curve is a
@@ -102,13 +102,18 @@ the second break at 161, 04 at 166, 05 at 178, 06 at 201, end at 204.
   panel is Lecture 1's standing starts; if asked why dry sat low on the rising side (κ = 0.0076),
   the motor asked for only about 0.28 of the load. Snow went over its 0.2 peak and spun, so its
   κ = 147 is wheelspin; braking slip stops at −1.
+- The slip angle (`lateral-slip`) is the tire curve turned sideways: same peak, same drop. Land
+  the last line, "a car corners on slip angles", before the cornering limit.
+- "Slide or tip over?" (`rollover`, after the locked wheel) is optional and outside the minutes,
+  2 min: t/2h against μ, no model behind it. Show it only if ahead, or if asked about the SUV
+  column of ESP's rollover numbers in section 05.
 - Build 01 is paper or REPL. Wait for 4256 N·m from most of the room: it comes back on every
   ABS slide.
 
-## 02 How the brakes work — 26 min
+## 02 How the brakes work — 30 min
 
-- Lever and hydraulics 2, force chain 2, pedal to pressure 2, master cylinder 1.5, the rest of the
-  system 1.5, **the parts you are given and build 02** 16, summary 1. The parts slide takes about
+- Lever and hydraulics 2, booster 2, pedal to pressure 2, force chain 2, load transfer 2, master
+  cylinder 1.5, the rest of the system 1.5, **the parts you are given and build 02** 16, summary 1. The parts slide takes about
   a minute of build 02's 16; leave it up while the room places the blocks.
 - Keep the theory moving; the pedal-to-pressure figure is the one to linger on: build 02's two
   runs sit on it, 150 N below run-out and 300 N past it.

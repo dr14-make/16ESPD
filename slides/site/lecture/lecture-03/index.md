@@ -831,7 +831,7 @@ New component `PhaseABS`, a duplicate of `SlipABS`:
 
    [![The same plot on a dry road, the first run with road_mu left at 1.0, from 1.0 to 3.3 s: abs.phase switching between 1 and -1 about 14 times a second at speed; abs.p_cmd and wheel.caliper_f.p rippling near 6.3 times 10 to the 6 Pa until about 2.2 s, then deep dumps, the caliper down to between about 3.6 and 2.5 times 10 to the 6 Pa, as the car slows.](/lecture/lecture-03/img/step04-dry-plot.png)](/lecture/lecture-03/img/step04-dry-plot.png)
 
-[![Two panels from 1.0 to 2.5 s of the wheel-speed-only stop on snow, road mu 0.3. Top, pressure: the allowed pressure climbs slowly in green build phases, drops in red dump phases and stays flat in amber hold phases; the front caliper follows it between 14.5 and 22.1 bar, about six dumps a second. Bottom, speed: the car falls steadily, the wheel dips below it in every dump, and the estimate rides the wheel. Title: 130.6 m.](/lecture/lecture-03/img/step04-phase-cycle.svg)](/lecture/lecture-03/img/step04-phase-cycle.svg)
+[![Two panels from 1.0 to 2.5 s of the wheel-speed-only stop on snow, road mu 0.3. Top, pressure: the allowed pressure climbs slowly in blue build phases, drops in vermilion dump phases and stays flat in yellow hold phases; the front caliper follows it between 14.5 and 22.1 bar, about six dumps a second. Bottom, speed: the car falls steadily, the wheel dips below it in every dump, and the estimate rides the wheel. Title: 130.6 m.](/lecture/lecture-03/img/step04-phase-cycle.svg)](/lecture/lecture-03/img/step04-phase-cycle.svg)
 
 ::: tip Expected result
 

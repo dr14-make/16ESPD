@@ -524,48 +524,53 @@ treat the "common on" remarks as typical rather than exact.
 routeAlias: abs-cycle
 ---
 
-## The control cycle
+## The control cycle: ours against Bosch
 
-<div class="grid grid-cols-[1.1fr_1fr] gap-8 text-sm">
+<div class="grid grid-cols-2 gap-8 text-sm">
 <div>
 
-The source deck's **simplest algorithm**:
+**Ours**, build 04's `PhaseABS`: **three phases**, simulated on snow
 
-1. While braking, watch every wheel for a deceleration **faster than the car can decelerate**.
-2. **Dump** pressure on that wheel until it accelerates again.
-3. **Hold**, the line isolated from the master cylinder.
-4. **Build** pressure again until the wheel decelerates too fast once more.
-5. Repeat.
+<ol style="list-style-type: lower-alpha">
+<li><b>Build</b> slowly, 116 bar/s. <span class="opacity-60">[Bosch 1, 7]</span></li>
+<li><b>Dump</b>, 580 bar/s, once the wheel decelerates faster than 12 m/s². <span class="opacity-60">[3]</span></li>
+<li><b>Hold</b> while it spins back up faster than 3 m/s². <span class="opacity-60">[4]</span></li>
+<li>Back to <b>build</b>. <span class="opacity-60">[5–7]</span></li>
+</ol>
 
-The driver feels a **pulsing in the pedal**.
+No hold before the dump, one build rate: no pressure memory. About **6 cycles/s**.
 
 </div>
 <div>
 
-Bosch's production cycle has **eight phases**, and two things the simple version lacks:
+**Bosch**, production ABS: **eight phases**, sketched
 
-- **Hold before dump**: a wheel decelerating hard may only be approaching the peak.
-- **Pressure memory**: rebuild fast to just below the pressure at which the wheel started to
-  lock, then creep up slowly.
+- **Hold before dump** <span class="opacity-60">[2]</span>: a wheel decelerating hard may only
+  be approaching the peak.
+- **Pressure memory**: build fast <span class="opacity-60">[5]</span> to just below the pressure
+  at which the wheel locked, then creep up in steps <span class="opacity-60">[7]</span>.
 
-| | |
-|---|---|
-| slip cycle, production ABS | **2–6 per second** |
-| pressure steps | up to 40 per second |
-| ECU sample time | 3–6 ms |
+**2–6 cycles/s**, pressure steps up to 40/s, ECU sample time 3–6 ms.
 
 </div>
 </div>
 
-<div class="diagram-cycle">
-
-![One cycle of the Bosch control cycle against time, in eight numbered phases shaded green for build, amber for hold and red for dump. Top: the car's speed falls in a straight dashed line; the wheel's speed drops below it, crosses the slip threshold lambda 1, bottoms out and recovers to just under the car. Middle: the wheel's acceleration with the thresholds plus A, plus a and minus a. Bottom: the brake pressure. Phase 1 builds with the driver until the wheel decelerates past minus a; 2 holds until the slip passes lambda 1; 3 dumps until the deceleration is back above minus a; 4 holds while the wheel speeds up past plus A; 5 builds fast while it stays above plus A; 6 holds until it falls below plus a; 7 builds slowly in small steps; 8 dumps again when the wheel passes minus a.](/diagrams/03-abs-cycle.svg)
-
+<div class="grid grid-cols-2 gap-8 mt-2">
+<img src="/diagrams/03-abs-cycle-ours.svg" class="w-full" alt="Two cycles, 0.34 s, of build 04's three-phase ABS on snow, simulated, on the same three panels as Bosch's: speed, wheel acceleration and pressure, shaded blue for build, yellow for hold and hatched vermilion for dump. The pressure ramps up slowly from 13 to 25 bar while the wheel decelerates; when the deceleration passes 12 m/s² it dumps steeply to 13 bar; the wheel spins back up past plus 3 m/s², the pressure holds flat, then builds slowly again."/>
+<img src="/diagrams/03-abs-cycle.svg" class="w-full" alt="One cycle of the Bosch control cycle against time, in eight numbered phases, each named under its number and shaded blue for build, yellow for hold and hatched vermilion for dump. Top: the car's speed falls in a straight dashed line; the wheel's speed drops below it, crosses the slip threshold lambda 1, bottoms out and recovers to just under the car. Middle: the wheel's acceleration with the thresholds plus A, plus a and minus a. Bottom: the brake pressure. Phase 1 builds with the driver until the wheel decelerates past minus a; 2 holds until the slip passes lambda 1; 3 dumps until the deceleration is back above minus a; 4 holds while the wheel speeds up past plus A; 5 builds fast while it stays above plus A; 6 holds until it falls below plus a; 7 builds slowly in small steps; 8 dumps again when the wheel passes minus a."/>
 </div>
 
 <!--
-The left column is the source deck's algorithm, reworded. It said "repeat this procedure around
-15 times per second". That number mixes up two rates. The pressure valves step tens of times per
+Left, ours: build 04's controller, the source deck's simplest algorithm made concrete. The source
+deck listed it as: watch every wheel for a deceleration faster than the car can manage, dump
+until it accelerates again, hold, build until it decelerates too fast once more, repeat; the
+driver feels a pulsing in the pedal. The figure is two cycles of the reference run on snow,
+simulated, drawn on Bosch's panels. Between the dump and the hold there is a short build: the
+deceleration has fallen under 12 but the wheel is not yet accelerating past 3, so no condition
+holds and the controller builds. The slip threshold of 0.2 is not drawn: on snow every dump comes
+from the deceleration threshold, and the slip never gets near it.
+
+Right, Bosch's. The source deck said "repeat this procedure around 15 times per second". That number mixes up two rates. The pressure valves step tens of times per
 second. The wheel's full slip cycle, lock-release-recover, runs at 2 to 4 per second on the front
 wheels on a dry road and 4 to 6 on the rear and on ice, measured on a Bosch ABS 5.2 car by Day and
 Roberts, SAE paper 2002-01-0559. The frequency is not chosen; it follows from the wheel's dynamics
@@ -577,7 +582,10 @@ a threshold, dump until the wheel accelerates again, hold, build fast, hold, bui
 a tenth of the fast rate, then dump again. The controller learns the lock-up pressure each cycle.
 
 The figure is that cycle, sketched, not simulated, in the colors of build 04's state diagram:
-green build, amber hold, red dump. Read it at the phase numbers on top. Top panel: the car's
+blue build, yellow hold, hatched vermilion dump. Read it at the phase numbers on top. The left
+column's steps are lettered a to d; the bracket after each step is the Bosch phase it matches.
+Ours has no phase 2, the hold before the dump, and only one build rate where Bosch builds fast,
+5, then in slow steps, 7. Top panel: the car's
 speed, dashed, and the wheel's, blue; the thin dashed line is the slip threshold lambda 1 under
 the reference speed. Middle: the wheel's own acceleration, with three thresholds, minus a for
 deceleration, plus a and the larger plus A for acceleration. Bottom: the wheel pressure. 1, the
@@ -1191,7 +1199,7 @@ routeAlias: build-wheel-only-cycle
 <div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
 <div class="stack">
 
-![Two panels from 1.0 to 2.5 s of the wheel-speed-only stop on snow, road mu 0.3. Top, pressure: the allowed pressure climbs slowly in the green build phases, drops in the red dump phases and stays flat in the amber hold phases; the front caliper follows it between 14.5 and 22.1 bar, about six dumps a second. Bottom, speed: the car falls steadily, the wheel dips below it in every dump, and the estimate rides the wheel. Title: your three-phase ABS, wheel speed only, mu 0.3, 130.6 m.](/img/lecture-03/step04-phase-cycle.svg)
+![Two panels from 1.0 to 2.5 s of the wheel-speed-only stop on snow, road mu 0.3. Top, pressure: the allowed pressure climbs slowly in the blue build phases, drops in the vermilion dump phases and stays flat in the yellow hold phases; the front caliper follows it between 14.5 and 22.1 bar, about six dumps a second. Bottom, speed: the car falls steadily, the wheel dips below it in every dump, and the estimate rides the wheel. Title: your three-phase ABS, wheel speed only, mu 0.3, 130.6 m.](/img/lecture-03/step04-phase-cycle.svg)
 
 <svg viewBox="0 0 520 250" class="w-[80%] mx-auto mt-2" role="img" aria-label="State diagram of the three phases. Build, slowly at 116 bar/s, goes to dump when the wheel decelerates faster than 12 m/s² or the estimated slip passes 0.2. Dump, at 580 bar/s, goes to hold when the wheel accelerates faster than 3 m/s², or back to build once neither dump condition holds. Hold, rate zero, goes to build when the wheel acceleration falls below 3 m/s². Before the first dump the driver's pressure passes straight through.">
   <defs>
@@ -1202,13 +1210,13 @@ routeAlias: build-wheel-only-cycle
   <g text-anchor="middle" fill="currentColor" style="font-size:15px">
     <text x="18" y="22" text-anchor="start" opacity="0.7" style="font-size:13px">start: demand passes through</text>
     <line x1="78" y1="30" x2="78" y2="58" stroke="currentColor" marker-end="url(#arr)"/>
-    <rect x="18" y="60" width="120" height="54" rx="10" fill="#2e8b57" fill-opacity="0.25" stroke="#2e8b57" stroke-width="2"/>
+    <rect x="18" y="60" width="120" height="54" rx="10" fill="#0072b2" fill-opacity="0.2" stroke="#0072b2" stroke-width="2"/>
     <text x="78" y="84" font-weight="bold">BUILD</text>
     <text x="78" y="103" style="font-size:13px">+k_inc, slow</text>
-    <rect x="382" y="60" width="120" height="54" rx="10" fill="#b22222" fill-opacity="0.25" stroke="#b22222" stroke-width="2"/>
+    <rect x="382" y="60" width="120" height="54" rx="10" fill="#d55e00" fill-opacity="0.2" stroke="#d55e00" stroke-width="2"/>
     <text x="442" y="84" font-weight="bold">DUMP</text>
     <text x="442" y="103" style="font-size:13px">−k_dec</text>
-    <rect x="200" y="182" width="120" height="54" rx="10" fill="#daa520" fill-opacity="0.25" stroke="#daa520" stroke-width="2"/>
+    <rect x="200" y="182" width="120" height="54" rx="10" fill="#f0e442" fill-opacity="0.45" stroke="#b8a800" stroke-width="2"/>
     <text x="260" y="206" font-weight="bold">HOLD</text>
     <text x="260" y="225" style="font-size:13px">rate 0</text>
     <line x1="140" y1="74" x2="380" y2="74" stroke="currentColor" marker-end="url(#arr)"/>
@@ -1250,14 +1258,14 @@ ice. Yours on snow is in that range; on a dry road it ripples fast and shallow a
 
 <!--
 The state diagram under the figure is `PhaseABS`'s phase line, the one build 04's notes read in
-step 5: green build, red dump, amber hold, the same colors as the figure above it.
+step 5: blue build, vermilion dump, yellow hold, the same colors as the figure above it.
 
 Run the dry road first: 38.5 meters. Shorter than your locked wheel, 43.7, and level with the
 library's wheel-speed-only ECU, 38.7. With the wheel speed alone.
 
 Then snow, road_mu 0.3, with a stop time of 20 seconds: 130.6 meters, against 136.7 locked. Only
 5 percent. Plot the phase, the allowed pressure and the front caliper's together. The figure is
-the reference run, zoomed to a second and a half: green build, red dump, amber hold. In every hold
+the reference run, zoomed to a second and a half: blue build, vermilion dump, yellow hold. In every hold
 the command is flat: that is the pressure memory. The hold shows where a dump lets the wheel spin
 back up past plus 3, which on snow is every dump. On a dry road the dump ends before the wheel
 turns round, so a student's dry plot shows no hold at all: expected.

@@ -13,10 +13,10 @@ the calipers.
 `notebooks/lecture03/02-brake-hydraulics.pluto.jl`
 
 <!--
-Budget: 26 minutes, 9 slides: lever 2, force chain 2, pedal to pressure 2, master cylinder 1.5,
-the rest of the system 1.5, the parts you are given and build 02 16, summary 1. Keep the theory
-moving: the section ends with
-build 02, where the students wire the whole chain, pedal to wheel, and stop their car with it.
+Budget: 30 minutes, 11 slides: lever 2, booster 2, pedal to pressure 2, force chain 2, load
+transfer 2, master cylinder 1.5, the rest of the system 1.5, the parts you are given and build 02
+16, summary 1. Keep the theory moving: the section ends with build 02, where the students wire the
+whole chain, pedal to wheel, and stop their car with it.
 
 The brakes transmit the force the driver applies to the pedal to the wheels using friction, at the
 pads, and the tires pass it to the road using friction again. Three pieces of physics sit in
@@ -72,12 +72,133 @@ many millimeters of pedal, and the pedal hits the floor. That is why a car has a
 -->
 
 ---
+routeAlias: booster
+---
+
+## The vacuum booster
+
+<div class="grid grid-cols-[1fr_1.25fr] gap-8 items-center">
+<div>
+
+A can split by a **diaphragm**. The front chamber holds **vacuum** from the engine, all the time.
+
+- **At rest**: the rear holds vacuum too. No pressure difference, no push.
+- **Press the pedal**: a valve lets **outside air** into the rear. The air pushes the diaphragm,
+  and the rod with it, toward the master cylinder.
+- The valve lets in just enough air for **5 ×** the rod's force. A rubber reaction disc feeds
+  part of it back, so the foot still feels the brake.
+- **Run-out**: the rear is at full atmosphere; from there only the foot adds.
+
+$$
+F_{max} = (p_{atm} - p_{vac})\,A_d - F_{spring} \approx 68\ \text{kPa} \times 533\ \text{cm}^2 \approx 3.5\ \text{kN}
+$$
+
+</div>
+<div>
+
+![Cutaway of a vacuum booster between the pedal's pushrod on the left and the master cylinder on the right. A diaphragm with a central plate splits the can: the rear chamber, on the pedal side, receives outside air through the valve on the pushrod when the driver presses, up to 101 kPa; the front chamber holds 33 kPa of vacuum through a hose and check valve to the engine's intake, and a return spring. Arrows show the pressure difference times the area pushing the diaphragm and the rod forward.](/diagrams/02-vacuum-booster.svg)
+
+</div>
+</div>
+
+<!--
+Budget: 2 minutes.
+
+The lever slide ended on the travel budget: the pedal cannot multiply the force much more. The
+booster adds force without adding travel, by borrowing it from the air.
+
+The booster is a round can, about 26 centimeters across, between the pedal and the master
+cylinder, split by a rubber diaphragm with a plate in the middle. The front chamber, on the master
+cylinder's side, is connected by a hose to the engine's intake manifold, through a check valve
+that only lets air out of the booster. So it always holds vacuum: 33 kilopascal absolute at idle,
+a third of the atmosphere.
+
+At rest the valve on the pushrod connects the two chambers, so the rear holds the same vacuum.
+Equal pressure on both sides: no force. Press the pedal and the valve does two things: it closes
+the link between the chambers and opens the rear to the outside air. Now the rear is at up to 101
+kilopascal, the front at 33, and that difference pushes on the whole diaphragm: the plate and the
+output rod go forward into the master cylinder, together with the force from the foot.
+
+The valve is a follower. A rubber reaction disc between the plate and the output rod squeezes
+back against the driver's plunger, so the valve lets in only as much air as gives five times the
+input force, and the driver feels a firm pedal that grows with the braking. Lift the foot and the
+valve reconnects the chambers, the engine pulls the air out, and the return spring pushes the
+diaphragm back.
+
+The formula is the limit. The difference between atmosphere and vacuum, 68 kilopascal, times the
+diaphragm's 533 square centimeters is 3.6 kilonewtons, less the return spring's 97 newtons: 3.5
+kilonewtons of help. Compare the lever slide: 100 newtons of foot made 350 at the rod. Once the
+rear chamber is full of air, the booster has nothing more to give: that is run-out, 232 newtons
+of foot in the model, the knee on the next slide.
+
+In the model this is `Vehicle.Brake.StaticBooster`: the five-times slope, the jump-in and the
+run-out, without the chambers filling. The diaphragm area, the idle vacuum and the spring preload
+are PATH's test car, UCB-ITS-PRR-97-21; the servo ratio of 5 is assumed. Where the vacuum comes
+from, and what happens when it runs out, is the optional slide after build 02.
+-->
+
+---
+routeAlias: pedal-to-pressure
+class: big-figure
+---
+
+## Pedal force to line pressure
+
+<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div>
+
+![Master-cylinder pressure against pedal force, 0 to 500 N: with idle vacuum, a jump at about 11 N to 6 bar, a steep boosted slope up to a run-out knee at 232 N and 84 bar, then a shallow slope; without vacuum, a single shallow line reaching about 29 bar at 500 N. A dotted line marks the 61.8 bar a 1 g stop needs.](/figures/02-pedal-to-pressure.svg)
+
+</div>
+<div class="text-[0.95rem]">
+
+**Vacuum booster.** Vacuum on the front of a diaphragm, atmosphere let in behind it when the
+driver pushes.
+
+| landmark | model |
+|---|---:|
+| cut-in, jump-in | 11.4 N → 5.7 bar |
+| boosted slope | 0.357 bar/N |
+| run-out knee | 232 N, 84.3 bar |
+| slope past run-out | 0.071 bar/N |
+| no vacuum, 500 N | 29.2 bar |
+
+</div>
+</div>
+
+<!--
+The figure is the pressure plot of notebook 02, "Experiment: pedal force to line pressure", at
+the default idle vacuum of 33 kilopascal absolute, with the no-vacuum curve dashed.
+
+The axes: pedal force in newtons across, master-cylinder pressure in bar up. The solid curve has
+engine vacuum, the dashed one none; the dotted line is the 61.8 bar a 1 g stop needs, worked out
+on the next slide.
+
+Read it left to right. Below the cut-in, 11.4 newtons, the booster's valve stays closed and
+nothing happens. At cut-in the output jumps to 5.7 bar: the reaction disc, the rubber disc that
+feeds part of the output force back to the driver's foot, has not touched the driver's plunger
+yet. Then the booster multiplies the force from the lever by five: the boosted slope. Where 0.357
+bar per newton comes from: 3.5 for the lever times 5 for the booster, over the bore area of 4.91
+square centimeters, is 0.357 bar for each newton of foot. At run-out, 232 newtons and 84.3 bar,
+the rear chamber is at full atmosphere and the diaphragm cannot push harder; past the knee only
+the foot adds, at one fifth of the slope, 0.071 bar per newton.
+
+Where does the vacuum come from? A throttled petrol engine makes it for free in the intake
+manifold, the same manifold pressure you met in Lecture 2. Diesels and turbo engines need a vacuum
+pump. Electric cars use an electric vacuum pump or an electromechanical booster such as Bosch's
+iBooster, which also lets the brake system blend in regenerative braking.
+
+The pressures match the brake plan's hand calculations to better than 0.1 percent; the notebook
+shows the comparison.
+-->
+
+---
 routeAlias: force-chain
 ---
 
 ## The force chain in the model
 
-![Block chain: the foot's force F_ped goes into the pedal lever, times 3.5, BrakePedal; then the vacuum booster, times 5 up to run-out, StaticBooster; then the tandem master cylinder, p equals F over A_mc, TandemMasterCylinder; two circuits, front and rear, each go through a line and a caliper, BrakeLine and BrakeCaliper, about 49 N·m per bar at the front axle and 20 at the rear; both calipers sit in HydraulicBrakedWheel.](/diagrams/02-force-chain.svg)
+![Block chain: the foot's force F_ped goes into the pedal lever, times 3.5, BrakePedal; then the vacuum booster, times 5 up to run-out, StaticBooster; then the tandem master cylinder, p equals F over A_mc, TandemMasterCylinder; two circuits, front and rear, each go through a line and a caliper, BrakeLine and BrakeCaliper, about 49 N·m per bar at the front axle and 20 at the rear; the rear circuit passes a dashed proportioning valve, times 0.43 above 45 bar, marked as in real cars but not in our model; both calipers sit in HydraulicBrakedWheel.](/diagrams/02-force-chain.svg)
 
 <div class="grid grid-cols-3 gap-6 text-sm mt-2">
 <div>
@@ -125,64 +246,83 @@ A failed booster costs deceleration, not the brakes.
 
 Lever ratio 3.5 and servo ratio 5 are assumed values; the bore and the booster's diaphragm come
 from the California PATH test car, report UCB-ITS-PRR-97-21.
+
+The dashed box in the rear circuit is the proportioning valve a real car has there; our model
+does not. Above a knee pressure it passes only part of any further increase to the rear, here 43
+percent above 45 bar, aftermarket figures. Why the rear needs less is the next slide.
 -->
 
 ---
-routeAlias: pedal-to-pressure
-class: big-figure
+routeAlias: load-transfer
 ---
 
-## Pedal force to line pressure
+## Braking tilts the car: front and rear
 
-<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-center">
 <div>
 
-![Master-cylinder pressure against pedal force, 0 to 500 N: with idle vacuum, a jump at about 11 N to 6 bar, a steep boosted slope up to a run-out knee at 232 N and 84 bar, then a shallow slope; without vacuum, a single shallow line reaching about 29 bar at 500 N. A dotted line marks the 61.8 bar a 1 g stop needs.](/figures/02-pedal-to-pressure.svg)
+The braking force acts at the road, the car's mass at height $h$ above it. The nose dips and
+load moves from the rear axle to the front:
+
+$$
+\Delta F_z = \frac{m\,a\,h}{l}
+$$
+
+| 1400 kg car | front $F_z$ | rear $F_z$ |
+|---|---:|---:|
+| at rest | 8.2 kN | 5.5 kN |
+| braking at 1 g | 11.1 kN | 2.6 kN |
+
+A lighter rear tire locks at less torque. If **the rear locks first**, the car spins. So the rear
+gets less pressure: a **proportioning valve** passes 43 % of the pressure above a knee of about
+45 bar; with ABS, **EBD** does it in software.
 
 </div>
-<div class="text-[0.95rem]">
+<div>
 
-**Vacuum booster.** Vacuum on the front of a diaphragm, atmosphere let in behind it when the
-driver pushes.
+![Side view of a car braking while it drives to the right: the nose dips; at the center of gravity, height h above the road, the inertial force m a points forward and the weight m g down; the braking forces at both tires point back; under the wheels, wheelbase l apart, the front normal load F z f plus delta F z is drawn much larger than the rear's F z r minus delta F z.](/diagrams/02-load-transfer.svg)
 
-| landmark | model |
-|---|---:|
-| cut-in, jump-in | 11.4 N → 5.7 bar |
-| boosted slope | 0.357 bar/N |
-| run-out knee | 232 N, 84.3 bar |
-| slope past run-out | 0.071 bar/N |
-| no vacuum, 500 N | 29.2 bar |
+<div class="caption">l 2.6 m, h 0.55 m, 60 % on the front at rest (assumed); our model has no valve</div>
 
 </div>
 </div>
 
 <!--
-The figure is the pressure plot of notebook 02, "Experiment: pedal force to line pressure", at
-the default idle vacuum of 33 kilopascal absolute, with the no-vacuum curve dashed.
+Budget: 2 minutes.
 
-The axes: pedal force in newtons across, master-cylinder pressure in bar up. The solid curve has
-engine vacuum, the dashed one none; the dotted line is the 61.8 bar a 1 g stop needs.
+The force chain just split the pressure two ways, front and rear, and gave the front calipers
+more than twice the torque per bar: 49 against 20 newton meters. Why not the same?
 
-How the booster works: the front chamber of the diaphragm holds vacuum. When the driver pushes, a
-valve lets outside air into the rear chamber, and the pressure difference pushes the diaphragm,
-and so the pushrod, forward.
+Braking, the tires push back at the road, but the car's mass sits 0.55 meters higher. The
+inertia, m times a, acts at the center of gravity and tries to tip the car forward; the nose dips.
+Take moments: the front axle carries more, the rear less, by m a h over the wheelbase l. For our
+1400 kilogram car at 1 g that is 1400 times 9.81 times 0.55 over 2.6, 2.9 kilonewtons. The front
+goes from 8.2 to 11.1, the rear from 5.5 to 2.6: the rear loses half its load.
 
-Read it left to right. Below the cut-in, 11.4 newtons, the booster's valve stays closed and
-nothing happens. At cut-in the output jumps to 5.7 bar: the reaction disc, the rubber disc that
-feeds part of the output force back to the driver's foot, has not touched the driver's plunger
-yet. Then the booster multiplies the force from the lever by five: the boosted slope. Where 0.357
-bar per newton comes from: 3.5 for the lever times 5 for the booster, over the bore area of 4.91
-square centimeters, is 0.357 bar for each newton of foot. At run-out, 232 newtons and 84.3 bar,
-the rear chamber is at full atmosphere and the diaphragm cannot push harder; past the knee only
-the foot adds, at one fifth of the slope, 0.071 bar per newton.
+A tire's grip is mu times its load. So the rear's limit falls as the braking gets harder, and the
+front's rises. The ideal split, braking each axle in proportion to its load, moves from 60 percent
+front at rest to 81 percent at 1 g. The calipers give a fixed 71 percent, which is ideal at only
+one deceleration, 0.52 g. Brake harder and the rear has too much: on a dry road its wheels would
+lock first, at about 0.8 g.
 
-Where does the vacuum come from? A throttled petrol engine makes it for free in the intake
-manifold, the same manifold pressure you met in Lecture 2. Diesels and turbo engines need a vacuum
-pump. Electric cars use an electric vacuum pump or an electromechanical booster such as Bosch's
-iBooster, which also lets the brake system blend in regenerative braking.
+Why that matters: locked front wheels push the car straight on, it cannot be steered but stays
+straight. Locked rear wheels have no side force either, so the rear swings out and the car spins.
+Every brake system is designed for the front to lock first.
 
-The pressures match the brake plan's hand calculations to better than 0.1 percent; the notebook
-shows the comparison.
+The fix in hardware is the proportioning valve in the rear line. Below a knee pressure it passes
+the pressure through; above it, only a fraction of any further increase, 43 percent in the
+aftermarket figures, with the knee at 41 to 48 bar. Some cars use a load-sensing valve linked to
+the rear suspension, so a loaded car gets more rear pressure. With ABS the valve became software:
+electronic brake-force distribution, EBD, holds the rear inlet valves once the rear wheels slip
+more than the front, right for any load. The valve's hardware comes back two slides on, on
+"The rest of the system".
+
+Numbers: the wheelbase, the center-of-gravity height and the static split are assumed, from the
+brake report, `docs/reports/Passenger car brake system modeling.md`, which also gives the 0.52 g
+crossing; the valve's knee and slope are aftermarket figures, Brakes-shop and Wilwood, not OEM
+data. Our model has no valve and no EBD: the one lumped wheel carries both axles' calipers under
+one tire, so no axle can lock first. The planar car of section 03 has load transfer, off in the
+runs shown.
 -->
 
 ---
@@ -276,13 +416,10 @@ distribution (EBD)** uses the ABS valves to limit rear pressure.
 <!--
 The source deck's overview, again HowStuffWorks.
 
-Why the rear needs less pressure: decelerating, the car pitches forward, and load moves from the
-rear axle to the front. A rear tire with less normal load reaches its friction limit at less
-brake torque. If the rear wheels lock before the front, the car becomes unstable: the rear swaps
-ends. If the front wheels lock first, the car goes straight and cannot be steered, which is the
-safer failure. Every brake system is therefore designed so the front locks first. A fixed
-proportioning valve gets this right for one load; EBD, using the ABS hardware and wheel-speed
-sensors, gets it right for any load. That is the first sign that ABS hardware does more than ABS.
+Why the rear needs less pressure is the load-transfer slide: braking moves load to the front,
+and the rear must not lock first. A fixed proportioning valve gets this right for one load; EBD,
+using the ABS hardware and wheel-speed sensors, gets it right for any load. That is the first
+sign that ABS hardware does more than ABS.
 
 The course model has no proportioning valve and no EBD: its single lumped wheel carries both
 axles' calipers under one tire, so no axle can lock first. The brake plan,
@@ -501,7 +638,9 @@ routeAlias: vacuum-booster
 <div class="grid grid-cols-[1fr_1.15fr] gap-6 items-start">
 <div>
 
-![FullCarVacuumStop in Studio. Along the top, throttle_pedal into the engine, then flywheel, clutch and variator, whose shaft runs right and down into the wheel; housing below them. Below, build 02's chain: command, pedal_unit, booster, master, line_f and line_r into wheel, with body and speed on the right and road feeding the wheel's friction. One teal hose runs from the engine's vacuum port down into the top of the booster.](/img/lecture-03/full-car-vacuum.png)
+<img src="/figures/02-throttle-vacuum.svg" class="h-60 mx-auto" alt="Steady manifold absolute pressure against throttle opening, 0 to 50 percent, at 800, 2000 and 3000 rpm, with the booster's most assist on a second axis: closed throttle gives 33 kPa and 3.5 kN at idle, 18 kPa at 2000 rpm and 13.5 at 3000; by 20 percent opening the manifold is at 74 to 98 kPa, and above 40 percent close to ambient, with almost no assist left."/>
+
+<img src="/img/lecture-03/full-car-vacuum.png" class="h-44 mx-auto mt-2" alt="FullCarVacuumStop in Studio. Along the top, throttle_pedal into the engine, then flywheel, clutch and variator, whose shaft runs right and down into the wheel; housing below them. Below, build 02's chain: command, pedal_unit, booster, master, line_f and line_r into wheel, with body and speed on the right and road feeding the wheel's friction. One teal hose runs from the engine's vacuum port down into the top of the booster."/>
 
 </div>
 <div>
@@ -519,6 +658,14 @@ from 54 to 23 kPa: full assist, **39.2 m**.
 
 <!--
 Optional, 3 minutes. A lecturer demo, outside the run sheet's minutes: show it only if ahead.
+
+The chart above the screenshot is the air path alone, at steady state: how much vacuum the
+manifold holds at each throttle opening. Shut, the cylinders pump the manifold down to 33
+kilopascal at idle and 13.5 at 3000 rpm, coasting. Open the throttle a fifth and the manifold is
+nearly back at the atmosphere: the vacuum, and with it the booster's assist, the right axis, is
+gone. A hard stop starts with the foot off the throttle, so the booster normally has its vacuum;
+the store behind the check valve covers the rest. From `scripts/export_lecture03_vacuum_figures.jl`,
+the same equations as `Vehicle.Engine.AirPath`.
 
 Two models with the same brake chain as build 02: brake pedal, booster, master cylinder, two
 brake lines, braked wheel. They differ in where the booster gets its vacuum. All pressures here
