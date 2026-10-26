@@ -9,7 +9,7 @@ building along in Dyad Studio on their own `MyCar`. Each build step has one slid
 it belongs to and an anchored section on the build guide (`lecture/lecture-03/` on the course
 site). The plan behind the steps is `docs/lecture-03-handson-plan.md`.
 
-**Total: 202 minutes**, including a 10-minute and a 5-minute break and the ESP demo: 22 more than
+**Total: 204 minutes**, including a 10-minute and a 5-minute break and the ESP demo: 24 more than
 the block. The deck is planned at its full length; the "If behind" cut order below is how it fits
 the room. Torque vectoring is not in this lecture: it belongs with the electric and hybrid drives.
 
@@ -22,12 +22,12 @@ the room. Torque vectoring is not in this lecture: it belongs with the electric 
 | Break | | 10 |
 | 03 Anti-lock braking, after the break | 04 only the wheel speed, 05 across road surfaces | 51 |
 | Break | | 5 |
-| 04 Traction control | 06 take-home bonus (slide only) | 10 |
+| 04 Traction control | 06 take-home bonus (slide only) | 12 |
 | 05 Electronic stability program, demo included | | 23 |
 | 06 Wrap-up | | 3 |
 
 Running clock: 01 starts at 10, 02 at 29, 03 at 55, the first break at 100, 03 resumes at 110,
-the second break at 161, 04 at 166, 05 at 176, 06 at 199, end at 202.
+the second break at 161, 04 at 166, 05 at 178, 06 at 201, end at 204.
 
 ## Before class
 
@@ -75,7 +75,7 @@ the second break at 161, 04 at 166, 05 at 176, 06 at 199, end at 202.
   sensor in 03, the locked wheel that does not steer in 01 (section 03's braking and steering
   shows it on the planar car), the differential film in 04, our ESP against a production ESP in
   05, then 05's sensor principles (how each sensor measures, the yaw-rate sensor, lateral
-  acceleration) down to the sensors slide alone. That is about 15 of the 22 minutes. Then hand
+  acceleration) down to the sensors slide alone. That is about 15 of the 24 minutes. Then hand
   out `PhaseABS` in step 04 so students write only the estimator. Do not cut the four ABS result
   slides, any build slide or the ESP demo.
 
@@ -202,13 +202,18 @@ After the break, 51 min:
 
 After the section 03 summary. The building is done for the day.
 
-## 04 Traction control — 10 min
+## 04 Traction control — 12 min
 
 - What it does 1.5, the differential film 2.5 (stop once the spider gears are shown), the open
-  differential 1.5, two actuators 1.5, Lecture 1 link 1, take-home bonus 1, summary 1.
-- The bonus is step 06 on the guide page: a brake-based TCS on hands-on 1's `SlipCar`, handed in
-  as a pull request for extra points. Its reference is `HandsOn03.TCSStartTransient` on
-  `feat/handson03-tcs-bonus`: 8.0 against 5.6 m/s at 10 s, against the guide's hand 8.5 and 5.7.
+  differential 1.5, two actuators 1.5, brake or engine 2, Lecture 1 link 1, take-home bonus 1,
+  summary 1.
+- "Brake or engine" shows the whole car on snow after 10 s: off 5.64, brake only 5.99, engine
+  only 6.62, both 6.45 m/s, 115 kJ burned by the brakes alone. The take-away: brake one spinning
+  wheel, cut the engine when both spin. From `HandsOn03.TCSStartTransient` (`brake_enabled`,
+  `engine_enabled`), checked in `test/tcs_bonus.jl`.
+- The bonus is step 06 on the guide page: the students build both paths on their own whole car
+  and hand in a pull request for extra points. The answer is on the slide, so they are graded on
+  the build and the paragraph.
 
 ## 05 Electronic stability program — 23 min
 
