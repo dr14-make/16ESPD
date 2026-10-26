@@ -23,6 +23,8 @@ include("PhaseABS_test.jl")
 include("RefSpeedEstimator_test.jl")
 include("SlipABS_test.jl")
 include("TCSCar_test.jl")
+include("TCSEngine_test.jl")
 include("TCSStart_test.jl")
 include("TCS_test.jl")
+include("TestTCSEngine_test.jl")
 end

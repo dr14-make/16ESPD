@@ -5,18 +5,19 @@
 
 
 @doc Markdown.doc"""
-   TCSStart(; name, tcs_enabled, supply_pressure)
+   TCSStart(; name, brake_enabled, engine_enabled, supply_pressure)
 
-Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
+Whole-car standing start on snow with brake and engine TCS independently selectable.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `tcs_enabled`         | Set to one to enable traction control, zero for the uncontrolled run                         | --  |   1.0 |
+| `brake_enabled`         | Set to one to enable brake intervention                         | --  |   1.0 |
+| `engine_enabled`         | Set to one to enable engine intervention                         | --  |   1.0 |
 | `supply_pressure`         | Pump and accumulator supply pressure                         | Pa  |   8.9e6 |
 """
-@component function TCSStart(; name = nothing, tcs_enabled=Float64(1.0), supply_pressure=Float64(8900000.0), kwargs...)
+@component function TCSStart(; name = nothing, brake_enabled=Float64(1.0), engine_enabled=Float64(1.0), supply_pressure=Float64(8900000.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,9 +48,12 @@ Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__tcs_enabled = tcs_enabled
-  append!(__params, @parameters (tcs_enabled::Real), [description = "Set to one to enable traction control, zero for the uncontrolled run"])
-  __initial_conditions[tcs_enabled] = __local__tcs_enabled
+  __local__brake_enabled = brake_enabled
+  append!(__params, @parameters (brake_enabled::Real), [description = "Set to one to enable brake intervention"])
+  __initial_conditions[brake_enabled] = __local__brake_enabled
+  __local__engine_enabled = engine_enabled
+  append!(__params, @parameters (engine_enabled::Real), [description = "Set to one to enable engine intervention"])
+  __initial_conditions[engine_enabled] = __local__engine_enabled
   __local__supply_pressure = supply_pressure
   append!(__params, @parameters (supply_pressure::Real), [description = "Pump and accumulator supply pressure"])
   __initial_conditions[supply_pressure] = __local__supply_pressure
@@ -69,21 +73,36 @@ Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
   # Subcomponent throttle of type BlockComponents.Sources.Step
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
   push!(__systems, @named throttle = BlockComponents.Sources.Step(; height=Float64(1.0), offset=Float64(0.0), start_time=Float64(0.0), throttle_overrides...))
+  # Subcomponent one of type BlockComponents.Sources.Constant
+  one_overrides = __pop_subcomponent_overrides!(__overrides, "one")
+  push!(__systems, @named one = BlockComponents.Sources.Constant(; k=Float64(1.0), one_overrides...))
   # Subcomponent friction of type BlockComponents.Sources.Constant
   friction_overrides = __pop_subcomponent_overrides!(__overrides, "friction")
   push!(__systems, @named friction = BlockComponents.Sources.Constant(; k=0.2, friction_overrides...))
   # Subcomponent supply of type BlockComponents.Sources.Constant
   supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
   push!(__systems, @named supply = BlockComponents.Sources.Constant(; k=supply_pressure, supply_overrides...))
-  # Subcomponent enable of type BlockComponents.Math.Gain
-  enable_overrides = __pop_subcomponent_overrides!(__overrides, "enable")
-  push!(__systems, @named enable = BlockComponents.Math.Gain(; k=tcs_enabled, enable_overrides...))
+  # Subcomponent brake_enable of type BlockComponents.Math.Gain
+  brake_enable_overrides = __pop_subcomponent_overrides!(__overrides, "brake_enable")
+  push!(__systems, @named brake_enable = BlockComponents.Math.Gain(; k=brake_enabled, brake_enable_overrides...))
+  # Subcomponent engine_reduction of type BlockComponents.Math.Feedback
+  engine_reduction_overrides = __pop_subcomponent_overrides!(__overrides, "engine_reduction")
+  push!(__systems, @named engine_reduction = BlockComponents.Math.Feedback(; engine_reduction_overrides...))
+  # Subcomponent engine_enable of type BlockComponents.Math.Gain
+  engine_enable_overrides = __pop_subcomponent_overrides!(__overrides, "engine_enable")
+  push!(__systems, @named engine_enable = BlockComponents.Math.Gain(; k=engine_enabled, engine_enable_overrides...))
+  # Subcomponent engine_limit of type BlockComponents.Math.Feedback
+  engine_limit_overrides = __pop_subcomponent_overrides!(__overrides, "engine_limit")
+  push!(__systems, @named engine_limit = BlockComponents.Math.Feedback(; engine_limit_overrides...))
   # Subcomponent car of type VehicleSystemsComponents.HandsOn03.TCSCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.HandsOn03.TCSCar(; supply_pressure=supply_pressure, car_overrides...))
-  # Subcomponent tcs of type VehicleSystemsComponents.HandsOn03.TCS
-  tcs_overrides = __pop_subcomponent_overrides!(__overrides, "tcs")
-  push!(__systems, @named tcs = VehicleSystemsComponents.HandsOn03.TCS(; tcs_overrides...))
+  # Subcomponent brake_tcs of type VehicleSystemsComponents.HandsOn03.TCS
+  brake_tcs_overrides = __pop_subcomponent_overrides!(__overrides, "brake_tcs")
+  push!(__systems, @named brake_tcs = VehicleSystemsComponents.HandsOn03.TCS(; brake_tcs_overrides...))
+  # Subcomponent engine_tcs of type VehicleSystemsComponents.HandsOn03.TCSEngine
+  engine_tcs_overrides = __pop_subcomponent_overrides!(__overrides, "engine_tcs")
+  push!(__systems, @named engine_tcs = VehicleSystemsComponents.HandsOn03.TCSEngine(; engine_tcs_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -106,10 +125,15 @@ Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
   ### Equations
   push!(__eqs, connect(throttle.y, car.pedal))
   push!(__eqs, connect(friction.y, car.mu_scale))
-  push!(__eqs, connect(supply.y, tcs.demand))
-  push!(__eqs, connect(car.kappa, tcs.kappa))
-  push!(__eqs, connect(tcs.p_cmd, enable.u))
-  push!(__eqs, connect(enable.y, car.p_cmd))
+  push!(__eqs, connect(supply.y, brake_tcs.demand))
+  push!(__eqs, connect(car.kappa, brake_tcs.kappa, engine_tcs.kappa))
+  push!(__eqs, connect(brake_tcs.p_cmd, brake_enable.u))
+  push!(__eqs, connect(brake_enable.y, car.p_cmd))
+  push!(__eqs, connect(one.y, engine_reduction.u1, engine_limit.u1))
+  push!(__eqs, connect(engine_tcs.u_tcs, engine_reduction.u2))
+  push!(__eqs, connect(engine_reduction.y, engine_enable.u))
+  push!(__eqs, connect(engine_enable.y, engine_limit.u2))
+  push!(__eqs, connect(engine_limit.y, car.u_tcs))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

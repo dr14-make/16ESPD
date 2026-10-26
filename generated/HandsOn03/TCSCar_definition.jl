@@ -21,6 +21,7 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
 ## Connectors
 
  * `pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `u_tcs` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `p_cmd` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `mu_scale` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
@@ -72,6 +73,7 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
 
   ### Final Path Parameters
   append!(__vars, @variables (pedal(t)::Real), [input = true])
+  append!(__vars, @variables (u_tcs(t)::Real), [input = true])
   append!(__vars, @variables (p_cmd(t)::Real), [input = true])
   append!(__vars, @variables (mu_scale(t)::Real), [input = true])
   append!(__vars, @variables (kappa(t)::Real), [output = true])
@@ -85,6 +87,9 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
   __constants = Any[]
 
   ### Components
+  # Subcomponent throttle_limit of type BlockComponents.Math.Min
+  throttle_limit_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_limit")
+  push!(__systems, @named throttle_limit = BlockComponents.Math.Min(; throttle_limit_overrides...))
   # Subcomponent engine of type VehicleSystemsComponents.HandsOn02.MapEngineFuelCut
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
   push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; engine_overrides...))
@@ -139,7 +144,9 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(pedal, engine.pedal, variator.pedal))
+  push!(__eqs, connect(pedal, throttle_limit.u1, variator.pedal))
+  push!(__eqs, connect(u_tcs, throttle_limit.u2))
+  push!(__eqs, connect(throttle_limit.y, engine.pedal))
   push!(__eqs, connect(engine.spline, flywheel.spline_a))
   push!(__eqs, connect(flywheel.spline_b, clutch.spline_a))
   push!(__eqs, connect(clutch.spline_b, variator.spline_a))

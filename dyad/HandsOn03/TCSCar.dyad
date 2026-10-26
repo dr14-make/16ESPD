@@ -5,6 +5,8 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
 component TCSCar
   "Driver's throttle pedal, 0 released to 1 floored"
   pedal = RealInput() {^pedal}
+  "TCS throttle limit, zero to one"
+  u_tcs = RealInput() {^u_tcs}
   "Allowed wheel-circuit pressure"
   p_cmd = RealInput() {^p_cmd}
   "Road-friction multiplier"
@@ -13,6 +15,7 @@ component TCSCar
   kappa = RealOutput() {^kappa}
   "Vehicle speed"
   v = RealOutput() {^v}
+  throttle_limit = BlockComponents.Math.Min() {^throttle_limit}
   engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut() {^engine}
   "Crankshaft and flywheel, J as MappedEngine assumes"
   flywheel = RotationalComponents.Components.Inertia(J = 0.15) {^flywheel}
@@ -37,7 +40,9 @@ component TCSCar
   "Pressure available from the pump and accumulator"
   parameter supply_pressure::Pressure = 8.9e6
 relations
-  connect(pedal, engine.pedal, variator.pedal) {^id1}
+  connect(pedal, throttle_limit.u1, variator.pedal) {^id1}
+  connect(u_tcs, throttle_limit.u2) {^id0}
+  connect(throttle_limit.y, engine.pedal) {^id00}
   connect(engine.spline, flywheel.spline_a) {^id2}
   connect(flywheel.spline_b, clutch.spline_a) {^id3}
   connect(clutch.spline_b, variator.spline_a) {^id4}
@@ -58,6 +63,8 @@ relations
 metadata {
   "_links": {
     "pedal": {"Dyad": {"placement": {"diagram": {"x1": -50, "y1": 50, "x2": 50, "y2": 150}}}},
+    "u_tcs": {"Dyad": {"placement": {"diagram": {"x1": -50, "y1": 180, "x2": 50, "y2": 280}}}},
+    "throttle_limit": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 50, "x2": 130, "y2": 130}}}},
     "engine": {"Dyad": {"placement": {"diagram": {"x1": 90, "y1": 50, "x2": 190, "y2": 150}}}},
     "flywheel": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 50, "x2": 330, "y2": 150}}}},
     "clutch": {"Dyad": {"placement": {"diagram": {"x1": 370, "y1": 50, "x2": 470, "y2": 150}}}},

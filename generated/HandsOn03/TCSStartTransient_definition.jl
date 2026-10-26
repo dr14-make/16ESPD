@@ -25,15 +25,17 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"specialization"::SpecializationLevel.Type = SpecializationLevel.Despecialize()
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
-  var"tcs_enabled"::Float64 = 1.0
-  # Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
+  var"brake_enabled"::Float64 = 1.0
+  var"engine_enabled"::Float64 = 1.0
+  # Whole-car standing start on snow with brake and engine TCS independently selectable.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.TCSStart(; name=:TCSStart)
 end
 
 function DyadInterface.run_analysis(spec::TCSStartTransientSpec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
-  push!(overrides, no_namespace_model.tcs_enabled => spec.var"tcs_enabled")
+  push!(overrides, no_namespace_model.brake_enabled => spec.var"brake_enabled")
+  push!(overrides, no_namespace_model.engine_enabled => spec.var"engine_enabled")
   base_spec = TransientAnalysisSpec(;
     name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
   )
