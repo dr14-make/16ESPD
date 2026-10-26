@@ -100,6 +100,9 @@ Take home: traction control on your whole car, <Link to="bonus-tcs">the bonus ta
 extra points. Next lecture: active and passive safety, including the restraint systems (airbags,
 belt pretensioners).
 
+Coming up with the electric and hybrid drives: **torque vectoring**. With an electric motor in
+each wheel, the car is steered with drive torque instead of the brakes, without losing speed.
+
 </div>
 
 <!--
@@ -115,6 +118,10 @@ in as a pull request from that branch; the guide page says what it must contain.
 
 The notebooks are in the repository, and the reference answers to every build are in
 `dyad/HandsOn03/`.
+
+Torque vectoring closes the loop on ESP: ESP turns the car by braking one wheel, and every
+intervention costs speed. A motor per wheel can push one side and pull the other, the same yaw
+moment without the loss. It needs the electric drives first, so it comes with them.
 -->
 
 ---

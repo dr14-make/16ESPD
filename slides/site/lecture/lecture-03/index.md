@@ -52,6 +52,26 @@ Lecture deck: [front matter](../../lecture-03/index.html#/build-setup){target="_
 
 Today's parts, the brake system, the braked wheels and the pressure integrator, are in the course library. Your `MyCar` needs a version that has them, and the fluid library `HydraulicComponents`.
 
+::: details No MyCar of your own, or yours does not compile? Start from the course's.
+
+Today needs only hands-on 1's car. The course's `MyCar` repository has it at the tag `lecture-03-start`: the finished hands-on 1 car, with nothing of today's work. Fork it and work on your fork; do this before class if you can.
+
+1. On github.com, open [`dr14-make/MyCar`](https://github.com/dr14-make/MyCar) and click **Fork**. Untick **Copy the `main` branch only**, so the fork gets the tag too, then click **Create fork**. The fork is `https://github.com/<you>/MyCar`.
+2. In Studio, press <kbd>F1</kbd> → **Git: Clone**, paste your fork's URL, pick an empty folder, and click **Open** when asked.
+3. Press <kbd>F1</kbd> → **Git: Create Branch From…**, type `lecture-03`, and pick the tag `lecture-03-start` from the list.
+4. In the **Actions** panel's title bar, click **Dyad: Open Julia REPL** and run the lines below. The first download takes a few minutes; wait until it stops printing.
+
+   ```julia
+   using Pkg
+   Pkg.instantiate()
+   ```
+
+5. Go on with step 2 of **Do this** below: your `lecture-03` branch already exists, so skip step 1.
+
+Your commits go to your fork, one per step, and the pull request at the end goes from `lecture-03` to your fork's `main`.
+
+:::
+
 #### Do this
 
 1. In the status bar, click the branch name → **Create new branch…** → `lecture-03`, from `main`. If you finished hands-on 2, branch from where it left you. If not, `main` is enough: today needs only hands-on 1's `Body`.

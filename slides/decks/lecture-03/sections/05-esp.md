@@ -650,8 +650,8 @@ If asked about load transfer: the car has it (task 7), off in every run shown he
 center of gravity 0.55 meters high, a steady 0.39 g left turn moves 1134 newtons off the left
 front and 924 off the left rear onto the right wheels, and the yaw rate changes by only
 0.14 percent, because a tire's cornering stiffness grows with its load. Near the
-limit it matters: the passive car then spins at 270 degrees and plows only at 280. The
-spin-or-plow boundary sits at the top of the test, so the passive 270-degree verdict is not a
+limit it matters: the passive car then oversteers into a spin at 270 degrees and understeers
+only at 280. The oversteer-or-understeer boundary sits at the top of the test, so the passive 270-degree verdict is not a
 robust number. ESP through ABS passes either way.
 -->
 
@@ -775,7 +775,7 @@ class: big-figure
 
 ## Demo: the test on our car, without ESP
 
-![Top view of three runs of the sine-with-dwell from 80 km/h, the car drawn every 0.4 s. At 76 degrees of steering-wheel angle the car follows a smooth lane change and drives on. At 180 degrees it swings out, turns broadside and spins, its path ending near x 94 m, y −9 m, pointing backward. At 270 degrees it runs wider and straighter than asked, the nose plowing, but stays pointing forward.](/figures/05-swd-path.svg)
+![Top view of three runs of the sine-with-dwell from 80 km/h, the car drawn every 0.4 s. At 76 degrees of steering-wheel angle the car follows a smooth lane change and drives on. At 180 degrees it swings out, turns broadside and spins, its path ending near x 94 m, y −9 m, pointing backward. At 270 degrees it understeers, running wider and straighter than asked, but stays pointing forward.](/figures/05-swd-path.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -784,7 +784,10 @@ class: big-figure
 |---|---:|---:|---:|---:|---:|---:|---:|
 | yaw-rate ratio, +1.00 s | 0.00 | 0.00 | 1.37 | 1.01 | 0.93 | 0.85 | 0.00 |
 | largest sideslip $\beta$ | 0.9° | 3.2° | 84° | 83° | 83° | 61° | 5.9° |
-| verdict | pass | pass | **spins** | **spins** | **spins** | **spins** | plows |
+| result | pass | pass | **oversteer** | **oversteer** | **oversteer** | **oversteer** | understeer |
+
+**Oversteer**: the rear lets go and the car spins. **Understeer**: the front lets go and the
+car runs wide.
 
 </div>
 <div>
@@ -808,9 +811,10 @@ dwell at the second peak. The test scales the amplitude by A, the steering-wheel
 or 270 degrees, whichever is larger.
 
 At 76 degrees the car changes lanes and drives on. From 97 to 220 degrees the rear lets go at the
-reversal and the car spins: the sideslip reaches 61 to 84 degrees, and at 97 to 180 degrees it
-ends sliding backward. At 270 degrees it does not spin: the front tires saturate first and the
-car plows, understeer, with a sideslip of only 5.9 degrees. Real test data show the same
+reversal and the car oversteers into a spin: the sideslip reaches 61 to 84 degrees, and at 97 to
+180 degrees it ends sliding backward. At 270 degrees it does not spin: the front tires saturate
+first and the car understeers, runs wide with the nose pushing on, with a sideslip of only 5.9
+degrees. Real test data show the same
 non-monotonic pattern. That 270-degree pass does not save the car: one failed amplitude fails the
 test.
 
@@ -831,7 +835,7 @@ class: big-figure
 <div class="caption">FMVSS 126: 1.00 s after the steering ends the yaw rate must be ≤ 35 % of its peak, after 1.75 s ≤ 20 %</div>
 
 <!--
-Read the bottom panel at the two dotted lines. The stable car's yaw rate is back at zero long
+Read the bottom panel at the two dotted lines. The 76° car's yaw rate is back at zero long
 before them: ratio 0.00. The 180-degree car is still rotating at 48 degrees per second, the same
 as its peak after the reversal: ratio 0.93 at both instants. The steering wheel has been straight
 for a second and the car does not respond to it any more, because the rear tires are sliding.
@@ -1069,7 +1073,7 @@ below 3 meters per second or at 6 seconds; notebook 03, section 6.
 - It corrects by braking single wheels, **inner rear** on understeer, **outer front** on
   oversteer, and by reducing engine torque.
 - Since 2011–2014 it is mandatory on new cars in the US and the EU; the test is the
-  sine-with-dwell. Our planar car **without** ESP spins in it from 97° up; **with** ESP it passes
+  sine-with-dwell. Our planar car **without** ESP oversteers into a spin from 97° up; **with** ESP it passes
   at every amplitude.
 - ESP brakes **through ABS**: no wheel locks, the car keeps ~5 m/s more speed. On split-µ it holds
   the heading, at the cost of stopping distance.

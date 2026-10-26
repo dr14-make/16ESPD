@@ -194,6 +194,62 @@ carry it to the wheel are library parts too: `BrakeLine`, `BrakeCaliper` and
 -->
 
 ---
+routeAlias: fork-mycar
+---
+
+## No `MyCar` of your own? Start from ours
+
+<div class="grid grid-cols-[1.1fr_1fr] gap-8 items-start">
+<div>
+
+Today needs only hands-on 1's car. If yours is missing or broken, fork the course's `MyCar` at
+the tag **`lecture-03-start`**: the finished hands-on 1 car, nothing of today.
+
+1. On github.com, open **`dr14-make/MyCar`** → **Fork**. Untick **Copy the `main` branch
+   only**, then **Create fork**.
+2. In Studio, <kbd>F1</kbd> → **Git: Clone** → paste `https://github.com/<you>/MyCar` → pick an
+   empty folder → **Open**.
+3. <kbd>F1</kbd> → **Git: Create Branch From…** → `lecture-03` → pick the tag
+   `lecture-03-start`.
+4. **Dyad: Open Julia REPL**, then run the lines on the right. Wait until it stops printing.
+5. Go on with **build 00** on the next slide.
+
+</div>
+<div>
+
+```julia
+using Pkg
+Pkg.instantiate()
+```
+
+> **Your own `MyCar` works?** Skip this slide: build 00 branches it from `main`.
+
+**Commits** go to your fork, as before: one per build, then a pull request from `lecture-03`.
+
+[page: step 00](../lecture/lecture-03/#step-00)
+
+</div>
+</div>
+
+<!--
+Two minutes, only for those who need it; ideally they do it before class.
+
+Some students arrive without a working MyCar: they missed hands-on 1, lost the folder, or their car
+does not compile. Lecture 3 needs only hands-on 1's Body, so they can start from the course's own
+MyCar repository. The tag lecture-03-start marks the finished hands-on 1 car, before any of
+today's work: it is the commit the rehearsal branch started from. The answers to today's builds
+are on a separate branch, lecture-03-rehearsal; the tag does not include them.
+
+Fork with "Copy the main branch only" unticked, so the fork has the tag too. Clone the fork, not
+the course repository: the students push their commits and open their pull request there. Git:
+Create Branch From asks for a name, then for the commit to start from; the tag is in that list.
+Pkg.instantiate downloads the packages the project lists, a few minutes the first time.
+
+From there build 00 is the same as for everyone: the course library at the Lecture 3 tag,
+HydraulicComponents, restart the language server, compile.
+-->
+
+---
 routeAlias: build-setup
 ---
 
@@ -209,8 +265,8 @@ routeAlias: build-setup
 </div>
 <div>
 
-*Branch `lecture-03` from `main` · in the REPL, move the course library to the Lecture 3 tag and
-add `HydraulicComponents` · <kbd>F1</kbd> → **Dyad: Restart Language Server**, then
+*Branch `lecture-03` from `main` · in the REPL, move the course library to its tag `lecture-03`
+and add `HydraulicComponents` · <kbd>F1</kbd> → **Dyad: Restart Language Server**, then
 **Dyad: Compile** · **+** → `VehicleSystemsComponents › Vehicle › Wheel` lists `BrakedWheel` and `HydraulicBrakedWheel`*
 
 ```julia
@@ -220,7 +276,7 @@ Pkg.add(url = "https://github.com/dr14-make/16ESPD",
 Pkg.add("HydraulicComponents")
 ```
 
-**Given:** the course library at the Lecture 3 tag · `HydraulicComponents`, the brake fluid's
+**Given:** the course library at the tag `lecture-03` · `HydraulicComponents`, the brake fluid's
 library
 
 [page: step 00](../lecture/lecture-03/#step-00)

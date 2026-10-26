@@ -87,6 +87,10 @@ the second break at 167, 04 at 172, 05 at 184, 06 at 207, end at 210.
   Language Server**: a compile without it flags every library part
   `missing-direct-dependency … not a direct dependency`.
 - "The sections": the right column says which section each build sits in; walk it once.
+- "No `MyCar` of your own?" (`fork-mycar`, before build 00) is for students without a working
+  hands-on 1 car: they fork `dr14-make/MyCar` and branch from the tag `lecture-03-start`, the
+  finished hands-on 1 car (c6d0079). Ask them to do it before class; in the room it costs a few
+  minutes of `Pkg.instantiate`. The answers stay on `lecture-03-rehearsal`, not on the tag.
 - Build 00: wait until most laptops list `BrakedWheel` under **+**. A student without hands-on 2
   branches from `main`; today needs only hands-on 1's `Body`.
 
