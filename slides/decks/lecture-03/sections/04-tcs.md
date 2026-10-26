@@ -39,7 +39,7 @@ It uses the ABS hardware: the same wheel-speed sensors, and the same modulator t
 </div>
 <div>
 
-![The Bosch evolution of driving-safety systems drawn as nested ellipses: ABS inside ASR/TCS inside ESP/ESC.](/pptx/slide19-abs-tcs-esp.jpg)
+![Three nested boxes. ABS, innermost: wheel-speed sensors and valves that hold and dump; holds a braked wheel's slip. TCS or ASR around it adds valves and a pump that build pressure, and the engine torque; holds a driven wheel's slip. ESP or ESC around both adds the steering angle, the yaw rate and the lateral acceleration; holds the car's yaw rate and sideslip.](/diagrams/04-abs-tcs-esp.svg)
 
 <div class="caption">Each system contains the one before it</div>
 
@@ -55,6 +55,12 @@ The sensors are the ABS wheel-speed sensors. The driven wheels are compared with
 ones, which roll freely and so give the car's speed directly: an easier estimation problem than
 ABS has. On an all-wheel-drive car there is no free-rolling wheel, and the car's speed again has
 to be estimated.
+
+The figure: each box is a system, and each contains the one before it. Black text is what a
+system adds to the hardware inside it, orange what it holds near the peak. ABS has the wheel-speed
+sensors and the valves that hold and dump pressure. TCS adds valves and a pump that build pressure
+without the pedal, and a say in the engine torque. ESP adds three sensors: steering angle, yaw
+rate, lateral acceleration.
 
 Bosch introduced TCS in 1986, on top of ABS. By 1990 five Bosch ASR variants were in production,
 some acting only on the engine, two combining brake and throttle, per SAE paper 900204.

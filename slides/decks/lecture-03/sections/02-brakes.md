@@ -30,10 +30,10 @@ routeAlias: lever-and-hydraulics
 
 ## Leverage and hydraulics
 
-<div class="grid grid-cols-3 gap-6">
-<div>
+![Three panels. Lever, times 3.5: a foot force of 100 N on the long arm, 3.5 a from the pivot, gives 350 N at the rod on the short arm a; the foot moves 35 mm, the rod 10 mm; BrakePedal, i_p 3.5. Pascal, times 5.2: the rod pushes a 25 mm piston with 350 N; the pressure, 7.1 bar, is the same everywhere in the fluid and lifts a 57 mm piston with 1820 N; the rod moves 10 mm, the large piston 1.9 mm. Together, times 18: the foot's 100 N on the pedal becomes 350 N at the master cylinder, 7.1 bar in the line and 1820 N at the caliper piston against the disc, with no booster and no springs.](/diagrams/02-lever-hydraulics.svg)
 
-![A lever on a pivot: a force F at the end of the long arm 2X balances a force 2F at the end of the short arm X; the long end moves 2Y while the short end moves Y.](/pptx/slide05-lever.jpg)
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
 
 **Lever.** Force times arm is the same on both sides: twice the arm, twice the force, half the
 travel.
@@ -41,15 +41,11 @@ travel.
 </div>
 <div>
 
-![Hydraulic multiplication: a 2-inch piston pushed down with 100 lb lifts a 6-inch piston with 900 lb; the small piston travels nine times as far.](/pptx/slide05-hydraulic-multiplication.png)
-
 **Hydraulics.** Pressure is the same everywhere in a closed fluid (Pascal):
 $F_2 = F_1 \, A_2 / A_1$. Again paid for in travel.
 
 </div>
 <div>
-
-![A simple brake system: the pedal, a lever with ratio 4x to x, pushes a small piston; a line carries the fluid to a larger caliper piston that moves 3y for the pedal piston's y.](/pptx/slide05-simple-brake-system.png)
 
 **Together.** The pedal multiplies the foot's force, the fluid multiplies it again at each caliper.
 
@@ -62,10 +58,14 @@ distance is the same on both ends. The hydraulic cylinders: pressure is the same
 fluid, so force scales with piston area, and the volume pushed out of the small piston equals the
 volume taken in by the large one, so travel scales the other way.
 
-In the middle figure the large piston has three times the diameter, nine times the area: 100
-pounds become 900, and the small piston moves nine times as far.
-
-The figures are the source deck's, from HowStuffWorks, in inches and pounds.
+The figure uses the model's own sizes, with no booster and no return springs. Left: the pedal
+lever, `BrakePedal`'s ratio i_p of 3.5. The foot's arm is 3.5 a long, the rod's a, so 100
+newtons at the foot become 350 at the rod, and the foot moves 35 millimeters for the rod's 10.
+Middle: the rod pushes the master cylinder's 25 millimeter piston, `TandemMasterCylinder`'s
+bore. 350 newtons on 4.9 square centimeters is 7.1 bar, everywhere in the fluid. The front
+caliper's 57 millimeter piston has 5.2 times the area, 25.5 square centimeters, so it pushes
+with 1820 newtons and moves 1.9 millimeters for the rod's 10. Right: both in series, 3.5 times
+5.2, about 18 times the foot's force at each caliper piston, against the disc.
 
 The travel budget is what limits the pedal ratio. Every millimeter of caliper piston travel costs
 many millimeters of pedal, and the pedal hits the floor. That is why a car has a booster too.
@@ -194,7 +194,7 @@ routeAlias: master-cylinder
 <div class="grid grid-cols-[1fr_1fr] gap-8">
 <div>
 
-![Inside the master cylinder: two reservoirs above one bore holding a primary piston, pushed from the pedal, and a secondary piston with springs, each feeding its own brake line.](/pptx/slide06-master-cylinder.jpg)
+![Section of a tandem master cylinder, not to scale. The pushrod from the booster pushes the primary piston with F_rod into a 25 mm bore; a spring sits between it and the floating secondary piston, a second spring between that piston and the end of the bore. A reservoir with one compartment per circuit feeds each chamber through a compensating port just ahead of the piston seal; the gap from seal to port is the 2.5 mm dead stroke. Circuit 1 leaves the primary chamber, circuit 2 the secondary chamber, both at the same p_mc in steady state; in the model the ports are front and rear. TandemMasterCylinder: spring 138 N, seal 80 N.](/diagrams/02-tandem-master-cylinder.svg)
 
 Two pistons in one bore. The pushrod drives the primary piston; its pressure drives the floating
 secondary piston. In steady state both circuits carry the same pressure:
@@ -229,6 +229,15 @@ counters that pull.
 Read the formula: the pressure p mc, in pascals, is the pushrod force F rod, minus the return
 spring's force F spring and the seal friction F seal, all in newtons, divided by the bore area A
 mc in square meters. It holds in steady state, when the pistons are not accelerating.
+
+The drawing is our model's cylinder, not to scale. The pushrod comes in from the left with
+F_rod, the booster's output. The primary piston, then the primary spring, then the floating
+secondary piston, then the secondary spring against the end of the 25 millimeter bore. Above it
+the reservoir, one compartment per circuit, each joined to its chamber by a small compensating
+port just ahead of the piston's seal: the orange 2.5 millimeters. Circuit 1 leaves the primary
+chamber, circuit 2 the secondary; in our model they are the ports `front` and `rear`, both at
+one `p_mc`. The 138 newtons are the spring preload `F_cs0` and the 80 newtons the seal friction
+`F_cf` in the formula on the slide, both from the PATH test car.
 
 In the model, `TandemMasterCylinder` uses this quasi-static form, with a 25 millimeter
 bore from the PATH test car. Before pressure rises, each piston covers a dead stroke, 2.5
