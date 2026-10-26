@@ -216,7 +216,7 @@ add `HydraulicComponents` · <kbd>F1</kbd> → **Dyad: Restart Language Server**
 ```julia
 using Pkg
 Pkg.add(url = "https://github.com/dr14-make/16ESPD",
-        rev = "TODO-TAG")   # tag not cut yet
+        rev = "lecture-03")
 Pkg.add("HydraulicComponents")
 ```
 
@@ -260,6 +260,6 @@ The common mistake is skipping the second line. Nothing fails yet; build 02 then
 error at the brake fluid, because `HydraulicComponents` is not in `MyCar`. A compile that flags
 every library part `missing-direct-dependency` means the language server was not restarted.
 
-TODO before the lecture: replace TODO-TAG with the tag cut from main, here and on the guide page. If the tag carries the planar car's MultibodyComponents, ask the
+`lecture-03` is the library's tag for this lecture, cut from main. If it carries the planar car's MultibodyComponents, ask the
 students to run this step before the lecture: the first compile then takes about a minute longer.
 -->

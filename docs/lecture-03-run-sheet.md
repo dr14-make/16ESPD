@@ -39,8 +39,8 @@ the second break at 167, 04 at 172, 05 at 184, 06 at 207, end at 210.
 - Run steps 02–04 once before class from the reference (`HandsOn03.PedalStopTransient`,
   `ABSStopTransient`, `ABSStopWheelOnlyTransient`) so the library is compiled, and keep the REPL
   open.
-- Step 00 needs the course-library tag (`TODO-TAG` on the build 00 slide and the guide page). A tag
-  cut from this branch carries the planar car's `MultibodyComponents`, so ask the students to run
+- Step 00 needs the course-library tag `lecture-03`, on the build 00 slide and the guide page, cut
+  from main. It carries the planar car's `MultibodyComponents`, so ask the students to run
   step 00 before the lecture: the first compile then takes about a minute longer.
 - The ABS figures are committed; nothing in the theory has to run. Notebook 01 open in Pluto is
   optional, for a question about `a_ref` (its slider).

@@ -542,7 +542,7 @@ numbers. The hand-over slide became "What you measured", one row per step.
 
 | Slot | Where | Filled by |
 |---|---|---|
-| Course-library tag | step 00 (`TODO-TAG` on the deck and the guide) | H5 |
+| Course-library tag | step 00 (`lecture-03` on the deck and the guide) | H5 |
 | ~~Run A distance, sliding share, cycle frequency; run C cycle frequency~~ | step 03 | H2, filled |
 | ~~Wheel-only column and the `a_ref = 2.4` run~~ | steps 04, 05 | H3, filled |
 | TCS figures | step 06 | H6 |

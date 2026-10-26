@@ -59,11 +59,9 @@ Today's parts, the brake system, the braked wheels and the pressure integrator, 
 
    ```julia
    using Pkg
-   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "TODO-TAG")
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-03")
    Pkg.add("HydraulicComponents")
    ```
-
-   <!-- TODO: replace TODO-TAG with the tag cut from main, here and on the deck's build 00 slide. -->
 
 3. <kbd>F1</kbd> → **Dyad: Restart Language Server**. The language server read your `Project.toml` when Studio started; until it restarts, the next compile flags every library part with `missing-direct-dependency … not a direct dependency`.
 4. <kbd>F1</kbd> → **Dyad: Compile**.
