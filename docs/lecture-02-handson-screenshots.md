@@ -43,16 +43,16 @@ Plotly. At 990 × 528, GR clips the axis labels without `margin = 5Plots.mm`.
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step02-manifold-code.png` | `HandsOn02.Manifold`, code view | The whole component: three inputs, `p_m` output, `V_m`, `T_m`, `R`, and the one `der(p)` equation. |
-| `step02-airpath-bench.png` | `HandsOn02.AirPathStep` | `throttle_cmd` → `throttle`, `speed` → `cylinders.omega`, `no_booster` → `manifold.mdot_bst`, the three flow wires into `manifold`, and `manifold.p_m` fed back to `throttle` and `cylinders`. |
+| `step02-manifold-code.png` | `HandsOn02.Manifold`, code view | The whole component: inputs `mdot_thr` and `mdot_cyl`, the `vacuum` `GasPort`, `p_m` output, `V_m`, `T_m`, `R`, and the one `der(p)` equation. |
+| `step02-airpath-bench.png` | `HandsOn02.AirPathStep` | `throttle_cmd` → `throttle`, `speed` → `cylinders.omega`, `manifold.vacuum` unconnected, the two flow wires into `manifold`, and `manifold.p_m` fed back to `throttle` and `cylinders`. |
 | `step02-idle-plot.png` | `HandsOn02.AirPathStepTransient`, idle | `manifold.p_m` in kPa falling from 101.3 to 33.0 over the first second. |
 
 ## Step 03 — map engine on a dynamometer
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step03-map-engine.png` | `HandsOn02.MapEngine` | The diagram students draw: ports `pedal` and `mdot_bst` on the left; `air`, `speed`, `torque_map` above `fuel_map`, `torque`, `co2`; the speed wires from `speed.w` and the pressure wires from `air.p_m` fanning out to both maps; `spline`, `support`, `mdot_fuel`, `mdot_co2`, `p_m` on the right edge. |
-| `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | Laid out left to right, no labels overlapping. `pedal` step and `no_booster` → `engine`, `speed` → `dyno`, `engine.spline` → `dyno`, both supports to `mounts`. |
+| `step03-map-engine.png` | `HandsOn02.MapEngine` | The diagram students draw: ports `pedal` and the `vacuum` hose on the left; `air`, `speed`, `torque_map` above `fuel_map`, `torque`, `co2`; the speed wires from `speed.w` and the pressure wires from `air.p_m` fanning out to both maps; `spline`, `support`, `mdot_fuel`, `mdot_co2`, `p_m` on the right edge. |
+| `step03-dyno-bench.png` | `HandsOn02.MapEngineDyno` | Laid out left to right, no labels overlapping. `pedal` step → `engine`, `engine.vacuum` unconnected, `speed` → `dyno`, `engine.spline` → `dyno`, both supports to `mounts`. |
 | `step03-step-plot.png` | `HandsOn02.MapEngineDynoTransient`, defaults | Two axes, one time base: `engine.p_m` 47.8 → 52.9 kPa and `engine.torque_map.y` 31.1 → 41.4 N·m, zoomed to 0.9–1.3 s so the 50 ms lag shows. |
 | `step03-map-engine-fuel-cut.png` | `HandsOn02.MapEngineFuelCut` | The engine after the fuel-cut paste: `cut_logic` at the bottom left, its output into both maps from below. A `dyad render` of the reference (dyad-cli 3.4.0), rasterized and trimmed, not a Studio shot: the CLI draws no port labels. |
 | `step03-dyno-bench-fuel-cut.png` | `HandsOn02.MapEngineFuelCutDyno` | The bench after the paste, `speed` a ramp. A `dyad render`, as above. |
@@ -62,7 +62,7 @@ Plotly. At 990 × 528, GR clips the axis labels without `margin = 5Plots.mm`.
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step04-mapped-car.png` | `HandsOn02.MappedCar` | `pedal` input → `engine` (the student's `MapEngine`) and → `driveline.pedal`; `engine` → `flywheel` → `driveline` (the given `CVTDriveline`) → `body` → `vsensor` → `to_kmh` in one row; `no_booster` → `engine.mdot_bst`; outputs `v_kmh`, `p_m`, `fuel_lph` on the right edge; the grounds. Before step 06 adds the brake. A `dyad render` (dyad-cli 3.4.0), rasterized and trimmed, as step 03 E. |
+| `step04-mapped-car.png` | `HandsOn02.MappedCar` | `pedal` input → `engine` (the student's `MapEngine`) and → `driveline.pedal`; `engine` → `flywheel` → `driveline` (the given `CVTDriveline`) → `body` → `vsensor` → `to_kmh` in one row; `engine.vacuum` unconnected; outputs `v_kmh`, `p_m`, `fuel_lph` on the right edge; the grounds. Before step 06 adds the brake. A `dyad render` (dyad-cli 3.4.0), rasterized and trimmed, as step 03 E. |
 | `step04-wot-plot.png` | `HandsOn02.MappedCarWOTTransient` | Two axes over 120 s: `car.v_kmh` from rest to 205 km/h with a dashed line at 246 km/h for hands-on 1's car; engine speed in rpm, held at 1300 rpm while the clutch slips, peaking at 6390 rpm below a dashed 6500 rpm limiter, settling at 6000. |
 
 ## Step 05 — cruise

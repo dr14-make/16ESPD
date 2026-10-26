@@ -41,6 +41,7 @@ component VacuumPedalStop
   speed = BlockComponents.Sources.Constant(k = engine_on * omega_e) {^speed}
   air = VehicleSystemsComponents.Vehicle.Engine.AirPath() {^air}
   pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(p_init = p_start) {^pump}
+  source = VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector(use_pump = ev_pump) {^source}
   pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
   booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(p_init = p_start) {^booster}
   master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
@@ -68,9 +69,9 @@ relations
   connect(throttle.y, air.u_thr) {^id12}
   connect(speed.y, air.omega) {^id13}
   connect(booster.p_vac, pump.p_sense) {^id14}
-  booster.p_src = ifelse(ev_pump > 0.5, pump.p, air.p_m)
-  air.mdot_bst = ifelse(ev_pump > 0.5, 0.0, booster.mdot_out)
-  pump.mdot_in = ifelse(ev_pump > 0.5, booster.mdot_out, 0.0)
+  connect(booster.vacuum, source.booster) {^id15}
+  connect(source.manifold, air.vacuum) {^id16}
+  connect(source.pump, pump.vacuum) {^id17}
   initial air.manifold.p = ifelse(engine_on > 0.5, 32955.7, p_atm)
   initial wheel.inertia.phi = 0
   initial wheel.inertia.w = 25 / 0.31
@@ -84,6 +85,7 @@ metadata {
     "speed": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 105, "x2": 80, "y2": 185}}}},
     "air": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 35, "x2": 185, "y2": 115}}}},
     "pump": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 95, "x2": 410, "y2": 175}}}},
+    "source": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 170, "x2": 260, "y2": 230}}}},
     "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 235, "x2": 185, "y2": 315}}}},
     "booster": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 235, "x2": 290, "y2": 315}}}},
     "master": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 235, "x2": 410, "y2": 315}}}},
@@ -107,7 +109,10 @@ metadata {
     "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 890, "y": 230}, {"x": 997, "y": 230}, {"x": 997, "y": 285}], "E": 2}, {"S": -1, "M": [{"x": 890, "y": 425}], "E": 3}], "junctions": [{"x": 890, "y": 285}]}},
     "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 94, "y": 0}, {"x": 94, "y": 51}], "E": 2}]}},
     "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 94, "y": 145}, {"x": 94, "y": 99}], "E": 2}]}},
-    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 80}, {"x": 370, "y": 80}], "E": 2}]}}
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 225}, {"x": 420, "y": 225}, {"x": 420, "y": 80}, {"x": 370, "y": 80}], "E": 2}]}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -15, "y": 200}, {"x": -15, "y": 75}], "E": 2}]}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 200}, {"x": 300, "y": 135}], "E": 2}]}}
   }
 }
 end

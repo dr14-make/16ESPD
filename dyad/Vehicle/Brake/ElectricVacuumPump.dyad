@@ -2,25 +2,23 @@
 Electric vane vacuum pump with its suction hose, for a booster with no manifold vacuum: a diesel,
 an unthrottled petrol engine, a hybrid or an EV.
 
-The booster's check valve feeds `mdot_in` into the hose, whose pressure `p` is the booster's
-`p_src`. The booster's vacuum sensor `p_sense` runs the pump through a continuous latch: on above
-`p_on`, off below `p_off`. The switch reads the booster, not the hose, because the hose follows
-the pump within milliseconds and would rebound past `p_off` as the pump slows, so the latch
-would chatter. Running, the pump moves a constant volume flow `Q` down to its ultimate pressure
+The booster's check valve feeds air into the hose through `vacuum`, and the hose pressure `p_h`
+is what the check valve sees. The booster's vacuum sensor `p_sense` runs the pump through a
+continuous latch: on above `p_on`, off below `p_off`. The switch reads the booster, not the
+hose, because the hose follows the pump within milliseconds and would rebound past `p_off` as the
+pump slows, so the latch would chatter. Running, the pump moves a constant volume flow `Q` down to its ultimate pressure
 `p_min`:
 
-    mdot_pump = Q / (R T) · max(p - p_min, 0) · y
+    mdot_pump = Q / (R T) · max(p_h - p_min, 0) · y
 
 Q and p_min come from Hella's UP28 data, which evacuates 3.2 L to 500 mbar in 5.5–6 s and reaches
 at least 86 % vacuum. The switch points are the aftermarket 18 and 25 inHg of vacuum.
 """
 component ElectricVacuumPump
-  "Air mass flow into the hose from the booster's check valve [kg/s]"
-  mdot_in = RealInput() {^mdot_in}
+  "Hose from the booster's check valve"
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Booster vacuum-sensor pressure [Pa]"
   p_sense = RealInput() {^p_sense}
-  "Hose absolute pressure, the booster's vacuum source [Pa]"
-  p = RealOutput() {^p}
   "Pump on/off state, 0 to 1"
   running = RealOutput() {^running}
   "Displaced volume flow [m^3/s] (derived from Hella UP28)"
@@ -53,16 +51,15 @@ relations
   request = ifelse(y < 0.5, ifelse(p_sense > p_on, 1.0, 0.0), ifelse(p_sense < p_off, 0.0, 1.0))
   der(y) = (request - y) / T_latch
   mdot_pump = Q / (R * T) * max(p_h - p_min, 0.0) * y
-  V_h / (R * T) * der(p_h) = mdot_in - mdot_pump
-  p = p_h
+  V_h / (R * T) * der(p_h) = vacuum.mdot - mdot_pump
+  vacuum.p = p_h
   running = y
   initial p_h = p_init
   initial y = ifelse(p_init > p_on, 1.0, 0.0)
 metadata {
   "_links": {
-    "mdot_in": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "p_sense": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
-    "p": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "running": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
   }
 }

@@ -29,4 +29,5 @@ include("TestForceChain_test.jl")
 include("TestHydraulicStop_test.jl")
 include("TestVacuumBooster_test.jl")
 include("VacuumBooster_test.jl")
+include("VacuumSourceSelector_test.jl")
 end

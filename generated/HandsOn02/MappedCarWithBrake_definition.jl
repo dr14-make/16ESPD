@@ -81,9 +81,6 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
   # Subcomponent flywheel of type RotationalComponents.Components.Inertia
   flywheel_overrides = __pop_subcomponent_overrides!(__overrides, "flywheel")
   push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, flywheel_overrides...))
-  # Subcomponent no_booster of type BlockComponents.Sources.Constant
-  no_booster_overrides = __pop_subcomponent_overrides!(__overrides, "no_booster")
-  push!(__systems, @named no_booster = BlockComponents.Sources.Constant(; k=Float64(0), no_booster_overrides...))
   # Subcomponent to_lph of type BlockComponents.Math.Gain
   to_lph_overrides = __pop_subcomponent_overrides!(__overrides, "to_lph")
   push!(__systems, @named to_lph = BlockComponents.Math.Gain(; k=4832.2, to_lph_overrides...))
@@ -122,7 +119,6 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
   ### Equations
   push!(__eqs, connect(pedal, engine.pedal))
   push!(__eqs, connect(pedal, driveline.pedal))
-  push!(__eqs, connect(no_booster.y, engine.mdot_bst))
   push!(__eqs, connect(engine.spline, flywheel.spline_a))
   push!(__eqs, connect(flywheel.spline_b, driveline.spline))
   push!(__eqs, connect(engine.support, rot_ground.spline))
