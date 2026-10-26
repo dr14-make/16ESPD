@@ -32,7 +32,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # flywheel and the CVT driving the hydraulic braked wheel, with Hands-on 03 step 03's ABS added as
   # `ABSStop` adds it: a `Vehicle.Brake.ABSValve` in each brake line, both commanded by
   # `HandsOn03.SlipABS` from the wheel slip, the car's speed and the master-cylinder pressure. The
-  # booster draws its vacuum from the engine's intake manifold, as in `FullCarVacuumStop`.
+  # valves return the fluid they dump to the master cylinder, an ideal return pump, so a long low-µ
+  # stop does not walk the pedal and booster to the end of their stroke. The booster draws its vacuum
+  # from the engine's intake manifold, as in `FullCarVacuumStop`.
   # 
   # The car cruises steadily at `speed_kmh` with the throttle pedal at `pedal_cmd`. At `brake_time`
   # the driver lifts off and the brake pedal steps to `pedal`, which locks the wheel without ABS.

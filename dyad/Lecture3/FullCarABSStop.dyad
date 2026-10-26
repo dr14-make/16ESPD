@@ -3,7 +3,9 @@ Lecture 3 whole-car ABS stop: `FullCarVacuumStop`, the Hands-on 02 map engine wi
 flywheel and the CVT driving the hydraulic braked wheel, with Hands-on 03 step 03's ABS added as
 `ABSStop` adds it: a `Vehicle.Brake.ABSValve` in each brake line, both commanded by
 `HandsOn03.SlipABS` from the wheel slip, the car's speed and the master-cylinder pressure. The
-booster draws its vacuum from the engine's intake manifold, as in `FullCarVacuumStop`.
+valves return the fluid they dump to the master cylinder, an ideal return pump, so a long low-µ
+stop does not walk the pedal and booster to the end of their stroke. The booster draws its vacuum
+from the engine's intake manifold, as in `FullCarVacuumStop`.
 
 The car cruises steadily at `speed_kmh` with the throttle pedal at `pedal_cmd`. At `brake_time`
 the driver lifts off and the brake pedal steps to `pedal`, which locks the wheel without ABS.
@@ -49,8 +51,8 @@ component FullCarABSStop
   pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
   booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(p_init = p_vac0) {^booster}
   master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
-  valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_f}
-  valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_r}
+  valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(return_dump = 1) {^valve_f}
+  valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(return_dump = 1) {^valve_r}
   line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
   line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
   abs = VehicleSystemsComponents.HandsOn03.SlipABS(T_p = T_p, lambda_target = lambda_target) {^abs}
@@ -159,10 +161,7 @@ end
 Dry-road stop of `FullCarABSStop` from the 90 km/h cruise at the pedal that locks the wheel
 without ABS. Pass `abs_on = 0` for the locked stop, and on a low-µ road a longer `stop`.
 
-Tsit5 with dtmax 1 ms, as `ABSStopTransient`: the valves are not stiff. ABSValve discards the fluid
-it dumps, so each cycle pushes the pedal, booster and master cylinder further. At `road_mu = 0.5`
-about half the booster's stroke is left at rest; at 0.3 the diaphragm reaches the end of its stroke
-6.6 s into the stop and the run fails.
+Tsit5 with dtmax 1 ms, as `ABSStopTransient`: the valves are not stiff.
 """
 analysis FullCarABSStopTransient
   extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
