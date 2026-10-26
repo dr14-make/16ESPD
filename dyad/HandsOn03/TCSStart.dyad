@@ -1,0 +1,70 @@
+"""Whole-car standing start on snow with brake and engine TCS independently selectable."""
+component TCSStart
+  "Set to one to enable brake intervention"
+  parameter brake_enabled::Real = 1.0
+  "Set to one to enable engine intervention"
+  parameter engine_enabled::Real = 1.0
+  "Pump and accumulator supply pressure"
+  parameter supply_pressure::Pressure = 8.9e6
+  "Throttle floored from idle"
+  throttle = BlockComponents.Sources.Step(height = 1.0, offset = 0.0, start_time = 0.0) {^throttle}
+  one = BlockComponents.Sources.Constant(k = 1.0) {^one}
+  friction = BlockComponents.Sources.Constant(k = 0.2) {^friction}
+  supply = BlockComponents.Sources.Constant(k = supply_pressure) {^supply}
+  brake_enable = BlockComponents.Math.Gain(k = brake_enabled) {^brake_enable}
+  engine_reduction = BlockComponents.Math.Feedback() {^engine_reduction}
+  engine_enable = BlockComponents.Math.Gain(k = engine_enabled) {^engine_enable}
+  engine_limit = BlockComponents.Math.Feedback() {^engine_limit}
+  car = TCSCar(supply_pressure = supply_pressure) {^car}
+  brake_tcs = TCS() {^brake_tcs}
+  engine_tcs = TCSEngine() {^engine_tcs}
+relations
+  connect(throttle.y, car.pedal) {^id0}
+  connect(friction.y, car.mu_scale) {^id1}
+  connect(supply.y, brake_tcs.demand) {^id2}
+  connect(car.kappa, brake_tcs.kappa, engine_tcs.kappa) {^id3}
+  connect(brake_tcs.p_cmd, brake_enable.u) {^id4}
+  connect(brake_enable.y, car.p_cmd) {^id5}
+  connect(one.y, engine_reduction.u1, engine_limit.u1) {^id6}
+  connect(engine_tcs.u_tcs, engine_reduction.u2) {^id7}
+  connect(engine_reduction.y, engine_enable.u) {^id8}
+  connect(engine_enable.y, engine_limit.u2) {^id9}
+  connect(engine_limit.y, car.u_tcs) {^id10}
+  initial car.wheel.inertia.phi = 0.0
+  initial car.wheel.inertia.w = 0.0
+  initial car.body.mass.s = 0.0
+  initial car.body.mass.v = 0.0
+  initial car.flywheel.w = 900 * pi / 30
+  initial car.flywheel.phi = 0.0
+  initial car.clutch.spline_b.phi = 0.0
+  initial car.engine.air.manifold.p = 101325.0
+metadata {
+  "_links": {
+    "throttle": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 120, "y1": 80, "y2": 160}}}},
+    "one": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 120, "y1": 250, "y2": 330}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 40, "x2": 120, "y1": 500, "y2": 580}}}},
+    "friction": {"Dyad": {"placement": {"diagram": {"x1": 700, "x2": 780, "y1": 800, "y2": 880}}}},
+    "engine_tcs": {"Dyad": {"placement": {"diagram": {"x1": 180, "x2": 280, "y1": 200, "y2": 300}}}},
+    "engine_reduction": {"Dyad": {"placement": {"diagram": {"x1": 340, "x2": 420, "y1": 200, "y2": 280}}}},
+    "engine_enable": {"Dyad": {"placement": {"diagram": {"x1": 470, "x2": 550, "y1": 200, "y2": 280}}}},
+    "engine_limit": {"Dyad": {"placement": {"diagram": {"x1": 600, "x2": 680, "y1": 200, "y2": 280}}}},
+    "brake_tcs": {"Dyad": {"placement": {"diagram": {"x1": 260, "x2": 360, "y1": 500, "y2": 600}}}},
+    "brake_enable": {"Dyad": {"placement": {"diagram": {"x1": 440, "x2": 520, "y1": 510, "y2": 590}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 760, "x2": 880, "y1": 400, "y2": 520}}}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 920, "y": 420}, {"x": 920, "y": 350}, {"x": 230, "y": 350}], "E": -1}, {"S": -1, "M": [{"x": 230, "y": 550}], "E": 2}, {"S": -1, "M": [{"x": 230, "y": 250}], "E": 3}], "junctions": [{"x": 230, "y": 350}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 550}, {"x": 650, "y": 470}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 720, "y": 240}, {"x": 720, "y": 430}], "E": 2}]}}
+  }
+}
+end
+
+analysis TCSStartTransient
+  extends TransientAnalysis(stop = 10.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3, abstol = 1e-5, reltol = 1e-5)
+  parameter brake_enabled::Real = 1.0
+  parameter engine_enabled::Real = 1.0
+  model = TCSStart(brake_enabled = brake_enabled, engine_enabled = engine_enabled)
+end
