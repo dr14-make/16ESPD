@@ -4,12 +4,15 @@ component TCSStart
   parameter tcs_enabled::Real = 1.0
   "Pump and accumulator supply pressure"
   parameter supply_pressure::Pressure = 8.9e6
+  "Throttle floored from idle"
+  throttle = BlockComponents.Sources.Step(height = 1.0, offset = 0.0, start_time = 0.0) {^throttle}
   friction = BlockComponents.Sources.Constant(k = 0.2) {^friction}
   supply = BlockComponents.Sources.Constant(k = supply_pressure) {^supply}
   enable = BlockComponents.Math.Gain(k = tcs_enabled) {^enable}
   car = TCSCar(supply_pressure = supply_pressure) {^car}
   tcs = TCS() {^tcs}
 relations
+  connect(throttle.y, car.pedal) {^id0}
   connect(friction.y, car.mu_scale) {^id1}
   connect(supply.y, tcs.demand) {^id2}
   connect(car.kappa, tcs.kappa) {^id3}
@@ -19,13 +22,19 @@ relations
   initial car.wheel.inertia.w = 0.0
   initial car.body.mass.s = 0.0
   initial car.body.mass.v = 0.0
+  initial car.flywheel.w = 900 * pi / 30
+  initial car.flywheel.phi = 0.0
+  initial car.clutch.spline_b.phi = 0.0
+  initial car.engine.air.manifold.p = 101325.0
 metadata {
   "_links": {
+    "throttle": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 200, "y2": 300}}}},
     "friction": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 700, "y2": 800}}}},
     "supply": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 450, "y2": 550}}}},
     "tcs": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 400, "y2": 500}}}},
     "enable": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 400, "y2": 500}}}},
     "car": {"Dyad": {"placement": {"diagram": {"x1": 760, "x2": 860, "y1": 400, "y2": 500}}}},
+    "id0": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 250}, {"x": 500, "y": 420}], "E": 2}]}},
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 690, "y": 750}, {"x": 690, "y": 475}], "E": 2}]}},
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 280, "y": 500}, {"x": 280, "y": 470}], "E": 2}]}},
     "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 910, "y": 425}, {"x": 910, "y": 250}, {"x": 300, "y": 250}, {"x": 300, "y": 430}], "E": 2}]}},
@@ -36,7 +45,7 @@ metadata {
 end
 
 analysis TCSStartTransient
-  extends TransientAnalysis(stop = 10.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  extends TransientAnalysis(stop = 10.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3, abstol = 1e-5, reltol = 1e-5)
   parameter tcs_enabled::Real = 1.0
   model = TCSStart(tcs_enabled = tcs_enabled)
 end

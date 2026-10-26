@@ -66,6 +66,9 @@ Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
   __constants = Any[]
 
   ### Components
+  # Subcomponent throttle of type BlockComponents.Sources.Step
+  throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
+  push!(__systems, @named throttle = BlockComponents.Sources.Step(; height=Float64(1.0), offset=Float64(0.0), start_time=Float64(0.0), throttle_overrides...))
   # Subcomponent friction of type BlockComponents.Sources.Constant
   friction_overrides = __pop_subcomponent_overrides!(__overrides, "friction")
   push!(__systems, @named friction = BlockComponents.Sources.Constant(; k=0.2, friction_overrides...))
@@ -92,11 +95,16 @@ Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
   push!(__initialization_eqs, car.wheel.inertia.w ~ 0.0)
   push!(__initialization_eqs, car.body.mass.s ~ 0.0)
   push!(__initialization_eqs, car.body.mass.v ~ 0.0)
+  push!(__initialization_eqs, car.flywheel.w ~ 900 * pi / 30)
+  push!(__initialization_eqs, car.flywheel.phi ~ 0.0)
+  push!(__initialization_eqs, car.clutch.spline_b.phi ~ 0.0)
+  push!(__initialization_eqs, car.engine.air.manifold.p ~ 101325.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(throttle.y, car.pedal))
   push!(__eqs, connect(friction.y, car.mu_scale))
   push!(__eqs, connect(supply.y, tcs.demand))
   push!(__eqs, connect(car.kappa, tcs.kappa))

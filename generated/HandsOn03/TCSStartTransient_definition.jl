@@ -13,8 +13,8 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"alg"::ODEAlg.Type = ODEAlg.Tsit5()
   var"start"::Float64 = 0
   var"stop"::Float64 = 10.0
-  var"abstol"::Float64 = 0.000001
-  var"reltol"::Float64 = 0.000001
+  var"abstol"::Float64 = 0.00001
+  var"reltol"::Float64 = 0.00001
   var"saveat"::Float64 = 0
   var"dtmax"::Float64 = 0.001
   var"tstops"::Array{Float64, 1} = []

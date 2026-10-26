@@ -5,30 +5,28 @@
 
 
 @doc Markdown.doc"""
-   TCSCar(; name, drive_torque, gear_ratio, J_w, m, g, supply_pressure)
+   TCSCar(; name, m, g, supply_pressure)
 
-Driven wheel, body, and the two hydraulic brake circuits from the hands-on ABS bench. A prescribed
-pressure boundary represents the ABS return pump and accumulator.
+Whole-car TCS plant: the hands-on 02 mapped engine, launch clutch and CVT drive the hands-on 03
+hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump and accumulator.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `drive_torque`         | Engine torque before the final drive                         | N.m  |   150.0 |
-| `gear_ratio`         | Final-drive ratio                         | --  |   4.0 |
-| `J_w`         | Road wheel and tire inertia                         | kg.m2  |   1.0 |
 | `m`         | Vehicle mass; the driven axle carries half of it                         | kg  |   1400.0 |
 | `g`         | Gravitational acceleration                         | m/s2  |   9.80665 |
 | `supply_pressure`         | Pressure available from the pump and accumulator                         | Pa  |   8.9e6 |
 
 ## Connectors
 
+ * `pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `p_cmd` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `mu_scale` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function TCSCar(; name = nothing, drive_torque=Float64(150.0), gear_ratio=Float64(4.0), J_w=Float64(1.0), m=Float64(1400.0), g=9.80665, supply_pressure=Float64(8900000.0), medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
+@component function TCSCar(; name = nothing, m=Float64(1400.0), g=9.80665, supply_pressure=Float64(8900000.0), medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -60,15 +58,6 @@ pressure boundary represents the ABS return pump and accumulator.
   ### Deferred assignment (default values that depend on final parameters)
 
   ### Symbolic Parameters
-  __local__drive_torque = drive_torque
-  append!(__params, @parameters (drive_torque::Real), [description = "Engine torque before the final drive"])
-  __initial_conditions[drive_torque] = __local__drive_torque
-  __local__gear_ratio = gear_ratio
-  append!(__params, @parameters (gear_ratio::Real), [description = "Final-drive ratio"])
-  __initial_conditions[gear_ratio] = __local__gear_ratio
-  __local__J_w = J_w
-  append!(__params, @parameters (J_w::Real), [description = "Road wheel and tire inertia"])
-  __initial_conditions[J_w] = __local__J_w
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass; the driven axle carries half of it", bounds = (0, Inf)])
   __initial_conditions[m] = __local__m
@@ -82,6 +71,7 @@ pressure boundary represents the ABS return pump and accumulator.
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (pedal(t)::Real), [input = true])
   append!(__vars, @variables (p_cmd(t)::Real), [input = true])
   append!(__vars, @variables (mu_scale(t)::Real), [input = true])
   append!(__vars, @variables (kappa(t)::Real), [output = true])
@@ -95,18 +85,21 @@ pressure boundary represents the ABS return pump and accumulator.
   __constants = Any[]
 
   ### Components
-  # Subcomponent command of type BlockComponents.Sources.Step
-  command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Step(; height=drive_torque, offset=Float64(0.0), start_time=Float64(0.0), command_overrides...))
+  # Subcomponent engine of type VehicleSystemsComponents.HandsOn02.MapEngineFuelCut
+  engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
+  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; engine_overrides...))
+  # Subcomponent flywheel of type RotationalComponents.Components.Inertia
+  flywheel_overrides = __pop_subcomponent_overrides!(__overrides, "flywheel")
+  push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, flywheel_overrides...))
+  # Subcomponent clutch of type VehicleSystemsComponents.Vehicle.CentrifugalClutch
+  clutch_overrides = __pop_subcomponent_overrides!(__overrides, "clutch")
+  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; clutch_overrides...))
+  # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
+  variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
+  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; variator_overrides...))
   # Subcomponent supply_command of type BlockComponents.Sources.Constant
   supply_command_overrides = __pop_subcomponent_overrides!(__overrides, "supply_command")
   push!(__systems, @named supply_command = BlockComponents.Sources.Constant(; k=supply_pressure, supply_command_overrides...))
-  # Subcomponent drive of type RotationalComponents.Sources.TorqueSource
-  drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
-  push!(__systems, @named drive = RotationalComponents.Sources.TorqueSource(; drive_overrides...))
-  # Subcomponent gear of type RotationalComponents.Components.IdealGear
-  gear_overrides = __pop_subcomponent_overrides!(__overrides, "gear")
-  push!(__systems, @named gear = RotationalComponents.Components.IdealGear(; ratio=gear_ratio, gear_overrides...))
   # Subcomponent supply of type HydraulicComponents.Sources.BoundaryPressure
   supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
   push!(__systems, @named supply = HydraulicComponents.Sources.BoundaryPressure(; continuity__graph0=medium, supply_overrides...))
@@ -124,13 +117,13 @@ pressure boundary represents the ABS return pump and accumulator.
   push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, line_r_overrides...))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; J_w=J_w, F_z=m * g / 2, continuity__graph0=medium, continuity__graph1=medium, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; F_z=m * g / 2, continuity__graph0=medium, continuity__graph1=medium, wheel_overrides...))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
   push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; m=m, g=g, body_overrides...))
-  # Subcomponent fixed of type RotationalComponents.Components.Fixed
-  fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  # Subcomponent housing of type RotationalComponents.Components.Fixed
+  housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
+  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; housing_overrides...))
   # Subcomponent speed of type TranslationalComponents.Sensors.VelocitySensor
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
   push!(__systems, @named speed = TranslationalComponents.Sensors.VelocitySensor(; speed_overrides...))
@@ -146,10 +139,12 @@ pressure boundary represents the ABS return pump and accumulator.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(command.y, drive.tau))
-  push!(__eqs, connect(drive.spline, gear.spline_a))
-  push!(__eqs, connect(gear.spline_b, wheel.spline))
-  push!(__eqs, connect(drive.support, gear.support, wheel.support, fixed.spline))
+  push!(__eqs, connect(pedal, engine.pedal, variator.pedal))
+  push!(__eqs, connect(engine.spline, flywheel.spline_a))
+  push!(__eqs, connect(flywheel.spline_b, clutch.spline_a))
+  push!(__eqs, connect(clutch.spline_b, variator.spline_a))
+  push!(__eqs, connect(variator.spline_b, wheel.spline))
+  push!(__eqs, connect(engine.support, clutch.support, variator.support, wheel.support, housing.spline))
   push!(__eqs, connect(supply_command.y, supply.p))
   push!(__eqs, connect(supply.port, valve_f.port_a, valve_r.port_a))
   push!(__eqs, connect(valve_f.port_b, line_f.port_a))
