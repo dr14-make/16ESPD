@@ -96,6 +96,12 @@ the second break at 161, 04 at 166, 05 at 176, 06 at 199, end at 202.
   cornering limit 2, a locked wheel does not steer 2, summary 1.
 - The static/kinetic block pictures were folded out; draw the friction-against-push curve on the
   board only if asked.
+- The tire curve (`tire-is-not-a-block`): lead with $F_x = \mu(\kappa)\,F_z$. The curve is a
+  ceiling, not what the tire gives: the tire slips just enough to supply the force asked of it.
+  The plots show driving slip; braking is the mirror at negative slip, so say that. The right
+  panel is Lecture 1's standing starts; if asked why dry sat low on the rising side (κ = 0.0076),
+  the motor asked for only about 0.28 of the load. Snow went over its 0.2 peak and spun, so its
+  κ = 147 is wheelspin; braking slip stops at −1.
 - Build 01 is paper or REPL. Wait for 4256 N·m from most of the room: it comes back on every
   ABS slide.
 

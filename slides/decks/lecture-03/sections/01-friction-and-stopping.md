@@ -105,6 +105,8 @@ so its force depends on **slip** $\kappa$:
 - **Adhesion peak**, a few percent of slip: the most force, $\mu_A$. This is the "static" end.
 - **Locked wheel**, $\kappa = -1$: the tread slides, $\mu_S$. This is the "kinetic" end.
 
+$$F_x = \mu(\kappa)\, F_z$$
+
 **Braking well means holding the tire near its peak.**
 
 <div class="handson">→ Build 01: the brake torque that holds the tire at this peak, by hand</div>
@@ -126,6 +128,11 @@ are taught. The more accurate version is this curve, and the one the models use.
 
 Two symbols on the slide: mu A, the adhesion peak, the most friction the tire gives, and mu S,
 the sliding value, what a locked wheel gets. Both have no unit.
+
+The formula: F x, the tire's longitudinal force, is the friction coefficient at the current slip
+times F z, the load pressing the tire onto the road. The tire gives only the force asked of it
+and slips just enough for mu of kappa to supply it. That is why Lecture 1's dry-road start sat low
+on the rising side: the motor never asked for more than about 0.28 of the load.
 
 The left plot: friction coefficient up, slip ratio across. Its left end, zero slip, is free
 rolling. As you brake harder, slip grows and so does the force, steeply, up to the adhesion peak,
