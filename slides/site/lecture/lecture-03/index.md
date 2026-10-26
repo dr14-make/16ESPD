@@ -1123,25 +1123,44 @@ Lecture deck: [traction control](../../lecture-03/index.html#/tcs){target="_self
 
 ### 06 · Take-home bonus: traction control {#step-06}
 
-A bonus task for home, for extra points. Hands-on 1's `SlipCar` on snow, full torque from rest: without traction control the wheel spins up, as on Lecture 1's ice patch; with a brake-based TCS it holds near the peak and the car is faster after 10 s.
+A bonus task for home, for extra points. Your whole car from hands-on 2 on snow, full throttle from rest: without traction control the wheel spins up, as on Lecture 1's ice patch. You stop it two ways, with the brakes and with the engine, and compare. The lecture's "brake or engine" slide has the answer to aim for.
 
 #### Parts
 
-- Given: `VehicleSystemsComponents › Vehicle › Wheel › BrakeActuator` (a brake with a 30 ms lag) and `ABSPressureIntegrator`.
-- Yours: `SlipCar` from hands-on 1, and `SlipABS` from step 03.
+- From hands-on 2: your mapped engine with fuel cut, flywheel, centrifugal clutch, CVT and car body (your `MappedCar`).
+- From hands-on 3: your two `ABSValve`s and brake lines, the `HydraulicBrakedWheel`, and `SlipABS` from step 03.
+- Given: `HydraulicComponents › Sources › BoundaryPressure`, `ABSPressureIntegrator`, and the standard `Min` and `Gain` blocks.
 
 #### The task
 
-1. `TCSSlipCar`: duplicate `SlipCar`, put a `BrakeActuator` between `wheel_inertia` and `wheel` with its `support` on `rot_ground`, and add an input `tau_tcs` for its command.
-2. `TCS`: step 03's law turned round. The slip is positive while driving: the brake torque builds while `kappa_pred > lambda_target` and falls otherwise, clipped to [0, `tau_tcs_max`].
-3. A bench: a full-torque step on `tau_cmd` from rest, `mu_scale = 0.2`, 10 s. Run it with and without the TCS.
+1. The car: connect the mapped engine through the flywheel, centrifugal clutch and CVT to the `HydraulicBrakedWheel`, and the wheel to the body. Put an `ABSValve` and a brake line in each brake circuit.
+2. The pressure: nobody presses the pedal while accelerating, so leave out the pedal, booster and master cylinder. Feed both valves from a `BoundaryPressure` at 8.9 MPa. It stands in for the pump and accumulator a real TCS unit has.
+3. The brake TCS: `SlipABS` turned round. Driving slip is positive, so the pressure builds while `kappa_pred > lambda_target` and falls otherwise, between zero and the supply pressure.
+4. The engine TCS: the same law on a throttle limit between 0 and 1. It falls while the predicted slip is above the target and recovers below it. Feed the engine with `Min(driver throttle, limit)`, and keep the driver's throttle wired straight to the CVT schedule. The throttle acts through the manifold, so look further ahead than the brake: 0.3 s instead of 30 ms.
+5. The bench: start the engine at idle, step the throttle to full at 0 s, `mu_scale = 0.2`, 10 s. Give it two parameters, `brake_enabled` and `engine_enabled`, each through its own `Gain`, so the diagram shows both loops.
+6. Run four cases: off, brake only, engine only, both.
+
+::: tip Expected result
+
+With Tsit5 and `dtmax = 1e-3`, at 10 s:
+
+| TCS | speed | slip | engine | burned in the brakes |
+|---|---:|---:|---:|---:|
+| off | 5.64 m/s | 9.7 | 6410 rpm | 0 |
+| brake only | 5.99 m/s | 0.11 | 2450 rpm | 115 kJ |
+| engine only | 6.62 m/s | 0.03 | 2520 rpm | 0 |
+| both | 6.45 m/s | 0.03 | 2450 rpm | 28 kJ |
+
+The CVT stays at its 12:1 launch ratio in the three controlled runs. If the uncontrolled run stops early on the 6500 rpm rev limiter, set `abstol = 1e-5` and `reltol = 1e-5` in the analysis.
+
+:::
 
 #### Hand in
 
 A pull request from your `lecture-03` branch into the branch you started from, not merged, with:
 
-- wheel slip and car speed over 10 s, with and without TCS. By hand, the traction limit is 0.2 × 6865 N = **1373 N** at the peak against **961 N** spinning: roughly **8.5 against 5.7 m/s** after 10 s. A working model gives about **8.0 against 5.6 m/s**: the hand estimate assumes peak traction the whole time and leaves out the engine delay, the brake lag and the slip cycling;
-- one paragraph: why a production TCS cuts engine torque when both driven wheels spin, what `SlipCar`'s 0.3 s engine delay would do to that loop, and why braking one wheel works only through an open differential, which a one-wheel model cannot show.
+- wheel slip and car speed over 10 s for the four cases;
+- one paragraph: why braking barely helps here and cutting the engine does, what an open differential with two driven wheels would change, and why the engine path needs a much longer look-ahead than the brake.
 
 ## 05 Electronic stability program
 

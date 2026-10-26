@@ -96,7 +96,7 @@ cars. Where it trusts a poor guess of the speed instead, it can stop longer than
 
 <div class="text-sm opacity-70 mt-4">
 
-Take home: traction control on your `SlipCar`, <Link to="bonus-tcs">the bonus task</Link>, for
+Take home: traction control on your whole car, <Link to="bonus-tcs">the bonus task</Link>, for
 extra points. Next lecture: active and passive safety, including the restraint systems (airbags,
 belt pretensioners).
 
