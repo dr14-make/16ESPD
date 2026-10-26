@@ -1614,6 +1614,54 @@ including 128.4, 130.9 and 106.3 meters.
 -->
 
 ---
+routeAlias: abs-full-car
+---
+
+## The whole car with ABS
+
+From 90 km/h, pedal 0.6, the engine still on the wheel through clutch and CVT:
+
+| road μ | ABS | valves held open | build 03 bench |
+|---:|---:|---:|---:|
+| 1.0 | **34.8 m** | 45.4 m | 34.2 m |
+| 0.5 | **64.7 m** | 86.6 m | 64.6 m |
+| 0.3 | **106.8 m** | 138.6 m | 106.1 m |
+
+Slip sits at **−0.033 to −0.037**, just inside the 4 % peak; the wheel never stops.
+
+The controller is unchanged: the **engine, flywheel and CVT** on the wheel cost it nothing.
+
+<!--
+Optional, 2 minutes. A lecturer demo like the vacuum-booster slide, outside the run sheet's
+minutes: show it only if ahead.
+
+Budget: 2 minutes, not counted in the section's minutes.
+
+`Lecture3.FullCarABSStop` is section 02's whole car, `FullCarVacuumStop`, with build 03's ABS
+added the way `ABSStop` adds it: a valve in each brake line, `SlipABS` commanding both from the
+wheel's slip, the car's speed and the master-cylinder pressure. `abs_on = 0` holds both valves
+open, and the brake chain is section 02's again: at pedal 0.3 it stops in the same 39.2 meters.
+
+At pedal 0.6 the locked whole car needs 45.4 meters on a dry road, 1.7 more than build 02's bench,
+because the vacuum booster fills its rear chamber first. With ABS: 34.8, 23 percent shorter, within
+0.6 meters of your build 03 bench. On a wet road, 0.5: 64.7 against 86.6.
+
+While the clutch holds, the engine's flywheel sits on the wheel multiplied by the CVT ratio
+squared: up to ten times the wheel's own inertia as the CVT shifts down. A controller that acts on
+the slip does not care; one tuned on the wheel's deceleration, like your build 04, would see a
+much slower wheel.
+
+On snow, 0.3: 106.8 meters against 138.6 locked, 23 percent shorter, within a meter of your build
+03 bench. The valves here pump the fluid they dump straight back to the master cylinder, an ideal
+return pump with no accumulator, so the pedal does not sink over the stop: it stays put and pulses,
+about 2 millimeters on snow, the kick a driver feels. Throw that fluid away instead and the booster
+runs out of travel 7 seconds into this stop. That is the return pump of the modulator slide.
+
+Live: `Vehicle.braking_distance(Lecture3.FullCarABSStopTransient())`, 34.8; with
+`abs_on = 0.0`, 45.4. Checked in `test/abs_full_car.jl`.
+-->
+
+---
 routeAlias: planar-car
 ---
 

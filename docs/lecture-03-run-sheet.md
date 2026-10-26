@@ -122,6 +122,8 @@ the second break at 161, 04 at 166, 05 at 176, 06 at 199, end at 202.
 - "Where the assist comes from" (`vacuum-booster`, after build 02) is optional and outside the
   minutes, 3 min: `Lecture3.VacuumPedalStop` on manifold vacuum, the store and the electric pump.
   Show it only if ahead; its live run is in the slide's note.
+- "One hose, one connector" (`vacuum-port`, right after it) is optional too, 2 min: the gas
+  connector that joins engine and booster. Show it only together with `vacuum-booster`.
 
 ## 03 Anti-lock braking — 96 min, the break inside it
 
@@ -179,6 +181,9 @@ After the break, 51 min:
   reruns give 130.9 m on snow, no better than at 8, and 106.3 m dry.
 - A valve-level modulator in place of the ideal `ABSValve` is a stretch goal for whoever finishes
   early (`docs/brake-system-implementation-plan.md`, step 3); never wait for it.
+- "The whole car with ABS" (`abs-full-car`, after build 05) is optional and outside the minutes,
+  2 min: `Lecture3.FullCarABSStop`, build 03's ABS in the whole car, 34.8 m dry against 45.4 m
+  locked. Show it only if ahead; its live run is in the slide's note.
 - "The planar car" and "Braking and steering" close the section: the one-wheel bench has no
   lateral force, so the steering benefit needs the planar car. The slide shows only steering:
   3.02 m to the side of the obstacle with ABS, 0.00 m locked. It leaves the stopping distance out
