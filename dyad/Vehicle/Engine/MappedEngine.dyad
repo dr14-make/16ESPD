@@ -10,8 +10,8 @@ component MappedEngine
   extends VehicleSystemsComponents.Vehicle.Engine.EngineMapData
   "Driver pedal command, 0 closed to 1 fully open"
   pedal = RealInput() {^pedal}
-  "Brake-booster air inflow to the manifold [kg/s]"
-  mdot_bst = RealInput() {^mdot_bst}
+  "Vacuum take-off: the hose to the brake booster, at manifold pressure"
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Engine output shaft"
   spline = Spline() {^spline}
   "Reaction support (engine mounts)"
@@ -75,7 +75,7 @@ relations
   N = speed.w * 30 / pi
   connect(pedal, pedal_map.pedal, cut_logic.pedal) {^pedal_wire}
   connect(pedal_map.u_thr, air.u_thr) {^throttle_wire}
-  connect(mdot_bst, air.mdot_bst) {^booster_wire}
+  connect(vacuum, air.vacuum) {^booster_wire}
   connect(air.p_m, p_m, torque_map.p_m, lambda_map.p_m, fuel_map.p_m, hc_map.p_m, co_map.p_m, nox_map.p_m) {^pressure_wire}
   connect(speed.w, air.omega, cut_logic.omega, torque_map.omega, closed_throttle.omega, lambda_map.omega, fuel_map.omega, hc_map.omega, co_map.omega, nox_map.omega) {^speed_wire}
   connect(torque_map.y, torque_blend.fired) {^fired_wire}
@@ -95,7 +95,7 @@ metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 235, "x2": 25, "y2": 285}}}},
-    "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"x1": -25, "y1": 375, "x2": 25, "y2": 425}}}},
+    "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}, "diagram": {"iconName": "gas_port_a", "x1": -25, "y1": 375, "x2": 25, "y2": 425}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": 1375, "y1": 15, "x2": 1425, "y2": 65}}}},
     "tau_e": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 1375, "y1": 85, "x2": 1425, "y2": 135}}}},
     "lambda": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}, "diagram": {"x1": 1375, "y1": 555, "x2": 1425, "y2": 605}}}},

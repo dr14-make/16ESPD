@@ -17,7 +17,6 @@ component MappedCarWithBrake
   engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut() {^engine}
   "Crankshaft and flywheel, J as MappedEngine assumes"
   flywheel = RotationalComponents.Components.Inertia(J = 0.15) {^flywheel}
-  no_booster = BlockComponents.Sources.Constant(k = 0) {^no_booster}
   "kg/s of petrol to L/h: 3600 s/h / 0.745 kg/L (Hands-on 02)"
   to_lph = BlockComponents.Math.Gain(k = 4832.2) {^to_lph}
   driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(ratio_initial = ratio_initial) {^driveline}
@@ -32,7 +31,6 @@ component MappedCarWithBrake
 relations
   connect(pedal, engine.pedal) {^w1}
   connect(pedal, driveline.pedal) {^w2}
-  connect(no_booster.y, engine.mdot_bst) {^w3}
   connect(engine.spline, flywheel.spline_a) {^w4}
   connect(flywheel.spline_b, driveline.spline) {^w5}
   connect(engine.support, rot_ground.spline) {^w6}
@@ -62,7 +60,6 @@ metadata {
     "flywheel": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 410, "x2": 380, "y2": 510}}}},
     "driveline": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 410, "x2": 540, "y2": 510}}}},
     "body": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 410, "x2": 720, "y2": 510}}}},
-    "no_booster": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 520, "x2": 70, "y2": 590}}}},
     "vsensor": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 425, "x2": 830, "y2": 495}}}},
     "to_kmh": {"Dyad": {"placement": {"diagram": {"x1": 870, "y1": 425, "x2": 940, "y2": 495}}}},
     "to_lph": {"Dyad": {"placement": {"diagram": {"x1": 800, "y1": 295, "x2": 870, "y2": 365}}}},
@@ -70,7 +67,6 @@ metadata {
     "trans_ground": {"Dyad": {"placement": {"diagram": {"x1": 780, "y1": 740, "x2": 860, "y2": 820}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 200}, {"x": 60, "y": 388}], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 420, "y": 200}, {"x": 420, "y": 430}], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 85, "y": 555}, {"x": 85, "y": 436}], "E": 2}]}},
     "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 160, "y": 700}, {"x": 330, "y": 700}], "E": 2}]}},

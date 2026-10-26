@@ -32,8 +32,9 @@ Traction control does the same for a driven tire. ESP does it for the car as a w
 single wheels to steer the car's rotation.
 
 You do not only listen. In sections 01 to 03 you build on your own car in Dyad Studio, along
-with me: first a brake system from pedal to wheel, pressed hard enough to lock the wheel, then a
-slip controller of your own, then one that sees only the wheel speed. Every build step has one
+with me: the tire's limit by hand, then a brake system from pedal to wheel, pressed hard enough
+to lock the wheel, then a slip controller of your own, then one that sees only the wheel speed,
+and last the same stop on three roads. Every build step has one
 slide: a screenshot, a one-line recipe, the code to paste, the library parts it uses and a "page:
 step" link to the build guide on the course site, which has every block, line of code and number
 to expect. If you fall behind, the guide has each step's finished code to paste.
@@ -76,9 +77,17 @@ Past the peak, more slip means less force, and the wheel runs away. Lecture 1 na
 </div>
 
 <!--
-Recall the picture. Slip kappa is how much faster the tread moves than the car, as a fraction of
-the car's speed. Zero is pure rolling. Positive is wheelspin. Today we mostly brake, so slip is
-negative: the tread moves slower than the car, and a locked wheel sits at minus one.
+Recall the picture. Read the first formula: slip kappa is the tread speed, omega times r, minus
+the car's speed v, divided by the car's speed. Omega is the wheel's angular speed in radians per
+second, r the wheel radius in meters, v the car's speed in meters per second; kappa itself has no
+unit. The max with epsilon, a small speed of 0.5 meters per second in the library, only stops a
+division by zero when the car stands still. So kappa is how much faster the tread moves than the
+car, as a fraction of the car's speed. Zero is pure rolling. Positive is wheelspin. Today we
+mostly brake, so slip is negative: the tread moves slower than the car, and a locked wheel sits
+at minus one.
+
+The second formula: the tire's longitudinal force F x, in newtons, is the friction coefficient mu,
+read off the curve at the present slip, times the normal load F z on the tire, in newtons.
 
 The curve is symmetric. Braking or driving, the tire gives its most force at a few percent of
 slip and less once it slides. That is why everything today is a slip controller: ABS on the
@@ -105,7 +114,8 @@ uses: peak 1.0 at 4 percent slip, sliding 0.7 from 12 percent.
 <!--
 Seven sections in three hours, with a 10-minute break in the middle of section 03 and a 5-minute
 one after it. Budgets per section are on each section's cover and in
-`docs/lecture-03-run-sheet.md`. 87 of the 180 minutes are building: builds 00 to 05 take 6, 5,
+`docs/lecture-03-run-sheet.md`: 202 minutes planned for the 180-minute block, its cut order
+takes back the rest. 87 of them are building: builds 00 to 05 take 6, 5,
 16, 22, 28 and 10; each build slide's note opens with its own budget and split.
 
 The first two sections are physics: what the tire can give, and how the brake system turns a foot

@@ -10,8 +10,8 @@ layout: section
 ABS turned around: keep a **driven** wheel from spinning, with the brakes and the engine.
 
 <!--
-Budget: 6 minutes, 6 slides, after the short break: what 1.5, actuators 1.5, Lecture 1 link 1,
-take-home bonus 1, summary 1.
+Budget: 10 minutes, after the short break: what 1.5, the differential film 2.5, the open
+differential 1.5, actuators 1.5, Lecture 1 link 1, take-home bonus 1, summary 1.
 
 Traction control, TCS, or ASR in Bosch's and the German makers' naming, from
 Antriebsschlupfregelung, drive slip control. It is the positive side of the friction curve.
@@ -39,7 +39,7 @@ It uses the ABS hardware: the same wheel-speed sensors, and the same modulator t
 </div>
 <div>
 
-![The Bosch evolution of driving-safety systems drawn as nested ellipses: ABS inside ASR/TCS inside ESP/ESC.](/pptx/slide19-abs-tcs-esp.jpg)
+![Three nested boxes. ABS, innermost: wheel-speed sensors and valves that hold and dump; holds a braked wheel's slip. TCS or ASR around it adds valves and a pump that build pressure, and the engine torque; holds a driven wheel's slip. ESP or ESC around both adds the steering angle, the yaw rate and the lateral acceleration; holds the car's yaw rate and sideslip.](/diagrams/04-abs-tcs-esp.svg)
 
 <div class="caption">Each system contains the one before it</div>
 
@@ -55,6 +55,12 @@ The sensors are the ABS wheel-speed sensors. The driven wheels are compared with
 ones, which roll freely and so give the car's speed directly: an easier estimation problem than
 ABS has. On an all-wheel-drive car there is no free-rolling wheel, and the car's speed again has
 to be estimated.
+
+The figure: each box is a system, and each contains the one before it. Black text is what a
+system adds to the hardware inside it, orange what it holds near the peak. ABS has the wheel-speed
+sensors and the valves that hold and dump pressure. TCS adds valves and a pump that build pressure
+without the pedal, and a say in the engine torque. ESP adds three sensors: steering angle, yaw
+rate, lateral acceleration.
 
 Bosch introduced TCS in 1986, on top of ABS. By 1990 five Bosch ASR variants were in production,
 some acting only on the engine, two combining brake and throttle, per SAE paper 900204.
@@ -127,6 +133,11 @@ The brake stands in for the grip the ice lacks: a **brake-based differential loc
 <!--
 Budget: 1.5 minutes. The equal split first, then the table, then why it is only a low-speed trick.
 
+Symbols: T in is the torque from the gearbox into the differential, T L and T R the torques in the
+left and right side shafts, all in newton meters. Omega L and omega R are the wheel speeds and
+omega carrier the speed of the differential's housing, in radians per second. F z is each wheel's
+normal load, 4000 newtons; T b the TCS brake torque on the left wheel.
+
 Why a differential at all: in a bend the outer wheel travels farther, so the two driven wheels
 must turn at different speeds. The open differential allows it: the carrier turns at the mean of
 the two wheel speeds. The price is in the torque. The small bevel gears in the carrier are a
@@ -139,9 +150,12 @@ ice.
 
 Brake the spinning wheel with 600 newton meters. The differential still splits equally, but now
 the left side resists with its brake plus the ice, 724 newton meters, so the differential can pass
-724 to each side. The right wheel puts its 724 into the dry road, and the drive force is 124 plus
-724 over 0.31, 2.7 kilonewtons, more than three times as much. The engine must supply the extra
-1448 newton meters at the axle, and the 600 at the brake become heat: at 20 kilometers per hour
+724 to each side. The table's "724 − 600" is that left shaft: 724 arrive, the brake takes 600 and
+only 124 reach the ice. The force column is the drive force on the road, the two tire torques
+added and divided by the wheel radius. The right wheel puts its 724 into the dry road, and the drive force is 124 plus
+724 over 0.31, 2.7 kilonewtons, more than three times as much. The engine must now supply 1448
+newton meters at the axle in total, 1200 more than the 248 without TCS, and the 600 at the brake
+become heat: at 20 kilometers per hour
 that is about 11 kilowatts in one brake disc. That is why brake-based TCS is a drive-off aid: a
 Bosch patent switches it off above about 40 kilometers per hour (US 4,971,400; in
 docs/esp-tcs-plausibility-research.md). Above that, and whenever both wheels spin, only cutting the
@@ -266,7 +280,7 @@ after 10 s.
 
 *`TCSSlipCar`: your `SlipCar` with a `Vehicle.Wheel.BrakeActuator` between `wheel_inertia` and
 `wheel`, its support on `rot_ground`, a `tau_tcs` input · `TCS`: build 03's law turned round,
-pressure builds while `kappa_pred > lambda_target`, clipped to [0, `tau_tcs_max`]*
+brake torque builds while `kappa_pred > lambda_target`, clipped to [0, `tau_tcs_max`]*
 
 **Given:** `BrakeActuator`, a brake with a 30 ms lag · `ABSPressureIntegrator`
 
@@ -297,9 +311,14 @@ The parts are all ones you have now: your `SlipCar` from hands-on 1, the given `
 and `ABSPressureIntegrator`, and your `SlipABS` from build 03, with the sign of the slip turned
 round. The guide page has the task, the parts and the advice, not the diagram.
 
-The reference solution is kept off main, on branch feat/handson03-tcs-bonus (not built yet), as
-the hands-on 2 WLTC bonus was. The 8.5 and 5.7 meters per second are hand estimates: net of
-resistance, about 0.85 against 0.57 meters per second squared.
+The reference solution is kept off main, on branch feat/handson03-tcs-bonus, as the hands-on 2
+WLTC bonus was: `HandsOn03.TCSStartTransient`, with `tcs_enabled` 1 or 0. The hand numbers on the
+slide: 6865 newtons is the normal load on the driven wheel, half the weight of the 1400 kilogram
+car. Times the snow factor 0.2 and the peak 1.0 it gives 1373 newtons of traction; spinning, at
+the sliding 0.7, 961. The 8.5 and 5.7 meters per second are hand estimates: net of resistance,
+about 0.85 against 0.57 meters per second squared, over 10 seconds. The reference gives 8.0
+against 5.6 at 10 seconds, the slip held at 0.036: the estimate assumes peak traction throughout
+and leaves out the engine delay, the brake lag and the slip cycling.
 -->
 
 ---

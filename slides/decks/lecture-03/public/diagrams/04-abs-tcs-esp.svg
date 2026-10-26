@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 380" width="600" height="380">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .esp { fill: #f3f6fa; stroke: #8a99a8; stroke-width: 2; }
+    .tcs { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .abs { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .t { font-size: 20px; font-weight: 700; }
+    .add { font-size: 15px; }
+    .goal { font-size: 15px; fill: #a75d00; font-weight: 600; }
+  </style>
+
+  <rect class="esp" x="10" y="10" width="580" height="360" rx="16"/>
+  <text x="30" y="40" class="t">ESP / ESC</text>
+  <text x="30" y="64" class="add">+ steering angle, yaw rate, lateral acceleration</text>
+  <text x="30" y="86" class="goal">holds the car's yaw rate and sideslip</text>
+
+  <rect class="tcs" x="30" y="108" width="440" height="242" rx="12"/>
+  <text x="50" y="136" class="t">TCS / ASR</text>
+  <text x="50" y="160" class="add">+ valves and pump that build pressure</text>
+  <text x="50" y="180" class="add">+ engine torque</text>
+  <text x="50" y="202" class="goal">holds a driven wheel's slip</text>
+
+  <rect class="abs" x="50" y="222" width="300" height="108" rx="10"/>
+  <text x="70" y="250" class="t">ABS</text>
+  <text x="70" y="274" class="add">wheel-speed sensors</text>
+  <text x="70" y="294" class="add">valves that hold and dump</text>
+  <text x="70" y="316" class="goal">holds a braked wheel's slip</text>
+</svg>

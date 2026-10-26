@@ -11,8 +11,8 @@ What the road can give back: the friction coefficient, how a tire differs from a
 and the shortest stop physics allows.
 
 <!--
-Budget: 14 minutes for the section, 7 slides: friction 2, tire curve 2, braking distance 2,
-build 01 by hand 5, cornering 2, summary 1.
+Budget: 19 minutes for the section: friction 2, tire curve 2, tire models 3, braking distance 2,
+build 01 by hand 5, cornering 2, a locked wheel does not steer 2, summary 1.
 
 Every brake, however strong, ends at the same place: the contact patch, about the size of a hand
 per wheel. Whatever the brakes do, the car decelerates only as hard as friction there allows. So
@@ -42,7 +42,7 @@ $F_f$ friction force [N], $F_N$ normal force [N], $\mu$ the coefficient of frict
 
 The tire rows are typical, not exact: they vary with the tire, its temperature, the speed, the
 water depth and the road. The repository's tire uses **1.0 at the peak**, **0.7 sliding**, scaled
-by a road factor: 1.0 dry, about 0.5 wet, 0.2 snow, 0.05 ice.
+by a road factor: 1.0 dry, about 0.5 wet, 0.3 snow, 0.05 ice.
 
 </div>
 <div>
@@ -124,10 +124,19 @@ The source deck explained the brake's job with static against kinetic friction: 
 uses static friction, a locked one kinetic. That picture is a good first step and is what drivers
 are taught. The more accurate version is this curve, and the one the models use.
 
-Its left end, zero slip, is free rolling. As you brake harder, slip grows and so does the force,
-steeply, up to the adhesion peak at about 4 percent in the model; real dry-road tires peak
-somewhere between about 5 and 20 percent depending on tire and surface. Past the peak the force
-falls toward the sliding value, which a locked wheel sits at.
+Two symbols on the slide: mu A, the adhesion peak, the most friction the tire gives, and mu S,
+the sliding value, what a locked wheel gets. Both have no unit.
+
+The left plot: friction coefficient up, slip ratio across. Its left end, zero slip, is free
+rolling. As you brake harder, slip grows and so does the force, steeply, up to the adhesion peak,
+1.0 at 4 percent slip in the model; real dry-road tires peak somewhere between about 5 and 20
+percent depending on tire and surface. Past the peak the force falls toward the sliding value,
+0.7 from 12 percent, which a locked wheel sits at. The shaded part, past the peak, is the unstable
+side: there more slip gives less force.
+
+The right plot is the same curve with the slip axis logarithmic, so the small slips are easier to
+read. The two marks are Lecture 1's standing starts on snow and on a dry road. Mention it and move
+on; today we work on the left plot's braking mirror image.
 
 So "static" and "kinetic" are the two ends of one curve. The source deck's three options become:
 brake just short of the peak, which only a very good driver can do; pump the brake, which cycles
@@ -163,7 +172,7 @@ routeAlias: tire-models
 
 <div class="caption">Same peak, published shapes: the peak's slip and the drop after it differ</div>
 
-**Ours:** one triple-S cubic, a peak and a sliding level; the planar car applies it to the
+**Ours:** one curve of three smooth pieces, a peak and a sliding level; the planar car applies it to the
 combined slip, the force against the slip velocity. **Enough for ABS and ESP**: the peak, the
 drop, and the shared budget.
 
@@ -176,9 +185,15 @@ Budget: 3 minutes. Figures from `scripts/export_lecture03_tire_figures.jl`; fact
 
 Two numbers describe how a tire slips. Kappa, the longitudinal slip: the wheel's rim speed
 against the car's speed, over the car's speed. Zero when it rolls freely, minus one when it is
-locked, negative whenever we brake; that is Pacejka's convention and our models'.
+locked, negative whenever we brake; that is Pacejka's convention and our models'. In the formula
+Omega is the wheel's angular speed, r its radius and v x the car's forward speed: the same slip as
+on the "Where Lecture 1 left the tire" slide, written with other letters.
 And alpha, the slip angle: the angle between where the wheel points and where it actually goes.
 A tire pushes sideways only when there is such an angle.
+
+Symbols in the table: C alpha is the cornering stiffness, the lateral force per radian of slip
+angle at small angles, in newtons per radian. F x and F y are the longitudinal and lateral tire
+forces, M z the aligning torque about the vertical axis. "Params" means parameters.
 
 How do simulators turn slip into force? The table goes from cheap to expensive. A straight line,
 the cornering stiffness, is what the bicycle model and ESP's reference use. The brush model, Fiala
@@ -195,7 +210,9 @@ measured shapes, which peak around 17 to 18 percent and keep 0.65 to 0.9 locked.
 with one friction coefficient has no drop at all. The right plot is the lateral side: the line,
 our planar car, a Magic Formula fit and Fiala, all with the same initial slope.
 
-Ours is the simplest curve with a peak and a drop. In the planar car the same curve takes the
+Ours is the simplest curve with a peak and a drop: three cubic pieces, a rise to the peak, a fall
+to the sliding level, then flat, each with zero slope at its ends so the curve has no kinks. The
+library calls this shape "triple-S". In the planar car the same curve takes the
 combined slip, longitudinal and lateral together, and the force points against the slip velocity.
 That is the friction circle, and it is all ABS and ESP need: a peak to hold, a drop to avoid, a
 budget to share. A Magic Formula would change the numbers, not the mechanism.
@@ -226,7 +243,7 @@ From **90 km/h = 25 m/s**:
 | 1.0 | dry, at the peak | 31.9 m |
 | 0.8 | dry, sliding | 39.8 m |
 | 0.6 | wet, at the peak | 53.1 m |
-| 0.4 | wet, sliding | 79.7 m |
+| 0.4 | wet, sliding | 79.6 m |
 | 0.3 | snow, at the peak | 106.2 m |
 | 0.2 | snow, sliding | 159.3 m |
 
@@ -255,6 +272,8 @@ From **90 km/h = 25 m/s**:
 The energy argument: the kinetic energy one half m v squared is removed by the friction force mu
 m g over the distance d. The mass cancels. That is why a heavy truck and a light car with the same
 tires need, in theory, the same distance; in practice a truck's brakes and tires are worse.
+
+Read one row out: 25 squared is 625; 2 times 9.81 times 1.0 is 19.6; 625 over 19.6 is 31.9 meters.
 
 The table is this formula at 25 meters per second with the source deck's friction table. Each
 pair, peak and sliding, is what ABS can win on that surface, in the ideal case. Real cars do not
@@ -319,8 +338,8 @@ meters, braking from 90 kilometers per hour, 25 meters per second. The tire is t
 
 First the normal force: m times g, 1400 times 9.81, about 13,700 newtons. The tire can carry at
 most mu A times that, and the brake torque that asks for exactly that force is the force times the
-radius: 4256 newton-meters. Remember it. The driver today asks for 6000, 1.4 times as much, so
-without ABS the wheel must lock.
+radius: 4256 newton-meters. Remember it. The driver in today's ABS model asks for 6000 newton
+meters of brake torque, a panic stop, 1.4 times as much, so without ABS the wheel must lock.
 
 Then the two distances from the formula on the last slide. At the peak, mu 1.0: 31.9 meters. That
 is the floor no ABS beats. Sliding, mu 0.7: 45.5 meters, roughly what a locked wheel gives. On
@@ -365,7 +384,12 @@ brake hard in a bend and less is left for turning.
 The second half of the source deck's slide: maximum velocity in a curve of radius r. Same mu,
 same g, now the force points sideways, toward the center of the curve.
 
-The numbers: square root of mu times 9.81 times 50, in kilometers per hour.
+Here r is the radius of the curve, not the wheel radius of the build slide. The formula sets the
+centripetal force equal to the most friction can give, m v squared over r equals mu m g; the mass
+cancels, so v max is the square root of mu g r.
+
+The numbers: square root of mu times 9.81 times 50. Dry, mu 1.0: the square root of 490.5 is 22.1
+meters per second, 80 kilometers per hour. Wet, 0.6: 62. Snow, 0.3: 44.
 
 The important sentence is the last one. Longitudinal and lateral force come out of the same
 contact patch, so braking and cornering draw on one budget. The next slide draws that budget and

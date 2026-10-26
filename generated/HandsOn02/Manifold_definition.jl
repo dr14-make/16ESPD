@@ -20,7 +20,11 @@ Intake manifold as one isothermal receiver: the pressure is its only state.
 ## Connectors
 
  * `mdot_thr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `mdot_bst` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `vacuum` - One end of a gas hose: absolute pressure across it, air mass flow through it.
+
+Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
+the other end receives. `mdot` is positive into the component that owns the port. A port left
+unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
  * `mdot_cyl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `p_m` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
@@ -75,7 +79,6 @@ Intake manifold as one isothermal receiver: the pressure is its only state.
 
   ### Final Path Parameters
   append!(__vars, @variables (mdot_thr(t)::Real), [input = true])
-  append!(__vars, @variables (mdot_bst(t)::Real), [input = true])
   append!(__vars, @variables (mdot_cyl(t)::Real), [input = true])
   append!(__vars, @variables (p_m(t)::Real), [output = true])
 
@@ -91,6 +94,7 @@ Intake manifold as one isothermal receiver: the pressure is its only state.
   __constants = Any[]
 
   ### Components
+  push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -104,7 +108,8 @@ Intake manifold as one isothermal receiver: the pressure is its only state.
   __assertions = []
 
   ### Equations
-  push!(__eqs, V_m / (R * T_m) * ModelingToolkit.D_nounits(p) ~ mdot_thr + mdot_bst - mdot_cyl)
+  push!(__eqs, V_m / (R * T_m) * ModelingToolkit.D_nounits(p) ~ mdot_thr + vacuum.mdot - mdot_cyl)
+  push!(__eqs, vacuum.p ~ p)
   push!(__eqs, p_m ~ p)
 
   # Return completely constructed System

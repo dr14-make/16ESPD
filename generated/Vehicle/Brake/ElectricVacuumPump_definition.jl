@@ -10,14 +10,14 @@
 Electric vane vacuum pump with its suction hose, for a booster with no manifold vacuum: a diesel,
 an unthrottled petrol engine, a hybrid or an EV.
 
-The booster's check valve feeds `mdot_in` into the hose, whose pressure `p` is the booster's
-`p_src`. The booster's vacuum sensor `p_sense` runs the pump through a continuous latch: on above
-`p_on`, off below `p_off`. The switch reads the booster, not the hose, because the hose follows
-the pump within milliseconds and would rebound past `p_off` as the pump slows, so the latch
-would chatter. Running, the pump moves a constant volume flow `Q` down to its ultimate pressure
+The booster's check valve feeds air into the hose through `vacuum`, and the hose pressure `p_h`
+is what the check valve sees. The booster's vacuum sensor `p_sense` runs the pump through a
+continuous latch: on above `p_on`, off below `p_off`. The switch reads the booster, not the
+hose, because the hose follows the pump within milliseconds and would rebound past `p_off` as the
+pump slows, so the latch would chatter. Running, the pump moves a constant volume flow `Q` down to its ultimate pressure
 `p_min`:
 
-    mdot_pump = Q / (R T) · max(p - p_min, 0) · y
+    mdot_pump = Q / (R T) · max(p_h - p_min, 0) · y
 
 Q and p_min come from Hella's UP28 data, which evacuates 3.2 L to 500 mbar in 5.5–6 s and reaches
 at least 86 % vacuum. The switch points are the aftermarket 18 and 25 inHg of vacuum.
@@ -38,9 +38,12 @@ at least 86 % vacuum. The switch points are the aftermarket 18 and 25 inHg of va
 
 ## Connectors
 
- * `mdot_in` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `vacuum` - One end of a gas hose: absolute pressure across it, air mass flow through it.
+
+Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
+the other end receives. `mdot` is positive into the component that owns the port. A port left
+unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
  * `p_sense` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `p` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `running` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
@@ -114,9 +117,7 @@ at least 86 % vacuum. The switch points are the aftermarket 18 and 25 inHg of va
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (mdot_in(t)::Real), [input = true])
   append!(__vars, @variables (p_sense(t)::Real), [input = true])
-  append!(__vars, @variables (p(t)::Real), [output = true])
   append!(__vars, @variables (running(t)::Real), [output = true])
 
   ### Variables (declarations)
@@ -143,6 +144,7 @@ at least 86 % vacuum. The switch points are the aftermarket 18 and 25 inHg of va
   __constants = Any[]
 
   ### Components
+  push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -164,8 +166,8 @@ at least 86 % vacuum. The switch points are the aftermarket 18 and 25 inHg of va
   push!(__eqs, request ~ ifelse(y < 0.5, ifelse(p_sense > p_on, 1.0, 0.0), ifelse(p_sense < p_off, 0.0, 1.0)))
   push!(__eqs, ModelingToolkit.D_nounits(y) ~ (request - y) / T_latch)
   push!(__eqs, mdot_pump ~ Q / (R * T) * max(p_h - p_min, 0.0) * y)
-  push!(__eqs, V_h / (R * T) * ModelingToolkit.D_nounits(p_h) ~ mdot_in - mdot_pump)
-  push!(__eqs, p ~ p_h)
+  push!(__eqs, V_h / (R * T) * ModelingToolkit.D_nounits(p_h) ~ vacuum.mdot - mdot_pump)
+  push!(__eqs, vacuum.p ~ p_h)
   push!(__eqs, running ~ y)
 
   # Return completely constructed System

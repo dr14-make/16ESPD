@@ -12,9 +12,9 @@ Keep every wheel rolling, near the peak of its friction curve, however hard the 
 `notebooks/lecture03/01-abs.pluto.jl`
 
 <!--
-Budget: 91 minutes, with the 10-minute break in the middle: 40 before it, 51 after.
-Before: cover and what ABS does 2, hardware 9 (history 1, sensors 2, modulator 2, channels 2,
-cycle 2), the model 3, build 03 and its result slide 22, one stop and on the curve 4. After: reference speed 2, build
+Budget: 96 minutes, with the 10-minute break in the middle: 45 before it, 51 after.
+Before: cover and what ABS does 2, hardware 14 (history 1, sensors 2, the active sensor 2,
+optional, the system and our models 3, modulator 2, channels 2, cycle 2), the model 3, build 03 and its result slide 22, one stop and on the curve 4. After: reference speed 2, build
 04 with its checkpoint 28, braking distance 2, surfaces 2, against measured cars 1.5, why ABS
 can stop longer 1.5, build 05 10, the planar car 1, braking and steering 2, summary 1.
 
@@ -45,7 +45,7 @@ Two benefits, in order of importance:
 1. **The car can still be steered**: a rolling tire gives lateral force, a locked one almost none.
 2. **A shorter stop on most roads**: the tire works near its peak instead of sliding.
 
-Four parts:
+Its parts:
 
 - **wheel-speed sensors**, usually one per wheel
 - **valves** and a **return pump**, in one hydraulic modulator
@@ -54,7 +54,7 @@ Four parts:
 </div>
 <div>
 
-![An ABS layout in a car: wheel-speed sensors at all four wheels with toothed pulser rings on the brake discs, brake lines to a modulator unit near the master cylinder, and a control module.](/pptx/slide07-abs-layout.jpg)
+![An ABS car from above, front at the top. The master cylinder, MC, behind the pedal and booster, feeds the hydraulic unit: valves and a pump, with the ECU mounted on it. Four brake lines run from the unit to the four wheels. A wheel-speed sensor sits at every wheel, and each has a signal wire to the ECU.](/diagrams/03-abs-layout.svg)
 
 </div>
 </div>
@@ -71,7 +71,11 @@ The shorter stop is real on paved roads, 10 to 23 percent in NHTSA's tests. On l
 deep snow a locked wheel can stop shorter, because it builds a wedge of material in front of the
 tire. Some off-road vehicles therefore have an ABS mode for loose surfaces.
 
-The image is the source deck's, a 1990s layout.
+The picture shows the three kinds of part on a car from above. Blue squares, a wheel-speed
+sensor at every wheel, each wired to the ECU, the thin blue lines. The light blue boxes are the
+hydraulic unit, the valves and the return pump in one block, with the ECU mounted on it. The
+master cylinder, MC, feeds it; the thick lines are the four brake lines to the wheels. Section
+02's pedal and booster sit behind the master cylinder.
 
 You have the problem on your own car already: build 02 at pedal 0.6 locks the wheel and stops in
 43.7 meters. Keep that run; every ABS build is measured against it.
@@ -145,7 +149,9 @@ the amplitude. Magnetoresistive versions also report the direction of rotation.
 </div>
 <div>
 
-![A toothed wheel turning past a wheel-speed sensor, which generates one pulse per tooth.](/pptx/slide08-tone-wheel.png)
+<CardExport notebook="illustrations" name="crank-vr-hall" height="18rem" />
+
+<div class="caption">Lecture 2's crank wheel, 60 − 2 teeth: the same two principles. An ABS ring has no gap.</div>
 
 > **The ABS measures only this**
 >
@@ -159,6 +165,13 @@ the amplitude. Magnetoresistive versions also report the direction of rotation.
 The same two sensor principles as the crank sensor in Lecture 2: the variable-reluctance sensor
 and the Hall sensor. The source deck described the passive type: low AC voltage, frequency
 rising with wheel speed.
+
+The plot is Lecture 2's, from its crank-sensor slide: one toothed wheel read two ways, against
+the angle from tooth 1. Top, the inductive sensor at 3000 rpm: a wave per tooth, its amplitude
+proportional to speed. Middle, the same sensor at 300 rpm: one tenth of the amplitude, hard to
+read. Bottom, a Hall sensor: the same square edges at any speed, from standstill. The shaded gap
+of two missing teeth marks the crank's position; an ABS tone wheel or encoder ring has no gap,
+every tooth or pole is the same.
 
 The passive sensor needs no supply, but its voltage falls with speed, so it gives no usable signal
 at a crawl, a few kilometers per hour. That was acceptable for ABS, which switches off near
@@ -417,7 +430,7 @@ driver pushes harder. Position three, release: dump, the outlet valve lets fluid
 spring-loaded accumulator. The pump returns it to the master-cylinder side, which is what the
 driver feels as pulsing in the pedal.
 
-The green box, in terms of these three states: `ABSValve`, from the table two slides back, has no
+The green box, in terms of these three states: `ABSValve`, from the previous slide's table, has no
 valve positions. A command held steady is hold, a falling one is dump, a rising one is build.
 The dumped fluid leaves the model, so the pulse the driver feels cannot appear.
 
@@ -440,7 +453,13 @@ routeAlias: abs-channels
 
 ## Channels and sensors
 
-<div class="grid grid-cols-3 gap-6">
+<div class="diagram-channels">
+
+![Three cars from above, each with a hydraulic unit, HU, in the middle. Four channels, four sensors: a numbered valve pair, 1 to 4, on the line to each wheel and a wheel-speed sensor at every wheel. Three channels, three sensors: valve pairs 1 and 2 for the front wheels, valve pair 3 on one line that feeds both rear wheels, marked select-low, and a single rear sensor at the differential. One channel, one sensor: the front wheels are fed through the unit with no ABS valve, dashed; valve pair 1 feeds both rear wheels, select-low, with one sensor at the differential.](/diagrams/03-abs-channels.svg)
+
+</div>
+
+<div class="grid grid-cols-3 gap-6 text-center">
 <div>
 
 ### Four-channel, four-sensor
@@ -491,6 +510,12 @@ fast the pressure difference between the fronts can grow, giving the driver time
 
 Four-channel is the norm since ESP: to brake one wheel on purpose, each wheel needs its own valves.
 
+The figure draws the three layouts from above, each column over its text. HU is the hydraulic
+unit. A numbered blue square is one channel, an inlet and an outlet valve; a small blue square is
+a wheel-speed sensor. In the three-channel car the rear sensor sits on the differential, shown as
+the gray circle, and channel 3 feeds both rear wheels, select-low. In the one-channel car the dashed
+gray lines are the front brakes, fed straight from the master cylinder with no ABS valve.
+
 These layouts are from the source deck; I did not find a primary source that classifies them, so
 treat the "common on" remarks as typical rather than exact.
 -->
@@ -501,7 +526,7 @@ routeAlias: abs-cycle
 
 ## The control cycle
 
-<div class="grid grid-cols-[1.1fr_1fr] gap-8">
+<div class="grid grid-cols-[1.1fr_1fr] gap-8 text-sm">
 <div>
 
 The source deck's **simplest algorithm**:
@@ -532,6 +557,12 @@ Bosch's production cycle has **eight phases**, and two things the simple version
 </div>
 </div>
 
+<div class="diagram-cycle">
+
+![One cycle of the Bosch control cycle against time, in eight numbered phases shaded green for build, amber for hold and red for dump. Top: the car's speed falls in a straight dashed line; the wheel's speed drops below it, crosses the slip threshold lambda 1, bottoms out and recovers to just under the car. Middle: the wheel's acceleration with the thresholds plus A, plus a and minus a. Bottom: the brake pressure. Phase 1 builds with the driver until the wheel decelerates past minus a; 2 holds until the slip passes lambda 1; 3 dumps until the deceleration is back above minus a; 4 holds while the wheel speeds up past plus A; 5 builds fast while it stays above plus A; 6 holds until it falls below plus a; 7 builds slowly in small steps; 8 dumps again when the wheel passes minus a.](/diagrams/03-abs-cycle.svg)
+
+</div>
+
 <!--
 The left column is the source deck's algorithm, reworded. It said "repeat this procedure around
 15 times per second". That number mixes up two rates. The pressure valves step tens of times per
@@ -544,6 +575,18 @@ The Bosch cycle, as reproduced by Day and Roberts from Bosch's Driving-safety sy
 follow the master cylinder until the wheel deceleration passes a threshold, hold until slip passes
 a threshold, dump until the wheel accelerates again, hold, build fast, hold, build slowly at about
 a tenth of the fast rate, then dump again. The controller learns the lock-up pressure each cycle.
+
+The figure is that cycle, sketched, not simulated, in the colors of build 04's state diagram:
+green build, amber hold, red dump. Read it at the phase numbers on top. Top panel: the car's
+speed, dashed, and the wheel's, blue; the thin dashed line is the slip threshold lambda 1 under
+the reference speed. Middle: the wheel's own acceleration, with three thresholds, minus a for
+deceleration, plus a and the larger plus A for acceleration. Bottom: the wheel pressure. 1, the
+pressure follows the master cylinder until the wheel decelerates past minus a. 2, hold, until the
+slip passes lambda 1. 3, dump, until the deceleration is back above minus a. 4, hold, while the
+wheel spins back up past plus A. 5, build fast, while it stays above plus A. 6, hold, until it
+falls under plus a. 7, build slowly in small steps, the pressure memory. 8, the wheel passes
+minus a again and the next dump starts. One cycle takes about 0.2 to 0.5 seconds: the 2 to 6 per
+second on the slide.
 
 The ECU sample times, 3 milliseconds for Bosch and 6 for Aisin, come from patents cited in
 `docs/abs-frequency-research.md`.
@@ -589,10 +632,23 @@ The model in `dyad/Vehicle/ABSController.dyad` and its test benches in `ABSBrake
 a compressed version of the Bosch cycle on the previous slides, with three phases, decrease, hold
 and increase, and an off state below 1.5 meters per second.
 
+Symbols on the slide: J w is the wheel's rotational inertia, 4 kilogram square meters for the four
+wheels lumped into one; r the wheel radius. Lambda is the slip, the same quantity as kappa on
+earlier slides; the library's controller names it lambda. Lambda dot is its rate of change, per
+second, and T p the look-ahead time, 30 milliseconds. "Lock torque" is the brake torque at which
+the wheel last started to lock.
+
+Read the diagram along the arrows: the ECU, sampled every 5 milliseconds, first estimates the car's
+speed and the slip from the wheel speed, then the modulator decides build, hold or dump and sends
+a torque command; the brake actuator follows it 30 milliseconds late; the wheel, tire and car
+respond; the wheel speed omega goes back to the estimator.
+
 The key design choice is the predicted slip. The brake hydraulics take 30 milliseconds to respond,
 so by the time a release command takes effect the wheel has dived further. The controller looks
 30 milliseconds ahead, slip plus 30 milliseconds times its rate of change, and releases when that
-predicted slip passes the peak. That is the lead that covers the actuator lag.
+predicted slip passes the peak. A number: a slip of minus 0.03 that falls at 0.5 per second
+predicts minus 0.03 minus 0.015, minus 0.045, already past the 4 percent peak, so the controller
+releases now. That is the lead that covers the actuator lag.
 
 The second choice is pressure memory, from the Bosch cycle: release to 60 percent of the torque at
 which the wheel started to lock, reapply quickly to 85 percent, then creep up.
@@ -952,6 +1008,11 @@ Production systems **learn** the road's deceleration, and some use a longitudina
 <!--
 This is the hardest part of a real ABS, and the reason the model in the repository has two
 versions of its controller.
+
+Symbols: omega i is the angular speed of wheel i, in radians per second, and omega r the speed of
+its tread in meters per second. v ref is the estimated car speed, a ref the fastest deceleration
+the estimate is allowed, in meters per second squared. Lambda is the slip computed from the
+estimate instead of the true speed: the wheel's tread speed minus v ref, over v ref.
 
 When all four wheels brake at once, none of them rolls freely, so none tells you the car's speed.
 The ABS assumes the car cannot decelerate faster than some limit and lets its estimate fall no
@@ -1387,7 +1448,9 @@ Sources, all in `docs/abs-efficiency-research.md` with the full citations:
   same for fresh snow on pavement just below freezing; only its abstract was available.
 
 UN Regulation 13-H, Annex 6: epsilon is the deceleration with ABS cycling, between 45 and 15
-km/h, divided by the best deceleration without locking a wheel. So the yardstick is the peak of
+km/h, divided by the best deceleration without locking a wheel. On the slide, z ABS is that ABS
+deceleration as a fraction of g, and k the highest one the tire reaches without locking, the
+peak friction coefficient. So the yardstick is the peak of
 the curve, not the locked wheel. Our tire locks at 0.7 of its peak, just under the line, which is
 why a locked wheel fails it and an ABS that barely beats locking can still pass.
 
@@ -1514,13 +1577,13 @@ reruns.
 Open the REPL and paste the loop from the guide page. It runs your three benches at road factor
 1, 0.5 and 0.3, each long enough for the car to stop: the stop-time rule gives about 20 seconds
 on snow. Read the table against the bars. The first column is your build 02 bench at its default
-pedal, 0.6: 43.7, 85.1, 136.7, the previous slide's locked column within a tenth of a meter. Your
+pedal, 0.6: 43.7, 85.1, 136.7, the locked column of "Across road surfaces" within a tenth of a meter. Your
 true-slip column: 34.2, 64.6, 106.1. Close to the library's ideal ABS, not equal to it: yours
 brakes through the valves, lines and calipers of build 02. Your wheel-speed-only column: 38.5,
 78.0, 130.6. All under locked, but on snow by only 5 percent.
 
-The fourth column is the library's clocked ECU, `Vehicle.ABSBrakeTransient`, from the previous
-slide. On snow it loses to the locked wheel, 141.3. That is the trap: `a_ref` 8 is almost three
+The fourth bar is the library's clocked ECU, `Vehicle.ABSBrakeTransient`, the ABS column of
+"Across road surfaces". On snow it loses to the locked wheel, 141.3. That is the trap: `a_ref` 8 is almost three
 times what mu 0.3 allows, 2.9, so its estimate falls too fast, it under-reads the slip and lets
 the wheel slide. Your `PhaseABS` does not fall into it: it dumps on the wheel's own deceleration,
 which needs no estimate of the car's speed. Its small gain on snow has another cause, the deep
@@ -1618,9 +1681,13 @@ class: big-figure
 
 ## Braking and steering
 
+<div class="diagram-path">
+
 ![Top view of two runs of the planar car from 80 km/h, the car drawn every 0.5 s. Both brake fully at 0.5 s, x 11 m, and steer the wheel 90 degrees to the left at 0.8 s. An obstacle stands in the lane at x 36 m. With ABS, solid blue, the car curves left, passes the obstacle 3.0 m to its side and stops at x 46 m, y 10.9 m, turned 49 degrees. With the wheels locked, dashed red, it slides straight on through the obstacle and stops at x 43 m, y 0.](/figures/03-brake-steer-path.svg)
 
-<div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
+</div>
+
+<div class="grid grid-cols-[1fr_1.1fr] gap-6 items-start text-sm">
 <div>
 
 | full braking from 80 km/h, wheel 90° left | ABS off, locked | ABS on |
@@ -1632,7 +1699,7 @@ class: big-figure
 </div>
 <div>
 
-<img src="/img/lecture-03/planar-brake-steer-bench.png" class="h-40" alt="The BrakeAndSteer bench in Studio: a steering ramp into steering_robot, which turns the car's steering; demand and a zero into abs, abs's four torques into car, car's frames and wheel spins into sensors, and the speed and four slips from sensors back into abs.">
+<img src="/img/lecture-03/planar-brake-steer-bench.png" class="bench-shot" alt="The BrakeAndSteer bench in Studio: a steering ramp into steering_robot, which turns the car's steering; demand and a zero into abs, abs's four torques into car, car's frames and wheel spins into sensors, and the speed and four slips from sensors back into abs.">
 
 `Lecture3.BrakeAndSteerTransient`, `abs_on = 1.0` or `0.0`
 
@@ -1698,7 +1765,7 @@ sheet):
   a fixed $a_{ref}$ throws the gain away.
 - On your car, through your own brake: 43.7 m locked, 34.2 m on the true slip, 38.5 m on the
   wheel speed alone, by dumping on the wheel's deceleration and **holding** the pressure. On
-  snow only 5 % shorter than locked, as real cars.
+  snow only 5 % shorter than locked, as on real cars.
 
 ### Next: the same idea for a wheel that is driven, not braked. <Link to="tcs">→ 04, traction control</Link>
 

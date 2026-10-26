@@ -30,10 +30,10 @@ routeAlias: lever-and-hydraulics
 
 ## Leverage and hydraulics
 
-<div class="grid grid-cols-3 gap-6">
-<div>
+![Three panels. Lever, times 3.5: a foot force of 100 N on the long arm, 3.5 a from the pivot, gives 350 N at the rod on the short arm a; the foot moves 35 mm, the rod 10 mm; BrakePedal, i_p 3.5. Pascal, times 5.2: the rod pushes a 25 mm piston with 350 N; the pressure, 7.1 bar, is the same everywhere in the fluid and lifts a 57 mm piston with 1820 N; the rod moves 10 mm, the large piston 1.9 mm. Together, times 18: the foot's 100 N on the pedal becomes 350 N at the master cylinder, 7.1 bar in the line and 1820 N at the caliper piston against the disc, with no booster and no springs.](/diagrams/02-lever-hydraulics.svg)
 
-![A lever on a pivot: a force F at the end of the long arm 2X balances a force 2F at the end of the short arm X; the long end moves 2Y while the short end moves Y.](/pptx/slide05-lever.jpg)
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
 
 **Lever.** Force times arm is the same on both sides: twice the arm, twice the force, half the
 travel.
@@ -41,15 +41,11 @@ travel.
 </div>
 <div>
 
-![Hydraulic multiplication: a 2-inch piston pushed down with 100 lb lifts a 6-inch piston with 900 lb; the small piston travels nine times as far.](/pptx/slide05-hydraulic-multiplication.png)
-
 **Hydraulics.** Pressure is the same everywhere in a closed fluid (Pascal):
 $F_2 = F_1 \, A_2 / A_1$. Again paid for in travel.
 
 </div>
 <div>
-
-![A simple brake system: the pedal, a lever with ratio 4x to x, pushes a small piston; a line carries the fluid to a larger caliper piston that moves 3y for the pedal piston's y.](/pptx/slide05-simple-brake-system.png)
 
 **Together.** The pedal multiplies the foot's force, the fluid multiplies it again at each caliper.
 
@@ -62,10 +58,14 @@ distance is the same on both ends. The hydraulic cylinders: pressure is the same
 fluid, so force scales with piston area, and the volume pushed out of the small piston equals the
 volume taken in by the large one, so travel scales the other way.
 
-In the middle figure the large piston has three times the diameter, nine times the area: 100
-pounds become 900, and the small piston moves nine times as far.
-
-The figures are the source deck's, from HowStuffWorks, in inches and pounds.
+The figure uses the model's own sizes, with no booster and no return springs. Left: the pedal
+lever, `BrakePedal`'s ratio i_p of 3.5. The foot's arm is 3.5 a long, the rod's a, so 100
+newtons at the foot become 350 at the rod, and the foot moves 35 millimeters for the rod's 10.
+Middle: the rod pushes the master cylinder's 25 millimeter piston, `TandemMasterCylinder`'s
+bore. 350 newtons on 4.9 square centimeters is 7.1 bar, everywhere in the fluid. The front
+caliper's 57 millimeter piston has 5.2 times the area, 25.5 square centimeters, so it pushes
+with 1820 newtons and moves 1.9 millimeters for the rod's 10. Right: both in series, 3.5 times
+5.2, about 18 times the foot's force at each caliper piston, against the disc.
 
 The travel budget is what limits the pedal ratio. Every millimeter of caliper piston travel costs
 many millimeters of pedal, and the pedal hits the floor. That is why a car has a booster too.
@@ -108,10 +108,15 @@ section, runs all of it on your car.
 
 The three numbers come from running notebook 02, cells "Why brakes need help" and the pressure
 table. To stop at 1 g, the tire must push back with the car's weight, about 13 700 newtons; at
-the 0.31 meter wheel radius that is 4256 newton meters. The report's caliper sizes, 57 millimeter
+the 0.31 meter wheel radius that is 4256 newton meters. The brake report's caliper sizes
+(`docs/reports/Passenger car brake system modeling.md`), 57 millimeter
 front and 38 millimeter rear pistons with a pad mu of 0.40, give 68.9 newton meters per bar,
 49.0 front and 19.9 rear. The report marks these caliper values as textbook, unverified. So 1 g
-needs 61.8 bar.
+needs 4256 over 68.9, 61.8 bar.
+
+In the diagram, F ped is the foot's force on the pedal in newtons and A mc the area of the master
+cylinder bore: 25 millimeters across, 4.91 square centimeters. The master cylinder's pressure is
+the pushrod force over that area.
 
 FMVSS 135, the US light-vehicle brake standard, caps the pedal force a test may use at 500
 newtons. Through the 3.5 lever and the 25 millimeter master cylinder bore, with no booster, 500
@@ -155,11 +160,21 @@ driver pushes.
 The figure is the pressure plot of notebook 02, "Experiment: pedal force to line pressure", at
 the default idle vacuum of 33 kilopascal absolute, with the no-vacuum curve dashed.
 
-Read it left to right. Below the cut-in the booster's valve stays closed and nothing happens. At
-cut-in the output jumps: the reaction disc has not touched the driver's plunger yet. Then every
-newton of foot gives five newtons more at the master cylinder: the boosted slope. At run-out the
-rear chamber is at full atmosphere and the diaphragm cannot push harder; past the knee only the
-foot adds, at one fifth of the slope.
+The axes: pedal force in newtons across, master-cylinder pressure in bar up. The solid curve has
+engine vacuum, the dashed one none; the dotted line is the 61.8 bar a 1 g stop needs.
+
+How the booster works: the front chamber of the diaphragm holds vacuum. When the driver pushes, a
+valve lets outside air into the rear chamber, and the pressure difference pushes the diaphragm,
+and so the pushrod, forward.
+
+Read it left to right. Below the cut-in, 11.4 newtons, the booster's valve stays closed and
+nothing happens. At cut-in the output jumps to 5.7 bar: the reaction disc, the rubber disc that
+feeds part of the output force back to the driver's foot, has not touched the driver's plunger
+yet. Then the booster multiplies the force from the lever by five: the boosted slope. Where 0.357
+bar per newton comes from: 3.5 for the lever times 5 for the booster, over the bore area of 4.91
+square centimeters, is 0.357 bar for each newton of foot. At run-out, 232 newtons and 84.3 bar,
+the rear chamber is at full atmosphere and the diaphragm cannot push harder; past the knee only
+the foot adds, at one fifth of the slope, 0.071 bar per newton.
 
 Where does the vacuum come from? A throttled petrol engine makes it for free in the intake
 manifold, the same manifold pressure you met in Lecture 2. Diesels and turbo engines need a vacuum
@@ -179,7 +194,7 @@ routeAlias: master-cylinder
 <div class="grid grid-cols-[1fr_1fr] gap-8">
 <div>
 
-![Inside the master cylinder: two reservoirs above one bore holding a primary piston, pushed from the pedal, and a secondary piston with springs, each feeding its own brake line.](/pptx/slide06-master-cylinder.jpg)
+![Section of a tandem master cylinder, not to scale. The pushrod from the booster pushes the primary piston with F_rod into a 25 mm bore; a spring sits between it and the floating secondary piston, a second spring between that piston and the end of the bore. A reservoir with one compartment per circuit feeds each chamber through a compensating port just ahead of the piston seal; the gap from seal to port is the 2.5 mm dead stroke. Circuit 1 leaves the primary chamber, circuit 2 the secondary chamber, both at the same p_mc in steady state; in the model the ports are front and rear. TandemMasterCylinder: spring 138 N, seal 80 N.](/diagrams/02-tandem-master-cylinder.svg)
 
 Two pistons in one bore. The pushrod drives the primary piston; its pressure drives the floating
 secondary piston. In steady state both circuits carry the same pressure:
@@ -211,7 +226,20 @@ capability, but braking one front wheel pulls the car toward that side. Front-wh
 with a negative scrub radius in the steering geometry use the X split because the geometry
 counters that pull.
 
-In the model, `TandemMasterCylinder` uses the quasi-static form on the slide, with a 25 millimeter
+Read the formula: the pressure p mc, in pascals, is the pushrod force F rod, minus the return
+spring's force F spring and the seal friction F seal, all in newtons, divided by the bore area A
+mc in square meters. It holds in steady state, when the pistons are not accelerating.
+
+The drawing is our model's cylinder, not to scale. The pushrod comes in from the left with
+F_rod, the booster's output. The primary piston, then the primary spring, then the floating
+secondary piston, then the secondary spring against the end of the 25 millimeter bore. Above it
+the reservoir, one compartment per circuit, each joined to its chamber by a small compensating
+port just ahead of the piston's seal: the orange 2.5 millimeters. Circuit 1 leaves the primary
+chamber, circuit 2 the secondary; in our model they are the ports `front` and `rear`, both at
+one `p_mc`. The 138 newtons are the spring preload `F_cs0` and the 80 newtons the seal friction
+`F_cf` in the formula on the slide, both from the PATH test car.
+
+In the model, `TandemMasterCylinder` uses this quasi-static form, with a 25 millimeter
 bore from the PATH test car. Before pressure rises, each piston covers a dead stroke, 2.5
 millimeters assumed, closing its compensating port to the reservoir.
 
@@ -256,8 +284,9 @@ safer failure. Every brake system is therefore designed so the front locks first
 proportioning valve gets this right for one load; EBD, using the ABS hardware and wheel-speed
 sensors, gets it right for any load. That is the first sign that ABS hardware does more than ABS.
 
-The brake plan's increment 1c adds the proportioning valve and the ideal-against-installed brake
-distribution plot to the model.
+The course model has no proportioning valve and no EBD: its single lumped wheel carries both
+axles' calipers under one tire, so no axle can lock first. The brake plan,
+`docs/brake-system-implementation-plan.md`, lists the valve as a later step.
 -->
 
 ---
@@ -352,7 +381,7 @@ Vehicle.braking_distance(r)
 
 <!--
 Sixteen minutes, the parts slide included: the largest drawing of the day, twelve blocks and
-eleven wires, then two code pastes, the analysis and two runs. Your first build of the day with a
+fourteen wires, then two code pastes, the analysis and two runs. Your first build of the day with a
 simulation in it: the brake system of this section, from the pedal to the wheel, stopping your own
 car. Every block is a library part; the wiring is yours. The guide page, step 02, has the same
 steps with every line of code; its "Do this" numbers are in brackets.
@@ -390,7 +419,7 @@ steps with every line of code; its "Do this" numbers are in brackets.
    port, to `fixed_hydraulic` first; only then the rotational one, the gray circle, to `fixed`,
    because a name still taken cannot be given.
 
-4. Wire [3], eleven wires in three groups.
+4. Wire [3], fourteen wires in three groups. The reference file writes them as eleven `connect` lines, because two of them join several ports: the three housings to ground, and the wheel, body and speed sensor.
    - The force chain: `command.y` → `pedal_unit.u`, `pedal_unit.rod` → `booster.input`,
      `booster.rod_out` → `master.pushrod`.
    - The housings and the two circuits: `pedal_unit.support`, `booster.support` and
@@ -461,6 +490,170 @@ seconds. At road factors 0.5 and 0.3: 85.1 and 136.7 meters. The testset is "Han
 hydraulic pedal stop" in `test/abs_handson_plausibility.jl`. The library twin, on a plain 1400
 kilogram mass, is `Vehicle.Brake.TestHydraulicStop`. Reference: `HandsOn03.PedalStop`,
 `dyad/HandsOn03/PedalStop.dyad`.
+-->
+
+---
+routeAlias: vacuum-booster
+---
+
+## Where the assist comes from
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-6 items-start">
+<div>
+
+![FullCarVacuumStop in Studio. Along the top, throttle_pedal into the engine, then flywheel, clutch and variator, whose shaft runs right and down into the wheel; housing below them. Below, build 02's chain: command, pedal_unit, booster, master, line_f and line_r into wheel, with body and speed on the right and road feeding the wheel's friction. One teal hose runs from the engine's vacuum port down into the top of the booster.](/img/lecture-03/full-car-vacuum.png)
+
+</div>
+<div>
+
+![Stopping distance from 25 m/s at a 150 N pedal, by vacuum source: idle 38.4 m, wide-open throttle with a fresh reserve 39.5 m, wide-open throttle with the reserve spent 329 m, engine off with the reserve spent 435 m, electric pump starting from 40 kPa 39.3 m.](/figures/02-vacuum-stopping.svg)
+
+The booster borrows **manifold vacuum**: 33 kPa at idle, almost none at wide-open throttle.
+A **check valve** keeps the stored vacuum, about **two** assisted stops once the source is gone.
+
+With a real engine feeding it (`FullCarVacuumStop`), lifting off at 90 km/h pulls the manifold
+from 54 to 23 kPa: full assist, **39.2 m**.
+
+</div>
+</div>
+
+<!--
+Optional, 3 minutes. A lecturer demo, outside the run sheet's minutes: show it only if ahead.
+
+Two models with the same brake chain as build 02: brake pedal, booster, master cylinder, two
+brake lines, braked wheel. They differ in where the booster gets its vacuum. All pressures here
+are absolute: the atmosphere is 101 kilopascal, and a lower number means a deeper vacuum.
+
+The whole car in the picture: `Lecture3.FullCarVacuumStop`. Here the Hands-on 02 engine,
+`HandsOn02.MapEngineFuelCut`, really drives the wheel, through its flywheel, the centrifugal
+clutch and the CVT. One hose joins the engine to the booster, a `vacuum` port on each (next
+slide): through it the booster sees the manifold pressure, and the air the booster draws out of
+its front chamber flows back into the manifold. The story: the car cruises at 90 kilometers per hour with the throttle pedal at 0.0916,
+about 9 percent; the engine turns 2182 rpm and the manifold sits at 54 kPa. At 0.5 seconds the
+driver lifts off, so the throttle closes, and presses the brake with the same 150 newtons.
+
+- Before lift-off the booster holds only the cruise vacuum, 54 kPa. That is good for 2.4
+  kilonewtons of assist, just short of the 2.45 that 150 newtons asks for.
+- With the throttle shut the engine pumps the manifold down: 33 kPa after 0.1 seconds, 23 kPa by
+  1.5 seconds. The booster follows to 25 kPa, and its reserve grows to 4.0 kilonewtons. It gives
+  the full 2.45 kilonewtons within half a second of the pedal going down, until the car stops.
+- The car stops in 39.2 meters and 2.9 seconds, at the same 56 bar, against 38.4 for the bench.
+  Started from the idle store of 33 kPa instead (`p_vac0 = 33e3`), the whole car needs 38.1: the
+  engine's drag gains a quarter meter, and the half-empty cruise store costs a meter.
+- The manifold never rises above its 54 kPa cruise value, far below the 101 of the atmosphere.
+  After the stop the engine idles at about 770 rpm and the manifold settles near 34 kPa.
+
+The bench behind the chart: `Lecture3.VacuumPedalStop`. It is build 02's `PedalStop` with
+`Vehicle.Brake.VacuumBooster` in place of the static booster. Its "engine" is only the air path,
+`Vehicle.Engine.AirPath`, held at a fixed throttle and a fixed engine speed. The switch `ev_pump`
+picks the source: 0 the engine's manifold, 1 an electric pump, `Vehicle.Brake.ElectricVacuumPump`.
+A small hose junction, `source`, joins the booster's hose to the one it picks and caps the other.
+Every run uses the same brake pedal, `pedal = 0.3`, which is 150 newtons of foot force, from 25
+meters per second, which is 90 kilometers per hour. The chart on the right comes from this bench.
+
+1. Idle: 38.4 meters, 56 bar in the master cylinder, against 36.0 for the static booster of build
+   02. The extra 2.4 meters are the booster filling its rear chamber, about 0.2 seconds.
+2. Wide-open throttle, fresh store: the manifold is near ambient and the check valve shuts, but
+   the booster still holds the 33 kPa it stored at idle: 39.5 meters, almost normal.
+3. Store used up: each full application lets rear-chamber air into the front chamber. After the
+   engine stops, four 400-newton applications leave 3.5, 2.1, 1.0 and 0.2 kilonewtons of assist,
+   the service manuals' "two or three assisted stops". With none left, 150 newtons makes 4 bar
+   instead of 56, and the car needs 435 meters with the engine off, 329 at wide-open throttle.
+4. Electric pump, starting at its 40 kPa switch-on point: 39.3 meters. That is why diesels,
+   hybrids and EVs carry one; Hella's UP28 pulls a 2.8-liter booster to 50 kPa in 6.7 seconds.
+
+Live, if there is time, in the Studio REPL (compiled before class):
+
+1. `using VehicleSystemsComponents: Lecture3, Vehicle`
+2. `Vehicle.braking_distance(Lecture3.VacuumPedalStopTransient())`: 38.4.
+3. `Vehicle.braking_distance(Lecture3.VacuumPedalStopTransient(engine_on = 0.0, n_apply = 4.0,
+   stop = 60.0))`: 435, the reserve spent. `engine_on = 0` stops the engine and `n_apply = 4`
+   means four full presses since it stopped. A minute of simulated time; give it a moment.
+4. `Vehicle.braking_distance(Lecture3.FullCarVacuumStopTransient())`: 39.2. About a minute the
+   first time.
+
+At pedal 0.6 the wheel locks whatever the source while the store holds: 44.1 meters at idle and
+45.4 for the whole car, against 43.7 for build 02.
+
+The booster's geometry, valve thresholds and flow coefficients are PATH's, UCB-ITS-PRR-97-21.
+The servo ratio, jump-in, cut-in and the valve's 10-newton dead band are assumed: PATH's 50
+newtons would leave the booster 250 newtons short of the static characteristic. Figure:
+`scripts/export_lecture03_vacuum_figures.jl`. The whole-car numbers are checked in
+`test/vacuum_full_car.jl`.
+-->
+
+---
+routeAlias: vacuum-port
+---
+
+## One hose, one connector
+
+![Before and after. Before: the engine and the booster joined by two signal wires, the manifold pressure p_m into the booster's p_src one way, and the booster's air flow mdot_out back into the engine's mdot_bst; two wires for one hose, and the sign is yours to write. Now: one hose between a vacuum port on each, carrying the pressure p, the same at both ends, and the mass flow m-dot, counted into each part; connect(engine.vacuum, booster.vacuum) gives p_engine = p_booster and m-dot_engine + m-dot_booster = 0.](/diagrams/02-vacuum-port.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm mt-2">
+<div>
+
+**Before:** two signal wires, the manifold pressure `p_m` to the booster and its air flow
+`mdot_out` back. Each points one way, and the minus sign between "out" and "in" was ours to write.
+
+</div>
+<div>
+
+**Now:** one connector, `Vehicle.GasPort`, as the brake line's hydraulic port and the spline:
+a **potential** $p$, absolute pressure in Pa, and a **flow** $\dot m$, air in kg/s, counted
+into each part.
+
+</div>
+<div>
+
+**Why a flow:** a hose joint stores no air, so at every connection $\sum \dot m = 0$. One
+`connect` writes that and $p_1 = p_2$; the physics, and the 39.2 m stop, are unchanged.
+
+</div>
+</div>
+
+<!--
+Optional, 2 minutes. A lecturer demo like the vacuum-booster slide, outside the run sheet's
+minutes: show it right after that slide, and only if ahead.
+
+Budget: 2 minutes, not counted in the section's 26.
+
+What changed in the library. In a car one rubber hose joins the engine's intake manifold to the
+vacuum booster. The model used to join them with two signal wires. The first carried `p_m`, the
+manifold's absolute pressure in pascals, from the engine into the booster's input `p_src`: the
+pressure on the far side of the booster's check valve. The second carried `mdot_out`, the air
+mass flow in kilograms per second that the check valve lets out of the booster's front chamber,
+back into the engine's input `mdot_bst`, where it adds to the air in the manifold. On the diagram
+of `FullCarVacuumStop` that was two wires looping between engine and booster.
+
+Now the manifold and the booster each have one port, `vacuum`, of the connector type
+`Vehicle.GasPort`, and one line joins them: `connect(engine.vacuum, booster.vacuum)`. The
+connector carries two variables. `p` is the absolute pressure at the end of the hose, in pascals.
+It is a potential variable: every port on one connection has the same `p`, as both ends of a
+short hose share one pressure. `mdot` is the air mass flow through the port in kilograms per
+second, counted positive into the part that owns the port. It is a flow variable. The brake line's
+hydraulic port is the same idea with pressure and mass flow of brake fluid; the spline is the
+same idea with angle and torque.
+
+Why the flow needs the sum-to-zero rule. For a flow variable, `connect` writes that all the flows
+at the joint add up to zero. With each `mdot` counted into its own part, that says the air the
+booster gives up is exactly the air the manifold takes in: a joint stores no air, so none is lost
+or made there. If `connect` only made the two flows equal, both ends would say "in", and air would
+appear from nothing. With signals, we wrote the minus sign ourselves, by calling one variable
+`mdot_out` and the other `mdot_bst`. The connector writes it at every joint, also where three
+hoses meet: the bench with the electric pump has a small junction with three ports, and the same
+rule holds there.
+
+Inside the parts nothing changed. The booster still computes `mdot_out = C_vm · max(0, p_f − p)`,
+where `p_f` is its front-chamber pressure and `C_vm` the check valve's flow coefficient, and
+sets its port's flow to minus that. The manifold sets its port's pressure to its own and adds the
+port's flow to its mass balance. The whole car still stops in 39.2 meters, checked in
+`test/vacuum_full_car.jl`. A port with nothing connected carries no flow, a capped hose: that is
+why hands-on 2's engine simply leaves it open.
+
+Ask the room, if there is time: why is pressure the potential and air flow the flow, and not the
+other way round? *(Pressure is a level, the same on both sides of a joint; air flow is an amount
+that moves through it and has to be conserved.)*
 -->
 
 ---

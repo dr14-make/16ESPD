@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .fluid { fill: #eaf1fa; stroke: none; }
+    .wall { stroke: #16202c; stroke-width: 4; fill: none; }
+    .thin { stroke: #16202c; stroke-width: 2; fill: none; }
+    .spring { stroke: #4a5a6b; stroke-width: 2; fill: none; }
+    .line { stroke: #16202c; stroke-width: 4; fill: none; }
+    .force { stroke: #a75d00; stroke-width: 4; fill: none; }
+    .dim { stroke: #a75d00; stroke-width: 1.5; fill: none; }
+    .seal { fill: #16202c; }
+    .t { font-size: 17px; font-weight: 600; }
+    .v { font-size: 15px; font-weight: 600; }
+    .warn { font-size: 15px; font-weight: 600; fill: #a75d00; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .code { font-size: 14px; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <marker id="tm-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="tm-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <!-- reservoir, two compartments -->
+  <rect class="fluid" x="282" y="84" width="356" height="56"/>
+  <path class="thin" d="M280 60 V142 H300 M308 142 H538 M546 142 H640 V60 M460 74 V142"/>
+  <text x="460" y="52" text-anchor="middle" class="lbl">reservoir, one compartment per circuit</text>
+
+  <!-- compensating ports from the reservoir into the bore -->
+  <rect class="fluid" x="300" y="140" width="8" height="34"/>
+  <rect class="fluid" x="538" y="140" width="8" height="34"/>
+  <path class="thin" d="M300 142 V172 M308 142 V172 M538 142 V172 M546 142 V172"/>
+
+  <!-- bore -->
+  <rect class="fluid" x="250" y="174" width="510" height="76"/>
+  <path class="wall" d="M120 172 H300 M308 172 H538 M546 172 H762 V252 H690 M670 252 H350 M330 252 H120"/>
+
+  <!-- pushrod and primary piston -->
+  <path class="line" d="M20 212 H198"/>
+  <path class="force" d="M30 190 H120" marker-end="url(#tm-warn)"/>
+  <text x="24" y="182" class="warn">F_rod</text>
+  <text x="20" y="240" class="lbl">pushrod, from</text>
+  <text x="20" y="258" class="lbl">the booster</text>
+  <rect class="box" x="198" y="176" width="52" height="72" rx="3"/>
+  <rect class="seal" x="244" y="176" width="6" height="72"/>
+  <text x="224" y="290" text-anchor="middle" class="v">primary</text>
+  <text x="224" y="308" text-anchor="middle" class="v">piston</text>
+
+  <!-- primary spring and chamber -->
+  <path class="spring" d="M250 212 l14 -18 l14 36 l14 -36 l14 36 l14 -36 l14 36 l14 -36 l14 36 l14 -36 l14 36 l14 -36 l14 36 l14 -18"/>
+
+  <!-- floating secondary piston -->
+  <rect class="box" x="436" y="176" width="52" height="72" rx="3"/>
+  <rect class="seal" x="482" y="176" width="6" height="72"/>
+  <text x="462" y="290" text-anchor="middle" class="v">secondary</text>
+  <text x="462" y="308" text-anchor="middle" class="v">piston, floating</text>
+
+  <!-- secondary spring to the bore end -->
+  <path class="spring" d="M488 212 l15 -18 l15 36 l15 -36 l15 36 l15 -36 l15 36 l15 -36 l15 36 l15 -36 l15 36 l15 -36 l15 36 l15 -36 l15 36 l15 -36 l15 36 l14 -18"/>
+  <text x="626" y="164" text-anchor="middle" class="lbl">springs</text>
+
+  <!-- dead stroke: seal edge to compensating port -->
+  <path class="dim" d="M250 160 H300" marker-start="url(#tm-warn)" marker-end="url(#tm-warn)"/>
+  <text x="96" y="150" class="warn">dead stroke 2.5 mm</text>
+
+  <!-- outlets -->
+  <path class="line" d="M340 252 V340"/>
+  <path class="line" d="M680 252 V340"/>
+  <text x="340" y="362" text-anchor="middle" class="v">circuit 1</text>
+  <text x="680" y="362" text-anchor="middle" class="v">circuit 2</text>
+  <text x="545" y="392" text-anchor="middle" class="lbl">both at the same p_mc in steady state; in the model the ports front and rear</text>
+
+  <text x="790" y="200" class="lbl">25 mm</text>
+  <text x="790" y="218" class="lbl">bore</text>
+  <text x="700" y="290" class="code">TandemMasterCylinder</text>
+  <text x="700" y="310" class="lbl">spring 138 N, seal 80 N</text>
+</svg>

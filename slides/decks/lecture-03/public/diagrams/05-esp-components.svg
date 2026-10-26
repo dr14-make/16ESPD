@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 460" width="680" height="460">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .body { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .wheel { fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .line { stroke: #16202c; stroke-width: 4; fill: none; }
+    .sig { stroke: #4a5a6b; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+    .lead { stroke: #4a5a6b; stroke-width: 1; fill: none; }
+    .want { fill: #a75d00; }
+    .does { fill: #1f5fa8; }
+    .v { font-size: 15px; font-weight: 600; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .lw { font-size: 15px; font-weight: 600; fill: #a75d00; }
+    .ld { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+
+  <!-- car, front at the top -->
+  <rect class="body" x="220" y="20" width="240" height="400" rx="50"/>
+  <rect class="wheel" x="198" y="70" width="22" height="60" rx="4"/>
+  <rect class="wheel" x="460" y="70" width="22" height="60" rx="4"/>
+  <rect class="wheel" x="198" y="310" width="22" height="60" rx="4"/>
+  <rect class="wheel" x="460" y="310" width="22" height="60" rx="4"/>
+
+  <rect class="box" x="300" y="36" width="110" height="40" rx="4"/>
+  <text x="355" y="61" text-anchor="middle" class="v">engine</text>
+
+  <rect class="box" x="236" y="140" width="56" height="32" rx="4"/>
+  <text x="264" y="161" text-anchor="middle" class="v">MC</text>
+  <rect class="box-accent" x="336" y="140" width="104" height="46" rx="4"/>
+  <text x="388" y="168" text-anchor="middle" class="v">HU + ECU</text>
+  <path class="line" d="M292 156 H336"/>
+
+  <!-- brake lines to the four wheels -->
+  <path class="line" d="M350 140 V100 H220"/>
+  <path class="line" d="M440 150 H448 V100 H460"/>
+  <path class="line" d="M348 186 V340 H220"/>
+  <path class="line" d="M364 186 V326 H460"/>
+
+  <!-- torque request to the engine -->
+  <path class="sig" d="M404 140 V76"/>
+
+  <!-- driver's intention -->
+  <circle cx="290" cy="240" r="26" fill="#fff" stroke="#16202c" stroke-width="3"/>
+  <rect class="want" x="284" y="208" width="12" height="12" rx="2"/>
+  <rect class="want" x="244" y="184" width="12" height="12" rx="2"/>
+  <rect class="want" x="434" y="168" width="12" height="12" rx="2"/>
+
+  <!-- car's motion -->
+  <rect class="box-accent" x="388" y="236" width="56" height="40" rx="4"/>
+  <text x="416" y="261" text-anchor="middle" class="v">ψ̇, a_y</text>
+  <rect class="does" x="182" y="94" width="12" height="12" rx="2"/>
+  <rect class="does" x="486" y="94" width="12" height="12" rx="2"/>
+  <rect class="does" x="182" y="334" width="12" height="12" rx="2"/>
+  <rect class="does" x="486" y="334" width="12" height="12" rx="2"/>
+
+  <!-- labels, intention -->
+  <path class="lead" d="M284 214 H180"/>
+  <text x="176" y="210" text-anchor="end" class="lw">steering-angle</text>
+  <text x="176" y="228" text-anchor="end" class="lw">sensor</text>
+  <path class="lead" d="M244 190 V176 H180"/>
+  <text x="176" y="164" text-anchor="end" class="lw">brake and</text>
+  <text x="176" y="182" text-anchor="end" class="lw">accelerator pedals</text>
+  <path class="lead" d="M446 174 H500"/>
+  <text x="504" y="170" class="lw">brake-pressure</text>
+  <text x="504" y="188" class="lw">sensor</text>
+
+  <!-- labels, motion -->
+  <path class="lead" d="M444 256 H500"/>
+  <text x="504" y="250" class="ld">yaw rate and lateral</text>
+  <text x="504" y="268" class="ld">acceleration, near</text>
+  <text x="504" y="286" class="ld">the center of gravity</text>
+  <text x="504" y="106" class="ld">wheel-speed</text>
+  <text x="504" y="124" class="ld">sensor, × 4</text>
+
+  <path class="lead" d="M404 90 H600 V56"/>
+  <text x="600" y="48" text-anchor="middle" class="lbl">torque request</text>
+
+  <!-- legend -->
+  <rect class="want" x="20" y="374" width="12" height="12" rx="2"/>
+  <text x="40" y="385" class="lbl">driver's intention</text>
+  <rect class="does" x="20" y="400" width="12" height="12" rx="2"/>
+  <text x="40" y="411" class="lbl">car's motion</text>
+  <text x="20" y="437" class="lbl">HU: hydraulic unit</text>
+  <path class="line" d="M500 400 H540"/>
+  <text x="548" y="405" class="lbl">brake line</text>
+  <path class="sig" d="M500 426 H540"/>
+  <text x="548" y="431" class="lbl">signal</text>
+</svg>
