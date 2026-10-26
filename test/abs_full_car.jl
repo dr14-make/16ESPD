@@ -17,9 +17,7 @@ using Statistics: median
     # Held open, the valves leave FullCarVacuumStop's brake chain.
     @test V.braking_distance(L3.FullCarABSStopTransient(pedal = 0.3, abs_on = 0.0)) ≈ 39.18 atol = 0.05
 
-    # µ 0.3 is left out: ABSValve discards the fluid it dumps, and on that long a stop the
-    # vacuum booster's diaphragm runs out of stroke before the car stops.
-    for (mu, d_abs, d_locked) in ((1.0, 34.82, 45.37), (0.5, 64.67, 86.60))
+    for (mu, d_abs, d_locked) in ((1.0, 34.82, 45.37), (0.5, 64.67, 86.60), (0.3, 106.80, 138.60))
         on = L3.FullCarABSStopTransient(road_mu = mu, stop = stop_time(mu))
         off = L3.FullCarABSStopTransient(road_mu = mu, abs_on = 0.0, stop = stop_time(mu))
         @test string(on.sol.retcode) == "Success"

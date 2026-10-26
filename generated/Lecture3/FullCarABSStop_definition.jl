@@ -11,7 +11,9 @@ Lecture 3 whole-car ABS stop: `FullCarVacuumStop`, the Hands-on 02 map engine wi
 flywheel and the CVT driving the hydraulic braked wheel, with Hands-on 03 step 03's ABS added as
 `ABSStop` adds it: a `Vehicle.Brake.ABSValve` in each brake line, both commanded by
 `HandsOn03.SlipABS` from the wheel slip, the car's speed and the master-cylinder pressure. The
-booster draws its vacuum from the engine's intake manifold, as in `FullCarVacuumStop`.
+valves return the fluid they dump to the master cylinder, an ideal return pump, so a long low-µ
+stop does not walk the pedal and booster to the end of their stroke. The booster draws its vacuum
+from the engine's intake manifold, as in `FullCarVacuumStop`.
 
 The car cruises steadily at `speed_kmh` with the throttle pedal at `pedal_cmd`. At `brake_time`
 the driver lifts off and the brake pedal steps to `pedal`, which locks the wheel without ABS.
@@ -150,10 +152,10 @@ reaches, and the brake chain is `FullCarVacuumStop`'s.
   push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
   # Subcomponent valve_f of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
   valve_f_overrides = __pop_subcomponent_overrides!(__overrides, "valve_f")
-  push!(__systems, @named valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, valve_f_overrides...))
+  push!(__systems, @named valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; return_dump=Float64(1), continuity__graph0=medium, valve_f_overrides...))
   # Subcomponent valve_r of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
   valve_r_overrides = __pop_subcomponent_overrides!(__overrides, "valve_r")
-  push!(__systems, @named valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, valve_r_overrides...))
+  push!(__systems, @named valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; return_dump=Float64(1), continuity__graph0=medium, valve_r_overrides...))
   # Subcomponent line_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
   push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, line_f_overrides...))

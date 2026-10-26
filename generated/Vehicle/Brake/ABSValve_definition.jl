@@ -5,19 +5,23 @@
 
 
 @doc Markdown.doc"""
-   ABSValve(; name, T_v)
+   ABSValve(; name, T_v, return_dump)
 
 Ideal per-circuit ABS modulator: the ECU commands the wheel-side pressure it allows, and the valve
 makes the caliper follow it after the solenoid lag `T_v`, never above the master-cylinder pressure.
-A command at or above the master-cylinder pressure leaves the inlet open, with no lag. Fluid
-dumped below the master-cylinder pressure leaves the model; there is no accumulator or return pump,
-so the pedal does not pulse.
+A command at or above the master-cylinder pressure leaves the inlet open, with no lag.
+
+`return_dump` decides where the fluid dumped from the caliper goes. At 0 it leaves the model, so
+the master cylinder makes up every dumped volume and the pedal creeps forward without pulsing. At 1
+it re-enters at `port_a`, as if an ideal return pump with no accumulator pushed it straight back
+to the master cylinder: the pedal is pushed back with every dump, the pulsation a driver feels.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `T_v`         | Electronics and solenoid reaction time                         | s  |   0.03 |
+| `return_dump`         | Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side                         | --  |   0 |
 
 ## Connectors
 
@@ -33,7 +37,7 @@ so the pedal does not pulse.
 | `p_target`         |                          | Pa  |
 | `m_dump`         |                          | kg/s  |
 """
-@component function ABSValve(; name = nothing, T_v=0.03, continuity__graph0, kwargs...)
+@component function ABSValve(; name = nothing, T_v=0.03, return_dump=Float64(0), continuity__graph0, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -67,6 +71,9 @@ so the pedal does not pulse.
   __local__T_v = T_v
   append!(__params, @parameters (T_v::Real), [description = "Electronics and solenoid reaction time", bounds = (eps(Float64), Inf)])
   __initial_conditions[T_v] = __local__T_v
+  __local__return_dump = return_dump
+  append!(__params, @parameters (return_dump::Real), [description = "Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side"])
+  __initial_conditions[return_dump] = __local__return_dump
 
   ### Final Parameters (assignments)
 
@@ -116,7 +123,7 @@ so the pedal does not pulse.
   push!(__eqs, p_target ~ min(max(p_cmd, 0.0), max(port_a.p, 0.0)))
   push!(__eqs, ModelingToolkit.D_nounits(p_delayed) ~ ifelse(p_cmd >= port_a.p, (port_a.p - p_delayed) / 0.001, (p_target - p_delayed) / T_v))
   push!(__eqs, port_b.p ~ ifelse(p_cmd >= port_a.p, port_a.p, min(port_a.p, max(p_delayed, 0.0))))
-  push!(__eqs, port_a.m_flow ~ ifelse(p_cmd >= port_a.p, -port_b.m_flow, max(-port_b.m_flow, 0.0)))
+  push!(__eqs, port_a.m_flow ~ ifelse(p_cmd >= port_a.p, -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0)))
   push!(__eqs, m_dump ~ port_a.m_flow + port_b.m_flow)
 
   # Return completely constructed System
