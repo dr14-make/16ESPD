@@ -16,9 +16,18 @@ end
 
 
 @testset "`VehicleSystemsComponents.Vehicle.Brake`" begin
+include("ABSValve_test.jl")
+include("BrakeCaliper_test.jl")
+include("BrakeLine_test.jl")
 include("BrakePedal_test.jl")
 include("ClosedHydraulicPort_test.jl")
+include("ElectricVacuumPump_test.jl")
 include("StaticBooster_test.jl")
 include("TandemMasterCylinder_test.jl")
+include("TestBrakeVacuum_test.jl")
 include("TestForceChain_test.jl")
+include("TestHydraulicStop_test.jl")
+include("TestVacuumBooster_test.jl")
+include("VacuumBooster_test.jl")
+include("VacuumSourceSelector_test.jl")
 end

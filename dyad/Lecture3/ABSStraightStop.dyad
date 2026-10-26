@@ -1,0 +1,117 @@
+"""Four-channel ABS stop from 80 km/h on a uniform dry road."""
+test component ABSStraightStop
+  parameter v0::Velocity = 22.22222222222222
+  parameter T_cmd::Torque = 2500.0
+  parameter brake_time::Time = 0.5
+  parameter radius::Length = 0.31
+  parameter select_low::Real = 0.0
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_slow::Real = 16000.0
+  parameter h_cg::Length = 0.0
+  structural parameter load_transfer::Boolean = true
+  steer = BlockComponents.Sources.Constant(k = 0.0) {^steer}
+  demand = BlockComponents.Sources.Step(offset = 0.0, height = T_cmd, start_time = brake_time) {^demand}
+  zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer) {^car}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow) {^abs}
+relations
+  connect(steer.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
+  connect(car.chassis, sensors.chassis) {^w4}
+  connect(car.steering, sensors.steering) {^w5}
+  connect(car.wheel_fl, sensors.wheel_fl) {^w6}
+  connect(car.wheel_fr, sensors.wheel_fr) {^w7}
+  connect(car.wheel_rl, sensors.wheel_rl) {^w8}
+  connect(car.wheel_rr, sensors.wheel_rr) {^w9}
+  connect(car.spin_fl, sensors.spin_fl) {^w10}
+  connect(car.spin_fr, sensors.spin_fr) {^w11}
+  connect(car.spin_rl, sensors.spin_rl) {^w12}
+  connect(car.spin_rr, sensors.spin_rr) {^w13}
+  connect(demand.y, abs.demand) {^w14}
+  connect(sensors.vx, abs.vx) {^w15}
+  connect(sensors.kappa_fl, abs.kappa_fl) {^w16}
+  connect(sensors.kappa_fr, abs.kappa_fr) {^w17}
+  connect(sensors.kappa_rl, abs.kappa_rl) {^w18}
+  connect(sensors.kappa_rr, abs.kappa_rr) {^w19}
+  connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr) {^w20}
+  connect(abs.tau_fl, car.tau_fl) {^w35}
+  connect(abs.tau_fr, car.tau_fr) {^w36}
+  connect(abs.tau_rl, car.tau_rl) {^w37}
+  connect(abs.tau_rr, car.tau_rr) {^w38}
+  initial car.body.r = [0, 0]
+  initial car.body.v = [v0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = (v0 + 0.01) / radius
+  initial car.fr.inertia.w = (v0 + 0.01) / radius
+  initial car.rl.inertia.w = (v0 + 0.01) / radius
+  initial car.rr.inertia.w = (v0 + 0.01) / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "dry_stop": {
+        "solver": "Tsit5", "stop": 6.0,
+        "params": {"load_transfer": false},
+        "atol": {"sensors.x": 0.5, "sensors.vx": 0.05},
+        "expect": {"final": {"sensors.x": 47.182, "sensors.vx": 0.0}, "signals": ["sensors.x", "sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl", "abs.hold_fl.y", "abs.hold_rl.y"]}
+      }
+    }
+  },
+  "_links": {
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 380, "x2": 640, "y2": 580}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 380, "x2": 900, "y2": 580}}}},
+    "steer": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 210, "x2": 110, "y2": 290}}}},
+    "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 200, "x2": 280, "y2": 300}}}},
+    "abs": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 380, "x2": 380, "y2": 580}}}},
+    "demand": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 370, "x2": 90, "y2": 430}}}},
+    "zero": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 490, "x2": 90, "y2": 550}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 250.0}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 340}, {"x": 800.0, "y": 340}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 915, "y": 520.0}, {"x": 915, "y": 630}, {"x": 260.0, "y": 630}], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 925, "y": 500.0}, {"x": 925, "y": 640}, {"x": 220.0, "y": 640}], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 935, "y": 480.0}, {"x": 935, "y": 650}, {"x": 150, "y": 650}, {"x": 150, "y": 540.0}], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 945, "y": 460.0}, {"x": 945, "y": 660}, {"x": 140, "y": 660}, {"x": 140, "y": 520.0}], "E": 2}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 955, "y": 440.0}, {"x": 955, "y": 670}, {"x": 130, "y": 670}, {"x": 130, "y": 500.0}], "E": 2}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 420.0}], "E": 2}, {"S": -1, "M": [{"x": 120, "y": 440.0}], "E": 3}, {"S": -1, "M": [{"x": 120, "y": 460.0}], "E": 4}, {"S": -1, "M": [{"x": 120, "y": 480.0}], "E": 5}], "junctions": [{"x": 120, "y": 520.0}]}},
+    "w35": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w36": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w37": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w38": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+analysis ABSStraightStopTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  parameter v0::Velocity = 22.22222222222222
+  parameter T_cmd::Torque = 2500.0
+  parameter select_low::Real = 0.0
+  parameter k_dec::Real = 40000.0
+  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_slow::Real = 16000.0
+  parameter h_cg::Length = 0.0
+  model = VehicleSystemsComponents.Lecture3.ABSStraightStop(v0 = v0, T_cmd = T_cmd, select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, h_cg = h_cg)
+relations
+end

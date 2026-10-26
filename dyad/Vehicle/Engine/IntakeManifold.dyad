@@ -4,13 +4,13 @@ Intake manifold as one isothermal receiver: the manifold pressure is the only st
     V_m / (R T_m) dp_m/dt = mdot_thr + mdot_bst - mdot_cyl
 
 Air enters through the throttle and, when the brake booster's check valve is open, from the
-booster; the cylinders draw it out.
+booster through the `vacuum` hose, `mdot_bst = vacuum.mdot`; the cylinders draw it out.
 """
 component IntakeManifold
   "Air flow in through the throttle [kg/s]"
   mdot_thr = RealInput() {^mdot_thr}
-  "Air flow in from the brake booster through its check valve [kg/s]"
-  mdot_bst = RealInput() {^mdot_bst}
+  "Vacuum take-off: the hose to the brake booster, at manifold pressure"
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Air flow out into the cylinders [kg/s]"
   mdot_cyl = RealInput() {^mdot_cyl}
   "Manifold absolute pressure [Pa]"
@@ -24,13 +24,14 @@ component IntakeManifold
   "Manifold absolute pressure"
   variable p::Pressure
 relations
-  V_m / (R * T_m) * der(p) = mdot_thr + mdot_bst - mdot_cyl
+  V_m / (R * T_m) * der(p) = mdot_thr + vacuum.mdot - mdot_cyl
+  vacuum.p = p
   p_m = p
 metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/IntakeManifold.svg"}},
   "_links": {
     "mdot_thr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-    "mdot_bst": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "mdot_cyl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
     "p_m": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
   }

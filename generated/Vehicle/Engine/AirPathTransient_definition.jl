@@ -44,9 +44,9 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # Brake plan increment 2a: the air path under prescribed throttle, speed and booster inflow.
   # 
   # The throttle steps from `u0` by `du` at `t_step`, the speed is held at `omega`, and the booster
-  # pushes `mdot_bst` into the manifold for `d_bst` seconds from `t_bst`. The test cases are the 2a
-  # scenarios: idle pull-down from ambient, tip-in to wide open at 3000 rpm, overrun at 3000 rpm, a
-  # small throttle step at idle for the time constant, and a booster release at idle.
+  # pushes `mdot_bst` into the manifold's `vacuum` hose for `d_bst` seconds from `t_bst`. The test
+  # cases are the 2a scenarios: idle pull-down from ambient, tip-in to wide open at 3000 rpm, overrun
+  # at 3000 rpm, a small throttle step at idle for the time constant, and a booster release at idle.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.Engine.TestAirPath(; name=:TestAirPath)
 end
 

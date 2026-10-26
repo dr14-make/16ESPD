@@ -1,0 +1,127 @@
+"""Steering ramp with reduced front friction for continuous-ESP understeer checks."""
+test component ESPSteerRamp
+  parameter v0::Velocity = 22.22222222222222
+  parameter delta_sw_final::Angle = 1.7671458676442586
+  parameter t_ramp::Time = 7.5
+  parameter t_steer::Time = 0.5
+  parameter mu_scale_front::Real = 0.7
+  parameter esp_on::Real = 1.0
+  parameter Kp::Real = 40000.0
+  parameter Ki::Real = 0.0
+  parameter T_build::Time = 0.1
+  parameter R_build::Real = 1.0e9
+  parameter radius::Length = 0.31
+  parameter h_cg::Length = 0.0
+  structural parameter load_transfer::Boolean = true
+  steer = BlockComponents.Sources.Ramp(offset = 0.0, height = delta_sw_final, duration = t_ramp, start_time = t_steer) {^steer}
+  steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
+  limit_fl = BlockComponents.Nonlinear.Limiter(y_min = 0) {^limit_fl}
+  limit_fr = BlockComponents.Nonlinear.Limiter(y_min = 0) {^limit_fr}
+  limit_rl = BlockComponents.Nonlinear.Limiter(y_min = 0) {^limit_rl}
+  limit_rr = BlockComponents.Nonlinear.Limiter(y_min = 0) {^limit_rr}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, mu_scale_fl = mu_scale_front, mu_scale_fr = mu_scale_front, h_cg = h_cg, load_transfer = load_transfer) {^car}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+  esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(esp_on = esp_on, Kp = Kp, Ki = Ki, T_build = T_build, R_build = R_build, radius = radius) {^esp}
+relations
+  connect(steer.y, steering_robot.delta_sw_ref) {^w1}
+  connect(steering_robot.steering, car.steering) {^w2}
+  connect(car.chassis, sensors.chassis) {^w4}
+  connect(car.steering, sensors.steering) {^w5}
+  connect(car.wheel_fl, sensors.wheel_fl) {^w6}
+  connect(car.wheel_fr, sensors.wheel_fr) {^w7}
+  connect(car.wheel_rl, sensors.wheel_rl) {^w8}
+  connect(car.wheel_rr, sensors.wheel_rr) {^w9}
+  connect(car.spin_fl, sensors.spin_fl) {^w10}
+  connect(car.spin_fr, sensors.spin_fr) {^w11}
+  connect(car.spin_rl, sensors.spin_rl) {^w12}
+  connect(car.spin_rr, sensors.spin_rr) {^w13}
+  connect(sensors.delta_sw, esp.delta_sw) {^w14}
+  connect(sensors.r, esp.r) {^w15}
+  connect(sensors.vx, esp.vx) {^w16}
+  connect(esp.dT_fl, limit_fl.u) {^w17}
+  connect(esp.dT_fr, limit_fr.u) {^w18}
+  connect(esp.dT_rl, limit_rl.u) {^w19}
+  connect(esp.dT_rr, limit_rr.u) {^w20}
+  connect(limit_fl.y, car.tau_fl) {^w21}
+  connect(limit_fr.y, car.tau_fr) {^w22}
+  connect(limit_rl.y, car.tau_rl) {^w23}
+  connect(limit_rr.y, car.tau_rr) {^w24}
+  initial car.body.r = [0, 0]
+  initial car.body.v = [v0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = (v0 + 0.01) / radius
+  initial car.fr.inertia.w = (v0 + 0.01) / radius
+  initial car.rl.inertia.w = (v0 + 0.01) / radius
+  initial car.rr.inertia.w = (v0 + 0.01) / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+metadata {
+  "Dyad": {
+    "tests": {
+      "front_low_mu": {
+        "solver": "Tsit5", "stop": 8.0,
+        "params": {"load_transfer": false},
+        "expect": {"signals": ["sensors.r", "sensors.vx", "esp.r_ref", "car.tau_fl", "car.tau_fr", "car.tau_rl", "car.tau_rr"]}
+      }
+    }
+  },
+  "_links": {
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 380, "x2": 640, "y2": 580}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 380, "x2": 900, "y2": 580}}}},
+    "steer": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 210, "x2": 110, "y2": 290}}}},
+    "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 200, "x2": 280, "y2": 300}}}},
+    "esp": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 380, "x2": 350, "y2": 580}}}},
+    "limit_fl": {"Dyad": {"placement": {"diagram": {"x1": 382, "y1": 360, "x2": 412, "y2": 390}}}},
+    "limit_fr": {"Dyad": {"placement": {"diagram": {"x1": 382, "y1": 430, "x2": 412, "y2": 460}}}},
+    "limit_rl": {"Dyad": {"placement": {"diagram": {"x1": 382, "y1": 500, "x2": 412, "y2": 530}}}},
+    "limit_rr": {"Dyad": {"placement": {"diagram": {"x1": 382, "y1": 570, "x2": 412, "y2": 600}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 250.0}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 340}, {"x": 800.0, "y": 340}], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 915, "y": 440.0}, {"x": 915, "y": 630}, {"x": 130, "y": 630}, {"x": 130, "y": 530.0}], "E": 2}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 925, "y": 420.0}, {"x": 925, "y": 640}, {"x": 120, "y": 640}, {"x": 120, "y": 480.0}], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 935, "y": 400.0}, {"x": 935, "y": 650}, {"x": 110, "y": 650}, {"x": 110, "y": 430.0}], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 366, "y": 420.0}, {"x": 366, "y": 375.0}], "E": 2}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 427, "y": 375.0}, {"x": 427, "y": 420.0}], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 366, "y": 460.0}, {"x": 366, "y": 445.0}], "E": 2}]}},
+    "w22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 427, "y": 445.0}, {"x": 427, "y": 460.0}], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 366, "y": 500.0}, {"x": 366, "y": 515.0}], "E": 2}]}},
+    "w23": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 427, "y": 515.0}, {"x": 427, "y": 500.0}], "E": 2}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 366, "y": 540.0}, {"x": 366, "y": 585.0}], "E": 2}]}},
+    "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 427, "y": 585.0}, {"x": 427, "y": 540.0}], "E": 2}]}}
+  }
+}
+end
+
+analysis ESPSteerRampTransient
+  extends TransientAnalysis(stop = 8.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  parameter v0::Velocity = 22.22222222222222
+  parameter delta_sw_final::Angle = 1.7671458676442586
+  parameter t_ramp::Time = 7.5
+  parameter t_steer::Time = 0.5
+  parameter mu_scale_front::Real = 0.7
+  parameter esp_on::Real = 1.0
+  parameter Kp::Real = 40000.0
+  parameter Ki::Real = 0.0
+  parameter T_build::Time = 0.1
+  parameter R_build::Real = 1.0e9
+  parameter h_cg::Length = 0.0
+  model = VehicleSystemsComponents.Lecture3.ESPSteerRamp(v0 = v0, delta_sw_final = delta_sw_final, t_ramp = t_ramp, t_steer = t_steer, mu_scale_front = mu_scale_front, esp_on = esp_on, Kp = Kp, Ki = Ki, T_build = T_build, R_build = R_build, h_cg = h_cg)
+relations
+end

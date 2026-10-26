@@ -1,0 +1,41 @@
+"""
+Ideal per-circuit ABS modulator: the ECU commands the wheel-side pressure it allows, and the valve
+makes the caliper follow it after the solenoid lag `T_v`, never above the master-cylinder pressure.
+A command at or above the master-cylinder pressure leaves the inlet open, with no lag.
+
+`return_dump` decides where the fluid dumped from the caliper goes. At 0 it leaves the model, so
+the master cylinder makes up every dumped volume and the pedal creeps forward without pulsing. At 1
+it re-enters at `port_a`, as if an ideal return pump with no accumulator pushed it straight back
+to the master cylinder: the pedal is pushed back with every dump, the pulsation a driver feels.
+"""
+component ABSValve
+  "Master-cylinder side"
+  port_a = HydraulicComponents.Interfaces.Port() {^port_a}
+  "Brake-line and caliper side"
+  port_b = HydraulicComponents.Interfaces.Port() {^port_b}
+  "Allowed wheel-circuit pressure; at or above the master-cylinder pressure the inlet is open [Pa]"
+  p_cmd = RealInput() {^p_cmd}
+  "Electronics and solenoid reaction time"
+  parameter T_v::Time(min = eps(Float64)) = 0.03
+  "Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side"
+  parameter return_dump::Real = 0
+  variable p_delayed::Pressure
+  variable p_target::Pressure
+  variable m_dump::MassFlowRate
+relations
+  continuity(port_a.medium, port_b.medium)
+  initial p_delayed = 0.0
+  p_target = min(max(p_cmd, 0.0), max(port_a.p, 0.0))
+  der(p_delayed) = ifelse(p_cmd >= port_a.p, (port_a.p - p_delayed) / 0.001, (p_target - p_delayed) / T_v)
+  port_b.p = ifelse(p_cmd >= port_a.p, port_a.p, min(port_a.p, max(p_delayed, 0.0)))
+  port_a.m_flow = ifelse(p_cmd >= port_a.p, -port_b.m_flow, max(-port_b.m_flow, 0.0) - return_dump * max(port_b.m_flow, 0.0))
+  m_dump = port_a.m_flow + port_b.m_flow
+metadata {
+  "_links": {
+    "port_a": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "port_b": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_b", "x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "p_cmd": {"Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 270}}}}
+  }
+}
+end
+

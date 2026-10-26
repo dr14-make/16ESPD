@@ -1,0 +1,54 @@
+"""
+One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-line friction torque.
+"""
+component BrakeCaliper
+  extends RotationalComponents.Interfaces.PartialElementaryTwoSplinesAndSupport
+  "Hydraulic connection"
+  port = HydraulicComponents.Interfaces.Port() {^port}
+  "Torque gain [N·m/Pa] (assumed, textbook)"
+  parameter K::Real = 49.0e-5
+  "Pad-contact pressure [Pa] (assumed, textbook)"
+  parameter p0::Pressure = 0.5e5
+  "Clearance take-up volume [m³] (assumed, textbook)"
+  parameter V0::Volume = 0.5e-6
+  "Linear pressure-volume coefficient [Pa/m³] (assumed, textbook)"
+  parameter K1::Real = 1e12
+  "Cubic pressure-volume coefficient [Pa/m⁹] (assumed, textbook)"
+  parameter K3::Real = 4.8e23
+  "Regularization below this shaft speed"
+  parameter w0::AngularVelocity(min = eps(Float64)) = 0.2
+  "Fluid volume admitted to the caliper"
+  variable V::Volume
+  "Caliper pressure"
+  variable p::Pressure
+  "Fluid density at the caliper pressure"
+  variable rho::Density
+  "Volume beyond clearance take-up"
+  variable u::Volume
+  "Applied brake-torque magnitude"
+  variable tau::Torque
+  "Shaft angle with respect to the support"
+  variable phi::Angle
+  "Shaft speed with respect to the support"
+  variable w::AngularVelocity
+  "Signed friction torque removed from the shaft line"
+  variable tau_friction::Torque
+relations
+  phi = spline_a.phi - phi_support
+  w = der(phi)
+  spline_b.phi = spline_a.phi
+  port.p = p
+  rho = HydraulicComponents.density(port.medium, p)
+  der(V) = port.m_flow / rho
+  u = V - V0
+  p = ifelse(V < V0, p0 * V / V0, p0 + K1 * u + K3 * u ^ 3)
+  tau = K * max(0.0, p - p0)
+  tau_friction = tau * ifelse(abs(w) >= w0, sign(w), sin(π / 2 * w / w0))
+  spline_a.tau + spline_b.tau = tau_friction
+  initial V = 0.0
+metadata {
+  "_links": {
+    "port": {"Dyad": {"placement": {"icon": {"iconName": "hydraulic_port_a", "x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}}
+  }
+}
+end

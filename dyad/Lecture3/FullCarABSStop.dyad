@@ -1,0 +1,172 @@
+"""
+Lecture 3 whole-car ABS stop: `FullCarVacuumStop`, the Hands-on 02 map engine with fuel cut, its
+flywheel and the CVT driving the hydraulic braked wheel, with Hands-on 03 step 03's ABS added as
+`ABSStop` adds it: a `Vehicle.Brake.ABSValve` in each brake line, both commanded by
+`HandsOn03.SlipABS` from the wheel slip, the car's speed and the master-cylinder pressure. The
+valves return the fluid they dump to the master cylinder, an ideal return pump, so a long low-µ
+stop does not walk the pedal and booster to the end of their stroke. The booster draws its vacuum
+from the engine's intake manifold, as in `FullCarVacuumStop`.
+
+The car cruises steadily at `speed_kmh` with the throttle pedal at `pedal_cmd`. At `brake_time`
+the driver lifts off and the brake pedal steps to `pedal`, which locks the wheel without ABS.
+
+`abs_on = 0` holds both valves open: `hold_open` then commands a pressure no master cylinder
+reaches, and the brake chain is `FullCarVacuumStop`'s.
+"""
+component FullCarABSStop
+  "Brake pedal command after brake_time, 0 released to 1 floored"
+  parameter pedal::Real = 0.6
+  "Road friction multiplier, 1 a dry road"
+  parameter road_mu::Real = 1.0
+  "ABS: 1 active, 0 valves held open"
+  parameter abs_on::Real = 1.0
+  "Slip the ABS holds, just past the tire's peak"
+  parameter lambda_target::Real = 0.04
+  "ABS look-ahead, the brake's lag"
+  parameter T_p::Time = 0.03
+  "Throttle released and brake applied at [s]"
+  parameter brake_time::Time = 0.5
+  "Initial road speed [km/h], 90 km/h cruise (Hands-on 02)"
+  parameter speed_kmh::Real = 90
+  "Throttle pedal that holds speed_kmh (MappedCarBrakeStop, derived)"
+  parameter pedal_cmd::Real = 0.0916
+  "Initial engine speed [rpm], steady at pedal_cmd (MappedCarBrakeStop, derived)"
+  parameter rpm0::Real = 2182
+  "Initial manifold pressure, steady at pedal_cmd (MappedCarBrakeStop, derived)"
+  parameter p_m0::Pressure = 54420
+  "Booster front-chamber pressure at the start [Pa], the cruise manifold"
+  parameter p_vac0::Pressure = p_m0
+  final parameter r_w::Length = 0.31
+  "Driver's throttle pedal, released at brake_time"
+  throttle_pedal = BlockComponents.Sources.Step(height = -pedal_cmd, offset = pedal_cmd, start_time = brake_time) {^throttle_pedal}
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = brake_time) {^command}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut() {^engine}
+  "Crankshaft and flywheel, J as MappedEngine assumes"
+  flywheel = RotationalComponents.Components.Inertia(J = 0.15) {^flywheel}
+  clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch() {^clutch}
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator(ratio_initial = rpm0 * pi / 30 * r_w / (speed_kmh / 3.6)) {^variator}
+  "Engine mounts and gearbox housing"
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
+  booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(p_init = p_vac0) {^booster}
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
+  valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(return_dump = 1) {^valve_f}
+  valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(return_dump = 1) {^valve_r}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
+  abs = VehicleSystemsComponents.HandsOn03.SlipABS(T_p = T_p, lambda_target = lambda_target) {^abs}
+  "Valve command floor [Pa]: zero with ABS on, above any master-cylinder pressure with it off"
+  hold_open = BlockComponents.Sources.Constant(k = (1 - abs_on) * 1e9) {^hold_open}
+  "The valves' command, the ABS's or hold_open's, whichever is higher"
+  valve_cmd = BlockComponents.Math.Max() {^valve_cmd}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(radius = r_w) {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  fixed_hydraulic = TranslationalComponents.Components.Fixed() {^fixed_hydraulic}
+  speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(throttle_pedal.y, engine.pedal, variator.pedal) {^id1}
+  connect(engine.spline, flywheel.spline_a) {^id2}
+  connect(flywheel.spline_b, clutch.spline_a) {^id3}
+  connect(clutch.spline_b, variator.spline_a) {^id4}
+  connect(variator.spline_b, wheel.spline) {^id5}
+  connect(engine.support, clutch.support, variator.support, housing.spline) {^id6}
+  connect(engine.vacuum, booster.vacuum) {^id7}
+  connect(command.y, pedal_unit.u) {^id9}
+  connect(pedal_unit.rod, booster.input) {^id10}
+  connect(booster.rod_out, master.pushrod) {^id11}
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange) {^id12}
+  connect(master.front, valve_f.port_a) {^id13}
+  connect(valve_f.port_b, line_f.port_a) {^id20}
+  connect(line_f.port_b, wheel.front) {^id14}
+  connect(master.rear, valve_r.port_a) {^id15}
+  connect(valve_r.port_b, line_r.port_a) {^id21}
+  connect(line_r.port_b, wheel.rear) {^id16}
+  continuity(medium, master.front.medium)
+  connect(master.p_mc, abs.demand) {^id22}
+  connect(wheel.kappa, abs.kappa) {^id23}
+  connect(speed.v, abs.v) {^id24}
+  connect(abs.p_cmd, valve_cmd.u1) {^id25}
+  connect(hold_open.y, valve_cmd.u2) {^id26}
+  connect(valve_cmd.y, valve_f.p_cmd, valve_r.p_cmd) {^id27}
+  connect(road.y, wheel.mu_scale) {^id17}
+  connect(wheel.support, fixed.spline) {^id18}
+  connect(wheel.flange, body.flange, speed.flange) {^id19}
+  initial engine.air.manifold.p = p_m0
+  initial flywheel.w = rpm0 * pi / 30
+  initial flywheel.phi = 0
+  initial clutch.spline_b.phi = 0
+  initial wheel.inertia.phi = 0
+  initial wheel.inertia.w = speed_kmh / 3.6 / r_w
+  initial body.mass.s = 0
+  initial body.mass.v = speed_kmh / 3.6
+metadata {
+  "_links": {
+    "throttle_pedal": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 35, "x2": 80, "y2": 115}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 35, "x2": 185, "y2": 115}}}},
+    "flywheel": {"Dyad": {"placement": {"diagram": {"x1": 215, "y1": 67, "x2": 295, "y2": 147}}}},
+    "clutch": {"Dyad": {"placement": {"diagram": {"x1": 325, "y1": 67, "x2": 405, "y2": 147}}}},
+    "variator": {"Dyad": {"placement": {"diagram": {"x1": 435, "y1": 67, "x2": 515, "y2": 147}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 390, "y1": 200, "x2": 450, "y2": 260}}}},
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 335, "x2": 80, "y2": 415}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 825, "x2": 700, "y2": 905}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 335, "x2": 185, "y2": 415}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 335, "x2": 290, "y2": 415}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 335, "x2": 410, "y2": 415}}}},
+    "valve_f": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 255, "x2": 550, "y2": 335}}}},
+    "valve_r": {"Dyad": {"placement": {"diagram": {"x1": 470, "y1": 415, "x2": 550, "y2": 495}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 255, "x2": 680, "y2": 335}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 415, "x2": 680, "y2": 495}}}},
+    "abs": {"Dyad": {"placement": {"diagram": {"x1": 472, "y1": 575, "x2": 572, "y2": 675}}}},
+    "valve_cmd": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 615, "x2": 650, "y2": 665}}}},
+    "hold_open": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 690, "x2": 550, "y2": 740}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 730, "y1": 315, "x2": 870, "y2": 455}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 345, "x2": 985, "y2": 425}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 770, "y1": 685, "x2": 830, "y2": 745}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 765, "x2": 290, "y2": 845}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 485, "x2": 985, "y2": 565}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 94, "y": 75}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 94, "y": 20}, {"x": 459, "y": 20}], "E": 3}], "junctions": [{"x": 94, "y": 59}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 712, "y": 107}, {"x": 712, "y": 385}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 175}], "E": -1}, {"S": 2, "M": [{"x": 365, "y": 175}], "E": -1}, {"S": 3, "M": [{"x": 475, "y": 175}], "E": -1}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 420, "y": 175}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 121, "y": 300}, {"x": 230, "y": 300}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 515}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 370, "y": 515}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 250, "y": 515}]}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 355}, {"x": 440, "y": 295}], "E": 2}]}},
+    "id20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 779, "y": 295}], "E": 2}]}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 395}, {"x": 440, "y": 455}], "E": 2}]}},
+    "id21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 694, "y": 455}, {"x": 694, "y": 280}, {"x": 821, "y": 280}], "E": 2}]}},
+    "id22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 320}, {"x": 310, "y": 320}, {"x": 310, "y": 650}], "E": 2}]}},
+    "id23": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 722, "y": 329}, {"x": 722, "y": 560}, {"x": 445, "y": 560}, {"x": 445, "y": 600}], "E": 2}]}},
+    "id24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 997, "y": 525}, {"x": 997, "y": 945}, {"x": 458, "y": 945}, {"x": 458, "y": 625}], "E": 2}]}},
+    "id25": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id26": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 580, "y": 715}, {"x": 580, "y": 655}], "E": 2}]}},
+    "id27": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 670, "y": 640}, {"x": 670, "y": 520}], "E": -1}, {"S": -1, "M": [{"x": 586, "y": 375}, {"x": 510, "y": 375}], "E": 2}, {"S": -1, "M": [{"x": 510, "y": 520}], "E": 3}], "junctions": [{"x": 586, "y": 520}]}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 842, "y": 865}], "E": 2}]}},
+    "id18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 890, "y": 330}, {"x": 997, "y": 330}, {"x": 997, "y": 385}], "E": 2}, {"S": -1, "M": [{"x": 890, "y": 525}], "E": 3}], "junctions": [{"x": 890, "y": 385}]}}
+  }
+}
+end
+
+"""
+Dry-road stop of `FullCarABSStop` from the 90 km/h cruise at the pedal that locks the wheel
+without ABS. Pass `abs_on = 0` for the locked stop, and on a low-µ road a longer `stop`.
+
+Tsit5 with dtmax 1 ms, as `ABSStopTransient`: the valves are not stiff.
+"""
+analysis FullCarABSStopTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.6
+  parameter road_mu::Real = 1.0
+  parameter abs_on::Real = 1.0
+  model = FullCarABSStop(pedal = pedal, road_mu = road_mu, abs_on = abs_on)
+end

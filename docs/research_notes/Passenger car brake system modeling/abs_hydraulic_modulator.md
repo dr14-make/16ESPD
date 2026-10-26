@@ -396,3 +396,108 @@ Usable open models are:
 - No open Modelica ABS-HCU library was found.
 - No open measured caliper-pressure traces with synchronized valve commands were found; only EDC's
   vehicle trace was found.
+
+## 7. The whole system: circuits, hydraulic unit, ECU, sensors, fail-safe
+
+For the deck's overview slide `abs-system` (diagram `03-abs-system.svg`) and the model-mapping
+slide after it. Sources opened for this section: the Bosch Mobility ABS and ESP pages, patents
+US5080450, US6846050B2 and US8678521B2, 49 CFR 571.135, and the Ram 2022 owner's manual. Not
+opened: the Bosch Automotive Handbook, Bosch "Safety, Comfort and Convenience Systems", Reif
+*Brakes, Brake Control and Driver Assistance Systems* (Springer 2014) and Breuer & Bill *Brake
+Technology Handbook*; they are paywalled, and nothing below depends on them.
+
+### Takeaway
+A four-channel return-flow unit on an X-split car:
+- the tandem master cylinder feeds two circuits, each one front wheel and the diagonally opposite
+  rear wheel;
+- per wheel, a normally open inlet valve with a check valve in parallel (wheel to master side) and
+  a normally closed outlet valve;
+- per circuit, a low-pressure accumulator, one pump element and a damper chamber with an orifice
+  on the pump outlet, returning to the master-cylinder side of the inlet valves;
+- one electric motor with an eccentric drives both pump elements;
+- the ECU sits on the hydraulic block, reads four wheel-speed sensors and drives the eight valve
+  coils and the motor;
+- unpowered, the valves leave the master cylinder connected straight to the calipers. On a fault
+  the ABS is switched off and a warning lamp lights; conventional braking remains.
+An ESP unit adds, per circuit, a normally open switch-over (cut) valve and a normally closed
+high-pressure (suction) valve, 12 valves in all (section 1).
+
+### Cited Findings
+- The hydraulic unit is "the central component of an ABS system", with valves, a return pump and
+  the electronic control unit; one active wheel-speed sensor per wheel; pressure is reduced and
+  increased "40 times a second" at most. The page says nothing on fail-safe behavior. —
+  [Bosch Mobility, Antilock braking system](https://www.bosch-mobility.com/en/solutions/driving-safety/antilock-braking-system/)
+- ESP "can build up braking pressure independently of the brake-pedal position". —
+  [Bosch Mobility, ESP](https://www.bosch-mobility.com/en/solutions/driving-safety/electronic-stability-program/)
+- Bosch, diagonal circuits VL+HR and HL+VR; one valve per wheel (3/3-way in this older design);
+  "two separate pumping elements 43, 44 that are driven in common by one electric motor 46";
+  "low-pressure reservoirs 51 are incorporated into the return lines"; "check valves 36 are
+  connected parallel to the control valves" of the front wheels. Priority 1990. —
+  [US5080450A, Hydraulic dual-circuit brake system](https://patents.google.com/patent/US5080450A/en)
+- Bosch, diagonal split, circuit 4 VL+HR and circuit 5 VR+HL; an inlet valve per wheel in the
+  primary circuit, an outlet valve per wheel in the secondary circuit leading to one low-pressure
+  reservoir and one return pump per circuit, returning to the primary circuit; "a pump motor 22,
+  embodied in the present case with an eccentric element" drives both pumps. Normal valve states
+  are not stated. Priority 2002. —
+  [US6846050B2, Hydraulic unit for an anti-lock vehicle brake system](https://patents.google.com/patent/US6846050B2/en)
+- Nissin Kogyo (a motorcycle front/rear system, the same channel topology): "The inlet valve 12
+  is a normally open type electromagnetic valve"; check valve 14 in parallel "allows only the flow
+  of the brake fluid from the front wheel brake B1 side to the regulator 6 side", so the brake
+  releases when the lever is let go even with the inlet closed; a normally closed outlet valve
+  13 into reservoir 2; pump 3 driven by a "common motor 8"; damper 4 and orifice 5 "damp
+  pulsation of the pressure of the brake fluid discharged from the pump 3", reducing noise; a
+  normally open cut valve 6a and a normally closed suction valve 7 for driver-independent
+  pressure build. Priority 2005. —
+  [US8678521B2, Vehicular brake control system](https://patents.google.com/patent/US8678521B2/en)
+- A return-pump piston bears on "a rotatably drivable eccentric"; the pump body is the hydraulic
+  block that also carries the slip-control solenoid valves. —
+  [US9140257B2, Discharge valve and damper for a piston pump](https://patents.google.com/patent/US9140257B2/en)
+- FMVSS 135: S5.5.1(b), a brake warning indicator is activated by "any electrical functional
+  failure in an antilock or variable brake proportioning system"; S7.8, after an antilock
+  functional failure the service brakes "shall continue to operate and shall stop the vehicle"
+  within the stated distance (85 m from 100 km/h); S5.3.2 prohibits a manual ABS-off control. —
+  [49 CFR 571.135](https://www.law.cornell.edu/cfr/text/49/571.135)
+- Owner's manual: with the ABS warning light on, "the conventional brake system will continue to
+  operate normally, assuming the Brake Warning Light is not also on". —
+  [Ram 2022 2500/3500 owner's manual, ABS warning light](https://vehicleinfo.mopar.com/assets/publications/en-us/Ram/2022/2500_3500/om_html/GUID-0BE667CC-D5AD-4411-8EA7-7DB5C94952AE.html)
+- X versus II split and their failure behavior: section "Dual-circuit split" of
+  `hydraulic_brake_circuit.md` in this folder.
+
+### Inferences
+- Fail-safe by valve choice: an unpowered unit has every inlet open and every outlet closed, the
+  pump off, so it is hydraulically a pipe from the master cylinder to the calipers. That is why
+  switching the ABS off on a fault leaves conventional braking. Inferred from the normally open
+  and normally closed states in US8678521B2 and the owner's-manual statement; no source opened
+  here says it in one sentence.
+- "ECU on the block": the Bosch ABS page places the control unit in the hydraulic unit; that the
+  coils plug directly into the ECU, with no harness between them, is general knowledge of current
+  units and was not confirmed in a source opened here.
+- The damper's role (pump pulsation and noise) is sourced to the Nissin patent; Bosch-specific
+  damper details were not found.
+
+### How the repository's models map onto it
+Read from the model code (no simulation needed):
+- Builds 03/04, `HandsOn03.ABSStop` and `ABSStopWheelOnly`: `BrakePedal`, `StaticBooster`,
+  `TandemMasterCylinder`, a front and a rear `BrakeLine` (an II split), one
+  `HydraulicBrakedWheel` with a front and a rear `BrakeCaliper` on one lumped wheel. One
+  `Vehicle.Brake.ABSValve` per circuit, both driven by the same `p_cmd`: wheel pressure follows the
+  command after `T_v` = 30 ms, never above the master cylinder; dumped fluid leaves the model.
+  Build 03's `SlipABS` reads the true slip (`wheel.kappa`) and the true speed (a velocity sensor on
+  the body); build 04's `RefSpeedEstimator` reads only the wheel's angular velocity, feeding
+  `PhaseABS`. Both controllers are continuous.
+- Library bench `Vehicle.ABSBrakeTest` (`ABSBrakeTransient`, used for the model, braking-distance
+  and road-surface slides): a torque step demand, `ABSControllerWheelOnly` (estimator and
+  `ABSModulatorDiscrete`) on a 5 ms clock, wheel speed only, and `BrakedWheel`, whose
+  `BrakeActuator` is a 30 ms first-order torque lag. No pedal, fluid or valves.
+- Planar car `Vehicle.Planar.ABSUnit` (`BrakeAndSteer`, `ABSStraightStop`, and inside section 05's
+  `BrakeControlUnit`): samplers and zero-order holds around `FourChannelABS`, four `BrakeChannel`s
+  each with an `ABSModulatorDiscrete`, 5 ms, optional rear select-low; torque level, one
+  `BrakeActuator` (30 ms, 2500 N·m) in each `PlanarBrakedWheel`; inputs are each wheel's true slip
+  from `WheelSlipSensor` and the true chassis speed. `abs_on = 0` bypasses the modulator.
+- A valve-level channel, `Vehicle.Brake.HydraulicModulator` (inlet and outlet valves,
+  accumulator, return pump), exists only on the `feat/lecture-03-abs-valves` branch.
+
+### Gaps
+- No primary source opened here gives one complete schematic of a current Bosch or Continental
+  unit with every check valve and damper; the diagram combines the patents above.
+- The book sources named above remain unread.

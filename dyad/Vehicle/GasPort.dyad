@@ -1,0 +1,24 @@
+"""
+One end of a gas hose: absolute pressure across it, air mass flow through it.
+
+Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
+the other end receives. `mdot` is positive into the component that owns the port. A port left
+unconnected carries no flow: a capped hose.
+"""
+connector GasPort
+  "Absolute pressure at the hose end [Pa]"
+  potential p::Pressure
+  "Air mass flow into the component [kg/s]"
+  flow mdot::MassFlowRate
+metadata {
+  "Dyad": {
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "layer": "icon"}],
+    "icons": {
+      "default": "dyad://VehicleSystemsComponents/Vehicle/GasPortA.svg",
+      "gas_port_a": "dyad://VehicleSystemsComponents/Vehicle/GasPortA.svg",
+      "gas_port_b": "dyad://VehicleSystemsComponents/Vehicle/GasPortB.svg"
+    },
+    "path": {"stroke": "#00897b"}
+  }
+}
+end

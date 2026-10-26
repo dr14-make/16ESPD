@@ -1,0 +1,89 @@
+"""Continuous yaw-error controller with deadband and speed-dependent enable."""
+component YawMomentController
+  "Measured yaw rate"
+  r = RealInput(units = "rad/s") {^r}
+  "Reference yaw rate"
+  r_ref = RealInput(units = "rad/s") {^r_ref}
+  "Measured longitudinal speed"
+  vx = RealInput(units = "m/s") {^vx}
+  "Requested corrective yaw moment"
+  Mz = RealOutput(units = "N.m") {^Mz}
+  "One for oversteer, zero for understeer"
+  oversteer = RealOutput() {^oversteer}
+  "Proportional yaw gain (probe)"
+  parameter Kp::Real = 40000.0
+  "Integral yaw gain (probe)"
+  parameter Ki::Real = 0.0
+  "Yaw-error deadband (probe)"
+  parameter deadband::AngularVelocity = 0.03
+  "ESP enable speed (assumed)"
+  parameter v_on::Velocity = 5.0
+  "Maximum requested yaw moment (assumed)"
+  parameter Mz_max::Torque = 10000.0
+  variable e::AngularVelocity
+  variable e_active::AngularVelocity
+  variable e_int::Angle
+  variable Mz_raw::Torque
+relations
+  e = r - r_ref
+  e_active = ifelse(abs(e) > deadband, e - deadband * sign(e), 0.0)
+  initial e_int = 0.0
+  der(e_int) = e
+  Mz_raw = -Kp * e_active - Ki * e_int
+  Mz = ifelse(vx > v_on, min(max(Mz_raw, -Mz_max), Mz_max), 0.0)
+  oversteer = ifelse(abs(r) > abs(r_ref), 1.0, 0.0)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://BlockComponents/LimPID.svg"}},
+  "_links": {
+    "r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 680, "x2": 50, "y2": 780}, "diagram": {"x1": -50, "y1": 680, "x2": 50, "y2": 780}}}},
+    "r_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 220, "x2": 50, "y2": 320}, "diagram": {"x1": -50, "y1": 220, "x2": 50, "y2": 320}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+    "Mz": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "oversteer": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 780, "x2": 1050, "y2": 880}, "diagram": {"x1": 950, "y1": 780, "x2": 1050, "y2": 880}}}}
+  }
+}
+end
+
+"Yaw controller checks active control, deadband, and low-speed inhibition."
+test component TestYawMomentController
+  measured = BlockComponents.Sources.Constant(k = 0.30) {^measured}
+  reference = BlockComponents.Sources.Constant(k = 0.20) {^reference}
+  speed = BlockComponents.Sources.Constant(k = 20.0) {^speed}
+  control = VehicleSystemsComponents.Vehicle.Planar.YawMomentController() {^control}
+relations
+  connect(measured.y, control.r) {^w1}
+  connect(reference.y, control.r_ref) {^w2}
+  connect(speed.y, control.vx) {^w3}
+metadata {
+  "Dyad": {
+    "tests": {
+      "active": {
+        "solver": "Tsit5", "stop": 1.0,
+        "expect": {"final": {"control.Mz": -2800.0, "control.oversteer": 1.0}},
+        "atol": {"control.Mz": 1e-6, "control.oversteer": 1e-6}
+      },
+      "deadband": {
+        "solver": "Tsit5", "stop": 1.0,
+        "params": {"measured.k": 0.21},
+        "expect": {"final": {"control.Mz": 0.0}},
+        "atol": {"control.Mz": 1e-9}
+      },
+      "low_speed": {
+        "solver": "Tsit5", "stop": 1.0,
+        "params": {"speed.k": 4.0},
+        "expect": {"final": {"control.Mz": 0.0}},
+        "atol": {"control.Mz": 1e-9}
+      }
+    }
+  },
+  "_links": {
+    "measured": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 300, "x2": 200, "y2": 400}}}},
+    "reference": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 160, "x2": 200, "y2": 260}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 30, "x2": 200, "y2": 130}}}},
+    "control": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 200, "x2": 500, "y2": 300}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 302.5, "y": 350}, {"x": 302.5, "y": 273}], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 302.5, "y": 210}, {"x": 302.5, "y": 227}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 80}], "E": 2}]}}
+  }
+}
+end

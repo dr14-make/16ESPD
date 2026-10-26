@@ -7,7 +7,7 @@
 @doc Markdown.doc"""
    ABSPressureIntegrator(; name, T_track)
 
-Shared continuous clipped brake-pressure integrator retained for the continuous ideal benchmark.
+Shared continuous clipped command integrator.
 
 ## Parameters:
 
@@ -20,13 +20,13 @@ Shared continuous clipped brake-pressure integrator retained for the continuous 
  * `demand` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `requested_rate` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `active` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `tau_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `p`         |                          | N.m  |
+| `p`         |                          | --  |
 | `pressure_rate`         |                          | --  |
 """
 @component function ABSPressureIntegrator(; name = nothing, T_track=0.01, kwargs...)
@@ -70,7 +70,7 @@ Shared continuous clipped brake-pressure integrator retained for the continuous 
   append!(__vars, @variables (demand(t)::Real), [input = true])
   append!(__vars, @variables (requested_rate(t)::Real), [input = true])
   append!(__vars, @variables (active(t)::Real), [input = true])
-  append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
+  append!(__vars, @variables (cmd(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (p(t)::Real))
@@ -105,7 +105,7 @@ Shared continuous clipped brake-pressure integrator retained for the continuous 
   ### Equations
   push!(__eqs, pressure_rate ~ ifelse(active < 0.5, (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), min((max(demand, 0.0) - p) / T_track, requested_rate), ifelse((p <= 0.0) & (requested_rate < 0.0), 0.0, ifelse((p >= max(demand, 0.0)) & (requested_rate > 0.0), 0.0, requested_rate)))))
   push!(__eqs, ModelingToolkit.D_nounits(p) ~ pressure_rate)
-  push!(__eqs, tau_cmd ~ min(max(p, 0.0), max(demand, 0.0)))
+  push!(__eqs, cmd ~ min(max(p, 0.0), max(demand, 0.0)))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="1000" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .level { fill: none; stroke: #1f5fa8; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .sig { font-size: 15px; font-weight: 600; }
+  </style>
+  <defs>
+    <marker id="ec-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <rect class="level" x="236" y="14" width="750" height="122" rx="8"/>
+  <text x="246" y="32" class="lbl">vehicle level: what the car should do</text>
+  <rect class="level" x="510" y="164" width="476" height="122" rx="8"/>
+  <text x="520" y="182" class="lbl">wheel level: what each brake does</text>
+
+  <rect class="box" x="20" y="44" width="180" height="84" rx="4"/>
+  <text x="110" y="72" text-anchor="middle" class="t">driver</text>
+  <text x="110" y="94" text-anchor="middle" class="lbl">steering angle δ_sw</text>
+  <text x="110" y="114" text-anchor="middle" class="lbl">brake pressure p_MC</text>
+
+  <rect class="box-accent" x="250" y="44" width="200" height="84" rx="4"/>
+  <text x="350" y="72" text-anchor="middle" class="t">reference</text>
+  <text x="350" y="94" text-anchor="middle" class="lbl">ψ̇_ref from single track</text>
+  <text x="350" y="114" text-anchor="middle" class="lbl">≤ μg / v, β kept small</text>
+
+  <rect class="box-accent" x="520" y="44" width="200" height="84" rx="4"/>
+  <text x="620" y="72" text-anchor="middle" class="t">yaw + sideslip control</text>
+  <text x="620" y="94" text-anchor="middle" class="lbl">errors in ψ̇ and β</text>
+  <text x="620" y="114" text-anchor="middle" class="lbl">→ yaw moment ΔM_z</text>
+
+  <rect class="box-accent" x="790" y="44" width="190" height="84" rx="4"/>
+  <text x="885" y="72" text-anchor="middle" class="t">wheel selection</text>
+  <text x="885" y="94" text-anchor="middle" class="lbl">which wheel, how much</text>
+  <text x="885" y="114" text-anchor="middle" class="lbl">→ slip target Δλ_i</text>
+
+  <rect class="box" x="20" y="194" width="180" height="84" rx="4"/>
+  <text x="110" y="222" text-anchor="middle" class="t">sensors</text>
+  <text x="110" y="244" text-anchor="middle" class="lbl">yaw rate ψ̇, a_y</text>
+  <text x="110" y="264" text-anchor="middle" class="lbl">wheel speeds ω_i</text>
+
+  <rect class="box-accent" x="250" y="194" width="200" height="84" rx="4"/>
+  <text x="350" y="222" text-anchor="middle" class="t">state estimator</text>
+  <text x="350" y="244" text-anchor="middle" class="lbl">v from the wheel speeds</text>
+  <text x="350" y="264" text-anchor="middle" class="lbl">β and μ estimated</text>
+
+  <rect class="box-accent" x="520" y="194" width="200" height="84" rx="4"/>
+  <text x="620" y="222" text-anchor="middle" class="t">hydraulic unit</text>
+  <text x="620" y="244" text-anchor="middle" class="lbl">build · hold · dump</text>
+  <text x="620" y="264" text-anchor="middle" class="lbl">active build: the pump</text>
+
+  <rect class="box-accent" x="790" y="194" width="190" height="84" rx="4"/>
+  <text x="885" y="222" text-anchor="middle" class="t">ABS / TCS control</text>
+  <text x="885" y="244" text-anchor="middle" class="lbl">one per wheel</text>
+  <text x="885" y="264" text-anchor="middle" class="lbl">holds slip λ_i</text>
+
+  <rect class="box" x="790" y="316" width="190" height="64" rx="4"/>
+  <text x="885" y="342" text-anchor="middle" class="t">engine management</text>
+  <text x="885" y="364" text-anchor="middle" class="lbl">torque cut</text>
+
+  <rect class="box" x="250" y="316" width="470" height="64" rx="4"/>
+  <text x="485" y="342" text-anchor="middle" class="t">car</text>
+  <text x="485" y="364" text-anchor="middle" class="lbl">wheels, tires, body</text>
+
+  <path class="arrow" d="M200 86 H246" marker-end="url(#ec-ink)"/>
+  <path class="arrow" d="M450 86 H516" marker-end="url(#ec-ink)"/>
+  <path class="arrow" d="M720 86 H786" marker-end="url(#ec-ink)"/>
+  <text x="753" y="78" text-anchor="middle" class="sig">ΔM_z</text>
+  <path class="arrow" d="M200 236 H246" marker-end="url(#ec-ink)"/>
+  <path class="arrow" d="M450 236 H485 V112 H516" marker-end="url(#ec-ink)"/>
+  <text x="492" y="160" class="sig">v, β</text>
+  <path class="arrow" d="M885 128 V190" marker-end="url(#ec-ink)"/>
+  <text x="893" y="162" class="sig">Δλ_i</text>
+  <path class="arrow" d="M790 236 H724" marker-end="url(#ec-ink)"/>
+  <path class="arrow" d="M620 278 V312" marker-end="url(#ec-ink)"/>
+  <path class="arrow" d="M980 86 H994 V348 H984" marker-end="url(#ec-ink)"/>
+  <path class="arrow" d="M790 348 H724" marker-end="url(#ec-ink)"/>
+  <path class="arrow" d="M250 348 H110 V282" marker-end="url(#ec-ink)"/>
+</svg>

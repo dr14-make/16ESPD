@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 400" width="520" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .axis { stroke: #16202c; stroke-width: 3; fill: none; }
+    .wheel { fill: #16202c; }
+    .dim { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .guide { stroke: #4a5a6b; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+    .vel { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .yaw { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .sym { font-size: 18px; font-weight: 600; }
+    .blue { font-size: 18px; font-weight: 600; fill: #1f5fa8; }
+    .warn { font-size: 18px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="st-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="st-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+  </defs>
+
+  <!-- vehicle axis, front at the top -->
+  <path class="axis" d="M200 330 V70"/>
+  <rect class="wheel" x="190" y="300" width="20" height="56" rx="4"/>
+  <g transform="translate(200 84) rotate(-18)">
+    <rect class="wheel" x="-10" y="-28" width="20" height="56" rx="4"/>
+  </g>
+  <path class="guide" d="M200 84 V20"/>
+  <path class="guide" d="M200 84 L179 20"/>
+  <text x="168" y="40" class="sym">δ</text>
+
+  <circle cx="200" cy="220" r="9" fill="#fff" stroke="#16202c" stroke-width="3"/>
+  <text x="214" y="226" class="lbl">CG</text>
+  <path class="vel" d="M200 220 L170 150" marker-end="url(#st-blue)"/>
+  <text x="140" y="160" class="blue">v</text>
+  <text x="172" y="198" class="sym">β</text>
+  <path class="yaw" d="M250 250 A 50 50 0 1 0 250 190" marker-end="url(#st-warn)"/>
+  <text x="264" y="226" class="warn">ψ̇</text>
+
+  <path class="dim" d="M110 84 V220 M102 84 H118 M102 220 H118"/>
+  <text x="70" y="158" class="sym">l_f</text>
+  <path class="dim" d="M110 220 V328 M102 328 H118"/>
+  <text x="70" y="280" class="sym">l_r</text>
+
+  <text x="320" y="70" class="lbl">both front wheels → one</text>
+  <text x="320" y="90" class="lbl">both rear wheels → one</text>
+  <text x="320" y="130" class="lbl">L = l_f + l_r, wheelbase</text>
+  <text x="320" y="150" class="lbl">β, body sideslip angle</text>
+  <text x="320" y="170" class="lbl">ψ̇, yaw rate</text>
+  <text x="320" y="190" class="lbl">δ, road-wheel steer angle</text>
+</svg>

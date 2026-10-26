@@ -39,7 +39,7 @@ stroke plus displaced fluid volume divided by bore area.
 | `F_rod`         | Pushrod-force magnitude [N]                         | N  |
 | `rho`         | Brake-fluid density evaluated at master-cylinder pressure [kg/m^3] (derived from hydraulic medium)                         | kg/m3  |
 """
-@component function TandemMasterCylinder(; name = nothing, A_mc=π * 0.025 ^ 2 / 4, F_cs0=Float64(138.0), F_cf=Float64(80.0), s_dead=0.0025, continuity__graph0, continuity__graph1, kwargs...)
+@component function TandemMasterCylinder(; name = nothing, A_mc=π * 0.025 ^ 2 / 4, F_cs0=Float64(138.0), F_cf=Float64(80.0), s_dead=0.0025, continuity__graph0, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -87,7 +87,7 @@ stroke plus displaced fluid volume divided by bore area.
 
   ### Final Path Parameters
   append!(__params, @parameters (front__medium::HydraulicComponents.Interfaces.AbstractMedium = continuity__graph0))
-  append!(__params, @parameters (rear__medium::HydraulicComponents.Interfaces.AbstractMedium = continuity__graph1))
+  append!(__params, @parameters (rear__medium::HydraulicComponents.Interfaces.AbstractMedium = continuity__graph0))
   append!(__vars, @variables (p_mc(t)::Real), [output = true])
   append!(__vars, @variables (x_rod(t)::Real), [output = true])
 

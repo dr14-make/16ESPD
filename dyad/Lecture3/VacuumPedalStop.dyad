@@ -1,0 +1,131 @@
+"""
+Lecture 3 demo bench: hands-on 03's `PedalStop` with the vacuum booster in place of the static
+one, drawing on the engine's air path at a prescribed throttle and engine speed, or on an
+electric vacuum pump.
+
+`engine_on = 0` stops the engine, so the manifold sits at ambient and the check valve stays
+shut. `n_apply` is the number of full applications the driver has already made since the vacuum
+source was lost, with the car parked. Each one lets the rear chamber fill to atmosphere at a
+piston travel of `x_full`, and its release mixes that air into the front chamber, so the
+booster starts the stop at
+
+    p_atm - max(0, β^n (p_atm - p_vac0) - γ (1 - β^n) / (1 - β)),
+    β = V_f0 / (V_f0 + V_r0),  γ = p_atm A_d x_full / (V_f0 + V_r0)
+
+which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed travel.
+"""
+component VacuumPedalStop
+  parameter pedal::Real = 0.3
+  parameter road_mu::Real = 1.0
+  "Throttle position: 0 closed (idle), 1 wide open"
+  parameter u_thr::Real = 0.0
+  "Engine running: 1 on, 0 off (manifold at ambient)"
+  parameter engine_on::Real = 1.0
+  "Engine speed while running, 83.776 rad/s = 800 rpm"
+  parameter omega_e::AngularVelocity = 83.776
+  "Full applications made before the stop with no vacuum supply"
+  parameter n_apply::Real = 0.0
+  "Vacuum source: 0 the intake manifold, 1 an electric pump"
+  parameter ev_pump::Real = 0.0
+  "Booster front-chamber pressure before those applications [Pa] (PATH idle)"
+  parameter p_vac0::Pressure = 33e3
+  "Piston travel of a full application [m] (derived from BrakeVacuumReserveTransient)"
+  parameter x_full::Length = 8.0e-3
+  final parameter p_atm::Pressure = 101325.0
+  final parameter beta::Real = 2.4e-3 / (2.4e-3 + 0.43e-3)
+  final parameter gamma::Pressure = p_atm * 0.0533 * x_full / (2.4e-3 + 0.43e-3)
+  final parameter p_start::Pressure = p_atm - max(0.0, beta ^ n_apply * (p_atm - p_vac0) - gamma * (1.0 - beta ^ n_apply) / (1.0 - beta))
+  command = BlockComponents.Sources.Step(height = pedal, offset = 0.0, start_time = 0.5) {^command}
+  road = BlockComponents.Sources.Constant(k = road_mu) {^road}
+  throttle = BlockComponents.Sources.Constant(k = u_thr) {^throttle}
+  speed = BlockComponents.Sources.Constant(k = engine_on * omega_e) {^speed}
+  air = VehicleSystemsComponents.Vehicle.Engine.AirPath() {^air}
+  pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(p_init = p_start) {^pump}
+  source = VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector(use_pump = ev_pump) {^source}
+  pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal() {^pedal_unit}
+  booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(p_init = p_start) {^booster}
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder() {^master}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel() {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body() {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  fixed_hydraulic = TranslationalComponents.Components.Fixed() {^fixed_hydraulic}
+  speed_sensor = TranslationalComponents.Sensors.VelocitySensor() {^speed_sensor}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  connect(command.y, pedal_unit.u) {^id1}
+  connect(pedal_unit.rod, booster.input) {^id2}
+  connect(booster.rod_out, master.pushrod) {^id3}
+  connect(pedal_unit.support, booster.support, master.support, fixed_hydraulic.flange) {^id4}
+  connect(master.front, line_f.port_a) {^id5}
+  connect(line_f.port_b, wheel.front) {^id6}
+  connect(master.rear, line_r.port_a) {^id7}
+  connect(line_r.port_b, wheel.rear) {^id8}
+  continuity(medium, master.front.medium)
+  connect(road.y, wheel.mu_scale) {^id9}
+  connect(wheel.support, fixed.spline) {^id10}
+  connect(wheel.flange, body.flange, speed_sensor.flange) {^id11}
+  connect(throttle.y, air.u_thr) {^id12}
+  connect(speed.y, air.omega) {^id13}
+  connect(booster.p_vac, pump.p_sense) {^id14}
+  connect(booster.vacuum, source.booster) {^id15}
+  connect(source.manifold, air.vacuum) {^id16}
+  connect(source.pump, pump.vacuum) {^id17}
+  initial air.manifold.p = ifelse(engine_on > 0.5, 32955.7, p_atm)
+  initial wheel.inertia.phi = 0
+  initial wheel.inertia.w = 25 / 0.31
+  initial body.mass.s = 0
+  initial body.mass.v = 25
+metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 235, "x2": 80, "y2": 315}}}},
+    "road": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 725, "x2": 700, "y2": 805}}}},
+    "throttle": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": -40, "x2": 80, "y2": 40}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 105, "x2": 80, "y2": 185}}}},
+    "air": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 35, "x2": 185, "y2": 115}}}},
+    "pump": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 95, "x2": 410, "y2": 175}}}},
+    "source": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 170, "x2": 260, "y2": 230}}}},
+    "pedal_unit": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 235, "x2": 185, "y2": 315}}}},
+    "booster": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 235, "x2": 290, "y2": 315}}}},
+    "master": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 235, "x2": 410, "y2": 315}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 155, "x2": 680, "y2": 235}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 315, "x2": 680, "y2": 395}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 730, "y1": 215, "x2": 870, "y2": 355}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 245, "x2": 985, "y2": 325}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 770, "y1": 585, "x2": 830, "y2": 645}}}},
+    "fixed_hydraulic": {"Dyad": {"placement": {"diagram": {"x1": 210, "y1": 665, "x2": 290, "y2": 745}}}},
+    "speed_sensor": {"Dyad": {"placement": {"diagram": {"x1": 905, "y1": 385, "x2": 985, "y2": 465}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 145, "y": 415}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 370, "y": 415}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 250, "y": 415}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 255}, {"x": 440, "y": 195}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 779, "y": 195}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 295}, {"x": 440, "y": 355}], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 694, "y": 355}, {"x": 694, "y": 180}, {"x": 821, "y": 180}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 842, "y": 765}], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 890, "y": 230}, {"x": 997, "y": 230}, {"x": 997, "y": 285}], "E": 2}, {"S": -1, "M": [{"x": 890, "y": 425}], "E": 3}], "junctions": [{"x": 890, "y": 285}]}},
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 94, "y": 0}, {"x": 94, "y": 51}], "E": 2}]}},
+    "id13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 94, "y": 145}, {"x": 94, "y": 99}], "E": 2}]}},
+    "id14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 225}, {"x": 420, "y": 225}, {"x": 420, "y": 80}, {"x": 370, "y": 80}], "E": 2}]}},
+    "id15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": -15, "y": 200}, {"x": -15, "y": 75}], "E": 2}]}},
+    "id17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 200}, {"x": 300, "y": 135}], "E": 2}]}}
+  }
+}
+end
+
+analysis VacuumPedalStopTransient
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter pedal::Real = 0.3
+  parameter road_mu::Real = 1.0
+  parameter u_thr::Real = 0.0
+  parameter engine_on::Real = 1.0
+  parameter omega_e::AngularVelocity = 83.776
+  parameter n_apply::Real = 0.0
+  parameter ev_pump::Real = 0.0
+  parameter p_vac0::Pressure = 33e3
+  model = VacuumPedalStop(pedal = pedal, road_mu = road_mu, u_thr = u_thr, engine_on = engine_on, omega_e = omega_e, n_apply = n_apply, ev_pump = ev_pump, p_vac0 = p_vac0)
+end

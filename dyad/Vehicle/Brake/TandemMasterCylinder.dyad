@@ -33,6 +33,7 @@ component TandemMasterCylinder
   "Brake-fluid density evaluated at master-cylinder pressure [kg/m^3] (derived from hydraulic medium)"
   variable rho::Density
 relations
+  continuity(front.medium, rear.medium)
   F_rod = -pushrod.f
   pushrod.f + support.f = 0.0
   pushrod.s - support.s = x_rod

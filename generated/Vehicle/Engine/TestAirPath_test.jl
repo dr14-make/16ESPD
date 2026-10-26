@@ -108,7 +108,7 @@ __dyad_run_test_case!(
   expected_final=Tuple[(m -> m.air.p_m, "air.p_m", 32955.7, 50, 1e-5)],
   signals=Tuple[
     (m -> m.air.p_m, "air.p_m", 50, 1e-5),
-    (m -> m.air.mdot_bst, "air.mdot_bst", 1e-5, 1e-5),
+    (m -> m.air.vacuum.mdot, "air.vacuum.mdot", 1e-5, 1e-5),
     (m -> m.air.mdot_cyl, "air.mdot_cyl", 1e-5, 1e-5),
   ],
 )

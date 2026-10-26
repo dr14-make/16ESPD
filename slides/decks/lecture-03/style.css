@@ -1,0 +1,92 @@
+/* Images from the source deck vary widely in size and aspect; capped by height so a picture
+   beside a column of text still fits the slide. */
+.slidev-layout img {
+  max-height: 27rem;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+/* A picture that has the slide to itself. */
+.slidev-layout.big-figure img {
+  max-height: 34rem;
+}
+
+/* Several pictures stacked in one column. */
+.slidev-layout .stack img {
+  max-height: 15rem;
+}
+
+.slidev-layout .caption {
+  font-size: 0.75rem;
+  line-height: 1.1rem;
+  opacity: 0.7;
+  text-align: center;
+  margin-top: 0.25rem;
+}
+
+/* A diagram that shares its column with a plot. */
+.slidev-layout .diagram-short img {
+  max-height: 14rem;
+}
+
+/* A diagram that has the slide to itself: an SVG's intrinsic width would otherwise cap it. */
+.slidev-layout .diagram-full img {
+  height: 35rem;
+  max-height: none;
+  width: auto;
+}
+
+/* Diagrams are drawn in the light palette, like the exported cards; in dark mode they keep a
+   light ground so their ink stays readable. Vite inlines a small SVG as a data URI. */
+html.dark .slidev-layout img[src$=".svg"],
+html.dark .slidev-layout img[src^="data:image/svg+xml"] {
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+/* A cue that a build step puts this slide into practice, or checks a number on it. */
+.slidev-layout .handson {
+  font-size: 0.8rem;
+  line-height: 1.2rem;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-left: 4px solid #2e8b57;
+  background: rgba(46, 139, 87, 0.08);
+}
+
+/* A Studio screenshot not yet captured: names the file and what it must show. */
+.slidev-layout .placeholder {
+  border: 2px dashed #b8860b;
+  border-radius: 6px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* A row of plan views over the text columns that describe them. */
+.slidev-layout .diagram-channels img {
+  max-height: 17rem;
+}
+
+/* The nested-systems picture under the wrap-up table. */
+.slidev-layout .diagram-systems img {
+  max-height: 20rem;
+}
+
+/* A sketch under two text columns. */
+.slidev-layout .diagram-cycle img {
+  max-height: 18rem;
+}
+
+/* A wide path plot that leaves room for a bench screenshot under it. */
+.slidev-layout.big-figure .diagram-path img {
+  max-height: 21rem;
+}
+
+/* A Studio bench screenshot beside a table, as large as the space under the plot allows. */
+.slidev-layout.big-figure img.bench-shot {
+  max-height: 17rem;
+  width: 100%;
+}

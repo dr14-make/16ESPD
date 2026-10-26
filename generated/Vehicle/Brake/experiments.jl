@@ -9,8 +9,17 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname |> Base.dirname, "
 end
 
 
+include("ABSValve_experiment.jl")
+include("BrakeCaliper_experiment.jl")
+include("BrakeLine_experiment.jl")
 include("BrakePedal_experiment.jl")
 include("ClosedHydraulicPort_experiment.jl")
+include("ElectricVacuumPump_experiment.jl")
 include("StaticBooster_experiment.jl")
 include("TandemMasterCylinder_experiment.jl")
+include("TestBrakeVacuum_experiment.jl")
 include("TestForceChain_experiment.jl")
+include("TestHydraulicStop_experiment.jl")
+include("TestVacuumBooster_experiment.jl")
+include("VacuumBooster_experiment.jl")
+include("VacuumSourceSelector_experiment.jl")

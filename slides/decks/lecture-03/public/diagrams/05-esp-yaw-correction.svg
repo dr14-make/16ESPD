@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .body { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .wheel { fill: #16202c; }
+    .braked { fill: #a75d00; stroke: #a75d00; stroke-width: 3; }
+    .want { stroke: #1f5fa8; stroke-width: 3; fill: none; stroke-dasharray: 9 6; }
+    .goes { stroke: #16202c; stroke-width: 3; fill: none; }
+    .yaw { stroke: #a75d00; stroke-width: 4; fill: none; }
+    .force { stroke: #a75d00; stroke-width: 4; fill: none; }
+    .t { font-size: 19px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .warn { font-size: 15px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="ey-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="ey-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="ey-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+  </defs>
+
+  <g transform="translate(70 0)">
+  <!-- understeer: left turn, car pushes wide; brake inner rear -->
+  <text x="190" y="28" text-anchor="middle" class="t">Understeer: the nose pushes wide</text>
+  <path class="want" d="M190 400 C190 300 170 200 70 120" marker-end="url(#ey-blue)"/>
+  <path class="goes" d="M190 400 C190 300 200 190 210 90" marker-end="url(#ey-ink)"/>
+  <g transform="translate(190 260)">
+    <rect class="body" x="-34" y="-70" width="68" height="140" rx="18"/>
+    <rect class="wheel" x="-46" y="-58" width="12" height="30" rx="3"/>
+    <rect class="wheel" x="34" y="-58" width="12" height="30" rx="3"/>
+    <rect class="braked" x="-46" y="28" width="12" height="30" rx="3"/>
+    <rect class="wheel" x="34" y="28" width="12" height="30" rx="3"/>
+    <path class="force" d="M-40 46 V86" marker-end="url(#ey-warn)"/>
+    <path class="yaw" d="M44 -96 A 50 50 0 0 0 -44 -96" marker-end="url(#ey-warn)"/>
+  </g>
+  <text x="236" y="120" class="lbl">goes</text>
+  <text x="56" y="108" class="lbl" fill="#1f5fa8">wants</text>
+
+  <!-- oversteer: left turn, rear steps out; brake outer front -->
+  <text x="570" y="28" text-anchor="middle" class="t">Oversteer: the tail steps out</text>
+  <path class="want" d="M570 400 C570 300 550 200 450 120" marker-end="url(#ey-blue)"/>
+  <path class="goes" d="M570 400 C560 320 500 240 400 200" marker-end="url(#ey-ink)"/>
+  <g transform="translate(570 250) rotate(-28)">
+    <rect class="body" x="-34" y="-70" width="68" height="140" rx="18"/>
+    <rect class="wheel" x="-46" y="-58" width="12" height="30" rx="3"/>
+    <rect class="braked" x="34" y="-58" width="12" height="30" rx="3"/>
+    <rect class="wheel" x="-46" y="28" width="12" height="30" rx="3"/>
+    <rect class="wheel" x="34" y="28" width="12" height="30" rx="3"/>
+    <path class="force" d="M40 -40 V0" marker-end="url(#ey-warn)"/>
+    <path class="yaw" d="M-44 -96 A 50 50 0 0 1 44 -96" marker-end="url(#ey-warn)"/>
+  </g>
+  <text x="392" y="226" class="lbl">goes</text>
+
+  <text x="380" y="68" text-anchor="middle" class="lbl">left-hand bend, top view</text>
+  </g>
+  <text x="10" y="300" class="warn">brake the</text>
+  <text x="10" y="320" class="warn">inner rear:</text>
+  <text x="10" y="342" class="lbl">turns the</text>
+  <text x="10" y="360" class="lbl">car in</text>
+  <text x="890" y="300" text-anchor="end" class="warn">brake the</text>
+  <text x="890" y="320" text-anchor="end" class="warn">outer front:</text>
+  <text x="890" y="342" text-anchor="end" class="lbl">holds the</text>
+  <text x="890" y="360" text-anchor="end" class="lbl">car back</text>
+</svg>

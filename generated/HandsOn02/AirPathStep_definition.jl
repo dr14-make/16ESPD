@@ -57,9 +57,6 @@
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
   push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=83.776, speed_overrides...))
-  # Subcomponent no_booster of type BlockComponents.Sources.Constant
-  no_booster_overrides = __pop_subcomponent_overrides!(__overrides, "no_booster")
-  push!(__systems, @named no_booster = BlockComponents.Sources.Constant(; k=Float64(0), no_booster_overrides...))
   # Subcomponent throttle of type VehicleSystemsComponents.Vehicle.Engine.Throttle
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
   push!(__systems, @named throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle(; throttle_overrides...))
@@ -84,7 +81,6 @@
   ### Equations
   push!(__eqs, connect(throttle_cmd.y, throttle.u_thr))
   push!(__eqs, connect(speed.y, cylinders.omega))
-  push!(__eqs, connect(no_booster.y, manifold.mdot_bst))
   push!(__eqs, connect(throttle.mdot_thr, manifold.mdot_thr))
   push!(__eqs, connect(cylinders.mdot_cyl, manifold.mdot_cyl))
   push!(__eqs, connect(manifold.p_m, throttle.p_m, cylinders.p_m))

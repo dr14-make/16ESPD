@@ -1,23 +1,23 @@
-"Shared continuous clipped brake-pressure integrator retained for the continuous ideal benchmark."
+"Shared continuous clipped command integrator."
 component ABSPressureIntegrator
   demand = RealInput() {^demand}
   requested_rate = RealInput() {^requested_rate}
   active = RealInput() {^active}
-  tau_cmd = RealOutput() {^tau_cmd}
+  cmd = RealOutput() {^cmd}
   parameter T_track::Time(min = eps(Float64)) = 0.01
-  variable p::Torque
+  variable p::Real
   variable pressure_rate::Real
 relations
   initial p = 0.0
   pressure_rate = ifelse(active < 0.5, (max(demand, 0.0) - p) / T_track, ifelse(p > max(demand, 0.0), min((max(demand, 0.0) - p) / T_track, requested_rate), ifelse(p <= 0.0 and requested_rate < 0.0, 0.0, ifelse(p >= max(demand, 0.0) and requested_rate > 0.0, 0.0, requested_rate))))
   der(p) = pressure_rate
-  tau_cmd = min(max(p, 0.0), max(demand, 0.0))
+  cmd = min(max(p, 0.0), max(demand, 0.0))
 metadata {
   "_links": {
     "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 200, "y2": 300}}}},
     "requested_rate": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
     "active": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 700, "y2": 800}}}},
-    "tau_cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
+    "cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}}
   }
 }
 end
@@ -49,7 +49,7 @@ relations
   connect(demand, pressure.demand) {^id6}
   pressure.requested_rate = rate
   pressure.active = ifelse(v > v_min, 1.0, 0.0)
-  connect(pressure.tau_cmd, tau_cmd) {^id7}
+  connect(pressure.cmd, tau_cmd) {^id7}
 metadata {
   "_links": {
     "kappa": {

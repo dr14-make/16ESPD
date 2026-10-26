@@ -26,7 +26,7 @@ __dyad_run_test_case!(
     (m -> m.pedal.x_ped, "pedal.x_ped", 0.00875, 0.000001, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.pedal_force.y, "pedal_force.y", 1e-5, 1e-5),
+    (m -> m.pedal.F_ped, "pedal.F_ped", 1e-5, 1e-5),
     (m -> m.pedal.F_rod, "pedal.F_rod", 1e-5, 1e-5),
     (m -> m.booster.F_out, "booster.F_out", 1e-5, 1e-5),
     (m -> m.master.p_mc, "master.p_mc", 20000, 1e-5),

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 380" width="620" height="380">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .diff { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .gear { fill: #fff; stroke: #1f5fa8; stroke-width: 2; }
+    .wheel { fill: #2b3440; stroke: #16202c; stroke-width: 2; }
+    .ice { fill: #dcecf7; stroke: #8fb8d8; stroke-width: 1.5; }
+    .dry { fill: #ece6da; stroke: #bfb29a; stroke-width: 1.5; }
+    .shaft { stroke: #16202c; stroke-width: 6; fill: none; }
+    .arrow { stroke: #16202c; stroke-width: 3; fill: none; }
+    .brake { fill: #c0392b; }
+    .t { font-size: 21px; font-weight: 600; }
+    .lbl { font-size: 19px; fill: #4a5a6b; }
+    .sig { font-size: 20px; font-weight: 600; }
+    .red { font-size: 19px; font-weight: 600; fill: #c0392b; }
+  </style>
+  <defs>
+    <marker id="od-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <rect class="ice" x="10" y="96" width="150" height="200" rx="6"/>
+  <text x="85" y="324" text-anchor="middle" class="lbl">ice, μ = 0.1</text>
+  <rect class="dry" x="460" y="96" width="150" height="200" rx="6"/>
+  <text x="535" y="324" text-anchor="middle" class="lbl">dry, μ = 1.0</text>
+
+  <rect class="box" x="210" y="10" width="200" height="50" rx="4"/>
+  <text x="310" y="42" text-anchor="middle" class="t">engine + gearbox</text>
+  <path class="arrow" d="M310 60 V128" marker-end="url(#od-ink)"/>
+  <text x="322" y="100" class="sig">T_in</text>
+
+  <path class="shaft" d="M111 196 H250"/>
+  <path class="shaft" d="M370 196 H509"/>
+
+  <circle class="diff" cx="310" cy="196" r="62"/>
+  <circle class="gear" cx="310" cy="160" r="15"/>
+  <circle class="gear" cx="310" cy="232" r="15"/>
+  <circle class="gear" cx="274" cy="196" r="20"/>
+  <circle class="gear" cx="346" cy="196" r="20"/>
+  <text x="310" y="290" text-anchor="middle" class="t">open differential</text>
+
+  <rect class="wheel" x="55" y="126" width="50" height="140" rx="10"/>
+  <rect class="wheel" x="515" y="126" width="50" height="140" rx="10"/>
+  <rect class="brake" x="107" y="166" width="14" height="60" rx="3"/>
+  <text x="122" y="272" class="red">brake T_b</text>
+
+  <text x="183" y="178" text-anchor="middle" class="sig">T_L</text>
+  <text x="437" y="178" text-anchor="middle" class="sig">T_R</text>
+  <text x="183" y="226" text-anchor="middle" class="lbl">ω_L</text>
+  <text x="437" y="226" text-anchor="middle" class="lbl">ω_R</text>
+  <text x="310" y="362" text-anchor="middle" class="sig">T_L = T_R = T_in / 2</text>
+</svg>

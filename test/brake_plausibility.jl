@@ -41,3 +41,23 @@ using DyadInterface: symbolic_container
     @test p_no_vacuum ≈ expected_no_vacuum rtol=0.02
     @test p_no_vacuum / 1e5 ≈ 29.2 rtol=0.02
 end
+
+
+@testset "Hydraulic brake-stop plausibility" begin
+    for (pedal, expected_bar, expected_tau) in ((0.3, 55.1, 3760.0), (0.6, 89.0, 6100.0))
+        result = VehicleSystemsComponents.Vehicle.Brake.HydraulicStopTransient(pedal=pedal, stop=6.0)
+        sol = result.sol
+        model = symbolic_container(result)
+        pressure = sol[model.master.p_mc]
+        torque = sol[model.wheel.caliper_f.tau] .+ sol[model.wheel.caliper_r.tau]
+        volume = sol[model.master.V_disp]
+        @test maximum(pressure) / 1e5 ≈ expected_bar rtol=0.03
+        @test maximum(torque) ≈ expected_tau rtol=0.03
+        @test 3e-6 < maximum(volume) < 5e-6
+        if pedal == 0.3
+            @test minimum(sol[model.wheel.kappa]) > -0.04
+        else
+            @test minimum(sol[model.wheel.kappa]) < -0.99
+        end
+    end
+end

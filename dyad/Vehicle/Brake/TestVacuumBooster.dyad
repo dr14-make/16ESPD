@@ -1,0 +1,85 @@
+"""
+Brake plan increment 2b: the vacuum booster at a constant vacuum source, pushing a master cylinder
+into both axles' calipers with the wheels held still.
+
+The pushrod force is a trapezoid: it ramps from 0 to `F_peak` over `t_up` starting at `t0`,
+holds for `t_hold` and ramps back to 0 over `t_down`. A short `t_up` makes it a step. The pedal
+lever is set to a ratio of 1, so its force is the pushrod force.
+"""
+test component TestVacuumBooster
+  "Peak pushrod force [N]"
+  parameter F_peak::Force = 375.0
+  "Start of the force ramp"
+  parameter t0::Time = 0.5
+  "Duration of the rise"
+  parameter t_up::Time = 3.0
+  "Duration of the hold at F_peak"
+  parameter t_hold::Time = 0.0
+  "Duration of the fall"
+  parameter t_down::Time = 3.0
+  "Vacuum-source absolute pressure [Pa] (PATH idle)"
+  parameter p_vac::Pressure = 33e3
+  "Valve apply threshold [N] (assumed)"
+  parameter F_app::Force = 10.0
+  "Valve release threshold [N] (assumed)"
+  parameter F_rel::Force = 10.0
+  pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(i_p = 1.0, F_max = 2000.0)
+  booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(p_init = p_vac, F_app = F_app, F_rel = F_rel)
+  master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder()
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine()
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0)
+  caliper_f = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper()
+  caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(K = 19.9e-5, V0 = 0.3e-6, K1 = 2.5e12, K3 = 7.5e24)
+  vacuum = BlockComponents.Sources.Constant(k = p_vac)
+  source = VehicleSystemsComponents.Vehicle.GasPressureSource()
+  fixed_t = TranslationalComponents.Components.Fixed()
+  fixed_r = RotationalComponents.Components.Fixed()
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+relations
+  pedal.u = F_peak / 2000.0 * max(0.0, min(min((time - t0) / t_up, 1.0), 1.0 - (time - t0 - t_up - t_hold) / t_down))
+  connect(pedal.rod, booster.input)
+  connect(booster.rod_out, master.pushrod)
+  connect(pedal.support, booster.support, master.support, fixed_t.flange)
+  connect(vacuum.y, source.p)
+  connect(source.port, booster.vacuum)
+  connect(master.front, line_f.port_a)
+  connect(line_f.port_b, caliper_f.port)
+  connect(master.rear, line_r.port_a)
+  connect(line_r.port_b, caliper_r.port)
+  continuity(medium, master.front.medium)
+  connect(caliper_f.spline_a, caliper_f.support, caliper_r.spline_a, caliper_r.support, fixed_r.spline)
+end
+
+"""
+PATH's validation ramp: the pushrod force rises slowly to 375 N and falls back, with the source
+at 33 kPa.
+"""
+analysis BoosterPATHTransient
+  extends TransientAnalysis(stop = 8.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter F_peak::Force = 375.0
+  parameter p_vac::Pressure = 33e3
+  model = VehicleSystemsComponents.Vehicle.Brake.TestVacuumBooster(F_peak = F_peak, t_up = 3.0, t_hold = 0.0, t_down = 3.0, p_vac = p_vac)
+end
+
+"""
+The booster's static characteristic: a slow triangle past run-out and back, 10 s each way.
+"""
+analysis BoosterCharacteristicTransient
+  extends TransientAnalysis(stop = 21.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter F_peak::Force = 1200.0
+  parameter p_vac::Pressure = 33e3
+  parameter F_app::Force = 10.0
+  parameter F_rel::Force = 10.0
+  model = VehicleSystemsComponents.Vehicle.Brake.TestVacuumBooster(F_peak = F_peak, t_up = 10.0, t_hold = 0.0, t_down = 10.0, p_vac = p_vac, F_app = F_app, F_rel = F_rel)
+end
+
+"""
+PATH's 200 N pedal-force step, held for 2 s, for the rear chamber's rise time. Through the
+3.5:1 pedal lever that is 700 N at the pushrod.
+"""
+analysis BoosterStepTransient
+  extends TransientAnalysis(stop = 3.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  parameter F_peak::Force = 700.0
+  parameter p_vac::Pressure = 33e3
+  model = VehicleSystemsComponents.Vehicle.Brake.TestVacuumBooster(F_peak = F_peak, t_up = 1e-3, t_hold = 2.0, t_down = 1e-3, p_vac = p_vac)
+end

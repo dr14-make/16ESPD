@@ -1,0 +1,75 @@
+"""
+Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
+"""
+component HydraulicBrakedWheel
+  "Inboard shaft; free if nothing drives the wheel"
+  spline = Spline() {^spline}
+  "Brake reaction support"
+  support = Spline() {^support}
+  "Longitudinal connection to the vehicle body"
+  flange = Flange() {^flange}
+  "Front brake-circuit hydraulic port"
+  front = HydraulicComponents.Interfaces.Port() {^front}
+  "Rear brake-circuit hydraulic port"
+  rear = HydraulicComponents.Interfaces.Port() {^rear}
+  "Road-friction multiplier"
+  mu_scale = RealInput() {^mu_scale}
+  "Contact longitudinal slip, negative during braking"
+  kappa = RealOutput() {^kappa}
+  inertia = RotationalComponents.Components.Inertia(J = J_w) {^inertia}
+  caliper_f = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(K = K_f, p0 = p0, V0 = V0_f, K1 = K1_f, K3 = K3_f, w0 = w0) {^caliper_f}
+  caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(K = K_r, p0 = p0, V0 = V0_r, K1 = K1_r, K3 = K3_r, w0 = w0) {^caliper_r}
+  tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(radius = radius, F_z = F_z, sAdhesion = sAdhesion, sSlide = sSlide, mu_A = mu_A, mu_S = mu_S) {^tire}
+  parameter radius::Length = 0.31
+  parameter J_w::MomentOfInertia = 4.0
+  parameter F_z::Force = 13729.31
+  parameter w0::AngularVelocity = 0.2
+  parameter sAdhesion::Real = 0.04
+  parameter sSlide::Real = 0.12
+  parameter mu_A::Real = 1.0
+  parameter mu_S::Real = 0.7
+  "Front-axle torque gain [N·m/Pa] (assumed, textbook)"
+  parameter K_f::Real = 49.0e-5
+  "Rear-axle torque gain [N·m/Pa] (assumed, textbook)"
+  parameter K_r::Real = 19.9e-5
+  "Pad-contact pressure [Pa] (assumed, textbook)"
+  parameter p0::Pressure = 0.5e5
+  "Front clearance take-up volume [m³] (assumed, textbook)"
+  parameter V0_f::Volume = 0.5e-6
+  "Rear clearance take-up volume [m³] (assumed, textbook)"
+  parameter V0_r::Volume = 0.3e-6
+  "Front linear P-V coefficient [Pa/m³] (assumed, textbook)"
+  parameter K1_f::Real = 1e12
+  "Rear linear P-V coefficient [Pa/m³] (assumed, textbook)"
+  parameter K1_r::Real = 2.5e12
+  "Front cubic P-V coefficient [Pa/m⁹] (assumed, textbook)"
+  parameter K3_f::Real = 4.8e23
+  "Rear cubic P-V coefficient [Pa/m⁹] (assumed, textbook)"
+  parameter K3_r::Real = 7.5e24
+relations
+  connect(spline, inertia.spline_a)
+  connect(inertia.spline_b, caliper_f.spline_a)
+  connect(caliper_f.spline_b, caliper_r.spline_a)
+  connect(caliper_r.spline_b, tire.spline)
+  connect(caliper_f.support, caliper_r.support, support)
+  connect(caliper_f.port, front)
+  connect(caliper_r.port, rear)
+  connect(tire.flange, flange)
+  connect(mu_scale, tire.mu_scale)
+  kappa = tire.kappa
+metadata {
+  "_links": {
+    "spline": {"Dyad": {"placement": {"diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "support": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 950, "y2": 1050}}}},
+    "flange": {"Dyad": {"placement": {"diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "front": {"Dyad": {"placement": {"diagram": {"iconName": "hydraulic_port_a", "x1": 300, "x2": 400, "y1": -50, "y2": 50, "rot": 270}}}},
+    "rear": {"Dyad": {"placement": {"diagram": {"iconName": "hydraulic_port_a", "x1": 600, "x2": 700, "y1": -50, "y2": 50, "rot": 270}}}},
+    "mu_scale": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 950, "y2": 1050, "rot": 270}}}},
+    "kappa": {"Dyad": {"placement": {"diagram": {"x1": 50, "x2": 150, "y1": 50, "y2": 150}}}},
+    "inertia": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}},
+    "caliper_f": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 450, "y2": 550}}}},
+    "caliper_r": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 450, "y2": 550}}}},
+    "tire": {"Dyad": {"placement": {"diagram": {"x1": 750, "x2": 850, "y1": 450, "y2": 550}}}}
+  }
+}
+end

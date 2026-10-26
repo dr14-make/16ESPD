@@ -18,6 +18,7 @@ end
 @testset "`VehicleSystemsComponents.Vehicle.Wheel`" begin
 include("BrakeActuator_test.jl")
 include("BrakedWheel_test.jl")
+include("HydraulicBrakedWheel_test.jl")
 include("LoadedSlipWheel1D_test.jl")
 include("SlipWheel1D_test.jl")
 include("TestBrakeActuator_test.jl")

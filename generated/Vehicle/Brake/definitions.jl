@@ -21,6 +21,7 @@ import DyadData
 import DyadInterface
 import ElectricalComponents
 import HydraulicComponents
+import MultibodyComponents
 import RotationalComponents
 import ThermalComponents
 import TranslationalComponents
@@ -202,9 +203,27 @@ component.
 end
 
 
+include("ABSValve_definition.jl")
+include("BoosterCharacteristicTransient_definition.jl")
+include("BoosterPATHTransient_definition.jl")
+include("BoosterStepTransient_definition.jl")
+include("BrakeCaliper_definition.jl")
+include("BrakeLine_definition.jl")
 include("BrakePedal_definition.jl")
+include("BrakeVacuumIdleTransient_definition.jl")
+include("BrakeVacuumReserveTransient_definition.jl")
+include("BrakeVacuumTransient_definition.jl")
+include("BrakeVacuumWOTTransient_definition.jl")
 include("ClosedHydraulicPort_definition.jl")
+include("EVVacuumPumpTransient_definition.jl")
+include("ElectricVacuumPump_definition.jl")
 include("ForceChainTransient_definition.jl")
+include("HydraulicStopTransient_definition.jl")
 include("StaticBooster_definition.jl")
 include("TandemMasterCylinder_definition.jl")
+include("TestBrakeVacuum_definition.jl")
 include("TestForceChain_definition.jl")
+include("TestHydraulicStop_definition.jl")
+include("TestVacuumBooster_definition.jl")
+include("VacuumBooster_definition.jl")
+include("VacuumSourceSelector_definition.jl")

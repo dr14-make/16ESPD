@@ -141,7 +141,6 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
   push!(__eqs, pedal_value ~ ifelse(scenario == 2, ifelse(t < t_step, pedal_initial, pedal_final), pedal_cmd))
   push!(__eqs, dyno_rpm ~ ifelse(scenario == 3, ifelse(t <= t_ramp, rpm, ifelse(t < t_ramp + ramp_duration, rpm + (overrun_end_rpm - rpm) * (t - t_ramp) / ramp_duration, overrun_end_rpm)), rpm))
   push!(__eqs, engine.pedal ~ pedal_value)
-  push!(__eqs, engine.mdot_bst ~ 0.0)
   push!(__eqs, dyno.w_ref ~ dyno_rpm * pi / 30)
   push!(__eqs, connect(engine.spline, dyno.spline))
   push!(__eqs, connect(engine.support, fixed.spline))

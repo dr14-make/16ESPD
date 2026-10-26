@@ -38,9 +38,10 @@ This notebook follows a driver's foot force through the brake system until it be
 model it shows.
 
 The model is the first increment of the brake library in `dyad/Vehicle/Brake/`: a **static
-force chain** of pedal lever, vacuum booster and tandem master cylinder. Brake lines,
-calipers and the car itself are not built yet, so this notebook stops at master-cylinder
-pressure. The last sections say what arrives next.
+force chain** of pedal lever, vacuum booster and tandem master cylinder, and this notebook
+stops at master-cylinder pressure. The brake lines, the calipers and the wheel they brake
+(`BrakeLine`, `BrakeCaliper`, `Vehicle.Wheel.HydraulicBrakedWheel`) are in the library too, and
+Lecture 3's build 02 runs them on a car. The last section says what they add.
 
 The physics and the sources behind every parameter are in
 `docs/reports/Passenger car brake system modeling.md`, cited below as *the report*.
@@ -170,8 +171,8 @@ Following the report's section *"Force is multiplied twice before any fluid move
 
 In the Dyad model the three stages are joined by translational `Flange` connectors, exactly
 as the pushrods join them in the car. The master cylinder's two outputs are hydraulic
-ports. Here both ports are capped (`ClosedHydraulicPort`), because the lines and calipers they
-will feed do not exist yet.
+ports. Here both ports are capped (`ClosedHydraulicPort`), so the chain runs on its own; the
+lines and calipers they feed are wired in Lecture 3's `HandsOn03.PedalStop`.
 """
 
 
@@ -194,7 +195,8 @@ Unboosted cars use **6–7:1**, boosted ones **4.5–5:1**
 ([Summit Racing](https://help.summitracing.com/knowledgebase/article/SR-05037/en-us)), and
 one trade source gives **3.2–4:1** for OEM boosted systems
 ([Tomorrow's Technician](https://www.tomorrowstechnician.com/boosters-and-master-cylinders-how-pressure-builds/)).
-The model's 3.5 is an assumed value inside that cited range.
+The model's 3.5 is an assumed value inside that cited range. The driver's foot enters the
+model as a command `u` from 0 to 1, the foot force as a fraction of `F_max` = 500 N.
 """
 
 
@@ -291,8 +293,9 @@ let
         "moves between **$(round(1e3x_lo; digits = 2)) and $(round(1e3x_hi; digits = 2)) mm**"
     Markdown.parse("""
     Over the whole run, pedal travel $travel, which is `i_p · s_dead`, and the largest displaced
-    volume is **$(V_max) m³**. Pedal travel that grows with pressure arrives with the calipers
-    in increment 1b.
+    volume is **$(V_max) m³**. Pedal travel that grows with pressure needs the calipers' fluid
+    volume: with lines and calipers attached, in Lecture 3's build 02, the master cylinder
+    displaces 3.5 to 4.1 cm³.
     """)
 end
 
@@ -302,8 +305,8 @@ md"""
 ## 6. Experiment: pedal force → line pressure
 
 The analysis `Vehicle.Brake.ForceChainTransient` runs the test harness `TestForceChain`: a
-force source ramps the pedal force from 0 to 500 N over 5 s, through pedal, booster and
-master cylinder, with both circuits capped. Its only knob is the booster's vacuum-chamber
+ramp drives the pedal command from 0 to 1 over 5 s, which is 0 to 500 N of foot force, through
+pedal, booster and master cylinder, with both circuits capped. Its only knob is the booster's vacuum-chamber
 pressure `p_vac`, passed straight through to `StaticBooster`. The harness itself is in
 [`dyad/Vehicle/Brake/TestForceChain.dyad`](../../dyad/Vehicle/Brake/TestForceChain.dyad).
 """
@@ -451,7 +454,7 @@ let
     Markdown.parse("""
     | quantity | model | band | | band source | model value from |
     |:---|---:|---:|:---|:---|:---|
-    | line pressure for a 1 g stop | $(r1(p_1g)) bar | 60–100 bar | $(check(p_1g, 60, 100)) | derived from cited caliper sizes | `m·g·r / $(K_TORQUE)`: the vehicle and the report's caliper gain, until 1b simulates the calipers |
+    | line pressure for a 1 g stop | $(r1(p_1g)) bar | 60–100 bar | $(check(p_1g, 60, 100)) | derived from cited caliper sizes | `m·g·r / $(K_TORQUE)`: the vehicle and the report's caliper gain; this notebook does not run the calipers |
     | pedal force for a hard stop (≈ 1 g) | $(r1(F_hard)) N | 150–300 N, never > 500 N | $(check(F_hard, 150, 300)) | judgment; 500 N ceiling cited (FMVSS 135) | simulation: first pedal force where `p_mc` reaches $(r1(p_1g)) bar |
     | booster run-out line pressure | $(r1(L.p_knee)) bar | 80–100 bar | $(check(L.p_knee, 80, 100)) | judgment around a PATH-area estimate | simulation: run-out knee at idle vacuum |
     """)
@@ -506,19 +509,21 @@ end
 md"""
 ## 8. What's next
 
-This notebook covers only increment 1a of the brake plan, the static force chain. It shows
+This notebook covers increment 1a of the brake plan, the static force chain. It shows
 pressure, but no fluid moves, nothing reaches a wheel, and the car does not appear. The rest
-of Step 1 arrives in two increments, and this notebook grows with them:
+of Step 1:
 
-- **1b — lines, calipers and torque.** Brake lines with a viscosity parameter, front and rear
-  caliper volumes with a stiffening pressure–volume curve, and caliper torque into the
-  existing wheel. That brings **fluid volume**, **pedal travel** that grows with pressure
-  (pedal feel), **brake torque** and deceleration in a real stop, and the **cold-fluid**
-  comparison of DOT 4 against DOT 4 LV at −40 °C.
+- **1b — lines, calipers and torque.** Built: `BrakeLine` with a viscosity parameter,
+  `BrakeCaliper` with a stiffening pressure–volume curve and the axle's friction torque, and
+  `Vehicle.Wheel.HydraulicBrakedWheel` with a front and a rear caliper. Lecture 3's build 02
+  (`HandsOn03.PedalStop`) runs them on a car: 55 bar and no lock at pedal 0.3, 89 bar and a
+  locked wheel at 0.6. Their plots of **fluid volume**, **pedal travel** that grows with
+  pressure (pedal feel), and the **cold-fluid** comparison of DOT 4 against DOT 4 LV at
+  −40 °C are not in this notebook yet.
 - **1c — brake-force distribution.** A proportioning valve on the rear circuit and the
   **front/rear distribution** plot of ideal against installed brake share.
 
-None of those are faked here: until the models exist, there is nothing honest to plot.
+None of those are faked here: a plot appears once its model runs in this notebook.
 """
 
 

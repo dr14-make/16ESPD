@@ -21,6 +21,7 @@ import DyadData
 import DyadInterface
 import ElectricalComponents
 import HydraulicComponents
+import MultibodyComponents
 import RotationalComponents
 import ThermalComponents
 import TranslationalComponents
@@ -206,6 +207,7 @@ include("BrakeActuatorTransient_definition.jl")
 include("BrakeActuator_definition.jl")
 include("BrakedWheelTransient_definition.jl")
 include("BrakedWheel_definition.jl")
+include("HydraulicBrakedWheel_definition.jl")
 include("LoadedSlipWheel1D_definition.jl")
 include("SlipWheel1D_definition.jl")
 include("TestBrakeActuator_definition.jl")

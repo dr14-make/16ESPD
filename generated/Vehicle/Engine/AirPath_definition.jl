@@ -10,10 +10,10 @@
 Mean-value air path of a throttled petrol engine: throttle, intake manifold and cylinders.
 
 Throttle position and engine speed set the manifold pressure `p_m`, the signal the engine maps
-are read at and the vacuum the brake booster draws on. `mdot_bst` is the booster's inflow
-through its check valve; hold it at zero when no booster is connected. `mdot_cyl` is the air the
-cylinders draw, which the fuel path meters against, and `mdot_thr` is what a mass-airflow
-sensor upstream of the throttle would read.
+are read at and the vacuum the brake booster draws on. `vacuum` is the hose to the booster, at
+manifold pressure, through which the booster's check valve lets air into the manifold; left
+unconnected it is capped. `mdot_cyl` is the air the cylinders draw, which the fuel path meters
+against, and `mdot_thr` is what a mass-airflow sensor upstream of the throttle would read.
 
 With the defaults: 33 kPa at idle (closed throttle, 800 rpm), 13.5 kPa on overrun at 3000 rpm,
 about 100 kPa at wide-open throttle, and a manifold time constant of about 0.15 s at idle.
@@ -33,7 +33,11 @@ about 100 kPa at wide-open throttle, and a manifold time constant of about 0.15 
 
  * `u_thr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `omega` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `mdot_bst` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `vacuum` - One end of a gas hose: absolute pressure across it, air mass flow through it.
+
+Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
+the other end receives. `mdot` is positive into the component that owns the port. A port left
+unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
  * `p_m` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `mdot_cyl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `mdot_thr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
@@ -93,7 +97,6 @@ about 100 kPa at wide-open throttle, and a manifold time constant of about 0.15 
   ### Final Path Parameters
   append!(__vars, @variables (u_thr(t)::Real), [input = true])
   append!(__vars, @variables (omega(t)::Real), [input = true])
-  append!(__vars, @variables (mdot_bst(t)::Real), [input = true])
   append!(__vars, @variables (p_m(t)::Real), [output = true])
   append!(__vars, @variables (mdot_cyl(t)::Real), [output = true])
   append!(__vars, @variables (mdot_thr(t)::Real), [output = true])
@@ -106,6 +109,7 @@ about 100 kPa at wide-open throttle, and a manifold time constant of about 0.15 
   __constants = Any[]
 
   ### Components
+  push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
   # Subcomponent throttle of type VehicleSystemsComponents.Vehicle.Engine.Throttle
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
   push!(__systems, @named throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle(; A_idle=A_idle, C_d=C_d, D_thr=D_thr, throttle_overrides...))
@@ -129,7 +133,7 @@ about 100 kPa at wide-open throttle, and a manifold time constant of about 0.15 
   ### Equations
   push!(__eqs, connect(u_thr, throttle.u_thr))
   push!(__eqs, connect(omega, cylinders.omega))
-  push!(__eqs, connect(mdot_bst, manifold.mdot_bst))
+  push!(__eqs, connect(vacuum, manifold.vacuum))
   push!(__eqs, connect(throttle.mdot_thr, mdot_thr, manifold.mdot_thr))
   push!(__eqs, connect(cylinders.mdot_cyl, mdot_cyl, manifold.mdot_cyl))
   push!(__eqs, connect(manifold.p_m, p_m, throttle.p_m, cylinders.p_m))
