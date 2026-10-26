@@ -1,27 +1,26 @@
 """
-Traction controller that builds brake torque above the target positive driving slip and releases it
-below the target.
+Hands-on 03 traction controller. It builds allowed hydraulic pressure while predicted positive
+wheel slip is past `lambda_target` and dumps pressure otherwise. The command remains between zero
+and the pump supply pressure.
 """
 component TCS
-  "Longitudinal tire slip, positive while driving"
+  "Wheel slip, positive while driving"
   kappa = RealInput() {^kappa}
-  "Commanded TCS brake torque"
-  tau_cmd = RealOutput() {^tau_cmd}
-  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = T_track) {^pressure}
-  "Slip held just past the tire's peak"
+  "Pump supply pressure [Pa]"
+  demand = RealInput() {^demand}
+  "Allowed wheel-circuit pressure [Pa]"
+  p_cmd = RealOutput() {^p_cmd}
+  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01) {^pressure}
+  "Slip held, just past the tire's peak"
   parameter lambda_target::Real = 0.04
-  "Maximum TCS brake torque"
-  parameter tau_tcs_max::Torque = 2000.0
-  "Brake-torque build rate"
-  parameter k_inc::Real = 40000.0
-  "Brake-torque release rate"
-  parameter k_dec::Real = 80000.0
-  "Look-ahead, the brake's lag"
+  "Pressure build rate [Pa/s]"
+  parameter k_inc::Real = 2.9e7
+  "Pressure dump rate [Pa/s]"
+  parameter k_dec::Real = 5.8e7
+  "Look-ahead, the valve's lag"
   parameter T_p::Time = 0.03
   "Slip-rate filter"
   parameter T_f::Time = 0.003
-  "Integrator tracking time"
-  parameter T_track::Time = 0.01
   variable kappa_f::Real
   variable kappa_dot::Real
   variable kappa_pred::Real
@@ -30,29 +29,18 @@ relations
   der(kappa_f) = (kappa - kappa_f) / T_f
   kappa_dot = (kappa - kappa_f) / T_f
   kappa_pred = kappa + T_p * kappa_dot
-  pressure.demand = tau_tcs_max
+  connect(demand, pressure.demand) {^id1}
   pressure.requested_rate = ifelse(kappa_pred > lambda_target, k_inc, -k_dec)
   pressure.active = 1.0
-  tau_cmd = min(max(pressure.cmd, 0.0), tau_tcs_max)
+  connect(pressure.cmd, p_cmd) {^id2}
 metadata {
   "_links": {
-    "kappa": {
-      "Dyad": {
-        "placement": {
-          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
-          "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}
-        }
-      }
-    },
-    "tau_cmd": {
-      "Dyad": {
-        "placement": {
-          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
-          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
-        }
-      }
-    },
-    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}}
+    "kappa": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 250, "y2": 350}, "diagram": {"x1": -50, "x2": 50, "y1": 250, "y2": 350}}}},
+    "demand": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 650, "y2": 750}, "diagram": {"x1": -50, "x2": 50, "y1": 650, "y2": 750}}}},
+    "p_cmd": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 700}, {"x": 200, "y": 450}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end

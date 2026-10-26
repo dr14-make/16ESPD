@@ -5,18 +5,18 @@
 
 
 @doc Markdown.doc"""
-   TCSStart(; name, tcs_enabled, tau_tcs_max)
+   TCSStart(; name, tcs_enabled, supply_pressure)
 
-Full-torque standing start on snow, with traction control selectable by parameter.
+Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `tcs_enabled`         | Set to one to enable traction control, zero for the uncontrolled run                         | --  |   1.0 |
-| `tau_tcs_max`         | Maximum TCS brake torque                         | N.m  |   2000.0 |
+| `supply_pressure`         | Pump and accumulator supply pressure                         | Pa  |   8.9e6 |
 """
-@component function TCSStart(; name = nothing, tcs_enabled=Float64(1.0), tau_tcs_max=Float64(2000.0), kwargs...)
+@component function TCSStart(; name = nothing, tcs_enabled=Float64(1.0), supply_pressure=Float64(8900000.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -50,9 +50,9 @@ Full-torque standing start on snow, with traction control selectable by paramete
   __local__tcs_enabled = tcs_enabled
   append!(__params, @parameters (tcs_enabled::Real), [description = "Set to one to enable traction control, zero for the uncontrolled run"])
   __initial_conditions[tcs_enabled] = __local__tcs_enabled
-  __local__tau_tcs_max = tau_tcs_max
-  append!(__params, @parameters (tau_tcs_max::Real), [description = "Maximum TCS brake torque"])
-  __initial_conditions[tau_tcs_max] = __local__tau_tcs_max
+  __local__supply_pressure = supply_pressure
+  append!(__params, @parameters (supply_pressure::Real), [description = "Pump and accumulator supply pressure"])
+  __initial_conditions[supply_pressure] = __local__supply_pressure
 
   ### Final Parameters (assignments)
 
@@ -66,21 +66,21 @@ Full-torque standing start on snow, with traction control selectable by paramete
   __constants = Any[]
 
   ### Components
-  # Subcomponent command of type BlockComponents.Sources.Step
-  command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Step(; height=Float64(150.0), offset=Float64(0.0), start_time=Float64(0.0), command_overrides...))
-  # Subcomponent road of type BlockComponents.Sources.Constant
-  road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0.0), road_overrides...))
   # Subcomponent friction of type BlockComponents.Sources.Constant
   friction_overrides = __pop_subcomponent_overrides!(__overrides, "friction")
   push!(__systems, @named friction = BlockComponents.Sources.Constant(; k=0.2, friction_overrides...))
-  # Subcomponent car of type VehicleSystemsComponents.HandsOn03.TCSSlipCar
+  # Subcomponent supply of type BlockComponents.Sources.Constant
+  supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
+  push!(__systems, @named supply = BlockComponents.Sources.Constant(; k=supply_pressure, supply_overrides...))
+  # Subcomponent enable of type BlockComponents.Math.Gain
+  enable_overrides = __pop_subcomponent_overrides!(__overrides, "enable")
+  push!(__systems, @named enable = BlockComponents.Math.Gain(; k=tcs_enabled, enable_overrides...))
+  # Subcomponent car of type VehicleSystemsComponents.HandsOn03.TCSCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.HandsOn03.TCSSlipCar(; car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.HandsOn03.TCSCar(; supply_pressure=supply_pressure, car_overrides...))
   # Subcomponent tcs of type VehicleSystemsComponents.HandsOn03.TCS
   tcs_overrides = __pop_subcomponent_overrides!(__overrides, "tcs")
-  push!(__systems, @named tcs = VehicleSystemsComponents.HandsOn03.TCS(; tau_tcs_max=tau_tcs_max, tcs_overrides...))
+  push!(__systems, @named tcs = VehicleSystemsComponents.HandsOn03.TCS(; tcs_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -88,22 +88,20 @@ Full-torque standing start on snow, with traction control selectable by paramete
   ### Guesses
 
   ### Initialization Equations
+  push!(__initialization_eqs, car.wheel.inertia.phi ~ 0.0)
+  push!(__initialization_eqs, car.wheel.inertia.w ~ 0.0)
   push!(__initialization_eqs, car.body.mass.s ~ 0.0)
   push!(__initialization_eqs, car.body.mass.v ~ 0.0)
-  push!(__initialization_eqs, car.engine.lag.x ~ 0.0)
-  push!(__initialization_eqs, car.wheel_inertia.phi ~ 0.0)
-  push!(__initialization_eqs, car.wheel_inertia.w ~ 0.0)
-  push!(__initialization_eqs, car.brake.tau_actual ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, car.tau_tcs ~ ifelse(tcs_enabled > 0.5, tcs.tau_cmd, 0.0))
-  push!(__eqs, connect(command.y, car.tau_cmd))
-  push!(__eqs, connect(road.y, car.grade))
   push!(__eqs, connect(friction.y, car.mu_scale))
+  push!(__eqs, connect(supply.y, tcs.demand))
   push!(__eqs, connect(car.kappa, tcs.kappa))
+  push!(__eqs, connect(tcs.p_cmd, enable.u))
+  push!(__eqs, connect(enable.y, car.p_cmd))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

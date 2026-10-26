@@ -5,27 +5,27 @@
 
 
 @doc Markdown.doc"""
-   TCS(; name, lambda_target, tau_tcs_max, k_inc, k_dec, T_p, T_f, T_track)
+   TCS(; name, lambda_target, k_inc, k_dec, T_p, T_f)
 
-Traction controller that builds brake torque above the target positive driving slip and releases it
-below the target.
+Hands-on 03 traction controller. It builds allowed hydraulic pressure while predicted positive
+wheel slip is past `lambda_target` and dumps pressure otherwise. The command remains between zero
+and the pump supply pressure.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `lambda_target`         | Slip held just past the tire's peak                         | --  |   0.04 |
-| `tau_tcs_max`         | Maximum TCS brake torque                         | N.m  |   2000.0 |
-| `k_inc`         | Brake-torque build rate                         | --  |   40000.0 |
-| `k_dec`         | Brake-torque release rate                         | --  |   80000.0 |
-| `T_p`         | Look-ahead, the brake's lag                         | s  |   0.03 |
+| `lambda_target`         | Slip held, just past the tire's peak                         | --  |   0.04 |
+| `k_inc`         | Pressure build rate [Pa/s]                         | --  |   2.9e7 |
+| `k_dec`         | Pressure dump rate [Pa/s]                         | --  |   5.8e7 |
+| `T_p`         | Look-ahead, the valve's lag                         | s  |   0.03 |
 | `T_f`         | Slip-rate filter                         | s  |   0.003 |
-| `T_track`         | Integrator tracking time                         | s  |   0.01 |
 
 ## Connectors
 
  * `kappa` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `tau_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `demand` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `p_cmd` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
 
@@ -35,7 +35,7 @@ below the target.
 | `kappa_dot`         |                          | --  |
 | `kappa_pred`         |                          | --  |
 """
-@component function TCS(; name = nothing, lambda_target=0.04, tau_tcs_max=Float64(2000.0), k_inc=Float64(40000.0), k_dec=Float64(80000.0), T_p=0.03, T_f=0.003, T_track=0.01, kwargs...)
+@component function TCS(; name = nothing, lambda_target=0.04, k_inc=Float64(29000000.0), k_dec=Float64(58000000.0), T_p=0.03, T_f=0.003, kwargs...)
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -67,32 +67,27 @@ below the target.
 
   ### Symbolic Parameters
   __local__lambda_target = lambda_target
-  append!(__params, @parameters (lambda_target::Real), [description = "Slip held just past the tire's peak"])
+  append!(__params, @parameters (lambda_target::Real), [description = "Slip held, just past the tire's peak"])
   __initial_conditions[lambda_target] = __local__lambda_target
-  __local__tau_tcs_max = tau_tcs_max
-  append!(__params, @parameters (tau_tcs_max::Real), [description = "Maximum TCS brake torque"])
-  __initial_conditions[tau_tcs_max] = __local__tau_tcs_max
   __local__k_inc = k_inc
-  append!(__params, @parameters (k_inc::Real), [description = "Brake-torque build rate"])
+  append!(__params, @parameters (k_inc::Real), [description = "Pressure build rate [Pa/s]"])
   __initial_conditions[k_inc] = __local__k_inc
   __local__k_dec = k_dec
-  append!(__params, @parameters (k_dec::Real), [description = "Brake-torque release rate"])
+  append!(__params, @parameters (k_dec::Real), [description = "Pressure dump rate [Pa/s]"])
   __initial_conditions[k_dec] = __local__k_dec
   __local__T_p = T_p
-  append!(__params, @parameters (T_p::Real), [description = "Look-ahead, the brake's lag"])
+  append!(__params, @parameters (T_p::Real), [description = "Look-ahead, the valve's lag"])
   __initial_conditions[T_p] = __local__T_p
   __local__T_f = T_f
   append!(__params, @parameters (T_f::Real), [description = "Slip-rate filter"])
   __initial_conditions[T_f] = __local__T_f
-  __local__T_track = T_track
-  append!(__params, @parameters (T_track::Real), [description = "Integrator tracking time"])
-  __initial_conditions[T_track] = __local__T_track
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
   append!(__vars, @variables (kappa(t)::Real), [input = true])
-  append!(__vars, @variables (tau_cmd(t)::Real), [output = true])
+  append!(__vars, @variables (demand(t)::Real), [input = true])
+  append!(__vars, @variables (p_cmd(t)::Real), [output = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (kappa_f(t)::Real))
@@ -116,7 +111,7 @@ below the target.
   ### Components
   # Subcomponent pressure of type VehicleSystemsComponents.Vehicle.ABSPressureIntegrator
   pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
-  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=T_track, pressure_overrides...))
+  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=0.01, pressure_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -136,10 +131,10 @@ below the target.
   push!(__eqs, ModelingToolkit.D_nounits(kappa_f) ~ (kappa - kappa_f) / T_f)
   push!(__eqs, kappa_dot ~ (kappa - kappa_f) / T_f)
   push!(__eqs, kappa_pred ~ kappa + T_p * kappa_dot)
-  push!(__eqs, pressure.demand ~ tau_tcs_max)
   push!(__eqs, pressure.requested_rate ~ ifelse(kappa_pred > lambda_target, k_inc, -k_dec))
   push!(__eqs, pressure.active ~ 1.0)
-  push!(__eqs, tau_cmd ~ min(max(pressure.cmd, 0.0), tau_tcs_max))
+  push!(__eqs, connect(demand, pressure.demand))
+  push!(__eqs, connect(pressure.cmd, p_cmd))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

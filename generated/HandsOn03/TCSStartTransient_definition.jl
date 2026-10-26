@@ -26,7 +26,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   var"verbose"::DEVerbosity.Type = DEVerbosity.Standard()
   var"log_file"::String = ""
   var"tcs_enabled"::Float64 = 1.0
-  # Full-torque standing start on snow, with traction control selectable by parameter.
+  # Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn03.TCSStart(; name=:TCSStart)
 end
 

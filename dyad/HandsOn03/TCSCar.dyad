@@ -1,0 +1,97 @@
+"""
+Driven wheel, body, and the two hydraulic brake circuits from the hands-on ABS bench. A prescribed
+pressure boundary represents the ABS return pump and accumulator.
+"""
+component TCSCar
+  "Allowed wheel-circuit pressure"
+  p_cmd = RealInput() {^p_cmd}
+  "Road-friction multiplier"
+  mu_scale = RealInput() {^mu_scale}
+  "Longitudinal tire slip"
+  kappa = RealOutput() {^kappa}
+  "Vehicle speed"
+  v = RealOutput() {^v}
+  "Full engine torque"
+  command = BlockComponents.Sources.Step(height = drive_torque, offset = 0.0, start_time = 0.0) {^command}
+  supply_command = BlockComponents.Sources.Constant(k = supply_pressure) {^supply_command}
+  drive = RotationalComponents.Sources.TorqueSource() {^drive}
+  gear = RotationalComponents.Components.IdealGear(ratio = gear_ratio) {^gear}
+  supply = HydraulicComponents.Sources.BoundaryPressure() {^supply}
+  valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_f}
+  valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_r}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(J_w = J_w, F_z = m * g / 2) {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body(m = m, g = g) {^body}
+  fixed = RotationalComponents.Components.Fixed() {^fixed}
+  speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+  "Engine torque before the final drive"
+  parameter drive_torque::Torque = 150.0
+  "Final-drive ratio"
+  parameter gear_ratio::Real = 4.0
+  "Road wheel and tire inertia"
+  parameter J_w::MomentOfInertia = 1.0
+  "Vehicle mass; the driven axle carries half of it"
+  parameter m::Dyad.Mass = 1400.0
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Pressure available from the pump and accumulator"
+  parameter supply_pressure::Pressure = 8.9e6
+relations
+  connect(command.y, drive.tau) {^id1}
+  connect(drive.spline, gear.spline_a) {^id2}
+  connect(gear.spline_b, wheel.spline) {^id3}
+  connect(drive.support, gear.support, wheel.support, fixed.spline) {^id4}
+  connect(supply_command.y, supply.p) {^id5}
+  connect(supply.port, valve_f.port_a, valve_r.port_a) {^id6}
+  connect(valve_f.port_b, line_f.port_a) {^id7}
+  connect(line_f.port_b, wheel.front) {^id8}
+  connect(valve_r.port_b, line_r.port_a) {^id9}
+  connect(line_r.port_b, wheel.rear) {^id10}
+  continuity(medium, supply.port.medium)
+  connect(p_cmd, valve_f.p_cmd, valve_r.p_cmd) {^id11}
+  connect(mu_scale, wheel.mu_scale) {^id12}
+  connect(wheel.flange, body.flange, speed.flange) {^id13}
+  connect(wheel.kappa, kappa) {^id14}
+  connect(speed.v, v) {^id15}
+metadata {
+  "_links": {
+    "command": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 210, "x2": 100, "y2": 290}}}},
+    "drive": {"Dyad": {"placement": {"diagram": {"x1": 130, "y1": 210, "x2": 210, "y2": 290}}}},
+    "gear": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 210, "x2": 330, "y2": 290}}}},
+    "supply_command": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 500, "x2": 100, "y2": 580}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 130, "y1": 500, "x2": 210, "y2": 580}}}},
+    "valve_f": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 450, "x2": 360, "y2": 530}}}},
+    "valve_r": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 590, "x2": 360, "y2": 670}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 410, "y1": 450, "x2": 490, "y2": 530}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 410, "y1": 590, "x2": 490, "y2": 670}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 290, "x2": 700, "y2": 430}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 790, "y1": 320, "x2": 870, "y2": 400}}}},
+    "fixed": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 80, "x2": 310, "y2": 140}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 790, "y1": 450, "x2": 870, "y2": 530}}}},
+    "p_cmd": {"Dyad": {"placement": {"diagram": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}}}},
+    "mu_scale": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 750, "x2": 600, "y2": 850}}}},
+    "kappa": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 170, "x2": 1050, "y2": 270}}}},
+    "v": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end
+
+test component TestTCSCar
+  zero_pressure = BlockComponents.Sources.Constant(k = 0.0)
+  snow = BlockComponents.Sources.Constant(k = 0.2)
+  car = TCSCar()
+relations
+  connect(zero_pressure.y, car.p_cmd)
+  connect(snow.y, car.mu_scale)
+  initial car.wheel.inertia.phi = 0.0
+  initial car.wheel.inertia.w = 0.0
+  initial car.body.mass.s = 0.0
+  initial car.body.mass.v = 0.0
+end
+
+analysis TCSCarTransient
+  extends TransientAnalysis(stop = 1.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  model = TestTCSCar()
+end

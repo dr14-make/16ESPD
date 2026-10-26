@@ -1,73 +1,36 @@
-"""Full-torque standing start on snow, with traction control selectable by parameter."""
+"""Full-torque hydraulic-brake TCS standing start on snow, selectable by parameter."""
 component TCSStart
   "Set to one to enable traction control, zero for the uncontrolled run"
   parameter tcs_enabled::Real = 1.0
-  "Maximum TCS brake torque"
-  parameter tau_tcs_max::Torque = 2000.0
-  "Full torque from rest"
-  command = BlockComponents.Sources.Step(height = 150.0, offset = 0.0, start_time = 0.0) {^command}
-  road = BlockComponents.Sources.Constant(k = 0.0) {^road}
+  "Pump and accumulator supply pressure"
+  parameter supply_pressure::Pressure = 8.9e6
   friction = BlockComponents.Sources.Constant(k = 0.2) {^friction}
-  car = TCSSlipCar() {^car}
-  tcs = TCS(tau_tcs_max = tau_tcs_max) {^tcs}
+  supply = BlockComponents.Sources.Constant(k = supply_pressure) {^supply}
+  enable = BlockComponents.Math.Gain(k = tcs_enabled) {^enable}
+  car = TCSCar(supply_pressure = supply_pressure) {^car}
+  tcs = TCS() {^tcs}
 relations
-  connect(command.y, car.tau_cmd) {^id1}
-  connect(road.y, car.grade) {^id2}
-  connect(friction.y, car.mu_scale) {^id3}
-  connect(car.kappa, tcs.kappa) {^id4}
-  car.tau_tcs = ifelse(tcs_enabled > 0.5, tcs.tau_cmd, 0.0)
+  connect(friction.y, car.mu_scale) {^id1}
+  connect(supply.y, tcs.demand) {^id2}
+  connect(car.kappa, tcs.kappa) {^id3}
+  connect(tcs.p_cmd, enable.u) {^id4}
+  connect(enable.y, car.p_cmd) {^id5}
+  initial car.wheel.inertia.phi = 0.0
+  initial car.wheel.inertia.w = 0.0
   initial car.body.mass.s = 0.0
   initial car.body.mass.v = 0.0
-  initial car.engine.lag.x = 0.0
-  initial car.wheel_inertia.phi = 0.0
-  initial car.wheel_inertia.w = 0.0
-  initial car.brake.tau_actual = 0.0
 metadata {
   "_links": {
-    "road": {"Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 250, "y2": 350}}}},
-    "friction": {
-      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 450, "y2": 550}}}
-    },
-    "command": {
-      "Dyad": {"placement": {"diagram": {"x1": 150, "x2": 250, "y1": 650, "y2": 750}}}
-    },
-    "car": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 450, "y2": 550}}}},
-    "tcs": {"Dyad": {"placement": {"diagram": {"x1": 450, "x2": 550, "y1": 230, "y2": 330}}}},
-    "id1": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 400, "y": 700}, {"x": 400, "y": 535}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id2": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 300, "y": 300}, {"x": 300, "y": 457}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id3": {
-      "Dyad": {
-        "edges": [{"S": 1, "M": [{"x": 350, "y": 500}, {"x": 350, "y": 472}], "E": 2}],
-        "path": {}
-      }
-    },
-    "id4": {
-      "Dyad": {
-        "edges": [
-          {
-            "S": 1,
-            "M": [
-              {"x": 600, "y": 497},
-              {"x": 600, "y": 190},
-              {"x": 420, "y": 190},
-              {"x": 420, "y": 280}
-            ],
-            "E": 2
-          }
-        ],
-        "path": {}
-      }
-    }
+    "friction": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 700, "y2": 800}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 120, "x2": 220, "y1": 450, "y2": 550}}}},
+    "tcs": {"Dyad": {"placement": {"diagram": {"x1": 350, "x2": 450, "y1": 400, "y2": 500}}}},
+    "enable": {"Dyad": {"placement": {"diagram": {"x1": 550, "x2": 650, "y1": 400, "y2": 500}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 760, "x2": 860, "y1": 400, "y2": 500}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 690, "y": 750}, {"x": 690, "y": 475}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 280, "y": 500}, {"x": 280, "y": 470}], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 910, "y": 425}, {"x": 910, "y": 250}, {"x": 300, "y": 250}, {"x": 300, "y": 430}], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end
