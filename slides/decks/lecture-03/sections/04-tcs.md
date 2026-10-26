@@ -127,6 +127,11 @@ The brake stands in for the grip the ice lacks: a **brake-based differential loc
 <!--
 Budget: 1.5 minutes. The equal split first, then the table, then why it is only a low-speed trick.
 
+Symbols: T in is the torque from the gearbox into the differential, T L and T R the torques in the
+left and right side shafts, all in newton meters. Omega L and omega R are the wheel speeds and
+omega carrier the speed of the differential's housing, in radians per second. F z is each wheel's
+normal load, 4000 newtons; T b the TCS brake torque on the left wheel.
+
 Why a differential at all: in a bend the outer wheel travels farther, so the two driven wheels
 must turn at different speeds. The open differential allows it: the carrier turns at the mean of
 the two wheel speeds. The price is in the torque. The small bevel gears in the carrier are a
@@ -139,9 +144,12 @@ ice.
 
 Brake the spinning wheel with 600 newton meters. The differential still splits equally, but now
 the left side resists with its brake plus the ice, 724 newton meters, so the differential can pass
-724 to each side. The right wheel puts its 724 into the dry road, and the drive force is 124 plus
-724 over 0.31, 2.7 kilonewtons, more than three times as much. The engine must supply the extra
-1448 newton meters at the axle, and the 600 at the brake become heat: at 20 kilometers per hour
+724 to each side. The table's "724 − 600" is that left shaft: 724 arrive, the brake takes 600 and
+only 124 reach the ice. The force column is the drive force on the road, the two tire torques
+added and divided by the wheel radius. The right wheel puts its 724 into the dry road, and the drive force is 124 plus
+724 over 0.31, 2.7 kilonewtons, more than three times as much. The engine must now supply 1448
+newton meters at the axle in total, 1200 more than the 248 without TCS, and the 600 at the brake
+become heat: at 20 kilometers per hour
 that is about 11 kilowatts in one brake disc. That is why brake-based TCS is a drive-off aid: a
 Bosch patent switches it off above about 40 kilometers per hour (US 4,971,400; in
 docs/esp-tcs-plausibility-research.md). Above that, and whenever both wheels spin, only cutting the
@@ -298,11 +306,13 @@ and `ABSPressureIntegrator`, and your `SlipABS` from build 03, with the sign of 
 round. The guide page has the task, the parts and the advice, not the diagram.
 
 The reference solution is kept off main, on branch feat/handson03-tcs-bonus, as the hands-on 2
-WLTC bonus was: `HandsOn03.TCSStartTransient`, with `tcs_enabled` 1 or 0. The 8.5 and 5.7 meters
-per second are hand estimates: net of resistance, about 0.85 against 0.57 meters per second
-squared. The reference gives 8.0 against 5.6 at 10 seconds, the slip held at 0.036: the estimate
-assumes peak traction throughout and leaves out the engine delay, the brake lag and the slip
-cycling.
+WLTC bonus was: `HandsOn03.TCSStartTransient`, with `tcs_enabled` 1 or 0. The hand numbers on the
+slide: 6865 newtons is the normal load on the driven wheel, half the weight of the 1400 kilogram
+car. Times the snow factor 0.2 and the peak 1.0 it gives 1373 newtons of traction; spinning, at
+the sliding 0.7, 961. The 8.5 and 5.7 meters per second are hand estimates: net of resistance,
+about 0.85 against 0.57 meters per second squared, over 10 seconds. The reference gives 8.0
+against 5.6 at 10 seconds, the slip held at 0.036: the estimate assumes peak traction throughout
+and leaves out the engine delay, the brake lag and the slip cycling.
 -->
 
 ---
