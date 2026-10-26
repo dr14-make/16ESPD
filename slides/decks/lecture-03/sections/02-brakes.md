@@ -511,20 +511,28 @@ routeAlias: vacuum-booster
 The booster borrows **manifold vacuum**: 33 kPa at idle, almost none at wide-open throttle.
 A **check valve** keeps the stored vacuum, about **two** assisted stops once the source is gone.
 
+With a real engine feeding it (`FullCarVacuumStop`), lifting off at 90 km/h pulls the manifold
+from 54 to 23 kPa: full assist, **39.2 m**.
+
 </div>
 </div>
 
 <!--
 Optional, 3 minutes. A lecturer demo, outside the run sheet's minutes: show it only if ahead.
 
-This is `Lecture3.VacuumPedalStop`: build 02's `PedalStop` with `Vehicle.Brake.VacuumBooster` in
-place of the static booster, its front chamber fed by the engine's `Vehicle.Engine.AirPath` at a
-prescribed throttle and engine speed, or by `Vehicle.Brake.ElectricVacuumPump`. The hose is two
-equations, not a wire: `ev_pump` picks the source. Same pedal every time, 0.3, 150 newtons, from
-25 meters per second.
+Two models with the same brake chain as build 02: brake pedal, booster, master cylinder, two
+brake lines, braked wheel. They differ in where the booster gets its vacuum. All pressures here
+are absolute: the atmosphere is 101 kilopascal, and a lower number means a deeper vacuum.
 
-1. Idle: 38.4 meters, 56 bar, against 36.0 for the static booster of build 02. The extra 2.4
-   meters are the booster filling its rear chamber, about 0.2 seconds.
+The bench in the picture: `Lecture3.VacuumPedalStop`. It is build 02's `PedalStop` with
+`Vehicle.Brake.VacuumBooster` in place of the static booster. Its "engine" is only the air path,
+`Vehicle.Engine.AirPath`, held at a fixed throttle and a fixed engine speed. The switch `ev_pump`
+picks the source: 0 the engine's manifold, 1 an electric pump, `Vehicle.Brake.ElectricVacuumPump`.
+Every run uses the same brake pedal, `pedal = 0.3`, which is 150 newtons of foot force, from 25
+meters per second, which is 90 kilometers per hour. The chart on the right comes from this bench.
+
+1. Idle: 38.4 meters, 56 bar in the master cylinder, against 36.0 for the static booster of build
+   02. The extra 2.4 meters are the booster filling its rear chamber, about 0.2 seconds.
 2. Wide-open throttle, fresh store: the manifold is near ambient and the check valve shuts, but
    the booster still holds the 33 kPa it stored at idle: 39.5 meters, almost normal.
 3. Store used up: each full application lets rear-chamber air into the front chamber. After the
@@ -534,20 +542,43 @@ equations, not a wire: `ev_pump` picks the source. Same pedal every time, 0.3, 1
 4. Electric pump, starting at its 40 kPa switch-on point: 39.3 meters. That is why diesels,
    hybrids and EVs carry one; Hella's UP28 pulls a 2.8-liter booster to 50 kPa in 6.7 seconds.
 
+The whole car: `Lecture3.FullCarVacuumStop`. Here the Hands-on 02 engine,
+`HandsOn02.MapEngineFuelCut`, really drives the wheel, through its flywheel, the centrifugal
+clutch and the CVT. Two wires join the engine to the booster: the manifold pressure `p_m` is the
+booster's vacuum source, and the air the booster draws out, `mdot_out`, flows back into the
+manifold. The story: the car cruises at 90 kilometers per hour with the throttle pedal at 0.0916,
+about 9 percent; the engine turns 2182 rpm and the manifold sits at 54 kPa. At 0.5 seconds the
+driver lifts off, so the throttle closes, and presses the brake with the same 150 newtons.
+
+- Before lift-off the booster holds only the cruise vacuum, 54 kPa. That is good for 2.4
+  kilonewtons of assist, just short of the 2.45 that 150 newtons asks for.
+- With the throttle shut the engine pumps the manifold down: 33 kPa after 0.1 seconds, 23 kPa by
+  1.5 seconds. The booster follows to 25 kPa, and its reserve grows to 4.0 kilonewtons. It gives
+  the full 2.45 kilonewtons within half a second of the pedal going down, until the car stops.
+- The car stops in 39.2 meters and 2.9 seconds, at the same 56 bar, against 38.4 for the bench.
+  Started from the idle store of 33 kPa instead (`p_vac0 = 33e3`), the whole car needs 38.1: the
+  engine's drag gains a quarter meter, and the half-empty cruise store costs a meter.
+- The manifold never rises above its 54 kPa cruise value, far below the 101 of the atmosphere.
+  After the stop the engine idles at about 770 rpm and the manifold settles near 34 kPa.
+
 Live, if there is time, in the Studio REPL (compiled before class):
 
 1. `using VehicleSystemsComponents: Lecture3, Vehicle`
 2. `Vehicle.braking_distance(Lecture3.VacuumPedalStopTransient())`: 38.4.
 3. `Vehicle.braking_distance(Lecture3.VacuumPedalStopTransient(engine_on = 0.0, n_apply = 4.0,
-   stop = 60.0))`: 435, the reserve spent. A minute of simulated time; give it a moment.
+   stop = 60.0))`: 435, the reserve spent. `engine_on = 0` stops the engine and `n_apply = 4`
+   means four full presses since it stopped. A minute of simulated time; give it a moment.
+4. `Vehicle.braking_distance(Lecture3.FullCarVacuumStopTransient())`: 39.2. About a minute the
+   first time.
 
-At pedal 0.6 the wheel locks whatever the source while the store holds: 44.1 meters at idle,
-against 43.7 for build 02.
+At pedal 0.6 the wheel locks whatever the source while the store holds: 44.1 meters at idle and
+45.4 for the whole car, against 43.7 for build 02.
 
 The booster's geometry, valve thresholds and flow coefficients are PATH's, UCB-ITS-PRR-97-21.
 The servo ratio, jump-in, cut-in and the valve's 10-newton dead band are assumed: PATH's 50
 newtons would leave the booster 250 newtons short of the static characteristic. Figure:
-`scripts/export_lecture03_vacuum_figures.jl`.
+`scripts/export_lecture03_vacuum_figures.jl`. The whole-car numbers are checked in
+`test/vacuum_full_car.jl`.
 -->
 
 ---
