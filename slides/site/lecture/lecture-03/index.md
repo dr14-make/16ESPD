@@ -55,7 +55,7 @@ Today's parts, the brake system, the braked wheels and the pressure integrator, 
 #### Do this
 
 1. In the status bar, click the branch name → **Create new branch…** → `lecture-03`, from `main`. If you finished hands-on 2, branch from where it left you. If not, `main` is enough: today needs only hands-on 1's `Body`.
-2. Open the Julia REPL and move the course library to the Lecture 3 version: the tag this lecture was rehearsed on. You added the library in hands-on 2, and your `Manifest.toml` still holds the version from that day, without today's parts. Skipped hands-on 2? The same line adds it. The second line adds `HydraulicComponents`: in step 02 your own bench declares the brake fluid, so `MyCar` needs the package itself.
+2. Open the Julia REPL and move the course library to the Lecture 3 version: the tag this lecture was rehearsed on. If you did hands-on 2, you added the library then, and your `Manifest.toml` still holds the version from that day, without today's parts. Started from `main`? `MyCar` has no course library yet, and the same line adds it. The second line adds `HydraulicComponents`: in step 02 your own bench declares the brake fluid, so `MyCar` needs the package itself.
 
    ```julia
    using Pkg
@@ -292,9 +292,9 @@ Library parts are under **+** → `VehicleSystemsComponents › Vehicle › Brak
 
 ::: tip Expected result
 
-**Pedal 0.3, 150 N of foot:** `master.p_mc` peaks at **55.2 bar**, 5.52×10⁶ on the plot's Pa axis, and the calipers hold **3765 N·m**, under the 4256 N·m of step 01. The wheel never locks: `wheel.kappa` stays above −0.03. The car decelerates at about 0.87 g, and `braking_distance` gives **36.0 m**. The front caliper's pressure rises from 10 to 90 % in 4.4 ms, and the master cylinder pushes 3.5 cm³ of fluid into the two circuits.
+**Pedal 0.3, 150 N of foot:** `master.p_mc` peaks at **55.1 bar**, 5.51×10⁶ on the plot's Pa axis, and the calipers hold **3765 N·m**, under the 4256 N·m of step 01. The wheel never locks: `wheel.kappa` stays above −0.03. The car decelerates at about 0.87 g, and `braking_distance` gives **36.0 m**. The front caliper's pressure rises from 10 to 90 % in 4.4 ms, and the master cylinder pushes 3.5 cm³ of fluid into the two circuits.
 
-**Pedal 0.6, 300 N**, past the booster's run-out: **89.2 bar** and **6109 N·m**, 1.4 times what the tire can carry. `wheel.kappa` reaches **−1** within 0.2 s of the pedal and stays there; the car is at rest just before **4 s**. `braking_distance` gives **43.7 m**: just short of the 45.5 m sliding bound of step 01, because the wheel is not locked at once, and drag and rolling resistance help. At `road_mu` 0.5 and 0.3: 85.1 and 136.7 m.
+**Pedal 0.6, 300 N**, past the booster's run-out: **89.2 bar** and **6109 N·m**, 1.4 times what the tire can carry. `wheel.kappa` reaches **−1** within 0.2 s of the pedal and stays there; the car is at rest just before **4 s**. `braking_distance` gives **43.7 m**: just short of the 45.5 m sliding bound of step 01, because the wheel is not locked at once, and drag and rolling resistance help. At `road_mu` 0.5 and 0.3: 85.1 and 136.7 m, once `stop` is long enough for the car to come to rest; step 05's loop sets it.
 
 The harder foot stops 7.7 m longer. Steps 03–05 measure every ABS against the 43.7 m of pedal 0.6.
 
@@ -437,7 +437,7 @@ What it is **not**: the real modulator of the lecture's *build, hold, dump* slid
 
    [![SlipABS's own diagram: the inputs kappa, v and demand on the left edge of the outline, p_cmd on the right, the pressure block in the middle, and demand wired to pressure.demand.](/lecture/lecture-03/img/step03-slipabs-diagram.png)](/lecture/lecture-03/img/step03-slipabs-diagram.png)
 
-2. <Badge type="tip" text="New component" /> **B · the bench, a copy of step 02's.** Right-click `PedalStop` → **Duplicate**, name it `ABSStop`. With nothing selected, **Edit Parameters** → **Add parameter**: `T_p`, type `Real` with unit `s`, value `0.03`, and `lambda_target`, type `Real`, value `0.04`. The form offers no `Time` type; `Real` in seconds is the same.
+2. <Badge type="tip" text="New component" /> **B · the bench, a copy of step 02's.** Right-click `PedalStop` → **Duplicate**, name it `ABSStop`. With nothing selected, **Edit Parameters** → **Add parameter**: `T_p`, type `Real` with unit `s`, value `0.03`, and `lambda_target`, type `Real`, value `0.04`. The form offers no `Time` type; `Real` in seconds is the same. If the copy is missing from the Components tree, or its diagram opens empty, open `absstop.dyad` once (<kbd>Ctrl</kbd>+<kbd>P</kbd>), then the diagram again.
 
    [![ABSStop's parameter panel with nothing selected: pedal 0.6, road_mu 1.0, T_p 0.03 s and lambda_target 0.04, over the finished bench.](/lecture/lecture-03/img/step03-params.png)](/lecture/lecture-03/img/step03-params.png)
 
@@ -488,7 +488,7 @@ What it is **not**: the real modulator of the lecture's *build, hold, dump* slid
 
    [![Run A, no look-ahead, in three panels: master.p_mc at about 8.9 times 10 to the 6 Pa; wheel.caliper_f.p saws between about 1 and 7 times 10 to the 6 Pa; wheel.kappa dives deeper on every cycle, to -1 near the end.](/lecture/lecture-03/img/step03-runA-plot.png)](/lecture/lecture-03/img/step03-runA-plot.png)
 
-3. **C · the look-ahead.** In `SlipABS` add the parameters `T_p = 0.03` and `T_f = 0.003`, three variables, and three lines; the rate line and the latch now read `kappa_pred`:
+3. **C · the look-ahead.** In `SlipABS` add the parameters `T_p = 0.03` and `T_f = 0.003` and the three variables above `relations`, and the four new lines below it; the rate line and the latch now read `kappa_pred`:
 
    ```txt
      variable kappa_f::Real
@@ -515,9 +515,9 @@ What it is **not**: the real modulator of the lecture's *build, hold, dump* slid
 
 ::: tip Expected result
 
-**A, no look-ahead:** **53.4 m**, *longer* than the locked 43.7 m; on wet and snow, 98.8 and 151.6 m, longer there too. The slip dives past the 12 % sliding point every cycle. Not a mistake: the law reacts to the slip now, but the valve follows 30 ms later, so every dump comes too late.
+**A, no look-ahead:** **53.4 m**, *longer* than the locked 43.7 m; on wet and snow, with a `stop` long enough to come to rest, 98.8 and 151.6 m, longer there too. The slip dives past the 12 % sliding point every cycle. Not a mistake: the law reacts to the slip now, but the valve follows 30 ms later, so every dump comes too late.
 
-**C, look-ahead 30 ms:** **34.2 m**, 22 % shorter than locked. The front caliper's pressure `wheel.caliper_f.p` holds at **63.6 bar** on average with a ripple of about 1 bar at **26 Hz**: a smooth slip regulator. `wheel.kappa` stays near −0.04. Below 1.5 m/s the ABS switches off and the wheel locks just before standstill. At `road_mu` 0.5 and 0.3: 64.6 and 106.1 m.
+**C, look-ahead 30 ms:** **34.2 m**, 22 % shorter than locked. The front caliper's pressure `wheel.caliper_f.p` holds at **63.6 bar** on average with a ripple of about 1 bar at **26 Hz**: a smooth slip regulator. `wheel.kappa` stays near −0.04. Below 1.5 m/s the ABS switches off and the wheel locks just before standstill. At `road_mu` 0.5 and 0.3, with a `stop` long enough to come to rest: 64.6 and 106.1 m.
 
 The wheel pressure never exceeds `master.p_mc`. At `pedal = 0.3`, where the wheel never locks, the ABS never acts: `MyCar.ABSStopTransient(pedal = 0.3)` stops in **35.95 m**, step 02's 36.0 m.
 

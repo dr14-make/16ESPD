@@ -106,7 +106,7 @@ the second break at 161, 04 at 166, 05 at 176, 06 at 199, end at 202.
   a minute of build 02's 16; leave it up while the room places the blocks.
 - Keep the theory moving; the pedal-to-pressure figure is the one to linger on: build 02's two
   runs sit on it, 150 N below run-out and 300 N past it.
-- Build 02 is the largest drawing of the day: twelve blocks, eleven wires. The two code pastes
+- Build 02 is the largest drawing of the day: twelve blocks, fourteen wires. The two code pastes
   are the stall: the brake fluid (`path medium` and `continuity`) and the four `initial` lines.
   Without the fluid lines Studio reports `Invalid common set: In component PedalStop, no local
   specification or external connectors … master.front.medium, master.rear.medium,
