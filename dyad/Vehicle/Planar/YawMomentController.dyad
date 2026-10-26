@@ -20,26 +20,83 @@ component YawMomentController
   parameter v_on::Velocity = 5.0
   "Maximum requested yaw moment (assumed)"
   parameter Mz_max::Torque = 10000.0
-  variable e::AngularVelocity
-  variable e_active::AngularVelocity
-  variable e_int::Angle
-  variable Mz_raw::Torque
+  error = BlockComponents.Math.Add(k1 = 1, k2 = -1) {^error}
+  deadzone = BlockComponents.Nonlinear.DeadZone(uMax = deadband) {^deadzone}
+  p_gain = BlockComponents.Math.Gain(k = -Kp) {^p_gain}
+  integrator = BlockComponents.Continuous.Integrator(x0 = 0.0) {^integrator}
+  i_gain = BlockComponents.Math.Gain(k = -Ki) {^i_gain}
+  sum = BlockComponents.Math.Add() {^sum}
+  limiter = BlockComponents.Nonlinear.Limiter(y_max = Mz_max) {^limiter}
+  enable = BlockComponents.Logical.GreaterThreshold(threshold = v_on) {^enable}
+  zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+  gate = BlockComponents.Logical.Switch() {^gate}
+  abs_r = BlockComponents.Math.Abs() {^abs_r}
+  abs_r_ref = BlockComponents.Math.Abs() {^abs_r_ref}
+  compare = BlockComponents.Logical.Greater() {^compare}
+  to_real = BlockComponents.Math.BooleanToReal() {^to_real}
 relations
-  e = r - r_ref
-  e_active = ifelse(abs(e) > deadband, e - deadband * sign(e), 0.0)
-  initial e_int = 0.0
-  der(e_int) = e
-  Mz_raw = -Kp * e_active - Ki * e_int
-  Mz = ifelse(vx > v_on, min(max(Mz_raw, -Mz_max), Mz_max), 0.0)
-  oversteer = ifelse(abs(r) > abs(r_ref), 1.0, 0.0)
+  connect(r, error.u1) {^w1}
+  connect(r_ref, error.u2) {^w2}
+  connect(error.y, deadzone.u) {^w3}
+  connect(deadzone.y, p_gain.u) {^w4}
+  connect(error.y, integrator.u) {^w5}
+  connect(integrator.y, i_gain.u) {^w6}
+  connect(p_gain.y, sum.u1) {^w7}
+  connect(i_gain.y, sum.u2) {^w8}
+  connect(sum.y, limiter.u) {^w9}
+  connect(limiter.y, gate.u1) {^w10}
+  connect(vx, enable.u) {^w11}
+  connect(enable.y, gate.u2) {^w12}
+  connect(zero.y, gate.u3) {^w13}
+  connect(gate.y, Mz) {^w14}
+  connect(r, abs_r.u) {^w15}
+  connect(r_ref, abs_r_ref.u) {^w16}
+  connect(abs_r.y, compare.u1) {^w17}
+  connect(abs_r_ref.y, compare.u2) {^w18}
+  connect(compare.y, to_real.u) {^w19}
+  connect(to_real.y, oversteer) {^w20}
 metadata {
   "Dyad": {"icons": {"default": "dyad://BlockComponents/LimPID.svg"}},
   "_links": {
-    "r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 680, "x2": 50, "y2": 780}, "diagram": {"x1": -50, "y1": 680, "x2": 50, "y2": 780}}}},
-    "r_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 220, "x2": 50, "y2": 320}, "diagram": {"x1": -50, "y1": 220, "x2": 50, "y2": 320}}}},
-    "vx": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
-    "Mz": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "oversteer": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 780, "x2": 1050, "y2": 880}, "diagram": {"x1": 950, "y1": 780, "x2": 1050, "y2": 880}}}}
+    "r": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 680, "x2": 50, "y2": 780}, "diagram": {"x1": -30, "y1": 375, "x2": 30, "y2": 435}}}},
+    "r_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 220, "x2": 50, "y2": 320}, "diagram": {"x1": -30, "y1": 465, "x2": 30, "y2": 525}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 470, "y1": -30, "x2": 530, "y2": 30, "rot": 90}}}},
+    "Mz": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1070, "y1": 470, "x2": 1130, "y2": 530}}}},
+    "oversteer": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 780, "x2": 1050, "y2": 880}, "diagram": {"x1": 1070, "y1": 830, "x2": 1130, "y2": 890}}}},
+    "error": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 375, "x2": 200, "y2": 525}}}},
+    "deadzone": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 400, "x2": 360, "y2": 500}}}},
+    "p_gain": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 400, "x2": 520, "y2": 500}}}},
+    "integrator": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 580, "x2": 360, "y2": 680}}}},
+    "i_gain": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 580, "x2": 520, "y2": 680}}}},
+    "sum": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 400, "x2": 700, "y2": 500}}}},
+    "limiter": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 400, "x2": 850, "y2": 500}}}},
+    "enable": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 120, "x2": 750, "y2": 220}}}},
+    "zero": {"Dyad": {"placement": {"diagram": {"x1": 780, "y1": 530, "x2": 840, "y2": 590}}}},
+    "gate": {"Dyad": {"placement": {"diagram": {"x1": 920, "y1": 420, "x2": 1000, "y2": 580}}}},
+    "abs_r": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 760, "x2": 340, "y2": 840}}}},
+    "abs_r_ref": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 880, "x2": 340, "y2": 960}}}},
+    "compare": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 800, "x2": 520, "y2": 920}}}},
+    "to_real": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 810, "x2": 700, "y2": 910}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 230, "y": 450}, {"x": 230, "y": 630}], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 450}, {"x": 560, "y": 420}], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 570, "y": 630}, {"x": 570, "y": 480}], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 170}], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 880, "y": 170}, {"x": 880, "y": 500}], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 870, "y": 560}, {"x": 870, "y": 551}], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 60, "y": 405}, {"x": 60, "y": 800}], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 45, "y": 495}, {"x": 45, "y": 920}], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 800}, {"x": 380, "y": 823}], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 390, "y": 920}, {"x": 390, "y": 890}], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end

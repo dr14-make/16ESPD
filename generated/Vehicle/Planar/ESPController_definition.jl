@@ -176,6 +176,18 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   # Subcomponent allocator of type VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator
   allocator_overrides = __pop_subcomponent_overrides!(__overrides, "allocator")
   push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, allocator_overrides...))
+  # Subcomponent enable_fl of type BlockComponents.Math.Gain
+  enable_fl_overrides = __pop_subcomponent_overrides!(__overrides, "enable_fl")
+  push!(__systems, @named enable_fl = BlockComponents.Math.Gain(; k=esp_on, enable_fl_overrides...))
+  # Subcomponent enable_fr of type BlockComponents.Math.Gain
+  enable_fr_overrides = __pop_subcomponent_overrides!(__overrides, "enable_fr")
+  push!(__systems, @named enable_fr = BlockComponents.Math.Gain(; k=esp_on, enable_fr_overrides...))
+  # Subcomponent enable_rl of type BlockComponents.Math.Gain
+  enable_rl_overrides = __pop_subcomponent_overrides!(__overrides, "enable_rl")
+  push!(__systems, @named enable_rl = BlockComponents.Math.Gain(; k=esp_on, enable_rl_overrides...))
+  # Subcomponent enable_rr of type BlockComponents.Math.Gain
+  enable_rr_overrides = __pop_subcomponent_overrides!(__overrides, "enable_rr")
+  push!(__systems, @named enable_rr = BlockComponents.Math.Gain(; k=esp_on, enable_rr_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -191,10 +203,6 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   __assertions = []
 
   ### Equations
-  push!(__eqs, dT_fl ~ esp_on * allocator.dT_fl)
-  push!(__eqs, dT_fr ~ esp_on * allocator.dT_fr)
-  push!(__eqs, dT_rl ~ esp_on * allocator.dT_rl)
-  push!(__eqs, dT_rr ~ esp_on * allocator.dT_rr)
   push!(__eqs, Mz ~ yaw.Mz)
   push!(__eqs, r_ref ~ reference.r_ref)
   push!(__eqs, oversteer ~ yaw.oversteer)
@@ -205,6 +213,14 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   push!(__eqs, connect(vx, yaw.vx))
   push!(__eqs, connect(yaw.Mz, allocator.Mz))
   push!(__eqs, connect(yaw.oversteer, allocator.oversteer))
+  push!(__eqs, connect(allocator.dT_fl, enable_fl.u))
+  push!(__eqs, connect(allocator.dT_fr, enable_fr.u))
+  push!(__eqs, connect(allocator.dT_rl, enable_rl.u))
+  push!(__eqs, connect(allocator.dT_rr, enable_rr.u))
+  push!(__eqs, connect(enable_fl.y, dT_fl))
+  push!(__eqs, connect(enable_fr.y, dT_fr))
+  push!(__eqs, connect(enable_rl.y, dT_rl))
+  push!(__eqs, connect(enable_rr.y, dT_rr))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
