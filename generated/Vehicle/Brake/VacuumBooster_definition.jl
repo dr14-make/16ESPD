@@ -10,18 +10,18 @@
 Dynamic vacuum booster: two air chambers on either side of the diaphragm, a static poppet valve,
 and a check valve to the vacuum source, behind the same mechanical ports as `StaticBooster`.
 
-The front (vacuum) chamber `p_f` drains through the check valve into the source at `p_src`, the
-intake manifold or a vacuum pump. The valve compares the input force with the reaction-disc
-force `F_r`: above the apply threshold it lets atmosphere into the rear chamber `p_r`, below the
-release threshold it joins the rear chamber to the front one, and in between it holds. Both
-chambers are isothermal ideal gas whose volumes trade with piston travel, which is the
-master-cylinder pushrod travel beyond its rest position.
+The front (vacuum) chamber `p_f` drains through the check valve into the `vacuum` hose, whose
+far end is the vacuum source: the intake manifold or a vacuum pump. The valve compares the input
+force with the reaction-disc force `F_r`: above the apply threshold it lets atmosphere into the
+rear chamber `p_r`, below the release threshold it joins the rear chamber to the front one, and
+in between it holds. Both chambers are isothermal ideal gas whose volumes trade with piston
+travel, which is the master-cylinder pushrod travel beyond its rest position.
 
     F_out = max(0, F_in + A_d (p_r - p_f) - F_rs0 - K_rs x_p)
     e     = F_in - F_cut - max(0, F_out - F_jump) / SR
     dp_r/dt = n/V_r (R T (mdot_aa - mdot_av) - p_r A_d dx_p/dt)
     dp_f/dt = n/V_f (R T (mdot_av - mdot_out + mdot_leak) + p_f A_d dx_p/dt)
-    mdot_out = C_vm max(0, p_f - p_src)
+    mdot_out = C_vm max(0, p_f - vacuum.p),  vacuum.mdot = -mdot_out
 
 PATH tabulates the flow coefficients in m·s, which reads as kg/(s·Pa) and gives a rear-chamber
 time constant near 0.2 ms, a thousand times faster than PATH's own traces. Read per kPa they give
@@ -61,8 +61,11 @@ defaults; (assumed) textbook-typical, no readable source.
  * `input` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `rod_out` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `support` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
- * `p_src` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
- * `mdot_out` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
+ * `vacuum` - One end of a gas hose: absolute pressure across it, air mass flow through it.
+
+Connected ports share `p`, and their `mdot` sum to zero, so the air one end gives up is the air
+the other end receives. `mdot` is positive into the component that owns the port. A port left
+unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
  * `p_vac` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
 ## Variables
@@ -83,6 +86,7 @@ defaults; (assumed) textbook-typical, no readable source.
 | `mdot_aa`         | Air flow from atmosphere into the rear chamber [kg/s]                         | --  |
 | `mdot_av`         | Air flow from the rear chamber into the front chamber [kg/s]                         | --  |
 | `mdot_leak`         | Air leaking from atmosphere into the front chamber [kg/s]                         | --  |
+| `mdot_out`         | Air mass flow out of the front chamber through the check valve [kg/s]                         | --  |
 | `F_assist_max`         | Assist available with the rear chamber at atmosphere, at the present front pressure                         | N  |
 """
 @component function VacuumBooster(; name = nothing, SR=Float64(5.0), F_cut=Float64(40.0), F_jump=Float64(500.0), A_d=0.0533, F_rs0=Float64(97.0), K_rs=Float64(2411.0), V_f0=0.0024, V_r0=0.00043, F_app=Float64(10.0), F_rel=Float64(10.0), F_w=Float64(20.0), C_aa=5.8e-8, C_av=2.2e-7, C_vm=1.26e-7, C_leak=1.4e-10, n=Float64(1.0), s_rest=0.0025, T=298.15, R=287.05, p_atm=Float64(101325.0), p_init=Float64(33000.0), kwargs...)
@@ -183,8 +187,6 @@ defaults; (assumed) textbook-typical, no readable source.
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
-  append!(__vars, @variables (p_src(t)::Real), [input = true])
-  append!(__vars, @variables (mdot_out(t)::Real), [output = true])
   append!(__vars, @variables (p_vac(t)::Real), [output = true])
 
   ### Variables (declarations)
@@ -202,6 +204,7 @@ defaults; (assumed) textbook-typical, no readable source.
   append!(__vars, @variables (mdot_aa(t)::Real), [description = "Air flow from atmosphere into the rear chamber [kg/s]"])
   append!(__vars, @variables (mdot_av(t)::Real), [description = "Air flow from the rear chamber into the front chamber [kg/s]"])
   append!(__vars, @variables (mdot_leak(t)::Real), [description = "Air leaking from atmosphere into the front chamber [kg/s]"])
+  append!(__vars, @variables (mdot_out(t)::Real), [description = "Air mass flow out of the front chamber through the check valve [kg/s]"])
   append!(__vars, @variables (F_assist_max(t)::Real), [description = "Assist available with the rear chamber at atmosphere, at the present front pressure"])
 
   ### Variables (assignments)
@@ -247,6 +250,9 @@ defaults; (assumed) textbook-typical, no readable source.
   __ovr_mdot_leak = pop!(__overrides, "mdot_leak", nothing); isnothing(__ovr_mdot_leak) || push!(__eqs, mdot_leak ~ __ovr_mdot_leak)
   __ovr_mdot_leak__initial = pop!(__overrides, "mdot_leak__initial", nothing); isnothing(__ovr_mdot_leak__initial) || (__initial_conditions[mdot_leak] = __ovr_mdot_leak__initial)
   __ovr_mdot_leak__guess = pop!(__overrides, "mdot_leak__guess", nothing)
+  __ovr_mdot_out = pop!(__overrides, "mdot_out", nothing); isnothing(__ovr_mdot_out) || push!(__eqs, mdot_out ~ __ovr_mdot_out)
+  __ovr_mdot_out__initial = pop!(__overrides, "mdot_out__initial", nothing); isnothing(__ovr_mdot_out__initial) || (__initial_conditions[mdot_out] = __ovr_mdot_out__initial)
+  __ovr_mdot_out__guess = pop!(__overrides, "mdot_out__guess", nothing)
   __ovr_F_assist_max = pop!(__overrides, "F_assist_max", nothing); isnothing(__ovr_F_assist_max) || push!(__eqs, F_assist_max ~ __ovr_F_assist_max)
   __ovr_F_assist_max__initial = pop!(__overrides, "F_assist_max__initial", nothing); isnothing(__ovr_F_assist_max__initial) || (__initial_conditions[F_assist_max] = __ovr_F_assist_max__initial)
   __ovr_F_assist_max__guess = pop!(__overrides, "F_assist_max__guess", nothing)
@@ -258,6 +264,7 @@ defaults; (assumed) textbook-typical, no readable source.
   push!(__systems, @named input = __Dyad__Flange())
   push!(__systems, @named rod_out = __Dyad__Flange())
   push!(__systems, @named support = __Dyad__Flange())
+  push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -277,6 +284,7 @@ defaults; (assumed) textbook-typical, no readable source.
   isnothing(__ovr_mdot_aa__guess) || (__guesses[mdot_aa] = __ovr_mdot_aa__guess)
   isnothing(__ovr_mdot_av__guess) || (__guesses[mdot_av] = __ovr_mdot_av__guess)
   isnothing(__ovr_mdot_leak__guess) || (__guesses[mdot_leak] = __ovr_mdot_leak__guess)
+  isnothing(__ovr_mdot_out__guess) || (__guesses[mdot_out] = __ovr_mdot_out__guess)
   isnothing(__ovr_F_assist_max__guess) || (__guesses[F_assist_max] = __ovr_F_assist_max__guess)
 
   ### Initialization Equations
@@ -302,7 +310,8 @@ defaults; (assumed) textbook-typical, no readable source.
   push!(__eqs, mdot_aa ~ C_aa * u_atm * (p_atm - p_r))
   push!(__eqs, mdot_av ~ C_av * u_vac * (p_r - p_f))
   push!(__eqs, mdot_leak ~ C_leak * (p_atm - p_f))
-  push!(__eqs, mdot_out ~ C_vm * max(0.0, p_f - p_src))
+  push!(__eqs, mdot_out ~ C_vm * max(0.0, p_f - vacuum.p))
+  push!(__eqs, vacuum.mdot ~ -mdot_out)
   push!(__eqs, ModelingToolkit.D_nounits(p_r) ~ n / V_r * (R * T * (mdot_aa - mdot_av) - p_r * A_d * ModelingToolkit.D_nounits(x_p)))
   push!(__eqs, ModelingToolkit.D_nounits(p_f) ~ n / V_f * (R * T * (mdot_av - mdot_out + mdot_leak) + p_f * A_d * ModelingToolkit.D_nounits(x_p)))
   push!(__eqs, p_vac ~ p_f)

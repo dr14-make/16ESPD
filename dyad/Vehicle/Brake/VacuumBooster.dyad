@@ -2,18 +2,18 @@
 Dynamic vacuum booster: two air chambers on either side of the diaphragm, a static poppet valve,
 and a check valve to the vacuum source, behind the same mechanical ports as `StaticBooster`.
 
-The front (vacuum) chamber `p_f` drains through the check valve into the source at `p_src`, the
-intake manifold or a vacuum pump. The valve compares the input force with the reaction-disc
-force `F_r`: above the apply threshold it lets atmosphere into the rear chamber `p_r`, below the
-release threshold it joins the rear chamber to the front one, and in between it holds. Both
-chambers are isothermal ideal gas whose volumes trade with piston travel, which is the
-master-cylinder pushrod travel beyond its rest position.
+The front (vacuum) chamber `p_f` drains through the check valve into the `vacuum` hose, whose
+far end is the vacuum source: the intake manifold or a vacuum pump. The valve compares the input
+force with the reaction-disc force `F_r`: above the apply threshold it lets atmosphere into the
+rear chamber `p_r`, below the release threshold it joins the rear chamber to the front one, and
+in between it holds. Both chambers are isothermal ideal gas whose volumes trade with piston
+travel, which is the master-cylinder pushrod travel beyond its rest position.
 
     F_out = max(0, F_in + A_d (p_r - p_f) - F_rs0 - K_rs x_p)
     e     = F_in - F_cut - max(0, F_out - F_jump) / SR
     dp_r/dt = n/V_r (R T (mdot_aa - mdot_av) - p_r A_d dx_p/dt)
     dp_f/dt = n/V_f (R T (mdot_av - mdot_out + mdot_leak) + p_f A_d dx_p/dt)
-    mdot_out = C_vm max(0, p_f - p_src)
+    mdot_out = C_vm max(0, p_f - vacuum.p),  vacuum.mdot = -mdot_out
 
 PATH tabulates the flow coefficients in m·s, which reads as kg/(s·Pa) and gives a rear-chamber
 time constant near 0.2 ms, a thousand times faster than PATH's own traces. Read per kPa they give
@@ -29,10 +29,8 @@ component VacuumBooster
   rod_out = Flange() {^rod_out}
   "Booster housing reaction"
   support = Flange() {^support}
-  "Absolute pressure at the source end of the check valve: manifold or pump [Pa]"
-  p_src = RealInput() {^p_src}
-  "Air mass flow out of the front chamber through the check valve [kg/s]"
-  mdot_out = RealOutput() {^mdot_out}
+  "Hose from the check valve to the vacuum source: manifold or pump"
+  vacuum = VehicleSystemsComponents.Vehicle.GasPort() {^vacuum}
   "Front-chamber absolute pressure, what a booster vacuum sensor reads [Pa]"
   p_vac = RealOutput() {^p_vac}
   "Boosted servo ratio (assumed)"
@@ -105,6 +103,8 @@ component VacuumBooster
   variable mdot_av::Real
   "Air leaking from atmosphere into the front chamber [kg/s]"
   variable mdot_leak::Real
+  "Air mass flow out of the front chamber through the check valve [kg/s]"
+  variable mdot_out::Real
   "Assist available with the rear chamber at atmosphere, at the present front pressure"
   variable F_assist_max::Force
 relations
@@ -125,7 +125,8 @@ relations
   mdot_aa = C_aa * u_atm * (p_atm - p_r)
   mdot_av = C_av * u_vac * (p_r - p_f)
   mdot_leak = C_leak * (p_atm - p_f)
-  mdot_out = C_vm * max(0.0, p_f - p_src)
+  mdot_out = C_vm * max(0.0, p_f - vacuum.p)
+  vacuum.mdot = -mdot_out
   der(p_r) = n / V_r * (R * T * (mdot_aa - mdot_av) - p_r * A_d * der(x_p))
   der(p_f) = n / V_f * (R * T * (mdot_av - mdot_out + mdot_leak) + p_f * A_d * der(x_p))
   p_vac = p_f
@@ -144,11 +145,8 @@ metadata {
     "support": {
       "Dyad": {"placement": {"icon": {"iconName": "flange_b", "x1": 450, "x2": 550, "y1": 950, "y2": 1050, "rot": 90}}}
     },
-    "p_src": {
-      "Dyad": {"placement": {"icon": {"x1": 200, "x2": 300, "y1": -50, "y2": 50, "rot": 90}}}
-    },
-    "mdot_out": {
-      "Dyad": {"placement": {"icon": {"x1": 450, "x2": 550, "y1": -50, "y2": 50, "rot": 270}}}
+    "vacuum": {
+      "Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 200, "x2": 300, "y1": -50, "y2": 50}}}
     },
     "p_vac": {
       "Dyad": {"placement": {"icon": {"x1": 700, "x2": 800, "y1": -50, "y2": 50, "rot": 270}}}

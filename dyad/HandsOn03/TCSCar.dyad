@@ -1,0 +1,88 @@
+"""
+Whole-car TCS plant: the hands-on 02 mapped engine, launch clutch and CVT drive the hands-on 03
+hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump and accumulator.
+"""
+component TCSCar
+  "Driver's throttle pedal, 0 released to 1 floored"
+  pedal = RealInput() {^pedal}
+  "TCS throttle limit, zero to one"
+  u_tcs = RealInput() {^u_tcs}
+  "Allowed wheel-circuit pressure"
+  p_cmd = RealInput() {^p_cmd}
+  "Road-friction multiplier"
+  mu_scale = RealInput() {^mu_scale}
+  "Longitudinal tire slip"
+  kappa = RealOutput() {^kappa}
+  "Vehicle speed"
+  v = RealOutput() {^v}
+  throttle_limit = BlockComponents.Math.Min() {^throttle_limit}
+  engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut() {^engine}
+  "Crankshaft and flywheel, J as MappedEngine assumes"
+  flywheel = RotationalComponents.Components.Inertia(J = 0.15) {^flywheel}
+  clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch() {^clutch}
+  variator = VehicleSystemsComponents.Vehicle.ControlledVariator() {^variator}
+  supply_command = BlockComponents.Sources.Constant(k = supply_pressure) {^supply_command}
+  supply = HydraulicComponents.Sources.BoundaryPressure() {^supply}
+  valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_f}
+  valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve() {^valve_r}
+  line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine() {^line_f}
+  line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(L = 4.0) {^line_r}
+  wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(F_z = m * g / 2) {^wheel}
+  body = VehicleSystemsComponents.HandsOn.Body(m = m, g = g) {^body}
+  "Engine mounts, transmission housing, and brake support"
+  housing = RotationalComponents.Components.Fixed() {^housing}
+  speed = TranslationalComponents.Sensors.VelocitySensor() {^speed}
+  path medium::HydraulicComponents.Interfaces.AbstractMedium = HydraulicComponents.IsothermalCompressible(bulk_modulus = 1.4e9, density = 1045.0, let_gas = false)
+  "Vehicle mass; the driven axle carries half of it"
+  parameter m::Dyad.Mass = 1400.0
+  "Gravitational acceleration"
+  parameter g::Acceleration = 9.80665
+  "Pressure available from the pump and accumulator"
+  parameter supply_pressure::Pressure = 8.9e6
+relations
+  connect(pedal, throttle_limit.u1, variator.pedal) {^id1}
+  connect(u_tcs, throttle_limit.u2) {^id0}
+  connect(throttle_limit.y, engine.pedal) {^id00}
+  connect(engine.spline, flywheel.spline_a) {^id2}
+  connect(flywheel.spline_b, clutch.spline_a) {^id3}
+  connect(clutch.spline_b, variator.spline_a) {^id4}
+  connect(variator.spline_b, wheel.spline) {^id5}
+  connect(engine.support, clutch.support, variator.support, wheel.support, housing.spline) {^id6}
+  connect(supply_command.y, supply.p) {^id7}
+  connect(supply.port, valve_f.port_a, valve_r.port_a) {^id8}
+  connect(valve_f.port_b, line_f.port_a) {^id9}
+  connect(line_f.port_b, wheel.front) {^id10}
+  connect(valve_r.port_b, line_r.port_a) {^id11}
+  connect(line_r.port_b, wheel.rear) {^id12}
+  continuity(medium, supply.port.medium)
+  connect(p_cmd, valve_f.p_cmd, valve_r.p_cmd) {^id13}
+  connect(mu_scale, wheel.mu_scale) {^id14}
+  connect(wheel.flange, body.flange, speed.flange) {^id15}
+  connect(wheel.kappa, kappa) {^id16}
+  connect(speed.v, v) {^id17}
+metadata {
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": -50, "y1": 50, "x2": 50, "y2": 150}}}},
+    "u_tcs": {"Dyad": {"placement": {"diagram": {"x1": -50, "y1": 180, "x2": 50, "y2": 280}}}},
+    "throttle_limit": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 50, "x2": 130, "y2": 130}}}},
+    "engine": {"Dyad": {"placement": {"diagram": {"x1": 90, "y1": 50, "x2": 190, "y2": 150}}}},
+    "flywheel": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 50, "x2": 330, "y2": 150}}}},
+    "clutch": {"Dyad": {"placement": {"diagram": {"x1": 370, "y1": 50, "x2": 470, "y2": 150}}}},
+    "variator": {"Dyad": {"placement": {"diagram": {"x1": 510, "y1": 50, "x2": 610, "y2": 150}}}},
+    "wheel": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 180, "x2": 840, "y2": 320}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 210, "x2": 980, "y2": 290}}}},
+    "housing": {"Dyad": {"placement": {"diagram": {"x1": 510, "y1": 230, "x2": 570, "y2": 290}}}},
+    "supply_command": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 470, "x2": 120, "y2": 550}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 470, "x2": 240, "y2": 550}}}},
+    "valve_f": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 390, "x2": 410, "y2": 470}}}},
+    "valve_r": {"Dyad": {"placement": {"diagram": {"x1": 330, "y1": 550, "x2": 410, "y2": 630}}}},
+    "line_f": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 390, "x2": 560, "y2": 470}}}},
+    "line_r": {"Dyad": {"placement": {"diagram": {"x1": 480, "y1": 550, "x2": 560, "y2": 630}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 350, "x2": 980, "y2": 430}}}},
+    "p_cmd": {"Dyad": {"placement": {"diagram": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}}}},
+    "mu_scale": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 750, "x2": 750, "y2": 850}}}},
+    "kappa": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}}}},
+    "v": {"Dyad": {"placement": {"diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

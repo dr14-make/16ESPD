@@ -4,7 +4,9 @@ Writes the checkpoint figures of the Lecture 3 live build into `slides/images/le
     julia +dyad-3.4.0 --project=. scripts/export_lecture03_build_figures.jl
 
 Runs the reference solutions in `dyad/HandsOn03/` and the library analyses beside them, and
-saves one SVG per build step. `slides/scripts/images.mjs` copies the folder into the lecture-03
+saves one SVG per build step. It also draws `03-abs-cycle-ours.svg` into the deck's diagrams: two
+cycles of the snow run in the hand-drawn style of `03-abs-cycle.svg`, Bosch's cycle, so the
+control-cycle slide can set them side by side. `slides/scripts/images.mjs` copies the folder into the lecture-03
 deck and the build guide page.
 """
 
@@ -19,6 +21,7 @@ const T_PEAK = 1.0 * 1400 * G * 0.31
 # Wheel pressure at which the two calipers of HydraulicBrakedWheel put T_PEAK on the wheel.
 const P_PEAK = T_PEAK / (49.0e-5 + 19.9e-5) + 0.5e5
 const BAR = 1e-5
+const DIAGRAMS = normpath(@__DIR__, "..", "slides", "decks", "lecture-03", "public", "diagrams")
 
 stop_time(mu, a_max = Inf) = 0.5 + 1.5 * 25 / min(0.7 * mu * G, a_max) + 1.0
 # A 2 ms grid resolves the true-slip ABS's 26 Hz ripple and keeps each SVG a few hundred kB.
@@ -83,14 +86,16 @@ let win = (1.0, 2.5), zoom(f) = trace(snow, f; dt = 5e-4, from = win[1], to = wi
     p1 = plot(; ylabel = "pressure [bar]", ylims = (0, 30), legend = :topright,
         title = "Your three-phase ABS, wheel speed only, μ = 0.3: $(round(d; digits = 1)) m")
     # One shaded span per phase run; the colors match the state diagram on the slide.
-    shades = Dict(-1 => (:firebrick, "dump"), 0 => (:goldenrod, "hold"), 1 => (:seagreen, "build"))
+    # Okabe–Ito blue, yellow and vermilion: apart for every common color-vision deficiency.
+    shades = Dict(-1 => (colorant"#D55E00", "dump"), 0 => (colorant"#F0E442", "hold"),
+        1 => (colorant"#0072B2", "build"))
     seen = Set{Int}()
     k = 1
     while k !== nothing
         ph = round(Int, phase[k])
         e = something(findnext(x -> round(Int, x) != ph, phase, k), length(t))
         color, name = shades[ph]
-        vspan!(p1, [t[k], t[e]]; color, alpha = 0.18, lw = 0,
+        vspan!(p1, [t[k], t[e]]; color, alpha = ph == 0 ? 0.35 : 0.2, lw = 0,
             label = ph in seen ? "" : name)
         push!(seen, ph)
         k = e < length(t) ? e : nothing
@@ -128,4 +133,88 @@ let mus = [1.0, 0.5, 0.3]
     for (mu, row) in zip(mus, eachrow(table))
         println("  μ $mu: ", join(round.(row; digits = 1), " · "))
     end
+end
+
+# Two snow cycles of build 04's PhaseABS, drawn on the layout of 03-abs-cycle.svg (Bosch's,
+# sketched): the same panels, band colors and legend, so the slide can compare them side by side.
+let (t0, t1) = (1.166, 1.5015), tw(f) = trace(snow, f; dt = 5e-4, from = t0, to = t1),
+    (t, phase) = tw(m -> m.abs.phase), (_, v) = tw(m -> m.body.mass.v),
+    (_, v_w) = tw(m -> m.est.v_w), (_, v_ref) = tw(m -> m.est.v_ref),
+    (_, a_w) = tw(m -> m.abs.a_w), (_, p) = tw(m -> m.abs.p_cmd),
+    X(x) = 90 + (x - t0) / (t1 - t0) * 510
+    fmt(x) = string(round(x; digits = 1))
+    path(xs, ys) = "M" * join(("$(fmt(X(a))) $(fmt(b))" for (a, b) in zip(xs, ys)), " L")
+    # On snow every dump comes from the deceleration threshold; the slip never nears lambda_1, so
+    # the speed panel is scaled to the two speeds alone.
+    lo, hi = minimum(v_w), maximum(v)
+    Vy(x) = 110 - (x - lo) / (hi - lo) * 70
+    Ay(a) = 175 - 3.0a
+    plo, phi = extrema(BAR .* p)
+    Py(x) = 300 - (x - plo) / (phi - plo) * 60
+    fills = Dict(1 => "#e2eef8", 0 => "#fcf9d8", -1 => "#f8dccb")
+    names = Dict(1 => "build", 0 => "hold", -1 => "dump")
+    io = IOBuffer()
+    print(io, """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 358" width="620" height="358">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .ax { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .thr { stroke: #4a5a6b; stroke-width: 1.5; fill: none; stroke-dasharray: 6 5; }
+    .veh { stroke: #16202c; stroke-width: 3; fill: none; stroke-dasharray: 10 6; }
+    .whl { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .prs { stroke: #16202c; stroke-width: 3.5; fill: none; }
+    .pw { font-size: 11px; font-weight: 600; fill: #4a5a6b; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .v { font-size: 15px; font-weight: 600; }
+    .wl { font-size: 15px; font-weight: 600; fill: #1f5fa8; }
+  </style>
+  <defs>
+    <pattern id="cy-hatch-ours" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <path d="M0 0 V10" stroke="#d55e00" stroke-width="1.6" stroke-opacity="0.45"/></pattern>
+  </defs>
+  <g transform="translate(0 18)">
+""")
+    k = 1
+    while k < length(t)
+        ph = round(Int, phase[k])
+        e = something(findnext(x -> round(Int, x) != ph, phase, k), length(t))
+        x0, x1 = X(t[k]), X(t[e])
+        println(io, "  <rect x=\"$(fmt(x0))\" y=\"28\" width=\"$(fmt(x1 - x0))\" height=\"280\" fill=\"$(fills[ph])\"/>")
+        ph == -1 && println(io, "  <rect x=\"$(fmt(x0))\" y=\"28\" width=\"$(fmt(x1 - x0))\" height=\"280\" fill=\"url(#cy-hatch-ours)\"/>")
+        k > 1 && println(io, "  <path d=\"M$(fmt(x0)) 28 V308\" stroke=\"#8a99a8\" stroke-width=\"1\"/>")
+        x1 - x0 >= 30 && println(io, "  <text x=\"$(fmt((x0 + x1) / 2))\" y=\"20\" text-anchor=\"middle\" class=\"pw\">$(names[ph])</text>")
+        k = e
+    end
+    println(io, "  <path class=\"veh\" d=\"", path(t, Vy.(v)), "\"/>")
+    println(io, "  <path class=\"whl\" d=\"", path(t, Vy.(v_w)), "\"/>")
+    for (a, label, dy) in ((3.0, "+3", -2), (-12.0, "−12", 5))
+        println(io, "  <path class=\"thr\" d=\"M90 $(fmt(Ay(a))) H600\"/>")
+        println(io, "  <text x=\"84\" y=\"$(fmt(Ay(a) + dy))\" text-anchor=\"end\" class=\"v\">$label</text>")
+    end
+    println(io, "  <path class=\"ax\" d=\"M90 $(fmt(Ay(0))) H600\"/>")
+    println(io, "  <text x=\"84\" y=\"$(fmt(Ay(0) + 13))\" text-anchor=\"end\" class=\"lbl\">0</text>")
+    println(io, "  <path class=\"whl\" d=\"", path(t, Ay.(a_w)), "\"/>")
+    println(io, "  <path class=\"prs\" d=\"", path(t, Py.(BAR .* p)), "\"/>")
+    print(io, """  <text x="10" y="60" class="v">speed</text>
+  <text x="10" y="140" class="v">wheel</text>
+  <text x="10" y="158" class="v">accel.</text>
+  <text x="10" y="276" class="v">pressure</text>
+  <text x="596" y="$(fmt(Vy(v[end]) - 8))" text-anchor="end" class="v">car</text>
+  <text x="596" y="$(fmt(Vy(v_w[end]) + 22))" text-anchor="end" class="wl">wheel</text>
+  <text x="84" y="$(fmt(Py(phi) + 5))" text-anchor="end" class="lbl">$(round(Int, phi))</text>
+  <text x="84" y="$(fmt(Py(plo) + 5))" text-anchor="end" class="lbl">$(round(Int, plo)) bar</text>
+  <rect x="90" y="320" width="16" height="16" fill="#8fbfe0"/>
+  <text x="114" y="333" class="lbl">build</text>
+  <rect x="170" y="320" width="16" height="16" fill="#f0e442"/>
+  <text x="194" y="333" class="lbl">hold</text>
+  <rect x="250" y="320" width="16" height="16" fill="#e89a6a"/>
+  <rect x="250" y="320" width="16" height="16" fill="url(#cy-hatch-ours)"/>
+  <text x="274" y="333" class="lbl">dump</text>
+  <text x="340" y="333" class="lbl">time →  two cycles, $(round(t1 - t0; digits = 2)) s</text>
+  </g>
+</svg>
+""")
+    path_out = joinpath(DIAGRAMS, "03-abs-cycle-ours.svg")
+    write(path_out, String(take!(io)))
+    println("  03-abs-cycle-ours.svg: pressure $(round(plo; digits = 1)) to $(round(phi; digits = 1)) bar, ",
+        "a_w $(round(minimum(a_w); digits = 1)) to $(round(maximum(a_w); digits = 1)) m/s²")
 end

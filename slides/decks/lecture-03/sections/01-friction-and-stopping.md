@@ -11,8 +11,9 @@ What the road can give back: the friction coefficient, how a tire differs from a
 and the shortest stop physics allows.
 
 <!--
-Budget: 14 minutes for the section, 7 slides: friction 2, tire curve 2, braking distance 2,
-build 01 by hand 5, cornering 2, summary 1.
+Budget: 21 minutes for the section: friction 2, tire curve 2, tire models 3, braking distance 2,
+build 01 by hand 5, slip angle 2, cornering 2, a locked wheel does not steer 2, summary 1. Slide or
+tip over is optional, outside the minutes.
 
 Every brake, however strong, ends at the same place: the contact patch, about the size of a hand
 per wheel. Whatever the brakes do, the car decelerates only as hard as friction there allows. So
@@ -42,7 +43,7 @@ $F_f$ friction force [N], $F_N$ normal force [N], $\mu$ the coefficient of frict
 
 The tire rows are typical, not exact: they vary with the tire, its temperature, the speed, the
 water depth and the road. The repository's tire uses **1.0 at the peak**, **0.7 sliding**, scaled
-by a road factor: 1.0 dry, about 0.5 wet, 0.2 snow, 0.05 ice.
+by a road factor: 1.0 dry, about 0.5 wet, 0.3 snow, 0.05 ice.
 
 </div>
 <div>
@@ -105,6 +106,8 @@ so its force depends on **slip** $\kappa$:
 - **Adhesion peak**, a few percent of slip: the most force, $\mu_A$. This is the "static" end.
 - **Locked wheel**, $\kappa = -1$: the tread slides, $\mu_S$. This is the "kinetic" end.
 
+$$F_x = \mu(\kappa)\, F_z$$
+
 **Braking well means holding the tire near its peak.**
 
 <div class="handson">→ Build 01: the brake torque that holds the tire at this peak, by hand</div>
@@ -124,10 +127,24 @@ The source deck explained the brake's job with static against kinetic friction: 
 uses static friction, a locked one kinetic. That picture is a good first step and is what drivers
 are taught. The more accurate version is this curve, and the one the models use.
 
-Its left end, zero slip, is free rolling. As you brake harder, slip grows and so does the force,
-steeply, up to the adhesion peak at about 4 percent in the model; real dry-road tires peak
-somewhere between about 5 and 20 percent depending on tire and surface. Past the peak the force
-falls toward the sliding value, which a locked wheel sits at.
+Two symbols on the slide: mu A, the adhesion peak, the most friction the tire gives, and mu S,
+the sliding value, what a locked wheel gets. Both have no unit.
+
+The formula: F x, the tire's longitudinal force, is the friction coefficient at the current slip
+times F z, the load pressing the tire onto the road. The tire gives only the force asked of it
+and slips just enough for mu of kappa to supply it. That is why Lecture 1's dry-road start sat low
+on the rising side: the motor never asked for more than about 0.28 of the load.
+
+The left plot: friction coefficient up, slip ratio across. Its left end, zero slip, is free
+rolling. As you brake harder, slip grows and so does the force, steeply, up to the adhesion peak,
+1.0 at 4 percent slip in the model; real dry-road tires peak somewhere between about 5 and 20
+percent depending on tire and surface. Past the peak the force falls toward the sliding value,
+0.7 from 12 percent, which a locked wheel sits at. The shaded part, past the peak, is the unstable
+side: there more slip gives less force.
+
+The right plot is the same curve with the slip axis logarithmic, so the small slips are easier to
+read. The two marks are Lecture 1's standing starts on snow and on a dry road. Mention it and move
+on; today we work on the left plot's braking mirror image.
 
 So "static" and "kinetic" are the two ends of one curve. The source deck's three options become:
 brake just short of the peak, which only a very good driver can do; pump the brake, which cycles
@@ -163,7 +180,7 @@ routeAlias: tire-models
 
 <div class="caption">Same peak, published shapes: the peak's slip and the drop after it differ</div>
 
-**Ours:** one triple-S cubic, a peak and a sliding level; the planar car applies it to the
+**Ours:** one curve of three smooth pieces, a peak and a sliding level; the planar car applies it to the
 combined slip, the force against the slip velocity. **Enough for ABS and ESP**: the peak, the
 drop, and the shared budget.
 
@@ -176,9 +193,15 @@ Budget: 3 minutes. Figures from `scripts/export_lecture03_tire_figures.jl`; fact
 
 Two numbers describe how a tire slips. Kappa, the longitudinal slip: the wheel's rim speed
 against the car's speed, over the car's speed. Zero when it rolls freely, minus one when it is
-locked, negative whenever we brake; that is Pacejka's convention and our models'.
+locked, negative whenever we brake; that is Pacejka's convention and our models'. In the formula
+Omega is the wheel's angular speed, r its radius and v x the car's forward speed: the same slip as
+on the "Where Lecture 1 left the tire" slide, written with other letters.
 And alpha, the slip angle: the angle between where the wheel points and where it actually goes.
 A tire pushes sideways only when there is such an angle.
+
+Symbols in the table: C alpha is the cornering stiffness, the lateral force per radian of slip
+angle at small angles, in newtons per radian. F x and F y are the longitudinal and lateral tire
+forces, M z the aligning torque about the vertical axis. "Params" means parameters.
 
 How do simulators turn slip into force? The table goes from cheap to expensive. A straight line,
 the cornering stiffness, is what the bicycle model and ESP's reference use. The brush model, Fiala
@@ -195,7 +218,9 @@ measured shapes, which peak around 17 to 18 percent and keep 0.65 to 0.9 locked.
 with one friction coefficient has no drop at all. The right plot is the lateral side: the line,
 our planar car, a Magic Formula fit and Fiala, all with the same initial slope.
 
-Ours is the simplest curve with a peak and a drop. In the planar car the same curve takes the
+Ours is the simplest curve with a peak and a drop: three cubic pieces, a rise to the peak, a fall
+to the sliding level, then flat, each with zero slope at its ends so the curve has no kinks. The
+library calls this shape "triple-S". In the planar car the same curve takes the
 combined slip, longitudinal and lateral together, and the force points against the slip velocity.
 That is the friction circle, and it is all ABS and ESP need: a peak to hold, a drop to avoid, a
 budget to share. A Magic Formula would change the numbers, not the mechanism.
@@ -226,7 +251,7 @@ From **90 km/h = 25 m/s**:
 | 1.0 | dry, at the peak | 31.9 m |
 | 0.8 | dry, sliding | 39.8 m |
 | 0.6 | wet, at the peak | 53.1 m |
-| 0.4 | wet, sliding | 79.7 m |
+| 0.4 | wet, sliding | 79.6 m |
 | 0.3 | snow, at the peak | 106.2 m |
 | 0.2 | snow, sliding | 159.3 m |
 
@@ -234,6 +259,13 @@ From **90 km/h = 25 m/s**:
 
 </div>
 <div>
+
+> **Where it comes from**
+>
+> The friction force $\mu m g$ over the distance $d$ removes the moving energy
+> $\tfrac{1}{2} m v^2$: $\;\mu m g\, d = \tfrac{1}{2} m v^2$. The mass cancels.
+>
+> First row: $25^2 / (2 \cdot 9.81 \cdot 1.0) = 625 / 19.62 = 31.9$ m.
 
 > **Speed squared**
 >
@@ -254,7 +286,10 @@ From **90 km/h = 25 m/s**:
 <!--
 The energy argument: the kinetic energy one half m v squared is removed by the friction force mu
 m g over the distance d. The mass cancels. That is why a heavy truck and a light car with the same
-tires need, in theory, the same distance; in practice a truck's brakes and tires are worse.
+tires need, in theory, the same distance; in practice a truck's brakes and tires are worse. The
+same result by kinematics: the deceleration is a = F over m = mu g, and v squared = 2 a d.
+
+Read one row out: 25 squared is 625; 2 times 9.81 times 1.0 is 19.6; 625 over 19.6 is 31.9 meters.
 
 The table is this formula at 25 meters per second with the source deck's friction table. Each
 pair, peak and sliding, is what ABS can win on that surface, in the ideal case. Real cars do not
@@ -286,6 +321,9 @@ $$
 F_z = m g \qquad T_{peak} = \mu_A F_z\, r \qquad d = \frac{v^2}{2\,\mu\, g}
 $$
 
+*F*<sub>z</sub> and *T*<sub>peak</sub> do not enter *d*; they decide which *d* you get. Brake
+torque above *T*<sub>peak</sub> locks the wheel and puts you in the sliding column.
+
 *On paper or in the REPL: F<sub>z</sub>, T<sub>peak</sub>, and d at the peak and sliding, on dry
 road and on snow (road factor 0.3)*
 
@@ -306,6 +344,15 @@ road and on snow (road factor 0.3)*
 > | dry, *μ* 1.0 | **31.9 m** | **45.5 m** |
 > | snow, *μ* 0.3 | **106.2 m** | **151.7 m** |
 
+In the Julia REPL:
+
+```julia
+F_z = 1400 * 9.80665
+T_peak = 1.0 * F_z * 0.31
+d(μ) = 25^2 / (2 * μ * 9.80665)
+d(1.0), d(0.7), d(0.3), d(0.21)
+```
+
 </div>
 </div>
 
@@ -319,17 +366,73 @@ meters, braking from 90 kilometers per hour, 25 meters per second. The tire is t
 
 First the normal force: m times g, 1400 times 9.81, about 13,700 newtons. The tire can carry at
 most mu A times that, and the brake torque that asks for exactly that force is the force times the
-radius: 4256 newton-meters. Remember it. The driver today asks for 6000, 1.4 times as much, so
-without ABS the wheel must lock.
+radius: 4256 newton-meters. Remember it. The driver in today's ABS model asks for 6000 newton
+meters of brake torque, a panic stop, 1.4 times as much, so without ABS the wheel must lock.
 
 Then the two distances from the formula on the last slide. At the peak, mu 1.0: 31.9 meters. That
 is the floor no ABS beats. Sliding, mu 0.7: 45.5 meters, roughly what a locked wheel gives. On
 snow, a road factor of 0.3 scales both: 106 and 152 meters.
 
+Neither F z nor T peak appears in d: the force mu F z over the mass m is mu g, so the mass, and the
+load with it, cancels. T peak picks the column instead. Braking at exactly T peak gives 4256 over
+0.31 is 13,729 newtons, over 1400 kilograms is 9.81, mu A times g: the peak row. Above it the wheel
+locks and the car stops on the sliding row.
+
 In the REPL: 25 squared over 2 times 1.0 times 9.81, and so on. Wait until most of the room has
 4256 before moving on; it comes back on every ABS slide.
 
 The guide uses g = 9.80665, the library's value; 9.81 on paper is close enough.
+-->
+
+---
+routeAlias: lateral-slip
+---
+
+## Sideways: the slip angle
+
+<div class="grid grid-cols-[1fr_1.2fr] gap-8 items-center">
+<div>
+
+A tire pushes sideways the way it brakes: by slipping. Sideways, the slip is an **angle**.
+
+- **Slip angle** $\alpha$: between where the wheel points and where it travels.
+- **Small angles**: the force grows in proportion, $F_y = C_\alpha\,\alpha$, with the cornering
+  stiffness $C_\alpha$ 0.22 of the load per degree on the planar car's tire.
+- **Peak**: $\mu_y = 1.0$ at 6.8°. Past it the patch slides and the force falls to 0.8.
+
+$$F_y = \mu_y(\alpha)\, F_z$$
+
+**A car corners on slip angles.** The cornering limit is this curve's peak.
+
+</div>
+<div>
+
+![Lateral friction coefficient against slip angle from 0 to 30 degrees for the planar car's tire: it rises almost on the straight line F y equals C alpha times alpha for the first few degrees, peaks at 1.0 at 6.8 degrees, and falls to a sliding level of 0.8 from 20 degrees; the region past the peak is shaded, more angle, less force.](/figures/01-lateral-slip.svg)
+
+<div class="caption">The planar car's tire in pure side slip: the slip curve, turned sideways</div>
+
+</div>
+</div>
+
+<!--
+Budget: 2 minutes. Figure from `scripts/export_lecture03_tire_figures.jl`.
+
+So far the tire only pushed forward and back. To turn, it has to push sideways, and it does that
+the same way: by slipping. Sideways the slip is an angle. Alpha, the slip angle, is the angle
+between where the wheel points and where it actually travels. A wheel that goes exactly where it
+points pushes nothing sideways.
+
+At small angles the force grows in proportion to the angle: F y equals C alpha times alpha. C
+alpha, the cornering stiffness, is the slope of that line: on the planar car's tire 0.22 of the
+load per degree, 12.5 per radian. At 2 degrees the line gives 0.44 of the load, the tire 0.42.
+
+Then the same story as the slip curve. The force peaks, at 1.0 times the load at 6.8 degrees on
+this tire, and past the peak the contact patch slides: more angle, less force, down to 0.8.
+Where the peak sits differs between tire models; the tire models slide showed the spread.
+
+The formula is the slip curve's, with y in place of x: the sideways force is the lateral friction
+coefficient at this angle times the load. Every turn the car makes, it makes on slip angles; the
+cornering limit on the next slide is this curve's peak.
 -->
 
 ---
@@ -365,7 +468,12 @@ brake hard in a bend and less is left for turning.
 The second half of the source deck's slide: maximum velocity in a curve of radius r. Same mu,
 same g, now the force points sideways, toward the center of the curve.
 
-The numbers: square root of mu times 9.81 times 50, in kilometers per hour.
+Here r is the radius of the curve, not the wheel radius of the build slide. The formula sets the
+centripetal force equal to the most friction can give, m v squared over r equals mu m g; the mass
+cancels, so v max is the square root of mu g r.
+
+The numbers: square root of mu times 9.81 times 50. Dry, mu 1.0: the square root of 490.5 is 22.1
+meters per second, 80 kilometers per hour. Wet, 0.6: 62. Snow, 0.3: 44.
 
 The important sentence is the last one. Longitudinal and lateral force come out of the same
 contact patch, so braking and cornering draw on one budget. The next slide draws that budget and
@@ -386,6 +494,9 @@ class: big-figure
 <div>Braking and cornering share one <b>friction circle</b>, radius μ F<sub>z</sub>; ABS keeps both.</div>
 <div>Locked, the patch <b>slides along the travel</b>: the force points back along −v. Nothing turns the car.</div>
 </div>
+
+<div class="text-center mt-3"><b>A rolling tire grips and bends, so it can push sideways; a locked tire only skids, and a skid
+slows the car in a straight line but never turns it.</b></div>
 
 <!--
 Budget: 2 minutes. From `scripts/export_lecture03_tire_figures.jl`: case (a) is Pacejka's brush
@@ -425,6 +536,70 @@ steering": with the wheels locked, the car slides straight into the obstacle wit
 turned 90 degrees.
 
 That also sets up ESP: it uses the same budget, braking one wheel on purpose to turn the car.
+-->
+
+---
+routeAlias: rollover
+---
+
+## Slide or tip over?
+
+<div class="grid grid-cols-[1fr_1fr] gap-8 items-center">
+<div>
+
+The tire's force acts at the road; the car's mass sits at height $h$ above it. About the outer
+wheel, the car tips once $m\,a_y\,h > m g\,t/2$:
+
+$$
+\frac{a_y}{g} \;>\; \frac{t}{2h}
+$$
+
+$t$ track width, $h$ center-of-gravity height. Friction caps $a_y/g$ at $\mu$: **$\mu < t/2h$
+slides, $\mu > t/2h$ tips.**
+
+| vehicle | $t/2h$ | on a dry road, $\mu \approx 1$ |
+|---|---:|---|
+| passenger car | 1.41 | slides |
+| SUV | 1.17 | slides, small margin |
+| loaded heavy truck | 0.25–0.5, measured | tips first |
+
+*Our models are planar: none of them can roll.*
+
+</div>
+<div>
+
+![Rear view of a car turning left: the tire forces F y at the road point toward the center of the curve, the inertial force m a y acts outward at the center of gravity, height h above the road, the weight m g acts down; the car tips about the outer wheel's contact point, t the track width between the wheels.](/diagrams/01-rollover.svg)
+
+</div>
+</div>
+
+<!--
+Optional, outside the minutes: 2 minutes. No model behind it; the planar car has no roll.
+
+So far everything was flat: forward and back, then sideways. Now height. The tire's force acts
+at the road, but the car's mass sits at height h above it. In the car's frame the turn feels like
+a force m a y pushing the center of gravity outward. Take moments about the outer wheel's contact
+point: that force times h tips the car over, the weight times half the track, t over 2, holds it
+down. The inner wheel lifts once a y over g exceeds t over 2 h, the static stability factor.
+
+The tire can give at most mu, so a y over g never exceeds mu. Compare the two numbers: below t
+over 2 h the tires slide first, the car skids; above it the car tips before the tires let go.
+
+Passenger cars average 1.41 and SUVs 1.17, the sales-weighted means of model year 2003 in NHTSA's
+rollover report: on a dry road both slide first, the SUV with little margin. Body roll and tire
+deflection move the center of gravity outward and bring the real threshold below t over 2 h. A
+loaded heavy truck tips at 0.25 to 0.5 g, measured thresholds rather than t over 2 h, so it rolls
+long before its tires slide.
+
+Then why do cars roll over at all? About 95 percent of single-vehicle rollovers are tripped: the
+car slides sideways, a curb or soft ground stops the tires, and the force at the road becomes far
+larger than friction could give. That is where ESP's 71 and 84 percent rollover reductions in
+section 05 come from: it keeps the car from sliding sideways in the first place.
+
+Sources: static stability factors, Walz, "Trends in the Static Stability Factor of Passenger
+Cars, Light Trucks, and Vans", NHTSA, DOT HS 809 868 (2005); the 95 percent, NHTSA's NCAP rollover
+notice, 68 FR 59250 (2003), from NASS CDS 1992–96; heavy trucks, Winkler and Ervin, "Rollover of Heavy Commercial Vehicles",
+UMTRI-99-19 (1999).
 -->
 
 ---

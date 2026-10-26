@@ -88,6 +88,9 @@ Free-crank mapped-engine harness for idle and booster-release cases.
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
   push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  # Subcomponent booster of type VehicleSystemsComponents.Vehicle.GasMassFlowSource
+  booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.GasMassFlowSource(; booster_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
@@ -104,8 +107,9 @@ Free-crank mapped-engine harness for idle and booster-release cases.
 
   ### Equations
   push!(__eqs, engine.pedal ~ pedal_cmd)
-  push!(__eqs, engine.mdot_bst ~ ifelse((t > t_booster) & (t <= t_booster + booster_duration), booster_flow, 0.0))
+  push!(__eqs, booster.mdot ~ ifelse((t > t_booster) & (t <= t_booster + booster_duration), booster_flow, 0.0))
   push!(__eqs, connect(engine.support, fixed.spline))
+  push!(__eqs, connect(booster.port, engine.vacuum))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -419,28 +419,27 @@ the hand-in asked for. Only the bonus is handed in.
 
 ### Step 06 · Traction control, bonus task (extra points) · take-home
 
-**Goal.** Hands-on 1's `SlipCar` on a snowy road, full torque from rest: without TCS the wheel
-spins up as in Lecture 1; with a brake-based TCS the wheel holds near the peak and the car
-gains more speed in 10 s.
+**Goal.** Hands-on 2's whole car on a snowy road, full throttle from rest: without TCS the wheel
+spins up as in Lecture 1. Students stop it with the brakes, then with the engine, and compare: with
+one lumped driven wheel, braking fights the engine and cutting the engine wins.
 
-**Built / given.** Given: `Vehicle.Wheel.BrakeActuator`, `Vehicle.ABSPressureIntegrator`. Built:
-`TCSSlipCar` (duplicate `SlipCar`, brake between `wheel_inertia` and `wheel`, its `support` on
-`rot_ground`, a `tau_tcs` input); `TCS`, the step 03 law turned round: the pressure builds while
-`kappa_pred > lambda_target` and falls otherwise, clipped to `[0, tau_tcs_max]`; the bench, a
-torque step on `tau_cmd` and `mu_scale = 0.2`.
+**Built / given.** Given: `HydraulicComponents.Sources.BoundaryPressure` (8.9 MPa, the pump's
+stand-in), `Vehicle.ABSPressureIntegrator`, stock `Min` and `Gain`. Built: the car, `MappedCar`'s
+driveline into the hydraulic braked wheel with an `ABSValve` and line per circuit; the brake TCS,
+`SlipABS` turned round; the engine TCS, the same law on a throttle limit fed through
+`Min(driver, limit)`; the bench with `brake_enabled` and `engine_enabled`.
 
-**Reference model.** `HandsOn03.TCSSlipCar`, `HandsOn03.TCSStart`, kept off `main` as the WLTC
-bonus was: on branch `feat/handson03-tcs-bonus` only. Students get the task, the parts and the
-advice, not the diagram.
+**Reference model.** `HandsOn03.TCSCar`, `HandsOn03.TCS`, `HandsOn03.TCSEngine`,
+`HandsOn03.TCSStart`, in the library. The lecture shows the four results on its
+`tcs-brake-or-engine` slide, so the bonus is graded on the build and the paragraph.
 
-**Checkpoint / grading** (hand estimate; H6 would measure it, not built yet): the traction limit is
-0.2 × 6865 N = 1373 N at the peak against 961 N spinning, so roughly 0.85 against 0.57 m/s² net
-of resistance, about 8.5 against 5.7 m/s after 10 s. One paragraph on why a production TCS
-cuts engine torque when both driven wheels spin (and what the 0.3 s engine delay of `SlipCar`
-would do to the loop), and brakes a single wheel only through an open differential, which a
-one-wheel model cannot show.
+**Checkpoint / grading** (`test/tcs_bonus.jl`, at 10 s): off 5.64 m/s, slip 9.7; brake only 5.99
+m/s, slip 0.11, 115 kJ in the brakes; engine only 6.62 m/s, slip 0.03; both 6.45 m/s, 28 kJ. One
+paragraph on why braking barely helps here and cutting the engine does, what an open differential
+with two driven wheels would change, and why the engine path looks 0.3 s ahead against the brake's
+30 ms.
 
-**Deck.** `what-tcs-does`, `tcs-actuators`, `tcs-and-lecture-1`.
+**Deck.** `what-tcs-does`, `tcs-actuators`, `tcs-brake-or-engine`, `tcs-and-lecture-1`, `bonus-tcs`.
 
 ## ESP: demo, not hands-on
 
@@ -482,7 +481,7 @@ format of that brief (each task ends in a check). It touches nothing under `dyad
 | H3 | `HandsOn03.RefSpeedEstimator`, `PhaseABS`, `ABSStopWheelOnly` + transient | **done**: 38.5 / 78.0 / 130.6 m, all under locked; `a_ref = 2.4`: 130.9 m at μ 0.3, 106.3 m at μ 1 |
 | H4 | `Vehicle.braking_distance(result; t_brake = 0.5, v_stop = 0.5)` (also `(t, s, v; …)`) in `dyad/Vehicle/module.jl`, the notebook's `braking` rule as one function; notebook 01 switched to it | **done**: unit test on a synthetic constant-deceleration trace; notebook 01 prints the same numbers |
 | H5 | merge PR #90 to `main`, tag it, and pin the tag in step 00 | open (the lecturer's call); a fresh `MyCar` clone with `Pkg.add(…, rev = tag)` and `Pkg.add("HydraulicComponents")` runs steps 02–05 |
-| H6 | bonus TCS reference on `feat/handson03-tcs-bonus` | open; the task is on the deck, the reference and its figures are not built |
+| H6 | bonus TCS reference on `feat/handson03-tcs-bonus` | **done** (a3b165b): 8.0 / 5.6 m/s at 10 s, slip 0.036; its figures are not made |
 
 Every reference analysis sets `alg = Tsit5` explicitly, with `dtmax = 1e-3`, and forwards every knob
 the guide varies by a short name (`road_mu`, `T_p`, `lambda_target`, `a_ref`, and the base `stop`),
@@ -543,7 +542,7 @@ numbers. The hand-over slide became "What you measured", one row per step.
 
 | Slot | Where | Filled by |
 |---|---|---|
-| Course-library tag | step 00 (`TODO-TAG` on the deck and the guide) | H5 |
+| Course-library tag | step 00 (`lecture-03` on the deck and the guide) | H5 |
 | ~~Run A distance, sliding share, cycle frequency; run C cycle frequency~~ | step 03 | H2, filled |
 | ~~Wheel-only column and the `a_ref = 2.4` run~~ | steps 04, 05 | H3, filled |
 | TCS figures | step 06 | H6 |
@@ -562,7 +561,7 @@ Each has a recommended default; the plan above runs on the defaults. D1 is decid
 | D3 | How the controller is built | code view, about 8 lines, integrator given / drawn from `BlockComponents` / given `ABSIdealController`, only wired | **code view with the integrator given**: the rate law and the look-ahead are the lesson; the clipping is not. Step 04's `PhaseABS` follows the same rule |
 | D4 | Wheel-speed-only step | build a continuous `RefSpeedEstimator` / wire the library's clocked `ABSController` in Studio | **build the estimator**; the clocked wiring (a three-way connect with the clock, three samplers) is GUI risk with no lesson in it. The library column in step 05 covers sampling |
 | D5 | ESP in the lecture | demo only / a REPL-only run at the end / build | **demo only**, in section 05 from notebook `03-esp` |
-| D6 | TCS | take-home bonus / a step in the lecture | **bonus**, brake in the wheel line of hands-on 1's `SlipCar`; no lecture time is left |
+| D6 | TCS | take-home bonus / a step in the lecture | **bonus**, on the hands-on 2 whole car, brake and engine paths compared; the lecture shows the result |
 | D7 | Library tag and `MultibodyComponents` | tag before the planar car merges / tag after it, with setup done before the lecture | **tag what was rehearsed**; if the planar car is in it, ask students to run step 00 before the lecture and measure the install time in rehearsal |
 | D8 | ABS on the student's `MappedCar` | no / a new `CVTDriveline` variant with a wheel shaft out, `BrakedWheel` on it | **no**: the engine and clutch add compile time and nothing to the ABS lesson; it would also leave out students who did not finish hands-on 2 |
 | D9 | Reference solutions on `main` | `dyad/HandsOn03/` on `main` like `HandsOn02` / off `main` | **on `main`**, except the TCS bonus |

@@ -64,3 +64,29 @@ html.dark .slidev-layout img[src^="data:image/svg+xml"] {
   font-size: 0.85rem;
   opacity: 0.8;
 }
+
+/* A row of plan views over the text columns that describe them. */
+.slidev-layout .diagram-channels img {
+  max-height: 17rem;
+}
+
+/* The nested-systems picture under the wrap-up table. */
+.slidev-layout .diagram-systems img {
+  max-height: 20rem;
+}
+
+/* A sketch under two text columns. */
+.slidev-layout .diagram-cycle img {
+  max-height: 18rem;
+}
+
+/* A wide path plot that leaves room for a bench screenshot under it. */
+.slidev-layout.big-figure .diagram-path img {
+  max-height: 21rem;
+}
+
+/* A Studio bench screenshot beside a table, as large as the space under the plot allows. */
+.slidev-layout.big-figure img.bench-shot {
+  max-height: 17rem;
+  width: 100%;
+}

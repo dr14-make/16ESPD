@@ -134,6 +134,9 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
   # Subcomponent pump of type VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump
   pump_overrides = __pop_subcomponent_overrides!(__overrides, "pump")
   push!(__systems, @named pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(; p_init=p_start, pump_overrides...))
+  # Subcomponent source of type VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector
+  source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
+  push!(__systems, @named source = VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector(; use_pump=ev_pump, source_overrides...))
   # Subcomponent pedal_unit of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
   pedal_unit_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_unit")
   push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; pedal_unit_overrides...))
@@ -181,9 +184,6 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
   __assertions = []
 
   ### Equations
-  push!(__eqs, booster.p_src ~ ifelse(ev_pump > 0.5, pump.p, air.p_m))
-  push!(__eqs, air.mdot_bst ~ ifelse(ev_pump > 0.5, 0.0, booster.mdot_out))
-  push!(__eqs, pump.mdot_in ~ ifelse(ev_pump > 0.5, booster.mdot_out, 0.0))
   push!(__eqs, connect(command.y, pedal_unit.u))
   push!(__eqs, connect(pedal_unit.rod, booster.input))
   push!(__eqs, connect(booster.rod_out, master.pushrod))
@@ -198,6 +198,9 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
   push!(__eqs, connect(throttle.y, air.u_thr))
   push!(__eqs, connect(speed.y, air.omega))
   push!(__eqs, connect(booster.p_vac, pump.p_sense))
+  push!(__eqs, connect(booster.vacuum, source.booster))
+  push!(__eqs, connect(source.manifold, air.vacuum))
+  push!(__eqs, connect(source.pump, pump.vacuum))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

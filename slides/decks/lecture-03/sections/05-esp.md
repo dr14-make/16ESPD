@@ -11,8 +11,10 @@ Compare where the driver steers with where the car goes, and brake single wheels
 gap.
 
 <!--
-Budget: 15 minutes, 15 slides, demo included. Theory 9 (what 1.5, sensors 1, Ackermann 1,
-reference model 2, yaw correction 2, evidence and the test 1.5), demo 5 (passive run 2, ESP on
+Budget: 23 minutes, demo included. Theory 17 (what 1.5, sensors 1, how each measures 1,
+yaw-rate sensor 1.5, lateral acceleration 1.5, Ackermann 1, reference model 2, yaw correction 2,
+the algorithm 1.5, evidence and the test 1.5, our ESP block by block 1, against a production ESP
+1.5), demo 5 (passive run 2, ESP on
 1.5, ESP through ABS 1.5; the planar car and split-µ in passing, its table only), summary 1. Nothing to build: the students
 watch the demo; the planar car is too large to draw in a lecture.
 
@@ -77,7 +79,7 @@ routeAlias: esp-sensors
 <div class="grid grid-cols-[1.2fr_1fr] gap-6">
 <div>
 
-![ESP components on a car's plan view: hydraulic links in purple to the four wheel brakes, electric links in green; a sensor combining lateral acceleration and yaw rate, a steering-wheel angle sensor, a disconnection switch, and engine torque management.](/pptx/slide16-esp-components.png)
+![An ESP car from above, front at the top. Orange, the driver's intention: a steering-angle sensor on the steering column, the brake and accelerator pedals, and a brake-pressure sensor on the hydraulic unit. Blue, the car's motion: a yaw-rate and lateral-acceleration sensor near the center of gravity, and a wheel-speed sensor at each of the four wheels. The master cylinder feeds the hydraulic unit with its ECU, HU + ECU, which has a brake line to each wheel and sends a torque request to the engine.](/diagrams/05-esp-components.svg)
 
 </div>
 <div>
@@ -94,12 +96,6 @@ routeAlias: esp-sensors
 - **lateral acceleration** $a_y$
 - wheel speeds
 
-<div class="stack">
-
-![A yaw-rate sensor: a small black plastic housing with a connector.](/pptx/slide17-yaw-rate-sensor.jpg)
-
-</div>
-
 </div>
 </div>
 
@@ -114,8 +110,12 @@ The source deck called the yaw-rate sensor a gyrometer, which is fair: it is a v
 micromechanical gyroscope. Bosch's micromechanical yaw-rate sensor arrived in 1998; the first ESP
 used a different design.
 
-The figure is from the source deck, a Renault diagram. Item 3 there is a switch to disable the
-system, which regulations allow only under conditions.
+The figure sorts the parts the same way as the two lists. Orange is the driver's intention: the
+steering-angle sensor on the column, the brake and accelerator pedals, and the brake-pressure
+sensor on the hydraulic unit, HU, which reads the master cylinder, MC. Blue is the car's motion:
+the yaw-rate and lateral-acceleration sensor, psi-dot and a y, near the center of gravity, and a
+wheel-speed sensor at each wheel. The thick lines are the four brake lines from the hydraulic
+unit; its ECU sends the engine a torque request, the dashed line.
 -->
 
 ---
@@ -402,6 +402,17 @@ ESP acts on the error $\dot\psi_{ref} - \dot\psi$, and on the sideslip angle $\b
 <!--
 The source deck said ESP compares the sensor data with a reference model of the vehicle's behavior
 stored in its memory. This is that reference model, in its textbook form.
+
+Units: psi dot ref, the reference yaw rate, in radians per second; v the speed in meters per
+second; L the wheelbase in meters; delta the road-wheel angle in radians, the steering-wheel angle
+over the steering ratio; K us in radians per meter per second squared. In the diagram, l f and l r
+are the distances from the center of gravity to the front and rear axle; their sum is L.
+
+A number, on the planar car of the demo: L 2.7 meters, K us 2.04 times ten to the minus three, at
+80 kilometers per hour, 22.2 meters per second. K us times v squared is 1.0, so the denominator is
+3.7 meters. A road-wheel angle of 0.02 radians, about 18 degrees on the steering wheel, asks for
+22.2 times 0.02 over 3.7, 0.12 radians per second, 7 degrees per second. The friction limit at
+that speed, 9.81 over 22.2, is 0.44 radians per second.
 
 The single-track or bicycle model lumps each axle into one wheel. In a steady turn at low speed,
 the car turns at v times delta over L: pure geometry. At higher speed the tires need slip angles
@@ -746,7 +757,7 @@ class: big-figure
 
 ## Demo: the test on our car, without ESP
 
-![Top view of three runs of the sine-with-dwell from 80 km/h, the car drawn every 0.4 s. At 76 degrees of steering-wheel angle the car follows a smooth lane change and drives on. At 180 degrees it swings out, turns broadside and spins, stopping near x 92 m pointing backward. At 270 degrees it runs wider and straighter than asked, the nose plowing, but stays pointing forward.](/figures/05-swd-path.svg)
+![Top view of three runs of the sine-with-dwell from 80 km/h, the car drawn every 0.4 s. At 76 degrees of steering-wheel angle the car follows a smooth lane change and drives on. At 180 degrees it swings out, turns broadside and spins, its path ending near x 94 m, y −9 m, pointing backward. At 270 degrees it runs wider and straighter than asked, the nose plowing, but stays pointing forward.](/figures/05-swd-path.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -819,7 +830,7 @@ class: big-figure
 
 ## With ESP: the car stops rotating, and has turned
 
-![Top view of the 180-degree sine-with-dwell from 80 km/h, the car drawn every 0.4 s. Without ESP, dashed red, the car swings out to y 5.5 m, turns broadside and spins, stopping near x 95 m. With ESP, solid blue, it changes lanes less sharply, to y 3 m, and drives on pointing along its path, still going at x 100 m.](/figures/05-swd-esp-path.svg)
+![Top view of the 180-degree sine-with-dwell from 80 km/h, the car drawn every 0.4 s. Without ESP, dashed red, the car swings out to y 5.5 m, turns broadside and spins, its path ending near x 94 m, y −9 m. With ESP, solid blue, it changes lanes less sharply, to y 3 m, and drives on pointing along its path, still moving when the run ends near x 97 m.](/figures/05-swd-esp-path.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -975,9 +986,9 @@ routeAlias: split-mu
 class: big-figure
 ---
 
-## Split-µ: braking with one side on ice
+## Split-µ: braking with one side on snow
 
-![Two panels. Left, top view: full braking from 80 km/h with the left wheels on dry asphalt and the right wheels on ice, the car drawn every 0.5 s. ABS only, red, turns left toward the dry side, more and more broadside, and stops at x 66 m, y 21 m. ABS with rear select-low, orange, and select-low with a proportional ESP, dashed purple, drift left to about y 15 m at x 87 to 90 m. Select-low with a PI ESP, blue, runs almost straight, to y 5 m at x 108 m. Right: heading over 6 s. ABS only climbs to 129 degrees by 4.5 s; the select-low runs reach 23 and 25 degrees by 6 s; the PI ESP stays near 3 degrees.](/figures/05-split-mu.svg)
+![Two panels. Left, top view: full braking from 80 km/h with the left wheels on dry asphalt and the right wheels on snow, road factor 0.3, the car drawn every 0.5 s. ABS only, red, turns left toward the dry side, more and more broadside, and stops at x 66 m, y 21 m. ABS with rear select-low, orange, and select-low with a proportional ESP, dashed purple, drift left to about y 15 m at x 87 to 90 m. Select-low with a PI ESP, blue, runs almost straight, to y 5 m at x 108 m. Right: heading over 6 s. ABS only climbs to 129 degrees by 4.5 s; the select-low runs reach 23 and 25 degrees by 6 s; the PI ESP stays near 3 degrees.](/figures/05-split-mu.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -1004,7 +1015,7 @@ Budget: in passing, the table only: ABS alone turns the car 129°, the PI ESP ho
 distance. The full read below is 2 minutes, only if ahead.
 
 The classic case where ABS alone is not enough. Full braking from 80 kilometers per hour, 2500
-newton meters asked at every wheel, the left wheels on dry asphalt and the right ones on ice at
+newton meters asked at every wheel, the left wheels on dry asphalt and the right ones on the low-µ side, snow at
 30 percent of the grip, and the steering wheel held straight: the robot does not countersteer, as
 a driver would.
 

@@ -60,7 +60,7 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 **Ask the room:** what does a car's sticker say about fuel? *(Liters per 100 km and grams of CO₂ per km. By the end of today they have both for their own car at three speeds.)*
 
-**Point at** the overview diagram on the title slide, and follow the air: the pedal opens the throttle, air fills the manifold, the cylinders draw it out. The manifold pressure is what is left: a state, which takes time to change. The maps are read at speed and that pressure. Students build the manifold (step 02) and a small map engine (step 03); the throttle and the cylinders come finished from the course library, physics the lecture stated, not what today teaches. The booster input is held at zero today; the brake lecture connects it.
+**Point at** the overview diagram on the title slide, and follow the air: the pedal opens the throttle, air fills the manifold, the cylinders draw it out. The manifold pressure is what is left: a state, which takes time to change. The maps are read at speed and that pressure. Students build the manifold (step 02) and a small map engine (step 03); the throttle and the cylinders come finished from the course library, physics the lecture stated, not what today teaches. The booster hose port, `vacuum`, stays unconnected today, which caps it; the brake lecture connects it.
 
 **Say:** the same rhythm as hands-on 1: predict a number, build, check the model gives it. Step 01 predicts the day's most important number, the fuel at 90 km/h, from the tables alone, for hands-on 1's single gear; step 05 measures the CVT car, which runs at another point of the same map, and compares. Step 04 is the milestone: the same car with a real engine and a CVT, and it no longer reaches 246. Keep the names the guide gives, `engine`, `car`, `p_m`, `fuel_lph`: the plot commands use them.
 
@@ -113,7 +113,8 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 - **Ports stacked in the middle of `manifold`.** They pasted a block without the `{"Dyad": …}` port placements, and the bench cannot be wired: paste the guide's block again.
 - **Search results.** "Manifold" also offers the course's `IntakeManifold`; "Throttle" offers four throttles. Take their own `MyCar › Manifold` and the plain `Vehicle › Engine › Throttle`.
-- **Default names.** The parts arrive as `step`, `constant1`, `constant2`, `throttle`, `cylinderairflow`, `manifold`: set parameters first, then rename to the guide's names.
+- **Default names.** The parts arrive with default names (`step`, a `constant…`, `throttle`, `cylinderairflow`, `manifold`): set parameters first, then rename to the guide's names.
+- **The square port on `manifold`.** That is `vacuum`, the hose to the brake booster, a `GasPort`: pressure and air flow in one connector, as a spline carries angle and torque. Left unconnected it is capped and carries no air, so the bench needs nothing on it.
 - **Which input is which.** The icons do not name their inputs: hover a port. `Throttle` has `u_thr` on top, `p_m` below; `CylinderAirflow` has `p_m` on top, `omega` below.
 - **Parameter fields.** Click, <kbd>End</kbd>, <kbd>Shift</kbd>+<kbd>Home</kbd>, type, <kbd>Enter</kbd>. <kbd>Ctrl</kbd>+<kbd>A</kbd> selects the whole Studio page, and a triple-click does not select the old value.
 - **The `initial` line** forgotten, or put after `metadata`. It goes after the last `connect`; without it the solver does not know the manifold starts full of outside air.
@@ -140,7 +141,8 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 - **The shaft.** The speed sensor's circle goes to `spline`, the same port as the torque source's, or the sensor reads a shaft nobody drives. There is no flywheel: on the dynamometer the bench sets the speed.
 - **Ports.** Drop each one from **+** straight onto the outline, in `MapEngine`'s own diagram. To move or rename one, click just outside it (a click on it starts a wire), then drag, or **Edit Parameters** → pencil.
-- **Port names.** Hover to read them: `air` has `u_thr`, `mdot_bst`, `omega` in from the top and `mdot_thr`, `p_m`, `mdot_cyl` out; the maps have `omega` on top, `p_m` below.
+- **Port names.** Hover to read them: `air` has `u_thr`, the square hose port `vacuum` and `omega` down its left edge and `mdot_thr`, `p_m`, `mdot_cyl` out; the maps have `omega` on top, `p_m` below.
+- **The `vacuum` port.** It is a `GasPort` from the course library, not a `Dyad` port. If **+** does not offer it as a port, the guide's fallback is one code line, `vacuum = VehicleSystemsComponents.Vehicle.GasPort()`.
 - **The last wire lost.** Save twice after it: one <kbd>Ctrl</kbd>+<kbd>S</kbd> can miss it, a known Studio bug. Then check the **Problems** tab is empty.
 - **The pasted bench piles up in a corner** if its `{"Dyad": …}` placements were left out: paste the guide's block again.
 - **Fuel read in kg/s.** The plot shows 0.00085, which is 0.85 g/s; wide open, 0.00375.
@@ -163,7 +165,7 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 **Say:** the milestone. Same body; the engine changes to theirs, and with it the input: a pedal from 0 to 1, not a torque. Hands-on 1 ended on this question: what would you add to get a believable top speed? A torque curve. But a mapped engine cannot sit on hands-on 1's single gear: at a standstill it would turn at 0 rpm and give nothing, and flat out it would hit the rev limiter at 190 km/h. So the driveline becomes a given CVT with a launch clutch. Then the guide's *Why a CVT* box: the clutch grips with engine speed, around 1300 rpm; the ratio runs from 12.0 to 2.8; the pedal picks the engine speed, 1800 to 6000 rpm, and the CVT picks the ratio that gets it there.
 
-**Built or given:** students duplicate their car, swap in their engine and the given `CVTDriveline`, add the flywheel, the booster constant and the two outputs, and add one parameter line in code. The bench is pasted.
+**Built or given:** students duplicate their car, swap in their engine and the given `CVTDriveline`, add the flywheel and the two outputs, leave the engine's `vacuum` hose port capped, and add one parameter line in code. The bench is pasted.
 
 **Duplicate, do not edit:** their hands-on 1 car stays as it was, and Lecture 1's cruise control still runs on it.
 
@@ -177,7 +179,7 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 **Where students stall:**
 
-- **`mdot_bst` or `driveline.pedal` left unconnected.** The model then has an input nobody drives and does not compile: the same "unbalanced" error as hands-on 1's missing support.
+- **`driveline.pedal` left unconnected.** The model then has an input nobody drives and does not compile: the same "unbalanced" error as hands-on 1's missing support. The engine's `vacuum` port is different: it is a hose, not an input, and left open it is capped.
 - **The two driveline supports.** `CVTDriveline` has `support_r` and `support_t` at its bottom, as the old one: rotational to `rot_ground`, translational to `trans_ground`.
 - **The `ratio_initial` edit forgotten.** Step 04's bench runs without it; step 05's bench then fails with an override that matches nothing. Add the parameter line and the `ratio_initial = ratio_initial` in the `driveline` line.
 - **Ports renamed on an instance.** Rename and place `MappedCar`'s ports in its own diagram, not on a `car` in a bench.

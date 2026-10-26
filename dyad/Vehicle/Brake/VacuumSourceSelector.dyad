@@ -1,0 +1,29 @@
+"""
+Bench hose junction that joins the booster's hose to one vacuum source, the intake manifold or an
+electric pump, chosen by `use_pump`. The source not chosen is cut off and sees no flow.
+
+    booster.p     = use_pump ? pump.p : manifold.p
+    manifold.mdot = use_pump ? 0 : -booster.mdot
+    pump.mdot     = use_pump ? -booster.mdot : 0
+"""
+component VacuumSourceSelector
+  "Hose from the booster's check valve"
+  booster = VehicleSystemsComponents.Vehicle.GasPort() {^booster}
+  "Hose to the intake manifold"
+  manifold = VehicleSystemsComponents.Vehicle.GasPort() {^manifold}
+  "Hose to the electric vacuum pump"
+  pump = VehicleSystemsComponents.Vehicle.GasPort() {^pump}
+  "Vacuum source: 0 the intake manifold, 1 the electric pump"
+  parameter use_pump::Real = 0.0
+relations
+  booster.p = ifelse(use_pump > 0.5, pump.p, manifold.p)
+  manifold.mdot = ifelse(use_pump > 0.5, 0.0, -booster.mdot)
+  pump.mdot = ifelse(use_pump > 0.5, -booster.mdot, 0.0)
+metadata {
+  "_links": {
+    "booster": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "manifold": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_b", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "pump": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_b", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}}
+  }
+}
+end

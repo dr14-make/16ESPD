@@ -11,7 +11,9 @@ No simulation runs: every curve is a closed-form steady-state tire law, evaluate
   at the peak and locked, its force against the friction circle; the rolling case shows the
   brush model's deflected tread and the pneumatic trail;
 - `01-combined-slip.svg`: the planar car's tire at a fixed slip angle, its lateral force falling
-  as braking slip grows to a locked wheel.
+  as braking slip grows to a locked wheel;
+- `01-lateral-slip.svg`: the planar car's tire in pure side slip, lateral μ against slip angle,
+  drawn like the longitudinal μ–slip curve: the linear start, the peak and the sliding level.
 
 The repository's two tire laws are evaluated through `MultibodyComponents.limit_S_triple`, the
 function both `Vehicle.Wheel.TireFrictionCurve` (the same cubic, written out) and
@@ -346,3 +348,25 @@ vline!(cs, [PLANAR.sA / (1 + PLANAR.sA)]; color = :gray, ls = :dot, label = "")
 annotate!(cs, PLANAR.sA / (1 + PLANAR.sA) + 0.01, 0.06,
     Plots.text("peak, −κ = 0.107", 9, :left, :gray25))
 save(cs, "01-combined-slip")
+
+const A_LAT = deg2rad.(collect(range(0.0, 30.0; length = 1201)))
+α_peak = atan(PLANAR.sA)
+α_slide = atan(PLANAR.sS)
+println("Planar tire in pure side slip: peak μ_y $(r3(planar_lat(α_peak))) at ",
+    "$(round(rad2deg(α_peak); digits = 1))°, sliding $(r3(planar_lat(α_slide))) from ",
+    "$(round(rad2deg(α_slide); digits = 1))°; at 2°: linear $(r3(linear_lat(deg2rad(2)))), ",
+    "tire $(r3(planar_lat(deg2rad(2))))")
+ls = plot(; xlabel = "slip angle α [°]", ylabel = "lateral friction coefficient μ_y [–]",
+    title = "Cornering: the same curve, against slip angle", size = (640, 420), dpi = 100,
+    xlims = (0, 30), ylims = (0, 1.12), legend = :bottomright)
+vspan!(ls, [rad2deg(α_peak), 30]; color = :firebrick, alpha = 0.07, label = "more angle, less force")
+A_LIN = filter(α -> linear_lat(α) <= 1.12, A_LAT)
+plot!(ls, rad2deg.(A_LIN), linear_lat.(A_LIN); label = "F_y = C_α α, small angles", STYLE.linear...)
+plot!(ls, rad2deg.(A_LAT), planar_lat.(A_LAT); label = "planar car's tire", color = :black)
+scatter!(ls, [rad2deg(α_peak)], [planar_lat(α_peak)]; color = :firebrick, ms = 6, label = "")
+annotate!(ls, rad2deg(α_peak) + 1, 1.05,
+    Plots.text("peak μ_y = 1.0 at α = $(round(rad2deg(α_peak); digits = 1))°", 9, :left, :firebrick))
+annotate!(ls, 29.5, planar_lat(α_slide) - 0.06,
+    Plots.text("sliding μ_y = $(r2(planar_lat(α_slide))) from $(round(Int, rad2deg(α_slide)))°", 9,
+        :right, :gray25))
+save(ls, "01-lateral-slip")

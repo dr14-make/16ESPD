@@ -1,0 +1,52 @@
+"""
+Traction-control throttle limit. It reduces the limit while predicted driving slip is past the
+target and restores it otherwise.
+"""
+component TCSEngine
+  "Wheel slip, positive while driving"
+  kappa = RealInput() {^kappa}
+  "Throttle limit, zero to one"
+  u_tcs = RealOutput() {^u_tcs}
+  limit = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = 0.01) {^limit}
+  "Slip held, just past the tire's peak"
+  parameter lambda_target::Real = 0.04
+  "Throttle-limit recovery rate [1/s]"
+  parameter k_inc::Real = 10.0
+  "Throttle-limit reduction rate [1/s]"
+  parameter k_dec::Real = 18.0
+  "Look-ahead for the intake and torque response"
+  parameter T_p::Time = 0.3
+  "Slip-rate filter"
+  parameter T_f::Time = 0.003
+  variable kappa_f::Real
+  variable kappa_dot::Real
+  variable kappa_pred::Real
+relations
+  initial kappa_f = 0.0
+  der(kappa_f) = (kappa - kappa_f) / T_f
+  kappa_dot = (kappa - kappa_f) / T_f
+  kappa_pred = kappa + T_p * kappa_dot
+  limit.demand = 1.0
+  limit.requested_rate = ifelse(kappa_pred > lambda_target, k_dec, -k_inc)
+  limit.active = 1.0
+  u_tcs = 1.0 - min(max(limit.cmd, 0.0), 1.0)
+metadata {
+  "_links": {
+    "kappa": {"Dyad": {"placement": {"icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}, "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}}}},
+    "u_tcs": {"Dyad": {"placement": {"icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}, "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}}}},
+    "limit": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}}
+  }
+}
+end
+
+test component TestTCSEngine
+  slip = BlockComponents.Sources.Step(height = 0.08, offset = 0.0, start_time = 0.2)
+  tcs = TCSEngine(T_p = 0.03)
+relations
+  connect(slip.y, tcs.kappa)
+end
+
+analysis TCSEngineTransient
+  extends TransientAnalysis(stop = 1.0, alg = ODEAlg.Tsit5(), dtmax = 1e-3)
+  model = TestTCSEngine()
+end

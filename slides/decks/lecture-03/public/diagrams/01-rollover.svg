@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" width="560" height="420">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .road { stroke: #16202c; stroke-width: 3; fill: none; }
+    .body { fill: #e8edf2; stroke: #16202c; stroke-width: 2.5; }
+    .wheel { fill: #16202c; }
+    .dim { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .guide { stroke: #4a5a6b; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+    .force { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .warn { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .sym { font-size: 18px; font-weight: 600; }
+    .blue { font-size: 18px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 18px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="ro-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="ro-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="ro-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+  </defs>
+
+  <text class="lbl" x="20" y="28">rear view, turning left</text>
+  <text class="lbl" x="20" y="48">← center of the curve</text>
+
+  <!-- car -->
+  <path class="body" d="M150 120 L180 70 H340 L370 120 H400 Q412 120 412 132 V262 H108 V132 Q108 120 120 120 Z"/>
+  <rect class="wheel" x="135" y="262" width="40" height="78" rx="6"/>
+  <rect class="wheel" x="345" y="262" width="40" height="78" rx="6"/>
+  <path class="road" d="M40 340 H520"/>
+
+  <!-- center of gravity -->
+  <circle cx="260" cy="185" r="9" fill="#16202c"/>
+  <path d="M260 176 A9 9 0 0 1 269 185 H260 Z M260 194 A9 9 0 0 1 251 185 H260 Z" fill="#ffffff"/>
+  <text class="lbl" x="232" y="168">CG</text>
+
+  <!-- forces at the CG -->
+  <path class="warn" d="M272 185 H360" marker-end="url(#ro-warn)"/>
+  <text class="orange" x="300" y="176">m a<tspan dy="5" font-size="13">y</tspan></text>
+  <path class="force" d="M260 198 V255" marker-end="url(#ro-blue)"/>
+  <text class="blue" x="268" y="240">m g</text>
+
+  <!-- tire forces toward the center -->
+  <path class="force" d="M150 352 H100" marker-end="url(#ro-blue)"/>
+  <path class="force" d="M370 352 H320" marker-end="url(#ro-blue)"/>
+  <text class="blue" x="60" y="358">F<tspan dy="5" font-size="13">y</tspan></text>
+
+  <!-- tipping point -->
+  <circle cx="365" cy="340" r="6" fill="#a75d00"/>
+  <path class="warn" d="M430 230 A110 110 0 0 1 438 300" marker-end="url(#ro-warn)"/>
+  <text class="lbl" x="400" y="366">tips about the</text>
+  <text class="lbl" x="400" y="386">outer wheel</text>
+
+  <!-- dimensions -->
+  <path class="guide" d="M269 185 H470"/>
+  <path class="dim" d="M470 192 V333" marker-start="url(#ro-dim)" marker-end="url(#ro-dim)"/>
+  <text class="sym" x="480" y="268">h</text>
+  <path class="guide" d="M155 340 V415 M365 340 V415"/>
+  <path class="dim" d="M162 408 H358" marker-start="url(#ro-dim)" marker-end="url(#ro-dim)"/>
+  <text class="sym" x="256" y="402">t</text>
+</svg>

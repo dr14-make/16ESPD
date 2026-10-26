@@ -84,9 +84,6 @@ Until 2 s it is `MapEngineDyno`'s bench, so the analysis's default 2 s runs are 
   # Subcomponent pedal of type BlockComponents.Sources.Step
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
   push!(__systems, @named pedal = BlockComponents.Sources.Step(; height=pedal_final - pedal_initial, offset=pedal_initial, start_time=t_step, pedal_overrides...))
-  # Subcomponent no_booster of type BlockComponents.Sources.Constant
-  no_booster_overrides = __pop_subcomponent_overrides!(__overrides, "no_booster")
-  push!(__systems, @named no_booster = BlockComponents.Sources.Constant(; k=Float64(0), no_booster_overrides...))
   # Subcomponent speed of type BlockComponents.Sources.Ramp
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
   push!(__systems, @named speed = BlockComponents.Sources.Ramp(; offset=rpm * pi / 30, height=(800 - rpm) * pi / 30, start_time=Float64(2), duration=Float64(3), speed_overrides...))
@@ -114,7 +111,6 @@ Until 2 s it is `MapEngineDyno`'s bench, so the analysis's default 2 s runs are 
 
   ### Equations
   push!(__eqs, connect(pedal.y, engine.pedal))
-  push!(__eqs, connect(no_booster.y, engine.mdot_bst))
   push!(__eqs, connect(speed.y, dyno.w_ref))
   push!(__eqs, connect(engine.spline, dyno.spline))
   push!(__eqs, connect(engine.support, mounts.spline))

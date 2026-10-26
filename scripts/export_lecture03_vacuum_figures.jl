@@ -11,6 +11,11 @@ cruise (2000 rpm, throttle 0.06, 45 kPa) and at wide-open throttle (3000 rpm);
 a spent reserve, with the engine off after the reserve is gone, and on the electric pump. All are
 Tsit5 with dtmax 1 ms. It prints every number the slides quote, and takes about a minute and a
 half.
+
+`02-throttle-vacuum.svg` needs no simulation: the steady manifold pressure against throttle
+opening, where `Vehicle.Engine.Throttle`'s flow equals `CylinderAirflow`'s, solved by bisection
+on the same equations with `AirPath`'s defaults, and the booster's run-out assist at that
+vacuum.
 """
 
 using VehicleSystemsComponents
@@ -160,3 +165,51 @@ for (k, d) in enumerate(reverse(distances))
     annotate!(stops_plot, d + 0.01 * maximum(distances), k, Plots.text("$(r1(d)) m", 10, :left))
 end
 save(stops_plot, "02-vacuum-stopping")
+
+# Steady state of `Vehicle.Engine.AirPath`: throttle flow = cylinder flow, with its defaults.
+const P_A, T_A, R_AIR, GAMMA, PI_LIN = 101325.0, 298.15, 287.05, 1.4, 0.95
+const PI_CR = (2 / (GAMMA + 1))^(GAMMA / (GAMMA - 1))
+psi(Π) = sqrt(2GAMMA / (GAMMA - 1) * (Π^(2 / GAMMA) - Π^((GAMMA + 1) / GAMMA)))
+function throttle_flow(u, p_m; alpha_0 = 0.122173, D = 0.05, A_idle = 7.4e-6, C_d = 0.8)
+    alpha = alpha_0 + clamp(u, 0, 1) * (pi / 2 - alpha_0)
+    A = A_idle + pi * D^2 / 4 * (1 - cos(alpha) / cos(alpha_0))
+    Π = max(p_m / P_A, PI_CR)
+    Ψ = Π > PI_LIN ? psi(PI_LIN) * (1 - Π) / (1 - PI_LIN) : psi(Π)
+    return C_d * A * P_A / sqrt(R_AIR * T_A) * Ψ
+end
+function cylinder_flow(p_m, n; V_d = 1.5e-3)
+    N = clamp(n, 500, 6750) / 1000
+    eta = (0.777026 + 0.148753N - 0.020452N^2) * (1 - 0.898877 + 0.898877 * p_m / 95000)
+    return eta * p_m * V_d * n / (120 * R_AIR * T_A)
+end
+function manifold_pressure(u, n)
+    lo, hi = 1.0, P_A
+    for _ in 1:100
+        mid = (lo + hi) / 2
+        throttle_flow(u, mid) > cylinder_flow(mid, n) ? (lo = mid) : (hi = mid)
+    end
+    return lo
+end
+assist_kN(p_m) = (0.0533 * (P_A - p_m) - 97.0) / 1000
+
+println("Steady manifold pressure against throttle opening:")
+const U_THR = collect(range(0.0, 0.5; length = 501))
+tv = plot(; xlabel = "throttle opening [%]", ylabel = "manifold absolute pressure [kPa]",
+    title = "Open the throttle and the vacuum is gone", legend = :right,
+    xlims = (0, 50), ylims = (0, 105), size = (900, 480), right_margin = 18Plots.mm)
+for (n, color) in ((800, :seagreen), (2000, :darkorange), (3000, :firebrick))
+    p = manifold_pressure.(U_THR, n)
+    println("  $n rpm: ", join(["$(round(Int, 100u)) % $(r1(manifold_pressure(u, n) * KPA)) kPa"
+        for u in (0.0, 0.05, 0.1, 0.2, 0.5, 1.0)], ", "))
+    plot!(tv, 100 .* U_THR, KPA .* p; color, label = "$n rpm")
+end
+hline!(tv, [101.325]; color = :gray, ls = :dot, lw = 1.5, label = "ambient, no vacuum")
+scatter!(tv, [0.0], [KPA * manifold_pressure(0.0, 800)]; color = :seagreen, ms = 6, label = "")
+annotate!(tv, 14, 8, Plots.text("idle, throttle shut: 33 kPa, 3.5 kN of assist", 9, :left, :seagreen))
+plot!(tv, [1, 13.5], [KPA * manifold_pressure(0.0, 800) - 1, 10]; color = :seagreen, lw = 1, label = "")
+tv2 = twinx(tv)
+plot!(tv2; ylims = (assist_kN(105e3), assist_kN(0.0)), yflip = true,
+    ylabel = "booster's most assist [kN]", legend = false, grid = false)
+println("  most assist: $(r2(assist_kN(33e3))) kN at 33 kPa, $(r2(assist_kN(54e3))) at 54, ",
+    "$(r2(assist_kN(90e3))) at 90")
+save(tv, "02-throttle-vacuum")

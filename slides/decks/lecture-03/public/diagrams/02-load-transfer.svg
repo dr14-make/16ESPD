@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" width="680" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .road { stroke: #16202c; stroke-width: 3; fill: none; }
+    .body { fill: #e8edf2; stroke: #16202c; stroke-width: 2.5; }
+    .tire { fill: #16202c; }
+    .hub { fill: #9aa7b4; }
+    .dim { stroke: #4a5a6b; stroke-width: 1.5; fill: none; }
+    .guide { stroke: #4a5a6b; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+    .force { stroke: #1f5fa8; stroke-width: 3; fill: none; }
+    .load { stroke: #1f5fa8; stroke-width: 7; fill: none; }
+    .warn { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .lbl { font-size: 15px; fill: #4a5a6b; }
+    .sym { font-size: 18px; font-weight: 600; }
+    .blue { font-size: 17px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 17px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="lt-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="lt-load" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="lt-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#a75d00"/></marker>
+    <marker id="lt-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+  </defs>
+
+  <!-- driving direction -->
+  <path class="dim" d="M540 34 H620" marker-end="url(#lt-dim)"/>
+  <text class="lbl" x="470" y="22">driving right, braking</text>
+
+  <!-- body, nose dipped -->
+  <g transform="rotate(2.5 335 230)">
+    <path class="body" d="M110 262 V212 Q114 186 150 180 L232 172 L292 122 H420 L482 172 L562 182 Q592 188 592 216 V262 Z"/>
+  </g>
+  <text class="lbl" x="476" y="140">nose dips</text>
+
+  <!-- wheels -->
+  <circle class="tire" cx="170" cy="282" r="38"/>
+  <circle class="hub" cx="170" cy="282" r="14"/>
+  <circle class="tire" cx="500" cy="282" r="38"/>
+  <circle class="hub" cx="500" cy="282" r="14"/>
+  <path class="road" d="M40 320 H650"/>
+
+  <!-- center of gravity and its forces -->
+  <circle cx="335" cy="212" r="9" fill="#16202c"/>
+  <path d="M335 203 A9 9 0 0 1 344 212 H335 Z M335 221 A9 9 0 0 1 326 212 H335 Z" fill="#ffffff"/>
+  <path class="warn" d="M347 212 H430" marker-end="url(#lt-warn)"/>
+  <text class="orange" x="372" y="202">m a</text>
+  <path class="force" d="M335 224 V268" marker-end="url(#lt-blue)"/>
+  <text class="blue" x="343" y="246">m g</text>
+
+  <!-- braking forces at the road -->
+  <path class="force" d="M170 316 H128" marker-end="url(#lt-blue)"/>
+  <path class="force" d="M500 316 H430" marker-end="url(#lt-blue)"/>
+
+  <!-- normal loads from below -->
+  <path class="load" d="M170 384 V350" marker-end="url(#lt-load)"/>
+  <path class="load" d="M500 398 V334" marker-end="url(#lt-load)"/>
+  <text class="blue" x="186" y="372">rear: F<tspan dy="5" font-size="13">z,r</tspan><tspan dy="-5"> − ΔF</tspan><tspan dy="5" font-size="13">z</tspan></text>
+  <text class="blue" x="516" y="372">front: F<tspan dy="5" font-size="13">z,f</tspan><tspan dy="-5"> + ΔF</tspan><tspan dy="5" font-size="13">z</tspan></text>
+
+  <!-- dimensions -->
+  <path class="guide" d="M170 282 V52 M500 282 V52"/>
+  <path class="dim" d="M176 60 H494" marker-start="url(#lt-dim)" marker-end="url(#lt-dim)"/>
+  <text class="sym" x="330" y="54">l</text>
+  <path class="guide" d="M344 212 H632"/>
+  <path class="dim" d="M624 218 V314" marker-start="url(#lt-dim)" marker-end="url(#lt-dim)"/>
+  <text class="sym" x="634" y="272">h</text>
+</svg>
