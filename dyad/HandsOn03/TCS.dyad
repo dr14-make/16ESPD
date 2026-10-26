@@ -4,10 +4,10 @@ below the target.
 """
 component TCS
   "Longitudinal tire slip, positive while driving"
-  kappa = RealInput()
+  kappa = RealInput() {^kappa}
   "Commanded TCS brake torque"
-  tau_cmd = RealOutput()
-  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = T_track)
+  tau_cmd = RealOutput() {^tau_cmd}
+  pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(T_track = T_track) {^pressure}
   "Slip held just past the tire's peak"
   parameter lambda_target::Real = 0.04
   "Maximum TCS brake torque"
@@ -34,4 +34,25 @@ relations
   pressure.requested_rate = ifelse(kappa_pred > lambda_target, k_inc, -k_dec)
   pressure.active = 1.0
   tau_cmd = min(max(pressure.cmd, 0.0), tau_tcs_max)
+metadata {
+  "_links": {
+    "kappa": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": -50, "x2": 50, "y1": 450, "y2": 550},
+          "diagram": {"x1": -50, "x2": 50, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "tau_cmd": {
+      "Dyad": {
+        "placement": {
+          "icon": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550},
+          "diagram": {"x1": 950, "x2": 1050, "y1": 450, "y2": 550}
+        }
+      }
+    },
+    "pressure": {"Dyad": {"placement": {"diagram": {"x1": 400, "x2": 600, "y1": 400, "y2": 600}}}}
+  }
+}
 end
