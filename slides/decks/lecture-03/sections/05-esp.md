@@ -581,17 +581,15 @@ routeAlias: esp-model
 
 ## The planar car, with ESP on top
 
-<div class="grid grid-cols-[1fr_1fr] gap-8">
+<div class="grid grid-cols-[1fr_1.05fr] gap-8 items-start">
 <div>
 
 The car from section 03: four wheels, combined slip, steering, yaw, four ABS channels,
 `Vehicle.Planar.PlanarCar`.
 
 The **ESP** on top of it: a yaw-rate reference, a yaw-moment controller and a brake allocator,
-`Vehicle.Planar.ESPController`. It brakes the wheels directly, or through the ABS channels.
-
-</div>
-<div>
+`Vehicle.Planar.ESPController`, inside the brake control unit `ecu`. It brakes the wheels
+directly, or through the ABS channels.
 
 **Checked before the demo:**
 
@@ -603,12 +601,32 @@ The **ESP** on top of it: a yaw-rate reference, a yaw-moment controller and a br
 | the same, parallel steering | 0.0216 rad |
 
 </div>
+<div>
+
+![The ESP demo bench Lecture3.ESPSineWithDwell in Studio: at the top left the sine-with-dwell source steer feeds the steering_robot, whose gray shaft goes to the steering of the car; below it the step source demand feeds the brake control unit ecu, whose four outputs drive the brake torques of the car; the car's chassis, wheel and spin ports are wired straight across to the sensors block on the right, and seven blue wires loop back under the whole row from the sensors to the inputs of the ecu.](/img/lecture-03/esp-sine-with-dwell.png)
+
+</div>
 </div>
 
 <!--
 No minute of its own: its minute went to the planar car in section 03. One sentence, the car
 from section 03 with ESP on top, then the passive run. Read the table only if asked: it is what
 was checked before trusting the car in a spin.
+
+The picture, if someone asks what they are looking at, left to right:
+
+- `steer`, top left, makes the steering-wheel angle of the sine with dwell. The
+  `steering_robot` turns that number into a real shaft angle, and the gray line carries the
+  shaft to the car's steering column. The same column also goes to the sensors.
+- `demand`, below it, is the driver's brake demand: zero by default, the robot does not
+  brake.
+- `ecu` is the brake control unit, the ESP and the four ABS channels in one box. Its four
+  outputs on the right are the brake torques, one per wheel, into the car.
+- `car` is the planar car of section 03. The red squares and gray dots on its right are the
+  chassis, the four wheels and their spin: the sensors attach to those physical points.
+- `sensors` is the ideal sensor cluster. It reads the car and sends seven signals back along the
+  blue wires under the row: steering-wheel angle, yaw rate, forward speed and the slip of
+  each wheel. Those are everything the ESP sees. Its other outputs are for the plots.
 
 The table is from `test/esp_plausibility.jl` and notebook `notebooks/lecture03/03-esp.pluto.jl`,
 which recomputes every number of this section with its band. In a steady turn at small steering
