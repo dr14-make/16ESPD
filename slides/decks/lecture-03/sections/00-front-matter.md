@@ -265,19 +265,19 @@ routeAlias: build-setup
 </div>
 <div>
 
-*Branch `lecture-03` from `main` · in the REPL, move the course library to its tag `lecture-03`
-and add `HydraulicComponents` · <kbd>F1</kbd> → **Dyad: Restart Language Server**, then
+*Branch `lecture-03` from `main` · in the REPL, move the course library to its tag
+`lecture-03-dyad-3.5` and add `HydraulicComponents` · <kbd>F1</kbd> → **Dyad: Restart Language Server**, then
 **Dyad: Compile** · **+** → `VehicleSystemsComponents › Vehicle › Wheel` lists `BrakedWheel` and `HydraulicBrakedWheel`*
 
 ```julia
 using Pkg
 Pkg.add(url = "https://github.com/dr14-make/16ESPD",
-        rev = "lecture-03")
+        rev = "lecture-03-dyad-3.5")
 Pkg.add("HydraulicComponents")
 ```
 
-**Given:** the course library at the tag `lecture-03` · `HydraulicComponents`, the brake fluid's
-library
+**Given:** the course library at the tag `lecture-03-dyad-3.5` · `HydraulicComponents`, the brake
+fluid's library
 
 [page: step 00](../lecture/lecture-03/#step-00)
 

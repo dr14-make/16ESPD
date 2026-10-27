@@ -39,9 +39,10 @@ the second break at 167, 04 at 172, 05 at 184, 06 at 207, end at 210.
 - Run steps 02–04 once before class from the reference (`HandsOn03.PedalStopTransient`,
   `ABSStopTransient`, `ABSStopWheelOnlyTransient`) so the library is compiled, and keep the REPL
   open.
-- Step 00 needs the course-library tag `lecture-03`, on the build 00 slide and the guide page, cut
-  from main. It carries the planar car's `MultibodyComponents`, so ask the students to run
-  step 00 before the lecture: the first compile then takes about a minute longer.
+- Step 00 needs the course-library tag `lecture-03-dyad-3.5`, on the build 00 slide and the guide
+  page, cut from main on Dyad 3.5.1; the older tag `lecture-03` is the Dyad 3.4 version. The tag
+  carries the planar car's `MultibodyComponents`, so ask the students to run step 00 before the
+  lecture: the first compile then takes about a minute longer.
 - The ABS figures are committed; nothing in the theory has to run. Notebook 01 open in Pluto is
   optional, for a question about `a_ref` (its slider).
 - The ESP demo figures are committed too. For a live run, in the same REPL run
@@ -89,8 +90,8 @@ the second break at 167, 04 at 172, 05 at 184, 06 at 207, end at 210.
 - "The sections": the right column says which section each build sits in; walk it once.
 - "No `MyCar` of your own?" (`fork-mycar`, before build 00) is for students without a working
   hands-on 1 car: they fork `dr14-make/MyCar` and branch from the tag `lecture-03-start`, the
-  finished hands-on 1 car (c6d0079). Ask them to do it before class; in the room it costs a few
-  minutes of `Pkg.instantiate`. The answers stay on `lecture-03-rehearsal`, not on the tag.
+  finished hands-on 1 car on Dyad 3.5.1 (601548b). Ask them to do it before class; in the room it
+  costs a few minutes of `Pkg.instantiate`. The answers stay on `lecture-03-rehearsal`, not on the tag.
 - Build 00: wait until most laptops list `BrakedWheel` under **+**. A student without hands-on 2
   branches from `main`; today needs only hands-on 1's `Body`.
 

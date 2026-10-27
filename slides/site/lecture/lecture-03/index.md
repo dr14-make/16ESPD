@@ -75,11 +75,11 @@ Your commits go to your fork, one per step, and the pull request at the end goes
 #### Do this
 
 1. In the status bar, click the branch name → **Create new branch…** → `lecture-03`, from `main`. If you finished hands-on 2, branch from where it left you. If not, `main` is enough: today needs only hands-on 1's `Body`.
-2. Open the Julia REPL and move the course library to the Lecture 3 version: the tag this lecture was rehearsed on. If you did hands-on 2, you added the library then, and your `Manifest.toml` still holds the version from that day, without today's parts. Started from `main`? `MyCar` has no course library yet, and the same line adds it. The second line adds `HydraulicComponents`: in step 02 your own bench declares the brake fluid, so `MyCar` needs the package itself.
+2. Open the Julia REPL and move the course library to the Lecture 3 version for Dyad 3.5. If you did hands-on 2, you added the library then, and your `Manifest.toml` still holds the version from that day, without today's parts. Started from `main`? `MyCar` has no course library yet, and the same line adds it. The second line adds `HydraulicComponents`: in step 02 your own bench declares the brake fluid, so `MyCar` needs the package itself.
 
    ```julia
    using Pkg
-   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-03")
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-03-dyad-3.5")
    Pkg.add("HydraulicComponents")
    ```
 
