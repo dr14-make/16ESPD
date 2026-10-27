@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   MapEngine(; name)
+   MapEngine(; name, __overrides)
 
 Pedal in; torque, fuel and CO2 out, read from the maps at engine speed and manifold pressure.
 
@@ -27,7 +27,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
  * `mdot_fuel` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `mdot_co2` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function MapEngine(; name = nothing, kwargs...)
+@component function MapEngine(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
     @named model = MapEngine()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -80,25 +80,25 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent air of type VehicleSystemsComponents.Vehicle.Engine.AirPath
   air_overrides = __pop_subcomponent_overrides!(__overrides, "air")
-  push!(__systems, @named air = VehicleSystemsComponents.Vehicle.Engine.AirPath(; air_overrides...))
+  push!(__systems, @named air = VehicleSystemsComponents.Vehicle.Engine.AirPath(; __overrides = air_overrides))
   # Subcomponent speed of type RotationalComponents.Sensors.VelocitySensor
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = RotationalComponents.Sensors.VelocitySensor(; speed_overrides...))
+  push!(__systems, @named speed = RotationalComponents.Sensors.VelocitySensor(; __overrides = speed_overrides))
   # Subcomponent torque_map of type VehicleSystemsComponents.Vehicle.Engine.TorqueMap
   torque_map_overrides = __pop_subcomponent_overrides!(__overrides, "torque_map")
-  push!(__systems, @named torque_map = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(; torque_map_overrides...))
+  push!(__systems, @named torque_map = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(; __overrides = torque_map_overrides))
   # Subcomponent fuel_map of type VehicleSystemsComponents.Vehicle.Engine.FuelMap
   fuel_map_overrides = __pop_subcomponent_overrides!(__overrides, "fuel_map")
-  push!(__systems, @named fuel_map = VehicleSystemsComponents.Vehicle.Engine.FuelMap(; fuel_map_overrides...))
+  push!(__systems, @named fuel_map = VehicleSystemsComponents.Vehicle.Engine.FuelMap(; __overrides = fuel_map_overrides))
   # Subcomponent co2 of type BlockComponents.Math.Gain
   co2_overrides = __pop_subcomponent_overrides!(__overrides, "co2")
-  push!(__systems, @named co2 = BlockComponents.Math.Gain(; k=3.09, co2_overrides...))
+  push!(__systems, @named co2 = BlockComponents.Math.Gain(; k=3.09, __overrides = co2_overrides))
   # Subcomponent torque of type RotationalComponents.Sources.TorqueSource
   torque_overrides = __pop_subcomponent_overrides!(__overrides, "torque")
-  push!(__systems, @named torque = RotationalComponents.Sources.TorqueSource(; torque_overrides...))
+  push!(__systems, @named torque = RotationalComponents.Sources.TorqueSource(; __overrides = torque_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -125,6 +125,6 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, connect(torque.support, support))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export MapEngine

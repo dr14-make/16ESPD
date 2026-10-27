@@ -5,12 +5,12 @@
 
 
 @doc Markdown.doc"""
-   Tour(; name)
+   Tour(; name, __overrides)
 
 Step 1 of the hands-on: two blocks and one wire, to show that the diagram and the code are the
 same model. The delay's input is left open; step 2 finishes this into `Engine`.
 """
-@component function Tour(; name = nothing, kwargs...)
+@component function Tour(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -18,7 +18,7 @@ same model. The delay's input is left open; step 2 finishes this into `Engine`.
     @named model = Tour()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -56,13 +56,13 @@ same model. The delay's input is left open; step 2 finishes this into `Engine`.
   ### Components
   # Subcomponent delay of type BlockComponents.Nonlinear.PadeDelay
   delay_overrides = __pop_subcomponent_overrides!(__overrides, "delay")
-  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; n=6, m=5, delayTime=0.3, delay_overrides...))
+  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; n=6, m=5, delayTime=0.3, __overrides = delay_overrides))
   # Subcomponent lag of type BlockComponents.Continuous.FirstOrder
   lag_overrides = __pop_subcomponent_overrides!(__overrides, "lag")
-  push!(__systems, @named lag = BlockComponents.Continuous.FirstOrder(; T=0.3, lag_overrides...))
+  push!(__systems, @named lag = BlockComponents.Continuous.FirstOrder(; T=0.3, __overrides = lag_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -75,6 +75,6 @@ same model. The delay's input is left open; step 2 finishes this into `Engine`.
   push!(__eqs, connect(delay.y, lag.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export Tour

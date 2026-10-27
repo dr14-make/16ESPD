@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ElectronicThrottle(; name, phi_span, V_window, U_batt, R_a, L_a, k_m, J_m, n_gear, J_p, phi_lh, T_pre, c_spring, eps_lh, d_bearing, k, Ti, Td, Nd, phi_0, R_wiper1)
+   ElectronicThrottle(; name, phi_span, V_window, U_batt, R_a, L_a, k_m, J_m, n_gear, J_p, phi_lh, T_pre, c_spring, eps_lh, d_bearing, k, Ti, Td, Nd, phi_0, R_wiper1, __overrides)
 
 An electronic throttle (drive by wire): the ECU positions the throttle plate with a DC motor and
 closes a position loop on the plate's own position sensor.
@@ -66,7 +66,7 @@ supplier publishes its motor and spring data.
  * `V2` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `i_motor` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function ElectronicThrottle(; name = nothing, phi_span=1.448623, V_window=Float64(4.0), U_batt=Float64(14.0), R_a=1.5, L_a=0.001, k_m=0.01, J_m=0.000002, n_gear=Float64(20.0), J_p=0.00005, phi_lh=0.10472, T_pre=0.25, c_spring=0.1, eps_lh=0.0035, d_bearing=0.001, k=Float64(40.0), Ti=0.1, Td=0.02, Nd=Float64(10.0), phi_0=0.10472, R_wiper1=Float64(10.0), kwargs...)
+@component function ElectronicThrottle(; name = nothing, var"phi_span"=1.448623, var"V_window"=Float64(4.0), var"U_batt"=Float64(14.0), var"R_a"=1.5, var"L_a"=0.001, var"k_m"=0.01, var"J_m"=0.000002, var"n_gear"=Float64(20.0), var"J_p"=0.00005, var"phi_lh"=0.10472, var"T_pre"=0.25, var"c_spring"=0.1, var"eps_lh"=0.0035, var"d_bearing"=0.001, var"k"=Float64(40.0), var"Ti"=0.1, var"Td"=0.02, var"Nd"=Float64(10.0), var"phi_0"=0.10472, var"R_wiper1"=Float64(10.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -74,7 +74,7 @@ supplier publishes its motor and spring data.
     @named model = ElectronicThrottle()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -83,6 +83,28 @@ supplier publishes its motor and spring data.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "phi_span") && (phi_span = pop!(__overrides, "phi_span"))
+  haskey(__overrides, "V_window") && (V_window = pop!(__overrides, "V_window"))
+  haskey(__overrides, "U_batt") && (U_batt = pop!(__overrides, "U_batt"))
+  haskey(__overrides, "R_a") && (R_a = pop!(__overrides, "R_a"))
+  haskey(__overrides, "L_a") && (L_a = pop!(__overrides, "L_a"))
+  haskey(__overrides, "k_m") && (k_m = pop!(__overrides, "k_m"))
+  haskey(__overrides, "J_m") && (J_m = pop!(__overrides, "J_m"))
+  haskey(__overrides, "n_gear") && (n_gear = pop!(__overrides, "n_gear"))
+  haskey(__overrides, "J_p") && (J_p = pop!(__overrides, "J_p"))
+  haskey(__overrides, "phi_lh") && (phi_lh = pop!(__overrides, "phi_lh"))
+  haskey(__overrides, "T_pre") && (T_pre = pop!(__overrides, "T_pre"))
+  haskey(__overrides, "c_spring") && (c_spring = pop!(__overrides, "c_spring"))
+  haskey(__overrides, "eps_lh") && (eps_lh = pop!(__overrides, "eps_lh"))
+  haskey(__overrides, "d_bearing") && (d_bearing = pop!(__overrides, "d_bearing"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
+  haskey(__overrides, "Td") && (Td = pop!(__overrides, "Td"))
+  haskey(__overrides, "Nd") && (Nd = pop!(__overrides, "Nd"))
+  haskey(__overrides, "phi_0") && (phi_0 = pop!(__overrides, "phi_0"))
+  haskey(__overrides, "R_wiper1") && (R_wiper1 = pop!(__overrides, "R_wiper1"))
 
   ### Structural Parameters (functions)
 
@@ -99,64 +121,64 @@ supplier publishes its motor and spring data.
   ### Symbolic Parameters
   __local__phi_span = phi_span
   append!(__params, @parameters (phi_span::Real), [description = "Plate travel from the closed stop to wide open, 83 deg (the Throttle's 7 to 90 deg)"])
-  __initial_conditions[phi_span] = __local__phi_span
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_span, __local__phi_span)
   __local__V_window = V_window
   append!(__params, @parameters (V_window::Real), [description = "Window the ECU expects a healthy TPS track to span, V_hi - V_lo = 4.5 - 0.5 V"])
-  __initial_conditions[V_window] = __local__V_window
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_window, __local__V_window)
   __local__U_batt = U_batt
   append!(__params, @parameters (U_batt::Real), [description = "Supply voltage the H-bridge can apply (textbook)"])
-  __initial_conditions[U_batt] = __local__U_batt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, U_batt, __local__U_batt)
   __local__R_a = R_a
   append!(__params, @parameters (R_a::Real), [description = "Armature resistance (assumed)"])
-  __initial_conditions[R_a] = __local__R_a
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_a, __local__R_a)
   __local__L_a = L_a
   append!(__params, @parameters (L_a::Real), [description = "Armature inductance (assumed)"])
-  __initial_conditions[L_a] = __local__L_a
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L_a, __local__L_a)
   __local__k_m = k_m
   append!(__params, @parameters (k_m::Real), [description = "Motor torque and back-EMF constant (assumed)"])
-  __initial_conditions[k_m] = __local__k_m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_m, __local__k_m)
   __local__J_m = J_m
   append!(__params, @parameters (J_m::Real), [description = "Motor rotor inertia (assumed)"])
-  __initial_conditions[J_m] = __local__J_m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J_m, __local__J_m)
   __local__n_gear = n_gear
   append!(__params, @parameters (n_gear::Real), [description = "Gearbox ratio, motor angle over plate angle (assumed)"])
-  __initial_conditions[n_gear] = __local__n_gear
+  __dyad_seed_parameter!(__initial_conditions, __bindings, n_gear, __local__n_gear)
   __local__J_p = J_p
   append!(__params, @parameters (J_p::Real), [description = "Plate, shaft and sector gear inertia (assumed)"])
-  __initial_conditions[J_p] = __local__J_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J_p, __local__J_p)
   __local__phi_lh = phi_lh
   append!(__params, @parameters (phi_lh::Real), [description = "Limp-home plate angle, 6 deg (assumed)"])
-  __initial_conditions[phi_lh] = __local__phi_lh
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_lh, __local__phi_lh)
   __local__T_pre = T_pre
   append!(__params, @parameters (T_pre::Real), [description = "Return-spring preload (assumed)"])
-  __initial_conditions[T_pre] = __local__T_pre
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_pre, __local__T_pre)
   __local__c_spring = c_spring
   append!(__params, @parameters (c_spring::Real), [description = "Return-spring rate (assumed)"])
-  __initial_conditions[c_spring] = __local__c_spring
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c_spring, __local__c_spring)
   __local__eps_lh = eps_lh
   append!(__params, @parameters (eps_lh::Real), [description = "Width over which the spring preload changes sign at limp home (assumed)"])
-  __initial_conditions[eps_lh] = __local__eps_lh
+  __dyad_seed_parameter!(__initial_conditions, __bindings, eps_lh, __local__eps_lh)
   __local__d_bearing = d_bearing
   append!(__params, @parameters (d_bearing::Real), [description = "Bearing and seal friction (assumed)"])
-  __initial_conditions[d_bearing] = __local__d_bearing
+  __dyad_seed_parameter!(__initial_conditions, __bindings, d_bearing, __local__d_bearing)
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Position controller gain [V per unit opening] (assumed, tuned)"])
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real), [description = "Position controller integral time (assumed, tuned)"])
-  __initial_conditions[Ti] = __local__Ti
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__Td = Td
   append!(__params, @parameters (Td::Real), [description = "Position controller derivative time (assumed, tuned)"])
-  __initial_conditions[Td] = __local__Td
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Td, __local__Td)
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real), [description = "Derivative filter ratio (assumed)"])
-  __initial_conditions[Nd] = __local__Nd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Nd, __local__Nd)
   __local__phi_0 = phi_0
   append!(__params, @parameters (phi_0::Real), [description = "Plate angle at the start (defaults to limp home)"])
-  __initial_conditions[phi_0] = __local__phi_0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_0, __local__phi_0)
   __local__R_wiper1 = R_wiper1
   append!(__params, @parameters (R_wiper1::Real), [description = "TPS track 1 wiper contact resistance; raise it to simulate a worn track"])
-  __initial_conditions[R_wiper1] = __local__R_wiper1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_wiper1, __local__R_wiper1)
 
   ### Final Parameters (assignments)
 
@@ -178,61 +200,68 @@ supplier publishes its motor and spring data.
   ### Components
   # Subcomponent estimate of type BlockComponents.Math.LinearDependency
   estimate_overrides = __pop_subcomponent_overrides!(__overrides, "estimate")
-  push!(__systems, @named estimate = BlockComponents.Math.LinearDependency(; y0=0.5, k1=0.5 / V_window, k2=-0.5 / V_window, estimate_overrides...))
+  push!(__systems, @named estimate = BlockComponents.Math.LinearDependency(; y0=0.5, k1=0.5 / V_window, k2=-0.5 / V_window, __overrides = estimate_overrides))
   # Subcomponent controller of type BlockComponents.Continuous.LimPID
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=U_batt, y_min=-U_batt, controller_overrides...))
+  push!(__systems, @named controller = BlockComponents.Continuous.LimPID(; k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=U_batt, y_min=-U_batt, __overrides = controller_overrides))
   # Subcomponent no_feed_forward of type BlockComponents.Sources.Constant
   no_feed_forward_overrides = __pop_subcomponent_overrides!(__overrides, "no_feed_forward")
-  push!(__systems, @named no_feed_forward = BlockComponents.Sources.Constant(; k=Float64(0), no_feed_forward_overrides...))
+  push!(__systems, @named no_feed_forward = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = no_feed_forward_overrides))
   # Subcomponent bridge of type ElectricalComponents.Analog.Sources.VoltageSource
   bridge_overrides = __pop_subcomponent_overrides!(__overrides, "bridge")
-  push!(__systems, @named bridge = ElectricalComponents.Analog.Sources.VoltageSource(; bridge_overrides...))
+  push!(__systems, @named bridge = ElectricalComponents.Analog.Sources.VoltageSource(; __overrides = bridge_overrides))
   # Subcomponent armature_R of type ElectricalComponents.Analog.Basic.Resistor
   armature_R_overrides = __pop_subcomponent_overrides!(__overrides, "armature_R")
-  push!(__systems, @named armature_R = ElectricalComponents.Analog.Basic.Resistor(; R=R_a, armature_R_overrides...))
+  push!(__systems, @named armature_R = ElectricalComponents.Analog.Basic.Resistor(; R=R_a, __overrides = armature_R_overrides))
   # Subcomponent armature_L of type ElectricalComponents.Analog.Basic.Inductor
   armature_L_overrides = __pop_subcomponent_overrides!(__overrides, "armature_L")
-  push!(__systems, @named armature_L = ElectricalComponents.Analog.Basic.Inductor(; L=L_a, i__initial=0, armature_L_overrides...))
+  armature_L_dict = Dict{String, Any}()
+  armature_L_dict["i.initial"] = ModelingToolkit.default_to_parentscope(0)
+  merge!(armature_L_dict, armature_L_overrides)
+  push!(__systems, @named armature_L = ElectricalComponents.Analog.Basic.Inductor(; L=L_a, __overrides = armature_L_dict))
   # Subcomponent current_sensor of type ElectricalComponents.Analog.Sensors.CurrentSensor
   current_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "current_sensor")
-  push!(__systems, @named current_sensor = ElectricalComponents.Analog.Sensors.CurrentSensor(; current_sensor_overrides...))
+  push!(__systems, @named current_sensor = ElectricalComponents.Analog.Sensors.CurrentSensor(; __overrides = current_sensor_overrides))
   # Subcomponent emf of type ElectricalComponents.Analog.Basic.RotationalEMF
   emf_overrides = __pop_subcomponent_overrides!(__overrides, "emf")
-  push!(__systems, @named emf = ElectricalComponents.Analog.Basic.RotationalEMF(; k=k_m, emf_overrides...))
+  push!(__systems, @named emf = ElectricalComponents.Analog.Basic.RotationalEMF(; k=k_m, __overrides = emf_overrides))
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
-  push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; ground_overrides...))
+  push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))
   # Subcomponent rotor of type RotationalComponents.Components.Inertia
   rotor_overrides = __pop_subcomponent_overrides!(__overrides, "rotor")
-  push!(__systems, @named rotor = RotationalComponents.Components.Inertia(; J=J_m, rotor_overrides...))
+  push!(__systems, @named rotor = RotationalComponents.Components.Inertia(; J=J_m, __overrides = rotor_overrides))
   # Subcomponent gearbox of type RotationalComponents.Components.IdealGear
   gearbox_overrides = __pop_subcomponent_overrides!(__overrides, "gearbox")
-  push!(__systems, @named gearbox = RotationalComponents.Components.IdealGear(; ratio=n_gear, gearbox_overrides...))
+  push!(__systems, @named gearbox = RotationalComponents.Components.IdealGear(; ratio=n_gear, __overrides = gearbox_overrides))
   # Subcomponent plate of type RotationalComponents.Components.Inertia
   plate_overrides = __pop_subcomponent_overrides!(__overrides, "plate")
-  push!(__systems, @named plate = RotationalComponents.Components.Inertia(; J=J_p, phi__initial=phi_0, w__initial=0, plate_overrides...))
+  plate_dict = Dict{String, Any}()
+  plate_dict["phi.initial"] = ModelingToolkit.default_to_parentscope(phi_0)
+  plate_dict["w.initial"] = ModelingToolkit.default_to_parentscope(0)
+  merge!(plate_dict, plate_overrides)
+  push!(__systems, @named plate = RotationalComponents.Components.Inertia(; J=J_p, __overrides = plate_dict))
   # Subcomponent return_spring of type VehicleSystemsComponents.Vehicle.Engine.LimpHomeSpring
   return_spring_overrides = __pop_subcomponent_overrides!(__overrides, "return_spring")
-  push!(__systems, @named return_spring = VehicleSystemsComponents.Vehicle.Engine.LimpHomeSpring(; phi_lh=phi_lh, T_pre=T_pre, c=c_spring, eps=eps_lh, return_spring_overrides...))
+  push!(__systems, @named return_spring = VehicleSystemsComponents.Vehicle.Engine.LimpHomeSpring(; phi_lh=phi_lh, T_pre=T_pre, c=c_spring, eps=eps_lh, __overrides = return_spring_overrides))
   # Subcomponent stops of type VehicleSystemsComponents.Vehicle.Engine.ThrottleEndStops
   stops_overrides = __pop_subcomponent_overrides!(__overrides, "stops")
-  push!(__systems, @named stops = VehicleSystemsComponents.Vehicle.Engine.ThrottleEndStops(; phi_max=phi_span, stops_overrides...))
+  push!(__systems, @named stops = VehicleSystemsComponents.Vehicle.Engine.ThrottleEndStops(; phi_max=phi_span, __overrides = stops_overrides))
   # Subcomponent bearing of type RotationalComponents.Components.Damper
   bearing_overrides = __pop_subcomponent_overrides!(__overrides, "bearing")
-  push!(__systems, @named bearing = RotationalComponents.Components.Damper(; d=d_bearing, bearing_overrides...))
+  push!(__systems, @named bearing = RotationalComponents.Components.Damper(; d=d_bearing, __overrides = bearing_overrides))
   # Subcomponent housing of type RotationalComponents.Components.Fixed
   housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; housing_overrides...))
+  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
   # Subcomponent angle_sensor of type RotationalComponents.Sensors.AngleSensor
   angle_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "angle_sensor")
-  push!(__systems, @named angle_sensor = RotationalComponents.Sensors.AngleSensor(; angle_sensor_overrides...))
+  push!(__systems, @named angle_sensor = RotationalComponents.Sensors.AngleSensor(; __overrides = angle_sensor_overrides))
   # Subcomponent tps of type VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor
   tps_overrides = __pop_subcomponent_overrides!(__overrides, "tps")
-  push!(__systems, @named tps = VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor(; phi_span=phi_span, R_wiper1=R_wiper1, tps_overrides...))
+  push!(__systems, @named tps = VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor(; phi_span=phi_span, R_wiper1=R_wiper1, __overrides = tps_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -274,6 +303,6 @@ supplier publishes its motor and spring data.
   push!(__eqs, connect(current_sensor.i, i_motor))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ElectronicThrottle

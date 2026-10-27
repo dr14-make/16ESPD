@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[(m -> m.conv.y, "conv.y", 954.9296585513721, 1e-9, 1e-5)],
   expected_final=Tuple[(m -> m.conv.y, "conv.y", 954.9296585513721, 1e-9, 1e-5)],

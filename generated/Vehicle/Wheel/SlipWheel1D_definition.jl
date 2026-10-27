@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SlipWheel1D(; name, radius, F_z, sAdhesion, sSlide, mu_A, mu_S, v_eps)
+   SlipWheel1D(; name, radius, F_z, sAdhesion, sSlide, mu_A, mu_S, v_eps, __overrides)
 
 One-dimensional tire contact with longitudinal slip-dependent friction.
 
@@ -48,7 +48,7 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
 | `mu`         | Signed friction coefficient after road scaling                         | --  |
 | `F_x`         | Longitudinal tire force                         | N  |
 """
-@component function SlipWheel1D(; name = nothing, radius=0.31, F_z=6864.655, sAdhesion=0.04, sSlide=0.12, mu_A=Float64(1.0), mu_S=0.7, v_eps=0.5, kwargs...)
+@component function SlipWheel1D(; name = nothing, var"radius"=0.31, var"F_z"=6864.655, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, var"v_eps"=0.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,7 +56,7 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
     @named model = SlipWheel1D()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -65,6 +65,15 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "F_z") && (F_z = pop!(__overrides, "F_z"))
+  haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
+  haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
+  haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
 
   ### Structural Parameters (functions)
 
@@ -81,25 +90,25 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__F_z = F_z
   append!(__params, @parameters (F_z::Real), [description = "Normal load carried by the driven axle"])
-  __initial_conditions[F_z] = __local__F_z
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_z, __local__F_z)
   __local__sAdhesion = sAdhesion
   append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion"])
-  __initial_conditions[sAdhesion] = __local__sAdhesion
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion, __local__sAdhesion)
   __local__sSlide = sSlide
   append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau"])
-  __initial_conditions[sSlide] = __local__sSlide
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient"])
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__mu_S = mu_S
   append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient"])
-  __initial_conditions[mu_S] = __local__mu_S
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [description = "Low-speed denominator floor; 0.5 m/s avoids singular standstill slip without masking launch dynamics"])
-  __initial_conditions[v_eps] = __local__v_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
 
   ### Final Parameters (assignments)
 
@@ -115,20 +124,20 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
 
   ### Variables (assignments)
   __ovr_omega = pop!(__overrides, "omega", nothing); isnothing(__ovr_omega) || push!(__eqs, omega ~ __ovr_omega)
-  __ovr_omega__initial = pop!(__overrides, "omega__initial", nothing); isnothing(__ovr_omega__initial) || (__initial_conditions[omega] = __ovr_omega__initial)
-  __ovr_omega__guess = pop!(__overrides, "omega__guess", nothing)
+  __ovr_omega__initial = pop!(__overrides, "omega.initial", nothing); isnothing(__ovr_omega__initial) || (__initial_conditions[omega] = __ovr_omega__initial)
+  __ovr_omega__guess = pop!(__overrides, "omega.guess", nothing)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
   __ovr_kappa = pop!(__overrides, "kappa", nothing); isnothing(__ovr_kappa) || push!(__eqs, kappa ~ __ovr_kappa)
-  __ovr_kappa__initial = pop!(__overrides, "kappa__initial", nothing); isnothing(__ovr_kappa__initial) || (__initial_conditions[kappa] = __ovr_kappa__initial)
-  __ovr_kappa__guess = pop!(__overrides, "kappa__guess", nothing)
+  __ovr_kappa__initial = pop!(__overrides, "kappa.initial", nothing); isnothing(__ovr_kappa__initial) || (__initial_conditions[kappa] = __ovr_kappa__initial)
+  __ovr_kappa__guess = pop!(__overrides, "kappa.guess", nothing)
   __ovr_mu = pop!(__overrides, "mu", nothing); isnothing(__ovr_mu) || push!(__eqs, mu ~ __ovr_mu)
-  __ovr_mu__initial = pop!(__overrides, "mu__initial", nothing); isnothing(__ovr_mu__initial) || (__initial_conditions[mu] = __ovr_mu__initial)
-  __ovr_mu__guess = pop!(__overrides, "mu__guess", nothing)
+  __ovr_mu__initial = pop!(__overrides, "mu.initial", nothing); isnothing(__ovr_mu__initial) || (__initial_conditions[mu] = __ovr_mu__initial)
+  __ovr_mu__guess = pop!(__overrides, "mu.guess", nothing)
   __ovr_F_x = pop!(__overrides, "F_x", nothing); isnothing(__ovr_F_x) || push!(__eqs, F_x ~ __ovr_F_x)
-  __ovr_F_x__initial = pop!(__overrides, "F_x__initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
-  __ovr_F_x__guess = pop!(__overrides, "F_x__guess", nothing)
+  __ovr_F_x__initial = pop!(__overrides, "F_x.initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
+  __ovr_F_x__guess = pop!(__overrides, "F_x.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -138,10 +147,10 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
   push!(__systems, @named flange = __Dyad__Flange())
   # Subcomponent curve of type VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve
   curve_overrides = __pop_subcomponent_overrides!(__overrides, "curve")
-  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(; sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, curve_overrides...))
+  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(; sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, __overrides = curve_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_omega__guess) || (__guesses[omega] = __ovr_omega__guess)
@@ -166,6 +175,6 @@ transitions. Explicit Runge-Kutta solvers generally handle it better than BDF me
   push!(__eqs, 0 ~ spline.tau + radius * flange.f)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SlipWheel1D

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestMappedEngineDyno(; name, scenario, rpm, pedal_cmd, pedal_initial, pedal_final, t_step, p_m0, overrun_end_rpm, t_ramp, ramp_duration)
+   TestMappedEngineDyno(; name, scenario, rpm, pedal_cmd, pedal_initial, pedal_final, t_step, p_m0, overrun_end_rpm, t_ramp, ramp_duration, __overrides)
 
 Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun.
 
@@ -31,7 +31,7 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
 | `pedal_value`         |                          | --  |
 | `dyno_rpm`         |                          | --  |
 """
-@component function TestMappedEngineDyno(; name = nothing, scenario=1, rpm=Float64(2000.0), pedal_cmd=Float64(1.0), pedal_initial=0.2, pedal_final=Float64(1.0), t_step=0.5, p_m0=13482.4, overrun_end_rpm=Float64(800.0), t_ramp=Float64(1.0), ramp_duration=Float64(3.0), kwargs...)
+@component function TestMappedEngineDyno(; name = nothing, var"scenario"=1, var"rpm"=Float64(2000.0), var"pedal_cmd"=Float64(1.0), var"pedal_initial"=0.2, var"pedal_final"=Float64(1.0), var"t_step"=0.5, var"p_m0"=13482.4, var"overrun_end_rpm"=Float64(800.0), var"t_ramp"=Float64(1.0), var"ramp_duration"=Float64(3.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -39,7 +39,7 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
     @named model = TestMappedEngineDyno()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -48,6 +48,18 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "scenario") && (scenario = pop!(__overrides, "scenario"))
+  haskey(__overrides, "rpm") && (rpm = pop!(__overrides, "rpm"))
+  haskey(__overrides, "pedal_cmd") && (pedal_cmd = pop!(__overrides, "pedal_cmd"))
+  haskey(__overrides, "pedal_initial") && (pedal_initial = pop!(__overrides, "pedal_initial"))
+  haskey(__overrides, "pedal_final") && (pedal_final = pop!(__overrides, "pedal_final"))
+  haskey(__overrides, "t_step") && (t_step = pop!(__overrides, "t_step"))
+  haskey(__overrides, "p_m0") && (p_m0 = pop!(__overrides, "p_m0"))
+  haskey(__overrides, "overrun_end_rpm") && (overrun_end_rpm = pop!(__overrides, "overrun_end_rpm"))
+  haskey(__overrides, "t_ramp") && (t_ramp = pop!(__overrides, "t_ramp"))
+  haskey(__overrides, "ramp_duration") && (ramp_duration = pop!(__overrides, "ramp_duration"))
 
   ### Structural Parameters (functions)
 
@@ -64,34 +76,34 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
   ### Symbolic Parameters
   __local__scenario = scenario
   append!(__params, @parameters (scenario::Int), [description = "Scenario: 1 steady, 2 tip-in, 3 overrun speed ramp"])
-  __initial_conditions[scenario] = __local__scenario
+  __dyad_seed_parameter!(__initial_conditions, __bindings, scenario, __local__scenario)
   __local__rpm = rpm
   append!(__params, @parameters (rpm::Real), [description = "Held or initial engine speed [rpm]"])
-  __initial_conditions[rpm] = __local__rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rpm, __local__rpm)
   __local__pedal_cmd = pedal_cmd
   append!(__params, @parameters (pedal_cmd::Real), [description = "Constant pedal command"])
-  __initial_conditions[pedal_cmd] = __local__pedal_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_cmd, __local__pedal_cmd)
   __local__pedal_initial = pedal_initial
   append!(__params, @parameters (pedal_initial::Real), [description = "Pedal before tip-in"])
-  __initial_conditions[pedal_initial] = __local__pedal_initial
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_initial, __local__pedal_initial)
   __local__pedal_final = pedal_final
   append!(__params, @parameters (pedal_final::Real), [description = "Pedal after tip-in"])
-  __initial_conditions[pedal_final] = __local__pedal_final
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_final, __local__pedal_final)
   __local__t_step = t_step
   append!(__params, @parameters (t_step::Real), [description = "Tip-in time"])
-  __initial_conditions[t_step] = __local__t_step
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_step, __local__t_step)
   __local__p_m0 = p_m0
   append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure [Pa]"])
-  __initial_conditions[p_m0] = __local__p_m0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_m0, __local__p_m0)
   __local__overrun_end_rpm = overrun_end_rpm
   append!(__params, @parameters (overrun_end_rpm::Real), [description = "End speed for the overrun ramp [rpm]"])
-  __initial_conditions[overrun_end_rpm] = __local__overrun_end_rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, overrun_end_rpm, __local__overrun_end_rpm)
   __local__t_ramp = t_ramp
   append!(__params, @parameters (t_ramp::Real), [description = "Start of the overrun speed ramp"])
-  __initial_conditions[t_ramp] = __local__t_ramp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_ramp, __local__t_ramp)
   __local__ramp_duration = ramp_duration
   append!(__params, @parameters (ramp_duration::Real), [description = "Duration of the overrun speed ramp"])
-  __initial_conditions[ramp_duration] = __local__ramp_duration
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ramp_duration, __local__ramp_duration)
 
   ### Final Parameters (assignments)
 
@@ -103,11 +115,11 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
 
   ### Variables (assignments)
   __ovr_pedal_value = pop!(__overrides, "pedal_value", nothing); isnothing(__ovr_pedal_value) || push!(__eqs, pedal_value ~ __ovr_pedal_value)
-  __ovr_pedal_value__initial = pop!(__overrides, "pedal_value__initial", nothing); isnothing(__ovr_pedal_value__initial) || (__initial_conditions[pedal_value] = __ovr_pedal_value__initial)
-  __ovr_pedal_value__guess = pop!(__overrides, "pedal_value__guess", nothing)
+  __ovr_pedal_value__initial = pop!(__overrides, "pedal_value.initial", nothing); isnothing(__ovr_pedal_value__initial) || (__initial_conditions[pedal_value] = __ovr_pedal_value__initial)
+  __ovr_pedal_value__guess = pop!(__overrides, "pedal_value.guess", nothing)
   __ovr_dyno_rpm = pop!(__overrides, "dyno_rpm", nothing); isnothing(__ovr_dyno_rpm) || push!(__eqs, dyno_rpm ~ __ovr_dyno_rpm)
-  __ovr_dyno_rpm__initial = pop!(__overrides, "dyno_rpm__initial", nothing); isnothing(__ovr_dyno_rpm__initial) || (__initial_conditions[dyno_rpm] = __ovr_dyno_rpm__initial)
-  __ovr_dyno_rpm__guess = pop!(__overrides, "dyno_rpm__guess", nothing)
+  __ovr_dyno_rpm__initial = pop!(__overrides, "dyno_rpm.initial", nothing); isnothing(__ovr_dyno_rpm__initial) || (__initial_conditions[dyno_rpm] = __ovr_dyno_rpm__initial)
+  __ovr_dyno_rpm__guess = pop!(__overrides, "dyno_rpm.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -115,16 +127,16 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
   ### Components
   # Subcomponent engine of type VehicleSystemsComponents.Vehicle.Engine.MappedEngine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; __overrides = engine_overrides))
   # Subcomponent dyno of type RotationalComponents.Sources.VelocitySource
   dyno_overrides = __pop_subcomponent_overrides!(__overrides, "dyno")
-  push!(__systems, @named dyno = RotationalComponents.Sources.VelocitySource(; dyno_overrides...))
+  push!(__systems, @named dyno = RotationalComponents.Sources.VelocitySource(; __overrides = dyno_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_pedal_value__guess) || (__guesses[pedal_value] = __ovr_pedal_value__guess)
@@ -147,6 +159,6 @@ Held-speed mapped-engine harness for dyno points, wide open, tip-in, and overrun
   push!(__eqs, connect(dyno.support, fixed.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestMappedEngineDyno

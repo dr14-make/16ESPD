@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakedWheel(; name, radius, J_w, F_z, tau_max, T_brake, w0, sAdhesion, sSlide, mu_A, mu_S)
+   BrakedWheel(; name, radius, J_w, F_z, tau_max, T_brake, w0, sAdhesion, sSlide, mu_A, mu_S, __overrides)
 
 A braked road wheel: rotating inertia, in-line friction brake, and slip-dependent tire contact.
 
@@ -48,7 +48,7 @@ whole vehicle mass halves the friction ceiling and roughly doubles the stopping 
  * `mu_scale` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function BrakedWheel(; name = nothing, radius=0.31, J_w=Float64(4.0), F_z=13729.31, tau_max=Float64(6000.0), T_brake=0.03, w0=0.2, sAdhesion=0.04, sSlide=0.12, mu_A=Float64(1.0), mu_S=0.7, kwargs...)
+@component function BrakedWheel(; name = nothing, var"radius"=0.31, var"J_w"=Float64(4.0), var"F_z"=13729.31, var"tau_max"=Float64(6000.0), var"T_brake"=0.03, var"w0"=0.2, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,7 +56,7 @@ whole vehicle mass halves the friction ceiling and roughly doubles the stopping 
     @named model = BrakedWheel()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -65,6 +65,18 @@ whole vehicle mass halves the friction ceiling and roughly doubles the stopping 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "J_w") && (J_w = pop!(__overrides, "J_w"))
+  haskey(__overrides, "F_z") && (F_z = pop!(__overrides, "F_z"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "T_brake") && (T_brake = pop!(__overrides, "T_brake"))
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
+  haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
+  haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
 
   ### Structural Parameters (functions)
 
@@ -81,34 +93,34 @@ whole vehicle mass halves the friction ceiling and roughly doubles the stopping 
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__J_w = J_w
   append!(__params, @parameters (J_w::Real), [description = "Rotating inertia; the default is four road wheels lumped together"])
-  __initial_conditions[J_w] = __local__J_w
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J_w, __local__J_w)
   __local__F_z = F_z
   append!(__params, @parameters (F_z::Real), [description = "Normal load; the default is the full weight of a 1400 kg vehicle"])
-  __initial_conditions[F_z] = __local__F_z
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_z, __local__F_z)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque, total across the brakes represented"])
-  __initial_conditions[tau_max] = __local__tau_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__T_brake = T_brake
   append!(__params, @parameters (T_brake::Real), [description = "Hydraulic time constant"])
-  __initial_conditions[T_brake] = __local__T_brake
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_brake, __local__T_brake)
   __local__w0 = w0
   append!(__params, @parameters (w0::Real), [description = "Brake regularisation speed"])
-  __initial_conditions[w0] = __local__w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
   __local__sAdhesion = sAdhesion
   append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion"])
-  __initial_conditions[sAdhesion] = __local__sAdhesion
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion, __local__sAdhesion)
   __local__sSlide = sSlide
   append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau"])
-  __initial_conditions[sSlide] = __local__sSlide
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient"])
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__mu_S = mu_S
   append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient"])
-  __initial_conditions[mu_S] = __local__mu_S
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
 
   ### Final Parameters (assignments)
 
@@ -130,16 +142,16 @@ whole vehicle mass halves the friction ceiling and roughly doubles the stopping 
   push!(__systems, @named flange = __Dyad__Flange())
   # Subcomponent inertia of type RotationalComponents.Components.Inertia
   inertia_overrides = __pop_subcomponent_overrides!(__overrides, "inertia")
-  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J_w, inertia_overrides...))
+  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J_w, __overrides = inertia_overrides))
   # Subcomponent brake of type VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(; tau_max=tau_max, T=T_brake, w0=w0, brake_overrides...))
+  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(; tau_max=tau_max, T=T_brake, w0=w0, __overrides = brake_overrides))
   # Subcomponent tire of type VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
-  push!(__systems, @named tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, tire_overrides...))
+  push!(__systems, @named tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, __overrides = tire_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -159,6 +171,6 @@ whole vehicle mass halves the friction ceiling and roughly doubles the stopping 
   push!(__eqs, connect(mu_scale, tire.mu_scale))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export BrakedWheel

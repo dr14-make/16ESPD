@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false),
+  params=Dict{String, Any}("load_transfer" => false),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -42,7 +42,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, T_cmd=500, brake_fl=1, brake_fr=1, brake_rl=1, brake_rr=1),
+  params=Dict{String, Any}("load_transfer" => false, "T_cmd" => 500.0, "brake_fl" => 1.0, "brake_fr" => 1.0, "brake_rl" => 1.0, "brake_rr" => 1.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -69,7 +69,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, delta_sw_final=0.08),
+  params=Dict{String, Any}("load_transfer" => false, "delta_sw_final" => 0.08),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -92,7 +92,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, delta_sw_final=0.16),
+  params=Dict{String, Any}("load_transfer" => false, "delta_sw_final" => 0.16),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -115,7 +115,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, delta_sw_final=0.32),
+  params=Dict{String, Any}("load_transfer" => false, "delta_sw_final" => 0.32),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -138,7 +138,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, delta_sw_final=0.48),
+  params=Dict{String, Any}("load_transfer" => false, "delta_sw_final" => 0.48),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -162,7 +162,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; delta_sw_final=0.48, h_cg=0.55, load_transfer=true),
+  params=Dict{String, Any}("delta_sw_final" => 0.48, "h_cg" => 0.55, "load_transfer" => true),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -190,7 +190,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, delta_sw_final=1.7671458676442586, t_ramp=7.5, t_steer=0.5),
+  params=Dict{String, Any}("load_transfer" => false, "delta_sw_final" => 1.7671458676442586, "t_ramp" => 7.5, "t_steer" => 0.5),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[],
@@ -211,7 +211,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, v0=3, delta_sw_final=3.2, ackermann=1),
+  params=Dict{String, Any}("load_transfer" => false, "v0" => 3.0, "delta_sw_final" => 3.2, "ackermann" => 1.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -238,7 +238,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false, v0=3, delta_sw_final=3.2, ackermann=0),
+  params=Dict{String, Any}("load_transfer" => false, "v0" => 3.0, "delta_sw_final" => 3.2, "ackermann" => 0.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[

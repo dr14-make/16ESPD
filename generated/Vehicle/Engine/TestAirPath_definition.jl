@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestAirPath(; name, u0, du, t_step, omega, mdot_bst, t_bst, d_bst, p_m0)
+   TestAirPath(; name, u0, du, t_step, omega, mdot_bst, t_bst, d_bst, p_m0, __overrides)
 
 Brake plan increment 2a: the air path under prescribed throttle, speed and booster inflow.
 
@@ -27,7 +27,7 @@ at 3000 rpm, a small throttle step at idle for the time constant, and a booster 
 | `d_bst`         | Length of the booster inflow pulse                         | s  |   0.5 |
 | `p_m0`         | Initial manifold pressure                         | Pa  |   101325.0 |
 """
-@component function TestAirPath(; name = nothing, u0=Float64(0.0), du=Float64(0.0), t_step=Float64(1.0), omega=83.776, mdot_bst=Float64(0.0), t_bst=Float64(1.0), d_bst=0.5, p_m0=Float64(101325.0), kwargs...)
+@component function TestAirPath(; name = nothing, var"u0"=Float64(0.0), var"du"=Float64(0.0), var"t_step"=Float64(1.0), var"omega"=83.776, var"mdot_bst"=Float64(0.0), var"t_bst"=Float64(1.0), var"d_bst"=0.5, var"p_m0"=Float64(101325.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ at 3000 rpm, a small throttle step at idle for the time constant, and a booster 
     @named model = TestAirPath()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,16 @@ at 3000 rpm, a small throttle step at idle for the time constant, and a booster 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "u0") && (u0 = pop!(__overrides, "u0"))
+  haskey(__overrides, "du") && (du = pop!(__overrides, "du"))
+  haskey(__overrides, "t_step") && (t_step = pop!(__overrides, "t_step"))
+  haskey(__overrides, "omega") && (omega = pop!(__overrides, "omega"))
+  haskey(__overrides, "mdot_bst") && (mdot_bst = pop!(__overrides, "mdot_bst"))
+  haskey(__overrides, "t_bst") && (t_bst = pop!(__overrides, "t_bst"))
+  haskey(__overrides, "d_bst") && (d_bst = pop!(__overrides, "d_bst"))
+  haskey(__overrides, "p_m0") && (p_m0 = pop!(__overrides, "p_m0"))
 
   ### Structural Parameters (functions)
 
@@ -60,28 +70,28 @@ at 3000 rpm, a small throttle step at idle for the time constant, and a booster 
   ### Symbolic Parameters
   __local__u0 = u0
   append!(__params, @parameters (u0::Real), [description = "Throttle position before the step"])
-  __initial_conditions[u0] = __local__u0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, u0, __local__u0)
   __local__du = du
   append!(__params, @parameters (du::Real), [description = "Throttle step height"])
-  __initial_conditions[du] = __local__du
+  __dyad_seed_parameter!(__initial_conditions, __bindings, du, __local__du)
   __local__t_step = t_step
   append!(__params, @parameters (t_step::Real), [description = "Time of the throttle step"])
-  __initial_conditions[t_step] = __local__t_step
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_step, __local__t_step)
   __local__omega = omega
   append!(__params, @parameters (omega::Real), [description = "Engine speed, 83.776 rad/s = 800 rpm"])
-  __initial_conditions[omega] = __local__omega
+  __dyad_seed_parameter!(__initial_conditions, __bindings, omega, __local__omega)
   __local__mdot_bst = mdot_bst
   append!(__params, @parameters (mdot_bst::Real), [description = "Booster inflow during its pulse [kg/s]"])
-  __initial_conditions[mdot_bst] = __local__mdot_bst
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mdot_bst, __local__mdot_bst)
   __local__t_bst = t_bst
   append!(__params, @parameters (t_bst::Real), [description = "Start of the booster inflow pulse"])
-  __initial_conditions[t_bst] = __local__t_bst
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_bst, __local__t_bst)
   __local__d_bst = d_bst
   append!(__params, @parameters (d_bst::Real), [description = "Length of the booster inflow pulse"])
-  __initial_conditions[d_bst] = __local__d_bst
+  __dyad_seed_parameter!(__initial_conditions, __bindings, d_bst, __local__d_bst)
   __local__p_m0 = p_m0
   append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure"])
-  __initial_conditions[p_m0] = __local__p_m0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_m0, __local__p_m0)
 
   ### Final Parameters (assignments)
 
@@ -97,22 +107,22 @@ at 3000 rpm, a small throttle step at idle for the time constant, and a booster 
   ### Components
   # Subcomponent throttle_cmd of type BlockComponents.Sources.Step
   throttle_cmd_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_cmd")
-  push!(__systems, @named throttle_cmd = BlockComponents.Sources.Step(; offset=u0, height=du, start_time=t_step, throttle_cmd_overrides...))
+  push!(__systems, @named throttle_cmd = BlockComponents.Sources.Step(; offset=u0, height=du, start_time=t_step, __overrides = throttle_cmd_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=omega, speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=omega, __overrides = speed_overrides))
   # Subcomponent booster of type BlockComponents.Sources.Pulse
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = BlockComponents.Sources.Pulse(; amplitude=mdot_bst, duty_cycle=Float64(1.0), period=d_bst, start_time=t_bst, offset=Float64(0.0), booster_overrides...))
+  push!(__systems, @named booster = BlockComponents.Sources.Pulse(; amplitude=mdot_bst, duty_cycle=Float64(1.0), period=d_bst, start_time=t_bst, offset=Float64(0.0), __overrides = booster_overrides))
   # Subcomponent booster_flow of type VehicleSystemsComponents.Vehicle.GasMassFlowSource
   booster_flow_overrides = __pop_subcomponent_overrides!(__overrides, "booster_flow")
-  push!(__systems, @named booster_flow = VehicleSystemsComponents.Vehicle.GasMassFlowSource(; booster_flow_overrides...))
+  push!(__systems, @named booster_flow = VehicleSystemsComponents.Vehicle.GasMassFlowSource(; __overrides = booster_flow_overrides))
   # Subcomponent air of type VehicleSystemsComponents.Vehicle.Engine.AirPath
   air_overrides = __pop_subcomponent_overrides!(__overrides, "air")
-  push!(__systems, @named air = VehicleSystemsComponents.Vehicle.Engine.AirPath(; air_overrides...))
+  push!(__systems, @named air = VehicleSystemsComponents.Vehicle.Engine.AirPath(; __overrides = air_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -129,6 +139,6 @@ at 3000 rpm, a small throttle step at idle for the time constant, and a booster 
   push!(__eqs, connect(booster_flow.port, air.vacuum))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestAirPath

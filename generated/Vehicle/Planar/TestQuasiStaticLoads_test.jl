@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; ax=-4, ay=0, h=0.55),
+  params=Dict{String, Any}("ax" => -4.0, "ay" => 0.0, "h" => 0.55),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -42,7 +42,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; ax=0, ay=3.873, h=0.55),
+  params=Dict{String, Any}("ax" => 0.0, "ay" => 3.873, "h" => 0.55),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[

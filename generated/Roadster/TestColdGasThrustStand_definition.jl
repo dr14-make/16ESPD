@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestColdGasThrustStand(; name, A_t, p0, V, n)
+   TestColdGasThrustStand(; name, A_t, p0, V, n, __overrides)
 
 Wide-open fixed thrust stand for a complete tank blowdown.
 
@@ -18,7 +18,7 @@ Wide-open fixed thrust stand for a complete tank blowdown.
 | `V`         | Tank volume                         | m3  |   0.6 |
 | `n`         | Polytropic index                         | --  |   1.4 |
 """
-@component function TestColdGasThrustStand(; name = nothing, A_t=0.001286, p0=Float64(38000000.0), V=0.6, n=1.4, kwargs...)
+@component function TestColdGasThrustStand(; name = nothing, var"A_t"=0.001286, var"p0"=Float64(38000000.0), var"V"=0.6, var"n"=1.4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -26,7 +26,7 @@ Wide-open fixed thrust stand for a complete tank blowdown.
     @named model = TestColdGasThrustStand()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -35,6 +35,12 @@ Wide-open fixed thrust stand for a complete tank blowdown.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "A_t") && (A_t = pop!(__overrides, "A_t"))
+  haskey(__overrides, "p0") && (p0 = pop!(__overrides, "p0"))
+  haskey(__overrides, "V") && (V = pop!(__overrides, "V"))
+  haskey(__overrides, "n") && (n = pop!(__overrides, "n"))
 
   ### Structural Parameters (functions)
 
@@ -51,16 +57,16 @@ Wide-open fixed thrust stand for a complete tank blowdown.
   ### Symbolic Parameters
   __local__A_t = A_t
   append!(__params, @parameters (A_t::Real), [description = "Total nozzle throat area"])
-  __initial_conditions[A_t] = __local__A_t
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_t, __local__A_t)
   __local__p0 = p0
   append!(__params, @parameters (p0::Real), [description = "Initial tank pressure"])
-  __initial_conditions[p0] = __local__p0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p0, __local__p0)
   __local__V = V
   append!(__params, @parameters (V::Real), [description = "Tank volume"])
-  __initial_conditions[V] = __local__V
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V, __local__V)
   __local__n = n
   append!(__params, @parameters (n::Real), [description = "Polytropic index"])
-  __initial_conditions[n] = __local__n
+  __dyad_seed_parameter!(__initial_conditions, __bindings, n, __local__n)
 
   ### Final Parameters (assignments)
 
@@ -76,19 +82,19 @@ Wide-open fixed thrust stand for a complete tank blowdown.
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Constant
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=Float64(1.0), command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = command_overrides))
   # Subcomponent tank of type VehicleSystemsComponents.Roadster.AirTank
   tank_overrides = __pop_subcomponent_overrides!(__overrides, "tank")
-  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; p0=p0, V=V, n=n, tank_overrides...))
+  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; p0=p0, V=V, n=n, __overrides = tank_overrides))
   # Subcomponent nozzle of type VehicleSystemsComponents.Roadster.ColdGasNozzle
   nozzle_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle")
-  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, nozzle_overrides...))
+  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, __overrides = nozzle_overrides))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -105,6 +111,6 @@ Wide-open fixed thrust stand for a complete tank blowdown.
   push!(__eqs, connect(nozzle.flange, fixed.flange))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestColdGasThrustStand

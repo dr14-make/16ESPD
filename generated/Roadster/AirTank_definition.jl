@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   AirTank(; name, V, p0, T0, R, n)
+   AirTank(; name, V, p0, T0, R, n, __overrides)
 
 Fixed-volume compressed-air tank with polytropic blowdown.
 
@@ -37,7 +37,7 @@ hydraulic connector has no gas temperature or energy state.
 | ------------ | ----------------------------------- | ------ |
 | `m_g`         | Air mass remaining in the tank                         | kg  |
 """
-@component function AirTank(; name = nothing, V=0.6, p0=Float64(38000000.0), T0=293.15, R=287.05, n=1.4, kwargs...)
+@component function AirTank(; name = nothing, var"V"=0.6, var"p0"=Float64(38000000.0), var"T0"=293.15, var"R"=287.05, var"n"=1.4, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,7 +45,7 @@ hydraulic connector has no gas temperature or energy state.
     @named model = AirTank()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -54,6 +54,13 @@ hydraulic connector has no gas temperature or energy state.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "V") && (V = pop!(__overrides, "V"))
+  haskey(__overrides, "p0") && (p0 = pop!(__overrides, "p0"))
+  haskey(__overrides, "T0") && (T0 = pop!(__overrides, "T0"))
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "n") && (n = pop!(__overrides, "n"))
 
   ### Structural Parameters (functions)
 
@@ -71,19 +78,19 @@ hydraulic connector has no gas temperature or energy state.
   ### Symbolic Parameters
   __local__V = V
   append!(__params, @parameters (V::Real), [description = "Tank volume; Tesla reports 600 L of compressed-air COPVs"])
-  __initial_conditions[V] = __local__V
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V, __local__V)
   __local__p0 = p0
   append!(__params, @parameters (p0::Real), [description = "Initial pressure; 5,500 psi in-car readout reported by Paul Tan"])
-  __initial_conditions[p0] = __local__p0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p0, __local__p0)
   __local__T0 = T0
   append!(__params, @parameters (T0::Real), [description = "Initial temperature; assumed room temperature", bounds = (0, Inf)])
-  __initial_conditions[T0] = __local__T0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T0, __local__T0)
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Specific gas constant of dry air; standard thermodynamic value"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__n = n
   append!(__params, @parameters (n::Real), [description = "Polytropic index; 1.4 is the adiabatic-air bound and 1 is isothermal"])
-  __initial_conditions[n] = __local__n
+  __dyad_seed_parameter!(__initial_conditions, __bindings, n, __local__n)
 
   ### Final Parameters (assignments)
   __bindings[m0] = p0 * V / (R * T0)
@@ -98,8 +105,8 @@ hydraulic connector has no gas temperature or energy state.
 
   ### Variables (assignments)
   __ovr_m_g = pop!(__overrides, "m_g", nothing); isnothing(__ovr_m_g) || push!(__eqs, m_g ~ __ovr_m_g)
-  __ovr_m_g__initial = pop!(__overrides, "m_g__initial", nothing); isnothing(__ovr_m_g__initial) || (__initial_conditions[m_g] = __ovr_m_g__initial)
-  __ovr_m_g__guess = pop!(__overrides, "m_g__guess", nothing)
+  __ovr_m_g__initial = pop!(__overrides, "m_g.initial", nothing); isnothing(__ovr_m_g__initial) || (__initial_conditions[m_g] = __ovr_m_g__initial)
+  __ovr_m_g__guess = pop!(__overrides, "m_g.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -107,7 +114,7 @@ hydraulic connector has no gas temperature or energy state.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_m_g__guess) || (__guesses[m_g] = __ovr_m_g__guess)
@@ -124,6 +131,6 @@ hydraulic connector has no gas temperature or energy state.
   push!(__eqs, T ~ T0 * (m_g / m0) ^ (n - 1))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export AirTank

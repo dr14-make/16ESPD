@@ -15,7 +15,7 @@ where they differ: the simulation wins, and the correction is part of the task.
   `notebooks/lecture03/01-abs.pluto.jl`: activate the repository project, include
   `notebooks/lecture01/support.jl` and `notebooks/lecture02/support.jl`, call `setup()`.
 - **Headless execution is the done-check**:
-  `julia +dyad-3.4.0 --project=. notebooks/lecture02/NN-name.pluto.jl` must run to completion. The
+  `julia +dyad-3.5.0 --project=. notebooks/lecture02/NN-name.pluto.jl` must run to completion. The
   Pluto file header's `@bind` mock supplies each slider's default. Pluto cell order is reactive, but
   the file must also run top to bottom as a script, so define before use in file order.
 - **Thin cells.** A code cell is a call and a plot. Model construction, sweeps and repeated plot

@@ -29,13 +29,13 @@ The ready-to-paste prompts are at the end, in § "Prompts".
 2. `agent_resources/skills/dyad-language/SKILL.md`, then from `agent_resources/docs/`:
    `syntax.md`, `components.md`, `initialization.md`, `metadata.md` (test blocks), `analyses.md`.
 3. `docs/HANDOVER.md` § "Gotchas found during the build". The two that bite hardest: a `.dyad`
-   edit does nothing until `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` regenerates
+   edit does nothing until `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` regenerates
    `generated/`, and the suite must run from `test/`.
 4. `docs/lecture-01-dyad-tasks.md` § "Parameter forwarding" and § "Harnesses and analyses".
 5. `docs/abs-controller-spec.md` § "Sign conventions" and § 5 (`ABSModulator`), before task 6.
 6. The `MultibodyComponents` sources, in
    `agent_resources/stdlib_reference/MultibodyComponents/PlanarMechanics/` (identical to the 0.2.6 package; `agent_resources/` is gitignored, so if it is missing use
-   `julia +dyad-3.4.0 --project=. -e 'using MultibodyComponents; println(pkgdir(MultibodyComponents))'`
+   `julia +dyad-3.5.0 --project=. -e 'using MultibodyComponents; println(pkgdir(MultibodyComponents))'`
    and its `dyad/PlanarMechanics/`). Read `slip_based_wheel_joint.dyad`, `body.dyad`,
    `revolute.dyad`, `fixed_translation.dyad`, `prescribed_velocity.dyad`, `world.dyad`,
    `sensors.dyad` and `examples/` (`TwoTrackModelTest`, topology only).
@@ -170,11 +170,11 @@ signals with `symbolic_container(result)`, as `test/roadster_plausibility.jl` do
 
 | What | Command |
 |---|---|
-| Compile | `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` from the repository root |
-| One component's Dyad tests | `cd test && julia +dyad-3.4.0 --project=.. -e 'using VehicleSystemsComponents, Test; include("../generated/test_internals.jl"); @testset "one" begin include("../generated/Vehicle/Planar/TestPlanarWheelRig_test.jl") end'` |
+| Compile | `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` from the repository root |
+| One component's Dyad tests | `cd test && julia +dyad-3.5.0 --project=.. -e 'using VehicleSystemsComponents, Test; include("../generated/test_internals.jl"); @testset "one" begin include("../generated/Vehicle/Planar/TestPlanarWheelRig_test.jl") end'` |
 | All planar Dyad tests | same, with `include("../generated/Vehicle/Planar/tests.jl")` (and `../generated/Lecture3/tests.jl`) |
-| The plausibility file alone | `cd test && julia +dyad-3.4.0 --project=.. -e 'using VehicleSystemsComponents, Test; include("plausibility_helpers.jl"); include("esp_plausibility.jl")'` |
-| Full suite | `cd test && julia +dyad-3.4.0 --project=.. runtests.jl` |
+| The plausibility file alone | `cd test && julia +dyad-3.5.0 --project=.. -e 'using VehicleSystemsComponents, Test; include("plausibility_helpers.jl"); include("esp_plausibility.jl")'` |
+| Full suite | `cd test && julia +dyad-3.5.0 --project=.. runtests.jl` |
 
 The single-component command was run in the Dyad probe against a scratch rig: 9 assertions, all
 passing, 54 s including compilation. Run it from `test/` so references land in `test/snapshots/`.
@@ -1213,10 +1213,10 @@ integration branch, and stops at a report. Merging is a human step after reading
 > The front wheels steer through Ackermann geometry: `tan δ_left = tan δ/(1 − k tan δ)`,
 > `tan δ_right = tan δ/(1 + k tan δ)`, `k = ackermann·t_k/(2L)`, `δ = δ_sw/16`.
 >
-> Compile with `npx -y @juliacomputing/dyad-cli@3.4.0 compile .`, and confirm your change appears
+> Compile with `npx -y @juliacomputing/dyad-cli@3.5.0 compile .`, and confirm your change appears
 > in `generated/` before trusting a test. Run your component's tests alone with the command in
 > "How testing works", then the full suite with
-> `cd test && julia +dyad-3.4.0 --project=.. runtests.jl`. Every test case and analysis uses
+> `cd test && julia +dyad-3.5.0 --project=.. runtests.jl`. Every test case and analysis uses
 > `Tsit5` (or `Rodas5P`), never FBDF or the default.
 >
 > Do not edit existing components or `generated/` by hand. Stage files by name, never

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeCaliper(; name, K, p0, V0, K1, K3, w0)
+   BrakeCaliper(; name, K, p0, V0, K1, K3, w0, __overrides)
 
 One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-line friction torque.
 
@@ -41,7 +41,7 @@ One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-li
 | `w`         | Shaft speed with respect to the support                         | rad/s  |
 | `tau_friction`         | Signed friction torque removed from the shaft line                         | N.m  |
 """
-@component function BrakeCaliper(; name = nothing, K=0.00049, p0=Float64(50000.0), V0=5e-7, K1=Float64(1000000000000.0), K3=Float64(4.8e+23), w0=0.2, continuity__graph0, kwargs...)
+@component function BrakeCaliper(; name = nothing, var"K"=0.00049, var"p0"=Float64(50000.0), var"V0"=5e-7, var"K1"=Float64(1000000000000.0), var"K3"=Float64(4.8e+23), var"w0"=0.2, var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -49,7 +49,7 @@ One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-li
     @named model = BrakeCaliper()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -58,6 +58,14 @@ One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-li
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "K") && (K = pop!(__overrides, "K"))
+  haskey(__overrides, "p0") && (p0 = pop!(__overrides, "p0"))
+  haskey(__overrides, "V0") && (V0 = pop!(__overrides, "V0"))
+  haskey(__overrides, "K1") && (K1 = pop!(__overrides, "K1"))
+  haskey(__overrides, "K3") && (K3 = pop!(__overrides, "K3"))
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
 
   ### Structural Parameters (functions)
 
@@ -74,22 +82,22 @@ One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-li
   ### Symbolic Parameters
   __local__K = K
   append!(__params, @parameters (K::Real), [description = "Torque gain [N·m/Pa] (assumed, textbook)"])
-  __initial_conditions[K] = __local__K
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K, __local__K)
   __local__p0 = p0
   append!(__params, @parameters (p0::Real), [description = "Pad-contact pressure [Pa] (assumed, textbook)"])
-  __initial_conditions[p0] = __local__p0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p0, __local__p0)
   __local__V0 = V0
   append!(__params, @parameters (V0::Real), [description = "Clearance take-up volume [m³] (assumed, textbook)"])
-  __initial_conditions[V0] = __local__V0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V0, __local__V0)
   __local__K1 = K1
   append!(__params, @parameters (K1::Real), [description = "Linear pressure-volume coefficient [Pa/m³] (assumed, textbook)"])
-  __initial_conditions[K1] = __local__K1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K1, __local__K1)
   __local__K3 = K3
   append!(__params, @parameters (K3::Real), [description = "Cubic pressure-volume coefficient [Pa/m⁹] (assumed, textbook)"])
-  __initial_conditions[K3] = __local__K3
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K3, __local__K3)
   __local__w0 = w0
   append!(__params, @parameters (w0::Real), [description = "Regularization below this shaft speed", bounds = (eps(Float64), Inf)])
-  __initial_conditions[w0] = __local__w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
 
   ### Final Parameters (assignments)
 
@@ -109,32 +117,32 @@ One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-li
 
   ### Variables (assignments)
   __ovr_phi_support = pop!(__overrides, "phi_support", nothing); isnothing(__ovr_phi_support) || push!(__eqs, phi_support ~ __ovr_phi_support)
-  __ovr_phi_support__initial = pop!(__overrides, "phi_support__initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
-  __ovr_phi_support__guess = pop!(__overrides, "phi_support__guess", nothing)
+  __ovr_phi_support__initial = pop!(__overrides, "phi_support.initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
+  __ovr_phi_support__guess = pop!(__overrides, "phi_support.guess", nothing)
   __ovr_V = pop!(__overrides, "V", nothing); isnothing(__ovr_V) || push!(__eqs, V ~ __ovr_V)
-  __ovr_V__initial = pop!(__overrides, "V__initial", nothing); isnothing(__ovr_V__initial) || (__initial_conditions[V] = __ovr_V__initial)
-  __ovr_V__guess = pop!(__overrides, "V__guess", nothing)
+  __ovr_V__initial = pop!(__overrides, "V.initial", nothing); isnothing(__ovr_V__initial) || (__initial_conditions[V] = __ovr_V__initial)
+  __ovr_V__guess = pop!(__overrides, "V.guess", nothing)
   __ovr_p = pop!(__overrides, "p", nothing); isnothing(__ovr_p) || push!(__eqs, p ~ __ovr_p)
-  __ovr_p__initial = pop!(__overrides, "p__initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
-  __ovr_p__guess = pop!(__overrides, "p__guess", nothing)
+  __ovr_p__initial = pop!(__overrides, "p.initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
+  __ovr_p__guess = pop!(__overrides, "p.guess", nothing)
   __ovr_rho = pop!(__overrides, "rho", nothing); isnothing(__ovr_rho) || push!(__eqs, rho ~ __ovr_rho)
-  __ovr_rho__initial = pop!(__overrides, "rho__initial", nothing); isnothing(__ovr_rho__initial) || (__initial_conditions[rho] = __ovr_rho__initial)
-  __ovr_rho__guess = pop!(__overrides, "rho__guess", nothing)
+  __ovr_rho__initial = pop!(__overrides, "rho.initial", nothing); isnothing(__ovr_rho__initial) || (__initial_conditions[rho] = __ovr_rho__initial)
+  __ovr_rho__guess = pop!(__overrides, "rho.guess", nothing)
   __ovr_u = pop!(__overrides, "u", nothing); isnothing(__ovr_u) || push!(__eqs, u ~ __ovr_u)
-  __ovr_u__initial = pop!(__overrides, "u__initial", nothing); isnothing(__ovr_u__initial) || (__initial_conditions[u] = __ovr_u__initial)
-  __ovr_u__guess = pop!(__overrides, "u__guess", nothing)
+  __ovr_u__initial = pop!(__overrides, "u.initial", nothing); isnothing(__ovr_u__initial) || (__initial_conditions[u] = __ovr_u__initial)
+  __ovr_u__guess = pop!(__overrides, "u.guess", nothing)
   __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
-  __ovr_tau__initial = pop!(__overrides, "tau__initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
-  __ovr_tau__guess = pop!(__overrides, "tau__guess", nothing)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
   __ovr_phi = pop!(__overrides, "phi", nothing); isnothing(__ovr_phi) || push!(__eqs, phi ~ __ovr_phi)
-  __ovr_phi__initial = pop!(__overrides, "phi__initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
-  __ovr_phi__guess = pop!(__overrides, "phi__guess", nothing)
+  __ovr_phi__initial = pop!(__overrides, "phi.initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
+  __ovr_phi__guess = pop!(__overrides, "phi.guess", nothing)
   __ovr_w = pop!(__overrides, "w", nothing); isnothing(__ovr_w) || push!(__eqs, w ~ __ovr_w)
-  __ovr_w__initial = pop!(__overrides, "w__initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
-  __ovr_w__guess = pop!(__overrides, "w__guess", nothing)
+  __ovr_w__initial = pop!(__overrides, "w.initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
+  __ovr_w__guess = pop!(__overrides, "w.guess", nothing)
   __ovr_tau_friction = pop!(__overrides, "tau_friction", nothing); isnothing(__ovr_tau_friction) || push!(__eqs, tau_friction ~ __ovr_tau_friction)
-  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction__initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
-  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction__guess", nothing)
+  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction.initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
+  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -146,7 +154,7 @@ One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-li
   push!(__systems, @named port = HydraulicComponents.Interfaces.Port())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_phi_support__guess) || (__guesses[phi_support] = __ovr_phi_support__guess)
@@ -181,6 +189,6 @@ One axle's hydraulic disc brakes, combining nonlinear fluid compliance and in-li
   push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export BrakeCaliper

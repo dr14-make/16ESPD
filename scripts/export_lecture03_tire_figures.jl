@@ -1,7 +1,7 @@
 """
 Writes the theory deck's tire-model figures into `slides/decks/lecture-03/public/figures/`:
 
-    julia +dyad-3.4.0 --project=. scripts/export_lecture03_tire_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture03_tire_figures.jl
 
 No simulation runs: every curve is a closed-form steady-state tire law, evaluated on a grid.
 

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   YawMomentController(; name, Kp, Ki, deadband, v_on, Mz_max)
+   YawMomentController(; name, Kp, Ki, deadband, v_on, Mz_max, __overrides)
 
 Continuous yaw-error controller with deadband and speed-dependent enable.
 
@@ -27,7 +27,7 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
  * `Mz` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `oversteer` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function YawMomentController(; name = nothing, Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), kwargs...)
+@component function YawMomentController(; name = nothing, var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
     @named model = YawMomentController()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,13 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "Kp") && (Kp = pop!(__overrides, "Kp"))
+  haskey(__overrides, "Ki") && (Ki = pop!(__overrides, "Ki"))
+  haskey(__overrides, "deadband") && (deadband = pop!(__overrides, "deadband"))
+  haskey(__overrides, "v_on") && (v_on = pop!(__overrides, "v_on"))
+  haskey(__overrides, "Mz_max") && (Mz_max = pop!(__overrides, "Mz_max"))
 
   ### Structural Parameters (functions)
 
@@ -60,19 +67,19 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
   ### Symbolic Parameters
   __local__Kp = Kp
   append!(__params, @parameters (Kp::Real), [description = "Proportional yaw gain (probe)"])
-  __initial_conditions[Kp] = __local__Kp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Kp, __local__Kp)
   __local__Ki = Ki
   append!(__params, @parameters (Ki::Real), [description = "Integral yaw gain (probe)"])
-  __initial_conditions[Ki] = __local__Ki
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ki, __local__Ki)
   __local__deadband = deadband
   append!(__params, @parameters (deadband::Real), [description = "Yaw-error deadband (probe)"])
-  __initial_conditions[deadband] = __local__deadband
+  __dyad_seed_parameter!(__initial_conditions, __bindings, deadband, __local__deadband)
   __local__v_on = v_on
   append!(__params, @parameters (v_on::Real), [description = "ESP enable speed (assumed)"])
-  __initial_conditions[v_on] = __local__v_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_on, __local__v_on)
   __local__Mz_max = Mz_max
   append!(__params, @parameters (Mz_max::Real), [description = "Maximum requested yaw moment (assumed)"])
-  __initial_conditions[Mz_max] = __local__Mz_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Mz_max, __local__Mz_max)
 
   ### Final Parameters (assignments)
 
@@ -93,49 +100,49 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
   ### Components
   # Subcomponent error of type BlockComponents.Math.Add
   error_overrides = __pop_subcomponent_overrides!(__overrides, "error")
-  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), error_overrides...))
+  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), __overrides = error_overrides))
   # Subcomponent deadzone of type BlockComponents.Nonlinear.DeadZone
   deadzone_overrides = __pop_subcomponent_overrides!(__overrides, "deadzone")
-  push!(__systems, @named deadzone = BlockComponents.Nonlinear.DeadZone(; uMax=deadband, deadzone_overrides...))
+  push!(__systems, @named deadzone = BlockComponents.Nonlinear.DeadZone(; uMax=deadband, __overrides = deadzone_overrides))
   # Subcomponent p_gain of type BlockComponents.Math.Gain
   p_gain_overrides = __pop_subcomponent_overrides!(__overrides, "p_gain")
-  push!(__systems, @named p_gain = BlockComponents.Math.Gain(; k=-Kp, p_gain_overrides...))
+  push!(__systems, @named p_gain = BlockComponents.Math.Gain(; k=-Kp, __overrides = p_gain_overrides))
   # Subcomponent integrator of type BlockComponents.Continuous.Integrator
   integrator_overrides = __pop_subcomponent_overrides!(__overrides, "integrator")
-  push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; x0=Float64(0.0), integrator_overrides...))
+  push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; x0=Float64(0.0), __overrides = integrator_overrides))
   # Subcomponent i_gain of type BlockComponents.Math.Gain
   i_gain_overrides = __pop_subcomponent_overrides!(__overrides, "i_gain")
-  push!(__systems, @named i_gain = BlockComponents.Math.Gain(; k=-Ki, i_gain_overrides...))
+  push!(__systems, @named i_gain = BlockComponents.Math.Gain(; k=-Ki, __overrides = i_gain_overrides))
   # Subcomponent sum of type BlockComponents.Math.Add
   sum_overrides = __pop_subcomponent_overrides!(__overrides, "sum")
-  push!(__systems, @named sum = BlockComponents.Math.Add(; sum_overrides...))
+  push!(__systems, @named sum = BlockComponents.Math.Add(; __overrides = sum_overrides))
   # Subcomponent limiter of type BlockComponents.Nonlinear.Limiter
   limiter_overrides = __pop_subcomponent_overrides!(__overrides, "limiter")
-  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=Mz_max, limiter_overrides...))
+  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=Mz_max, __overrides = limiter_overrides))
   # Subcomponent enable of type BlockComponents.Logical.GreaterThreshold
   enable_overrides = __pop_subcomponent_overrides!(__overrides, "enable")
-  push!(__systems, @named enable = BlockComponents.Logical.GreaterThreshold(; threshold=v_on, enable_overrides...))
+  push!(__systems, @named enable = BlockComponents.Logical.GreaterThreshold(; threshold=v_on, __overrides = enable_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
-  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent gate of type BlockComponents.Logical.Switch
   gate_overrides = __pop_subcomponent_overrides!(__overrides, "gate")
-  push!(__systems, @named gate = BlockComponents.Logical.Switch(; gate_overrides...))
+  push!(__systems, @named gate = BlockComponents.Logical.Switch(; __overrides = gate_overrides))
   # Subcomponent abs_r of type BlockComponents.Math.Abs
   abs_r_overrides = __pop_subcomponent_overrides!(__overrides, "abs_r")
-  push!(__systems, @named abs_r = BlockComponents.Math.Abs(; abs_r_overrides...))
+  push!(__systems, @named abs_r = BlockComponents.Math.Abs(; __overrides = abs_r_overrides))
   # Subcomponent abs_r_ref of type BlockComponents.Math.Abs
   abs_r_ref_overrides = __pop_subcomponent_overrides!(__overrides, "abs_r_ref")
-  push!(__systems, @named abs_r_ref = BlockComponents.Math.Abs(; abs_r_ref_overrides...))
+  push!(__systems, @named abs_r_ref = BlockComponents.Math.Abs(; __overrides = abs_r_ref_overrides))
   # Subcomponent compare of type BlockComponents.Logical.Greater
   compare_overrides = __pop_subcomponent_overrides!(__overrides, "compare")
-  push!(__systems, @named compare = BlockComponents.Logical.Greater(; compare_overrides...))
+  push!(__systems, @named compare = BlockComponents.Logical.Greater(; __overrides = compare_overrides))
   # Subcomponent to_real of type BlockComponents.Math.BooleanToReal
   to_real_overrides = __pop_subcomponent_overrides!(__overrides, "to_real")
-  push!(__systems, @named to_real = BlockComponents.Math.BooleanToReal(; to_real_overrides...))
+  push!(__systems, @named to_real = BlockComponents.Math.BooleanToReal(; __overrides = to_real_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -167,6 +174,6 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
   push!(__eqs, connect(to_real.y, oversteer))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export YawMomentController

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSStraightStop(; name, load_transfer, v0, T_cmd, brake_time, radius, select_low, k_dec, k_inc_fast, k_inc_slow, h_cg)
+   ABSStraightStop(; name, load_transfer, v0, T_cmd, brake_time, radius, select_low, k_dec, k_inc_fast, k_inc_slow, h_cg, __overrides)
 
 Four-channel ABS stop from 80 km/h on a uniform dry road.
 
@@ -24,7 +24,7 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function ABSStraightStop(; name = nothing, load_transfer=true, v0=22.22222222222222, T_cmd=Float64(2500.0), brake_time=0.5, radius=0.31, select_low=Float64(0.0), k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), h_cg=Float64(0.0), kwargs...)
+@component function ABSStraightStop(; name = nothing, var"load_transfer"=true, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"radius"=0.31, var"select_low"=Float64(0.0), var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -32,7 +32,7 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
     @named model = ABSStraightStop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -41,6 +41,18 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "T_cmd") && (T_cmd = pop!(__overrides, "T_cmd"))
+  haskey(__overrides, "brake_time") && (brake_time = pop!(__overrides, "brake_time"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "select_low") && (select_low = pop!(__overrides, "select_low"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
 
   ### Structural Parameters (functions)
 
@@ -57,31 +69,31 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   ### Symbolic Parameters
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__T_cmd = T_cmd
   append!(__params, @parameters (T_cmd::Real))
-  __initial_conditions[T_cmd] = __local__T_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_cmd, __local__T_cmd)
   __local__brake_time = brake_time
   append!(__params, @parameters (brake_time::Real))
-  __initial_conditions[brake_time] = __local__brake_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_time, __local__brake_time)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__select_low = select_low
   append!(__params, @parameters (select_low::Real))
-  __initial_conditions[select_low] = __local__select_low
+  __dyad_seed_parameter!(__initial_conditions, __bindings, select_low, __local__select_low)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
   append!(__params, @parameters (k_inc_fast::Real))
-  __initial_conditions[k_inc_fast] = __local__k_inc_fast
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__h_cg = h_cg
   append!(__params, @parameters (h_cg::Real))
-  __initial_conditions[h_cg] = __local__h_cg
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_cg, __local__h_cg)
 
   ### Final Parameters (assignments)
 
@@ -97,28 +109,28 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   ### Components
   # Subcomponent steer of type BlockComponents.Sources.Constant
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
-  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=Float64(0.0), steer_overrides...))
+  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = steer_overrides))
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=Float64(0.0), height=T_cmd, start_time=brake_time, demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=Float64(0.0), height=T_cmd, start_time=brake_time, __overrides = demand_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
-  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
-  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = steering_robot_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
+  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, abs_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, __overrides = abs_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -169,6 +181,6 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   push!(__eqs, connect(abs.tau_rr, car.tau_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSStraightStop

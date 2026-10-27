@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestYawReference(; name)
+   TestYawReference(; name, __overrides)
 
 Yaw-reference checks below and at the friction limit.
 """
-@component function TestYawReference(; name = nothing, kwargs...)
+@component function TestYawReference(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Yaw-reference checks below and at the friction limit.
     @named model = TestYawReference()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,16 +55,16 @@ Yaw-reference checks below and at the friction limit.
   ### Components
   # Subcomponent steer of type BlockComponents.Sources.Constant
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
-  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=0.32, steer_overrides...))
+  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=0.32, __overrides = steer_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=22.222, speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=22.222, __overrides = speed_overrides))
   # Subcomponent reference of type VehicleSystemsComponents.Vehicle.Planar.YawReference
   reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(; reference_overrides...))
+  push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(; __overrides = reference_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -78,6 +78,6 @@ Yaw-reference checks below and at the friction limit.
   push!(__eqs, connect(speed.y, reference.vx))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestYawReference

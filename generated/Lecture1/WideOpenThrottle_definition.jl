@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   WideOpenThrottle(; name)
+   WideOpenThrottle(; name, __overrides)
 
 Open-loop wide-open-throttle run: full torque from rest on flat road.
 
@@ -14,7 +14,7 @@ unconnected. This harness drives it from a constant source and carries the initi
 so notebook 01 can run it to terminal speed and read the transient.
 The command is well above the torque ceiling so the engine clamps at its limit throughout.
 """
-@component function WideOpenThrottle(; name = nothing, kwargs...)
+@component function WideOpenThrottle(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -22,7 +22,7 @@ The command is well above the torque ceiling so the engine clamps at its limit t
     @named model = WideOpenThrottle()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -60,13 +60,13 @@ The command is well above the torque ceiling so the engine clamps at its limit t
   ### Components
   # Subcomponent plant of type VehicleSystemsComponents.HandsOn.Car
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.Car(; plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.Car(; __overrides = plant_overrides))
   # Subcomponent cmd of type BlockComponents.Sources.Constant
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
-  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=Float64(300.0), cmd_overrides...))
+  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=Float64(300.0), __overrides = cmd_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -82,6 +82,6 @@ The command is well above the torque ceiling so the engine clamps at its limit t
   push!(__eqs, connect(cmd.y, plant.tau_cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export WideOpenThrottle

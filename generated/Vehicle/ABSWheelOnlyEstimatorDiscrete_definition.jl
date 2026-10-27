@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSWheelOnlyEstimatorDiscrete(; name, dt, radius, a_ref, v_ref0, omega0, v_eps)
+   ABSWheelOnlyEstimatorDiscrete(; name, dt, radius, a_ref, v_ref0, omega0, v_eps, __overrides)
 
 Clocked wheel-only reference-speed and slip estimator.
 
@@ -37,7 +37,7 @@ Clocked wheel-only reference-speed and slip estimator.
 | `a_hat`         |                          | m/s2  |
 | `a_ref_effective`         |                          | m/s2  |
 """
-@component function ABSWheelOnlyEstimatorDiscrete(; name = nothing, dt=0.005, radius=0.31, a_ref=Float64(10.0), v_ref0=Float64(25.0), v_eps=0.5, omega0=v_ref0 / radius, kwargs...)
+@component function ABSWheelOnlyEstimatorDiscrete(; name = nothing, var"dt"=0.005, var"radius"=0.31, var"a_ref"=Float64(10.0), var"v_ref0"=Float64(25.0), var"v_eps"=0.5, var"omega0"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,7 +45,7 @@ Clocked wheel-only reference-speed and slip estimator.
     @named model = ABSWheelOnlyEstimatorDiscrete()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -54,6 +54,17 @@ Clocked wheel-only reference-speed and slip estimator.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "a_ref") && (a_ref = pop!(__overrides, "a_ref"))
+  haskey(__overrides, "v_ref0") && (v_ref0 = pop!(__overrides, "v_ref0"))
+  haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
+  haskey(__overrides, "omega0") && (omega0 = pop!(__overrides, "omega0"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(omega0) && (omega0 = v_ref0 / radius)
 
   ### Structural Parameters (functions)
 
@@ -70,22 +81,22 @@ Clocked wheel-only reference-speed and slip estimator.
   ### Symbolic Parameters
   __local__dt = dt
   append!(__params, @parameters (dt::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[dt] = __local__dt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dt, __local__dt)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__a_ref = a_ref
   append!(__params, @parameters (a_ref::Real))
-  __initial_conditions[a_ref] = __local__a_ref
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a_ref, __local__a_ref)
   __local__v_ref0 = v_ref0
   append!(__params, @parameters (v_ref0::Real))
-  __initial_conditions[v_ref0] = __local__v_ref0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_ref0, __local__v_ref0)
   __local__omega0 = omega0
   append!(__params, @parameters (omega0::Real))
-  __initial_conditions[omega0] = __local__omega0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, omega0, __local__omega0)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[v_eps] = __local__v_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
 
   ### Final Parameters (assignments)
 
@@ -104,20 +115,20 @@ Clocked wheel-only reference-speed and slip estimator.
 
   ### Variables (assignments)
   __ovr_v_ref = pop!(__overrides, "v_ref", nothing); isnothing(__ovr_v_ref) || push!(__eqs, v_ref ~ __ovr_v_ref)
-  __ovr_v_ref__initial = pop!(__overrides, "v_ref__initial", nothing); isnothing(__ovr_v_ref__initial) || (__initial_conditions[v_ref] = __ovr_v_ref__initial)
-  __ovr_v_ref__guess = pop!(__overrides, "v_ref__guess", nothing)
+  __ovr_v_ref__initial = pop!(__overrides, "v_ref.initial", nothing); isnothing(__ovr_v_ref__initial) || (__initial_conditions[v_ref] = __ovr_v_ref__initial)
+  __ovr_v_ref__guess = pop!(__overrides, "v_ref.guess", nothing)
   __ovr_v_w = pop!(__overrides, "v_w", nothing); isnothing(__ovr_v_w) || push!(__eqs, v_w ~ __ovr_v_w)
-  __ovr_v_w__initial = pop!(__overrides, "v_w__initial", nothing); isnothing(__ovr_v_w__initial) || (__initial_conditions[v_w] = __ovr_v_w__initial)
-  __ovr_v_w__guess = pop!(__overrides, "v_w__guess", nothing)
+  __ovr_v_w__initial = pop!(__overrides, "v_w.initial", nothing); isnothing(__ovr_v_w__initial) || (__initial_conditions[v_w] = __ovr_v_w__initial)
+  __ovr_v_w__guess = pop!(__overrides, "v_w.guess", nothing)
   __ovr_a_w = pop!(__overrides, "a_w", nothing); isnothing(__ovr_a_w) || push!(__eqs, a_w ~ __ovr_a_w)
-  __ovr_a_w__initial = pop!(__overrides, "a_w__initial", nothing); isnothing(__ovr_a_w__initial) || (__initial_conditions[a_w] = __ovr_a_w__initial)
-  __ovr_a_w__guess = pop!(__overrides, "a_w__guess", nothing)
+  __ovr_a_w__initial = pop!(__overrides, "a_w.initial", nothing); isnothing(__ovr_a_w__initial) || (__initial_conditions[a_w] = __ovr_a_w__initial)
+  __ovr_a_w__guess = pop!(__overrides, "a_w.guess", nothing)
   __ovr_a_hat = pop!(__overrides, "a_hat", nothing); isnothing(__ovr_a_hat) || push!(__eqs, a_hat ~ __ovr_a_hat)
-  __ovr_a_hat__initial = pop!(__overrides, "a_hat__initial", nothing); isnothing(__ovr_a_hat__initial) || (__initial_conditions[a_hat] = __ovr_a_hat__initial)
-  __ovr_a_hat__guess = pop!(__overrides, "a_hat__guess", nothing)
+  __ovr_a_hat__initial = pop!(__overrides, "a_hat.initial", nothing); isnothing(__ovr_a_hat__initial) || (__initial_conditions[a_hat] = __ovr_a_hat__initial)
+  __ovr_a_hat__guess = pop!(__overrides, "a_hat.guess", nothing)
   __ovr_a_ref_effective = pop!(__overrides, "a_ref_effective", nothing); isnothing(__ovr_a_ref_effective) || push!(__eqs, a_ref_effective ~ __ovr_a_ref_effective)
-  __ovr_a_ref_effective__initial = pop!(__overrides, "a_ref_effective__initial", nothing); isnothing(__ovr_a_ref_effective__initial) || (__initial_conditions[a_ref_effective] = __ovr_a_ref_effective__initial)
-  __ovr_a_ref_effective__guess = pop!(__overrides, "a_ref_effective__guess", nothing)
+  __ovr_a_ref_effective__initial = pop!(__overrides, "a_ref_effective.initial", nothing); isnothing(__ovr_a_ref_effective__initial) || (__initial_conditions[a_ref_effective] = __ovr_a_ref_effective__initial)
+  __ovr_a_ref_effective__guess = pop!(__overrides, "a_ref_effective.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -125,7 +136,7 @@ Clocked wheel-only reference-speed and slip estimator.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v_ref__guess) || (__guesses[v_ref] = __ovr_v_ref__guess)
@@ -153,6 +164,6 @@ Clocked wheel-only reference-speed and slip estimator.
   push!(__eqs, a_w_out ~ a_w)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSWheelOnlyEstimatorDiscrete

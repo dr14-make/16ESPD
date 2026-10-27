@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   VacuumSourceSelector(; name, use_pump)
+   VacuumSourceSelector(; name, use_pump, __overrides)
 
 Bench hose junction that joins the booster's hose to one vacuum source, the intake manifold or an
 electric pump, chosen by `use_pump`. The source not chosen is cut off and sees no flow.
@@ -38,7 +38,7 @@ Connected ports share `p`, and their `mdot` sum to zero, so the air one end give
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 """
-@component function VacuumSourceSelector(; name = nothing, use_pump=Float64(0.0), kwargs...)
+@component function VacuumSourceSelector(; name = nothing, var"use_pump"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -46,7 +46,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
     @named model = VacuumSourceSelector()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,6 +55,9 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "use_pump") && (use_pump = pop!(__overrides, "use_pump"))
 
   ### Structural Parameters (functions)
 
@@ -71,7 +74,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   ### Symbolic Parameters
   __local__use_pump = use_pump
   append!(__params, @parameters (use_pump::Real), [description = "Vacuum source: 0 the intake manifold, 1 the electric pump"])
-  __initial_conditions[use_pump] = __local__use_pump
+  __dyad_seed_parameter!(__initial_conditions, __bindings, use_pump, __local__use_pump)
 
   ### Final Parameters (assignments)
 
@@ -90,7 +93,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__systems, @named pump = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -105,6 +108,6 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, pump.mdot ~ ifelse(use_pump > 0.5, -booster.mdot, 0.0))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export VacuumSourceSelector

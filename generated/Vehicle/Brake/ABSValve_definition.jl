@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSValve(; name, T_v, return_dump)
+   ABSValve(; name, T_v, return_dump, __overrides)
 
 Ideal per-circuit ABS modulator: the ECU commands the wheel-side pressure it allows, and the valve
 makes the caliper follow it after the solenoid lag `T_v`, never above the master-cylinder pressure.
@@ -37,7 +37,7 @@ to the master cylinder: the pedal is pushed back with every dump, the pulsation 
 | `p_target`         |                          | Pa  |
 | `m_dump`         |                          | kg/s  |
 """
-@component function ABSValve(; name = nothing, T_v=0.03, return_dump=Float64(0), continuity__graph0, kwargs...)
+@component function ABSValve(; name = nothing, var"T_v"=0.03, var"return_dump"=Float64(0), var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,7 +45,7 @@ to the master cylinder: the pedal is pushed back with every dump, the pulsation 
     @named model = ABSValve()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -54,6 +54,10 @@ to the master cylinder: the pedal is pushed back with every dump, the pulsation 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "T_v") && (T_v = pop!(__overrides, "T_v"))
+  haskey(__overrides, "return_dump") && (return_dump = pop!(__overrides, "return_dump"))
 
   ### Structural Parameters (functions)
 
@@ -70,10 +74,10 @@ to the master cylinder: the pedal is pushed back with every dump, the pulsation 
   ### Symbolic Parameters
   __local__T_v = T_v
   append!(__params, @parameters (T_v::Real), [description = "Electronics and solenoid reaction time", bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_v] = __local__T_v
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_v, __local__T_v)
   __local__return_dump = return_dump
   append!(__params, @parameters (return_dump::Real), [description = "Dumped fluid: 0 leaves the model, 1 returns to the master-cylinder side"])
-  __initial_conditions[return_dump] = __local__return_dump
+  __dyad_seed_parameter!(__initial_conditions, __bindings, return_dump, __local__return_dump)
 
   ### Final Parameters (assignments)
 
@@ -89,14 +93,14 @@ to the master cylinder: the pedal is pushed back with every dump, the pulsation 
 
   ### Variables (assignments)
   __ovr_p_delayed = pop!(__overrides, "p_delayed", nothing); isnothing(__ovr_p_delayed) || push!(__eqs, p_delayed ~ __ovr_p_delayed)
-  __ovr_p_delayed__initial = pop!(__overrides, "p_delayed__initial", nothing); isnothing(__ovr_p_delayed__initial) || (__initial_conditions[p_delayed] = __ovr_p_delayed__initial)
-  __ovr_p_delayed__guess = pop!(__overrides, "p_delayed__guess", nothing)
+  __ovr_p_delayed__initial = pop!(__overrides, "p_delayed.initial", nothing); isnothing(__ovr_p_delayed__initial) || (__initial_conditions[p_delayed] = __ovr_p_delayed__initial)
+  __ovr_p_delayed__guess = pop!(__overrides, "p_delayed.guess", nothing)
   __ovr_p_target = pop!(__overrides, "p_target", nothing); isnothing(__ovr_p_target) || push!(__eqs, p_target ~ __ovr_p_target)
-  __ovr_p_target__initial = pop!(__overrides, "p_target__initial", nothing); isnothing(__ovr_p_target__initial) || (__initial_conditions[p_target] = __ovr_p_target__initial)
-  __ovr_p_target__guess = pop!(__overrides, "p_target__guess", nothing)
+  __ovr_p_target__initial = pop!(__overrides, "p_target.initial", nothing); isnothing(__ovr_p_target__initial) || (__initial_conditions[p_target] = __ovr_p_target__initial)
+  __ovr_p_target__guess = pop!(__overrides, "p_target.guess", nothing)
   __ovr_m_dump = pop!(__overrides, "m_dump", nothing); isnothing(__ovr_m_dump) || push!(__eqs, m_dump ~ __ovr_m_dump)
-  __ovr_m_dump__initial = pop!(__overrides, "m_dump__initial", nothing); isnothing(__ovr_m_dump__initial) || (__initial_conditions[m_dump] = __ovr_m_dump__initial)
-  __ovr_m_dump__guess = pop!(__overrides, "m_dump__guess", nothing)
+  __ovr_m_dump__initial = pop!(__overrides, "m_dump.initial", nothing); isnothing(__ovr_m_dump__initial) || (__initial_conditions[m_dump] = __ovr_m_dump__initial)
+  __ovr_m_dump__guess = pop!(__overrides, "m_dump.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -106,7 +110,7 @@ to the master cylinder: the pedal is pushed back with every dump, the pulsation 
   push!(__systems, @named port_b = HydraulicComponents.Interfaces.Port())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_p_delayed__guess) || (__guesses[p_delayed] = __ovr_p_delayed__guess)
@@ -127,6 +131,6 @@ to the master cylinder: the pedal is pushed back with every dump, the pulsation 
   push!(__eqs, m_dump ~ port_a.m_flow + port_b.m_flow)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSValve

@@ -285,7 +285,8 @@ end
     @test idle.before ≈ 33.0 atol = 0.05
     @test idle.after ≈ 37.3 atol = 0.05
 
-    open_3000 = air_path_step_kpa(speed__k = 314.159, throttle_cmd__height = 1.0)
+    open_3000 = air_path_step_kpa(
+        __overrides = Dict("speed.k" => 314.159, "throttle_cmd.height" => 1.0))
     @test open_3000.before ≈ 13.5 atol = 0.05
     @test open_3000.after ≈ 99.9 atol = 0.05
 end

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   MappedCarWithBrake(; name, ratio_initial)
+   MappedCarWithBrake(; name, ratio_initial, __overrides)
 
 Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the road.
 
@@ -23,7 +23,7 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
  * `p_m` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `fuel_lph` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function MappedCarWithBrake(; name = nothing, ratio_initial=Float64(12), kwargs...)
+@component function MappedCarWithBrake(; name = nothing, var"ratio_initial"=Float64(12), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -31,7 +31,7 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
     @named model = MappedCarWithBrake()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -40,6 +40,9 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "ratio_initial") && (ratio_initial = pop!(__overrides, "ratio_initial"))
 
   ### Structural Parameters (functions)
 
@@ -56,7 +59,7 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
   ### Symbolic Parameters
   __local__ratio_initial = ratio_initial
   append!(__params, @parameters (ratio_initial::Real), [description = "Initial CVT ratio, engine to wheel; 12 is CVTDriveline's launch setting"])
-  __initial_conditions[ratio_initial] = __local__ratio_initial
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ratio_initial, __local__ratio_initial)
 
   ### Final Parameters (assignments)
 
@@ -77,37 +80,37 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
   ### Components
   # Subcomponent engine of type VehicleSystemsComponents.HandsOn02.MapEngineFuelCut
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; __overrides = engine_overrides))
   # Subcomponent flywheel of type RotationalComponents.Components.Inertia
   flywheel_overrides = __pop_subcomponent_overrides!(__overrides, "flywheel")
-  push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, flywheel_overrides...))
+  push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, __overrides = flywheel_overrides))
   # Subcomponent to_lph of type BlockComponents.Math.Gain
   to_lph_overrides = __pop_subcomponent_overrides!(__overrides, "to_lph")
-  push!(__systems, @named to_lph = BlockComponents.Math.Gain(; k=4832.2, to_lph_overrides...))
+  push!(__systems, @named to_lph = BlockComponents.Math.Gain(; k=4832.2, __overrides = to_lph_overrides))
   # Subcomponent driveline of type VehicleSystemsComponents.Vehicle.CVTDriveline
   driveline_overrides = __pop_subcomponent_overrides!(__overrides, "driveline")
-  push!(__systems, @named driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(; ratio_initial=ratio_initial, driveline_overrides...))
+  push!(__systems, @named driveline = VehicleSystemsComponents.Vehicle.CVTDriveline(; ratio_initial=ratio_initial, __overrides = driveline_overrides))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; __overrides = body_overrides))
   # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
   vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
-  push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
+  push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; __overrides = vsensor_overrides))
   # Subcomponent to_kmh of type BlockComponents.Math.Gain
   to_kmh_overrides = __pop_subcomponent_overrides!(__overrides, "to_kmh")
-  push!(__systems, @named to_kmh = BlockComponents.Math.Gain(; k=3.6, to_kmh_overrides...))
+  push!(__systems, @named to_kmh = BlockComponents.Math.Gain(; k=3.6, __overrides = to_kmh_overrides))
   # Subcomponent brake of type VehicleSystemsComponents.Vehicle.RoadBrake
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.RoadBrake(; brake_overrides...))
+  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.RoadBrake(; __overrides = brake_overrides))
   # Subcomponent rot_ground of type RotationalComponents.Components.Fixed
   rot_ground_overrides = __pop_subcomponent_overrides!(__overrides, "rot_ground")
-  push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; rot_ground_overrides...))
+  push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; __overrides = rot_ground_overrides))
   # Subcomponent trans_ground of type TranslationalComponents.Components.Fixed
   trans_ground_overrides = __pop_subcomponent_overrides!(__overrides, "trans_ground")
-  push!(__systems, @named trans_ground = TranslationalComponents.Components.Fixed(; trans_ground_overrides...))
+  push!(__systems, @named trans_ground = TranslationalComponents.Components.Fixed(; __overrides = trans_ground_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -136,6 +139,6 @@ Hands-on 02 step 06 B: `MappedCar` with a service brake between the body and the
   push!(__eqs, connect(brake.support, trans_ground.flange))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export MappedCarWithBrake

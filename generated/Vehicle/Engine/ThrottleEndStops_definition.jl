@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ThrottleEndStops(; name, phi_min, phi_max, c, d)
+   ThrottleEndStops(; name, phi_min, phi_max, c, d, __overrides)
 
 The two mechanical end stops of a throttle plate: closed at `phi_min`, wide open at `phi_max`.
 
@@ -44,7 +44,7 @@ stiffness and damping are assumed.
 | `w_rel`         | Relative angular velocity                         | rad/s  |
 | `tau_c`         | Spring part of the contact torque                         | N.m  |
 """
-@component function ThrottleEndStops(; name = nothing, phi_min=Float64(0.0), phi_max=1.448623, c=Float64(100.0), d=0.5, kwargs...)
+@component function ThrottleEndStops(; name = nothing, var"phi_min"=Float64(0.0), var"phi_max"=1.448623, var"c"=Float64(100.0), var"d"=0.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -52,7 +52,7 @@ stiffness and damping are assumed.
     @named model = ThrottleEndStops()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -61,6 +61,12 @@ stiffness and damping are assumed.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "phi_min") && (phi_min = pop!(__overrides, "phi_min"))
+  haskey(__overrides, "phi_max") && (phi_max = pop!(__overrides, "phi_max"))
+  haskey(__overrides, "c") && (c = pop!(__overrides, "c"))
+  haskey(__overrides, "d") && (d = pop!(__overrides, "d"))
 
   ### Structural Parameters (functions)
 
@@ -77,16 +83,16 @@ stiffness and damping are assumed.
   ### Symbolic Parameters
   __local__phi_min = phi_min
   append!(__params, @parameters (phi_min::Real), [description = "Closed stop (assumed at the angle origin)"])
-  __initial_conditions[phi_min] = __local__phi_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_min, __local__phi_min)
   __local__phi_max = phi_max
   append!(__params, @parameters (phi_max::Real), [description = "Wide-open stop, 83 deg of plate travel (the Throttle's 7 to 90 deg)"])
-  __initial_conditions[phi_max] = __local__phi_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_max, __local__phi_max)
   __local__c = c
   append!(__params, @parameters (c::Real), [description = "Stop stiffness (assumed)"])
-  __initial_conditions[c] = __local__c
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c, __local__c)
   __local__d = d
   append!(__params, @parameters (d::Real), [description = "Stop damping (assumed)"])
-  __initial_conditions[d] = __local__d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, d, __local__d)
 
   ### Final Parameters (assignments)
 
@@ -100,17 +106,17 @@ stiffness and damping are assumed.
 
   ### Variables (assignments)
   __ovr_phi_rel = pop!(__overrides, "phi_rel", nothing); isnothing(__ovr_phi_rel) || push!(__eqs, phi_rel ~ __ovr_phi_rel)
-  __ovr_phi_rel__initial = pop!(__overrides, "phi_rel__initial", nothing); isnothing(__ovr_phi_rel__initial) || (__initial_conditions[phi_rel] = __ovr_phi_rel__initial)
-  __ovr_phi_rel__guess = pop!(__overrides, "phi_rel__guess", nothing)
+  __ovr_phi_rel__initial = pop!(__overrides, "phi_rel.initial", nothing); isnothing(__ovr_phi_rel__initial) || (__initial_conditions[phi_rel] = __ovr_phi_rel__initial)
+  __ovr_phi_rel__guess = pop!(__overrides, "phi_rel.guess", nothing)
   __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
-  __ovr_tau__initial = pop!(__overrides, "tau__initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
-  __ovr_tau__guess = pop!(__overrides, "tau__guess", nothing)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
   __ovr_w_rel = pop!(__overrides, "w_rel", nothing); isnothing(__ovr_w_rel) || push!(__eqs, w_rel ~ __ovr_w_rel)
-  __ovr_w_rel__initial = pop!(__overrides, "w_rel__initial", nothing); isnothing(__ovr_w_rel__initial) || (__initial_conditions[w_rel] = __ovr_w_rel__initial)
-  __ovr_w_rel__guess = pop!(__overrides, "w_rel__guess", nothing)
+  __ovr_w_rel__initial = pop!(__overrides, "w_rel.initial", nothing); isnothing(__ovr_w_rel__initial) || (__initial_conditions[w_rel] = __ovr_w_rel__initial)
+  __ovr_w_rel__guess = pop!(__overrides, "w_rel.guess", nothing)
   __ovr_tau_c = pop!(__overrides, "tau_c", nothing); isnothing(__ovr_tau_c) || push!(__eqs, tau_c ~ __ovr_tau_c)
-  __ovr_tau_c__initial = pop!(__overrides, "tau_c__initial", nothing); isnothing(__ovr_tau_c__initial) || (__initial_conditions[tau_c] = __ovr_tau_c__initial)
-  __ovr_tau_c__guess = pop!(__overrides, "tau_c__guess", nothing)
+  __ovr_tau_c__initial = pop!(__overrides, "tau_c.initial", nothing); isnothing(__ovr_tau_c__initial) || (__initial_conditions[tau_c] = __ovr_tau_c__initial)
+  __ovr_tau_c__guess = pop!(__overrides, "tau_c.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -120,7 +126,7 @@ stiffness and damping are assumed.
   push!(__systems, @named spline_b = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_phi_rel__guess) || (__guesses[phi_rel] = __ovr_phi_rel__guess)
@@ -142,6 +148,6 @@ stiffness and damping are assumed.
   push!(__eqs, tau ~ ifelse(phi_rel < phi_min, min(max(tau_c + d * w_rel, 2 * tau_c), 0), ifelse(phi_rel > phi_max, max(min(tau_c + d * w_rel, 2 * tau_c), 0), 0)))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ThrottleEndStops

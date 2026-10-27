@@ -257,15 +257,32 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   only took effect when an unrelated build triggered a recompile. After any `.dyad` edit,
   confirm the change appears in the matching `generated/` file before trusting a test result.
 - **Compile with the CLI release that matches `[dyad] kernel` in `Project.toml`.** The command
-  is `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` from the repository root; bump the
-  version together with the kernel pin. The package lives on the GitHub npm registry, so
-  `~/.npmrc` needs a token with `read:packages` for the `@juliacomputing` scope (see the
+  is `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` from the repository root; bump the
+  version together with the kernel pin. Kernel 3.5.1 has no CLI release of its own: Dyad 3.5.1
+  fixed only Dyad Studio and ships the 3.5.0 compiler. The package lives on the GitHub npm
+  registry, so `~/.npmrc` needs a token with `read:packages` for the `@juliacomputing` scope (see the
   dyad-lang `apps/cli/README.md`). Recompiling an unchanged checkout must leave `git status`
   clean; that is the check that the compiler is the right one. Older CLIs on this machine fail
   on the 3.4 standard libraries rather than on our code: `~/.dyad-maxwell/dyad-lang/apps/cli/dyad`
   is a 1.1 prerelease and dies in `ElectricalComponents` ("Expected module Analog/Basic/Tests"),
   and `~/julia/dyad-lang/apps/cli/dyad` is a 3.2.0 build that rejects `DiscreteComponents`
   0.5 (`Unknown element x0 in definition InitialCondition`).
+- **On Dyad 3.5, the planar car is wrong unless its analysis sets `optimize =
+  OptimizationLevel.None()`.** The default, `Aggressive`, rewrites each small linear block into
+  `DyadCompilerPasses.linear_solve`, which returns one shared buffer per block size. The planar
+  car has four identical 2×2 blocks (one per corner), so every corner reads the last corner's
+  tire force: no error, `retcode = Success`, and the sine-with-dwell yaw peak drops from 0.214
+  to 0.078 rad/s. These analyses therefore set `optimize = OptimizationLevel.None()`:
+  `PlanarOpenLoopTransient`, `SineWithDwellRunTransient`, `ESPSineWithDwellTransient`,
+  `ESPSteerRampTransient`, `SplitMuStopTransient`, `BrakeAndSteerTransient` and
+  `ABSStraightStopTransient`. A new analysis of a model with repeated identical algebraic loops
+  needs the same line; compare a run at `None` against `Aggressive` to tell. Do not set it
+  everywhere: `ThrottlePedalStepTransient` starts the throttle at the wrong position under
+  `None` and is correct under the default. The generated tests cannot take the setting, so the
+  generated Lecture 3 tests for these models fail on 3.5 (3992 of 7749 checks) until the fix
+  ships. Upstream: JuliaComputing/DyadCompilerPasses.jl#114, fix in draft PR #153 (unreleased
+  as of DyadCompilerPasses 0.3.11). When a Dyad release carries it, drop the setting and rerun
+  the suite.
 - **A clocked variable reads back as its last value.** `sol(t, idxs = controller.y)` on a
   variable of the discrete partition returns the value from the final tick for every `t`, with
   no error. Read the held, continuous-time side instead (`hold.y` after a `ZeroOrderHold`), in

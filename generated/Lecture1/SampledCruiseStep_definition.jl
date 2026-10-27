@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SampledCruiseStep(; name, theta_e, with_I, with_D, Ts, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, v_lo, v_hi, v0, tau0, t_step)
+   SampledCruiseStep(; name, theta_e, with_I, with_D, Ts, k, Ti, Td, Nd, Ni, T_max, y_max, y_min, wp, wd, v_lo, v_hi, v0, tau0, t_step, __overrides)
 
 Flat-road 90 to 110 km/h setpoint step for `SampledCruiseLoop`.
 
@@ -36,7 +36,7 @@ and observe the effects of controller discretization and sample-and-hold delay.
 | `tau0`         |                          | N.m  |   31.078 |
 | `t_step`         |                          | s  |   0.0 |
 """
-@component function SampledCruiseStep(; name = nothing, theta_e=0.3, with_I=false, with_D=false, Ts=0.1, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), Ni=0.9, T_max=Float64(150.0), y_min=Float64(0.0), wp=Float64(1.0), wd=Float64(1.0), v_lo=Float64(90.0), v_hi=Float64(110.0), v0=Float64(25.0), tau0=31.078, t_step=Float64(0.0), y_max=T_max, kwargs...)
+@component function SampledCruiseStep(; name = nothing, var"theta_e"=0.3, var"with_I"=false, var"with_D"=false, var"Ts"=0.1, var"k"=Float64(56.0), var"Ti"=Float64(10.0), var"Td"=0.1, var"Nd"=Float64(10.0), var"Ni"=0.9, var"T_max"=Float64(150.0), var"y_min"=Float64(0.0), var"wp"=Float64(1.0), var"wd"=Float64(1.0), var"v_lo"=Float64(90.0), var"v_hi"=Float64(110.0), var"v0"=Float64(25.0), var"tau0"=31.078, var"t_step"=Float64(0.0), var"y_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -44,7 +44,7 @@ and observe the effects of controller discretization and sample-and-hold delay.
     @named model = SampledCruiseStep()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,6 +53,30 @@ and observe the effects of controller discretization and sample-and-hold delay.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "theta_e") && (theta_e = pop!(__overrides, "theta_e"))
+  haskey(__overrides, "with_I") && (with_I = pop!(__overrides, "with_I"))
+  haskey(__overrides, "with_D") && (with_D = pop!(__overrides, "with_D"))
+  haskey(__overrides, "Ts") && (Ts = pop!(__overrides, "Ts"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
+  haskey(__overrides, "Td") && (Td = pop!(__overrides, "Td"))
+  haskey(__overrides, "Nd") && (Nd = pop!(__overrides, "Nd"))
+  haskey(__overrides, "Ni") && (Ni = pop!(__overrides, "Ni"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "y_min") && (y_min = pop!(__overrides, "y_min"))
+  haskey(__overrides, "wp") && (wp = pop!(__overrides, "wp"))
+  haskey(__overrides, "wd") && (wd = pop!(__overrides, "wd"))
+  haskey(__overrides, "v_lo") && (v_lo = pop!(__overrides, "v_lo"))
+  haskey(__overrides, "v_hi") && (v_hi = pop!(__overrides, "v_hi"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "tau0") && (tau0 = pop!(__overrides, "tau0"))
+  haskey(__overrides, "t_step") && (t_step = pop!(__overrides, "t_step"))
+  haskey(__overrides, "y_max") && (y_max = pop!(__overrides, "y_max"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(y_max) && (y_max = T_max)
 
   ### Structural Parameters (functions)
 
@@ -69,49 +93,49 @@ and observe the effects of controller discretization and sample-and-hold delay.
   ### Symbolic Parameters
   __local__k = k
   append!(__params, @parameters (k::Real))
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real))
-  __initial_conditions[Ti] = __local__Ti
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__Td = Td
   append!(__params, @parameters (Td::Real))
-  __initial_conditions[Td] = __local__Td
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Td, __local__Td)
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
-  __initial_conditions[Nd] = __local__Nd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Nd, __local__Nd)
   __local__Ni = Ni
   append!(__params, @parameters (Ni::Real))
-  __initial_conditions[Ni] = __local__Ni
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ni, __local__Ni)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__y_max = y_max
   append!(__params, @parameters (y_max::Real))
-  __initial_conditions[y_max] = __local__y_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_max, __local__y_max)
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
-  __initial_conditions[y_min] = __local__y_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_min, __local__y_min)
   __local__wp = wp
   append!(__params, @parameters (wp::Real))
-  __initial_conditions[wp] = __local__wp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wp, __local__wp)
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
-  __initial_conditions[wd] = __local__wd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wd, __local__wd)
   __local__v_lo = v_lo
   append!(__params, @parameters (v_lo::Real))
-  __initial_conditions[v_lo] = __local__v_lo
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_lo, __local__v_lo)
   __local__v_hi = v_hi
   append!(__params, @parameters (v_hi::Real))
-  __initial_conditions[v_hi] = __local__v_hi
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_hi, __local__v_hi)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__tau0 = tau0
   append!(__params, @parameters (tau0::Real))
-  __initial_conditions[tau0] = __local__tau0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau0, __local__tau0)
   __local__t_step = t_step
   append!(__params, @parameters (t_step::Real))
-  __initial_conditions[t_step] = __local__t_step
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_step, __local__t_step)
 
   ### Final Parameters (assignments)
 
@@ -127,16 +151,16 @@ and observe the effects of controller discretization and sample-and-hold delay.
   ### Components
   # Subcomponent loop of type VehicleSystemsComponents.Lecture1.SampledCruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.SampledCruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, Ts=Ts, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m0=v_lo, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.SampledCruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, Ts=Ts, k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, m0=v_lo, __overrides = loop_overrides))
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=v_lo, height=v_hi - v_lo, start_time=t_step, demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=v_lo, height=v_hi - v_lo, start_time=t_step, __overrides = demand_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0.0), road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = road_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -153,6 +177,6 @@ and observe the effects of controller discretization and sample-and-hold delay.
   push!(__eqs, connect(road.y, loop.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SampledCruiseStep

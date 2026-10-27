@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestHydraulicStop(; name, pedal, road_mu)
+   TestHydraulicStop(; name, pedal, road_mu, __overrides)
 
 ## Parameters:
 
@@ -14,7 +14,7 @@
 | `pedal`         |                          | --  |   0.6 |
 | `road_mu`         |                          | --  |   1.0 |
 """
-@component function TestHydraulicStop(; name = nothing, pedal=0.6, road_mu=Float64(1.0), medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
+@component function TestHydraulicStop(; name = nothing, var"pedal"=0.6, var"road_mu"=Float64(1.0), var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -22,7 +22,7 @@
     @named model = TestHydraulicStop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -31,6 +31,11 @@
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "pedal") && (pedal = pop!(__overrides, "pedal"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
+  haskey(__overrides, "medium") && (medium = pop!(__overrides, "medium"))
 
   ### Structural Parameters (functions)
 
@@ -48,10 +53,10 @@
   ### Symbolic Parameters
   __local__pedal = pedal
   append!(__params, @parameters (pedal::Real))
-  __initial_conditions[pedal] = __local__pedal
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal, __local__pedal)
   __local__road_mu = road_mu
   append!(__params, @parameters (road_mu::Real))
-  __initial_conditions[road_mu] = __local__road_mu
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
 
   ### Final Parameters (assignments)
 
@@ -67,40 +72,40 @@
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Step(; height=pedal, offset=Float64(0.0), start_time=0.5, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Step(; height=pedal, offset=Float64(0.0), start_time=0.5, __overrides = command_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, __overrides = road_overrides))
   # Subcomponent pedal_unit of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
   pedal_unit_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_unit")
-  push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; pedal_unit_overrides...))
+  push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; __overrides = pedal_unit_overrides))
   # Subcomponent booster of type VehicleSystemsComponents.Vehicle.Brake.StaticBooster
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster(; booster_overrides...))
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster(; __overrides = booster_overrides))
   # Subcomponent master of type VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder
   master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
-  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
+  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, __overrides = master_overrides))
   # Subcomponent line_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
-  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, line_f_overrides...))
+  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, __overrides = line_f_overrides))
   # Subcomponent line_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_r_overrides = __pop_subcomponent_overrides!(__overrides, "line_r")
-  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, line_r_overrides...))
+  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, __overrides = line_r_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; continuity__graph0=medium, continuity__graph1=medium, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; continuity__graph0=medium, continuity__graph1=medium, __overrides = wheel_overrides))
   # Subcomponent body of type TranslationalComponents.Components.Mass
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = TranslationalComponents.Components.Mass(; m=Float64(1400.0), body_overrides...))
+  push!(__systems, @named body = TranslationalComponents.Components.Mass(; m=Float64(1400.0), __overrides = body_overrides))
   # Subcomponent fixed_t of type TranslationalComponents.Components.Fixed
   fixed_t_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_t")
-  push!(__systems, @named fixed_t = TranslationalComponents.Components.Fixed(; fixed_t_overrides...))
+  push!(__systems, @named fixed_t = TranslationalComponents.Components.Fixed(; __overrides = fixed_t_overrides))
   # Subcomponent fixed_r of type RotationalComponents.Components.Fixed
   fixed_r_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_r")
-  push!(__systems, @named fixed_r = RotationalComponents.Components.Fixed(; fixed_r_overrides...))
+  push!(__systems, @named fixed_r = RotationalComponents.Components.Fixed(; __overrides = fixed_r_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -127,6 +132,6 @@
   push!(__eqs, connect(wheel.flange, body.flange_a))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestHydraulicStop

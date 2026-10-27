@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ThrottleSensorSweep(; name, phi_from, phi_to, duration, R_wiper1)
+   ThrottleSensorSweep(; name, phi_from, phi_to, duration, R_wiper1, __overrides)
 
 The throttle position sensor's characteristic: the plate angle swept slowly past both stops while
 the ECU reads both tracks.
@@ -23,7 +23,7 @@ so time only orders the angles; each instant is a static point of the characteri
 | `duration`         | Sweep duration                         | s  |   1.0 |
 | `R_wiper1`         | Track 1 wiper contact resistance                         | Ω  |   10.0 |
 """
-@component function ThrottleSensorSweep(; name = nothing, phi_from=-0.0872665, phi_to=1.53589, duration=Float64(1.0), R_wiper1=Float64(10.0), kwargs...)
+@component function ThrottleSensorSweep(; name = nothing, var"phi_from"=-0.0872665, var"phi_to"=1.53589, var"duration"=Float64(1.0), var"R_wiper1"=Float64(10.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -31,7 +31,7 @@ so time only orders the angles; each instant is a static point of the characteri
     @named model = ThrottleSensorSweep()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -40,6 +40,12 @@ so time only orders the angles; each instant is a static point of the characteri
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "phi_from") && (phi_from = pop!(__overrides, "phi_from"))
+  haskey(__overrides, "phi_to") && (phi_to = pop!(__overrides, "phi_to"))
+  haskey(__overrides, "duration") && (duration = pop!(__overrides, "duration"))
+  haskey(__overrides, "R_wiper1") && (R_wiper1 = pop!(__overrides, "R_wiper1"))
 
   ### Structural Parameters (functions)
 
@@ -56,16 +62,16 @@ so time only orders the angles; each instant is a static point of the characteri
   ### Symbolic Parameters
   __local__phi_from = phi_from
   append!(__params, @parameters (phi_from::Real), [description = "Plate angle at the start of the sweep, 5 deg before the closed stop"])
-  __initial_conditions[phi_from] = __local__phi_from
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_from, __local__phi_from)
   __local__phi_to = phi_to
   append!(__params, @parameters (phi_to::Real), [description = "Plate angle at the end of the sweep, 5 deg past wide open"])
-  __initial_conditions[phi_to] = __local__phi_to
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_to, __local__phi_to)
   __local__duration = duration
   append!(__params, @parameters (duration::Real), [description = "Sweep duration"])
-  __initial_conditions[duration] = __local__duration
+  __dyad_seed_parameter!(__initial_conditions, __bindings, duration, __local__duration)
   __local__R_wiper1 = R_wiper1
   append!(__params, @parameters (R_wiper1::Real), [description = "Track 1 wiper contact resistance"])
-  __initial_conditions[R_wiper1] = __local__R_wiper1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_wiper1, __local__R_wiper1)
 
   ### Final Parameters (assignments)
 
@@ -81,16 +87,16 @@ so time only orders the angles; each instant is a static point of the characteri
   ### Components
   # Subcomponent angle of type BlockComponents.Sources.Ramp
   angle_overrides = __pop_subcomponent_overrides!(__overrides, "angle")
-  push!(__systems, @named angle = BlockComponents.Sources.Ramp(; offset=phi_from, height=phi_to - phi_from, duration=duration, start_time=Float64(0), angle_overrides...))
+  push!(__systems, @named angle = BlockComponents.Sources.Ramp(; offset=phi_from, height=phi_to - phi_from, duration=duration, start_time=Float64(0), __overrides = angle_overrides))
   # Subcomponent tps of type VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor
   tps_overrides = __pop_subcomponent_overrides!(__overrides, "tps")
-  push!(__systems, @named tps = VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor(; R_wiper1=R_wiper1, tps_overrides...))
+  push!(__systems, @named tps = VehicleSystemsComponents.Vehicle.Engine.ThrottlePositionSensor(; R_wiper1=R_wiper1, __overrides = tps_overrides))
   # Subcomponent track_sum of type BlockComponents.Math.Add
   track_sum_overrides = __pop_subcomponent_overrides!(__overrides, "track_sum")
-  push!(__systems, @named track_sum = BlockComponents.Math.Add(; track_sum_overrides...))
+  push!(__systems, @named track_sum = BlockComponents.Math.Add(; __overrides = track_sum_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -105,6 +111,6 @@ so time only orders the angles; each instant is a static point of the characteri
   push!(__eqs, connect(tps.V2, track_sum.u2))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ThrottleSensorSweep

@@ -1,5 +1,5 @@
 # Parameter-override runs at road_mu = 0.3 behind docs/abs-efficiency-research.md.
-# Run from the repo root: julia +dyad-3.4.0 --project=. scripts/abs_snow_overrides.jl
+# Run from the repo root: julia +dyad-3.5.0 --project=. scripts/abs_snow_overrides.jl
 using VehicleSystemsComponents, ModelingToolkit
 using UUIDs
 const OT = Base.require(Base.PkgId(UUID("b1df2697-797e-41e3-8120-5422d3b24e4a"), "OrdinaryDiffEqTsit5"))

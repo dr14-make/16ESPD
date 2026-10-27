@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   OnOff(; name, on)
+   OnOff(; name, on, __overrides)
 
 Passes the signal through when `on`, outputs zero when off.
 
@@ -20,7 +20,7 @@ Passes the signal through when `on`, outputs zero when off.
  * `u` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function OnOff(; name = nothing, on=true, kwargs...)
+@component function OnOff(; name = nothing, var"on"=true, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -28,7 +28,7 @@ Passes the signal through when `on`, outputs zero when off.
     @named model = OnOff()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -37,6 +37,9 @@ Passes the signal through when `on`, outputs zero when off.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "on") && (on = pop!(__overrides, "on"))
 
   ### Structural Parameters (functions)
 
@@ -53,7 +56,7 @@ Passes the signal through when `on`, outputs zero when off.
   ### Symbolic Parameters
   __local__on = on
   append!(__params, @parameters (on::Bool), [description = "Pass the signal through"])
-  __initial_conditions[on] = __local__on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, on, __local__on)
 
   ### Final Parameters (assignments)
 
@@ -71,7 +74,7 @@ Passes the signal through when `on`, outputs zero when off.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -84,6 +87,6 @@ Passes the signal through when `on`, outputs zero when off.
   push!(__eqs, y ~ ifelse(on, u, 0))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export OnOff

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RefSpeedEstimator(; name, radius, a_ref, v0, T_up, v_eps, T_f)
+   RefSpeedEstimator(; name, radius, a_ref, v0, T_up, v_eps, T_f, __overrides)
 
 Hands-on 03 step 04: what an ECU reads from a wheel-speed sensor. The car's speed: while the
 wheel turns faster than the estimate, the estimate follows it within `T_up`; otherwise it falls
@@ -37,7 +37,7 @@ And the wheel's own acceleration, a derivative filtered over `T_f`, which needs 
 | `v_w`         |                          | m/s  |
 | `v_f`         |                          | m/s  |
 """
-@component function RefSpeedEstimator(; name = nothing, radius=0.31, a_ref=Float64(8), v0=Float64(25), T_up=0.01, v_eps=0.5, T_f=0.005, kwargs...)
+@component function RefSpeedEstimator(; name = nothing, var"radius"=0.31, var"a_ref"=Float64(8), var"v0"=Float64(25), var"T_up"=0.01, var"v_eps"=0.5, var"T_f"=0.005, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,7 +45,7 @@ And the wheel's own acceleration, a derivative filtered over `T_f`, which needs 
     @named model = RefSpeedEstimator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -54,6 +54,14 @@ And the wheel's own acceleration, a derivative filtered over `T_f`, which needs 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "a_ref") && (a_ref = pop!(__overrides, "a_ref"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "T_up") && (T_up = pop!(__overrides, "T_up"))
+  haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
+  haskey(__overrides, "T_f") && (T_f = pop!(__overrides, "T_f"))
 
   ### Structural Parameters (functions)
 
@@ -70,22 +78,22 @@ And the wheel's own acceleration, a derivative filtered over `T_f`, which needs 
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__a_ref = a_ref
   append!(__params, @parameters (a_ref::Real), [description = "Assumed deceleration while the wheel slips"])
-  __initial_conditions[a_ref] = __local__a_ref
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a_ref, __local__a_ref)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real), [description = "Speed at the start"])
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__T_up = T_up
   append!(__params, @parameters (T_up::Real), [description = "Time constant of following the wheel up"])
-  __initial_conditions[T_up] = __local__T_up
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_up, __local__T_up)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [description = "Floor on the speed the slip is divided by"])
-  __initial_conditions[v_eps] = __local__v_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
   __local__T_f = T_f
   append!(__params, @parameters (T_f::Real), [description = "Wheel-acceleration filter"])
-  __initial_conditions[T_f] = __local__T_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_f, __local__T_f)
 
   ### Final Parameters (assignments)
 
@@ -101,11 +109,11 @@ And the wheel's own acceleration, a derivative filtered over `T_f`, which needs 
 
   ### Variables (assignments)
   __ovr_v_w = pop!(__overrides, "v_w", nothing); isnothing(__ovr_v_w) || push!(__eqs, v_w ~ __ovr_v_w)
-  __ovr_v_w__initial = pop!(__overrides, "v_w__initial", nothing); isnothing(__ovr_v_w__initial) || (__initial_conditions[v_w] = __ovr_v_w__initial)
-  __ovr_v_w__guess = pop!(__overrides, "v_w__guess", nothing)
+  __ovr_v_w__initial = pop!(__overrides, "v_w.initial", nothing); isnothing(__ovr_v_w__initial) || (__initial_conditions[v_w] = __ovr_v_w__initial)
+  __ovr_v_w__guess = pop!(__overrides, "v_w.guess", nothing)
   __ovr_v_f = pop!(__overrides, "v_f", nothing); isnothing(__ovr_v_f) || push!(__eqs, v_f ~ __ovr_v_f)
-  __ovr_v_f__initial = pop!(__overrides, "v_f__initial", nothing); isnothing(__ovr_v_f__initial) || (__initial_conditions[v_f] = __ovr_v_f__initial)
-  __ovr_v_f__guess = pop!(__overrides, "v_f__guess", nothing)
+  __ovr_v_f__initial = pop!(__overrides, "v_f.initial", nothing); isnothing(__ovr_v_f__initial) || (__initial_conditions[v_f] = __ovr_v_f__initial)
+  __ovr_v_f__guess = pop!(__overrides, "v_f.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -113,7 +121,7 @@ And the wheel's own acceleration, a derivative filtered over `T_f`, which needs 
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v_w__guess) || (__guesses[v_w] = __ovr_v_w__guess)
@@ -134,6 +142,6 @@ And the wheel's own acceleration, a derivative filtered over `T_f`, which needs 
   push!(__eqs, a_w ~ (v_w - v_f) / T_f)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export RefSpeedEstimator

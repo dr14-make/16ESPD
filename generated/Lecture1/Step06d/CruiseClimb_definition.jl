@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   CruiseClimb(; name)
+   CruiseClimb(; name, __overrides)
 
 Step 6c: a 130 km/h cruise into a 120 s, 10 % climb, here with the clamping controller.
 """
-@component function CruiseClimb(; name = nothing, kwargs...)
+@component function CruiseClimb(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Step 6c: a 130 km/h cruise into a 120 s, 10 % climb, here with the clamping cont
     @named model = CruiseClimb()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,19 +55,19 @@ Step 6c: a 130 km/h cruise into a 120 s, 10 % climb, here with the clamping cont
   ### Components
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(130), demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(130), __overrides = demand_overrides))
   # Subcomponent controller of type VehicleSystemsComponents.Lecture1.Step06d.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.Step06d.CruiseController(; y_max=Float64(150), y_min=Float64(0), xd0=Float64(-130), controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.Step06d.CruiseController(; y_max=Float64(150), y_min=Float64(0), xd0=Float64(-130), __overrides = controller_overrides))
   # Subcomponent plant of type VehicleSystemsComponents.Lecture1.Step06d.GradeCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Lecture1.Step06d.GradeCar(; plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.Lecture1.Step06d.GradeCar(; __overrides = plant_overrides))
   # Subcomponent road of type BlockComponents.Sources.Pulse
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Pulse(; amplitude=0.1, offset=Float64(0), start_time=Float64(30), duty_cycle=Float64(1.0), period=Float64(120), road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Pulse(; amplitude=0.1, offset=Float64(0), start_time=Float64(30), duty_cycle=Float64(1.0), period=Float64(120), __overrides = road_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -86,6 +86,6 @@ Step 6c: a 130 km/h cruise into a 120 s, 10 % climb, here with the clamping cont
   push!(__eqs, connect(road.y, plant.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CruiseClimb

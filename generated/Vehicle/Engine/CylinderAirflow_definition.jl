@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CylinderAirflow(; name, V_d, T_m, R, c0, c1, c2, k, p_ref, n_min, n_max)
+   CylinderAirflow(; name, V_d, T_m, R, c0, c1, c2, k, p_ref, n_min, n_max, __overrides)
 
 Air drawn by the cylinders, by speed-density: a four-stroke fills its displacement once every
 two revolutions.
@@ -48,7 +48,7 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
 | `eta_fl`         | Full-load volumetric efficiency                         | --  |
 | `eta_v`         | Volumetric efficiency                         | --  |
 """
-@component function CylinderAirflow(; name = nothing, V_d=0.0015, T_m=298.15, R=287.05, c0=0.777026, c1=0.148753, c2=-0.020452, k=0.898877, p_ref=Float64(95000.0), n_min=Float64(500.0), n_max=Float64(6750.0), kwargs...)
+@component function CylinderAirflow(; name = nothing, var"V_d"=0.0015, var"T_m"=298.15, var"R"=287.05, var"c0"=0.777026, var"c1"=0.148753, var"c2"=-0.020452, var"k"=0.898877, var"p_ref"=Float64(95000.0), var"n_min"=Float64(500.0), var"n_max"=Float64(6750.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,7 +56,7 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
     @named model = CylinderAirflow()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -65,6 +65,18 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "V_d") && (V_d = pop!(__overrides, "V_d"))
+  haskey(__overrides, "T_m") && (T_m = pop!(__overrides, "T_m"))
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "c0") && (c0 = pop!(__overrides, "c0"))
+  haskey(__overrides, "c1") && (c1 = pop!(__overrides, "c1"))
+  haskey(__overrides, "c2") && (c2 = pop!(__overrides, "c2"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "p_ref") && (p_ref = pop!(__overrides, "p_ref"))
+  haskey(__overrides, "n_min") && (n_min = pop!(__overrides, "n_min"))
+  haskey(__overrides, "n_max") && (n_max = pop!(__overrides, "n_max"))
 
   ### Structural Parameters (functions)
 
@@ -81,34 +93,34 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
   ### Symbolic Parameters
   __local__V_d = V_d
   append!(__params, @parameters (V_d::Real), [description = "Displacement (MathWorks)"])
-  __initial_conditions[V_d] = __local__V_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_d, __local__V_d)
   __local__T_m = T_m
   append!(__params, @parameters (T_m::Real), [description = "Manifold air temperature (MathWorks)", bounds = (0, Inf)])
-  __initial_conditions[T_m] = __local__T_m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_m, __local__T_m)
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Gas constant of air [J/(kg.K)] (textbook)"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__c0 = c0
   append!(__params, @parameters (c0::Real), [description = "Full-load breathing, constant term (derived, data/engine/eta_v_coeffs.csv)"])
-  __initial_conditions[c0] = __local__c0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c0, __local__c0)
   __local__c1 = c1
   append!(__params, @parameters (c1::Real), [description = "Full-load breathing, linear term [1/krpm] (derived, data/engine/eta_v_coeffs.csv)"])
-  __initial_conditions[c1] = __local__c1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c1, __local__c1)
   __local__c2 = c2
   append!(__params, @parameters (c2::Real), [description = "Full-load breathing, quadratic term [1/krpm^2] (derived, data/engine/eta_v_coeffs.csv)"])
-  __initial_conditions[c2] = __local__c2
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c2, __local__c2)
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Load sensitivity of eta_v (derived, data/engine/eta_v_coeffs.csv)"])
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__p_ref = p_ref
   append!(__params, @parameters (p_ref::Real), [description = "Full-load manifold pressure the breathing curve refers to (assumed)"])
-  __initial_conditions[p_ref] = __local__p_ref
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_ref, __local__p_ref)
   __local__n_min = n_min
   append!(__params, @parameters (n_min::Real), [description = "Lowest speed of the breathing fit [rpm] (assumed)"])
-  __initial_conditions[n_min] = __local__n_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, n_min, __local__n_min)
   __local__n_max = n_max
   append!(__params, @parameters (n_max::Real), [description = "Highest speed of the breathing fit [rpm] (assumed)"])
-  __initial_conditions[n_max] = __local__n_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, n_max, __local__n_max)
 
   ### Final Parameters (assignments)
 
@@ -124,14 +136,14 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
 
   ### Variables (assignments)
   __ovr_N = pop!(__overrides, "N", nothing); isnothing(__ovr_N) || push!(__eqs, N ~ __ovr_N)
-  __ovr_N__initial = pop!(__overrides, "N__initial", nothing); isnothing(__ovr_N__initial) || (__initial_conditions[N] = __ovr_N__initial)
-  __ovr_N__guess = pop!(__overrides, "N__guess", nothing)
+  __ovr_N__initial = pop!(__overrides, "N.initial", nothing); isnothing(__ovr_N__initial) || (__initial_conditions[N] = __ovr_N__initial)
+  __ovr_N__guess = pop!(__overrides, "N.guess", nothing)
   __ovr_eta_fl = pop!(__overrides, "eta_fl", nothing); isnothing(__ovr_eta_fl) || push!(__eqs, eta_fl ~ __ovr_eta_fl)
-  __ovr_eta_fl__initial = pop!(__overrides, "eta_fl__initial", nothing); isnothing(__ovr_eta_fl__initial) || (__initial_conditions[eta_fl] = __ovr_eta_fl__initial)
-  __ovr_eta_fl__guess = pop!(__overrides, "eta_fl__guess", nothing)
+  __ovr_eta_fl__initial = pop!(__overrides, "eta_fl.initial", nothing); isnothing(__ovr_eta_fl__initial) || (__initial_conditions[eta_fl] = __ovr_eta_fl__initial)
+  __ovr_eta_fl__guess = pop!(__overrides, "eta_fl.guess", nothing)
   __ovr_eta_v = pop!(__overrides, "eta_v", nothing); isnothing(__ovr_eta_v) || push!(__eqs, eta_v ~ __ovr_eta_v)
-  __ovr_eta_v__initial = pop!(__overrides, "eta_v__initial", nothing); isnothing(__ovr_eta_v__initial) || (__initial_conditions[eta_v] = __ovr_eta_v__initial)
-  __ovr_eta_v__guess = pop!(__overrides, "eta_v__guess", nothing)
+  __ovr_eta_v__initial = pop!(__overrides, "eta_v.initial", nothing); isnothing(__ovr_eta_v__initial) || (__initial_conditions[eta_v] = __ovr_eta_v__initial)
+  __ovr_eta_v__guess = pop!(__overrides, "eta_v.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -139,7 +151,7 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_N__guess) || (__guesses[N] = __ovr_N__guess)
@@ -158,6 +170,6 @@ load, to about 0.37 at idle. With 0 < k < 1 the air flow rises strictly with `p_
   push!(__eqs, mdot_cyl ~ eta_v * p_m * V_d * N / (120 * R * T_m))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CylinderAirflow

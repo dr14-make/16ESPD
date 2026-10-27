@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-11,
   reltol=1e-8,
   solver=ODEAlg.Rodas5P(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.injector.solenoid.i, "injector.solenoid.i", 0, 0.001, 1e-7),
@@ -45,7 +45,7 @@ __dyad_run_test_case!(
   abstol=1e-11,
   reltol=1e-8,
   solver=ODEAlg.Rodas5P(),
-  params=(; U_batt=8),
+  params=Dict{String, Any}("U_batt" => 8.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.injector.solenoid.i, "injector.solenoid.i", 0, 0.001, 1e-7),

@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.tps.V1, "tps.V1", 0.4988, 0.001, 1e-5),
@@ -44,7 +44,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(; R_wiper1=50000),
+  params=Dict{String, Any}("R_wiper1" => 50000.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[

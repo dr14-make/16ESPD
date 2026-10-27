@@ -304,7 +304,7 @@ Every model a student builds is in the course library, `dyad/HandsOn/`, under th
 - **The car goes backward:** the sign on `flange.f` in `SlipWheel1D`.
 - **Both lines together on the slippery run:** the bench's `friction` is still 1.0; set it back to 0.2.
 - **`SlipCarStandingStartTransient` not defined:** rename the word after `analysis`.
-- **The dry run:** `friction__k = 1.0` means "the `k` of the block named `friction`", for this run only. Or set `k` to 1.0 in the bench, save and run again.
+- **The dry run:** `__overrides = Dict("friction.k" => 1.0)` means "the `k` of the block named `friction`", for this run only. Or set `k` to 1.0 in the bench, save and run again.
 
 **Close:** the run matches the two-limits table: on snow the tire reaches its limit before the engine does. Lecture 1 ends with this car under cruise control on an ice patch: the controller sees the speed falling, commands more torque, and produces what you just watched. That is the argument for traction control, and for the cascade control of Lecture 2, one controller inside another; nobody needs it today.
 

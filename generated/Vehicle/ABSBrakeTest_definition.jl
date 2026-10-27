@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0, dt, a_ref, k_inc_slow, wheel_w0)
+   ABSBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0, dt, a_ref, k_inc_slow, wheel_w0, __overrides)
 
 Wheel-speed-only sampled ABS braking harness.
 
@@ -26,7 +26,7 @@ Wheel-speed-only sampled ABS braking harness.
 | `k_inc_slow`         |                          | --  |   8000.0 |
 | `wheel_w0`         |                          | rad/s  |   v0 / radius |
 """
-@component function ABSBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, dt=0.005, a_ref=Float64(8.0), k_inc_slow=Float64(8000.0), wheel_w0=v0 / radius, kwargs...)
+@component function ABSBrakeTest(; name = nothing, var"v0"=Float64(25.0), var"brake_demand"=Float64(6000.0), var"brake_time"=0.5, var"road_mu"=Float64(1.0), var"m"=Float64(1400.0), var"radius"=0.31, var"J_w"=Float64(4.0), var"w0"=0.2, var"dt"=0.005, var"a_ref"=Float64(8.0), var"k_inc_slow"=Float64(8000.0), var"wheel_w0"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -34,7 +34,7 @@ Wheel-speed-only sampled ABS braking harness.
     @named model = ABSBrakeTest()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -43,6 +43,23 @@ Wheel-speed-only sampled ABS braking harness.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "brake_demand") && (brake_demand = pop!(__overrides, "brake_demand"))
+  haskey(__overrides, "brake_time") && (brake_time = pop!(__overrides, "brake_time"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "J_w") && (J_w = pop!(__overrides, "J_w"))
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
+  haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
+  haskey(__overrides, "a_ref") && (a_ref = pop!(__overrides, "a_ref"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "wheel_w0") && (wheel_w0 = pop!(__overrides, "wheel_w0"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(wheel_w0) && (wheel_w0 = v0 / radius)
 
   ### Structural Parameters (functions)
 
@@ -59,40 +76,40 @@ Wheel-speed-only sampled ABS braking harness.
   ### Symbolic Parameters
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__brake_demand = brake_demand
   append!(__params, @parameters (brake_demand::Real))
-  __initial_conditions[brake_demand] = __local__brake_demand
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_demand, __local__brake_demand)
   __local__brake_time = brake_time
   append!(__params, @parameters (brake_time::Real))
-  __initial_conditions[brake_time] = __local__brake_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_time, __local__brake_time)
   __local__road_mu = road_mu
   append!(__params, @parameters (road_mu::Real))
-  __initial_conditions[road_mu] = __local__road_mu
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
   __local__m = m
   append!(__params, @parameters (m::Real), [bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__J_w = J_w
   append!(__params, @parameters (J_w::Real))
-  __initial_conditions[J_w] = __local__J_w
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J_w, __local__J_w)
   __local__w0 = w0
   append!(__params, @parameters (w0::Real))
-  __initial_conditions[w0] = __local__w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
   __local__dt = dt
   append!(__params, @parameters (dt::Real))
-  __initial_conditions[dt] = __local__dt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dt, __local__dt)
   __local__a_ref = a_ref
   append!(__params, @parameters (a_ref::Real))
-  __initial_conditions[a_ref] = __local__a_ref
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a_ref, __local__a_ref)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__wheel_w0 = wheel_w0
   append!(__params, @parameters (wheel_w0::Real))
-  __initial_conditions[wheel_w0] = __local__wheel_w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wheel_w0, __local__wheel_w0)
 
   ### Final Parameters (assignments)
 
@@ -108,43 +125,43 @@ Wheel-speed-only sampled ABS braking harness.
   ### Components
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; height=brake_demand, offset=Float64(0.0), start_time=brake_time, demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Step(; height=brake_demand, offset=Float64(0.0), start_time=brake_time, __overrides = demand_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, __overrides = road_overrides))
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
-  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), flat_overrides...))
+  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = flat_overrides))
   # Subcomponent clock of type DiscreteComponents.PeriodicClock
   clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
-  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, clock_overrides...))
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, __symbol_overrides(clock_overrides)...))
   # Subcomponent speed_sampler of type DiscreteComponents.Sampler
   speed_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sampler")
-  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; speed_sampler_overrides...))
+  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; __overrides = speed_sampler_overrides))
   # Subcomponent demand_sampler of type DiscreteComponents.Sampler
   demand_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "demand_sampler")
-  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; demand_sampler_overrides...))
+  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; __overrides = demand_sampler_overrides))
   # Subcomponent controller of type VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(; dt=dt, radius=radius, a_ref=a_ref, omega0=wheel_w0, v_ref0=v0, k_inc_slow=k_inc_slow, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly(; dt=dt, radius=radius, a_ref=a_ref, omega0=wheel_w0, v_ref0=v0, k_inc_slow=k_inc_slow, __overrides = controller_overrides))
   # Subcomponent hold of type DiscreteComponents.ZeroOrderHold
   hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
-  push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; hold_overrides...))
+  push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; __overrides = hold_overrides))
   # Subcomponent wsensor of type RotationalComponents.Sensors.VelocitySensor
   wsensor_overrides = __pop_subcomponent_overrides!(__overrides, "wsensor")
-  push!(__systems, @named wsensor = RotationalComponents.Sensors.VelocitySensor(; wsensor_overrides...))
+  push!(__systems, @named wsensor = RotationalComponents.Sensors.VelocitySensor(; __overrides = wsensor_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, __overrides = wheel_overrides))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, __overrides = body_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -172,6 +189,6 @@ Wheel-speed-only sampled ABS braking harness.
   push!(__eqs, connect(flat.y, body.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSBrakeTest

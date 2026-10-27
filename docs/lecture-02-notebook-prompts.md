@@ -32,7 +32,7 @@ Paste this preamble above every prompt.
 > nested `a__b__c` override. The deck is `materials/ControlTheory/2. Engine CS.pptx`; unzip it to a
 > scratch directory and copy the figures you show from `ppt/media/` into
 > `notebooks/lecture02/assets/`. Done means
-> `julia +dyad-3.4.0 --project=. notebooks/lecture02/<file>.pluto.jl` runs to completion with every
+> `julia +dyad-3.5.0 --project=. notebooks/lecture02/<file>.pluto.jl` runs to completion with every
 > check cell passing. Quote numbers from the run; where the spec's numbers differ, correct
 > `docs/lecture-02-notebooks.md` in the same PR. Stage files by name, Conventional Commits, US
 > English. Report the check-cell numbers and any spec corrections.

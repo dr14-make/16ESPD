@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestBrakeControlUnit(; name)
+   TestBrakeControlUnit(; name, __overrides)
 
 Composition check for the continuous ECU boundary.
 """
-@component function TestBrakeControlUnit(; name = nothing, kwargs...)
+@component function TestBrakeControlUnit(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Composition check for the continuous ECU boundary.
     @named model = TestBrakeControlUnit()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,25 +55,25 @@ Composition check for the continuous ECU boundary.
   ### Components
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(0.0), demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = demand_overrides))
   # Subcomponent steer of type BlockComponents.Sources.Constant
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
-  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=0.5624768, steer_overrides...))
+  push!(__systems, @named steer = BlockComponents.Sources.Constant(; k=0.5624768, __overrides = steer_overrides))
   # Subcomponent measured of type BlockComponents.Sources.Constant
   measured_overrides = __pop_subcomponent_overrides!(__overrides, "measured")
-  push!(__systems, @named measured = BlockComponents.Sources.Constant(; k=0.3, measured_overrides...))
+  push!(__systems, @named measured = BlockComponents.Sources.Constant(; k=0.3, __overrides = measured_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = speed_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
-  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; abs_on=Float64(0.0), ecu_overrides...))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; abs_on=Float64(0.0), __overrides = ecu_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -90,6 +90,6 @@ Composition check for the continuous ECU boundary.
   push!(__eqs, connect(zero.y, ecu.kappa_fl, ecu.kappa_fr, ecu.kappa_rl, ecu.kappa_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestBrakeControlUnit

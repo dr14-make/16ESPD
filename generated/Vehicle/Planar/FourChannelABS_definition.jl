@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FourChannelABS(; name, dt, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, select_low)
+   FourChannelABS(; name, dt, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, select_low, __overrides)
 
 Four independently modulated sampled ABS channels with optional rear select-low.
 
@@ -51,7 +51,7 @@ Four independently modulated sampled ABS channels with optional rear select-low.
 | ------------ | ----------------------------------- | ------ |
 | `rear_low`         |                          | N.m  |
 """
-@component function FourChannelABS(; name = nothing, dt=0.005, T_p=0.03, lambda_1_f=0.08, lambda_1_r=0.06, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), v_min=1.5, select_low=Float64(1.0), kwargs...)
+@component function FourChannelABS(; name = nothing, var"dt"=0.005, var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, var"select_low"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -59,7 +59,7 @@ Four independently modulated sampled ABS channels with optional rear select-low.
     @named model = FourChannelABS()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -68,6 +68,22 @@ Four independently modulated sampled ABS channels with optional rear select-low.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "lambda_1_f") && (lambda_1_f = pop!(__overrides, "lambda_1_f"))
+  haskey(__overrides, "lambda_1_r") && (lambda_1_r = pop!(__overrides, "lambda_1_r"))
+  haskey(__overrides, "lambda_lock") && (lambda_lock = pop!(__overrides, "lambda_lock"))
+  haskey(__overrides, "alpha_rel") && (alpha_rel = pop!(__overrides, "alpha_rel"))
+  haskey(__overrides, "beta_reapply") && (beta_reapply = pop!(__overrides, "beta_reapply"))
+  haskey(__overrides, "l_rec") && (l_rec = pop!(__overrides, "l_rec"))
+  haskey(__overrides, "T_hold_max") && (T_hold_max = pop!(__overrides, "T_hold_max"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
+  haskey(__overrides, "select_low") && (select_low = pop!(__overrides, "select_low"))
 
   ### Structural Parameters (functions)
 
@@ -84,46 +100,46 @@ Four independently modulated sampled ABS channels with optional rear select-low.
   ### Symbolic Parameters
   __local__dt = dt
   append!(__params, @parameters (dt::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[dt] = __local__dt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dt, __local__dt)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real), [bounds = (0.0, Inf)])
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__lambda_1_f = lambda_1_f
   append!(__params, @parameters (lambda_1_f::Real))
-  __initial_conditions[lambda_1_f] = __local__lambda_1_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_f, __local__lambda_1_f)
   __local__lambda_1_r = lambda_1_r
   append!(__params, @parameters (lambda_1_r::Real))
-  __initial_conditions[lambda_1_r] = __local__lambda_1_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_r, __local__lambda_1_r)
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
-  __initial_conditions[lambda_lock] = __local__lambda_lock
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_lock, __local__lambda_lock)
   __local__alpha_rel = alpha_rel
   append!(__params, @parameters (alpha_rel::Real))
-  __initial_conditions[alpha_rel] = __local__alpha_rel
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_rel, __local__alpha_rel)
   __local__beta_reapply = beta_reapply
   append!(__params, @parameters (beta_reapply::Real))
-  __initial_conditions[beta_reapply] = __local__beta_reapply
+  __dyad_seed_parameter!(__initial_conditions, __bindings, beta_reapply, __local__beta_reapply)
   __local__l_rec = l_rec
   append!(__params, @parameters (l_rec::Real))
-  __initial_conditions[l_rec] = __local__l_rec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, l_rec, __local__l_rec)
   __local__T_hold_max = T_hold_max
   append!(__params, @parameters (T_hold_max::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_hold_max] = __local__T_hold_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_hold_max, __local__T_hold_max)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
   append!(__params, @parameters (k_inc_fast::Real))
-  __initial_conditions[k_inc_fast] = __local__k_inc_fast
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
   __local__select_low = select_low
   append!(__params, @parameters (select_low::Real))
-  __initial_conditions[select_low] = __local__select_low
+  __dyad_seed_parameter!(__initial_conditions, __bindings, select_low, __local__select_low)
 
   ### Final Parameters (assignments)
 
@@ -148,8 +164,8 @@ Four independently modulated sampled ABS channels with optional rear select-low.
 
   ### Variables (assignments)
   __ovr_rear_low = pop!(__overrides, "rear_low", nothing); isnothing(__ovr_rear_low) || push!(__eqs, rear_low ~ __ovr_rear_low)
-  __ovr_rear_low__initial = pop!(__overrides, "rear_low__initial", nothing); isnothing(__ovr_rear_low__initial) || (__initial_conditions[rear_low] = __ovr_rear_low__initial)
-  __ovr_rear_low__guess = pop!(__overrides, "rear_low__guess", nothing)
+  __ovr_rear_low__initial = pop!(__overrides, "rear_low.initial", nothing); isnothing(__ovr_rear_low__initial) || (__initial_conditions[rear_low] = __ovr_rear_low__initial)
+  __ovr_rear_low__guess = pop!(__overrides, "rear_low.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -157,19 +173,19 @@ Four independently modulated sampled ABS channels with optional rear select-low.
   ### Components
   # Subcomponent fl of type VehicleSystemsComponents.Vehicle.Planar.BrakeChannel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
-  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_f, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, fl_overrides...))
+  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_f, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = fl_overrides))
   # Subcomponent fr of type VehicleSystemsComponents.Vehicle.Planar.BrakeChannel
   fr_overrides = __pop_subcomponent_overrides!(__overrides, "fr")
-  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_f, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, fr_overrides...))
+  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_f, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = fr_overrides))
   # Subcomponent rl of type VehicleSystemsComponents.Vehicle.Planar.BrakeChannel
   rl_overrides = __pop_subcomponent_overrides!(__overrides, "rl")
-  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, rl_overrides...))
+  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = rl_overrides))
   # Subcomponent rr of type VehicleSystemsComponents.Vehicle.Planar.BrakeChannel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
-  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, rr_overrides...))
+  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; dt=dt, T_p=T_p, lambda_1=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = rr_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_rear_low__guess) || (__guesses[rear_low] = __ovr_rear_low__guess)
@@ -197,6 +213,6 @@ Four independently modulated sampled ABS channels with optional rear select-low.
   push!(__eqs, connect(fr.tau_cmd, tau_fr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export FourChannelABS

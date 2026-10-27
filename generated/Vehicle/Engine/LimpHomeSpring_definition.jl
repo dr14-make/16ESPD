@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   LimpHomeSpring(; name, phi_lh, T_pre, c, eps)
+   LimpHomeSpring(; name, phi_lh, T_pre, c, eps, __overrides)
 
 The return spring of an electronic throttle, with its limp-home position.
 
@@ -42,7 +42,7 @@ are assumed.
 | `phi_rel`         | Relative rotation angle between spline_b and spline_a                         | rad  |
 | `tau`         | Torque transmitted between the splines                         | N.m  |
 """
-@component function LimpHomeSpring(; name = nothing, phi_lh=0.10472, T_pre=0.25, c=0.1, eps=0.0035, kwargs...)
+@component function LimpHomeSpring(; name = nothing, var"phi_lh"=0.10472, var"T_pre"=0.25, var"c"=0.1, var"eps"=0.0035, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -50,7 +50,7 @@ are assumed.
     @named model = LimpHomeSpring()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -59,6 +59,12 @@ are assumed.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "phi_lh") && (phi_lh = pop!(__overrides, "phi_lh"))
+  haskey(__overrides, "T_pre") && (T_pre = pop!(__overrides, "T_pre"))
+  haskey(__overrides, "c") && (c = pop!(__overrides, "c"))
+  haskey(__overrides, "eps") && (eps = pop!(__overrides, "eps"))
 
   ### Structural Parameters (functions)
 
@@ -75,16 +81,16 @@ are assumed.
   ### Symbolic Parameters
   __local__phi_lh = phi_lh
   append!(__params, @parameters (phi_lh::Real), [description = "Limp-home plate angle from the closed stop, 6 deg (assumed)"])
-  __initial_conditions[phi_lh] = __local__phi_lh
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_lh, __local__phi_lh)
   __local__T_pre = T_pre
   append!(__params, @parameters (T_pre::Real), [description = "Spring preload at the limp-home position (assumed)"])
-  __initial_conditions[T_pre] = __local__T_pre
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_pre, __local__T_pre)
   __local__c = c
   append!(__params, @parameters (c::Real), [description = "Spring rate (assumed)"])
-  __initial_conditions[c] = __local__c
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c, __local__c)
   __local__eps = eps
   append!(__params, @parameters (eps::Real), [description = "Width over which the preload changes sign (assumed)"])
-  __initial_conditions[eps] = __local__eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, eps, __local__eps)
 
   ### Final Parameters (assignments)
 
@@ -96,11 +102,11 @@ are assumed.
 
   ### Variables (assignments)
   __ovr_phi_rel = pop!(__overrides, "phi_rel", nothing); isnothing(__ovr_phi_rel) || push!(__eqs, phi_rel ~ __ovr_phi_rel)
-  __ovr_phi_rel__initial = pop!(__overrides, "phi_rel__initial", nothing); isnothing(__ovr_phi_rel__initial) || (__initial_conditions[phi_rel] = __ovr_phi_rel__initial)
-  __ovr_phi_rel__guess = pop!(__overrides, "phi_rel__guess", nothing)
+  __ovr_phi_rel__initial = pop!(__overrides, "phi_rel.initial", nothing); isnothing(__ovr_phi_rel__initial) || (__initial_conditions[phi_rel] = __ovr_phi_rel__initial)
+  __ovr_phi_rel__guess = pop!(__overrides, "phi_rel.guess", nothing)
   __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
-  __ovr_tau__initial = pop!(__overrides, "tau__initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
-  __ovr_tau__guess = pop!(__overrides, "tau__guess", nothing)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -110,7 +116,7 @@ are assumed.
   push!(__systems, @named spline_b = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_phi_rel__guess) || (__guesses[phi_rel] = __ovr_phi_rel__guess)
@@ -128,6 +134,6 @@ are assumed.
   push!(__eqs, tau ~ T_pre * tanh((phi_rel - phi_lh) / eps) + c * (phi_rel - phi_lh))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export LimpHomeSpring

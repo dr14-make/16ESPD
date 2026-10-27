@@ -1,7 +1,7 @@
 # Lecture 3 FullCarABSStop: the whole car of FullCarVacuumStop with step 03's slip ABS, through a
 # lift-off stop from the 90 km/h cruise at the pedal that locks the wheel without ABS.
 #
-# Alone: julia +dyad-3.4.0 --project=. -e 'using Test, VehicleSystemsComponents;
+# Alone: julia +dyad-3.5.0 --project=. -e 'using Test, VehicleSystemsComponents;
 #     include("test/abs_full_car.jl")'
 
 using Test

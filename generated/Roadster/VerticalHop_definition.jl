@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   VerticalHop(; name, m, tank_volume, tank_pressure, A_t, g, contact_c, contact_d)
+   VerticalHop(; name, m, tank_volume, tank_pressure, A_t, g, contact_c, contact_d, __overrides)
 
 Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thrust set.
 
@@ -31,7 +31,7 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
 | ------------ | ----------------------------------- | ------ |
 | `altitude`         | Altitude relative to the undeflected ground                         | m  |
 """
-@component function VerticalHop(; name = nothing, m=Float64(2000), tank_volume=0.6, tank_pressure=Float64(38000000.0), A_t=0.001286, g=9.80665, contact_c=Float64(2000000.0), contact_d=Float64(100000.0), kwargs...)
+@component function VerticalHop(; name = nothing, var"m"=Float64(2000), var"tank_volume"=0.6, var"tank_pressure"=Float64(38000000.0), var"A_t"=0.001286, var"g"=9.80665, var"contact_c"=Float64(2000000.0), var"contact_d"=Float64(100000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -39,7 +39,7 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
     @named model = VerticalHop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -48,6 +48,15 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "tank_volume") && (tank_volume = pop!(__overrides, "tank_volume"))
+  haskey(__overrides, "tank_pressure") && (tank_pressure = pop!(__overrides, "tank_pressure"))
+  haskey(__overrides, "A_t") && (A_t = pop!(__overrides, "A_t"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
+  haskey(__overrides, "contact_c") && (contact_c = pop!(__overrides, "contact_c"))
+  haskey(__overrides, "contact_d") && (contact_d = pop!(__overrides, "contact_d"))
 
   ### Structural Parameters (functions)
 
@@ -64,25 +73,25 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Car mass; assumed because Tesla has not disclosed it", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__tank_volume = tank_volume
   append!(__params, @parameters (tank_volume::Real), [description = "Tank volume; Tesla reports 600 L total"])
-  __initial_conditions[tank_volume] = __local__tank_volume
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_volume, __local__tank_volume)
   __local__tank_pressure = tank_pressure
   append!(__params, @parameters (tank_pressure::Real), [description = "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"])
-  __initial_conditions[tank_pressure] = __local__tank_pressure
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_pressure, __local__tank_pressure)
   __local__A_t = A_t
   append!(__params, @parameters (A_t::Real), [description = "Total nozzle throat area, sized for 80 kN at 380 bar"])
-  __initial_conditions[A_t] = __local__A_t
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_t, __local__A_t)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Standard gravitational acceleration"])
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
   __local__contact_c = contact_c
   append!(__params, @parameters (contact_c::Real), [description = "Ground-contact stiffness; assumed"])
-  __initial_conditions[contact_c] = __local__contact_c
+  __dyad_seed_parameter!(__initial_conditions, __bindings, contact_c, __local__contact_c)
   __local__contact_d = contact_d
   append!(__params, @parameters (contact_d::Real), [description = "Ground-contact damping; assumed"])
-  __initial_conditions[contact_d] = __local__contact_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, contact_d, __local__contact_d)
 
   ### Final Parameters (assignments)
 
@@ -94,8 +103,8 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
 
   ### Variables (assignments)
   __ovr_altitude = pop!(__overrides, "altitude", nothing); isnothing(__ovr_altitude) || push!(__eqs, altitude ~ __ovr_altitude)
-  __ovr_altitude__initial = pop!(__overrides, "altitude__initial", nothing); isnothing(__ovr_altitude__initial) || (__initial_conditions[altitude] = __ovr_altitude__initial)
-  __ovr_altitude__guess = pop!(__overrides, "altitude__guess", nothing)
+  __ovr_altitude__initial = pop!(__overrides, "altitude.initial", nothing); isnothing(__ovr_altitude__initial) || (__initial_conditions[altitude] = __ovr_altitude__initial)
+  __ovr_altitude__guess = pop!(__overrides, "altitude.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -103,31 +112,31 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
   ### Components
   # Subcomponent body of type TranslationalComponents.Components.Mass
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = TranslationalComponents.Components.Mass(; m=m, g=-g, theta=-1.5707963267948966, body_overrides...))
+  push!(__systems, @named body = TranslationalComponents.Components.Mass(; m=m, g=-g, theta=-1.5707963267948966, __overrides = body_overrides))
   # Subcomponent ground of type VehicleSystemsComponents.Roadster.VerticalGroundContact
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
-  push!(__systems, @named ground = VehicleSystemsComponents.Roadster.VerticalGroundContact(; c=contact_c, d=contact_d, ground_overrides...))
+  push!(__systems, @named ground = VehicleSystemsComponents.Roadster.VerticalGroundContact(; c=contact_c, d=contact_d, __overrides = ground_overrides))
   # Subcomponent tank of type VehicleSystemsComponents.Roadster.AirTank
   tank_overrides = __pop_subcomponent_overrides!(__overrides, "tank")
-  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, tank_overrides...))
+  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, __overrides = tank_overrides))
   # Subcomponent nozzle of type VehicleSystemsComponents.Roadster.ColdGasNozzle
   nozzle_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle")
-  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, nozzle_overrides...))
+  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, __overrides = nozzle_overrides))
   # Subcomponent nozzle_stand of type TranslationalComponents.Components.Fixed
   nozzle_stand_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle_stand")
-  push!(__systems, @named nozzle_stand = TranslationalComponents.Components.Fixed(; nozzle_stand_overrides...))
+  push!(__systems, @named nozzle_stand = TranslationalComponents.Components.Fixed(; __overrides = nozzle_stand_overrides))
   # Subcomponent upward_gain of type BlockComponents.Math.Gain
   upward_gain_overrides = __pop_subcomponent_overrides!(__overrides, "upward_gain")
-  push!(__systems, @named upward_gain = BlockComponents.Math.Gain(; k=Float64(1), upward_gain_overrides...))
+  push!(__systems, @named upward_gain = BlockComponents.Math.Gain(; k=Float64(1), __overrides = upward_gain_overrides))
   # Subcomponent thrust of type TranslationalComponents.Sources.Force
   thrust_overrides = __pop_subcomponent_overrides!(__overrides, "thrust")
-  push!(__systems, @named thrust = TranslationalComponents.Sources.Force(; thrust_overrides...))
+  push!(__systems, @named thrust = TranslationalComponents.Sources.Force(; __overrides = thrust_overrides))
   # Subcomponent thrust_ground of type TranslationalComponents.Components.Fixed
   thrust_ground_overrides = __pop_subcomponent_overrides!(__overrides, "thrust_ground")
-  push!(__systems, @named thrust_ground = TranslationalComponents.Components.Fixed(; thrust_ground_overrides...))
+  push!(__systems, @named thrust_ground = TranslationalComponents.Components.Fixed(; __overrides = thrust_ground_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_altitude__guess) || (__guesses[altitude] = __ovr_altitude__guess)
@@ -153,6 +162,6 @@ Vertical car, ground contact, compressed-air tank, and aggregate four-nozzle thr
   push!(__eqs, connect(ground.flange, body.flange_a))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export VerticalHop

@@ -188,10 +188,10 @@ Everything an agent needs to pick up a task cold. Commands assume the repository
 
 | Purpose | Command or path |
 |---|---|
-| Compile `dyad/` into `generated/` | `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` (the version must equal `[dyad] kernel` in `Project.toml`; see HANDOVER gotchas) |
-| Run the test suite | `cd test && julia +dyad-3.4.0 --project=.. runtests.jl` (never from the root; see HANDOVER gotchas) |
-| Load the library interactively | `julia +dyad-3.4.0 --project=.`, then `using VehicleSystemsComponents` |
-| Run a Pluto notebook headless | `julia +dyad-3.4.0 --project=. notebooks/lecture02/<file>.pluto.jl` (the `@bind` mock supplies defaults) |
+| Compile `dyad/` into `generated/` | `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` (the version must equal `[dyad] kernel` in `Project.toml`; see HANDOVER gotchas) |
+| Run the test suite | `cd test && julia +dyad-3.5.0 --project=.. runtests.jl` (never from the root; see HANDOVER gotchas) |
+| Load the library interactively | `julia +dyad-3.5.0 --project=.`, then `using VehicleSystemsComponents` |
+| Run a Pluto notebook headless | `julia +dyad-3.5.0 --project=. notebooks/lecture02/<file>.pluto.jl` (the `@bind` mock supplies defaults) |
 | Dyad language reference | `agent_resources/skills/dyad-language/SKILL.md`, then `agent_resources/docs/{syntax,components,initialization,analyses,metadata}.md` |
 | Standard-library source | `agent_resources/stdlib_reference/<Library>/<Path>.dyad`, e.g. `BlockComponents/Tables/InterpolatedTable.dyad` |
 | Analyses (transient, steady state, linear, closed loop) | `agent_resources/docs/analyses.md`; DyadControlSystems analyses in `~/.julia/packages/DyadControlSystems/*/dyad/` |

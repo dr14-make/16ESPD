@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestQuasiStaticLoads(; name, ax, ay, h)
+   TestQuasiStaticLoads(; name, ax, ay, h, __overrides)
 
 Prescribed-acceleration rig for quasi-static wheel-load transfer.
 
@@ -17,7 +17,7 @@ Prescribed-acceleration rig for quasi-static wheel-load transfer.
 | `ay`         |                          | m/s2  |   0.0 |
 | `h`         |                          | m  |   0.55 |
 """
-@component function TestQuasiStaticLoads(; name = nothing, ax=-4.0, ay=Float64(0.0), h=0.55, kwargs...)
+@component function TestQuasiStaticLoads(; name = nothing, var"ax"=-4.0, var"ay"=Float64(0.0), var"h"=0.55, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -25,7 +25,7 @@ Prescribed-acceleration rig for quasi-static wheel-load transfer.
     @named model = TestQuasiStaticLoads()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -34,6 +34,11 @@ Prescribed-acceleration rig for quasi-static wheel-load transfer.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "ax") && (ax = pop!(__overrides, "ax"))
+  haskey(__overrides, "ay") && (ay = pop!(__overrides, "ay"))
+  haskey(__overrides, "h") && (h = pop!(__overrides, "h"))
 
   ### Structural Parameters (functions)
 
@@ -50,13 +55,13 @@ Prescribed-acceleration rig for quasi-static wheel-load transfer.
   ### Symbolic Parameters
   __local__ax = ax
   append!(__params, @parameters (ax::Real))
-  __initial_conditions[ax] = __local__ax
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ax, __local__ax)
   __local__ay = ay
   append!(__params, @parameters (ay::Real))
-  __initial_conditions[ay] = __local__ay
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ay, __local__ay)
   __local__h = h
   append!(__params, @parameters (h::Real))
-  __initial_conditions[h] = __local__h
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h, __local__h)
 
   ### Final Parameters (assignments)
 
@@ -72,31 +77,31 @@ Prescribed-acceleration rig for quasi-static wheel-load transfer.
   ### Components
   # Subcomponent vx of type BlockComponents.Sources.Ramp
   vx_overrides = __pop_subcomponent_overrides!(__overrides, "vx")
-  push!(__systems, @named vx = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=2 * ax, duration=Float64(2.0), start_time=Float64(0.0), vx_overrides...))
+  push!(__systems, @named vx = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=2 * ax, duration=Float64(2.0), start_time=Float64(0.0), __overrides = vx_overrides))
   # Subcomponent vy of type BlockComponents.Sources.Ramp
   vy_overrides = __pop_subcomponent_overrides!(__overrides, "vy")
-  push!(__systems, @named vy = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=2 * ay, duration=Float64(2.0), start_time=Float64(0.0), vy_overrides...))
+  push!(__systems, @named vy = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=2 * ay, duration=Float64(2.0), start_time=Float64(0.0), __overrides = vy_overrides))
   # Subcomponent motion of type MultibodyComponents.PlanarMechanics.PrescribedVelocity
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
-  push!(__systems, @named motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(; fixed_orientation=true, motion_overrides...))
+  push!(__systems, @named motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(; fixed_orientation=true, __overrides = motion_overrides))
   # Subcomponent loads of type VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads
   loads_overrides = __pop_subcomponent_overrides!(__overrides, "loads")
-  push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; h=h, load_transfer=true, loads_overrides...))
+  push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; h=h, load_transfer=true, __overrides = loads_overrides))
   # Subcomponent fixed_fl of type TranslationalComponents.Components.Fixed
   fixed_fl_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_fl")
-  push!(__systems, @named fixed_fl = TranslationalComponents.Components.Fixed(; fixed_fl_overrides...))
+  push!(__systems, @named fixed_fl = TranslationalComponents.Components.Fixed(; __overrides = fixed_fl_overrides))
   # Subcomponent fixed_fr of type TranslationalComponents.Components.Fixed
   fixed_fr_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_fr")
-  push!(__systems, @named fixed_fr = TranslationalComponents.Components.Fixed(; fixed_fr_overrides...))
+  push!(__systems, @named fixed_fr = TranslationalComponents.Components.Fixed(; __overrides = fixed_fr_overrides))
   # Subcomponent fixed_rl of type TranslationalComponents.Components.Fixed
   fixed_rl_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_rl")
-  push!(__systems, @named fixed_rl = TranslationalComponents.Components.Fixed(; fixed_rl_overrides...))
+  push!(__systems, @named fixed_rl = TranslationalComponents.Components.Fixed(; __overrides = fixed_rl_overrides))
   # Subcomponent fixed_rr of type TranslationalComponents.Components.Fixed
   fixed_rr_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_rr")
-  push!(__systems, @named fixed_rr = TranslationalComponents.Components.Fixed(; fixed_rr_overrides...))
+  push!(__systems, @named fixed_rr = TranslationalComponents.Components.Fixed(; __overrides = fixed_rr_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -115,6 +120,6 @@ Prescribed-acceleration rig for quasi-static wheel-load transfer.
   push!(__eqs, connect(loads.rr, fixed_rr.flange))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestQuasiStaticLoads

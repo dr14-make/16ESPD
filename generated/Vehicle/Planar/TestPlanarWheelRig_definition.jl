@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestPlanarWheelRig(; name, v, vy, tau, N_load)
+   TestPlanarWheelRig(; name, v, vy, tau, N_load, __overrides)
 
 ## Parameters:
 
@@ -16,7 +16,7 @@
 | `tau`         | Brake command                         | N.m  |   0.0 |
 | `N_load`         | Applied normal load                         | N  |   4000.0 |
 """
-@component function TestPlanarWheelRig(; name = nothing, v=Float64(20.0), vy=Float64(0.0), tau=Float64(0.0), N_load=Float64(4000.0), kwargs...)
+@component function TestPlanarWheelRig(; name = nothing, var"v"=Float64(20.0), var"vy"=Float64(0.0), var"tau"=Float64(0.0), var"N_load"=Float64(4000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -24,7 +24,7 @@
     @named model = TestPlanarWheelRig()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -33,6 +33,12 @@
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "v") && (v = pop!(__overrides, "v"))
+  haskey(__overrides, "vy") && (vy = pop!(__overrides, "vy"))
+  haskey(__overrides, "tau") && (tau = pop!(__overrides, "tau"))
+  haskey(__overrides, "N_load") && (N_load = pop!(__overrides, "N_load"))
 
   ### Structural Parameters (functions)
 
@@ -49,16 +55,16 @@
   ### Symbolic Parameters
   __local__v = v
   append!(__params, @parameters (v::Real), [description = "Prescribed forward speed"])
-  __initial_conditions[v] = __local__v
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v, __local__v)
   __local__vy = vy
   append!(__params, @parameters (vy::Real), [description = "Prescribed lateral speed"])
-  __initial_conditions[vy] = __local__vy
+  __dyad_seed_parameter!(__initial_conditions, __bindings, vy, __local__vy)
   __local__tau = tau
   append!(__params, @parameters (tau::Real), [description = "Brake command"])
-  __initial_conditions[tau] = __local__tau
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau, __local__tau)
   __local__N_load = N_load
   append!(__params, @parameters (N_load::Real), [description = "Applied normal load"])
-  __initial_conditions[N_load] = __local__N_load
+  __dyad_seed_parameter!(__initial_conditions, __bindings, N_load, __local__N_load)
 
   ### Final Parameters (assignments)
 
@@ -74,34 +80,34 @@
   ### Components
   # Subcomponent vx_source of type BlockComponents.Sources.Constant
   vx_source_overrides = __pop_subcomponent_overrides!(__overrides, "vx_source")
-  push!(__systems, @named vx_source = BlockComponents.Sources.Constant(; k=v, vx_source_overrides...))
+  push!(__systems, @named vx_source = BlockComponents.Sources.Constant(; k=v, __overrides = vx_source_overrides))
   # Subcomponent vy_source of type BlockComponents.Sources.Constant
   vy_source_overrides = __pop_subcomponent_overrides!(__overrides, "vy_source")
-  push!(__systems, @named vy_source = BlockComponents.Sources.Constant(; k=vy, vy_source_overrides...))
+  push!(__systems, @named vy_source = BlockComponents.Sources.Constant(; k=vy, __overrides = vy_source_overrides))
   # Subcomponent tau_source of type BlockComponents.Sources.Constant
   tau_source_overrides = __pop_subcomponent_overrides!(__overrides, "tau_source")
-  push!(__systems, @named tau_source = BlockComponents.Sources.Constant(; k=tau, tau_source_overrides...))
+  push!(__systems, @named tau_source = BlockComponents.Sources.Constant(; k=tau, __overrides = tau_source_overrides))
   # Subcomponent load_source of type BlockComponents.Sources.Constant
   load_source_overrides = __pop_subcomponent_overrides!(__overrides, "load_source")
-  push!(__systems, @named load_source = BlockComponents.Sources.Constant(; k=N_load, load_source_overrides...))
+  push!(__systems, @named load_source = BlockComponents.Sources.Constant(; k=N_load, __overrides = load_source_overrides))
   # Subcomponent motion of type MultibodyComponents.PlanarMechanics.PrescribedVelocity
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
-  push!(__systems, @named motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(; motion_overrides...))
+  push!(__systems, @named motion = MultibodyComponents.PlanarMechanics.PrescribedVelocity(; __overrides = motion_overrides))
   # Subcomponent force of type TranslationalComponents.Sources.Force
   force_overrides = __pop_subcomponent_overrides!(__overrides, "force")
-  push!(__systems, @named force = TranslationalComponents.Sources.Force(; force_overrides...))
+  push!(__systems, @named force = TranslationalComponents.Sources.Force(; __overrides = force_overrides))
   # Subcomponent load_fixed of type TranslationalComponents.Components.Fixed
   load_fixed_overrides = __pop_subcomponent_overrides!(__overrides, "load_fixed")
-  push!(__systems, @named load_fixed = TranslationalComponents.Components.Fixed(; load_fixed_overrides...))
+  push!(__systems, @named load_fixed = TranslationalComponents.Components.Fixed(; __overrides = load_fixed_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; sAdhesion=0.12, sSlide=0.36, mu_A=Float64(1.0), mu_S=0.8, J=Float64(1.0), tau_max=Float64(10000.0), wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; sAdhesion=0.12, sSlide=0.36, mu_A=Float64(1.0), mu_S=0.8, J=Float64(1.0), tau_max=Float64(10000.0), __overrides = wheel_overrides))
   # Subcomponent slip of type VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor
   slip_overrides = __pop_subcomponent_overrides!(__overrides, "slip")
-  push!(__systems, @named slip = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=0.31, slip_overrides...))
+  push!(__systems, @named slip = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=0.31, __overrides = slip_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -125,6 +131,6 @@
   push!(__eqs, connect(wheel.spin, slip.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestPlanarWheelRig

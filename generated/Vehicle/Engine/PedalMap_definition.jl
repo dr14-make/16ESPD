@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PedalMap(; name, pedal_exponent, throttle_time)
+   PedalMap(; name, pedal_exponent, throttle_time, __overrides)
 
 Progressive pedal map followed by a first-order drive-by-wire actuator.
 
@@ -21,7 +21,7 @@ Progressive pedal map followed by a first-order drive-by-wire actuator.
  * `pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `u_thr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function PedalMap(; name = nothing, pedal_exponent=1.5, throttle_time=0.05, kwargs...)
+@component function PedalMap(; name = nothing, var"pedal_exponent"=1.5, var"throttle_time"=0.05, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -29,7 +29,7 @@ Progressive pedal map followed by a first-order drive-by-wire actuator.
     @named model = PedalMap()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -38,6 +38,10 @@ Progressive pedal map followed by a first-order drive-by-wire actuator.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "pedal_exponent") && (pedal_exponent = pop!(__overrides, "pedal_exponent"))
+  haskey(__overrides, "throttle_time") && (throttle_time = pop!(__overrides, "throttle_time"))
 
   ### Structural Parameters (functions)
 
@@ -54,10 +58,10 @@ Progressive pedal map followed by a first-order drive-by-wire actuator.
   ### Symbolic Parameters
   __local__pedal_exponent = pedal_exponent
   append!(__params, @parameters (pedal_exponent::Real), [description = "Progressive drive-by-wire pedal exponent (assumed)"])
-  __initial_conditions[pedal_exponent] = __local__pedal_exponent
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_exponent, __local__pedal_exponent)
   __local__throttle_time = throttle_time
   append!(__params, @parameters (throttle_time::Real), [description = "Drive-by-wire throttle actuator time constant (assumed)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[throttle_time] = __local__throttle_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, throttle_time, __local__throttle_time)
 
   ### Final Parameters (assignments)
 
@@ -75,10 +79,10 @@ Progressive pedal map followed by a first-order drive-by-wire actuator.
   ### Components
   # Subcomponent actuator of type BlockComponents.Continuous.FirstOrder
   actuator_overrides = __pop_subcomponent_overrides!(__overrides, "actuator")
-  push!(__systems, @named actuator = BlockComponents.Continuous.FirstOrder(; T=throttle_time, actuator_overrides...))
+  push!(__systems, @named actuator = BlockComponents.Continuous.FirstOrder(; T=throttle_time, __overrides = actuator_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -93,6 +97,6 @@ Progressive pedal map followed by a first-order drive-by-wire actuator.
   push!(__eqs, connect(actuator.y, u_thr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export PedalMap

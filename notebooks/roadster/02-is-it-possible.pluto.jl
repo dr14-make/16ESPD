@@ -30,7 +30,7 @@ We take each claim through the same four steps:
 3. **Our model:** a small computer model of the car, built in Dyad.
 4. **The simulation:** run the model, and compare it with the claim.
 
-*To start the notebook: `julia +dyad-3.4.0 notebooks/roadster/present.jl`. The launcher runs it
+*To start the notebook: `julia +dyad-3.5.0 notebooks/roadster/present.jl`. The launcher runs it
 in its own process, because Pluto's helper processes cannot load Dyad with this Julia build.*
 """
 

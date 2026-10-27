@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSUnit(; name, dt, abs_on, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min)
+   ABSUnit(; name, dt, abs_on, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
 
 Sampled four-channel ABS with continuous sensor and brake-command ports.
 
@@ -49,7 +49,7 @@ sampled modulator while retaining the nonnegative ESP brake increments.
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function ABSUnit(; name = nothing, dt=0.005, abs_on=Float64(1.0), select_low=Float64(1.0), T_p=0.03, lambda_1_f=0.08, lambda_1_r=0.06, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), v_min=1.5, kwargs...)
+@component function ABSUnit(; name = nothing, var"dt"=0.005, var"abs_on"=Float64(1.0), var"select_low"=Float64(1.0), var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -57,7 +57,7 @@ sampled modulator while retaining the nonnegative ESP brake increments.
     @named model = ABSUnit()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -66,6 +66,23 @@ sampled modulator while retaining the nonnegative ESP brake increments.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
+  haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
+  haskey(__overrides, "select_low") && (select_low = pop!(__overrides, "select_low"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "lambda_1_f") && (lambda_1_f = pop!(__overrides, "lambda_1_f"))
+  haskey(__overrides, "lambda_1_r") && (lambda_1_r = pop!(__overrides, "lambda_1_r"))
+  haskey(__overrides, "lambda_lock") && (lambda_lock = pop!(__overrides, "lambda_lock"))
+  haskey(__overrides, "alpha_rel") && (alpha_rel = pop!(__overrides, "alpha_rel"))
+  haskey(__overrides, "beta_reapply") && (beta_reapply = pop!(__overrides, "beta_reapply"))
+  haskey(__overrides, "l_rec") && (l_rec = pop!(__overrides, "l_rec"))
+  haskey(__overrides, "T_hold_max") && (T_hold_max = pop!(__overrides, "T_hold_max"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
 
   ### Structural Parameters (functions)
 
@@ -82,46 +99,46 @@ sampled modulator while retaining the nonnegative ESP brake increments.
   ### Symbolic Parameters
   __local__abs_on = abs_on
   append!(__params, @parameters (abs_on::Real))
-  __initial_conditions[abs_on] = __local__abs_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abs_on, __local__abs_on)
   __local__select_low = select_low
   append!(__params, @parameters (select_low::Real))
-  __initial_conditions[select_low] = __local__select_low
+  __dyad_seed_parameter!(__initial_conditions, __bindings, select_low, __local__select_low)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real))
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__lambda_1_f = lambda_1_f
   append!(__params, @parameters (lambda_1_f::Real))
-  __initial_conditions[lambda_1_f] = __local__lambda_1_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_f, __local__lambda_1_f)
   __local__lambda_1_r = lambda_1_r
   append!(__params, @parameters (lambda_1_r::Real))
-  __initial_conditions[lambda_1_r] = __local__lambda_1_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_r, __local__lambda_1_r)
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
-  __initial_conditions[lambda_lock] = __local__lambda_lock
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_lock, __local__lambda_lock)
   __local__alpha_rel = alpha_rel
   append!(__params, @parameters (alpha_rel::Real))
-  __initial_conditions[alpha_rel] = __local__alpha_rel
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_rel, __local__alpha_rel)
   __local__beta_reapply = beta_reapply
   append!(__params, @parameters (beta_reapply::Real))
-  __initial_conditions[beta_reapply] = __local__beta_reapply
+  __dyad_seed_parameter!(__initial_conditions, __bindings, beta_reapply, __local__beta_reapply)
   __local__l_rec = l_rec
   append!(__params, @parameters (l_rec::Real))
-  __initial_conditions[l_rec] = __local__l_rec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, l_rec, __local__l_rec)
   __local__T_hold_max = T_hold_max
   append!(__params, @parameters (T_hold_max::Real))
-  __initial_conditions[T_hold_max] = __local__T_hold_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_hold_max, __local__T_hold_max)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
   append!(__params, @parameters (k_inc_fast::Real))
-  __initial_conditions[k_inc_fast] = __local__k_inc_fast
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
 
   ### Final Parameters (assignments)
 
@@ -151,55 +168,55 @@ sampled modulator while retaining the nonnegative ESP brake increments.
   ### Components
   # Subcomponent clock of type DiscreteComponents.PeriodicClock
   clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
-  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=dt, clock_overrides...))
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=dt, __symbol_overrides(clock_overrides)...))
   # Subcomponent demand_sampler of type DiscreteComponents.Sampler
   demand_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "demand_sampler")
-  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; demand_sampler_overrides...))
+  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; __overrides = demand_sampler_overrides))
   # Subcomponent speed_sampler of type DiscreteComponents.Sampler
   speed_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sampler")
-  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; speed_sampler_overrides...))
+  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; __overrides = speed_sampler_overrides))
   # Subcomponent dT_fl_sampler of type DiscreteComponents.Sampler
   dT_fl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_fl_sampler")
-  push!(__systems, @named dT_fl_sampler = DiscreteComponents.Sampler(; dT_fl_sampler_overrides...))
+  push!(__systems, @named dT_fl_sampler = DiscreteComponents.Sampler(; __overrides = dT_fl_sampler_overrides))
   # Subcomponent dT_fr_sampler of type DiscreteComponents.Sampler
   dT_fr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_fr_sampler")
-  push!(__systems, @named dT_fr_sampler = DiscreteComponents.Sampler(; dT_fr_sampler_overrides...))
+  push!(__systems, @named dT_fr_sampler = DiscreteComponents.Sampler(; __overrides = dT_fr_sampler_overrides))
   # Subcomponent dT_rl_sampler of type DiscreteComponents.Sampler
   dT_rl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_rl_sampler")
-  push!(__systems, @named dT_rl_sampler = DiscreteComponents.Sampler(; dT_rl_sampler_overrides...))
+  push!(__systems, @named dT_rl_sampler = DiscreteComponents.Sampler(; __overrides = dT_rl_sampler_overrides))
   # Subcomponent dT_rr_sampler of type DiscreteComponents.Sampler
   dT_rr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "dT_rr_sampler")
-  push!(__systems, @named dT_rr_sampler = DiscreteComponents.Sampler(; dT_rr_sampler_overrides...))
+  push!(__systems, @named dT_rr_sampler = DiscreteComponents.Sampler(; __overrides = dT_rr_sampler_overrides))
   # Subcomponent kappa_fl_sampler of type DiscreteComponents.Sampler
   kappa_fl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_fl_sampler")
-  push!(__systems, @named kappa_fl_sampler = DiscreteComponents.Sampler(; kappa_fl_sampler_overrides...))
+  push!(__systems, @named kappa_fl_sampler = DiscreteComponents.Sampler(; __overrides = kappa_fl_sampler_overrides))
   # Subcomponent kappa_fr_sampler of type DiscreteComponents.Sampler
   kappa_fr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_fr_sampler")
-  push!(__systems, @named kappa_fr_sampler = DiscreteComponents.Sampler(; kappa_fr_sampler_overrides...))
+  push!(__systems, @named kappa_fr_sampler = DiscreteComponents.Sampler(; __overrides = kappa_fr_sampler_overrides))
   # Subcomponent kappa_rl_sampler of type DiscreteComponents.Sampler
   kappa_rl_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_rl_sampler")
-  push!(__systems, @named kappa_rl_sampler = DiscreteComponents.Sampler(; kappa_rl_sampler_overrides...))
+  push!(__systems, @named kappa_rl_sampler = DiscreteComponents.Sampler(; __overrides = kappa_rl_sampler_overrides))
   # Subcomponent kappa_rr_sampler of type DiscreteComponents.Sampler
   kappa_rr_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "kappa_rr_sampler")
-  push!(__systems, @named kappa_rr_sampler = DiscreteComponents.Sampler(; kappa_rr_sampler_overrides...))
+  push!(__systems, @named kappa_rr_sampler = DiscreteComponents.Sampler(; __overrides = kappa_rr_sampler_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.FourChannelABS
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(; dt=dt, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, select_low=select_low, abs_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(; dt=dt, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, select_low=select_low, __overrides = abs_overrides))
   # Subcomponent hold_fl of type DiscreteComponents.ZeroOrderHold
   hold_fl_overrides = __pop_subcomponent_overrides!(__overrides, "hold_fl")
-  push!(__systems, @named hold_fl = DiscreteComponents.ZeroOrderHold(; hold_fl_overrides...))
+  push!(__systems, @named hold_fl = DiscreteComponents.ZeroOrderHold(; __overrides = hold_fl_overrides))
   # Subcomponent hold_fr of type DiscreteComponents.ZeroOrderHold
   hold_fr_overrides = __pop_subcomponent_overrides!(__overrides, "hold_fr")
-  push!(__systems, @named hold_fr = DiscreteComponents.ZeroOrderHold(; hold_fr_overrides...))
+  push!(__systems, @named hold_fr = DiscreteComponents.ZeroOrderHold(; __overrides = hold_fr_overrides))
   # Subcomponent hold_rl of type DiscreteComponents.ZeroOrderHold
   hold_rl_overrides = __pop_subcomponent_overrides!(__overrides, "hold_rl")
-  push!(__systems, @named hold_rl = DiscreteComponents.ZeroOrderHold(; hold_rl_overrides...))
+  push!(__systems, @named hold_rl = DiscreteComponents.ZeroOrderHold(; __overrides = hold_rl_overrides))
   # Subcomponent hold_rr of type DiscreteComponents.ZeroOrderHold
   hold_rr_overrides = __pop_subcomponent_overrides!(__overrides, "hold_rr")
-  push!(__systems, @named hold_rr = DiscreteComponents.ZeroOrderHold(; hold_rr_overrides...))
+  push!(__systems, @named hold_rr = DiscreteComponents.ZeroOrderHold(; __overrides = hold_rr_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -239,6 +256,6 @@ sampled modulator while retaining the nonnegative ESP brake increments.
   push!(__eqs, connect(abs.tau_rr, hold_rr.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSUnit

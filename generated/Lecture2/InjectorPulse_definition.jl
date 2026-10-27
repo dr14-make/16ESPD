@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   InjectorPulse(; name, U_batt, t_pulse, t_start, dp_rail, R_on, t_switch, V_clamp)
+   InjectorPulse(; name, U_batt, t_pulse, t_start, dp_rail, R_on, t_switch, V_clamp, __overrides)
 
 One injection pulse: a battery drives a `FuelInjector` through a low-side driver for `t_pulse`
 seconds, with the fuel rail 3 bar above the manifold.
@@ -34,7 +34,7 @@ traces open with a flat stretch, as on deck slide 45.
 | `t_switch`         | Driver switching time constant (assumed)                         | s  |   1e-6 |
 | `V_clamp`         | Driver Zener clamp voltage (assumed, a common 60-80 V driver clamp)                         | V  |   60.0 |
 """
-@component function InjectorPulse(; name = nothing, U_batt=Float64(14.0), t_pulse=0.003, t_start=0.0005, dp_rail=Float64(300000.0), R_on=0.1, t_switch=0.000001, V_clamp=Float64(60.0), kwargs...)
+@component function InjectorPulse(; name = nothing, var"U_batt"=Float64(14.0), var"t_pulse"=0.003, var"t_start"=0.0005, var"dp_rail"=Float64(300000.0), var"R_on"=0.1, var"t_switch"=0.000001, var"V_clamp"=Float64(60.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -42,7 +42,7 @@ traces open with a flat stretch, as on deck slide 45.
     @named model = InjectorPulse()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -51,6 +51,15 @@ traces open with a flat stretch, as on deck slide 45.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "U_batt") && (U_batt = pop!(__overrides, "U_batt"))
+  haskey(__overrides, "t_pulse") && (t_pulse = pop!(__overrides, "t_pulse"))
+  haskey(__overrides, "t_start") && (t_start = pop!(__overrides, "t_start"))
+  haskey(__overrides, "dp_rail") && (dp_rail = pop!(__overrides, "dp_rail"))
+  haskey(__overrides, "R_on") && (R_on = pop!(__overrides, "R_on"))
+  haskey(__overrides, "t_switch") && (t_switch = pop!(__overrides, "t_switch"))
+  haskey(__overrides, "V_clamp") && (V_clamp = pop!(__overrides, "V_clamp"))
 
   ### Structural Parameters (functions)
 
@@ -67,25 +76,25 @@ traces open with a flat stretch, as on deck slide 45.
   ### Symbolic Parameters
   __local__U_batt = U_batt
   append!(__params, @parameters (U_batt::Real), [description = "Battery voltage"])
-  __initial_conditions[U_batt] = __local__U_batt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, U_batt, __local__U_batt)
   __local__t_pulse = t_pulse
   append!(__params, @parameters (t_pulse::Real), [description = "Activation pulse width"])
-  __initial_conditions[t_pulse] = __local__t_pulse
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_pulse, __local__t_pulse)
   __local__t_start = t_start
   append!(__params, @parameters (t_start::Real), [description = "Start of the activation pulse"])
-  __initial_conditions[t_start] = __local__t_start
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_start, __local__t_start)
   __local__dp_rail = dp_rail
   append!(__params, @parameters (dp_rail::Real), [description = "Rail pressure above the manifold, 3 bar (Bosch EV14 rating)"])
-  __initial_conditions[dp_rail] = __local__dp_rail
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dp_rail, __local__dp_rail)
   __local__R_on = R_on
   append!(__params, @parameters (R_on::Real), [description = "Driver on-resistance (assumed)"])
-  __initial_conditions[R_on] = __local__R_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_on, __local__R_on)
   __local__t_switch = t_switch
   append!(__params, @parameters (t_switch::Real), [description = "Driver switching time constant (assumed)"])
-  __initial_conditions[t_switch] = __local__t_switch
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_switch, __local__t_switch)
   __local__V_clamp = V_clamp
   append!(__params, @parameters (V_clamp::Real), [description = "Driver Zener clamp voltage (assumed, a common 60-80 V driver clamp)"])
-  __initial_conditions[V_clamp] = __local__V_clamp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_clamp, __local__V_clamp)
 
   ### Final Parameters (assignments)
 
@@ -101,40 +110,40 @@ traces open with a flat stretch, as on deck slide 45.
   ### Components
   # Subcomponent pulse of type BlockComponents.Sources.Pulse
   pulse_overrides = __pop_subcomponent_overrides!(__overrides, "pulse")
-  push!(__systems, @named pulse = BlockComponents.Sources.Pulse(; amplitude=Float64(1), offset=Float64(0), duty_cycle=Float64(1), period=t_pulse, start_time=t_start, pulse_overrides...))
+  push!(__systems, @named pulse = BlockComponents.Sources.Pulse(; amplitude=Float64(1), offset=Float64(0), duty_cycle=Float64(1), period=t_pulse, start_time=t_start, __overrides = pulse_overrides))
   # Subcomponent gate_drive of type BlockComponents.Continuous.FirstOrder
   gate_drive_overrides = __pop_subcomponent_overrides!(__overrides, "gate_drive")
-  push!(__systems, @named gate_drive = BlockComponents.Continuous.FirstOrder(; k=1 / R_on, T=t_switch, gate_drive_overrides...))
+  push!(__systems, @named gate_drive = BlockComponents.Continuous.FirstOrder(; k=1 / R_on, T=t_switch, __overrides = gate_drive_overrides))
   # Subcomponent battery_level of type BlockComponents.Sources.Constant
   battery_level_overrides = __pop_subcomponent_overrides!(__overrides, "battery_level")
-  push!(__systems, @named battery_level = BlockComponents.Sources.Constant(; k=U_batt, battery_level_overrides...))
+  push!(__systems, @named battery_level = BlockComponents.Sources.Constant(; k=U_batt, __overrides = battery_level_overrides))
   # Subcomponent battery of type ElectricalComponents.Analog.Sources.VoltageSource
   battery_overrides = __pop_subcomponent_overrides!(__overrides, "battery")
-  push!(__systems, @named battery = ElectricalComponents.Analog.Sources.VoltageSource(; battery_overrides...))
+  push!(__systems, @named battery = ElectricalComponents.Analog.Sources.VoltageSource(; __overrides = battery_overrides))
   # Subcomponent injector of type VehicleSystemsComponents.Vehicle.Engine.FuelInjector
   injector_overrides = __pop_subcomponent_overrides!(__overrides, "injector")
-  push!(__systems, @named injector = VehicleSystemsComponents.Vehicle.Engine.FuelInjector(; injector_overrides...))
+  push!(__systems, @named injector = VehicleSystemsComponents.Vehicle.Engine.FuelInjector(; __overrides = injector_overrides))
   # Subcomponent transistor of type ElectricalComponents.Analog.Basic.VariableConductor
   transistor_overrides = __pop_subcomponent_overrides!(__overrides, "transistor")
-  push!(__systems, @named transistor = ElectricalComponents.Analog.Basic.VariableConductor(; transistor_overrides...))
+  push!(__systems, @named transistor = ElectricalComponents.Analog.Basic.VariableConductor(; __overrides = transistor_overrides))
   # Subcomponent zener of type ElectricalComponents.Analog.Basic.NonlinearResistor
   zener_overrides = __pop_subcomponent_overrides!(__overrides, "zener")
-  push!(__systems, @named zener = ElectricalComponents.Analog.Basic.NonlinearResistor(; Ga=0.0001, Gb=0.1, Ve=V_clamp, zener_overrides...))
+  push!(__systems, @named zener = ElectricalComponents.Analog.Basic.NonlinearResistor(; Ga=0.0001, Gb=0.1, Ve=V_clamp, __overrides = zener_overrides))
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
-  push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; ground_overrides...))
+  push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))
   # Subcomponent ambient of type ThermalComponents.Sources.FixedTemperature
   ambient_overrides = __pop_subcomponent_overrides!(__overrides, "ambient")
-  push!(__systems, @named ambient = ThermalComponents.Sources.FixedTemperature(; T=293.15, ambient_overrides...))
+  push!(__systems, @named ambient = ThermalComponents.Sources.FixedTemperature(; T=293.15, __overrides = ambient_overrides))
   # Subcomponent rail of type BlockComponents.Sources.Constant
   rail_overrides = __pop_subcomponent_overrides!(__overrides, "rail")
-  push!(__systems, @named rail = BlockComponents.Sources.Constant(; k=dp_rail, rail_overrides...))
+  push!(__systems, @named rail = BlockComponents.Sources.Constant(; k=dp_rail, __overrides = rail_overrides))
   # Subcomponent fuel_mass of type BlockComponents.Continuous.Integrator
   fuel_mass_overrides = __pop_subcomponent_overrides!(__overrides, "fuel_mass")
-  push!(__systems, @named fuel_mass = BlockComponents.Continuous.Integrator(; fuel_mass_overrides...))
+  push!(__systems, @named fuel_mass = BlockComponents.Continuous.Integrator(; __overrides = fuel_mass_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -159,6 +168,6 @@ traces open with a flat stretch, as on deck slide 45.
   push!(__eqs, connect(injector.mdot_f, fuel_mass.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export InjectorPulse

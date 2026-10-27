@@ -364,7 +364,7 @@ metadata {
 end
 
 "Default sampled wheel-only ABS controller."
-component ABSController@[input clk extends Discrete]
+component ABSController
   extends VehicleSystemsComponents.Vehicle.ABSControllerWheelOnly
 relations
 end

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TandemMasterCylinder(; name, A_mc, F_cs0, F_cf, s_dead)
+   TandemMasterCylinder(; name, A_mc, F_cs0, F_cf, s_dead, __overrides)
 
 Quasi-static tandem master cylinder with two physical hydraulic circuit connectors.
 
@@ -39,7 +39,7 @@ stroke plus displaced fluid volume divided by bore area.
 | `F_rod`         | Pushrod-force magnitude [N]                         | N  |
 | `rho`         | Brake-fluid density evaluated at master-cylinder pressure [kg/m^3] (derived from hydraulic medium)                         | kg/m3  |
 """
-@component function TandemMasterCylinder(; name = nothing, A_mc=π * 0.025 ^ 2 / 4, F_cs0=Float64(138.0), F_cf=Float64(80.0), s_dead=0.0025, continuity__graph0, kwargs...)
+@component function TandemMasterCylinder(; name = nothing, var"A_mc"=π * 0.025 ^ 2 / 4, var"F_cs0"=Float64(138.0), var"F_cf"=Float64(80.0), var"s_dead"=0.0025, var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,7 +47,7 @@ stroke plus displaced fluid volume divided by bore area.
     @named model = TandemMasterCylinder()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -56,6 +56,12 @@ stroke plus displaced fluid volume divided by bore area.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "A_mc") && (A_mc = pop!(__overrides, "A_mc"))
+  haskey(__overrides, "F_cs0") && (F_cs0 = pop!(__overrides, "F_cs0"))
+  haskey(__overrides, "F_cf") && (F_cf = pop!(__overrides, "F_cf"))
+  haskey(__overrides, "s_dead") && (s_dead = pop!(__overrides, "s_dead"))
 
   ### Structural Parameters (functions)
 
@@ -72,16 +78,16 @@ stroke plus displaced fluid volume divided by bore area.
   ### Symbolic Parameters
   __local__A_mc = A_mc
   append!(__params, @parameters (A_mc::Real), [description = "Master-cylinder piston area, pi*0.025^2/4 for a 25 mm bore [m^2] (PATH)"])
-  __initial_conditions[A_mc] = __local__A_mc
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_mc, __local__A_mc)
   __local__F_cs0 = F_cs0
   append!(__params, @parameters (F_cs0::Real), [description = "Master-cylinder spring preload [N] (PATH)"])
-  __initial_conditions[F_cs0] = __local__F_cs0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_cs0, __local__F_cs0)
   __local__F_cf = F_cf
   append!(__params, @parameters (F_cf::Real), [description = "Master-cylinder seal friction [N] (PATH)"])
-  __initial_conditions[F_cf] = __local__F_cf
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_cf, __local__F_cf)
   __local__s_dead = s_dead
   append!(__params, @parameters (s_dead::Real), [description = "Dead stroke before fluid displacement [m] (assumed; textbook range 1.5–3.5 mm)"])
-  __initial_conditions[s_dead] = __local__s_dead
+  __dyad_seed_parameter!(__initial_conditions, __bindings, s_dead, __local__s_dead)
 
   ### Final Parameters (assignments)
 
@@ -98,14 +104,14 @@ stroke plus displaced fluid volume divided by bore area.
 
   ### Variables (assignments)
   __ovr_V_disp = pop!(__overrides, "V_disp", nothing); isnothing(__ovr_V_disp) || push!(__eqs, V_disp ~ __ovr_V_disp)
-  __ovr_V_disp__initial = pop!(__overrides, "V_disp__initial", nothing); isnothing(__ovr_V_disp__initial) || (__initial_conditions[V_disp] = __ovr_V_disp__initial)
-  __ovr_V_disp__guess = pop!(__overrides, "V_disp__guess", nothing)
+  __ovr_V_disp__initial = pop!(__overrides, "V_disp.initial", nothing); isnothing(__ovr_V_disp__initial) || (__initial_conditions[V_disp] = __ovr_V_disp__initial)
+  __ovr_V_disp__guess = pop!(__overrides, "V_disp.guess", nothing)
   __ovr_F_rod = pop!(__overrides, "F_rod", nothing); isnothing(__ovr_F_rod) || push!(__eqs, F_rod ~ __ovr_F_rod)
-  __ovr_F_rod__initial = pop!(__overrides, "F_rod__initial", nothing); isnothing(__ovr_F_rod__initial) || (__initial_conditions[F_rod] = __ovr_F_rod__initial)
-  __ovr_F_rod__guess = pop!(__overrides, "F_rod__guess", nothing)
+  __ovr_F_rod__initial = pop!(__overrides, "F_rod.initial", nothing); isnothing(__ovr_F_rod__initial) || (__initial_conditions[F_rod] = __ovr_F_rod__initial)
+  __ovr_F_rod__guess = pop!(__overrides, "F_rod.guess", nothing)
   __ovr_rho = pop!(__overrides, "rho", nothing); isnothing(__ovr_rho) || push!(__eqs, rho ~ __ovr_rho)
-  __ovr_rho__initial = pop!(__overrides, "rho__initial", nothing); isnothing(__ovr_rho__initial) || (__initial_conditions[rho] = __ovr_rho__initial)
-  __ovr_rho__guess = pop!(__overrides, "rho__guess", nothing)
+  __ovr_rho__initial = pop!(__overrides, "rho.initial", nothing); isnothing(__ovr_rho__initial) || (__initial_conditions[rho] = __ovr_rho__initial)
+  __ovr_rho__guess = pop!(__overrides, "rho.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -117,7 +123,7 @@ stroke plus displaced fluid volume divided by bore area.
   push!(__systems, @named rear = HydraulicComponents.Interfaces.Port())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_V_disp__guess) || (__guesses[V_disp] = __ovr_V_disp__guess)
@@ -142,6 +148,6 @@ stroke plus displaced fluid volume divided by bore area.
   push!(__eqs, x_rod ~ s_dead + V_disp / A_mc)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TandemMasterCylinder

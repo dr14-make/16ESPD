@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSIdealController(; name, lambda_target, T_p, T_f, k_inc, k_dec, v_min, T_track)
+   ABSIdealController(; name, lambda_target, T_p, T_f, k_inc, k_dec, v_min, T_track, __overrides)
 
 Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
 
@@ -37,7 +37,7 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
 | `kappa_pred`         |                          | --  |
 | `rate`         |                          | --  |
 """
-@component function ABSIdealController(; name = nothing, lambda_target=0.04, T_p=0.03, T_f=0.003, k_inc=Float64(20000.0), k_dec=Float64(40000.0), v_min=1.5, T_track=0.01, kwargs...)
+@component function ABSIdealController(; name = nothing, var"lambda_target"=0.04, var"T_p"=0.03, var"T_f"=0.003, var"k_inc"=Float64(20000.0), var"k_dec"=Float64(40000.0), var"v_min"=1.5, var"T_track"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,7 +45,7 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
     @named model = ABSIdealController()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -54,6 +54,15 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "lambda_target") && (lambda_target = pop!(__overrides, "lambda_target"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "T_f") && (T_f = pop!(__overrides, "T_f"))
+  haskey(__overrides, "k_inc") && (k_inc = pop!(__overrides, "k_inc"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
+  haskey(__overrides, "T_track") && (T_track = pop!(__overrides, "T_track"))
 
   ### Structural Parameters (functions)
 
@@ -70,25 +79,25 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
   ### Symbolic Parameters
   __local__lambda_target = lambda_target
   append!(__params, @parameters (lambda_target::Real))
-  __initial_conditions[lambda_target] = __local__lambda_target
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_target, __local__lambda_target)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__T_f = T_f
   append!(__params, @parameters (T_f::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_f] = __local__T_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_f, __local__T_f)
   __local__k_inc = k_inc
   append!(__params, @parameters (k_inc::Real))
-  __initial_conditions[k_inc] = __local__k_inc
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc, __local__k_inc)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
   __local__T_track = T_track
   append!(__params, @parameters (T_track::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_track] = __local__T_track
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_track, __local__T_track)
 
   ### Final Parameters (assignments)
 
@@ -106,17 +115,17 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
 
   ### Variables (assignments)
   __ovr_kappa_filtered = pop!(__overrides, "kappa_filtered", nothing); isnothing(__ovr_kappa_filtered) || push!(__eqs, kappa_filtered ~ __ovr_kappa_filtered)
-  __ovr_kappa_filtered__initial = pop!(__overrides, "kappa_filtered__initial", nothing); isnothing(__ovr_kappa_filtered__initial) || (__initial_conditions[kappa_filtered] = __ovr_kappa_filtered__initial)
-  __ovr_kappa_filtered__guess = pop!(__overrides, "kappa_filtered__guess", nothing)
+  __ovr_kappa_filtered__initial = pop!(__overrides, "kappa_filtered.initial", nothing); isnothing(__ovr_kappa_filtered__initial) || (__initial_conditions[kappa_filtered] = __ovr_kappa_filtered__initial)
+  __ovr_kappa_filtered__guess = pop!(__overrides, "kappa_filtered.guess", nothing)
   __ovr_kappa_dot = pop!(__overrides, "kappa_dot", nothing); isnothing(__ovr_kappa_dot) || push!(__eqs, kappa_dot ~ __ovr_kappa_dot)
-  __ovr_kappa_dot__initial = pop!(__overrides, "kappa_dot__initial", nothing); isnothing(__ovr_kappa_dot__initial) || (__initial_conditions[kappa_dot] = __ovr_kappa_dot__initial)
-  __ovr_kappa_dot__guess = pop!(__overrides, "kappa_dot__guess", nothing)
+  __ovr_kappa_dot__initial = pop!(__overrides, "kappa_dot.initial", nothing); isnothing(__ovr_kappa_dot__initial) || (__initial_conditions[kappa_dot] = __ovr_kappa_dot__initial)
+  __ovr_kappa_dot__guess = pop!(__overrides, "kappa_dot.guess", nothing)
   __ovr_kappa_pred = pop!(__overrides, "kappa_pred", nothing); isnothing(__ovr_kappa_pred) || push!(__eqs, kappa_pred ~ __ovr_kappa_pred)
-  __ovr_kappa_pred__initial = pop!(__overrides, "kappa_pred__initial", nothing); isnothing(__ovr_kappa_pred__initial) || (__initial_conditions[kappa_pred] = __ovr_kappa_pred__initial)
-  __ovr_kappa_pred__guess = pop!(__overrides, "kappa_pred__guess", nothing)
+  __ovr_kappa_pred__initial = pop!(__overrides, "kappa_pred.initial", nothing); isnothing(__ovr_kappa_pred__initial) || (__initial_conditions[kappa_pred] = __ovr_kappa_pred__initial)
+  __ovr_kappa_pred__guess = pop!(__overrides, "kappa_pred.guess", nothing)
   __ovr_rate = pop!(__overrides, "rate", nothing); isnothing(__ovr_rate) || push!(__eqs, rate ~ __ovr_rate)
-  __ovr_rate__initial = pop!(__overrides, "rate__initial", nothing); isnothing(__ovr_rate__initial) || (__initial_conditions[rate] = __ovr_rate__initial)
-  __ovr_rate__guess = pop!(__overrides, "rate__guess", nothing)
+  __ovr_rate__initial = pop!(__overrides, "rate.initial", nothing); isnothing(__ovr_rate__initial) || (__initial_conditions[rate] = __ovr_rate__initial)
+  __ovr_rate__guess = pop!(__overrides, "rate.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -124,10 +133,10 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
   ### Components
   # Subcomponent pressure of type VehicleSystemsComponents.Vehicle.ABSPressureIntegrator
   pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
-  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=T_track, pressure_overrides...))
+  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=T_track, __overrides = pressure_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_kappa_filtered__guess) || (__guesses[kappa_filtered] = __ovr_kappa_filtered__guess)
@@ -152,6 +161,6 @@ Ideal continuous ABS benchmark using true tire slip and true vehicle speed.
   push!(__eqs, connect(pressure.cmd, tau_cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSIdealController

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPSineWithDwell(; name, load_transfer, A_sw, v0, esp_on, abs_on, Kp, Ki, T_build, R_build, radius, select_low, mu_scale_right, T_cmd, k_dec, k_inc_fast, k_inc_slow, h_cg)
+   ESPSineWithDwell(; name, load_transfer, A_sw, v0, esp_on, abs_on, Kp, Ki, T_build, R_build, radius, select_low, mu_scale_right, T_cmd, k_dec, k_inc_fast, k_inc_slow, h_cg, __overrides)
 
 Planar car with ESP and an optional sampled four-channel ABS path.
 
@@ -31,7 +31,7 @@ Planar car with ESP and an optional sampled four-channel ABS path.
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function ESPSineWithDwell(; name = nothing, load_transfer=true, A_sw=0.5585053606381855, v0=22.22222222222222, esp_on=Float64(1.0), abs_on=Float64(0.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, R_build=Float64(1000000000.0), radius=0.31, select_low=Float64(1.0), mu_scale_right=Float64(1.0), T_cmd=Float64(0.0), k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), h_cg=Float64(0.0), kwargs...)
+@component function ESPSineWithDwell(; name = nothing, var"load_transfer"=true, var"A_sw"=0.5585053606381855, var"v0"=22.22222222222222, var"esp_on"=Float64(1.0), var"abs_on"=Float64(0.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"radius"=0.31, var"select_low"=Float64(1.0), var"mu_scale_right"=Float64(1.0), var"T_cmd"=Float64(0.0), var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -39,7 +39,7 @@ Planar car with ESP and an optional sampled four-channel ABS path.
     @named model = ESPSineWithDwell()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -48,6 +48,25 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
+  haskey(__overrides, "A_sw") && (A_sw = pop!(__overrides, "A_sw"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
+  haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
+  haskey(__overrides, "Kp") && (Kp = pop!(__overrides, "Kp"))
+  haskey(__overrides, "Ki") && (Ki = pop!(__overrides, "Ki"))
+  haskey(__overrides, "T_build") && (T_build = pop!(__overrides, "T_build"))
+  haskey(__overrides, "R_build") && (R_build = pop!(__overrides, "R_build"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "select_low") && (select_low = pop!(__overrides, "select_low"))
+  haskey(__overrides, "mu_scale_right") && (mu_scale_right = pop!(__overrides, "mu_scale_right"))
+  haskey(__overrides, "T_cmd") && (T_cmd = pop!(__overrides, "T_cmd"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
 
   ### Structural Parameters (functions)
 
@@ -64,52 +83,52 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   ### Symbolic Parameters
   __local__A_sw = A_sw
   append!(__params, @parameters (A_sw::Real))
-  __initial_conditions[A_sw] = __local__A_sw
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_sw, __local__A_sw)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__esp_on = esp_on
   append!(__params, @parameters (esp_on::Real))
-  __initial_conditions[esp_on] = __local__esp_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
   __local__abs_on = abs_on
   append!(__params, @parameters (abs_on::Real))
-  __initial_conditions[abs_on] = __local__abs_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abs_on, __local__abs_on)
   __local__Kp = Kp
   append!(__params, @parameters (Kp::Real))
-  __initial_conditions[Kp] = __local__Kp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Kp, __local__Kp)
   __local__Ki = Ki
   append!(__params, @parameters (Ki::Real))
-  __initial_conditions[Ki] = __local__Ki
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ki, __local__Ki)
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
-  __initial_conditions[T_build] = __local__T_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_build, __local__T_build)
   __local__R_build = R_build
   append!(__params, @parameters (R_build::Real))
-  __initial_conditions[R_build] = __local__R_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_build, __local__R_build)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__select_low = select_low
   append!(__params, @parameters (select_low::Real))
-  __initial_conditions[select_low] = __local__select_low
+  __dyad_seed_parameter!(__initial_conditions, __bindings, select_low, __local__select_low)
   __local__mu_scale_right = mu_scale_right
   append!(__params, @parameters (mu_scale_right::Real))
-  __initial_conditions[mu_scale_right] = __local__mu_scale_right
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_right, __local__mu_scale_right)
   __local__T_cmd = T_cmd
   append!(__params, @parameters (T_cmd::Real))
-  __initial_conditions[T_cmd] = __local__T_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_cmd, __local__T_cmd)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
   append!(__params, @parameters (k_inc_fast::Real))
-  __initial_conditions[k_inc_fast] = __local__k_inc_fast
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__h_cg = h_cg
   append!(__params, @parameters (h_cg::Real))
-  __initial_conditions[h_cg] = __local__h_cg
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_cg, __local__h_cg)
 
   ### Final Parameters (assignments)
 
@@ -125,25 +144,25 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   ### Components
   # Subcomponent steer of type VehicleSystemsComponents.Vehicle.Planar.SineWithDwell
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
-  push!(__systems, @named steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(; A=A_sw, steer_overrides...))
+  push!(__systems, @named steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(; A=A_sw, __overrides = steer_overrides))
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=Float64(0.0), height=T_cmd, start_time=0.5, demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=Float64(0.0), height=T_cmd, start_time=0.5, __overrides = demand_overrides))
   # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
-  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = steering_robot_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fr=mu_scale_right, mu_scale_rr=mu_scale_right, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fr=mu_scale_right, mu_scale_rr=mu_scale_right, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
+  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
-  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, abs_on=abs_on, Kp=Kp, Ki=Ki, T_build=T_build, R_build=R_build, radius=radius, select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, ecu_overrides...))
+  push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, abs_on=abs_on, Kp=Kp, Ki=Ki, T_build=T_build, R_build=R_build, radius=radius, select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, __overrides = ecu_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -195,6 +214,6 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   push!(__eqs, connect(ecu.tau_rr, car.tau_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ESPSineWithDwell

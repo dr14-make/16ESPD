@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestBrakeAllocator(; name)
+   TestBrakeAllocator(; name, __overrides)
 
 Brake-allocation checks for oversteer, understeer, and saturation.
 """
-@component function TestBrakeAllocator(; name = nothing, kwargs...)
+@component function TestBrakeAllocator(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Brake-allocation checks for oversteer, understeer, and saturation.
     @named model = TestBrakeAllocator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,16 +55,16 @@ Brake-allocation checks for oversteer, understeer, and saturation.
   ### Components
   # Subcomponent moment of type BlockComponents.Sources.Constant
   moment_overrides = __pop_subcomponent_overrides!(__overrides, "moment")
-  push!(__systems, @named moment = BlockComponents.Sources.Constant(; k=-2800.0, moment_overrides...))
+  push!(__systems, @named moment = BlockComponents.Sources.Constant(; k=-2800.0, __overrides = moment_overrides))
   # Subcomponent mode of type BlockComponents.Sources.Constant
   mode_overrides = __pop_subcomponent_overrides!(__overrides, "mode")
-  push!(__systems, @named mode = BlockComponents.Sources.Constant(; k=Float64(1.0), mode_overrides...))
+  push!(__systems, @named mode = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = mode_overrides))
   # Subcomponent allocator of type VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator
   allocator_overrides = __pop_subcomponent_overrides!(__overrides, "allocator")
-  push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; allocator_overrides...))
+  push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; __overrides = allocator_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -78,6 +78,6 @@ Brake-allocation checks for oversteer, understeer, and saturation.
   push!(__eqs, connect(mode.y, allocator.oversteer))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestBrakeAllocator

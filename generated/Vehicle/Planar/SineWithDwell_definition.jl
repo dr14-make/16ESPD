@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SineWithDwell(; name, A, f, t0, T_dwell, sign)
+   SineWithDwell(; name, A, f, t0, T_dwell, sign, __overrides)
 
 FMVSS 126 sine-with-dwell steering-wheel command.
 
@@ -29,7 +29,7 @@ FMVSS 126 sine-with-dwell steering-wheel command.
 | ------------ | ----------------------------------- | ------ |
 | `tau`         |                          | s  |
 """
-@component function SineWithDwell(; name = nothing, A=0.3775147179563736, f=0.7, t0=Float64(1.0), T_dwell=0.5, sign=Float64(1.0), kwargs...)
+@component function SineWithDwell(; name = nothing, var"A"=0.3775147179563736, var"f"=0.7, var"t0"=Float64(1.0), var"T_dwell"=0.5, var"sign"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ FMVSS 126 sine-with-dwell steering-wheel command.
     @named model = SineWithDwell()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,13 @@ FMVSS 126 sine-with-dwell steering-wheel command.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "A") && (A = pop!(__overrides, "A"))
+  haskey(__overrides, "f") && (f = pop!(__overrides, "f"))
+  haskey(__overrides, "t0") && (t0 = pop!(__overrides, "t0"))
+  haskey(__overrides, "T_dwell") && (T_dwell = pop!(__overrides, "T_dwell"))
+  haskey(__overrides, "sign") && (sign = pop!(__overrides, "sign"))
 
   ### Structural Parameters (functions)
 
@@ -62,19 +69,19 @@ FMVSS 126 sine-with-dwell steering-wheel command.
   ### Symbolic Parameters
   __local__A = A
   append!(__params, @parameters (A::Real), [description = "Steering-wheel amplitude (probe)"])
-  __initial_conditions[A] = __local__A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A, __local__A)
   __local__f = f
   append!(__params, @parameters (f::Real), [description = "Steering frequency (FMVSS 126)"])
-  __initial_conditions[f] = __local__f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f, __local__f)
   __local__t0 = t0
   append!(__params, @parameters (t0::Real), [description = "Beginning of the sine input (assumed)"])
-  __initial_conditions[t0] = __local__t0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t0, __local__t0)
   __local__T_dwell = T_dwell
   append!(__params, @parameters (T_dwell::Real), [description = "Duration at the second peak (FMVSS 126)"])
-  __initial_conditions[T_dwell] = __local__T_dwell
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_dwell, __local__T_dwell)
   __local__sign = sign
   append!(__params, @parameters (sign::Real), [description = "Maneuver direction (assumed)"])
-  __initial_conditions[sign] = __local__sign
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sign, __local__sign)
 
   ### Final Parameters (assignments)
 
@@ -86,8 +93,8 @@ FMVSS 126 sine-with-dwell steering-wheel command.
 
   ### Variables (assignments)
   __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
-  __ovr_tau__initial = pop!(__overrides, "tau__initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
-  __ovr_tau__guess = pop!(__overrides, "tau__guess", nothing)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -95,7 +102,7 @@ FMVSS 126 sine-with-dwell steering-wheel command.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_tau__guess) || (__guesses[tau] = __ovr_tau__guess)
@@ -110,6 +117,6 @@ FMVSS 126 sine-with-dwell steering-wheel command.
   push!(__eqs, y ~ sign * ifelse(tau < 0.0, 0.0, ifelse(tau < 0.75 / f, A * sin(2.0 * π * f * tau), ifelse(tau < 0.75 / f + T_dwell, -A, ifelse(tau < 1.0 / f + T_dwell, A * sin(2.0 * π * f * (tau - T_dwell)), 0.0)))))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SineWithDwell

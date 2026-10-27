@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestOnOff(; name)
+   TestOnOff(; name, __overrides)
 """
-@component function TestOnOff(; name = nothing, kwargs...)
+@component function TestOnOff(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestOnOff()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,16 +53,16 @@
   ### Components
   # Subcomponent src of type BlockComponents.Sources.Constant
   src_overrides = __pop_subcomponent_overrides!(__overrides, "src")
-  push!(__systems, @named src = BlockComponents.Sources.Constant(; k=2.5, src_overrides...))
+  push!(__systems, @named src = BlockComponents.Sources.Constant(; k=2.5, __overrides = src_overrides))
   # Subcomponent pass of type VehicleSystemsComponents.Lecture1.OnOff
   pass_overrides = __pop_subcomponent_overrides!(__overrides, "pass")
-  push!(__systems, @named pass = VehicleSystemsComponents.Lecture1.OnOff(; on=true, pass_overrides...))
+  push!(__systems, @named pass = VehicleSystemsComponents.Lecture1.OnOff(; on=true, __overrides = pass_overrides))
   # Subcomponent block of type VehicleSystemsComponents.Lecture1.OnOff
   block_overrides = __pop_subcomponent_overrides!(__overrides, "block")
-  push!(__systems, @named block = VehicleSystemsComponents.Lecture1.OnOff(; on=false, block_overrides...))
+  push!(__systems, @named block = VehicleSystemsComponents.Lecture1.OnOff(; on=false, __overrides = block_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -76,6 +76,6 @@
   push!(__eqs, connect(src.y, block.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestOnOff

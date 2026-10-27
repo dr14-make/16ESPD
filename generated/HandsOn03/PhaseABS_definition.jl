@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PhaseABS(; name, a_minus, a_plus, lambda_1, k_dec, k_inc, v_min, T_latch)
+   PhaseABS(; name, a_minus, a_plus, lambda_1, k_dec, k_inc, v_min, T_latch, __overrides)
 
 Hands-on 03 step 04 wheel-speed-only ABS controller. It dumps allowed hydraulic pressure while
 the wheel decelerates past `a_minus` or slips past `lambda_1`, holds while the wheel spins back up
@@ -38,7 +38,7 @@ past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
 | `phase`         | -1 decrease, 0 hold, 1 increase                         | --  |
 | `cycled`         | 1 once the first dump has happened                         | --  |
 """
-@component function PhaseABS(; name = nothing, a_minus=Float64(12), a_plus=Float64(3), lambda_1=0.2, k_dec=Float64(58000000.0), k_inc=Float64(11600000.0), v_min=1.5, T_latch=0.001, kwargs...)
+@component function PhaseABS(; name = nothing, var"a_minus"=Float64(12), var"a_plus"=Float64(3), var"lambda_1"=0.2, var"k_dec"=Float64(58000000.0), var"k_inc"=Float64(11600000.0), var"v_min"=1.5, var"T_latch"=0.001, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -46,7 +46,7 @@ past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
     @named model = PhaseABS()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,6 +55,15 @@ past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "a_minus") && (a_minus = pop!(__overrides, "a_minus"))
+  haskey(__overrides, "a_plus") && (a_plus = pop!(__overrides, "a_plus"))
+  haskey(__overrides, "lambda_1") && (lambda_1 = pop!(__overrides, "lambda_1"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc") && (k_inc = pop!(__overrides, "k_inc"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
+  haskey(__overrides, "T_latch") && (T_latch = pop!(__overrides, "T_latch"))
 
   ### Structural Parameters (functions)
 
@@ -71,25 +80,25 @@ past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
   ### Symbolic Parameters
   __local__a_minus = a_minus
   append!(__params, @parameters (a_minus::Real), [description = "Wheel deceleration that starts a dump (-a)"])
-  __initial_conditions[a_minus] = __local__a_minus
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a_minus, __local__a_minus)
   __local__a_plus = a_plus
   append!(__params, @parameters (a_plus::Real), [description = "Wheel acceleration that holds the pressure (+a)"])
-  __initial_conditions[a_plus] = __local__a_plus
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a_plus, __local__a_plus)
   __local__lambda_1 = lambda_1
   append!(__params, @parameters (lambda_1::Real), [description = "Estimated slip that starts a dump"])
-  __initial_conditions[lambda_1] = __local__lambda_1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1, __local__lambda_1)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real), [description = "Dump rate [Pa/s]"])
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc = k_inc
   append!(__params, @parameters (k_inc::Real), [description = "Rebuild rate after the first dump [Pa/s]"])
-  __initial_conditions[k_inc] = __local__k_inc
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc, __local__k_inc)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real), [description = "ABS off below this speed"])
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
   __local__T_latch = T_latch
   append!(__params, @parameters (T_latch::Real), [description = "Time constant of the cycled latch"])
-  __initial_conditions[T_latch] = __local__T_latch
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_latch, __local__T_latch)
 
   ### Final Parameters (assignments)
 
@@ -106,11 +115,11 @@ past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
 
   ### Variables (assignments)
   __ovr_phase = pop!(__overrides, "phase", nothing); isnothing(__ovr_phase) || push!(__eqs, phase ~ __ovr_phase)
-  __ovr_phase__initial = pop!(__overrides, "phase__initial", nothing); isnothing(__ovr_phase__initial) || (__initial_conditions[phase] = __ovr_phase__initial)
-  __ovr_phase__guess = pop!(__overrides, "phase__guess", nothing)
+  __ovr_phase__initial = pop!(__overrides, "phase.initial", nothing); isnothing(__ovr_phase__initial) || (__initial_conditions[phase] = __ovr_phase__initial)
+  __ovr_phase__guess = pop!(__overrides, "phase.guess", nothing)
   __ovr_cycled = pop!(__overrides, "cycled", nothing); isnothing(__ovr_cycled) || push!(__eqs, cycled ~ __ovr_cycled)
-  __ovr_cycled__initial = pop!(__overrides, "cycled__initial", nothing); isnothing(__ovr_cycled__initial) || (__initial_conditions[cycled] = __ovr_cycled__initial)
-  __ovr_cycled__guess = pop!(__overrides, "cycled__guess", nothing)
+  __ovr_cycled__initial = pop!(__overrides, "cycled.initial", nothing); isnothing(__ovr_cycled__initial) || (__initial_conditions[cycled] = __ovr_cycled__initial)
+  __ovr_cycled__guess = pop!(__overrides, "cycled.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -118,10 +127,10 @@ past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
   ### Components
   # Subcomponent pressure of type VehicleSystemsComponents.Vehicle.ABSPressureIntegrator
   pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
-  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=0.01, pressure_overrides...))
+  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=0.01, __overrides = pressure_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_phase__guess) || (__guesses[phase] = __ovr_phase__guess)
@@ -142,6 +151,6 @@ past `a_plus`, and otherwise rebuilds pressure slowly from the held level.
   push!(__eqs, connect(demand, pressure.demand))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export PhaseABS

@@ -5,11 +5,157 @@
 
 
 using DyadInterface
-using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
-using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct InjectorPulseTransientSpec <: AbstractTransientAnalysisSpec
+@component function InjectorPulseTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=0.0065, var"abstol"=1e-11, var"reltol"=1e-8, var"saveat"=0, var"dtmax"=0.00001, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"U_batt"=14.0, var"t_pulse"=0.003, var"t_start"=0.0005, var"dp_rail"=300000.0, var"V_clamp"=60.0, __overrides = Dict{String, Any}())
+  isnothing(name) && throw(ArgumentError("""
+    The `name` keyword must be provided. Please consider using the `@named` macro,
+    like so:
+  
+    @named model = InjectorPulseTransient__System()
+  """))
+
+  __overrides = Dict{String, Any}(__overrides)
+  __params = Symbolics.SymbolicT[]
+  __vars = Symbolics.SymbolicT[]
+  __systems = System[]
+  __guesses = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initial_conditions = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initialization_eqs = Equation[]
+  __eqs = Equation[]
+  __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "alg") && (alg = pop!(__overrides, "alg"))
+  haskey(__overrides, "start") && (start = pop!(__overrides, "start"))
+  haskey(__overrides, "stop") && (stop = pop!(__overrides, "stop"))
+  haskey(__overrides, "abstol") && (abstol = pop!(__overrides, "abstol"))
+  haskey(__overrides, "reltol") && (reltol = pop!(__overrides, "reltol"))
+  haskey(__overrides, "saveat") && (saveat = pop!(__overrides, "saveat"))
+  haskey(__overrides, "dtmax") && (dtmax = pop!(__overrides, "dtmax"))
+  haskey(__overrides, "tstops") && (tstops = pop!(__overrides, "tstops"))
+  haskey(__overrides, "automatic_discontinuity_detection") && (automatic_discontinuity_detection = pop!(__overrides, "automatic_discontinuity_detection"))
+  haskey(__overrides, "optimize") && (optimize = pop!(__overrides, "optimize"))
+  haskey(__overrides, "progress") && (progress = pop!(__overrides, "progress"))
+  haskey(__overrides, "respecialize") && (respecialize = pop!(__overrides, "respecialize"))
+  haskey(__overrides, "specialization") && (specialization = pop!(__overrides, "specialization"))
+  haskey(__overrides, "verbose") && (verbose = pop!(__overrides, "verbose"))
+  haskey(__overrides, "log_file") && (log_file = pop!(__overrides, "log_file"))
+  haskey(__overrides, "U_batt") && (U_batt = pop!(__overrides, "U_batt"))
+  haskey(__overrides, "t_pulse") && (t_pulse = pop!(__overrides, "t_pulse"))
+  haskey(__overrides, "t_start") && (t_start = pop!(__overrides, "t_start"))
+  haskey(__overrides, "dp_rail") && (dp_rail = pop!(__overrides, "dp_rail"))
+  haskey(__overrides, "V_clamp") && (V_clamp = pop!(__overrides, "V_clamp"))
+
+  ### Structural Parameters (functions)
+
+  ### Structural Parameters (Final)
+
+  ### Path Parameters (functions)
+
+  ### Path Parameters (non-final)
+
+  ### Final Parameters (declarations)
+
+  ### Deferred assignment (default values that depend on final parameters)
+
+  ### Symbolic Parameters
+  __local__alg = alg
+  append!(__params, @parameters (alg::ODEAlg.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alg, __local__alg)
+  __local__start = start
+  append!(__params, @parameters (start::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start, __local__start)
+  __local__stop = stop
+  append!(__params, @parameters (stop::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, stop, __local__stop)
+  __local__abstol = abstol
+  append!(__params, @parameters (abstol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abstol, __local__abstol)
+  __local__reltol = reltol
+  append!(__params, @parameters (reltol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, reltol, __local__reltol)
+  __local__saveat = saveat
+  append!(__params, @parameters (saveat::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, saveat, __local__saveat)
+  __local__dtmax = dtmax
+  append!(__params, @parameters (dtmax::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dtmax, __local__dtmax)
+  __local__tstops = tstops
+  append!(__params, @parameters (tstops::Array{Float64, 1}))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tstops, __local__tstops)
+  __local__automatic_discontinuity_detection = automatic_discontinuity_detection
+  append!(__params, @parameters (automatic_discontinuity_detection::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, automatic_discontinuity_detection, __local__automatic_discontinuity_detection)
+  __local__optimize = optimize
+  append!(__params, @parameters (optimize::OptimizationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, optimize, __local__optimize)
+  __local__progress = progress
+  append!(__params, @parameters (progress::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, progress, __local__progress)
+  __local__respecialize = respecialize
+  append!(__params, @parameters (respecialize::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, respecialize, __local__respecialize)
+  __local__specialization = specialization
+  append!(__params, @parameters (specialization::SpecializationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, specialization, __local__specialization)
+  __local__verbose = verbose
+  append!(__params, @parameters (verbose::DEVerbosity.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, verbose, __local__verbose)
+  __local__log_file = log_file
+  append!(__params, @parameters (log_file::String))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, log_file, __local__log_file)
+  __local__U_batt = U_batt
+  append!(__params, @parameters (U_batt::Float64), [description = "Battery voltage"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, U_batt, __local__U_batt)
+  __local__t_pulse = t_pulse
+  append!(__params, @parameters (t_pulse::Float64), [description = "Activation pulse width"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_pulse, __local__t_pulse)
+  __local__t_start = t_start
+  append!(__params, @parameters (t_start::Float64), [description = "Start of the activation pulse"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_start, __local__t_start)
+  __local__dp_rail = dp_rail
+  append!(__params, @parameters (dp_rail::Float64), [description = "Rail pressure above the manifold"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dp_rail, __local__dp_rail)
+  __local__V_clamp = V_clamp
+  append!(__params, @parameters (V_clamp::Float64), [description = "Driver Zener clamp voltage"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_clamp, __local__V_clamp)
+
+  ### Final Parameters (assignments)
+
+  ### Final Path Parameters
+
+  ### Variables (declarations)
+
+  ### Variables (assignments)
+
+  ### Constants
+  __constants = Any[]
+
+  ### Components
+  # Subcomponent model of type VehicleSystemsComponents.Lecture2.InjectorPulse
+  model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
+  push!(__systems, @named model = VehicleSystemsComponents.Lecture2.InjectorPulse(; U_batt=U_batt, t_pulse=t_pulse, t_start=t_start, dp_rail=dp_rail, V_clamp=V_clamp, __overrides = model_overrides))
+
+  ### Check there are no unmatched overrides
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
+
+  ### Guesses
+
+  ### Initialization Equations
+
+  ### Assertions
+  __assertions = []
+
+  ### Equations
+
+  # Return completely constructed System
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+end
+export InjectorPulseTransient__System
+
+@kwdef struct InjectorPulseTransient__Spec <: AbstractTransientAnalysisSpec
   name::Symbol = :InjectorPulseTransient
+  __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
   var"alg"::ODEAlg.Type = ODEAlg.Rodas5P()
   var"start"::Float64 = 0
   var"stop"::Float64 = 0.0065
@@ -50,9 +196,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # The needle starts on its seat with no current. Nothing happens before `t_start`, so the
   # traces open with a flat stretch, as on deck slide 45.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture2.InjectorPulse(; name=:InjectorPulse)
+  __system::System = InjectorPulseTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"U_batt"=var"U_batt", var"t_pulse"=var"t_pulse", var"t_start"=var"t_start", var"dp_rail"=var"dp_rail", var"V_clamp"=var"V_clamp")
 end
 
-function DyadInterface.run_analysis(spec::InjectorPulseTransientSpec)
+function __dyad_base_analysis_spec(spec::InjectorPulseTransient__Spec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.U_batt => spec.var"U_batt")
@@ -60,11 +207,19 @@ function DyadInterface.run_analysis(spec::InjectorPulseTransientSpec)
   push!(overrides, no_namespace_model.t_start => spec.var"t_start")
   push!(overrides, no_namespace_model.dp_rail => spec.var"dp_rail")
   push!(overrides, no_namespace_model.V_clamp => spec.var"V_clamp")
-  base_spec = TransientAnalysisSpec(;
-    name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
+  merge!(overrides, spec.__overrides)
+  TransientAnalysisSpec(;
+    name=spec.name, overrides, __system=spec.__system, var"alg"=spec.var"alg", var"start"=spec.var"start", var"stop"=spec.var"stop", var"abstol"=spec.var"abstol", var"reltol"=spec.var"reltol", var"saveat"=spec.var"saveat", var"dtmax"=spec.var"dtmax", var"tstops"=spec.var"tstops", var"automatic_discontinuity_detection"=spec.var"automatic_discontinuity_detection", var"optimize"=spec.var"optimize", var"progress"=spec.var"progress", var"respecialize"=spec.var"respecialize", var"specialization"=spec.var"specialization", var"verbose"=spec.var"verbose", var"log_file"=spec.var"log_file", var"model"=spec.var"model"
   )
-  run_analysis(base_spec)
 end
 
-InjectorPulseTransient(;kwargs...) = run_analysis(InjectorPulseTransientSpec(;kwargs...))
-export InjectorPulseTransient, InjectorPulseTransientSpec
+function DyadInterface.run_analysis(spec::InjectorPulseTransient__Spec)
+  run_analysis(__dyad_base_analysis_spec(spec))
+end
+
+function DyadInterface.setup_analysis(spec::InjectorPulseTransient__Spec; kwargs...)
+  DyadInterface.setup_analysis(__dyad_base_analysis_spec(spec); kwargs...)
+end
+
+InjectorPulseTransient(;kwargs...) = run_analysis(InjectorPulseTransient__Spec(;kwargs...))
+export InjectorPulseTransient, InjectorPulseTransient__Spec

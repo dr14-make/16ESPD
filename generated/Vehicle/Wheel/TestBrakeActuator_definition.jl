@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestBrakeActuator(; name)
+   TestBrakeActuator(; name, __overrides)
 """
-@component function TestBrakeActuator(; name = nothing, kwargs...)
+@component function TestBrakeActuator(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestBrakeActuator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,19 +53,19 @@
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Step(; height=Float64(500.0), offset=Float64(0.0), start_time=0.1, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Step(; height=Float64(500.0), offset=Float64(0.0), start_time=0.1, __overrides = command_overrides))
   # Subcomponent brake of type VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(; T=0.03, tau_max=Float64(400.0), w0=Float64(1.0), brake_overrides...))
+  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(; T=0.03, tau_max=Float64(400.0), w0=Float64(1.0), __overrides = brake_overrides))
   # Subcomponent wheel of type RotationalComponents.Components.Inertia
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = RotationalComponents.Components.Inertia(; J=Float64(10.0), wheel_overrides...))
+  push!(__systems, @named wheel = RotationalComponents.Components.Inertia(; J=Float64(10.0), __overrides = wheel_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -83,6 +83,6 @@
   push!(__eqs, connect(brake.support, fixed.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestBrakeActuator

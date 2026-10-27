@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   DriveCycle(; name, file, dataset)
+   DriveCycle(; name, file, dataset, __overrides)
 
 Vehicle-speed trace loaded from a two-column time-series CSV.
 
@@ -23,7 +23,7 @@ ramps between its 1 Hz points, while constant extrapolation keeps the endpoint d
 
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function DriveCycle(; name = nothing, file="dyad://VehicleSystemsComponents/data/drive_cycles/wltc_class3b.csv", dataset=DyadData.DyadTimeseries(file; independent_var="t_s", dependent_vars=["v_kmh"]), kwargs...)
+@component function DriveCycle(; name = nothing, var"file"="dyad://VehicleSystemsComponents/data/drive_cycles/wltc_class3b.csv", var"dataset"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -31,7 +31,7 @@ ramps between its 1 Hz points, while constant extrapolation keeps the endpoint d
     @named model = DriveCycle()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -40,6 +40,13 @@ ramps between its 1 Hz points, while constant extrapolation keeps the endpoint d
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "file") && (file = pop!(__overrides, "file"))
+  haskey(__overrides, "dataset") && (dataset = pop!(__overrides, "dataset"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(dataset) && (dataset = DyadData.DyadTimeseries(file; independent_var="t_s", dependent_vars=["v_kmh"]))
 
   ### Structural Parameters (functions)
 
@@ -70,10 +77,10 @@ ramps between its 1 Hz points, while constant extrapolation keeps the endpoint d
   ### Components
   # Subcomponent interpolation of type BlockComponents.Tables.Interpolation
   interpolation_overrides = __pop_subcomponent_overrides!(__overrides, "interpolation")
-  push!(__systems, @named interpolation = BlockComponents.Tables.Interpolation(; dataset=dataset, interpolation_type=BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type=BlockComponents.Tables.ExtrapolationType.Constant(), interpolation_overrides...))
+  push!(__systems, @named interpolation = BlockComponents.Tables.Interpolation(; dataset=dataset, interpolation_type=BlockComponents.Tables.InterpolationType.LinearInterpolation(), extrapolation_type=BlockComponents.Tables.ExtrapolationType.Constant(), __overrides = interpolation_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -87,6 +94,6 @@ ramps between its 1 Hz points, while constant extrapolation keeps the endpoint d
   push!(__eqs, connect(interpolation.y, y))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export DriveCycle

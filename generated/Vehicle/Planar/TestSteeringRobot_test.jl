@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[(m -> m.sensor.phi, "sensor.phi", 0.2, 0.0001, 1e-5)],

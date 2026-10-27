@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   QuasiStaticLoads(; name, load_transfer, m, a, b, tw, g, h, T_lt)
+   QuasiStaticLoads(; name, load_transfer, m, a, b, tw, g, h, T_lt, __overrides)
 
 Quasi-static wheel loads from filtered chassis acceleration.
 
@@ -45,7 +45,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
 | `dN_rl`         |                          | N  |
 | `dN_rr`         |                          | N  |
 """
-@component function QuasiStaticLoads(; name = nothing, load_transfer=false, m=Float64(1500.0), a=1.2, b=1.5, tw=1.55, g=9.81, h=Float64(0.0), T_lt=0.05, kwargs...)
+@component function QuasiStaticLoads(; name = nothing, var"load_transfer"=false, var"m"=Float64(1500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"g"=9.81, var"h"=Float64(0.0), var"T_lt"=0.05, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -53,7 +53,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
     @named model = QuasiStaticLoads()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -62,6 +62,16 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "a") && (a = pop!(__overrides, "a"))
+  haskey(__overrides, "b") && (b = pop!(__overrides, "b"))
+  haskey(__overrides, "tw") && (tw = pop!(__overrides, "tw"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
+  haskey(__overrides, "h") && (h = pop!(__overrides, "h"))
+  haskey(__overrides, "T_lt") && (T_lt = pop!(__overrides, "T_lt"))
 
   ### Structural Parameters (functions)
 
@@ -79,25 +89,25 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass (probe)", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__a = a
   append!(__params, @parameters (a::Real), [description = "CG distance to front axle (probe)"])
-  __initial_conditions[a] = __local__a
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a, __local__a)
   __local__b = b
   append!(__params, @parameters (b::Real), [description = "CG distance to rear axle (probe)"])
-  __initial_conditions[b] = __local__b
+  __dyad_seed_parameter!(__initial_conditions, __bindings, b, __local__b)
   __local__tw = tw
   append!(__params, @parameters (tw::Real), [description = "Track width (probe)"])
-  __initial_conditions[tw] = __local__tw
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tw, __local__tw)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration used for vertical loads (probe)"])
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
   __local__h = h
   append!(__params, @parameters (h::Real), [description = "CG height above the road (NHTSA)"])
-  __initial_conditions[h] = __local__h
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h, __local__h)
   __local__T_lt = T_lt
   append!(__params, @parameters (T_lt::Real), [description = "Load-transfer lag time constant (assumed)"])
-  __initial_conditions[T_lt] = __local__T_lt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_lt, __local__T_lt)
 
   ### Final Parameters (assignments)
   __bindings[L] = a + b
@@ -117,32 +127,32 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
 
   ### Variables (assignments)
   __ovr_Nf = pop!(__overrides, "Nf", nothing); isnothing(__ovr_Nf) || push!(__eqs, Nf ~ __ovr_Nf)
-  __ovr_Nf__initial = pop!(__overrides, "Nf__initial", nothing); isnothing(__ovr_Nf__initial) || (__initial_conditions[Nf] = __ovr_Nf__initial)
-  __ovr_Nf__guess = pop!(__overrides, "Nf__guess", nothing)
+  __ovr_Nf__initial = pop!(__overrides, "Nf.initial", nothing); isnothing(__ovr_Nf__initial) || (__initial_conditions[Nf] = __ovr_Nf__initial)
+  __ovr_Nf__guess = pop!(__overrides, "Nf.guess", nothing)
   __ovr_Nr = pop!(__overrides, "Nr", nothing); isnothing(__ovr_Nr) || push!(__eqs, Nr ~ __ovr_Nr)
-  __ovr_Nr__initial = pop!(__overrides, "Nr__initial", nothing); isnothing(__ovr_Nr__initial) || (__initial_conditions[Nr] = __ovr_Nr__initial)
-  __ovr_Nr__guess = pop!(__overrides, "Nr__guess", nothing)
+  __ovr_Nr__initial = pop!(__overrides, "Nr.initial", nothing); isnothing(__ovr_Nr__initial) || (__initial_conditions[Nr] = __ovr_Nr__initial)
+  __ovr_Nr__guess = pop!(__overrides, "Nr.guess", nothing)
   __ovr_axf = pop!(__overrides, "axf", nothing); isnothing(__ovr_axf) || push!(__eqs, axf ~ __ovr_axf)
-  __ovr_axf__initial = pop!(__overrides, "axf__initial", nothing); isnothing(__ovr_axf__initial) || (__initial_conditions[axf] = __ovr_axf__initial)
-  __ovr_axf__guess = pop!(__overrides, "axf__guess", nothing)
+  __ovr_axf__initial = pop!(__overrides, "axf.initial", nothing); isnothing(__ovr_axf__initial) || (__initial_conditions[axf] = __ovr_axf__initial)
+  __ovr_axf__guess = pop!(__overrides, "axf.guess", nothing)
   __ovr_ayf = pop!(__overrides, "ayf", nothing); isnothing(__ovr_ayf) || push!(__eqs, ayf ~ __ovr_ayf)
-  __ovr_ayf__initial = pop!(__overrides, "ayf__initial", nothing); isnothing(__ovr_ayf__initial) || (__initial_conditions[ayf] = __ovr_ayf__initial)
-  __ovr_ayf__guess = pop!(__overrides, "ayf__guess", nothing)
+  __ovr_ayf__initial = pop!(__overrides, "ayf.initial", nothing); isnothing(__ovr_ayf__initial) || (__initial_conditions[ayf] = __ovr_ayf__initial)
+  __ovr_ayf__guess = pop!(__overrides, "ayf.guess", nothing)
   __ovr_d_long = pop!(__overrides, "d_long", nothing); isnothing(__ovr_d_long) || push!(__eqs, d_long ~ __ovr_d_long)
-  __ovr_d_long__initial = pop!(__overrides, "d_long__initial", nothing); isnothing(__ovr_d_long__initial) || (__initial_conditions[d_long] = __ovr_d_long__initial)
-  __ovr_d_long__guess = pop!(__overrides, "d_long__guess", nothing)
+  __ovr_d_long__initial = pop!(__overrides, "d_long.initial", nothing); isnothing(__ovr_d_long__initial) || (__initial_conditions[d_long] = __ovr_d_long__initial)
+  __ovr_d_long__guess = pop!(__overrides, "d_long.guess", nothing)
   __ovr_dN_fl = pop!(__overrides, "dN_fl", nothing); isnothing(__ovr_dN_fl) || push!(__eqs, dN_fl ~ __ovr_dN_fl)
-  __ovr_dN_fl__initial = pop!(__overrides, "dN_fl__initial", nothing); isnothing(__ovr_dN_fl__initial) || (__initial_conditions[dN_fl] = __ovr_dN_fl__initial)
-  __ovr_dN_fl__guess = pop!(__overrides, "dN_fl__guess", nothing)
+  __ovr_dN_fl__initial = pop!(__overrides, "dN_fl.initial", nothing); isnothing(__ovr_dN_fl__initial) || (__initial_conditions[dN_fl] = __ovr_dN_fl__initial)
+  __ovr_dN_fl__guess = pop!(__overrides, "dN_fl.guess", nothing)
   __ovr_dN_fr = pop!(__overrides, "dN_fr", nothing); isnothing(__ovr_dN_fr) || push!(__eqs, dN_fr ~ __ovr_dN_fr)
-  __ovr_dN_fr__initial = pop!(__overrides, "dN_fr__initial", nothing); isnothing(__ovr_dN_fr__initial) || (__initial_conditions[dN_fr] = __ovr_dN_fr__initial)
-  __ovr_dN_fr__guess = pop!(__overrides, "dN_fr__guess", nothing)
+  __ovr_dN_fr__initial = pop!(__overrides, "dN_fr.initial", nothing); isnothing(__ovr_dN_fr__initial) || (__initial_conditions[dN_fr] = __ovr_dN_fr__initial)
+  __ovr_dN_fr__guess = pop!(__overrides, "dN_fr.guess", nothing)
   __ovr_dN_rl = pop!(__overrides, "dN_rl", nothing); isnothing(__ovr_dN_rl) || push!(__eqs, dN_rl ~ __ovr_dN_rl)
-  __ovr_dN_rl__initial = pop!(__overrides, "dN_rl__initial", nothing); isnothing(__ovr_dN_rl__initial) || (__initial_conditions[dN_rl] = __ovr_dN_rl__initial)
-  __ovr_dN_rl__guess = pop!(__overrides, "dN_rl__guess", nothing)
+  __ovr_dN_rl__initial = pop!(__overrides, "dN_rl.initial", nothing); isnothing(__ovr_dN_rl__initial) || (__initial_conditions[dN_rl] = __ovr_dN_rl__initial)
+  __ovr_dN_rl__guess = pop!(__overrides, "dN_rl.guess", nothing)
   __ovr_dN_rr = pop!(__overrides, "dN_rr", nothing); isnothing(__ovr_dN_rr) || push!(__eqs, dN_rr ~ __ovr_dN_rr)
-  __ovr_dN_rr__initial = pop!(__overrides, "dN_rr__initial", nothing); isnothing(__ovr_dN_rr__initial) || (__initial_conditions[dN_rr] = __ovr_dN_rr__initial)
-  __ovr_dN_rr__guess = pop!(__overrides, "dN_rr__guess", nothing)
+  __ovr_dN_rr__initial = pop!(__overrides, "dN_rr.initial", nothing); isnothing(__ovr_dN_rr__initial) || (__initial_conditions[dN_rr] = __ovr_dN_rr__initial)
+  __ovr_dN_rr__guess = pop!(__overrides, "dN_rr.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -155,10 +165,10 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named rr = __Dyad__Flange())
   # Subcomponent acc of type MultibodyComponents.PlanarMechanics.AbsoluteAcceleration
   acc_overrides = __pop_subcomponent_overrides!(__overrides, "acc")
-  push!(__systems, @named acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration(; acc_overrides...))
+  push!(__systems, @named acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration(; __overrides = acc_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_Nf__guess) || (__guesses[Nf] = __ovr_Nf__guess)
@@ -202,6 +212,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   end
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export QuasiStaticLoads

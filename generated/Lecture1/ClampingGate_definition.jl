@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ClampingGate(; name, y_max, y_min, on)
+   ClampingGate(; name, y_max, y_min, on, __overrides)
 
 Clamping anti-windup gate in front of an integrator.
 
@@ -29,7 +29,7 @@ With `on = false` the gate always outputs zero, so the integrator holds its init
  * `u_lim` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function ClampingGate(; name = nothing, y_max=Float64(1e+300), on=true, y_min=-y_max, kwargs...)
+@component function ClampingGate(; name = nothing, var"y_max"=Float64(1e+300), var"on"=true, var"y_min"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ With `on = false` the gate always outputs zero, so the integrator holds its init
     @named model = ClampingGate()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,14 @@ With `on = false` the gate always outputs zero, so the integrator holds its init
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "y_max") && (y_max = pop!(__overrides, "y_max"))
+  haskey(__overrides, "on") && (on = pop!(__overrides, "on"))
+  haskey(__overrides, "y_min") && (y_min = pop!(__overrides, "y_min"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(y_min) && (y_min = -y_max)
 
   ### Structural Parameters (functions)
 
@@ -62,13 +70,13 @@ With `on = false` the gate always outputs zero, so the integrator holds its init
   ### Symbolic Parameters
   __local__y_max = y_max
   append!(__params, @parameters (y_max::Real), [description = "Upper output limit"])
-  __initial_conditions[y_max] = __local__y_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_max, __local__y_max)
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real), [description = "Lower output limit"])
-  __initial_conditions[y_min] = __local__y_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_min, __local__y_min)
   __local__on = on
   append!(__params, @parameters (on::Bool), [description = "Pass the error through; with false the output is zero"])
-  __initial_conditions[on] = __local__on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, on, __local__on)
 
   ### Final Parameters (assignments)
 
@@ -87,7 +95,7 @@ With `on = false` the gate always outputs zero, so the integrator holds its init
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -100,6 +108,6 @@ With `on = false` the gate always outputs zero, so the integrator holds its init
   push!(__eqs, y ~ ifelse(on, ifelse(u_lim >= y_max, ifelse(u >= 0, 0.0, u), ifelse(u_lim <= y_min, ifelse(u <= 0, 0.0, u), u)), 0.0))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ClampingGate

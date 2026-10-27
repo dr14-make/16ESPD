@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   IdealEngine(; name, theta_e, tau_e, T_max)
+   IdealEngine(; name, theta_e, tau_e, T_max, __overrides)
 
 Torque command in, shaft torque out, through the two lags that make the plant FOPTD.
 
@@ -30,7 +30,7 @@ stay explicit and must not be collapsed into an instantaneous torque source.
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
 """
-@component function IdealEngine(; name = nothing, theta_e=0.3, tau_e=0.3, T_max=Float64(150.0), kwargs...)
+@component function IdealEngine(; name = nothing, var"theta_e"=0.3, var"tau_e"=0.3, var"T_max"=Float64(150.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -38,7 +38,7 @@ stay explicit and must not be collapsed into an instantaneous torque source.
     @named model = IdealEngine()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -47,6 +47,11 @@ stay explicit and must not be collapsed into an instantaneous torque source.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "theta_e") && (theta_e = pop!(__overrides, "theta_e"))
+  haskey(__overrides, "tau_e") && (tau_e = pop!(__overrides, "tau_e"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
 
   ### Structural Parameters (functions)
 
@@ -63,10 +68,10 @@ stay explicit and must not be collapsed into an instantaneous torque source.
   ### Symbolic Parameters
   __local__tau_e = tau_e
   append!(__params, @parameters (tau_e::Real), [description = "Manifold-filling first-order lag"])
-  __initial_conditions[tau_e] = __local__tau_e
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_e, __local__tau_e)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Peak deliverable torque"])
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
 
   ### Final Parameters (assignments)
 
@@ -85,19 +90,19 @@ stay explicit and must not be collapsed into an instantaneous torque source.
   push!(__systems, @named support = __Dyad__Spline())
   # Subcomponent delay of type BlockComponents.Nonlinear.PadeDelay
   delay_overrides = __pop_subcomponent_overrides!(__overrides, "delay")
-  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; n=6, m=5, delayTime=theta_e, delay_overrides...))
+  push!(__systems, @named delay = BlockComponents.Nonlinear.PadeDelay(; n=6, m=5, delayTime=theta_e, __overrides = delay_overrides))
   # Subcomponent lag of type BlockComponents.Continuous.FirstOrder
   lag_overrides = __pop_subcomponent_overrides!(__overrides, "lag")
-  push!(__systems, @named lag = BlockComponents.Continuous.FirstOrder(; T=tau_e, lag_overrides...))
+  push!(__systems, @named lag = BlockComponents.Continuous.FirstOrder(; T=tau_e, __overrides = lag_overrides))
   # Subcomponent limiter of type BlockComponents.Nonlinear.Limiter
   limiter_overrides = __pop_subcomponent_overrides!(__overrides, "limiter")
-  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=T_max, y_min=Float64(0), limiter_overrides...))
+  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=T_max, y_min=Float64(0), __overrides = limiter_overrides))
   # Subcomponent torque of type RotationalComponents.Sources.TorqueSource
   torque_overrides = __pop_subcomponent_overrides!(__overrides, "torque")
-  push!(__systems, @named torque = RotationalComponents.Sources.TorqueSource(; torque_overrides...))
+  push!(__systems, @named torque = RotationalComponents.Sources.TorqueSource(; __overrides = torque_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -115,6 +120,6 @@ stay explicit and must not be collapsed into an instantaneous torque source.
   push!(__eqs, connect(torque.support, support))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export IdealEngine

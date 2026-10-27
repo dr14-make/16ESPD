@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CarStepTest(; name, tau_lo, tau_hi, v0, t_step)
+   CarStepTest(; name, tau_lo, tau_hi, v0, t_step, __overrides)
 
 Open-loop torque step from one cruise to another, on flat road.
 
@@ -28,7 +28,7 @@ since the vehicle's own time constant is about 60 s.
 | `v0`         | Initial speed, matching the tau_lo cruise (25 m/s = 90 km/h)                         | m/s  |   25.0 |
 | `t_step`         | Time of the torque step                         | s  |   50.0 |
 """
-@component function CarStepTest(; name = nothing, tau_lo=31.078, tau_hi=40.119, v0=Float64(25.0), t_step=Float64(50.0), kwargs...)
+@component function CarStepTest(; name = nothing, var"tau_lo"=31.078, var"tau_hi"=40.119, var"v0"=Float64(25.0), var"t_step"=Float64(50.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -36,7 +36,7 @@ since the vehicle's own time constant is about 60 s.
     @named model = CarStepTest()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -45,6 +45,12 @@ since the vehicle's own time constant is about 60 s.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "tau_lo") && (tau_lo = pop!(__overrides, "tau_lo"))
+  haskey(__overrides, "tau_hi") && (tau_hi = pop!(__overrides, "tau_hi"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "t_step") && (t_step = pop!(__overrides, "t_step"))
 
   ### Structural Parameters (functions)
 
@@ -61,16 +67,16 @@ since the vehicle's own time constant is about 60 s.
   ### Symbolic Parameters
   __local__tau_lo = tau_lo
   append!(__params, @parameters (tau_lo::Real), [description = "Cruise torque before the step (holds 90 km/h)"])
-  __initial_conditions[tau_lo] = __local__tau_lo
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_lo, __local__tau_lo)
   __local__tau_hi = tau_hi
   append!(__params, @parameters (tau_hi::Real), [description = "Cruise torque after the step (holds 110 km/h)"])
-  __initial_conditions[tau_hi] = __local__tau_hi
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_hi, __local__tau_hi)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real), [description = "Initial speed, matching the tau_lo cruise (25 m/s = 90 km/h)"])
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__t_step = t_step
   append!(__params, @parameters (t_step::Real), [description = "Time of the torque step"])
-  __initial_conditions[t_step] = __local__t_step
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_step, __local__t_step)
 
   ### Final Parameters (assignments)
 
@@ -86,13 +92,13 @@ since the vehicle's own time constant is about 60 s.
   ### Components
   # Subcomponent plant of type VehicleSystemsComponents.HandsOn.Car
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.Car(; plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.Car(; __overrides = plant_overrides))
   # Subcomponent cmd of type BlockComponents.Sources.Step
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
-  push!(__systems, @named cmd = BlockComponents.Sources.Step(; offset=tau_lo, height=tau_hi - tau_lo, start_time=t_step, cmd_overrides...))
+  push!(__systems, @named cmd = BlockComponents.Sources.Step(; offset=tau_lo, height=tau_hi - tau_lo, start_time=t_step, __overrides = cmd_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -108,6 +114,6 @@ since the vehicle's own time constant is about 60 s.
   push!(__eqs, connect(cmd.y, plant.tau_cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CarStepTest

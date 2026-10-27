@@ -3,7 +3,7 @@
 Tables for a 1.5 L naturally aspirated four-cylinder (lecture plan S4), indexed by engine speed
 and intake manifold pressure (mapped-engine plan M3–M5). Every file here is written by
 
-    julia +dyad-3.4.0 --project=. scripts/alpha_engine_maps.jl [--figures data/engine/figures]
+    julia +dyad-3.5.0 --project=. scripts/alpha_engine_maps.jl [--figures data/engine/figures]
 
 which also prints the reality-anchor checks, marking each miss. Do not edit the CSVs by hand;
 change the script and rerun it.

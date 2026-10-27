@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestABSUnit(; name)
+   TestABSUnit(; name, __overrides)
 
 Continuous-boundary ABS composition check.
 """
-@component function TestABSUnit(; name = nothing, kwargs...)
+@component function TestABSUnit(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Continuous-boundary ABS composition check.
     @named model = TestABSUnit()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,22 +55,22 @@ Continuous-boundary ABS composition check.
   ### Components
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), __overrides = demand_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = speed_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
-  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent cut of type BlockComponents.Sources.Constant
   cut_overrides = __pop_subcomponent_overrides!(__overrides, "cut")
-  push!(__systems, @named cut = BlockComponents.Sources.Constant(; k=-200.0, cut_overrides...))
+  push!(__systems, @named cut = BlockComponents.Sources.Constant(; k=-200.0, __overrides = cut_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=Float64(1.0), abs_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=Float64(1.0), __overrides = abs_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -86,6 +86,6 @@ Continuous-boundary ABS composition check.
   push!(__eqs, connect(cut.y, abs.dT_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestABSUnit

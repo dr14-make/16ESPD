@@ -1,7 +1,7 @@
 """
 Writes the Lecture 3 deck's notebook figures into `slides/decks/lecture-03/public/figures/`.
 
-    julia +dyad-3.4.0 --project=. scripts/export_lecture03_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture03_figures.jl
 
 Runs `notebooks/lecture03/01-abs.pluto.jl` and `02-brake-hydraulics.pluto.jl` top to bottom with
 their sliders at the defaults, and saves the plots the deck shows as SVG. Each notebook runs in a

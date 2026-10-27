@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ClampingCruiseClimb(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, v_set, v0, tau0, gradient, start_time, duration)
+   ClampingCruiseClimb(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, v_set, v0, tau0, gradient, start_time, duration, __overrides)
 
 The clamping counterpart of `CruiseClimb`: same scenario, closed with `CruiseLoop`.
 
@@ -35,7 +35,7 @@ anti-windup cases the same way, swapping only the analysis.
 | `start_time`         | Time at which the climb begins                         | s  |   30.0 |
 | `duration`         | Climb duration; the road returns to flat afterwards                         | s  |   120.0 |
 """
-@component function ClampingCruiseClimb(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), v_set=Float64(130.0), v0=36.111111111111114, tau0=50.9693, gradient=0.1, start_time=Float64(30.0), duration=Float64(120.0), y_max=T_max, kwargs...)
+@component function ClampingCruiseClimb(; name = nothing, var"theta_e"=0.3, var"with_I"=true, var"with_D"=true, var"k"=Float64(56.0), var"Ti"=Float64(10.0), var"Td"=0.1, var"Nd"=Float64(10.0), var"T_max"=Float64(150.0), var"y_min"=Float64(0.0), var"wd"=Float64(1.0), var"v_set"=Float64(130.0), var"v0"=36.111111111111114, var"tau0"=50.9693, var"gradient"=0.1, var"start_time"=Float64(30.0), var"duration"=Float64(120.0), var"y_max"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -43,7 +43,7 @@ anti-windup cases the same way, swapping only the analysis.
     @named model = ClampingCruiseClimb()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -52,6 +52,28 @@ anti-windup cases the same way, swapping only the analysis.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "theta_e") && (theta_e = pop!(__overrides, "theta_e"))
+  haskey(__overrides, "with_I") && (with_I = pop!(__overrides, "with_I"))
+  haskey(__overrides, "with_D") && (with_D = pop!(__overrides, "with_D"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
+  haskey(__overrides, "Td") && (Td = pop!(__overrides, "Td"))
+  haskey(__overrides, "Nd") && (Nd = pop!(__overrides, "Nd"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "y_min") && (y_min = pop!(__overrides, "y_min"))
+  haskey(__overrides, "wd") && (wd = pop!(__overrides, "wd"))
+  haskey(__overrides, "v_set") && (v_set = pop!(__overrides, "v_set"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "tau0") && (tau0 = pop!(__overrides, "tau0"))
+  haskey(__overrides, "gradient") && (gradient = pop!(__overrides, "gradient"))
+  haskey(__overrides, "start_time") && (start_time = pop!(__overrides, "start_time"))
+  haskey(__overrides, "duration") && (duration = pop!(__overrides, "duration"))
+  haskey(__overrides, "y_max") && (y_max = pop!(__overrides, "y_max"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(y_max) && (y_max = T_max)
 
   ### Structural Parameters (functions)
 
@@ -68,52 +90,52 @@ anti-windup cases the same way, swapping only the analysis.
   ### Symbolic Parameters
   __local__with_I = with_I
   append!(__params, @parameters (with_I::Bool))
-  __initial_conditions[with_I] = __local__with_I
+  __dyad_seed_parameter!(__initial_conditions, __bindings, with_I, __local__with_I)
   __local__with_D = with_D
   append!(__params, @parameters (with_D::Bool))
-  __initial_conditions[with_D] = __local__with_D
+  __dyad_seed_parameter!(__initial_conditions, __bindings, with_D, __local__with_D)
   __local__k = k
   append!(__params, @parameters (k::Real))
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real))
-  __initial_conditions[Ti] = __local__Ti
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__Td = Td
   append!(__params, @parameters (Td::Real))
-  __initial_conditions[Td] = __local__Td
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Td, __local__Td)
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
-  __initial_conditions[Nd] = __local__Nd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Nd, __local__Nd)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__y_max = y_max
   append!(__params, @parameters (y_max::Real))
-  __initial_conditions[y_max] = __local__y_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_max, __local__y_max)
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
-  __initial_conditions[y_min] = __local__y_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_min, __local__y_min)
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
-  __initial_conditions[wd] = __local__wd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wd, __local__wd)
   __local__v_set = v_set
   append!(__params, @parameters (v_set::Real), [description = "Cruise setpoint in km/h"])
-  __initial_conditions[v_set] = __local__v_set
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_set, __local__v_set)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real), [description = "Initial speed (36.1111 m/s = 130 km/h)"])
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__tau0 = tau0
   append!(__params, @parameters (tau0::Real), [description = "Holding torque at 130 km/h on flat road"])
-  __initial_conditions[tau0] = __local__tau0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau0, __local__tau0)
   __local__gradient = gradient
   append!(__params, @parameters (gradient::Real), [description = "Gradient of the climb, tan(alpha)"])
-  __initial_conditions[gradient] = __local__gradient
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gradient, __local__gradient)
   __local__start_time = start_time
   append!(__params, @parameters (start_time::Real), [description = "Time at which the climb begins"])
-  __initial_conditions[start_time] = __local__start_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start_time, __local__start_time)
   __local__duration = duration
   append!(__params, @parameters (duration::Real), [description = "Climb duration; the road returns to flat afterwards"])
-  __initial_conditions[duration] = __local__duration
+  __dyad_seed_parameter!(__initial_conditions, __bindings, duration, __local__duration)
 
   ### Final Parameters (assignments)
 
@@ -129,16 +151,16 @@ anti-windup cases the same way, swapping only the analysis.
   ### Components
   # Subcomponent loop of type VehicleSystemsComponents.Lecture1.CruiseLoop
   loop_overrides = __pop_subcomponent_overrides!(__overrides, "loop")
-  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wd=wd, m0=v_set, loop_overrides...))
+  push!(__systems, @named loop = VehicleSystemsComponents.Lecture1.CruiseLoop(; theta_e=theta_e, with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, T_max=T_max, y_max=y_max, y_min=y_min, wd=wd, m0=v_set, __overrides = loop_overrides))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=v_set, demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=v_set, __overrides = demand_overrides))
   # Subcomponent road of type VehicleSystemsComponents.Vehicle.GradeProfile
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=gradient, start_time=start_time, duration=duration, road_overrides...))
+  push!(__systems, @named road = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=gradient, start_time=start_time, duration=duration, __overrides = road_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -155,6 +177,6 @@ anti-windup cases the same way, swapping only the analysis.
   push!(__eqs, connect(road.y, loop.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ClampingCruiseClimb

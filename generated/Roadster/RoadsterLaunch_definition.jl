@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L, fan_cmd, skirt_gap, thrust_cmd, tank_volume, tank_pressure, tank_n, A_t, down_fraction)
+   RoadsterLaunch(; name, m, CdA, T_max, P_max, J_w, radius, mu_A, mu_S, grip, share, h_over_L, fan_cmd, skirt_gap, thrust_cmd, tank_volume, tank_pressure, tank_n, A_t, down_fraction, __overrides)
 
 Standing-start launch of a 1 MW car with optional stationary suction and ideal traction control.
 
@@ -48,7 +48,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
 | ------------ | ----------------------------------- | ------ |
 | `v`         | Vehicle speed                         | m/s  |
 """
-@component function RoadsterLaunch(; name = nothing, m=Float64(2000), CdA=0.6, T_max=Float64(12000), P_max=Float64(1000000.0), J_w=2.4, radius=0.35, mu_A=1.26, mu_S=Float64(1.0), grip=0.98, share=0.55, h_over_L=0.17, fan_cmd=Float64(0.0), skirt_gap=0.003, thrust_cmd=Float64(0.0), tank_volume=0.6, tank_pressure=Float64(38000000.0), tank_n=1.4, A_t=0.001286, down_fraction=Float64(0.0), kwargs...)
+@component function RoadsterLaunch(; name = nothing, var"m"=Float64(2000), var"CdA"=0.6, var"T_max"=Float64(12000), var"P_max"=Float64(1000000.0), var"J_w"=2.4, var"radius"=0.35, var"mu_A"=1.26, var"mu_S"=Float64(1.0), var"grip"=0.98, var"share"=0.55, var"h_over_L"=0.17, var"fan_cmd"=Float64(0.0), var"skirt_gap"=0.003, var"thrust_cmd"=Float64(0.0), var"tank_volume"=0.6, var"tank_pressure"=Float64(38000000.0), var"tank_n"=1.4, var"A_t"=0.001286, var"down_fraction"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -56,7 +56,7 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
     @named model = RoadsterLaunch()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -65,6 +65,27 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "P_max") && (P_max = pop!(__overrides, "P_max"))
+  haskey(__overrides, "J_w") && (J_w = pop!(__overrides, "J_w"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
+  haskey(__overrides, "grip") && (grip = pop!(__overrides, "grip"))
+  haskey(__overrides, "share") && (share = pop!(__overrides, "share"))
+  haskey(__overrides, "h_over_L") && (h_over_L = pop!(__overrides, "h_over_L"))
+  haskey(__overrides, "fan_cmd") && (fan_cmd = pop!(__overrides, "fan_cmd"))
+  haskey(__overrides, "skirt_gap") && (skirt_gap = pop!(__overrides, "skirt_gap"))
+  haskey(__overrides, "thrust_cmd") && (thrust_cmd = pop!(__overrides, "thrust_cmd"))
+  haskey(__overrides, "tank_volume") && (tank_volume = pop!(__overrides, "tank_volume"))
+  haskey(__overrides, "tank_pressure") && (tank_pressure = pop!(__overrides, "tank_pressure"))
+  haskey(__overrides, "tank_n") && (tank_n = pop!(__overrides, "tank_n"))
+  haskey(__overrides, "A_t") && (A_t = pop!(__overrides, "A_t"))
+  haskey(__overrides, "down_fraction") && (down_fraction = pop!(__overrides, "down_fraction"))
 
   ### Structural Parameters (functions)
 
@@ -81,61 +102,61 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass; assumed because Tesla has not disclosed it", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__CdA = CdA
   append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area, Cd * A; assumed"])
-  __initial_conditions[CdA] = __local__CdA
+  __dyad_seed_parameter!(__initial_conditions, __bindings, CdA, __local__CdA)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"])
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__P_max = P_max
   append!(__params, @parameters (P_max::Real), [description = "Rated power; press reports describe the drive as over 1 MW"])
-  __initial_conditions[P_max] = __local__P_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_max, __local__P_max)
   __local__J_w = J_w
   append!(__params, @parameters (J_w::Real), [description = "Driven road wheels only, without reflected motor rotors; assumed. Rotors would make it about 7-10 kg.m^2 and the rear-wheel-drive t60 about 3.41-3.46 s"])
-  __initial_conditions[J_w] = __local__J_w
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J_w, __local__J_w)
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius; assumed"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real), [description = "Peak tire adhesion; Tesla's stated tire limit"])
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__mu_S = mu_S
   append!(__params, @parameters (mu_S::Real), [description = "Sliding tire friction; assumed"])
-  __initial_conditions[mu_S] = __local__mu_S
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
   __local__grip = grip
   append!(__params, @parameters (grip::Real), [description = "Fraction of peak adhesion targeted by ideal traction control; assumed margin"])
-  __initial_conditions[grip] = __local__grip
+  __dyad_seed_parameter!(__initial_conditions, __bindings, grip, __local__grip)
   __local__share = share
   append!(__params, @parameters (share::Real), [description = "Static fraction of weight on the driven axle; assumed"])
-  __initial_conditions[share] = __local__share
+  __dyad_seed_parameter!(__initial_conditions, __bindings, share, __local__share)
   __local__h_over_L = h_over_L
   append!(__params, @parameters (h_over_L::Real), [description = "Center-of-mass height over wheelbase; assumed"])
-  __initial_conditions[h_over_L] = __local__h_over_L
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_over_L, __local__h_over_L)
   __local__fan_cmd = fan_cmd
   append!(__params, @parameters (fan_cmd::Real), [description = "Normalized suction-fan command"])
-  __initial_conditions[fan_cmd] = __local__fan_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, fan_cmd, __local__fan_cmd)
   __local__skirt_gap = skirt_gap
   append!(__params, @parameters (skirt_gap::Real), [description = "Effective skirt gap; assumed"])
-  __initial_conditions[skirt_gap] = __local__skirt_gap
+  __dyad_seed_parameter!(__initial_conditions, __bindings, skirt_gap, __local__skirt_gap)
   __local__thrust_cmd = thrust_cmd
   append!(__params, @parameters (thrust_cmd::Real), [description = "Normalized rear-thrust valve command"])
-  __initial_conditions[thrust_cmd] = __local__thrust_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, thrust_cmd, __local__thrust_cmd)
   __local__tank_volume = tank_volume
   append!(__params, @parameters (tank_volume::Real), [description = "Compressed-air volume; Tesla reports 600 L total and Electrek reports 200 L for the Thrust trim"])
-  __initial_conditions[tank_volume] = __local__tank_volume
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_volume, __local__tank_volume)
   __local__tank_pressure = tank_pressure
   append!(__params, @parameters (tank_pressure::Real), [description = "Initial tank pressure; 5,500 psi in-car readout reported by Paul Tan"])
-  __initial_conditions[tank_pressure] = __local__tank_pressure
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_pressure, __local__tank_pressure)
   __local__tank_n = tank_n
   append!(__params, @parameters (tank_n::Real), [description = "Tank polytropic index; 1.4 is the adiabatic-air bound and 1 is isothermal"])
-  __initial_conditions[tank_n] = __local__tank_n
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_n, __local__tank_n)
   __local__A_t = A_t
   append!(__params, @parameters (A_t::Real), [description = "Total nozzle throat area, sized for 80 kN at 380 bar"])
-  __initial_conditions[A_t] = __local__A_t
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_t, __local__A_t)
   __local__down_fraction = down_fraction
   append!(__params, @parameters (down_fraction::Real), [description = "Share of rear thrust directed downward rather than backward", bounds = (0, 1)])
-  __initial_conditions[down_fraction] = __local__down_fraction
+  __dyad_seed_parameter!(__initial_conditions, __bindings, down_fraction, __local__down_fraction)
 
   ### Final Parameters (assignments)
 
@@ -146,8 +167,8 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -155,64 +176,64 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   ### Components
   # Subcomponent motor of type VehicleSystemsComponents.Roadster.PowerLimitedMotor
   motor_overrides = __pop_subcomponent_overrides!(__overrides, "motor")
-  push!(__systems, @named motor = VehicleSystemsComponents.Roadster.PowerLimitedMotor(; T_max=T_max, P_max=P_max, motor_overrides...))
+  push!(__systems, @named motor = VehicleSystemsComponents.Roadster.PowerLimitedMotor(; T_max=T_max, P_max=P_max, __overrides = motor_overrides))
   # Subcomponent wheel_inertia of type RotationalComponents.Components.Inertia
   wheel_inertia_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_inertia")
-  push!(__systems, @named wheel_inertia = RotationalComponents.Components.Inertia(; J=J_w, wheel_inertia_overrides...))
+  push!(__systems, @named wheel_inertia = RotationalComponents.Components.Inertia(; J=J_w, __overrides = wheel_inertia_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.LoadedSlipWheel1D
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.LoadedSlipWheel1D(; radius=radius, mu_A=mu_A, mu_S=mu_S, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.LoadedSlipWheel1D(; radius=radius, mu_A=mu_A, mu_S=mu_S, __overrides = wheel_overrides))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, CdA=CdA, body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, CdA=CdA, __overrides = body_overrides))
   # Subcomponent axle of type VehicleSystemsComponents.Roadster.AxleLoad
   axle_overrides = __pop_subcomponent_overrides!(__overrides, "axle")
-  push!(__systems, @named axle = VehicleSystemsComponents.Roadster.AxleLoad(; m=m, share=share, h_over_L=h_over_L, axle_overrides...))
+  push!(__systems, @named axle = VehicleSystemsComponents.Roadster.AxleLoad(; m=m, share=share, h_over_L=h_over_L, __overrides = axle_overrides))
   # Subcomponent traction of type VehicleSystemsComponents.Roadster.TractionControl
   traction_overrides = __pop_subcomponent_overrides!(__overrides, "traction")
-  push!(__systems, @named traction = VehicleSystemsComponents.Roadster.TractionControl(; grip=grip, mu_A=mu_A, radius=radius, traction_overrides...))
+  push!(__systems, @named traction = VehicleSystemsComponents.Roadster.TractionControl(; grip=grip, mu_A=mu_A, radius=radius, __overrides = traction_overrides))
   # Subcomponent fan_command of type BlockComponents.Sources.Constant
   fan_command_overrides = __pop_subcomponent_overrides!(__overrides, "fan_command")
-  push!(__systems, @named fan_command = BlockComponents.Sources.Constant(; k=fan_cmd, fan_command_overrides...))
+  push!(__systems, @named fan_command = BlockComponents.Sources.Constant(; k=fan_cmd, __overrides = fan_command_overrides))
   # Subcomponent fan of type VehicleSystemsComponents.Roadster.SuctionFan
   fan_overrides = __pop_subcomponent_overrides!(__overrides, "fan")
-  push!(__systems, @named fan = VehicleSystemsComponents.Roadster.SuctionFan(; gap=skirt_gap, fan_overrides...))
+  push!(__systems, @named fan = VehicleSystemsComponents.Roadster.SuctionFan(; gap=skirt_gap, __overrides = fan_overrides))
   # Subcomponent suction_rolling of type VehicleSystemsComponents.Roadster.SuctionRollingResistance
   suction_rolling_overrides = __pop_subcomponent_overrides!(__overrides, "suction_rolling")
-  push!(__systems, @named suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance(; suction_rolling_overrides...))
+  push!(__systems, @named suction_rolling = VehicleSystemsComponents.Roadster.SuctionRollingResistance(; __overrides = suction_rolling_overrides))
   # Subcomponent thrust_command of type BlockComponents.Sources.Constant
   thrust_command_overrides = __pop_subcomponent_overrides!(__overrides, "thrust_command")
-  push!(__systems, @named thrust_command = BlockComponents.Sources.Constant(; k=thrust_cmd, thrust_command_overrides...))
+  push!(__systems, @named thrust_command = BlockComponents.Sources.Constant(; k=thrust_cmd, __overrides = thrust_command_overrides))
   # Subcomponent tank of type VehicleSystemsComponents.Roadster.AirTank
   tank_overrides = __pop_subcomponent_overrides!(__overrides, "tank")
-  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, n=tank_n, tank_overrides...))
+  push!(__systems, @named tank = VehicleSystemsComponents.Roadster.AirTank(; V=tank_volume, p0=tank_pressure, n=tank_n, __overrides = tank_overrides))
   # Subcomponent nozzle of type VehicleSystemsComponents.Roadster.ColdGasNozzle
   nozzle_overrides = __pop_subcomponent_overrides!(__overrides, "nozzle")
-  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, nozzle_overrides...))
+  push!(__systems, @named nozzle = VehicleSystemsComponents.Roadster.ColdGasNozzle(; A_t=A_t, __overrides = nozzle_overrides))
   # Subcomponent thrust_stand of type TranslationalComponents.Components.Fixed
   thrust_stand_overrides = __pop_subcomponent_overrides!(__overrides, "thrust_stand")
-  push!(__systems, @named thrust_stand = TranslationalComponents.Components.Fixed(; thrust_stand_overrides...))
+  push!(__systems, @named thrust_stand = TranslationalComponents.Components.Fixed(; __overrides = thrust_stand_overrides))
   # Subcomponent forward_gain of type BlockComponents.Math.Gain
   forward_gain_overrides = __pop_subcomponent_overrides!(__overrides, "forward_gain")
-  push!(__systems, @named forward_gain = BlockComponents.Math.Gain(; k=1 - down_fraction, forward_gain_overrides...))
+  push!(__systems, @named forward_gain = BlockComponents.Math.Gain(; k=1 - down_fraction, __overrides = forward_gain_overrides))
   # Subcomponent forward_force of type TranslationalComponents.Sources.Force
   forward_force_overrides = __pop_subcomponent_overrides!(__overrides, "forward_force")
-  push!(__systems, @named forward_force = TranslationalComponents.Sources.Force(; forward_force_overrides...))
+  push!(__systems, @named forward_force = TranslationalComponents.Sources.Force(; __overrides = forward_force_overrides))
   # Subcomponent force_ground of type TranslationalComponents.Components.Fixed
   force_ground_overrides = __pop_subcomponent_overrides!(__overrides, "force_ground")
-  push!(__systems, @named force_ground = TranslationalComponents.Components.Fixed(; force_ground_overrides...))
+  push!(__systems, @named force_ground = TranslationalComponents.Components.Fixed(; __overrides = force_ground_overrides))
   # Subcomponent downforce_sum of type BlockComponents.Math.Add
   downforce_sum_overrides = __pop_subcomponent_overrides!(__overrides, "downforce_sum")
-  push!(__systems, @named downforce_sum = BlockComponents.Math.Add(; k1=Float64(1), k2=down_fraction, downforce_sum_overrides...))
+  push!(__systems, @named downforce_sum = BlockComponents.Math.Add(; k1=Float64(1), k2=down_fraction, __overrides = downforce_sum_overrides))
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
-  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0), flat_overrides...))
+  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = flat_overrides))
   # Subcomponent rot_ground of type RotationalComponents.Components.Fixed
   rot_ground_overrides = __pop_subcomponent_overrides!(__overrides, "rot_ground")
-  push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; rot_ground_overrides...))
+  push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; __overrides = rot_ground_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
@@ -257,6 +278,6 @@ only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only 
   push!(__eqs, connect(flat.y, body.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export RoadsterLaunch

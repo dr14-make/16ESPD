@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeActuator(; name, T, tau_max, w0)
+   BrakeActuator(; name, T, tau_max, w0, __overrides)
 
 In-line wheel brake: commanded-magnitude Coulomb friction with first-order hydraulic response.
 
@@ -55,7 +55,7 @@ at zero speed, this is the appropriate fidelity.
 | `w`         | Shaft speed with respect to the support (= der(phi))                         | rad/s  |
 | `tau_friction`         | Signed friction torque removed from the shaft line; carries the sign of w                         | N.m  |
 """
-@component function BrakeActuator(; name = nothing, T=0.03, tau_max=Float64(2000.0), w0=Float64(1.0), kwargs...)
+@component function BrakeActuator(; name = nothing, var"T"=0.03, var"tau_max"=Float64(2000.0), var"w0"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -63,7 +63,7 @@ at zero speed, this is the appropriate fidelity.
     @named model = BrakeActuator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -72,6 +72,11 @@ at zero speed, this is the appropriate fidelity.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "T") && (T = pop!(__overrides, "T"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
 
   ### Structural Parameters (functions)
 
@@ -88,13 +93,13 @@ at zero speed, this is the appropriate fidelity.
   ### Symbolic Parameters
   __local__T = T
   append!(__params, @parameters (T::Real), [description = "Hydraulic time constant"])
-  __initial_conditions[T] = __local__T
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T, __local__T)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque"])
-  __initial_conditions[tau_max] = __local__tau_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__w0 = w0
   append!(__params, @parameters (w0::Real), [description = "Regularization below this shaft speed", bounds = (eps(Float64), Inf)])
-  __initial_conditions[w0] = __local__w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
 
   ### Final Parameters (assignments)
 
@@ -110,20 +115,20 @@ at zero speed, this is the appropriate fidelity.
 
   ### Variables (assignments)
   __ovr_phi_support = pop!(__overrides, "phi_support", nothing); isnothing(__ovr_phi_support) || push!(__eqs, phi_support ~ __ovr_phi_support)
-  __ovr_phi_support__initial = pop!(__overrides, "phi_support__initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
-  __ovr_phi_support__guess = pop!(__overrides, "phi_support__guess", nothing)
+  __ovr_phi_support__initial = pop!(__overrides, "phi_support.initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
+  __ovr_phi_support__guess = pop!(__overrides, "phi_support.guess", nothing)
   __ovr_tau_actual = pop!(__overrides, "tau_actual", nothing); isnothing(__ovr_tau_actual) || push!(__eqs, tau_actual ~ __ovr_tau_actual)
-  __ovr_tau_actual__initial = pop!(__overrides, "tau_actual__initial", nothing); isnothing(__ovr_tau_actual__initial) || (__initial_conditions[tau_actual] = __ovr_tau_actual__initial)
-  __ovr_tau_actual__guess = pop!(__overrides, "tau_actual__guess", nothing)
+  __ovr_tau_actual__initial = pop!(__overrides, "tau_actual.initial", nothing); isnothing(__ovr_tau_actual__initial) || (__initial_conditions[tau_actual] = __ovr_tau_actual__initial)
+  __ovr_tau_actual__guess = pop!(__overrides, "tau_actual.guess", nothing)
   __ovr_phi = pop!(__overrides, "phi", nothing); isnothing(__ovr_phi) || push!(__eqs, phi ~ __ovr_phi)
-  __ovr_phi__initial = pop!(__overrides, "phi__initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
-  __ovr_phi__guess = pop!(__overrides, "phi__guess", nothing)
+  __ovr_phi__initial = pop!(__overrides, "phi.initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
+  __ovr_phi__guess = pop!(__overrides, "phi.guess", nothing)
   __ovr_w = pop!(__overrides, "w", nothing); isnothing(__ovr_w) || push!(__eqs, w ~ __ovr_w)
-  __ovr_w__initial = pop!(__overrides, "w__initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
-  __ovr_w__guess = pop!(__overrides, "w__guess", nothing)
+  __ovr_w__initial = pop!(__overrides, "w.initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
+  __ovr_w__guess = pop!(__overrides, "w.guess", nothing)
   __ovr_tau_friction = pop!(__overrides, "tau_friction", nothing); isnothing(__ovr_tau_friction) || push!(__eqs, tau_friction ~ __ovr_tau_friction)
-  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction__initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
-  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction__guess", nothing)
+  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction.initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
+  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -134,7 +139,7 @@ at zero speed, this is the appropriate fidelity.
   push!(__systems, @named support = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_phi_support__guess) || (__guesses[phi_support] = __ovr_phi_support__guess)
@@ -159,6 +164,6 @@ at zero speed, this is the appropriate fidelity.
   push!(__eqs, spline_a.tau + spline_b.tau ~ tau_friction)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export BrakeActuator

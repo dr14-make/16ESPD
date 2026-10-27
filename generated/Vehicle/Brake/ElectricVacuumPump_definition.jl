@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ElectricVacuumPump(; name, Q, p_min, p_on, p_off, V_h, T_latch, T, R, p_init)
+   ElectricVacuumPump(; name, Q, p_min, p_on, p_off, V_h, T_latch, T, R, p_init, __overrides)
 
 Electric vane vacuum pump with its suction hose, for a booster with no manifold vacuum: a diesel,
 an unthrottled petrol engine, a hybrid or an EV.
@@ -55,7 +55,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 | `request`         | Latch target                         | --  |
 | `mdot_pump`         | Air mass flow the pump removes [kg/s]                         | --  |
 """
-@component function ElectricVacuumPump(; name = nothing, Q=0.0004, p_min=Float64(14000.0), p_on=Float64(40000.0), p_off=Float64(17000.0), V_h=0.00005, T_latch=0.01, T=298.15, R=287.05, p_init=Float64(101325.0), kwargs...)
+@component function ElectricVacuumPump(; name = nothing, var"Q"=0.0004, var"p_min"=Float64(14000.0), var"p_on"=Float64(40000.0), var"p_off"=Float64(17000.0), var"V_h"=0.00005, var"T_latch"=0.01, var"T"=298.15, var"R"=287.05, var"p_init"=Float64(101325.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -63,7 +63,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
     @named model = ElectricVacuumPump()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -72,6 +72,17 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "Q") && (Q = pop!(__overrides, "Q"))
+  haskey(__overrides, "p_min") && (p_min = pop!(__overrides, "p_min"))
+  haskey(__overrides, "p_on") && (p_on = pop!(__overrides, "p_on"))
+  haskey(__overrides, "p_off") && (p_off = pop!(__overrides, "p_off"))
+  haskey(__overrides, "V_h") && (V_h = pop!(__overrides, "V_h"))
+  haskey(__overrides, "T_latch") && (T_latch = pop!(__overrides, "T_latch"))
+  haskey(__overrides, "T") && (T = pop!(__overrides, "T"))
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "p_init") && (p_init = pop!(__overrides, "p_init"))
 
   ### Structural Parameters (functions)
 
@@ -88,31 +99,31 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   ### Symbolic Parameters
   __local__Q = Q
   append!(__params, @parameters (Q::Real), [description = "Displaced volume flow [m^3/s] (derived from Hella UP28)"])
-  __initial_conditions[Q] = __local__Q
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Q, __local__Q)
   __local__p_min = p_min
   append!(__params, @parameters (p_min::Real), [description = "Ultimate pressure [Pa] (derived from Hella UP28, 86 % vacuum)"])
-  __initial_conditions[p_min] = __local__p_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_min, __local__p_min)
   __local__p_on = p_on
   append!(__params, @parameters (p_on::Real), [description = "Switch-on pressure, 18 inHg of vacuum [Pa] (aftermarket, Summit)"])
-  __initial_conditions[p_on] = __local__p_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_on, __local__p_on)
   __local__p_off = p_off
   append!(__params, @parameters (p_off::Real), [description = "Switch-off pressure, 25 inHg of vacuum [Pa] (aftermarket, Summit)"])
-  __initial_conditions[p_off] = __local__p_off
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_off, __local__p_off)
   __local__V_h = V_h
   append!(__params, @parameters (V_h::Real), [description = "Suction hose volume between check valve and pump [m^3] (assumed)"])
-  __initial_conditions[V_h] = __local__V_h
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_h, __local__V_h)
   __local__T_latch = T_latch
   append!(__params, @parameters (T_latch::Real), [description = "Continuous latch transition time (assumed)", bounds = (0.001, Inf)])
-  __initial_conditions[T_latch] = __local__T_latch
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_latch, __local__T_latch)
   __local__T = T
   append!(__params, @parameters (T::Real), [description = "Air temperature [K] (MathWorks)", bounds = (0, Inf)])
-  __initial_conditions[T] = __local__T
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T, __local__T)
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Gas constant of air [J/(kg.K)] (textbook)"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__p_init = p_init
   append!(__params, @parameters (p_init::Real), [description = "Hose absolute pressure at t = 0 [Pa]"])
-  __initial_conditions[p_init] = __local__p_init
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_init, __local__p_init)
 
   ### Final Parameters (assignments)
 
@@ -128,17 +139,17 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 
   ### Variables (assignments)
   __ovr_p_h = pop!(__overrides, "p_h", nothing); isnothing(__ovr_p_h) || push!(__eqs, p_h ~ __ovr_p_h)
-  __ovr_p_h__initial = pop!(__overrides, "p_h__initial", nothing); isnothing(__ovr_p_h__initial) || (__initial_conditions[p_h] = __ovr_p_h__initial)
-  __ovr_p_h__guess = pop!(__overrides, "p_h__guess", nothing)
+  __ovr_p_h__initial = pop!(__overrides, "p_h.initial", nothing); isnothing(__ovr_p_h__initial) || (__initial_conditions[p_h] = __ovr_p_h__initial)
+  __ovr_p_h__guess = pop!(__overrides, "p_h.guess", nothing)
   __ovr_y = pop!(__overrides, "y", nothing); isnothing(__ovr_y) || push!(__eqs, y ~ __ovr_y)
-  __ovr_y__initial = pop!(__overrides, "y__initial", nothing); isnothing(__ovr_y__initial) || (__initial_conditions[y] = __ovr_y__initial)
-  __ovr_y__guess = pop!(__overrides, "y__guess", nothing)
+  __ovr_y__initial = pop!(__overrides, "y.initial", nothing); isnothing(__ovr_y__initial) || (__initial_conditions[y] = __ovr_y__initial)
+  __ovr_y__guess = pop!(__overrides, "y.guess", nothing)
   __ovr_request = pop!(__overrides, "request", nothing); isnothing(__ovr_request) || push!(__eqs, request ~ __ovr_request)
-  __ovr_request__initial = pop!(__overrides, "request__initial", nothing); isnothing(__ovr_request__initial) || (__initial_conditions[request] = __ovr_request__initial)
-  __ovr_request__guess = pop!(__overrides, "request__guess", nothing)
+  __ovr_request__initial = pop!(__overrides, "request.initial", nothing); isnothing(__ovr_request__initial) || (__initial_conditions[request] = __ovr_request__initial)
+  __ovr_request__guess = pop!(__overrides, "request.guess", nothing)
   __ovr_mdot_pump = pop!(__overrides, "mdot_pump", nothing); isnothing(__ovr_mdot_pump) || push!(__eqs, mdot_pump ~ __ovr_mdot_pump)
-  __ovr_mdot_pump__initial = pop!(__overrides, "mdot_pump__initial", nothing); isnothing(__ovr_mdot_pump__initial) || (__initial_conditions[mdot_pump] = __ovr_mdot_pump__initial)
-  __ovr_mdot_pump__guess = pop!(__overrides, "mdot_pump__guess", nothing)
+  __ovr_mdot_pump__initial = pop!(__overrides, "mdot_pump.initial", nothing); isnothing(__ovr_mdot_pump__initial) || (__initial_conditions[mdot_pump] = __ovr_mdot_pump__initial)
+  __ovr_mdot_pump__guess = pop!(__overrides, "mdot_pump.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -147,7 +158,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_p_h__guess) || (__guesses[p_h] = __ovr_p_h__guess)
@@ -171,6 +182,6 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, running ~ y)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ElectricVacuumPump

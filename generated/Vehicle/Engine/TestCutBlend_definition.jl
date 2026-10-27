@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestCutBlend(; name)
+   TestCutBlend(; name, __overrides)
 """
-@component function TestCutBlend(; name = nothing, kwargs...)
+@component function TestCutBlend(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestCutBlend()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,25 +53,25 @@
   ### Components
   # Subcomponent fired of type BlockComponents.Sources.Constant
   fired_overrides = __pop_subcomponent_overrides!(__overrides, "fired")
-  push!(__systems, @named fired = BlockComponents.Sources.Constant(; k=Float64(100.0), fired_overrides...))
+  push!(__systems, @named fired = BlockComponents.Sources.Constant(; k=Float64(100.0), __overrides = fired_overrides))
   # Subcomponent motored of type BlockComponents.Sources.Constant
   motored_overrides = __pop_subcomponent_overrides!(__overrides, "motored")
-  push!(__systems, @named motored = BlockComponents.Sources.Constant(; k=-20.0, motored_overrides...))
+  push!(__systems, @named motored = BlockComponents.Sources.Constant(; k=-20.0, __overrides = motored_overrides))
   # Subcomponent fired_end of type BlockComponents.Sources.Constant
   fired_end_overrides = __pop_subcomponent_overrides!(__overrides, "fired_end")
-  push!(__systems, @named fired_end = BlockComponents.Sources.Constant(; k=Float64(0.0), fired_end_overrides...))
+  push!(__systems, @named fired_end = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = fired_end_overrides))
   # Subcomponent motored_end of type BlockComponents.Sources.Constant
   motored_end_overrides = __pop_subcomponent_overrides!(__overrides, "motored_end")
-  push!(__systems, @named motored_end = BlockComponents.Sources.Constant(; k=Float64(1.0), motored_end_overrides...))
+  push!(__systems, @named motored_end = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = motored_end_overrides))
   # Subcomponent at_fired of type VehicleSystemsComponents.Vehicle.Engine.CutBlend
   at_fired_overrides = __pop_subcomponent_overrides!(__overrides, "at_fired")
-  push!(__systems, @named at_fired = VehicleSystemsComponents.Vehicle.Engine.CutBlend(; at_fired_overrides...))
+  push!(__systems, @named at_fired = VehicleSystemsComponents.Vehicle.Engine.CutBlend(; __overrides = at_fired_overrides))
   # Subcomponent at_motored of type VehicleSystemsComponents.Vehicle.Engine.CutBlend
   at_motored_overrides = __pop_subcomponent_overrides!(__overrides, "at_motored")
-  push!(__systems, @named at_motored = VehicleSystemsComponents.Vehicle.Engine.CutBlend(; at_motored_overrides...))
+  push!(__systems, @named at_motored = VehicleSystemsComponents.Vehicle.Engine.CutBlend(; __overrides = at_motored_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -87,6 +87,6 @@
   push!(__eqs, connect(motored_end.y, at_motored.cut))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestCutBlend

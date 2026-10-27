@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ColdGasNozzle(; name, A_t, gamma, R, c_p, p_a, eta_n, p_close)
+   ColdGasNozzle(; name, A_t, gamma, R, c_p, p_a, eta_n, p_close, __overrides)
 
 Choked compressed-air nozzle with ideal expansion to ambient pressure.
 
@@ -43,7 +43,7 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
 | `F`         | Thrust magnitude                         | N  |
 | `opening`         | Effective open command                         | --  |
 """
-@component function ColdGasNozzle(; name = nothing, A_t=0.001286, gamma=1.4, R=287.05, c_p=Float64(1005), p_a=Float64(101325), eta_n=Float64(1.0), p_close=Float64(200000.0), kwargs...)
+@component function ColdGasNozzle(; name = nothing, var"A_t"=0.001286, var"gamma"=1.4, var"R"=287.05, var"c_p"=Float64(1005), var"p_a"=Float64(101325), var"eta_n"=Float64(1.0), var"p_close"=Float64(200000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -51,7 +51,7 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
     @named model = ColdGasNozzle()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -60,6 +60,15 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "A_t") && (A_t = pop!(__overrides, "A_t"))
+  haskey(__overrides, "gamma") && (gamma = pop!(__overrides, "gamma"))
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "c_p") && (c_p = pop!(__overrides, "c_p"))
+  haskey(__overrides, "p_a") && (p_a = pop!(__overrides, "p_a"))
+  haskey(__overrides, "eta_n") && (eta_n = pop!(__overrides, "eta_n"))
+  haskey(__overrides, "p_close") && (p_close = pop!(__overrides, "p_close"))
 
   ### Structural Parameters (functions)
 
@@ -76,25 +85,25 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
   ### Symbolic Parameters
   __local__A_t = A_t
   append!(__params, @parameters (A_t::Real), [description = "Total throat area, sized for 80 kN at 380 bar; four rear nozzles are about 20 mm diameter each"])
-  __initial_conditions[A_t] = __local__A_t
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_t, __local__A_t)
   __local__gamma = gamma
   append!(__params, @parameters (gamma::Real), [description = "Ratio of specific heats for air; standard thermodynamic value"])
-  __initial_conditions[gamma] = __local__gamma
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gamma, __local__gamma)
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Specific gas constant of dry air; standard thermodynamic value"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__c_p = c_p
   append!(__params, @parameters (c_p::Real), [description = "Constant-pressure specific heat of air; standard thermodynamic value"])
-  __initial_conditions[c_p] = __local__c_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c_p, __local__c_p)
   __local__p_a = p_a
   append!(__params, @parameters (p_a::Real), [description = "Ambient sea-level pressure; standard atmosphere"])
-  __initial_conditions[p_a] = __local__p_a
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_a, __local__p_a)
   __local__eta_n = eta_n
   append!(__params, @parameters (eta_n::Real), [description = "Nozzle velocity efficiency; ideal expansion assumed by default"])
-  __initial_conditions[eta_n] = __local__eta_n
+  __dyad_seed_parameter!(__initial_conditions, __bindings, eta_n, __local__eta_n)
   __local__p_close = p_close
   append!(__params, @parameters (p_close::Real), [description = "Valve cutoff pressure; assumed 2 bar to avoid the unmodeled subsonic branch"])
-  __initial_conditions[p_close] = __local__p_close
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_close, __local__p_close)
 
   ### Final Parameters (assignments)
 
@@ -112,14 +121,14 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
 
   ### Variables (assignments)
   __ovr_v_e = pop!(__overrides, "v_e", nothing); isnothing(__ovr_v_e) || push!(__eqs, v_e ~ __ovr_v_e)
-  __ovr_v_e__initial = pop!(__overrides, "v_e__initial", nothing); isnothing(__ovr_v_e__initial) || (__initial_conditions[v_e] = __ovr_v_e__initial)
-  __ovr_v_e__guess = pop!(__overrides, "v_e__guess", nothing)
+  __ovr_v_e__initial = pop!(__overrides, "v_e.initial", nothing); isnothing(__ovr_v_e__initial) || (__initial_conditions[v_e] = __ovr_v_e__initial)
+  __ovr_v_e__guess = pop!(__overrides, "v_e.guess", nothing)
   __ovr_F = pop!(__overrides, "F", nothing); isnothing(__ovr_F) || push!(__eqs, F ~ __ovr_F)
-  __ovr_F__initial = pop!(__overrides, "F__initial", nothing); isnothing(__ovr_F__initial) || (__initial_conditions[F] = __ovr_F__initial)
-  __ovr_F__guess = pop!(__overrides, "F__guess", nothing)
+  __ovr_F__initial = pop!(__overrides, "F.initial", nothing); isnothing(__ovr_F__initial) || (__initial_conditions[F] = __ovr_F__initial)
+  __ovr_F__guess = pop!(__overrides, "F.guess", nothing)
   __ovr_opening = pop!(__overrides, "opening", nothing); isnothing(__ovr_opening) || push!(__eqs, opening ~ __ovr_opening)
-  __ovr_opening__initial = pop!(__overrides, "opening__initial", nothing); isnothing(__ovr_opening__initial) || (__initial_conditions[opening] = __ovr_opening__initial)
-  __ovr_opening__guess = pop!(__overrides, "opening__guess", nothing)
+  __ovr_opening__initial = pop!(__overrides, "opening.initial", nothing); isnothing(__ovr_opening__initial) || (__initial_conditions[opening] = __ovr_opening__initial)
+  __ovr_opening__guess = pop!(__overrides, "opening.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -128,7 +137,7 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
   push!(__systems, @named flange = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v_e__guess) || (__guesses[v_e] = __ovr_v_e__guess)
@@ -149,6 +158,6 @@ the high-pressure thrust pulse and defines its endpoint conservatively.
   push!(__eqs, flange.f ~ -F)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ColdGasNozzle

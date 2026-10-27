@@ -5,12 +5,12 @@
 
 
 @doc Markdown.doc"""
-   MappedCarWOT(; name)
+   MappedCarWOT(; name, __overrides)
 
 Hands-on 02 step 04 bench: the pedal floored from rest, the engine idling behind the open launch
 clutch.
 """
-@component function MappedCarWOT(; name = nothing, kwargs...)
+@component function MappedCarWOT(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -18,7 +18,7 @@ clutch.
     @named model = MappedCarWOT()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -56,13 +56,13 @@ clutch.
   ### Components
   # Subcomponent pedal of type BlockComponents.Sources.Constant
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
-  push!(__systems, @named pedal = BlockComponents.Sources.Constant(; k=Float64(1), pedal_overrides...))
+  push!(__systems, @named pedal = BlockComponents.Sources.Constant(; k=Float64(1), __overrides = pedal_overrides))
   # Subcomponent car of type VehicleSystemsComponents.HandsOn02.MappedCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCar(; car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCar(; __overrides = car_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -82,6 +82,6 @@ clutch.
   push!(__eqs, connect(pedal.y, car.pedal))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export MappedCarWOT

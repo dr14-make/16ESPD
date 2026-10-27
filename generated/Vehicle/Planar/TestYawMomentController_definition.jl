@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestYawMomentController(; name)
+   TestYawMomentController(; name, __overrides)
 
 Yaw controller checks active control, deadband, and low-speed inhibition.
 """
-@component function TestYawMomentController(; name = nothing, kwargs...)
+@component function TestYawMomentController(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Yaw controller checks active control, deadband, and low-speed inhibition.
     @named model = TestYawMomentController()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,19 +55,19 @@ Yaw controller checks active control, deadband, and low-speed inhibition.
   ### Components
   # Subcomponent measured of type BlockComponents.Sources.Constant
   measured_overrides = __pop_subcomponent_overrides!(__overrides, "measured")
-  push!(__systems, @named measured = BlockComponents.Sources.Constant(; k=0.3, measured_overrides...))
+  push!(__systems, @named measured = BlockComponents.Sources.Constant(; k=0.3, __overrides = measured_overrides))
   # Subcomponent reference of type BlockComponents.Sources.Constant
   reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  push!(__systems, @named reference = BlockComponents.Sources.Constant(; k=0.2, reference_overrides...))
+  push!(__systems, @named reference = BlockComponents.Sources.Constant(; k=0.2, __overrides = reference_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = speed_overrides))
   # Subcomponent control of type VehicleSystemsComponents.Vehicle.Planar.YawMomentController
   control_overrides = __pop_subcomponent_overrides!(__overrides, "control")
-  push!(__systems, @named control = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(; control_overrides...))
+  push!(__systems, @named control = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(; __overrides = control_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -82,6 +82,6 @@ Yaw controller checks active control, deadband, and low-speed inhibition.
   push!(__eqs, connect(speed.y, control.vx))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestYawMomentController

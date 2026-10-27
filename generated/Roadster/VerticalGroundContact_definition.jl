@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   VerticalGroundContact(; name, c, d)
+   VerticalGroundContact(; name, c, d, __overrides)
 
 Unilateral vertical ground contact following the ElastoGap spring-damper law.
 
@@ -29,7 +29,7 @@ Unilateral vertical ground contact following the ElastoGap spring-damper law.
 | `spring_force`         |                          | N  |
 | `damping_force`         |                          | N  |
 """
-@component function VerticalGroundContact(; name = nothing, c=Float64(2000000.0), d=Float64(100000.0), kwargs...)
+@component function VerticalGroundContact(; name = nothing, var"c"=Float64(2000000.0), var"d"=Float64(100000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ Unilateral vertical ground contact following the ElastoGap spring-damper law.
     @named model = VerticalGroundContact()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,10 @@ Unilateral vertical ground contact following the ElastoGap spring-damper law.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "c") && (c = pop!(__overrides, "c"))
+  haskey(__overrides, "d") && (d = pop!(__overrides, "d"))
 
   ### Structural Parameters (functions)
 
@@ -62,10 +66,10 @@ Unilateral vertical ground contact following the ElastoGap spring-damper law.
   ### Symbolic Parameters
   __local__c = c
   append!(__params, @parameters (c::Real), [description = "Ground-contact stiffness; assumed for a roughly 10 mm static deflection"])
-  __initial_conditions[c] = __local__c
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c, __local__c)
   __local__d = d
   append!(__params, @parameters (d::Real), [description = "Ground-contact damping; assumed near critical for the 2,000 kg car"])
-  __initial_conditions[d] = __local__d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, d, __local__d)
 
   ### Final Parameters (assignments)
 
@@ -79,17 +83,17 @@ Unilateral vertical ground contact following the ElastoGap spring-damper law.
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
   __ovr_compression = pop!(__overrides, "compression", nothing); isnothing(__ovr_compression) || push!(__eqs, compression ~ __ovr_compression)
-  __ovr_compression__initial = pop!(__overrides, "compression__initial", nothing); isnothing(__ovr_compression__initial) || (__initial_conditions[compression] = __ovr_compression__initial)
-  __ovr_compression__guess = pop!(__overrides, "compression__guess", nothing)
+  __ovr_compression__initial = pop!(__overrides, "compression.initial", nothing); isnothing(__ovr_compression__initial) || (__initial_conditions[compression] = __ovr_compression__initial)
+  __ovr_compression__guess = pop!(__overrides, "compression.guess", nothing)
   __ovr_spring_force = pop!(__overrides, "spring_force", nothing); isnothing(__ovr_spring_force) || push!(__eqs, spring_force ~ __ovr_spring_force)
-  __ovr_spring_force__initial = pop!(__overrides, "spring_force__initial", nothing); isnothing(__ovr_spring_force__initial) || (__initial_conditions[spring_force] = __ovr_spring_force__initial)
-  __ovr_spring_force__guess = pop!(__overrides, "spring_force__guess", nothing)
+  __ovr_spring_force__initial = pop!(__overrides, "spring_force.initial", nothing); isnothing(__ovr_spring_force__initial) || (__initial_conditions[spring_force] = __ovr_spring_force__initial)
+  __ovr_spring_force__guess = pop!(__overrides, "spring_force.guess", nothing)
   __ovr_damping_force = pop!(__overrides, "damping_force", nothing); isnothing(__ovr_damping_force) || push!(__eqs, damping_force ~ __ovr_damping_force)
-  __ovr_damping_force__initial = pop!(__overrides, "damping_force__initial", nothing); isnothing(__ovr_damping_force__initial) || (__initial_conditions[damping_force] = __ovr_damping_force__initial)
-  __ovr_damping_force__guess = pop!(__overrides, "damping_force__guess", nothing)
+  __ovr_damping_force__initial = pop!(__overrides, "damping_force.initial", nothing); isnothing(__ovr_damping_force__initial) || (__initial_conditions[damping_force] = __ovr_damping_force__initial)
+  __ovr_damping_force__guess = pop!(__overrides, "damping_force.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -98,7 +102,7 @@ Unilateral vertical ground contact following the ElastoGap spring-damper law.
   push!(__systems, @named flange = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
@@ -119,6 +123,6 @@ Unilateral vertical ground contact following the ElastoGap spring-damper law.
   push!(__eqs, flange.f ~ -(spring_force + damping_force))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export VerticalGroundContact

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TCSStart(; name, brake_enabled, engine_enabled, supply_pressure)
+   TCSStart(; name, brake_enabled, engine_enabled, supply_pressure, __overrides)
 
 Whole-car standing start on snow with brake and engine TCS independently selectable.
 
@@ -17,7 +17,7 @@ Whole-car standing start on snow with brake and engine TCS independently selecta
 | `engine_enabled`         | Set to one to enable engine intervention                         | --  |   1.0 |
 | `supply_pressure`         | Pump and accumulator supply pressure                         | Pa  |   8.9e6 |
 """
-@component function TCSStart(; name = nothing, brake_enabled=Float64(1.0), engine_enabled=Float64(1.0), supply_pressure=Float64(8900000.0), kwargs...)
+@component function TCSStart(; name = nothing, var"brake_enabled"=Float64(1.0), var"engine_enabled"=Float64(1.0), var"supply_pressure"=Float64(8900000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -25,7 +25,7 @@ Whole-car standing start on snow with brake and engine TCS independently selecta
     @named model = TCSStart()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -34,6 +34,11 @@ Whole-car standing start on snow with brake and engine TCS independently selecta
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "brake_enabled") && (brake_enabled = pop!(__overrides, "brake_enabled"))
+  haskey(__overrides, "engine_enabled") && (engine_enabled = pop!(__overrides, "engine_enabled"))
+  haskey(__overrides, "supply_pressure") && (supply_pressure = pop!(__overrides, "supply_pressure"))
 
   ### Structural Parameters (functions)
 
@@ -50,13 +55,13 @@ Whole-car standing start on snow with brake and engine TCS independently selecta
   ### Symbolic Parameters
   __local__brake_enabled = brake_enabled
   append!(__params, @parameters (brake_enabled::Real), [description = "Set to one to enable brake intervention"])
-  __initial_conditions[brake_enabled] = __local__brake_enabled
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_enabled, __local__brake_enabled)
   __local__engine_enabled = engine_enabled
   append!(__params, @parameters (engine_enabled::Real), [description = "Set to one to enable engine intervention"])
-  __initial_conditions[engine_enabled] = __local__engine_enabled
+  __dyad_seed_parameter!(__initial_conditions, __bindings, engine_enabled, __local__engine_enabled)
   __local__supply_pressure = supply_pressure
   append!(__params, @parameters (supply_pressure::Real), [description = "Pump and accumulator supply pressure"])
-  __initial_conditions[supply_pressure] = __local__supply_pressure
+  __dyad_seed_parameter!(__initial_conditions, __bindings, supply_pressure, __local__supply_pressure)
 
   ### Final Parameters (assignments)
 
@@ -72,40 +77,40 @@ Whole-car standing start on snow with brake and engine TCS independently selecta
   ### Components
   # Subcomponent throttle of type BlockComponents.Sources.Step
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
-  push!(__systems, @named throttle = BlockComponents.Sources.Step(; height=Float64(1.0), offset=Float64(0.0), start_time=Float64(0.0), throttle_overrides...))
+  push!(__systems, @named throttle = BlockComponents.Sources.Step(; height=Float64(1.0), offset=Float64(0.0), start_time=Float64(0.0), __overrides = throttle_overrides))
   # Subcomponent one of type BlockComponents.Sources.Constant
   one_overrides = __pop_subcomponent_overrides!(__overrides, "one")
-  push!(__systems, @named one = BlockComponents.Sources.Constant(; k=Float64(1.0), one_overrides...))
+  push!(__systems, @named one = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = one_overrides))
   # Subcomponent friction of type BlockComponents.Sources.Constant
   friction_overrides = __pop_subcomponent_overrides!(__overrides, "friction")
-  push!(__systems, @named friction = BlockComponents.Sources.Constant(; k=0.2, friction_overrides...))
+  push!(__systems, @named friction = BlockComponents.Sources.Constant(; k=0.2, __overrides = friction_overrides))
   # Subcomponent supply of type BlockComponents.Sources.Constant
   supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
-  push!(__systems, @named supply = BlockComponents.Sources.Constant(; k=supply_pressure, supply_overrides...))
+  push!(__systems, @named supply = BlockComponents.Sources.Constant(; k=supply_pressure, __overrides = supply_overrides))
   # Subcomponent brake_enable of type BlockComponents.Math.Gain
   brake_enable_overrides = __pop_subcomponent_overrides!(__overrides, "brake_enable")
-  push!(__systems, @named brake_enable = BlockComponents.Math.Gain(; k=brake_enabled, brake_enable_overrides...))
+  push!(__systems, @named brake_enable = BlockComponents.Math.Gain(; k=brake_enabled, __overrides = brake_enable_overrides))
   # Subcomponent engine_reduction of type BlockComponents.Math.Feedback
   engine_reduction_overrides = __pop_subcomponent_overrides!(__overrides, "engine_reduction")
-  push!(__systems, @named engine_reduction = BlockComponents.Math.Feedback(; engine_reduction_overrides...))
+  push!(__systems, @named engine_reduction = BlockComponents.Math.Feedback(; __overrides = engine_reduction_overrides))
   # Subcomponent engine_enable of type BlockComponents.Math.Gain
   engine_enable_overrides = __pop_subcomponent_overrides!(__overrides, "engine_enable")
-  push!(__systems, @named engine_enable = BlockComponents.Math.Gain(; k=engine_enabled, engine_enable_overrides...))
+  push!(__systems, @named engine_enable = BlockComponents.Math.Gain(; k=engine_enabled, __overrides = engine_enable_overrides))
   # Subcomponent engine_limit of type BlockComponents.Math.Feedback
   engine_limit_overrides = __pop_subcomponent_overrides!(__overrides, "engine_limit")
-  push!(__systems, @named engine_limit = BlockComponents.Math.Feedback(; engine_limit_overrides...))
+  push!(__systems, @named engine_limit = BlockComponents.Math.Feedback(; __overrides = engine_limit_overrides))
   # Subcomponent car of type VehicleSystemsComponents.HandsOn03.TCSCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.HandsOn03.TCSCar(; supply_pressure=supply_pressure, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.HandsOn03.TCSCar(; supply_pressure=supply_pressure, __overrides = car_overrides))
   # Subcomponent brake_tcs of type VehicleSystemsComponents.HandsOn03.TCS
   brake_tcs_overrides = __pop_subcomponent_overrides!(__overrides, "brake_tcs")
-  push!(__systems, @named brake_tcs = VehicleSystemsComponents.HandsOn03.TCS(; brake_tcs_overrides...))
+  push!(__systems, @named brake_tcs = VehicleSystemsComponents.HandsOn03.TCS(; __overrides = brake_tcs_overrides))
   # Subcomponent engine_tcs of type VehicleSystemsComponents.HandsOn03.TCSEngine
   engine_tcs_overrides = __pop_subcomponent_overrides!(__overrides, "engine_tcs")
-  push!(__systems, @named engine_tcs = VehicleSystemsComponents.HandsOn03.TCSEngine(; engine_tcs_overrides...))
+  push!(__systems, @named engine_tcs = VehicleSystemsComponents.HandsOn03.TCSEngine(; __overrides = engine_tcs_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -136,6 +141,6 @@ Whole-car standing start on snow with brake and engine TCS independently selecta
   push!(__eqs, connect(engine_limit.y, car.u_tcs))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TCSStart

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPSteerRamp(; name, load_transfer, v0, delta_sw_final, t_ramp, t_steer, mu_scale_front, esp_on, Kp, Ki, T_build, R_build, radius, h_cg)
+   ESPSteerRamp(; name, load_transfer, v0, delta_sw_final, t_ramp, t_steer, mu_scale_front, esp_on, Kp, Ki, T_build, R_build, radius, h_cg, __overrides)
 
 Steering ramp with reduced front friction for continuous-ESP understeer checks.
 
@@ -27,7 +27,7 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
 | `radius`         |                          | m  |   0.31 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function ESPSteerRamp(; name = nothing, load_transfer=true, v0=22.22222222222222, delta_sw_final=1.7671458676442586, t_ramp=7.5, t_steer=0.5, mu_scale_front=0.7, esp_on=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), T_build=0.1, R_build=Float64(1000000000.0), radius=0.31, h_cg=Float64(0.0), kwargs...)
+@component function ESPSteerRamp(; name = nothing, var"load_transfer"=true, var"v0"=22.22222222222222, var"delta_sw_final"=1.7671458676442586, var"t_ramp"=7.5, var"t_steer"=0.5, var"mu_scale_front"=0.7, var"esp_on"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"radius"=0.31, var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
     @named model = ESPSteerRamp()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,21 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "delta_sw_final") && (delta_sw_final = pop!(__overrides, "delta_sw_final"))
+  haskey(__overrides, "t_ramp") && (t_ramp = pop!(__overrides, "t_ramp"))
+  haskey(__overrides, "t_steer") && (t_steer = pop!(__overrides, "t_steer"))
+  haskey(__overrides, "mu_scale_front") && (mu_scale_front = pop!(__overrides, "mu_scale_front"))
+  haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
+  haskey(__overrides, "Kp") && (Kp = pop!(__overrides, "Kp"))
+  haskey(__overrides, "Ki") && (Ki = pop!(__overrides, "Ki"))
+  haskey(__overrides, "T_build") && (T_build = pop!(__overrides, "T_build"))
+  haskey(__overrides, "R_build") && (R_build = pop!(__overrides, "R_build"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
 
   ### Structural Parameters (functions)
 
@@ -60,40 +75,40 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   ### Symbolic Parameters
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__delta_sw_final = delta_sw_final
   append!(__params, @parameters (delta_sw_final::Real))
-  __initial_conditions[delta_sw_final] = __local__delta_sw_final
+  __dyad_seed_parameter!(__initial_conditions, __bindings, delta_sw_final, __local__delta_sw_final)
   __local__t_ramp = t_ramp
   append!(__params, @parameters (t_ramp::Real))
-  __initial_conditions[t_ramp] = __local__t_ramp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_ramp, __local__t_ramp)
   __local__t_steer = t_steer
   append!(__params, @parameters (t_steer::Real))
-  __initial_conditions[t_steer] = __local__t_steer
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_steer, __local__t_steer)
   __local__mu_scale_front = mu_scale_front
   append!(__params, @parameters (mu_scale_front::Real))
-  __initial_conditions[mu_scale_front] = __local__mu_scale_front
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_front, __local__mu_scale_front)
   __local__esp_on = esp_on
   append!(__params, @parameters (esp_on::Real))
-  __initial_conditions[esp_on] = __local__esp_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
   __local__Kp = Kp
   append!(__params, @parameters (Kp::Real))
-  __initial_conditions[Kp] = __local__Kp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Kp, __local__Kp)
   __local__Ki = Ki
   append!(__params, @parameters (Ki::Real))
-  __initial_conditions[Ki] = __local__Ki
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ki, __local__Ki)
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
-  __initial_conditions[T_build] = __local__T_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_build, __local__T_build)
   __local__R_build = R_build
   append!(__params, @parameters (R_build::Real))
-  __initial_conditions[R_build] = __local__R_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_build, __local__R_build)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__h_cg = h_cg
   append!(__params, @parameters (h_cg::Real))
-  __initial_conditions[h_cg] = __local__h_cg
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_cg, __local__h_cg)
 
   ### Final Parameters (assignments)
 
@@ -109,34 +124,34 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   ### Components
   # Subcomponent steer of type BlockComponents.Sources.Ramp
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
-  push!(__systems, @named steer = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=delta_sw_final, duration=t_ramp, start_time=t_steer, steer_overrides...))
+  push!(__systems, @named steer = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=delta_sw_final, duration=t_ramp, start_time=t_steer, __overrides = steer_overrides))
   # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
-  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = steering_robot_overrides))
   # Subcomponent limit_fl of type BlockComponents.Nonlinear.Limiter
   limit_fl_overrides = __pop_subcomponent_overrides!(__overrides, "limit_fl")
-  push!(__systems, @named limit_fl = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_fl_overrides...))
+  push!(__systems, @named limit_fl = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), __overrides = limit_fl_overrides))
   # Subcomponent limit_fr of type BlockComponents.Nonlinear.Limiter
   limit_fr_overrides = __pop_subcomponent_overrides!(__overrides, "limit_fr")
-  push!(__systems, @named limit_fr = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_fr_overrides...))
+  push!(__systems, @named limit_fr = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), __overrides = limit_fr_overrides))
   # Subcomponent limit_rl of type BlockComponents.Nonlinear.Limiter
   limit_rl_overrides = __pop_subcomponent_overrides!(__overrides, "limit_rl")
-  push!(__systems, @named limit_rl = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_rl_overrides...))
+  push!(__systems, @named limit_rl = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), __overrides = limit_rl_overrides))
   # Subcomponent limit_rr of type BlockComponents.Nonlinear.Limiter
   limit_rr_overrides = __pop_subcomponent_overrides!(__overrides, "limit_rr")
-  push!(__systems, @named limit_rr = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), limit_rr_overrides...))
+  push!(__systems, @named limit_rr = BlockComponents.Nonlinear.Limiter(; y_min=Float64(0), __overrides = limit_rr_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_front, mu_scale_fr=mu_scale_front, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_front, mu_scale_fr=mu_scale_front, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
+  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
   # Subcomponent esp of type VehicleSystemsComponents.Vehicle.Planar.ESPController
   esp_overrides = __pop_subcomponent_overrides!(__overrides, "esp")
-  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, Kp=Kp, Ki=Ki, T_build=T_build, R_build=R_build, radius=radius, esp_overrides...))
+  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, Kp=Kp, Ki=Ki, T_build=T_build, R_build=R_build, radius=radius, __overrides = esp_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -187,6 +202,6 @@ Steering ramp with reduced front friction for continuous-ESP understeer checks.
   push!(__eqs, connect(limit_rr.y, car.tau_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ESPSteerRamp

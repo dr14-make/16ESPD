@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PowerLimitedMotor(; name, T_max, P_max, w_eps)
+   PowerLimitedMotor(; name, T_max, P_max, w_eps, __overrides)
 
 Electric drive referred to the driven wheels: it delivers the commanded torque up to a torque
 ceiling, and above base speed no more than its rated power allows.
@@ -39,7 +39,7 @@ represent reverse drive or regenerative braking.
 | `tau`         | Delivered wheel torque                         | N.m  |
 | `P`         | Delivered mechanical power                         | W  |
 """
-@component function PowerLimitedMotor(; name = nothing, T_max=Float64(12000), P_max=Float64(1000000.0), w_eps=Float64(1.0), kwargs...)
+@component function PowerLimitedMotor(; name = nothing, var"T_max"=Float64(12000), var"P_max"=Float64(1000000.0), var"w_eps"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,7 +47,7 @@ represent reverse drive or regenerative braking.
     @named model = PowerLimitedMotor()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -56,6 +56,11 @@ represent reverse drive or regenerative braking.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "P_max") && (P_max = pop!(__overrides, "P_max"))
+  haskey(__overrides, "w_eps") && (w_eps = pop!(__overrides, "w_eps"))
 
   ### Structural Parameters (functions)
 
@@ -72,13 +77,13 @@ represent reverse drive or regenerative braking.
   ### Symbolic Parameters
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Peak wheel torque; 1,400 N.m at the motor times an assumed 8.5:1 reduction"])
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__P_max = P_max
   append!(__params, @parameters (P_max::Real), [description = "Rated power; press reports describe the drive as over 1 MW"])
-  __initial_conditions[P_max] = __local__P_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_max, __local__P_max)
   __local__w_eps = w_eps
   append!(__params, @parameters (w_eps::Real), [description = "Speed floor for the power ceiling; numerical regularization"])
-  __initial_conditions[w_eps] = __local__w_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w_eps, __local__w_eps)
 
   ### Final Parameters (assignments)
 
@@ -94,20 +99,20 @@ represent reverse drive or regenerative braking.
 
   ### Variables (assignments)
   __ovr_phi_support = pop!(__overrides, "phi_support", nothing); isnothing(__ovr_phi_support) || push!(__eqs, phi_support ~ __ovr_phi_support)
-  __ovr_phi_support__initial = pop!(__overrides, "phi_support__initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
-  __ovr_phi_support__guess = pop!(__overrides, "phi_support__guess", nothing)
+  __ovr_phi_support__initial = pop!(__overrides, "phi_support.initial", nothing); isnothing(__ovr_phi_support__initial) || (__initial_conditions[phi_support] = __ovr_phi_support__initial)
+  __ovr_phi_support__guess = pop!(__overrides, "phi_support.guess", nothing)
   __ovr_phi = pop!(__overrides, "phi", nothing); isnothing(__ovr_phi) || push!(__eqs, phi ~ __ovr_phi)
-  __ovr_phi__initial = pop!(__overrides, "phi__initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
-  __ovr_phi__guess = pop!(__overrides, "phi__guess", nothing)
+  __ovr_phi__initial = pop!(__overrides, "phi.initial", nothing); isnothing(__ovr_phi__initial) || (__initial_conditions[phi] = __ovr_phi__initial)
+  __ovr_phi__guess = pop!(__overrides, "phi.guess", nothing)
   __ovr_w = pop!(__overrides, "w", nothing); isnothing(__ovr_w) || push!(__eqs, w ~ __ovr_w)
-  __ovr_w__initial = pop!(__overrides, "w__initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
-  __ovr_w__guess = pop!(__overrides, "w__guess", nothing)
+  __ovr_w__initial = pop!(__overrides, "w.initial", nothing); isnothing(__ovr_w__initial) || (__initial_conditions[w] = __ovr_w__initial)
+  __ovr_w__guess = pop!(__overrides, "w.guess", nothing)
   __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
-  __ovr_tau__initial = pop!(__overrides, "tau__initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
-  __ovr_tau__guess = pop!(__overrides, "tau__guess", nothing)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
   __ovr_P = pop!(__overrides, "P", nothing); isnothing(__ovr_P) || push!(__eqs, P ~ __ovr_P)
-  __ovr_P__initial = pop!(__overrides, "P__initial", nothing); isnothing(__ovr_P__initial) || (__initial_conditions[P] = __ovr_P__initial)
-  __ovr_P__guess = pop!(__overrides, "P__guess", nothing)
+  __ovr_P__initial = pop!(__overrides, "P.initial", nothing); isnothing(__ovr_P__initial) || (__initial_conditions[P] = __ovr_P__initial)
+  __ovr_P__guess = pop!(__overrides, "P.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -117,7 +122,7 @@ represent reverse drive or regenerative braking.
   push!(__systems, @named support = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_phi_support__guess) || (__guesses[phi_support] = __ovr_phi_support__guess)
@@ -141,6 +146,6 @@ represent reverse drive or regenerative braking.
   push!(__eqs, P ~ tau * w)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export PowerLimitedMotor

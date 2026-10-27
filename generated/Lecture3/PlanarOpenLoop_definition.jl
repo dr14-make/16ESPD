@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarOpenLoop(; name, load_transfer, v0, delta_sw_final, t_ramp, t_steer, T_cmd, brake_fl, brake_fr, brake_rl, brake_rr, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, ackermann, radius, h_cg)
+   PlanarOpenLoop(; name, load_transfer, v0, delta_sw_final, t_ramp, t_steer, T_cmd, brake_fl, brake_fr, brake_rl, brake_rr, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, ackermann, radius, h_cg, __overrides)
 
 Open-loop planar-car harness with steering-wheel position and selectable wheel braking.
 
@@ -31,7 +31,7 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
 | `radius`         |                          | m  |   0.31 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function PlanarOpenLoop(; name = nothing, load_transfer=true, v0=22.22222222222222, delta_sw_final=Float64(0.0), t_ramp=0.2, t_steer=Float64(0.0), T_cmd=Float64(0.0), brake_fl=Float64(0.0), brake_fr=Float64(0.0), brake_rl=Float64(0.0), brake_rr=Float64(0.0), mu_scale_fl=Float64(1.0), mu_scale_fr=Float64(1.0), mu_scale_rl=Float64(1.0), mu_scale_rr=Float64(1.0), ackermann=Float64(1.0), radius=0.31, h_cg=Float64(0.0), kwargs...)
+@component function PlanarOpenLoop(; name = nothing, var"load_transfer"=true, var"v0"=22.22222222222222, var"delta_sw_final"=Float64(0.0), var"t_ramp"=0.2, var"t_steer"=Float64(0.0), var"T_cmd"=Float64(0.0), var"brake_fl"=Float64(0.0), var"brake_fr"=Float64(0.0), var"brake_rl"=Float64(0.0), var"brake_rr"=Float64(0.0), var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"ackermann"=Float64(1.0), var"radius"=0.31, var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -39,7 +39,7 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
     @named model = PlanarOpenLoop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -48,6 +48,25 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "delta_sw_final") && (delta_sw_final = pop!(__overrides, "delta_sw_final"))
+  haskey(__overrides, "t_ramp") && (t_ramp = pop!(__overrides, "t_ramp"))
+  haskey(__overrides, "t_steer") && (t_steer = pop!(__overrides, "t_steer"))
+  haskey(__overrides, "T_cmd") && (T_cmd = pop!(__overrides, "T_cmd"))
+  haskey(__overrides, "brake_fl") && (brake_fl = pop!(__overrides, "brake_fl"))
+  haskey(__overrides, "brake_fr") && (brake_fr = pop!(__overrides, "brake_fr"))
+  haskey(__overrides, "brake_rl") && (brake_rl = pop!(__overrides, "brake_rl"))
+  haskey(__overrides, "brake_rr") && (brake_rr = pop!(__overrides, "brake_rr"))
+  haskey(__overrides, "mu_scale_fl") && (mu_scale_fl = pop!(__overrides, "mu_scale_fl"))
+  haskey(__overrides, "mu_scale_fr") && (mu_scale_fr = pop!(__overrides, "mu_scale_fr"))
+  haskey(__overrides, "mu_scale_rl") && (mu_scale_rl = pop!(__overrides, "mu_scale_rl"))
+  haskey(__overrides, "mu_scale_rr") && (mu_scale_rr = pop!(__overrides, "mu_scale_rr"))
+  haskey(__overrides, "ackermann") && (ackermann = pop!(__overrides, "ackermann"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
 
   ### Structural Parameters (functions)
 
@@ -64,52 +83,52 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   ### Symbolic Parameters
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__delta_sw_final = delta_sw_final
   append!(__params, @parameters (delta_sw_final::Real))
-  __initial_conditions[delta_sw_final] = __local__delta_sw_final
+  __dyad_seed_parameter!(__initial_conditions, __bindings, delta_sw_final, __local__delta_sw_final)
   __local__t_ramp = t_ramp
   append!(__params, @parameters (t_ramp::Real))
-  __initial_conditions[t_ramp] = __local__t_ramp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_ramp, __local__t_ramp)
   __local__t_steer = t_steer
   append!(__params, @parameters (t_steer::Real))
-  __initial_conditions[t_steer] = __local__t_steer
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_steer, __local__t_steer)
   __local__T_cmd = T_cmd
   append!(__params, @parameters (T_cmd::Real))
-  __initial_conditions[T_cmd] = __local__T_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_cmd, __local__T_cmd)
   __local__brake_fl = brake_fl
   append!(__params, @parameters (brake_fl::Real))
-  __initial_conditions[brake_fl] = __local__brake_fl
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_fl, __local__brake_fl)
   __local__brake_fr = brake_fr
   append!(__params, @parameters (brake_fr::Real))
-  __initial_conditions[brake_fr] = __local__brake_fr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_fr, __local__brake_fr)
   __local__brake_rl = brake_rl
   append!(__params, @parameters (brake_rl::Real))
-  __initial_conditions[brake_rl] = __local__brake_rl
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_rl, __local__brake_rl)
   __local__brake_rr = brake_rr
   append!(__params, @parameters (brake_rr::Real))
-  __initial_conditions[brake_rr] = __local__brake_rr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_rr, __local__brake_rr)
   __local__mu_scale_fl = mu_scale_fl
   append!(__params, @parameters (mu_scale_fl::Real))
-  __initial_conditions[mu_scale_fl] = __local__mu_scale_fl
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_fl, __local__mu_scale_fl)
   __local__mu_scale_fr = mu_scale_fr
   append!(__params, @parameters (mu_scale_fr::Real))
-  __initial_conditions[mu_scale_fr] = __local__mu_scale_fr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_fr, __local__mu_scale_fr)
   __local__mu_scale_rl = mu_scale_rl
   append!(__params, @parameters (mu_scale_rl::Real))
-  __initial_conditions[mu_scale_rl] = __local__mu_scale_rl
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_rl, __local__mu_scale_rl)
   __local__mu_scale_rr = mu_scale_rr
   append!(__params, @parameters (mu_scale_rr::Real))
-  __initial_conditions[mu_scale_rr] = __local__mu_scale_rr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_rr, __local__mu_scale_rr)
   __local__ackermann = ackermann
   append!(__params, @parameters (ackermann::Real))
-  __initial_conditions[ackermann] = __local__ackermann
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ackermann, __local__ackermann)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__h_cg = h_cg
   append!(__params, @parameters (h_cg::Real))
-  __initial_conditions[h_cg] = __local__h_cg
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_cg, __local__h_cg)
 
   ### Final Parameters (assignments)
 
@@ -125,34 +144,34 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   ### Components
   # Subcomponent steer_ramp of type BlockComponents.Sources.Ramp
   steer_ramp_overrides = __pop_subcomponent_overrides!(__overrides, "steer_ramp")
-  push!(__systems, @named steer_ramp = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=delta_sw_final, duration=t_ramp, start_time=t_steer, steer_ramp_overrides...))
+  push!(__systems, @named steer_ramp = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=delta_sw_final, duration=t_ramp, start_time=t_steer, __overrides = steer_ramp_overrides))
   # Subcomponent brake_step of type BlockComponents.Sources.Step
   brake_step_overrides = __pop_subcomponent_overrides!(__overrides, "brake_step")
-  push!(__systems, @named brake_step = BlockComponents.Sources.Step(; offset=Float64(0.0), height=T_cmd, start_time=0.5, brake_step_overrides...))
+  push!(__systems, @named brake_step = BlockComponents.Sources.Step(; offset=Float64(0.0), height=T_cmd, start_time=0.5, __overrides = brake_step_overrides))
   # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
-  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = steering_robot_overrides))
   # Subcomponent gain_fl of type BlockComponents.Math.Gain
   gain_fl_overrides = __pop_subcomponent_overrides!(__overrides, "gain_fl")
-  push!(__systems, @named gain_fl = BlockComponents.Math.Gain(; k=brake_fl, gain_fl_overrides...))
+  push!(__systems, @named gain_fl = BlockComponents.Math.Gain(; k=brake_fl, __overrides = gain_fl_overrides))
   # Subcomponent gain_fr of type BlockComponents.Math.Gain
   gain_fr_overrides = __pop_subcomponent_overrides!(__overrides, "gain_fr")
-  push!(__systems, @named gain_fr = BlockComponents.Math.Gain(; k=brake_fr, gain_fr_overrides...))
+  push!(__systems, @named gain_fr = BlockComponents.Math.Gain(; k=brake_fr, __overrides = gain_fr_overrides))
   # Subcomponent gain_rl of type BlockComponents.Math.Gain
   gain_rl_overrides = __pop_subcomponent_overrides!(__overrides, "gain_rl")
-  push!(__systems, @named gain_rl = BlockComponents.Math.Gain(; k=brake_rl, gain_rl_overrides...))
+  push!(__systems, @named gain_rl = BlockComponents.Math.Gain(; k=brake_rl, __overrides = gain_rl_overrides))
   # Subcomponent gain_rr of type BlockComponents.Math.Gain
   gain_rr_overrides = __pop_subcomponent_overrides!(__overrides, "gain_rr")
-  push!(__systems, @named gain_rr = BlockComponents.Math.Gain(; k=brake_rr, gain_rr_overrides...))
+  push!(__systems, @named gain_rr = BlockComponents.Math.Gain(; k=brake_rr, __overrides = gain_rr_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_fl, mu_scale_fr=mu_scale_fr, mu_scale_rl=mu_scale_rl, mu_scale_rr=mu_scale_rr, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_fl, mu_scale_fr=mu_scale_fr, mu_scale_rl=mu_scale_rl, mu_scale_rr=mu_scale_rr, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
+  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -197,6 +216,6 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   push!(__eqs, connect(gain_rr.y, car.tau_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export PlanarOpenLoop

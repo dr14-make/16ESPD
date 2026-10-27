@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CentrifugalClutch(; name, engage_rpm, engage_width_rpm, tau_max, w_regularization)
+   CentrifugalClutch(; name, engage_rpm, engage_width_rpm, tau_max, w_regularization, __overrides)
 
 Smooth centrifugal launch clutch.
 
@@ -39,7 +39,7 @@ the small regularization speed makes the two shafts effectively locked.
 | `tau_capacity`         | Available friction torque [N.m]                         | N.m  |
 | `tau`         | Torque transmitted from the input shaft to the output shaft [N.m]                         | N.m  |
 """
-@component function CentrifugalClutch(; name = nothing, engage_rpm=Float64(1300.0), engage_width_rpm=Float64(120.0), tau_max=Float64(230.0), w_regularization=Float64(1.0), kwargs...)
+@component function CentrifugalClutch(; name = nothing, var"engage_rpm"=Float64(1300.0), var"engage_width_rpm"=Float64(120.0), var"tau_max"=Float64(230.0), var"w_regularization"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,7 +47,7 @@ the small regularization speed makes the two shafts effectively locked.
     @named model = CentrifugalClutch()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -56,6 +56,12 @@ the small regularization speed makes the two shafts effectively locked.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "engage_rpm") && (engage_rpm = pop!(__overrides, "engage_rpm"))
+  haskey(__overrides, "engage_width_rpm") && (engage_width_rpm = pop!(__overrides, "engage_width_rpm"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "w_regularization") && (w_regularization = pop!(__overrides, "w_regularization"))
 
   ### Structural Parameters (functions)
 
@@ -72,16 +78,16 @@ the small regularization speed makes the two shafts effectively locked.
   ### Symbolic Parameters
   __local__engage_rpm = engage_rpm
   append!(__params, @parameters (engage_rpm::Real), [description = "Center of the centrifugal engagement ramp [rpm] (assumed for a small petrol car)"])
-  __initial_conditions[engage_rpm] = __local__engage_rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, engage_rpm, __local__engage_rpm)
   __local__engage_width_rpm = engage_width_rpm
   append!(__params, @parameters (engage_width_rpm::Real), [description = "Width of the centrifugal engagement ramp [rpm] (assumed)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[engage_width_rpm] = __local__engage_width_rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, engage_width_rpm, __local__engage_width_rpm)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Fully engaged torque capacity [N.m] (assumed, about 1.5 times peak engine torque)"])
-  __initial_conditions[tau_max] = __local__tau_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__w_regularization = w_regularization
   append!(__params, @parameters (w_regularization::Real), [description = "Slip regularization speed [rad/s] (assumed for continuous near-lock behavior)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[w_regularization] = __local__w_regularization
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w_regularization, __local__w_regularization)
 
   ### Final Parameters (assignments)
 
@@ -97,23 +103,23 @@ the small regularization speed makes the two shafts effectively locked.
 
   ### Variables (assignments)
   __ovr_w_a = pop!(__overrides, "w_a", nothing); isnothing(__ovr_w_a) || push!(__eqs, w_a ~ __ovr_w_a)
-  __ovr_w_a__initial = pop!(__overrides, "w_a__initial", nothing); isnothing(__ovr_w_a__initial) || (__initial_conditions[w_a] = __ovr_w_a__initial)
-  __ovr_w_a__guess = pop!(__overrides, "w_a__guess", nothing)
+  __ovr_w_a__initial = pop!(__overrides, "w_a.initial", nothing); isnothing(__ovr_w_a__initial) || (__initial_conditions[w_a] = __ovr_w_a__initial)
+  __ovr_w_a__guess = pop!(__overrides, "w_a.guess", nothing)
   __ovr_w_b = pop!(__overrides, "w_b", nothing); isnothing(__ovr_w_b) || push!(__eqs, w_b ~ __ovr_w_b)
-  __ovr_w_b__initial = pop!(__overrides, "w_b__initial", nothing); isnothing(__ovr_w_b__initial) || (__initial_conditions[w_b] = __ovr_w_b__initial)
-  __ovr_w_b__guess = pop!(__overrides, "w_b__guess", nothing)
+  __ovr_w_b__initial = pop!(__overrides, "w_b.initial", nothing); isnothing(__ovr_w_b__initial) || (__initial_conditions[w_b] = __ovr_w_b__initial)
+  __ovr_w_b__guess = pop!(__overrides, "w_b.guess", nothing)
   __ovr_N_a = pop!(__overrides, "N_a", nothing); isnothing(__ovr_N_a) || push!(__eqs, N_a ~ __ovr_N_a)
-  __ovr_N_a__initial = pop!(__overrides, "N_a__initial", nothing); isnothing(__ovr_N_a__initial) || (__initial_conditions[N_a] = __ovr_N_a__initial)
-  __ovr_N_a__guess = pop!(__overrides, "N_a__guess", nothing)
+  __ovr_N_a__initial = pop!(__overrides, "N_a.initial", nothing); isnothing(__ovr_N_a__initial) || (__initial_conditions[N_a] = __ovr_N_a__initial)
+  __ovr_N_a__guess = pop!(__overrides, "N_a.guess", nothing)
   __ovr_w_slip = pop!(__overrides, "w_slip", nothing); isnothing(__ovr_w_slip) || push!(__eqs, w_slip ~ __ovr_w_slip)
-  __ovr_w_slip__initial = pop!(__overrides, "w_slip__initial", nothing); isnothing(__ovr_w_slip__initial) || (__initial_conditions[w_slip] = __ovr_w_slip__initial)
-  __ovr_w_slip__guess = pop!(__overrides, "w_slip__guess", nothing)
+  __ovr_w_slip__initial = pop!(__overrides, "w_slip.initial", nothing); isnothing(__ovr_w_slip__initial) || (__initial_conditions[w_slip] = __ovr_w_slip__initial)
+  __ovr_w_slip__guess = pop!(__overrides, "w_slip.guess", nothing)
   __ovr_tau_capacity = pop!(__overrides, "tau_capacity", nothing); isnothing(__ovr_tau_capacity) || push!(__eqs, tau_capacity ~ __ovr_tau_capacity)
-  __ovr_tau_capacity__initial = pop!(__overrides, "tau_capacity__initial", nothing); isnothing(__ovr_tau_capacity__initial) || (__initial_conditions[tau_capacity] = __ovr_tau_capacity__initial)
-  __ovr_tau_capacity__guess = pop!(__overrides, "tau_capacity__guess", nothing)
+  __ovr_tau_capacity__initial = pop!(__overrides, "tau_capacity.initial", nothing); isnothing(__ovr_tau_capacity__initial) || (__initial_conditions[tau_capacity] = __ovr_tau_capacity__initial)
+  __ovr_tau_capacity__guess = pop!(__overrides, "tau_capacity.guess", nothing)
   __ovr_tau = pop!(__overrides, "tau", nothing); isnothing(__ovr_tau) || push!(__eqs, tau ~ __ovr_tau)
-  __ovr_tau__initial = pop!(__overrides, "tau__initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
-  __ovr_tau__guess = pop!(__overrides, "tau__guess", nothing)
+  __ovr_tau__initial = pop!(__overrides, "tau.initial", nothing); isnothing(__ovr_tau__initial) || (__initial_conditions[tau] = __ovr_tau__initial)
+  __ovr_tau__guess = pop!(__overrides, "tau.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -124,7 +130,7 @@ the small regularization speed makes the two shafts effectively locked.
   push!(__systems, @named support = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_w_a__guess) || (__guesses[w_a] = __ovr_w_a__guess)
@@ -151,6 +157,6 @@ the small regularization speed makes the two shafts effectively locked.
   push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CentrifugalClutch

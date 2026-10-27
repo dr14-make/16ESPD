@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestSuctionFan(; name, cmd, gap)
+   TestSuctionFan(; name, cmd, gap, __overrides)
 
 Fan operating-point harness, including the least-pressure inverted-hold case.
 
@@ -16,7 +16,7 @@ Fan operating-point harness, including the least-pressure inverted-hold case.
 | `cmd`         | Fan command                         | --  |   1.0 |
 | `gap`         | Effective skirt gap                         | m  |   0.003 |
 """
-@component function TestSuctionFan(; name = nothing, cmd=Float64(1.0), gap=0.003, kwargs...)
+@component function TestSuctionFan(; name = nothing, var"cmd"=Float64(1.0), var"gap"=0.003, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -24,7 +24,7 @@ Fan operating-point harness, including the least-pressure inverted-hold case.
     @named model = TestSuctionFan()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -33,6 +33,10 @@ Fan operating-point harness, including the least-pressure inverted-hold case.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "cmd") && (cmd = pop!(__overrides, "cmd"))
+  haskey(__overrides, "gap") && (gap = pop!(__overrides, "gap"))
 
   ### Structural Parameters (functions)
 
@@ -49,10 +53,10 @@ Fan operating-point harness, including the least-pressure inverted-hold case.
   ### Symbolic Parameters
   __local__cmd = cmd
   append!(__params, @parameters (cmd::Real), [description = "Fan command"])
-  __initial_conditions[cmd] = __local__cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, cmd, __local__cmd)
   __local__gap = gap
   append!(__params, @parameters (gap::Real), [description = "Effective skirt gap"])
-  __initial_conditions[gap] = __local__gap
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gap, __local__gap)
 
   ### Final Parameters (assignments)
 
@@ -68,13 +72,13 @@ Fan operating-point harness, including the least-pressure inverted-hold case.
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Constant
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=cmd, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=cmd, __overrides = command_overrides))
   # Subcomponent fan of type VehicleSystemsComponents.Roadster.SuctionFan
   fan_overrides = __pop_subcomponent_overrides!(__overrides, "fan")
-  push!(__systems, @named fan = VehicleSystemsComponents.Roadster.SuctionFan(; gap=gap, fan_overrides...))
+  push!(__systems, @named fan = VehicleSystemsComponents.Roadster.SuctionFan(; gap=gap, __overrides = fan_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -88,6 +92,6 @@ Fan operating-point harness, including the least-pressure inverted-hold case.
   push!(__eqs, connect(command.y, fan.cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestSuctionFan

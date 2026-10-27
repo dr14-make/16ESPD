@@ -4,12 +4,12 @@ node = "22"
 
 [tasks."cards:lecture-02"]
 description = "Export the Lecture 2 notebooks' deck cells into the theory deck's public/cards/"
-run = "julia +dyad-3.4.0 --project=. scripts/export_deck_cards.jl"
+run = "julia +dyad-3.5.0 --project=. scripts/export_deck_cards.jl"
 
 [tasks."figures:lecture-03"]
 description = "Run the Lecture 3 notebooks and write their figures into the theory deck's public/figures/"
-run = "julia +dyad-3.4.0 --project=. scripts/export_lecture03_figures.jl"
+run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_figures.jl"
 
 [tasks."figures:lecture-03-build"]
 description = "Run the Lecture 3 build's reference models and write their figures into slides/images/lecture-03/"
-run = "julia +dyad-3.4.0 --project=. scripts/export_lecture03_build_figures.jl"
+run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_build_figures.jl"

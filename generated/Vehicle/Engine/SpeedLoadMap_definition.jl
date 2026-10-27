@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SpeedLoadMap(; name, rpm_axis, kpa_axis, data, gain)
+   SpeedLoadMap(; name, rpm_axis, kpa_axis, data, gain, __overrides)
 
 Two-dimensional engine map with SI inputs and an SI-scaled output.
 
@@ -27,7 +27,7 @@ boundary so the interpolator is never asked to extrapolate.
  * `p_m` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function SpeedLoadMap(; name = nothing, rpm_axis=nothing, kpa_axis=nothing, data=nothing, gain=Float64(1.0), kwargs...)
+@component function SpeedLoadMap(; name = nothing, var"rpm_axis"=nothing, var"kpa_axis"=nothing, var"data"=nothing, var"gain"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ boundary so the interpolator is never asked to extrapolate.
     @named model = SpeedLoadMap()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,12 @@ boundary so the interpolator is never asked to extrapolate.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "rpm_axis") && (rpm_axis = pop!(__overrides, "rpm_axis"))
+  haskey(__overrides, "kpa_axis") && (kpa_axis = pop!(__overrides, "kpa_axis"))
+  haskey(__overrides, "data") && (data = pop!(__overrides, "data"))
+  haskey(__overrides, "gain") && (gain = pop!(__overrides, "gain"))
 
   ### Structural Parameters (functions)
 
@@ -60,7 +66,7 @@ boundary so the interpolator is never asked to extrapolate.
   ### Symbolic Parameters
   __local__gain = gain
   append!(__params, @parameters (gain::Real), [description = "Scale from the table's output units to SI (derived)"])
-  __initial_conditions[gain] = __local__gain
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gain, __local__gain)
 
   ### Final Parameters (assignments)
 
@@ -79,10 +85,10 @@ boundary so the interpolator is never asked to extrapolate.
   ### Components
   # Subcomponent table of type BlockComponents.Tables.InterpolatedTable
   table_overrides = __pop_subcomponent_overrides!(__overrides, "table")
-  push!(__systems, @named table = BlockComponents.Tables.InterpolatedTable(; axis1=rpm_axis, axis2=kpa_axis, data=data, interpolation_dim1=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), table_overrides...))
+  push!(__systems, @named table = BlockComponents.Tables.InterpolatedTable(; axis1=rpm_axis, axis2=kpa_axis, data=data, interpolation_dim1=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), interpolation_dim2=BlockComponents.Tables.InterpolationDimension.LinearInterpolationDimension(), __overrides = table_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -97,6 +103,6 @@ boundary so the interpolator is never asked to extrapolate.
   push!(__eqs, y ~ gain * table.y)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SpeedLoadMap

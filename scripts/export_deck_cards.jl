@@ -1,7 +1,7 @@
 """
 Exports the Lecture 2 notebooks' deck cells into the theory deck, as one HTML page per cell.
 
-    julia +dyad-3.4.0 --project=. scripts/export_deck_cards.jl [notebook.pluto.jl ...]
+    julia +dyad-3.5.0 --project=. scripts/export_deck_cards.jl [notebook.pluto.jl ...]
 
 With no argument it exports every notebook in `notebooks/lecture02/` that has a cell carrying
 `card` metadata, each in a Julia process of its own, so no notebook sees another's globals.

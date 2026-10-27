@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestBrakeChannel(; name)
+   TestBrakeChannel(; name, __overrides)
 
 Sampled channel wiring check with held output.
 """
-@component function TestBrakeChannel(; name = nothing, kwargs...)
+@component function TestBrakeChannel(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Sampled channel wiring check with held output.
     @named model = TestBrakeChannel()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,40 +55,40 @@ Sampled channel wiring check with held output.
   ### Components
   # Subcomponent clock of type DiscreteComponents.PeriodicClock
   clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
-  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, clock_overrides...))
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, __symbol_overrides(clock_overrides)...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), __overrides = demand_overrides))
   # Subcomponent correction of type BlockComponents.Sources.Constant
   correction_overrides = __pop_subcomponent_overrides!(__overrides, "correction")
-  push!(__systems, @named correction = BlockComponents.Sources.Constant(; k=-200.0, correction_overrides...))
+  push!(__systems, @named correction = BlockComponents.Sources.Constant(; k=-200.0, __overrides = correction_overrides))
   # Subcomponent slip of type BlockComponents.Sources.Constant
   slip_overrides = __pop_subcomponent_overrides!(__overrides, "slip")
-  push!(__systems, @named slip = BlockComponents.Sources.Constant(; k=Float64(0.0), slip_overrides...))
+  push!(__systems, @named slip = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = slip_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = speed_overrides))
   # Subcomponent demand_sampler of type DiscreteComponents.Sampler
   demand_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "demand_sampler")
-  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; demand_sampler_overrides...))
+  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; __overrides = demand_sampler_overrides))
   # Subcomponent correction_sampler of type DiscreteComponents.Sampler
   correction_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "correction_sampler")
-  push!(__systems, @named correction_sampler = DiscreteComponents.Sampler(; correction_sampler_overrides...))
+  push!(__systems, @named correction_sampler = DiscreteComponents.Sampler(; __overrides = correction_sampler_overrides))
   # Subcomponent slip_sampler of type DiscreteComponents.Sampler
   slip_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "slip_sampler")
-  push!(__systems, @named slip_sampler = DiscreteComponents.Sampler(; slip_sampler_overrides...))
+  push!(__systems, @named slip_sampler = DiscreteComponents.Sampler(; __overrides = slip_sampler_overrides))
   # Subcomponent speed_sampler of type DiscreteComponents.Sampler
   speed_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sampler")
-  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; speed_sampler_overrides...))
+  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; __overrides = speed_sampler_overrides))
   # Subcomponent channel of type VehicleSystemsComponents.Vehicle.Planar.BrakeChannel
   channel_overrides = __pop_subcomponent_overrides!(__overrides, "channel")
-  push!(__systems, @named channel = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; channel_overrides...))
+  push!(__systems, @named channel = VehicleSystemsComponents.Vehicle.Planar.BrakeChannel(; __overrides = channel_overrides))
   # Subcomponent hold of type DiscreteComponents.ZeroOrderHold
   hold_overrides = __pop_subcomponent_overrides!(__overrides, "hold")
-  push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; hold_overrides...))
+  push!(__systems, @named hold = DiscreteComponents.ZeroOrderHold(; __overrides = hold_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -109,6 +109,6 @@ Sampled channel wiring check with held output.
   push!(__eqs, connect(channel.tau_cmd, hold.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestBrakeChannel

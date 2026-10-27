@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestGradeProfile(; name)
+   TestGradeProfile(; name, __overrides)
 """
-@component function TestGradeProfile(; name = nothing, kwargs...)
+@component function TestGradeProfile(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestGradeProfile()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,19 +53,19 @@
   ### Components
   # Subcomponent gp of type VehicleSystemsComponents.Vehicle.GradeProfile
   gp_overrides = __pop_subcomponent_overrides!(__overrides, "gp")
-  push!(__systems, @named gp = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=0.1, start_time=Float64(1.0), gp_overrides...))
+  push!(__systems, @named gp = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=0.1, start_time=Float64(1.0), __overrides = gp_overrides))
   # Subcomponent gp_finite of type VehicleSystemsComponents.Vehicle.GradeProfile
   gp_finite_overrides = __pop_subcomponent_overrides!(__overrides, "gp_finite")
-  push!(__systems, @named gp_finite = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=0.1, start_time=0.5, duration=0.5, gp_finite_overrides...))
+  push!(__systems, @named gp_finite = VehicleSystemsComponents.Vehicle.GradeProfile(; gradient=0.1, start_time=0.5, duration=0.5, __overrides = gp_finite_overrides))
   # Subcomponent sink_finite of type BlockComponents.Routing.RealPassThrough
   sink_finite_overrides = __pop_subcomponent_overrides!(__overrides, "sink_finite")
-  push!(__systems, @named sink_finite = BlockComponents.Routing.RealPassThrough(; sink_finite_overrides...))
+  push!(__systems, @named sink_finite = BlockComponents.Routing.RealPassThrough(; __overrides = sink_finite_overrides))
   # Subcomponent sink of type BlockComponents.Routing.RealPassThrough
   sink_overrides = __pop_subcomponent_overrides!(__overrides, "sink")
-  push!(__systems, @named sink = BlockComponents.Routing.RealPassThrough(; sink_overrides...))
+  push!(__systems, @named sink = BlockComponents.Routing.RealPassThrough(; __overrides = sink_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -79,6 +79,6 @@
   push!(__eqs, connect(gp_finite.y, sink_finite.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestGradeProfile

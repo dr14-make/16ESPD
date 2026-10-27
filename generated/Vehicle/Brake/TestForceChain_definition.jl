@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestForceChain(; name, p_vac)
+   TestForceChain(; name, p_vac, __overrides)
 
 Increment 1a force-chain demonstration. The pedal command ramps from 0 to 1 in 5 s, which is
 0 to 500 N of foot force, while closed front and rear hydraulic connectors hold both circuit flows
@@ -17,7 +17,7 @@ at zero.
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `p_vac`         | Vacuum-chamber absolute pressure [Pa] (PATH)                         | Pa  |   33e3 |
 """
-@component function TestForceChain(; name = nothing, p_vac=Float64(33000.0), medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
+@component function TestForceChain(; name = nothing, var"p_vac"=Float64(33000.0), var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -25,7 +25,7 @@ at zero.
     @named model = TestForceChain()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -34,6 +34,10 @@ at zero.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "p_vac") && (p_vac = pop!(__overrides, "p_vac"))
+  haskey(__overrides, "medium") && (medium = pop!(__overrides, "medium"))
 
   ### Structural Parameters (functions)
 
@@ -51,7 +55,7 @@ at zero.
   ### Symbolic Parameters
   __local__p_vac = p_vac
   append!(__params, @parameters (p_vac::Real), [description = "Vacuum-chamber absolute pressure [Pa] (PATH)"])
-  __initial_conditions[p_vac] = __local__p_vac
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_vac, __local__p_vac)
 
   ### Final Parameters (assignments)
 
@@ -67,28 +71,28 @@ at zero.
   ### Components
   # Subcomponent pedal_force of type BlockComponents.Sources.Ramp
   pedal_force_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_force")
-  push!(__systems, @named pedal_force = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=Float64(1.0), duration=Float64(5.0), start_time=Float64(0.0), pedal_force_overrides...))
+  push!(__systems, @named pedal_force = BlockComponents.Sources.Ramp(; offset=Float64(0.0), height=Float64(1.0), duration=Float64(5.0), start_time=Float64(0.0), __overrides = pedal_force_overrides))
   # Subcomponent pedal of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
-  push!(__systems, @named pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; pedal_overrides...))
+  push!(__systems, @named pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; __overrides = pedal_overrides))
   # Subcomponent booster of type VehicleSystemsComponents.Vehicle.Brake.StaticBooster
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster(; p_vac=p_vac, booster_overrides...))
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.StaticBooster(; p_vac=p_vac, __overrides = booster_overrides))
   # Subcomponent master of type VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder
   master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
-  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
+  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, __overrides = master_overrides))
   # Subcomponent fixed of type TranslationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = TranslationalComponents.Components.Fixed(; __overrides = fixed_overrides))
   # Subcomponent front_closed of type VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort
   front_closed_overrides = __pop_subcomponent_overrides!(__overrides, "front_closed")
-  push!(__systems, @named front_closed = VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort(; continuity__graph0=medium, front_closed_overrides...))
+  push!(__systems, @named front_closed = VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort(; continuity__graph0=medium, __overrides = front_closed_overrides))
   # Subcomponent rear_closed of type VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort
   rear_closed_overrides = __pop_subcomponent_overrides!(__overrides, "rear_closed")
-  push!(__systems, @named rear_closed = VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort(; continuity__graph0=medium, rear_closed_overrides...))
+  push!(__systems, @named rear_closed = VehicleSystemsComponents.Vehicle.Brake.ClosedHydraulicPort(; continuity__graph0=medium, __overrides = rear_closed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -108,6 +112,6 @@ at zero.
   push!(__eqs, connect(master.rear, rear_closed.port))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestForceChain

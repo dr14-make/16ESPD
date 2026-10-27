@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   YawReference(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor)
+   YawReference(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, __overrides)
 
 Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
 
@@ -34,7 +34,7 @@ Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
 | `r_nom`         |                          | rad/s  |
 | `r_limit`         |                          | rad/s  |
 """
-@component function YawReference(; name = nothing, L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), kwargs...)
+@component function YawReference(; name = nothing, var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -42,7 +42,7 @@ Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
     @named model = YawReference()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -51,6 +51,15 @@ Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
+  haskey(__overrides, "K_us") && (K_us = pop!(__overrides, "K_us"))
+  haskey(__overrides, "i_s") && (i_s = pop!(__overrides, "i_s"))
+  haskey(__overrides, "mu_est") && (mu_est = pop!(__overrides, "mu_est"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
+  haskey(__overrides, "k_lim") && (k_lim = pop!(__overrides, "k_lim"))
+  haskey(__overrides, "v_floor") && (v_floor = pop!(__overrides, "v_floor"))
 
   ### Structural Parameters (functions)
 
@@ -67,25 +76,25 @@ Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
   ### Symbolic Parameters
   __local__L = L
   append!(__params, @parameters (L::Real), [description = "Wheelbase (probe)"])
-  __initial_conditions[L] = __local__L
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L, __local__L)
   __local__K_us = K_us
   append!(__params, @parameters (K_us::Real), [description = "Understeer gradient (derived)"])
-  __initial_conditions[K_us] = __local__K_us
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K_us, __local__K_us)
   __local__i_s = i_s
   append!(__params, @parameters (i_s::Real), [description = "Steering ratio (assumed)"])
-  __initial_conditions[i_s] = __local__i_s
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_s, __local__i_s)
   __local__mu_est = mu_est
   append!(__params, @parameters (mu_est::Real), [description = "Estimated road friction (assumed)"])
-  __initial_conditions[mu_est] = __local__mu_est
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_est, __local__mu_est)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravity used by the probe"])
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
   __local__k_lim = k_lim
   append!(__params, @parameters (k_lim::Real), [description = "Fraction of estimated friction used by the reference limit (derived)"])
-  __initial_conditions[k_lim] = __local__k_lim
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_lim, __local__k_lim)
   __local__v_floor = v_floor
   append!(__params, @parameters (v_floor::Real), [description = "Low-speed denominator floor (assumed)"])
-  __initial_conditions[v_floor] = __local__v_floor
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_floor, __local__v_floor)
 
   ### Final Parameters (assignments)
 
@@ -100,11 +109,11 @@ Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
 
   ### Variables (assignments)
   __ovr_r_nom = pop!(__overrides, "r_nom", nothing); isnothing(__ovr_r_nom) || push!(__eqs, r_nom ~ __ovr_r_nom)
-  __ovr_r_nom__initial = pop!(__overrides, "r_nom__initial", nothing); isnothing(__ovr_r_nom__initial) || (__initial_conditions[r_nom] = __ovr_r_nom__initial)
-  __ovr_r_nom__guess = pop!(__overrides, "r_nom__guess", nothing)
+  __ovr_r_nom__initial = pop!(__overrides, "r_nom.initial", nothing); isnothing(__ovr_r_nom__initial) || (__initial_conditions[r_nom] = __ovr_r_nom__initial)
+  __ovr_r_nom__guess = pop!(__overrides, "r_nom.guess", nothing)
   __ovr_r_limit = pop!(__overrides, "r_limit", nothing); isnothing(__ovr_r_limit) || push!(__eqs, r_limit ~ __ovr_r_limit)
-  __ovr_r_limit__initial = pop!(__overrides, "r_limit__initial", nothing); isnothing(__ovr_r_limit__initial) || (__initial_conditions[r_limit] = __ovr_r_limit__initial)
-  __ovr_r_limit__guess = pop!(__overrides, "r_limit__guess", nothing)
+  __ovr_r_limit__initial = pop!(__overrides, "r_limit.initial", nothing); isnothing(__ovr_r_limit__initial) || (__initial_conditions[r_limit] = __ovr_r_limit__initial)
+  __ovr_r_limit__guess = pop!(__overrides, "r_limit.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -112,7 +121,7 @@ Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_r_nom__guess) || (__guesses[r_nom] = __ovr_r_nom__guess)
@@ -129,6 +138,6 @@ Friction-limited bicycle-model yaw-rate reference for the continuous ESP.
   push!(__eqs, r_ref ~ min(max(r_nom, -r_limit), r_limit))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export YawReference

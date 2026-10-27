@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; load_transfer=false),
+  params=Dict{String, Any}("load_transfer" => false),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
