@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakePedal(; name, i_p, F_max)
+   BrakePedal(; name, i_p, F_max, __overrides)
 
 Ideal, massless brake-pedal lever driven by a 0–1 pedal command.
 
@@ -36,7 +36,7 @@ the pushrod travel; the lever multiplies the foot force by `i_p`.
 | `x_ped`         | Pedal travel relative to the pivot [m]                         | m  |
 | `x_rod`         | Pushrod travel relative to the pivot [m]                         | m  |
 """
-@component function BrakePedal(; name = nothing, i_p=3.5, F_max=Float64(500.0), kwargs...)
+@component function BrakePedal(; name = nothing, var"i_p"=3.5, var"F_max"=Float64(500.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -44,7 +44,7 @@ the pushrod travel; the lever multiplies the foot force by `i_p`.
     @named model = BrakePedal()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,6 +53,10 @@ the pushrod travel; the lever multiplies the foot force by `i_p`.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "i_p") && (i_p = pop!(__overrides, "i_p"))
+  haskey(__overrides, "F_max") && (F_max = pop!(__overrides, "F_max"))
 
   ### Structural Parameters (functions)
 
@@ -69,10 +73,10 @@ the pushrod travel; the lever multiplies the foot force by `i_p`.
   ### Symbolic Parameters
   __local__i_p = i_p
   append!(__params, @parameters (i_p::Real), [description = "Pedal lever ratio (assumed; cited OEM boosted range 3.2–5)"])
-  __initial_conditions[i_p] = __local__i_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_p, __local__i_p)
   __local__F_max = F_max
   append!(__params, @parameters (F_max::Real), [description = "Foot force at full pedal [N]: the 500 N ceiling of a brake test (FMVSS 135)"])
-  __initial_conditions[F_max] = __local__F_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_max, __local__F_max)
 
   ### Final Parameters (assignments)
 
@@ -87,17 +91,17 @@ the pushrod travel; the lever multiplies the foot force by `i_p`.
 
   ### Variables (assignments)
   __ovr_F_ped = pop!(__overrides, "F_ped", nothing); isnothing(__ovr_F_ped) || push!(__eqs, F_ped ~ __ovr_F_ped)
-  __ovr_F_ped__initial = pop!(__overrides, "F_ped__initial", nothing); isnothing(__ovr_F_ped__initial) || (__initial_conditions[F_ped] = __ovr_F_ped__initial)
-  __ovr_F_ped__guess = pop!(__overrides, "F_ped__guess", nothing)
+  __ovr_F_ped__initial = pop!(__overrides, "F_ped.initial", nothing); isnothing(__ovr_F_ped__initial) || (__initial_conditions[F_ped] = __ovr_F_ped__initial)
+  __ovr_F_ped__guess = pop!(__overrides, "F_ped.guess", nothing)
   __ovr_F_rod = pop!(__overrides, "F_rod", nothing); isnothing(__ovr_F_rod) || push!(__eqs, F_rod ~ __ovr_F_rod)
-  __ovr_F_rod__initial = pop!(__overrides, "F_rod__initial", nothing); isnothing(__ovr_F_rod__initial) || (__initial_conditions[F_rod] = __ovr_F_rod__initial)
-  __ovr_F_rod__guess = pop!(__overrides, "F_rod__guess", nothing)
+  __ovr_F_rod__initial = pop!(__overrides, "F_rod.initial", nothing); isnothing(__ovr_F_rod__initial) || (__initial_conditions[F_rod] = __ovr_F_rod__initial)
+  __ovr_F_rod__guess = pop!(__overrides, "F_rod.guess", nothing)
   __ovr_x_ped = pop!(__overrides, "x_ped", nothing); isnothing(__ovr_x_ped) || push!(__eqs, x_ped ~ __ovr_x_ped)
-  __ovr_x_ped__initial = pop!(__overrides, "x_ped__initial", nothing); isnothing(__ovr_x_ped__initial) || (__initial_conditions[x_ped] = __ovr_x_ped__initial)
-  __ovr_x_ped__guess = pop!(__overrides, "x_ped__guess", nothing)
+  __ovr_x_ped__initial = pop!(__overrides, "x_ped.initial", nothing); isnothing(__ovr_x_ped__initial) || (__initial_conditions[x_ped] = __ovr_x_ped__initial)
+  __ovr_x_ped__guess = pop!(__overrides, "x_ped.guess", nothing)
   __ovr_x_rod = pop!(__overrides, "x_rod", nothing); isnothing(__ovr_x_rod) || push!(__eqs, x_rod ~ __ovr_x_rod)
-  __ovr_x_rod__initial = pop!(__overrides, "x_rod__initial", nothing); isnothing(__ovr_x_rod__initial) || (__initial_conditions[x_rod] = __ovr_x_rod__initial)
-  __ovr_x_rod__guess = pop!(__overrides, "x_rod__guess", nothing)
+  __ovr_x_rod__initial = pop!(__overrides, "x_rod.initial", nothing); isnothing(__ovr_x_rod__initial) || (__initial_conditions[x_rod] = __ovr_x_rod__initial)
+  __ovr_x_rod__guess = pop!(__overrides, "x_rod.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -107,7 +111,7 @@ the pushrod travel; the lever multiplies the foot force by `i_p`.
   push!(__systems, @named support = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_F_ped__guess) || (__guesses[F_ped] = __ovr_F_ped__guess)
@@ -129,6 +133,6 @@ the pushrod travel; the lever multiplies the foot force by `i_p`.
   push!(__eqs, rod.f + support.f ~ 0.0)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export BrakePedal

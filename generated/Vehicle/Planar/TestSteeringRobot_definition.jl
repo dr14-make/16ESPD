@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestSteeringRobot(; name)
+   TestSteeringRobot(; name, __overrides)
 
 Steering robot position check.
 """
-@component function TestSteeringRobot(; name = nothing, kwargs...)
+@component function TestSteeringRobot(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Steering robot position check.
     @named model = TestSteeringRobot()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,16 +55,16 @@ Steering robot position check.
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Constant
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=0.2, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=0.2, __overrides = command_overrides))
   # Subcomponent robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   robot_overrides = __pop_subcomponent_overrides!(__overrides, "robot")
-  push!(__systems, @named robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; robot_overrides...))
+  push!(__systems, @named robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = robot_overrides))
   # Subcomponent sensor of type RotationalComponents.Sensors.AngleSensor
   sensor_overrides = __pop_subcomponent_overrides!(__overrides, "sensor")
-  push!(__systems, @named sensor = RotationalComponents.Sensors.AngleSensor(; sensor_overrides...))
+  push!(__systems, @named sensor = RotationalComponents.Sensors.AngleSensor(; __overrides = sensor_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -78,6 +78,6 @@ Steering robot position check.
   push!(__eqs, connect(robot.steering, sensor.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestSteeringRobot

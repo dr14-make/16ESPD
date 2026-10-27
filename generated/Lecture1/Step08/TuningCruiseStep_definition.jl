@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TuningCruiseStep(; name)
+   TuningCruiseStep(; name, __overrides)
 
 Step 8: the flat loop with the Ziegler-Nichols gains and every limit lifted.
 """
-@component function TuningCruiseStep(; name = nothing, kwargs...)
+@component function TuningCruiseStep(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Step 8: the flat loop with the Ziegler-Nichols gains and every limit lifted.
     @named model = TuningCruiseStep()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,19 +55,19 @@ Step 8: the flat loop with the Ziegler-Nichols gains and every limit lifted.
   ### Components
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=Float64(90), height=Float64(20), start_time=Float64(0), demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Step(; offset=Float64(90), height=Float64(20), start_time=Float64(0), __overrides = demand_overrides))
   # Subcomponent controller of type VehicleSystemsComponents.Lecture1.Step08.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.Step08.CruiseController(; k=67.41, Ti=1.092, Td=0.273, y_max=Float64(1000000.0), y_min=-1000000.0, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.Step08.CruiseController(; k=67.41, Ti=1.092, Td=0.273, y_max=Float64(1000000.0), y_min=-1000000.0, __overrides = controller_overrides))
   # Subcomponent plant of type VehicleSystemsComponents.Lecture1.Step08.GradeCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.Lecture1.Step08.GradeCar(; T_max=Float64(1000000.0), plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.Lecture1.Step08.GradeCar(; T_max=Float64(1000000.0), __overrides = plant_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0), road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = road_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -86,6 +86,6 @@ Step 8: the flat loop with the Ziegler-Nichols gains and every limit lifted.
   push!(__eqs, connect(road.y, plant.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TuningCruiseStep

@@ -5,11 +5,193 @@
 
 
 using DyadInterface
-using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
-using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct CruiseClimbTransientSpec <: AbstractTransientAnalysisSpec
+@component function CruiseClimbTransient__System(; name = nothing, var"alg"=ODEAlg.Auto(), var"start"=0, var"stop"=400, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"k"=56.0, var"Ti"=10.0, var"Td"=0.1, var"Nd"=10.0, var"Ni"=0.9, var"T_max"=150.0, var"y_max"=T_max, var"y_min"=0.0, var"wp"=1.0, var"wd"=1.0, var"v_set"=130.0, var"gradient"=0.1, var"start_time"=30.0, var"duration"=120.0, __overrides = Dict{String, Any}())
+  isnothing(name) && throw(ArgumentError("""
+    The `name` keyword must be provided. Please consider using the `@named` macro,
+    like so:
+  
+    @named model = CruiseClimbTransient__System()
+  """))
+
+  __overrides = Dict{String, Any}(__overrides)
+  __params = Symbolics.SymbolicT[]
+  __vars = Symbolics.SymbolicT[]
+  __systems = System[]
+  __guesses = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initial_conditions = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initialization_eqs = Equation[]
+  __eqs = Equation[]
+  __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "alg") && (alg = pop!(__overrides, "alg"))
+  haskey(__overrides, "start") && (start = pop!(__overrides, "start"))
+  haskey(__overrides, "stop") && (stop = pop!(__overrides, "stop"))
+  haskey(__overrides, "abstol") && (abstol = pop!(__overrides, "abstol"))
+  haskey(__overrides, "reltol") && (reltol = pop!(__overrides, "reltol"))
+  haskey(__overrides, "saveat") && (saveat = pop!(__overrides, "saveat"))
+  haskey(__overrides, "dtmax") && (dtmax = pop!(__overrides, "dtmax"))
+  haskey(__overrides, "tstops") && (tstops = pop!(__overrides, "tstops"))
+  haskey(__overrides, "automatic_discontinuity_detection") && (automatic_discontinuity_detection = pop!(__overrides, "automatic_discontinuity_detection"))
+  haskey(__overrides, "optimize") && (optimize = pop!(__overrides, "optimize"))
+  haskey(__overrides, "progress") && (progress = pop!(__overrides, "progress"))
+  haskey(__overrides, "respecialize") && (respecialize = pop!(__overrides, "respecialize"))
+  haskey(__overrides, "specialization") && (specialization = pop!(__overrides, "specialization"))
+  haskey(__overrides, "verbose") && (verbose = pop!(__overrides, "verbose"))
+  haskey(__overrides, "log_file") && (log_file = pop!(__overrides, "log_file"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
+  haskey(__overrides, "Td") && (Td = pop!(__overrides, "Td"))
+  haskey(__overrides, "Nd") && (Nd = pop!(__overrides, "Nd"))
+  haskey(__overrides, "Ni") && (Ni = pop!(__overrides, "Ni"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "y_max") && (y_max = pop!(__overrides, "y_max"))
+  haskey(__overrides, "y_min") && (y_min = pop!(__overrides, "y_min"))
+  haskey(__overrides, "wp") && (wp = pop!(__overrides, "wp"))
+  haskey(__overrides, "wd") && (wd = pop!(__overrides, "wd"))
+  haskey(__overrides, "v_set") && (v_set = pop!(__overrides, "v_set"))
+  haskey(__overrides, "gradient") && (gradient = pop!(__overrides, "gradient"))
+  haskey(__overrides, "start_time") && (start_time = pop!(__overrides, "start_time"))
+  haskey(__overrides, "duration") && (duration = pop!(__overrides, "duration"))
+
+  ### Structural Parameters (functions)
+
+  ### Structural Parameters (Final)
+
+  ### Path Parameters (functions)
+
+  ### Path Parameters (non-final)
+
+  ### Final Parameters (declarations)
+
+  ### Deferred assignment (default values that depend on final parameters)
+
+  ### Symbolic Parameters
+  __local__alg = alg
+  append!(__params, @parameters (alg::ODEAlg.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alg, __local__alg)
+  __local__start = start
+  append!(__params, @parameters (start::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start, __local__start)
+  __local__stop = stop
+  append!(__params, @parameters (stop::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, stop, __local__stop)
+  __local__abstol = abstol
+  append!(__params, @parameters (abstol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abstol, __local__abstol)
+  __local__reltol = reltol
+  append!(__params, @parameters (reltol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, reltol, __local__reltol)
+  __local__saveat = saveat
+  append!(__params, @parameters (saveat::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, saveat, __local__saveat)
+  __local__dtmax = dtmax
+  append!(__params, @parameters (dtmax::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dtmax, __local__dtmax)
+  __local__tstops = tstops
+  append!(__params, @parameters (tstops::Array{Float64, 1}))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tstops, __local__tstops)
+  __local__automatic_discontinuity_detection = automatic_discontinuity_detection
+  append!(__params, @parameters (automatic_discontinuity_detection::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, automatic_discontinuity_detection, __local__automatic_discontinuity_detection)
+  __local__optimize = optimize
+  append!(__params, @parameters (optimize::OptimizationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, optimize, __local__optimize)
+  __local__progress = progress
+  append!(__params, @parameters (progress::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, progress, __local__progress)
+  __local__respecialize = respecialize
+  append!(__params, @parameters (respecialize::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, respecialize, __local__respecialize)
+  __local__specialization = specialization
+  append!(__params, @parameters (specialization::SpecializationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, specialization, __local__specialization)
+  __local__verbose = verbose
+  append!(__params, @parameters (verbose::DEVerbosity.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, verbose, __local__verbose)
+  __local__log_file = log_file
+  append!(__params, @parameters (log_file::String))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, log_file, __local__log_file)
+  __local__k = k
+  append!(__params, @parameters (k::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
+  __local__Ti = Ti
+  append!(__params, @parameters (Ti::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
+  __local__Td = Td
+  append!(__params, @parameters (Td::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Td, __local__Td)
+  __local__Nd = Nd
+  append!(__params, @parameters (Nd::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Nd, __local__Nd)
+  __local__Ni = Ni
+  append!(__params, @parameters (Ni::Float64), [description = "Back-calculation tracking-time factor; large values disable anti-windup"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ni, __local__Ni)
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
+  __local__y_max = y_max
+  append!(__params, @parameters (y_max::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_max, __local__y_max)
+  __local__y_min = y_min
+  append!(__params, @parameters (y_min::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_min, __local__y_min)
+  __local__wp = wp
+  append!(__params, @parameters (wp::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wp, __local__wp)
+  __local__wd = wd
+  append!(__params, @parameters (wd::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wd, __local__wd)
+  __local__v_set = v_set
+  append!(__params, @parameters (v_set::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_set, __local__v_set)
+  __local__gradient = gradient
+  append!(__params, @parameters (gradient::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gradient, __local__gradient)
+  __local__start_time = start_time
+  append!(__params, @parameters (start_time::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start_time, __local__start_time)
+  __local__duration = duration
+  append!(__params, @parameters (duration::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, duration, __local__duration)
+
+  ### Final Parameters (assignments)
+
+  ### Final Path Parameters
+
+  ### Variables (declarations)
+
+  ### Variables (assignments)
+
+  ### Constants
+  __constants = Any[]
+
+  ### Components
+  # Subcomponent model of type VehicleSystemsComponents.Lecture1.CruiseClimb
+  model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
+  push!(__systems, @named model = VehicleSystemsComponents.Lecture1.CruiseClimb(; k=k, Ti=Ti, Td=Td, Nd=Nd, Ni=Ni, T_max=T_max, y_max=y_max, y_min=y_min, wp=wp, wd=wd, v_set=v_set, gradient=gradient, start_time=start_time, duration=duration, __overrides = model_overrides))
+
+  ### Check there are no unmatched overrides
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
+
+  ### Guesses
+
+  ### Initialization Equations
+
+  ### Assertions
+  __assertions = []
+
+  ### Equations
+
+  # Return completely constructed System
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+end
+export CruiseClimbTransient__System
+
+@kwdef struct CruiseClimbTransient__Spec <: AbstractTransientAnalysisSpec
   name::Symbol = :CruiseClimbTransient
+  __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
   var"stop"::Float64 = 400
@@ -53,9 +235,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # no-anti-windup case; leave it at 0.9 for the back-calculation case. Set `y_max` below `T_max`
   # to clamp the controller under the physical ceiling, as notebook 06's closing section does.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture1.CruiseClimb(; name=:CruiseClimb)
+  __system::System = CruiseClimbTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"k"=var"k", var"Ti"=var"Ti", var"Td"=var"Td", var"Nd"=var"Nd", var"Ni"=var"Ni", var"T_max"=var"T_max", var"y_max"=var"y_max", var"y_min"=var"y_min", var"wp"=var"wp", var"wd"=var"wd", var"v_set"=var"v_set", var"gradient"=var"gradient", var"start_time"=var"start_time", var"duration"=var"duration")
 end
 
-function DyadInterface.run_analysis(spec::CruiseClimbTransientSpec)
+function __dyad_base_analysis_spec(spec::CruiseClimbTransient__Spec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.k => spec.var"k")
@@ -72,11 +255,19 @@ function DyadInterface.run_analysis(spec::CruiseClimbTransientSpec)
   push!(overrides, no_namespace_model.gradient => spec.var"gradient")
   push!(overrides, no_namespace_model.start_time => spec.var"start_time")
   push!(overrides, no_namespace_model.duration => spec.var"duration")
-  base_spec = TransientAnalysisSpec(;
-    name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
+  merge!(overrides, spec.__overrides)
+  TransientAnalysisSpec(;
+    name=spec.name, overrides, __system=spec.__system, var"alg"=spec.var"alg", var"start"=spec.var"start", var"stop"=spec.var"stop", var"abstol"=spec.var"abstol", var"reltol"=spec.var"reltol", var"saveat"=spec.var"saveat", var"dtmax"=spec.var"dtmax", var"tstops"=spec.var"tstops", var"automatic_discontinuity_detection"=spec.var"automatic_discontinuity_detection", var"optimize"=spec.var"optimize", var"progress"=spec.var"progress", var"respecialize"=spec.var"respecialize", var"specialization"=spec.var"specialization", var"verbose"=spec.var"verbose", var"log_file"=spec.var"log_file", var"model"=spec.var"model"
   )
-  run_analysis(base_spec)
 end
 
-CruiseClimbTransient(;kwargs...) = run_analysis(CruiseClimbTransientSpec(;kwargs...))
-export CruiseClimbTransient, CruiseClimbTransientSpec
+function DyadInterface.run_analysis(spec::CruiseClimbTransient__Spec)
+  run_analysis(__dyad_base_analysis_spec(spec))
+end
+
+function DyadInterface.setup_analysis(spec::CruiseClimbTransient__Spec; kwargs...)
+  DyadInterface.setup_analysis(__dyad_base_analysis_spec(spec); kwargs...)
+end
+
+CruiseClimbTransient(;kwargs...) = run_analysis(CruiseClimbTransient__Spec(;kwargs...))
+export CruiseClimbTransient, CruiseClimbTransient__Spec

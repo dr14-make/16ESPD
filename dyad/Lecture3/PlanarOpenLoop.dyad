@@ -156,7 +156,7 @@ metadata {
 end
 
 analysis PlanarOpenLoopTransient
-  extends TransientAnalysis(stop = 5.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  extends TransientAnalysis(stop = 5.0, alg = ODEAlg.Tsit5(), dtmax = 0.005, optimize = OptimizationLevel.None())
   parameter v0::Velocity = 22.22222222222222
   parameter delta_sw_final::Angle = 0.0
   parameter t_ramp::Time = 0.2

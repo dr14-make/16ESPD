@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   VacuumBooster(; name, SR, F_cut, F_jump, A_d, F_rs0, K_rs, V_f0, V_r0, F_app, F_rel, F_w, C_aa, C_av, C_vm, C_leak, n, s_rest, T, R, p_atm, p_init)
+   VacuumBooster(; name, SR, F_cut, F_jump, A_d, F_rs0, K_rs, V_f0, V_r0, F_app, F_rel, F_w, C_aa, C_av, C_vm, C_leak, n, s_rest, T, R, p_atm, p_init, __overrides)
 
 Dynamic vacuum booster: two air chambers on either side of the diaphragm, a static poppet valve,
 and a check valve to the vacuum source, behind the same mechanical ports as `StaticBooster`.
@@ -89,7 +89,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 | `mdot_out`         | Air mass flow out of the front chamber through the check valve [kg/s]                         | --  |
 | `F_assist_max`         | Assist available with the rear chamber at atmosphere, at the present front pressure                         | N  |
 """
-@component function VacuumBooster(; name = nothing, SR=Float64(5.0), F_cut=Float64(40.0), F_jump=Float64(500.0), A_d=0.0533, F_rs0=Float64(97.0), K_rs=Float64(2411.0), V_f0=0.0024, V_r0=0.00043, F_app=Float64(10.0), F_rel=Float64(10.0), F_w=Float64(20.0), C_aa=5.8e-8, C_av=2.2e-7, C_vm=1.26e-7, C_leak=1.4e-10, n=Float64(1.0), s_rest=0.0025, T=298.15, R=287.05, p_atm=Float64(101325.0), p_init=Float64(33000.0), kwargs...)
+@component function VacuumBooster(; name = nothing, var"SR"=Float64(5.0), var"F_cut"=Float64(40.0), var"F_jump"=Float64(500.0), var"A_d"=0.0533, var"F_rs0"=Float64(97.0), var"K_rs"=Float64(2411.0), var"V_f0"=0.0024, var"V_r0"=0.00043, var"F_app"=Float64(10.0), var"F_rel"=Float64(10.0), var"F_w"=Float64(20.0), var"C_aa"=5.8e-8, var"C_av"=2.2e-7, var"C_vm"=1.26e-7, var"C_leak"=1.4e-10, var"n"=Float64(1.0), var"s_rest"=0.0025, var"T"=298.15, var"R"=287.05, var"p_atm"=Float64(101325.0), var"p_init"=Float64(33000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -97,7 +97,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
     @named model = VacuumBooster()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -106,6 +106,29 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "SR") && (SR = pop!(__overrides, "SR"))
+  haskey(__overrides, "F_cut") && (F_cut = pop!(__overrides, "F_cut"))
+  haskey(__overrides, "F_jump") && (F_jump = pop!(__overrides, "F_jump"))
+  haskey(__overrides, "A_d") && (A_d = pop!(__overrides, "A_d"))
+  haskey(__overrides, "F_rs0") && (F_rs0 = pop!(__overrides, "F_rs0"))
+  haskey(__overrides, "K_rs") && (K_rs = pop!(__overrides, "K_rs"))
+  haskey(__overrides, "V_f0") && (V_f0 = pop!(__overrides, "V_f0"))
+  haskey(__overrides, "V_r0") && (V_r0 = pop!(__overrides, "V_r0"))
+  haskey(__overrides, "F_app") && (F_app = pop!(__overrides, "F_app"))
+  haskey(__overrides, "F_rel") && (F_rel = pop!(__overrides, "F_rel"))
+  haskey(__overrides, "F_w") && (F_w = pop!(__overrides, "F_w"))
+  haskey(__overrides, "C_aa") && (C_aa = pop!(__overrides, "C_aa"))
+  haskey(__overrides, "C_av") && (C_av = pop!(__overrides, "C_av"))
+  haskey(__overrides, "C_vm") && (C_vm = pop!(__overrides, "C_vm"))
+  haskey(__overrides, "C_leak") && (C_leak = pop!(__overrides, "C_leak"))
+  haskey(__overrides, "n") && (n = pop!(__overrides, "n"))
+  haskey(__overrides, "s_rest") && (s_rest = pop!(__overrides, "s_rest"))
+  haskey(__overrides, "T") && (T = pop!(__overrides, "T"))
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "p_atm") && (p_atm = pop!(__overrides, "p_atm"))
+  haskey(__overrides, "p_init") && (p_init = pop!(__overrides, "p_init"))
 
   ### Structural Parameters (functions)
 
@@ -122,67 +145,67 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   ### Symbolic Parameters
   __local__SR = SR
   append!(__params, @parameters (SR::Real), [description = "Boosted servo ratio (assumed)"])
-  __initial_conditions[SR] = __local__SR
+  __dyad_seed_parameter!(__initial_conditions, __bindings, SR, __local__SR)
   __local__F_cut = F_cut
   append!(__params, @parameters (F_cut::Real), [description = "Input force at booster cut-in [N] (assumed)"])
-  __initial_conditions[F_cut] = __local__F_cut
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_cut, __local__F_cut)
   __local__F_jump = F_jump
   append!(__params, @parameters (F_jump::Real), [description = "Jump-in output force [N] (assumed)"])
-  __initial_conditions[F_jump] = __local__F_jump
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_jump, __local__F_jump)
   __local__A_d = A_d
   append!(__params, @parameters (A_d::Real), [description = "Effective diaphragm area [m^2] (PATH)"])
-  __initial_conditions[A_d] = __local__A_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_d, __local__A_d)
   __local__F_rs0 = F_rs0
   append!(__params, @parameters (F_rs0::Real), [description = "Return-spring preload [N] (PATH)"])
-  __initial_conditions[F_rs0] = __local__F_rs0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_rs0, __local__F_rs0)
   __local__K_rs = K_rs
   append!(__params, @parameters (K_rs::Real), [description = "Return-spring rate [N/m] (PATH)"])
-  __initial_conditions[K_rs] = __local__K_rs
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K_rs, __local__K_rs)
   __local__V_f0 = V_f0
   append!(__params, @parameters (V_f0::Real), [description = "Front-chamber volume at rest [m^3] (PATH)"])
-  __initial_conditions[V_f0] = __local__V_f0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_f0, __local__V_f0)
   __local__V_r0 = V_r0
   append!(__params, @parameters (V_r0::Real), [description = "Rear-chamber volume at rest [m^3] (PATH)"])
-  __initial_conditions[V_r0] = __local__V_r0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_r0, __local__V_r0)
   __local__F_app = F_app
   append!(__params, @parameters (F_app::Real), [description = "Valve apply threshold [N] (assumed; PATH gives 50 N, which puts the apply branch SR·50 = 250 N under StaticBooster)"])
-  __initial_conditions[F_app] = __local__F_app
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_app, __local__F_app)
   __local__F_rel = F_rel
   append!(__params, @parameters (F_rel::Real), [description = "Valve release threshold [N] (assumed; PATH gives 50 N)"])
-  __initial_conditions[F_rel] = __local__F_rel
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_rel, __local__F_rel)
   __local__F_w = F_w
   append!(__params, @parameters (F_w::Real), [description = "Valve opening width beyond each threshold [N] (assumed)"])
-  __initial_conditions[F_w] = __local__F_w
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_w, __local__F_w)
   __local__C_aa = C_aa
   append!(__params, @parameters (C_aa::Real), [description = "Atmospheric-valve flow coefficient, 5.8e-5 kg/(s·kPa) [kg/(s·Pa)] (PATH, read per kPa)"])
-  __initial_conditions[C_aa] = __local__C_aa
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_aa, __local__C_aa)
   __local__C_av = C_av
   append!(__params, @parameters (C_av::Real), [description = "Vacuum-valve flow coefficient, 2.2e-4 kg/(s·kPa) [kg/(s·Pa)] (PATH, read per kPa)"])
-  __initial_conditions[C_av] = __local__C_av
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_av, __local__C_av)
   __local__C_vm = C_vm
   append!(__params, @parameters (C_vm::Real), [description = "Check-valve flow coefficient, 1.26e-4 kg/(s·kPa) [kg/(s·Pa)] (PATH, read per kPa)"])
-  __initial_conditions[C_vm] = __local__C_vm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_vm, __local__C_vm)
   __local__C_leak = C_leak
   append!(__params, @parameters (C_leak::Real), [description = "Front-chamber leak from atmosphere, 1.4e-7 kg/(s·kPa) [kg/(s·Pa)] (PATH, read per kPa)"])
-  __initial_conditions[C_leak] = __local__C_leak
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_leak, __local__C_leak)
   __local__n = n
   append!(__params, @parameters (n::Real), [description = "Polytropic exponent of the chamber air, 1 for isothermal (assumed)"])
-  __initial_conditions[n] = __local__n
+  __dyad_seed_parameter!(__initial_conditions, __bindings, n, __local__n)
   __local__s_rest = s_rest
   append!(__params, @parameters (s_rest::Real), [description = "Pushrod position at rest, the master cylinder's dead stroke [m] (assumed)"])
-  __initial_conditions[s_rest] = __local__s_rest
+  __dyad_seed_parameter!(__initial_conditions, __bindings, s_rest, __local__s_rest)
   __local__T = T
   append!(__params, @parameters (T::Real), [description = "Chamber air temperature [K] (MathWorks)", bounds = (0, Inf)])
-  __initial_conditions[T] = __local__T
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T, __local__T)
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Gas constant of air [J/(kg.K)] (textbook)"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__p_atm = p_atm
   append!(__params, @parameters (p_atm::Real), [description = "Atmospheric absolute pressure [Pa] (standard atmosphere)"])
-  __initial_conditions[p_atm] = __local__p_atm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_atm, __local__p_atm)
   __local__p_init = p_init
   append!(__params, @parameters (p_init::Real), [description = "Both chambers' absolute pressure at t = 0 [Pa] (PATH idle)"])
-  __initial_conditions[p_init] = __local__p_init
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_init, __local__p_init)
 
   ### Final Parameters (assignments)
 
@@ -209,53 +232,53 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 
   ### Variables (assignments)
   __ovr_p_f = pop!(__overrides, "p_f", nothing); isnothing(__ovr_p_f) || push!(__eqs, p_f ~ __ovr_p_f)
-  __ovr_p_f__initial = pop!(__overrides, "p_f__initial", nothing); isnothing(__ovr_p_f__initial) || (__initial_conditions[p_f] = __ovr_p_f__initial)
-  __ovr_p_f__guess = pop!(__overrides, "p_f__guess", nothing)
+  __ovr_p_f__initial = pop!(__overrides, "p_f.initial", nothing); isnothing(__ovr_p_f__initial) || (__initial_conditions[p_f] = __ovr_p_f__initial)
+  __ovr_p_f__guess = pop!(__overrides, "p_f.guess", nothing)
   __ovr_p_r = pop!(__overrides, "p_r", nothing); isnothing(__ovr_p_r) || push!(__eqs, p_r ~ __ovr_p_r)
-  __ovr_p_r__initial = pop!(__overrides, "p_r__initial", nothing); isnothing(__ovr_p_r__initial) || (__initial_conditions[p_r] = __ovr_p_r__initial)
-  __ovr_p_r__guess = pop!(__overrides, "p_r__guess", nothing)
+  __ovr_p_r__initial = pop!(__overrides, "p_r.initial", nothing); isnothing(__ovr_p_r__initial) || (__initial_conditions[p_r] = __ovr_p_r__initial)
+  __ovr_p_r__guess = pop!(__overrides, "p_r.guess", nothing)
   __ovr_x_p = pop!(__overrides, "x_p", nothing); isnothing(__ovr_x_p) || push!(__eqs, x_p ~ __ovr_x_p)
-  __ovr_x_p__initial = pop!(__overrides, "x_p__initial", nothing); isnothing(__ovr_x_p__initial) || (__initial_conditions[x_p] = __ovr_x_p__initial)
-  __ovr_x_p__guess = pop!(__overrides, "x_p__guess", nothing)
+  __ovr_x_p__initial = pop!(__overrides, "x_p.initial", nothing); isnothing(__ovr_x_p__initial) || (__initial_conditions[x_p] = __ovr_x_p__initial)
+  __ovr_x_p__guess = pop!(__overrides, "x_p.guess", nothing)
   __ovr_V_f = pop!(__overrides, "V_f", nothing); isnothing(__ovr_V_f) || push!(__eqs, V_f ~ __ovr_V_f)
-  __ovr_V_f__initial = pop!(__overrides, "V_f__initial", nothing); isnothing(__ovr_V_f__initial) || (__initial_conditions[V_f] = __ovr_V_f__initial)
-  __ovr_V_f__guess = pop!(__overrides, "V_f__guess", nothing)
+  __ovr_V_f__initial = pop!(__overrides, "V_f.initial", nothing); isnothing(__ovr_V_f__initial) || (__initial_conditions[V_f] = __ovr_V_f__initial)
+  __ovr_V_f__guess = pop!(__overrides, "V_f.guess", nothing)
   __ovr_V_r = pop!(__overrides, "V_r", nothing); isnothing(__ovr_V_r) || push!(__eqs, V_r ~ __ovr_V_r)
-  __ovr_V_r__initial = pop!(__overrides, "V_r__initial", nothing); isnothing(__ovr_V_r__initial) || (__initial_conditions[V_r] = __ovr_V_r__initial)
-  __ovr_V_r__guess = pop!(__overrides, "V_r__guess", nothing)
+  __ovr_V_r__initial = pop!(__overrides, "V_r.initial", nothing); isnothing(__ovr_V_r__initial) || (__initial_conditions[V_r] = __ovr_V_r__initial)
+  __ovr_V_r__guess = pop!(__overrides, "V_r.guess", nothing)
   __ovr_F_in = pop!(__overrides, "F_in", nothing); isnothing(__ovr_F_in) || push!(__eqs, F_in ~ __ovr_F_in)
-  __ovr_F_in__initial = pop!(__overrides, "F_in__initial", nothing); isnothing(__ovr_F_in__initial) || (__initial_conditions[F_in] = __ovr_F_in__initial)
-  __ovr_F_in__guess = pop!(__overrides, "F_in__guess", nothing)
+  __ovr_F_in__initial = pop!(__overrides, "F_in.initial", nothing); isnothing(__ovr_F_in__initial) || (__initial_conditions[F_in] = __ovr_F_in__initial)
+  __ovr_F_in__guess = pop!(__overrides, "F_in.guess", nothing)
   __ovr_F_out = pop!(__overrides, "F_out", nothing); isnothing(__ovr_F_out) || push!(__eqs, F_out ~ __ovr_F_out)
-  __ovr_F_out__initial = pop!(__overrides, "F_out__initial", nothing); isnothing(__ovr_F_out__initial) || (__initial_conditions[F_out] = __ovr_F_out__initial)
-  __ovr_F_out__guess = pop!(__overrides, "F_out__guess", nothing)
+  __ovr_F_out__initial = pop!(__overrides, "F_out.initial", nothing); isnothing(__ovr_F_out__initial) || (__initial_conditions[F_out] = __ovr_F_out__initial)
+  __ovr_F_out__guess = pop!(__overrides, "F_out.guess", nothing)
   __ovr_F_r = pop!(__overrides, "F_r", nothing); isnothing(__ovr_F_r) || push!(__eqs, F_r ~ __ovr_F_r)
-  __ovr_F_r__initial = pop!(__overrides, "F_r__initial", nothing); isnothing(__ovr_F_r__initial) || (__initial_conditions[F_r] = __ovr_F_r__initial)
-  __ovr_F_r__guess = pop!(__overrides, "F_r__guess", nothing)
+  __ovr_F_r__initial = pop!(__overrides, "F_r.initial", nothing); isnothing(__ovr_F_r__initial) || (__initial_conditions[F_r] = __ovr_F_r__initial)
+  __ovr_F_r__guess = pop!(__overrides, "F_r.guess", nothing)
   __ovr_e = pop!(__overrides, "e", nothing); isnothing(__ovr_e) || push!(__eqs, e ~ __ovr_e)
-  __ovr_e__initial = pop!(__overrides, "e__initial", nothing); isnothing(__ovr_e__initial) || (__initial_conditions[e] = __ovr_e__initial)
-  __ovr_e__guess = pop!(__overrides, "e__guess", nothing)
+  __ovr_e__initial = pop!(__overrides, "e.initial", nothing); isnothing(__ovr_e__initial) || (__initial_conditions[e] = __ovr_e__initial)
+  __ovr_e__guess = pop!(__overrides, "e.guess", nothing)
   __ovr_u_atm = pop!(__overrides, "u_atm", nothing); isnothing(__ovr_u_atm) || push!(__eqs, u_atm ~ __ovr_u_atm)
-  __ovr_u_atm__initial = pop!(__overrides, "u_atm__initial", nothing); isnothing(__ovr_u_atm__initial) || (__initial_conditions[u_atm] = __ovr_u_atm__initial)
-  __ovr_u_atm__guess = pop!(__overrides, "u_atm__guess", nothing)
+  __ovr_u_atm__initial = pop!(__overrides, "u_atm.initial", nothing); isnothing(__ovr_u_atm__initial) || (__initial_conditions[u_atm] = __ovr_u_atm__initial)
+  __ovr_u_atm__guess = pop!(__overrides, "u_atm.guess", nothing)
   __ovr_u_vac = pop!(__overrides, "u_vac", nothing); isnothing(__ovr_u_vac) || push!(__eqs, u_vac ~ __ovr_u_vac)
-  __ovr_u_vac__initial = pop!(__overrides, "u_vac__initial", nothing); isnothing(__ovr_u_vac__initial) || (__initial_conditions[u_vac] = __ovr_u_vac__initial)
-  __ovr_u_vac__guess = pop!(__overrides, "u_vac__guess", nothing)
+  __ovr_u_vac__initial = pop!(__overrides, "u_vac.initial", nothing); isnothing(__ovr_u_vac__initial) || (__initial_conditions[u_vac] = __ovr_u_vac__initial)
+  __ovr_u_vac__guess = pop!(__overrides, "u_vac.guess", nothing)
   __ovr_mdot_aa = pop!(__overrides, "mdot_aa", nothing); isnothing(__ovr_mdot_aa) || push!(__eqs, mdot_aa ~ __ovr_mdot_aa)
-  __ovr_mdot_aa__initial = pop!(__overrides, "mdot_aa__initial", nothing); isnothing(__ovr_mdot_aa__initial) || (__initial_conditions[mdot_aa] = __ovr_mdot_aa__initial)
-  __ovr_mdot_aa__guess = pop!(__overrides, "mdot_aa__guess", nothing)
+  __ovr_mdot_aa__initial = pop!(__overrides, "mdot_aa.initial", nothing); isnothing(__ovr_mdot_aa__initial) || (__initial_conditions[mdot_aa] = __ovr_mdot_aa__initial)
+  __ovr_mdot_aa__guess = pop!(__overrides, "mdot_aa.guess", nothing)
   __ovr_mdot_av = pop!(__overrides, "mdot_av", nothing); isnothing(__ovr_mdot_av) || push!(__eqs, mdot_av ~ __ovr_mdot_av)
-  __ovr_mdot_av__initial = pop!(__overrides, "mdot_av__initial", nothing); isnothing(__ovr_mdot_av__initial) || (__initial_conditions[mdot_av] = __ovr_mdot_av__initial)
-  __ovr_mdot_av__guess = pop!(__overrides, "mdot_av__guess", nothing)
+  __ovr_mdot_av__initial = pop!(__overrides, "mdot_av.initial", nothing); isnothing(__ovr_mdot_av__initial) || (__initial_conditions[mdot_av] = __ovr_mdot_av__initial)
+  __ovr_mdot_av__guess = pop!(__overrides, "mdot_av.guess", nothing)
   __ovr_mdot_leak = pop!(__overrides, "mdot_leak", nothing); isnothing(__ovr_mdot_leak) || push!(__eqs, mdot_leak ~ __ovr_mdot_leak)
-  __ovr_mdot_leak__initial = pop!(__overrides, "mdot_leak__initial", nothing); isnothing(__ovr_mdot_leak__initial) || (__initial_conditions[mdot_leak] = __ovr_mdot_leak__initial)
-  __ovr_mdot_leak__guess = pop!(__overrides, "mdot_leak__guess", nothing)
+  __ovr_mdot_leak__initial = pop!(__overrides, "mdot_leak.initial", nothing); isnothing(__ovr_mdot_leak__initial) || (__initial_conditions[mdot_leak] = __ovr_mdot_leak__initial)
+  __ovr_mdot_leak__guess = pop!(__overrides, "mdot_leak.guess", nothing)
   __ovr_mdot_out = pop!(__overrides, "mdot_out", nothing); isnothing(__ovr_mdot_out) || push!(__eqs, mdot_out ~ __ovr_mdot_out)
-  __ovr_mdot_out__initial = pop!(__overrides, "mdot_out__initial", nothing); isnothing(__ovr_mdot_out__initial) || (__initial_conditions[mdot_out] = __ovr_mdot_out__initial)
-  __ovr_mdot_out__guess = pop!(__overrides, "mdot_out__guess", nothing)
+  __ovr_mdot_out__initial = pop!(__overrides, "mdot_out.initial", nothing); isnothing(__ovr_mdot_out__initial) || (__initial_conditions[mdot_out] = __ovr_mdot_out__initial)
+  __ovr_mdot_out__guess = pop!(__overrides, "mdot_out.guess", nothing)
   __ovr_F_assist_max = pop!(__overrides, "F_assist_max", nothing); isnothing(__ovr_F_assist_max) || push!(__eqs, F_assist_max ~ __ovr_F_assist_max)
-  __ovr_F_assist_max__initial = pop!(__overrides, "F_assist_max__initial", nothing); isnothing(__ovr_F_assist_max__initial) || (__initial_conditions[F_assist_max] = __ovr_F_assist_max__initial)
-  __ovr_F_assist_max__guess = pop!(__overrides, "F_assist_max__guess", nothing)
+  __ovr_F_assist_max__initial = pop!(__overrides, "F_assist_max.initial", nothing); isnothing(__ovr_F_assist_max__initial) || (__initial_conditions[F_assist_max] = __ovr_F_assist_max__initial)
+  __ovr_F_assist_max__guess = pop!(__overrides, "F_assist_max.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -267,7 +290,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_p_f__guess) || (__guesses[p_f] = __ovr_p_f__guess)
@@ -318,6 +341,6 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, F_assist_max ~ A_d * (p_atm - p_f) - F_rs0)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export VacuumBooster

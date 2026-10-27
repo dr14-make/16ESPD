@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Rodas5P(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -38,7 +38,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Rodas5P(),
-  params=(; delta_in=-0.1),
+  params=Dict{String, Any}("delta_in" => -0.1),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -61,7 +61,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Rodas5P(),
-  params=(; delta_in=0.2),
+  params=Dict{String, Any}("delta_in" => 0.2),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -84,7 +84,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Rodas5P(),
-  params=(; ackermann=0),
+  params=Dict{String, Any}("ackermann" => 0.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -107,7 +107,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Rodas5P(),
-  params=(; tau_load=10),
+  params=Dict{String, Any}("tau_load" => 10.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[(m -> m.torque_sensor.tau, "torque_sensor.tau", -20.0487, 0.001, 1e-5)],

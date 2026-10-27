@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   WheelSlipSensor(; name, radius, v_eps)
+   WheelSlipSensor(; name, radius, v_eps, __overrides)
 
 Ideal wheel-slip sensor using physical frame and spin-shaft ports.
 
@@ -29,7 +29,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `omega` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v_long` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function WheelSlipSensor(; name = nothing, radius=0.31, v_eps=0.5, kwargs...)
+@component function WheelSlipSensor(; name = nothing, var"radius"=0.31, var"v_eps"=0.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
     @named model = WheelSlipSensor()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,10 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
 
   ### Structural Parameters (functions)
 
@@ -62,10 +66,10 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius (repository default)"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [description = "Low-speed denominator floor (assumed)"])
-  __initial_conditions[v_eps] = __local__v_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
 
   ### Final Parameters (assignments)
 
@@ -87,13 +91,13 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named spline = __Dyad__Spline())
   # Subcomponent vel of type MultibodyComponents.PlanarMechanics.AbsoluteVelocity
   vel_overrides = __pop_subcomponent_overrides!(__overrides, "vel")
-  push!(__systems, @named vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; vel_overrides...))
+  push!(__systems, @named vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; __overrides = vel_overrides))
   # Subcomponent spin of type RotationalComponents.Sensors.VelocitySensor
   spin_overrides = __pop_subcomponent_overrides!(__overrides, "spin")
-  push!(__systems, @named spin = RotationalComponents.Sensors.VelocitySensor(; spin_overrides...))
+  push!(__systems, @named spin = RotationalComponents.Sensors.VelocitySensor(; __overrides = spin_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -111,6 +115,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(spline, spin.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export WheelSlipSensor

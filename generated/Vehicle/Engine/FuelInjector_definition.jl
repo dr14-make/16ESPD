@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FuelInjector(; name, R, L_inf, L_0, g_0, g_res, lift_max, m, c_spring, F_pre, c_stop, d_stop, d_seat, C_d, rho_f, q_static, dp_rated)
+   FuelInjector(; name, R, L_inf, L_0, g_0, g_res, lift_max, m, c_spring, F_pre, c_stop, d_stop, d_seat, C_d, rho_f, q_static, dp_rated, __overrides)
 
 A port fuel injector: solenoid, needle and spray orifice, from the electrical terminals to the
 fuel mass flow.
@@ -62,7 +62,7 @@ fuel-per-pulse line, lands in the EV14 table's band.
 | ------------ | ----------------------------------- | ------ |
 | `A_open`         | Open flow area                         | m2  |
 """
-@component function FuelInjector(; name = nothing, R=Float64(12.0), L_inf=0.00288, L_0=0.0288, g_0=0.0001, g_res=0.0001, lift_max=0.00005, m=0.003, c_spring=Float64(10000.0), F_pre=6.97, c_stop=Float64(1000000000.0), d_stop=Float64(3000.0), d_seat=0.0013, C_d=0.7, rho_f=Float64(740.0), q_static=0.000146 / 60, dp_rated=Float64(300000.0), kwargs...)
+@component function FuelInjector(; name = nothing, var"R"=Float64(12.0), var"L_inf"=0.00288, var"L_0"=0.0288, var"g_0"=0.0001, var"g_res"=0.0001, var"lift_max"=0.00005, var"m"=0.003, var"c_spring"=Float64(10000.0), var"F_pre"=6.97, var"c_stop"=Float64(1000000000.0), var"d_stop"=Float64(3000.0), var"d_seat"=0.0013, var"C_d"=0.7, var"rho_f"=Float64(740.0), var"q_static"=0.000146 / 60, var"dp_rated"=Float64(300000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -70,7 +70,7 @@ fuel-per-pulse line, lands in the EV14 table's band.
     @named model = FuelInjector()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -79,6 +79,24 @@ fuel-per-pulse line, lands in the EV14 table's band.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "L_inf") && (L_inf = pop!(__overrides, "L_inf"))
+  haskey(__overrides, "L_0") && (L_0 = pop!(__overrides, "L_0"))
+  haskey(__overrides, "g_0") && (g_0 = pop!(__overrides, "g_0"))
+  haskey(__overrides, "g_res") && (g_res = pop!(__overrides, "g_res"))
+  haskey(__overrides, "lift_max") && (lift_max = pop!(__overrides, "lift_max"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "c_spring") && (c_spring = pop!(__overrides, "c_spring"))
+  haskey(__overrides, "F_pre") && (F_pre = pop!(__overrides, "F_pre"))
+  haskey(__overrides, "c_stop") && (c_stop = pop!(__overrides, "c_stop"))
+  haskey(__overrides, "d_stop") && (d_stop = pop!(__overrides, "d_stop"))
+  haskey(__overrides, "d_seat") && (d_seat = pop!(__overrides, "d_seat"))
+  haskey(__overrides, "C_d") && (C_d = pop!(__overrides, "C_d"))
+  haskey(__overrides, "rho_f") && (rho_f = pop!(__overrides, "rho_f"))
+  haskey(__overrides, "q_static") && (q_static = pop!(__overrides, "q_static"))
+  haskey(__overrides, "dp_rated") && (dp_rated = pop!(__overrides, "dp_rated"))
 
   ### Structural Parameters (functions)
 
@@ -96,52 +114,52 @@ fuel-per-pulse line, lands in the EV14 table's band.
   ### Symbolic Parameters
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Winding resistance, 12 ohm (Bosch EV14 datasheet)"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__L_inf = L_inf
   append!(__params, @parameters (L_inf::Real), [description = "Inductance that does not depend on the gap (assumed)"])
-  __initial_conditions[L_inf] = __local__L_inf
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L_inf, __local__L_inf)
   __local__L_0 = L_0
   append!(__params, @parameters (L_0::Real), [description = "Gap-dependent inductance scale (assumed)"])
-  __initial_conditions[L_0] = __local__L_0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L_0, __local__L_0)
   __local__g_0 = g_0
   append!(__params, @parameters (g_0::Real), [description = "Gap length at which the gap-dependent inductance halves (assumed)"])
-  __initial_conditions[g_0] = __local__g_0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g_0, __local__g_0)
   __local__g_res = g_res
   append!(__params, @parameters (g_res::Real), [description = "Residual air gap with the armature on its stop (assumed)"])
-  __initial_conditions[g_res] = __local__g_res
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g_res, __local__g_res)
   __local__lift_max = lift_max
   append!(__params, @parameters (lift_max::Real), [description = "Needle travel to the armature stop, 0.05 mm (deck slide 43)"])
-  __initial_conditions[lift_max] = __local__lift_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lift_max, __local__lift_max)
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Armature and needle mass (assumed)", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__c_spring = c_spring
   append!(__params, @parameters (c_spring::Real), [description = "Return spring rate (assumed)"])
-  __initial_conditions[c_spring] = __local__c_spring
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c_spring, __local__c_spring)
   __local__F_pre = F_pre
   append!(__params, @parameters (F_pre::Real), [description = "Spring preload with the needle seated, including the fuel pressure on the seat (assumed)"])
-  __initial_conditions[F_pre] = __local__F_pre
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_pre, __local__F_pre)
   __local__c_stop = c_stop
   append!(__params, @parameters (c_stop::Real), [description = "Contact stiffness of the seat and the stop (assumed)"])
-  __initial_conditions[c_stop] = __local__c_stop
+  __dyad_seed_parameter!(__initial_conditions, __bindings, c_stop, __local__c_stop)
   __local__d_stop = d_stop
   append!(__params, @parameters (d_stop::Real), [description = "Contact damping of the seat and the stop, near critical for the needle mass (assumed)"])
-  __initial_conditions[d_stop] = __local__d_stop
+  __dyad_seed_parameter!(__initial_conditions, __bindings, d_stop, __local__d_stop)
   __local__d_seat = d_seat
   append!(__params, @parameters (d_seat::Real), [description = "Seat diameter whose annulus the needle uncovers (assumed)"])
-  __initial_conditions[d_seat] = __local__d_seat
+  __dyad_seed_parameter!(__initial_conditions, __bindings, d_seat, __local__d_seat)
   __local__C_d = C_d
   append!(__params, @parameters (C_d::Real), [description = "Nozzle discharge coefficient (assumed)"])
-  __initial_conditions[C_d] = __local__C_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_d, __local__C_d)
   __local__rho_f = rho_f
   append!(__params, @parameters (rho_f::Real), [description = "Fuel density (textbook)", bounds = (0, Inf)])
-  __initial_conditions[rho_f] = __local__rho_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rho_f, __local__rho_f)
   __local__q_static = q_static
   append!(__params, @parameters (q_static::Real), [description = "Static flow at full lift and the rated pressure, 146 cm3/min (Bosch EV14 datasheet)"])
-  __initial_conditions[q_static] = __local__q_static
+  __dyad_seed_parameter!(__initial_conditions, __bindings, q_static, __local__q_static)
   __local__dp_rated = dp_rated
   append!(__params, @parameters (dp_rated::Real), [description = "Pressure at which q_static is rated, 3 bar (Bosch EV14 datasheet)"])
-  __initial_conditions[dp_rated] = __local__dp_rated
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dp_rated, __local__dp_rated)
 
   ### Final Parameters (assignments)
   __bindings[A_orifice] = rho_f * q_static / (C_d * sqrt(2 * rho_f * dp_rated))
@@ -156,8 +174,8 @@ fuel-per-pulse line, lands in the EV14 table's band.
 
   ### Variables (assignments)
   __ovr_A_open = pop!(__overrides, "A_open", nothing); isnothing(__ovr_A_open) || push!(__eqs, A_open ~ __ovr_A_open)
-  __ovr_A_open__initial = pop!(__overrides, "A_open__initial", nothing); isnothing(__ovr_A_open__initial) || (__initial_conditions[A_open] = __ovr_A_open__initial)
-  __ovr_A_open__guess = pop!(__overrides, "A_open__guess", nothing)
+  __ovr_A_open__initial = pop!(__overrides, "A_open.initial", nothing); isnothing(__ovr_A_open__initial) || (__initial_conditions[A_open] = __ovr_A_open__initial)
+  __ovr_A_open__guess = pop!(__overrides, "A_open.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -167,31 +185,38 @@ fuel-per-pulse line, lands in the EV14 table's band.
   push!(__systems, @named n = __Dyad__Pin())
   # Subcomponent solenoid of type VehicleSystemsComponents.Vehicle.Engine.Solenoid
   solenoid_overrides = __pop_subcomponent_overrides!(__overrides, "solenoid")
-  push!(__systems, @named solenoid = VehicleSystemsComponents.Vehicle.Engine.Solenoid(; R=R, L_inf=L_inf, L_0=L_0, g_0=g_0, g_max=lift_max + g_res, psi__initial=0, solenoid_overrides...))
+  solenoid_dict = Dict{String, Any}()
+  solenoid_dict["psi.initial"] = ModelingToolkit.default_to_parentscope(0)
+  merge!(solenoid_dict, solenoid_overrides)
+  push!(__systems, @named solenoid = VehicleSystemsComponents.Vehicle.Engine.Solenoid(; R=R, L_inf=L_inf, L_0=L_0, g_0=g_0, g_max=lift_max + g_res, __overrides = solenoid_dict))
   # Subcomponent needle of type TranslationalComponents.Components.Mass
   needle_overrides = __pop_subcomponent_overrides!(__overrides, "needle")
-  push!(__systems, @named needle = TranslationalComponents.Components.Mass(; m=m, L=Float64(0), s__initial=-F_pre / c_stop, v__initial=0, needle_overrides...))
+  needle_dict = Dict{String, Any}()
+  needle_dict["s.initial"] = ModelingToolkit.default_to_parentscope(-F_pre / c_stop)
+  needle_dict["v.initial"] = ModelingToolkit.default_to_parentscope(0)
+  merge!(needle_dict, needle_overrides)
+  push!(__systems, @named needle = TranslationalComponents.Components.Mass(; m=m, L=Float64(0), __overrides = needle_dict))
   # Subcomponent spring of type TranslationalComponents.Components.Spring
   spring_overrides = __pop_subcomponent_overrides!(__overrides, "spring")
-  push!(__systems, @named spring = TranslationalComponents.Components.Spring(; c=c_spring, s_rel0=-F_pre / c_spring, spring_overrides...))
+  push!(__systems, @named spring = TranslationalComponents.Components.Spring(; c=c_spring, s_rel0=-F_pre / c_spring, __overrides = spring_overrides))
   # Subcomponent seat of type TranslationalComponents.Components.ElastoGap
   seat_overrides = __pop_subcomponent_overrides!(__overrides, "seat")
-  push!(__systems, @named seat = TranslationalComponents.Components.ElastoGap(; c=c_stop, d=d_stop, s_rel0=Float64(0), seat_overrides...))
+  push!(__systems, @named seat = TranslationalComponents.Components.ElastoGap(; c=c_stop, d=d_stop, s_rel0=Float64(0), __overrides = seat_overrides))
   # Subcomponent stop of type TranslationalComponents.Components.ElastoGap
   stop_overrides = __pop_subcomponent_overrides!(__overrides, "stop")
-  push!(__systems, @named stop = TranslationalComponents.Components.ElastoGap(; c=c_stop, d=d_stop, s_rel0=-lift_max, stop_overrides...))
+  push!(__systems, @named stop = TranslationalComponents.Components.ElastoGap(; c=c_stop, d=d_stop, s_rel0=-lift_max, __overrides = stop_overrides))
   # Subcomponent housing of type TranslationalComponents.Components.Fixed
   housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = TranslationalComponents.Components.Fixed(; housing_overrides...))
+  push!(__systems, @named housing = TranslationalComponents.Components.Fixed(; __overrides = housing_overrides))
   # Subcomponent lift_sensor of type TranslationalComponents.Sensors.PositionSensor
   lift_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "lift_sensor")
-  push!(__systems, @named lift_sensor = TranslationalComponents.Sensors.PositionSensor(; lift_sensor_overrides...))
+  push!(__systems, @named lift_sensor = TranslationalComponents.Sensors.PositionSensor(; __overrides = lift_sensor_overrides))
   # Subcomponent ambient of type ThermalComponents.Sources.FixedTemperature
   ambient_overrides = __pop_subcomponent_overrides!(__overrides, "ambient")
-  push!(__systems, @named ambient = ThermalComponents.Sources.FixedTemperature(; T=293.15, ambient_overrides...))
+  push!(__systems, @named ambient = ThermalComponents.Sources.FixedTemperature(; T=293.15, __overrides = ambient_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_A_open__guess) || (__guesses[A_open] = __ovr_A_open__guess)
@@ -220,6 +245,6 @@ fuel-per-pulse line, lands in the EV14 table's band.
   push!(__eqs, connect(lift_sensor.s, lift))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export FuelInjector

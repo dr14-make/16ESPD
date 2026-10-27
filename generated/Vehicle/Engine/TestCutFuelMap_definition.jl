@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestCutFuelMap(; name)
+   TestCutFuelMap(; name, __overrides)
 """
-@component function TestCutFuelMap(; name = nothing, kwargs...)
+@component function TestCutFuelMap(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestCutFuelMap()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,25 +53,25 @@
   ### Components
   # Subcomponent omega of type BlockComponents.Sources.Constant
   omega_overrides = __pop_subcomponent_overrides!(__overrides, "omega")
-  push!(__systems, @named omega = BlockComponents.Sources.Constant(; k=2000 * pi / 30, omega_overrides...))
+  push!(__systems, @named omega = BlockComponents.Sources.Constant(; k=2000 * pi / 30, __overrides = omega_overrides))
   # Subcomponent pressure of type BlockComponents.Sources.Constant
   pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
-  push!(__systems, @named pressure = BlockComponents.Sources.Constant(; k=Float64(50000.0), pressure_overrides...))
+  push!(__systems, @named pressure = BlockComponents.Sources.Constant(; k=Float64(50000.0), __overrides = pressure_overrides))
   # Subcomponent no_cut of type BlockComponents.Sources.Constant
   no_cut_overrides = __pop_subcomponent_overrides!(__overrides, "no_cut")
-  push!(__systems, @named no_cut = BlockComponents.Sources.Constant(; k=Float64(0.0), no_cut_overrides...))
+  push!(__systems, @named no_cut = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = no_cut_overrides))
   # Subcomponent full_cut of type BlockComponents.Sources.Constant
   full_cut_overrides = __pop_subcomponent_overrides!(__overrides, "full_cut")
-  push!(__systems, @named full_cut = BlockComponents.Sources.Constant(; k=Float64(1.0), full_cut_overrides...))
+  push!(__systems, @named full_cut = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = full_cut_overrides))
   # Subcomponent fired_map of type VehicleSystemsComponents.Vehicle.Engine.CutFuelMap
   fired_map_overrides = __pop_subcomponent_overrides!(__overrides, "fired_map")
-  push!(__systems, @named fired_map = VehicleSystemsComponents.Vehicle.Engine.CutFuelMap(; fired_map_overrides...))
+  push!(__systems, @named fired_map = VehicleSystemsComponents.Vehicle.Engine.CutFuelMap(; __overrides = fired_map_overrides))
   # Subcomponent cut_map of type VehicleSystemsComponents.Vehicle.Engine.CutFuelMap
   cut_map_overrides = __pop_subcomponent_overrides!(__overrides, "cut_map")
-  push!(__systems, @named cut_map = VehicleSystemsComponents.Vehicle.Engine.CutFuelMap(; cut_map_overrides...))
+  push!(__systems, @named cut_map = VehicleSystemsComponents.Vehicle.Engine.CutFuelMap(; __overrides = cut_map_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -87,6 +87,6 @@
   push!(__eqs, connect(full_cut.y, cut_map.cut))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestCutFuelMap

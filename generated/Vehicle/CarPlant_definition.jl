@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CarPlant(; name, theta_e, T_max, m, CdA)
+   CarPlant(; name, theta_e, T_max, m, CdA, __overrides)
 
 Longitudinal car plant (L0): torque command and road grade in, speed out.
 
@@ -32,7 +32,7 @@ is converted, and no second conversion is added anywhere downstream.
  * `v_kmh` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CarPlant(; name = nothing, theta_e=0.3, T_max=Float64(150.0), m=Float64(1400.0), CdA=0.63, kwargs...)
+@component function CarPlant(; name = nothing, var"theta_e"=0.3, var"T_max"=Float64(150.0), var"m"=Float64(1400.0), var"CdA"=0.63, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -40,7 +40,7 @@ is converted, and no second conversion is added anywhere downstream.
     @named model = CarPlant()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -49,6 +49,12 @@ is converted, and no second conversion is added anywhere downstream.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "theta_e") && (theta_e = pop!(__overrides, "theta_e"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
 
   ### Structural Parameters (functions)
 
@@ -65,13 +71,13 @@ is converted, and no second conversion is added anywhere downstream.
   ### Symbolic Parameters
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Peak deliverable engine torque"])
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__CdA = CdA
   append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A)"])
-  __initial_conditions[CdA] = __local__CdA
+  __dyad_seed_parameter!(__initial_conditions, __bindings, CdA, __local__CdA)
 
   ### Final Parameters (assignments)
 
@@ -91,28 +97,28 @@ is converted, and no second conversion is added anywhere downstream.
   ### Components
   # Subcomponent engine of type VehicleSystemsComponents.Vehicle.IdealEngine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.IdealEngine(; theta_e=theta_e, T_max=T_max, engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.IdealEngine(; theta_e=theta_e, T_max=T_max, __overrides = engine_overrides))
   # Subcomponent driveline of type VehicleSystemsComponents.Vehicle.Driveline
   driveline_overrides = __pop_subcomponent_overrides!(__overrides, "driveline")
-  push!(__systems, @named driveline = VehicleSystemsComponents.Vehicle.Driveline(; driveline_overrides...))
+  push!(__systems, @named driveline = VehicleSystemsComponents.Vehicle.Driveline(; __overrides = driveline_overrides))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, CdA=CdA, body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, CdA=CdA, __overrides = body_overrides))
   # Subcomponent vsensor of type TranslationalComponents.Sensors.VelocitySensor
   vsensor_overrides = __pop_subcomponent_overrides!(__overrides, "vsensor")
-  push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; vsensor_overrides...))
+  push!(__systems, @named vsensor = TranslationalComponents.Sensors.VelocitySensor(; __overrides = vsensor_overrides))
   # Subcomponent tokmh of type VehicleSystemsComponents.Vehicle.ToKmPerHour
   tokmh_overrides = __pop_subcomponent_overrides!(__overrides, "tokmh")
-  push!(__systems, @named tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; tokmh_overrides...))
+  push!(__systems, @named tokmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = tokmh_overrides))
   # Subcomponent rot_ground of type RotationalComponents.Components.Fixed
   rot_ground_overrides = __pop_subcomponent_overrides!(__overrides, "rot_ground")
-  push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; rot_ground_overrides...))
+  push!(__systems, @named rot_ground = RotationalComponents.Components.Fixed(; __overrides = rot_ground_overrides))
   # Subcomponent trans_ground of type TranslationalComponents.Components.Fixed
   trans_ground_overrides = __pop_subcomponent_overrides!(__overrides, "trans_ground")
-  push!(__systems, @named trans_ground = TranslationalComponents.Components.Fixed(; trans_ground_overrides...))
+  push!(__systems, @named trans_ground = TranslationalComponents.Components.Fixed(; __overrides = trans_ground_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -135,6 +141,6 @@ is converted, and no second conversion is added anywhere downstream.
   push!(__eqs, connect(tokmh.y, v_kmh))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CarPlant

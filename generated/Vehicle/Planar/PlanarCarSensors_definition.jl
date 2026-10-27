@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarCarSensors(; name, radius)
+   PlanarCarSensors(; name, radius, __overrides)
 
 Ideal planar-car sensor cluster attached only through physical ports.
 
@@ -55,7 +55,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `omega_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `omega_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function PlanarCarSensors(; name = nothing, radius=0.31, kwargs...)
+@component function PlanarCarSensors(; name = nothing, var"radius"=0.31, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -63,7 +63,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
     @named model = PlanarCarSensors()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -72,6 +72,9 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
 
   ### Structural Parameters (functions)
 
@@ -88,7 +91,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (repository default)"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
 
   ### Final Parameters (assignments)
 
@@ -136,31 +139,31 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named spin_rr = __Dyad__Spline())
   # Subcomponent vel of type MultibodyComponents.PlanarMechanics.AbsoluteVelocity
   vel_overrides = __pop_subcomponent_overrides!(__overrides, "vel")
-  push!(__systems, @named vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; vel_overrides...))
+  push!(__systems, @named vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; __overrides = vel_overrides))
   # Subcomponent acc of type MultibodyComponents.PlanarMechanics.AbsoluteAcceleration
   acc_overrides = __pop_subcomponent_overrides!(__overrides, "acc")
-  push!(__systems, @named acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration(; acc_overrides...))
+  push!(__systems, @named acc = MultibodyComponents.PlanarMechanics.AbsoluteAcceleration(; __overrides = acc_overrides))
   # Subcomponent pos of type MultibodyComponents.PlanarMechanics.AbsolutePosition
   pos_overrides = __pop_subcomponent_overrides!(__overrides, "pos")
-  push!(__systems, @named pos = MultibodyComponents.PlanarMechanics.AbsolutePosition(; resolve_in_frame=MultibodyComponents.ResolveInFrame.World(), pos_overrides...))
+  push!(__systems, @named pos = MultibodyComponents.PlanarMechanics.AbsolutePosition(; resolve_in_frame=MultibodyComponents.ResolveInFrame.World(), __overrides = pos_overrides))
   # Subcomponent swa of type RotationalComponents.Sensors.AngleSensor
   swa_overrides = __pop_subcomponent_overrides!(__overrides, "swa")
-  push!(__systems, @named swa = RotationalComponents.Sensors.AngleSensor(; swa_overrides...))
+  push!(__systems, @named swa = RotationalComponents.Sensors.AngleSensor(; __overrides = swa_overrides))
   # Subcomponent slip_fl of type VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor
   slip_fl_overrides = __pop_subcomponent_overrides!(__overrides, "slip_fl")
-  push!(__systems, @named slip_fl = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, slip_fl_overrides...))
+  push!(__systems, @named slip_fl = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, __overrides = slip_fl_overrides))
   # Subcomponent slip_fr of type VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor
   slip_fr_overrides = __pop_subcomponent_overrides!(__overrides, "slip_fr")
-  push!(__systems, @named slip_fr = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, slip_fr_overrides...))
+  push!(__systems, @named slip_fr = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, __overrides = slip_fr_overrides))
   # Subcomponent slip_rl of type VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor
   slip_rl_overrides = __pop_subcomponent_overrides!(__overrides, "slip_rl")
-  push!(__systems, @named slip_rl = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, slip_rl_overrides...))
+  push!(__systems, @named slip_rl = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, __overrides = slip_rl_overrides))
   # Subcomponent slip_rr of type VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor
   slip_rr_overrides = __pop_subcomponent_overrides!(__overrides, "slip_rr")
-  push!(__systems, @named slip_rr = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, slip_rr_overrides...))
+  push!(__systems, @named slip_rr = VehicleSystemsComponents.Vehicle.Planar.WheelSlipSensor(; radius=radius, __overrides = slip_rr_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -204,6 +207,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(spin_rr, slip_rr.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export PlanarCarSensors

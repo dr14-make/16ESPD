@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SineWithDwellRun(; name, load_transfer, A_sw, v0, radius, h_cg)
+   SineWithDwellRun(; name, load_transfer, A_sw, v0, radius, h_cg, __overrides)
 
 Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
 
@@ -19,7 +19,7 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
 | `radius`         | Wheel radius (repository default)                         | m  |   0.31 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function SineWithDwellRun(; name = nothing, load_transfer=true, A_sw=0.5585053606381855, v0=22.22222222222222, radius=0.31, h_cg=Float64(0.0), kwargs...)
+@component function SineWithDwellRun(; name = nothing, var"load_transfer"=true, var"A_sw"=0.5585053606381855, var"v0"=22.22222222222222, var"radius"=0.31, var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -27,7 +27,7 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
     @named model = SineWithDwellRun()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -36,6 +36,13 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
+  haskey(__overrides, "A_sw") && (A_sw = pop!(__overrides, "A_sw"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
 
   ### Structural Parameters (functions)
 
@@ -52,16 +59,16 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   ### Symbolic Parameters
   __local__A_sw = A_sw
   append!(__params, @parameters (A_sw::Real), [description = "Steering-wheel amplitude"])
-  __initial_conditions[A_sw] = __local__A_sw
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_sw, __local__A_sw)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real), [description = "Initial vehicle speed (FMVSS 126)"])
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (repository default)"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__h_cg = h_cg
   append!(__params, @parameters (h_cg::Real))
-  __initial_conditions[h_cg] = __local__h_cg
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_cg, __local__h_cg)
 
   ### Final Parameters (assignments)
 
@@ -77,22 +84,22 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   ### Components
   # Subcomponent steer of type VehicleSystemsComponents.Vehicle.Planar.SineWithDwell
   steer_overrides = __pop_subcomponent_overrides!(__overrides, "steer")
-  push!(__systems, @named steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(; A=A_sw, steer_overrides...))
+  push!(__systems, @named steer = VehicleSystemsComponents.Vehicle.Planar.SineWithDwell(; A=A_sw, __overrides = steer_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
-  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent steering_robot of type VehicleSystemsComponents.Vehicle.Planar.SteeringRobot
   steering_robot_overrides = __pop_subcomponent_overrides!(__overrides, "steering_robot")
-  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; steering_robot_overrides...))
+  push!(__systems, @named steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot(; __overrides = steering_robot_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
   # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
   sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, sensors_overrides...))
+  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -133,6 +140,6 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   push!(__eqs, connect(zero.y, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SineWithDwellRun

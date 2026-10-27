@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeLine(; name, D, L, nu)
+   BrakeLine(; name, D, L, nu, __overrides)
 
 Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a positive pressure drop.
 
@@ -29,7 +29,7 @@ Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a posi
 | `Δp`         | Pressure difference across the component, defined as port_a.p - port_b.p                         | Pa  |
 | `m_flow`         | Overall mass flow rate through the component                         | kg/s  |
 """
-@component function BrakeLine(; name = nothing, D=0.003, L=1.5, nu=0.00001, continuity__graph0, kwargs...)
+@component function BrakeLine(; name = nothing, var"D"=0.003, var"L"=1.5, var"nu"=0.00001, var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a posi
     @named model = BrakeLine()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,11 @@ Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a posi
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "D") && (D = pop!(__overrides, "D"))
+  haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
+  haskey(__overrides, "nu") && (nu = pop!(__overrides, "nu"))
 
   ### Structural Parameters (functions)
 
@@ -62,13 +67,13 @@ Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a posi
   ### Symbolic Parameters
   __local__D = D
   append!(__params, @parameters (D::Real), [description = "Internal diameter"])
-  __initial_conditions[D] = __local__D
+  __dyad_seed_parameter!(__initial_conditions, __bindings, D, __local__D)
   __local__L = L
   append!(__params, @parameters (L::Real), [description = "Line length"])
-  __initial_conditions[L] = __local__L
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L, __local__L)
   __local__nu = nu
   append!(__params, @parameters (nu::Real), [description = "Brake-fluid kinematic viscosity; DOT 4 at 20 °C (1800e-6 m²/s at -40 °C)", bounds = (0, Inf)])
-  __initial_conditions[nu] = __local__nu
+  __dyad_seed_parameter!(__initial_conditions, __bindings, nu, __local__nu)
 
   ### Final Parameters (assignments)
 
@@ -82,11 +87,11 @@ Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a posi
 
   ### Variables (assignments)
   __ovr_Δp = pop!(__overrides, "Δp", nothing); isnothing(__ovr_Δp) || push!(__eqs, Δp ~ __ovr_Δp)
-  __ovr_Δp__initial = pop!(__overrides, "Δp__initial", nothing); isnothing(__ovr_Δp__initial) || (__initial_conditions[Δp] = __ovr_Δp__initial)
-  __ovr_Δp__guess = pop!(__overrides, "Δp__guess", nothing)
+  __ovr_Δp__initial = pop!(__overrides, "Δp.initial", nothing); isnothing(__ovr_Δp__initial) || (__initial_conditions[Δp] = __ovr_Δp__initial)
+  __ovr_Δp__guess = pop!(__overrides, "Δp.guess", nothing)
   __ovr_m_flow = pop!(__overrides, "m_flow", nothing); isnothing(__ovr_m_flow) || push!(__eqs, m_flow ~ __ovr_m_flow)
-  __ovr_m_flow__initial = pop!(__overrides, "m_flow__initial", nothing); isnothing(__ovr_m_flow__initial) || (__initial_conditions[m_flow] = __ovr_m_flow__initial)
-  __ovr_m_flow__guess = pop!(__overrides, "m_flow__guess", nothing)
+  __ovr_m_flow__initial = pop!(__overrides, "m_flow.initial", nothing); isnothing(__ovr_m_flow__initial) || (__initial_conditions[m_flow] = __ovr_m_flow__initial)
+  __ovr_m_flow__guess = pop!(__overrides, "m_flow.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -96,7 +101,7 @@ Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a posi
   push!(__systems, @named port_b = HydraulicComponents.Interfaces.Port())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_Δp__guess) || (__guesses[Δp] = __ovr_Δp__guess)
@@ -114,6 +119,6 @@ Laminar brake line. Positive mass flow from `port_a` to `port_b` produces a posi
   push!(__eqs, Δp ~ 128 * nu * L * m_flow / (π * D ^ 4))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export BrakeLine

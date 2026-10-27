@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   Solenoid(; name, R, L_inf, L_0, g_0, g_max)
+   Solenoid(; name, R, L_inf, L_0, g_0, g_max, __overrides)
 
 A solenoid actuator: an electrical winding and a magnetic armature, coupled through the air gap.
 
@@ -57,7 +57,7 @@ at rest, and divided by `R` gives the electrical time constant that sets the ope
 | `dLdx`         | Slope of the inductance with armature travel                         | H/m  |
 | `f`         | Magnetic force on the armature, toward closing the gap                         | N  |
 """
-@component function Solenoid(; name = nothing, R=Float64(12.0), L_inf=0.00288, L_0=0.0288, g_0=0.0001, g_max=0.00015, kwargs...)
+@component function Solenoid(; name = nothing, var"R"=Float64(12.0), var"L_inf"=0.00288, var"L_0"=0.0288, var"g_0"=0.0001, var"g_max"=0.00015, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -65,7 +65,7 @@ at rest, and divided by `R` gives the electrical time constant that sets the ope
     @named model = Solenoid()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -74,6 +74,13 @@ at rest, and divided by `R` gives the electrical time constant that sets the ope
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "L_inf") && (L_inf = pop!(__overrides, "L_inf"))
+  haskey(__overrides, "L_0") && (L_0 = pop!(__overrides, "L_0"))
+  haskey(__overrides, "g_0") && (g_0 = pop!(__overrides, "g_0"))
+  haskey(__overrides, "g_max") && (g_max = pop!(__overrides, "g_max"))
 
   ### Structural Parameters (functions)
 
@@ -90,19 +97,19 @@ at rest, and divided by `R` gives the electrical time constant that sets the ope
   ### Symbolic Parameters
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Winding resistance, 12 ohm (Bosch EV14 datasheet)"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__L_inf = L_inf
   append!(__params, @parameters (L_inf::Real), [description = "Inductance that does not depend on the gap: leakage flux (assumed)"])
-  __initial_conditions[L_inf] = __local__L_inf
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L_inf, __local__L_inf)
   __local__L_0 = L_0
   append!(__params, @parameters (L_0::Real), [description = "Gap-dependent inductance scale (assumed)"])
-  __initial_conditions[L_0] = __local__L_0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L_0, __local__L_0)
   __local__g_0 = g_0
   append!(__params, @parameters (g_0::Real), [description = "Gap length at which the gap-dependent inductance halves (assumed)"])
-  __initial_conditions[g_0] = __local__g_0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g_0, __local__g_0)
   __local__g_max = g_max
   append!(__params, @parameters (g_max::Real), [description = "Air gap with the armature at rest (assumed): needle lift plus a residual gap at the stop"])
-  __initial_conditions[g_max] = __local__g_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g_max, __local__g_max)
 
   ### Final Parameters (assignments)
 
@@ -120,29 +127,29 @@ at rest, and divided by `R` gives the electrical time constant that sets the ope
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
   __ovr_i = pop!(__overrides, "i", nothing); isnothing(__ovr_i) || push!(__eqs, i ~ __ovr_i)
-  __ovr_i__initial = pop!(__overrides, "i__initial", nothing); isnothing(__ovr_i__initial) || (__initial_conditions[i] = __ovr_i__initial)
-  __ovr_i__guess = pop!(__overrides, "i__guess", nothing)
+  __ovr_i__initial = pop!(__overrides, "i.initial", nothing); isnothing(__ovr_i__initial) || (__initial_conditions[i] = __ovr_i__initial)
+  __ovr_i__guess = pop!(__overrides, "i.guess", nothing)
   __ovr_psi = pop!(__overrides, "psi", nothing); isnothing(__ovr_psi) || push!(__eqs, psi ~ __ovr_psi)
-  __ovr_psi__initial = pop!(__overrides, "psi__initial", nothing); isnothing(__ovr_psi__initial) || (__initial_conditions[psi] = __ovr_psi__initial)
-  __ovr_psi__guess = pop!(__overrides, "psi__guess", nothing)
+  __ovr_psi__initial = pop!(__overrides, "psi.initial", nothing); isnothing(__ovr_psi__initial) || (__initial_conditions[psi] = __ovr_psi__initial)
+  __ovr_psi__guess = pop!(__overrides, "psi.guess", nothing)
   __ovr_x = pop!(__overrides, "x", nothing); isnothing(__ovr_x) || push!(__eqs, x ~ __ovr_x)
-  __ovr_x__initial = pop!(__overrides, "x__initial", nothing); isnothing(__ovr_x__initial) || (__initial_conditions[x] = __ovr_x__initial)
-  __ovr_x__guess = pop!(__overrides, "x__guess", nothing)
+  __ovr_x__initial = pop!(__overrides, "x.initial", nothing); isnothing(__ovr_x__initial) || (__initial_conditions[x] = __ovr_x__initial)
+  __ovr_x__guess = pop!(__overrides, "x.guess", nothing)
   __ovr_g = pop!(__overrides, "g", nothing); isnothing(__ovr_g) || push!(__eqs, g ~ __ovr_g)
-  __ovr_g__initial = pop!(__overrides, "g__initial", nothing); isnothing(__ovr_g__initial) || (__initial_conditions[g] = __ovr_g__initial)
-  __ovr_g__guess = pop!(__overrides, "g__guess", nothing)
+  __ovr_g__initial = pop!(__overrides, "g.initial", nothing); isnothing(__ovr_g__initial) || (__initial_conditions[g] = __ovr_g__initial)
+  __ovr_g__guess = pop!(__overrides, "g.guess", nothing)
   __ovr_L = pop!(__overrides, "L", nothing); isnothing(__ovr_L) || push!(__eqs, L ~ __ovr_L)
-  __ovr_L__initial = pop!(__overrides, "L__initial", nothing); isnothing(__ovr_L__initial) || (__initial_conditions[L] = __ovr_L__initial)
-  __ovr_L__guess = pop!(__overrides, "L__guess", nothing)
+  __ovr_L__initial = pop!(__overrides, "L.initial", nothing); isnothing(__ovr_L__initial) || (__initial_conditions[L] = __ovr_L__initial)
+  __ovr_L__guess = pop!(__overrides, "L.guess", nothing)
   __ovr_dLdx = pop!(__overrides, "dLdx", nothing); isnothing(__ovr_dLdx) || push!(__eqs, dLdx ~ __ovr_dLdx)
-  __ovr_dLdx__initial = pop!(__overrides, "dLdx__initial", nothing); isnothing(__ovr_dLdx__initial) || (__initial_conditions[dLdx] = __ovr_dLdx__initial)
-  __ovr_dLdx__guess = pop!(__overrides, "dLdx__guess", nothing)
+  __ovr_dLdx__initial = pop!(__overrides, "dLdx.initial", nothing); isnothing(__ovr_dLdx__initial) || (__initial_conditions[dLdx] = __ovr_dLdx__initial)
+  __ovr_dLdx__guess = pop!(__overrides, "dLdx.guess", nothing)
   __ovr_f = pop!(__overrides, "f", nothing); isnothing(__ovr_f) || push!(__eqs, f ~ __ovr_f)
-  __ovr_f__initial = pop!(__overrides, "f__initial", nothing); isnothing(__ovr_f__initial) || (__initial_conditions[f] = __ovr_f__initial)
-  __ovr_f__guess = pop!(__overrides, "f__guess", nothing)
+  __ovr_f__initial = pop!(__overrides, "f.initial", nothing); isnothing(__ovr_f__initial) || (__initial_conditions[f] = __ovr_f__initial)
+  __ovr_f__guess = pop!(__overrides, "f.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -154,7 +161,7 @@ at rest, and divided by `R` gives the electrical time constant that sets the ope
   push!(__systems, @named support = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
@@ -186,6 +193,6 @@ at rest, and divided by `R` gives the electrical time constant that sets the ope
   push!(__eqs, support.f ~ f)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export Solenoid

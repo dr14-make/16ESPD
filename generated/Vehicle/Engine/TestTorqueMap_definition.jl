@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestTorqueMap(; name)
+   TestTorqueMap(; name, __overrides)
 """
-@component function TestTorqueMap(; name = nothing, kwargs...)
+@component function TestTorqueMap(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestTorqueMap()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,25 +53,25 @@
   ### Components
   # Subcomponent omega_part of type BlockComponents.Sources.Constant
   omega_part_overrides = __pop_subcomponent_overrides!(__overrides, "omega_part")
-  push!(__systems, @named omega_part = BlockComponents.Sources.Constant(; k=3000 * pi / 30, omega_part_overrides...))
+  push!(__systems, @named omega_part = BlockComponents.Sources.Constant(; k=3000 * pi / 30, __overrides = omega_part_overrides))
   # Subcomponent pressure_part of type BlockComponents.Sources.Constant
   pressure_part_overrides = __pop_subcomponent_overrides!(__overrides, "pressure_part")
-  push!(__systems, @named pressure_part = BlockComponents.Sources.Constant(; k=Float64(50000.0), pressure_part_overrides...))
+  push!(__systems, @named pressure_part = BlockComponents.Sources.Constant(; k=Float64(50000.0), __overrides = pressure_part_overrides))
   # Subcomponent omega_capped of type BlockComponents.Sources.Constant
   omega_capped_overrides = __pop_subcomponent_overrides!(__overrides, "omega_capped")
-  push!(__systems, @named omega_capped = BlockComponents.Sources.Constant(; k=3000 * pi / 30, omega_capped_overrides...))
+  push!(__systems, @named omega_capped = BlockComponents.Sources.Constant(; k=3000 * pi / 30, __overrides = omega_capped_overrides))
   # Subcomponent pressure_capped of type BlockComponents.Sources.Constant
   pressure_capped_overrides = __pop_subcomponent_overrides!(__overrides, "pressure_capped")
-  push!(__systems, @named pressure_capped = BlockComponents.Sources.Constant(; k=Float64(100000.0), pressure_capped_overrides...))
+  push!(__systems, @named pressure_capped = BlockComponents.Sources.Constant(; k=Float64(100000.0), __overrides = pressure_capped_overrides))
   # Subcomponent part of type VehicleSystemsComponents.Vehicle.Engine.TorqueMap
   part_overrides = __pop_subcomponent_overrides!(__overrides, "part")
-  push!(__systems, @named part = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(; part_overrides...))
+  push!(__systems, @named part = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(; __overrides = part_overrides))
   # Subcomponent capped of type VehicleSystemsComponents.Vehicle.Engine.TorqueMap
   capped_overrides = __pop_subcomponent_overrides!(__overrides, "capped")
-  push!(__systems, @named capped = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(; capped_overrides...))
+  push!(__systems, @named capped = VehicleSystemsComponents.Vehicle.Engine.TorqueMap(; __overrides = capped_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -87,6 +87,6 @@
   push!(__eqs, connect(pressure_capped.y, capped.p_m))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestTorqueMap

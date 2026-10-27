@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestControlledVariator(; name)
+   TestControlledVariator(; name, __overrides)
 """
-@component function TestControlledVariator(; name = nothing, kwargs...)
+@component function TestControlledVariator(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestControlledVariator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,25 +53,25 @@
   ### Components
   # Subcomponent drive of type RotationalComponents.Sources.ConstantTorque
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
-  push!(__systems, @named drive = RotationalComponents.Sources.ConstantTorque(; tau_constant=Float64(100.0), drive_overrides...))
+  push!(__systems, @named drive = RotationalComponents.Sources.ConstantTorque(; tau_constant=Float64(100.0), __overrides = drive_overrides))
   # Subcomponent input_inertia of type RotationalComponents.Components.Inertia
   input_inertia_overrides = __pop_subcomponent_overrides!(__overrides, "input_inertia")
-  push!(__systems, @named input_inertia = RotationalComponents.Components.Inertia(; J=0.15, input_inertia_overrides...))
+  push!(__systems, @named input_inertia = RotationalComponents.Components.Inertia(; J=0.15, __overrides = input_inertia_overrides))
   # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
   variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; variator_overrides...))
+  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; __overrides = variator_overrides))
   # Subcomponent load of type RotationalComponents.Components.Inertia
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
-  push!(__systems, @named load = RotationalComponents.Components.Inertia(; J=Float64(10.0), load_overrides...))
+  push!(__systems, @named load = RotationalComponents.Components.Inertia(; J=Float64(10.0), __overrides = load_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
   # Subcomponent full_pedal of type BlockComponents.Sources.Constant
   full_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "full_pedal")
-  push!(__systems, @named full_pedal = BlockComponents.Sources.Constant(; k=Float64(1.0), full_pedal_overrides...))
+  push!(__systems, @named full_pedal = BlockComponents.Sources.Constant(; k=Float64(1.0), __overrides = full_pedal_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -92,6 +92,6 @@
   push!(__eqs, connect(full_pedal.y, variator.pedal))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestControlledVariator

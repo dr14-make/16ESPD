@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   NoisyCruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, m, CdA, amplitude, m0, xi0, xd0)
+   NoisyCruiseLoop(; name, theta_e, with_I, with_D, k, Ti, Td, Nd, T_max, y_max, y_min, wd, m, CdA, amplitude, m0, xi0, xd0, __overrides)
 
 Cruise-control loop with deterministic noise in the speed-measurement path.
 
@@ -39,7 +39,7 @@ the controller. The loop signals and noise amplitude are in km/h.
  * `setpoint` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `grade` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function NoisyCruiseLoop(; name = nothing, theta_e=0.3, with_I=true, with_D=true, k=Float64(56.0), Ti=Float64(10.0), Td=0.1, Nd=Float64(10.0), T_max=Float64(150.0), y_min=Float64(0.0), wd=Float64(1.0), m=Float64(1400.0), CdA=0.63, amplitude=0.2, m0=Float64(90.0), xi0=Float64(0.0), y_max=T_max, xd0=(wd - 1) * m0, kwargs...)
+@component function NoisyCruiseLoop(; name = nothing, var"theta_e"=0.3, var"with_I"=true, var"with_D"=true, var"k"=Float64(56.0), var"Ti"=Float64(10.0), var"Td"=0.1, var"Nd"=Float64(10.0), var"T_max"=Float64(150.0), var"y_min"=Float64(0.0), var"wd"=Float64(1.0), var"m"=Float64(1400.0), var"CdA"=0.63, var"amplitude"=0.2, var"m0"=Float64(90.0), var"xi0"=Float64(0.0), var"y_max"=nothing, var"xd0"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,7 +47,7 @@ the controller. The loop signals and noise amplitude are in km/h.
     @named model = NoisyCruiseLoop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -56,6 +56,29 @@ the controller. The loop signals and noise amplitude are in km/h.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "theta_e") && (theta_e = pop!(__overrides, "theta_e"))
+  haskey(__overrides, "with_I") && (with_I = pop!(__overrides, "with_I"))
+  haskey(__overrides, "with_D") && (with_D = pop!(__overrides, "with_D"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
+  haskey(__overrides, "Td") && (Td = pop!(__overrides, "Td"))
+  haskey(__overrides, "Nd") && (Nd = pop!(__overrides, "Nd"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "y_min") && (y_min = pop!(__overrides, "y_min"))
+  haskey(__overrides, "wd") && (wd = pop!(__overrides, "wd"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
+  haskey(__overrides, "amplitude") && (amplitude = pop!(__overrides, "amplitude"))
+  haskey(__overrides, "m0") && (m0 = pop!(__overrides, "m0"))
+  haskey(__overrides, "xi0") && (xi0 = pop!(__overrides, "xi0"))
+  haskey(__overrides, "y_max") && (y_max = pop!(__overrides, "y_max"))
+  haskey(__overrides, "xd0") && (xd0 = pop!(__overrides, "xd0"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(y_max) && (y_max = T_max)
+  isnothing(xd0) && (xd0 = (wd - 1) * m0)
 
   ### Structural Parameters (functions)
 
@@ -72,52 +95,52 @@ the controller. The loop signals and noise amplitude are in km/h.
   ### Symbolic Parameters
   __local__with_I = with_I
   append!(__params, @parameters (with_I::Bool), [description = "Switch integral action on"])
-  __initial_conditions[with_I] = __local__with_I
+  __dyad_seed_parameter!(__initial_conditions, __bindings, with_I, __local__with_I)
   __local__with_D = with_D
   append!(__params, @parameters (with_D::Bool), [description = "Switch derivative action on"])
-  __initial_conditions[with_D] = __local__with_D
+  __dyad_seed_parameter!(__initial_conditions, __bindings, with_D, __local__with_D)
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Controller gain in N.m per km/h"])
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real))
-  __initial_conditions[Ti] = __local__Ti
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__Td = Td
   append!(__params, @parameters (Td::Real))
-  __initial_conditions[Td] = __local__Td
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Td, __local__Td)
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real))
-  __initial_conditions[Nd] = __local__Nd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Nd, __local__Nd)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__y_max = y_max
   append!(__params, @parameters (y_max::Real))
-  __initial_conditions[y_max] = __local__y_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_max, __local__y_max)
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real))
-  __initial_conditions[y_min] = __local__y_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_min, __local__y_min)
   __local__wd = wd
   append!(__params, @parameters (wd::Real))
-  __initial_conditions[wd] = __local__wd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wd, __local__wd)
   __local__m = m
   append!(__params, @parameters (m::Real), [bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__CdA = CdA
   append!(__params, @parameters (CdA::Real))
-  __initial_conditions[CdA] = __local__CdA
+  __dyad_seed_parameter!(__initial_conditions, __bindings, CdA, __local__CdA)
   __local__amplitude = amplitude
   append!(__params, @parameters (amplitude::Real), [description = "Amplitude of each measurement-noise sinusoid in km/h"])
-  __initial_conditions[amplitude] = __local__amplitude
+  __dyad_seed_parameter!(__initial_conditions, __bindings, amplitude, __local__amplitude)
   __local__m0 = m0
   append!(__params, @parameters (m0::Real), [description = "Initial measured speed in km/h, the settled cruise the loop starts from"])
-  __initial_conditions[m0] = __local__m0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m0, __local__m0)
   __local__xi0 = xi0
   append!(__params, @parameters (xi0::Real))
-  __initial_conditions[xi0] = __local__xi0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, xi0, __local__xi0)
   __local__xd0 = xd0
   append!(__params, @parameters (xd0::Real), [description = "Initial derivative-filter state, seeded from the initial measurement"])
-  __initial_conditions[xd0] = __local__xd0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, xd0, __local__xd0)
 
   ### Final Parameters (assignments)
 
@@ -135,16 +158,16 @@ the controller. The loop signals and noise amplitude are in km/h.
   ### Components
   # Subcomponent plant of type VehicleSystemsComponents.HandsOn.GradeCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.GradeCar(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.GradeCar(; theta_e=theta_e, T_max=T_max, m=m, CdA=CdA, __overrides = plant_overrides))
   # Subcomponent controller of type VehicleSystemsComponents.Lecture1.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.CruiseController(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=y_max, y_min=y_min, wd=wd, xi0=xi0, xd0=xd0, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.CruiseController(; with_I=with_I, with_D=with_D, k=k, Ti=Ti, Td=Td, Nd=Nd, y_max=y_max, y_min=y_min, wd=wd, xi0=xi0, xd0=xd0, __overrides = controller_overrides))
   # Subcomponent noise of type VehicleSystemsComponents.Lecture1.MeasurementNoise
   noise_overrides = __pop_subcomponent_overrides!(__overrides, "noise")
-  push!(__systems, @named noise = VehicleSystemsComponents.Lecture1.MeasurementNoise(; amplitude=amplitude, noise_overrides...))
+  push!(__systems, @named noise = VehicleSystemsComponents.Lecture1.MeasurementNoise(; amplitude=amplitude, __overrides = noise_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -161,6 +184,6 @@ the controller. The loop signals and noise amplitude are in km/h.
   push!(__eqs, connect(grade, plant.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export NoisyCruiseLoop

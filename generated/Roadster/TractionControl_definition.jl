@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TractionControl(; name, grip, mu_A, radius, kappa_on, kappa_off)
+   TractionControl(; name, grip, mu_A, radius, kappa_on, kappa_off, __overrides)
 
 Slip-limited traction control: a load feedforward with a proportional slip cut-back.
 
@@ -44,7 +44,7 @@ step size. `kappa_on` must sit above the slip the feedforward holds on its own, 
 | ------------ | ----------------------------------- | ------ |
 | `tau_ff`         | Load feedforward torque                         | N.m  |
 """
-@component function TractionControl(; name = nothing, grip=0.98, mu_A=1.26, radius=0.35, kappa_on=0.036, kappa_off=0.04, kwargs...)
+@component function TractionControl(; name = nothing, var"grip"=0.98, var"mu_A"=1.26, var"radius"=0.35, var"kappa_on"=0.036, var"kappa_off"=0.04, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -52,7 +52,7 @@ step size. `kappa_on` must sit above the slip the feedforward holds on its own, 
     @named model = TractionControl()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -61,6 +61,13 @@ step size. `kappa_on` must sit above the slip the feedforward holds on its own, 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "grip") && (grip = pop!(__overrides, "grip"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "kappa_on") && (kappa_on = pop!(__overrides, "kappa_on"))
+  haskey(__overrides, "kappa_off") && (kappa_off = pop!(__overrides, "kappa_off"))
 
   ### Structural Parameters (functions)
 
@@ -77,19 +84,19 @@ step size. `kappa_on` must sit above the slip the feedforward holds on its own, 
   ### Symbolic Parameters
   __local__grip = grip
   append!(__params, @parameters (grip::Real), [description = "Fraction of peak adhesion the feedforward targets; assumed margin"])
-  __initial_conditions[grip] = __local__grip
+  __dyad_seed_parameter!(__initial_conditions, __bindings, grip, __local__grip)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real), [description = "Peak tire adhesion"])
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__kappa_on = kappa_on
   append!(__params, @parameters (kappa_on::Real), [description = "Slip at which the request starts to fall; assumed, between the working slip and the peak"])
-  __initial_conditions[kappa_on] = __local__kappa_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, kappa_on, __local__kappa_on)
   __local__kappa_off = kappa_off
   append!(__params, @parameters (kappa_off::Real), [description = "Slip at which the request reaches zero; the tire's adhesion peak, sAdhesion"])
-  __initial_conditions[kappa_off] = __local__kappa_off
+  __dyad_seed_parameter!(__initial_conditions, __bindings, kappa_off, __local__kappa_off)
 
   ### Final Parameters (assignments)
 
@@ -103,8 +110,8 @@ step size. `kappa_on` must sit above the slip the feedforward holds on its own, 
 
   ### Variables (assignments)
   __ovr_tau_ff = pop!(__overrides, "tau_ff", nothing); isnothing(__ovr_tau_ff) || push!(__eqs, tau_ff ~ __ovr_tau_ff)
-  __ovr_tau_ff__initial = pop!(__overrides, "tau_ff__initial", nothing); isnothing(__ovr_tau_ff__initial) || (__initial_conditions[tau_ff] = __ovr_tau_ff__initial)
-  __ovr_tau_ff__guess = pop!(__overrides, "tau_ff__guess", nothing)
+  __ovr_tau_ff__initial = pop!(__overrides, "tau_ff.initial", nothing); isnothing(__ovr_tau_ff__initial) || (__initial_conditions[tau_ff] = __ovr_tau_ff__initial)
+  __ovr_tau_ff__guess = pop!(__overrides, "tau_ff.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -112,7 +119,7 @@ step size. `kappa_on` must sit above the slip the feedforward holds on its own, 
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_tau_ff__guess) || (__guesses[tau_ff] = __ovr_tau_ff__guess)
@@ -127,6 +134,6 @@ step size. `kappa_on` must sit above the slip the feedforward holds on its own, 
   push!(__eqs, tau_cmd ~ tau_ff * max(0, min(1, (kappa_off - kappa) / (kappa_off - kappa_on))))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TractionControl

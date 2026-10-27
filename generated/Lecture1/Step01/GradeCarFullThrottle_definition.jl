@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   GradeCarFullThrottle(; name)
+   GradeCarFullThrottle(; name, __overrides)
 
 Step 1b bench: full throttle from rest on `GradeCar`, run to terminal speed.
 """
-@component function GradeCarFullThrottle(; name = nothing, kwargs...)
+@component function GradeCarFullThrottle(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Step 1b bench: full throttle from rest on `GradeCar`, run to terminal speed.
     @named model = GradeCarFullThrottle()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,16 +55,16 @@ Step 1b bench: full throttle from rest on `GradeCar`, run to terminal speed.
   ### Components
   # Subcomponent cmd of type BlockComponents.Sources.Constant
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
-  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=Float64(150), cmd_overrides...))
+  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=Float64(150), __overrides = cmd_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0), road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = road_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Lecture1.Step01.GradeCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Lecture1.Step01.GradeCar(; car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.Lecture1.Step01.GradeCar(; __overrides = car_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -81,6 +81,6 @@ Step 1b bench: full throttle from rest on `GradeCar`, run to terminal speed.
   push!(__eqs, connect(road.y, car.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export GradeCarFullThrottle

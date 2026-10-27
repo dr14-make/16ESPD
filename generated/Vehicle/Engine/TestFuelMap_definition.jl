@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestFuelMap(; name)
+   TestFuelMap(; name, __overrides)
 """
-@component function TestFuelMap(; name = nothing, kwargs...)
+@component function TestFuelMap(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestFuelMap()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,25 +53,25 @@
   ### Components
   # Subcomponent omega_node of type BlockComponents.Sources.Constant
   omega_node_overrides = __pop_subcomponent_overrides!(__overrides, "omega_node")
-  push!(__systems, @named omega_node = BlockComponents.Sources.Constant(; k=2000 * pi / 30, omega_node_overrides...))
+  push!(__systems, @named omega_node = BlockComponents.Sources.Constant(; k=2000 * pi / 30, __overrides = omega_node_overrides))
   # Subcomponent pressure_node of type BlockComponents.Sources.Constant
   pressure_node_overrides = __pop_subcomponent_overrides!(__overrides, "pressure_node")
-  push!(__systems, @named pressure_node = BlockComponents.Sources.Constant(; k=Float64(50000.0), pressure_node_overrides...))
+  push!(__systems, @named pressure_node = BlockComponents.Sources.Constant(; k=Float64(50000.0), __overrides = pressure_node_overrides))
   # Subcomponent omega_clamped of type BlockComponents.Sources.Constant
   omega_clamped_overrides = __pop_subcomponent_overrides!(__overrides, "omega_clamped")
-  push!(__systems, @named omega_clamped = BlockComponents.Sources.Constant(; k=Float64(0.0), omega_clamped_overrides...))
+  push!(__systems, @named omega_clamped = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = omega_clamped_overrides))
   # Subcomponent pressure_clamped of type BlockComponents.Sources.Constant
   pressure_clamped_overrides = __pop_subcomponent_overrides!(__overrides, "pressure_clamped")
-  push!(__systems, @named pressure_clamped = BlockComponents.Sources.Constant(; k=Float64(150000.0), pressure_clamped_overrides...))
+  push!(__systems, @named pressure_clamped = BlockComponents.Sources.Constant(; k=Float64(150000.0), __overrides = pressure_clamped_overrides))
   # Subcomponent node of type VehicleSystemsComponents.Vehicle.Engine.FuelMap
   node_overrides = __pop_subcomponent_overrides!(__overrides, "node")
-  push!(__systems, @named node = VehicleSystemsComponents.Vehicle.Engine.FuelMap(; node_overrides...))
+  push!(__systems, @named node = VehicleSystemsComponents.Vehicle.Engine.FuelMap(; __overrides = node_overrides))
   # Subcomponent clamped of type VehicleSystemsComponents.Vehicle.Engine.FuelMap
   clamped_overrides = __pop_subcomponent_overrides!(__overrides, "clamped")
-  push!(__systems, @named clamped = VehicleSystemsComponents.Vehicle.Engine.FuelMap(; clamped_overrides...))
+  push!(__systems, @named clamped = VehicleSystemsComponents.Vehicle.Engine.FuelMap(; __overrides = clamped_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -87,6 +87,6 @@
   push!(__eqs, connect(pressure_clamped.y, clamped.p_m))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestFuelMap

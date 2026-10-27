@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(; controller__wd=1, controller__xd0=0),
+  params=Dict{String, Any}("controller.wd" => 1, "controller.xd0" => 0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.plant.v_kmh, "plant.v_kmh", 90, 0.1, 1e-5),
@@ -36,7 +36,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[
     (m -> m.plant.v_kmh, "plant.v_kmh", 90, 0.1, 1e-5),

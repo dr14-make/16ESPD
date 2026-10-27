@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestMappedEngine(; name, rpm, pedal_cmd, booster_flow, t_booster, booster_duration, p_m0)
+   TestMappedEngine(; name, rpm, pedal_cmd, booster_flow, t_booster, booster_duration, p_m0, __overrides)
 
 Free-crank mapped-engine harness for idle and booster-release cases.
 
@@ -20,7 +20,7 @@ Free-crank mapped-engine harness for idle and booster-release cases.
 | `booster_duration`         | Duration of the booster pulse                         | s  |   0.5 |
 | `p_m0`         | Initial manifold pressure [Pa]                         | Pa  |   32955.7 |
 """
-@component function TestMappedEngine(; name = nothing, rpm=Float64(800.0), pedal_cmd=Float64(0.0), booster_flow=Float64(0.0), t_booster=Float64(1.0), booster_duration=0.5, p_m0=32955.7, kwargs...)
+@component function TestMappedEngine(; name = nothing, var"rpm"=Float64(800.0), var"pedal_cmd"=Float64(0.0), var"booster_flow"=Float64(0.0), var"t_booster"=Float64(1.0), var"booster_duration"=0.5, var"p_m0"=32955.7, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -28,7 +28,7 @@ Free-crank mapped-engine harness for idle and booster-release cases.
     @named model = TestMappedEngine()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -37,6 +37,14 @@ Free-crank mapped-engine harness for idle and booster-release cases.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "rpm") && (rpm = pop!(__overrides, "rpm"))
+  haskey(__overrides, "pedal_cmd") && (pedal_cmd = pop!(__overrides, "pedal_cmd"))
+  haskey(__overrides, "booster_flow") && (booster_flow = pop!(__overrides, "booster_flow"))
+  haskey(__overrides, "t_booster") && (t_booster = pop!(__overrides, "t_booster"))
+  haskey(__overrides, "booster_duration") && (booster_duration = pop!(__overrides, "booster_duration"))
+  haskey(__overrides, "p_m0") && (p_m0 = pop!(__overrides, "p_m0"))
 
   ### Structural Parameters (functions)
 
@@ -53,22 +61,22 @@ Free-crank mapped-engine harness for idle and booster-release cases.
   ### Symbolic Parameters
   __local__rpm = rpm
   append!(__params, @parameters (rpm::Real), [description = "Initial engine speed [rpm]"])
-  __initial_conditions[rpm] = __local__rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rpm, __local__rpm)
   __local__pedal_cmd = pedal_cmd
   append!(__params, @parameters (pedal_cmd::Real), [description = "Constant pedal command"])
-  __initial_conditions[pedal_cmd] = __local__pedal_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_cmd, __local__pedal_cmd)
   __local__booster_flow = booster_flow
   append!(__params, @parameters (booster_flow::Real), [description = "Booster pulse mass flow [kg/s]"])
-  __initial_conditions[booster_flow] = __local__booster_flow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, booster_flow, __local__booster_flow)
   __local__t_booster = t_booster
   append!(__params, @parameters (t_booster::Real), [description = "Start of the booster pulse"])
-  __initial_conditions[t_booster] = __local__t_booster
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_booster, __local__t_booster)
   __local__booster_duration = booster_duration
   append!(__params, @parameters (booster_duration::Real), [description = "Duration of the booster pulse"])
-  __initial_conditions[booster_duration] = __local__booster_duration
+  __dyad_seed_parameter!(__initial_conditions, __bindings, booster_duration, __local__booster_duration)
   __local__p_m0 = p_m0
   append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure [Pa]"])
-  __initial_conditions[p_m0] = __local__p_m0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_m0, __local__p_m0)
 
   ### Final Parameters (assignments)
 
@@ -84,16 +92,16 @@ Free-crank mapped-engine harness for idle and booster-release cases.
   ### Components
   # Subcomponent engine of type VehicleSystemsComponents.Vehicle.Engine.MappedEngine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.Vehicle.Engine.MappedEngine(; __overrides = engine_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
   # Subcomponent booster of type VehicleSystemsComponents.Vehicle.GasMassFlowSource
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.GasMassFlowSource(; booster_overrides...))
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.GasMassFlowSource(; __overrides = booster_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -112,6 +120,6 @@ Free-crank mapped-engine harness for idle and booster-release cases.
   push!(__eqs, connect(booster.port, engine.vacuum))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestMappedEngine

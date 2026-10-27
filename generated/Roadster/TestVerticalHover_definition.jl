@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestVerticalHover(; name, m, tank_pressure, tank_volume, A_t, target, k_p, k_i, k_v)
+   TestVerticalHover(; name, m, tank_pressure, tank_volume, A_t, target, k_p, k_i, k_v, __overrides)
 
 PI altitude hold from rest, including a gravity feed-forward valve command.
 
@@ -29,7 +29,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
 | `integral_error`         |                          | m.s  |
 | `unsaturated_command`         |                          | --  |
 """
-@component function TestVerticalHover(; name = nothing, m=Float64(2000), tank_pressure=Float64(38000000.0), tank_volume=0.6, A_t=0.001286, target=Float64(2.0), k_p=0.15, k_i=0.2, k_v=0.2, kwargs...)
+@component function TestVerticalHover(; name = nothing, var"m"=Float64(2000), var"tank_pressure"=Float64(38000000.0), var"tank_volume"=0.6, var"A_t"=0.001286, var"target"=Float64(2.0), var"k_p"=0.15, var"k_i"=0.2, var"k_v"=0.2, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
     @named model = TestVerticalHover()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,16 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "tank_pressure") && (tank_pressure = pop!(__overrides, "tank_pressure"))
+  haskey(__overrides, "tank_volume") && (tank_volume = pop!(__overrides, "tank_volume"))
+  haskey(__overrides, "A_t") && (A_t = pop!(__overrides, "A_t"))
+  haskey(__overrides, "target") && (target = pop!(__overrides, "target"))
+  haskey(__overrides, "k_p") && (k_p = pop!(__overrides, "k_p"))
+  haskey(__overrides, "k_i") && (k_i = pop!(__overrides, "k_i"))
+  haskey(__overrides, "k_v") && (k_v = pop!(__overrides, "k_v"))
 
   ### Structural Parameters (functions)
 
@@ -63,28 +73,28 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Car mass", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__tank_pressure = tank_pressure
   append!(__params, @parameters (tank_pressure::Real), [description = "Initial tank pressure"])
-  __initial_conditions[tank_pressure] = __local__tank_pressure
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_pressure, __local__tank_pressure)
   __local__tank_volume = tank_volume
   append!(__params, @parameters (tank_volume::Real), [description = "Tank volume"])
-  __initial_conditions[tank_volume] = __local__tank_volume
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_volume, __local__tank_volume)
   __local__A_t = A_t
   append!(__params, @parameters (A_t::Real), [description = "Total nozzle throat area"])
-  __initial_conditions[A_t] = __local__A_t
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_t, __local__A_t)
   __local__target = target
   append!(__params, @parameters (target::Real), [description = "Altitude target"])
-  __initial_conditions[target] = __local__target
+  __dyad_seed_parameter!(__initial_conditions, __bindings, target, __local__target)
   __local__k_p = k_p
   append!(__params, @parameters (k_p::Real), [description = "Proportional valve gain; assumed"])
-  __initial_conditions[k_p] = __local__k_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_p, __local__k_p)
   __local__k_i = k_i
   append!(__params, @parameters (k_i::Real), [description = "Integral valve gain; assumed"])
-  __initial_conditions[k_i] = __local__k_i
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_i, __local__k_i)
   __local__k_v = k_v
   append!(__params, @parameters (k_v::Real), [description = "Vertical-speed damping gain used with the altitude PI; assumed"])
-  __initial_conditions[k_v] = __local__k_v
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_v, __local__k_v)
 
   ### Final Parameters (assignments)
   __bindings[F_full] = 80000 * tank_pressure / 38000000.0
@@ -97,11 +107,11 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
 
   ### Variables (assignments)
   __ovr_integral_error = pop!(__overrides, "integral_error", nothing); isnothing(__ovr_integral_error) || push!(__eqs, integral_error ~ __ovr_integral_error)
-  __ovr_integral_error__initial = pop!(__overrides, "integral_error__initial", nothing); isnothing(__ovr_integral_error__initial) || (__initial_conditions[integral_error] = __ovr_integral_error__initial)
-  __ovr_integral_error__guess = pop!(__overrides, "integral_error__guess", nothing)
+  __ovr_integral_error__initial = pop!(__overrides, "integral_error.initial", nothing); isnothing(__ovr_integral_error__initial) || (__initial_conditions[integral_error] = __ovr_integral_error__initial)
+  __ovr_integral_error__guess = pop!(__overrides, "integral_error.guess", nothing)
   __ovr_unsaturated_command = pop!(__overrides, "unsaturated_command", nothing); isnothing(__ovr_unsaturated_command) || push!(__eqs, unsaturated_command ~ __ovr_unsaturated_command)
-  __ovr_unsaturated_command__initial = pop!(__overrides, "unsaturated_command__initial", nothing); isnothing(__ovr_unsaturated_command__initial) || (__initial_conditions[unsaturated_command] = __ovr_unsaturated_command__initial)
-  __ovr_unsaturated_command__guess = pop!(__overrides, "unsaturated_command__guess", nothing)
+  __ovr_unsaturated_command__initial = pop!(__overrides, "unsaturated_command.initial", nothing); isnothing(__ovr_unsaturated_command__initial) || (__initial_conditions[unsaturated_command] = __ovr_unsaturated_command__initial)
+  __ovr_unsaturated_command__guess = pop!(__overrides, "unsaturated_command.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -109,10 +119,10 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   ### Components
   # Subcomponent hover of type VehicleSystemsComponents.Roadster.VerticalHop
   hover_overrides = __pop_subcomponent_overrides!(__overrides, "hover")
-  push!(__systems, @named hover = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, A_t=A_t, hover_overrides...))
+  push!(__systems, @named hover = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, A_t=A_t, __overrides = hover_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_integral_error__guess) || (__guesses[integral_error] = __ovr_integral_error__guess)
@@ -130,6 +140,6 @@ PI altitude hold from rest, including a gravity feed-forward valve command.
   push!(__eqs, hover.command ~ max(0, min(1, unsaturated_command)))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestVerticalHover

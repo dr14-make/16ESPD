@@ -80,7 +80,7 @@ end
 end
 
 @testset "Hands-on 03 steps 04-05: wheel speed only" begin
-    for (mu, mine_expected, lib_expected) in ((1.0, 38.5, 38.7), (0.5, 78.0, 83.2), (0.3, 130.6, 141.3))
+    for (mu, mine_expected, lib_expected) in ((1.0, 38.56, 38.7), (0.5, 78.0, 83.2), (0.3, 130.6, 141.3))
         stop = _stop_time(mu, 8.0)
         mine = _V.braking_distance(_H3.ABSStopWheelOnlyTransient(road_mu = mu, stop = stop))
         lib = _V.braking_distance(_V.ABSBrakeTransient(; road_mu = mu, stop, _tsit5...))

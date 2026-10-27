@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[(m -> m.plant.v_kmh, "plant.v_kmh", 130, 0.05, 1e-5)],
   expected_final=Tuple[
@@ -36,7 +36,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Auto(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[(m -> m.plant.v_kmh, "plant.v_kmh", 130, 0.1, 1e-5)],
   expected_final=Tuple[(m -> m.plant.v_kmh, "plant.v_kmh", 130, 0.1, 1e-5)],

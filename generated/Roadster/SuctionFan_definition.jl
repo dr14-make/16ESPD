@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SuctionFan(; name, A_floor, perimeter, gap, C_d, eta, rho, T_fan, dp_max)
+   SuctionFan(; name, A_floor, perimeter, gap, C_d, eta, rho, T_fan, dp_max, __overrides)
 
 Reduced-order underbody suction fan with skirt leakage.
 
@@ -39,7 +39,7 @@ the pressure-flow product divided by efficiency.
 | `dp`         | Underbody pressure drop                         | Pa  |
 | `Q`         | Skirt leakage volume flow                         | m3/s  |
 """
-@component function SuctionFan(; name = nothing, A_floor=Float64(4.0), perimeter=Float64(10.0), gap=0.003, C_d=0.6, eta=0.6, rho=1.2, T_fan=0.3, dp_max=4700 * 9.80665 / 4.0, kwargs...)
+@component function SuctionFan(; name = nothing, var"A_floor"=Float64(4.0), var"perimeter"=Float64(10.0), var"gap"=0.003, var"C_d"=0.6, var"eta"=0.6, var"rho"=1.2, var"T_fan"=0.3, var"dp_max"=4700 * 9.80665 / 4.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -47,7 +47,7 @@ the pressure-flow product divided by efficiency.
     @named model = SuctionFan()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -56,6 +56,16 @@ the pressure-flow product divided by efficiency.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "A_floor") && (A_floor = pop!(__overrides, "A_floor"))
+  haskey(__overrides, "perimeter") && (perimeter = pop!(__overrides, "perimeter"))
+  haskey(__overrides, "gap") && (gap = pop!(__overrides, "gap"))
+  haskey(__overrides, "C_d") && (C_d = pop!(__overrides, "C_d"))
+  haskey(__overrides, "eta") && (eta = pop!(__overrides, "eta"))
+  haskey(__overrides, "rho") && (rho = pop!(__overrides, "rho"))
+  haskey(__overrides, "T_fan") && (T_fan = pop!(__overrides, "T_fan"))
+  haskey(__overrides, "dp_max") && (dp_max = pop!(__overrides, "dp_max"))
 
   ### Structural Parameters (functions)
 
@@ -72,28 +82,28 @@ the pressure-flow product divided by efficiency.
   ### Symbolic Parameters
   __local__A_floor = A_floor
   append!(__params, @parameters (A_floor::Real), [description = "Floor area; assumed"])
-  __initial_conditions[A_floor] = __local__A_floor
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_floor, __local__A_floor)
   __local__perimeter = perimeter
   append!(__params, @parameters (perimeter::Real), [description = "Sealed-floor perimeter; assumed"])
-  __initial_conditions[perimeter] = __local__perimeter
+  __dyad_seed_parameter!(__initial_conditions, __bindings, perimeter, __local__perimeter)
   __local__gap = gap
   append!(__params, @parameters (gap::Real), [description = "Effective skirt gap; assumed"])
-  __initial_conditions[gap] = __local__gap
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gap, __local__gap)
   __local__C_d = C_d
   append!(__params, @parameters (C_d::Real), [description = "Skirt discharge coefficient; assumed"])
-  __initial_conditions[C_d] = __local__C_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_d, __local__C_d)
   __local__eta = eta
   append!(__params, @parameters (eta::Real), [description = "Fan efficiency; assumed"])
-  __initial_conditions[eta] = __local__eta
+  __dyad_seed_parameter!(__initial_conditions, __bindings, eta, __local__eta)
   __local__rho = rho
   append!(__params, @parameters (rho::Real), [description = "Air density; assumed", bounds = (0, Inf)])
-  __initial_conditions[rho] = __local__rho
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rho, __local__rho)
   __local__T_fan = T_fan
   append!(__params, @parameters (T_fan::Real), [description = "Fan pressure-response time constant; assumed"])
-  __initial_conditions[T_fan] = __local__T_fan
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_fan, __local__T_fan)
   __local__dp_max = dp_max
   append!(__params, @parameters (dp_max::Real), [description = "Maximum pressure drop, sized from the 4,700 kgf readout over the default floor area"])
-  __initial_conditions[dp_max] = __local__dp_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dp_max, __local__dp_max)
 
   ### Final Parameters (assignments)
 
@@ -108,11 +118,11 @@ the pressure-flow product divided by efficiency.
 
   ### Variables (assignments)
   __ovr_dp = pop!(__overrides, "dp", nothing); isnothing(__ovr_dp) || push!(__eqs, dp ~ __ovr_dp)
-  __ovr_dp__initial = pop!(__overrides, "dp__initial", nothing); isnothing(__ovr_dp__initial) || (__initial_conditions[dp] = __ovr_dp__initial)
-  __ovr_dp__guess = pop!(__overrides, "dp__guess", nothing)
+  __ovr_dp__initial = pop!(__overrides, "dp.initial", nothing); isnothing(__ovr_dp__initial) || (__initial_conditions[dp] = __ovr_dp__initial)
+  __ovr_dp__guess = pop!(__overrides, "dp.guess", nothing)
   __ovr_Q = pop!(__overrides, "Q", nothing); isnothing(__ovr_Q) || push!(__eqs, Q ~ __ovr_Q)
-  __ovr_Q__initial = pop!(__overrides, "Q__initial", nothing); isnothing(__ovr_Q__initial) || (__initial_conditions[Q] = __ovr_Q__initial)
-  __ovr_Q__guess = pop!(__overrides, "Q__guess", nothing)
+  __ovr_Q__initial = pop!(__overrides, "Q.initial", nothing); isnothing(__ovr_Q__initial) || (__initial_conditions[Q] = __ovr_Q__initial)
+  __ovr_Q__guess = pop!(__overrides, "Q.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -120,7 +130,7 @@ the pressure-flow product divided by efficiency.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_dp__guess) || (__guesses[dp] = __ovr_dp__guess)
@@ -138,6 +148,6 @@ the pressure-flow product divided by efficiency.
   push!(__eqs, power ~ Q * dp / eta)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SuctionFan

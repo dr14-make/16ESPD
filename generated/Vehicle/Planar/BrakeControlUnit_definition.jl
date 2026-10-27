@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeControlUnit(; name, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min)
+   BrakeControlUnit(; name, dt, esp_on, abs_on, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, select_low, T_p, lambda_1_f, lambda_1_r, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
 
 Electronic brake control unit combining continuous ESP and sampled four-channel ABS.
 
@@ -62,7 +62,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
  * `tau_rl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_rr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function BrakeControlUnit(; name = nothing, dt=0.005, esp_on=Float64(1.0), abs_on=Float64(1.0), L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, R_build=Float64(1000000000.0), select_low=Float64(1.0), T_p=0.03, lambda_1_f=0.08, lambda_1_r=0.06, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(40000.0), k_inc_fast=Float64(160000.0), k_inc_slow=Float64(16000.0), v_min=1.5, kwargs...)
+@component function BrakeControlUnit(; name = nothing, var"dt"=0.005, var"esp_on"=Float64(1.0), var"abs_on"=Float64(1.0), var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"select_low"=Float64(1.0), var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -70,7 +70,7 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
     @named model = BrakeControlUnit()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -79,6 +79,41 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
+  haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
+  haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
+  haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
+  haskey(__overrides, "K_us") && (K_us = pop!(__overrides, "K_us"))
+  haskey(__overrides, "i_s") && (i_s = pop!(__overrides, "i_s"))
+  haskey(__overrides, "mu_est") && (mu_est = pop!(__overrides, "mu_est"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
+  haskey(__overrides, "k_lim") && (k_lim = pop!(__overrides, "k_lim"))
+  haskey(__overrides, "v_floor") && (v_floor = pop!(__overrides, "v_floor"))
+  haskey(__overrides, "Kp") && (Kp = pop!(__overrides, "Kp"))
+  haskey(__overrides, "Ki") && (Ki = pop!(__overrides, "Ki"))
+  haskey(__overrides, "deadband") && (deadband = pop!(__overrides, "deadband"))
+  haskey(__overrides, "v_on") && (v_on = pop!(__overrides, "v_on"))
+  haskey(__overrides, "Mz_max") && (Mz_max = pop!(__overrides, "Mz_max"))
+  haskey(__overrides, "tw") && (tw = pop!(__overrides, "tw"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "T_build") && (T_build = pop!(__overrides, "T_build"))
+  haskey(__overrides, "R_build") && (R_build = pop!(__overrides, "R_build"))
+  haskey(__overrides, "select_low") && (select_low = pop!(__overrides, "select_low"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "lambda_1_f") && (lambda_1_f = pop!(__overrides, "lambda_1_f"))
+  haskey(__overrides, "lambda_1_r") && (lambda_1_r = pop!(__overrides, "lambda_1_r"))
+  haskey(__overrides, "lambda_lock") && (lambda_lock = pop!(__overrides, "lambda_lock"))
+  haskey(__overrides, "alpha_rel") && (alpha_rel = pop!(__overrides, "alpha_rel"))
+  haskey(__overrides, "beta_reapply") && (beta_reapply = pop!(__overrides, "beta_reapply"))
+  haskey(__overrides, "l_rec") && (l_rec = pop!(__overrides, "l_rec"))
+  haskey(__overrides, "T_hold_max") && (T_hold_max = pop!(__overrides, "T_hold_max"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
 
   ### Structural Parameters (functions)
 
@@ -95,100 +130,100 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   ### Symbolic Parameters
   __local__esp_on = esp_on
   append!(__params, @parameters (esp_on::Real))
-  __initial_conditions[esp_on] = __local__esp_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
   __local__abs_on = abs_on
   append!(__params, @parameters (abs_on::Real))
-  __initial_conditions[abs_on] = __local__abs_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abs_on, __local__abs_on)
   __local__L = L
   append!(__params, @parameters (L::Real))
-  __initial_conditions[L] = __local__L
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L, __local__L)
   __local__K_us = K_us
   append!(__params, @parameters (K_us::Real))
-  __initial_conditions[K_us] = __local__K_us
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K_us, __local__K_us)
   __local__i_s = i_s
   append!(__params, @parameters (i_s::Real))
-  __initial_conditions[i_s] = __local__i_s
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_s, __local__i_s)
   __local__mu_est = mu_est
   append!(__params, @parameters (mu_est::Real))
-  __initial_conditions[mu_est] = __local__mu_est
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_est, __local__mu_est)
   __local__g = g
   append!(__params, @parameters (g::Real))
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
   __local__k_lim = k_lim
   append!(__params, @parameters (k_lim::Real))
-  __initial_conditions[k_lim] = __local__k_lim
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_lim, __local__k_lim)
   __local__v_floor = v_floor
   append!(__params, @parameters (v_floor::Real))
-  __initial_conditions[v_floor] = __local__v_floor
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_floor, __local__v_floor)
   __local__Kp = Kp
   append!(__params, @parameters (Kp::Real))
-  __initial_conditions[Kp] = __local__Kp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Kp, __local__Kp)
   __local__Ki = Ki
   append!(__params, @parameters (Ki::Real))
-  __initial_conditions[Ki] = __local__Ki
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ki, __local__Ki)
   __local__deadband = deadband
   append!(__params, @parameters (deadband::Real))
-  __initial_conditions[deadband] = __local__deadband
+  __dyad_seed_parameter!(__initial_conditions, __bindings, deadband, __local__deadband)
   __local__v_on = v_on
   append!(__params, @parameters (v_on::Real))
-  __initial_conditions[v_on] = __local__v_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_on, __local__v_on)
   __local__Mz_max = Mz_max
   append!(__params, @parameters (Mz_max::Real))
-  __initial_conditions[Mz_max] = __local__Mz_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Mz_max, __local__Mz_max)
   __local__tw = tw
   append!(__params, @parameters (tw::Real))
-  __initial_conditions[tw] = __local__tw
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tw, __local__tw)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
-  __initial_conditions[T_build] = __local__T_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_build, __local__T_build)
   __local__R_build = R_build
   append!(__params, @parameters (R_build::Real))
-  __initial_conditions[R_build] = __local__R_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_build, __local__R_build)
   __local__select_low = select_low
   append!(__params, @parameters (select_low::Real))
-  __initial_conditions[select_low] = __local__select_low
+  __dyad_seed_parameter!(__initial_conditions, __bindings, select_low, __local__select_low)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real))
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__lambda_1_f = lambda_1_f
   append!(__params, @parameters (lambda_1_f::Real))
-  __initial_conditions[lambda_1_f] = __local__lambda_1_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_f, __local__lambda_1_f)
   __local__lambda_1_r = lambda_1_r
   append!(__params, @parameters (lambda_1_r::Real))
-  __initial_conditions[lambda_1_r] = __local__lambda_1_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_r, __local__lambda_1_r)
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
-  __initial_conditions[lambda_lock] = __local__lambda_lock
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_lock, __local__lambda_lock)
   __local__alpha_rel = alpha_rel
   append!(__params, @parameters (alpha_rel::Real))
-  __initial_conditions[alpha_rel] = __local__alpha_rel
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_rel, __local__alpha_rel)
   __local__beta_reapply = beta_reapply
   append!(__params, @parameters (beta_reapply::Real))
-  __initial_conditions[beta_reapply] = __local__beta_reapply
+  __dyad_seed_parameter!(__initial_conditions, __bindings, beta_reapply, __local__beta_reapply)
   __local__l_rec = l_rec
   append!(__params, @parameters (l_rec::Real))
-  __initial_conditions[l_rec] = __local__l_rec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, l_rec, __local__l_rec)
   __local__T_hold_max = T_hold_max
   append!(__params, @parameters (T_hold_max::Real))
-  __initial_conditions[T_hold_max] = __local__T_hold_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_hold_max, __local__T_hold_max)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
   append!(__params, @parameters (k_inc_fast::Real))
-  __initial_conditions[k_inc_fast] = __local__k_inc_fast
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
 
   ### Final Parameters (assignments)
 
@@ -216,13 +251,13 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   ### Components
   # Subcomponent esp of type VehicleSystemsComponents.Vehicle.Planar.ESPController
   esp_overrides = __pop_subcomponent_overrides!(__overrides, "esp")
-  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, esp_overrides...))
+  push!(__systems, @named esp = VehicleSystemsComponents.Vehicle.Planar.ESPController(; esp_on=esp_on, L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, __overrides = esp_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; abs_on=abs_on, dt=dt, select_low=select_low, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, abs_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; abs_on=abs_on, dt=dt, select_low=select_low, T_p=T_p, lambda_1_f=lambda_1_f, lambda_1_r=lambda_1_r, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = abs_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -250,6 +285,6 @@ Electronic brake control unit combining continuous ESP and sampled four-channel 
   push!(__eqs, connect(abs.tau_rr, tau_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export BrakeControlUnit

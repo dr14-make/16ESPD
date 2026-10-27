@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSModulatorDiscrete(; name, dt, T_p, lambda_1, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min)
+   ABSModulatorDiscrete(; name, dt, T_p, lambda_1, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
 
 Clocked ABS pressure-memory state machine.
 
@@ -56,7 +56,7 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
 | `fast_rate`         |                          | --  |
 | `slow_rate`         |                          | --  |
 """
-@component function ABSModulatorDiscrete(; name = nothing, dt=0.005, T_p=0.03, lambda_1=0.04, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(80000.0), k_inc_fast=Float64(80000.0), k_inc_slow=Float64(8000.0), v_min=1.5, kwargs...)
+@component function ABSModulatorDiscrete(; name = nothing, var"dt"=0.005, var"T_p"=0.03, var"lambda_1"=0.04, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(80000.0), var"k_inc_fast"=Float64(80000.0), var"k_inc_slow"=Float64(8000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -64,7 +64,7 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
     @named model = ABSModulatorDiscrete()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -73,6 +73,20 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "lambda_1") && (lambda_1 = pop!(__overrides, "lambda_1"))
+  haskey(__overrides, "lambda_lock") && (lambda_lock = pop!(__overrides, "lambda_lock"))
+  haskey(__overrides, "alpha_rel") && (alpha_rel = pop!(__overrides, "alpha_rel"))
+  haskey(__overrides, "beta_reapply") && (beta_reapply = pop!(__overrides, "beta_reapply"))
+  haskey(__overrides, "l_rec") && (l_rec = pop!(__overrides, "l_rec"))
+  haskey(__overrides, "T_hold_max") && (T_hold_max = pop!(__overrides, "T_hold_max"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
 
   ### Structural Parameters (functions)
 
@@ -89,40 +103,40 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
   ### Symbolic Parameters
   __local__dt = dt
   append!(__params, @parameters (dt::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[dt] = __local__dt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dt, __local__dt)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real), [bounds = (0.0, Inf)])
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__lambda_1 = lambda_1
   append!(__params, @parameters (lambda_1::Real))
-  __initial_conditions[lambda_1] = __local__lambda_1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1, __local__lambda_1)
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
-  __initial_conditions[lambda_lock] = __local__lambda_lock
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_lock, __local__lambda_lock)
   __local__alpha_rel = alpha_rel
   append!(__params, @parameters (alpha_rel::Real))
-  __initial_conditions[alpha_rel] = __local__alpha_rel
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_rel, __local__alpha_rel)
   __local__beta_reapply = beta_reapply
   append!(__params, @parameters (beta_reapply::Real))
-  __initial_conditions[beta_reapply] = __local__beta_reapply
+  __dyad_seed_parameter!(__initial_conditions, __bindings, beta_reapply, __local__beta_reapply)
   __local__l_rec = l_rec
   append!(__params, @parameters (l_rec::Real))
-  __initial_conditions[l_rec] = __local__l_rec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, l_rec, __local__l_rec)
   __local__T_hold_max = T_hold_max
   append!(__params, @parameters (T_hold_max::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_hold_max] = __local__T_hold_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_hold_max, __local__T_hold_max)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
   append!(__params, @parameters (k_inc_fast::Real))
-  __initial_conditions[k_inc_fast] = __local__k_inc_fast
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
 
   ### Final Parameters (assignments)
 
@@ -152,44 +166,44 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
 
   ### Variables (assignments)
   __ovr_p = pop!(__overrides, "p", nothing); isnothing(__ovr_p) || push!(__eqs, p ~ __ovr_p)
-  __ovr_p__initial = pop!(__overrides, "p__initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
-  __ovr_p__guess = pop!(__overrides, "p__guess", nothing)
+  __ovr_p__initial = pop!(__overrides, "p.initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
+  __ovr_p__guess = pop!(__overrides, "p.guess", nothing)
   __ovr_phase = pop!(__overrides, "phase", nothing); isnothing(__ovr_phase) || push!(__eqs, phase ~ __ovr_phase)
-  __ovr_phase__initial = pop!(__overrides, "phase__initial", nothing); isnothing(__ovr_phase__initial) || (__initial_conditions[phase] = __ovr_phase__initial)
-  __ovr_phase__guess = pop!(__overrides, "phase__guess", nothing)
+  __ovr_phase__initial = pop!(__overrides, "phase.initial", nothing); isnothing(__ovr_phase__initial) || (__initial_conditions[phase] = __ovr_phase__initial)
+  __ovr_phase__guess = pop!(__overrides, "phase.guess", nothing)
   __ovr_tau_lock = pop!(__overrides, "tau_lock", nothing); isnothing(__ovr_tau_lock) || push!(__eqs, tau_lock ~ __ovr_tau_lock)
-  __ovr_tau_lock__initial = pop!(__overrides, "tau_lock__initial", nothing); isnothing(__ovr_tau_lock__initial) || (__initial_conditions[tau_lock] = __ovr_tau_lock__initial)
-  __ovr_tau_lock__guess = pop!(__overrides, "tau_lock__guess", nothing)
+  __ovr_tau_lock__initial = pop!(__overrides, "tau_lock.initial", nothing); isnothing(__ovr_tau_lock__initial) || (__initial_conditions[tau_lock] = __ovr_tau_lock__initial)
+  __ovr_tau_lock__guess = pop!(__overrides, "tau_lock.guess", nothing)
   __ovr_hold_count = pop!(__overrides, "hold_count", nothing); isnothing(__ovr_hold_count) || push!(__eqs, hold_count ~ __ovr_hold_count)
-  __ovr_hold_count__initial = pop!(__overrides, "hold_count__initial", nothing); isnothing(__ovr_hold_count__initial) || (__initial_conditions[hold_count] = __ovr_hold_count__initial)
-  __ovr_hold_count__guess = pop!(__overrides, "hold_count__guess", nothing)
+  __ovr_hold_count__initial = pop!(__overrides, "hold_count.initial", nothing); isnothing(__ovr_hold_count__initial) || (__initial_conditions[hold_count] = __ovr_hold_count__initial)
+  __ovr_hold_count__guess = pop!(__overrides, "hold_count.guess", nothing)
   __ovr_released = pop!(__overrides, "released", nothing); isnothing(__ovr_released) || push!(__eqs, released ~ __ovr_released)
-  __ovr_released__initial = pop!(__overrides, "released__initial", nothing); isnothing(__ovr_released__initial) || (__initial_conditions[released] = __ovr_released__initial)
-  __ovr_released__guess = pop!(__overrides, "released__guess", nothing)
+  __ovr_released__initial = pop!(__overrides, "released.initial", nothing); isnothing(__ovr_released__initial) || (__initial_conditions[released] = __ovr_released__initial)
+  __ovr_released__guess = pop!(__overrides, "released.guess", nothing)
   __ovr_fast_reapply = pop!(__overrides, "fast_reapply", nothing); isnothing(__ovr_fast_reapply) || push!(__eqs, fast_reapply ~ __ovr_fast_reapply)
-  __ovr_fast_reapply__initial = pop!(__overrides, "fast_reapply__initial", nothing); isnothing(__ovr_fast_reapply__initial) || (__initial_conditions[fast_reapply] = __ovr_fast_reapply__initial)
-  __ovr_fast_reapply__guess = pop!(__overrides, "fast_reapply__guess", nothing)
+  __ovr_fast_reapply__initial = pop!(__overrides, "fast_reapply.initial", nothing); isnothing(__ovr_fast_reapply__initial) || (__initial_conditions[fast_reapply] = __ovr_fast_reapply__initial)
+  __ovr_fast_reapply__guess = pop!(__overrides, "fast_reapply.guess", nothing)
   __ovr_lambda_dot = pop!(__overrides, "lambda_dot", nothing); isnothing(__ovr_lambda_dot) || push!(__eqs, lambda_dot ~ __ovr_lambda_dot)
-  __ovr_lambda_dot__initial = pop!(__overrides, "lambda_dot__initial", nothing); isnothing(__ovr_lambda_dot__initial) || (__initial_conditions[lambda_dot] = __ovr_lambda_dot__initial)
-  __ovr_lambda_dot__guess = pop!(__overrides, "lambda_dot__guess", nothing)
+  __ovr_lambda_dot__initial = pop!(__overrides, "lambda_dot.initial", nothing); isnothing(__ovr_lambda_dot__initial) || (__initial_conditions[lambda_dot] = __ovr_lambda_dot__initial)
+  __ovr_lambda_dot__guess = pop!(__overrides, "lambda_dot.guess", nothing)
   __ovr_lambda_pred = pop!(__overrides, "lambda_pred", nothing); isnothing(__ovr_lambda_pred) || push!(__eqs, lambda_pred ~ __ovr_lambda_pred)
-  __ovr_lambda_pred__initial = pop!(__overrides, "lambda_pred__initial", nothing); isnothing(__ovr_lambda_pred__initial) || (__initial_conditions[lambda_pred] = __ovr_lambda_pred__initial)
-  __ovr_lambda_pred__guess = pop!(__overrides, "lambda_pred__guess", nothing)
+  __ovr_lambda_pred__initial = pop!(__overrides, "lambda_pred.initial", nothing); isnothing(__ovr_lambda_pred__initial) || (__initial_conditions[lambda_pred] = __ovr_lambda_pred__initial)
+  __ovr_lambda_pred__guess = pop!(__overrides, "lambda_pred.guess", nothing)
   __ovr_release_now = pop!(__overrides, "release_now", nothing); isnothing(__ovr_release_now) || push!(__eqs, release_now ~ __ovr_release_now)
-  __ovr_release_now__initial = pop!(__overrides, "release_now__initial", nothing); isnothing(__ovr_release_now__initial) || (__initial_conditions[release_now] = __ovr_release_now__initial)
-  __ovr_release_now__guess = pop!(__overrides, "release_now__guess", nothing)
+  __ovr_release_now__initial = pop!(__overrides, "release_now.initial", nothing); isnothing(__ovr_release_now__initial) || (__initial_conditions[release_now] = __ovr_release_now__initial)
+  __ovr_release_now__guess = pop!(__overrides, "release_now.guess", nothing)
   __ovr_rate = pop!(__overrides, "rate", nothing); isnothing(__ovr_rate) || push!(__eqs, rate ~ __ovr_rate)
-  __ovr_rate__initial = pop!(__overrides, "rate__initial", nothing); isnothing(__ovr_rate__initial) || (__initial_conditions[rate] = __ovr_rate__initial)
-  __ovr_rate__guess = pop!(__overrides, "rate__guess", nothing)
+  __ovr_rate__initial = pop!(__overrides, "rate.initial", nothing); isnothing(__ovr_rate__initial) || (__initial_conditions[rate] = __ovr_rate__initial)
+  __ovr_rate__guess = pop!(__overrides, "rate.guess", nothing)
   __ovr_dec_rate = pop!(__overrides, "dec_rate", nothing); isnothing(__ovr_dec_rate) || push!(__eqs, dec_rate ~ __ovr_dec_rate)
-  __ovr_dec_rate__initial = pop!(__overrides, "dec_rate__initial", nothing); isnothing(__ovr_dec_rate__initial) || (__initial_conditions[dec_rate] = __ovr_dec_rate__initial)
-  __ovr_dec_rate__guess = pop!(__overrides, "dec_rate__guess", nothing)
+  __ovr_dec_rate__initial = pop!(__overrides, "dec_rate.initial", nothing); isnothing(__ovr_dec_rate__initial) || (__initial_conditions[dec_rate] = __ovr_dec_rate__initial)
+  __ovr_dec_rate__guess = pop!(__overrides, "dec_rate.guess", nothing)
   __ovr_fast_rate = pop!(__overrides, "fast_rate", nothing); isnothing(__ovr_fast_rate) || push!(__eqs, fast_rate ~ __ovr_fast_rate)
-  __ovr_fast_rate__initial = pop!(__overrides, "fast_rate__initial", nothing); isnothing(__ovr_fast_rate__initial) || (__initial_conditions[fast_rate] = __ovr_fast_rate__initial)
-  __ovr_fast_rate__guess = pop!(__overrides, "fast_rate__guess", nothing)
+  __ovr_fast_rate__initial = pop!(__overrides, "fast_rate.initial", nothing); isnothing(__ovr_fast_rate__initial) || (__initial_conditions[fast_rate] = __ovr_fast_rate__initial)
+  __ovr_fast_rate__guess = pop!(__overrides, "fast_rate.guess", nothing)
   __ovr_slow_rate = pop!(__overrides, "slow_rate", nothing); isnothing(__ovr_slow_rate) || push!(__eqs, slow_rate ~ __ovr_slow_rate)
-  __ovr_slow_rate__initial = pop!(__overrides, "slow_rate__initial", nothing); isnothing(__ovr_slow_rate__initial) || (__initial_conditions[slow_rate] = __ovr_slow_rate__initial)
-  __ovr_slow_rate__guess = pop!(__overrides, "slow_rate__guess", nothing)
+  __ovr_slow_rate__initial = pop!(__overrides, "slow_rate.initial", nothing); isnothing(__ovr_slow_rate__initial) || (__initial_conditions[slow_rate] = __ovr_slow_rate__initial)
+  __ovr_slow_rate__guess = pop!(__overrides, "slow_rate.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -197,7 +211,7 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
@@ -246,6 +260,6 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
   push!(__eqs, lambda_dot_out ~ lambda_dot)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSModulatorDiscrete

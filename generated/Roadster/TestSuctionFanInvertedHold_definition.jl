@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestSuctionFanInvertedHold(; name, m, g, cmd, gap)
+   TestSuctionFanInvertedHold(; name, m, g, cmd, gap, __overrides)
 
 Inverted-hold harness: reversed gravity pulls the car away from the road, while suction acts
 toward it. `hold_force = 0` is the least pressure that holds the stationary car.
@@ -25,7 +25,7 @@ toward it. `hold_force = 0` is the least pressure that holds the stationary car.
 | ------------ | ----------------------------------- | ------ |
 | `hold_force`         | Net holding force toward the road                         | N  |
 """
-@component function TestSuctionFanInvertedHold(; name = nothing, m=Float64(2000), g=-9.80665, gap=0.003, cmd=-m * g / (4.0 * (4700 * 9.80665 / 4.0)), kwargs...)
+@component function TestSuctionFanInvertedHold(; name = nothing, var"m"=Float64(2000), var"g"=-9.80665, var"gap"=0.003, var"cmd"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -33,7 +33,7 @@ toward it. `hold_force = 0` is the least pressure that holds the stationary car.
     @named model = TestSuctionFanInvertedHold()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -42,6 +42,15 @@ toward it. `hold_force = 0` is the least pressure that holds the stationary car.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
+  haskey(__overrides, "gap") && (gap = pop!(__overrides, "gap"))
+  haskey(__overrides, "cmd") && (cmd = pop!(__overrides, "cmd"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(cmd) && (cmd = -m * g / (4.0 * (4700 * 9.80665 / 4.0)))
 
   ### Structural Parameters (functions)
 
@@ -58,16 +67,16 @@ toward it. `hold_force = 0` is the least pressure that holds the stationary car.
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass; assumed because Tesla has not disclosed it", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Reversed gravitational acceleration"])
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
   __local__cmd = cmd
   append!(__params, @parameters (cmd::Real), [description = "Least command that balances reversed gravity"])
-  __initial_conditions[cmd] = __local__cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, cmd, __local__cmd)
   __local__gap = gap
   append!(__params, @parameters (gap::Real), [description = "Effective skirt gap; assumed"])
-  __initial_conditions[gap] = __local__gap
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gap, __local__gap)
 
   ### Final Parameters (assignments)
 
@@ -78,8 +87,8 @@ toward it. `hold_force = 0` is the least pressure that holds the stationary car.
 
   ### Variables (assignments)
   __ovr_hold_force = pop!(__overrides, "hold_force", nothing); isnothing(__ovr_hold_force) || push!(__eqs, hold_force ~ __ovr_hold_force)
-  __ovr_hold_force__initial = pop!(__overrides, "hold_force__initial", nothing); isnothing(__ovr_hold_force__initial) || (__initial_conditions[hold_force] = __ovr_hold_force__initial)
-  __ovr_hold_force__guess = pop!(__overrides, "hold_force__guess", nothing)
+  __ovr_hold_force__initial = pop!(__overrides, "hold_force.initial", nothing); isnothing(__ovr_hold_force__initial) || (__initial_conditions[hold_force] = __ovr_hold_force__initial)
+  __ovr_hold_force__guess = pop!(__overrides, "hold_force.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -87,13 +96,13 @@ toward it. `hold_force = 0` is the least pressure that holds the stationary car.
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Constant
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=cmd, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=cmd, __overrides = command_overrides))
   # Subcomponent fan of type VehicleSystemsComponents.Roadster.SuctionFan
   fan_overrides = __pop_subcomponent_overrides!(__overrides, "fan")
-  push!(__systems, @named fan = VehicleSystemsComponents.Roadster.SuctionFan(; gap=gap, fan_overrides...))
+  push!(__systems, @named fan = VehicleSystemsComponents.Roadster.SuctionFan(; gap=gap, __overrides = fan_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_hold_force__guess) || (__guesses[hold_force] = __ovr_hold_force__guess)
@@ -109,6 +118,6 @@ toward it. `hold_force = 0` is the least pressure that holds the stationary car.
   push!(__eqs, connect(command.y, fan.cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestSuctionFanInvertedHold

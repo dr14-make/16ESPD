@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CruiseController(; name, k, Ti, xi0, Td, Nd, wd, xd0, y_max, y_min)
+   CruiseController(; name, k, Ti, xi0, Td, Nd, wd, xd0, y_max, y_min, __overrides)
 
 Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the command and the error pushes the same way as the cut.
 
@@ -29,7 +29,7 @@ Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the co
  * `u_m` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CruiseController(; name = nothing, k=Float64(56), Ti=Float64(10), xi0=Float64(0), Td=0.5, Nd=Float64(10), wd=Float64(0), xd0=Float64(-90), y_max=Float64(1e+300), y_min=-y_max, kwargs...)
+@component function CruiseController(; name = nothing, var"k"=Float64(56), var"Ti"=Float64(10), var"xi0"=Float64(0), var"Td"=0.5, var"Nd"=Float64(10), var"wd"=Float64(0), var"xd0"=Float64(-90), var"y_max"=Float64(1e+300), var"y_min"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the co
     @named model = CruiseController()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,20 @@ Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the co
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
+  haskey(__overrides, "xi0") && (xi0 = pop!(__overrides, "xi0"))
+  haskey(__overrides, "Td") && (Td = pop!(__overrides, "Td"))
+  haskey(__overrides, "Nd") && (Nd = pop!(__overrides, "Nd"))
+  haskey(__overrides, "wd") && (wd = pop!(__overrides, "wd"))
+  haskey(__overrides, "xd0") && (xd0 = pop!(__overrides, "xd0"))
+  haskey(__overrides, "y_max") && (y_max = pop!(__overrides, "y_max"))
+  haskey(__overrides, "y_min") && (y_min = pop!(__overrides, "y_min"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(y_min) && (y_min = -y_max)
 
   ### Structural Parameters (functions)
 
@@ -62,31 +76,31 @@ Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the co
   ### Symbolic Parameters
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Controller gain in N·m per km/h"])
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real), [description = "Integral time"])
-  __initial_conditions[Ti] = __local__Ti
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__xi0 = xi0
   append!(__params, @parameters (xi0::Real), [description = "Initial integrator state"])
-  __initial_conditions[xi0] = __local__xi0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, xi0, __local__xi0)
   __local__Td = Td
   append!(__params, @parameters (Td::Real), [description = "Derivative time"])
-  __initial_conditions[Td] = __local__Td
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Td, __local__Td)
   __local__Nd = Nd
   append!(__params, @parameters (Nd::Real), [description = "Derivative filter: the filter time constant is Td / Nd"])
-  __initial_conditions[Nd] = __local__Nd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Nd, __local__Nd)
   __local__wd = wd
   append!(__params, @parameters (wd::Real), [description = "Setpoint weight in the derivative"])
-  __initial_conditions[wd] = __local__wd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, wd, __local__wd)
   __local__xd0 = xd0
   append!(__params, @parameters (xd0::Real), [description = "Initial derivative-filter state, (wd - 1) * 90"])
-  __initial_conditions[xd0] = __local__xd0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, xd0, __local__xd0)
   __local__y_max = y_max
   append!(__params, @parameters (y_max::Real), [description = "Output ceiling; no limit unless one is set"])
-  __initial_conditions[y_max] = __local__y_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_max, __local__y_max)
   __local__y_min = y_min
   append!(__params, @parameters (y_min::Real), [description = "Output floor"])
-  __initial_conditions[y_min] = __local__y_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, y_min, __local__y_min)
 
   ### Final Parameters (assignments)
 
@@ -105,43 +119,43 @@ Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the co
   ### Components
   # Subcomponent error of type BlockComponents.Math.Add
   error_overrides = __pop_subcomponent_overrides!(__overrides, "error")
-  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), error_overrides...))
+  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), __overrides = error_overrides))
   # Subcomponent add_d of type BlockComponents.Math.Add
   add_d_overrides = __pop_subcomponent_overrides!(__overrides, "add_d")
-  push!(__systems, @named add_d = BlockComponents.Math.Add(; k1=wd, k2=Float64(-1), add_d_overrides...))
+  push!(__systems, @named add_d = BlockComponents.Math.Add(; k1=wd, k2=Float64(-1), __overrides = add_d_overrides))
   # Subcomponent derivative of type BlockComponents.Continuous.Derivative
   derivative_overrides = __pop_subcomponent_overrides!(__overrides, "derivative")
-  push!(__systems, @named derivative = BlockComponents.Continuous.Derivative(; k=Td, T=Td / Nd, x0=xd0, derivative_overrides...))
+  push!(__systems, @named derivative = BlockComponents.Continuous.Derivative(; k=Td, T=Td / Nd, x0=xd0, __overrides = derivative_overrides))
   # Subcomponent integrator of type BlockComponents.Continuous.Integrator
   integrator_overrides = __pop_subcomponent_overrides!(__overrides, "integrator")
-  push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; k=1 / Ti, x0=xi0, integrator_overrides...))
+  push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; k=1 / Ti, x0=xi0, __overrides = integrator_overrides))
   # Subcomponent add_pid of type BlockComponents.Math.Add3
   add_pid_overrides = __pop_subcomponent_overrides!(__overrides, "add_pid")
-  push!(__systems, @named add_pid = BlockComponents.Math.Add3(; k1=Float64(1), k2=Float64(1), k3=Float64(1), add_pid_overrides...))
+  push!(__systems, @named add_pid = BlockComponents.Math.Add3(; k1=Float64(1), k2=Float64(1), k3=Float64(1), __overrides = add_pid_overrides))
   # Subcomponent gain of type BlockComponents.Math.Gain
   gain_overrides = __pop_subcomponent_overrides!(__overrides, "gain")
-  push!(__systems, @named gain = BlockComponents.Math.Gain(; k=k, gain_overrides...))
+  push!(__systems, @named gain = BlockComponents.Math.Gain(; k=k, __overrides = gain_overrides))
   # Subcomponent limiter of type BlockComponents.Nonlinear.Limiter
   limiter_overrides = __pop_subcomponent_overrides!(__overrides, "limiter")
-  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=y_max, y_min=y_min, limiter_overrides...))
+  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=y_max, y_min=y_min, __overrides = limiter_overrides))
   # Subcomponent excess of type BlockComponents.Math.Add
   excess_overrides = __pop_subcomponent_overrides!(__overrides, "excess")
-  push!(__systems, @named excess = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), excess_overrides...))
+  push!(__systems, @named excess = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), __overrides = excess_overrides))
   # Subcomponent push of type BlockComponents.Math.Product
   push_overrides = __pop_subcomponent_overrides!(__overrides, "push")
-  push!(__systems, @named push = BlockComponents.Math.Product(; push_overrides...))
+  push!(__systems, @named push = BlockComponents.Math.Product(; __overrides = push_overrides))
   # Subcomponent winding of type BlockComponents.Logical.GreaterThreshold
   winding_overrides = __pop_subcomponent_overrides!(__overrides, "winding")
-  push!(__systems, @named winding = BlockComponents.Logical.GreaterThreshold(; threshold=Float64(0), winding_overrides...))
+  push!(__systems, @named winding = BlockComponents.Logical.GreaterThreshold(; threshold=Float64(0), __overrides = winding_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
-  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent gate of type BlockComponents.Logical.Switch
   gate_overrides = __pop_subcomponent_overrides!(__overrides, "gate")
-  push!(__systems, @named gate = BlockComponents.Logical.Switch(; gate_overrides...))
+  push!(__systems, @named gate = BlockComponents.Logical.Switch(; __overrides = gate_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -173,6 +187,6 @@ Step 6d: clamping blocks gate `integrator.u`: zero while the limiter cuts the co
   push!(__eqs, connect(gate.y, integrator.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CruiseController

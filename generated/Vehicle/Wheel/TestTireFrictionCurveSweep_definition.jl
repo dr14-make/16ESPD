@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestTireFrictionCurveSweep(; name)
+   TestTireFrictionCurveSweep(; name, __overrides)
 
 Slip swept from a locked wheel under braking to full wheelspin, to plot `curve.mu` against `curve.kappa`.
 """
-@component function TestTireFrictionCurveSweep(; name = nothing, kwargs...)
+@component function TestTireFrictionCurveSweep(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Slip swept from a locked wheel under braking to full wheelspin, to plot `curve.m
     @named model = TestTireFrictionCurveSweep()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,13 +55,13 @@ Slip swept from a locked wheel under braking to full wheelspin, to plot `curve.m
   ### Components
   # Subcomponent slip of type BlockComponents.Sources.Ramp
   slip_overrides = __pop_subcomponent_overrides!(__overrides, "slip")
-  push!(__systems, @named slip = BlockComponents.Sources.Ramp(; offset=-1.0, height=Float64(2.0), duration=Float64(2.0), start_time=Float64(0.0), slip_overrides...))
+  push!(__systems, @named slip = BlockComponents.Sources.Ramp(; offset=-1.0, height=Float64(2.0), duration=Float64(2.0), start_time=Float64(0.0), __overrides = slip_overrides))
   # Subcomponent curve of type VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve
   curve_overrides = __pop_subcomponent_overrides!(__overrides, "curve")
-  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(; curve_overrides...))
+  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(; __overrides = curve_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -74,6 +74,6 @@ Slip swept from a locked wheel under braking to full wheelspin, to plot `curve.m
   push!(__eqs, connect(slip.y, curve.kappa))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestTireFrictionCurveSweep

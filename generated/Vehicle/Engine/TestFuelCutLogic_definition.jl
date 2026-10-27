@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestFuelCutLogic(; name)
+   TestFuelCutLogic(; name, __overrides)
 """
-@component function TestFuelCutLogic(; name = nothing, kwargs...)
+@component function TestFuelCutLogic(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestFuelCutLogic()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,22 +53,22 @@
   ### Components
   # Subcomponent pedal of type BlockComponents.Sources.Constant
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
-  push!(__systems, @named pedal = BlockComponents.Sources.Constant(; k=Float64(0.0), pedal_overrides...))
+  push!(__systems, @named pedal = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = pedal_overrides))
   # Subcomponent overrun_speed of type BlockComponents.Sources.Constant
   overrun_speed_overrides = __pop_subcomponent_overrides!(__overrides, "overrun_speed")
-  push!(__systems, @named overrun_speed = BlockComponents.Sources.Constant(; k=3000 * pi / 30, overrun_speed_overrides...))
+  push!(__systems, @named overrun_speed = BlockComponents.Sources.Constant(; k=3000 * pi / 30, __overrides = overrun_speed_overrides))
   # Subcomponent rev_speed of type BlockComponents.Sources.Constant
   rev_speed_overrides = __pop_subcomponent_overrides!(__overrides, "rev_speed")
-  push!(__systems, @named rev_speed = BlockComponents.Sources.Constant(; k=6600 * pi / 30, rev_speed_overrides...))
+  push!(__systems, @named rev_speed = BlockComponents.Sources.Constant(; k=6600 * pi / 30, __overrides = rev_speed_overrides))
   # Subcomponent decel_logic of type VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic
   decel_logic_overrides = __pop_subcomponent_overrides!(__overrides, "decel_logic")
-  push!(__systems, @named decel_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic(; decel_logic_overrides...))
+  push!(__systems, @named decel_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic(; __overrides = decel_logic_overrides))
   # Subcomponent rev_logic of type VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic
   rev_logic_overrides = __pop_subcomponent_overrides!(__overrides, "rev_logic")
-  push!(__systems, @named rev_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic(; rev_logic_overrides...))
+  push!(__systems, @named rev_logic = VehicleSystemsComponents.Vehicle.Engine.FuelCutLogic(; __overrides = rev_logic_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -83,6 +83,6 @@
   push!(__eqs, connect(rev_speed.y, rev_logic.omega))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestFuelCutLogic

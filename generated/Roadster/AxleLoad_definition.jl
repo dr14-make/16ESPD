@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   AxleLoad(; name, m, share, h_over_L, T_pitch, g)
+   AxleLoad(; name, m, share, h_over_L, T_pitch, g, __overrides)
 
 Normal load on the driven axle during straight-line acceleration.
 
@@ -43,7 +43,7 @@ for the acceleration, which would divide by `h_over_L`.
 | `a`         | Vehicle acceleration                         | m/s2  |
 | `a_pitch`         | Acceleration seen by the suspension                         | m/s2  |
 """
-@component function AxleLoad(; name = nothing, m=Float64(2000), share=0.55, h_over_L=0.17, T_pitch=0.1, g=9.80665, kwargs...)
+@component function AxleLoad(; name = nothing, var"m"=Float64(2000), var"share"=0.55, var"h_over_L"=0.17, var"T_pitch"=0.1, var"g"=9.80665, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -51,7 +51,7 @@ for the acceleration, which would divide by `h_over_L`.
     @named model = AxleLoad()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -60,6 +60,13 @@ for the acceleration, which would divide by `h_over_L`.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "share") && (share = pop!(__overrides, "share"))
+  haskey(__overrides, "h_over_L") && (h_over_L = pop!(__overrides, "h_over_L"))
+  haskey(__overrides, "T_pitch") && (T_pitch = pop!(__overrides, "T_pitch"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
 
   ### Structural Parameters (functions)
 
@@ -76,19 +83,19 @@ for the acceleration, which would divide by `h_over_L`.
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass; assumed because Tesla has not disclosed it", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__share = share
   append!(__params, @parameters (share::Real), [description = "Static fraction of weight and downforce on the driven axle; assumed"])
-  __initial_conditions[share] = __local__share
+  __dyad_seed_parameter!(__initial_conditions, __bindings, share, __local__share)
   __local__h_over_L = h_over_L
   append!(__params, @parameters (h_over_L::Real), [description = "Center-of-mass height over wheelbase; assumed"])
-  __initial_conditions[h_over_L] = __local__h_over_L
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_over_L, __local__h_over_L)
   __local__T_pitch = T_pitch
   append!(__params, @parameters (T_pitch::Real), [description = "Reduced-order suspension pitch time constant; assumed"])
-  __initial_conditions[T_pitch] = __local__T_pitch
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_pitch, __local__T_pitch)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Standard gravitational acceleration"])
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
 
   ### Final Parameters (assignments)
 
@@ -103,14 +110,14 @@ for the acceleration, which would divide by `h_over_L`.
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
   __ovr_a = pop!(__overrides, "a", nothing); isnothing(__ovr_a) || push!(__eqs, a ~ __ovr_a)
-  __ovr_a__initial = pop!(__overrides, "a__initial", nothing); isnothing(__ovr_a__initial) || (__initial_conditions[a] = __ovr_a__initial)
-  __ovr_a__guess = pop!(__overrides, "a__guess", nothing)
+  __ovr_a__initial = pop!(__overrides, "a.initial", nothing); isnothing(__ovr_a__initial) || (__initial_conditions[a] = __ovr_a__initial)
+  __ovr_a__guess = pop!(__overrides, "a.guess", nothing)
   __ovr_a_pitch = pop!(__overrides, "a_pitch", nothing); isnothing(__ovr_a_pitch) || push!(__eqs, a_pitch ~ __ovr_a_pitch)
-  __ovr_a_pitch__initial = pop!(__overrides, "a_pitch__initial", nothing); isnothing(__ovr_a_pitch__initial) || (__initial_conditions[a_pitch] = __ovr_a_pitch__initial)
-  __ovr_a_pitch__guess = pop!(__overrides, "a_pitch__guess", nothing)
+  __ovr_a_pitch__initial = pop!(__overrides, "a_pitch.initial", nothing); isnothing(__ovr_a_pitch__initial) || (__initial_conditions[a_pitch] = __ovr_a_pitch__initial)
+  __ovr_a_pitch__guess = pop!(__overrides, "a_pitch.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -119,7 +126,7 @@ for the acceleration, which would divide by `h_over_L`.
   push!(__systems, @named flange = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
@@ -139,6 +146,6 @@ for the acceleration, which would divide by `h_over_L`.
   push!(__eqs, F_z ~ share * (m * g + downforce) + m * a_pitch * h_over_L)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export AxleLoad

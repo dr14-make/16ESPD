@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestSpeedCurve(; name)
+   TestSpeedCurve(; name, __overrides)
 """
-@component function TestSpeedCurve(; name = nothing, kwargs...)
+@component function TestSpeedCurve(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestSpeedCurve()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,13 +53,13 @@
   ### Components
   # Subcomponent omega of type BlockComponents.Sources.Constant
   omega_overrides = __pop_subcomponent_overrides!(__overrides, "omega")
-  push!(__systems, @named omega = BlockComponents.Sources.Constant(; k=1500 * pi / 30, omega_overrides...))
+  push!(__systems, @named omega = BlockComponents.Sources.Constant(; k=1500 * pi / 30, __overrides = omega_overrides))
   # Subcomponent curve of type VehicleSystemsComponents.Vehicle.Engine.SpeedCurve
   curve_overrides = __pop_subcomponent_overrides!(__overrides, "curve")
-  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(; rpm_axis=[Float64(1000), Float64(2000)], data=[Float64(10) Float64(10); Float64(20) Float64(20)], curve_overrides...))
+  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Engine.SpeedCurve(; rpm_axis=[Float64(1000), Float64(2000)], data=[Float64(10) Float64(10); Float64(20) Float64(20)], __overrides = curve_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -72,6 +72,6 @@
   push!(__eqs, connect(omega.y, curve.omega))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestSpeedCurve

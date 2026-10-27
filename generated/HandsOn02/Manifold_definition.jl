@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   Manifold(; name, V_m, T_m, R)
+   Manifold(; name, V_m, T_m, R, __overrides)
 
 Intake manifold as one isothermal receiver: the pressure is its only state.
 
@@ -34,7 +34,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 | ------------ | ----------------------------------- | ------ |
 | `p`         | Manifold absolute pressure                         | Pa  |
 """
-@component function Manifold(; name = nothing, V_m=0.001, T_m=298.15, R=287.05, kwargs...)
+@component function Manifold(; name = nothing, var"V_m"=0.001, var"T_m"=298.15, var"R"=287.05, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -42,7 +42,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
     @named model = Manifold()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -51,6 +51,11 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "V_m") && (V_m = pop!(__overrides, "V_m"))
+  haskey(__overrides, "T_m") && (T_m = pop!(__overrides, "T_m"))
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
 
   ### Structural Parameters (functions)
 
@@ -67,13 +72,13 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   ### Symbolic Parameters
   __local__V_m = V_m
   append!(__params, @parameters (V_m::Real), [description = "Manifold volume"])
-  __initial_conditions[V_m] = __local__V_m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_m, __local__V_m)
   __local__T_m = T_m
   append!(__params, @parameters (T_m::Real), [description = "Manifold air temperature", bounds = (0, Inf)])
-  __initial_conditions[T_m] = __local__T_m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_m, __local__T_m)
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Gas constant of air [J/(kg.K)]"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
 
   ### Final Parameters (assignments)
 
@@ -87,8 +92,8 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 
   ### Variables (assignments)
   __ovr_p = pop!(__overrides, "p", nothing); isnothing(__ovr_p) || push!(__eqs, p ~ __ovr_p)
-  __ovr_p__initial = pop!(__overrides, "p__initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
-  __ovr_p__guess = pop!(__overrides, "p__guess", nothing)
+  __ovr_p__initial = pop!(__overrides, "p.initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
+  __ovr_p__guess = pop!(__overrides, "p.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -97,7 +102,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
@@ -113,6 +118,6 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, p_m ~ p)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export Manifold

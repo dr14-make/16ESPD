@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestAckermannSteering(; name, delta_in, ackermann, tau_load)
+   TestAckermannSteering(; name, delta_in, ackermann, tau_load, __overrides)
 
 ## Parameters:
 
@@ -15,7 +15,7 @@
 | `ackermann`         | Ackermann fraction                         | --  |   1.0 |
 | `tau_load`         | Torque applied to each output shaft                         | N.m  |   0.0 |
 """
-@component function TestAckermannSteering(; name = nothing, delta_in=0.1, ackermann=Float64(1.0), tau_load=Float64(0.0), kwargs...)
+@component function TestAckermannSteering(; name = nothing, var"delta_in"=0.1, var"ackermann"=Float64(1.0), var"tau_load"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -23,7 +23,7 @@
     @named model = TestAckermannSteering()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -32,6 +32,11 @@
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "delta_in") && (delta_in = pop!(__overrides, "delta_in"))
+  haskey(__overrides, "ackermann") && (ackermann = pop!(__overrides, "ackermann"))
+  haskey(__overrides, "tau_load") && (tau_load = pop!(__overrides, "tau_load"))
 
   ### Structural Parameters (functions)
 
@@ -48,13 +53,13 @@
   ### Symbolic Parameters
   __local__delta_in = delta_in
   append!(__params, @parameters (delta_in::Real), [description = "Commanded virtual center-wheel angle"])
-  __initial_conditions[delta_in] = __local__delta_in
+  __dyad_seed_parameter!(__initial_conditions, __bindings, delta_in, __local__delta_in)
   __local__ackermann = ackermann
   append!(__params, @parameters (ackermann::Real), [description = "Ackermann fraction"])
-  __initial_conditions[ackermann] = __local__ackermann
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ackermann, __local__ackermann)
   __local__tau_load = tau_load
   append!(__params, @parameters (tau_load::Real), [description = "Torque applied to each output shaft"])
-  __initial_conditions[tau_load] = __local__tau_load
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_load, __local__tau_load)
 
   ### Final Parameters (assignments)
 
@@ -70,28 +75,28 @@
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Constant
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=delta_in, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Constant(; k=delta_in, __overrides = command_overrides))
   # Subcomponent source of type RotationalComponents.Sources.Position
   source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
-  push!(__systems, @named source = RotationalComponents.Sources.Position(; source_overrides...))
+  push!(__systems, @named source = RotationalComponents.Sources.Position(; __overrides = source_overrides))
   # Subcomponent torque_sensor of type RotationalComponents.Sensors.TorqueSensor
   torque_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "torque_sensor")
-  push!(__systems, @named torque_sensor = RotationalComponents.Sensors.TorqueSensor(; torque_sensor_overrides...))
+  push!(__systems, @named torque_sensor = RotationalComponents.Sensors.TorqueSensor(; __overrides = torque_sensor_overrides))
   # Subcomponent linkage of type VehicleSystemsComponents.Vehicle.Planar.AckermannSteering
   linkage_overrides = __pop_subcomponent_overrides!(__overrides, "linkage")
-  push!(__systems, @named linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(; ackermann=ackermann, linkage_overrides...))
+  push!(__systems, @named linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(; ackermann=ackermann, __overrides = linkage_overrides))
   # Subcomponent load_left of type RotationalComponents.Sources.ConstantTorque
   load_left_overrides = __pop_subcomponent_overrides!(__overrides, "load_left")
-  push!(__systems, @named load_left = RotationalComponents.Sources.ConstantTorque(; tau_constant=tau_load, load_left_overrides...))
+  push!(__systems, @named load_left = RotationalComponents.Sources.ConstantTorque(; tau_constant=tau_load, __overrides = load_left_overrides))
   # Subcomponent load_right of type RotationalComponents.Sources.ConstantTorque
   load_right_overrides = __pop_subcomponent_overrides!(__overrides, "load_right")
-  push!(__systems, @named load_right = RotationalComponents.Sources.ConstantTorque(; tau_constant=tau_load, load_right_overrides...))
+  push!(__systems, @named load_right = RotationalComponents.Sources.ConstantTorque(; tau_constant=tau_load, __overrides = load_right_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -110,6 +115,6 @@
   push!(__eqs, connect(source.support, linkage.support, load_left.support, load_right.support, fixed.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestAckermannSteering

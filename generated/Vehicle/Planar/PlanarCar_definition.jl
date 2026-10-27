@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarCar(; name, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt)
+   PlanarCar(; name, load_transfer, m, Iz, a, b, tw, radius, J, mu_A, mu_S, sAdhesion_f, sAdhesion_r, mu_scale_fl, mu_scale_fr, mu_scale_rl, mu_scale_rr, T_brake, tau_max, i_s, t_k, ackermann, h_cg, T_lt, __overrides)
 
 Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 
@@ -59,7 +59,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `tau_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function PlanarCar(; name = nothing, load_transfer=false, m=Float64(1500.0), Iz=Float64(2500.0), a=1.2, b=1.5, tw=1.55, radius=0.31, J=Float64(1.0), mu_A=Float64(1.0), mu_S=0.8, sAdhesion_f=0.12, sAdhesion_r=0.09, mu_scale_fl=Float64(1.0), mu_scale_fr=Float64(1.0), mu_scale_rl=Float64(1.0), mu_scale_rr=Float64(1.0), T_brake=0.03, tau_max=Float64(2500.0), i_s=Float64(16.0), ackermann=Float64(1.0), h_cg=Float64(0.0), T_lt=0.05, t_k=tw, kwargs...)
+@component function PlanarCar(; name = nothing, var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -67,7 +67,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
     @named model = PlanarCar()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -76,6 +76,34 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "load_transfer") && (load_transfer = pop!(__overrides, "load_transfer"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "Iz") && (Iz = pop!(__overrides, "Iz"))
+  haskey(__overrides, "a") && (a = pop!(__overrides, "a"))
+  haskey(__overrides, "b") && (b = pop!(__overrides, "b"))
+  haskey(__overrides, "tw") && (tw = pop!(__overrides, "tw"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "J") && (J = pop!(__overrides, "J"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
+  haskey(__overrides, "sAdhesion_f") && (sAdhesion_f = pop!(__overrides, "sAdhesion_f"))
+  haskey(__overrides, "sAdhesion_r") && (sAdhesion_r = pop!(__overrides, "sAdhesion_r"))
+  haskey(__overrides, "mu_scale_fl") && (mu_scale_fl = pop!(__overrides, "mu_scale_fl"))
+  haskey(__overrides, "mu_scale_fr") && (mu_scale_fr = pop!(__overrides, "mu_scale_fr"))
+  haskey(__overrides, "mu_scale_rl") && (mu_scale_rl = pop!(__overrides, "mu_scale_rl"))
+  haskey(__overrides, "mu_scale_rr") && (mu_scale_rr = pop!(__overrides, "mu_scale_rr"))
+  haskey(__overrides, "T_brake") && (T_brake = pop!(__overrides, "T_brake"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "i_s") && (i_s = pop!(__overrides, "i_s"))
+  haskey(__overrides, "ackermann") && (ackermann = pop!(__overrides, "ackermann"))
+  haskey(__overrides, "h_cg") && (h_cg = pop!(__overrides, "h_cg"))
+  haskey(__overrides, "T_lt") && (T_lt = pop!(__overrides, "T_lt"))
+  haskey(__overrides, "t_k") && (t_k = pop!(__overrides, "t_k"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(t_k) && (t_k = tw)
 
   ### Structural Parameters (functions)
 
@@ -92,70 +120,70 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass (probe)", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__Iz = Iz
   append!(__params, @parameters (Iz::Real), [description = "Yaw inertia (probe)"])
-  __initial_conditions[Iz] = __local__Iz
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Iz, __local__Iz)
   __local__a = a
   append!(__params, @parameters (a::Real), [description = "CG distance to front axle (probe)"])
-  __initial_conditions[a] = __local__a
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a, __local__a)
   __local__b = b
   append!(__params, @parameters (b::Real), [description = "CG distance to rear axle (probe)"])
-  __initial_conditions[b] = __local__b
+  __dyad_seed_parameter!(__initial_conditions, __bindings, b, __local__b)
   __local__tw = tw
   append!(__params, @parameters (tw::Real), [description = "Track width (probe)"])
-  __initial_conditions[tw] = __local__tw
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tw, __local__tw)
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (repository default)"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__J = J
   append!(__params, @parameters (J::Real), [description = "One-wheel spin inertia (assumed)"])
-  __initial_conditions[J] = __local__J
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J, __local__J)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient (probe)"])
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__mu_S = mu_S
   append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient (probe)"])
-  __initial_conditions[mu_S] = __local__mu_S
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
   __local__sAdhesion_f = sAdhesion_f
   append!(__params, @parameters (sAdhesion_f::Real), [description = "Front peak-slip ratio (probe)"])
-  __initial_conditions[sAdhesion_f] = __local__sAdhesion_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion_f, __local__sAdhesion_f)
   __local__sAdhesion_r = sAdhesion_r
   append!(__params, @parameters (sAdhesion_r::Real), [description = "Rear peak-slip ratio (probe)"])
-  __initial_conditions[sAdhesion_r] = __local__sAdhesion_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion_r, __local__sAdhesion_r)
   __local__mu_scale_fl = mu_scale_fl
   append!(__params, @parameters (mu_scale_fl::Real), [description = "Front-left road-friction multiplier (derived)"])
-  __initial_conditions[mu_scale_fl] = __local__mu_scale_fl
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_fl, __local__mu_scale_fl)
   __local__mu_scale_fr = mu_scale_fr
   append!(__params, @parameters (mu_scale_fr::Real), [description = "Front-right road-friction multiplier (derived)"])
-  __initial_conditions[mu_scale_fr] = __local__mu_scale_fr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_fr, __local__mu_scale_fr)
   __local__mu_scale_rl = mu_scale_rl
   append!(__params, @parameters (mu_scale_rl::Real), [description = "Rear-left road-friction multiplier (derived)"])
-  __initial_conditions[mu_scale_rl] = __local__mu_scale_rl
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_rl, __local__mu_scale_rl)
   __local__mu_scale_rr = mu_scale_rr
   append!(__params, @parameters (mu_scale_rr::Real), [description = "Rear-right road-friction multiplier (derived)"])
-  __initial_conditions[mu_scale_rr] = __local__mu_scale_rr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale_rr, __local__mu_scale_rr)
   __local__T_brake = T_brake
   append!(__params, @parameters (T_brake::Real), [description = "Brake actuator time constant (probe)"])
-  __initial_conditions[T_brake] = __local__T_brake
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_brake, __local__T_brake)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque (assumed)"])
-  __initial_conditions[tau_max] = __local__tau_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__i_s = i_s
   append!(__params, @parameters (i_s::Real), [description = "Steering ratio (assumed)"])
-  __initial_conditions[i_s] = __local__i_s
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_s, __local__i_s)
   __local__t_k = t_k
   append!(__params, @parameters (t_k::Real), [description = "Kingpin track (probe)"])
-  __initial_conditions[t_k] = __local__t_k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_k, __local__t_k)
   __local__ackermann = ackermann
   append!(__params, @parameters (ackermann::Real), [description = "Ackermann fraction (assumed)"])
-  __initial_conditions[ackermann] = __local__ackermann
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ackermann, __local__ackermann)
   __local__h_cg = h_cg
   append!(__params, @parameters (h_cg::Real), [description = "CG height above the road (NHTSA)"])
-  __initial_conditions[h_cg] = __local__h_cg
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_cg, __local__h_cg)
   __local__T_lt = T_lt
   append!(__params, @parameters (T_lt::Real), [description = "Load-transfer lag time constant (assumed)"])
-  __initial_conditions[T_lt] = __local__T_lt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_lt, __local__T_lt)
 
   ### Final Parameters (assignments)
 
@@ -185,61 +213,61 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named spin_rr = __Dyad__Spline())
   # Subcomponent world of type MultibodyComponents.PlanarMechanics.World
   world_overrides = __pop_subcomponent_overrides!(__overrides, "world")
-  push!(__systems, @named world = MultibodyComponents.PlanarMechanics.World(; g=Float64(0.0), world_overrides...))
+  push!(__systems, @named world = MultibodyComponents.PlanarMechanics.World(; g=Float64(0.0), __symbol_overrides(world_overrides)...))
   # Subcomponent body of type MultibodyComponents.PlanarMechanics.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = MultibodyComponents.PlanarMechanics.Body(; m=m, I=Iz, render=false, linearStatePriority=2, body_overrides...))
+  push!(__systems, @named body = MultibodyComponents.PlanarMechanics.Body(; m=m, I=Iz, render=false, linearStatePriority=2, __overrides = body_overrides))
   # Subcomponent tf of type MultibodyComponents.PlanarMechanics.FixedTranslation
   tf_overrides = __pop_subcomponent_overrides!(__overrides, "tf")
-  push!(__systems, @named tf = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[a, Float64(0)], tf_overrides...))
+  push!(__systems, @named tf = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[a, Float64(0)], __overrides = tf_overrides))
   # Subcomponent tr of type MultibodyComponents.PlanarMechanics.FixedTranslation
   tr_overrides = __pop_subcomponent_overrides!(__overrides, "tr")
-  push!(__systems, @named tr = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[-b, Float64(0)], tr_overrides...))
+  push!(__systems, @named tr = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[-b, Float64(0)], __overrides = tr_overrides))
   # Subcomponent fl_arm of type MultibodyComponents.PlanarMechanics.FixedTranslation
   fl_arm_overrides = __pop_subcomponent_overrides!(__overrides, "fl_arm")
-  push!(__systems, @named fl_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), tw / 2], fl_arm_overrides...))
+  push!(__systems, @named fl_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), tw / 2], __overrides = fl_arm_overrides))
   # Subcomponent fr_arm of type MultibodyComponents.PlanarMechanics.FixedTranslation
   fr_arm_overrides = __pop_subcomponent_overrides!(__overrides, "fr_arm")
-  push!(__systems, @named fr_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), -tw / 2], fr_arm_overrides...))
+  push!(__systems, @named fr_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), -tw / 2], __overrides = fr_arm_overrides))
   # Subcomponent rl_arm of type MultibodyComponents.PlanarMechanics.FixedTranslation
   rl_arm_overrides = __pop_subcomponent_overrides!(__overrides, "rl_arm")
-  push!(__systems, @named rl_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), tw / 2], rl_arm_overrides...))
+  push!(__systems, @named rl_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), tw / 2], __overrides = rl_arm_overrides))
   # Subcomponent rr_arm of type MultibodyComponents.PlanarMechanics.FixedTranslation
   rr_arm_overrides = __pop_subcomponent_overrides!(__overrides, "rr_arm")
-  push!(__systems, @named rr_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), -tw / 2], rr_arm_overrides...))
+  push!(__systems, @named rr_arm = MultibodyComponents.PlanarMechanics.FixedTranslation(; r=[Float64(0), -tw / 2], __overrides = rr_arm_overrides))
   # Subcomponent steerL of type MultibodyComponents.PlanarMechanics.Revolute
   steerL_overrides = __pop_subcomponent_overrides!(__overrides, "steerL")
-  push!(__systems, @named steerL = MultibodyComponents.PlanarMechanics.Revolute(; steerL_overrides...))
+  push!(__systems, @named steerL = MultibodyComponents.PlanarMechanics.Revolute(; __overrides = steerL_overrides))
   # Subcomponent steerR of type MultibodyComponents.PlanarMechanics.Revolute
   steerR_overrides = __pop_subcomponent_overrides!(__overrides, "steerR")
-  push!(__systems, @named steerR = MultibodyComponents.PlanarMechanics.Revolute(; steerR_overrides...))
+  push!(__systems, @named steerR = MultibodyComponents.PlanarMechanics.Revolute(; __overrides = steerR_overrides))
   # Subcomponent column of type RotationalComponents.Components.IdealGear
   column_overrides = __pop_subcomponent_overrides!(__overrides, "column")
-  push!(__systems, @named column = RotationalComponents.Components.IdealGear(; ratio=i_s, column_overrides...))
+  push!(__systems, @named column = RotationalComponents.Components.IdealGear(; ratio=i_s, __overrides = column_overrides))
   # Subcomponent linkage of type VehicleSystemsComponents.Vehicle.Planar.AckermannSteering
   linkage_overrides = __pop_subcomponent_overrides!(__overrides, "linkage")
-  push!(__systems, @named linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(; L=a + b, t_k=t_k, ackermann=ackermann, linkage_overrides...))
+  push!(__systems, @named linkage = VehicleSystemsComponents.Vehicle.Planar.AckermannSteering(; L=a + b, t_k=t_k, ackermann=ackermann, __overrides = linkage_overrides))
   # Subcomponent housing of type RotationalComponents.Components.Fixed
   housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; housing_overrides...))
+  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
   # Subcomponent loads of type VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads
   loads_overrides = __pop_subcomponent_overrides!(__overrides, "loads")
-  push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, h=h_cg, load_transfer=load_transfer, T_lt=T_lt, loads_overrides...))
+  push!(__systems, @named loads = VehicleSystemsComponents.Vehicle.Planar.QuasiStaticLoads(; m=m, a=a, b=b, tw=tw, h=h_cg, load_transfer=load_transfer, T_lt=T_lt, __overrides = loads_overrides))
   # Subcomponent fl of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   fl_overrides = __pop_subcomponent_overrides!(__overrides, "fl")
-  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fl, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, fl_overrides...))
+  push!(__systems, @named fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fl, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fl_overrides))
   # Subcomponent fr of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   fr_overrides = __pop_subcomponent_overrides!(__overrides, "fr")
-  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fr, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, fr_overrides...))
+  push!(__systems, @named fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_fr, sAdhesion=sAdhesion_f, sSlide=3 * sAdhesion_f, T_brake=T_brake, tau_max=tau_max, __overrides = fr_overrides))
   # Subcomponent rl of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   rl_overrides = __pop_subcomponent_overrides!(__overrides, "rl")
-  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rl, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, rl_overrides...))
+  push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rl, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rl_overrides))
   # Subcomponent rr of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
-  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rr, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, rr_overrides...))
+  push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rr, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -277,6 +305,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(tau_rr, rr.tau_cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export PlanarCar

@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestDriveCycle(; name)
+   TestDriveCycle(; name, __overrides)
 """
-@component function TestDriveCycle(; name = nothing, kwargs...)
+@component function TestDriveCycle(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestDriveCycle()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,13 +53,13 @@
   ### Components
   # Subcomponent cycle of type VehicleSystemsComponents.Vehicle.DriveCycle
   cycle_overrides = __pop_subcomponent_overrides!(__overrides, "cycle")
-  push!(__systems, @named cycle = VehicleSystemsComponents.Vehicle.DriveCycle(; cycle_overrides...))
+  push!(__systems, @named cycle = VehicleSystemsComponents.Vehicle.DriveCycle(; __overrides = cycle_overrides))
   # Subcomponent sink of type BlockComponents.Routing.RealPassThrough
   sink_overrides = __pop_subcomponent_overrides!(__overrides, "sink")
-  push!(__systems, @named sink = BlockComponents.Routing.RealPassThrough(; sink_overrides...))
+  push!(__systems, @named sink = BlockComponents.Routing.RealPassThrough(; __overrides = sink_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -72,6 +72,6 @@
   push!(__eqs, connect(cycle.y, sink.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestDriveCycle

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   LoadedSlipWheel1D(; name, radius, sAdhesion, sSlide, mu_A, mu_S, v_eps)
+   LoadedSlipWheel1D(; name, radius, sAdhesion, sSlide, mu_A, mu_S, v_eps, __overrides)
 
 One-dimensional tire contact whose normal load is a signal rather than a constant.
 
@@ -40,7 +40,7 @@ controller can read it.
 | `v`         | Vehicle longitudinal speed                         | m/s  |
 | `F_x`         | Longitudinal tire force                         | N  |
 """
-@component function LoadedSlipWheel1D(; name = nothing, radius=0.35, sAdhesion=0.04, sSlide=0.12, mu_A=1.26, mu_S=Float64(1.0), v_eps=0.5, kwargs...)
+@component function LoadedSlipWheel1D(; name = nothing, var"radius"=0.35, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=1.26, var"mu_S"=Float64(1.0), var"v_eps"=0.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -48,7 +48,7 @@ controller can read it.
     @named model = LoadedSlipWheel1D()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -57,6 +57,14 @@ controller can read it.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
+  haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
+  haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
 
   ### Structural Parameters (functions)
 
@@ -73,22 +81,22 @@ controller can read it.
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius; assumed"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__sAdhesion = sAdhesion
   append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion; assumed from the reusable tire curve"])
-  __initial_conditions[sAdhesion] = __local__sAdhesion
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion, __local__sAdhesion)
   __local__sSlide = sSlide
   append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau; assumed from the reusable tire curve"])
-  __initial_conditions[sSlide] = __local__sSlide
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient; Tesla's stated tire limit"])
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__mu_S = mu_S
   append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient; assumed"])
-  __initial_conditions[mu_S] = __local__mu_S
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [description = "Low-speed denominator floor that avoids singular standstill slip; numerical regularization"])
-  __initial_conditions[v_eps] = __local__v_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
 
   ### Final Parameters (assignments)
 
@@ -103,14 +111,14 @@ controller can read it.
 
   ### Variables (assignments)
   __ovr_omega = pop!(__overrides, "omega", nothing); isnothing(__ovr_omega) || push!(__eqs, omega ~ __ovr_omega)
-  __ovr_omega__initial = pop!(__overrides, "omega__initial", nothing); isnothing(__ovr_omega__initial) || (__initial_conditions[omega] = __ovr_omega__initial)
-  __ovr_omega__guess = pop!(__overrides, "omega__guess", nothing)
+  __ovr_omega__initial = pop!(__overrides, "omega.initial", nothing); isnothing(__ovr_omega__initial) || (__initial_conditions[omega] = __ovr_omega__initial)
+  __ovr_omega__guess = pop!(__overrides, "omega.guess", nothing)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
   __ovr_F_x = pop!(__overrides, "F_x", nothing); isnothing(__ovr_F_x) || push!(__eqs, F_x ~ __ovr_F_x)
-  __ovr_F_x__initial = pop!(__overrides, "F_x__initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
-  __ovr_F_x__guess = pop!(__overrides, "F_x__guess", nothing)
+  __ovr_F_x__initial = pop!(__overrides, "F_x.initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
+  __ovr_F_x__guess = pop!(__overrides, "F_x.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -120,10 +128,10 @@ controller can read it.
   push!(__systems, @named flange = __Dyad__Flange())
   # Subcomponent curve of type VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve
   curve_overrides = __pop_subcomponent_overrides!(__overrides, "curve")
-  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(; sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, curve_overrides...))
+  push!(__systems, @named curve = VehicleSystemsComponents.Vehicle.Wheel.TireFrictionCurve(; sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, __overrides = curve_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_omega__guess) || (__guesses[omega] = __ovr_omega__guess)
@@ -145,6 +153,6 @@ controller can read it.
   push!(__eqs, 0 ~ spline.tau + radius * flange.f)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export LoadedSlipWheel1D

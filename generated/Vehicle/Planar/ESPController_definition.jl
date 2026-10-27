@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ESPController(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, esp_on)
+   ESPController(; name, L, K_us, i_s, mu_est, g, k_lim, v_floor, Kp, Ki, deadband, v_on, Mz_max, tw, radius, T_max, T_build, R_build, esp_on, __overrides)
 
 Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 
@@ -50,7 +50,7 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 | `r_ref`         |                          | rad/s  |
 | `oversteer`         |                          | --  |
 """
-@component function ESPController(; name = nothing, L=2.7, K_us=0.0020387, i_s=Float64(16.0), mu_est=Float64(1.0), g=9.81, k_lim=0.85, v_floor=Float64(1.0), Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, R_build=Float64(1000000000.0), esp_on=Float64(1.0), kwargs...)
+@component function ESPController(; name = nothing, var"L"=2.7, var"K_us"=0.0020387, var"i_s"=Float64(16.0), var"mu_est"=Float64(1.0), var"g"=9.81, var"k_lim"=0.85, var"v_floor"=Float64(1.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"deadband"=0.03, var"v_on"=Float64(5.0), var"Mz_max"=Float64(10000.0), var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"esp_on"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -58,7 +58,7 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
     @named model = ESPController()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -67,6 +67,26 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
+  haskey(__overrides, "K_us") && (K_us = pop!(__overrides, "K_us"))
+  haskey(__overrides, "i_s") && (i_s = pop!(__overrides, "i_s"))
+  haskey(__overrides, "mu_est") && (mu_est = pop!(__overrides, "mu_est"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
+  haskey(__overrides, "k_lim") && (k_lim = pop!(__overrides, "k_lim"))
+  haskey(__overrides, "v_floor") && (v_floor = pop!(__overrides, "v_floor"))
+  haskey(__overrides, "Kp") && (Kp = pop!(__overrides, "Kp"))
+  haskey(__overrides, "Ki") && (Ki = pop!(__overrides, "Ki"))
+  haskey(__overrides, "deadband") && (deadband = pop!(__overrides, "deadband"))
+  haskey(__overrides, "v_on") && (v_on = pop!(__overrides, "v_on"))
+  haskey(__overrides, "Mz_max") && (Mz_max = pop!(__overrides, "Mz_max"))
+  haskey(__overrides, "tw") && (tw = pop!(__overrides, "tw"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "T_build") && (T_build = pop!(__overrides, "T_build"))
+  haskey(__overrides, "R_build") && (R_build = pop!(__overrides, "R_build"))
+  haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
 
   ### Structural Parameters (functions)
 
@@ -83,58 +103,58 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   ### Symbolic Parameters
   __local__L = L
   append!(__params, @parameters (L::Real))
-  __initial_conditions[L] = __local__L
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L, __local__L)
   __local__K_us = K_us
   append!(__params, @parameters (K_us::Real))
-  __initial_conditions[K_us] = __local__K_us
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K_us, __local__K_us)
   __local__i_s = i_s
   append!(__params, @parameters (i_s::Real))
-  __initial_conditions[i_s] = __local__i_s
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_s, __local__i_s)
   __local__mu_est = mu_est
   append!(__params, @parameters (mu_est::Real))
-  __initial_conditions[mu_est] = __local__mu_est
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_est, __local__mu_est)
   __local__g = g
   append!(__params, @parameters (g::Real))
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
   __local__k_lim = k_lim
   append!(__params, @parameters (k_lim::Real))
-  __initial_conditions[k_lim] = __local__k_lim
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_lim, __local__k_lim)
   __local__v_floor = v_floor
   append!(__params, @parameters (v_floor::Real))
-  __initial_conditions[v_floor] = __local__v_floor
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_floor, __local__v_floor)
   __local__Kp = Kp
   append!(__params, @parameters (Kp::Real))
-  __initial_conditions[Kp] = __local__Kp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Kp, __local__Kp)
   __local__Ki = Ki
   append!(__params, @parameters (Ki::Real))
-  __initial_conditions[Ki] = __local__Ki
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ki, __local__Ki)
   __local__deadband = deadband
   append!(__params, @parameters (deadband::Real))
-  __initial_conditions[deadband] = __local__deadband
+  __dyad_seed_parameter!(__initial_conditions, __bindings, deadband, __local__deadband)
   __local__v_on = v_on
   append!(__params, @parameters (v_on::Real))
-  __initial_conditions[v_on] = __local__v_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_on, __local__v_on)
   __local__Mz_max = Mz_max
   append!(__params, @parameters (Mz_max::Real))
-  __initial_conditions[Mz_max] = __local__Mz_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Mz_max, __local__Mz_max)
   __local__tw = tw
   append!(__params, @parameters (tw::Real))
-  __initial_conditions[tw] = __local__tw
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tw, __local__tw)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real))
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real))
-  __initial_conditions[T_build] = __local__T_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_build, __local__T_build)
   __local__R_build = R_build
   append!(__params, @parameters (R_build::Real))
-  __initial_conditions[R_build] = __local__R_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_build, __local__R_build)
   __local__esp_on = esp_on
   append!(__params, @parameters (esp_on::Real), [description = "ESP enable; outputs are zero below 0.5"])
-  __initial_conditions[esp_on] = __local__esp_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
 
   ### Final Parameters (assignments)
 
@@ -154,14 +174,14 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
 
   ### Variables (assignments)
   __ovr_Mz = pop!(__overrides, "Mz", nothing); isnothing(__ovr_Mz) || push!(__eqs, Mz ~ __ovr_Mz)
-  __ovr_Mz__initial = pop!(__overrides, "Mz__initial", nothing); isnothing(__ovr_Mz__initial) || (__initial_conditions[Mz] = __ovr_Mz__initial)
-  __ovr_Mz__guess = pop!(__overrides, "Mz__guess", nothing)
+  __ovr_Mz__initial = pop!(__overrides, "Mz.initial", nothing); isnothing(__ovr_Mz__initial) || (__initial_conditions[Mz] = __ovr_Mz__initial)
+  __ovr_Mz__guess = pop!(__overrides, "Mz.guess", nothing)
   __ovr_r_ref = pop!(__overrides, "r_ref", nothing); isnothing(__ovr_r_ref) || push!(__eqs, r_ref ~ __ovr_r_ref)
-  __ovr_r_ref__initial = pop!(__overrides, "r_ref__initial", nothing); isnothing(__ovr_r_ref__initial) || (__initial_conditions[r_ref] = __ovr_r_ref__initial)
-  __ovr_r_ref__guess = pop!(__overrides, "r_ref__guess", nothing)
+  __ovr_r_ref__initial = pop!(__overrides, "r_ref.initial", nothing); isnothing(__ovr_r_ref__initial) || (__initial_conditions[r_ref] = __ovr_r_ref__initial)
+  __ovr_r_ref__guess = pop!(__overrides, "r_ref.guess", nothing)
   __ovr_oversteer = pop!(__overrides, "oversteer", nothing); isnothing(__ovr_oversteer) || push!(__eqs, oversteer ~ __ovr_oversteer)
-  __ovr_oversteer__initial = pop!(__overrides, "oversteer__initial", nothing); isnothing(__ovr_oversteer__initial) || (__initial_conditions[oversteer] = __ovr_oversteer__initial)
-  __ovr_oversteer__guess = pop!(__overrides, "oversteer__guess", nothing)
+  __ovr_oversteer__initial = pop!(__overrides, "oversteer.initial", nothing); isnothing(__ovr_oversteer__initial) || (__initial_conditions[oversteer] = __ovr_oversteer__initial)
+  __ovr_oversteer__guess = pop!(__overrides, "oversteer.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -169,28 +189,28 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   ### Components
   # Subcomponent reference of type VehicleSystemsComponents.Vehicle.Planar.YawReference
   reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(; L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, reference_overrides...))
+  push!(__systems, @named reference = VehicleSystemsComponents.Vehicle.Planar.YawReference(; L=L, K_us=K_us, i_s=i_s, mu_est=mu_est, g=g, k_lim=k_lim, v_floor=v_floor, __overrides = reference_overrides))
   # Subcomponent yaw of type VehicleSystemsComponents.Vehicle.Planar.YawMomentController
   yaw_overrides = __pop_subcomponent_overrides!(__overrides, "yaw")
-  push!(__systems, @named yaw = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(; Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, yaw_overrides...))
+  push!(__systems, @named yaw = VehicleSystemsComponents.Vehicle.Planar.YawMomentController(; Kp=Kp, Ki=Ki, deadband=deadband, v_on=v_on, Mz_max=Mz_max, __overrides = yaw_overrides))
   # Subcomponent allocator of type VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator
   allocator_overrides = __pop_subcomponent_overrides!(__overrides, "allocator")
-  push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, allocator_overrides...))
+  push!(__systems, @named allocator = VehicleSystemsComponents.Vehicle.Planar.BrakeAllocator(; tw=tw, radius=radius, T_max=T_max, T_build=T_build, R_build=R_build, __overrides = allocator_overrides))
   # Subcomponent enable_fl of type BlockComponents.Math.Gain
   enable_fl_overrides = __pop_subcomponent_overrides!(__overrides, "enable_fl")
-  push!(__systems, @named enable_fl = BlockComponents.Math.Gain(; k=esp_on, enable_fl_overrides...))
+  push!(__systems, @named enable_fl = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_fl_overrides))
   # Subcomponent enable_fr of type BlockComponents.Math.Gain
   enable_fr_overrides = __pop_subcomponent_overrides!(__overrides, "enable_fr")
-  push!(__systems, @named enable_fr = BlockComponents.Math.Gain(; k=esp_on, enable_fr_overrides...))
+  push!(__systems, @named enable_fr = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_fr_overrides))
   # Subcomponent enable_rl of type BlockComponents.Math.Gain
   enable_rl_overrides = __pop_subcomponent_overrides!(__overrides, "enable_rl")
-  push!(__systems, @named enable_rl = BlockComponents.Math.Gain(; k=esp_on, enable_rl_overrides...))
+  push!(__systems, @named enable_rl = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_rl_overrides))
   # Subcomponent enable_rr of type BlockComponents.Math.Gain
   enable_rr_overrides = __pop_subcomponent_overrides!(__overrides, "enable_rr")
-  push!(__systems, @named enable_rr = BlockComponents.Math.Gain(; k=esp_on, enable_rr_overrides...))
+  push!(__systems, @named enable_rr = BlockComponents.Math.Gain(; k=esp_on, __overrides = enable_rr_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_Mz__guess) || (__guesses[Mz] = __ovr_Mz__guess)
@@ -223,6 +243,6 @@ Continuous ESP composed from yaw reference, yaw control, and brake allocation.
   push!(__eqs, connect(enable_rr.y, dT_rr))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ESPController

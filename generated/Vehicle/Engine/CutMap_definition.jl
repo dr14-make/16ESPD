@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CutMap(; name, rpm_axis, kpa_axis, data, gain)
+   CutMap(; name, rpm_axis, kpa_axis, data, gain, __overrides)
 
 ## Parameters:
 
@@ -23,7 +23,7 @@
  * `cut` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CutMap(; name = nothing, rpm_axis=nothing, kpa_axis=nothing, data=nothing, gain=Float64(1.0), kwargs...)
+@component function CutMap(; name = nothing, var"rpm_axis"=nothing, var"kpa_axis"=nothing, var"data"=nothing, var"gain"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -31,7 +31,7 @@
     @named model = CutMap()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -40,6 +40,12 @@
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "rpm_axis") && (rpm_axis = pop!(__overrides, "rpm_axis"))
+  haskey(__overrides, "kpa_axis") && (kpa_axis = pop!(__overrides, "kpa_axis"))
+  haskey(__overrides, "data") && (data = pop!(__overrides, "data"))
+  haskey(__overrides, "gain") && (gain = pop!(__overrides, "gain"))
 
   ### Structural Parameters (functions)
 
@@ -56,7 +62,7 @@
   ### Symbolic Parameters
   __local__gain = gain
   append!(__params, @parameters (gain::Real), [description = "Scale from the table's output units to SI (derived)"])
-  __initial_conditions[gain] = __local__gain
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gain, __local__gain)
 
   ### Final Parameters (assignments)
 
@@ -76,10 +82,10 @@
   ### Components
   # Subcomponent map of type VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap
   map_overrides = __pop_subcomponent_overrides!(__overrides, "map")
-  push!(__systems, @named map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(; rpm_axis=rpm_axis, kpa_axis=kpa_axis, data=data, gain=gain, map_overrides...))
+  push!(__systems, @named map = VehicleSystemsComponents.Vehicle.Engine.SpeedLoadMap(; rpm_axis=rpm_axis, kpa_axis=kpa_axis, data=data, gain=gain, __overrides = map_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -94,6 +100,6 @@
   push!(__eqs, connect(p_m, map.p_m))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CutMap

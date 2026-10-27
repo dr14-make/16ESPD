@@ -5,11 +5,197 @@
 
 
 using DyadInterface
-using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
-using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct RoadsterLaunchTransientSpec <: AbstractTransientAnalysisSpec
+@component function RoadsterLaunchTransient__System(; name = nothing, var"alg"=ODEAlg.Auto(), var"start"=0, var"stop"=6.0, var"abstol"=1e-8, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"m"=2000, var"CdA"=0.6, var"P_max"=1000000.0, var"T_max"=12000, var"fan_cmd"=0.0, var"skirt_gap"=0.003, var"thrust_cmd"=0.0, var"tank_volume"=0.6, var"tank_pressure"=38000000.0, var"tank_n"=1.4, var"A_t"=0.001286, var"down_fraction"=0.0, var"mu_A"=1.26, var"share"=0.55, var"h_over_L"=0.17, __overrides = Dict{String, Any}())
+  isnothing(name) && throw(ArgumentError("""
+    The `name` keyword must be provided. Please consider using the `@named` macro,
+    like so:
+  
+    @named model = RoadsterLaunchTransient__System()
+  """))
+
+  __overrides = Dict{String, Any}(__overrides)
+  __params = Symbolics.SymbolicT[]
+  __vars = Symbolics.SymbolicT[]
+  __systems = System[]
+  __guesses = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initial_conditions = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initialization_eqs = Equation[]
+  __eqs = Equation[]
+  __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "alg") && (alg = pop!(__overrides, "alg"))
+  haskey(__overrides, "start") && (start = pop!(__overrides, "start"))
+  haskey(__overrides, "stop") && (stop = pop!(__overrides, "stop"))
+  haskey(__overrides, "abstol") && (abstol = pop!(__overrides, "abstol"))
+  haskey(__overrides, "reltol") && (reltol = pop!(__overrides, "reltol"))
+  haskey(__overrides, "saveat") && (saveat = pop!(__overrides, "saveat"))
+  haskey(__overrides, "dtmax") && (dtmax = pop!(__overrides, "dtmax"))
+  haskey(__overrides, "tstops") && (tstops = pop!(__overrides, "tstops"))
+  haskey(__overrides, "automatic_discontinuity_detection") && (automatic_discontinuity_detection = pop!(__overrides, "automatic_discontinuity_detection"))
+  haskey(__overrides, "optimize") && (optimize = pop!(__overrides, "optimize"))
+  haskey(__overrides, "progress") && (progress = pop!(__overrides, "progress"))
+  haskey(__overrides, "respecialize") && (respecialize = pop!(__overrides, "respecialize"))
+  haskey(__overrides, "specialization") && (specialization = pop!(__overrides, "specialization"))
+  haskey(__overrides, "verbose") && (verbose = pop!(__overrides, "verbose"))
+  haskey(__overrides, "log_file") && (log_file = pop!(__overrides, "log_file"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
+  haskey(__overrides, "P_max") && (P_max = pop!(__overrides, "P_max"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "fan_cmd") && (fan_cmd = pop!(__overrides, "fan_cmd"))
+  haskey(__overrides, "skirt_gap") && (skirt_gap = pop!(__overrides, "skirt_gap"))
+  haskey(__overrides, "thrust_cmd") && (thrust_cmd = pop!(__overrides, "thrust_cmd"))
+  haskey(__overrides, "tank_volume") && (tank_volume = pop!(__overrides, "tank_volume"))
+  haskey(__overrides, "tank_pressure") && (tank_pressure = pop!(__overrides, "tank_pressure"))
+  haskey(__overrides, "tank_n") && (tank_n = pop!(__overrides, "tank_n"))
+  haskey(__overrides, "A_t") && (A_t = pop!(__overrides, "A_t"))
+  haskey(__overrides, "down_fraction") && (down_fraction = pop!(__overrides, "down_fraction"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "share") && (share = pop!(__overrides, "share"))
+  haskey(__overrides, "h_over_L") && (h_over_L = pop!(__overrides, "h_over_L"))
+
+  ### Structural Parameters (functions)
+
+  ### Structural Parameters (Final)
+
+  ### Path Parameters (functions)
+
+  ### Path Parameters (non-final)
+
+  ### Final Parameters (declarations)
+
+  ### Deferred assignment (default values that depend on final parameters)
+
+  ### Symbolic Parameters
+  __local__alg = alg
+  append!(__params, @parameters (alg::ODEAlg.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alg, __local__alg)
+  __local__start = start
+  append!(__params, @parameters (start::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start, __local__start)
+  __local__stop = stop
+  append!(__params, @parameters (stop::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, stop, __local__stop)
+  __local__abstol = abstol
+  append!(__params, @parameters (abstol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abstol, __local__abstol)
+  __local__reltol = reltol
+  append!(__params, @parameters (reltol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, reltol, __local__reltol)
+  __local__saveat = saveat
+  append!(__params, @parameters (saveat::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, saveat, __local__saveat)
+  __local__dtmax = dtmax
+  append!(__params, @parameters (dtmax::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dtmax, __local__dtmax)
+  __local__tstops = tstops
+  append!(__params, @parameters (tstops::Array{Float64, 1}))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tstops, __local__tstops)
+  __local__automatic_discontinuity_detection = automatic_discontinuity_detection
+  append!(__params, @parameters (automatic_discontinuity_detection::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, automatic_discontinuity_detection, __local__automatic_discontinuity_detection)
+  __local__optimize = optimize
+  append!(__params, @parameters (optimize::OptimizationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, optimize, __local__optimize)
+  __local__progress = progress
+  append!(__params, @parameters (progress::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, progress, __local__progress)
+  __local__respecialize = respecialize
+  append!(__params, @parameters (respecialize::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, respecialize, __local__respecialize)
+  __local__specialization = specialization
+  append!(__params, @parameters (specialization::SpecializationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, specialization, __local__specialization)
+  __local__verbose = verbose
+  append!(__params, @parameters (verbose::DEVerbosity.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, verbose, __local__verbose)
+  __local__log_file = log_file
+  append!(__params, @parameters (log_file::String))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, log_file, __local__log_file)
+  __local__m = m
+  append!(__params, @parameters (m::Float64), [description = "Vehicle mass", bounds = (0, Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
+  __local__CdA = CdA
+  append!(__params, @parameters (CdA::Float64), [description = "Aerodynamic drag area, Cd * A; assumed"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, CdA, __local__CdA)
+  __local__P_max = P_max
+  append!(__params, @parameters (P_max::Float64), [description = "Rated power"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, P_max, __local__P_max)
+  __local__T_max = T_max
+  append!(__params, @parameters (T_max::Float64), [description = "Peak wheel torque"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
+  __local__fan_cmd = fan_cmd
+  append!(__params, @parameters (fan_cmd::Float64), [description = "Normalized suction-fan command"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, fan_cmd, __local__fan_cmd)
+  __local__skirt_gap = skirt_gap
+  append!(__params, @parameters (skirt_gap::Float64), [description = "Effective skirt gap; assumed"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, skirt_gap, __local__skirt_gap)
+  __local__thrust_cmd = thrust_cmd
+  append!(__params, @parameters (thrust_cmd::Float64), [description = "Normalized rear-thrust valve command"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, thrust_cmd, __local__thrust_cmd)
+  __local__tank_volume = tank_volume
+  append!(__params, @parameters (tank_volume::Float64), [description = "Compressed-air tank volume"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_volume, __local__tank_volume)
+  __local__tank_pressure = tank_pressure
+  append!(__params, @parameters (tank_pressure::Float64), [description = "Initial compressed-air pressure"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_pressure, __local__tank_pressure)
+  __local__tank_n = tank_n
+  append!(__params, @parameters (tank_n::Float64), [description = "Tank polytropic index"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_n, __local__tank_n)
+  __local__A_t = A_t
+  append!(__params, @parameters (A_t::Float64), [description = "Total nozzle throat area"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_t, __local__A_t)
+  __local__down_fraction = down_fraction
+  append!(__params, @parameters (down_fraction::Float64), [description = "Share of thrust directed downward"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, down_fraction, __local__down_fraction)
+  __local__mu_A = mu_A
+  append!(__params, @parameters (mu_A::Float64), [description = "Peak tire adhesion"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
+  __local__share = share
+  append!(__params, @parameters (share::Float64), [description = "Static fraction of weight on the driven axle; 1 for all-wheel drive"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, share, __local__share)
+  __local__h_over_L = h_over_L
+  append!(__params, @parameters (h_over_L::Float64), [description = "Center-of-mass height over wheelbase; 0 for all-wheel drive"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, h_over_L, __local__h_over_L)
+
+  ### Final Parameters (assignments)
+
+  ### Final Path Parameters
+
+  ### Variables (declarations)
+
+  ### Variables (assignments)
+
+  ### Constants
+  __constants = Any[]
+
+  ### Components
+  # Subcomponent model of type VehicleSystemsComponents.Roadster.RoadsterLaunch
+  model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
+  push!(__systems, @named model = VehicleSystemsComponents.Roadster.RoadsterLaunch(; m=m, CdA=CdA, P_max=P_max, T_max=T_max, fan_cmd=fan_cmd, skirt_gap=skirt_gap, thrust_cmd=thrust_cmd, tank_volume=tank_volume, tank_pressure=tank_pressure, tank_n=tank_n, A_t=A_t, down_fraction=down_fraction, mu_A=mu_A, share=share, h_over_L=h_over_L, __overrides = model_overrides))
+
+  ### Check there are no unmatched overrides
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
+
+  ### Guesses
+
+  ### Initialization Equations
+
+  ### Assertions
+  __assertions = []
+
+  ### Equations
+
+  # Return completely constructed System
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+end
+export RoadsterLaunchTransient__System
+
+@kwdef struct RoadsterLaunchTransient__Spec <: AbstractTransientAnalysisSpec
   name::Symbol = :RoadsterLaunchTransient
+  __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
   var"alg"::ODEAlg.Type = ODEAlg.Auto()
   var"start"::Float64 = 0
   var"stop"::Float64 = 6.0
@@ -66,9 +252,10 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # load. The baseline `VehicleBody` already applies resistance from vehicle weight; this model adds
   # only the suction-dependent increment, so `fan_cmd = 0` reproduces the tire-only car exactly.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Roadster.RoadsterLaunch(; name=:RoadsterLaunch)
+  __system::System = RoadsterLaunchTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"m"=var"m", var"CdA"=var"CdA", var"P_max"=var"P_max", var"T_max"=var"T_max", var"fan_cmd"=var"fan_cmd", var"skirt_gap"=var"skirt_gap", var"thrust_cmd"=var"thrust_cmd", var"tank_volume"=var"tank_volume", var"tank_pressure"=var"tank_pressure", var"tank_n"=var"tank_n", var"A_t"=var"A_t", var"down_fraction"=var"down_fraction", var"mu_A"=var"mu_A", var"share"=var"share", var"h_over_L"=var"h_over_L")
 end
 
-function DyadInterface.run_analysis(spec::RoadsterLaunchTransientSpec)
+function __dyad_base_analysis_spec(spec::RoadsterLaunchTransient__Spec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.m => spec.var"m")
@@ -86,11 +273,19 @@ function DyadInterface.run_analysis(spec::RoadsterLaunchTransientSpec)
   push!(overrides, no_namespace_model.mu_A => spec.var"mu_A")
   push!(overrides, no_namespace_model.share => spec.var"share")
   push!(overrides, no_namespace_model.h_over_L => spec.var"h_over_L")
-  base_spec = TransientAnalysisSpec(;
-    name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
+  merge!(overrides, spec.__overrides)
+  TransientAnalysisSpec(;
+    name=spec.name, overrides, __system=spec.__system, var"alg"=spec.var"alg", var"start"=spec.var"start", var"stop"=spec.var"stop", var"abstol"=spec.var"abstol", var"reltol"=spec.var"reltol", var"saveat"=spec.var"saveat", var"dtmax"=spec.var"dtmax", var"tstops"=spec.var"tstops", var"automatic_discontinuity_detection"=spec.var"automatic_discontinuity_detection", var"optimize"=spec.var"optimize", var"progress"=spec.var"progress", var"respecialize"=spec.var"respecialize", var"specialization"=spec.var"specialization", var"verbose"=spec.var"verbose", var"log_file"=spec.var"log_file", var"model"=spec.var"model"
   )
-  run_analysis(base_spec)
 end
 
-RoadsterLaunchTransient(;kwargs...) = run_analysis(RoadsterLaunchTransientSpec(;kwargs...))
-export RoadsterLaunchTransient, RoadsterLaunchTransientSpec
+function DyadInterface.run_analysis(spec::RoadsterLaunchTransient__Spec)
+  run_analysis(__dyad_base_analysis_spec(spec))
+end
+
+function DyadInterface.setup_analysis(spec::RoadsterLaunchTransient__Spec; kwargs...)
+  DyadInterface.setup_analysis(__dyad_base_analysis_spec(spec); kwargs...)
+end
+
+RoadsterLaunchTransient(;kwargs...) = run_analysis(RoadsterLaunchTransient__Spec(;kwargs...))
+export RoadsterLaunchTransient, RoadsterLaunchTransient__Spec

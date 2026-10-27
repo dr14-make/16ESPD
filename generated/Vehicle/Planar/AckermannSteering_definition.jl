@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   AckermannSteering(; name, L, t_k, ackermann)
+   AckermannSteering(; name, L, t_k, ackermann, __overrides)
 
 Massless Ackermann steering linkage with physical rotational shafts.
 
@@ -36,7 +36,7 @@ shaft torques satisfy virtual work so steering reactions propagate back through 
 | `g_left`         |                          | --  |
 | `g_right`         |                          | --  |
 """
-@component function AckermannSteering(; name = nothing, L=2.7, t_k=1.55, ackermann=Float64(1.0), kwargs...)
+@component function AckermannSteering(; name = nothing, var"L"=2.7, var"t_k"=1.55, var"ackermann"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -44,7 +44,7 @@ shaft torques satisfy virtual work so steering reactions propagate back through 
     @named model = AckermannSteering()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,6 +53,11 @@ shaft torques satisfy virtual work so steering reactions propagate back through 
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "L") && (L = pop!(__overrides, "L"))
+  haskey(__overrides, "t_k") && (t_k = pop!(__overrides, "t_k"))
+  haskey(__overrides, "ackermann") && (ackermann = pop!(__overrides, "ackermann"))
 
   ### Structural Parameters (functions)
 
@@ -70,13 +75,13 @@ shaft torques satisfy virtual work so steering reactions propagate back through 
   ### Symbolic Parameters
   __local__L = L
   append!(__params, @parameters (L::Real), [description = "Wheelbase (probe)"])
-  __initial_conditions[L] = __local__L
+  __dyad_seed_parameter!(__initial_conditions, __bindings, L, __local__L)
   __local__t_k = t_k
   append!(__params, @parameters (t_k::Real), [description = "Kingpin track (probe)"])
-  __initial_conditions[t_k] = __local__t_k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_k, __local__t_k)
   __local__ackermann = ackermann
   append!(__params, @parameters (ackermann::Real), [description = "Ackermann fraction (assumed)"])
-  __initial_conditions[ackermann] = __local__ackermann
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ackermann, __local__ackermann)
 
   ### Final Parameters (assignments)
   __bindings[k] = ackermann * t_k / (2 * L)
@@ -91,17 +96,17 @@ shaft torques satisfy virtual work so steering reactions propagate back through 
 
   ### Variables (assignments)
   __ovr_delta_left = pop!(__overrides, "delta_left", nothing); isnothing(__ovr_delta_left) || push!(__eqs, delta_left ~ __ovr_delta_left)
-  __ovr_delta_left__initial = pop!(__overrides, "delta_left__initial", nothing); isnothing(__ovr_delta_left__initial) || (__initial_conditions[delta_left] = __ovr_delta_left__initial)
-  __ovr_delta_left__guess = pop!(__overrides, "delta_left__guess", nothing)
+  __ovr_delta_left__initial = pop!(__overrides, "delta_left.initial", nothing); isnothing(__ovr_delta_left__initial) || (__initial_conditions[delta_left] = __ovr_delta_left__initial)
+  __ovr_delta_left__guess = pop!(__overrides, "delta_left.guess", nothing)
   __ovr_delta_right = pop!(__overrides, "delta_right", nothing); isnothing(__ovr_delta_right) || push!(__eqs, delta_right ~ __ovr_delta_right)
-  __ovr_delta_right__initial = pop!(__overrides, "delta_right__initial", nothing); isnothing(__ovr_delta_right__initial) || (__initial_conditions[delta_right] = __ovr_delta_right__initial)
-  __ovr_delta_right__guess = pop!(__overrides, "delta_right__guess", nothing)
+  __ovr_delta_right__initial = pop!(__overrides, "delta_right.initial", nothing); isnothing(__ovr_delta_right__initial) || (__initial_conditions[delta_right] = __ovr_delta_right__initial)
+  __ovr_delta_right__guess = pop!(__overrides, "delta_right.guess", nothing)
   __ovr_g_left = pop!(__overrides, "g_left", nothing); isnothing(__ovr_g_left) || push!(__eqs, g_left ~ __ovr_g_left)
-  __ovr_g_left__initial = pop!(__overrides, "g_left__initial", nothing); isnothing(__ovr_g_left__initial) || (__initial_conditions[g_left] = __ovr_g_left__initial)
-  __ovr_g_left__guess = pop!(__overrides, "g_left__guess", nothing)
+  __ovr_g_left__initial = pop!(__overrides, "g_left.initial", nothing); isnothing(__ovr_g_left__initial) || (__initial_conditions[g_left] = __ovr_g_left__initial)
+  __ovr_g_left__guess = pop!(__overrides, "g_left.guess", nothing)
   __ovr_g_right = pop!(__overrides, "g_right", nothing); isnothing(__ovr_g_right) || push!(__eqs, g_right ~ __ovr_g_right)
-  __ovr_g_right__initial = pop!(__overrides, "g_right__initial", nothing); isnothing(__ovr_g_right__initial) || (__initial_conditions[g_right] = __ovr_g_right__initial)
-  __ovr_g_right__guess = pop!(__overrides, "g_right__guess", nothing)
+  __ovr_g_right__initial = pop!(__overrides, "g_right.initial", nothing); isnothing(__ovr_g_right__initial) || (__initial_conditions[g_right] = __ovr_g_right__initial)
+  __ovr_g_right__guess = pop!(__overrides, "g_right.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -113,7 +118,7 @@ shaft torques satisfy virtual work so steering reactions propagate back through 
   push!(__systems, @named support = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_delta_left__guess) || (__guesses[delta_left] = __ovr_delta_left__guess)
@@ -137,6 +142,6 @@ shaft torques satisfy virtual work so steering reactions propagate back through 
   push!(__eqs, 0 ~ support.tau + spline_in.tau + spline_left.tau + spline_right.tau)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export AckermannSteering

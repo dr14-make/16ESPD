@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CVTDriveline(; name, r, ratio_initial)
+   CVTDriveline(; name, r, ratio_initial, __overrides)
 
 CVT and centrifugal launch clutch: engine shaft in, tractive force on the body out.
 
@@ -27,7 +27,7 @@ the clutch opens at idle and progressively couples the engine for launch.
  * `support_t` - This connector represents a mechanical flange with position and force as the potential and flow variables, respectively. ([`Flange`](@ref))
  * `pedal` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 """
-@component function CVTDriveline(; name = nothing, r=0.31, ratio_initial=Float64(12.0), kwargs...)
+@component function CVTDriveline(; name = nothing, var"r"=0.31, var"ratio_initial"=Float64(12.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ the clutch opens at idle and progressively couples the engine for launch.
     @named model = CVTDriveline()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,10 @@ the clutch opens at idle and progressively couples the engine for launch.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "r") && (r = pop!(__overrides, "r"))
+  haskey(__overrides, "ratio_initial") && (ratio_initial = pop!(__overrides, "ratio_initial"))
 
   ### Structural Parameters (functions)
 
@@ -60,10 +64,10 @@ the clutch opens at idle and progressively couples the engine for launch.
   ### Symbolic Parameters
   __local__r = r
   append!(__params, @parameters (r::Real), [description = "Wheel rolling radius (Hands-on 1 car)"])
-  __initial_conditions[r] = __local__r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, r, __local__r)
   __local__ratio_initial = ratio_initial
   append!(__params, @parameters (ratio_initial::Real), [description = "Initial total ratio (assumed launch setting; override for initialized cruise)"])
-  __initial_conditions[ratio_initial] = __local__ratio_initial
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ratio_initial, __local__ratio_initial)
 
   ### Final Parameters (assignments)
 
@@ -84,16 +88,16 @@ the clutch opens at idle and progressively couples the engine for launch.
   push!(__systems, @named support_t = __Dyad__Flange())
   # Subcomponent clutch of type VehicleSystemsComponents.Vehicle.CentrifugalClutch
   clutch_overrides = __pop_subcomponent_overrides!(__overrides, "clutch")
-  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; clutch_overrides...))
+  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; __overrides = clutch_overrides))
   # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
   variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; ratio_initial=ratio_initial, variator_overrides...))
+  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; ratio_initial=ratio_initial, __overrides = variator_overrides))
   # Subcomponent wheel of type RotationalComponents.Components.IdealRollingWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = RotationalComponents.Components.IdealRollingWheel(; radius=r, wheel_overrides...))
+  push!(__systems, @named wheel = RotationalComponents.Components.IdealRollingWheel(; radius=r, __overrides = wheel_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -114,6 +118,6 @@ the clutch opens at idle and progressively couples the engine for launch.
   push!(__eqs, connect(wheel.support_t, support_t))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CVTDriveline

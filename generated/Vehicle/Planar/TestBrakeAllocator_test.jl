@@ -15,7 +15,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(;),
+  params=Dict{String, Any}(),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -37,7 +37,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; moment__k=2800, mode__k=0),
+  params=Dict{String, Any}("moment.k" => 2800.0, "mode.k" => 0.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
@@ -59,7 +59,7 @@ __dyad_run_test_case!(
   abstol=1e-6,
   reltol=1e-6,
   solver=ODEAlg.Tsit5(),
-  params=(; moment__k=-20000),
+  params=Dict{String, Any}("moment.k" => -20000.0),
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[(m -> m.allocator.dT_fr, "allocator.dT_fr", 2500, 1, 1e-5)],

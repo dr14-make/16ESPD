@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ThrottlePedalStep(; name, u_0, u_step, t_step, u_end, t_ramp, d_ramp, U_batt, k, Ti, Td, R_wiper1, eps_lh)
+   ThrottlePedalStep(; name, u_0, u_step, t_step, u_end, t_ramp, d_ramp, U_batt, k, Ti, Td, R_wiper1, eps_lh, __overrides)
 
 The electronic throttle answering the driver's pedal: a step opening, a hold, then a ramp back.
 
@@ -32,7 +32,7 @@ opens in equilibrium.
 | `R_wiper1`         | TPS track 1 wiper contact resistance                         | Ω  |   10.0 |
 | `eps_lh`         | Width over which the spring preload changes sign at limp home                         | rad  |   0.0035 |
 """
-@component function ThrottlePedalStep(; name = nothing, u_0=0.0722892, u_step=0.6, t_step=0.1, u_end=0.1, t_ramp=0.6, d_ramp=0.4, U_batt=Float64(14.0), k=Float64(40.0), Ti=0.1, Td=0.02, R_wiper1=Float64(10.0), eps_lh=0.0035, kwargs...)
+@component function ThrottlePedalStep(; name = nothing, var"u_0"=0.0722892, var"u_step"=0.6, var"t_step"=0.1, var"u_end"=0.1, var"t_ramp"=0.6, var"d_ramp"=0.4, var"U_batt"=Float64(14.0), var"k"=Float64(40.0), var"Ti"=0.1, var"Td"=0.02, var"R_wiper1"=Float64(10.0), var"eps_lh"=0.0035, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -40,7 +40,7 @@ opens in equilibrium.
     @named model = ThrottlePedalStep()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -49,6 +49,20 @@ opens in equilibrium.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "u_0") && (u_0 = pop!(__overrides, "u_0"))
+  haskey(__overrides, "u_step") && (u_step = pop!(__overrides, "u_step"))
+  haskey(__overrides, "t_step") && (t_step = pop!(__overrides, "t_step"))
+  haskey(__overrides, "u_end") && (u_end = pop!(__overrides, "u_end"))
+  haskey(__overrides, "t_ramp") && (t_ramp = pop!(__overrides, "t_ramp"))
+  haskey(__overrides, "d_ramp") && (d_ramp = pop!(__overrides, "d_ramp"))
+  haskey(__overrides, "U_batt") && (U_batt = pop!(__overrides, "U_batt"))
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
+  haskey(__overrides, "Ti") && (Ti = pop!(__overrides, "Ti"))
+  haskey(__overrides, "Td") && (Td = pop!(__overrides, "Td"))
+  haskey(__overrides, "R_wiper1") && (R_wiper1 = pop!(__overrides, "R_wiper1"))
+  haskey(__overrides, "eps_lh") && (eps_lh = pop!(__overrides, "eps_lh"))
 
   ### Structural Parameters (functions)
 
@@ -65,40 +79,40 @@ opens in equilibrium.
   ### Symbolic Parameters
   __local__u_0 = u_0
   append!(__params, @parameters (u_0::Real), [description = "Opening before the step, limp home (6 of 83 deg)"])
-  __initial_conditions[u_0] = __local__u_0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, u_0, __local__u_0)
   __local__u_step = u_step
   append!(__params, @parameters (u_step::Real), [description = "Opening after the step"])
-  __initial_conditions[u_step] = __local__u_step
+  __dyad_seed_parameter!(__initial_conditions, __bindings, u_step, __local__u_step)
   __local__t_step = t_step
   append!(__params, @parameters (t_step::Real), [description = "Time of the step"])
-  __initial_conditions[t_step] = __local__t_step
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_step, __local__t_step)
   __local__u_end = u_end
   append!(__params, @parameters (u_end::Real), [description = "Opening at the end of the ramp"])
-  __initial_conditions[u_end] = __local__u_end
+  __dyad_seed_parameter!(__initial_conditions, __bindings, u_end, __local__u_end)
   __local__t_ramp = t_ramp
   append!(__params, @parameters (t_ramp::Real), [description = "Start of the ramp"])
-  __initial_conditions[t_ramp] = __local__t_ramp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_ramp, __local__t_ramp)
   __local__d_ramp = d_ramp
   append!(__params, @parameters (d_ramp::Real), [description = "Duration of the ramp"])
-  __initial_conditions[d_ramp] = __local__d_ramp
+  __dyad_seed_parameter!(__initial_conditions, __bindings, d_ramp, __local__d_ramp)
   __local__U_batt = U_batt
   append!(__params, @parameters (U_batt::Real), [description = "Supply voltage"])
-  __initial_conditions[U_batt] = __local__U_batt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, U_batt, __local__U_batt)
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Position controller gain"])
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
   __local__Ti = Ti
   append!(__params, @parameters (Ti::Real), [description = "Position controller integral time"])
-  __initial_conditions[Ti] = __local__Ti
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Ti, __local__Ti)
   __local__Td = Td
   append!(__params, @parameters (Td::Real), [description = "Position controller derivative time"])
-  __initial_conditions[Td] = __local__Td
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Td, __local__Td)
   __local__R_wiper1 = R_wiper1
   append!(__params, @parameters (R_wiper1::Real), [description = "TPS track 1 wiper contact resistance"])
-  __initial_conditions[R_wiper1] = __local__R_wiper1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_wiper1, __local__R_wiper1)
   __local__eps_lh = eps_lh
   append!(__params, @parameters (eps_lh::Real), [description = "Width over which the spring preload changes sign at limp home"])
-  __initial_conditions[eps_lh] = __local__eps_lh
+  __dyad_seed_parameter!(__initial_conditions, __bindings, eps_lh, __local__eps_lh)
 
   ### Final Parameters (assignments)
 
@@ -114,19 +128,19 @@ opens in equilibrium.
   ### Components
   # Subcomponent step of type BlockComponents.Sources.Step
   step_overrides = __pop_subcomponent_overrides!(__overrides, "step")
-  push!(__systems, @named step = BlockComponents.Sources.Step(; offset=u_0, height=u_step - u_0, start_time=t_step, step_overrides...))
+  push!(__systems, @named step = BlockComponents.Sources.Step(; offset=u_0, height=u_step - u_0, start_time=t_step, __overrides = step_overrides))
   # Subcomponent ramp of type BlockComponents.Sources.Ramp
   ramp_overrides = __pop_subcomponent_overrides!(__overrides, "ramp")
-  push!(__systems, @named ramp = BlockComponents.Sources.Ramp(; offset=Float64(0), height=u_end - u_step, duration=d_ramp, start_time=t_ramp, ramp_overrides...))
+  push!(__systems, @named ramp = BlockComponents.Sources.Ramp(; offset=Float64(0), height=u_end - u_step, duration=d_ramp, start_time=t_ramp, __overrides = ramp_overrides))
   # Subcomponent command of type BlockComponents.Math.Add
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Math.Add(; command_overrides...))
+  push!(__systems, @named command = BlockComponents.Math.Add(; __overrides = command_overrides))
   # Subcomponent etc of type VehicleSystemsComponents.Vehicle.Engine.ElectronicThrottle
   etc_overrides = __pop_subcomponent_overrides!(__overrides, "etc")
-  push!(__systems, @named etc = VehicleSystemsComponents.Vehicle.Engine.ElectronicThrottle(; U_batt=U_batt, k=k, Ti=Ti, Td=Td, R_wiper1=R_wiper1, eps_lh=eps_lh, phi_0=u_0 * 1.448623, etc_overrides...))
+  push!(__systems, @named etc = VehicleSystemsComponents.Vehicle.Engine.ElectronicThrottle(; U_batt=U_batt, k=k, Ti=Ti, Td=Td, R_wiper1=R_wiper1, eps_lh=eps_lh, phi_0=u_0 * 1.448623, __overrides = etc_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -141,6 +155,6 @@ opens in equilibrium.
   push!(__eqs, connect(command.y, etc.u_cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ThrottlePedalStep

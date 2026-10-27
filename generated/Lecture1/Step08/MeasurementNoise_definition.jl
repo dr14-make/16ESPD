@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   MeasurementNoise(; name, amplitude, f1, f2, f3, f4, f5, f6, p1, p2, p3, p4, p5, p6)
+   MeasurementNoise(; name, amplitude, f1, f2, f3, f4, f5, f6, p1, p2, p3, p4, p5, p6, __overrides)
 
 Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5 to 16 Hz.
 
@@ -32,7 +32,7 @@ Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5
  * `u` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function MeasurementNoise(; name = nothing, amplitude=0.2, f1=0.5, f2=Float64(1.0), f3=Float64(2.0), f4=Float64(4.0), f5=Float64(8.0), f6=Float64(16.0), p1=Float64(0.0), p2=0.7, p3=1.5, p4=2.2, p5=Float64(3.0), p6=3.9, kwargs...)
+@component function MeasurementNoise(; name = nothing, var"amplitude"=0.2, var"f1"=0.5, var"f2"=Float64(1.0), var"f3"=Float64(2.0), var"f4"=Float64(4.0), var"f5"=Float64(8.0), var"f6"=Float64(16.0), var"p1"=Float64(0.0), var"p2"=0.7, var"p3"=1.5, var"p4"=2.2, var"p5"=Float64(3.0), var"p6"=3.9, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -40,7 +40,7 @@ Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5
     @named model = MeasurementNoise()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -49,6 +49,21 @@ Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "amplitude") && (amplitude = pop!(__overrides, "amplitude"))
+  haskey(__overrides, "f1") && (f1 = pop!(__overrides, "f1"))
+  haskey(__overrides, "f2") && (f2 = pop!(__overrides, "f2"))
+  haskey(__overrides, "f3") && (f3 = pop!(__overrides, "f3"))
+  haskey(__overrides, "f4") && (f4 = pop!(__overrides, "f4"))
+  haskey(__overrides, "f5") && (f5 = pop!(__overrides, "f5"))
+  haskey(__overrides, "f6") && (f6 = pop!(__overrides, "f6"))
+  haskey(__overrides, "p1") && (p1 = pop!(__overrides, "p1"))
+  haskey(__overrides, "p2") && (p2 = pop!(__overrides, "p2"))
+  haskey(__overrides, "p3") && (p3 = pop!(__overrides, "p3"))
+  haskey(__overrides, "p4") && (p4 = pop!(__overrides, "p4"))
+  haskey(__overrides, "p5") && (p5 = pop!(__overrides, "p5"))
+  haskey(__overrides, "p6") && (p6 = pop!(__overrides, "p6"))
 
   ### Structural Parameters (functions)
 
@@ -65,43 +80,43 @@ Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5
   ### Symbolic Parameters
   __local__amplitude = amplitude
   append!(__params, @parameters (amplitude::Real), [description = "Amplitude of each sinusoid"])
-  __initial_conditions[amplitude] = __local__amplitude
+  __dyad_seed_parameter!(__initial_conditions, __bindings, amplitude, __local__amplitude)
   __local__f1 = f1
   append!(__params, @parameters (f1::Real), [description = "Component frequencies in Hz"])
-  __initial_conditions[f1] = __local__f1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f1, __local__f1)
   __local__f2 = f2
   append!(__params, @parameters (f2::Real))
-  __initial_conditions[f2] = __local__f2
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f2, __local__f2)
   __local__f3 = f3
   append!(__params, @parameters (f3::Real))
-  __initial_conditions[f3] = __local__f3
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f3, __local__f3)
   __local__f4 = f4
   append!(__params, @parameters (f4::Real))
-  __initial_conditions[f4] = __local__f4
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f4, __local__f4)
   __local__f5 = f5
   append!(__params, @parameters (f5::Real))
-  __initial_conditions[f5] = __local__f5
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f5, __local__f5)
   __local__f6 = f6
   append!(__params, @parameters (f6::Real))
-  __initial_conditions[f6] = __local__f6
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f6, __local__f6)
   __local__p1 = p1
   append!(__params, @parameters (p1::Real))
-  __initial_conditions[p1] = __local__p1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p1, __local__p1)
   __local__p2 = p2
   append!(__params, @parameters (p2::Real))
-  __initial_conditions[p2] = __local__p2
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p2, __local__p2)
   __local__p3 = p3
   append!(__params, @parameters (p3::Real))
-  __initial_conditions[p3] = __local__p3
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p3, __local__p3)
   __local__p4 = p4
   append!(__params, @parameters (p4::Real))
-  __initial_conditions[p4] = __local__p4
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p4, __local__p4)
   __local__p5 = p5
   append!(__params, @parameters (p5::Real))
-  __initial_conditions[p5] = __local__p5
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p5, __local__p5)
   __local__p6 = p6
   append!(__params, @parameters (p6::Real))
-  __initial_conditions[p6] = __local__p6
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p6, __local__p6)
 
   ### Final Parameters (assignments)
 
@@ -119,7 +134,7 @@ Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -132,6 +147,6 @@ Step 7: the measurement noise pasted from the guide, six 0.2 km/h sines from 0.5
   push!(__eqs, y ~ u + amplitude * (sin(2 * pi * f1 * t + p1) + sin(2 * pi * f2 * t + p2) + sin(2 * pi * f3 * t + p3) + sin(2 * pi * f4 * t + p4) + sin(2 * pi * f5 * t + p5) + sin(2 * pi * f6 * t + p6)))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export MeasurementNoise

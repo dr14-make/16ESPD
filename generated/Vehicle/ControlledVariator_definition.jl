@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ControlledVariator(; name, i_launch, i_overdrive, target_rpm_min, target_rpm_max, ratio_time, output_rpm_floor, ratio_initial)
+   ControlledVariator(; name, i_launch, i_overdrive, target_rpm_min, target_rpm_max, ratio_time, output_rpm_floor, ratio_initial, __overrides)
 
 Ideal continuously variable transmission with a pedal-scheduled speed controller.
 
@@ -44,7 +44,7 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
 | `i_command`         | Bounded ratio command                         | --  |
 | `ratio`         | Actual total speed ratio                         | --  |
 """
-@component function ControlledVariator(; name = nothing, i_launch=Float64(12.0), i_overdrive=2.8, target_rpm_min=Float64(1800.0), target_rpm_max=Float64(6000.0), ratio_time=0.5, output_rpm_floor=Float64(50.0), ratio_initial=i_launch, kwargs...)
+@component function ControlledVariator(; name = nothing, var"i_launch"=Float64(12.0), var"i_overdrive"=2.8, var"target_rpm_min"=Float64(1800.0), var"target_rpm_max"=Float64(6000.0), var"ratio_time"=0.5, var"output_rpm_floor"=Float64(50.0), var"ratio_initial"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -52,7 +52,7 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
     @named model = ControlledVariator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -61,6 +61,18 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "i_launch") && (i_launch = pop!(__overrides, "i_launch"))
+  haskey(__overrides, "i_overdrive") && (i_overdrive = pop!(__overrides, "i_overdrive"))
+  haskey(__overrides, "target_rpm_min") && (target_rpm_min = pop!(__overrides, "target_rpm_min"))
+  haskey(__overrides, "target_rpm_max") && (target_rpm_max = pop!(__overrides, "target_rpm_max"))
+  haskey(__overrides, "ratio_time") && (ratio_time = pop!(__overrides, "ratio_time"))
+  haskey(__overrides, "output_rpm_floor") && (output_rpm_floor = pop!(__overrides, "output_rpm_floor"))
+  haskey(__overrides, "ratio_initial") && (ratio_initial = pop!(__overrides, "ratio_initial"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(ratio_initial) && (ratio_initial = i_launch)
 
   ### Structural Parameters (functions)
 
@@ -77,25 +89,25 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   ### Symbolic Parameters
   __local__i_launch = i_launch
   append!(__params, @parameters (i_launch::Real), [description = "Launch ratio, including final drive (assumed for a small-car belt CVT)"])
-  __initial_conditions[i_launch] = __local__i_launch
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_launch, __local__i_launch)
   __local__i_overdrive = i_overdrive
   append!(__params, @parameters (i_overdrive::Real), [description = "Overdrive ratio, including final drive (assumed for a small-car belt CVT)"])
-  __initial_conditions[i_overdrive] = __local__i_overdrive
+  __dyad_seed_parameter!(__initial_conditions, __bindings, i_overdrive, __local__i_overdrive)
   __local__target_rpm_min = target_rpm_min
   append!(__params, @parameters (target_rpm_min::Real), [description = "Closed-pedal target speed [rpm] (assumed above clutch engagement)"])
-  __initial_conditions[target_rpm_min] = __local__target_rpm_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, target_rpm_min, __local__target_rpm_min)
   __local__target_rpm_max = target_rpm_max
   append!(__params, @parameters (target_rpm_max::Real), [description = "Wide-open target speed [rpm] (assumed 500 rpm below the rev limiter)"])
-  __initial_conditions[target_rpm_max] = __local__target_rpm_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, target_rpm_max, __local__target_rpm_max)
   __local__ratio_time = ratio_time
   append!(__params, @parameters (ratio_time::Real), [description = "Ratio actuator time constant [s] (assumed for a hydraulic belt CVT)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[ratio_time] = __local__ratio_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ratio_time, __local__ratio_time)
   __local__output_rpm_floor = output_rpm_floor
   append!(__params, @parameters (output_rpm_floor::Real), [description = "Regularizing output speed [rpm] (assumed to keep the launch command finite)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[output_rpm_floor] = __local__output_rpm_floor
+  __dyad_seed_parameter!(__initial_conditions, __bindings, output_rpm_floor, __local__output_rpm_floor)
   __local__ratio_initial = ratio_initial
   append!(__params, @parameters (ratio_initial::Real), [description = "Initial total ratio (assumed launch setting; override for initialized cruise)"])
-  __initial_conditions[ratio_initial] = __local__ratio_initial
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ratio_initial, __local__ratio_initial)
 
   ### Final Parameters (assignments)
 
@@ -113,26 +125,26 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
 
   ### Variables (assignments)
   __ovr_w_a = pop!(__overrides, "w_a", nothing); isnothing(__ovr_w_a) || push!(__eqs, w_a ~ __ovr_w_a)
-  __ovr_w_a__initial = pop!(__overrides, "w_a__initial", nothing); isnothing(__ovr_w_a__initial) || (__initial_conditions[w_a] = __ovr_w_a__initial)
-  __ovr_w_a__guess = pop!(__overrides, "w_a__guess", nothing)
+  __ovr_w_a__initial = pop!(__overrides, "w_a.initial", nothing); isnothing(__ovr_w_a__initial) || (__initial_conditions[w_a] = __ovr_w_a__initial)
+  __ovr_w_a__guess = pop!(__overrides, "w_a.guess", nothing)
   __ovr_w_b = pop!(__overrides, "w_b", nothing); isnothing(__ovr_w_b) || push!(__eqs, w_b ~ __ovr_w_b)
-  __ovr_w_b__initial = pop!(__overrides, "w_b__initial", nothing); isnothing(__ovr_w_b__initial) || (__initial_conditions[w_b] = __ovr_w_b__initial)
-  __ovr_w_b__guess = pop!(__overrides, "w_b__guess", nothing)
+  __ovr_w_b__initial = pop!(__overrides, "w_b.initial", nothing); isnothing(__ovr_w_b__initial) || (__initial_conditions[w_b] = __ovr_w_b__initial)
+  __ovr_w_b__guess = pop!(__overrides, "w_b.guess", nothing)
   __ovr_N_a = pop!(__overrides, "N_a", nothing); isnothing(__ovr_N_a) || push!(__eqs, N_a ~ __ovr_N_a)
-  __ovr_N_a__initial = pop!(__overrides, "N_a__initial", nothing); isnothing(__ovr_N_a__initial) || (__initial_conditions[N_a] = __ovr_N_a__initial)
-  __ovr_N_a__guess = pop!(__overrides, "N_a__guess", nothing)
+  __ovr_N_a__initial = pop!(__overrides, "N_a.initial", nothing); isnothing(__ovr_N_a__initial) || (__initial_conditions[N_a] = __ovr_N_a__initial)
+  __ovr_N_a__guess = pop!(__overrides, "N_a.guess", nothing)
   __ovr_N_b = pop!(__overrides, "N_b", nothing); isnothing(__ovr_N_b) || push!(__eqs, N_b ~ __ovr_N_b)
-  __ovr_N_b__initial = pop!(__overrides, "N_b__initial", nothing); isnothing(__ovr_N_b__initial) || (__initial_conditions[N_b] = __ovr_N_b__initial)
-  __ovr_N_b__guess = pop!(__overrides, "N_b__guess", nothing)
+  __ovr_N_b__initial = pop!(__overrides, "N_b.initial", nothing); isnothing(__ovr_N_b__initial) || (__initial_conditions[N_b] = __ovr_N_b__initial)
+  __ovr_N_b__guess = pop!(__overrides, "N_b.guess", nothing)
   __ovr_N_target = pop!(__overrides, "N_target", nothing); isnothing(__ovr_N_target) || push!(__eqs, N_target ~ __ovr_N_target)
-  __ovr_N_target__initial = pop!(__overrides, "N_target__initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
-  __ovr_N_target__guess = pop!(__overrides, "N_target__guess", nothing)
+  __ovr_N_target__initial = pop!(__overrides, "N_target.initial", nothing); isnothing(__ovr_N_target__initial) || (__initial_conditions[N_target] = __ovr_N_target__initial)
+  __ovr_N_target__guess = pop!(__overrides, "N_target.guess", nothing)
   __ovr_i_command = pop!(__overrides, "i_command", nothing); isnothing(__ovr_i_command) || push!(__eqs, i_command ~ __ovr_i_command)
-  __ovr_i_command__initial = pop!(__overrides, "i_command__initial", nothing); isnothing(__ovr_i_command__initial) || (__initial_conditions[i_command] = __ovr_i_command__initial)
-  __ovr_i_command__guess = pop!(__overrides, "i_command__guess", nothing)
+  __ovr_i_command__initial = pop!(__overrides, "i_command.initial", nothing); isnothing(__ovr_i_command__initial) || (__initial_conditions[i_command] = __ovr_i_command__initial)
+  __ovr_i_command__guess = pop!(__overrides, "i_command.guess", nothing)
   __ovr_ratio = pop!(__overrides, "ratio", nothing); isnothing(__ovr_ratio) || push!(__eqs, ratio ~ __ovr_ratio)
-  __ovr_ratio__initial = pop!(__overrides, "ratio__initial", nothing); isnothing(__ovr_ratio__initial) || (__initial_conditions[ratio] = __ovr_ratio__initial)
-  __ovr_ratio__guess = pop!(__overrides, "ratio__guess", nothing)
+  __ovr_ratio__initial = pop!(__overrides, "ratio.initial", nothing); isnothing(__ovr_ratio__initial) || (__initial_conditions[ratio] = __ovr_ratio__initial)
+  __ovr_ratio__guess = pop!(__overrides, "ratio.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -143,7 +155,7 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   push!(__systems, @named support = __Dyad__Spline())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_w_a__guess) || (__guesses[w_a] = __ovr_w_a__guess)
@@ -173,6 +185,6 @@ lag. The velocity constraint avoids dependence on accumulated absolute shaft ang
   push!(__eqs, support.tau ~ -spline_a.tau - spline_b.tau)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ControlledVariator

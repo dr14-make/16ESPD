@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   MappedCarCoast(; name, speed_kmh, pedal_cmd, rpm0, p_m0)
+   MappedCarCoast(; name, speed_kmh, pedal_cmd, rpm0, p_m0, __overrides)
 
 Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal released at 5 s.
 
@@ -18,7 +18,7 @@ Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal release
 | `rpm0`         | Initial engine speed [rpm], steady at pedal_cmd (derived)                         | --  |   2182 |
 | `p_m0`         | Initial manifold pressure, steady at pedal_cmd (derived)                         | Pa  |   54420 |
 """
-@component function MappedCarCoast(; name = nothing, speed_kmh=Float64(90), pedal_cmd=0.0916, rpm0=Float64(2182), p_m0=Float64(54420), kwargs...)
+@component function MappedCarCoast(; name = nothing, var"speed_kmh"=Float64(90), var"pedal_cmd"=0.0916, var"rpm0"=Float64(2182), var"p_m0"=Float64(54420), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -26,7 +26,7 @@ Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal release
     @named model = MappedCarCoast()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -35,6 +35,12 @@ Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal release
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "speed_kmh") && (speed_kmh = pop!(__overrides, "speed_kmh"))
+  haskey(__overrides, "pedal_cmd") && (pedal_cmd = pop!(__overrides, "pedal_cmd"))
+  haskey(__overrides, "rpm0") && (rpm0 = pop!(__overrides, "rpm0"))
+  haskey(__overrides, "p_m0") && (p_m0 = pop!(__overrides, "p_m0"))
 
   ### Structural Parameters (functions)
 
@@ -51,16 +57,16 @@ Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal release
   ### Symbolic Parameters
   __local__speed_kmh = speed_kmh
   append!(__params, @parameters (speed_kmh::Real), [description = "Initial road speed [km/h], 90 km/h cruise (Hands-on 02)"])
-  __initial_conditions[speed_kmh] = __local__speed_kmh
+  __dyad_seed_parameter!(__initial_conditions, __bindings, speed_kmh, __local__speed_kmh)
   __local__pedal_cmd = pedal_cmd
   append!(__params, @parameters (pedal_cmd::Real), [description = "Pedal that holds speed_kmh until the release (derived)"])
-  __initial_conditions[pedal_cmd] = __local__pedal_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_cmd, __local__pedal_cmd)
   __local__rpm0 = rpm0
   append!(__params, @parameters (rpm0::Real), [description = "Initial engine speed [rpm], steady at pedal_cmd (derived)"])
-  __initial_conditions[rpm0] = __local__rpm0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rpm0, __local__rpm0)
   __local__p_m0 = p_m0
   append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure, steady at pedal_cmd (derived)"])
-  __initial_conditions[p_m0] = __local__p_m0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_m0, __local__p_m0)
 
   ### Final Parameters (assignments)
 
@@ -76,13 +82,13 @@ Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal release
   ### Components
   # Subcomponent pedal of type BlockComponents.Sources.Step
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
-  push!(__systems, @named pedal = BlockComponents.Sources.Step(; height=-pedal_cmd, offset=pedal_cmd, start_time=Float64(5), pedal_overrides...))
+  push!(__systems, @named pedal = BlockComponents.Sources.Step(; height=-pedal_cmd, offset=pedal_cmd, start_time=Float64(5), __overrides = pedal_overrides))
   # Subcomponent car of type VehicleSystemsComponents.HandsOn02.MappedCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCar(; ratio_initial=rpm0 * pi / 30 * 0.31 / (speed_kmh / 3.6), car_overrides...))
+  push!(__systems, @named car = VehicleSystemsComponents.HandsOn02.MappedCar(; ratio_initial=rpm0 * pi / 30 * 0.31 / (speed_kmh / 3.6), __overrides = car_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -101,6 +107,6 @@ Hands-on 02 step 06 A bench: `MappedCarCruise` at 90 km/h with the pedal release
   push!(__eqs, connect(pedal.y, car.pedal))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export MappedCarCoast

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   GasPressureSource(; name)
+   GasPressureSource(; name, __overrides)
 
 Ideal pressure reservoir on a gas hose: holds the hose at `p` whatever air flows in or out. A
 bench stand-in for a vacuum source too large to be drawn down, such as an engine manifold at a
@@ -20,7 +20,7 @@ Connected ports share `p`, and their `mdot` sum to zero, so the air one end give
 the other end receives. `mdot` is positive into the component that owns the port. A port left
 unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
 """
-@component function GasPressureSource(; name = nothing, kwargs...)
+@component function GasPressureSource(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -28,7 +28,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
     @named model = GasPressureSource()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -68,7 +68,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__systems, @named port = VehicleSystemsComponents.Vehicle.GasPort())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -81,6 +81,6 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, port.p ~ p)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export GasPressureSource

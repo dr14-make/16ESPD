@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   GradeProfile(; name, gradient, start_time, duration)
+   GradeProfile(; name, gradient, start_time, duration, __overrides)
 
 Road-grade scenario: flat, climb, then flat again.
 
@@ -25,7 +25,7 @@ needed for the windup demonstration.
 
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function GradeProfile(; name = nothing, gradient=0.1, start_time=Float64(30.0), duration=Inf, kwargs...)
+@component function GradeProfile(; name = nothing, var"gradient"=0.1, var"start_time"=Float64(30.0), var"duration"=Inf, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -33,7 +33,7 @@ needed for the windup demonstration.
     @named model = GradeProfile()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -42,6 +42,11 @@ needed for the windup demonstration.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "gradient") && (gradient = pop!(__overrides, "gradient"))
+  haskey(__overrides, "start_time") && (start_time = pop!(__overrides, "start_time"))
+  haskey(__overrides, "duration") && (duration = pop!(__overrides, "duration"))
 
   ### Structural Parameters (functions)
 
@@ -58,13 +63,13 @@ needed for the windup demonstration.
   ### Symbolic Parameters
   __local__gradient = gradient
   append!(__params, @parameters (gradient::Real), [description = "Gradient of the climb, tan(alpha)"])
-  __initial_conditions[gradient] = __local__gradient
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gradient, __local__gradient)
   __local__start_time = start_time
   append!(__params, @parameters (start_time::Real), [description = "Time at which the climb begins"])
-  __initial_conditions[start_time] = __local__start_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start_time, __local__start_time)
   __local__duration = duration
   append!(__params, @parameters (duration::Real), [description = "Climb duration; Inf retains a sustained climb"])
-  __initial_conditions[duration] = __local__duration
+  __dyad_seed_parameter!(__initial_conditions, __bindings, duration, __local__duration)
 
   ### Final Parameters (assignments)
 
@@ -81,10 +86,10 @@ needed for the windup demonstration.
   ### Components
   # Subcomponent pulse of type BlockComponents.Sources.Pulse
   pulse_overrides = __pop_subcomponent_overrides!(__overrides, "pulse")
-  push!(__systems, @named pulse = BlockComponents.Sources.Pulse(; amplitude=gradient, offset=Float64(0.0), start_time=start_time, duty_cycle=Float64(1.0), period=duration, pulse_overrides...))
+  push!(__systems, @named pulse = BlockComponents.Sources.Pulse(; amplitude=gradient, offset=Float64(0.0), start_time=start_time, duty_cycle=Float64(1.0), period=duration, __overrides = pulse_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -97,6 +102,6 @@ needed for the windup demonstration.
   push!(__eqs, connect(pulse.y, y))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export GradeProfile

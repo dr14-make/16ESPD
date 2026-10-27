@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   MapEngineDyno(; name, rpm, pedal_initial, pedal_final, t_step, p_m0)
+   MapEngineDyno(; name, rpm, pedal_initial, pedal_final, t_step, p_m0, __overrides)
 
 Dynamometer bench for `MapEngine`: the shaft is held at a fixed speed and the pedal steps once.
 
@@ -22,7 +22,7 @@ manifold filling.
 | `t_step`         | Pedal step time (assumed)                         | s  |   1.0 |
 | `p_m0`         | Initial manifold pressure, steady at the initial pedal (derived)                         | Pa  |   47829.1 |
 """
-@component function MapEngineDyno(; name = nothing, rpm=Float64(3080.0), pedal_initial=0.1034, pedal_final=0.12, t_step=Float64(1.0), p_m0=47829.1, kwargs...)
+@component function MapEngineDyno(; name = nothing, var"rpm"=Float64(3080.0), var"pedal_initial"=0.1034, var"pedal_final"=0.12, var"t_step"=Float64(1.0), var"p_m0"=47829.1, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -30,7 +30,7 @@ manifold filling.
     @named model = MapEngineDyno()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -39,6 +39,13 @@ manifold filling.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "rpm") && (rpm = pop!(__overrides, "rpm"))
+  haskey(__overrides, "pedal_initial") && (pedal_initial = pop!(__overrides, "pedal_initial"))
+  haskey(__overrides, "pedal_final") && (pedal_final = pop!(__overrides, "pedal_final"))
+  haskey(__overrides, "t_step") && (t_step = pop!(__overrides, "t_step"))
+  haskey(__overrides, "p_m0") && (p_m0 = pop!(__overrides, "p_m0"))
 
   ### Structural Parameters (functions)
 
@@ -55,19 +62,19 @@ manifold filling.
   ### Symbolic Parameters
   __local__rpm = rpm
   append!(__params, @parameters (rpm::Real), [description = "Held engine speed [rpm], 90 km/h cruise (deck)"])
-  __initial_conditions[rpm] = __local__rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rpm, __local__rpm)
   __local__pedal_initial = pedal_initial
   append!(__params, @parameters (pedal_initial::Real), [description = "Pedal before the step, holds 31.1 N.m at 3080 rpm (derived)"])
-  __initial_conditions[pedal_initial] = __local__pedal_initial
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_initial, __local__pedal_initial)
   __local__pedal_final = pedal_final
   append!(__params, @parameters (pedal_final::Real), [description = "Pedal after the step (assumed)"])
-  __initial_conditions[pedal_final] = __local__pedal_final
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_final, __local__pedal_final)
   __local__t_step = t_step
   append!(__params, @parameters (t_step::Real), [description = "Pedal step time (assumed)"])
-  __initial_conditions[t_step] = __local__t_step
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_step, __local__t_step)
   __local__p_m0 = p_m0
   append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure, steady at the initial pedal (derived)"])
-  __initial_conditions[p_m0] = __local__p_m0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_m0, __local__p_m0)
 
   ### Final Parameters (assignments)
 
@@ -83,22 +90,22 @@ manifold filling.
   ### Components
   # Subcomponent pedal of type BlockComponents.Sources.Step
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
-  push!(__systems, @named pedal = BlockComponents.Sources.Step(; height=pedal_final - pedal_initial, offset=pedal_initial, start_time=t_step, pedal_overrides...))
+  push!(__systems, @named pedal = BlockComponents.Sources.Step(; height=pedal_final - pedal_initial, offset=pedal_initial, start_time=t_step, __overrides = pedal_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=rpm * pi / 30, speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=rpm * pi / 30, __overrides = speed_overrides))
   # Subcomponent engine of type VehicleSystemsComponents.HandsOn02.MapEngine
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngine(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngine(; __overrides = engine_overrides))
   # Subcomponent dyno of type RotationalComponents.Sources.VelocitySource
   dyno_overrides = __pop_subcomponent_overrides!(__overrides, "dyno")
-  push!(__systems, @named dyno = RotationalComponents.Sources.VelocitySource(; dyno_overrides...))
+  push!(__systems, @named dyno = RotationalComponents.Sources.VelocitySource(; __overrides = dyno_overrides))
   # Subcomponent mounts of type RotationalComponents.Components.Fixed
   mounts_overrides = __pop_subcomponent_overrides!(__overrides, "mounts")
-  push!(__systems, @named mounts = RotationalComponents.Components.Fixed(; mounts_overrides...))
+  push!(__systems, @named mounts = RotationalComponents.Components.Fixed(; __overrides = mounts_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -117,6 +124,6 @@ manifold filling.
   push!(__eqs, connect(dyno.support, mounts.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export MapEngineDyno

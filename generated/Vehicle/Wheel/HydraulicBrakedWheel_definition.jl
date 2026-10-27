@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   HydraulicBrakedWheel(; name, radius, J_w, F_z, w0, sAdhesion, sSlide, mu_A, mu_S, K_f, K_r, p0, V0_f, V0_r, K1_f, K1_r, K3_f, K3_r)
+   HydraulicBrakedWheel(; name, radius, J_w, F_z, w0, sAdhesion, sSlide, mu_A, mu_S, K_f, K_r, p0, V0_f, V0_r, K1_f, K1_r, K3_f, K3_r, __overrides)
 
 Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
 
@@ -41,7 +41,7 @@ Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
  * `mu_scale` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function HydraulicBrakedWheel(; name = nothing, radius=0.31, J_w=Float64(4.0), F_z=13729.31, w0=0.2, sAdhesion=0.04, sSlide=0.12, mu_A=Float64(1.0), mu_S=0.7, K_f=0.00049, K_r=0.000199, p0=Float64(50000.0), V0_f=5e-7, V0_r=3e-7, K1_f=Float64(1000000000000.0), K1_r=Float64(2500000000000.0), K3_f=Float64(4.8e+23), K3_r=Float64(7.5e+24), continuity__graph0, continuity__graph1, kwargs...)
+@component function HydraulicBrakedWheel(; name = nothing, var"radius"=0.31, var"J_w"=Float64(4.0), var"F_z"=13729.31, var"w0"=0.2, var"sAdhesion"=0.04, var"sSlide"=0.12, var"mu_A"=Float64(1.0), var"mu_S"=0.7, var"K_f"=0.00049, var"K_r"=0.000199, var"p0"=Float64(50000.0), var"V0_f"=5e-7, var"V0_r"=3e-7, var"K1_f"=Float64(1000000000000.0), var"K1_r"=Float64(2500000000000.0), var"K3_f"=Float64(4.8e+23), var"K3_r"=Float64(7.5e+24), var"continuity__graph0", var"continuity__graph1", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -49,7 +49,7 @@ Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
     @named model = HydraulicBrakedWheel()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -58,6 +58,25 @@ Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "J_w") && (J_w = pop!(__overrides, "J_w"))
+  haskey(__overrides, "F_z") && (F_z = pop!(__overrides, "F_z"))
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
+  haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
+  haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
+  haskey(__overrides, "K_f") && (K_f = pop!(__overrides, "K_f"))
+  haskey(__overrides, "K_r") && (K_r = pop!(__overrides, "K_r"))
+  haskey(__overrides, "p0") && (p0 = pop!(__overrides, "p0"))
+  haskey(__overrides, "V0_f") && (V0_f = pop!(__overrides, "V0_f"))
+  haskey(__overrides, "V0_r") && (V0_r = pop!(__overrides, "V0_r"))
+  haskey(__overrides, "K1_f") && (K1_f = pop!(__overrides, "K1_f"))
+  haskey(__overrides, "K1_r") && (K1_r = pop!(__overrides, "K1_r"))
+  haskey(__overrides, "K3_f") && (K3_f = pop!(__overrides, "K3_f"))
+  haskey(__overrides, "K3_r") && (K3_r = pop!(__overrides, "K3_r"))
 
   ### Structural Parameters (functions)
 
@@ -74,55 +93,55 @@ Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__J_w = J_w
   append!(__params, @parameters (J_w::Real))
-  __initial_conditions[J_w] = __local__J_w
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J_w, __local__J_w)
   __local__F_z = F_z
   append!(__params, @parameters (F_z::Real))
-  __initial_conditions[F_z] = __local__F_z
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_z, __local__F_z)
   __local__w0 = w0
   append!(__params, @parameters (w0::Real))
-  __initial_conditions[w0] = __local__w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
   __local__sAdhesion = sAdhesion
   append!(__params, @parameters (sAdhesion::Real))
-  __initial_conditions[sAdhesion] = __local__sAdhesion
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion, __local__sAdhesion)
   __local__sSlide = sSlide
   append!(__params, @parameters (sSlide::Real))
-  __initial_conditions[sSlide] = __local__sSlide
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real))
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__mu_S = mu_S
   append!(__params, @parameters (mu_S::Real))
-  __initial_conditions[mu_S] = __local__mu_S
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
   __local__K_f = K_f
   append!(__params, @parameters (K_f::Real), [description = "Front-axle torque gain [N·m/Pa] (assumed, textbook)"])
-  __initial_conditions[K_f] = __local__K_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K_f, __local__K_f)
   __local__K_r = K_r
   append!(__params, @parameters (K_r::Real), [description = "Rear-axle torque gain [N·m/Pa] (assumed, textbook)"])
-  __initial_conditions[K_r] = __local__K_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K_r, __local__K_r)
   __local__p0 = p0
   append!(__params, @parameters (p0::Real), [description = "Pad-contact pressure [Pa] (assumed, textbook)"])
-  __initial_conditions[p0] = __local__p0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p0, __local__p0)
   __local__V0_f = V0_f
   append!(__params, @parameters (V0_f::Real), [description = "Front clearance take-up volume [m³] (assumed, textbook)"])
-  __initial_conditions[V0_f] = __local__V0_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V0_f, __local__V0_f)
   __local__V0_r = V0_r
   append!(__params, @parameters (V0_r::Real), [description = "Rear clearance take-up volume [m³] (assumed, textbook)"])
-  __initial_conditions[V0_r] = __local__V0_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V0_r, __local__V0_r)
   __local__K1_f = K1_f
   append!(__params, @parameters (K1_f::Real), [description = "Front linear P-V coefficient [Pa/m³] (assumed, textbook)"])
-  __initial_conditions[K1_f] = __local__K1_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K1_f, __local__K1_f)
   __local__K1_r = K1_r
   append!(__params, @parameters (K1_r::Real), [description = "Rear linear P-V coefficient [Pa/m³] (assumed, textbook)"])
-  __initial_conditions[K1_r] = __local__K1_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K1_r, __local__K1_r)
   __local__K3_f = K3_f
   append!(__params, @parameters (K3_f::Real), [description = "Front cubic P-V coefficient [Pa/m⁹] (assumed, textbook)"])
-  __initial_conditions[K3_f] = __local__K3_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K3_f, __local__K3_f)
   __local__K3_r = K3_r
   append!(__params, @parameters (K3_r::Real), [description = "Rear cubic P-V coefficient [Pa/m⁹] (assumed, textbook)"])
-  __initial_conditions[K3_r] = __local__K3_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, K3_r, __local__K3_r)
 
   ### Final Parameters (assignments)
 
@@ -147,19 +166,19 @@ Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
   push!(__systems, @named rear = HydraulicComponents.Interfaces.Port())
   # Subcomponent inertia of type RotationalComponents.Components.Inertia
   inertia_overrides = __pop_subcomponent_overrides!(__overrides, "inertia")
-  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J_w, inertia_overrides...))
+  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J_w, __overrides = inertia_overrides))
   # Subcomponent caliper_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper
   caliper_f_overrides = __pop_subcomponent_overrides!(__overrides, "caliper_f")
-  push!(__systems, @named caliper_f = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; K=K_f, p0=p0, V0=V0_f, K1=K1_f, K3=K3_f, w0=w0, continuity__graph0=continuity__graph0, caliper_f_overrides...))
+  push!(__systems, @named caliper_f = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; K=K_f, p0=p0, V0=V0_f, K1=K1_f, K3=K3_f, w0=w0, continuity__graph0=continuity__graph0, __overrides = caliper_f_overrides))
   # Subcomponent caliper_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper
   caliper_r_overrides = __pop_subcomponent_overrides!(__overrides, "caliper_r")
-  push!(__systems, @named caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; K=K_r, p0=p0, V0=V0_r, K1=K1_r, K3=K3_r, w0=w0, continuity__graph0=continuity__graph1, caliper_r_overrides...))
+  push!(__systems, @named caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; K=K_r, p0=p0, V0=V0_r, K1=K1_r, K3=K3_r, w0=w0, continuity__graph0=continuity__graph1, __overrides = caliper_r_overrides))
   # Subcomponent tire of type VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D
   tire_overrides = __pop_subcomponent_overrides!(__overrides, "tire")
-  push!(__systems, @named tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, tire_overrides...))
+  push!(__systems, @named tire = VehicleSystemsComponents.Vehicle.Wheel.SlipWheel1D(; radius=radius, F_z=F_z, sAdhesion=sAdhesion, sSlide=sSlide, mu_A=mu_A, mu_S=mu_S, __overrides = tire_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -181,6 +200,6 @@ Equivalent road wheel with separate front- and rear-axle hydraulic disc brakes.
   push!(__eqs, connect(mu_scale, tire.mu_scale))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export HydraulicBrakedWheel

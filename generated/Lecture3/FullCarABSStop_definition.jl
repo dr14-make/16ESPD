@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FullCarABSStop(; name, pedal, road_mu, abs_on, lambda_target, T_p, brake_time, speed_kmh, pedal_cmd, rpm0, p_m0, p_vac0)
+   FullCarABSStop(; name, pedal, road_mu, abs_on, lambda_target, T_p, brake_time, speed_kmh, pedal_cmd, rpm0, p_m0, p_vac0, __overrides)
 
 Lecture 3 whole-car ABS stop: `FullCarVacuumStop`, the Hands-on 02 map engine with fuel cut, its
 flywheel and the CVT driving the hydraulic braked wheel, with Hands-on 03 step 03's ABS added as
@@ -37,7 +37,7 @@ reaches, and the brake chain is `FullCarVacuumStop`'s.
 | `p_m0`         | Initial manifold pressure, steady at pedal_cmd (MappedCarBrakeStop, derived)                         | Pa  |   54420 |
 | `p_vac0`         | Booster front-chamber pressure at the start [Pa], the cruise manifold                         | Pa  |   p_m0 |
 """
-@component function FullCarABSStop(; name = nothing, pedal=0.6, road_mu=Float64(1.0), abs_on=Float64(1.0), lambda_target=0.04, T_p=0.03, brake_time=0.5, speed_kmh=Float64(90), pedal_cmd=0.0916, rpm0=Float64(2182), p_m0=Float64(54420), medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), p_vac0=p_m0, kwargs...)
+@component function FullCarABSStop(; name = nothing, var"pedal"=0.6, var"road_mu"=Float64(1.0), var"abs_on"=Float64(1.0), var"lambda_target"=0.04, var"T_p"=0.03, var"brake_time"=0.5, var"speed_kmh"=Float64(90), var"pedal_cmd"=0.0916, var"rpm0"=Float64(2182), var"p_m0"=Float64(54420), var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), var"p_vac0"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,7 +45,7 @@ reaches, and the brake chain is `FullCarVacuumStop`'s.
     @named model = FullCarABSStop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -54,6 +54,23 @@ reaches, and the brake chain is `FullCarVacuumStop`'s.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "pedal") && (pedal = pop!(__overrides, "pedal"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
+  haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
+  haskey(__overrides, "lambda_target") && (lambda_target = pop!(__overrides, "lambda_target"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "brake_time") && (brake_time = pop!(__overrides, "brake_time"))
+  haskey(__overrides, "speed_kmh") && (speed_kmh = pop!(__overrides, "speed_kmh"))
+  haskey(__overrides, "pedal_cmd") && (pedal_cmd = pop!(__overrides, "pedal_cmd"))
+  haskey(__overrides, "rpm0") && (rpm0 = pop!(__overrides, "rpm0"))
+  haskey(__overrides, "p_m0") && (p_m0 = pop!(__overrides, "p_m0"))
+  haskey(__overrides, "medium") && (medium = pop!(__overrides, "medium"))
+  haskey(__overrides, "p_vac0") && (p_vac0 = pop!(__overrides, "p_vac0"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(p_vac0) && (p_vac0 = p_m0)
 
   ### Structural Parameters (functions)
 
@@ -72,37 +89,37 @@ reaches, and the brake chain is `FullCarVacuumStop`'s.
   ### Symbolic Parameters
   __local__pedal = pedal
   append!(__params, @parameters (pedal::Real), [description = "Brake pedal command after brake_time, 0 released to 1 floored"])
-  __initial_conditions[pedal] = __local__pedal
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal, __local__pedal)
   __local__road_mu = road_mu
   append!(__params, @parameters (road_mu::Real), [description = "Road friction multiplier, 1 a dry road"])
-  __initial_conditions[road_mu] = __local__road_mu
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
   __local__abs_on = abs_on
   append!(__params, @parameters (abs_on::Real), [description = "ABS: 1 active, 0 valves held open"])
-  __initial_conditions[abs_on] = __local__abs_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abs_on, __local__abs_on)
   __local__lambda_target = lambda_target
   append!(__params, @parameters (lambda_target::Real), [description = "Slip the ABS holds, just past the tire's peak"])
-  __initial_conditions[lambda_target] = __local__lambda_target
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_target, __local__lambda_target)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real), [description = "ABS look-ahead, the brake's lag"])
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__brake_time = brake_time
   append!(__params, @parameters (brake_time::Real), [description = "Throttle released and brake applied at [s]"])
-  __initial_conditions[brake_time] = __local__brake_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_time, __local__brake_time)
   __local__speed_kmh = speed_kmh
   append!(__params, @parameters (speed_kmh::Real), [description = "Initial road speed [km/h], 90 km/h cruise (Hands-on 02)"])
-  __initial_conditions[speed_kmh] = __local__speed_kmh
+  __dyad_seed_parameter!(__initial_conditions, __bindings, speed_kmh, __local__speed_kmh)
   __local__pedal_cmd = pedal_cmd
   append!(__params, @parameters (pedal_cmd::Real), [description = "Throttle pedal that holds speed_kmh (MappedCarBrakeStop, derived)"])
-  __initial_conditions[pedal_cmd] = __local__pedal_cmd
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_cmd, __local__pedal_cmd)
   __local__rpm0 = rpm0
   append!(__params, @parameters (rpm0::Real), [description = "Initial engine speed [rpm], steady at pedal_cmd (MappedCarBrakeStop, derived)"])
-  __initial_conditions[rpm0] = __local__rpm0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rpm0, __local__rpm0)
   __local__p_m0 = p_m0
   append!(__params, @parameters (p_m0::Real), [description = "Initial manifold pressure, steady at pedal_cmd (MappedCarBrakeStop, derived)"])
-  __initial_conditions[p_m0] = __local__p_m0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_m0, __local__p_m0)
   __local__p_vac0 = p_vac0
   append!(__params, @parameters (p_vac0::Real), [description = "Booster front-chamber pressure at the start [Pa], the cruise manifold"])
-  __initial_conditions[p_vac0] = __local__p_vac0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_vac0, __local__p_vac0)
 
   ### Final Parameters (assignments)
   __bindings[r_w] = 0.31
@@ -119,76 +136,76 @@ reaches, and the brake chain is `FullCarVacuumStop`'s.
   ### Components
   # Subcomponent throttle_pedal of type BlockComponents.Sources.Step
   throttle_pedal_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_pedal")
-  push!(__systems, @named throttle_pedal = BlockComponents.Sources.Step(; height=-pedal_cmd, offset=pedal_cmd, start_time=brake_time, throttle_pedal_overrides...))
+  push!(__systems, @named throttle_pedal = BlockComponents.Sources.Step(; height=-pedal_cmd, offset=pedal_cmd, start_time=brake_time, __overrides = throttle_pedal_overrides))
   # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Step(; height=pedal, offset=Float64(0.0), start_time=brake_time, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Step(; height=pedal, offset=Float64(0.0), start_time=brake_time, __overrides = command_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, __overrides = road_overrides))
   # Subcomponent engine of type VehicleSystemsComponents.HandsOn02.MapEngineFuelCut
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; __overrides = engine_overrides))
   # Subcomponent flywheel of type RotationalComponents.Components.Inertia
   flywheel_overrides = __pop_subcomponent_overrides!(__overrides, "flywheel")
-  push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, flywheel_overrides...))
+  push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, __overrides = flywheel_overrides))
   # Subcomponent clutch of type VehicleSystemsComponents.Vehicle.CentrifugalClutch
   clutch_overrides = __pop_subcomponent_overrides!(__overrides, "clutch")
-  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; clutch_overrides...))
+  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; __overrides = clutch_overrides))
   # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
   variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; ratio_initial=rpm0 * pi / 30 * r_w / (speed_kmh / 3.6), variator_overrides...))
+  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; ratio_initial=rpm0 * pi / 30 * r_w / (speed_kmh / 3.6), __overrides = variator_overrides))
   # Subcomponent housing of type RotationalComponents.Components.Fixed
   housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; housing_overrides...))
+  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
   # Subcomponent pedal_unit of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
   pedal_unit_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_unit")
-  push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; pedal_unit_overrides...))
+  push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; __overrides = pedal_unit_overrides))
   # Subcomponent booster of type VehicleSystemsComponents.Vehicle.Brake.VacuumBooster
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(; p_init=p_vac0, booster_overrides...))
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(; p_init=p_vac0, __overrides = booster_overrides))
   # Subcomponent master of type VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder
   master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
-  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
+  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, __overrides = master_overrides))
   # Subcomponent valve_f of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
   valve_f_overrides = __pop_subcomponent_overrides!(__overrides, "valve_f")
-  push!(__systems, @named valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; return_dump=Float64(1), continuity__graph0=medium, valve_f_overrides...))
+  push!(__systems, @named valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; return_dump=Float64(1), continuity__graph0=medium, __overrides = valve_f_overrides))
   # Subcomponent valve_r of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
   valve_r_overrides = __pop_subcomponent_overrides!(__overrides, "valve_r")
-  push!(__systems, @named valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; return_dump=Float64(1), continuity__graph0=medium, valve_r_overrides...))
+  push!(__systems, @named valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; return_dump=Float64(1), continuity__graph0=medium, __overrides = valve_r_overrides))
   # Subcomponent line_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
-  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, line_f_overrides...))
+  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, __overrides = line_f_overrides))
   # Subcomponent line_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_r_overrides = __pop_subcomponent_overrides!(__overrides, "line_r")
-  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, line_r_overrides...))
+  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, __overrides = line_r_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.HandsOn03.SlipABS
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.HandsOn03.SlipABS(; T_p=T_p, lambda_target=lambda_target, abs_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.HandsOn03.SlipABS(; T_p=T_p, lambda_target=lambda_target, __overrides = abs_overrides))
   # Subcomponent hold_open of type BlockComponents.Sources.Constant
   hold_open_overrides = __pop_subcomponent_overrides!(__overrides, "hold_open")
-  push!(__systems, @named hold_open = BlockComponents.Sources.Constant(; k=(1 - abs_on) * 1000000000.0, hold_open_overrides...))
+  push!(__systems, @named hold_open = BlockComponents.Sources.Constant(; k=(1 - abs_on) * 1000000000.0, __overrides = hold_open_overrides))
   # Subcomponent valve_cmd of type BlockComponents.Math.Max
   valve_cmd_overrides = __pop_subcomponent_overrides!(__overrides, "valve_cmd")
-  push!(__systems, @named valve_cmd = BlockComponents.Math.Max(; valve_cmd_overrides...))
+  push!(__systems, @named valve_cmd = BlockComponents.Math.Max(; __overrides = valve_cmd_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; radius=r_w, continuity__graph0=medium, continuity__graph1=medium, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; radius=r_w, continuity__graph0=medium, continuity__graph1=medium, __overrides = wheel_overrides))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; __overrides = body_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
   # Subcomponent fixed_hydraulic of type TranslationalComponents.Components.Fixed
   fixed_hydraulic_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_hydraulic")
-  push!(__systems, @named fixed_hydraulic = TranslationalComponents.Components.Fixed(; fixed_hydraulic_overrides...))
+  push!(__systems, @named fixed_hydraulic = TranslationalComponents.Components.Fixed(; __overrides = fixed_hydraulic_overrides))
   # Subcomponent speed of type TranslationalComponents.Sensors.VelocitySensor
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = TranslationalComponents.Sensors.VelocitySensor(; speed_overrides...))
+  push!(__systems, @named speed = TranslationalComponents.Sensors.VelocitySensor(; __overrides = speed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -234,6 +251,6 @@ reaches, and the brake chain is `FullCarVacuumStop`'s.
   push!(__eqs, connect(wheel.flange, body.flange, speed.flange))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export FullCarABSStop

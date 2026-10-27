@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FuelCutLogic(; name, pedal_closed, fuel_cut_rpm, fuel_resume_rpm, rev_cut_rpm, rev_resume_rpm, latch_time)
+   FuelCutLogic(; name, pedal_closed, fuel_cut_rpm, fuel_resume_rpm, rev_cut_rpm, rev_resume_rpm, latch_time, __overrides)
 
 Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis latches.
 
@@ -26,7 +26,7 @@ Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis lat
  * `omega` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `cut` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function FuelCutLogic(; name = nothing, pedal_closed=0.0001, fuel_cut_rpm=Float64(1300.0), fuel_resume_rpm=Float64(1000.0), rev_cut_rpm=Float64(6500.0), rev_resume_rpm=Float64(6300.0), latch_time=0.01, kwargs...)
+@component function FuelCutLogic(; name = nothing, var"pedal_closed"=0.0001, var"fuel_cut_rpm"=Float64(1300.0), var"fuel_resume_rpm"=Float64(1000.0), var"rev_cut_rpm"=Float64(6500.0), var"rev_resume_rpm"=Float64(6300.0), var"latch_time"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -34,7 +34,7 @@ Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis lat
     @named model = FuelCutLogic()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -43,6 +43,14 @@ Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis lat
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "pedal_closed") && (pedal_closed = pop!(__overrides, "pedal_closed"))
+  haskey(__overrides, "fuel_cut_rpm") && (fuel_cut_rpm = pop!(__overrides, "fuel_cut_rpm"))
+  haskey(__overrides, "fuel_resume_rpm") && (fuel_resume_rpm = pop!(__overrides, "fuel_resume_rpm"))
+  haskey(__overrides, "rev_cut_rpm") && (rev_cut_rpm = pop!(__overrides, "rev_cut_rpm"))
+  haskey(__overrides, "rev_resume_rpm") && (rev_resume_rpm = pop!(__overrides, "rev_resume_rpm"))
+  haskey(__overrides, "latch_time") && (latch_time = pop!(__overrides, "latch_time"))
 
   ### Structural Parameters (functions)
 
@@ -59,22 +67,22 @@ Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis lat
   ### Symbolic Parameters
   __local__pedal_closed = pedal_closed
   append!(__params, @parameters (pedal_closed::Real), [description = "Closed-pedal threshold for deceleration fuel cut (assumed)"])
-  __initial_conditions[pedal_closed] = __local__pedal_closed
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal_closed, __local__pedal_closed)
   __local__fuel_cut_rpm = fuel_cut_rpm
   append!(__params, @parameters (fuel_cut_rpm::Real), [description = "Deceleration fuel-cut speed [rpm] (assumed)"])
-  __initial_conditions[fuel_cut_rpm] = __local__fuel_cut_rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, fuel_cut_rpm, __local__fuel_cut_rpm)
   __local__fuel_resume_rpm = fuel_resume_rpm
   append!(__params, @parameters (fuel_resume_rpm::Real), [description = "Deceleration fuel-resume speed [rpm] (assumed)"])
-  __initial_conditions[fuel_resume_rpm] = __local__fuel_resume_rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, fuel_resume_rpm, __local__fuel_resume_rpm)
   __local__rev_cut_rpm = rev_cut_rpm
   append!(__params, @parameters (rev_cut_rpm::Real), [description = "Rev-limiter fuel-cut speed [rpm] (assumed)"])
-  __initial_conditions[rev_cut_rpm] = __local__rev_cut_rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rev_cut_rpm, __local__rev_cut_rpm)
   __local__rev_resume_rpm = rev_resume_rpm
   append!(__params, @parameters (rev_resume_rpm::Real), [description = "Rev-limiter fuel-resume speed [rpm] (assumed)"])
-  __initial_conditions[rev_resume_rpm] = __local__rev_resume_rpm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, rev_resume_rpm, __local__rev_resume_rpm)
   __local__latch_time = latch_time
   append!(__params, @parameters (latch_time::Real), [description = "Continuous latch transition time (assumed)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[latch_time] = __local__latch_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, latch_time, __local__latch_time)
 
   ### Final Parameters (assignments)
 
@@ -93,13 +101,13 @@ Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis lat
   ### Components
   # Subcomponent decel of type VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch
   decel_overrides = __pop_subcomponent_overrides!(__overrides, "decel")
-  push!(__systems, @named decel = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(; latch_time=latch_time, decel_overrides...))
+  push!(__systems, @named decel = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(; latch_time=latch_time, __overrides = decel_overrides))
   # Subcomponent rev of type VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch
   rev_overrides = __pop_subcomponent_overrides!(__overrides, "rev")
-  push!(__systems, @named rev = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(; latch_time=latch_time, rev_overrides...))
+  push!(__systems, @named rev = VehicleSystemsComponents.Vehicle.Engine.HysteresisLatch(; latch_time=latch_time, __overrides = rev_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -116,6 +124,6 @@ Deceleration fuel-cut and rev-limiter logic built from continuous hysteresis lat
   push!(__eqs, cut ~ min(max(decel.y + rev.y, 0.0), 1.0))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export FuelCutLogic

@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestFourChannelABS(; name)
+   TestFourChannelABS(; name, __overrides)
 
 Rear select-low wiring check.
 """
-@component function TestFourChannelABS(; name = nothing, kwargs...)
+@component function TestFourChannelABS(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Rear select-low wiring check.
     @named model = TestFourChannelABS()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,43 +55,43 @@ Rear select-low wiring check.
   ### Components
   # Subcomponent clock of type DiscreteComponents.PeriodicClock
   clock_overrides = __pop_subcomponent_overrides!(__overrides, "clock")
-  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, clock_overrides...))
+  push!(__systems, @named clock = DiscreteComponents.PeriodicClock(; dt=0.005, __symbol_overrides(clock_overrides)...))
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(1000.0), __overrides = demand_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=Float64(20.0), __overrides = speed_overrides))
   # Subcomponent zero of type BlockComponents.Sources.Constant
   zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
-  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent cut of type BlockComponents.Sources.Constant
   cut_overrides = __pop_subcomponent_overrides!(__overrides, "cut")
-  push!(__systems, @named cut = BlockComponents.Sources.Constant(; k=-200.0, cut_overrides...))
+  push!(__systems, @named cut = BlockComponents.Sources.Constant(; k=-200.0, __overrides = cut_overrides))
   # Subcomponent demand_sampler of type DiscreteComponents.Sampler
   demand_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "demand_sampler")
-  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; demand_sampler_overrides...))
+  push!(__systems, @named demand_sampler = DiscreteComponents.Sampler(; __overrides = demand_sampler_overrides))
   # Subcomponent speed_sampler of type DiscreteComponents.Sampler
   speed_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sampler")
-  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; speed_sampler_overrides...))
+  push!(__systems, @named speed_sampler = DiscreteComponents.Sampler(; __overrides = speed_sampler_overrides))
   # Subcomponent zero_sampler of type DiscreteComponents.Sampler
   zero_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "zero_sampler")
-  push!(__systems, @named zero_sampler = DiscreteComponents.Sampler(; zero_sampler_overrides...))
+  push!(__systems, @named zero_sampler = DiscreteComponents.Sampler(; __overrides = zero_sampler_overrides))
   # Subcomponent cut_sampler of type DiscreteComponents.Sampler
   cut_sampler_overrides = __pop_subcomponent_overrides!(__overrides, "cut_sampler")
-  push!(__systems, @named cut_sampler = DiscreteComponents.Sampler(; cut_sampler_overrides...))
+  push!(__systems, @named cut_sampler = DiscreteComponents.Sampler(; __overrides = cut_sampler_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.FourChannelABS
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(; select_low=Float64(1.0), abs_overrides...))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.FourChannelABS(; select_low=Float64(1.0), __overrides = abs_overrides))
   # Subcomponent hold_rl of type DiscreteComponents.ZeroOrderHold
   hold_rl_overrides = __pop_subcomponent_overrides!(__overrides, "hold_rl")
-  push!(__systems, @named hold_rl = DiscreteComponents.ZeroOrderHold(; hold_rl_overrides...))
+  push!(__systems, @named hold_rl = DiscreteComponents.ZeroOrderHold(; __overrides = hold_rl_overrides))
   # Subcomponent hold_rr of type DiscreteComponents.ZeroOrderHold
   hold_rr_overrides = __pop_subcomponent_overrides!(__overrides, "hold_rr")
-  push!(__systems, @named hold_rr = DiscreteComponents.ZeroOrderHold(; hold_rr_overrides...))
+  push!(__systems, @named hold_rr = DiscreteComponents.ZeroOrderHold(; __overrides = hold_rr_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -113,6 +113,6 @@ Rear select-low wiring check.
   push!(__eqs, connect(abs.tau_rr, hold_rr.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestFourChannelABS

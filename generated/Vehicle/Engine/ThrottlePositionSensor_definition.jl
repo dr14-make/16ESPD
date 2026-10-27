@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ThrottlePositionSensor(; name, V_ref, phi_span, R_track, R_end, R_wiper1, R_wiper2, R_in)
+   ThrottlePositionSensor(; name, V_ref, phi_span, R_track, R_end, R_wiper1, R_wiper2, R_in, __overrides)
 
 A dual-track throttle position sensor: two potentiometers on the throttle shaft, fed from the
 ECU's 5 V reference, read by the ECU as two voltages.
@@ -47,7 +47,7 @@ All values are assumed: no supplier publishes the resistances of a throttle-body
  * `V1` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `V2` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function ThrottlePositionSensor(; name = nothing, V_ref=Float64(5.0), phi_span=1.448623, R_track=Float64(2000.0), R_end=Float64(250.0), R_wiper1=Float64(10.0), R_wiper2=Float64(10.0), R_in=Float64(100000.0), kwargs...)
+@component function ThrottlePositionSensor(; name = nothing, var"V_ref"=Float64(5.0), var"phi_span"=1.448623, var"R_track"=Float64(2000.0), var"R_end"=Float64(250.0), var"R_wiper1"=Float64(10.0), var"R_wiper2"=Float64(10.0), var"R_in"=Float64(100000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -55,7 +55,7 @@ All values are assumed: no supplier publishes the resistances of a throttle-body
     @named model = ThrottlePositionSensor()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -64,6 +64,15 @@ All values are assumed: no supplier publishes the resistances of a throttle-body
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "V_ref") && (V_ref = pop!(__overrides, "V_ref"))
+  haskey(__overrides, "phi_span") && (phi_span = pop!(__overrides, "phi_span"))
+  haskey(__overrides, "R_track") && (R_track = pop!(__overrides, "R_track"))
+  haskey(__overrides, "R_end") && (R_end = pop!(__overrides, "R_end"))
+  haskey(__overrides, "R_wiper1") && (R_wiper1 = pop!(__overrides, "R_wiper1"))
+  haskey(__overrides, "R_wiper2") && (R_wiper2 = pop!(__overrides, "R_wiper2"))
+  haskey(__overrides, "R_in") && (R_in = pop!(__overrides, "R_in"))
 
   ### Structural Parameters (functions)
 
@@ -82,25 +91,25 @@ All values are assumed: no supplier publishes the resistances of a throttle-body
   ### Symbolic Parameters
   __local__V_ref = V_ref
   append!(__params, @parameters (V_ref::Real), [description = "ECU sensor reference voltage, 5 V (textbook)"])
-  __initial_conditions[V_ref] = __local__V_ref
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_ref, __local__V_ref)
   __local__phi_span = phi_span
   append!(__params, @parameters (phi_span::Real), [description = "Plate travel from the closed stop to wide open, 83 deg (the Throttle's 7 to 90 deg)"])
-  __initial_conditions[phi_span] = __local__phi_span
+  __dyad_seed_parameter!(__initial_conditions, __bindings, phi_span, __local__phi_span)
   __local__R_track = R_track
   append!(__params, @parameters (R_track::Real), [description = "Resistance of one track (assumed)"])
-  __initial_conditions[R_track] = __local__R_track
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_track, __local__R_track)
   __local__R_end = R_end
   append!(__params, @parameters (R_end::Real), [description = "End resistor at each end of a track, sets the 0.5-4.5 V window (assumed)"])
-  __initial_conditions[R_end] = __local__R_end
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_end, __local__R_end)
   __local__R_wiper1 = R_wiper1
   append!(__params, @parameters (R_wiper1::Real), [description = "Wiper 1 contact resistance, healthy (assumed)"])
-  __initial_conditions[R_wiper1] = __local__R_wiper1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_wiper1, __local__R_wiper1)
   __local__R_wiper2 = R_wiper2
   append!(__params, @parameters (R_wiper2::Real), [description = "Wiper 2 contact resistance, healthy (assumed)"])
-  __initial_conditions[R_wiper2] = __local__R_wiper2
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_wiper2, __local__R_wiper2)
   __local__R_in = R_in
   append!(__params, @parameters (R_in::Real), [description = "ECU input resistance (assumed)"])
-  __initial_conditions[R_in] = __local__R_in
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_in, __local__R_in)
 
   ### Final Parameters (assignments)
   __bindings[V_lo] = V_ref * R_end / (R_track + 2 * R_end)
@@ -121,58 +130,58 @@ All values are assumed: no supplier publishes the resistances of a throttle-body
   ### Components
   # Subcomponent reference_level of type BlockComponents.Sources.Constant
   reference_level_overrides = __pop_subcomponent_overrides!(__overrides, "reference_level")
-  push!(__systems, @named reference_level = BlockComponents.Sources.Constant(; k=V_ref, reference_level_overrides...))
+  push!(__systems, @named reference_level = BlockComponents.Sources.Constant(; k=V_ref, __overrides = reference_level_overrides))
   # Subcomponent reference of type ElectricalComponents.Analog.Sources.VoltageSource
   reference_overrides = __pop_subcomponent_overrides!(__overrides, "reference")
-  push!(__systems, @named reference = ElectricalComponents.Analog.Sources.VoltageSource(; reference_overrides...))
+  push!(__systems, @named reference = ElectricalComponents.Analog.Sources.VoltageSource(; __overrides = reference_overrides))
   # Subcomponent wiper_drive of type BlockComponents.Math.Gain
   wiper_drive_overrides = __pop_subcomponent_overrides!(__overrides, "wiper_drive")
-  push!(__systems, @named wiper_drive = BlockComponents.Math.Gain(; k=1 / phi_span, wiper_drive_overrides...))
+  push!(__systems, @named wiper_drive = BlockComponents.Math.Gain(; k=1 / phi_span, __overrides = wiper_drive_overrides))
   # Subcomponent track1 of type ElectricalComponents.Analog.Basic.Potentiometer
   track1_overrides = __pop_subcomponent_overrides!(__overrides, "track1")
-  push!(__systems, @named track1 = ElectricalComponents.Analog.Basic.Potentiometer(; R=R_track, track1_overrides...))
+  push!(__systems, @named track1 = ElectricalComponents.Analog.Basic.Potentiometer(; R=R_track, __overrides = track1_overrides))
   # Subcomponent track2 of type ElectricalComponents.Analog.Basic.Potentiometer
   track2_overrides = __pop_subcomponent_overrides!(__overrides, "track2")
-  push!(__systems, @named track2 = ElectricalComponents.Analog.Basic.Potentiometer(; R=R_track, track2_overrides...))
+  push!(__systems, @named track2 = ElectricalComponents.Analog.Basic.Potentiometer(; R=R_track, __overrides = track2_overrides))
   # Subcomponent top1 of type ElectricalComponents.Analog.Basic.Resistor
   top1_overrides = __pop_subcomponent_overrides!(__overrides, "top1")
-  push!(__systems, @named top1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, top1_overrides...))
+  push!(__systems, @named top1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, __overrides = top1_overrides))
   # Subcomponent bottom1 of type ElectricalComponents.Analog.Basic.Resistor
   bottom1_overrides = __pop_subcomponent_overrides!(__overrides, "bottom1")
-  push!(__systems, @named bottom1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, bottom1_overrides...))
+  push!(__systems, @named bottom1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, __overrides = bottom1_overrides))
   # Subcomponent top2 of type ElectricalComponents.Analog.Basic.Resistor
   top2_overrides = __pop_subcomponent_overrides!(__overrides, "top2")
-  push!(__systems, @named top2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, top2_overrides...))
+  push!(__systems, @named top2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, __overrides = top2_overrides))
   # Subcomponent bottom2 of type ElectricalComponents.Analog.Basic.Resistor
   bottom2_overrides = __pop_subcomponent_overrides!(__overrides, "bottom2")
-  push!(__systems, @named bottom2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, bottom2_overrides...))
+  push!(__systems, @named bottom2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_end, __overrides = bottom2_overrides))
   # Subcomponent wiper1 of type ElectricalComponents.Analog.Basic.Resistor
   wiper1_overrides = __pop_subcomponent_overrides!(__overrides, "wiper1")
-  push!(__systems, @named wiper1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_wiper1, wiper1_overrides...))
+  push!(__systems, @named wiper1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_wiper1, __overrides = wiper1_overrides))
   # Subcomponent wiper2 of type ElectricalComponents.Analog.Basic.Resistor
   wiper2_overrides = __pop_subcomponent_overrides!(__overrides, "wiper2")
-  push!(__systems, @named wiper2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_wiper2, wiper2_overrides...))
+  push!(__systems, @named wiper2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_wiper2, __overrides = wiper2_overrides))
   # Subcomponent input1 of type ElectricalComponents.Analog.Basic.Resistor
   input1_overrides = __pop_subcomponent_overrides!(__overrides, "input1")
-  push!(__systems, @named input1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_in, input1_overrides...))
+  push!(__systems, @named input1 = ElectricalComponents.Analog.Basic.Resistor(; R=R_in, __overrides = input1_overrides))
   # Subcomponent input2 of type ElectricalComponents.Analog.Basic.Resistor
   input2_overrides = __pop_subcomponent_overrides!(__overrides, "input2")
-  push!(__systems, @named input2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_in, input2_overrides...))
+  push!(__systems, @named input2 = ElectricalComponents.Analog.Basic.Resistor(; R=R_in, __overrides = input2_overrides))
   # Subcomponent sense1 of type ElectricalComponents.Analog.Sensors.VoltageSensor
   sense1_overrides = __pop_subcomponent_overrides!(__overrides, "sense1")
-  push!(__systems, @named sense1 = ElectricalComponents.Analog.Sensors.VoltageSensor(; sense1_overrides...))
+  push!(__systems, @named sense1 = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = sense1_overrides))
   # Subcomponent sense2 of type ElectricalComponents.Analog.Sensors.VoltageSensor
   sense2_overrides = __pop_subcomponent_overrides!(__overrides, "sense2")
-  push!(__systems, @named sense2 = ElectricalComponents.Analog.Sensors.VoltageSensor(; sense2_overrides...))
+  push!(__systems, @named sense2 = ElectricalComponents.Analog.Sensors.VoltageSensor(; __overrides = sense2_overrides))
   # Subcomponent ground of type ElectricalComponents.Analog.Basic.Ground
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
-  push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; ground_overrides...))
+  push!(__systems, @named ground = ElectricalComponents.Analog.Basic.Ground(; __overrides = ground_overrides))
   # Subcomponent ambient of type ThermalComponents.Sources.FixedTemperature
   ambient_overrides = __pop_subcomponent_overrides!(__overrides, "ambient")
-  push!(__systems, @named ambient = ThermalComponents.Sources.FixedTemperature(; T=293.15, ambient_overrides...))
+  push!(__systems, @named ambient = ThermalComponents.Sources.FixedTemperature(; T=293.15, __overrides = ambient_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -211,6 +220,6 @@ All values are assumed: no supplier publishes the resistances of a throttle-body
   push!(__eqs, connect(track2.heat_port, ambient.port))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ThrottlePositionSensor

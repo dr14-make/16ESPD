@@ -5,11 +5,149 @@
 
 
 using DyadInterface
-using DyadInterface: ODEAlg, DEVerbosity, OptimizationLevel, SpecializationLevel
-using ModelingToolkit: SymbolicT, toggle_namespacing
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@kwdef mutable struct FullCarVacuumStopTransientSpec <: AbstractTransientAnalysisSpec
+@component function FullCarVacuumStopTransient__System(; name = nothing, var"alg"=ODEAlg.Tsit5(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.001, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.Aggressive(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"pedal"=0.3, var"road_mu"=1.0, var"p_vac0"=54420, __overrides = Dict{String, Any}())
+  isnothing(name) && throw(ArgumentError("""
+    The `name` keyword must be provided. Please consider using the `@named` macro,
+    like so:
+  
+    @named model = FullCarVacuumStopTransient__System()
+  """))
+
+  __overrides = Dict{String, Any}(__overrides)
+  __params = Symbolics.SymbolicT[]
+  __vars = Symbolics.SymbolicT[]
+  __systems = System[]
+  __guesses = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initial_conditions = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+  __initialization_eqs = Equation[]
+  __eqs = Equation[]
+  __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "alg") && (alg = pop!(__overrides, "alg"))
+  haskey(__overrides, "start") && (start = pop!(__overrides, "start"))
+  haskey(__overrides, "stop") && (stop = pop!(__overrides, "stop"))
+  haskey(__overrides, "abstol") && (abstol = pop!(__overrides, "abstol"))
+  haskey(__overrides, "reltol") && (reltol = pop!(__overrides, "reltol"))
+  haskey(__overrides, "saveat") && (saveat = pop!(__overrides, "saveat"))
+  haskey(__overrides, "dtmax") && (dtmax = pop!(__overrides, "dtmax"))
+  haskey(__overrides, "tstops") && (tstops = pop!(__overrides, "tstops"))
+  haskey(__overrides, "automatic_discontinuity_detection") && (automatic_discontinuity_detection = pop!(__overrides, "automatic_discontinuity_detection"))
+  haskey(__overrides, "optimize") && (optimize = pop!(__overrides, "optimize"))
+  haskey(__overrides, "progress") && (progress = pop!(__overrides, "progress"))
+  haskey(__overrides, "respecialize") && (respecialize = pop!(__overrides, "respecialize"))
+  haskey(__overrides, "specialization") && (specialization = pop!(__overrides, "specialization"))
+  haskey(__overrides, "verbose") && (verbose = pop!(__overrides, "verbose"))
+  haskey(__overrides, "log_file") && (log_file = pop!(__overrides, "log_file"))
+  haskey(__overrides, "pedal") && (pedal = pop!(__overrides, "pedal"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
+  haskey(__overrides, "p_vac0") && (p_vac0 = pop!(__overrides, "p_vac0"))
+
+  ### Structural Parameters (functions)
+
+  ### Structural Parameters (Final)
+
+  ### Path Parameters (functions)
+
+  ### Path Parameters (non-final)
+
+  ### Final Parameters (declarations)
+
+  ### Deferred assignment (default values that depend on final parameters)
+
+  ### Symbolic Parameters
+  __local__alg = alg
+  append!(__params, @parameters (alg::ODEAlg.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alg, __local__alg)
+  __local__start = start
+  append!(__params, @parameters (start::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start, __local__start)
+  __local__stop = stop
+  append!(__params, @parameters (stop::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, stop, __local__stop)
+  __local__abstol = abstol
+  append!(__params, @parameters (abstol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abstol, __local__abstol)
+  __local__reltol = reltol
+  append!(__params, @parameters (reltol::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, reltol, __local__reltol)
+  __local__saveat = saveat
+  append!(__params, @parameters (saveat::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, saveat, __local__saveat)
+  __local__dtmax = dtmax
+  append!(__params, @parameters (dtmax::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dtmax, __local__dtmax)
+  __local__tstops = tstops
+  append!(__params, @parameters (tstops::Array{Float64, 1}))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tstops, __local__tstops)
+  __local__automatic_discontinuity_detection = automatic_discontinuity_detection
+  append!(__params, @parameters (automatic_discontinuity_detection::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, automatic_discontinuity_detection, __local__automatic_discontinuity_detection)
+  __local__optimize = optimize
+  append!(__params, @parameters (optimize::OptimizationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, optimize, __local__optimize)
+  __local__progress = progress
+  append!(__params, @parameters (progress::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, progress, __local__progress)
+  __local__respecialize = respecialize
+  append!(__params, @parameters (respecialize::Bool))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, respecialize, __local__respecialize)
+  __local__specialization = specialization
+  append!(__params, @parameters (specialization::SpecializationLevel.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, specialization, __local__specialization)
+  __local__verbose = verbose
+  append!(__params, @parameters (verbose::DEVerbosity.Type))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, verbose, __local__verbose)
+  __local__log_file = log_file
+  append!(__params, @parameters (log_file::String))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, log_file, __local__log_file)
+  __local__pedal = pedal
+  append!(__params, @parameters (pedal::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal, __local__pedal)
+  __local__road_mu = road_mu
+  append!(__params, @parameters (road_mu::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
+  __local__p_vac0 = p_vac0
+  append!(__params, @parameters (p_vac0::Float64))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_vac0, __local__p_vac0)
+
+  ### Final Parameters (assignments)
+
+  ### Final Path Parameters
+
+  ### Variables (declarations)
+
+  ### Variables (assignments)
+
+  ### Constants
+  __constants = Any[]
+
+  ### Components
+  # Subcomponent model of type VehicleSystemsComponents.Lecture3.FullCarVacuumStop
+  model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
+  push!(__systems, @named model = VehicleSystemsComponents.Lecture3.FullCarVacuumStop(; pedal=pedal, road_mu=road_mu, p_vac0=p_vac0, __overrides = model_overrides))
+
+  ### Check there are no unmatched overrides
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
+
+  ### Guesses
+
+  ### Initialization Equations
+
+  ### Assertions
+  __assertions = []
+
+  ### Equations
+
+  # Return completely constructed System
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+end
+export FullCarVacuumStopTransient__System
+
+@kwdef struct FullCarVacuumStopTransient__Spec <: AbstractTransientAnalysisSpec
   name::Symbol = :FullCarVacuumStopTransient
+  __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
   var"alg"::ODEAlg.Type = ODEAlg.Tsit5()
   var"start"::Float64 = 0
   var"stop"::Float64 = 6.0
@@ -43,19 +181,28 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   # `p_vac0` defaults to the cruise manifold pressure: through a long cruise the front-chamber leak
   # brings the store up to the manifold, where the check valve holds it.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Lecture3.FullCarVacuumStop(; name=:FullCarVacuumStop)
+  __system::System = FullCarVacuumStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"pedal"=var"pedal", var"road_mu"=var"road_mu", var"p_vac0"=var"p_vac0")
 end
 
-function DyadInterface.run_analysis(spec::FullCarVacuumStopTransientSpec)
+function __dyad_base_analysis_spec(spec::FullCarVacuumStopTransient__Spec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.pedal => spec.var"pedal")
   push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
   push!(overrides, no_namespace_model.p_vac0 => spec.var"p_vac0")
-  base_spec = TransientAnalysisSpec(;
-    name=:TransientAnalysis, overrides, alg=spec.alg, start=spec.start, stop=spec.stop, abstol=spec.abstol, reltol=spec.reltol, saveat=spec.saveat, dtmax=spec.dtmax, tstops=spec.tstops, automatic_discontinuity_detection=spec.automatic_discontinuity_detection, optimize=spec.optimize, progress=spec.progress, respecialize=spec.respecialize, specialization=spec.specialization, verbose=spec.verbose, log_file=spec.log_file, model=spec.model
+  merge!(overrides, spec.__overrides)
+  TransientAnalysisSpec(;
+    name=spec.name, overrides, __system=spec.__system, var"alg"=spec.var"alg", var"start"=spec.var"start", var"stop"=spec.var"stop", var"abstol"=spec.var"abstol", var"reltol"=spec.var"reltol", var"saveat"=spec.var"saveat", var"dtmax"=spec.var"dtmax", var"tstops"=spec.var"tstops", var"automatic_discontinuity_detection"=spec.var"automatic_discontinuity_detection", var"optimize"=spec.var"optimize", var"progress"=spec.var"progress", var"respecialize"=spec.var"respecialize", var"specialization"=spec.var"specialization", var"verbose"=spec.var"verbose", var"log_file"=spec.var"log_file", var"model"=spec.var"model"
   )
-  run_analysis(base_spec)
 end
 
-FullCarVacuumStopTransient(;kwargs...) = run_analysis(FullCarVacuumStopTransientSpec(;kwargs...))
-export FullCarVacuumStopTransient, FullCarVacuumStopTransientSpec
+function DyadInterface.run_analysis(spec::FullCarVacuumStopTransient__Spec)
+  run_analysis(__dyad_base_analysis_spec(spec))
+end
+
+function DyadInterface.setup_analysis(spec::FullCarVacuumStopTransient__Spec; kwargs...)
+  DyadInterface.setup_analysis(__dyad_base_analysis_spec(spec); kwargs...)
+end
+
+FullCarVacuumStopTransient(;kwargs...) = run_analysis(FullCarVacuumStopTransient__Spec(;kwargs...))
+export FullCarVacuumStopTransient, FullCarVacuumStopTransient__Spec

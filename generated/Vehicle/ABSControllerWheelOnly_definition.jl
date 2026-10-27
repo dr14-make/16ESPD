@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSControllerWheelOnly(; name, dt, radius, a_ref, omega0, v_ref0, v_eps, T_p, lambda_1, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min)
+   ABSControllerWheelOnly(; name, dt, radius, a_ref, omega0, v_ref0, v_eps, T_p, lambda_1, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
 
 Wheel-speed-only sampled ABS controller.
 
@@ -41,7 +41,7 @@ Wheel-speed-only sampled ABS controller.
  * `v_ref_out` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `a_w_out` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function ABSControllerWheelOnly(; name = nothing, dt=0.005, radius=0.31, a_ref=Float64(10.0), omega0=Float64(0.0), v_ref0=Float64(0.0), v_eps=0.5, T_p=0.03, lambda_1=0.04, lambda_lock=0.2, alpha_rel=0.6, beta_reapply=0.85, l_rec=0.03, T_hold_max=0.06, k_dec=Float64(80000.0), k_inc_fast=Float64(80000.0), k_inc_slow=Float64(8000.0), v_min=1.5, kwargs...)
+@component function ABSControllerWheelOnly(; name = nothing, var"dt"=0.005, var"radius"=0.31, var"a_ref"=Float64(10.0), var"omega0"=Float64(0.0), var"v_ref0"=Float64(0.0), var"v_eps"=0.5, var"T_p"=0.03, var"lambda_1"=0.04, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(80000.0), var"k_inc_fast"=Float64(80000.0), var"k_inc_slow"=Float64(8000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -49,7 +49,7 @@ Wheel-speed-only sampled ABS controller.
     @named model = ABSControllerWheelOnly()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -58,6 +58,25 @@ Wheel-speed-only sampled ABS controller.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "dt") && (dt = pop!(__overrides, "dt"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "a_ref") && (a_ref = pop!(__overrides, "a_ref"))
+  haskey(__overrides, "omega0") && (omega0 = pop!(__overrides, "omega0"))
+  haskey(__overrides, "v_ref0") && (v_ref0 = pop!(__overrides, "v_ref0"))
+  haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "lambda_1") && (lambda_1 = pop!(__overrides, "lambda_1"))
+  haskey(__overrides, "lambda_lock") && (lambda_lock = pop!(__overrides, "lambda_lock"))
+  haskey(__overrides, "alpha_rel") && (alpha_rel = pop!(__overrides, "alpha_rel"))
+  haskey(__overrides, "beta_reapply") && (beta_reapply = pop!(__overrides, "beta_reapply"))
+  haskey(__overrides, "l_rec") && (l_rec = pop!(__overrides, "l_rec"))
+  haskey(__overrides, "T_hold_max") && (T_hold_max = pop!(__overrides, "T_hold_max"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
+  haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
 
   ### Structural Parameters (functions)
 
@@ -74,55 +93,55 @@ Wheel-speed-only sampled ABS controller.
   ### Symbolic Parameters
   __local__dt = dt
   append!(__params, @parameters (dt::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[dt] = __local__dt
+  __dyad_seed_parameter!(__initial_conditions, __bindings, dt, __local__dt)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__a_ref = a_ref
   append!(__params, @parameters (a_ref::Real))
-  __initial_conditions[a_ref] = __local__a_ref
+  __dyad_seed_parameter!(__initial_conditions, __bindings, a_ref, __local__a_ref)
   __local__omega0 = omega0
   append!(__params, @parameters (omega0::Real))
-  __initial_conditions[omega0] = __local__omega0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, omega0, __local__omega0)
   __local__v_ref0 = v_ref0
   append!(__params, @parameters (v_ref0::Real))
-  __initial_conditions[v_ref0] = __local__v_ref0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_ref0, __local__v_ref0)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[v_eps] = __local__v_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real), [bounds = (0.0, Inf)])
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__lambda_1 = lambda_1
   append!(__params, @parameters (lambda_1::Real))
-  __initial_conditions[lambda_1] = __local__lambda_1
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1, __local__lambda_1)
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
-  __initial_conditions[lambda_lock] = __local__lambda_lock
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_lock, __local__lambda_lock)
   __local__alpha_rel = alpha_rel
   append!(__params, @parameters (alpha_rel::Real))
-  __initial_conditions[alpha_rel] = __local__alpha_rel
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_rel, __local__alpha_rel)
   __local__beta_reapply = beta_reapply
   append!(__params, @parameters (beta_reapply::Real))
-  __initial_conditions[beta_reapply] = __local__beta_reapply
+  __dyad_seed_parameter!(__initial_conditions, __bindings, beta_reapply, __local__beta_reapply)
   __local__l_rec = l_rec
   append!(__params, @parameters (l_rec::Real))
-  __initial_conditions[l_rec] = __local__l_rec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, l_rec, __local__l_rec)
   __local__T_hold_max = T_hold_max
   append!(__params, @parameters (T_hold_max::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_hold_max] = __local__T_hold_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_hold_max, __local__T_hold_max)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
   append!(__params, @parameters (k_inc_fast::Real))
-  __initial_conditions[k_inc_fast] = __local__k_inc_fast
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
-  __initial_conditions[k_inc_slow] = __local__k_inc_slow
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
 
   ### Final Parameters (assignments)
 
@@ -145,13 +164,13 @@ Wheel-speed-only sampled ABS controller.
   ### Components
   # Subcomponent estimator of type VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete
   estimator_overrides = __pop_subcomponent_overrides!(__overrides, "estimator")
-  push!(__systems, @named estimator = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(; dt=dt, radius=radius, a_ref=a_ref, v_ref0=v_ref0, omega0=omega0, v_eps=v_eps, estimator_overrides...))
+  push!(__systems, @named estimator = VehicleSystemsComponents.Vehicle.ABSWheelOnlyEstimatorDiscrete(; dt=dt, radius=radius, a_ref=a_ref, v_ref0=v_ref0, omega0=omega0, v_eps=v_eps, __overrides = estimator_overrides))
   # Subcomponent modulator of type VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete
   modulator_overrides = __pop_subcomponent_overrides!(__overrides, "modulator")
-  push!(__systems, @named modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(; dt=dt, T_p=T_p, lambda_1=lambda_1, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, modulator_overrides...))
+  push!(__systems, @named modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(; dt=dt, T_p=T_p, lambda_1=lambda_1, lambda_lock=lambda_lock, alpha_rel=alpha_rel, beta_reapply=beta_reapply, l_rec=l_rec, T_hold_max=T_hold_max, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, v_min=v_min, __overrides = modulator_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -172,6 +191,6 @@ Wheel-speed-only sampled ABS controller.
   push!(__eqs, connect(estimator.a_w_out, a_w_out))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSControllerWheelOnly

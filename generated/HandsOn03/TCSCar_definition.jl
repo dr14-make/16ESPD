@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TCSCar(; name, m, g, supply_pressure)
+   TCSCar(; name, m, g, supply_pressure, __overrides)
 
 Whole-car TCS plant: the hands-on 02 mapped engine, launch clutch and CVT drive the hands-on 03
 hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump and accumulator.
@@ -27,7 +27,7 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
  * `kappa` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `v` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function TCSCar(; name = nothing, m=Float64(1400.0), g=9.80665, supply_pressure=Float64(8900000.0), medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
+@component function TCSCar(; name = nothing, var"m"=Float64(1400.0), var"g"=9.80665, var"supply_pressure"=Float64(8900000.0), var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
     @named model = TCSCar()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,12 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "g") && (g = pop!(__overrides, "g"))
+  haskey(__overrides, "supply_pressure") && (supply_pressure = pop!(__overrides, "supply_pressure"))
+  haskey(__overrides, "medium") && (medium = pop!(__overrides, "medium"))
 
   ### Structural Parameters (functions)
 
@@ -61,13 +67,13 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
   ### Symbolic Parameters
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass; the driven axle carries half of it", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__g = g
   append!(__params, @parameters (g::Real), [description = "Gravitational acceleration"])
-  __initial_conditions[g] = __local__g
+  __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
   __local__supply_pressure = supply_pressure
   append!(__params, @parameters (supply_pressure::Real), [description = "Pressure available from the pump and accumulator"])
-  __initial_conditions[supply_pressure] = __local__supply_pressure
+  __dyad_seed_parameter!(__initial_conditions, __bindings, supply_pressure, __local__supply_pressure)
 
   ### Final Parameters (assignments)
 
@@ -89,52 +95,52 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
   ### Components
   # Subcomponent throttle_limit of type BlockComponents.Math.Min
   throttle_limit_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_limit")
-  push!(__systems, @named throttle_limit = BlockComponents.Math.Min(; throttle_limit_overrides...))
+  push!(__systems, @named throttle_limit = BlockComponents.Math.Min(; __overrides = throttle_limit_overrides))
   # Subcomponent engine of type VehicleSystemsComponents.HandsOn02.MapEngineFuelCut
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; engine_overrides...))
+  push!(__systems, @named engine = VehicleSystemsComponents.HandsOn02.MapEngineFuelCut(; __overrides = engine_overrides))
   # Subcomponent flywheel of type RotationalComponents.Components.Inertia
   flywheel_overrides = __pop_subcomponent_overrides!(__overrides, "flywheel")
-  push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, flywheel_overrides...))
+  push!(__systems, @named flywheel = RotationalComponents.Components.Inertia(; J=0.15, __overrides = flywheel_overrides))
   # Subcomponent clutch of type VehicleSystemsComponents.Vehicle.CentrifugalClutch
   clutch_overrides = __pop_subcomponent_overrides!(__overrides, "clutch")
-  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; clutch_overrides...))
+  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; __overrides = clutch_overrides))
   # Subcomponent variator of type VehicleSystemsComponents.Vehicle.ControlledVariator
   variator_overrides = __pop_subcomponent_overrides!(__overrides, "variator")
-  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; variator_overrides...))
+  push!(__systems, @named variator = VehicleSystemsComponents.Vehicle.ControlledVariator(; __overrides = variator_overrides))
   # Subcomponent supply_command of type BlockComponents.Sources.Constant
   supply_command_overrides = __pop_subcomponent_overrides!(__overrides, "supply_command")
-  push!(__systems, @named supply_command = BlockComponents.Sources.Constant(; k=supply_pressure, supply_command_overrides...))
+  push!(__systems, @named supply_command = BlockComponents.Sources.Constant(; k=supply_pressure, __overrides = supply_command_overrides))
   # Subcomponent supply of type HydraulicComponents.Sources.BoundaryPressure
   supply_overrides = __pop_subcomponent_overrides!(__overrides, "supply")
-  push!(__systems, @named supply = HydraulicComponents.Sources.BoundaryPressure(; continuity__graph0=medium, supply_overrides...))
+  push!(__systems, @named supply = HydraulicComponents.Sources.BoundaryPressure(; continuity__graph0=medium, __overrides = supply_overrides))
   # Subcomponent valve_f of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
   valve_f_overrides = __pop_subcomponent_overrides!(__overrides, "valve_f")
-  push!(__systems, @named valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, valve_f_overrides...))
+  push!(__systems, @named valve_f = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, __overrides = valve_f_overrides))
   # Subcomponent valve_r of type VehicleSystemsComponents.Vehicle.Brake.ABSValve
   valve_r_overrides = __pop_subcomponent_overrides!(__overrides, "valve_r")
-  push!(__systems, @named valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, valve_r_overrides...))
+  push!(__systems, @named valve_r = VehicleSystemsComponents.Vehicle.Brake.ABSValve(; continuity__graph0=medium, __overrides = valve_r_overrides))
   # Subcomponent line_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
-  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, line_f_overrides...))
+  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, __overrides = line_f_overrides))
   # Subcomponent line_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_r_overrides = __pop_subcomponent_overrides!(__overrides, "line_r")
-  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, line_r_overrides...))
+  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, __overrides = line_r_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; F_z=m * g / 2, continuity__graph0=medium, continuity__graph1=medium, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; F_z=m * g / 2, continuity__graph0=medium, continuity__graph1=medium, __overrides = wheel_overrides))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; m=m, g=g, body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; m=m, g=g, __overrides = body_overrides))
   # Subcomponent housing of type RotationalComponents.Components.Fixed
   housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; housing_overrides...))
+  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
   # Subcomponent speed of type TranslationalComponents.Sensors.VelocitySensor
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = TranslationalComponents.Sensors.VelocitySensor(; speed_overrides...))
+  push!(__systems, @named speed = TranslationalComponents.Sensors.VelocitySensor(; __overrides = speed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -165,6 +171,6 @@ hydraulic braked wheel. A prescribed pressure boundary represents the ABS pump a
   push!(__eqs, connect(speed.v, v))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TCSCar

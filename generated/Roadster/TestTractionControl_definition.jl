@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   TestTractionControl(; name)
+   TestTractionControl(; name, __overrides)
 
 Traction control at fixed load, one slip value per case: below, inside and above the cut-back.
 """
-@component function TestTractionControl(; name = nothing, kwargs...)
+@component function TestTractionControl(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Traction control at fixed load, one slip value per case: below, inside and above
     @named model = TestTractionControl()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,16 +55,16 @@ Traction control at fixed load, one slip value per case: below, inside and above
   ### Components
   # Subcomponent load of type BlockComponents.Sources.Constant
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
-  push!(__systems, @named load = BlockComponents.Sources.Constant(; k=Float64(10000), load_overrides...))
+  push!(__systems, @named load = BlockComponents.Sources.Constant(; k=Float64(10000), __overrides = load_overrides))
   # Subcomponent slip of type BlockComponents.Sources.Constant
   slip_overrides = __pop_subcomponent_overrides!(__overrides, "slip")
-  push!(__systems, @named slip = BlockComponents.Sources.Constant(; k=0.03, slip_overrides...))
+  push!(__systems, @named slip = BlockComponents.Sources.Constant(; k=0.03, __overrides = slip_overrides))
   # Subcomponent control of type VehicleSystemsComponents.Roadster.TractionControl
   control_overrides = __pop_subcomponent_overrides!(__overrides, "control")
-  push!(__systems, @named control = VehicleSystemsComponents.Roadster.TractionControl(; control_overrides...))
+  push!(__systems, @named control = VehicleSystemsComponents.Roadster.TractionControl(; __overrides = control_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -78,6 +78,6 @@ Traction control at fixed load, one slip value per case: below, inside and above
   push!(__eqs, connect(slip.y, control.kappa))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestTractionControl

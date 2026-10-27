@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   CruiseController(; name, k)
+   CruiseController(; name, k, __overrides)
 
 Step 3: `gain` after `error`, the P controller.
 
@@ -21,7 +21,7 @@ Step 3: `gain` after `error`, the P controller.
  * `u_m` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function CruiseController(; name = nothing, k=Float64(56), kwargs...)
+@component function CruiseController(; name = nothing, var"k"=Float64(56), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -29,7 +29,7 @@ Step 3: `gain` after `error`, the P controller.
     @named model = CruiseController()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -38,6 +38,9 @@ Step 3: `gain` after `error`, the P controller.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "k") && (k = pop!(__overrides, "k"))
 
   ### Structural Parameters (functions)
 
@@ -54,7 +57,7 @@ Step 3: `gain` after `error`, the P controller.
   ### Symbolic Parameters
   __local__k = k
   append!(__params, @parameters (k::Real), [description = "Controller gain in N·m per km/h"])
-  __initial_conditions[k] = __local__k
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k, __local__k)
 
   ### Final Parameters (assignments)
 
@@ -73,13 +76,13 @@ Step 3: `gain` after `error`, the P controller.
   ### Components
   # Subcomponent error of type BlockComponents.Math.Add
   error_overrides = __pop_subcomponent_overrides!(__overrides, "error")
-  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), error_overrides...))
+  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), __overrides = error_overrides))
   # Subcomponent gain of type BlockComponents.Math.Gain
   gain_overrides = __pop_subcomponent_overrides!(__overrides, "gain")
-  push!(__systems, @named gain = BlockComponents.Math.Gain(; k=k, gain_overrides...))
+  push!(__systems, @named gain = BlockComponents.Math.Gain(; k=k, __overrides = gain_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -95,6 +98,6 @@ Step 3: `gain` after `error`, the P controller.
   push!(__eqs, connect(gain.y, y))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export CruiseController

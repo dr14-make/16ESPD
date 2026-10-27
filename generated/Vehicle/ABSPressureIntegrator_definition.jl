@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSPressureIntegrator(; name, T_track)
+   ABSPressureIntegrator(; name, T_track, __overrides)
 
 Shared continuous clipped command integrator.
 
@@ -29,7 +29,7 @@ Shared continuous clipped command integrator.
 | `p`         |                          | --  |
 | `pressure_rate`         |                          | --  |
 """
-@component function ABSPressureIntegrator(; name = nothing, T_track=0.01, kwargs...)
+@component function ABSPressureIntegrator(; name = nothing, var"T_track"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ Shared continuous clipped command integrator.
     @named model = ABSPressureIntegrator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,9 @@ Shared continuous clipped command integrator.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "T_track") && (T_track = pop!(__overrides, "T_track"))
 
   ### Structural Parameters (functions)
 
@@ -62,7 +65,7 @@ Shared continuous clipped command integrator.
   ### Symbolic Parameters
   __local__T_track = T_track
   append!(__params, @parameters (T_track::Real), [bounds = (eps(Float64), Inf)])
-  __initial_conditions[T_track] = __local__T_track
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_track, __local__T_track)
 
   ### Final Parameters (assignments)
 
@@ -78,11 +81,11 @@ Shared continuous clipped command integrator.
 
   ### Variables (assignments)
   __ovr_p = pop!(__overrides, "p", nothing); isnothing(__ovr_p) || push!(__eqs, p ~ __ovr_p)
-  __ovr_p__initial = pop!(__overrides, "p__initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
-  __ovr_p__guess = pop!(__overrides, "p__guess", nothing)
+  __ovr_p__initial = pop!(__overrides, "p.initial", nothing); isnothing(__ovr_p__initial) || (__initial_conditions[p] = __ovr_p__initial)
+  __ovr_p__guess = pop!(__overrides, "p.guess", nothing)
   __ovr_pressure_rate = pop!(__overrides, "pressure_rate", nothing); isnothing(__ovr_pressure_rate) || push!(__eqs, pressure_rate ~ __ovr_pressure_rate)
-  __ovr_pressure_rate__initial = pop!(__overrides, "pressure_rate__initial", nothing); isnothing(__ovr_pressure_rate__initial) || (__initial_conditions[pressure_rate] = __ovr_pressure_rate__initial)
-  __ovr_pressure_rate__guess = pop!(__overrides, "pressure_rate__guess", nothing)
+  __ovr_pressure_rate__initial = pop!(__overrides, "pressure_rate.initial", nothing); isnothing(__ovr_pressure_rate__initial) || (__initial_conditions[pressure_rate] = __ovr_pressure_rate__initial)
+  __ovr_pressure_rate__guess = pop!(__overrides, "pressure_rate.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -90,7 +93,7 @@ Shared continuous clipped command integrator.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_p__guess) || (__guesses[p] = __ovr_p__guess)
@@ -108,6 +111,6 @@ Shared continuous clipped command integrator.
   push!(__eqs, cmd ~ min(max(p, 0.0), max(demand, 0.0)))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ABSPressureIntegrator

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SteeringRobot(; name)
+   SteeringRobot(; name, __overrides)
 
 Steering robot that converts a steering-wheel reference signal into a physical shaft angle.
 
@@ -14,7 +14,7 @@ Steering robot that converts a steering-wheel reference signal into a physical s
  * `delta_sw_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `steering` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
 """
-@component function SteeringRobot(; name = nothing, kwargs...)
+@component function SteeringRobot(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -22,7 +22,7 @@ Steering robot that converts a steering-wheel reference signal into a physical s
     @named model = SteeringRobot()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -62,13 +62,13 @@ Steering robot that converts a steering-wheel reference signal into a physical s
   push!(__systems, @named steering = __Dyad__Spline())
   # Subcomponent wheel_pos of type RotationalComponents.Sources.Position
   wheel_pos_overrides = __pop_subcomponent_overrides!(__overrides, "wheel_pos")
-  push!(__systems, @named wheel_pos = RotationalComponents.Sources.Position(; wheel_pos_overrides...))
+  push!(__systems, @named wheel_pos = RotationalComponents.Sources.Position(; __overrides = wheel_pos_overrides))
   # Subcomponent steering_fixed of type RotationalComponents.Components.Fixed
   steering_fixed_overrides = __pop_subcomponent_overrides!(__overrides, "steering_fixed")
-  push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; steering_fixed_overrides...))
+  push!(__systems, @named steering_fixed = RotationalComponents.Components.Fixed(; __overrides = steering_fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -84,6 +84,6 @@ Steering robot that converts a steering-wheel reference signal into a physical s
   push!(__eqs, connect(wheel_pos.support, steering_fixed.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SteeringRobot

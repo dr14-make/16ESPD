@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ClosedHydraulicPort(; name)
+   ClosedHydraulicPort(; name, __overrides)
 
 Zero-flow termination used to cap an unused hydraulic circuit.
 
@@ -13,7 +13,7 @@ Zero-flow termination used to cap an unused hydraulic circuit.
 
  * `port` - ([`Port`](@ref))
 """
-@component function ClosedHydraulicPort(; name = nothing, continuity__graph0, kwargs...)
+@component function ClosedHydraulicPort(; name = nothing, var"continuity__graph0", __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -21,7 +21,7 @@ Zero-flow termination used to cap an unused hydraulic circuit.
     @named model = ClosedHydraulicPort()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -61,7 +61,7 @@ Zero-flow termination used to cap an unused hydraulic circuit.
   push!(__systems, @named port = HydraulicComponents.Interfaces.Port())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -74,6 +74,6 @@ Zero-flow termination used to cap an unused hydraulic circuit.
   push!(__eqs, port.m_flow ~ 0.0)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ClosedHydraulicPort

@@ -124,7 +124,7 @@ end
 
 analysis ColdGasThrustStandTransient
   extends TransientAnalysis(stop = 15.0, abstol = 1e-9, reltol = 1e-7,
-                            automatic_discontinuity_detection = true)
+                            automatic_discontinuity_detection = false)
   "Total nozzle throat area"
   parameter A_t::Area = 1.286e-3
   "Initial tank pressure"

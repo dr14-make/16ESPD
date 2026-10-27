@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   Throttle(; name, D_thr, alpha_0, A_idle, C_d, p_a, T_a, R, gamma, Pi_lin)
+   Throttle(; name, D_thr, alpha_0, A_idle, C_d, p_a, T_a, R, gamma, Pi_lin, __overrides)
 
 Throttle plate as a compressible orifice: ambient air in, mass flow into the manifold out.
 
@@ -52,7 +52,7 @@ idles at 33 kPa at 800 rpm.
 | `Pi`         | Pressure ratio across the throttle, floored at the choked value                         | --  |
 | `Psi`         | Isentropic flow function                         | --  |
 """
-@component function Throttle(; name = nothing, D_thr=0.05, alpha_0=0.122173, A_idle=0.0000074, C_d=0.8, p_a=Float64(101325.0), T_a=298.15, R=287.05, gamma=1.4, Pi_lin=0.95, kwargs...)
+@component function Throttle(; name = nothing, var"D_thr"=0.05, var"alpha_0"=0.122173, var"A_idle"=0.0000074, var"C_d"=0.8, var"p_a"=Float64(101325.0), var"T_a"=298.15, var"R"=287.05, var"gamma"=1.4, var"Pi_lin"=0.95, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -60,7 +60,7 @@ idles at 33 kPa at 800 rpm.
     @named model = Throttle()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -69,6 +69,17 @@ idles at 33 kPa at 800 rpm.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "D_thr") && (D_thr = pop!(__overrides, "D_thr"))
+  haskey(__overrides, "alpha_0") && (alpha_0 = pop!(__overrides, "alpha_0"))
+  haskey(__overrides, "A_idle") && (A_idle = pop!(__overrides, "A_idle"))
+  haskey(__overrides, "C_d") && (C_d = pop!(__overrides, "C_d"))
+  haskey(__overrides, "p_a") && (p_a = pop!(__overrides, "p_a"))
+  haskey(__overrides, "T_a") && (T_a = pop!(__overrides, "T_a"))
+  haskey(__overrides, "R") && (R = pop!(__overrides, "R"))
+  haskey(__overrides, "gamma") && (gamma = pop!(__overrides, "gamma"))
+  haskey(__overrides, "Pi_lin") && (Pi_lin = pop!(__overrides, "Pi_lin"))
 
   ### Structural Parameters (functions)
 
@@ -87,31 +98,31 @@ idles at 33 kPa at 800 rpm.
   ### Symbolic Parameters
   __local__D_thr = D_thr
   append!(__params, @parameters (D_thr::Real), [description = "Throttle bore diameter (MathWorks)"])
-  __initial_conditions[D_thr] = __local__D_thr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, D_thr, __local__D_thr)
   __local__alpha_0 = alpha_0
   append!(__params, @parameters (alpha_0::Real), [description = "Plate angle at the closed stop, 7 deg (assumed)"])
-  __initial_conditions[alpha_0] = __local__alpha_0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_0, __local__alpha_0)
   __local__A_idle = A_idle
   append!(__params, @parameters (A_idle::Real), [description = "Leakage plus idle-bypass area, sets 33 kPa idle at 800 rpm (derived)"])
-  __initial_conditions[A_idle] = __local__A_idle
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_idle, __local__A_idle)
   __local__C_d = C_d
   append!(__params, @parameters (C_d::Real), [description = "Discharge coefficient (assumed)"])
-  __initial_conditions[C_d] = __local__C_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_d, __local__C_d)
   __local__p_a = p_a
   append!(__params, @parameters (p_a::Real), [description = "Ambient pressure (textbook)"])
-  __initial_conditions[p_a] = __local__p_a
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_a, __local__p_a)
   __local__T_a = T_a
   append!(__params, @parameters (T_a::Real), [description = "Ambient air temperature (MathWorks)", bounds = (0, Inf)])
-  __initial_conditions[T_a] = __local__T_a
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_a, __local__T_a)
   __local__R = R
   append!(__params, @parameters (R::Real), [description = "Gas constant of air [J/(kg.K)] (textbook)"])
-  __initial_conditions[R] = __local__R
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R, __local__R)
   __local__gamma = gamma
   append!(__params, @parameters (gamma::Real), [description = "Ratio of specific heats of air (textbook)"])
-  __initial_conditions[gamma] = __local__gamma
+  __dyad_seed_parameter!(__initial_conditions, __bindings, gamma, __local__gamma)
   __local__Pi_lin = Pi_lin
   append!(__params, @parameters (Pi_lin::Real), [description = "Pressure ratio above which Psi is linearized (MathWorks)"])
-  __initial_conditions[Pi_lin] = __local__Pi_lin
+  __dyad_seed_parameter!(__initial_conditions, __bindings, Pi_lin, __local__Pi_lin)
 
   ### Final Parameters (assignments)
   __bindings[Pi_cr] = (2 / (gamma + 1)) ^ (gamma / (gamma - 1))
@@ -130,17 +141,17 @@ idles at 33 kPa at 800 rpm.
 
   ### Variables (assignments)
   __ovr_alpha = pop!(__overrides, "alpha", nothing); isnothing(__ovr_alpha) || push!(__eqs, alpha ~ __ovr_alpha)
-  __ovr_alpha__initial = pop!(__overrides, "alpha__initial", nothing); isnothing(__ovr_alpha__initial) || (__initial_conditions[alpha] = __ovr_alpha__initial)
-  __ovr_alpha__guess = pop!(__overrides, "alpha__guess", nothing)
+  __ovr_alpha__initial = pop!(__overrides, "alpha.initial", nothing); isnothing(__ovr_alpha__initial) || (__initial_conditions[alpha] = __ovr_alpha__initial)
+  __ovr_alpha__guess = pop!(__overrides, "alpha.guess", nothing)
   __ovr_A_thr = pop!(__overrides, "A_thr", nothing); isnothing(__ovr_A_thr) || push!(__eqs, A_thr ~ __ovr_A_thr)
-  __ovr_A_thr__initial = pop!(__overrides, "A_thr__initial", nothing); isnothing(__ovr_A_thr__initial) || (__initial_conditions[A_thr] = __ovr_A_thr__initial)
-  __ovr_A_thr__guess = pop!(__overrides, "A_thr__guess", nothing)
+  __ovr_A_thr__initial = pop!(__overrides, "A_thr.initial", nothing); isnothing(__ovr_A_thr__initial) || (__initial_conditions[A_thr] = __ovr_A_thr__initial)
+  __ovr_A_thr__guess = pop!(__overrides, "A_thr.guess", nothing)
   __ovr_Pi = pop!(__overrides, "Pi", nothing); isnothing(__ovr_Pi) || push!(__eqs, Pi ~ __ovr_Pi)
-  __ovr_Pi__initial = pop!(__overrides, "Pi__initial", nothing); isnothing(__ovr_Pi__initial) || (__initial_conditions[Pi] = __ovr_Pi__initial)
-  __ovr_Pi__guess = pop!(__overrides, "Pi__guess", nothing)
+  __ovr_Pi__initial = pop!(__overrides, "Pi.initial", nothing); isnothing(__ovr_Pi__initial) || (__initial_conditions[Pi] = __ovr_Pi__initial)
+  __ovr_Pi__guess = pop!(__overrides, "Pi.guess", nothing)
   __ovr_Psi = pop!(__overrides, "Psi", nothing); isnothing(__ovr_Psi) || push!(__eqs, Psi ~ __ovr_Psi)
-  __ovr_Psi__initial = pop!(__overrides, "Psi__initial", nothing); isnothing(__ovr_Psi__initial) || (__initial_conditions[Psi] = __ovr_Psi__initial)
-  __ovr_Psi__guess = pop!(__overrides, "Psi__guess", nothing)
+  __ovr_Psi__initial = pop!(__overrides, "Psi.initial", nothing); isnothing(__ovr_Psi__initial) || (__initial_conditions[Psi] = __ovr_Psi__initial)
+  __ovr_Psi__guess = pop!(__overrides, "Psi.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -148,7 +159,7 @@ idles at 33 kPa at 800 rpm.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_alpha__guess) || (__guesses[alpha] = __ovr_alpha__guess)
@@ -169,6 +180,6 @@ idles at 33 kPa at 800 rpm.
   push!(__eqs, mdot_thr ~ C_d * A_thr * p_a / sqrt(R * T_a) * Psi)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export Throttle

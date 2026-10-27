@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   BrakeAllocator(; name, tw, radius, T_max, T_build, R_build)
+   BrakeAllocator(; name, tw, radius, T_max, T_build, R_build, __overrides)
 
 Signed single-wheel yaw-moment allocation with pressure-build dynamics.
 
@@ -38,7 +38,7 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
 | `req_rl`         |                          | N.m  |
 | `req_rr`         |                          | N.m  |
 """
-@component function BrakeAllocator(; name = nothing, tw=1.55, radius=0.31, T_max=Float64(2500.0), T_build=0.1, R_build=Float64(1000000000.0), kwargs...)
+@component function BrakeAllocator(; name = nothing, var"tw"=1.55, var"radius"=0.31, var"T_max"=Float64(2500.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -46,7 +46,7 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
     @named model = BrakeAllocator()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,6 +55,13 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "tw") && (tw = pop!(__overrides, "tw"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
+  haskey(__overrides, "T_build") && (T_build = pop!(__overrides, "T_build"))
+  haskey(__overrides, "R_build") && (R_build = pop!(__overrides, "R_build"))
 
   ### Structural Parameters (functions)
 
@@ -71,19 +78,19 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
   ### Symbolic Parameters
   __local__tw = tw
   append!(__params, @parameters (tw::Real), [description = "Track width (probe)"])
-  __initial_conditions[tw] = __local__tw
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tw, __local__tw)
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel radius (repository default)"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__T_max = T_max
   append!(__params, @parameters (T_max::Real), [description = "Maximum wheel torque request (assumed)"])
-  __initial_conditions[T_max] = __local__T_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_max, __local__T_max)
   __local__T_build = T_build
   append!(__params, @parameters (T_build::Real), [description = "Pressure build lag (assumed)"])
-  __initial_conditions[T_build] = __local__T_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_build, __local__T_build)
   __local__R_build = R_build
   append!(__params, @parameters (R_build::Real), [description = "Maximum rate of brake-torque increase in N.m/s; a pump-based unit builds front-lock torque in about 0.34 s"])
-  __initial_conditions[R_build] = __local__R_build
+  __dyad_seed_parameter!(__initial_conditions, __bindings, R_build, __local__R_build)
 
   ### Final Parameters (assignments)
 
@@ -104,20 +111,20 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
 
   ### Variables (assignments)
   __ovr_T = pop!(__overrides, "T", nothing); isnothing(__ovr_T) || push!(__eqs, T ~ __ovr_T)
-  __ovr_T__initial = pop!(__overrides, "T__initial", nothing); isnothing(__ovr_T__initial) || (__initial_conditions[T] = __ovr_T__initial)
-  __ovr_T__guess = pop!(__overrides, "T__guess", nothing)
+  __ovr_T__initial = pop!(__overrides, "T.initial", nothing); isnothing(__ovr_T__initial) || (__initial_conditions[T] = __ovr_T__initial)
+  __ovr_T__guess = pop!(__overrides, "T.guess", nothing)
   __ovr_req_fl = pop!(__overrides, "req_fl", nothing); isnothing(__ovr_req_fl) || push!(__eqs, req_fl ~ __ovr_req_fl)
-  __ovr_req_fl__initial = pop!(__overrides, "req_fl__initial", nothing); isnothing(__ovr_req_fl__initial) || (__initial_conditions[req_fl] = __ovr_req_fl__initial)
-  __ovr_req_fl__guess = pop!(__overrides, "req_fl__guess", nothing)
+  __ovr_req_fl__initial = pop!(__overrides, "req_fl.initial", nothing); isnothing(__ovr_req_fl__initial) || (__initial_conditions[req_fl] = __ovr_req_fl__initial)
+  __ovr_req_fl__guess = pop!(__overrides, "req_fl.guess", nothing)
   __ovr_req_fr = pop!(__overrides, "req_fr", nothing); isnothing(__ovr_req_fr) || push!(__eqs, req_fr ~ __ovr_req_fr)
-  __ovr_req_fr__initial = pop!(__overrides, "req_fr__initial", nothing); isnothing(__ovr_req_fr__initial) || (__initial_conditions[req_fr] = __ovr_req_fr__initial)
-  __ovr_req_fr__guess = pop!(__overrides, "req_fr__guess", nothing)
+  __ovr_req_fr__initial = pop!(__overrides, "req_fr.initial", nothing); isnothing(__ovr_req_fr__initial) || (__initial_conditions[req_fr] = __ovr_req_fr__initial)
+  __ovr_req_fr__guess = pop!(__overrides, "req_fr.guess", nothing)
   __ovr_req_rl = pop!(__overrides, "req_rl", nothing); isnothing(__ovr_req_rl) || push!(__eqs, req_rl ~ __ovr_req_rl)
-  __ovr_req_rl__initial = pop!(__overrides, "req_rl__initial", nothing); isnothing(__ovr_req_rl__initial) || (__initial_conditions[req_rl] = __ovr_req_rl__initial)
-  __ovr_req_rl__guess = pop!(__overrides, "req_rl__guess", nothing)
+  __ovr_req_rl__initial = pop!(__overrides, "req_rl.initial", nothing); isnothing(__ovr_req_rl__initial) || (__initial_conditions[req_rl] = __ovr_req_rl__initial)
+  __ovr_req_rl__guess = pop!(__overrides, "req_rl.guess", nothing)
   __ovr_req_rr = pop!(__overrides, "req_rr", nothing); isnothing(__ovr_req_rr) || push!(__eqs, req_rr ~ __ovr_req_rr)
-  __ovr_req_rr__initial = pop!(__overrides, "req_rr__initial", nothing); isnothing(__ovr_req_rr__initial) || (__initial_conditions[req_rr] = __ovr_req_rr__initial)
-  __ovr_req_rr__guess = pop!(__overrides, "req_rr__guess", nothing)
+  __ovr_req_rr__initial = pop!(__overrides, "req_rr.initial", nothing); isnothing(__ovr_req_rr__initial) || (__initial_conditions[req_rr] = __ovr_req_rr__initial)
+  __ovr_req_rr__guess = pop!(__overrides, "req_rr.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -125,7 +132,7 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_T__guess) || (__guesses[T] = __ovr_T__guess)
@@ -155,6 +162,6 @@ Signed single-wheel yaw-moment allocation with pressure-build dynamics.
   push!(__eqs, ModelingToolkit.D_nounits(dT_rr) ~ min((req_rr - dT_rr) / T_build, R_build))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export BrakeAllocator

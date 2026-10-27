@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   RoadBrake(; name, v_reg)
+   RoadBrake(; name, v_reg, __overrides)
 
 Service brake acting between the car body and the road.
 
@@ -33,7 +33,7 @@ Friction acts against relative motion whichever way the two flanges are connecte
 | `v`         | Speed of the flange relative to the support                         | m/s  |
 | `f`         | Friction force, signed with v; the flange feels it against its motion                         | N  |
 """
-@component function RoadBrake(; name = nothing, v_reg=0.05, kwargs...)
+@component function RoadBrake(; name = nothing, var"v_reg"=0.05, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -41,7 +41,7 @@ Friction acts against relative motion whichever way the two flanges are connecte
     @named model = RoadBrake()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -50,6 +50,9 @@ Friction acts against relative motion whichever way the two flanges are connecte
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "v_reg") && (v_reg = pop!(__overrides, "v_reg"))
 
   ### Structural Parameters (functions)
 
@@ -66,7 +69,7 @@ Friction acts against relative motion whichever way the two flanges are connecte
   ### Symbolic Parameters
   __local__v_reg = v_reg
   append!(__params, @parameters (v_reg::Real), [description = "Slip regularization speed (assumed)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[v_reg] = __local__v_reg
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_reg, __local__v_reg)
 
   ### Final Parameters (assignments)
 
@@ -79,11 +82,11 @@ Friction acts against relative motion whichever way the two flanges are connecte
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
   __ovr_f = pop!(__overrides, "f", nothing); isnothing(__ovr_f) || push!(__eqs, f ~ __ovr_f)
-  __ovr_f__initial = pop!(__overrides, "f__initial", nothing); isnothing(__ovr_f__initial) || (__initial_conditions[f] = __ovr_f__initial)
-  __ovr_f__guess = pop!(__overrides, "f__guess", nothing)
+  __ovr_f__initial = pop!(__overrides, "f.initial", nothing); isnothing(__ovr_f__initial) || (__initial_conditions[f] = __ovr_f__initial)
+  __ovr_f__guess = pop!(__overrides, "f.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -93,7 +96,7 @@ Friction acts against relative motion whichever way the two flanges are connecte
   push!(__systems, @named support = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
@@ -111,6 +114,6 @@ Friction acts against relative motion whichever way the two flanges are connecte
   push!(__eqs, support.f ~ -f)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export RoadBrake

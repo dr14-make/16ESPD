@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SlipABS(; name, lambda_target, k_inc, k_dec, v_min, T_p, T_f)
+   SlipABS(; name, lambda_target, k_inc, k_dec, v_min, T_p, T_f, __overrides)
 
 Hands-on 03 step 03 slip controller. It dumps allowed hydraulic pressure while predicted wheel
 slip is past `lambda_target` and builds pressure otherwise. The command remains between zero and
@@ -38,7 +38,7 @@ the driver's master-cylinder pressure.
 | `kappa_pred`         |                          | --  |
 | `cycled`         |                          | --  |
 """
-@component function SlipABS(; name = nothing, lambda_target=0.04, k_inc=Float64(29000000.0), k_dec=Float64(58000000.0), v_min=1.5, T_p=0.03, T_f=0.003, kwargs...)
+@component function SlipABS(; name = nothing, var"lambda_target"=0.04, var"k_inc"=Float64(29000000.0), var"k_dec"=Float64(58000000.0), var"v_min"=1.5, var"T_p"=0.03, var"T_f"=0.003, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -46,7 +46,7 @@ the driver's master-cylinder pressure.
     @named model = SlipABS()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,6 +55,14 @@ the driver's master-cylinder pressure.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "lambda_target") && (lambda_target = pop!(__overrides, "lambda_target"))
+  haskey(__overrides, "k_inc") && (k_inc = pop!(__overrides, "k_inc"))
+  haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
+  haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
+  haskey(__overrides, "T_p") && (T_p = pop!(__overrides, "T_p"))
+  haskey(__overrides, "T_f") && (T_f = pop!(__overrides, "T_f"))
 
   ### Structural Parameters (functions)
 
@@ -71,22 +79,22 @@ the driver's master-cylinder pressure.
   ### Symbolic Parameters
   __local__lambda_target = lambda_target
   append!(__params, @parameters (lambda_target::Real), [description = "Slip held, just past the tire's peak"])
-  __initial_conditions[lambda_target] = __local__lambda_target
+  __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_target, __local__lambda_target)
   __local__k_inc = k_inc
   append!(__params, @parameters (k_inc::Real), [description = "Pressure build rate [Pa/s]"])
-  __initial_conditions[k_inc] = __local__k_inc
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc, __local__k_inc)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real), [description = "Pressure dump rate [Pa/s]"])
-  __initial_conditions[k_dec] = __local__k_dec
+  __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real), [description = "ABS off below this speed"])
-  __initial_conditions[v_min] = __local__v_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
   __local__T_p = T_p
   append!(__params, @parameters (T_p::Real), [description = "Look-ahead, the brake's lag"])
-  __initial_conditions[T_p] = __local__T_p
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__T_f = T_f
   append!(__params, @parameters (T_f::Real), [description = "Slip-rate filter"])
-  __initial_conditions[T_f] = __local__T_f
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_f, __local__T_f)
 
   ### Final Parameters (assignments)
 
@@ -104,17 +112,17 @@ the driver's master-cylinder pressure.
 
   ### Variables (assignments)
   __ovr_kappa_f = pop!(__overrides, "kappa_f", nothing); isnothing(__ovr_kappa_f) || push!(__eqs, kappa_f ~ __ovr_kappa_f)
-  __ovr_kappa_f__initial = pop!(__overrides, "kappa_f__initial", nothing); isnothing(__ovr_kappa_f__initial) || (__initial_conditions[kappa_f] = __ovr_kappa_f__initial)
-  __ovr_kappa_f__guess = pop!(__overrides, "kappa_f__guess", nothing)
+  __ovr_kappa_f__initial = pop!(__overrides, "kappa_f.initial", nothing); isnothing(__ovr_kappa_f__initial) || (__initial_conditions[kappa_f] = __ovr_kappa_f__initial)
+  __ovr_kappa_f__guess = pop!(__overrides, "kappa_f.guess", nothing)
   __ovr_kappa_dot = pop!(__overrides, "kappa_dot", nothing); isnothing(__ovr_kappa_dot) || push!(__eqs, kappa_dot ~ __ovr_kappa_dot)
-  __ovr_kappa_dot__initial = pop!(__overrides, "kappa_dot__initial", nothing); isnothing(__ovr_kappa_dot__initial) || (__initial_conditions[kappa_dot] = __ovr_kappa_dot__initial)
-  __ovr_kappa_dot__guess = pop!(__overrides, "kappa_dot__guess", nothing)
+  __ovr_kappa_dot__initial = pop!(__overrides, "kappa_dot.initial", nothing); isnothing(__ovr_kappa_dot__initial) || (__initial_conditions[kappa_dot] = __ovr_kappa_dot__initial)
+  __ovr_kappa_dot__guess = pop!(__overrides, "kappa_dot.guess", nothing)
   __ovr_kappa_pred = pop!(__overrides, "kappa_pred", nothing); isnothing(__ovr_kappa_pred) || push!(__eqs, kappa_pred ~ __ovr_kappa_pred)
-  __ovr_kappa_pred__initial = pop!(__overrides, "kappa_pred__initial", nothing); isnothing(__ovr_kappa_pred__initial) || (__initial_conditions[kappa_pred] = __ovr_kappa_pred__initial)
-  __ovr_kappa_pred__guess = pop!(__overrides, "kappa_pred__guess", nothing)
+  __ovr_kappa_pred__initial = pop!(__overrides, "kappa_pred.initial", nothing); isnothing(__ovr_kappa_pred__initial) || (__initial_conditions[kappa_pred] = __ovr_kappa_pred__initial)
+  __ovr_kappa_pred__guess = pop!(__overrides, "kappa_pred.guess", nothing)
   __ovr_cycled = pop!(__overrides, "cycled", nothing); isnothing(__ovr_cycled) || push!(__eqs, cycled ~ __ovr_cycled)
-  __ovr_cycled__initial = pop!(__overrides, "cycled__initial", nothing); isnothing(__ovr_cycled__initial) || (__initial_conditions[cycled] = __ovr_cycled__initial)
-  __ovr_cycled__guess = pop!(__overrides, "cycled__guess", nothing)
+  __ovr_cycled__initial = pop!(__overrides, "cycled.initial", nothing); isnothing(__ovr_cycled__initial) || (__initial_conditions[cycled] = __ovr_cycled__initial)
+  __ovr_cycled__guess = pop!(__overrides, "cycled.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -122,10 +130,10 @@ the driver's master-cylinder pressure.
   ### Components
   # Subcomponent pressure of type VehicleSystemsComponents.Vehicle.ABSPressureIntegrator
   pressure_overrides = __pop_subcomponent_overrides!(__overrides, "pressure")
-  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=0.01, pressure_overrides...))
+  push!(__systems, @named pressure = VehicleSystemsComponents.Vehicle.ABSPressureIntegrator(; T_track=0.01, __overrides = pressure_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_kappa_f__guess) || (__guesses[kappa_f] = __ovr_kappa_f__guess)
@@ -151,6 +159,6 @@ the driver's master-cylinder pressure.
   push!(__eqs, connect(demand, pressure.demand))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SlipABS

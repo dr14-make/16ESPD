@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   SuctionRollingResistance(; name, f_r, v_eps)
+   SuctionRollingResistance(; name, f_r, v_eps, __overrides)
 
 Incremental rolling resistance caused by suction downforce.
 
@@ -27,7 +27,7 @@ Incremental rolling resistance caused by suction downforce.
 | ------------ | ----------------------------------- | ------ |
 | `v`         | Vehicle speed                         | m/s  |
 """
-@component function SuctionRollingResistance(; name = nothing, f_r=0.012, v_eps=0.1, kwargs...)
+@component function SuctionRollingResistance(; name = nothing, var"f_r"=0.012, var"v_eps"=0.1, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ Incremental rolling resistance caused by suction downforce.
     @named model = SuctionRollingResistance()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,10 @@ Incremental rolling resistance caused by suction downforce.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "f_r") && (f_r = pop!(__overrides, "f_r"))
+  haskey(__overrides, "v_eps") && (v_eps = pop!(__overrides, "v_eps"))
 
   ### Structural Parameters (functions)
 
@@ -60,10 +64,10 @@ Incremental rolling resistance caused by suction downforce.
   ### Symbolic Parameters
   __local__f_r = f_r
   append!(__params, @parameters (f_r::Real), [description = "Rolling resistance coefficient; inherited from the baseline vehicle assumption"])
-  __initial_conditions[f_r] = __local__f_r
+  __dyad_seed_parameter!(__initial_conditions, __bindings, f_r, __local__f_r)
   __local__v_eps = v_eps
   append!(__params, @parameters (v_eps::Real), [description = "Speed scale for a continuous force reversal; numerical regularization"])
-  __initial_conditions[v_eps] = __local__v_eps
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v_eps, __local__v_eps)
 
   ### Final Parameters (assignments)
 
@@ -75,8 +79,8 @@ Incremental rolling resistance caused by suction downforce.
 
   ### Variables (assignments)
   __ovr_v = pop!(__overrides, "v", nothing); isnothing(__ovr_v) || push!(__eqs, v ~ __ovr_v)
-  __ovr_v__initial = pop!(__overrides, "v__initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
-  __ovr_v__guess = pop!(__overrides, "v__guess", nothing)
+  __ovr_v__initial = pop!(__overrides, "v.initial", nothing); isnothing(__ovr_v__initial) || (__initial_conditions[v] = __ovr_v__initial)
+  __ovr_v__guess = pop!(__overrides, "v.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -85,7 +89,7 @@ Incremental rolling resistance caused by suction downforce.
   push!(__systems, @named flange = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_v__guess) || (__guesses[v] = __ovr_v__guess)
@@ -100,6 +104,6 @@ Incremental rolling resistance caused by suction downforce.
   push!(__eqs, flange.f ~ f_r * downforce * tanh(v / v_eps))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SuctionRollingResistance

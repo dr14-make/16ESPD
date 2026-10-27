@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestToKmPerHour(; name)
+   TestToKmPerHour(; name, __overrides)
 """
-@component function TestToKmPerHour(; name = nothing, kwargs...)
+@component function TestToKmPerHour(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestToKmPerHour()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,13 +53,13 @@
   ### Components
   # Subcomponent src of type BlockComponents.Sources.Constant
   src_overrides = __pop_subcomponent_overrides!(__overrides, "src")
-  push!(__systems, @named src = BlockComponents.Sources.Constant(; k=Float64(10.0), src_overrides...))
+  push!(__systems, @named src = BlockComponents.Sources.Constant(; k=Float64(10.0), __overrides = src_overrides))
   # Subcomponent conv of type VehicleSystemsComponents.Vehicle.ToKmPerHour
   conv_overrides = __pop_subcomponent_overrides!(__overrides, "conv")
-  push!(__systems, @named conv = VehicleSystemsComponents.Vehicle.ToKmPerHour(; conv_overrides...))
+  push!(__systems, @named conv = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = conv_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -72,6 +72,6 @@
   push!(__eqs, connect(src.y, conv.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestToKmPerHour

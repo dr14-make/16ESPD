@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   HysteresisLatch(; name, latch_time)
+   HysteresisLatch(; name, latch_time, __overrides)
 
 Continuous set/reset latch.
 
@@ -30,7 +30,7 @@ initial value follows an asserted set input so a simulation begun inside a cut r
 | ------------ | ----------------------------------- | ------ |
 | `request`         |                          | --  |
 """
-@component function HysteresisLatch(; name = nothing, latch_time=0.01, kwargs...)
+@component function HysteresisLatch(; name = nothing, var"latch_time"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -38,7 +38,7 @@ initial value follows an asserted set input so a simulation begun inside a cut r
     @named model = HysteresisLatch()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -47,6 +47,9 @@ initial value follows an asserted set input so a simulation begun inside a cut r
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "latch_time") && (latch_time = pop!(__overrides, "latch_time"))
 
   ### Structural Parameters (functions)
 
@@ -63,7 +66,7 @@ initial value follows an asserted set input so a simulation begun inside a cut r
   ### Symbolic Parameters
   __local__latch_time = latch_time
   append!(__params, @parameters (latch_time::Real), [description = "Continuous latch transition time (assumed)", bounds = (eps(Float64), Inf)])
-  __initial_conditions[latch_time] = __local__latch_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, latch_time, __local__latch_time)
 
   ### Final Parameters (assignments)
 
@@ -77,8 +80,8 @@ initial value follows an asserted set input so a simulation begun inside a cut r
 
   ### Variables (assignments)
   __ovr_request = pop!(__overrides, "request", nothing); isnothing(__ovr_request) || push!(__eqs, request ~ __ovr_request)
-  __ovr_request__initial = pop!(__overrides, "request__initial", nothing); isnothing(__ovr_request__initial) || (__initial_conditions[request] = __ovr_request__initial)
-  __ovr_request__guess = pop!(__overrides, "request__guess", nothing)
+  __ovr_request__initial = pop!(__overrides, "request.initial", nothing); isnothing(__ovr_request__initial) || (__initial_conditions[request] = __ovr_request__initial)
+  __ovr_request__guess = pop!(__overrides, "request.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -86,7 +89,7 @@ initial value follows an asserted set input so a simulation begun inside a cut r
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_request__guess) || (__guesses[request] = __ovr_request__guess)
@@ -102,6 +105,6 @@ initial value follows an asserted set input so a simulation begun inside a cut r
   push!(__eqs, ModelingToolkit.D_nounits(y) ~ (request - y) / latch_time)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export HysteresisLatch

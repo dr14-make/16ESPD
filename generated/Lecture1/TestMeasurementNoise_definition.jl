@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestMeasurementNoise(; name)
+   TestMeasurementNoise(; name, __overrides)
 """
-@component function TestMeasurementNoise(; name = nothing, kwargs...)
+@component function TestMeasurementNoise(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestMeasurementNoise()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,13 +53,13 @@
   ### Components
   # Subcomponent carrier of type BlockComponents.Sources.Constant
   carrier_overrides = __pop_subcomponent_overrides!(__overrides, "carrier")
-  push!(__systems, @named carrier = BlockComponents.Sources.Constant(; k=Float64(90.0), carrier_overrides...))
+  push!(__systems, @named carrier = BlockComponents.Sources.Constant(; k=Float64(90.0), __overrides = carrier_overrides))
   # Subcomponent noise of type VehicleSystemsComponents.Lecture1.MeasurementNoise
   noise_overrides = __pop_subcomponent_overrides!(__overrides, "noise")
-  push!(__systems, @named noise = VehicleSystemsComponents.Lecture1.MeasurementNoise(; noise_overrides...))
+  push!(__systems, @named noise = VehicleSystemsComponents.Lecture1.MeasurementNoise(; __overrides = noise_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -72,6 +72,6 @@
   push!(__eqs, connect(carrier.y, noise.u))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestMeasurementNoise

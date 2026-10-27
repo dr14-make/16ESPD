@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   LockedBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0)
+   LockedBrakeTest(; name, v0, brake_demand, brake_time, road_mu, m, radius, J_w, w0, __overrides)
 
 Locked-wheel baseline with unmodulated driver demand.
 
@@ -22,7 +22,7 @@ Locked-wheel baseline with unmodulated driver demand.
 | `J_w`         |                          | kg.m2  |   4.0 |
 | `w0`         |                          | rad/s  |   0.2 |
 """
-@component function LockedBrakeTest(; name = nothing, v0=Float64(25.0), brake_demand=Float64(6000.0), brake_time=0.5, road_mu=Float64(1.0), m=Float64(1400.0), radius=0.31, J_w=Float64(4.0), w0=0.2, kwargs...)
+@component function LockedBrakeTest(; name = nothing, var"v0"=Float64(25.0), var"brake_demand"=Float64(6000.0), var"brake_time"=0.5, var"road_mu"=Float64(1.0), var"m"=Float64(1400.0), var"radius"=0.31, var"J_w"=Float64(4.0), var"w0"=0.2, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -30,7 +30,7 @@ Locked-wheel baseline with unmodulated driver demand.
     @named model = LockedBrakeTest()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -39,6 +39,16 @@ Locked-wheel baseline with unmodulated driver demand.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
+  haskey(__overrides, "brake_demand") && (brake_demand = pop!(__overrides, "brake_demand"))
+  haskey(__overrides, "brake_time") && (brake_time = pop!(__overrides, "brake_time"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "J_w") && (J_w = pop!(__overrides, "J_w"))
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
 
   ### Structural Parameters (functions)
 
@@ -55,28 +65,28 @@ Locked-wheel baseline with unmodulated driver demand.
   ### Symbolic Parameters
   __local__v0 = v0
   append!(__params, @parameters (v0::Real))
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
   __local__brake_demand = brake_demand
   append!(__params, @parameters (brake_demand::Real))
-  __initial_conditions[brake_demand] = __local__brake_demand
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_demand, __local__brake_demand)
   __local__brake_time = brake_time
   append!(__params, @parameters (brake_time::Real))
-  __initial_conditions[brake_time] = __local__brake_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, brake_time, __local__brake_time)
   __local__road_mu = road_mu
   append!(__params, @parameters (road_mu::Real))
-  __initial_conditions[road_mu] = __local__road_mu
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
   __local__m = m
   append!(__params, @parameters (m::Real), [bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__radius = radius
   append!(__params, @parameters (radius::Real))
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__J_w = J_w
   append!(__params, @parameters (J_w::Real))
-  __initial_conditions[J_w] = __local__J_w
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J_w, __local__J_w)
   __local__w0 = w0
   append!(__params, @parameters (w0::Real))
-  __initial_conditions[w0] = __local__w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
 
   ### Final Parameters (assignments)
 
@@ -92,25 +102,25 @@ Locked-wheel baseline with unmodulated driver demand.
   ### Components
   # Subcomponent demand of type BlockComponents.Sources.Step
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Step(; height=brake_demand, offset=Float64(0.0), start_time=brake_time, demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Step(; height=brake_demand, offset=Float64(0.0), start_time=brake_time, __overrides = demand_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, __overrides = road_overrides))
   # Subcomponent flat of type BlockComponents.Sources.Constant
   flat_overrides = __pop_subcomponent_overrides!(__overrides, "flat")
-  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), flat_overrides...))
+  push!(__systems, @named flat = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = flat_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.BrakedWheel(; radius=radius, J_w=J_w, F_z=m * 9.80665, tau_max=brake_demand, w0=w0, __overrides = wheel_overrides))
   # Subcomponent body of type VehicleSystemsComponents.Vehicle.VehicleBody
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.Vehicle.VehicleBody(; m=m, __overrides = body_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -132,6 +142,6 @@ Locked-wheel baseline with unmodulated driver demand.
   push!(__eqs, connect(flat.y, body.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export LockedBrakeTest

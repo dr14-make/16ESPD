@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestVerticalHop(; name, t_b, m, tank_volume, tank_pressure, A_t, contact_c, contact_d)
+   TestVerticalHop(; name, t_b, m, tank_volume, tank_pressure, A_t, contact_c, contact_d, __overrides)
 
 Open-loop full-thrust hop followed by ballistic coast.
 
@@ -21,7 +21,7 @@ Open-loop full-thrust hop followed by ballistic coast.
 | `contact_c`         | Hop landing stiffness, selected to limit penetration below 50 mm in the presentation sweep                         | N/m  |   2.0e8 |
 | `contact_d`         | Hop landing damping, selected to suppress rebound in the presentation sweep                         | N.s/m  |   4.0e6 |
 """
-@component function TestVerticalHop(; name = nothing, t_b=0.5, m=Float64(2000), tank_volume=0.6, tank_pressure=Float64(38000000.0), A_t=0.001286, contact_c=Float64(200000000.0), contact_d=Float64(4000000.0), kwargs...)
+@component function TestVerticalHop(; name = nothing, var"t_b"=0.5, var"m"=Float64(2000), var"tank_volume"=0.6, var"tank_pressure"=Float64(38000000.0), var"A_t"=0.001286, var"contact_c"=Float64(200000000.0), var"contact_d"=Float64(4000000.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -29,7 +29,7 @@ Open-loop full-thrust hop followed by ballistic coast.
     @named model = TestVerticalHop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -38,6 +38,15 @@ Open-loop full-thrust hop followed by ballistic coast.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "t_b") && (t_b = pop!(__overrides, "t_b"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "tank_volume") && (tank_volume = pop!(__overrides, "tank_volume"))
+  haskey(__overrides, "tank_pressure") && (tank_pressure = pop!(__overrides, "tank_pressure"))
+  haskey(__overrides, "A_t") && (A_t = pop!(__overrides, "A_t"))
+  haskey(__overrides, "contact_c") && (contact_c = pop!(__overrides, "contact_c"))
+  haskey(__overrides, "contact_d") && (contact_d = pop!(__overrides, "contact_d"))
 
   ### Structural Parameters (functions)
 
@@ -54,25 +63,25 @@ Open-loop full-thrust hop followed by ballistic coast.
   ### Symbolic Parameters
   __local__t_b = t_b
   append!(__params, @parameters (t_b::Real), [description = "Full-thrust burn duration"])
-  __initial_conditions[t_b] = __local__t_b
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_b, __local__t_b)
   __local__m = m
   append!(__params, @parameters (m::Real), [bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__tank_volume = tank_volume
   append!(__params, @parameters (tank_volume::Real))
-  __initial_conditions[tank_volume] = __local__tank_volume
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_volume, __local__tank_volume)
   __local__tank_pressure = tank_pressure
   append!(__params, @parameters (tank_pressure::Real))
-  __initial_conditions[tank_pressure] = __local__tank_pressure
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tank_pressure, __local__tank_pressure)
   __local__A_t = A_t
   append!(__params, @parameters (A_t::Real))
-  __initial_conditions[A_t] = __local__A_t
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_t, __local__A_t)
   __local__contact_c = contact_c
   append!(__params, @parameters (contact_c::Real), [description = "Hop landing stiffness, selected to limit penetration below 50 mm in the presentation sweep"])
-  __initial_conditions[contact_c] = __local__contact_c
+  __dyad_seed_parameter!(__initial_conditions, __bindings, contact_c, __local__contact_c)
   __local__contact_d = contact_d
   append!(__params, @parameters (contact_d::Real), [description = "Hop landing damping, selected to suppress rebound in the presentation sweep"])
-  __initial_conditions[contact_d] = __local__contact_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, contact_d, __local__contact_d)
 
   ### Final Parameters (assignments)
 
@@ -88,10 +97,10 @@ Open-loop full-thrust hop followed by ballistic coast.
   ### Components
   # Subcomponent hop of type VehicleSystemsComponents.Roadster.VerticalHop
   hop_overrides = __pop_subcomponent_overrides!(__overrides, "hop")
-  push!(__systems, @named hop = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, A_t=A_t, contact_c=contact_c, contact_d=contact_d, hop_overrides...))
+  push!(__systems, @named hop = VehicleSystemsComponents.Roadster.VerticalHop(; m=m, tank_volume=tank_volume, tank_pressure=tank_pressure, A_t=A_t, contact_c=contact_c, contact_d=contact_d, __overrides = hop_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -104,6 +113,6 @@ Open-loop full-thrust hop followed by ballistic coast.
   push!(__eqs, hop.command ~ ifelse(t < t_b, 1.0, 0.0))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestVerticalHop

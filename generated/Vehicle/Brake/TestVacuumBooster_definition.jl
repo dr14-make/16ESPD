@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   TestVacuumBooster(; name, F_peak, t0, t_up, t_hold, t_down, p_vac, F_app, F_rel)
+   TestVacuumBooster(; name, F_peak, t0, t_up, t_hold, t_down, p_vac, F_app, F_rel, __overrides)
 
 Brake plan increment 2b: the vacuum booster at a constant vacuum source, pushing a master cylinder
 into both axles' calipers with the wheels held still.
@@ -27,7 +27,7 @@ lever is set to a ratio of 1, so its force is the pushrod force.
 | `F_app`         | Valve apply threshold [N] (assumed)                         | N  |   10.0 |
 | `F_rel`         | Valve release threshold [N] (assumed)                         | N  |   10.0 |
 """
-@component function TestVacuumBooster(; name = nothing, F_peak=Float64(375.0), t0=0.5, t_up=Float64(3.0), t_hold=Float64(0.0), t_down=Float64(3.0), p_vac=Float64(33000.0), F_app=Float64(10.0), F_rel=Float64(10.0), medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
+@component function TestVacuumBooster(; name = nothing, var"F_peak"=Float64(375.0), var"t0"=0.5, var"t_up"=Float64(3.0), var"t_hold"=Float64(0.0), var"t_down"=Float64(3.0), var"p_vac"=Float64(33000.0), var"F_app"=Float64(10.0), var"F_rel"=Float64(10.0), var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -35,7 +35,7 @@ lever is set to a ratio of 1, so its force is the pushrod force.
     @named model = TestVacuumBooster()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -44,6 +44,17 @@ lever is set to a ratio of 1, so its force is the pushrod force.
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "F_peak") && (F_peak = pop!(__overrides, "F_peak"))
+  haskey(__overrides, "t0") && (t0 = pop!(__overrides, "t0"))
+  haskey(__overrides, "t_up") && (t_up = pop!(__overrides, "t_up"))
+  haskey(__overrides, "t_hold") && (t_hold = pop!(__overrides, "t_hold"))
+  haskey(__overrides, "t_down") && (t_down = pop!(__overrides, "t_down"))
+  haskey(__overrides, "p_vac") && (p_vac = pop!(__overrides, "p_vac"))
+  haskey(__overrides, "F_app") && (F_app = pop!(__overrides, "F_app"))
+  haskey(__overrides, "F_rel") && (F_rel = pop!(__overrides, "F_rel"))
+  haskey(__overrides, "medium") && (medium = pop!(__overrides, "medium"))
 
   ### Structural Parameters (functions)
 
@@ -61,28 +72,28 @@ lever is set to a ratio of 1, so its force is the pushrod force.
   ### Symbolic Parameters
   __local__F_peak = F_peak
   append!(__params, @parameters (F_peak::Real), [description = "Peak pushrod force [N]"])
-  __initial_conditions[F_peak] = __local__F_peak
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_peak, __local__F_peak)
   __local__t0 = t0
   append!(__params, @parameters (t0::Real), [description = "Start of the force ramp"])
-  __initial_conditions[t0] = __local__t0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t0, __local__t0)
   __local__t_up = t_up
   append!(__params, @parameters (t_up::Real), [description = "Duration of the rise"])
-  __initial_conditions[t_up] = __local__t_up
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_up, __local__t_up)
   __local__t_hold = t_hold
   append!(__params, @parameters (t_hold::Real), [description = "Duration of the hold at F_peak"])
-  __initial_conditions[t_hold] = __local__t_hold
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_hold, __local__t_hold)
   __local__t_down = t_down
   append!(__params, @parameters (t_down::Real), [description = "Duration of the fall"])
-  __initial_conditions[t_down] = __local__t_down
+  __dyad_seed_parameter!(__initial_conditions, __bindings, t_down, __local__t_down)
   __local__p_vac = p_vac
   append!(__params, @parameters (p_vac::Real), [description = "Vacuum-source absolute pressure [Pa] (PATH idle)"])
-  __initial_conditions[p_vac] = __local__p_vac
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_vac, __local__p_vac)
   __local__F_app = F_app
   append!(__params, @parameters (F_app::Real), [description = "Valve apply threshold [N] (assumed)"])
-  __initial_conditions[F_app] = __local__F_app
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_app, __local__F_app)
   __local__F_rel = F_rel
   append!(__params, @parameters (F_rel::Real), [description = "Valve release threshold [N] (assumed)"])
-  __initial_conditions[F_rel] = __local__F_rel
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_rel, __local__F_rel)
 
   ### Final Parameters (assignments)
 
@@ -98,40 +109,40 @@ lever is set to a ratio of 1, so its force is the pushrod force.
   ### Components
   # Subcomponent pedal of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
   pedal_overrides = __pop_subcomponent_overrides!(__overrides, "pedal")
-  push!(__systems, @named pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; i_p=Float64(1.0), F_max=Float64(2000.0), pedal_overrides...))
+  push!(__systems, @named pedal = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; i_p=Float64(1.0), F_max=Float64(2000.0), __overrides = pedal_overrides))
   # Subcomponent booster of type VehicleSystemsComponents.Vehicle.Brake.VacuumBooster
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(; p_init=p_vac, F_app=F_app, F_rel=F_rel, booster_overrides...))
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(; p_init=p_vac, F_app=F_app, F_rel=F_rel, __overrides = booster_overrides))
   # Subcomponent master of type VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder
   master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
-  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
+  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, __overrides = master_overrides))
   # Subcomponent line_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
-  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, line_f_overrides...))
+  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, __overrides = line_f_overrides))
   # Subcomponent line_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_r_overrides = __pop_subcomponent_overrides!(__overrides, "line_r")
-  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, line_r_overrides...))
+  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, __overrides = line_r_overrides))
   # Subcomponent caliper_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper
   caliper_f_overrides = __pop_subcomponent_overrides!(__overrides, "caliper_f")
-  push!(__systems, @named caliper_f = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; continuity__graph0=medium, caliper_f_overrides...))
+  push!(__systems, @named caliper_f = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; continuity__graph0=medium, __overrides = caliper_f_overrides))
   # Subcomponent caliper_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper
   caliper_r_overrides = __pop_subcomponent_overrides!(__overrides, "caliper_r")
-  push!(__systems, @named caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; K=0.000199, V0=3e-7, K1=Float64(2500000000000.0), K3=Float64(7.5e+24), continuity__graph0=medium, caliper_r_overrides...))
+  push!(__systems, @named caliper_r = VehicleSystemsComponents.Vehicle.Brake.BrakeCaliper(; K=0.000199, V0=3e-7, K1=Float64(2500000000000.0), K3=Float64(7.5e+24), continuity__graph0=medium, __overrides = caliper_r_overrides))
   # Subcomponent vacuum of type BlockComponents.Sources.Constant
   vacuum_overrides = __pop_subcomponent_overrides!(__overrides, "vacuum")
-  push!(__systems, @named vacuum = BlockComponents.Sources.Constant(; k=p_vac, vacuum_overrides...))
+  push!(__systems, @named vacuum = BlockComponents.Sources.Constant(; k=p_vac, __overrides = vacuum_overrides))
   # Subcomponent source of type VehicleSystemsComponents.Vehicle.GasPressureSource
   source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
-  push!(__systems, @named source = VehicleSystemsComponents.Vehicle.GasPressureSource(; source_overrides...))
+  push!(__systems, @named source = VehicleSystemsComponents.Vehicle.GasPressureSource(; __overrides = source_overrides))
   # Subcomponent fixed_t of type TranslationalComponents.Components.Fixed
   fixed_t_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_t")
-  push!(__systems, @named fixed_t = TranslationalComponents.Components.Fixed(; fixed_t_overrides...))
+  push!(__systems, @named fixed_t = TranslationalComponents.Components.Fixed(; __overrides = fixed_t_overrides))
   # Subcomponent fixed_r of type RotationalComponents.Components.Fixed
   fixed_r_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_r")
-  push!(__systems, @named fixed_r = RotationalComponents.Components.Fixed(; fixed_r_overrides...))
+  push!(__systems, @named fixed_r = RotationalComponents.Components.Fixed(; __overrides = fixed_r_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -154,6 +165,6 @@ lever is set to a ratio of 1, so its force is the pushrod force.
   push!(__eqs, connect(caliper_f.spline_a, caliper_f.support, caliper_r.spline_a, caliper_r.support, fixed_r.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestVacuumBooster

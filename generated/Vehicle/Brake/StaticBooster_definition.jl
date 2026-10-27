@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   StaticBooster(; name, SR, F_cut, F_jump, A_d, p_vac, F_rs0, p_atm)
+   StaticBooster(; name, SR, F_cut, F_jump, A_d, p_vac, F_rs0, p_atm, __overrides)
 
 Static vacuum booster with physical translational input, output, and housing connectors.
 
@@ -37,7 +37,7 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
 | `F_in`         | Input-force magnitude [N]                         | N  |
 | `F_out`         | Output-force magnitude [N]                         | N  |
 """
-@component function StaticBooster(; name = nothing, SR=Float64(5.0), F_cut=Float64(40.0), F_jump=Float64(500.0), A_d=0.0533, p_vac=Float64(33000.0), F_rs0=Float64(97.0), p_atm=Float64(101325.0), kwargs...)
+@component function StaticBooster(; name = nothing, var"SR"=Float64(5.0), var"F_cut"=Float64(40.0), var"F_jump"=Float64(500.0), var"A_d"=0.0533, var"p_vac"=Float64(33000.0), var"F_rs0"=Float64(97.0), var"p_atm"=Float64(101325.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -45,7 +45,7 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
     @named model = StaticBooster()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -54,6 +54,15 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "SR") && (SR = pop!(__overrides, "SR"))
+  haskey(__overrides, "F_cut") && (F_cut = pop!(__overrides, "F_cut"))
+  haskey(__overrides, "F_jump") && (F_jump = pop!(__overrides, "F_jump"))
+  haskey(__overrides, "A_d") && (A_d = pop!(__overrides, "A_d"))
+  haskey(__overrides, "p_vac") && (p_vac = pop!(__overrides, "p_vac"))
+  haskey(__overrides, "F_rs0") && (F_rs0 = pop!(__overrides, "F_rs0"))
+  haskey(__overrides, "p_atm") && (p_atm = pop!(__overrides, "p_atm"))
 
   ### Structural Parameters (functions)
 
@@ -71,25 +80,25 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
   ### Symbolic Parameters
   __local__SR = SR
   append!(__params, @parameters (SR::Real), [description = "Boosted servo ratio (assumed)"])
-  __initial_conditions[SR] = __local__SR
+  __dyad_seed_parameter!(__initial_conditions, __bindings, SR, __local__SR)
   __local__F_cut = F_cut
   append!(__params, @parameters (F_cut::Real), [description = "Input force at booster cut-in [N] (assumed)"])
-  __initial_conditions[F_cut] = __local__F_cut
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_cut, __local__F_cut)
   __local__F_jump = F_jump
   append!(__params, @parameters (F_jump::Real), [description = "Jump-in output force [N] (assumed)"])
-  __initial_conditions[F_jump] = __local__F_jump
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_jump, __local__F_jump)
   __local__A_d = A_d
   append!(__params, @parameters (A_d::Real), [description = "Effective booster diaphragm area [m^2] (PATH)"])
-  __initial_conditions[A_d] = __local__A_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_d, __local__A_d)
   __local__p_vac = p_vac
   append!(__params, @parameters (p_vac::Real), [description = "Vacuum-chamber absolute pressure [Pa] (PATH)"])
-  __initial_conditions[p_vac] = __local__p_vac
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_vac, __local__p_vac)
   __local__F_rs0 = F_rs0
   append!(__params, @parameters (F_rs0::Real), [description = "Booster return-spring preload [N] (PATH)"])
-  __initial_conditions[F_rs0] = __local__F_rs0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, F_rs0, __local__F_rs0)
   __local__p_atm = p_atm
   append!(__params, @parameters (p_atm::Real), [description = "Atmospheric absolute pressure [Pa] (standard atmosphere)"])
-  __initial_conditions[p_atm] = __local__p_atm
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_atm, __local__p_atm)
 
   ### Final Parameters (assignments)
   __bindings[F_assist_max] = A_d * (p_atm - p_vac) - F_rs0
@@ -102,11 +111,11 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
 
   ### Variables (assignments)
   __ovr_F_in = pop!(__overrides, "F_in", nothing); isnothing(__ovr_F_in) || push!(__eqs, F_in ~ __ovr_F_in)
-  __ovr_F_in__initial = pop!(__overrides, "F_in__initial", nothing); isnothing(__ovr_F_in__initial) || (__initial_conditions[F_in] = __ovr_F_in__initial)
-  __ovr_F_in__guess = pop!(__overrides, "F_in__guess", nothing)
+  __ovr_F_in__initial = pop!(__overrides, "F_in.initial", nothing); isnothing(__ovr_F_in__initial) || (__initial_conditions[F_in] = __ovr_F_in__initial)
+  __ovr_F_in__guess = pop!(__overrides, "F_in.guess", nothing)
   __ovr_F_out = pop!(__overrides, "F_out", nothing); isnothing(__ovr_F_out) || push!(__eqs, F_out ~ __ovr_F_out)
-  __ovr_F_out__initial = pop!(__overrides, "F_out__initial", nothing); isnothing(__ovr_F_out__initial) || (__initial_conditions[F_out] = __ovr_F_out__initial)
-  __ovr_F_out__guess = pop!(__overrides, "F_out__guess", nothing)
+  __ovr_F_out__initial = pop!(__overrides, "F_out.initial", nothing); isnothing(__ovr_F_out__initial) || (__initial_conditions[F_out] = __ovr_F_out__initial)
+  __ovr_F_out__guess = pop!(__overrides, "F_out.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -117,7 +126,7 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
   push!(__systems, @named support = __Dyad__Flange())
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_F_in__guess) || (__guesses[F_in] = __ovr_F_in__guess)
@@ -136,6 +145,6 @@ force characteristic includes cut-in, jump-in, boosted slope, and vacuum-limited
   push!(__eqs, input.f + rod_out.f + support.f ~ 0.0)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export StaticBooster

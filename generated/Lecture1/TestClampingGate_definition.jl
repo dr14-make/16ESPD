@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestClampingGate(; name)
+   TestClampingGate(; name, __overrides)
 """
-@component function TestClampingGate(; name = nothing, kwargs...)
+@component function TestClampingGate(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestClampingGate()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,31 +53,31 @@
   ### Components
   # Subcomponent err_pos of type BlockComponents.Sources.Constant
   err_pos_overrides = __pop_subcomponent_overrides!(__overrides, "err_pos")
-  push!(__systems, @named err_pos = BlockComponents.Sources.Constant(; k=Float64(2.0), err_pos_overrides...))
+  push!(__systems, @named err_pos = BlockComponents.Sources.Constant(; k=Float64(2.0), __overrides = err_pos_overrides))
   # Subcomponent err_neg of type BlockComponents.Sources.Constant
   err_neg_overrides = __pop_subcomponent_overrides!(__overrides, "err_neg")
-  push!(__systems, @named err_neg = BlockComponents.Sources.Constant(; k=-2.0, err_neg_overrides...))
+  push!(__systems, @named err_neg = BlockComponents.Sources.Constant(; k=-2.0, __overrides = err_neg_overrides))
   # Subcomponent at_max of type BlockComponents.Sources.Constant
   at_max_overrides = __pop_subcomponent_overrides!(__overrides, "at_max")
-  push!(__systems, @named at_max = BlockComponents.Sources.Constant(; k=Float64(10.0), at_max_overrides...))
+  push!(__systems, @named at_max = BlockComponents.Sources.Constant(; k=Float64(10.0), __overrides = at_max_overrides))
   # Subcomponent free of type BlockComponents.Sources.Constant
   free_overrides = __pop_subcomponent_overrides!(__overrides, "free")
-  push!(__systems, @named free = BlockComponents.Sources.Constant(; k=Float64(5.0), free_overrides...))
+  push!(__systems, @named free = BlockComponents.Sources.Constant(; k=Float64(5.0), __overrides = free_overrides))
   # Subcomponent frozen of type VehicleSystemsComponents.Lecture1.ClampingGate
   frozen_overrides = __pop_subcomponent_overrides!(__overrides, "frozen")
-  push!(__systems, @named frozen = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), frozen_overrides...))
+  push!(__systems, @named frozen = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), __overrides = frozen_overrides))
   # Subcomponent unwind of type VehicleSystemsComponents.Lecture1.ClampingGate
   unwind_overrides = __pop_subcomponent_overrides!(__overrides, "unwind")
-  push!(__systems, @named unwind = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), unwind_overrides...))
+  push!(__systems, @named unwind = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), __overrides = unwind_overrides))
   # Subcomponent pass of type VehicleSystemsComponents.Lecture1.ClampingGate
   pass_overrides = __pop_subcomponent_overrides!(__overrides, "pass")
-  push!(__systems, @named pass = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), pass_overrides...))
+  push!(__systems, @named pass = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), __overrides = pass_overrides))
   # Subcomponent off of type VehicleSystemsComponents.Lecture1.ClampingGate
   off_overrides = __pop_subcomponent_overrides!(__overrides, "off")
-  push!(__systems, @named off = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), on=false, off_overrides...))
+  push!(__systems, @named off = VehicleSystemsComponents.Lecture1.ClampingGate(; y_max=Float64(10.0), y_min=Float64(0.0), on=false, __overrides = off_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -97,6 +97,6 @@
   push!(__eqs, connect(free.y, off.u_lim))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestClampingGate

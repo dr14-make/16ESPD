@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FrictionProfile(; name, low, start_time, duration)
+   FrictionProfile(; name, low, start_time, duration, __overrides)
 
 Road-friction scenario: normal grip, a finite low-friction patch, then normal grip again.
 
@@ -24,7 +24,7 @@ part of the scenario interface because recovery after leaving the patch is the t
 
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function FrictionProfile(; name = nothing, low=0.2, start_time=Float64(10.0), duration=Float64(2.0), kwargs...)
+@component function FrictionProfile(; name = nothing, var"low"=0.2, var"start_time"=Float64(10.0), var"duration"=Float64(2.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -32,7 +32,7 @@ part of the scenario interface because recovery after leaving the patch is the t
     @named model = FrictionProfile()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -41,6 +41,11 @@ part of the scenario interface because recovery after leaving the patch is the t
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "low") && (low = pop!(__overrides, "low"))
+  haskey(__overrides, "start_time") && (start_time = pop!(__overrides, "start_time"))
+  haskey(__overrides, "duration") && (duration = pop!(__overrides, "duration"))
 
   ### Structural Parameters (functions)
 
@@ -57,13 +62,13 @@ part of the scenario interface because recovery after leaving the patch is the t
   ### Symbolic Parameters
   __local__low = low
   append!(__params, @parameters (low::Real), [description = "Friction multiplier on the low-grip patch"])
-  __initial_conditions[low] = __local__low
+  __dyad_seed_parameter!(__initial_conditions, __bindings, low, __local__low)
   __local__start_time = start_time
   append!(__params, @parameters (start_time::Real), [description = "Time at which the patch begins"])
-  __initial_conditions[start_time] = __local__start_time
+  __dyad_seed_parameter!(__initial_conditions, __bindings, start_time, __local__start_time)
   __local__duration = duration
   append!(__params, @parameters (duration::Real), [description = "Duration of the low-grip patch"])
-  __initial_conditions[duration] = __local__duration
+  __dyad_seed_parameter!(__initial_conditions, __bindings, duration, __local__duration)
 
   ### Final Parameters (assignments)
 
@@ -80,10 +85,10 @@ part of the scenario interface because recovery after leaving the patch is the t
   ### Components
   # Subcomponent pulse of type BlockComponents.Sources.Pulse
   pulse_overrides = __pop_subcomponent_overrides!(__overrides, "pulse")
-  push!(__systems, @named pulse = BlockComponents.Sources.Pulse(; amplitude=low, offset=Float64(1.0), start_time=start_time, duty_cycle=Float64(1.0), period=duration, pulse_overrides...))
+  push!(__systems, @named pulse = BlockComponents.Sources.Pulse(; amplitude=low, offset=Float64(1.0), start_time=start_time, duty_cycle=Float64(1.0), period=duration, __overrides = pulse_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -96,6 +101,6 @@ part of the scenario interface because recovery after leaving the patch is the t
   push!(__eqs, connect(pulse.y, y))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export FrictionProfile

@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   AirPath(; name, A_idle, C_d, D_thr, V_m, V_d, T_m)
+   AirPath(; name, A_idle, C_d, D_thr, V_m, V_d, T_m, __overrides)
 
 Mean-value air path of a throttled petrol engine: throttle, intake manifold and cylinders.
 
@@ -42,7 +42,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
  * `mdot_cyl` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `mdot_thr` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function AirPath(; name = nothing, A_idle=0.0000074, C_d=0.8, D_thr=0.05, V_m=0.001, V_d=0.0015, T_m=298.15, kwargs...)
+@component function AirPath(; name = nothing, var"A_idle"=0.0000074, var"C_d"=0.8, var"D_thr"=0.05, var"V_m"=0.001, var"V_d"=0.0015, var"T_m"=298.15, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -50,7 +50,7 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
     @named model = AirPath()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -59,6 +59,14 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "A_idle") && (A_idle = pop!(__overrides, "A_idle"))
+  haskey(__overrides, "C_d") && (C_d = pop!(__overrides, "C_d"))
+  haskey(__overrides, "D_thr") && (D_thr = pop!(__overrides, "D_thr"))
+  haskey(__overrides, "V_m") && (V_m = pop!(__overrides, "V_m"))
+  haskey(__overrides, "V_d") && (V_d = pop!(__overrides, "V_d"))
+  haskey(__overrides, "T_m") && (T_m = pop!(__overrides, "T_m"))
 
   ### Structural Parameters (functions)
 
@@ -75,22 +83,22 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   ### Symbolic Parameters
   __local__A_idle = A_idle
   append!(__params, @parameters (A_idle::Real), [description = "Leakage plus idle-bypass area, sets 33 kPa idle at 800 rpm (derived)"])
-  __initial_conditions[A_idle] = __local__A_idle
+  __dyad_seed_parameter!(__initial_conditions, __bindings, A_idle, __local__A_idle)
   __local__C_d = C_d
   append!(__params, @parameters (C_d::Real), [description = "Throttle discharge coefficient (assumed)"])
-  __initial_conditions[C_d] = __local__C_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, C_d, __local__C_d)
   __local__D_thr = D_thr
   append!(__params, @parameters (D_thr::Real), [description = "Throttle bore diameter (MathWorks)"])
-  __initial_conditions[D_thr] = __local__D_thr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, D_thr, __local__D_thr)
   __local__V_m = V_m
   append!(__params, @parameters (V_m::Real), [description = "Manifold volume (MathWorks)"])
-  __initial_conditions[V_m] = __local__V_m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_m, __local__V_m)
   __local__V_d = V_d
   append!(__params, @parameters (V_d::Real), [description = "Displacement (MathWorks)"])
-  __initial_conditions[V_d] = __local__V_d
+  __dyad_seed_parameter!(__initial_conditions, __bindings, V_d, __local__V_d)
   __local__T_m = T_m
   append!(__params, @parameters (T_m::Real), [description = "Manifold air temperature (MathWorks)", bounds = (0, Inf)])
-  __initial_conditions[T_m] = __local__T_m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_m, __local__T_m)
 
   ### Final Parameters (assignments)
 
@@ -112,16 +120,16 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__systems, @named vacuum = VehicleSystemsComponents.Vehicle.GasPort())
   # Subcomponent throttle of type VehicleSystemsComponents.Vehicle.Engine.Throttle
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
-  push!(__systems, @named throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle(; A_idle=A_idle, C_d=C_d, D_thr=D_thr, throttle_overrides...))
+  push!(__systems, @named throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle(; A_idle=A_idle, C_d=C_d, D_thr=D_thr, __overrides = throttle_overrides))
   # Subcomponent manifold of type VehicleSystemsComponents.Vehicle.Engine.IntakeManifold
   manifold_overrides = __pop_subcomponent_overrides!(__overrides, "manifold")
-  push!(__systems, @named manifold = VehicleSystemsComponents.Vehicle.Engine.IntakeManifold(; V_m=V_m, T_m=T_m, manifold_overrides...))
+  push!(__systems, @named manifold = VehicleSystemsComponents.Vehicle.Engine.IntakeManifold(; V_m=V_m, T_m=T_m, __overrides = manifold_overrides))
   # Subcomponent cylinders of type VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow
   cylinders_overrides = __pop_subcomponent_overrides!(__overrides, "cylinders")
-  push!(__systems, @named cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow(; V_d=V_d, T_m=T_m, cylinders_overrides...))
+  push!(__systems, @named cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow(; V_d=V_d, T_m=T_m, __overrides = cylinders_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -139,6 +147,6 @@ unconnected carries no flow: a capped hose. ([`GasPort`](@ref))
   push!(__eqs, connect(manifold.p_m, p_m, throttle.p_m, cylinders.p_m))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export AirPath

@@ -104,7 +104,7 @@ metadata {
 end
 
 analysis ABSStraightStopTransient
-  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 0.005)
+  extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Tsit5(), dtmax = 0.005, optimize = OptimizationLevel.None())
   parameter v0::Velocity = 22.22222222222222
   parameter T_cmd::Torque = 2500.0
   parameter select_low::Real = 0.0

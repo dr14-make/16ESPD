@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestCentrifugalClutch(; name)
+   TestCentrifugalClutch(; name, __overrides)
 """
-@component function TestCentrifugalClutch(; name = nothing, kwargs...)
+@component function TestCentrifugalClutch(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestCentrifugalClutch()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,22 +53,22 @@
   ### Components
   # Subcomponent drive of type RotationalComponents.Sources.ConstantTorque
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
-  push!(__systems, @named drive = RotationalComponents.Sources.ConstantTorque(; tau_constant=Float64(100.0), drive_overrides...))
+  push!(__systems, @named drive = RotationalComponents.Sources.ConstantTorque(; tau_constant=Float64(100.0), __overrides = drive_overrides))
   # Subcomponent engine of type RotationalComponents.Components.Inertia
   engine_overrides = __pop_subcomponent_overrides!(__overrides, "engine")
-  push!(__systems, @named engine = RotationalComponents.Components.Inertia(; J=0.15, engine_overrides...))
+  push!(__systems, @named engine = RotationalComponents.Components.Inertia(; J=0.15, __overrides = engine_overrides))
   # Subcomponent clutch of type VehicleSystemsComponents.Vehicle.CentrifugalClutch
   clutch_overrides = __pop_subcomponent_overrides!(__overrides, "clutch")
-  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; clutch_overrides...))
+  push!(__systems, @named clutch = VehicleSystemsComponents.Vehicle.CentrifugalClutch(; __overrides = clutch_overrides))
   # Subcomponent load of type RotationalComponents.Components.Inertia
   load_overrides = __pop_subcomponent_overrides!(__overrides, "load")
-  push!(__systems, @named load = RotationalComponents.Components.Inertia(; J=1.5, load_overrides...))
+  push!(__systems, @named load = RotationalComponents.Components.Inertia(; J=1.5, __overrides = load_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -89,6 +89,6 @@
   push!(__eqs, connect(clutch.support, fixed.spline))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestCentrifugalClutch

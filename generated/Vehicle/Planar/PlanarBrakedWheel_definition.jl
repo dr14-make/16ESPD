@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarBrakedWheel(; name, radius, J, mu_A, mu_S, mu_scale, sAdhesion, sSlide, vAdhesion_min, vSlide_min, T_brake, tau_max, w0)
+   PlanarBrakedWheel(; name, radius, J, mu_A, mu_S, mu_scale, sAdhesion, sSlide, vAdhesion_min, vSlide_min, T_brake, tau_max, w0, __overrides)
 
 Planar road wheel combining tire contact, spin inertia, and an in-line brake.
 
@@ -46,7 +46,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
 | `F_y`         | Lateral tire force on the vehicle                         | N  |
 | `F_z`         | Normal tire load                         | N  |
 """
-@component function PlanarBrakedWheel(; name = nothing, radius=0.31, J=Float64(1.0), mu_A=Float64(1.0), mu_S=0.8, mu_scale=Float64(1.0), sAdhesion=0.12, vAdhesion_min=0.05, vSlide_min=0.15, T_brake=0.03, tau_max=Float64(2500.0), w0=Float64(1.0), sSlide=3 * sAdhesion, kwargs...)
+@component function PlanarBrakedWheel(; name = nothing, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"mu_scale"=Float64(1.0), var"sAdhesion"=0.12, var"vAdhesion_min"=0.05, var"vSlide_min"=0.15, var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"w0"=Float64(1.0), var"sSlide"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -54,7 +54,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
     @named model = PlanarBrakedWheel()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -63,6 +63,23 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
+  haskey(__overrides, "J") && (J = pop!(__overrides, "J"))
+  haskey(__overrides, "mu_A") && (mu_A = pop!(__overrides, "mu_A"))
+  haskey(__overrides, "mu_S") && (mu_S = pop!(__overrides, "mu_S"))
+  haskey(__overrides, "mu_scale") && (mu_scale = pop!(__overrides, "mu_scale"))
+  haskey(__overrides, "sAdhesion") && (sAdhesion = pop!(__overrides, "sAdhesion"))
+  haskey(__overrides, "vAdhesion_min") && (vAdhesion_min = pop!(__overrides, "vAdhesion_min"))
+  haskey(__overrides, "vSlide_min") && (vSlide_min = pop!(__overrides, "vSlide_min"))
+  haskey(__overrides, "T_brake") && (T_brake = pop!(__overrides, "T_brake"))
+  haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
+  haskey(__overrides, "w0") && (w0 = pop!(__overrides, "w0"))
+  haskey(__overrides, "sSlide") && (sSlide = pop!(__overrides, "sSlide"))
+
+  ### Deferred keyword defaults (defaults referencing other keyword arguments)
+  isnothing(sSlide) && (sSlide = 3 * sAdhesion)
 
   ### Structural Parameters (functions)
 
@@ -79,40 +96,40 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   ### Symbolic Parameters
   __local__radius = radius
   append!(__params, @parameters (radius::Real), [description = "Wheel rolling radius (repository default)"])
-  __initial_conditions[radius] = __local__radius
+  __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__J = J
   append!(__params, @parameters (J::Real), [description = "One-wheel spin inertia (assumed)"])
-  __initial_conditions[J] = __local__J
+  __dyad_seed_parameter!(__initial_conditions, __bindings, J, __local__J)
   __local__mu_A = mu_A
   append!(__params, @parameters (mu_A::Real), [description = "Peak adhesion coefficient (probe)"])
-  __initial_conditions[mu_A] = __local__mu_A
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_A, __local__mu_A)
   __local__mu_S = mu_S
   append!(__params, @parameters (mu_S::Real), [description = "Sliding friction coefficient (probe)"])
-  __initial_conditions[mu_S] = __local__mu_S
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_S, __local__mu_S)
   __local__mu_scale = mu_scale
   append!(__params, @parameters (mu_scale::Real), [description = "Per-wheel road-friction multiplier (derived)"])
-  __initial_conditions[mu_scale] = __local__mu_scale
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu_scale, __local__mu_scale)
   __local__sAdhesion = sAdhesion
   append!(__params, @parameters (sAdhesion::Real), [description = "Slip ratio at peak adhesion (probe)"])
-  __initial_conditions[sAdhesion] = __local__sAdhesion
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sAdhesion, __local__sAdhesion)
   __local__sSlide = sSlide
   append!(__params, @parameters (sSlide::Real), [description = "Slip ratio at the sliding plateau (probe)"])
-  __initial_conditions[sSlide] = __local__sSlide
+  __dyad_seed_parameter!(__initial_conditions, __bindings, sSlide, __local__sSlide)
   __local__vAdhesion_min = vAdhesion_min
   append!(__params, @parameters (vAdhesion_min::Real), [description = "Minimum adhesion velocity (probe)"])
-  __initial_conditions[vAdhesion_min] = __local__vAdhesion_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, vAdhesion_min, __local__vAdhesion_min)
   __local__vSlide_min = vSlide_min
   append!(__params, @parameters (vSlide_min::Real), [description = "Minimum sliding velocity (probe)"])
-  __initial_conditions[vSlide_min] = __local__vSlide_min
+  __dyad_seed_parameter!(__initial_conditions, __bindings, vSlide_min, __local__vSlide_min)
   __local__T_brake = T_brake
   append!(__params, @parameters (T_brake::Real), [description = "Hydraulic time constant (probe)"])
-  __initial_conditions[T_brake] = __local__T_brake
+  __dyad_seed_parameter!(__initial_conditions, __bindings, T_brake, __local__T_brake)
   __local__tau_max = tau_max
   append!(__params, @parameters (tau_max::Real), [description = "Maximum brake torque (assumed)"])
-  __initial_conditions[tau_max] = __local__tau_max
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__w0 = w0
   append!(__params, @parameters (w0::Real), [description = "Brake regularization speed (assumed)"])
-  __initial_conditions[w0] = __local__w0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, w0, __local__w0)
 
   ### Final Parameters (assignments)
 
@@ -126,14 +143,14 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
 
   ### Variables (assignments)
   __ovr_F_x = pop!(__overrides, "F_x", nothing); isnothing(__ovr_F_x) || push!(__eqs, F_x ~ __ovr_F_x)
-  __ovr_F_x__initial = pop!(__overrides, "F_x__initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
-  __ovr_F_x__guess = pop!(__overrides, "F_x__guess", nothing)
+  __ovr_F_x__initial = pop!(__overrides, "F_x.initial", nothing); isnothing(__ovr_F_x__initial) || (__initial_conditions[F_x] = __ovr_F_x__initial)
+  __ovr_F_x__guess = pop!(__overrides, "F_x.guess", nothing)
   __ovr_F_y = pop!(__overrides, "F_y", nothing); isnothing(__ovr_F_y) || push!(__eqs, F_y ~ __ovr_F_y)
-  __ovr_F_y__initial = pop!(__overrides, "F_y__initial", nothing); isnothing(__ovr_F_y__initial) || (__initial_conditions[F_y] = __ovr_F_y__initial)
-  __ovr_F_y__guess = pop!(__overrides, "F_y__guess", nothing)
+  __ovr_F_y__initial = pop!(__overrides, "F_y.initial", nothing); isnothing(__ovr_F_y__initial) || (__initial_conditions[F_y] = __ovr_F_y__initial)
+  __ovr_F_y__guess = pop!(__overrides, "F_y.guess", nothing)
   __ovr_F_z = pop!(__overrides, "F_z", nothing); isnothing(__ovr_F_z) || push!(__eqs, F_z ~ __ovr_F_z)
-  __ovr_F_z__initial = pop!(__overrides, "F_z__initial", nothing); isnothing(__ovr_F_z__initial) || (__initial_conditions[F_z] = __ovr_F_z__initial)
-  __ovr_F_z__guess = pop!(__overrides, "F_z__guess", nothing)
+  __ovr_F_z__initial = pop!(__overrides, "F_z.initial", nothing); isnothing(__ovr_F_z__initial) || (__initial_conditions[F_z] = __ovr_F_z__initial)
+  __ovr_F_z__guess = pop!(__overrides, "F_z.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -144,19 +161,19 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named load = __Dyad__Flange())
   # Subcomponent joint of type MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint
   joint_overrides = __pop_subcomponent_overrides!(__overrides, "joint")
-  push!(__systems, @named joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(; N=Float64(0.0), mu_A=mu_scale * mu_A, mu_S=mu_scale * mu_S, r=[Float64(1), Float64(0)], render=false, radius=radius, sAdhesion=sAdhesion, sSlide=sSlide, vAdhesion_min=vAdhesion_min, vSlide_min=vSlide_min, joint_overrides...))
+  push!(__systems, @named joint = MultibodyComponents.PlanarMechanics.SlipBasedWheelJoint(; N=Float64(0.0), mu_A=mu_scale * mu_A, mu_S=mu_scale * mu_S, r=[Float64(1), Float64(0)], render=false, radius=radius, sAdhesion=sAdhesion, sSlide=sSlide, vAdhesion_min=vAdhesion_min, vSlide_min=vSlide_min, __overrides = joint_overrides))
   # Subcomponent inertia of type RotationalComponents.Components.Inertia
   inertia_overrides = __pop_subcomponent_overrides!(__overrides, "inertia")
-  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J, inertia_overrides...))
+  push!(__systems, @named inertia = RotationalComponents.Components.Inertia(; J=J, __overrides = inertia_overrides))
   # Subcomponent brake of type VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(; T=T_brake, tau_max=tau_max, w0=w0, brake_overrides...))
+  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.Wheel.BrakeActuator(; T=T_brake, tau_max=tau_max, w0=w0, __overrides = brake_overrides))
   # Subcomponent housing of type RotationalComponents.Components.Fixed
   housing_overrides = __pop_subcomponent_overrides!(__overrides, "housing")
-  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; housing_overrides...))
+  push!(__systems, @named housing = RotationalComponents.Components.Fixed(; __overrides = housing_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
   isnothing(__ovr_F_x__guess) || (__guesses[F_x] = __ovr_F_x__guess)
@@ -182,6 +199,6 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(tau_cmd, brake.tau_cmd))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export PlanarBrakedWheel

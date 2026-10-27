@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ToRPM(; name)
+   ToRPM(; name, __overrides)
 
 Signal-level unit conversion: rad/s to revolutions per minute.
 
@@ -17,7 +17,7 @@ its own than hidden inside a `Gain` whose constant `9.5493...` says nothing abou
  * `u` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `y` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 """
-@component function ToRPM(; name = nothing, kwargs...)
+@component function ToRPM(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -25,7 +25,7 @@ its own than hidden inside a `Gain` whose constant `9.5493...` says nothing abou
     @named model = ToRPM()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -65,7 +65,7 @@ its own than hidden inside a `Gain` whose constant `9.5493...` says nothing abou
   ### Components
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -78,6 +78,6 @@ its own than hidden inside a `Gain` whose constant `9.5493...` says nothing abou
   push!(__eqs, y ~ (60 / (2 * pi)) * u)
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export ToRPM

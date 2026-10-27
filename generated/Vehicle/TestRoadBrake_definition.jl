@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   TestRoadBrake(; name)
+   TestRoadBrake(; name, __overrides)
 """
-@component function TestRoadBrake(; name = nothing, kwargs...)
+@component function TestRoadBrake(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = TestRoadBrake()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,25 +53,25 @@
   ### Components
   # Subcomponent cmd of type BlockComponents.Sources.Constant
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
-  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=Float64(4000.0), cmd_overrides...))
+  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=Float64(4000.0), __overrides = cmd_overrides))
   # Subcomponent body of type TranslationalComponents.Components.Mass
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = TranslationalComponents.Components.Mass(; m=Float64(1400.0), body_overrides...))
+  push!(__systems, @named body = TranslationalComponents.Components.Mass(; m=Float64(1400.0), __overrides = body_overrides))
   # Subcomponent brake of type VehicleSystemsComponents.Vehicle.RoadBrake
   brake_overrides = __pop_subcomponent_overrides!(__overrides, "brake")
-  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.RoadBrake(; brake_overrides...))
+  push!(__systems, @named brake = VehicleSystemsComponents.Vehicle.RoadBrake(; __overrides = brake_overrides))
   # Subcomponent swapped_body of type TranslationalComponents.Components.Mass
   swapped_body_overrides = __pop_subcomponent_overrides!(__overrides, "swapped_body")
-  push!(__systems, @named swapped_body = TranslationalComponents.Components.Mass(; m=Float64(1400.0), swapped_body_overrides...))
+  push!(__systems, @named swapped_body = TranslationalComponents.Components.Mass(; m=Float64(1400.0), __overrides = swapped_body_overrides))
   # Subcomponent swapped of type VehicleSystemsComponents.Vehicle.RoadBrake
   swapped_overrides = __pop_subcomponent_overrides!(__overrides, "swapped")
-  push!(__systems, @named swapped = VehicleSystemsComponents.Vehicle.RoadBrake(; swapped_overrides...))
+  push!(__systems, @named swapped = VehicleSystemsComponents.Vehicle.RoadBrake(; __overrides = swapped_overrides))
   # Subcomponent road of type TranslationalComponents.Components.Fixed
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = TranslationalComponents.Components.Fixed(; road_overrides...))
+  push!(__systems, @named road = TranslationalComponents.Components.Fixed(; __overrides = road_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -92,6 +92,6 @@
   push!(__eqs, connect(swapped.flange, road.flange))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export TestRoadBrake

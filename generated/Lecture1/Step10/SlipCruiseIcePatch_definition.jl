@@ -5,11 +5,11 @@
 
 
 @doc Markdown.doc"""
-   SlipCruiseIcePatch(; name)
+   SlipCruiseIcePatch(; name, __overrides)
 
 Step 10: the loop on `SlipCar`, crossing an 8 s ice patch from 4 to 12 s.
 """
-@component function SlipCruiseIcePatch(; name = nothing, kwargs...)
+@component function SlipCruiseIcePatch(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -17,7 +17,7 @@ Step 10: the loop on `SlipCar`, crossing an 8 s ice patch from 4 to 12 s.
     @named model = SlipCruiseIcePatch()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -55,22 +55,22 @@ Step 10: the loop on `SlipCar`, crossing an 8 s ice patch from 4 to 12 s.
   ### Components
   # Subcomponent demand of type BlockComponents.Sources.Constant
   demand_overrides = __pop_subcomponent_overrides!(__overrides, "demand")
-  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(90), demand_overrides...))
+  push!(__systems, @named demand = BlockComponents.Sources.Constant(; k=Float64(90), __overrides = demand_overrides))
   # Subcomponent controller of type VehicleSystemsComponents.Lecture1.Step10.CruiseController
   controller_overrides = __pop_subcomponent_overrides!(__overrides, "controller")
-  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.Step10.CruiseController(; y_max=Float64(150), y_min=Float64(0), xi0=31.078 / 56, controller_overrides...))
+  push!(__systems, @named controller = VehicleSystemsComponents.Lecture1.Step10.CruiseController(; y_max=Float64(150), y_min=Float64(0), xi0=31.078 / 56, __overrides = controller_overrides))
   # Subcomponent plant of type VehicleSystemsComponents.HandsOn.SlipCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.SlipCar(; plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.SlipCar(; __overrides = plant_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0), road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=Float64(0), __overrides = road_overrides))
   # Subcomponent friction of type BlockComponents.Sources.Pulse
   friction_overrides = __pop_subcomponent_overrides!(__overrides, "friction")
-  push!(__systems, @named friction = BlockComponents.Sources.Pulse(; amplitude=0.05, offset=Float64(1.0), start_time=Float64(4), duty_cycle=Float64(1.0), period=Float64(8), friction_overrides...))
+  push!(__systems, @named friction = BlockComponents.Sources.Pulse(; amplitude=0.05, offset=Float64(1.0), start_time=Float64(4), duty_cycle=Float64(1.0), period=Float64(8), __overrides = friction_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -92,6 +92,6 @@ Step 10: the loop on `SlipCar`, crossing an 8 s ice patch from 4 to 12 s.
   push!(__eqs, connect(friction.y, plant.mu_scale))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export SlipCruiseIcePatch

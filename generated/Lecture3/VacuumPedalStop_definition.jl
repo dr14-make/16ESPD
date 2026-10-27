@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   VacuumPedalStop(; name, pedal, road_mu, u_thr, engine_on, omega_e, n_apply, ev_pump, p_vac0, x_full)
+   VacuumPedalStop(; name, pedal, road_mu, u_thr, engine_on, omega_e, n_apply, ev_pump, p_vac0, x_full, __overrides)
 
 Lecture 3 demo bench: hands-on 03's `PedalStop` with the vacuum booster in place of the static
 one, drawing on the engine's air path at a prescribed throttle and engine speed, or on an
@@ -36,7 +36,7 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
 | `p_vac0`         | Booster front-chamber pressure before those applications [Pa] (PATH idle)                         | Pa  |   33e3 |
 | `x_full`         | Piston travel of a full application [m] (derived from BrakeVacuumReserveTransient)                         | m  |   8.0e-3 |
 """
-@component function VacuumPedalStop(; name = nothing, pedal=0.3, road_mu=Float64(1.0), u_thr=Float64(0.0), engine_on=Float64(1.0), omega_e=83.776, n_apply=Float64(0.0), ev_pump=Float64(0.0), p_vac0=Float64(33000.0), x_full=0.008, medium=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), kwargs...)
+@component function VacuumPedalStop(; name = nothing, var"pedal"=0.3, var"road_mu"=Float64(1.0), var"u_thr"=Float64(0.0), var"engine_on"=Float64(1.0), var"omega_e"=83.776, var"n_apply"=Float64(0.0), var"ev_pump"=Float64(0.0), var"p_vac0"=Float64(33000.0), var"x_full"=0.008, var"medium"=HydraulicComponents.IsothermalCompressible(; bulk_modulus=1400000000.0, density=1045.0, let_gas=false), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -44,7 +44,7 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
     @named model = VacuumPedalStop()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,6 +53,18 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "pedal") && (pedal = pop!(__overrides, "pedal"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
+  haskey(__overrides, "u_thr") && (u_thr = pop!(__overrides, "u_thr"))
+  haskey(__overrides, "engine_on") && (engine_on = pop!(__overrides, "engine_on"))
+  haskey(__overrides, "omega_e") && (omega_e = pop!(__overrides, "omega_e"))
+  haskey(__overrides, "n_apply") && (n_apply = pop!(__overrides, "n_apply"))
+  haskey(__overrides, "ev_pump") && (ev_pump = pop!(__overrides, "ev_pump"))
+  haskey(__overrides, "p_vac0") && (p_vac0 = pop!(__overrides, "p_vac0"))
+  haskey(__overrides, "x_full") && (x_full = pop!(__overrides, "x_full"))
+  haskey(__overrides, "medium") && (medium = pop!(__overrides, "medium"))
 
   ### Structural Parameters (functions)
 
@@ -74,31 +86,31 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
   ### Symbolic Parameters
   __local__pedal = pedal
   append!(__params, @parameters (pedal::Real))
-  __initial_conditions[pedal] = __local__pedal
+  __dyad_seed_parameter!(__initial_conditions, __bindings, pedal, __local__pedal)
   __local__road_mu = road_mu
   append!(__params, @parameters (road_mu::Real))
-  __initial_conditions[road_mu] = __local__road_mu
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
   __local__u_thr = u_thr
   append!(__params, @parameters (u_thr::Real), [description = "Throttle position: 0 closed (idle), 1 wide open"])
-  __initial_conditions[u_thr] = __local__u_thr
+  __dyad_seed_parameter!(__initial_conditions, __bindings, u_thr, __local__u_thr)
   __local__engine_on = engine_on
   append!(__params, @parameters (engine_on::Real), [description = "Engine running: 1 on, 0 off (manifold at ambient)"])
-  __initial_conditions[engine_on] = __local__engine_on
+  __dyad_seed_parameter!(__initial_conditions, __bindings, engine_on, __local__engine_on)
   __local__omega_e = omega_e
   append!(__params, @parameters (omega_e::Real), [description = "Engine speed while running, 83.776 rad/s = 800 rpm"])
-  __initial_conditions[omega_e] = __local__omega_e
+  __dyad_seed_parameter!(__initial_conditions, __bindings, omega_e, __local__omega_e)
   __local__n_apply = n_apply
   append!(__params, @parameters (n_apply::Real), [description = "Full applications made before the stop with no vacuum supply"])
-  __initial_conditions[n_apply] = __local__n_apply
+  __dyad_seed_parameter!(__initial_conditions, __bindings, n_apply, __local__n_apply)
   __local__ev_pump = ev_pump
   append!(__params, @parameters (ev_pump::Real), [description = "Vacuum source: 0 the intake manifold, 1 an electric pump"])
-  __initial_conditions[ev_pump] = __local__ev_pump
+  __dyad_seed_parameter!(__initial_conditions, __bindings, ev_pump, __local__ev_pump)
   __local__p_vac0 = p_vac0
   append!(__params, @parameters (p_vac0::Real), [description = "Booster front-chamber pressure before those applications [Pa] (PATH idle)"])
-  __initial_conditions[p_vac0] = __local__p_vac0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, p_vac0, __local__p_vac0)
   __local__x_full = x_full
   append!(__params, @parameters (x_full::Real), [description = "Piston travel of a full application [m] (derived from BrakeVacuumReserveTransient)"])
-  __initial_conditions[x_full] = __local__x_full
+  __dyad_seed_parameter!(__initial_conditions, __bindings, x_full, __local__x_full)
 
   ### Final Parameters (assignments)
   __bindings[p_atm] = 101325.0
@@ -118,58 +130,58 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
   ### Components
   # Subcomponent command of type BlockComponents.Sources.Step
   command_overrides = __pop_subcomponent_overrides!(__overrides, "command")
-  push!(__systems, @named command = BlockComponents.Sources.Step(; height=pedal, offset=Float64(0.0), start_time=0.5, command_overrides...))
+  push!(__systems, @named command = BlockComponents.Sources.Step(; height=pedal, offset=Float64(0.0), start_time=0.5, __overrides = command_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=road_mu, __overrides = road_overrides))
   # Subcomponent throttle of type BlockComponents.Sources.Constant
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
-  push!(__systems, @named throttle = BlockComponents.Sources.Constant(; k=u_thr, throttle_overrides...))
+  push!(__systems, @named throttle = BlockComponents.Sources.Constant(; k=u_thr, __overrides = throttle_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=engine_on * omega_e, speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=engine_on * omega_e, __overrides = speed_overrides))
   # Subcomponent air of type VehicleSystemsComponents.Vehicle.Engine.AirPath
   air_overrides = __pop_subcomponent_overrides!(__overrides, "air")
-  push!(__systems, @named air = VehicleSystemsComponents.Vehicle.Engine.AirPath(; air_overrides...))
+  push!(__systems, @named air = VehicleSystemsComponents.Vehicle.Engine.AirPath(; __overrides = air_overrides))
   # Subcomponent pump of type VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump
   pump_overrides = __pop_subcomponent_overrides!(__overrides, "pump")
-  push!(__systems, @named pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(; p_init=p_start, pump_overrides...))
+  push!(__systems, @named pump = VehicleSystemsComponents.Vehicle.Brake.ElectricVacuumPump(; p_init=p_start, __overrides = pump_overrides))
   # Subcomponent source of type VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector
   source_overrides = __pop_subcomponent_overrides!(__overrides, "source")
-  push!(__systems, @named source = VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector(; use_pump=ev_pump, source_overrides...))
+  push!(__systems, @named source = VehicleSystemsComponents.Vehicle.Brake.VacuumSourceSelector(; use_pump=ev_pump, __overrides = source_overrides))
   # Subcomponent pedal_unit of type VehicleSystemsComponents.Vehicle.Brake.BrakePedal
   pedal_unit_overrides = __pop_subcomponent_overrides!(__overrides, "pedal_unit")
-  push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; pedal_unit_overrides...))
+  push!(__systems, @named pedal_unit = VehicleSystemsComponents.Vehicle.Brake.BrakePedal(; __overrides = pedal_unit_overrides))
   # Subcomponent booster of type VehicleSystemsComponents.Vehicle.Brake.VacuumBooster
   booster_overrides = __pop_subcomponent_overrides!(__overrides, "booster")
-  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(; p_init=p_start, booster_overrides...))
+  push!(__systems, @named booster = VehicleSystemsComponents.Vehicle.Brake.VacuumBooster(; p_init=p_start, __overrides = booster_overrides))
   # Subcomponent master of type VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder
   master_overrides = __pop_subcomponent_overrides!(__overrides, "master")
-  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, master_overrides...))
+  push!(__systems, @named master = VehicleSystemsComponents.Vehicle.Brake.TandemMasterCylinder(; continuity__graph0=medium, __overrides = master_overrides))
   # Subcomponent line_f of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_f_overrides = __pop_subcomponent_overrides!(__overrides, "line_f")
-  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, line_f_overrides...))
+  push!(__systems, @named line_f = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; continuity__graph0=medium, __overrides = line_f_overrides))
   # Subcomponent line_r of type VehicleSystemsComponents.Vehicle.Brake.BrakeLine
   line_r_overrides = __pop_subcomponent_overrides!(__overrides, "line_r")
-  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, line_r_overrides...))
+  push!(__systems, @named line_r = VehicleSystemsComponents.Vehicle.Brake.BrakeLine(; L=Float64(4.0), continuity__graph0=medium, __overrides = line_r_overrides))
   # Subcomponent wheel of type VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel
   wheel_overrides = __pop_subcomponent_overrides!(__overrides, "wheel")
-  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; continuity__graph0=medium, continuity__graph1=medium, wheel_overrides...))
+  push!(__systems, @named wheel = VehicleSystemsComponents.Vehicle.Wheel.HydraulicBrakedWheel(; continuity__graph0=medium, continuity__graph1=medium, __overrides = wheel_overrides))
   # Subcomponent body of type VehicleSystemsComponents.HandsOn.Body
   body_overrides = __pop_subcomponent_overrides!(__overrides, "body")
-  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; body_overrides...))
+  push!(__systems, @named body = VehicleSystemsComponents.HandsOn.Body(; __overrides = body_overrides))
   # Subcomponent fixed of type RotationalComponents.Components.Fixed
   fixed_overrides = __pop_subcomponent_overrides!(__overrides, "fixed")
-  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; fixed_overrides...))
+  push!(__systems, @named fixed = RotationalComponents.Components.Fixed(; __overrides = fixed_overrides))
   # Subcomponent fixed_hydraulic of type TranslationalComponents.Components.Fixed
   fixed_hydraulic_overrides = __pop_subcomponent_overrides!(__overrides, "fixed_hydraulic")
-  push!(__systems, @named fixed_hydraulic = TranslationalComponents.Components.Fixed(; fixed_hydraulic_overrides...))
+  push!(__systems, @named fixed_hydraulic = TranslationalComponents.Components.Fixed(; __overrides = fixed_hydraulic_overrides))
   # Subcomponent speed_sensor of type TranslationalComponents.Sensors.VelocitySensor
   speed_sensor_overrides = __pop_subcomponent_overrides!(__overrides, "speed_sensor")
-  push!(__systems, @named speed_sensor = TranslationalComponents.Sensors.VelocitySensor(; speed_sensor_overrides...))
+  push!(__systems, @named speed_sensor = TranslationalComponents.Sensors.VelocitySensor(; __overrides = speed_sensor_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -203,6 +215,6 @@ which is the mass balance `BrakeVacuumReserveTransient` simulates, at a fixed tr
   push!(__eqs, connect(source.pump, pump.vacuum))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export VacuumPedalStop

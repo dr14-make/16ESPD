@@ -5,9 +5,9 @@
 
 
 @doc Markdown.doc"""
-   AirPathStep(; name)
+   AirPathStep(; name, __overrides)
 """
-@component function AirPathStep(; name = nothing, kwargs...)
+@component function AirPathStep(; name = nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -15,7 +15,7 @@
     @named model = AirPathStep()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -53,22 +53,22 @@
   ### Components
   # Subcomponent throttle_cmd of type BlockComponents.Sources.Step
   throttle_cmd_overrides = __pop_subcomponent_overrides!(__overrides, "throttle_cmd")
-  push!(__systems, @named throttle_cmd = BlockComponents.Sources.Step(; offset=Float64(0), height=0.005, start_time=Float64(1), throttle_cmd_overrides...))
+  push!(__systems, @named throttle_cmd = BlockComponents.Sources.Step(; offset=Float64(0), height=0.005, start_time=Float64(1), __overrides = throttle_cmd_overrides))
   # Subcomponent speed of type BlockComponents.Sources.Constant
   speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=83.776, speed_overrides...))
+  push!(__systems, @named speed = BlockComponents.Sources.Constant(; k=83.776, __overrides = speed_overrides))
   # Subcomponent throttle of type VehicleSystemsComponents.Vehicle.Engine.Throttle
   throttle_overrides = __pop_subcomponent_overrides!(__overrides, "throttle")
-  push!(__systems, @named throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle(; throttle_overrides...))
+  push!(__systems, @named throttle = VehicleSystemsComponents.Vehicle.Engine.Throttle(; __overrides = throttle_overrides))
   # Subcomponent cylinders of type VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow
   cylinders_overrides = __pop_subcomponent_overrides!(__overrides, "cylinders")
-  push!(__systems, @named cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow(; cylinders_overrides...))
+  push!(__systems, @named cylinders = VehicleSystemsComponents.Vehicle.Engine.CylinderAirflow(; __overrides = cylinders_overrides))
   # Subcomponent manifold of type VehicleSystemsComponents.HandsOn02.Manifold
   manifold_overrides = __pop_subcomponent_overrides!(__overrides, "manifold")
-  push!(__systems, @named manifold = VehicleSystemsComponents.HandsOn02.Manifold(; manifold_overrides...))
+  push!(__systems, @named manifold = VehicleSystemsComponents.HandsOn02.Manifold(; __overrides = manifold_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -86,6 +86,6 @@
   push!(__eqs, connect(manifold.p_m, throttle.p_m, cylinders.p_m))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export AirPathStep

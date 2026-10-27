@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   FeedforwardCruise(; name, tau_ff, grade, m, CdA, v0)
+   FeedforwardCruise(; name, tau_ff, grade, m, CdA, v0, __overrides)
 
 Open-loop feedforward cruise: a fixed torque computed from the nominal force balance.
 
@@ -29,7 +29,7 @@ already settled instead of spending the vehicle's ~60 s time constant getting th
 | `CdA`         | Aerodynamic drag area (Cd * A)                         | m2  |   0.63 |
 | `v0`         | Initial speed (25 m/s = 90 km/h)                         | m/s  |   25.0 |
 """
-@component function FeedforwardCruise(; name = nothing, tau_ff=31.078, grade=Float64(0.0), m=Float64(1400.0), CdA=0.63, v0=Float64(25.0), kwargs...)
+@component function FeedforwardCruise(; name = nothing, var"tau_ff"=31.078, var"grade"=Float64(0.0), var"m"=Float64(1400.0), var"CdA"=0.63, var"v0"=Float64(25.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -37,7 +37,7 @@ already settled instead of spending the vehicle's ~60 s time constant getting th
     @named model = FeedforwardCruise()
   """))
 
-  __overrides = __build_overrides(kwargs)
+  __overrides = Dict{String, Any}(__overrides)
   __params = Symbolics.SymbolicT[]
   __vars = Symbolics.SymbolicT[]
   __systems = System[]
@@ -46,6 +46,13 @@ already settled instead of spending the vehicle's ~60 s time constant getting th
   __initialization_eqs = Equation[]
   __eqs = Equation[]
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
+
+  ### Keyword argument overrides
+  haskey(__overrides, "tau_ff") && (tau_ff = pop!(__overrides, "tau_ff"))
+  haskey(__overrides, "grade") && (grade = pop!(__overrides, "grade"))
+  haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
+  haskey(__overrides, "CdA") && (CdA = pop!(__overrides, "CdA"))
+  haskey(__overrides, "v0") && (v0 = pop!(__overrides, "v0"))
 
   ### Structural Parameters (functions)
 
@@ -62,19 +69,19 @@ already settled instead of spending the vehicle's ~60 s time constant getting th
   ### Symbolic Parameters
   __local__tau_ff = tau_ff
   append!(__params, @parameters (tau_ff::Real), [description = "Feedforward torque holding the target speed on the nominal car"])
-  __initial_conditions[tau_ff] = __local__tau_ff
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_ff, __local__tau_ff)
   __local__grade = grade
   append!(__params, @parameters (grade::Real), [description = "Constant road gradient, tan(alpha)"])
-  __initial_conditions[grade] = __local__grade
+  __dyad_seed_parameter!(__initial_conditions, __bindings, grade, __local__grade)
   __local__m = m
   append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
-  __initial_conditions[m] = __local__m
+  __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__CdA = CdA
   append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A)"])
-  __initial_conditions[CdA] = __local__CdA
+  __dyad_seed_parameter!(__initial_conditions, __bindings, CdA, __local__CdA)
   __local__v0 = v0
   append!(__params, @parameters (v0::Real), [description = "Initial speed (25 m/s = 90 km/h)"])
-  __initial_conditions[v0] = __local__v0
+  __dyad_seed_parameter!(__initial_conditions, __bindings, v0, __local__v0)
 
   ### Final Parameters (assignments)
 
@@ -90,16 +97,16 @@ already settled instead of spending the vehicle's ~60 s time constant getting th
   ### Components
   # Subcomponent plant of type VehicleSystemsComponents.HandsOn.GradeCar
   plant_overrides = __pop_subcomponent_overrides!(__overrides, "plant")
-  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.GradeCar(; m=m, CdA=CdA, plant_overrides...))
+  push!(__systems, @named plant = VehicleSystemsComponents.HandsOn.GradeCar(; m=m, CdA=CdA, __overrides = plant_overrides))
   # Subcomponent cmd of type BlockComponents.Sources.Constant
   cmd_overrides = __pop_subcomponent_overrides!(__overrides, "cmd")
-  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=tau_ff, cmd_overrides...))
+  push!(__systems, @named cmd = BlockComponents.Sources.Constant(; k=tau_ff, __overrides = cmd_overrides))
   # Subcomponent road of type BlockComponents.Sources.Constant
   road_overrides = __pop_subcomponent_overrides!(__overrides, "road")
-  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=grade, road_overrides...))
+  push!(__systems, @named road = BlockComponents.Sources.Constant(; k=grade, __overrides = road_overrides))
 
   ### Check there are no unmatched overrides
-  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
+  isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
 
@@ -116,6 +123,6 @@ already settled instead of spending the vehicle's ~60 s time constant getting th
   push!(__eqs, connect(road.y, plant.grade))
 
   # Return completely constructed System
-  return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
+  return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
 end
 export FeedforwardCruise
