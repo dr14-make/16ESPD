@@ -24,10 +24,11 @@ const OUT = normpath(@__DIR__, "..", "slides", "decks", "lecture-03", "public", 
 const A_REF = deg2rad(21.63)
 const AMPLITUDES = (32.0, 76.0, 97.0, 141.0, 180.0, 220.0, 270.0)
 const T = collect(range(0.0, 6.0; length = 1201))
+# Okabe–Ito blue and vermilion, and gray: apart without red-green vision.
 const CASES = [
-    (76.0, "76°: stable", :seagreen, :solid),
-    (180.0, "180°: spins", :firebrick, :solid),
-    (270.0, "270°: plows", :darkorange, :dash),
+    (76.0, "76°: pass", colorant"#0072B2", :solid),
+    (180.0, "180°: oversteer, spins", colorant"#D55E00", :solid),
+    (270.0, "270°: understeer", colorant"#555555", :dash),
 ]
 
 trapz(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
