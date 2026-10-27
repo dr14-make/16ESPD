@@ -181,6 +181,9 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 - **`driveline.pedal` left unconnected.** The model then has an input nobody drives and does not compile: the same "unbalanced" error as hands-on 1's missing support. The engine's `vacuum` port is different: it is a hose, not an input, and left open it is capped.
 - **The two driveline supports.** `CVTDriveline` has `support_r` and `support_t` at its bottom, as the old one: rotational to `rot_ground`, translational to `trans_ground`.
+- **An empty diagram after Duplicate,** "Unknown entity MappedCar" behind the red ⓘ, and the copy missing from **Components**: Studio has not read the new file yet. Open `mappedcar.dyad` once with <kbd>Ctrl</kbd>+<kbd>P</kbd>, then the diagram from the tree. Same in step 06 for `MappedCarCoast`.
+- **Two strings in a row.** The rename keeps hands-on 1's `"Commanded engine torque"` above `pedal`; the `ratio_initial` lines added under it give a syntax error. Replace that line.
+- **`UndefVarError: MappedCarWOTTransient not defined`:** the REPL from step 00 does not know components made since. ▷ on the analysis tab first, in steps 05 and 06 too.
 - **The `ratio_initial` edit forgotten.** Step 04's bench runs without it; step 05's bench then fails with an override that matches nothing. Add the parameter line and the `ratio_initial = ratio_initial` in the `driveline` line.
 - **Ports renamed on an instance.** Rename and place `MappedCar`'s ports in its own diagram, not on a `car` in a bench.
 - **Reading rad/s as rpm.** `car.engine.speed.w` is rad/s: 1300 rpm is 136, 6000 rpm is 628.
@@ -223,7 +226,7 @@ The guide's *Stuck? The full model* boxes hold the code of steps 02 and 03, and 
 
 **Where students stall:**
 
-- **Benches that stop compiling** after `F_brake` is added: every other car bench now has an input nobody drives. Each needs a `Constant(k = 0)` into `car.F_brake`.
+- **Benches that stop compiling** after `F_brake` is added: every other car bench now has an input nobody drives, and the run stops with "The system is unbalanced … 78 highest order derivative variables and 77 equations". Each needs a `Constant(k = 0)` into `car.F_brake`.
 - **The coast run ending at 20 s** after part B: the brake is now in their `MappedCarCoast`, and `stop = 20` is passed in the REPL. The coast-down itself stays in the course library as `HandsOn02.MappedCarCoast`.
 - **Reading the fuel's return on the speed panel.** It is on the fuel panel, where the engine panel crosses 1000 rpm.
 
