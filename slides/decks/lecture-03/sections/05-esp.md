@@ -686,7 +686,8 @@ than a pump-based unit builds pressure.
 
 <!--
 Budget: 1 minute. Point at the boxes in the same order as on the algorithm slide; the dashed ones
-are the honest part.
+are the honest part. The optional next slide shows the controller boxes as the wired blocks in
+Studio.
 
 Top row. The reference is the single-track formula from the reference-model slide, the steering
 wheel angle divided by the steering ratio, 16, and clipped at 0.85 mu g over v with mu assumed 1.
@@ -709,6 +710,58 @@ torque with a lag, and the research note docs/esp-tcs-plausibility-research.md p
 roughly three times faster than a conventional pump-based unit; the ESP active-build bench
 shows where a real build time comes from. No engine: the sine-with-dwell is driven coasting
 anyway, as the regulation requires.
+-->
+
+---
+routeAlias: esp-wired
+---
+
+## The same ESP in Studio, block by block
+
+<div class="grid grid-cols-[1fr_1.1fr] gap-6 items-start">
+<div>
+
+<img src="/img/lecture-03/esp-controller.png" class="w-full" alt="Vehicle.Planar.ESPController in Studio. Inputs vx, delta_sw and r on the left. delta_sw and vx feed reference, whose r_ref output goes into yaw together with r and vx. yaw's two outputs, Mz and oversteer, go into allocator, whose four outputs pass through four gains k = esp_on, enable_fl to enable_rr, to the outputs dT_fl, dT_fr, dT_rl and dT_rr."/>
+
+`ESPController`: reference, yaw controller, allocator, and an `esp_on` gain on each wheel.
+
+</div>
+<div>
+
+<img src="/img/lecture-03/yaw-moment-controller.png" class="w-full" alt="Vehicle.Planar.YawMomentController in Studio. Middle row: r and r_ref into error, then deadzone, p_gain k = -Kp, sum, limiter, into gate and out as Mz. Below the middle row, error also feeds integrator and i_gain k = -Ki into sum. Top row: vx into enable, a greater-than test against v_on, which switches gate between the controller and zero. Bottom row: abs_r and abs_r_ref into compare, a greater-than test, then to_real and out as oversteer."/>
+
+`YawMomentController`: what the controller does to the yaw-rate error, one block per step.
+
+</div>
+</div>
+
+<!--
+Optional, no minute of its own: show it after the block-by-block slide if a student asks what
+"the controller" is, or if ahead. These are the library components the runs use,
+`Vehicle.Planar.ESPController` and `Vehicle.Planar.YawMomentController`, opened in Studio.
+
+Left, the ESP. The reference block turns steering-wheel angle and speed into the yaw rate the
+driver asks for. The yaw block compares it with the measured yaw rate and asks for a yaw moment.
+The allocator turns that moment into a brake torque at one wheel. The four small gains on the
+right multiply each torque by esp_on, so esp_on equal to zero switches the ESP off without
+changing anything else.
+
+Right, inside the yaw block, read it row by row. Middle row: error is r minus r_ref. The dead
+zone passes nothing while the error is within 0.03 radians per second, and only the part beyond
+that when it is outside. The gain minus Kp, 40 000, turns it into a yaw moment; the minus sign
+means a car that turns too fast gets a moment that turns it back. The sum adds the integral path,
+and the limiter caps the result at 10 kilonewton meters. Second row, the integral path: the
+integrator adds up the raw error, without the dead zone, and the gain minus Ki scales it. Ki is
+zero in the P runs and 10 to the 5 in the PI runs of split-µ. Top row: enable is true above
+5 meters per second, and the gate passes the moment while it is true and the zero source below
+it while it is not, so the ESP stays quiet when parking. Bottom row: compare tells oversteer from
+understeer, the car turning faster than asked, absolute yaw rate above absolute reference; to_real
+turns that true or false into one or zero, and the allocator uses it to pick the outer front or
+the inner rear wheel.
+
+Every block here is a standard block from the library: add, dead zone, gain, integrator, limiter,
+switch, absolute value, comparison. Students can open the component and follow one signal through
+it, or change one parameter and watch which block it lives in.
 -->
 
 ---

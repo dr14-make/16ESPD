@@ -26,15 +26,6 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
  * `vx` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `Mz` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `oversteer` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `e`         |                          | rad/s  |
-| `e_active`         |                          | rad/s  |
-| `e_int`         |                          | rad  |
-| `Mz_raw`         |                          | N.m  |
 """
 @component function YawMomentController(; name = nothing, Kp=Float64(40000.0), Ki=Float64(0.0), deadband=0.03, v_on=Float64(5.0), Mz_max=Float64(10000.0), kwargs...)
   isnothing(name) && throw(ArgumentError("""
@@ -93,52 +84,87 @@ Continuous yaw-error controller with deadband and speed-dependent enable.
   append!(__vars, @variables (oversteer(t)::Real), [output = true])
 
   ### Variables (declarations)
-  append!(__vars, @variables (e(t)::Real))
-  append!(__vars, @variables (e_active(t)::Real))
-  append!(__vars, @variables (e_int(t)::Real))
-  append!(__vars, @variables (Mz_raw(t)::Real))
 
   ### Variables (assignments)
-  __ovr_e = pop!(__overrides, "e", nothing); isnothing(__ovr_e) || push!(__eqs, e ~ __ovr_e)
-  __ovr_e__initial = pop!(__overrides, "e__initial", nothing); isnothing(__ovr_e__initial) || (__initial_conditions[e] = __ovr_e__initial)
-  __ovr_e__guess = pop!(__overrides, "e__guess", nothing)
-  __ovr_e_active = pop!(__overrides, "e_active", nothing); isnothing(__ovr_e_active) || push!(__eqs, e_active ~ __ovr_e_active)
-  __ovr_e_active__initial = pop!(__overrides, "e_active__initial", nothing); isnothing(__ovr_e_active__initial) || (__initial_conditions[e_active] = __ovr_e_active__initial)
-  __ovr_e_active__guess = pop!(__overrides, "e_active__guess", nothing)
-  __ovr_e_int = pop!(__overrides, "e_int", nothing); isnothing(__ovr_e_int) || push!(__eqs, e_int ~ __ovr_e_int)
-  __ovr_e_int__initial = pop!(__overrides, "e_int__initial", nothing); isnothing(__ovr_e_int__initial) || (__initial_conditions[e_int] = __ovr_e_int__initial)
-  __ovr_e_int__guess = pop!(__overrides, "e_int__guess", nothing)
-  __ovr_Mz_raw = pop!(__overrides, "Mz_raw", nothing); isnothing(__ovr_Mz_raw) || push!(__eqs, Mz_raw ~ __ovr_Mz_raw)
-  __ovr_Mz_raw__initial = pop!(__overrides, "Mz_raw__initial", nothing); isnothing(__ovr_Mz_raw__initial) || (__initial_conditions[Mz_raw] = __ovr_Mz_raw__initial)
-  __ovr_Mz_raw__guess = pop!(__overrides, "Mz_raw__guess", nothing)
 
   ### Constants
   __constants = Any[]
 
   ### Components
+  # Subcomponent error of type BlockComponents.Math.Add
+  error_overrides = __pop_subcomponent_overrides!(__overrides, "error")
+  push!(__systems, @named error = BlockComponents.Math.Add(; k1=Float64(1), k2=Float64(-1), error_overrides...))
+  # Subcomponent deadzone of type BlockComponents.Nonlinear.DeadZone
+  deadzone_overrides = __pop_subcomponent_overrides!(__overrides, "deadzone")
+  push!(__systems, @named deadzone = BlockComponents.Nonlinear.DeadZone(; uMax=deadband, deadzone_overrides...))
+  # Subcomponent p_gain of type BlockComponents.Math.Gain
+  p_gain_overrides = __pop_subcomponent_overrides!(__overrides, "p_gain")
+  push!(__systems, @named p_gain = BlockComponents.Math.Gain(; k=-Kp, p_gain_overrides...))
+  # Subcomponent integrator of type BlockComponents.Continuous.Integrator
+  integrator_overrides = __pop_subcomponent_overrides!(__overrides, "integrator")
+  push!(__systems, @named integrator = BlockComponents.Continuous.Integrator(; x0=Float64(0.0), integrator_overrides...))
+  # Subcomponent i_gain of type BlockComponents.Math.Gain
+  i_gain_overrides = __pop_subcomponent_overrides!(__overrides, "i_gain")
+  push!(__systems, @named i_gain = BlockComponents.Math.Gain(; k=-Ki, i_gain_overrides...))
+  # Subcomponent sum of type BlockComponents.Math.Add
+  sum_overrides = __pop_subcomponent_overrides!(__overrides, "sum")
+  push!(__systems, @named sum = BlockComponents.Math.Add(; sum_overrides...))
+  # Subcomponent limiter of type BlockComponents.Nonlinear.Limiter
+  limiter_overrides = __pop_subcomponent_overrides!(__overrides, "limiter")
+  push!(__systems, @named limiter = BlockComponents.Nonlinear.Limiter(; y_max=Mz_max, limiter_overrides...))
+  # Subcomponent enable of type BlockComponents.Logical.GreaterThreshold
+  enable_overrides = __pop_subcomponent_overrides!(__overrides, "enable")
+  push!(__systems, @named enable = BlockComponents.Logical.GreaterThreshold(; threshold=v_on, enable_overrides...))
+  # Subcomponent zero of type BlockComponents.Sources.Constant
+  zero_overrides = __pop_subcomponent_overrides!(__overrides, "zero")
+  push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), zero_overrides...))
+  # Subcomponent gate of type BlockComponents.Logical.Switch
+  gate_overrides = __pop_subcomponent_overrides!(__overrides, "gate")
+  push!(__systems, @named gate = BlockComponents.Logical.Switch(; gate_overrides...))
+  # Subcomponent abs_r of type BlockComponents.Math.Abs
+  abs_r_overrides = __pop_subcomponent_overrides!(__overrides, "abs_r")
+  push!(__systems, @named abs_r = BlockComponents.Math.Abs(; abs_r_overrides...))
+  # Subcomponent abs_r_ref of type BlockComponents.Math.Abs
+  abs_r_ref_overrides = __pop_subcomponent_overrides!(__overrides, "abs_r_ref")
+  push!(__systems, @named abs_r_ref = BlockComponents.Math.Abs(; abs_r_ref_overrides...))
+  # Subcomponent compare of type BlockComponents.Logical.Greater
+  compare_overrides = __pop_subcomponent_overrides!(__overrides, "compare")
+  push!(__systems, @named compare = BlockComponents.Logical.Greater(; compare_overrides...))
+  # Subcomponent to_real of type BlockComponents.Math.BooleanToReal
+  to_real_overrides = __pop_subcomponent_overrides!(__overrides, "to_real")
+  push!(__systems, @named to_real = BlockComponents.Math.BooleanToReal(; to_real_overrides...))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded."))
 
   ### Guesses
-  isnothing(__ovr_e__guess) || (__guesses[e] = __ovr_e__guess)
-  isnothing(__ovr_e_active__guess) || (__guesses[e_active] = __ovr_e_active__guess)
-  isnothing(__ovr_e_int__guess) || (__guesses[e_int] = __ovr_e_int__guess)
-  isnothing(__ovr_Mz_raw__guess) || (__guesses[Mz_raw] = __ovr_Mz_raw__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, e_int ~ 0.0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
-  push!(__eqs, e ~ r - r_ref)
-  push!(__eqs, e_active ~ ifelse(abs(e) > deadband, e - deadband * sign(e), 0.0))
-  push!(__eqs, ModelingToolkit.D_nounits(e_int) ~ e)
-  push!(__eqs, Mz_raw ~ -Kp * e_active - Ki * e_int)
-  push!(__eqs, Mz ~ ifelse(vx > v_on, min(max(Mz_raw, -Mz_max), Mz_max), 0.0))
-  push!(__eqs, oversteer ~ ifelse(abs(r) > abs(r_ref), 1.0, 0.0))
+  push!(__eqs, connect(r, error.u1))
+  push!(__eqs, connect(r_ref, error.u2))
+  push!(__eqs, connect(error.y, deadzone.u))
+  push!(__eqs, connect(deadzone.y, p_gain.u))
+  push!(__eqs, connect(error.y, integrator.u))
+  push!(__eqs, connect(integrator.y, i_gain.u))
+  push!(__eqs, connect(p_gain.y, sum.u1))
+  push!(__eqs, connect(i_gain.y, sum.u2))
+  push!(__eqs, connect(sum.y, limiter.u))
+  push!(__eqs, connect(limiter.y, gate.u1))
+  push!(__eqs, connect(vx, enable.u))
+  push!(__eqs, connect(enable.y, gate.u2))
+  push!(__eqs, connect(zero.y, gate.u3))
+  push!(__eqs, connect(gate.y, Mz))
+  push!(__eqs, connect(r, abs_r.u))
+  push!(__eqs, connect(r_ref, abs_r_ref.u))
+  push!(__eqs, connect(abs_r.y, compare.u1))
+  push!(__eqs, connect(abs_r_ref.y, compare.u2))
+  push!(__eqs, connect(compare.y, to_real.u))
+  push!(__eqs, connect(to_real.y, oversteer))
 
   # Return completely constructed System
   return System(__eqs, t, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
