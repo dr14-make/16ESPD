@@ -131,9 +131,9 @@ explicit RK solvers handle it better than BDF, as the multibody equivalent does.
 `CarPlant` already does this for `theta_e` and `T_max`, and `CarStepTest` exposes `tau_lo`,
 `tau_hi`, `v0` and `t_step`. Follow that pattern for every new knob.
 
-Dyad also generates a nested override mechanism — keyword arguments split on a double
-underscore and forwarded down the tree, so `WideOpenThrottle(plant__body__m = 1600)` reaches
-`VehicleBody`. It works, and it is strict about unmatched names. It is still not the interface:
+Dyad also generates a nested override mechanism — an `__overrides` dict keyed by the dotted
+path and forwarded down the tree, so
+`WideOpenThrottle(name = :m, __overrides = Dict("plant.body.m" => 1600))` reaches `VehicleBody`. It works, and it is strict about unmatched names. It is still not the interface:
 that path encodes the model's internal structure, so renaming a subcomponent breaks every
 notebook using it, for a reason unrelated to anything those notebooks teach. Treat it as an
 escape hatch for one-off exploration.

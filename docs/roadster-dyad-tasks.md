@@ -10,7 +10,7 @@ the back-of-envelope numbers are in `docs/research_notes/Roadster plausibility/s
    `syntax.md`, `components.md`, `initialization.md`, `metadata.md` (test blocks) and
    `analyses.md`.
 2. `docs/HANDOVER.md` § "Gotchas found during the build". The three that bite hardest:
-   - A `.dyad` edit does nothing until `npx -y @juliacomputing/dyad-cli@3.4.0 compile .`
+   - A `.dyad` edit does nothing until `npx -y @juliacomputing/dyad-cli@3.5.0 compile .`
      regenerates `generated/`.
    - The suite must run from `test/`.
    - A model with an unconnected `RealInput` cannot be a `TransientAnalysis` model.

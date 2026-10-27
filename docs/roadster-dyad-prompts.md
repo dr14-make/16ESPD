@@ -22,9 +22,9 @@ report. Merging back into `feat/roadster-plausibility` is a human step after rea
 > Dyad language: `agent_resources/skills/dyad-language/SKILL.md`. Stdlib source:
 > `agent_resources/stdlib_reference/<Library>/<Path>.dyad`.
 >
-> Compile with `npx -y @juliacomputing/dyad-cli@3.4.0 compile .`, and confirm your change appears
+> Compile with `npx -y @juliacomputing/dyad-cli@3.5.0 compile .`, and confirm your change appears
 > in `generated/` before trusting a test. Run the tests with
-> `cd test && julia +dyad-3.4.0 --project=.. runtests.jl`.
+> `cd test && julia +dyad-3.5.0 --project=.. runtests.jl`.
 >
 > Stage files by name, never `git add -A`. Use Conventional Commits with `Refs #64`, and US
 > English. Do not push, and do not merge.

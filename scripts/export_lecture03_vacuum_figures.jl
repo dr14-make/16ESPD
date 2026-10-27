@@ -1,7 +1,7 @@
 """
 Writes the Lecture 3 vacuum-booster demo figures into `slides/decks/lecture-03/public/figures/`:
 
-    julia +dyad-3.4.0 --project=. scripts/export_lecture03_vacuum_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture03_vacuum_figures.jl
 
 It runs `Vehicle.Brake.BrakeVacuumTransient` with one 400 N application at idle (800 rpm), at
 cruise (2000 rpm, throttle 0.06, 45 kPa) and at wide-open throttle (3000 rpm);

@@ -14,9 +14,9 @@ Every prompt assumes the same preamble. Paste it above the task text.
 > `docs/HANDOVER.md` § "Gotchas found during the build". Dyad language:
 > `agent_resources/skills/dyad-language/SKILL.md`. Stdlib source:
 > `agent_resources/stdlib_reference/<Library>/<Path>.dyad`. Compile with
-> `npx -y @juliacomputing/dyad-cli@3.4.0 compile .` and confirm your change appears in
+> `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` and confirm your change appears in
 > `generated/` before trusting a test. Run tests with
-> `cd test && julia +dyad-3.4.0 --project=.. runtests.jl`. Do not edit existing components or
+> `cd test && julia +dyad-3.5.0 --project=.. runtests.jl`. Do not edit existing components or
 > `generated/`. Stage files by name, Conventional Commits, US English. Report every acceptance
 > number you measured, and say plainly if one misses its band. Do not move a band.
 

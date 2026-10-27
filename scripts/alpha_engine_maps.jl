@@ -2,7 +2,7 @@
 #
 # EPA ALPHA 2014 Mazda 2.0 L Skyactiv (LEV III fuel) -> 1.5 L maps on (N, p_m).
 #
-#     julia +dyad-3.4.0 --project=. scripts/alpha_engine_maps.jl [--figures DIR]
+#     julia +dyad-3.5.0 --project=. scripts/alpha_engine_maps.jl [--figures DIR]
 #
 # Reads `data/engine/alpha/*.m` as text (it is never executed), writes the tables to
 # `data/engine/`, and prints the reality-anchor checks of `docs/lecture-02-mapped-engine-plan.md`

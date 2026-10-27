@@ -1808,7 +1808,8 @@ The finished bench, drawn by the Dyad command line from the reference `HandsOn.S
 
    ```julia
    dry = MyCar.SlipCarStandingStartTransient(
-       model = MyCar.SlipCarStandingStart(name = :SlipCarStandingStart, friction__k = 1.0))
+       model = MyCar.SlipCarStandingStart(name = :SlipCarStandingStart,
+                                          __overrides = Dict("friction.k" => 1.0)))
    plot(dry; idxs = [dry."car.v_kmh", dry."car.wheel_kmh"])
    ```
 

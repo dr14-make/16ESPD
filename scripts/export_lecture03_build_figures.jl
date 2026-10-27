@@ -1,7 +1,7 @@
 """
 Writes the checkpoint figures of the Lecture 3 live build into `slides/images/lecture-03/`.
 
-    julia +dyad-3.4.0 --project=. scripts/export_lecture03_build_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture03_build_figures.jl
 
 Runs the reference solutions in `dyad/HandsOn03/` and the library analyses beside them, and
 saves one SVG per build step. It also draws `03-abs-cycle-ours.svg` into the deck's diagrams: two

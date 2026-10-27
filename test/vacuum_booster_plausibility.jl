@@ -5,7 +5,7 @@
 # Bands the model misses with its PATH and assumed defaults are `@test_broken`, so they stay
 # visible and turn into an "Unexpected Pass" once the defaults are retuned.
 #
-# Alone: julia +dyad-3.4.0 --project=. -e 'using Test, VehicleSystemsComponents;
+# Alone: julia +dyad-3.5.0 --project=. -e 'using Test, VehicleSystemsComponents;
 #     include("test/plausibility_helpers.jl"); include("test/vacuum_booster_plausibility.jl")'
 
 using Test

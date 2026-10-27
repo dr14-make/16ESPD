@@ -3,7 +3,7 @@ Writes the theory deck's ESP figures, the planar car in the FMVSS 126 sine-with-
 ESP, with ESP braking directly and with ESP through four ABS channels, and in a split-µ stop,
 into `slides/decks/lecture-03/public/figures/`:
 
-    julia +dyad-3.4.0 --project=. scripts/export_lecture03_esp_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture03_esp_figures.jl
 
 It runs `Lecture3.SineWithDwellRunTransient` at every amplitude of the test,
 `Lecture3.ESPSineWithDwellTransient` with ESP off at 180° and with ESP on at every amplitude,

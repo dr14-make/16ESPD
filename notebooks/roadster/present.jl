@@ -1,6 +1,6 @@
 # Open the Roadster presentation notebook in Pluto, from the repository root:
 #
-#     julia +dyad-3.4.0 notebooks/roadster/present.jl
+#     julia +dyad-3.5.0 notebooks/roadster/present.jl
 #
 # A Pluto worker process fails to load the Dyad packages with this Julia build (`TypeError:
 # expected Core.CodeInfo, got SynchJulia.DNode`). This launcher loads them here first and runs

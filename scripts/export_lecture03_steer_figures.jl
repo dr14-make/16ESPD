@@ -3,7 +3,7 @@ Writes the theory deck's brake-and-steer figures, the planar car braking fully f
 a dry road while the driver steers left around an obstacle, with ABS and with the wheels locked,
 into `slides/decks/lecture-03/public/figures/`:
 
-    julia +dyad-3.4.0 --project=. scripts/export_lecture03_steer_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture03_steer_figures.jl
 
 It runs `Lecture3.BrakeAndSteerTransient` twice, with `abs_on = 1` and `abs_on = 0`, Tsit5 with
 dtmax 5 ms and no load transfer, and prints every number the slides quote: the stopping

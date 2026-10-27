@@ -225,7 +225,7 @@ on every section's result. It stays visible in present mode and when scrolling.
 - **Present mode:** a button cell, `html"<button onclick='present()'>present</button>"`. Each `##`
   heading is a slide. `TableOfContents()` is for scrolling mode only.
 - **Code:** all code cells are committed folded (`# ╟─`), and outputs show.
-- **Headless done-check:** `julia +dyad-3.4.0 --project=. notebooks/roadster/02-is-it-possible.pluto.jl`
+- **Headless done-check:** `julia +dyad-3.5.0 --project=. notebooks/roadster/02-is-it-possible.pluto.jl`
   runs to completion with the slider defaults. The last slide's check cell `@assert`s the default
   runs against the reference numbers, with the tolerance in the message.
 - **Script mode runs in `Main`.** The setup cell binds the loaded package as `components`, not as
@@ -237,7 +237,7 @@ on every section's result. It stays visible in present mode and when scrolling.
   notebook. Running Pluto in-process (`workspace_use_distributed = false`) with the packages
   loaded before the notebook opens works: every cell runs, and every slider re-runs without error.
   `notebooks/roadster/present.jl` does exactly that, and the title slide names it:
-  `julia +dyad-3.4.0 notebooks/roadster/present.jl`.
+  `julia +dyad-3.5.0 notebooks/roadster/present.jl`.
 - **Slide height.** Every slide fits about 1,000 px at a 1,300 px column, the projector layout.
 - **Slides show only markdown, sliders, plots and rendered tables.** Every computation cell ends
   in `;` or returns `nothing`, and the rigs are built with `progress = false`.

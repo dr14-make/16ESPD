@@ -1,7 +1,7 @@
 # Lecture 3 FullCarVacuumStop: the vacuum booster fed by the mapped engine's manifold, through a
 # lift-off stop from the 90 km/h cruise.
 #
-# Alone: julia +dyad-3.4.0 --project=. -e 'using Test, VehicleSystemsComponents;
+# Alone: julia +dyad-3.5.0 --project=. -e 'using Test, VehicleSystemsComponents;
 #     include("test/vacuum_full_car.jl")'
 
 using Test
