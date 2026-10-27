@@ -43,7 +43,7 @@ A branch for today on your `MyCar`, and the course library beside your own.
 
    ```julia
    using Pkg
-   Pkg.add(url = "https://github.com/dr14-make/16ESPD")
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-03-dyad-3.5")
    ```
 
    It downloads and precompiles: a few minutes. Read step 01 meanwhile. A yellow warning that packages are precompiled but "different versions are currently loaded … Restart julia" is harmless: carry on.
@@ -51,7 +51,6 @@ A branch for today on your `MyCar`, and the course library beside your own.
 4. Open any diagram (double-click it in the **Components** tree), click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Engine`. The course library shows under **+**, not in the **Components** tree on the left: that is expected.
 
 [![The diagram toolbar's plus popup opened at VehicleSystemsComponents › Vehicle › Engine: under the folders HandsOn, HandsOn02, Lecture1, Lecture2 and Vehicle › Brake, the Engine folder lists AirPath, CutBlend, CutFuelMap, CutMap, CutTorqueMap, CylinderAirflow, ElectronicThrottle and more, down to MappedEngine, PedalMap and the Test models; Throttle is further down the list.](/handson/lecture-02/img/step00-engine-library.png){style="max-width:324px" width="324" height="878"}](/handson/lecture-02/img/step00-engine-library.png)
-<!-- TODO: pin Pkg.add to a tag once the course library's branch merges. -->
 
 ::: tip Checkpoint
 
