@@ -27,13 +27,20 @@ Each component reaches step 6 before the next one starts.
 
 1. **Read.** The plan doc, the nearest existing component of the same kind (copy its shape), and
    `stdlib_reference/<Lib>/...dyad` for every connector and base class you extend. Take sign
-   conventions from the connector.
+   conventions from the connector. Check every path and location the brief names against the
+   repo; follow the repo where they disagree, and say so in the report.
    *Done when* every connector and base class you will use has been read.
 2. **Write the anchors** before simulating: steady state, a time constant, an energy or force
    balance, a band from the plan's reality-anchor table.
    *Done when* each check in step 6 has a number and a tolerance to meet.
 3. **Write the component with its `test component` and `analysis`.** Every parameter a scenario
    varies is declared on the analysis and forwarded to the model.
+   - **Reuse first:** `extends` the stdlib interface that already declares the connectors and
+     their balance (`ElectricalComponents.Analog.Interfaces.TwoPin`,
+     `RotationalComponents.Interfaces.PartialTorque`, …) — `find agent_resources/stdlib_reference
+     -path '*Interfaces*'` before writing a pin.
+   - **Derived defaults stay formulas:** `Q_nom = 40.0e3 * 3600.0 / 350.0`, not `411428.6`, so the
+     derivation is checkable where its tag says `(derived)`.
 4. **Compile** all edits of the increment at once, with the CLI version HANDOVER names. Fix each
    diagnostic by reading the doc it points to; [`reference/errors.md`](reference/errors.md) maps
    diagnostics to causes. A diagnostic that returns unchanged means read, not edit.
@@ -68,6 +75,10 @@ Each component reaches step 6 before the next one starts.
    Snapshot `.ref` files change only when the task says so, each with the change that moved its
    curve named.
    *Done when* every group you touched passes.
+8. **Leave the lesson.** A gotcha the task cost you that no doc names — a solver trap, an API
+   surprise, a convention — goes into `docs/HANDOVER.md` in the same commit, with the numbers that
+   showed it.
+   *Done when* each such gotcha has its HANDOVER entry, or the report says there was none.
 
 ## Traps no error message names
 
@@ -76,10 +87,10 @@ Each component reaches step 6 before the next one starts.
 - **Repeated identical algebraic blocks on Dyad 3.5** share a buffer under the default optimizer;
   HANDOVER says when an analysis needs `optimize = OptimizationLevel.None()`.
 - **Clocked variables** read back as their last value; read the held side.
-- **A step input makes integrated states drift** at the default 1e-6 tolerance: the integrator
-  steps across the edge and counts input that never flowed (`tstops` alone does not cure it).
-  Set `abstol`/`reltol` around 1e-10 on the analysis and the test case, and anchor the
-  integrated state. `automatic_discontinuity_detection = true` fails on Dyad's `ifelse`.
+- **A step input makes integrated states drift**: sources switch with `ifelse` on `time`, which
+  is no event, so the solver strides across the edge and counts input that never flowed. Put the
+  edge in the analysis' `tstops` and drive it with a `Step` (a `Pulse` still misreads the edge);
+  HANDOVER has the numbers. Anchor the integrated state to catch it.
 - **`rm` prompts on this machine** and does nothing without a TTY; delete files you created with
   `\rm -f`.
 
