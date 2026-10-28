@@ -1,0 +1,48 @@
+"""
+Traction battery as a constant open-circuit voltage behind a series resistance, with its state
+of charge counted from the current (coulomb counting).
+
+    v = E - R0 i
+    dSoC/dt = -i / Q_nom
+
+`i` is the discharge current: out of the positive pin `p`, through the load and back into `n`.
+It is negative while the battery charges, which is how regenerative braking shows up. `v` is the
+terminal voltage `p.v - n.v`, so under load it sits `R0 i` below `E`, and `R0 i^2` is burned
+inside the pack. `E` does not depend on SoC, and SoC is not clamped: a run that draws more
+charge than the pack holds takes SoC below 0, and a long charge takes it above 1.
+
+The interface is the one the extra pack's Thevenin cell keeps, so that cell replaces this battery
+without rewiring: the pins `p` and `n`, the output `SoC`, the variables `v`, `i` and `E`, and the
+parameters `R0`, `Q_nom` and `SoC0`. There `E` becomes the open-circuit voltage read from SoC,
+and one RC pair joins `R0` in series.
+
+Defaults are the Nissan Leaf ZE1 40 kWh pack. Source tags: (Nissan) ZE1 specification sheet,
+catalog 1709; (INL) INL-5045 pulse tests of a 2013 Leaf pack; (derived) computed from other
+numbers, method given; (assumed) the course's choice.
+"""
+component Battery
+  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  "State of charge: 1 full, 0 empty"
+  SoC = RealOutput() {^SoC}
+  "Open-circuit voltage, the ZE1 pack's 350 V nominal (Nissan)"
+  parameter E::Voltage = 350.0
+  "Series resistance: 2 mOhm per 56 Ah ZE1-class cell, 96 in series over 2 in parallel (derived; INL measured 0.11-0.145 Ohm mid-SoC on the 2013 pack, +50 % near empty)"
+  parameter R0::Resistance = 0.1
+  "Charge capacity, 40 kWh / 350 V = 114.3 A.h [C] (derived from Nissan)"
+  parameter Q_nom::ElectricCharge = 40.0e3 * 3600.0 / 350.0
+  "State of charge at t = 0 (assumed)"
+  parameter SoC0::Real = 0.9
+  "Discharge current, out of p through the load and back into n"
+  variable i::Current
+relations
+  initial SoC = SoC0
+  p.i + n.i = 0
+  i = n.i
+  v = E - R0 * i
+  der(SoC) = -i / Q_nom
+metadata {
+  "_links": {
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}}
+  }
+}
+end

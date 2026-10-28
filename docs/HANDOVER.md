@@ -320,6 +320,14 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   running the value the PID notebook arrives at. Both times the notebook agent caught the
   mismatch and both times the notebook was right to keep the lecture's value. Before quoting a
   number into a brief, check which parameter set produced it.
+- **A load step needs a `tstops` entry, and it must be a `Step`, not a `Pulse`.** Sources switch
+  with `ifelse` on `time`, which is no event. Without a stop the solver strides across the edge:
+  the battery bench counted 0.5 s of its 100 A too little (SoC 1.3e-4 low). `Step` switches at
+  `time >= start_time`, so with `tstops = [start_time]` the step leaving the stop sees the new
+  value and the error falls to the tolerance (3.5e-6). `Pulse` switches on at `time >
+  start_time`, so a stop on its edge makes the first stage after it read the old value, and it
+  stays wrong (9.4e-5). `automatic_discontinuity_detection = true` does not rescue `Pulse` on
+  3.5: it throws `Condition of ifelse must be a Bool` in DyadCompilerPasses' if-lifting.
 - **Memory.** Running several agents alongside the Dyad language server exhausts this machine;
   `earlyoom` is configured to prefer killing `julia`. A run that dies with no error message was
   probably killed, not broken. Retry before debugging.

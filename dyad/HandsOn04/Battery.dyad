@@ -1,0 +1,31 @@
+"""
+Hands-on 04 step 03: the battery as an open-circuit voltage behind a resistance, its state of
+charge counted from the current.
+
+    v = E - R0 i
+    dSoC/dt = -i / Q_nom
+
+`i` is the discharge current, out of `p`; it is negative while the battery charges. Same names
+as the library's `Vehicle.Electric.Battery`, so either one drops into the car.
+"""
+component Battery
+  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  "State of charge: 1 full, 0 empty"
+  SoC = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}}
+  "Open-circuit voltage, Leaf ZE1 nominal"
+  parameter E::Voltage = 350.0
+  "Series resistance"
+  parameter R0::Resistance = 0.1
+  "Charge capacity, 40 kWh / 350 V = 114.3 A.h [C]"
+  parameter Q_nom::ElectricCharge = 40.0e3 * 3600.0 / 350.0
+  "State of charge at t = 0"
+  parameter SoC0::Real = 0.9
+  "Discharge current, out of p through the load and back into n"
+  variable i::Current
+relations
+  initial SoC = SoC0
+  p.i + n.i = 0
+  i = n.i
+  v = E - R0 * i
+  der(SoC) = -i / Q_nom
+end
