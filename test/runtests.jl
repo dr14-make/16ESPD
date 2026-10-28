@@ -15,6 +15,7 @@ const GROUPS = [
     "abs" => ["abs_handson_plausibility.jl", "abs_full_car.jl"],
     "tcs" => ["tcs_bonus.jl"],
     "vacuum" => ["vacuum_booster_plausibility.jl", "vacuum_full_car.jl"],
+    "lecture04" => ["battery_plausibility.jl"],
     "generated" => ["../generated/tests.jl"],
 ]
 

@@ -1,0 +1,33 @@
+"""
+Constant-current discharge of the library `Battery`: open circuit for 60 s, then `I_load` drawn
+for 30 minutes. With the Leaf defaults and 100 A the terminal voltage drops from 350 V to 340 V
+when the load comes on, and SoC falls from 0.9 by 100 A x 1800 s / Q_nom = 0.4375 to 0.4625. A
+negative `I_load` charges the pack.
+
+The analysis lands the solver on the load step with `tstops`. `Step` switches at
+`time >= start_time`, so the step that starts there already sees the load; without the stop the
+integrator steps across the edge and the counted charge is off by about 1e-4 of SoC.
+"""
+test component TestBattery
+  "Current drawn from the battery once the load is on; negative charges it"
+  parameter I_load::Current = 100.0
+  "Battery series resistance"
+  parameter R0::Resistance = 0.1
+  load_profile = BlockComponents.Sources.Step(height = I_load, offset = 0.0, start_time = 60.0) {^load_profile}
+  load = ElectricalComponents.Analog.Sources.CurrentSource() {^load}
+  battery = VehicleSystemsComponents.Vehicle.Electric.Battery(R0 = R0) {^battery}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+relations
+  connect(load_profile.y, load.I) {^id1}
+  connect(battery.p, load.p) {^id2}
+  connect(load.n, battery.n, ground.g) {^id3}
+end
+
+analysis BatteryTransient
+  extends TransientAnalysis(stop = 1860.0, tstops = [60.0])
+  "Current drawn from the battery once the load is on; negative charges it"
+  parameter I_load::Current = 100.0
+  "Battery series resistance"
+  parameter R0::Resistance = 0.1
+  model = VehicleSystemsComponents.Vehicle.Electric.TestBattery(I_load = I_load, R0 = R0)
+end
