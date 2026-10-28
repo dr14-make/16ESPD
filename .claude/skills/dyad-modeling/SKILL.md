@@ -37,28 +37,37 @@ Each component reaches step 6 before the next one starts.
 4. **Compile** all edits of the increment at once, with the CLI version HANDOVER names. Fix each
    diagnostic by reading the doc it points to; [`reference/errors.md`](reference/errors.md) maps
    diagnostics to causes. A diagnostic that returns unchanged means read, not edit.
-   *Done when* the compile exits 0 (the licence banner on stderr is not an error).
-5. **Check `generated/` is fresh**: `git diff --stat generated/`, and `grep -n <NewName>
-   generated/*.jl` for each new name. A stale `generated/` runs the old model and passes.
-   *Done when* every new or changed name appears there; changes in files you did not touch are
-   compiler drift — stop and report them.
+   *Done when* the compile exits 0 (the license banner on stderr is not an error).
+5. **Check `generated/` is fresh**: `git diff --stat generated/`, and `grep -rn <NewName>
+   generated/` for each new name. A stale `generated/` runs the old model and passes.
+   *Done when* every new or changed name appears there. A new sublibrary directory adds
+   `include` lines to its parent's `module.jl` and `tests.jl`; any other change in a file you did
+   not touch is compiler drift — stop and report it.
 6. **Simulate in the warm session**, starting with `Revise.revise()` (restart instead after a
    deletion or rename):
    ```julia
    r = VehicleSystemsComponents.<Sub>.<Name>Transient(p = 0.3)   # <Sub> = directory under dyad/
    m = symbolic_container(r)                                     # the model: m.body.mass.v
    r.sol.retcode, r.sol[m.body.mass.v][end], r.sol(1.0, idxs = m.wheel.kappa)
+   r.sol.ps[m.battery.R0]                                        # a parameter's value
    ```
+   The result carries `spec`, `sol`, `sys`, `u0` and `p`.
    Vary scenarios through analysis keywords in the session; edit a default only when the model's
    own value is wrong. Prove a fix (initial value, guess, solver option) in the session before
    writing it into the `.dyad`.
    *Done when* every anchor from step 2 is met within its tolerance — `retcode == Success` alone
    is not a pass.
-7. **Tests.** Add the `tests` metadata and plausibility assertions the plan asks for, and run the
-   affected group in its own process from `test/` (`mise run test:group <group>`), in the
-   background; wait for its notification. Snapshot `.ref` files change only when the task says
-   so, each with the change that moved its curve named.
-   *Done when* the group passes.
+7. **Tests.** Add the `tests` metadata and plausibility assertions the plan asks for. A new
+   test file gets its own group in the `GROUPS` table of `test/runtests.jl`.
+   - A new sublibrary's generated cases alone: from `test/`, include
+     `generated/test_internals.jl`, then `generated/<Sub>/tests.jl`, in a fresh module. The
+     `generated` group is the whole library's suite.
+   - Groups: `exit()` the warm session, then `mise run test:group <group>` in the background;
+     wait for its notification.
+
+   Snapshot `.ref` files change only when the task says so, each with the change that moved its
+   curve named.
+   *Done when* every group you touched passes.
 
 ## Traps no error message names
 
@@ -67,6 +76,10 @@ Each component reaches step 6 before the next one starts.
 - **Repeated identical algebraic blocks on Dyad 3.5** share a buffer under the default optimizer;
   HANDOVER says when an analysis needs `optimize = OptimizationLevel.None()`.
 - **Clocked variables** read back as their last value; read the held side.
+- **A step input makes integrated states drift** at the default 1e-6 tolerance: the integrator
+  steps across the edge and counts input that never flowed (`tstops` alone does not cure it).
+  Set `abstol`/`reltol` around 1e-10 on the analysis and the test case, and anchor the
+  integrated state. `automatic_discontinuity_detection = true` fails on Dyad's `ifelse`.
 - **`rm` prompts on this machine** and does nothing without a TTY; delete files you created with
   `\rm -f`.
 
