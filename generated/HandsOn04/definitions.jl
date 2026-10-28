@@ -208,3 +208,6 @@ end
 include("BatteryDischargeTransient_definition.jl")
 include("BatteryDischarge_definition.jl")
 include("Battery_definition.jl")
+include("DCMachineDynoTransient_definition.jl")
+include("DCMachineDyno_definition.jl")
+include("DCMachine_definition.jl")

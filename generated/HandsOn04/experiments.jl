@@ -11,3 +11,5 @@ end
 
 include("BatteryDischarge_experiment.jl")
 include("Battery_experiment.jl")
+include("DCMachineDyno_experiment.jl")
+include("DCMachine_experiment.jl")

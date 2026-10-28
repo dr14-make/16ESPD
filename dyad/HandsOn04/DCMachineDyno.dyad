@@ -1,0 +1,53 @@
+"""
+Hands-on 04 step 01 bench: the machine on a 350 V supply, the dyno holding 3283 rpm for 1 s,
+ramping to 3600 rpm over 10 s and holding there. The torque falls from 320 N.m at base speed
+through zero just below 3447 rpm to -304 N.m, generating.
+"""
+component DCMachineDyno
+  "Supply voltage at the terminals"
+  parameter V::Voltage = 350.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 3283.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 3600.0
+  voltage = BlockComponents.Sources.Constant(k = V) {^voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  machine = DCMachine() {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 10.0) {^speed}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+relations
+  initial dyno.phi = 0
+  initial machine.inductor.i = 0
+  connect(voltage.y, supply.V) {^id1}
+  connect(supply.p, machine.p) {^id2}
+  connect(machine.n, supply.n) {^id3}
+  connect(supply.n, ground.g) {^id4}
+  connect(speed.y, dyno.w_ref) {^id5}
+  connect(machine.spline, dyno.spline) {^id6}
+  connect(machine.support, mounts.spline) {^id7}
+  connect(dyno.support, mounts.spline) {^id8}
+metadata {
+  "_links": {
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 100, "x2": 200, "y2": 200}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 100, "x2": 400, "y2": 200, "rot": 90}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 300, "x2": 650, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 120, "x2": 840, "y2": 200}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 150, "x2": 1200, "y2": 250}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 350, "x2": 1000, "y2": 450, "rot": 180}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 650, "x2": 600, "y2": 750}}}}
+  }
+}
+end
+
+analysis DCMachineDynoTransient
+  extends TransientAnalysis(stop = 12.0, alg = ODEAlg.Rodas5P(), saveat = 0.01, tstops = [1.0, 11.0])
+  "Supply voltage at the terminals"
+  parameter V::Voltage = 350.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 3283.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 3600.0
+  model = DCMachineDyno(V = V, rpm_start = rpm_start, rpm_end = rpm_end)
+end

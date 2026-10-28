@@ -1,0 +1,105 @@
+"""
+Hands-on 04 step 01: a DC-equivalent machine. The stdlib back-EMF element sits behind the
+armature resistance and inductance, and the deck's losses are parts on the shaft.
+
+    v = R i + L di/dt + E        E = k w        tau_em = k i
+    P_loss = R i^2 + T_f w + K_i w + k_w w^3 + C
+
+Same names as the library's `Vehicle.Electric.DCMachine`, so either one drops into the car.
+"""
+component DCMachine
+  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  "Rotor shaft"
+  spline = Spline() {^spline}
+  "Housing"
+  support = Spline() {^support}
+  resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
+  inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
+  emf = ElectricalComponents.Analog.Basic.RotationalEMF(k = k) {^emf}
+  rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
+  friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
+  iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
+  windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
+  constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
+  "Peak shaft torque, Leaf ZE1"
+  parameter T_max::Torque = 320.0
+  "Base speed, 3283 rpm"
+  parameter w_base::AngularVelocity = 3283.0 * pi / 30.0
+  "Supply voltage at which the machine reaches base speed at full torque"
+  parameter V_nom::Voltage = 350.0
+  "Armature resistance"
+  parameter R::Resistance = 0.05
+  "Armature inductance, L/R = 10 ms"
+  parameter L::Inductance = 0.5e-3
+  "Rotor inertia"
+  parameter J::Inertia = 0.05
+  "Friction torque T_f; loss T_f w"
+  parameter T_f::Torque = 0.5
+  "Iron loss coefficient K_i; loss K_i w"
+  parameter K_i::Torque = 1.0
+  "Windage coefficient k_w; loss k_w w^3, 300 W at 10100 rpm [N.m.s2]"
+  parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3
+  "Constant loss C"
+  parameter C::Power = 200.0
+  "Speed below which the speed-independent loss torques fade to zero"
+  parameter w_reg::AngularVelocity = 10.0
+  "Torque the losses take at base speed"
+  parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
+  "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
+  parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+  "Armature current, into p"
+  variable i::Current
+  "Back-EMF, E = k w"
+  variable E::Voltage
+  "Electromagnetic torque, tau_em = k i"
+  variable tau_em::Torque
+  "Shaft speed relative to the housing"
+  variable w::AngularVelocity
+  "Torque delivered at the shaft"
+  variable tau::Torque
+  "Electrical power into the terminals"
+  variable P_elec::Power
+  "Mechanical power out of the shaft"
+  variable P_mech::Power
+  "Copper loss, R i^2"
+  variable P_cu::Power
+  "Friction loss"
+  variable P_fric::Power
+  "Iron loss"
+  variable P_iron::Power
+  "Windage loss"
+  variable P_wind::Power
+  "Constant loss"
+  variable P_const::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  connect(p, resistor.p) {^id1}
+  connect(resistor.n, inductor.p) {^id2}
+  connect(inductor.n, emf.p) {^id3}
+  connect(emf.n, n) {^id4}
+  connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
+  connect(rotor.spline_b, spline) {^id6}
+  connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
+  i = p.i
+  E = emf.v
+  tau_em = -emf.tau
+  w = emf.w
+  tau = -spline.tau
+  P_elec = v * i
+  P_mech = tau * w
+  P_cu = resistor.v * resistor.i
+  P_fric = -friction.tau * w
+  P_iron = -iron.tau * w
+  P_wind = -windage.tau * w
+  P_const = -constant_loss.tau * w
+  P_loss = P_cu + P_fric + P_iron + P_wind + P_const
+metadata {
+  "_links": {
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}}
+  }
+}
+end
