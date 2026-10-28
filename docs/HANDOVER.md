@@ -295,8 +295,21 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   resolves references at the relative path `joinpath("snapshots", ...)`. `Pkg.test()` runs from
   `test/` so this works; a direct `julia test/runtests.jl` from the root finds no snapshots,
   silently skips every trajectory comparison, writes a stray `snapshots/` at the root, and
-  still exits 0. The tell is the assertion count — the real suite is about 4700, the crippled
-  one about 70. Use `cd test && julia --project=.. runtests.jl`.
+  still exits 0. The tell is the assertion count — the real `generated` group is about 29,600,
+  the crippled one about 70. Use `mise run test`, which runs
+  `cd test && julia +dyad-3.5.0 --project=.. runtests.jl`.
+- **The suite runs one child process per group.** One process holding every group's compiled
+  models and solutions outgrows 30 GB and `earlyoom` kills it, while no group alone needs a
+  sixth of that. With no argument, `runtests.jl` therefore starts each group in `GROUPS` as its
+  own Julia process, one after another, prints a table of passes, failures, broken tests, peak
+  memory and time per group, and exits nonzero if any group failed or was killed. Named groups
+  run in the current process: `mise run test:group esp brake`, `runtests.jl esp brake` or
+  `TEST_GROUPS=esp,brake`. A new suite file becomes a group with one line in `GROUPS`; a group
+  that would rather share another's process can list both files under one name. Peak memory per
+  group (`Sys.maxrss`, 2026-10-28): `esp` 4.6 GB, `abs` 4.3 GB, `generated` 3.5–4.1 GB, the
+  rest 2.2–2.6 GB (1.5 GB of that is loading the library). The full run takes about 36
+  minutes, 15 of them `esp`. If one group passes about 10 GB, split it before it becomes the
+  new limit.
 - **Exported figures carry their clipped points.** Setting `xlims` on a plot hides data from
   the eye, not from the SVG: one sweep figure came out at 2.7 MB, six times the largest other
   figure, which would make the deck crawl on a projector. Hand each panel only the window it is

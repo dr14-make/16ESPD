@@ -189,7 +189,8 @@ Everything an agent needs to pick up a task cold. Commands assume the repository
 | Purpose | Command or path |
 |---|---|
 | Compile `dyad/` into `generated/` | `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` (the version must equal `[dyad] kernel` in `Project.toml`; see HANDOVER gotchas) |
-| Run the test suite | `cd test && julia +dyad-3.5.0 --project=.. runtests.jl` (never from the root; see HANDOVER gotchas) |
+| Run the test suite | `mise run test` (each group in its own process, then a summary table; same as `cd test && julia +dyad-3.5.0 --project=.. runtests.jl`, never from the root; see HANDOVER gotchas) |
+| Run one test group | `mise run test:group esp` (several: `mise run test:group esp brake`; group names are `GROUPS` in `test/runtests.jl`) |
 | Load the library interactively | `julia +dyad-3.5.0 --project=.`, then `using VehicleSystemsComponents` |
 | Run a Pluto notebook headless | `julia +dyad-3.5.0 --project=. notebooks/lecture02/<file>.pluto.jl` (the `@bind` mock supplies defaults) |
 | Dyad language reference | `agent_resources/skills/dyad-language/SKILL.md`, then `agent_resources/docs/{syntax,components,initialization,analyses,metadata}.md` |
