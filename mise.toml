@@ -13,3 +13,15 @@ run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_figures.jl"
 [tasks."figures:lecture-03-build"]
 description = "Run the Lecture 3 build's reference models and write their figures into slides/images/lecture-03/"
 run = "julia +dyad-3.5.0 --project=. scripts/export_lecture03_build_figures.jl"
+
+# The suite resolves snapshots against test/, so both tasks run from there.
+[tasks.test]
+description = "Run the Julia test suite, each group in its own process, and summarize the groups"
+dir = "{{config_root}}/test"
+run = "julia +dyad-3.5.0 --project=.. runtests.jl"
+
+[tasks."test:group"]
+description = "Run the named test groups in this process, e.g. `mise run test:group esp brake`"
+usage = 'arg "<group>" var=#true help="Group names from GROUPS in test/runtests.jl"'
+dir = "{{config_root}}/test"
+run = "julia +dyad-3.5.0 --project=.. runtests.jl {{ usage.group | join(sep=' ') }}"
