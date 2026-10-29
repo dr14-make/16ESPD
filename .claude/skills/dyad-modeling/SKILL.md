@@ -118,6 +118,14 @@ Each component reaches step 6 before the next one starts.
 
 ## Traps no error message names
 
+- **A regularized law has an operating envelope.** Tire slip, rolling resistance and friction laws
+  in the stdlib regularize near zero and can overflow outside the range they were written for (the
+  course's `RollingResistance` overflows below −0.71 m/s). Before choosing a driver or a start
+  state, read the law's equations and keep the run inside that envelope; test it at the envelope's
+  edges, such as a stop and a reversal.
+- **A wall-clock criterion** (a run under 10 s) is measured and reported, or asserted with a
+  wide margin: a shared machine makes a tight timing test flaky.
+
 - **FBDF can report success on a frozen run.** Use the solver the plan names (Tsit5 or Rodas5P
   with `dtmax`), and check distance or state against an anchor.
 - **Repeated identical algebraic blocks on Dyad 3.5** share a buffer under the default optimizer;
