@@ -1,0 +1,28 @@
+# Notebooks and exported figures
+
+The course's notebooks are Pluto files (`notebooks/lecture0N/NN-name.pluto.jl`); a script in
+`scripts/` with a `mise.toml` task runs them headless and writes the deck's figures. Copy the
+shape of the newest lecture's notebook and export script, `@bind` mock and cell markers included.
+
+## Setup cell
+
+`notebooks/lecture01/support.jl` holds `setup()`, which activates the project and loads the library.
+On the Dyad 3.5 distribution pass `setup(backend = :plotly)`: the distribution ships Plots with
+PlotlyBase and PlotlyKaleido, and the default `:gr` fails with `Package GR not found`.
+
+## Iterate in the warm session
+
+`include` the export script as a warm-session step: the models stay compiled, so a figure change
+costs seconds. Once the figures are right, run the `mise` task once from a fresh process — that is
+the "runs headless" check.
+
+## Look at each figure
+
+`savefig` a PNG copy beside each SVG into the scratch directory and read the PNG. A rendering of
+the plotly SVG by another tool (ImageMagick) misdraws it. Check the figure against the deck slide
+it replaces.
+
+## Size
+
+A figure carries every point handed to it, clipped ones included (HANDOVER has the case): hand
+each panel only its window, and thin the saved grid of a switching run before plotting.

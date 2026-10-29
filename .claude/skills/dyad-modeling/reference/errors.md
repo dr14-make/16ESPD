@@ -17,6 +17,7 @@ Almost all are fixed by reading the reference instead of guessing. When the same
 | `invalid-type: Element x found in definition C isn't a component type` | Arrays or functions declared like subcomponents | See `docs/arrays.md`, `docs/functions.md` |
 | `parse-error: ... unexpected token '{' ... 'component_metadata'` / extra content `metadata` | Metadata block in the wrong place or wrong syntax | Copy the shape from `agent_resources/docs/metadata.md` or an existing test component |
 | `parse-error: ... expecting a name ... found 'output'` | `output` used as an identifier | Rename; `input`/`output` are keywords |
+| `parse-error: The '...' block needs to be closed with an 'end' keyword, but I found 'switch'` | A reserved word used as a name (`switch`, `input`, `output`, …) | Rename (`sw`, `transistor`); the message names the word, not the cause |
 | `incompatible-connector-types` | A variable passed to `connect` | `connect` takes connectors only |
 | `invalid-entity: Unknown symbol Any` | Julia types in a Dyad declaration | Use Dyad types (`Real`, unit types) |
 | `urn:properties:unknown-modification-target` | Overriding a parameter after a rename | Read the component for its current parameter names |
@@ -34,6 +35,7 @@ The common ones are API misuse around generated code, not physics; solver failur
 | `SystemError: opening file ".../test/xyz.jl"` / `cd("test")` failed | Relative paths resolved from the wrong directory (foreground and background) | Absolute paths; run tests from `test/` (`cd test && julia --project=.. runtests.jl <group>`) |
 | `ArgumentError: System S: variable p does not exist` | Passing a parameter the analysis does not declare | Add the parameter to the analysis and forward it to the model (house rule: scenario parameters are forwarded, never nested-overridden) |
 | `MethodError: no method matching XTransientSpec(; p=...)` | Same, through the Spec constructor | Same |
+| `Package GR not found` (from Plots) | The Dyad 3.5 distribution ships Plots with PlotlyBase and PlotlyKaleido, not GR | `setup(backend = :plotly)`; see `notebooks.md` |
 | `Package X not found in current path` | `using OrdinaryDiffEq`, `NonlinearSolve`, `SciMLBase` etc. not in the project | Use what the project has (`OrdinaryDiffEqDefault`, `DyadInterface`); add a package only when the task needs it |
 | `ArgumentError: The name keyword must be provided` | Calling a component constructor bare | `@named sys = Lib.Comp()` |
 | `overrides: [c] don't match names found in model` | Nested override with the wrong spelling | Constructor overrides use `sub__param` (`discretepidstandard__Ts = 0.1`), not `sub = (param = ...)` |
