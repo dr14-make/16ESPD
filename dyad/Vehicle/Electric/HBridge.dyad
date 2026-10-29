@@ -92,21 +92,27 @@ relations
 metadata {
   "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
   "_links": {
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 785}, {"x": 560, "y": 700}], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 385}, {"x": 560, "y": 300}], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 5}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 1}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 3}, {"S": -3, "M": [{"x": 870, "y": 900}], "E": 4}], "junctions": [{"x": 130, "y": 900}, {"x": 310, "y": 900}, {"x": 690, "y": 900}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 2}, {"S": -2, "M": [], "E": 4}, {"S": -2, "M": [], "E": 5}], "junctions": [{"x": 690, "y": 500}, {"x": 870, "y": 500}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 2}, {"S": -2, "M": [], "E": 4}, {"S": -2, "M": [], "E": 5}], "junctions": [{"x": 310, "y": 500}, {"x": 130, "y": 500}]}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 4}, {"S": -3, "M": [{"x": 870, "y": 100}], "E": 5}], "junctions": [{"x": 130, "y": 100}, {"x": 310, "y": 100}, {"x": 690, "y": 100}]}},
     "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 50, "x2": 50, "y2": 150}}}},
     "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 850, "x2": 50, "y2": 950}}}},
-    "a": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 250, "y1": 950, "x2": 350, "y2": 1050}}}},
-    "b": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"iconName": "neg", "x1": 650, "y1": 950, "x2": 750, "y2": 1050}}}},
+    "a": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "b": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
     "u": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
-    "pwm_a": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 100, "x2": 200, "y2": 200}}}},
-    "pwm_c": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 600, "x2": 200, "y2": 700}}}},
-    "switch_a": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 200, "x2": 350, "y2": 300, "rot": 90}}}},
-    "diode_a": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 200, "x2": 480, "y2": 300, "rot": 270}}}},
-    "switch_c": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 650, "x2": 350, "y2": 750, "rot": 90}}}},
-    "diode_c": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 650, "x2": 480, "y2": 750, "rot": 270}}}},
-    "switch_b": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 200, "x2": 750, "y2": 300, "rot": 90}}}},
-    "diode_b": {"Dyad": {"placement": {"diagram": {"x1": 780, "y1": 200, "x2": 880, "y2": 300, "rot": 270}}}},
-    "switch_d": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 650, "x2": 750, "y2": 750, "rot": 90}}}},
-    "diode_d": {"Dyad": {"placement": {"diagram": {"x1": 780, "y1": 650, "x2": 880, "y2": 750, "rot": 270}}}}
+    "pwm_a": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 340, "x2": 510, "y2": 430}}}},
+    "pwm_c": {"Dyad": {"placement": {"diagram": {"x1": 420, "y1": 740, "x2": 510, "y2": 830}}}},
+    "switch_a": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 250, "x2": 360, "y2": 350, "rot": 90}}}},
+    "diode_a": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 250, "x2": 180, "y2": 350, "rot": 270}}}},
+    "switch_c": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 650, "x2": 360, "y2": 750, "rot": 90}}}},
+    "diode_c": {"Dyad": {"placement": {"diagram": {"x1": 80, "y1": 650, "x2": 180, "y2": 750, "rot": 270}}}},
+    "switch_b": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 250, "x2": 740, "y2": 350, "rot": 90}}}},
+    "diode_b": {"Dyad": {"placement": {"diagram": {"x1": 820, "y1": 250, "x2": 920, "y2": 350, "rot": 270}}}},
+    "switch_d": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 650, "x2": 740, "y2": 750, "rot": 90}}}},
+    "diode_d": {"Dyad": {"placement": {"diagram": {"x1": 820, "y1": 650, "x2": 920, "y2": 750, "rot": 270}}}}
   }
 }
 end

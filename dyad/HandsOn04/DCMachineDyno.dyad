@@ -30,13 +30,21 @@ relations
   connect(dyno.support, mounts.spline) {^id8}
 metadata {
   "_links": {
-    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 100, "x2": 200, "y2": 200}}}},
-    "supply": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 100, "x2": 400, "y2": 200, "rot": 90}}}},
-    "machine": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 300, "x2": 650, "y2": 500}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 760, "y1": 120, "x2": 840, "y2": 200}}}},
-    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1100, "y1": 150, "x2": 1200, "y2": 250}}}},
-    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 350, "x2": 1000, "y2": 450, "rot": 180}}}},
-    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 650, "x2": 600, "y2": 750}}}}
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 720}, {"x": 800, "y": 800}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 500}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 400}, {"x": 970, "y": 670}], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 460}, {"x": 600, "y": 550}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 20, "y": 550}, {"x": 20, "y": 340}], "E": 2}]}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 430}], "E": 2}]}},
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 380, "x2": 160, "y2": 480}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 500, "x2": 300, "y2": 600}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 300, "x2": 840, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 640, "x2": 340, "y2": 720}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 660, "y1": 620, "x2": 760, "y2": 720}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 620, "x2": 940, "y2": 720}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 800, "x2": 700, "y2": 900}}}}
   }
 }
 end
