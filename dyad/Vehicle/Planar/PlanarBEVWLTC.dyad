@@ -87,7 +87,7 @@ relations
   connect(car.bus, motion.bus) {^wbus}
   connect(trace.y, driver.u_s) {^w1}
   connect(motion.vx, kmh.u) {^w2}
-  connect(kmh.y, driver.u_m) {^w3}
+  connect(kmh.y, driver.u_m, split.v) {^w3}
   connect(no_ff.y, driver.u_ff) {^w4}
   connect(drive.spline, differential.flange_b) {^w5}
   connect(differential.flange_left, car.spin_fl) {^w6}
@@ -97,7 +97,6 @@ relations
   connect(flat.y, roadload.grade) {^w10}
   connect(car.chassis, roadload.chassis) {^w11}
   connect(driver.y, split.tau_ref) {^w21}
-  connect(kmh.y, split.v) {^w22}
   connect(split.tau_motor, drive.tau_ref) {^w23}
   connect(split.tau_brake, car.tau_fl, car.tau_fr) {^w24}
   car.tau_rl = 0.0
@@ -166,7 +165,7 @@ metadata {
     "split": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 960, "y": 662.0}, {"x": 960, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
-    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 125, "y": 225}, {"x": 125, "y": 143}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
     "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
     "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
@@ -176,7 +175,6 @@ metadata {
     "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
     "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
-    "w22": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 2}]}},
     "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}, {"x": 410, "y": 633}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 470}, {"x": 760, "y": 470}, {"x": 760, "y": 633}], "E": 3}], "junctions": [{"x": 500, "y": 633}]}}
   }

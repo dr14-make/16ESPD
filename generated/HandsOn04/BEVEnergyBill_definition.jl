@@ -314,7 +314,7 @@ up to `E_cells`.
   push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
   push!(__eqs, connect(motion.vx, kmh.u))
-  push!(__eqs, connect(kmh.y, driver.u_m))
+  push!(__eqs, connect(kmh.y, driver.u_m, split.v))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(drive.spline, differential.flange_b))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
@@ -324,7 +324,6 @@ up to `E_cells`.
   push!(__eqs, connect(flat.y, roadload.grade))
   push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(driver.y, split.tau_ref))
-  push!(__eqs, connect(kmh.y, split.v))
   push!(__eqs, connect(split.tau_motor, drive.tau_ref))
   push!(__eqs, connect(split.tau_brake, car.tau_fl, car.tau_fr))
 

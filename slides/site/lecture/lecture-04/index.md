@@ -1143,7 +1143,7 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      connect(car.bus, motion.bus)
      connect(trace.y, driver.u_s)
      connect(motion.vx, kmh.u)
-     connect(kmh.y, driver.u_m)
+     connect(kmh.y, driver.u_m, split.v)
      connect(no_ff.y, driver.u_ff)
      connect(drive.spline, differential.flange_b)
      connect(differential.flange_left, car.spin_fl)
@@ -1153,7 +1153,6 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      connect(flat.y, roadload.grade)
      connect(car.chassis, roadload.chassis)
      connect(driver.y, split.tau_ref)
-     connect(kmh.y, split.v)
      connect(split.tau_motor, drive.tau_ref)
      connect(split.tau_brake, car.tau_fl, car.tau_fr)
      car.tau_rl = 0.0
@@ -1189,7 +1188,7 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
 
    :::
 
-   The last four `connect` lines are the driver's output split: the driver's torque and the car's speed go into `split`, `split.tau_motor` drives your `ElectricDrive`, and `split.tau_brake` goes to both front brakes. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
+   The last three `connect` lines are the driver's output split: the driver's torque goes into `split`, which also gets the car's speed from `kmh.y`, `split.tau_motor` drives your `ElectricDrive`, and `split.tau_brake` goes to both front brakes. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
 5. Click ▷ **Run Analysis → BEVWLTCTransient** once, then plot the speed against the trace, the battery and the machine:
 
    ```julia
