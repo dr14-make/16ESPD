@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 250 H170 M0 350 H170 M0 750 H170 M0 850 H170"/>
+    <path d="M1000 250 H830 M1000 350 H830 M1000 750 H830 M1000 850 H830"/>
+    <path d="M0 150 H170 M0 650 H170 M1000 150 H830 M1000 650 H830" stroke-width="30"/>
+    <path d="M500 0 V70 M500 930 V1000"/>
+    <path d="M290 250 H330 M710 250 H670 M290 750 H330 M710 750 H670"/>
+    <path d="M670 500 H1000" stroke="#0277bd" stroke-width="60"/>
+    <path d="M330 170 Q330 80 420 70 H580 Q670 80 670 170 V840 Q670 930 580 930 H420 Q330 930 330 840 Z" fill="#eceff1"/>
+    <path d="M385 330 Q500 290 615 330 L595 410 H405 Z" fill="#ffffff" stroke-width="30"/>
+    <path d="M405 730 H595 L615 800 Q500 830 385 800 Z" fill="#ffffff" stroke-width="30"/>
+    <rect x="170" y="120" width="120" height="260" rx="40" fill="#cfd8dc"/>
+    <rect x="710" y="120" width="120" height="260" rx="40" fill="#cfd8dc"/>
+    <rect x="170" y="620" width="120" height="260" rx="40" fill="#cfd8dc"/>
+    <rect x="710" y="620" width="120" height="260" rx="40" fill="#cfd8dc"/>
+    <path d="M500 650 V480 M430 550 L500 480 L570 550" stroke="#0277bd"/>
+  </g>
+  <g font-family="sans-serif" font-size="60" fill="#263238" text-anchor="middle">
+    <text x="430" y="235">FL</text>
+    <text x="570" y="235">FR</text>
+    <text x="430" y="895">RL</text>
+    <text x="570" y="895">RR</text>
+  </g>
+</svg>
