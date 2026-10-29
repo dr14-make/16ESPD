@@ -55,6 +55,24 @@ end
     end
 end
 
+@testset "Planar WLTC: road load resolved in a chassis turned off the world axis" begin
+    # A chassis heading 0.5 rad off the world x axis coasts down from 30 m/s beside the
+    # longitudinal car's VehicleBody of the same 1500 kg; measured agreement 2.4e-13 m/s.
+    run = _PL.PlanarRoadLoadTransient()
+    m = symbolic_container(run)
+    s = run.sol
+    @test string(s.retcode) == "Success"
+    ts = range(0, 60, length = 601)
+    v_planar = s(ts, idxs = m.vel.v_x).u
+    @test v_planar ≈ s(ts, idxs = m.reference.mass.v).u atol = 1e-9
+    # It slows along its heading and nowhere else.
+    @test maximum(abs, s(ts, idxs = m.vel.v_y).u) < 1e-9
+    @test maximum(abs, s(ts, idxs = m.body.phi).u .- 0.5) < 1e-9
+    @test atan(s(60.0, idxs = m.body.r[2]), s(60.0, idxs = m.body.r[1])) ≈ 0.5 atol = 1e-9
+    @test s[m.roadload.F][1] ≈ _road_load(30.0) rtol = 1e-12
+    @test v_planar[end] < 16.0
+end
+
 @testset "Planar WLTC: distance and standstill" begin
     run = _PL.PlanarWLTCTransient()
     @test string(run.sol.retcode) == "Success"

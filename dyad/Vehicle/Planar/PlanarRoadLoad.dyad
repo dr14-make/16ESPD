@@ -66,3 +66,54 @@ metadata {
   }
 }
 end
+
+"""
+A planar chassis and the longitudinal car's body coast down side by side from the same speed.
+
+The chassis heads `phi0` off the world x axis, so the adapter has to sense the speed and apply
+the force in the chassis frame: the chassis must slow along its heading exactly as the
+`VehicleBody` of the same mass slows along its line, and pick up no sideways speed.
+"""
+test component TestPlanarRoadLoad
+  "Initial speed along the heading"
+  parameter v0::Velocity = 30.0
+  "Heading of the chassis from the world x axis"
+  parameter phi0::Angle = 0.5
+  "Mass of both cars (derived)"
+  parameter m::Dyad.Mass = 1500.0
+  world = MultibodyComponents.PlanarMechanics.World(g = 0.0) {^world}
+  body = MultibodyComponents.PlanarMechanics.Body(m = m, I = 2500.0, render = false) {^body}
+  vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {^vel}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  "The longitudinal car's body, coasting on the same law"
+  reference = VehicleSystemsComponents.Vehicle.VehicleBody(m = m) {^reference}
+relations
+  connect(body.frame_a, roadload.chassis, vel.frame_a) {^w1}
+  connect(flat.y, roadload.grade, reference.grade) {^w2}
+  initial body.r = [0, 0]
+  initial body.v = [v0 * cos(phi0), v0 * sin(phi0)]
+  initial body.phi = phi0
+  initial body.w = 0.0
+  initial reference.mass.s = 0.0
+  initial reference.mass.v = v0
+metadata {
+  "_links": {
+    "world": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 50, "x2": 150, "y2": 150}}}},
+    "body": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 200, "x2": 550, "y2": 300}}}},
+    "vel": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 50, "x2": 750, "y2": 150}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 200, "x2": 400, "y2": 300}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 300, "x2": 150, "y2": 400}}}},
+    "reference": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 400, "x2": 400, "y2": 500}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 100}], "E": 3}], "junctions": [{"x": 500, "y": 250}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 200, "y": 250}], "E": 2}, {"S": -1, "M": [{"x": 200, "y": 450}], "E": 3}], "junctions": [{"x": 200, "y": 350}]}}
+  }
+}
+end
+
+analysis PlanarRoadLoadTransient
+  extends TransientAnalysis(stop = 60.0, alg = ODEAlg.Rodas5P())
+  parameter v0::Velocity = 30.0
+  parameter phi0::Angle = 0.5
+  model = VehicleSystemsComponents.Vehicle.Planar.TestPlanarRoadLoad(v0 = v0, phi0 = phi0)
+end
