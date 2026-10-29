@@ -36,6 +36,7 @@ The common ones are API misuse around generated code, not physics; solver failur
 | `ArgumentError: System S: variable p does not exist` | Passing a parameter the analysis does not declare | Add the parameter to the analysis and forward it to the model (house rule: scenario parameters are forwarded, never nested-overridden) |
 | `MethodError: no method matching XTransientSpec(; p=...)` | Same, through the Spec constructor | Same |
 | `Package GR not found` (from Plots) | The Dyad 3.5 distribution ships Plots with PlotlyBase and PlotlyKaleido, not GR | `setup(backend = :plotly)`; see `notebooks.md` |
+| `HybridSystemNotSupportedException` from `mtkcompile` | A model with clocked parts compiled by hand | Take the compiled system from an analysis result, `r.sys`, which the analysis builds with the clock handling |
 | `Package X not found in current path` | `using OrdinaryDiffEq`, `NonlinearSolve`, `SciMLBase` etc. not in the project | Use what the project has (`OrdinaryDiffEqDefault`, `DyadInterface`); add a package only when the task needs it |
 | `ArgumentError: The name keyword must be provided` | Calling a component constructor bare | `@named sys = Lib.Comp()` |
 | `overrides: [c] don't match names found in model` | Nested override with the wrong spelling | Constructor overrides use `sub__param` (`discretepidstandard__Ts = 0.1`), not `sub = (param = ...)` |

@@ -82,7 +82,9 @@ Each component reaches step 6 before the next one starts.
    r.sol.retcode, r.sol[m.body.mass.v][end], r.sol(1.0, idxs = m.wheel.kappa)
    r.sol.ps[m.battery.R0]                                        # a parameter's value
    ```
-   The result carries `spec`, `sol`, `sys`, `u0` and `p`.
+   The result carries `spec`, `sol`, `sys`, `u0` and `p`. A `test component` has no analysis;
+   run its cases with their assertions by including `generated/test_internals.jl` and then its
+   `generated/<Sub>/<Name>_test.jl`.
    Vary scenarios through analysis keywords in the session; edit a default only when the model's
    own value is wrong. Prove a fix (initial value, guess, solver option) in the session before
    writing it into the `.dyad`.
@@ -131,6 +133,12 @@ Each component reaches step 6 before the next one starts.
   sum over `saveat` aliases with the switching frequency.
 - **`rm` prompts on this machine** and does nothing without a TTY; delete files you created with
   `\rm -f`.
+
+## Refactors
+
+A change whose bar is "the numbers do not move" — extracting a part, renaming, regrouping: follow
+[`reference/refactor.md`](reference/refactor.md) before the first edit; its baseline has to be
+captured from the old code.
 
 ## Notebooks
 
