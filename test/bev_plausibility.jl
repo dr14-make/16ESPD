@@ -36,7 +36,7 @@ function _bev_bill(run)
         R0 = e(m.E_R0), aux = e(m.E_aux), conv = e(m.E_conv), motor = e(m.E_motor),
         shaft_out = e(m.E_shaft_out), shaft_in = e(m.E_shaft_in), road = e(m.E_road),
         brake = e(m.E_brake), tire = e(m.E_tire), dkin = e(m.E_kin) - s[m.E_kin][1])
-    return (; km = e(m.sensors.x) / 1000, E)
+    return (; km = e(m.speed.px) / 1000, E)
 end
 
 _bev_links(E) = E.road + E.brake + E.tire + E.motor + E.conv + E.R0 + E.aux + E.dkin
@@ -67,13 +67,13 @@ const _bev_run = _BEV_PL.PlanarBEVWLTCTransient()
     s = run.sol
     @test string(s.retcode) == "Success"
     @test s.t[end] == 1800.0
-    v_kmh = 3.6 .* s[m.sensors.vx]
+    v_kmh = 3.6 .* s[m.speed.v_x]
     ref = s[m.trace.y]
     # Measured 1.63 km/h at worst, inside WLTP's ±2 km/h everywhere.
     @test maximum(abs, v_kmh .- ref) < 2.0
     # Measured 2.6e-5 of the trace.
-    @test s[m.sensors.x][end] / 1000 ≈ _WLTC_KM rtol = 5e-4
-    @test maximum(abs, s[m.sensors.y]) < 1e-6
+    @test s[m.speed.px][end] / 1000 ≈ _WLTC_KM rtol = 5e-4
+    @test maximum(abs, s[m.speed.py]) < 1e-6
     # The machine's braking share fades out before standstill, so the car never reverses and the
     # friction brakes hold it at every stop.
     @test minimum(v_kmh) > -1e-3
@@ -150,10 +150,10 @@ end
     @test string(bill.sol.retcode) == "Success"
     ts = range(0, 1800, length = 3601)
     ml, m4, mb = symbolic_container(lib), symbolic_container(step4), symbolic_container(bill)
-    v_lib = lib.sol(ts, idxs = ml.sensors.vx).u
+    v_lib = lib.sol(ts, idxs = ml.speed.v_x).u
     # The meters add states, which moves the solver's steps by a hair (measured 3.6e-5 m/s).
-    @test step4.sol(ts, idxs = m4.sensors.vx).u ≈ v_lib atol = 1e-4
-    @test bill.sol(ts, idxs = mb.sensors.vx).u ≈ v_lib atol = 1e-9
+    @test step4.sol(ts, idxs = m4.speed.v_x).u ≈ v_lib atol = 1e-4
+    @test bill.sol(ts, idxs = mb.speed.v_x).u ≈ v_lib atol = 1e-9
     (; km, E) = _bev_bill(bill)
     @test E.dc / 3600 / km ≈ 131.24 atol = 0.05
     @test abs(_bev_links(E) - E.cells) / E.cells < 1e-6

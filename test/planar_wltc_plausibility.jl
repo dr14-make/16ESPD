@@ -14,8 +14,8 @@ const _radius = 0.31
 function _wltc_traces(run)
     m = symbolic_container(run)
     s = run.sol
-    return (; t = s.t, ref = s[m.trace.y], v_kmh = 3.6 .* s[m.sensors.vx], x = s[m.sensors.x],
-        y = s[m.sensors.y], drive = s[m.to_drive.y], brake = s[m.to_brake.y])
+    return (; t = s.t, ref = s[m.trace.y], v_kmh = 3.6 .* s[m.speed.v_x], x = s[m.speed.px],
+        y = s[m.speed.py], drive = s[m.to_drive.y], brake = s[m.to_brake.y])
 end
 
 _trapz(t, y) = sum((y[1:end-1] .+ y[2:end]) ./ 2 .* diff(t))
@@ -45,7 +45,7 @@ end
         m = symbolic_container(run)
         s = run.sol
         @test string(s.retcode) == "Success"
-        v = s[m.sensors.vx][end]
+        v = s[m.speed.v_x][end]
         @test 3.6 * v ≈ v_set atol = 0.01
         # The adapter applies the longitudinal law at the sensed speed ...
         @test s[m.roadload.F][end] ≈ _road_load(v) rtol = 1e-9

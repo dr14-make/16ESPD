@@ -93,10 +93,10 @@ begin
             shaft_in = kWh(m.E_shaft_in), road = kWh(m.E_road), brake = kWh(m.E_brake),
             tire = kWh(m.E_tire), dkin = (s[m.E_kin][end] - s[m.E_kin][1]) / 3.6e6)
         phases = map(PHASES) do (name, a, b)
-            dkm = (s(b, idxs = m.sensors.x) - s(a, idxs = m.sensors.x)) / 1000
+            dkm = (s(b, idxs = m.speed.px) - s(a, idxs = m.speed.px)) / 1000
             (; name, km = dkm, dc = (s(b, idxs = m.E_dc) - s(a, idxs = m.E_dc)) / 3.6e6)
         end
-        return (; r, m, s, E, phases, km = s[m.sensors.x][end] / 1000)
+        return (; r, m, s, E, phases, km = s[m.speed.px][end] / 1000)
     end
 end
 
@@ -122,7 +122,7 @@ show_dyad("TorqueSplit")
 tracking_plot = let
     (; s, m) = bev
     ts = 0:0.5:1800
-    v = 3.6 .* s(ts, idxs = m.sensors.vx).u
+    v = 3.6 .* s(ts, idxs = m.speed.v_x).u
     ref = s(ts, idxs = m.trace.y).u
     P = s(ts, idxs = m.P_dc).u ./ 1e3
     p = plot(layout = (2, 1), size = (960, 560), link = :x)
@@ -138,7 +138,7 @@ end
 # ╔═╡ 8bf2b979-4cd2-4c05-b68b-d5b78c36ed0a
 let
     (; s, m, km) = bev
-    v = 3.6 .* s[m.sensors.vx]
+    v = 3.6 .* s[m.speed.v_x]
     md"""
     Distance **$(round(km; digits = 3)) km** against the trace's 23.266 km; worst speed error
     **$(round(maximum(abs, v .- s[m.trace.y]); digits = 2)) km/h**; battery power from

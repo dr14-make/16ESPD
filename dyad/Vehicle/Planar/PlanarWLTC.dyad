@@ -51,7 +51,7 @@ test component PlanarWLTC
   no_brake = BlockComponents.Sources.Constant(k = 0.0) {^no_brake}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
-  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+  speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {^speed}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
 relations
   if cycle
@@ -59,7 +59,7 @@ relations
   else
     connect(cruise.y, driver.u_s) {^w2}
   end
-  connect(sensors.vx, kmh.u) {^w4}
+  connect(speed.v_x, kmh.u) {^w4}
   connect(kmh.y, driver.u_m) {^w5}
   connect(no_ff.y, driver.u_ff) {^w6}
   connect(driver.y, to_drive.u, brake_part.u) {^w7}
@@ -72,16 +72,7 @@ relations
   connect(car.steering, straight.spline) {^w11}
   connect(no_brake.y, car.tau_rl, car.tau_rr) {^w12}
   connect(flat.y, roadload.grade) {^w13}
-  connect(car.chassis, roadload.chassis, sensors.chassis) {^w14}
-  connect(car.steering, sensors.steering) {^w15}
-  connect(car.wheel_fl, sensors.wheel_fl) {^w16}
-  connect(car.wheel_fr, sensors.wheel_fr) {^w17}
-  connect(car.wheel_rl, sensors.wheel_rl) {^w18}
-  connect(car.wheel_rr, sensors.wheel_rr) {^w19}
-  connect(car.spin_fl, sensors.spin_fl) {^w20}
-  connect(car.spin_fr, sensors.spin_fr) {^w21}
-  connect(car.spin_rl, sensors.spin_rl) {^w22}
-  connect(car.spin_rr, sensors.spin_rr) {^w23}
+  connect(car.chassis, roadload.chassis, speed.frame_a) {^w14}
   initial car.body.r = [0, 0]
   initial car.body.v = [v0, 0]
   initial car.body.phi = 0.0
@@ -115,7 +106,7 @@ metadata {
     "no_brake": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 600, "x2": 750, "y2": 700}}}},
     "flat": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 600, "x2": 1300, "y2": 700}}}},
     "car": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 0, "x2": 1050, "y2": 200}}}},
-    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 400, "x2": 1050, "y2": 600}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 450, "x2": 980, "y2": 530}}}},
     "roadload": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 400, "x2": 1300, "y2": 500}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
@@ -132,16 +123,7 @@ metadata {
     "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 800, "y": 650}]}},
     "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 1100, "y": 300}]}},
-    "w15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 1100, "y": 300}]}}
   }
 }
 end
