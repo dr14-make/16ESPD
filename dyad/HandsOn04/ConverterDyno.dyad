@@ -1,0 +1,66 @@
+"""
+Hands-on 04 step 02 bench: the machine with its field input behind the converter, on a 350 V
+supply. The converter is asked for 500 A and gives its 332.2 A limit; the dyno holds standstill
+for 1 s, ramps to 10 000 rpm over 100 s and holds there. The shaft gives 320 N.m up to the base
+speed of 3283 rpm, 110 kW, and above it a torque falling as 1/w: 104 N.m at 10 000 rpm.
+"""
+component ConverterDyno
+  "Supply voltage at the converter's input"
+  parameter V::Voltage = 350.0
+  "Current asked of the converter"
+  parameter I_ref::Current = 500.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 0.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 10000.0
+  voltage = BlockComponents.Sources.Constant(k = V) {^voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  current = BlockComponents.Sources.Constant(k = I_ref) {^current}
+  converter = Converter() {^converter}
+  machine = DCMachine(field_weakening = true) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 100.0) {^speed}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+relations
+  initial dyno.phi = 0
+  initial converter.i_out = 0
+  connect(voltage.y, supply.V) {^id1}
+  connect(supply.p, converter.p_in) {^id2}
+  connect(converter.p_out, machine.p) {^id3}
+  connect(machine.n, converter.n) {^id4}
+  connect(supply.n, converter.n) {^id5}
+  connect(converter.n, ground.g) {^id6}
+  connect(current.y, converter.i_ref) {^id7}
+  connect(converter.field, machine.field) {^id8}
+  connect(speed.y, dyno.w_ref) {^id9}
+  connect(machine.spline, dyno.spline) {^id10}
+  connect(machine.support, mounts.spline) {^id11}
+  connect(dyno.support, mounts.spline) {^id12}
+metadata {
+  "_links": {
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 100, "x2": 150, "y2": 200}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 250, "x2": 300, "y2": 350, "rot": 90}}}},
+    "current": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 50, "x2": 500, "y2": 150}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 250, "x2": 550, "y2": 450}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 250, "x2": 900, "y2": 450}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 410, "y1": 560, "x2": 490, "y2": 640}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 300, "x2": 1300, "y2": 400}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 1000, "y1": 300, "x2": 1100, "y2": 400, "rot": 180}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 600, "x2": 850, "y2": 700}}}}
+  }
+}
+end
+
+analysis ConverterDynoTransient
+  extends TransientAnalysis(stop = 102.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [1.0, 101.0])
+  "Supply voltage at the converter's input"
+  parameter V::Voltage = 350.0
+  "Current asked of the converter"
+  parameter I_ref::Current = 500.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 0.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 10000.0
+  model = ConverterDyno(V = V, I_ref = I_ref, rpm_start = rpm_start, rpm_end = rpm_end)
+end

@@ -189,6 +189,9 @@ interleaved. Figures the models can produce are regenerated from them, not copie
 ## Known limits
 
 - The machine is DC-equivalent; saliency, reluctance torque and dq dynamics are out (extra pack).
+- Field weakening is a flux input on the machine (`FieldEMF`), set by the average converter where
+  its duty reaches the limit. It costs nothing: a PMSM's d-axis copper loss is not modeled. The
+  converter imposes its current, so it holds its voltage limit only through that field.
 - No thermal model of motor, inverter or battery; efficiencies are at warm operating temperature.
 - Battery E is constant: SoC does not move the open-circuit voltage until the extra pack's cell.
 - WLTC is gentle; the blending result on WLTC is mostly fade, so the hard stop carries that lesson.

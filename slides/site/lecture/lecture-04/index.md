@@ -18,9 +18,10 @@ From a DC-equivalent machine on a test bench to a Leaf-class car on the WLTC and
 
 Every number in an expected result is a test expectation or a measured run of the reference model.
 
-<!-- Steps 02 and 04–06 land with their own issues under dr14-make/16ESPD#99. -->
+<!-- Steps 04–06 land with their own issues under dr14-make/16ESPD#99. -->
 
 - [01 · The machine: T = KΦI, E = KΦω](#step-01)
+- [02 · The converter: V_out = d·V_in, and field weakening](#step-02)
 - [03 · The battery: V = E − I·R](#step-03)
 
 ## 02 The DC machine
@@ -100,7 +101,7 @@ New component `DCMachineDyno` in `MyCar`:
 
 ::: warning Use these names
 
-`p`, `n`, `spline`, `support`, `i`, `E`, `tau_em`, `tau`, `w`, `k`, `R`, `P_cu` and the other `P_` losses are the names the course library's `Vehicle.Electric.DCMachine` uses. Keep them, and in step 02 the converter, and in step 04 the car, take either machine.
+`p`, `n`, `spline`, `support`, `i`, `E`, `tau_em`, `tau`, `w`, `k`, `R`, `P_cu` and the other `P_` losses are the names the course library's `Vehicle.Electric.DCMachine` uses. Keep them: step 02 gives this machine a field input and drives it from the converter, and in step 04 the car takes either machine.
 
 :::
 
@@ -324,6 +325,505 @@ end
 
 ---
 
+## 04 The envelope
+
+### 02 · The converter: V_out = d·V_in, and field weakening {#step-02}
+
+Between the pack and the machine sits the inverter. Averaged over a switching period it is one number, the duty *d*: it gives the machine *d* times the pack voltage and draws *d* times the machine current from the pack. Give it a current limit and a voltage limit, drive step 01's machine through it, and sweep the dyno from standstill to 10 000 rpm: the shaft gives the Leaf's **320 N·m up to 3283 rpm**, and above that, where the voltage runs out, a torque that falls as 1/ω at **110 kW**.
+
+#### Given
+
+The average converter, with its two limits:
+
+$$
+v_{out} = d\, v_{in} \qquad i_{in} = d\, i_{out} + \frac{P_{loss}}{v_{in}} \qquad |i_{out}| \le I_{max} \qquad |d| \le d_{max}
+$$
+
+$$
+P_{loss} = \underbrace{V_{on}\,|i_{out}|}_{\text{conduction}} + \underbrace{f_s\, t_{sw}\, v_{in}\,|i_{out}|}_{\text{switching}}
+$$
+
+Without its losses the converter is a DC transformer: *v*<sub>in</sub>·*i*<sub>in</sub> = *v*<sub>out</sub>·*i*<sub>out</sub>. With them, *P*<sub>in</sub> = *P*<sub>out</sub> + *P*<sub>loss</sub>, in either direction. The machine gets one new input, its **field**: the flux Φ as a fraction of full, so that
+
+$$
+E = \text{field}\cdot K\Phi\,\omega \qquad T_{em} = \text{field}\cdot K\Phi\, i
+$$
+
+| Parameter | Value | Where it comes from |
+| --- | --- | --- |
+| *I*<sub>max</sub> | 332.2 A | the current at which step 01's machine gives 320 N·m at base speed |
+| *d*<sub>max</sub> | 1 | the inverter cannot give the machine more than the pack's voltage |
+| *T*<sub>i</sub> | 1 ms | how fast the inverter's current loop follows its command |
+| *V*<sub>on</sub> | 1.2 V | two devices carry the current at any instant, 0.6 V each (deck: power electronics) |
+| *f*<sub>s</sub>, *t*<sub>sw</sub> | 5 kHz, 1 µs | ORNL ran the Leaf inverter at 5 kHz; 1 µs edges land the efficiency in ORNL's 96–99 % |
+
+::: info Why the torque falls as 1/ω
+
+Step 01 showed the trouble: on a fixed 350 V the machine's torque falls on a steep line and reaches zero at *V*/*K*Φ = 3447 rpm, where the back-EMF has caught up with the supply. The Leaf's motor runs to about 10 000 rpm.
+
+The converter's current limit caps the torque: 332.2 A is 322.1 N·m in the air gap, 320 N·m at the shaft. To drive that current the machine needs *v* = *K*Φ·ω + *R*·*I*<sub>max</sub>, and the converter lowers its duty to give exactly that. As the speed rises the duty rises with the back-EMF, until at **3283 rpm** it reaches 1: the converter is giving all of the pack's 350 V. That is the **base speed**, the corner of the envelope, and the voltage has run out.
+
+Faster than that, the only way to keep the current flowing is to lower *E* = *K*Φ·ω, and the only part of it left to lower is Φ: **field weakening**, the deck's second way to control a DC motor. Hold the voltage at 350 V and the current at 332.2 A, and *K*Φ·ω must stay at 350 − 16.6 = 333.4 V. So Φ falls as 1/ω, the torque *K*Φ·*I* falls as 1/ω with it, and the power *E*·*I* = 333.4 V × 332.2 A = **110.75 kW** stays constant: the hyperbola on every EV's spec sheet. A permanent-magnet motor's flux comes from its magnets and cannot be turned down. Its inverter weakens it instead, with a current that opposes the magnets (the d-axis current of field-oriented control), and does exactly this.
+
+:::
+
+::: info How the converter decides
+
+`T_i * der(i_out) = i_cmd - i_out` is the current loop: the output current follows the command, clipped to ±*I*<sub>max</sub>, within a few milliseconds. The duty is then whatever the machine needs to carry that current. The last relation is an either-or: **either the field is full, or the duty is at its limit**, which is `min(1 - field, d_max - abs(d)) = 0`. Below base speed the voltage has room, so the field stays at 1. Above it the duty sits at 1, and the field goes wherever it must for the current to keep flowing. It is written with the corner of `min` rounded by `eps` = 10⁻⁴, so the solver meets no kink at base speed; the rounding costs 0.02 N·m at the corner and nothing measurable elsewhere.
+
+:::
+
+::: details Details: the checkpoint numbers worked through
+
+- **Below base speed:** *K*Φ = 0.9697 N·m/A, so 332.2 A is *T*<sub>em</sub> = 322.1 N·m. At standstill *v*<sub>out</sub> = 0.05 × 332.2 = 16.6 V, so *d* = 16.6/350 = **0.047**. At 3283 rpm the shaft losses take 2.1 N·m: **320.0 N·m**, **110.0 kW**.
+- **Base speed:** *K*Φ·ω + *R*·*I*<sub>max</sub> = 350 V gives ω = 333.4/0.9697 = 343.8 rad/s = **3283 rpm**.
+- **At 10 000 rpm:** ω = 1047.2 rad/s, field = 333.4/(0.9697 × 1047.2) = **0.328**, *T*<sub>em</sub> = 110 752/1047.2 = 105.8 N·m. The shaft losses take 2.0 N·m: **103.8 N·m**, **108.7 kW**. Friction, iron and windage grow with speed, so the shaft power slips from 110.0 to 108.7 kW while *E*·*I* stays at 110.75 kW.
+- **The converter:** *P*<sub>out</sub> = 350 × 332.2 = 116.27 kW; *P*<sub>loss</sub> = 332.2 × (1.2 + 5000 × 10⁻⁶ × 350) = 332.2 × 2.95 = 0.98 kW; *P*<sub>in</sub> = **117.25 kW**, and the converter is 350/352.95 = **99.2 %** efficient. Machine and converter together: 110.0/117.2 = **93.8 %** at the corner.
+
+:::
+
+#### Parts
+
+New component `FieldEMF` in `MyCar`, and a new version of your `DCMachine`: paste the code below.
+
+New component `Converter` in `MyCar`: paste the code below.
+
+New component `ConverterDyno` in `MyCar`:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `V` | parameter `Voltage` | `350.0`: the supply voltage |
+| `I_ref` | parameter `Current` | `500.0`: the current asked of the converter, more than it gives |
+| `rpm_start` | parameter `Real` | `0.0`: dyno speed before the ramp |
+| `rpm_end` | parameter `Real` | `10000.0`: dyno speed after the ramp |
+| `voltage` | BlockComponents › Sources › Constant | `k = V` |
+| `supply` | ElectricalComponents › Analog › Sources › VoltageSource | — |
+| `current` | BlockComponents › Sources › Constant | `k = I_ref` |
+| `converter` | your `Converter` | defaults |
+| `machine` | your `DCMachine` | `field_weakening = true` |
+| `ground` | ElectricalComponents › Analog › Basic › Ground | — |
+| `speed` | BlockComponents › Sources › Ramp | `height = (rpm_end - rpm_start) * pi / 30.0`, `offset = rpm_start * pi / 30.0`, `start_time = 1.0`, `duration = 100.0` |
+| `dyno` | RotationalComponents › Sources › VelocitySource | — |
+| `mounts` | RotationalComponents › Components › Fixed | — |
+
+:::: info Given parts: the field and the current command
+
+**`FieldEMF`** (inside your machine, as `emf`): the standard library's `RotationalEMF` with one more input, `field`. Its equations are `RotationalEMF`'s with *k* replaced by `field * k`, and it has the same pins, splines and names, so it swaps in without touching a wire. With `field = 1` it is the element you had.
+
+**`Constant`** (`current`): the current command into the converter's `i_ref`, in amperes; positive drives, negative brakes. Asking for 500 A asks for more than the converter will give, so every point of the sweep is a point of the envelope.
+
+The supply, the dyno and the mounts are step 01's.
+
+::::
+
+::: warning Use these names
+
+`p_in`, `p_out`, `n`, `i_ref`, `field`, `d`, `v_in`, `i_in`, `v_out`, `i_out`, `P_in`, `P_out` and `P_loss` are the names the course library's `Vehicle.Electric.Converter` uses, and `field_weakening` and `field` the names its `DCMachine` uses. Keep them, and in step 04 the car takes either converter and either machine.
+
+:::
+
+#### Do this
+
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `FieldEMF`. Toggle to code (⇄), select everything, paste the block below and save.
+
+   ::: code-group
+
+   ```txt [FieldEMF]
+   component FieldEMF
+     "Positive electrical pin"
+     p = Pin() {^p}
+     "Negative electrical pin"
+     n = Pin() {^n}
+     "Rotor spline"
+     rotor = Spline() {^rotor}
+     "Housing (support) of the emf shaft"
+     housing = Spline() {^housing}
+     "Flux as a fraction of full flux, 1 for full"
+     field = RealInput() {^field}
+     "Torque and back-EMF constant KΦ at full flux"
+     parameter k::ElectricalTorqueConstant
+     "Voltage drop between the two pins"
+     variable v::Voltage
+     "Current flowing from positive to negative pin"
+     variable i::Current
+     "Angle of the rotor with respect to the housing"
+     variable phi::Angle
+     "Angular velocity of the rotor relative to the housing"
+     variable w::AngularVelocity
+     "Torque on the rotor"
+     variable tau::Torque
+   relations
+     v = p.v - n.v
+     0 = p.i + n.i
+     i = p.i
+     phi = rotor.phi - housing.phi
+     w = der(phi)
+     v = field * k * w
+     tau = -field * k * i
+     tau = rotor.tau
+     0 = housing.tau + rotor.tau
+   metadata {
+     "Dyad": {"icons": {"default": "dyad://ElectricalComponents/RotationalEMF.svg"}},
+     "_links": {
+       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 450, "y1": -50, "x2": 550, "y2": 50}}}},
+       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+       "rotor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+       "housing": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+       "field": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 90}}}}
+     }
+   }
+   end
+   ```
+
+   :::
+
+2. <Badge type="warning" text="Change" /> Open your `DCMachine`, toggle to code, select everything and paste the block below over it.
+
+   ::: code-group
+
+   ```txt [DCMachine]
+   component DCMachine
+     extends ElectricalComponents.Analog.Interfaces.TwoPin
+     "Rotor shaft"
+     spline = Spline() {^spline}
+     "Housing"
+     support = Spline() {^support}
+     "Flux as a fraction of full flux; present only with field_weakening = true"
+     field = RealInput() if field_weakening {^field}
+     resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
+     inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
+     emf = FieldEMF(k = k) {^emf}
+     rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
+     friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
+     iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
+     windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
+     constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
+     "Expose the field input; off runs at full flux"
+     structural parameter field_weakening::Boolean = false
+     "Peak shaft torque, Leaf ZE1"
+     parameter T_max::Torque = 320.0
+     "Base speed, 3283 rpm"
+     parameter w_base::AngularVelocity = 3283.0 * pi / 30.0
+     "Supply voltage at which the machine reaches base speed at full torque"
+     parameter V_nom::Voltage = 350.0
+     "Armature resistance"
+     parameter R::Resistance = 0.05
+     "Armature inductance, L/R = 10 ms"
+     parameter L::Inductance = 0.5e-3
+     "Rotor inertia"
+     parameter J::Inertia = 0.05
+     "Friction torque T_f; loss T_f w"
+     parameter T_f::Torque = 0.5
+     "Iron loss coefficient K_i; loss K_i w"
+     parameter K_i::Torque = 1.0
+     "Windage coefficient k_w; loss k_w w^3, 300 W at 10100 rpm [N.m.s2]"
+     parameter k_w::Real = 300.0 / (10100.0 * pi / 30.0) ^ 3
+     "Constant loss C"
+     parameter C::Power = 200.0
+     "Speed below which the speed-independent loss torques fade to zero"
+     parameter w_reg::AngularVelocity = 10.0
+     "Torque the losses take at base speed"
+     parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
+     "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
+     parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+     "Armature current, into p"
+     variable i::Current
+     "Back-EMF, E = k w"
+     variable E::Voltage
+     "Electromagnetic torque, tau_em = k i"
+     variable tau_em::Torque
+     "Shaft speed relative to the housing"
+     variable w::AngularVelocity
+     "Torque delivered at the shaft"
+     variable tau::Torque
+     "Electrical power into the terminals"
+     variable P_elec::Power
+     "Mechanical power out of the shaft"
+     variable P_mech::Power
+     "Copper loss, R i^2"
+     variable P_cu::Power
+     "Friction loss"
+     variable P_fric::Power
+     "Iron loss"
+     variable P_iron::Power
+     "Windage loss"
+     variable P_wind::Power
+     "Constant loss"
+     variable P_const::Power
+     "Sum of the losses"
+     variable P_loss::Power
+   relations
+     connect(p, resistor.p) {^id1}
+     connect(resistor.n, inductor.p) {^id2}
+     connect(inductor.n, emf.p) {^id3}
+     connect(emf.n, n) {^id4}
+     connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
+     connect(rotor.spline_b, spline) {^id6}
+     connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
+     if field_weakening
+       connect(field, emf.field) {^id8}
+     else
+       emf.field = 1.0
+     end
+     i = p.i
+     E = emf.v
+     tau_em = -emf.tau
+     w = emf.w
+     tau = -spline.tau
+     P_elec = v * i
+     P_mech = tau * w
+     P_cu = resistor.v * resistor.i
+     P_fric = -friction.tau * w
+     P_iron = -iron.tau * w
+     P_wind = -windage.tau * w
+     P_const = -constant_loss.tau * w
+     P_loss = P_cu + P_fric + P_iron + P_wind + P_const
+   metadata {
+     "_links": {
+       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+       "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
+       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}},
+       "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
+     }
+   }
+   end
+   ```
+
+   :::
+
+   Four things changed. `emf` is now your `FieldEMF`. The structural parameter `field_weakening` decides whether the machine has a `field` input: the line `field = RealInput() if field_weakening` creates it only when `field_weakening` is true. The `if` block in `relations` wires that input to the EMF, or else holds the field at 1. And the metadata places `field` on the machine's left side. Left at its default, `false`, this is step 01's machine: run **DCMachineDynoTransient** again and it gives the same 320 N·m and −304 N·m.
+
+3. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Converter`. Toggle to code, select everything, paste the block below and save.
+
+   ::: code-group
+
+   ```txt [Converter]
+   """
+   The average converter: one duty ratio between the DC link and the machine, with a current
+   limit and a voltage limit. Where the voltage runs out, it weakens the machine's field.
+   """
+   component Converter
+     "DC link, positive rail: the battery side"
+     p_in = Pin() {^p_in}
+     "Output, positive rail: the machine side"
+     p_out = Pin() {^p_out}
+     "Negative rail, common to input and output"
+     n = Pin() {^n}
+     "Output current command, positive motoring"
+     i_ref = RealInput() {^i_ref}
+     "Field command to the machine: flux as a fraction of full"
+     field = RealOutput() {^field}
+     "Output current limit, the 332.2 A at which the machine gives 320 N.m"
+     parameter I_max::Current = 332.2
+     "Largest duty: the voltage limit as a fraction of the input"
+     parameter d_max::Real = 1.0
+     "Current-loop time constant"
+     parameter T_i::Time = 1.0e-3
+     "Conduction drop of the two devices that carry the current, 0.6 V each"
+     parameter V_on::Voltage = 1.2
+     "Switching frequency"
+     parameter f_s::Frequency = 5.0e3
+     "Duration of each switching edge"
+     parameter t_sw::Time = 1.0e-6
+     "Rounding of the corner of min(1 - field, d_max - |d|)"
+     parameter eps::Real = 1.0e-4
+     "Input voltage, the DC link"
+     variable v_in::Voltage
+     "Input current, drawn from the DC link"
+     variable i_in::Current
+     "Output voltage, across the machine"
+     variable v_out::Voltage
+     "Output current, into the machine"
+     variable i_out::Current
+     "Duty ratio, v_out / v_in"
+     variable d::Real
+     "Current command after the limit"
+     variable i_cmd::Current
+     "Power drawn from the DC link"
+     variable P_in::Power
+     "Power delivered to the machine"
+     variable P_out::Power
+     "Conduction loss"
+     variable P_cond::Power
+     "Switching loss"
+     variable P_sw::Power
+     "Sum of the losses"
+     variable P_loss::Power
+   relations
+     v_in = p_in.v - n.v
+     v_out = p_out.v - n.v
+     i_in = p_in.i
+     i_out = -p_out.i
+     p_in.i + p_out.i + n.i = 0
+     v_out = d * v_in
+     i_in = d * i_out + P_loss / v_in
+     i_cmd = max(-I_max, min(I_max, i_ref))
+     T_i * der(i_out) = i_cmd - i_out
+     (1 - field) + (d_max - abs(d)) - sqrt(((1 - field) - (d_max - abs(d))) ^ 2 + eps ^ 2) = 0
+     P_in = v_in * i_in
+     P_out = v_out * i_out
+     P_cond = V_on * abs(i_out)
+     P_sw = f_s * t_sw * v_in * abs(i_out)
+     P_loss = P_cond + P_sw
+   metadata {
+     "_links": {
+       "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+       "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+       "i_ref": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+       "field": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+     }
+   }
+   end
+   ```
+
+   :::
+
+   The three pins share one negative rail, `n`, as in the deck's chopper: the pack sits between `p_in` and `n`, the machine between `p_out` and `n`. A pin's current counts positive *into* the component, so `i_in = p_in.i` is drawn from the pack and `i_out = -p_out.i` is pushed into the machine, and the three currents sum to zero. The next two lines are the converter's equations; `P_loss / v_in` is the extra input current that pays for the losses. Then the current limit and the current loop, the either-or between field and duty, and the two losses.
+
+4. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `ConverterDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** four times for `V`, `I_ref`, `rpm_start` and `rpm_end`. Place the nine blocks from the table, rename each to its **Name** and set the values in its **Set** column. Once `machine`'s `field_weakening` is `true`, its `field` input appears on its left side.
+5. Wire:
+   - `voltage.y → supply.V`
+   - `supply.p → converter.p_in`
+   - `converter.p_out → machine.p`
+   - `machine.n → converter.n`, `supply.n → converter.n`, and `converter.n → ground.g`
+   - `current.y → converter.i_ref`
+   - `converter.field → machine.field`
+   - `speed.y → dyno.w_ref`
+   - `machine.spline → dyno.spline`
+   - `machine.support → mounts.spline`, and `dyno.support → mounts.spline`
+6. <Badge type="tip" text="New analysis" /> Toggle to code. Add these two lines in the `relations` section, so that the dyno's angle and the current start at zero:
+
+   ```txt
+   initial dyno.phi = 0
+   initial converter.i_out = 0
+   ```
+
+   The converter sets the current now, so the machine's inductor carries `converter.i_out`: step 01's `initial machine.inductor.i = 0` would set the same current twice. Then add the analysis below the component:
+
+   ```txt
+   analysis ConverterDynoTransient
+     extends TransientAnalysis(stop = 102.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [1.0, 101.0])
+     parameter V::Voltage = 350.0
+     parameter I_ref::Current = 500.0
+     parameter rpm_start::Real = 0.0
+     parameter rpm_end::Real = 10000.0
+     model = ConverterDyno(V = V, I_ref = I_ref, rpm_start = rpm_start, rpm_end = rpm_end)
+   end
+   ```
+
+   The dyno holds standstill for a second while the current rises, sweeps to 10 000 rpm in 100 s, and holds again.
+7. Click ▷ **Run Analysis → ConverterDynoTransient** once, then plot the envelope, the shaft power, and the duty against the field:
+
+   ```julia
+   using Plots; plotly()
+   r = MyCar.ConverterDynoTransient();
+   rpm = r.sol[r."machine.w"] .* 30 ./ pi;
+   plot(rpm[21:end], r.sol[r."machine.tau"][21:end]; xlabel = "rpm", ylabel = "N·m", label = "shaft torque")
+   plot(rpm[21:end], r.sol[r."machine.P_mech"][21:end] ./ 1e3; xlabel = "rpm", ylabel = "kW", label = "shaft power")
+   plot(rpm[21:end], [r.sol[r."converter.d"][21:end] r.sol[r."converter.field"][21:end]]; xlabel = "rpm", label = ["duty d" "field"])
+   ```
+
+   Points 1 to 20 are the first second at standstill, so the curves start at point 21, *t* = 1 s.
+8. Check that the power balances, and that the torque is 1/ω above base speed:
+
+   ```julia
+   r.sol[r."converter.P_in"][end], r.sol[r."converter.P_out"][end], r.sol[r."converter.P_loss"][end]
+   r.sol[r."machine.tau_em"][end] * r.sol[r."machine.w"][end]
+   ```
+
+9. Run it on a lower pack voltage, at part load, and braking:
+
+   ```julia
+   r = MyCar.ConverterDynoTransient(V = 300.0);
+   plot(r.sol[r."machine.w"][21:end] .* 30 ./ pi, r.sol[r."machine.P_mech"][21:end] ./ 1e3)
+   r = MyCar.ConverterDynoTransient(I_ref = 150.0);
+   plot(r.sol[r."machine.w"][21:end] .* 30 ./ pi, r.sol[r."machine.tau"][21:end])
+   r = MyCar.ConverterDynoTransient(I_ref = -500.0);
+   plot(r.sol[r."machine.w"][21:end] .* 30 ./ pi, r.sol[r."converter.P_in"][21:end] ./ 1e3)
+   ```
+
+::: tip Expected result
+
+**The envelope:** `converter.i_out` is **332.2 A** from the first few milliseconds to the end: the converter was asked for 500 A and gives its limit. At standstill `converter.d` is **0.047**: 16.6 V is all it takes to push 332.2 A through 0.05 Ω. Up to base speed `converter.field` stays at **1**, the duty rises in a straight line with the back-EMF (**0.60** at 1900 rpm), `machine.tau_em` holds **322.1 N·m**, and the shaft gives **319.1 N·m** at 1900 rpm: the air-gap torque less the losses and the 0.52 N·m the dyno spends accelerating the rotor. Near 95 rpm the shaft torque dips to **300 N·m**: step 01's constant 200 W loss is a torque *C*/ω, 20 N·m there.
+
+**The corner:** the duty reaches **1** at **3283 rpm**, and there the field starts to fall. Held at 3283 rpm (`rpm_start = rpm_end = 3283.0`) the shaft gives **320.0 N·m**, **110.0 kW**.
+
+**Above base speed:** the duty stays at 1, the field falls as 1/ω (**0.66** at 5000 rpm, **0.328** at 10 000 rpm), and so does the torque: **209 N·m** at 5000 rpm, **103.8 N·m** held at 10 000 rpm. `machine.tau_em` × `machine.w` is **110.75 kW** all the way; the shaft power slips from 110.0 to **108.7 kW** as friction, iron loss and windage grow with speed.
+
+**The power:** at the end `converter.P_in` is **117.25 kW**, `converter.P_out` **116.27 kW**, and `converter.P_loss` **0.98 kW**, their difference to the watt, at every instant. The converter is **99.2 %** efficient at 350 V out. Its losses track the current, not the power, so at 1000 rpm and 220 N·m, 113 V out, it is 97.5 %: ORNL measured 96–98 % over most of the Leaf inverter's map, and 99 % at high speed.
+
+**300 V:** the voltage runs out sooner. The corner moves to **2791 rpm** and the power above it drops to 94.1 kW in the air gap, 92 kW at the shaft. A sagging pack does this in step 03.
+
+**150 A:** 145.5 N·m in the air gap up to **3373 rpm**: less current needs less *R*·*i*, so the voltage lasts slightly longer. Above it the power holds at 51.4 kW in the air gap.
+
+**−500 A, braking:** −332.2 A and a negative torque at every speed. Above **3610 rpm** the back-EMF would push more than 350 V into the pack, and the converter weakens the field here too. At 10 000 rpm `converter.P_in` is **−115.3 kW**: power flowing back into the supply. At standstill there is no back-EMF to brake with, so the supply pays the copper loss: **+6.5 kW** in.
+
+Reference: `HandsOn04.FieldEMF`, `HandsOn04.DCMachine`, `HandsOn04.Converter`, `HandsOn04.ConverterDyno`, `HandsOn04.ConverterDynoTransient`; the course library's copies are `Vehicle.Electric.FieldEMF`, `Vehicle.Electric.DCMachine` and `Vehicle.Electric.Converter`.
+
+:::
+
+Commit: **Source Control** → message `Step 02: converter` → **Commit** → **Sync Changes**.
+
+:::: warning Fell behind?
+
+Paste `FieldEMF`, `DCMachine` and `Converter` from steps 1 to 3 of **Do this** above. Then right-click `MyCar` → **Add Component**, name it `ConverterDyno`, toggle to code (⇄) and paste this over its contents.
+
+::: code-group
+
+```txt [ConverterDyno]
+component ConverterDyno
+  "Supply voltage at the converter's input"
+  parameter V::Voltage = 350.0
+  "Current asked of the converter"
+  parameter I_ref::Current = 500.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 0.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 10000.0
+  voltage = BlockComponents.Sources.Constant(k = V)
+  supply = ElectricalComponents.Analog.Sources.VoltageSource()
+  current = BlockComponents.Sources.Constant(k = I_ref)
+  converter = Converter()
+  machine = DCMachine(field_weakening = true)
+  ground = ElectricalComponents.Analog.Basic.Ground()
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 100.0)
+  dyno = RotationalComponents.Sources.VelocitySource()
+  mounts = RotationalComponents.Components.Fixed()
+relations
+  initial dyno.phi = 0
+  initial converter.i_out = 0
+  connect(voltage.y, supply.V)
+  connect(supply.p, converter.p_in)
+  connect(converter.p_out, machine.p)
+  connect(machine.n, converter.n)
+  connect(supply.n, converter.n)
+  connect(converter.n, ground.g)
+  connect(current.y, converter.i_ref)
+  connect(converter.field, machine.field)
+  connect(speed.y, dyno.w_ref)
+  connect(machine.spline, dyno.spline)
+  connect(machine.support, mounts.spline)
+  connect(dyno.support, mounts.spline)
+end
+
+analysis ConverterDynoTransient
+  extends TransientAnalysis(stop = 102.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [1.0, 101.0])
+  parameter V::Voltage = 350.0
+  parameter I_ref::Current = 500.0
+  parameter rpm_start::Real = 0.0
+  parameter rpm_end::Real = 10000.0
+  model = ConverterDyno(V = V, I_ref = I_ref, rpm_start = rpm_start, rpm_end = rpm_end)
+end
+```
+
+:::
+
+::::
+
+---
+
 ## 06 Batteries, simply
 
 ### 03 · The battery: V = E − I·R {#step-03}
@@ -512,4 +1012,4 @@ end
 
 ---
 
-Reference models: `dyad/HandsOn04/` in the course repository; checkpoint tests in `test/machine_plausibility.jl` and `test/battery_plausibility.jl`. Design: `docs/lecture-04-plan.md`.
+Reference models: `dyad/HandsOn04/` in the course repository; checkpoint tests in `test/machine_plausibility.jl`, `test/converter_plausibility.jl` and `test/battery_plausibility.jl`. Design: `docs/lecture-04-plan.md`.

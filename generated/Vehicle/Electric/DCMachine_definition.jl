@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   DCMachine(; name, T_max, w_base, V_nom, R, L, J, T_f, K_i, k_w, C, w_reg, tau_loss_base, k, __overrides)
+   DCMachine(; name, field_weakening, T_max, w_base, V_nom, R, L, J, T_f, K_i, k_w, C, w_reg, tau_loss_base, k, __overrides)
 
 DC-equivalent traction machine: a back-EMF element behind armature resistance and inductance,
 with the deck's speed-dependent losses as parts on the shaft.
@@ -25,6 +25,13 @@ already lives in the resistor, so a measured efficiency map layered on this mach
 twice; the map is something the machine reproduces, not an extra loss. The inverter's losses
 belong to the inverter, which is why the coefficients follow the motor-only map.
 
+The back-EMF element is a `FieldEMF`, the stdlib `RotationalEMF` with its flux as an input.
+With `field_weakening = false`, the default, the machine has no `field` input and runs at full
+flux: `E = k w` and `tau_em = k i`, the fixed-flux machine. With `field_weakening = true` it
+gains the input `field`, the flux as a fraction of full, and `E = field k w`, `tau_em = field k
+i`. Turning the field down above base speed is what lets the back-EMF stay under a fixed supply
+voltage: the converter (`Converter`) drives it.
+
 Defaults are a Nissan Leaf ZE1-class machine. `k` is derived so that at the 350 V pack
 voltage and base speed the shaft delivers the full 320 N.m: the armature then draws 332 A and
 the shaft 110 kW. The loss coefficients are chosen to land the motor-only efficiency near ORNL's
@@ -37,6 +44,7 @@ numbers, method given; (assumed) the course's choice.
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
+| `field_weakening`         | Expose the field input, so that a converter can weaken the flux; off runs at full flux                         | --  |   false |
 | `T_max`         | Peak shaft torque, held from standstill to base speed (Nissan)                         | N.m  |   320.0 |
 | `w_base`         | Base speed, 3283 rpm, where 320 N.m meets 110 kW (Nissan)                         | rad/s  |   3283.0 * pi / 30.0 |
 | `V_nom`         | Supply voltage at which the machine reaches base speed at full torque: the ZE1 pack's 350 V nominal (Nissan)                         | V  |   350.0 |
@@ -57,6 +65,7 @@ numbers, method given; (assumed) the course's choice.
  * `n` - This connector represents an electrical pin with voltage and current as the potential and flow variables, respectively. ([`Pin`](@ref))
  * `spline` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
  * `support` - This connector represents a rotational spline with angle and torque as the potential and flow variables, respectively. ([`Spline`](@ref))
+ * `field` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
 
 ## Variables
 
@@ -77,7 +86,7 @@ numbers, method given; (assumed) the course's choice.
 | `P_const`         | Constant loss                         | W  |
 | `P_loss`         | Sum of the losses                         | W  |
 """
-@component function DCMachine(; name = nothing, var"T_max"=Float64(320.0), var"w_base"=3283.0 * pi / 30.0, var"V_nom"=Float64(350.0), var"R"=0.05, var"L"=0.0005, var"J"=0.05, var"T_f"=0.5, var"K_i"=Float64(1.0), var"k_w"=300.0 / (10100.0 * pi / 30.0) ^ 3, var"C"=Float64(200.0), var"w_reg"=Float64(10.0), var"tau_loss_base"=nothing, var"k"=nothing, __overrides = Dict{String, Any}())
+@component function DCMachine(; name = nothing, var"field_weakening"=false, var"T_max"=Float64(320.0), var"w_base"=3283.0 * pi / 30.0, var"V_nom"=Float64(350.0), var"R"=0.05, var"L"=0.0005, var"J"=0.05, var"T_f"=0.5, var"K_i"=Float64(1.0), var"k_w"=300.0 / (10100.0 * pi / 30.0) ^ 3, var"C"=Float64(200.0), var"w_reg"=Float64(10.0), var"tau_loss_base"=nothing, var"k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -96,6 +105,7 @@ numbers, method given; (assumed) the course's choice.
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "field_weakening") && (field_weakening = pop!(__overrides, "field_weakening"))
   haskey(__overrides, "T_max") && (T_max = pop!(__overrides, "T_max"))
   haskey(__overrides, "w_base") && (w_base = pop!(__overrides, "w_base"))
   haskey(__overrides, "V_nom") && (V_nom = pop!(__overrides, "V_nom"))
@@ -170,6 +180,7 @@ numbers, method given; (assumed) the course's choice.
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
+  append!(__vars, @variables (field(t)::Real), [input = true])
 
   ### Variables (declarations)
   append!(__vars, @variables (v(t)::Real), [description = "Voltage across the component (between pin p and pin n)."])
@@ -245,9 +256,9 @@ numbers, method given; (assumed) the course's choice.
   # Subcomponent inductor of type ElectricalComponents.Analog.Basic.Inductor
   inductor_overrides = __pop_subcomponent_overrides!(__overrides, "inductor")
   push!(__systems, @named inductor = ElectricalComponents.Analog.Basic.Inductor(; L=L, __overrides = inductor_overrides))
-  # Subcomponent emf of type ElectricalComponents.Analog.Basic.RotationalEMF
+  # Subcomponent emf of type VehicleSystemsComponents.Vehicle.Electric.FieldEMF
   emf_overrides = __pop_subcomponent_overrides!(__overrides, "emf")
-  push!(__systems, @named emf = ElectricalComponents.Analog.Basic.RotationalEMF(; k=k, __overrides = emf_overrides))
+  push!(__systems, @named emf = VehicleSystemsComponents.Vehicle.Electric.FieldEMF(; k=k, __overrides = emf_overrides))
   # Subcomponent rotor of type RotationalComponents.Components.Inertia
   rotor_overrides = __pop_subcomponent_overrides!(__overrides, "rotor")
   push!(__systems, @named rotor = RotationalComponents.Components.Inertia(; J=J, __overrides = rotor_overrides))
@@ -310,6 +321,13 @@ numbers, method given; (assumed) the course's choice.
   push!(__eqs, connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline))
   push!(__eqs, connect(rotor.spline_b, spline))
   push!(__eqs, connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support))
+
+  ### Control Structures
+  if field_weakening
+    push!(__eqs, connect(field, emf.field))
+  else
+    push!(__eqs, emf.field ~ 1.0)
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

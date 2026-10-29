@@ -1,0 +1,115 @@
+"""
+Average converter: the traction inverter and its current control, as one duty ratio between the
+DC link and the machine, with a current limit and a voltage limit (deck 7 slides 27-33, averaged
+over a switching period).
+
+    v_out = d v_in        i_in = d i_out + P_loss / v_in
+    T_i di_out/dt = clamp(i_ref, -I_max, I_max) - i_out
+    |d| <= d_max,   field <= 1,   and one of them at its limit
+
+The output current follows the command `i_ref`, clipped to `±I_max`, with the current loop's
+time constant `T_i`. The duty `d` is then whatever the load needs to carry that current, and
+the converter can give at most `d_max` of its input voltage. Where the needed voltage would pass
+that, the converter weakens the field instead: its output `field` (flux as a fraction of full)
+goes to the machine's field input, and the either-or `min(1 - field, d_max - |d|) = 0` holds
+the field at 1 while the voltage has room, and holds `|d|` at `d_max` once it has none. The
+relation is written as that `min` with its corner rounded, `a + b - sqrt((a - b)^2 + eps^2) =
+0`, which is `a b = eps^2 / 4` with both positive: the solver meets no kink at base speed, and
+at the corner each side gives up `eps / 2` (0.02 N.m of torque with the Leaf machine). On a
+machine at full current this is the whole envelope: constant torque up to the speed where the
+voltage runs out (base speed), and above it a field, and so a torque, falling as `1/w` at
+constant power. A field-oriented PMSM drive does the same with its d-axis current.
+
+The current is imposed, so the converter must drive an inductive load that takes it, and the
+voltage limit is held only through `field`: on a load without a field input, `|d|` is not
+limited. Near standstill the field cannot help, so the current loop must be slow enough that
+`R i + L di/dt` stays under the limit there (166 V at the defaults on the Leaf machine against
+350 V).
+
+Each loss is its own term: conduction in the two devices that carry the current at any instant,
+`P_cond = V_on |i_out|`, and switching, `P_sw = f_s t_sw v_in |i_out|` (two edges per period,
+each costing `v_in |i_out| t_sw / 2`). Power is conserved apart from them: `P_in = P_out +
+P_loss` at every instant, in both directions; `i_in` and `i_out` are negative while the machine
+regenerates. Both losses track the current, so the efficiency rises with the output voltage: at
+350 V it is 99.2 %, at 113 V (1000 rpm, 220 N.m) 97.5 %, ORNL's 96-98 % with 99 % at high
+speed. A real PM machine also pays d-axis copper loss for its weakened field; that cost is in
+neither this converter nor `FieldEMF`.
+
+Defaults are a Leaf ZE1-class inverter. Source tags: (deck) deck 7 slide 28; (ORNL) 2013
+benchmarking of the 2012 Leaf; (derived) computed from other numbers, method given; (assumed) the
+course's choice.
+"""
+component Converter
+  "DC link, positive rail: the battery side"
+  p_in = Pin() {^p_in}
+  "Output, positive rail: the machine side"
+  p_out = Pin() {^p_out}
+  "Negative rail, common to input and output"
+  n = Pin() {^n}
+  "Output current command, positive motoring"
+  i_ref = RealInput() {^i_ref}
+  "Field command to the machine: flux as a fraction of full"
+  field = RealOutput() {^field}
+  "Output current limit: the 332.2 A at which the default DCMachine gives 320 N.m at base speed (derived)"
+  parameter I_max::Current = 332.2
+  "Largest duty, the voltage limit as a fraction of the input: an inverter cannot give more than its DC link (assumed)"
+  parameter d_max::Real = 1.0
+  "Current-loop time constant (assumed)"
+  parameter T_i::Time = 1.0e-3
+  "Conduction drop of the two devices that carry the current, 0.6 V each (deck)"
+  parameter V_on::Voltage = 1.2
+  "Switching frequency; ORNL tested the Leaf inverter at 5 kHz (ORNL)"
+  parameter f_s::Frequency = 5.0e3
+  "Duration of each switching edge; with V_on it lands the efficiency in ORNL's inverter band (assumed)"
+  parameter t_sw::Time = 1.0e-6
+  "Rounding of the corner between full field and full duty: there (1 - field)(d_max - |d|) = eps^2 / 4 (numerical)"
+  parameter eps::Real = 1.0e-4
+  "Input voltage, the DC link"
+  variable v_in::Voltage
+  "Input current, drawn from the DC link"
+  variable i_in::Current
+  "Output voltage, across the machine"
+  variable v_out::Voltage
+  "Output current, into the machine"
+  variable i_out::Current
+  "Duty ratio, v_out / v_in"
+  variable d::Real
+  "Current command after the limit"
+  variable i_cmd::Current
+  "Power drawn from the DC link"
+  variable P_in::Power
+  "Power delivered to the machine"
+  variable P_out::Power
+  "Conduction loss"
+  variable P_cond::Power
+  "Switching loss"
+  variable P_sw::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  v_in = p_in.v - n.v
+  v_out = p_out.v - n.v
+  i_in = p_in.i
+  i_out = -p_out.i
+  p_in.i + p_out.i + n.i = 0
+  v_out = d * v_in
+  i_in = d * i_out + P_loss / v_in
+  i_cmd = max(-I_max, min(I_max, i_ref))
+  T_i * der(i_out) = i_cmd - i_out
+  (1 - field) + (d_max - abs(d)) - sqrt(((1 - field) - (d_max - abs(d))) ^ 2 + eps ^ 2) = 0
+  P_in = v_in * i_in
+  P_out = v_out * i_out
+  P_cond = V_on * abs(i_out)
+  P_sw = f_s * t_sw * v_in * abs(i_out)
+  P_loss = P_cond + P_sw
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "i_ref": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+    "field": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  }
+}
+end

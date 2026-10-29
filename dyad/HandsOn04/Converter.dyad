@@ -1,0 +1,89 @@
+"""
+Hands-on 04 step 02: the average converter, one duty ratio between the DC link and the machine,
+with a current limit and a voltage limit.
+
+    v_out = d v_in        i_in = d i_out + P_loss / v_in
+    T_i di_out/dt = clamp(i_ref, -I_max, I_max) - i_out
+    min(1 - field, d_max - |d|) = 0
+
+The output current follows the command, clipped to `±I_max`. The duty is what the machine needs
+for that current, up to `d_max`; where the voltage runs out, the converter turns the machine's
+field down instead. The last relation is written with the corner of `min` rounded by `eps`, so
+the solver meets no kink. Losses: `P_cond = V_on |i_out|` and `P_sw = f_s t_sw v_in |i_out|`.
+
+Same names as the library's `Vehicle.Electric.Converter`, so either one drops into the car.
+"""
+component Converter
+  "DC link, positive rail: the battery side"
+  p_in = Pin() {^p_in}
+  "Output, positive rail: the machine side"
+  p_out = Pin() {^p_out}
+  "Negative rail, common to input and output"
+  n = Pin() {^n}
+  "Output current command, positive motoring"
+  i_ref = RealInput() {^i_ref}
+  "Field command to the machine: flux as a fraction of full"
+  field = RealOutput() {^field}
+  "Output current limit, the 332.2 A at which the machine gives 320 N.m"
+  parameter I_max::Current = 332.2
+  "Largest duty: the voltage limit as a fraction of the input"
+  parameter d_max::Real = 1.0
+  "Current-loop time constant"
+  parameter T_i::Time = 1.0e-3
+  "Conduction drop of the two devices that carry the current, 0.6 V each"
+  parameter V_on::Voltage = 1.2
+  "Switching frequency"
+  parameter f_s::Frequency = 5.0e3
+  "Duration of each switching edge"
+  parameter t_sw::Time = 1.0e-6
+  "Rounding of the corner of min(1 - field, d_max - |d|)"
+  parameter eps::Real = 1.0e-4
+  "Input voltage, the DC link"
+  variable v_in::Voltage
+  "Input current, drawn from the DC link"
+  variable i_in::Current
+  "Output voltage, across the machine"
+  variable v_out::Voltage
+  "Output current, into the machine"
+  variable i_out::Current
+  "Duty ratio, v_out / v_in"
+  variable d::Real
+  "Current command after the limit"
+  variable i_cmd::Current
+  "Power drawn from the DC link"
+  variable P_in::Power
+  "Power delivered to the machine"
+  variable P_out::Power
+  "Conduction loss"
+  variable P_cond::Power
+  "Switching loss"
+  variable P_sw::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  v_in = p_in.v - n.v
+  v_out = p_out.v - n.v
+  i_in = p_in.i
+  i_out = -p_out.i
+  p_in.i + p_out.i + n.i = 0
+  v_out = d * v_in
+  i_in = d * i_out + P_loss / v_in
+  i_cmd = max(-I_max, min(I_max, i_ref))
+  T_i * der(i_out) = i_cmd - i_out
+  (1 - field) + (d_max - abs(d)) - sqrt(((1 - field) - (d_max - abs(d))) ^ 2 + eps ^ 2) = 0
+  P_in = v_in * i_in
+  P_out = v_out * i_out
+  P_cond = V_on * abs(i_out)
+  P_sw = f_s * t_sw * v_in * abs(i_out)
+  P_loss = P_cond + P_sw
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "i_ref": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+    "field": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  }
+}
+end
