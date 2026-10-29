@@ -1,0 +1,33 @@
+"""
+Pulse-width modulator: compares the duty command `u` with a triangular carrier at `f_s` and
+outputs the gate command `y` that drives a `Switch`.
+
+    carrier = 1 - |2 (f_s t - round(f_s t))|        y = clamp(1/2 + (u - carrier) / band, 0, 1)
+
+The carrier is 1 at `t = k / f_s` and falls to 0 half a period later, so the switch is off at
+`t = 0` and each pulse is centered in its period: on from `(k + (1 - u)/2) / f_s` to
+`(k + (1 + u)/2) / f_s`. Instead of jumping, the gate ramps between 0 and 1 over `t_sw`,
+centered on the instant the carrier crosses `u`; `band = 2 f_s t_sw` is how far the carrier
+moves in that time. The carrier is continuous, so the gate is too, and the solver follows every
+edge without events. The ramps are symmetric, so over a period the gate averages exactly `u`
+for any `u` between `f_s t_sw` and `1 - f_s t_sw`.
+
+Closer to 0 or 1 the pulse would be shorter than its own edges. There the pulse height is cut
+in proportion to `u` (or to `1 - u`), so that a duty of exactly 0 holds the switch off and a
+duty of exactly 1 holds it on. Without the cut a duty of 0 would still give a half-height gate
+at every carrier valley, and an H-bridge would short a leg through it.
+"""
+component PWM
+  extends BlockComponents.Interfaces.SISO
+  "Switching frequency, the carrier's (assumed)"
+  parameter f_s::Frequency = 20.0e3
+  "Duration of each gate edge (assumed)"
+  parameter t_sw::Time = 0.5e-6
+  "Carrier change during one gate edge"
+  final parameter band::Real = 2 * f_s * t_sw
+  "Triangular carrier between 0 and 1"
+  variable carrier::Real
+relations
+  carrier = 1 - abs(2 * (f_s * time - floor(f_s * time + 0.5)))
+  y = max(0, min(1, max(min(0.5 + (u - carrier) / band, 2 * u / band), 1 - 2 * (1 - u) / band)))
+end

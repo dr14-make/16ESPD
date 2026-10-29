@@ -1,0 +1,74 @@
+"""
+Electronic power switch (MOSFET or IGBT) as a resistance that the gate command moves between an
+on and an off value, with the device's output capacitance across it. The standard library has
+no switch, so the channel is its `VariableResistor`.
+
+    R = R_off (R_on / R_off)^g        v = R i_channel        i = i_channel + C_oss dv/dt
+
+`g` is the gate command: 0 holds the switch off at `R_off`, 1 holds it on at `R_on`, and the
+values between are the turn-on and turn-off transitions, which a `PWM` block ramps over a finite
+time. The interpolation is geometric: an equal step in `g` multiplies `R` by an equal factor, so
+during a ramp the resistance sweeps the whole range at an even pace. That is what makes current
+and voltage overlap while the switch changes state, and the overlap is the switching loss. A
+switch that jumped from off to on would dissipate nothing while switching.
+
+Hard-switching an inductive current `I` against a voltage `V` with a linear ramp of `g` over
+`t_sw` dissipates `2 V I t_sw / ln(R_off / R_on)` per edge (derived: the current, or the voltage,
+follows `R` exponentially for the part of the ramp where the other is clamped). With the
+defaults that is `0.109 V I t_sw`, the textbook `V I t / 2` of an edge `0.22 t_sw` long. While
+fully on the switch burns `R_on i^2`, the deck's `R_DSon I^2` conduction loss. The channel
+conducts both ways, like a MOSFET's; a freewheeling diode is a separate part.
+
+The output capacitance `C_oss` is what a real switch node slews through, and the model needs it
+for the same reason: without it the node between a switch and a diode has no state, and at each
+turn-on the solver has to jump the node from the diode's drop to the supply in one algebraic
+step. At 1e-6 tolerances that jump fails on the second pulse of the buck chopper. With `C_oss`
+the node voltage is continuous, and the capacitor adds only its `C_oss V^2 / 2` per turn-on to
+the loss (0.02 W in the buck at 48 V and 20 kHz).
+
+Defaults are a low-voltage power MOSFET (assumed). `P_loss` is the power the channel
+dissipates, conduction and switching together; the capacitor stores energy and dissipates none.
+"""
+component Switch
+  extends ElectricalComponents.Analog.Interfaces.TwoPin
+  "Gate command: 0 off, 1 on, between is a transition"
+  g = RealInput() {^g}
+  channel = ElectricalComponents.Analog.Basic.VariableResistor() {^channel}
+  "Holds the channel's heat port; the resistance has no temperature coefficient"
+  ambient = ThermalComponents.Sources.FixedTemperature(T = 300.15) {^ambient}
+  capacitance = ElectricalComponents.Analog.Basic.Capacitor(C = C_oss) {^capacitance}
+  "Resistance when on, R_DSon (assumed)"
+  parameter R_on::Resistance = 10.0e-3
+  "Resistance when off; leakage v / R_off (assumed)"
+  parameter R_off::Resistance = 1.0e6
+  "Output capacitance across the switch (assumed)"
+  parameter C_oss::Capacitance = 1.0e-9
+  "Current into p, through the switch and its capacitance, out of n"
+  variable i::Current
+  "Current through the channel alone"
+  variable i_channel::Current
+  "Resistance set by the gate"
+  variable R::Resistance
+  "Power dissipated in the channel"
+  variable P_loss::Power
+relations
+  connect(p, channel.p, capacitance.p) {^id1}
+  connect(channel.n, capacitance.n, n) {^id2}
+  connect(channel.heat_port, ambient.port) {^id3}
+  R = R_off * (R_on / R_off) ^ g
+  channel.R = R
+  i = p.i
+  i_channel = channel.i
+  P_loss = channel.LossPower
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1000, "rot": 0}]},
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "g": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+    "channel": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "capacitance": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 600, "x2": 600, "y2": 800}}}},
+    "ambient": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 100, "x2": 900, "y2": 300, "rot": 180}}}}
+  }
+}
+end
