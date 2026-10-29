@@ -1,0 +1,62 @@
+"""
+Envelope bench for the library `Converter` driving the library `DCMachine` with its field
+input: a stiff supply of `V` feeds the converter, the converter is asked for `I_ref`, and the
+dyno holds the shaft at `rpm_start` for 1 s, ramps it to `rpm_end` over 100 s and holds it there
+for 1 s.
+
+With the defaults the converter is asked for 500 A and delivers its limit, 332.2 A, from
+standstill to 10 000 rpm. Up to base speed the field is full and the duty rises with the
+back-EMF; the electromagnetic torque is k I_max = 322.1 N.m and the shaft gives it less the
+losses, 320.0 N.m at base speed. At 3283 rpm the duty reaches 1: the voltage has run out. Above
+it the converter holds the duty at 1 and turns the field down as 1/w, so the torque falls as 1/w
+and the electromagnetic power stays at (V - R I_max) I_max = 110.75 kW. The shaft gives 110.0
+kW at base speed and 108.7 kW at 10 000 rpm, where the field is down to 0.33 and the torque to
+104 N.m; the difference is the speed-dependent losses. Along the ramp the dyno also accelerates
+the rotor, which takes J dw/dt = 0.52 N.m of the torque.
+
+The analysis lands the solver on both corners of the ramp with `tstops`.
+"""
+test component TestConverter
+  "Supply voltage at the converter's input"
+  parameter V::Voltage = 350.0
+  "Current asked of the converter"
+  parameter I_ref::Current = 500.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 0.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 10000.0
+  voltage = BlockComponents.Sources.Constant(k = V) {^voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  current = BlockComponents.Sources.Constant(k = I_ref) {^current}
+  converter = VehicleSystemsComponents.Vehicle.Electric.Converter() {^converter}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 100.0) {^speed}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+relations
+  initial dyno.phi = 0
+  initial converter.i_out = 0
+  connect(voltage.y, supply.V) {^id1}
+  connect(supply.p, converter.p_in) {^id2}
+  connect(converter.p_out, machine.p) {^id3}
+  connect(machine.n, converter.n, supply.n, ground.g) {^id4}
+  connect(current.y, converter.i_ref) {^id5}
+  connect(converter.field, machine.field) {^id6}
+  connect(speed.y, dyno.w_ref) {^id7}
+  connect(machine.spline, dyno.spline) {^id8}
+  connect(machine.support, dyno.support, mounts.spline) {^id9}
+end
+
+analysis ConverterTransient
+  extends TransientAnalysis(stop = 102.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [1.0, 101.0])
+  "Supply voltage at the converter's input"
+  parameter V::Voltage = 350.0
+  "Current asked of the converter"
+  parameter I_ref::Current = 500.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 0.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 10000.0
+  model = VehicleSystemsComponents.Vehicle.Electric.TestConverter(V = V, I_ref = I_ref, rpm_start = rpm_start, rpm_end = rpm_end)
+end

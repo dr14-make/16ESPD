@@ -17,6 +17,13 @@ already lives in the resistor, so a measured efficiency map layered on this mach
 twice; the map is something the machine reproduces, not an extra loss. The inverter's losses
 belong to the inverter, which is why the coefficients follow the motor-only map.
 
+The back-EMF element is a `FieldEMF`, the stdlib `RotationalEMF` with its flux as an input.
+With `field_weakening = false`, the default, the machine has no `field` input and runs at full
+flux: `E = k w` and `tau_em = k i`, the fixed-flux machine. With `field_weakening = true` it
+gains the input `field`, the flux as a fraction of full, and `E = field k w`, `tau_em = field k
+i`. Turning the field down above base speed is what lets the back-EMF stay under a fixed supply
+voltage: the converter (`Converter`) drives it.
+
 Defaults are a Nissan Leaf ZE1-class machine. `k` is derived so that at the 350 V pack
 voltage and base speed the shaft delivers the full 320 N.m: the armature then draws 332 A and
 the shaft 110 kW. The loss coefficients are chosen to land the motor-only efficiency near ORNL's
@@ -31,14 +38,18 @@ component DCMachine
   spline = Spline() {^spline}
   "Housing"
   support = Spline() {^support}
+  "Flux as a fraction of full flux; present only with field_weakening = true"
+  field = RealInput() if field_weakening {^field}
   resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
   inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
-  emf = ElectricalComponents.Analog.Basic.RotationalEMF(k = k) {^emf}
+  emf = VehicleSystemsComponents.Vehicle.Electric.FieldEMF(k = k) {^emf}
   rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
   friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
   iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
   windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
   constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
+  "Expose the field input, so that a converter can weaken the flux; off runs at full flux"
+  structural parameter field_weakening::Boolean = false
   "Peak shaft torque, held from standstill to base speed (Nissan)"
   parameter T_max::Torque = 320.0
   "Base speed, 3283 rpm, where 320 N.m meets 110 kW (Nissan)"
@@ -99,6 +110,11 @@ relations
   connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
   connect(rotor.spline_b, spline) {^id6}
   connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
+  if field_weakening
+    connect(field, emf.field) {^id8}
+  else
+    emf.field = 1.0
+  end
   i = p.i
   E = emf.v
   tau_em = -emf.tau
@@ -119,6 +135,7 @@ metadata {
     "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
     "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}, "diagram": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
     "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}, "diagram": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}},
+    "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "resistor": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 150, "x2": 250, "y2": 250}}}},
     "inductor": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 150, "x2": 400, "y2": 250}}}},
     "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},

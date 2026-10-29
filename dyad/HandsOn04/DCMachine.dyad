@@ -5,6 +5,11 @@ armature resistance and inductance, and the deck's losses are parts on the shaft
     v = R i + L di/dt + E        E = k w        tau_em = k i
     P_loss = R i^2 + T_f w + K_i w + k_w w^3 + C
 
+Step 02 makes the flux Φ an input: the back-EMF element becomes `FieldEMF`, and
+`field_weakening = true` gives the machine a `field` input, the flux as a fraction of full, so
+that `E = field k w` and `tau_em = field k i`. Left at `false` the machine runs at full flux and
+the step 01 bench runs unchanged.
+
 Same names as the library's `Vehicle.Electric.DCMachine`, so either one drops into the car.
 """
 component DCMachine
@@ -13,14 +18,18 @@ component DCMachine
   spline = Spline() {^spline}
   "Housing"
   support = Spline() {^support}
+  "Flux as a fraction of full flux; present only with field_weakening = true"
+  field = RealInput() if field_weakening {^field}
   resistor = ElectricalComponents.Analog.Basic.Resistor(R = R) {^resistor}
   inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
-  emf = ElectricalComponents.Analog.Basic.RotationalEMF(k = k) {^emf}
+  emf = FieldEMF(k = k) {^emf}
   rotor = RotationalComponents.Components.Inertia(J = J) {^rotor}
   friction = RotationalComponents.Sources.SignTorque(tau_nominal = -T_f, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^friction}
   iron = RotationalComponents.Sources.SignTorque(tau_nominal = -K_i, reg = RotationalComponents.Sources.Regularization.Linear(), w0 = w_reg) {^iron}
   windage = RotationalComponents.Sources.QuadraticSpeedDependentTorque(tau_nominal = -k_w * w_base ^ 2, w_nominal = w_base, TorqueDirection = false) {^windage}
   constant_loss = RotationalComponents.Sources.InverseSpeedDependentTorque(tau_nominal = -C / w_reg, w_nominal = w_reg, w0 = w_reg, TorqueDirection = false) {^constant_loss}
+  "Expose the field input; off runs at full flux"
+  structural parameter field_weakening::Boolean = false
   "Peak shaft torque, Leaf ZE1"
   parameter T_max::Torque = 320.0
   "Base speed, 3283 rpm"
@@ -81,6 +90,11 @@ relations
   connect(emf.rotor, rotor.spline_a, friction.spline, iron.spline, windage.spline, constant_loss.spline) {^id5}
   connect(rotor.spline_b, spline) {^id6}
   connect(emf.housing, friction.support, iron.support, windage.support, constant_loss.support, support) {^id7}
+  if field_weakening
+    connect(field, emf.field) {^id8}
+  else
+    emf.field = 1.0
+  end
   i = p.i
   E = emf.v
   tau_em = -emf.tau
@@ -101,6 +115,7 @@ metadata {
     "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
     "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}, "diagram": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
     "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}, "diagram": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}},
+    "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "resistor": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 150, "x2": 250, "y2": 250}}}},
     "inductor": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 150, "x2": 400, "y2": 250}}}},
     "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},

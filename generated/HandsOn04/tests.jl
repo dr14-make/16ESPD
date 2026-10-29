@@ -18,6 +18,9 @@ end
 @testset "`VehicleSystemsComponents.HandsOn04`" begin
 include("BatteryDischarge_test.jl")
 include("Battery_test.jl")
+include("ConverterDyno_test.jl")
+include("Converter_test.jl")
 include("DCMachineDyno_test.jl")
 include("DCMachine_test.jl")
+include("FieldEMF_test.jl")
 end

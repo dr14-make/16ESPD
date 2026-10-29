@@ -1,0 +1,66 @@
+"""
+The standard library's `RotationalEMF` with its flux as an input: `k` is KΦ at full flux, and
+`field` scales Φ.
+
+    v = field k w        tau = -field k i
+
+`field` is the flux as a fraction of its full value, 1 for full flux. It scales the back-EMF and
+the torque per ampere by the same factor, so the power balance `v i = -tau w` holds at every
+`field`, as it does for the fixed-flux element. The pins, splines, variables and sign conventions
+are those of `RotationalEMF`, so the two swap without other changes; with `field = 1` they are
+the same element.
+
+Turning `field` down is field weakening (deck 7 slide 26: "changing the magnetic flux Φ"). In a
+wound-field DC machine the field current sets Φ; in a permanent-magnet machine under
+field-oriented control the inverter weakens the magnets' flux with its d-axis current. This
+element covers either at the level of the DC-equivalent machine: Φ is whatever the controller
+asks for, with no cost of its own. A real PM machine pays for weakening in d-axis copper loss,
+which this element does not carry.
+"""
+component FieldEMF
+  "Positive electrical pin"
+  p = Pin() {^p}
+  "Negative electrical pin"
+  n = Pin() {^n}
+  "Rotor spline"
+  rotor = Spline() {^rotor}
+  "Housing (support) of the emf shaft"
+  housing = Spline() {^housing}
+  "Flux as a fraction of full flux, 1 for full"
+  field = RealInput() {^field}
+  "Torque and back-EMF constant KΦ at full flux"
+  parameter k::ElectricalTorqueConstant
+  "Voltage drop between the two pins"
+  variable v::Voltage
+  "Current flowing from positive to negative pin"
+  variable i::Current
+  "Angle of the rotor with respect to the housing"
+  variable phi::Angle
+  "Angular velocity of the rotor relative to the housing"
+  variable w::AngularVelocity
+  "Torque on the rotor"
+  variable tau::Torque
+relations
+  v = p.v - n.v
+  0 = p.i + n.i
+  i = p.i
+  phi = rotor.phi - housing.phi
+  w = der(phi)
+  v = field * k * w
+  tau = -field * k * i
+  tau = rotor.tau
+  0 = housing.tau + rotor.tau
+metadata {
+  "Dyad": {
+    "labels": [{"label": "$(instance)", "x": 500, "y": 1200, "rot": 0}],
+    "icons": {"default": "dyad://ElectricalComponents/RotationalEMF.svg"}
+  },
+  "_links": {
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 450, "y1": -50, "x2": 550, "y2": 50}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "rotor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "housing": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "field": {"Dyad": {"placement": {"icon": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 90}}}}
+  }
+}
+end
