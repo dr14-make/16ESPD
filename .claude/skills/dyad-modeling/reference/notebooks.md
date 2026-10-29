@@ -10,6 +10,17 @@ shape of the newest lecture's notebook and export script, `@bind` mock and cell 
 On the Dyad 3.5 distribution pass `setup(backend = :plotly)`: the distribution ships Plots with
 PlotlyBase and PlotlyKaleido, and the default `:gr` fails with `Package GR not found`.
 
+## Plotly traps
+
+Each one exports without an error:
+
+- `Plots.savefig` hands Kaleido no size, so every SVG comes out 700 × 500 whatever `size` says.
+  Convert the plot to its plotly figure and pass its size to Kaleido.
+- Plotly simplifies lines by default, which draws smooth curves as visible polygons: set
+  `line.simplify = false` on every trace.
+- `vspan!` and `hspan!` write infinite bounds, which the JSON writer rejects (`-Inf not allowed`);
+  shade with a finite `Shape`.
+
 ## Iterate in the warm session
 
 `include` the export script as a warm-session step: the models stay compiled, so a figure change
