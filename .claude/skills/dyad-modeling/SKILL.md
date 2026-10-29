@@ -71,10 +71,19 @@ Each component reaches step 6 before the next one starts.
    is not a pass.
 7. **Tests.** Add the `tests` metadata and plausibility assertions the plan asks for. A new
    test file gets its own group in the `GROUPS` table of `test/runtests.jl`.
-   - Iterate in the warm session: `include` the plausibility file as a step until it passes.
+   - Iterate in the warm session until the file passes, with the step doing what `run_group`
+     does — the test files rely on the helpers being loaded first, and every path is absolute:
+     ```julia
+     using Test; cd("<worktree>/test")
+     @testset "<group>" begin
+         include("<worktree>/test/plausibility_helpers.jl")
+         include("<worktree>/test/<file>.jl")
+     end
+     ```
    - A new sublibrary's generated cases alone: from `test/`, include
      `generated/test_internals.jl`, then `generated/<Sub>/tests.jl`, in a fresh module. The
-     `generated` group is the whole library's suite.
+     `generated` group is the whole library's suite; it earns its run only when a component
+     carries `tests` metadata, which fills its `generated/**/<Name>_test.jl`.
    - Last, the groups: `exit()` the warm session, then `mise run test:group <group>` in the
      background; wait for its notification.
 
@@ -97,8 +106,16 @@ Each component reaches step 6 before the next one starts.
   is no event, so the solver strides across the edge and counts input that never flowed. Put the
   edge in the analysis' `tstops` and drive it with a `Step` (a `Pulse` still misreads the edge);
   HANDOVER has the numbers. Anchor the integrated state to catch it.
+- **A fast periodic source** (PWM, a chopper, thousands of edges a run) has no event per edge:
+  write each edge as a ramp in `time`, keep `dtmax` below the shortest ramp, and show a result
+  stays put when `dtmax` halves. Take averages and losses from energy states (`der(E) = P`); a
+  sum over `saveat` aliases with the switching frequency.
 - **`rm` prompts on this machine** and does nothing without a TTY; delete files you created with
   `\rm -f`.
+
+## Notebooks
+
+A notebook or an exported figure: follow [`reference/notebooks.md`](reference/notebooks.md).
 
 ## Debugging
 

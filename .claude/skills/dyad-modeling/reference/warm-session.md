@@ -51,7 +51,9 @@ print its error and still reach its sentinel, so the wait ends at once instead o
 timeout: wait again on the same sentinel.
 
 The script writes its results to a file; read that file. Read the pane
-(`herdr pane read "$P" --source recent-unwrapped --lines 40`) for errors and stack traces.
+(`herdr pane read "$P" --source recent-unwrapped --lines 80 | grep -m5 -A3 -E 'ERROR|Error|error:'`)
+for the error itself: a backtrace runs to dozens of lines, and its first frames are the ones that
+name your code.
 
 ## After a compile
 
