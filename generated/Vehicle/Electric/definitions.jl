@@ -205,6 +205,7 @@ component.
 end
 
 
+include("AuxLoad_definition.jl")
 include("BatteryTransient_definition.jl")
 include("Battery_definition.jl")
 include("BuckChopperTransient_definition.jl")
@@ -213,6 +214,7 @@ include("ConverterTransient_definition.jl")
 include("Converter_definition.jl")
 include("DCMachineTransient_definition.jl")
 include("DCMachine_definition.jl")
+include("ElectricDrive_definition.jl")
 include("FieldEMF_definition.jl")
 include("HBridgeTransient_definition.jl")
 include("HBridge_definition.jl")
@@ -223,3 +225,4 @@ include("TestBuckChopper_definition.jl")
 include("TestConverter_definition.jl")
 include("TestDCMachine_definition.jl")
 include("TestHBridge_definition.jl")
+include("TorqueSplit_definition.jl")

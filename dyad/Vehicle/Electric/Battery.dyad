@@ -41,6 +41,7 @@ relations
   v = E - R0 * i
   der(SoC) = -i / Q_nom
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}},
   "_links": {
     "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}}}}
   }

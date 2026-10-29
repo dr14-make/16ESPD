@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 500 H140" stroke-width="30"/>
+    <path d="M840 500 H1000"/>
+    <path d="M140 480 V780 H300 Z" fill="#cfd8dc" stroke-width="30"/>
+    <path d="M300 780 H950"/>
+    <path d="M330 680 V570 Q330 515 380 510 L500 495 L580 390 Q595 370 620 370 H740 Q765 370 780 390 L850 495 Q900 505 900 570 V680 Z" fill="#eceff1"/>
+    <circle cx="450" cy="690" r="70" fill="#ffffff" stroke-width="30"/>
+    <circle cx="790" cy="690" r="70" fill="#ffffff" stroke-width="30"/>
+    <path d="M820 270 H380 M450 210 L370 270 L450 330" stroke="#0277bd"/>
+    <path d="M560 640 H690 M560 640 V540" stroke-width="20"/>
+    <path d="M665 615 L700 640 L665 665 M535 565 L560 530 L585 565" stroke-width="20"/>
+  </g>
+  <text x="560" y="160" text-anchor="middle" font-family="sans-serif" font-size="85" fill="#263238">ROAD LOAD</text>
+</svg>

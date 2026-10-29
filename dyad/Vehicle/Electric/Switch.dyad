@@ -61,7 +61,7 @@ relations
   i_channel = channel.i
   P_loss = channel.LossPower
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1000, "rot": 0}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Switch.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1000, "rot": 0}]},
   "_links": {
     "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"iconName": "pos", "x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
     "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"iconName": "neg", "x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},

@@ -18,11 +18,13 @@ From a DC-equivalent machine on a test bench to a Leaf-class car on the WLTC and
 
 Every number in an expected result is a test expectation or a measured run of the reference model.
 
-<!-- Steps 04–06 land with their own issues under dr14-make/16ESPD#99. -->
+<!-- Step 05 lands with its own issue under dr14-make/16ESPD#99. -->
 
 - [01 · The machine: T = KΦI, E = KΦω](#step-01)
 - [02 · The converter: V_out = d·V_in, and field weakening](#step-02)
 - [03 · The battery: V = E − I·R](#step-03)
+- [04 · The car: machine → 8.193 → differential → front wheels](#step-04)
+- [06 · The WLTC energy bill](#step-06)
 
 ## 02 The DC machine
 
@@ -1012,4 +1014,418 @@ end
 
 ---
 
-Reference models: `dyad/HandsOn04/` in the course repository; checkpoint tests in `test/machine_plausibility.jl`, `test/converter_plausibility.jl` and `test/battery_plausibility.jl`. Design: `docs/lecture-04-plan.md`.
+## 07 The car and regen
+
+### 04 · The car: machine → 8.193 → differential → front wheels {#step-04}
+
+Put steps 01–03 into a car. The battery feeds the converter, the converter the machine, the machine turns the Leaf's single 8.193 reduction, and the reduction turns the planar car's differential, which shares its torque between the two front wheels. The 12 V auxiliaries hang on the battery. A PI driver follows WLTC: the car drives the cycle's **23.27 km** to within a few metres and never more than **1.6 km/h** off the trace, and the battery goes from 0.9 to **0.822**.
+
+#### Given
+
+The Leaf ZE1 reduction, **8.193** from the motor to the differential. The differential is a planetary gear that splits its input torque equally between two wheels and lets them turn at different speeds:
+
+$$
+\omega_{machine} = 8.193\;\frac{\omega_{fl} + \omega_{fr}}{2} \qquad \tau_{fl} = \tau_{fr} = \frac{8.193\;\tau_{machine}}{2}
+$$
+
+The car is Lecture 3's planar car with the course road load (`PlanarRoadLoad`: 1500 kg, *C*<sub>d</sub>*A* = 0.63 m², *f*<sub>r</sub> = 0.012), and the cycle the WLTC class 3b trace of Lecture 2. Both are prepared in the course library, as are `AuxLoad`, the 12 V network as a constant **300 W** draw on the battery, and `TorqueSplit`, which shares the driver's torque between the machine and the friction brakes.
+
+::: info Torque in, current out
+
+The driver thinks in torque, the converter in current. The drive turns one into the other: the machine gives *field*·*K*Φ newton-metres per ampere, so it asks the converter for `i_ref = tau_ref / (converter.field * machine.k)`. Below base speed (about 48 km/h in this car) the field is 1; above it the converter weakens the field, at 131 km/h to about a third, and the same torque takes three times the current. A field-oriented drive does the same with its q-axis current.
+
+Divided by full field only, the drive would give a third of the torque asked for at 131 km/h, and the driver's loop gain would fall with it on the motorway. Divided by the present field, a torque command means the same torque at any speed.
+
+:::
+
+::: info Braking: the machine first, the friction brakes at walking pace
+
+When the driver's output goes negative, the car has to slow down. The machine can do it: asked for a negative torque, it turns generator, the converter's and the battery's currents reverse, and the pack charges. WLTC never brakes harder than 1.5 m/s², 85 N·m at the machine, well inside its 320 N·m, so above walking pace the machine does all the braking.
+
+Near standstill it must not: a machine asked for a negative torque at a stop drives the car backwards. So the machine's share fades linearly from all of it at **10 km/h** (`v_fade`) to none at standstill, and the planar car's own front friction brakes take the rest, at the same wheel torque. A friction brake only ever opposes motion, so the car stops and is held at every stop without rolling back. The course library's `TorqueSplit` block does this split. Step 05 extends it to real blending onto Lecture 3's hydraulic brakes, with the machine's and the battery's limits.
+
+:::
+
+#### Parts
+
+New component `ElectricDrive` in `MyCar`:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `ratio` | parameter `Real` | `8.193`: the reduction |
+| `P_aux` | parameter `Power` | `300.0`: the 12 V network |
+| `tau_ref` | BlockComponents › Interfaces › RealInput | the machine torque asked for |
+| `spline` | RotationalComponents › Interfaces › Spline | the reduction's output, to the differential |
+| `support` | RotationalComponents › Interfaces › Spline | the machine housing and gear case |
+| `SoC` | BlockComponents › Interfaces › RealOutput | the battery's state of charge |
+| `battery` | your `Battery` | defaults |
+| `aux` | VehicleSystemsComponents › Vehicle › Electric › AuxLoad | `P_aux = P_aux` |
+| `converter` | your `Converter` | defaults |
+| `machine` | your `DCMachine` | `field_weakening = true` |
+| `ground` | ElectricalComponents › Analog › Basic › Ground | — |
+| `reduction` | RotationalComponents › Components › IdealGear | `ratio = ratio` |
+
+New component `BEVWLTC` in `MyCar`: paste the code below. It is the course library's planar WLTC bench with your drive on the front axle.
+
+:::: info Given parts: the reduction, the differential and the auxiliaries
+
+**`IdealGear`** (`reduction`): a lossless gear. `spline_a` turns `ratio` times faster than `spline_b`, and `spline_b` carries `ratio` times the torque; the housing reaction goes to `support`. Put the machine on `spline_a`.
+
+**`DifferentialGear`** (`differential`, in the bench): MultibodyComponents › PlanarMechanics. The torque on `flange_b` is split equally between `flange_left` and `flange_right`, and `flange_b` turns at their average speed. It needs no housing.
+
+**`AuxLoad`** (`aux`): draws the current that makes *v*·*i* = `P_aux` from the pins it sits across, following the voltage within 10 ms. It stands for the DC-DC converter and everything on the 12 V network: control units, pumps, fans, lights.
+
+**`TorqueSplit`** (`split`, in the bench): VehicleSystemsComponents › Vehicle › Electric. Takes the driver's torque `tau_ref` and the speed `v` in km/h. Gives `tau_motor`, all of a positive `tau_ref` and the share `fade = clamp(v / v_fade, 0, 1)` of a negative one, and `tau_brake`, the rest of a negative one as a torque for each front brake: `-(1 - fade) min(tau_ref, 0) ratio / 2`.
+
+::::
+
+::: warning Use these names
+
+The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, `drive.aux` and `drive.SoC`. Keep the names, and either your drive or the course library's `Vehicle.Electric.ElectricDrive` fits.
+
+:::
+
+#### Do this
+
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `ElectricDrive`. With nothing selected, click **Edit Parameters** → **Add parameter**: `ratio`, type `Real`, value `8.193`, and `P_aux`, type `Power`, value `300.0`. Place the parts from the table and rename each to its **Name**. Set `machine`'s `field_weakening` to `true`, `aux`'s `P_aux` to `P_aux` and `reduction`'s `ratio` to `ratio`.
+2. Wire:
+   - `battery.p → converter.p_in`, and `battery.p → aux.p`
+   - `battery.n → converter.n`, `battery.n → aux.n`, `battery.n → machine.n` and `battery.n → ground.g`
+   - `converter.p_out → machine.p`, and `converter.field → machine.field`
+   - `machine.spline → reduction.spline_a`, and `reduction.spline_b → spline`
+   - `machine.support → reduction.support`, and `reduction.support → support`
+   - `battery.SoC → SoC`
+3. Toggle to code and add one line at the end of `relations`, the torque-to-current conversion at the present field:
+
+   ```txt
+   converter.i_ref = tau_ref / (converter.field * machine.k)
+   ```
+
+   If the compile flags `VehicleSystemsComponents` or `MultibodyComponents` as `missing-direct-dependency`, add it in the REPL with `using Pkg; Pkg.add("MultibodyComponents")` (or the other name), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
+4. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVWLTC`. Toggle to code (⇄), select everything, paste the block below and save.
+
+   ::: code-group
+
+   ```txt [BEVWLTC]
+   component BEVWLTC
+     "Vehicle mass, shared by the car and its road load (probe)"
+     parameter m::Mass = 1500.0
+     "Wheel radius (repository default)"
+     parameter radius::Length = 0.31
+     "Driver gain, machine torque per km/h of speed error (assumed)"
+     parameter k::Real = 50.0
+     "Driver integral time (assumed)"
+     parameter Ti::Time = 2.0
+     "Driver torque limit, the machine's peak torque (Nissan)"
+     parameter tau_max::Torque = 320.0
+     "Speed below which the machine's braking share fades to zero, km/h (assumed)"
+     parameter v_fade::Real = 10.0
+     "Power drawn by the 12 V network (assumed)"
+     parameter P_aux::Power = 300.0
+     "Single-speed reduction (Nissan)"
+     parameter ratio::Real = 8.193
+     "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+     parameter dv_wheel::Velocity = 0.01
+     trace = VehicleSystemsComponents.Vehicle.DriveCycle()
+     driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max)
+     no_ff = BlockComponents.Sources.Constant(k = 0.0)
+     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+     drive = ElectricDrive(ratio = ratio, P_aux = P_aux)
+     differential = MultibodyComponents.PlanarMechanics.DifferentialGear()
+     mount = RotationalComponents.Components.Fixed()
+     straight = RotationalComponents.Components.Fixed()
+     flat = BlockComponents.Sources.Constant(k = 0.0)
+     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
+     sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
+     roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m)
+     split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade)
+   relations
+     connect(trace.y, driver.u_s)
+     connect(sensors.vx, kmh.u)
+     connect(kmh.y, driver.u_m)
+     connect(no_ff.y, driver.u_ff)
+     connect(drive.spline, differential.flange_b)
+     connect(differential.flange_left, car.spin_fl)
+     connect(differential.flange_right, car.spin_fr)
+     connect(drive.support, mount.spline)
+     connect(car.steering, straight.spline)
+     connect(flat.y, roadload.grade)
+     connect(car.chassis, roadload.chassis, sensors.chassis)
+     connect(car.steering, sensors.steering)
+     connect(car.wheel_fl, sensors.wheel_fl)
+     connect(car.wheel_fr, sensors.wheel_fr)
+     connect(car.wheel_rl, sensors.wheel_rl)
+     connect(car.wheel_rr, sensors.wheel_rr)
+     connect(car.spin_fl, sensors.spin_fl)
+     connect(car.spin_fr, sensors.spin_fr)
+     connect(car.spin_rl, sensors.spin_rl)
+     connect(car.spin_rr, sensors.spin_rr)
+     connect(driver.y, split.tau_ref)
+     connect(kmh.y, split.v)
+     connect(split.tau_motor, drive.tau_ref)
+     connect(split.tau_brake, car.tau_fl, car.tau_fr)
+     car.tau_rl = 0.0
+     car.tau_rr = 0.0
+     initial car.body.r = [0, 0]
+     initial car.body.v = [0, 0]
+     initial car.body.phi = 0.0
+     initial car.body.w = 0.0
+     initial car.fl.inertia.w = dv_wheel / radius
+     initial car.fr.inertia.w = dv_wheel / radius
+     initial car.rl.inertia.w = dv_wheel / radius
+     initial car.rr.inertia.w = dv_wheel / radius
+     initial car.fl.inertia.phi = 0.0
+     initial car.fr.inertia.phi = 0.0
+     initial car.rl.inertia.phi = 0.0
+     initial car.rr.inertia.phi = 0.0
+     initial car.fl.brake.tau_actual = 0.0
+     initial car.fr.brake.tau_actual = 0.0
+     initial car.rl.brake.tau_actual = 0.0
+     initial car.rr.brake.tau_actual = 0.0
+     initial drive.converter.i_out = 0.0
+   end
+
+   analysis BEVWLTCTransient
+     extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+     parameter k::Real = 50.0
+     parameter Ti::Time = 2.0
+     parameter v_fade::Real = 10.0
+     parameter P_aux::Power = 300.0
+     model = BEVWLTC(k = k, Ti = Ti, v_fade = v_fade, P_aux = P_aux)
+   end
+   ```
+
+   :::
+
+   The last four `connect` lines are the driver's output split: the driver's torque and the car's speed go into `split`, `split.tau_motor` drives your `ElectricDrive`, and `split.tau_brake` goes to both front brakes. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
+5. Click ▷ **Run Analysis → BEVWLTCTransient** once, then plot the speed against the trace, the battery and the machine:
+
+   ```julia
+   using Plots; plotly()
+   r = MyCar.BEVWLTCTransient();
+   plot(r; idxs = [r."trace.y", r."kmh.y"])
+   plot(r; idxs = [r."drive.battery.i", r."drive.SoC", r."drive.converter.field"], layout = (3, 1))
+   r.sol[r."sensors.x"][end], r.sol[r."drive.SoC"][end]
+   ```
+
+::: tip Expected result
+
+`kmh.y` lies on `trace.y` all the way: the worst gap is **1.63 km/h**, inside WLTP's ±2 km/h. `sensors.x` ends at **23 267 m**, the trace's 23 266 m, and at every stop the car stands still to a thousandth of a km/h, never backwards.
+
+`drive.battery.i` peaks at **138 A** (46 kW) in the Extra High phase and goes as low as **−86 A** (31 kW charging) under braking; between, the 300 W of auxiliaries draw 0.86 A. `drive.SoC` falls from **0.9** to **0.822**: 3.1 kWh of the 40. `drive.converter.field` is **1** below about 48 km/h and falls to **0.36** at the cycle's 131 km/h, where the machine turns 9260 rpm. The driver never asks for more than **117 N·m**, and the machine gives it at every speed to within 0.2 N·m.
+
+The run takes about 7 s once compiled.
+
+Reference: `HandsOn04.ElectricDrive`, `HandsOn04.BEVWLTC`, `HandsOn04.BEVWLTCTransient`; the course library's copies are `Vehicle.Electric.ElectricDrive` and `Vehicle.Planar.PlanarBEVWLTC`.
+
+:::
+
+Commit: **Source Control** → message `Step 04: the car` → **Commit** → **Sync Changes**.
+
+:::: warning Fell behind?
+
+Paste `BEVWLTC` from step 4 of **Do this** above. Then right-click `MyCar` → **Add Component**, name it `ElectricDrive`, toggle to code (⇄) and paste this over its contents.
+
+::: code-group
+
+```txt [ElectricDrive]
+component ElectricDrive
+  "Machine torque asked for, positive motoring"
+  tau_ref = RealInput()
+  "Reduction output shaft, to the differential"
+  spline = Spline()
+  "Machine housing and gear case"
+  support = Spline()
+  "Battery state of charge"
+  SoC = RealOutput()
+  battery = Battery()
+  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux)
+  converter = Converter()
+  machine = DCMachine(field_weakening = true)
+  ground = ElectricalComponents.Analog.Basic.Ground()
+  reduction = RotationalComponents.Components.IdealGear(ratio = ratio)
+  "Single-speed reduction, Leaf ZE1"
+  parameter ratio::Real = 8.193
+  "Power drawn by the 12 V network"
+  parameter P_aux::Power = 300.0
+relations
+  connect(battery.p, converter.p_in, aux.p)
+  connect(battery.n, converter.n, aux.n, machine.n, ground.g)
+  connect(converter.p_out, machine.p)
+  connect(converter.field, machine.field)
+  connect(machine.spline, reduction.spline_a)
+  connect(reduction.spline_b, spline)
+  connect(machine.support, reduction.support, support)
+  connect(battery.SoC, SoC)
+  converter.i_ref = tau_ref / (converter.field * machine.k)
+end
+```
+
+:::
+
+::::
+
+---
+
+## 08 The energy bill
+
+### 06 · The WLTC energy bill {#step-06}
+
+Put a meter on every link of the chain and read the bill: **131.2 Wh/km** at the battery terminals, 13.1 kWh/100 km, of which the road load takes 103 and the machine 18. Braking gives back a quarter of the traction energy, and the links add up to what left the cells to nine digits. In MJ/100 km the same cycle costs this car **47.2** and Lecture 2's engine car **168.8**.
+
+#### Given
+
+An energy meter is a state that integrates a power: `der(E_road) = roadload.F * sensors.vx` starts at 0 and holds the joules the road load has taken so far. One meter per link:
+
+| Meter | Power | Link |
+| --- | --- | --- |
+| `E_cells` | `battery.E * battery.i` | out of the cells: what SoC counts |
+| `E_dc`, `E_dc_out`, `E_dc_in` | `battery.v * battery.i`, and its positive and negative parts | at the battery terminals: net, discharged, charged back |
+| `E_R0` | `battery.R0 * battery.i^2` | the battery's resistance |
+| `E_aux` | `aux.v * aux.i` | the 12 V network |
+| `E_conv` | `converter.P_loss` | the converter |
+| `E_motor` | `machine.P_loss` | the machine |
+| `E_shaft_out`, `E_shaft_in` | positive and negative parts of `machine.P_mech` | traction into the reduction, and braking taken back through it |
+| `E_road` | `roadload.F * sensors.vx` | drag and rolling resistance |
+| `E_brake` | brake torque × wheel speed, four wheels | the friction brakes |
+| `E_tire` | tire force × slip speed, four wheels | tire slip |
+
+and `E_kin`, the energy stored in motion (body, wheels, rotor) and in the armature's inductance. The reduction and the differential are lossless. Energy is conserved, so
+
+$$
+E_{cells} = E_{road} + E_{brake} + E_{tire} + E_{motor} + E_{conv} + E_{R_0} + E_{aux} + \Delta E_{kin}
+$$
+
+Lecture 2's engine car on the same cycle: **5.22 L/100 km** of petrol (its reference run, 1400 kg), at 0.745 kg/L and a lower heating value of 43.4 MJ/kg.
+
+::: info Why meter the links, and not just the battery
+
+The battery alone gives the consumption. The meters give the bill: where each kilowatt-hour went. And because each one is measured on its own, from the power in its own part, their sum closing on the battery is a check that the model is right: a sign error in a connector or a loss counted twice shows up as a residual.
+
+Each meter is a state, not a sum over the plotted points afterwards: the solver integrates it with the same accuracy as the car's speed, so the bill closes to the solver's tolerance however the result is saved.
+
+:::
+
+::: details Details: the checkpoint numbers worked through
+
+- **Per kilometre:** every meter divided by the 23.267 km driven. 3.0535 kWh at the terminals is **131.2 Wh/km**, 13.12 kWh/100 km; 3.1257 kWh out of the cells is 134.3 Wh/km.
+- **MJ/100 km:** 1 kWh = 3.6 MJ, so 13.12 kWh/100 km is **47.2 MJ/100 km**. The engine car: 5.22 L × 0.745 kg/L × 43.4 MJ/kg = **168.8 MJ/100 km**, 3.6 times more. At the wall, with 13 % lost in charging, the electric car takes 54.3.
+- **Braking:** the shaft delivered 3.341 kWh of traction and took back 0.897 kWh, **27 %**; the battery received 0.795 kWh of it, **89 %** of what the shaft took back and 24 % of the traction.
+- **The plan's band:** the Leaf's WLTP figure is 171 Wh/km at the wall; less 10–15 % for charging that is 145–154 Wh/km at the battery, and the course road load is about 15 % below the Leaf's: **120–155 Wh/km**.
+
+:::
+
+#### Do this
+
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVEnergyBill`. Toggle to code (⇄), select everything, paste the block below and save. It `extends` your step 04 bench, so it is the same car with the meters added.
+
+   ::: code-group
+
+   ```txt [BEVEnergyBill]
+   component BEVEnergyBill
+     extends BEVWLTC
+     "Power at the battery terminals, positive discharging"
+     variable P_dc::Power
+     "Power at the reduction output, positive driving the wheels"
+     variable P_shaft::Power
+     variable E_cells::Energy
+     variable E_dc::Energy
+     variable E_dc_out::Energy
+     variable E_dc_in::Energy
+     variable E_R0::Energy
+     variable E_aux::Energy
+     variable E_conv::Energy
+     variable E_motor::Energy
+     variable E_shaft_out::Energy
+     variable E_shaft_in::Energy
+     variable E_road::Energy
+     variable E_brake::Energy
+     variable E_tire::Energy
+     "Kinetic energy of body, wheels and rotor, and the armature's magnetic energy"
+     variable E_kin::Energy
+   relations
+     P_dc = drive.battery.v * drive.battery.i
+     P_shaft = drive.machine.P_mech
+     der(E_cells) = drive.battery.E * drive.battery.i
+     der(E_dc) = P_dc
+     der(E_dc_out) = max(P_dc, 0.0)
+     der(E_dc_in) = max(-P_dc, 0.0)
+     der(E_R0) = drive.battery.R0 * drive.battery.i ^ 2
+     der(E_aux) = drive.aux.v * drive.aux.i
+     der(E_conv) = drive.converter.P_loss
+     der(E_motor) = drive.machine.P_loss
+     der(E_shaft_out) = max(P_shaft, 0.0)
+     der(E_shaft_in) = max(-P_shaft, 0.0)
+     der(E_road) = roadload.F * sensors.vx
+     der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+     der(E_tire) = car.fl.joint.f_long * car.fl.joint.v_slip_long + car.fl.joint.f_lat * car.fl.joint.v_slip_lat + car.fr.joint.f_long * car.fr.joint.v_slip_long + car.fr.joint.f_lat * car.fr.joint.v_slip_lat + car.rl.joint.f_long * car.rl.joint.v_slip_long + car.rl.joint.f_lat * car.rl.joint.v_slip_lat + car.rr.joint.f_long * car.rr.joint.v_slip_long + car.rr.joint.f_lat * car.rr.joint.v_slip_lat
+     E_kin = 0.5 * m * (car.body.v[1] ^ 2 + car.body.v[2] ^ 2) + 0.5 * car.Iz * car.body.w ^ 2 + 0.5 * car.J * (car.fl.inertia.w ^ 2 + car.fr.inertia.w ^ 2 + car.rl.inertia.w ^ 2 + car.rr.inertia.w ^ 2) + 0.5 * drive.machine.J * drive.machine.rotor.w ^ 2 + 0.5 * drive.machine.L * drive.machine.inductor.i ^ 2
+     initial E_cells = 0.0
+     initial E_dc = 0.0
+     initial E_dc_out = 0.0
+     initial E_dc_in = 0.0
+     initial E_R0 = 0.0
+     initial E_aux = 0.0
+     initial E_conv = 0.0
+     initial E_motor = 0.0
+     initial E_shaft_out = 0.0
+     initial E_shaft_in = 0.0
+     initial E_road = 0.0
+     initial E_brake = 0.0
+     initial E_tire = 0.0
+   end
+
+   analysis BEVEnergyBillTransient
+     extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+     parameter k::Real = 50.0
+     parameter Ti::Time = 2.0
+     parameter v_fade::Real = 10.0
+     parameter P_aux::Power = 300.0
+     model = BEVEnergyBill(k = k, Ti = Ti, v_fade = v_fade, P_aux = P_aux)
+   end
+   ```
+
+   :::
+
+2. Click ▷ **Run Analysis → BEVEnergyBillTransient** once, then read the bill:
+
+   ```julia
+   r = MyCar.BEVEnergyBillTransient();
+   km = r.sol[r."sensors.x"][end] / 1000
+   kWh(x) = r.sol[x][end] / 3.6e6
+   links = ["road load" => r."E_road", "machine" => r."E_motor", "auxiliaries" => r."E_aux",
+       "battery R0" => r."E_R0", "converter" => r."E_conv", "tire slip" => r."E_tire",
+       "friction brakes" => r."E_brake"]
+   [name => round(kWh(x) / km * 1000; digits = 1) for (name, x) in links]  # Wh/km per link
+   Wh_per_km = kWh(r."E_dc") / km * 1000                             # at the battery terminals
+   ΔE_kin = (r.sol[r."E_kin"][end] - r.sol[r."E_kin"][1]) / 3.6e6
+   residual = (sum(kWh(x) for (_, x) in links) + ΔE_kin - kWh(r."E_cells")) / kWh(r."E_cells")
+   MJ_per_100km = Wh_per_km * 3.6 / 10, 5.22 * 0.745 * 43.4         # this car, the engine car
+   kWh(r."E_dc_in") / kWh(r."E_shaft_out")                          # braking energy back, per traction
+   ```
+
+::: tip Expected result
+
+**The bill, in Wh/km:** road load **103.2**, machine **17.6**, auxiliaries **6.4**, battery *R*<sub>0</sub> **3.1**, converter **2.1**, tire slip **1.8**, friction brakes **0.1**. They add up to **134.3 Wh/km** out of the cells, and `residual` is about **3 × 10⁻⁹**. The car ends at rest, so `ΔE_kin` is zero.
+
+**At the battery terminals:** `Wh_per_km` is **131.2**, 13.12 kWh/100 km, inside the plan's 120–155 Wh/km. The terminals gave out 165.4 Wh/km and took **34.2 Wh/km** back from braking: 24 % of the traction energy. The friction brakes burned only what the fade below 10 km/h left them.
+
+**Against the engine car:** **47.2 MJ/100 km** against **168.8 MJ/100 km**, 3.6 times less, on the same cycle and road load with a car 100 kg heavier.
+
+**Change one thing:** `MyCar.BEVEnergyBillTransient(P_aux = 500.0)` puts the consumption at 135.5 Wh/km: 200 W more for half an hour on 23 km is 4.3 Wh/km. A heater at 3 kW would add 64 Wh/km, half again.
+
+Reference: `HandsOn04.BEVEnergyBill`, `HandsOn04.BEVEnergyBillTransient`; the course library's `Vehicle.Planar.PlanarBEVWLTC` carries the same meters, and `notebooks/lecture04/03-energy-bill.pluto.jl` draws the bill.
+
+:::
+
+Commit: **Source Control** → message `Step 06: energy bill` → **Commit** → **Sync Changes**.
+
+:::: warning Fell behind?
+
+Paste `BEVEnergyBill` from step 1 of **Do this** above; it needs step 04's `ElectricDrive` and `BEVWLTC`, whose **Fell behind?** block is above.
+
+::::
+
+---
+
+Reference models: `dyad/HandsOn04/` in the course repository; checkpoint tests in `test/machine_plausibility.jl`, `test/converter_plausibility.jl`, `test/battery_plausibility.jl` and `test/bev_plausibility.jl`. Design: `docs/lecture-04-plan.md`.

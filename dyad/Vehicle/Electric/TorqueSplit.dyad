@@ -1,0 +1,53 @@
+"""
+Splits the driver's signed torque demand between the machine and the front friction brakes.
+
+    fade      = clamp(v / v_fade, 0, 1)
+    tau_motor = max(tau_ref, 0) + fade min(tau_ref, 0)
+    tau_brake = -(1 - fade) min(tau_ref, 0) ratio / 2
+
+`tau_ref` is the torque asked for at the machine shaft, positive driving. **Driving** is the
+machine's alone. **Braking** is the machine's too, regenerating into the battery, down to
+`v_fade`; below it the machine's share fades linearly to zero and the front friction brakes take
+the rest, so at standstill the friction brakes hold the car and the machine carries no current.
+A machine that braked down to zero speed would drive the car backwards out of every stop.
+
+`tau_motor` goes to the drive's torque input. `tau_brake` is the torque asked of each of the two
+front brakes: the share of `tau_ref` the machine does not take, carried through the reduction
+(`ratio`) and split over two wheels. A friction brake only opposes motion, so the brakes cannot
+reverse the car.
+
+`v` is the car's speed in km/h, the driver loop's unit; at or below zero the machine takes no
+braking. The machine's torque limit and the battery's charge-power limit do not enter: on WLTC,
+which never decelerates harder than 1.5 m/s² (85 N·m at the machine), neither binds.
+
+Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (assumed) the course's choice.
+"""
+component TorqueSplit
+  "Torque asked for at the machine shaft: positive drives, negative brakes"
+  tau_ref = RealInput() {^tau_ref}
+  "Vehicle speed [km/h]"
+  v = RealInput() {^v}
+  "Torque the machine is asked for"
+  tau_motor = RealOutput() {^tau_motor}
+  "Brake torque asked of each front friction brake"
+  tau_brake = RealOutput() {^tau_brake}
+  "Single-speed reduction, machine to differential (Nissan)"
+  parameter ratio::Real = 8.193
+  "Speed below which the machine's braking share fades to zero, km/h; the plan's band is 5-10 km/h (assumed)"
+  parameter v_fade::Real = 10.0
+  "Machine's share of a braking demand: 1 above v_fade, 0 at standstill"
+  variable fade::Real
+relations
+  fade = min(max(v / v_fade, 0.0), 1.0)
+  tau_motor = max(tau_ref, 0.0) + fade * min(tau_ref, 0.0)
+  tau_brake = -(1.0 - fade) * min(tau_ref, 0.0) * ratio / 2.0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/TorqueSplit.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "tau_motor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "tau_brake": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  }
+}
+end

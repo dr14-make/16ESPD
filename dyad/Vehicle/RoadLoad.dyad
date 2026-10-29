@@ -56,6 +56,7 @@ relations
   connect(grade, rolling.inclination) {^id15}
   connect(grade, gradeforce.grade) {^id16}
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/RoadLoad.svg"}},
   "_links": {
     "flange": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
     "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},

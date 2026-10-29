@@ -135,7 +135,7 @@ relations
   P_const = -constant_loss.tau * w
   P_loss = P_cu + P_fric + P_iron + P_wind + P_const
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
   "_links": {
     "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 500}, {"x": 80, "y": 320}, {"x": 470, "y": 320}], "E": 2}]}},
     "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},

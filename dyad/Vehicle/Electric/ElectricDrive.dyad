@@ -1,0 +1,79 @@
+"""
+The battery-electric drive of a Leaf-class car: battery, average converter and DC-equivalent
+machine, the 12 V auxiliaries on the DC link, and the single-speed reduction to the shaft that
+drives the differential.
+
+    battery -> DC link -> converter -> machine -> reduction (ratio) -> spline
+                       -> aux
+
+`tau_ref` is the machine torque asked for, positive motoring, negative braking. The converter
+imposes a current, so the drive divides the torque by the torque per ampere at the present
+field, `i_ref = tau_ref / (field k)`: the machine gives `field k i`, so `tau_ref` is the torque
+delivered at any speed, up to the converter's current limit. Below base speed `field = 1`; above
+it the converter weakens the field and the same torque takes more current, as a field-oriented
+drive's q-axis current does. A driver closed around the car's speed therefore sees the same
+loop gain on the motorway as in town. A negative `tau_ref` makes the machine a generator: the
+converter's and the battery's currents reverse and the pack charges.
+
+`spline` turns `ratio` times slower than the machine and carries `ratio` times its torque; the
+reduction is ideal, so it costs nothing. `support` takes the reactions of the machine housing
+and the gear case.
+
+Defaults are the Nissan Leaf ZE1. Source tags: (Nissan) ZE1 specification sheet, catalog 1709;
+(assumed) the course's choice.
+"""
+component ElectricDrive
+  "Machine torque asked for, positive motoring"
+  tau_ref = RealInput() {^tau_ref}
+  "Reduction output shaft, to the differential"
+  spline = Spline() {^spline}
+  "Machine housing and gear case"
+  support = Spline() {^support}
+  "Battery state of charge"
+  SoC = RealOutput() {^SoC}
+  battery = VehicleSystemsComponents.Vehicle.Electric.Battery(SoC0 = SoC0) {^battery}
+  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux) {^aux}
+  converter = VehicleSystemsComponents.Vehicle.Electric.Converter() {^converter}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine(field_weakening = true) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
+  "Single-speed reduction, machine to differential (Nissan)"
+  parameter ratio::Real = 8.193
+  "Power drawn by the 12 V network (assumed)"
+  parameter P_aux::Power = 300.0
+  "Battery state of charge at t = 0 (assumed)"
+  parameter SoC0::Real = 0.9
+relations
+  connect(battery.p, converter.p_in, aux.p) {^w1}
+  connect(battery.n, converter.n, aux.n, machine.n, ground.g) {^w2}
+  connect(converter.p_out, machine.p) {^w3}
+  connect(converter.field, machine.field) {^w4}
+  connect(machine.spline, reduction.spline_a) {^w5}
+  connect(reduction.spline_b, spline) {^w6}
+  connect(machine.support, reduction.support, support) {^w7}
+  connect(battery.SoC, SoC) {^w8}
+  converter.i_ref = tau_ref / (converter.field * machine.k)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
+    "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 545, "y1": 720, "x2": 625, "y2": 800}}}},
+    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 260}], "E": -1}, {"S": -1, "M": [{"x": 365, "y": 260}, {"x": 365, "y": 396}], "E": 2}, {"S": 3, "M": [], "E": -1}], "junctions": [{"x": 290, "y": 260}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 680}], "E": -1}, {"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 5}, {"S": -3, "M": [], "E": -2}, {"S": 2, "M": [], "E": -3}, {"S": 4, "M": [{"x": 585, "y": 504}], "E": -3}], "junctions": [{"x": 290, "y": 680}, {"x": 585, "y": 680}, {"x": 585, "y": 540}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 610, "y": 486}, {"x": 610, "y": 450}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 838, "y": 495}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 838, "y": 540}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 185, "y": 450}], "E": 2}]}}
+  }
+}
+end

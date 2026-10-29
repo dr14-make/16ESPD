@@ -195,3 +195,11 @@ interleaved. Figures the models can produce are regenerated from them, not copie
 - No thermal model of motor, inverter or battery; efficiencies are at warm operating temperature.
 - Battery E is constant: SoC does not move the open-circuit voltage until the extra pack's cell.
 - WLTC is gentle; the blending result on WLTC is mostly fade, so the hard stop carries that lesson.
+- Reduction and differential are ideal gears. A real single-speed reducer's 2–3 % each way, on
+  the 144 Wh/km of traction and 39 Wh/km of braking at the shaft, would add 4–5 Wh/km to the bill.
+- Step 4's car (`Vehicle.Electric.TorqueSplit`) brakes on the motor down to 10 km/h and hands the
+  rest to the front friction brakes; S8's charge-power limit, allocator and hard stop come with
+  step 5. Measured on WLTC: 134.3 Wh/km at the cells, 34.2 Wh/km back into the battery
+  terminals, 23.8 % of the shaft's traction energy, just above the 18–22 % anchor: the regen path
+  (motor, converter, pack) returns 89 % of the shaft's braking energy, just above Boretti's
+  measured 72–87 % on the MY2013 Leaf.
