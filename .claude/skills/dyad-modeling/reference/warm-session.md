@@ -69,5 +69,6 @@ send `exit()`, then the start lines again — Revise keeps the old name defined.
 
 ## Before tests, and at the end
 
-Send `exit()` before running a test group, and when the task ends: the session holds every model it
-has compiled, and the machine runs one model-loading Julia at a time.
+Send `exit()` before running a test group: the session holds every model it has compiled, and the
+machine runs one model-loading Julia at a time. When the task ends, `herdr pane close "$P"` — the
+pane you split, and no other.
