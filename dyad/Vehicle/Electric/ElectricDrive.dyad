@@ -55,24 +55,24 @@ relations
   converter.i_ref = tau_ref / (converter.field * machine.k)
 metadata {
   "_links": {
-    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
-    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 650, "y1": 950, "x2": 750, "y2": 1050}}}},
-    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}}}},
-    "battery": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 200, "x2": 200, "y2": 300, "rot": 90}}}},
-    "aux": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 600, "x2": 350, "y2": 700, "rot": 90}}}},
-    "converter": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 300, "x2": 400, "y2": 400}}}},
-    "machine": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 400, "x2": 600, "y2": 500}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 800, "x2": 500, "y2": 900}}}},
-    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 250, "y": 300}]}},
-    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [], "E": 5}], "junctions": [{"x": 450, "y": 750}]}},
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
+    "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 545, "y1": 720, "x2": 625, "y2": 800}}}},
+    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 260}], "E": -1}, {"S": -1, "M": [{"x": 365, "y": 260}, {"x": 365, "y": 396}], "E": 2}, {"S": 3, "M": [], "E": -1}], "junctions": [{"x": 290, "y": 260}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 680}], "E": -1}, {"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 5}, {"S": -3, "M": [], "E": -2}, {"S": 2, "M": [], "E": -3}, {"S": 4, "M": [{"x": 585, "y": 504}], "E": -3}], "junctions": [{"x": 290, "y": 680}, {"x": 585, "y": 680}, {"x": 585, "y": 540}]}},
     "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 610, "y": 486}, {"x": 610, "y": 450}], "E": 2}]}},
     "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 650, "y": 900}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 838, "y": 495}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 838, "y": 540}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 185, "y": 450}], "E": 2}]}}
   }
 }
 end
