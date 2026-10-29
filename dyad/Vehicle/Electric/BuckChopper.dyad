@@ -1,0 +1,105 @@
+"""
+Step-down (buck) chopper, switched: deck 7 slide 28. A `Switch` chops the input onto the switch
+node, a freewheeling diode carries the inductor current while the switch is off, and the
+inductor smooths the pulses into a current with a ripple.
+
+    p_in -- transistor --+-- inductor -- winding -- p_out
+                         |
+                       diode (anode at n)
+                         |
+    n -------------------+-------------------------- n
+
+The `PWM` block turns the duty command `d` into the gate signal at `f_s`. On average the switch
+node sits at `d V_in`, less the switch, diode and winding drops, so this is the switched
+counterpart of the average converter `V_out = d V_in`. Around that average the inductor current
+rises by `(V_in - V_out) d / (L f_s)` while the switch is on and falls by as much while it is
+off: the ripple, which halves when `L` or `f_s` doubles.
+
+Each of the deck's loss mechanisms is a part with its own power: `P_switch` in the switch
+(`R_on i^2` while on, plus the switching loss of every edge), `P_diode` in the diode (about
+`0.6 V` times the current while it conducts), and `P_winding` in the inductor's resistance.
+They sum to `P_loss`, and over a whole period in steady state `P_in = P_out + P_loss`; the
+instantaneous balance also carries the inductor's stored energy.
+
+The diode is the standard library's exponential `Diode` with its MSL defaults: it conducts
+3.3 A at 0.60 V and continues linearly with 12 mOhm above that, so it drops 0.68 V at 10 A and
+0.81 V at 20 A, the deck's `0.6 x I`. It has no reverse recovery. Defaults are a 48 V to 13 V
+converter of a few hundred watts at 20 kHz. Source tags: (deck) slide 28; (assumed) the
+course's choice.
+"""
+component BuckChopper
+  "Input, positive rail"
+  p_in = Pin() {^p_in}
+  "Output, positive rail"
+  p_out = Pin() {^p_out}
+  "Negative rail, common to input and output"
+  n = Pin() {^n}
+  "Duty cycle command, 0 to 1"
+  d = RealInput() {^d}
+  pwm = VehicleSystemsComponents.Vehicle.Electric.PWM(f_s = f_s, t_sw = t_sw) {^pwm}
+  transistor = VehicleSystemsComponents.Vehicle.Electric.Switch(R_on = R_on, R_off = R_off) {^transistor}
+  diode = ElectricalComponents.Analog.Semiconductors.Diode() {^diode}
+  inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
+  winding = ElectricalComponents.Analog.Basic.Resistor(R = R_L) {^winding}
+  "Switching frequency (assumed)"
+  parameter f_s::Frequency = 20.0e3
+  "Duration of each gate edge; switching loss per edge 0.109 V I t_sw (assumed)"
+  parameter t_sw::Time = 0.5e-6
+  "Switch on-resistance, R_DSon (assumed)"
+  parameter R_on::Resistance = 10.0e-3
+  "Switch off-resistance (assumed)"
+  parameter R_off::Resistance = 1.0e6
+  "Inductance: ripple about a quarter of the load current at 48 V in, 13 V and 19 A out (assumed)"
+  parameter L::Inductance = 100.0e-6
+  "Inductor winding resistance (assumed)"
+  parameter R_L::Resistance = 10.0e-3
+  "Inductor current, toward the output"
+  variable i_L::Current
+  "Switch-node voltage against the negative rail"
+  variable v_sw::Voltage
+  "Output voltage"
+  variable v_out::Voltage
+  "Power drawn at the input"
+  variable P_in::Power
+  "Power delivered at the output"
+  variable P_out::Power
+  "Switch loss, conduction and switching"
+  variable P_switch::Power
+  "Diode loss"
+  variable P_diode::Power
+  "Inductor winding loss"
+  variable P_winding::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  connect(d, pwm.u) {^id1}
+  connect(pwm.y, transistor.g) {^id2}
+  connect(p_in, transistor.p) {^id3}
+  connect(transistor.n, diode.n, inductor.p) {^id4}
+  connect(inductor.n, winding.p) {^id5}
+  connect(winding.n, p_out) {^id6}
+  connect(diode.p, n) {^id7}
+  i_L = inductor.i
+  v_sw = transistor.n.v - n.v
+  v_out = p_out.v - n.v
+  P_in = (p_in.v - n.v) * p_in.i
+  P_out = -v_out * p_out.i
+  P_switch = transistor.P_loss
+  P_diode = diode.LossPower
+  P_winding = winding.v * winding.i
+  P_loss = P_switch + P_diode + P_winding
+metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "d": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 90}}}},
+    "pwm": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 50, "x2": 250, "y2": 150, "rot": 90}}}},
+    "transistor": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 150, "x2": 250, "y2": 250}}}},
+    "diode": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 500, "x2": 400, "y2": 600, "rot": 270}}}},
+    "inductor": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 150, "x2": 550, "y2": 250}}}},
+    "winding": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 150, "x2": 750, "y2": 250}}}}
+  }
+}
+end

@@ -1,0 +1,58 @@
+"""
+Bench for the library `BuckChopper`, the circuit of deck 7 slide 28: a stiff `V_in` supply, the
+chopper at a fixed duty `d`, and a resistive load. The inductor starts without current, so the
+run shows the current climbing into its periodic steady state with `L / R` = 0.14 ms (defaults),
+then the ripple at `f_s`; from 1 ms on the run is periodic.
+
+With the defaults (48 V, d = 0.3, 0.7 Ohm, 20 kHz) the output settles at 13.4 V and 19.1 A,
+256 W, with a ripple of 5.0 A peak to peak, a quarter of the current. The losses are 10.6 W in
+the diode, 3.7 W in the winding, 1.1 W of conduction and 2.0 W of switching in the switch, so
+the chopper is 93.6 % efficient: the deck's "over 90 %". Most of the loss is the diode's 0.8 V
+against a 13 V output, which is why low-voltage converters replace the diode with a second
+switch. The current sits 1.7 % below the textbook `d V_in` estimate because the switch node
+rises late in each turn-on ramp and falls early in each turn-off ramp: the effective duty is
+0.296 (see the `switching` tests).
+
+The analysis caps the step at 1 us so that the solver cannot step over a gate pulse.
+"""
+test component TestBuckChopper
+  "Supply voltage"
+  parameter V_in::Voltage = 48.0
+  "Duty cycle"
+  parameter d::Real = 0.3
+  "Load resistance"
+  parameter R_load::Resistance = 0.7
+  "Switching frequency"
+  parameter f_s::Frequency = 20.0e3
+  "Inductance"
+  parameter L::Inductance = 100.0e-6
+  supply_voltage = BlockComponents.Sources.Constant(k = V_in) {^supply_voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  duty = BlockComponents.Sources.Constant(k = d) {^duty}
+  chopper = VehicleSystemsComponents.Vehicle.Electric.BuckChopper(f_s = f_s, L = L) {^chopper}
+  load = ElectricalComponents.Analog.Basic.Resistor(R = R_load) {^load}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+relations
+  initial chopper.inductor.i = 0
+  initial chopper.v_sw = 0
+  connect(supply_voltage.y, supply.V) {^id1}
+  connect(duty.y, chopper.d) {^id2}
+  connect(supply.p, chopper.p_in) {^id3}
+  connect(chopper.p_out, load.p) {^id4}
+  connect(supply.n, chopper.n, load.n, ground.g) {^id5}
+end
+
+analysis BuckChopperTransient
+  extends TransientAnalysis(stop = 2.0e-3, alg = ODEAlg.Rodas5P(), abstol = 1.0e-7, reltol = 1.0e-7, dtmax = 1.0e-6)
+  "Supply voltage"
+  parameter V_in::Voltage = 48.0
+  "Duty cycle"
+  parameter d::Real = 0.3
+  "Load resistance"
+  parameter R_load::Resistance = 0.7
+  "Switching frequency"
+  parameter f_s::Frequency = 20.0e3
+  "Inductance"
+  parameter L::Inductance = 100.0e-6
+  model = VehicleSystemsComponents.Vehicle.Electric.TestBuckChopper(V_in = V_in, d = d, R_load = R_load, f_s = f_s, L = L)
+end

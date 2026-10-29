@@ -10,6 +10,12 @@ end
 
 
 include("Battery_experiment.jl")
+include("BuckChopper_experiment.jl")
 include("DCMachine_experiment.jl")
+include("HBridge_experiment.jl")
+include("PWM_experiment.jl")
+include("Switch_experiment.jl")
 include("TestBattery_experiment.jl")
+include("TestBuckChopper_experiment.jl")
 include("TestDCMachine_experiment.jl")
+include("TestHBridge_experiment.jl")

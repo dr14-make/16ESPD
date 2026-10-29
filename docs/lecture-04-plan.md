@@ -75,8 +75,10 @@ Lecture 2's S1: never stack time scales. The inverter in the car is the average 
 2. The DC-DC converter is a constant 12 V auxiliary power draw (the deck's O_aux). The charger is a
 theory slide and one efficiency. The buck chopper and the H-bridge with PWM are separate
 millisecond-scale models for the lecturer's demo and a notebook, regenerating deck slides 28–32.
-The stdlib has no switch or diode, so a switch is a `VariableResistor` toggled between on and off
-values.
+The stdlib has no switch, so a switch is a `VariableResistor` toggled between on and off
+values. ElectricalComponents 3.0 does ship an exponential `Diode`, which the freewheeling diodes
+use. Slides 29 (boost) and 32 (three-phase bridge) are diagrams with no switched model; the
+notebook regenerates 28, 30 and 31.
 
 **S5 — The battery is simple and has one interface.** V = E − I·R with constant E, SoC by coulomb
 counting. The extra pack's Thevenin cell (OCV(SoC), R0, one RC pair) replaces it without

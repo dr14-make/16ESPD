@@ -1,0 +1,67 @@
+"""
+Bench for the library `HBridge`, the circuit of deck 7 slides 30 and 31: the Leaf pack's 350 V
+as a stiff DC link, the bridge, and an R-L load such as a motor winding. A sine reference of
+amplitude `m` at `f_1` drives the bridge; the load current starts at zero and its offset decays
+with `L_load / R_load` = 1 ms, so from the second cycle on the run is periodic.
+
+With the defaults (m = 0.8, 50 Hz, 10 Ohm, 10 mH, 1 kHz carrier, about ten pulses per half
+cycle as on slide 31) the output voltage's fundamental is `m V_dc` = 280 V and the current's is
+280 V / |10 + j 3.14| Ohm = 26.7 A, lagging by 17 degrees. The switching harmonics of the voltage
+sit around 1, 2, 3 kHz, the largest at 950 and 1050 Hz (119 V and 102 V); the inductance's
+63 Ohm at 1 kHz keeps their current to a ripple of about 2 A. The 3rd, 5th and 7th harmonics
+come out at about 15 V each: for the 17 degrees after each zero crossing the current still flows
+the old way, the diode of the switch that is off clamps the output to the full rail, and the
+voltage stops following the reference. They vanish with a resistive load. With `m` well above 1
+(say 20) the bridge runs square wave, as on slide 30.
+
+The analysis caps the step at 10 us so that the solver cannot step over a gate pulse.
+"""
+test component TestHBridge
+  "DC link voltage, the Leaf ZE1 pack's 350 V nominal (Nissan)"
+  parameter V_dc::Voltage = 350.0
+  "Modulation index: amplitude of the sine reference"
+  parameter m::Real = 0.8
+  "Output (fundamental) frequency"
+  parameter f_1::Frequency = 50.0
+  "Switching (carrier) frequency"
+  parameter f_s::Frequency = 1.0e3
+  "Load resistance (assumed)"
+  parameter R_load::Resistance = 10.0
+  "Load inductance (assumed)"
+  parameter L_load::Inductance = 10.0e-3
+  supply_voltage = BlockComponents.Sources.Constant(k = V_dc) {^supply_voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  reference = BlockComponents.Sources.Sine(amplitude = m, frequency = f_1) {^reference}
+  bridge = VehicleSystemsComponents.Vehicle.Electric.HBridge(f_s = f_s) {^bridge}
+  load_resistor = ElectricalComponents.Analog.Basic.Resistor(R = R_load) {^load_resistor}
+  load_inductor = ElectricalComponents.Analog.Basic.Inductor(L = L_load) {^load_inductor}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+relations
+  initial load_inductor.i = 0
+  initial bridge.switch_c.capacitance.v = V_dc / 2
+  initial bridge.switch_d.capacitance.v = V_dc / 2
+  connect(supply_voltage.y, supply.V) {^id1}
+  connect(reference.y, bridge.u) {^id2}
+  connect(supply.p, bridge.p) {^id3}
+  connect(supply.n, bridge.n, ground.g) {^id4}
+  connect(bridge.a, load_resistor.p) {^id5}
+  connect(load_resistor.n, load_inductor.p) {^id6}
+  connect(load_inductor.n, bridge.b) {^id7}
+end
+
+analysis HBridgeTransient
+  extends TransientAnalysis(stop = 0.06, alg = ODEAlg.Rodas5P(), abstol = 1.0e-7, reltol = 1.0e-7, dtmax = 10.0e-6)
+  "DC link voltage"
+  parameter V_dc::Voltage = 350.0
+  "Modulation index: amplitude of the sine reference"
+  parameter m::Real = 0.8
+  "Output (fundamental) frequency"
+  parameter f_1::Frequency = 50.0
+  "Switching (carrier) frequency"
+  parameter f_s::Frequency = 1.0e3
+  "Load resistance"
+  parameter R_load::Resistance = 10.0
+  "Load inductance"
+  parameter L_load::Inductance = 10.0e-3
+  model = VehicleSystemsComponents.Vehicle.Electric.TestHBridge(V_dc = V_dc, m = m, f_1 = f_1, f_s = f_s, R_load = R_load, L_load = L_load)
+end

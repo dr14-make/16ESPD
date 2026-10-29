@@ -339,6 +339,31 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
 - **Memory.** Running several agents alongside the Dyad language server exhausts this machine;
   `earlyoom` is configured to prefer killing `julia`. A run that dies with no error message was
   probably killed, not broken. Retry before debugging.
+- **The dyad-3.5.0 kernel ships no GR.** Its stdlib has `Plots`, `PlotlyBase`, `PlotlyKaleido`
+  and `Kaleido_jll`; the 3.4 kernel also had `GR`. `setup()` defaults to `backend = :gr` and
+  fails on 3.5 with `Package GR not found in current path`, so the Lecture 4 notebook calls
+  `setup(backend = :plotly)` and `scripts/export_lecture04_figures.jl` writes its SVGs through
+  Kaleido. Three traps on that route: `Plots.savefig` passes Kaleido no size, so every figure
+  comes out 700 × 500 whatever `size` says (the script converts the plot itself and passes its
+  size); plotly's default line simplification draws smooth curves as visible polygons (the script
+  sets `line.simplify = false`); and `vspan!` writes infinite bounds that the JSON writer rejects
+  (`-Inf not allowed`), so shade with a finite `Shape`. The Lecture 3 export still asks for GR and
+  needs the 3.4 kernel or the same change.
+- **`switch` is a reserved word in Dyad.** An instance named `switch` fails to parse with "The
+  'component' block needs to be closed with an 'end' keyword, but I found 'switch'". A component
+  type may be called `Switch`.
+- **A switch node needs a capacitance.** In the switched buck chopper (resistive `Switch` plus the
+  library's exponential `Diode`) the node between them was algebraic, and at each turn-on the
+  solver had to move it from the diode's drop to the supply in one algebraic step: at
+  `abstol = reltol = 1e-6`, Rodas5P threw the node to −1088 V and aborted on the second pulse
+  (t = 67.9 µs); it only ran at 1e-7 and tighter. The switch's output capacitance `C_oss` = 1 nF
+  makes the node a state; the run then succeeds at 1e-6 and the current moves by 0.4 mA of 19 A.
+- **Average switching power over the solver's own steps.** The loss in a switching edge is a
+  pulse a few nanoseconds wide. A 1 µs sampling grid put the 10 kHz H-bridge's losses at
+  1266 W against 26 W, and sampling the interpolant between steps still gave 103–179 W, because it
+  misreads the currents that charge `C_oss`. The trapezoid rule over `sol.t` closes
+  `P_dc = P_ac + P_loss` to 1e-7 and matches the hand estimate; the `switching` tests and the
+  notebook use it. Voltages and smooth currents can still be sampled from the interpolant.
 
 ## Conventions
 
