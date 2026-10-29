@@ -1,0 +1,58 @@
+"""
+Hands-on 04 step 04: the drive. Battery, converter and machine from steps 1-3, the 12 V
+auxiliaries on the DC link, and the 8.193 reduction to the shaft that turns the differential.
+`tau_ref` is the machine torque asked for; the drive asks the converter for the current that
+gives it at full field. Same names as the library's `Vehicle.Electric.ElectricDrive`.
+"""
+component ElectricDrive
+  "Machine torque asked for, positive motoring"
+  tau_ref = RealInput() {^tau_ref}
+  "Reduction output shaft, to the differential"
+  spline = Spline() {^spline}
+  "Machine housing and gear case"
+  support = Spline() {^support}
+  "Battery state of charge"
+  SoC = RealOutput() {^SoC}
+  battery = Battery() {^battery}
+  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux) {^aux}
+  converter = Converter() {^converter}
+  machine = DCMachine(field_weakening = true) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
+  "Single-speed reduction, Leaf ZE1"
+  parameter ratio::Real = 8.193
+  "Power drawn by the 12 V network"
+  parameter P_aux::Power = 300.0
+relations
+  connect(battery.p, converter.p_in, aux.p) {^w1}
+  connect(battery.n, converter.n, aux.n, machine.n, ground.g) {^w2}
+  connect(converter.p_out, machine.p) {^w3}
+  connect(converter.field, machine.field) {^w4}
+  connect(machine.spline, reduction.spline_a) {^w5}
+  connect(reduction.spline_b, spline) {^w6}
+  connect(machine.support, reduction.support, support) {^w7}
+  connect(battery.SoC, SoC) {^w8}
+  converter.i_ref = tau_ref / machine.k
+metadata {
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 650, "y1": 950, "x2": 750, "y2": 1050}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 150, "y1": -50, "x2": 250, "y2": 50, "rot": 270}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 200, "x2": 200, "y2": 300, "rot": 90}}}},
+    "aux": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 600, "x2": 350, "y2": 700, "rot": 90}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 300, "x2": 400, "y2": 400}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 400, "x2": 600, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 800, "x2": 500, "y2": 900}}}},
+    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 250, "y": 300}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [], "E": 5}], "junctions": [{"x": 450, "y": 750}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 650, "y": 900}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end

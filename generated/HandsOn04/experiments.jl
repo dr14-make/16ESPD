@@ -9,10 +9,13 @@ if isfile(joinpath((@__DIR__) |> Base.dirname |> Base.dirname, "dyad", "HandsOn0
 end
 
 
+include("BEVEnergyBill_experiment.jl")
+include("BEVWLTC_experiment.jl")
 include("BatteryDischarge_experiment.jl")
 include("Battery_experiment.jl")
 include("ConverterDyno_experiment.jl")
 include("Converter_experiment.jl")
 include("DCMachineDyno_experiment.jl")
 include("DCMachine_experiment.jl")
+include("ElectricDrive_experiment.jl")
 include("FieldEMF_experiment.jl")

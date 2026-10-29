@@ -1,0 +1,29 @@
+"""
+The 12 V auxiliaries as a constant power drawn from the traction battery's DC link: the DC-DC
+converter and everything behind it (control units, pumps, fans, lights), lumped into one draw
+`P_aux` (deck 7's O_aux).
+
+    T di/dt = P_aux / v - i
+
+`i` is the current drawn, into `p` and out of `n`. The DC-DC converter's control holds its draw
+at `P_aux` with the time constant `T`, so in steady state `v i = P_aux` and the current rises as
+the link voltage sags. The DC-DC converter's own loss is inside `P_aux`.
+
+The current is a state starting at zero, not solved from `v i = P_aux`: a constant power
+behind a source resistance has two operating points, the link near its open voltage with a
+small current and the link collapsed with a huge one (0.086 V and 3500 A on the Leaf pack), and
+initialization of the algebraic form can pick the collapsed one.
+
+The default is for a car driven on a test cycle with the climate control off: 300 W (assumed).
+Lecture 2's road-load energy notebook used 500 W (assumed) for the engine car's auxiliaries.
+"""
+component AuxLoad
+  extends ElectricalComponents.Analog.Interfaces.OnePort
+  "Power drawn by the 12 V network through the DC-DC converter (assumed)"
+  parameter P_aux::Power = 300.0
+  "Time constant of the DC-DC converter's power control (assumed)"
+  parameter T::Time = 0.01
+relations
+  initial i = 0.0
+  T * der(i) = P_aux / v - i
+end

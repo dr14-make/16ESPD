@@ -16,10 +16,12 @@ end
 
 
 @testset "`VehicleSystemsComponents.Vehicle.Electric`" begin
+include("AuxLoad_test.jl")
 include("Battery_test.jl")
 include("BuckChopper_test.jl")
 include("Converter_test.jl")
 include("DCMachine_test.jl")
+include("ElectricDrive_test.jl")
 include("FieldEMF_test.jl")
 include("HBridge_test.jl")
 include("PWM_test.jl")

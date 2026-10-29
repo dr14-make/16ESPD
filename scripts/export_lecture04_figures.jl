@@ -3,10 +3,10 @@ Writes the Lecture 4 deck's notebook figures into `slides/decks/lecture-04/publi
 
     julia +dyad-3.5.0 --project=. scripts/export_lecture04_figures.jl
 
-Runs `notebooks/lecture04/02-switching.pluto.jl` top to bottom with its controls at their
-defaults, and saves the plots the deck shows as SVG. The notebook runs in a module of its own:
-it assigns the global `VehicleSystemsComponents`, which would collide with the package `setup()`
-loads into `Main`.
+Runs `notebooks/lecture04/02-switching.pluto.jl` and `03-energy-bill.pluto.jl` top to bottom
+with their controls at their defaults, and saves the plots the deck shows as SVG. Each notebook
+runs in a module of its own: it assigns the global `VehicleSystemsComponents`, which would
+collide with the package `setup()` loads into `Main`.
 
 The dyad-3.5 kernel ships Plots' plotly backend with Kaleido, not GR, so the figures go through
 Kaleido. Plots hands Kaleido no size, and Kaleido then draws every figure at 700 x 500, so the
@@ -28,6 +28,11 @@ const FIGURES = Dict(
         "05-pwm-current" => :pwm_current_plot,
         "05-pwm-spectrum" => :pwm_spectrum_plot,
         "05-pwm-carrier" => :pwm_carrier_plot,
+    ],
+    "03-energy-bill.pluto.jl" => [
+        "08-wltc-tracking" => :tracking_plot,
+        "08-energy-bill" => :bill_plot,
+        "08-mj-comparison" => :mj_plot,
     ],
 )
 

@@ -275,7 +275,8 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   to 0.078 rad/s. These analyses therefore set `optimize = OptimizationLevel.None()`:
   `PlanarOpenLoopTransient`, `SineWithDwellRunTransient`, `ESPSineWithDwellTransient`,
   `ESPSteerRampTransient`, `SplitMuStopTransient`, `BrakeAndSteerTransient`,
-  `ABSStraightStopTransient`, `PlanarWLTCTransient` and `PlanarCruiseTransient`. A new analysis of a model with repeated identical algebraic loops
+  `ABSStraightStopTransient`, `PlanarWLTCTransient`, `PlanarCruiseTransient`,
+  `PlanarBEVWLTCTransient`, `HandsOn04.BEVWLTCTransient` and `HandsOn04.BEVEnergyBillTransient`. A new analysis of a model with repeated identical algebraic loops
   needs the same line; compare a run at `None` against `Aggressive` to tell. Do not set it
   everywhere: `ThrottlePedalStepTransient` starts the throttle at the wrong position under
   `None` and is correct under the default. The generated tests cannot take the setting, so the
@@ -376,6 +377,17 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   sets `line.simplify = false`); and `vspan!` writes infinite bounds that the JSON writer rejects
   (`-Inf not allowed`), so shade with a finite `Shape`. The Lecture 3 export still asks for GR and
   needs the 3.4 kernel or the same change.
+- **A constant-power load on the battery has two solutions, and initialization can pick the
+  wrong one.** `v i = P` behind the pack's `E - R0 i` is a quadratic: the link near 350 V with
+  0.86 A, or the link collapsed to 0.086 V with 3500 A. Written algebraically in the BEV, the
+  solver initialized on the second, burned 3.8 kWh in `R0` in 11 s and aborted (`dt forced below
+  eps`, the converter's field at −77 000). A `guess i = 0` did not help: the torn unknown was the
+  link voltage, not the load current. `Vehicle.Electric.AuxLoad` therefore makes its current a
+  state, `T di/dt = P/v - i` from `i = 0`, which starts on the high-voltage branch and stays; the 10 ms lag
+  costs 1e-5 of the auxiliary energy over WLTC.
+- **`r."path"` takes a literal only.** On an analysis result, `r."E_dc"` works but `r."$x"`
+  with `x = "E_dc"` throws a `MethodError`, and `getproperty(r, :E_dc)` a `FieldError`. A snippet
+  that loops over signals collects the literals first: `links = ["road" => r."E_road", ...]`.
 - **`switch` is a reserved word in Dyad.** An instance named `switch` fails to parse with "The
   'component' block needs to be closed with an 'end' keyword, but I found 'switch'". A component
   type may be called `Switch`.

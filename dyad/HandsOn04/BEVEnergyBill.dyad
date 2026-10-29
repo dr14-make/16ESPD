@@ -1,0 +1,70 @@
+"""
+Hands-on 04 step 06: the step 04 bench with an energy meter on every link. Each `E_` state
+integrates one power from t = 0, in joules: out of the cells (`E_cells`), at the battery
+terminals (`E_dc`, split into `E_dc_out` discharged and `E_dc_in` charged back), the battery
+resistance, the auxiliaries, the converter, the machine, the shaft to the differential (traction
+`E_shaft_out`, braking `E_shaft_in`), the road load, the friction brakes and tire slip. `E_kin`
+is the energy stored in motion and in the armature. The links, with the change in `E_kin`, add
+up to `E_cells`.
+"""
+component BEVEnergyBill
+  extends BEVWLTC
+  "Power at the battery terminals, positive discharging"
+  variable P_dc::Power
+  "Power at the reduction output, positive driving the wheels"
+  variable P_shaft::Power
+  variable E_cells::Energy
+  variable E_dc::Energy
+  variable E_dc_out::Energy
+  variable E_dc_in::Energy
+  variable E_R0::Energy
+  variable E_aux::Energy
+  variable E_conv::Energy
+  variable E_motor::Energy
+  variable E_shaft_out::Energy
+  variable E_shaft_in::Energy
+  variable E_road::Energy
+  variable E_brake::Energy
+  variable E_tire::Energy
+  "Kinetic energy of body, wheels and rotor, and the armature's magnetic energy"
+  variable E_kin::Energy
+relations
+  P_dc = drive.battery.v * drive.battery.i
+  P_shaft = drive.machine.P_mech
+  der(E_cells) = drive.battery.E * drive.battery.i
+  der(E_dc) = P_dc
+  der(E_dc_out) = max(P_dc, 0.0)
+  der(E_dc_in) = max(-P_dc, 0.0)
+  der(E_R0) = drive.battery.R0 * drive.battery.i ^ 2
+  der(E_aux) = drive.aux.v * drive.aux.i
+  der(E_conv) = drive.converter.P_loss
+  der(E_motor) = drive.machine.P_loss
+  der(E_shaft_out) = max(P_shaft, 0.0)
+  der(E_shaft_in) = max(-P_shaft, 0.0)
+  der(E_road) = roadload.F * sensors.vx
+  der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+  der(E_tire) = car.fl.joint.f_long * car.fl.joint.v_slip_long + car.fl.joint.f_lat * car.fl.joint.v_slip_lat + car.fr.joint.f_long * car.fr.joint.v_slip_long + car.fr.joint.f_lat * car.fr.joint.v_slip_lat + car.rl.joint.f_long * car.rl.joint.v_slip_long + car.rl.joint.f_lat * car.rl.joint.v_slip_lat + car.rr.joint.f_long * car.rr.joint.v_slip_long + car.rr.joint.f_lat * car.rr.joint.v_slip_lat
+  E_kin = 0.5 * m * (car.body.v[1] ^ 2 + car.body.v[2] ^ 2) + 0.5 * car.Iz * car.body.w ^ 2 + 0.5 * car.J * (car.fl.inertia.w ^ 2 + car.fr.inertia.w ^ 2 + car.rl.inertia.w ^ 2 + car.rr.inertia.w ^ 2) + 0.5 * drive.machine.J * drive.machine.rotor.w ^ 2 + 0.5 * drive.machine.L * drive.machine.inductor.i ^ 2
+  initial E_cells = 0.0
+  initial E_dc = 0.0
+  initial E_dc_out = 0.0
+  initial E_dc_in = 0.0
+  initial E_R0 = 0.0
+  initial E_aux = 0.0
+  initial E_conv = 0.0
+  initial E_motor = 0.0
+  initial E_shaft_out = 0.0
+  initial E_shaft_in = 0.0
+  initial E_road = 0.0
+  initial E_brake = 0.0
+  initial E_tire = 0.0
+end
+
+analysis BEVEnergyBillTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  parameter k::Real = 50.0
+  parameter Ti::Time = 2.0
+  parameter v_fade::Real = 10.0
+  parameter P_aux::Power = 300.0
+  model = BEVEnergyBill(k = k, Ti = Ti, v_fade = v_fade, P_aux = P_aux)
+end

@@ -1,0 +1,136 @@
+"""
+Hands-on 04 step 04 bench: your drive turns the planar car's front wheels through the planar
+differential, and a PI driver follows WLTC. The driver asks for a machine torque. Driving, the
+machine gives it; braking, the machine takes it back into the battery, its share faded from all
+at `v_fade` to none at standstill, and the front friction brakes take the rest, so the car never
+rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
+"""
+component BEVWLTC
+  "Vehicle mass, shared by the car and its road load (probe)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Driver gain, machine torque per km/h of speed error (assumed)"
+  parameter k::Real = 50.0
+  "Driver integral time (assumed)"
+  parameter Ti::Time = 2.0
+  "Driver torque limit, the machine's peak torque (Nissan)"
+  parameter tau_max::Torque = 320.0
+  "Speed below which the machine's braking share fades to zero, km/h (assumed)"
+  parameter v_fade::Real = 10.0
+  "Power drawn by the 12 V network (assumed)"
+  parameter P_aux::Power = 300.0
+  "Single-speed reduction (Nissan)"
+  parameter ratio::Real = 8.193
+  "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+  parameter dv_wheel::Velocity = 0.01
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  "Machine torque the driver asks for"
+  variable tau_cmd::Torque
+  "Machine's share of braking: 1 above v_fade, 0 at standstill"
+  variable fade::Real
+  "Friction brake torque asked of each front wheel"
+  variable tau_friction::Torque
+relations
+  connect(trace.y, driver.u_s) {^w1}
+  connect(sensors.vx, kmh.u) {^w2}
+  connect(kmh.y, driver.u_m) {^w3}
+  connect(no_ff.y, driver.u_ff) {^w4}
+  connect(drive.spline, differential.flange_b) {^w5}
+  connect(differential.flange_left, car.spin_fl) {^w6}
+  connect(differential.flange_right, car.spin_fr) {^w7}
+  connect(drive.support, mount.spline) {^w8}
+  connect(car.steering, straight.spline) {^w9}
+  connect(flat.y, roadload.grade) {^w10}
+  connect(car.chassis, roadload.chassis, sensors.chassis) {^w11}
+  connect(car.steering, sensors.steering) {^w12}
+  connect(car.wheel_fl, sensors.wheel_fl) {^w13}
+  connect(car.wheel_fr, sensors.wheel_fr) {^w14}
+  connect(car.wheel_rl, sensors.wheel_rl) {^w15}
+  connect(car.wheel_rr, sensors.wheel_rr) {^w16}
+  connect(car.spin_fl, sensors.spin_fl) {^w17}
+  connect(car.spin_fr, sensors.spin_fr) {^w18}
+  connect(car.spin_rl, sensors.spin_rl) {^w19}
+  connect(car.spin_rr, sensors.spin_rr) {^w20}
+  tau_cmd = driver.y
+  fade = min(1.0, max(0.0, kmh.y / v_fade))
+  drive.tau_ref = max(tau_cmd, 0.0) + fade * min(tau_cmd, 0.0)
+  tau_friction = -(1.0 - fade) * min(tau_cmd, 0.0) * ratio / 2.0
+  car.tau_fl = tau_friction
+  car.tau_fr = tau_friction
+  car.tau_rl = 0.0
+  car.tau_rr = 0.0
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial drive.converter.i_out = 0.0
+metadata {
+  "_links": {
+    "trace": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 0, "x2": 100, "y2": 100}}}},
+    "driver": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 50, "x2": 350, "y2": 150}}}},
+    "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 250, "x2": 100, "y2": 350}}}},
+    "kmh": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 450, "x2": 250, "y2": 550}}}},
+    "drive": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 50, "x2": 550, "y2": 150}}}},
+    "differential": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 50, "x2": 750, "y2": 150}}}},
+    "mount": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 250, "x2": 550, "y2": 350}}}},
+    "straight": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": -200, "x2": 1000, "y2": -100}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 600, "x2": 1300, "y2": 700}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 0, "x2": 1050, "y2": 200}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 400, "x2": 1050, "y2": 600}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 400, "x2": 1300, "y2": 500}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 1100, "y": 300}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+analysis BEVWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  parameter k::Real = 50.0
+  parameter Ti::Time = 2.0
+  parameter v_fade::Real = 10.0
+  parameter P_aux::Power = 300.0
+  model = BEVWLTC(k = k, Ti = Ti, v_fade = v_fade, P_aux = P_aux)
+end
