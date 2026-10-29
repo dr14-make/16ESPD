@@ -1,29 +1,90 @@
 # Find layout defects in a rendered diagram: diagonal wire segments, crossings, overlapping wires,
-# wires through blocks or instance labels, and anything outside the outline.
+# wires through blocks or instance labels, anything outside the outline, and blocks whose label
+# draws sideways or mirrored.
 #
 # Usage: julia check.jl <file.dyad> <Component> <render.svg>
 #
-# Wires come from the SVG (diagram coordinates, rounded to whole units); blocks from the component's
-# `_links` placements. Each default `$(instance)` label is estimated as a box from y2 + 0.07 h to
-# y2 + 0.2 h, 0.11 h wide per character. Custom `labels` and rotated blocks are estimated the same way,
-# so read the render for those.
+# Wires come from the SVG (diagram coordinates, rounded to whole units); blocks from the `_links`
+# placements of the component and of every base it extends inside this library. A base outside the
+# library is named in a `note` line and its parts go unchecked. Placements written inline on a
+# declaration or `connect` are not read, so they count as a problem until moved into `_links`.
+# Each default `$(instance)` label is estimated as a box from y2 + 0.07 h to y2 + 0.2 h, 0.11 h wide
+# per character. Custom `labels` are estimated the same way, so read the render for those.
 #
 # A wire running exactly along a block's edge, as one leaving or reaching a bottom-center port
 # sideways does, is a graze, not a hit. A wire is not checked against the block of a port it ends at,
-# but is checked against that block's label. Wires leaving the same port may overlap. The component's
-# own ports may straddle the 0..1000 outline. A wire looping around its target, and labels drawn above
-# a block (Constant names, Gain `k=`), show only in the PNG. Exit status is the number of problems, so
-# a non-zero exit is a finding, not a crash.
+# but is checked against that block's label. Wires leaving the same port may overlap, and wires
+# sharing a trunk count one crossing per point. The component's own ports may straddle the 0..1000
+# outline. A wire looping around its target, and labels drawn above a block (Constant names, Gain
+# `k=`), show only in the PNG. Exit status is the number of problems, so a non-zero exit is a
+# finding, not a crash.
 using JSON, OrderedCollections
 
 dyad_path, component, svg_path = ARGS
 
-src = read(dyad_path, String)
-body = match(Regex("^(?:\\w+ )*component $component\\b.*?^end\\b", "ms"), src)
+problems = 0
+
+function report(kind, what...)
+    kind in ("graze", "note") || (global problems += 1)
+    println(join((kind, what...), " "))
+end
+
+body_of(text, name) = match(Regex("^(?:\\w+ )*component $name\\b.*?^end\\b", "ms"), text)
+
+# The `dyad/` directory; a base `Lib.A.B.Name` is defined in a file under `dyad/A/B/`.
+root = let d = dirname(abspath(dyad_path))
+    while basename(d) != "dyad" && dirname(d) != d
+        d = dirname(d)
+    end
+    d
+end
+
+function find_base(qualified)
+    parts = split(qualified, '.')
+    dir = joinpath(root, parts[2:end-1]...)
+    isdir(dir) || return nothing
+    for f in readdir(dir; join=true)
+        endswith(f, ".dyad") || continue
+        b = body_of(read(f, String), parts[end])
+        b === nothing || return b.match
+    end
+    nothing
+end
+
+# The component's own ports: a `connect` names them bare, and a part's ports as `part.port`.
+own = Set{String}()
+
+"`_links` of a component body, its library bases' entries first, so its own override them."
+function links_of(text, seen=Set{String}())
+    links = OrderedDict{String,Any}()
+    for c in eachmatch(r"^\s*connect\(([^)]*)\)"m, text), arg in split(c[1], ',')
+        occursin('.', arg) || push!(own, strip(arg))
+    end
+    for e in eachmatch(r"^\s*extends\s+([\w.]+)"m, text)
+        base = e[1]
+        base in seen && continue
+        push!(seen, base)
+        btext = find_base(base)
+        if btext === nothing
+            report("note", "base $base is outside this library; its parts are not checked")
+        else
+            merge!(links, links_of(btext, seen))
+        end
+    end
+    meta = match(r"^metadata (\{.*?^\})\s*$"ms, text)
+    declarations = meta === nothing ? text : text[1:prevind(text, meta.offset)]
+    if occursin(r"\{\s*\"Dyad\"\s*:\s*\{\s*\"(placement|edges)\""m, declarations)
+        name = something(match(r"component (\w+)", text), ["?"])[1]
+        report("inline", name, "places parts inline; move them into `_links` with `{^tag}`s")
+    end
+    meta === nothing ||
+        merge!(links, get(JSON.parse(meta[1]; dicttype=OrderedDict{String,Any}), "_links", Dict()))
+    links
+end
+
+body = body_of(read(dyad_path, String), component)
 body === nothing && (println(stderr, "component $component not found in $dyad_path"); exit(1))
-meta = match(r"^metadata (\{.*?^\})\s*$"ms, body.match)
-links = meta === nothing ? Dict() :
-    get(JSON.parse(meta[1]; dicttype=OrderedDict{String,Any}), "_links", Dict())
+links = links_of(body.match)
 
 blocks, labels, ports = Pair{String,NTuple{4,Real}}[], Pair{String,NTuple{4,Real}}[], Set{String}()
 for (name, link) in links
@@ -33,13 +94,17 @@ for (name, link) in links
     x1, x2 = minmax(box["x1"], box["x2"])
     y1, y2 = minmax(box["y1"], box["y2"])
     push!(blocks, name => (x1, y1, x2, y2))
-    if haskey(placement, "icon")  # the component's own ports draw no label
+    if name in own || haskey(placement, "icon")  # the component's own ports draw no label
         push!(ports, name)
     else
         h, cx = y2 - y1, (x1 + x2) / 2
         half = 0.055 * h * length(name)
         # glyphs start a little below the edge, leaving room for a bottom port's wire stub
         push!(labels, name => (cx - half, y2 + 0.07 * h, cx + half, y2 + 0.2 * h))
+        # a rotated or flipped block turns its label with it
+        rot = mod(get(box, "rot", 0), 360)
+        rot == 0 || report("rotated", name, "rot=$rot")
+        (box["x1"] > box["x2"] || box["y1"] > box["y2"]) && report("mirrored", name)
     end
 end
 
@@ -49,13 +114,6 @@ paths = [[(round(Int, parse(Float64, p[1])), round(Int, parse(Float64, p[2])))
          for d in eachmatch(r"<path d=\"(M [^\"]*)\" stroke-stroke", svg)]
 segs = [(i, a, b) for (i, p) in enumerate(paths) for (a, b) in zip(p, p[2:end]) if a != b]
 ends = [Set([p[1], p[end]]) for p in paths]
-
-problems = 0
-
-function report(kind, what...)
-    kind == "graze" || (global problems += 1)
-    println(join((kind, what...), " "))
-end
 
 for (name, (x1, y1, x2, y2)) in blocks
     lo, hi = name in ports ? (-50, 1050) : (0, 1000)  # own ports straddle the outline

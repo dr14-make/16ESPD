@@ -35,9 +35,12 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    ```
    The `.jl` scripts run on Dyad's own Julia, which bundles their JSON and OrderedCollections; run
    them without `--project`, so the bundled copies load.
-   This renders the file as it is on disk, uncommitted edits included. `check.jl` lists diagonals,
-   crossings, overlapping wires, wires through blocks or labels, and anything outside the outline; its
-   exit status is the problem count. Read the PNG too, for what a script can't judge: flow, lanes, empty
+   This renders the file as it is on disk, uncommitted edits included, from the checkout `render.sh`
+   sits in; set `DYAD_ROOT` to render another worktree. `check.jl` lists diagonals, crossings,
+   overlapping wires, wires through blocks or labels, anything outside the outline, labels turned
+   sideways or mirrored, and placements written inline. It checks parts inherited through `extends`
+   with the diagram, and names a base outside the library in a `note`. Its exit status is the problem
+   count. Read the PNG too, for what a script can't judge: flow, lanes, empty
    canvas, a wire looping around its target, and labels drawn above a block. At the default size, PNG
    pixel = diagram coordinate + 200. A child's port positions are in the child's own file, but the
    exact point a wire meets (a `Constant` output sits at x2 + 4, not x2) is the end of its SVG path.
@@ -45,6 +48,14 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
 3. **Edit the `_links` entries** to fix every item. Write the new values as a JSON spec
    (`{"tag": <new value>}`) and run `julia $K/apply.jl <file.dyad> <Name> <spec.json>`. It replaces
    one-line entries and adds tags that have none yet. Syntax and its traps: [Metadata](#metadata).
+
+   For a diagram with no layout yet, `dyad layout` (dyad-cli 3.5.0) can draft one:
+   `npx -y @juliacomputing/dyad-cli@3.5.0 layout -d . <Lib.A.B.Name> --dry-run --render draft.svg`.
+   It is a draft only: it starts from the current positions, so it barely moves a laid-out diagram;
+   it often leaves connections unrouted and then writes nothing; it stops with `unreachable` on some
+   components that use `extends`; and when it does write, it writes inline annotations. To use a
+   draft, copy the file aside, run it without `--dry-run`, carry the placements it wrote into a spec,
+   copy the original back, and apply the spec.
 
 4. **Prove it metadata-only:** `$K/metadata-only.sh <base> <file.dyad>` is silent and exits 0 when only
    `metadata` and `{^tag}`s changed; anything else prints a diff.
@@ -111,6 +122,7 @@ The traps those files don't explain:
 - **Inherited parts are fixed:** components, connectors and `connect`s that come through `extends`
   take their placement from the base's file, so a derived diagram can't move them. Lay out around
   them, and report a move they need as a base change, since it shifts every derived diagram.
+  `check.jl` checks them along with the derived diagram's own parts.
 - **Coordinates:** y grows down. A block's `placement.diagram` box is where its 0..1000 icon square is
   drawn. The instance label sits centered below the box at icon (500, 1100), about 20 % of the box
   height tall. A `Gain` also draws `k=…` above; a `Constant` draws its name above and `k = …` below.
@@ -122,9 +134,9 @@ The traps those files don't explain:
   means `junctions[k-1]`, so an edge can run junction to junction (`{"S": -1, "E": -2}`). The path
   runs port-box center → each `M` point → port-box center in straight segments, so for an orthogonal
   wire the first `M` point shares the source port center's x or y and the last shares the target's.
-- **Flips:** `y1 > y2` flips vertically, and a flipped box must be square or its ports draw away from
-  the icon. The flip mirrors the instance label too, upside down above the block, so it is no way
-  around a bottom port. **(unverified)** `rot` turns clockwise on screen, and `x1 > x2` flips horizontally; check
-  in a render before relying on either.
+- **Flips and rotation turn the label too:** `y1 > y2` flips the block and draws its label upside
+  down above it, `x1 > x2` mirrors the label ("steerL" reads "Lreets"), and `rot` 90/270 stands it
+  on its side. A flipped box must also be square or its ports draw away from the icon. Change the
+  port sides on the child's icon instead; `check.jl` flags every rotated or mirrored block.
 - **CLI version:** `render.sh` uses `@juliacomputing/dyad-cli@3.5.0`; set `DYAD_CLI` to match the
   library's Dyad version, and use the same version to compile.

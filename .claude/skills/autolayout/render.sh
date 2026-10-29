@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Render a component's diagram to PNG without Studio: dyad-cli draws the SVG, headless Chrome
 # rasterizes it so part icons and instance labels show (ImageMagick drops them).
-# Usage: render.sh <Library.Module.Component> <out.png> [size]
+# Usage: [DYAD_ROOT=<library dir>] render.sh <Library.Module.Component> <out.png> [size]
+# Renders from DYAD_ROOT, by default the checkout this script sits in.
 # Writes <out.png> and <out.svg> and prints both paths.
 set -euo pipefail
 comp=$1 size=${3:-1000}
 out=$(realpath -m "$2")
 cli=${DYAD_CLI:-@juliacomputing/dyad-cli@3.5.0}
-root=$(git -C "$(dirname "$(realpath "$0")")" rev-parse --show-toplevel)
+root=${DYAD_ROOT:-$(git -C "$(dirname "$(realpath "$0")")" rev-parse --show-toplevel)}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
