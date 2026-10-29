@@ -26,10 +26,11 @@ holds its anchors and house rules. Both win over this file.
 Each component reaches step 6 before the next one starts.
 
 1. **Read.** The plan doc, the nearest existing component of the same kind (copy its shape), and
-   `stdlib_reference/<Lib>/...dyad` for every connector and base class you extend. Take sign
-   conventions from the connector. Check every path and location the brief names against the
+   `stdlib_reference/<Lib>/...dyad` for every connector, base class and part you reuse, its
+   equations included: a reused part's regularization, cutoff or sign is your model's behavior.
+   Take sign conventions from the connector. Check every path and location the brief names against the
    repo; follow the repo where they disagree, and say so in the report.
-   *Done when* every connector and base class you will use has been read.
+   *Done when* every connector, base class and part you will use has been read.
 2. **Write the anchors** before simulating: steady state, a time constant, an energy or force
    balance, a band from the plan's reality-anchor table.
    *Done when* each check in step 6 has a number and a tolerance to meet.
@@ -38,9 +39,13 @@ Each component reaches step 6 before the next one starts.
    - **Reuse first:** `extends` the stdlib interface that already declares the connectors and
      their balance (`ElectricalComponents.Analog.Interfaces.TwoPin`,
      `RotationalComponents.Interfaces.PartialTorque`, …) — `find agent_resources/stdlib_reference
-     -path '*Interfaces*'` before writing a pin.
+     -path '*Interfaces*'` before writing a pin. `PartialTorque` fits a bare torque source; a
+     part with inertia between its source and its shaft composes an `Inertia` and declares its own
+     `spline` and `support`.
    - **Derived defaults stay formulas:** `Q_nom = 40.0e3 * 3600.0 / 350.0`, not `411428.6`, so the
      derivation is checkable where its tag says `(derived)`.
+   - **Lay out the diagram:** every part and port gets a `diagram` placement in the `_links`
+     metadata, so the component opens laid out in Studio rather than stacked at the origin.
 4. **Compile** all edits of the increment at once, with the CLI version HANDOVER names. Fix each
    diagnostic by reading the doc it points to; [`reference/errors.md`](reference/errors.md) maps
    diagnostics to causes. A diagnostic that returns unchanged means read, not edit.
@@ -53,7 +58,7 @@ Each component reaches step 6 before the next one starts.
 6. **Simulate in the warm session**, starting with `Revise.revise()` (restart instead after a
    deletion or rename):
    ```julia
-   r = VehicleSystemsComponents.<Sub>.<Name>Transient(p = 0.3)   # <Sub> = directory under dyad/
+   r = VehicleSystemsComponents.<Sub>.<Name>Transient(p = 0.3)   # <Sub>: dyad/Vehicle/Electric → Vehicle.Electric
    m = symbolic_container(r)                                     # the model: m.body.mass.v
    r.sol.retcode, r.sol[m.body.mass.v][end], r.sol(1.0, idxs = m.wheel.kappa)
    r.sol.ps[m.battery.R0]                                        # a parameter's value
@@ -66,11 +71,12 @@ Each component reaches step 6 before the next one starts.
    is not a pass.
 7. **Tests.** Add the `tests` metadata and plausibility assertions the plan asks for. A new
    test file gets its own group in the `GROUPS` table of `test/runtests.jl`.
+   - Iterate in the warm session: `include` the plausibility file as a step until it passes.
    - A new sublibrary's generated cases alone: from `test/`, include
      `generated/test_internals.jl`, then `generated/<Sub>/tests.jl`, in a fresh module. The
      `generated` group is the whole library's suite.
-   - Groups: `exit()` the warm session, then `mise run test:group <group>` in the background;
-     wait for its notification.
+   - Last, the groups: `exit()` the warm session, then `mise run test:group <group>` in the
+     background; wait for its notification.
 
    Snapshot `.ref` files change only when the task says so, each with the change that moved its
    curve named.
