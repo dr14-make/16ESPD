@@ -16,8 +16,12 @@ julia +dyad-3.5.0 --project=@revise -e 'using Pkg; Pkg.add("Revise")'
 ```bash
 P=$(herdr pane split --current --direction down --cwd <worktree> --no-focus | jq -r .result.pane.pane_id)
 herdr pane run "$P" "julia +dyad-3.5.0 --project=. --startup-file=no"
-herdr pane wait-output "$P" --regex 'julia> \s*$' --timeout 100000
+herdr pane run "$P" 'println("__READY", "__")'
+herdr pane wait-output "$P" --regex '(?m)^__READY__\s*$' --timeout 100000
 ```
+
+Julia reads the queued line once its REPL is up, so the sentinel marks readiness; the prompt itself
+is drawn in a way no regex on the pane matches reliably.
 
 Keep every `--timeout` under the Bash tool's 120 s default, or the call moves to the background.
 
@@ -37,12 +41,13 @@ Number the steps. Write step `n` to a script at an absolute path, then send one 
 carries `n`:
 
 ```bash
-herdr pane run "$P" 'include("/abs/path/step3.jl"); println("__STEP", 3, "_DONE__")'
+herdr pane run "$P" 'try include("/abs/path/step3.jl") catch e; Base.display_error(e, catch_backtrace()) end; println("__STEP", 3, "_DONE__")'
 herdr pane wait-output "$P" --regex '(?m)^__STEP3_DONE__\s*$' --timeout 100000
 ```
 
 The sentinel is computed, so the echoed command cannot match it, and it is unique per step, so an
-earlier step's sentinel still on screen cannot match it either. A step that runs longer than the
+earlier step's sentinel still on screen cannot match it either. The `try` makes a failing step
+print its error and still reach its sentinel, so the wait ends at once instead of at the timeout. A step that runs longer than the
 timeout: wait again on the same sentinel.
 
 The script writes its results to a file; read that file. Read the pane
