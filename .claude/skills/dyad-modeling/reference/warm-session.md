@@ -37,7 +37,8 @@ one project.
 
 ## Send a step
 
-Number the steps. Write step `n` to a script at an absolute path, then send one line whose sentinel
+Number the steps. Write step `n` to a script in a directory of this task's own (create a fresh
+one; a shared scratch directory holds other tasks' `step3.jl`), then send one line whose sentinel
 carries `n`:
 
 ```bash
