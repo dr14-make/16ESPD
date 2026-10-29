@@ -22,9 +22,9 @@ md"""
 
 A planar four-wheel car, built from `MultibodyComponents.PlanarMechanics` and steered through an
 Ackermann linkage, driven through the FMVSS 126 **sine-with-dwell** test with and without a
-yaw-rate ESP. Every curve below is a `Lecture3` analysis; the plots read what the car's sensor
-cluster (`PlanarCarSensors`) and the controllers output, plus the wheel loads and steer angles
-where a plot needs them.
+yaw-rate ESP. Every curve below is a `Lecture3` analysis; the plots read what the car sends on
+its measurement bus (`car.bus`) and what the controllers output, plus the wheel loads and steer
+angles where a plot needs them.
 
 The car: `m = 1500 kg`, `Iz = 2500 kg·m²`, CG 1.2 m behind the front axle and 1.5 m ahead of
 the rear one, track 1.55 m, steering ratio 16, starting at 80 km/h. Body frame: x forward,
@@ -66,19 +66,19 @@ begin
     end
     signal(run, x) = run.sol[x]
     signal(run, x, t) = run.sol(t; idxs = x).u
-    wheel_signals(run, prefix) = [signal(run, getproperty(run.m.sensors, Symbol(prefix, w)))
+    wheel_signals(run, prefix) = [signal(run, getproperty(run.m.car.bus, Symbol(prefix, w)))
                                   for w in (:fl, :fr, :rl, :rr)]
 
     function sdw_metrics(run)
-        s = run.m.sensors
+        s = run.m.car.bus
         fmvss126_metrics(T_SDW, signal(run, s.delta_sw, T_SDW), signal(run, s.r, T_SDW),
             signal(run, s.y, T_SDW); A = A_FMVSS)
     end
-    beta_max_deg(run) = rad2deg(maximum(abs, signal(run, run.m.sensors.beta)))
-    end_speed(run) = signal(run, run.m.sensors.vx)[end]
+    beta_max_deg(run) = rad2deg(maximum(abs, signal(run, run.m.car.bus.beta)))
+    end_speed(run) = signal(run, run.m.car.bus.vx)[end]
     min_kappa(run) = minimum(minimum, wheel_signals(run, "kappa_"))
     function min_kappa_moving(run)
-        s = run.m.sensors
+        s = run.m.car.bus
         moving = T_SDW[signal(run, s.vx, T_SDW) .> 3.0]
         minimum(minimum(signal(run, k, moving)) for k in (s.kappa_fl, s.kappa_fr, s.kappa_rl, s.kappa_rr))
     end
@@ -115,7 +115,7 @@ begin
                    for v in SWEEP_SPEEDS]
 
     function steady_point(run, δ)
-        s = run.m.sensors
+        s = run.m.car.bus
         r = run.sol(4.0; idxs = s.r)
         vx = run.sol(4.0; idxs = s.vx)
         beta = run.sol(4.0; idxs = s.beta)
@@ -238,7 +238,7 @@ let
     free = fl_forces(free_wheel, [3.0])
     locked = fl_forces(locked_wheel, [3.0])
     ratio = locked.Fy[1] / free.Fy[1]
-    κ = locked_wheel.sol(3.0; idxs = locked_wheel.m.sensors.kappa_fl)
+    κ = locked_wheel.sol(3.0; idxs = locked_wheel.m.car.bus.kappa_fl)
     Markdown.parse("""
     | quantity | value | band | in band |
     |---|---:|---:|:---:|
@@ -281,7 +281,7 @@ trajectory_plot = let
         legend = :bottomleft)
     for (a, color) in ((76.0, :seagreen), (97.0, :firebrick), (270.0, :steelblue))
         run = passive[a]
-        x, y = signal(run, run.m.sensors.x), signal(run, run.m.sensors.y)
+        x, y = signal(run, run.m.car.bus.x), signal(run, run.m.car.bus.y)
         plot!(p, x, y; lw = 2, color, label = "$(round(Int, a))° SWA")
         scatter!(p, [x[end]], [y[end]]; color, ms = 6, label = "")
     end
@@ -335,15 +335,15 @@ begin
     low_parallel = simulate(L3.PlanarOpenLoopTransient; stop = 4.0, v0 = 3.0,
         delta_sw_final = 3.2, ackermann = 0.0)
 
-    ramp_ay = signal(steer_ramp, steer_ramp.m.sensors.vx) .* signal(steer_ramp, steer_ramp.m.sensors.r)
-    measured_A = rad2deg(signal(steer_ramp, steer_ramp.m.sensors.delta_sw)[findfirst(>=(0.3G), ramp_ay)])
+    ramp_ay = signal(steer_ramp, steer_ramp.m.car.bus.vx) .* signal(steer_ramp, steer_ramp.m.car.bus.r)
+    measured_A = rad2deg(signal(steer_ramp, steer_ramp.m.car.bus.delta_sw)[findfirst(>=(0.3G), ramp_ay)])
 end
 
 # ╔═╡ 5209998d-a17e-4db0-9149-c897b3f5b9c2
 ackermann_plot = let
     function angles(run)
         t = collect(0.0:0.001:0.2)
-        (; sw = rad2deg.(signal(run, run.m.sensors.delta_sw, t)),
+        (; sw = rad2deg.(signal(run, run.m.car.bus.delta_sw, t)),
            left = rad2deg.(signal(run, run.m.car.linkage.delta_left, t)),
            right = rad2deg.(signal(run, run.m.car.linkage.delta_right, t)))
     end
@@ -361,7 +361,7 @@ scrub_plot = let
     p = plot(xlabel = "time [s]", ylabel = "front slip angle α [°]",
         title = "Front slip angles at 3 m/s, 13 m radius", legend = :right)
     for (run, ls, name) in ((low_ackermann, :solid, "Ackermann"), (low_parallel, :dash, "parallel"))
-        s = run.m.sensors
+        s = run.m.car.bus
         plot!(p, run.sol.t, rad2deg.(signal(run, s.alpha_fl)); lw = 2, ls, color = WHEEL_COLORS.fl,
             label = "$name, left front")
         plot!(p, run.sol.t, rad2deg.(signal(run, s.alpha_fr)); lw = 2, ls, color = WHEEL_COLORS.fr,
@@ -374,7 +374,7 @@ end
 # ╔═╡ 31a0fbf9-0c77-44ab-b928-fc9810507d11
 let
     final(run, x) = run.sol(4.0; idxs = x)
-    sa, sp = low_ackermann.m.sensors, low_parallel.m.sensors
+    sa, sp = low_ackermann.m.car.bus, low_parallel.m.car.bus
     afl_a, afr_a = final(low_ackermann, sa.alpha_fl), final(low_ackermann, sa.alpha_fr)
     afl_p, afr_p = final(low_parallel, sp.alpha_fl), final(low_parallel, sp.alpha_fr)
     v_a, v_p = final(low_ackermann, sa.vx), final(low_parallel, sp.vx)
@@ -431,8 +431,8 @@ $(@bind detail_amplitude Select([97.0 => "97°", 180.0 => "180°", 270.0 => "270
 
 # ╔═╡ d77c5d82-277e-4098-9821-6339c1fb76fc
 yaw_plot = let run = esp[detail_amplitude], ref = passive[detail_amplitude]
-    s = run.m.sensors
-    p = plot(ref.sol.t, rad2deg.(signal(ref, ref.m.sensors.r)); lw = 2, ls = :dash, color = :firebrick,
+    s = run.m.car.bus
+    p = plot(ref.sol.t, rad2deg.(signal(ref, ref.m.car.bus.r)); lw = 2, ls = :dash, color = :firebrick,
         label = "ESP off: yaw rate", xlabel = "time [s]", ylabel = "yaw rate [°/s]",
         title = "Yaw rate at $(round(Int, detail_amplitude))° SWA", legend = :bottomleft,
         ylims = (-60, 60))
@@ -511,9 +511,9 @@ understeer_plot = let
         title = "Understeer: front grip at 70 %", legend = :topleft)
     plot!(p, understeer_on.sol.t, rad2deg.(signal(understeer_on, understeer_on.m.esp.r_ref));
         lw = 1.5, ls = :dot, color = :black, label = "ESP reference r_ref")
-    plot!(p, understeer_off.sol.t, rad2deg.(signal(understeer_off, understeer_off.m.sensors.r));
+    plot!(p, understeer_off.sol.t, rad2deg.(signal(understeer_off, understeer_off.m.car.bus.r));
         lw = 2, ls = :dash, color = :firebrick, label = "ESP off: yaw rate")
-    plot!(p, understeer_on.sol.t, rad2deg.(signal(understeer_on, understeer_on.m.sensors.r));
+    plot!(p, understeer_on.sol.t, rad2deg.(signal(understeer_on, understeer_on.m.car.bus.r));
         lw = 2, color = :steelblue, label = "ESP on: yaw rate")
     p
 end
@@ -523,7 +523,7 @@ let
     t = collect(range(0.0, 8.0; length = 1601))
     c = understeer_on.m.car
     integrals = [trapz(t, signal(understeer_on, τ, t)) for τ in (c.tau_fl, c.tau_fr, c.tau_rl, c.tau_rr)]
-    shortfall(run) = minimum(signal(run, run.m.sensors.r) .- signal(run, run.m.esp.r_ref))
+    shortfall(run) = minimum(signal(run, run.m.car.bus.r) .- signal(run, run.m.esp.r_ref))
     on, off = shortfall(understeer_on), shortfall(understeer_off)
     Markdown.parse("""
     | quantity | value | band | in band |
@@ -636,7 +636,7 @@ begin
     split_runs = [simulate(L3.SplitMuStopTransient; c.knobs...) for c in SPLIT_CONFIGS]
 
     function split_measurement(run)
-        s = run.m.sensors
+        s = run.m.car.bus
         t = collect(range(0.0, 6.0; length = 1201))
         speeds = signal(run, s.vx, t)
         t_metric = t[something(findfirst(<(3.0), speeds), length(t))]
@@ -653,7 +653,7 @@ split_trajectory_plot = let
         title = "Split-µ stop: path", legend = :topleft)
     for (c, run, q) in zip(SPLIT_CONFIGS, split_runs, split_results)
         t = collect(0.0:0.01:q.t_metric)
-        plot!(p, signal(run, run.m.sensors.x, t), signal(run, run.m.sensors.y, t);
+        plot!(p, signal(run, run.m.car.bus.x, t), signal(run, run.m.car.bus.y, t);
             lw = 2, color = c.color, label = c.name)
         scatter!(p, [q.distance], [q.offset]; color = c.color, ms = 6, label = "")
     end
@@ -665,7 +665,7 @@ split_heading_plot = let
     p = plot(xlabel = "time [s]", ylabel = "heading ψ [°]", title = "Split-µ stop: heading",
         legend = :topleft)
     for (c, run) in zip(SPLIT_CONFIGS, split_runs)
-        plot!(p, run.sol.t, rad2deg.(signal(run, run.m.sensors.psi)); lw = 2, color = c.color,
+        plot!(p, run.sol.t, rad2deg.(signal(run, run.m.car.bus.psi)); lw = 2, color = c.color,
             label = c.name)
     end
     vline!(p, [0.5]; color = :gray, ls = :dot, label = "brake applied")
@@ -745,7 +745,7 @@ lt_yaw_plot = let
             (passive_lt[270.0], :firebrick, :solid, "passive, h_cg = 0.55 m (270°)"),
             (passive_lt[280.0], :darkorange, :solid, "passive, h_cg = 0.55 m (280°)"),
             (esp_abs_lt, :steelblue, :solid, "ESP through ABS, h_cg = 0.55 m (270°)"))
-        plot!(p, run.sol.t, rad2deg.(signal(run, run.m.sensors.r)); lw = 2, color, ls, label)
+        plot!(p, run.sol.t, rad2deg.(signal(run, run.m.car.bus.r)); lw = 2, color, ls, label)
     end
     vline!(p, [T_COS]; color = :gray, ls = :dot, label = "")
     p
@@ -760,8 +760,8 @@ let
                           signal(lt_steady, m.car.loads.dN_rl) .+ signal(lt_steady, m.car.loads.dN_rr))
     Fz_sum = maximum(abs, signal(lt_steady, m.car.fl.F_z) .+ signal(lt_steady, m.car.fr.F_z) .+
                           signal(lt_steady, m.car.rl.F_z) .+ signal(lt_steady, m.car.rr.F_z) .- 1500 * 9.81)
-    ay = lt_steady.sol(4.0; idxs = m.sensors.ay)
-    r = lt_steady.sol(4.0; idxs = m.sensors.r)
+    ay = lt_steady.sol(4.0; idxs = m.car.bus.ay)
+    r = lt_steady.sol(4.0; idxs = m.car.bus.r)
     Fz_fl = lt_steady.sol(4.0; idxs = m.car.fl.F_z)
     sdw_rows = map(LT_AMPLITUDES) do a
         run = passive_lt[a]

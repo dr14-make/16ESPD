@@ -51,15 +51,16 @@ test component PlanarWLTC
   no_brake = BlockComponents.Sources.Constant(k = 0.0) {^no_brake}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
-  speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {^speed}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
 relations
+  connect(car.bus, motion.bus) {^wbus}
   if cycle
     connect(trace.y, driver.u_s) {^w1}
   else
     connect(cruise.y, driver.u_s) {^w2}
   end
-  connect(speed.v_x, kmh.u) {^w4}
+  connect(motion.vx, kmh.u) {^w4}
   connect(kmh.y, driver.u_m) {^w5}
   connect(no_ff.y, driver.u_ff) {^w6}
   connect(driver.y, to_drive.u, brake_part.u) {^w7}
@@ -72,7 +73,7 @@ relations
   connect(car.steering, straight.spline) {^w11}
   connect(no_brake.y, car.tau_rl, car.tau_rr) {^w12}
   connect(flat.y, roadload.grade) {^w13}
-  connect(car.chassis, roadload.chassis, speed.frame_a) {^w14}
+  connect(car.chassis, roadload.chassis) {^w14}
   initial car.body.r = [0, 0]
   initial car.body.v = [v0, 0]
   initial car.body.phi = 0.0
@@ -91,6 +92,7 @@ relations
   initial car.rr.brake.tau_actual = 0.0
 metadata {
   "_links": {
+    "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "trace": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 0, "x2": 100, "y2": 100}}}},
     "cruise": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 150, "x2": 100, "y2": 250}}}},
     "driver": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 50, "x2": 450, "y2": 150}}}},
@@ -106,7 +108,7 @@ metadata {
     "no_brake": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 600, "x2": 750, "y2": 700}}}},
     "flat": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 600, "x2": 1300, "y2": 700}}}},
     "car": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 0, "x2": 1050, "y2": 200}}}},
-    "speed": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 450, "x2": 980, "y2": 530}}}},
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": 450, "x2": 980, "y2": 530}}}},
     "roadload": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 400, "x2": 1300, "y2": 500}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
@@ -123,7 +125,7 @@ metadata {
     "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 800, "y": 650}]}},
     "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 1100, "y": 300}]}}
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
   }
 }
 end

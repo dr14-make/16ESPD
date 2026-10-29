@@ -9,6 +9,9 @@
 
 Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
 
+The car measures itself: an ideal `PlanarCarSensors` cluster inside it reads the chassis, the
+steering column and each wheel, and the car sends every reading on its `bus` port.
+
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
@@ -58,6 +61,13 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
  * `tau_fr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_rl` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_rr` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `bus` - The planar car's measurement bus, as the car sends it: every signal the car measures about
+itself, on one port. One wire carries all of them, the way a vehicle network carries the
+sensors' messages to every control unit that listens.
+
+A `CarBus` connects to a `CarBusIn`, field by field. Two `CarBus` ports would both drive the
+same signals, and the compiler does not reject that wiring, so connect a `CarBus` only to
+`CarBusIn` ports. ([`CarBus`](@ref))
 """
 @component function PlanarCar(; name = nothing, var"load_transfer"=false, var"m"=Float64(1500.0), var"Iz"=Float64(2500.0), var"a"=1.2, var"b"=1.5, var"tw"=1.55, var"radius"=0.31, var"J"=Float64(1.0), var"mu_A"=Float64(1.0), var"mu_S"=0.8, var"sAdhesion_f"=0.12, var"sAdhesion_r"=0.09, var"mu_scale_fl"=Float64(1.0), var"mu_scale_fr"=Float64(1.0), var"mu_scale_rl"=Float64(1.0), var"mu_scale_rr"=Float64(1.0), var"T_brake"=0.03, var"tau_max"=Float64(2500.0), var"i_s"=Float64(16.0), var"ackermann"=Float64(1.0), var"h_cg"=Float64(0.0), var"T_lt"=0.05, var"t_k"=nothing, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -211,6 +221,7 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__systems, @named spin_fr = __Dyad__Spline())
   push!(__systems, @named spin_rl = __Dyad__Spline())
   push!(__systems, @named spin_rr = __Dyad__Spline())
+  push!(__systems, @named bus = VehicleSystemsComponents.Vehicle.Planar.CarBus())
   # Subcomponent world of type MultibodyComponents.PlanarMechanics.World
   world_overrides = __pop_subcomponent_overrides!(__overrides, "world")
   push!(__systems, @named world = MultibodyComponents.PlanarMechanics.World(; g=Float64(0.0), __symbol_overrides(world_overrides)...))
@@ -262,6 +273,9 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   # Subcomponent rl of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   rl_overrides = __pop_subcomponent_overrides!(__overrides, "rl")
   push!(__systems, @named rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rl, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rl_overrides))
+  # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
+  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
+  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
   # Subcomponent rr of type VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel
   rr_overrides = __pop_subcomponent_overrides!(__overrides, "rr")
   push!(__systems, @named rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(; radius=radius, J=J, mu_A=mu_A, mu_S=mu_S, mu_scale=mu_scale_rr, sAdhesion=sAdhesion_r, sSlide=3 * sAdhesion_r, T_brake=T_brake, tau_max=tau_max, __overrides = rr_overrides))
@@ -277,16 +291,38 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis))
+  push!(__eqs, bus.vx ~ sensors.vx)
+  push!(__eqs, bus.vy ~ sensors.vy)
+  push!(__eqs, bus.r ~ sensors.r)
+  push!(__eqs, bus.ax ~ sensors.ax)
+  push!(__eqs, bus.ay ~ sensors.ay)
+  push!(__eqs, bus.x ~ sensors.x)
+  push!(__eqs, bus.y ~ sensors.y)
+  push!(__eqs, bus.psi ~ sensors.psi)
+  push!(__eqs, bus.beta ~ sensors.beta)
+  push!(__eqs, bus.delta_sw ~ sensors.delta_sw)
+  push!(__eqs, bus.kappa_fl ~ sensors.kappa_fl)
+  push!(__eqs, bus.kappa_fr ~ sensors.kappa_fr)
+  push!(__eqs, bus.kappa_rl ~ sensors.kappa_rl)
+  push!(__eqs, bus.kappa_rr ~ sensors.kappa_rr)
+  push!(__eqs, bus.alpha_fl ~ sensors.alpha_fl)
+  push!(__eqs, bus.alpha_fr ~ sensors.alpha_fr)
+  push!(__eqs, bus.alpha_rl ~ sensors.alpha_rl)
+  push!(__eqs, bus.alpha_rr ~ sensors.alpha_rr)
+  push!(__eqs, bus.omega_fl ~ sensors.omega_fl)
+  push!(__eqs, bus.omega_fr ~ sensors.omega_fr)
+  push!(__eqs, bus.omega_rl ~ sensors.omega_rl)
+  push!(__eqs, bus.omega_rr ~ sensors.omega_rr)
+  push!(__eqs, connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis, sensors.chassis))
   push!(__eqs, connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a))
   push!(__eqs, connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a))
   push!(__eqs, connect(fl_arm.frame_b, steerL.frame_a))
-  push!(__eqs, connect(steerL.frame_b, fl.frame_a, wheel_fl))
+  push!(__eqs, connect(steerL.frame_b, fl.frame_a, wheel_fl, sensors.wheel_fl))
   push!(__eqs, connect(fr_arm.frame_b, steerR.frame_a))
-  push!(__eqs, connect(steerR.frame_b, fr.frame_a, wheel_fr))
-  push!(__eqs, connect(rl_arm.frame_b, rl.frame_a, wheel_rl))
-  push!(__eqs, connect(rr_arm.frame_b, rr.frame_a, wheel_rr))
-  push!(__eqs, connect(steering, column.spline_a))
+  push!(__eqs, connect(steerR.frame_b, fr.frame_a, wheel_fr, sensors.wheel_fr))
+  push!(__eqs, connect(rl_arm.frame_b, rl.frame_a, wheel_rl, sensors.wheel_rl))
+  push!(__eqs, connect(rr_arm.frame_b, rr.frame_a, wheel_rr, sensors.wheel_rr))
+  push!(__eqs, connect(steering, column.spline_a, sensors.steering))
   push!(__eqs, connect(column.spline_b, linkage.spline_in))
   push!(__eqs, connect(linkage.spline_left, steerL.flange_a))
   push!(__eqs, connect(linkage.spline_right, steerR.flange_a))
@@ -295,10 +331,10 @@ All variables are resolved in the planar world frame. ([`Frame2D`](@ref))
   push!(__eqs, connect(loads.fr, fr.load))
   push!(__eqs, connect(loads.rl, rl.load))
   push!(__eqs, connect(loads.rr, rr.load))
-  push!(__eqs, connect(fl.spin, spin_fl))
-  push!(__eqs, connect(fr.spin, spin_fr))
-  push!(__eqs, connect(rl.spin, spin_rl))
-  push!(__eqs, connect(rr.spin, spin_rr))
+  push!(__eqs, connect(fl.spin, spin_fl, sensors.spin_fl))
+  push!(__eqs, connect(fr.spin, spin_fr, sensors.spin_fr))
+  push!(__eqs, connect(rl.spin, spin_rl, sensors.spin_rl))
+  push!(__eqs, connect(rr.spin, spin_rr, sensors.spin_rr))
   push!(__eqs, connect(tau_fl, fl.tau_cmd))
   push!(__eqs, connect(tau_fr, fr.tau_cmd))
   push!(__eqs, connect(tau_rl, rl.tau_cmd))

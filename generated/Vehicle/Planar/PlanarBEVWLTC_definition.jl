@@ -251,9 +251,9 @@ own, so the balance `E_cells = E_road + E_brake + E_tire + E_motor + E_conv + E_
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, __overrides = car_overrides))
-  # Subcomponent speed of type MultibodyComponents.PlanarMechanics.AbsoluteVelocity
-  speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; __overrides = speed_overrides))
+  # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
+  motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
+  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
@@ -332,12 +332,13 @@ own, so the balance `E_cells = E_road + E_brake + E_tire + E_motor + E_conv + E_
   push!(__eqs, ModelingToolkit.D_nounits(E_motor) ~ drive.machine.P_loss)
   push!(__eqs, ModelingToolkit.D_nounits(E_shaft_out) ~ max(P_shaft, 0.0))
   push!(__eqs, ModelingToolkit.D_nounits(E_shaft_in) ~ max(-P_shaft, 0.0))
-  push!(__eqs, ModelingToolkit.D_nounits(E_road) ~ roadload.F * speed.v_x)
+  push!(__eqs, ModelingToolkit.D_nounits(E_road) ~ roadload.F * car.bus.vx)
   push!(__eqs, ModelingToolkit.D_nounits(E_brake) ~ car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w)
   push!(__eqs, ModelingToolkit.D_nounits(E_tire) ~ car.fl.joint.f_long * car.fl.joint.v_slip_long + car.fl.joint.f_lat * car.fl.joint.v_slip_lat + car.fr.joint.f_long * car.fr.joint.v_slip_long + car.fr.joint.f_lat * car.fr.joint.v_slip_lat + car.rl.joint.f_long * car.rl.joint.v_slip_long + car.rl.joint.f_lat * car.rl.joint.v_slip_lat + car.rr.joint.f_long * car.rr.joint.v_slip_long + car.rr.joint.f_lat * car.rr.joint.v_slip_lat)
   push!(__eqs, E_kin ~ 0.5 * m * (getindex(getproperty(getproperty(car, :body), :v), 1) ^ 2 + getindex(getproperty(getproperty(car, :body), :v), 2) ^ 2) + 0.5 * car.Iz * car.body.w ^ 2 + 0.5 * car.J * (car.fl.inertia.w ^ 2 + car.fr.inertia.w ^ 2 + car.rl.inertia.w ^ 2 + car.rr.inertia.w ^ 2) + 0.5 * drive.machine.J * drive.machine.rotor.w ^ 2 + 0.5 * drive.machine.L * drive.machine.inductor.i ^ 2)
+  push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
-  push!(__eqs, connect(speed.v_x, kmh.u))
+  push!(__eqs, connect(motion.vx, kmh.u))
   push!(__eqs, connect(kmh.y, driver.u_m))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(drive.spline, differential.flange_b))
@@ -346,7 +347,7 @@ own, so the balance `E_cells = E_road + E_brake + E_tire + E_motor + E_conv + E_
   push!(__eqs, connect(drive.support, mount.spline))
   push!(__eqs, connect(car.steering, straight.spline))
   push!(__eqs, connect(flat.y, roadload.grade))
-  push!(__eqs, connect(car.chassis, roadload.chassis, speed.frame_a))
+  push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(driver.y, split.tau_ref))
   push!(__eqs, connect(kmh.y, split.v))
   push!(__eqs, connect(split.tau_motor, drive.tau_ref))

@@ -19,16 +19,16 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 22.222492, 0.0001, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0, 1e-8, 1e-5),
-    (m -> m.sensors.vy, "sensors.vy", 0, 1e-8, 1e-5),
-    (m -> m.sensors.y, "sensors.y", 0, 0.000001, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 22.222492, 0.0001, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0, 1e-8, 1e-5),
+    (m -> m.car.bus.vy, "car.bus.vy", 0, 1e-8, 1e-5),
+    (m -> m.car.bus.y, "car.bus.y", 0, 0.000001, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 0.0001, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 1e-8, 1e-5),
-    (m -> m.sensors.vy, "sensors.vy", 1e-8, 1e-5),
-    (m -> m.sensors.y, "sensors.y", 0.000001, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.0001, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 1e-8, 1e-5),
+    (m -> m.car.bus.vy, "car.bus.vy", 1e-8, 1e-5),
+    (m -> m.car.bus.y, "car.bus.y", 0.000001, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -46,16 +46,16 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 11.895, 0.02, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0, 0.000001, 1e-5),
-    (m -> m.sensors.kappa_fl, "sensors.kappa_fl", -0.0305, 0.002, 1e-5),
-    (m -> m.sensors.kappa_rl, "sensors.kappa_rl", -0.0291, 0.002, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 11.895, 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0, 0.000001, 1e-5),
+    (m -> m.car.bus.kappa_fl, "car.bus.kappa_fl", -0.0305, 0.002, 1e-5),
+    (m -> m.car.bus.kappa_rl, "car.bus.kappa_rl", -0.0291, 0.002, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0.000001, 1e-5),
-    (m -> m.sensors.kappa_fl, "sensors.kappa_fl", 0.002, 1e-5),
-    (m -> m.sensors.kappa_rl, "sensors.kappa_rl", 0.002, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.000001, 1e-5),
+    (m -> m.car.bus.kappa_fl, "car.bus.kappa_fl", 0.002, 1e-5),
+    (m -> m.car.bus.kappa_rl, "car.bus.kappa_rl", 0.002, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -73,12 +73,12 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.02996, 0.0003, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 22.211, 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.02996, 0.0003, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 22.211, 0.02, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.0003, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.0003, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.02, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -96,12 +96,12 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.05985, 0.0006, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 22.177, 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.05985, 0.0006, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 22.177, 0.02, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.0006, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.0006, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.02, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -119,12 +119,12 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.1191, 0.0012, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 22.04, 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.1191, 0.0012, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 22.04, 0.02, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.0012, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.0012, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.02, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -142,13 +142,13 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.17716, 0.0018, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 21.814, 0.02, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.17716, 0.0018, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 21.814, 0.02, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.r, "sensors.r", 0.0018, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 0.02, 1e-5),
-    (m -> m.sensors.beta, "sensors.beta", 1e-5, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.0018, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.02, 1e-5),
+    (m -> m.car.bus.beta, "car.bus.beta", 1e-5, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -166,13 +166,13 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.ay, "sensors.ay", 3.865, 0.01, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0.17692, 0.001, 1e-5),
+    (m -> m.car.bus.ay, "car.bus.ay", 3.865, 0.01, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.17692, 0.001, 1e-5),
     (m -> m.car.fl.F_z, "car.fl.F_z", 2953, 5, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.ay, "sensors.ay", 0.01, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0.001, 1e-5),
+    (m -> m.car.bus.ay, "car.bus.ay", 0.01, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.001, 1e-5),
     (m -> m.car.fl.F_z, "car.fl.F_z", 5, 1e-5),
     (m -> m.car.fr.F_z, "car.fr.F_z", 1e-5, 1e-5),
     (m -> m.car.rl.F_z, "car.rl.F_z", 1e-5, 1e-5),
@@ -195,9 +195,9 @@ __dyad_run_test_case!(
   expected_initial=Tuple[],
   expected_final=Tuple[],
   signals=Tuple[
-    (m -> m.sensors.r, "sensors.r", 1e-5, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 1e-5, 1e-5),
-    (m -> m.sensors.delta_sw, "sensors.delta_sw", 1e-5, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 1e-5, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 1e-5, 1e-5),
+    (m -> m.car.bus.delta_sw, "car.bus.delta_sw", 1e-5, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -215,16 +215,16 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", -0.00573, 0.0003, 1e-5),
-    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", -0.00498, 0.0003, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 2.95, 0.005, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0.21976, 0.0005, 1e-5),
+    (m -> m.car.bus.alpha_fl, "car.bus.alpha_fl", -0.00573, 0.0003, 1e-5),
+    (m -> m.car.bus.alpha_fr, "car.bus.alpha_fr", -0.00498, 0.0003, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 2.95, 0.005, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.21976, 0.0005, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", 0.0003, 1e-5),
-    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", 0.0003, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 0.005, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0.0005, 1e-5),
+    (m -> m.car.bus.alpha_fl, "car.bus.alpha_fl", 0.0003, 1e-5),
+    (m -> m.car.bus.alpha_fr, "car.bus.alpha_fr", 0.0003, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.005, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.0005, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -242,15 +242,15 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", 0.00493, 0.0003, 1e-5),
-    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", -0.01672, 0.0003, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 2.919, 0.005, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0.21535, 0.0005, 1e-5),
+    (m -> m.car.bus.alpha_fl, "car.bus.alpha_fl", 0.00493, 0.0003, 1e-5),
+    (m -> m.car.bus.alpha_fr, "car.bus.alpha_fr", -0.01672, 0.0003, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 2.919, 0.005, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.21535, 0.0005, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.alpha_fl, "sensors.alpha_fl", 0.0003, 1e-5),
-    (m -> m.sensors.alpha_fr, "sensors.alpha_fr", 0.0003, 1e-5),
-    (m -> m.sensors.vx, "sensors.vx", 0.005, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 0.0005, 1e-5),
+    (m -> m.car.bus.alpha_fl, "car.bus.alpha_fl", 0.0003, 1e-5),
+    (m -> m.car.bus.alpha_fr, "car.bus.alpha_fr", 0.0003, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.005, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 0.0005, 1e-5),
   ],
 )

@@ -167,9 +167,9 @@ through every WLTC stop and a 400 s park.
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, __overrides = car_overrides))
-  # Subcomponent speed of type MultibodyComponents.PlanarMechanics.AbsoluteVelocity
-  speed_overrides = __pop_subcomponent_overrides!(__overrides, "speed")
-  push!(__systems, @named speed = MultibodyComponents.PlanarMechanics.AbsoluteVelocity(; __overrides = speed_overrides))
+  # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
+  motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
+  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
@@ -201,7 +201,8 @@ through every WLTC stop and a 400 s park.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(speed.v_x, kmh.u))
+  push!(__eqs, connect(car.bus, motion.bus))
+  push!(__eqs, connect(motion.vx, kmh.u))
   push!(__eqs, connect(kmh.y, driver.u_m))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(driver.y, to_drive.u, brake_part.u))
@@ -214,7 +215,7 @@ through every WLTC stop and a 400 s park.
   push!(__eqs, connect(car.steering, straight.spline))
   push!(__eqs, connect(no_brake.y, car.tau_rl, car.tau_rr))
   push!(__eqs, connect(flat.y, roadload.grade))
-  push!(__eqs, connect(car.chassis, roadload.chassis, speed.frame_a))
+  push!(__eqs, connect(car.chassis, roadload.chassis))
 
   ### Control Structures
   if cycle

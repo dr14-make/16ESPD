@@ -19,16 +19,16 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 22.0753, 0.1, 1e-5),
-    (m -> m.sensors.psi, "sensors.psi", -0.1039, 0.02, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 22.0753, 0.1, 1e-5),
+    (m -> m.car.bus.psi, "car.bus.psi", -0.1039, 0.02, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 0.1, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 1e-5, 1e-5),
-    (m -> m.sensors.y, "sensors.y", 1e-5, 1e-5),
-    (m -> m.sensors.psi, "sensors.psi", 0.02, 1e-5),
-    (m -> m.sensors.beta, "sensors.beta", 1e-5, 1e-5),
-    (m -> m.sensors.delta_sw, "sensors.delta_sw", 1e-5, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.1, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 1e-5, 1e-5),
+    (m -> m.car.bus.y, "car.bus.y", 1e-5, 1e-5),
+    (m -> m.car.bus.psi, "car.bus.psi", 0.02, 1e-5),
+    (m -> m.car.bus.beta, "car.bus.beta", 1e-5, 1e-5),
+    (m -> m.car.bus.delta_sw, "car.bus.delta_sw", 1e-5, 1e-5),
   ],
 )
 __dyad_run_test_case!(
@@ -46,15 +46,15 @@ __dyad_run_test_case!(
   initial_conditions=Tuple[],
   expected_initial=Tuple[],
   expected_final=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 19.6498, 0.1, 1e-5),
-    (m -> m.sensors.psi, "sensors.psi", -0.2229, 0.02, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 19.6498, 0.1, 1e-5),
+    (m -> m.car.bus.psi, "car.bus.psi", -0.2229, 0.02, 1e-5),
   ],
   signals=Tuple[
-    (m -> m.sensors.vx, "sensors.vx", 0.1, 1e-5),
-    (m -> m.sensors.r, "sensors.r", 1e-5, 1e-5),
-    (m -> m.sensors.y, "sensors.y", 1e-5, 1e-5),
-    (m -> m.sensors.psi, "sensors.psi", 0.02, 1e-5),
-    (m -> m.sensors.beta, "sensors.beta", 1e-5, 1e-5),
-    (m -> m.sensors.delta_sw, "sensors.delta_sw", 1e-5, 1e-5),
+    (m -> m.car.bus.vx, "car.bus.vx", 0.1, 1e-5),
+    (m -> m.car.bus.r, "car.bus.r", 1e-5, 1e-5),
+    (m -> m.car.bus.y, "car.bus.y", 1e-5, 1e-5),
+    (m -> m.car.bus.psi, "car.bus.psi", 0.02, 1e-5),
+    (m -> m.car.bus.beta, "car.bus.beta", 1e-5, 1e-5),
+    (m -> m.car.bus.delta_sw, "car.bus.delta_sw", 1e-5, 1e-5),
   ],
 )

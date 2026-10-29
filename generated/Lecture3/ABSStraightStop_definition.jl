@@ -122,9 +122,12 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
-  # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
-  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
+  # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
+  motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
+  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
+  # Subcomponent slips of type VehicleSystemsComponents.Vehicle.Planar.BusSlip
+  slips_overrides = __pop_subcomponent_overrides!(__overrides, "slips")
+  push!(__systems, @named slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip(; __overrides = slips_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
   push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, __overrides = abs_overrides))
@@ -156,24 +159,15 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(car.bus, motion.bus, slips.bus))
   push!(__eqs, connect(steer.y, steering_robot.delta_sw_ref))
   push!(__eqs, connect(steering_robot.steering, car.steering))
-  push!(__eqs, connect(car.chassis, sensors.chassis))
-  push!(__eqs, connect(car.steering, sensors.steering))
-  push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
-  push!(__eqs, connect(car.wheel_fr, sensors.wheel_fr))
-  push!(__eqs, connect(car.wheel_rl, sensors.wheel_rl))
-  push!(__eqs, connect(car.wheel_rr, sensors.wheel_rr))
-  push!(__eqs, connect(car.spin_fl, sensors.spin_fl))
-  push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
-  push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
-  push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
   push!(__eqs, connect(demand.y, abs.demand))
-  push!(__eqs, connect(sensors.vx, abs.vx))
-  push!(__eqs, connect(sensors.kappa_fl, abs.kappa_fl))
-  push!(__eqs, connect(sensors.kappa_fr, abs.kappa_fr))
-  push!(__eqs, connect(sensors.kappa_rl, abs.kappa_rl))
-  push!(__eqs, connect(sensors.kappa_rr, abs.kappa_rr))
+  push!(__eqs, connect(motion.vx, abs.vx))
+  push!(__eqs, connect(slips.kappa_fl, abs.kappa_fl))
+  push!(__eqs, connect(slips.kappa_fr, abs.kappa_fr))
+  push!(__eqs, connect(slips.kappa_rl, abs.kappa_rl))
+  push!(__eqs, connect(slips.kappa_rr, abs.kappa_rr))
   push!(__eqs, connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr))
   push!(__eqs, connect(abs.tau_fl, car.tau_fl))
   push!(__eqs, connect(abs.tau_fr, car.tau_fr))

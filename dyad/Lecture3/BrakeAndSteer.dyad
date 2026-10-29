@@ -19,27 +19,19 @@ test component BrakeAndSteer
   zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
   steering_robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^steering_robot}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, h_cg = h_cg, load_transfer = load_transfer) {^car}
-  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
   abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(abs_on = abs_on, select_low = select_low, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow) {^abs}
 relations
+  connect(car.bus, motion.bus, slips.bus) {^wbus}
   connect(steer.y, steering_robot.delta_sw_ref) {^w1}
   connect(steering_robot.steering, car.steering) {^w2}
-  connect(car.chassis, sensors.chassis) {^w4}
-  connect(car.steering, sensors.steering) {^w5}
-  connect(car.wheel_fl, sensors.wheel_fl) {^w6}
-  connect(car.wheel_fr, sensors.wheel_fr) {^w7}
-  connect(car.wheel_rl, sensors.wheel_rl) {^w8}
-  connect(car.wheel_rr, sensors.wheel_rr) {^w9}
-  connect(car.spin_fl, sensors.spin_fl) {^w10}
-  connect(car.spin_fr, sensors.spin_fr) {^w11}
-  connect(car.spin_rl, sensors.spin_rl) {^w12}
-  connect(car.spin_rr, sensors.spin_rr) {^w13}
   connect(demand.y, abs.demand) {^w14}
-  connect(sensors.vx, abs.vx) {^w15}
-  connect(sensors.kappa_fl, abs.kappa_fl) {^w16}
-  connect(sensors.kappa_fr, abs.kappa_fr) {^w17}
-  connect(sensors.kappa_rl, abs.kappa_rl) {^w18}
-  connect(sensors.kappa_rr, abs.kappa_rr) {^w19}
+  connect(motion.vx, abs.vx) {^w15}
+  connect(slips.kappa_fl, abs.kappa_fl) {^w16}
+  connect(slips.kappa_fr, abs.kappa_fr) {^w17}
+  connect(slips.kappa_rl, abs.kappa_rl) {^w18}
+  connect(slips.kappa_rr, abs.kappa_rr) {^w19}
   connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr) {^w20}
   connect(abs.tau_fl, car.tau_fl) {^w35}
   connect(abs.tau_fr, car.tau_fr) {^w36}
@@ -63,8 +55,10 @@ relations
   initial car.rr.brake.tau_actual = 0.0
 metadata {
   "_links": {
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 720, "y1": 380, "x2": 800, "y2": 580}}}},
+    "slips": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 430, "x2": 900, "y2": 530}}}},
+    "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
     "car": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 380, "x2": 640, "y2": 580}}}},
-    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 380, "x2": 900, "y2": 580}}}},
     "steer": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 210, "x2": 110, "y2": 290}}}},
     "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 200, "x2": 280, "y2": 300}}}},
     "abs": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 380, "x2": 380, "y2": 580}}}},
@@ -72,16 +66,6 @@ metadata {
     "zero": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 490, "x2": 90, "y2": 550}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 250.0}], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 340}, {"x": 800.0, "y": 340}], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 915, "y": 520.0}, {"x": 915, "y": 630}, {"x": 260.0, "y": 630}], "E": 2}]}},
     "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 925, "y": 500.0}, {"x": 925, "y": 640}, {"x": 220.0, "y": 640}], "E": 2}]}},

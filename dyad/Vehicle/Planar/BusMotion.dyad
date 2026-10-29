@@ -1,0 +1,53 @@
+"""Body motion from the car's bus: steering-wheel angle, yaw rate, speeds, sideslip,
+accelerations, yaw angle and position, as plain signals for blocks that take `RealInput`s."""
+component BusMotion
+  "The car's measurement bus"
+  bus = VehicleSystemsComponents.Vehicle.Planar.CarBusIn() {^bus}
+  "Steering-wheel angle [rad]"
+  delta_sw = RealOutput() {^delta_sw}
+  "Yaw rate [rad/s]"
+  r = RealOutput() {^r}
+  "Forward speed of the chassis, in the chassis frame [m/s]"
+  vx = RealOutput() {^vx}
+  "Lateral speed of the chassis, in the chassis frame [m/s]"
+  vy = RealOutput() {^vy}
+  "Body sideslip angle, atan(vy / max(vx, 1)) [rad]"
+  beta = RealOutput() {^beta}
+  "Forward acceleration, in the chassis frame [m/s^2]"
+  ax = RealOutput() {^ax}
+  "Lateral acceleration, in the chassis frame [m/s^2]"
+  ay = RealOutput() {^ay}
+  "Yaw angle [rad]"
+  psi = RealOutput() {^psi}
+  "World x position of the chassis frame [m]"
+  x = RealOutput() {^x}
+  "World y position of the chassis frame [m]"
+  y = RealOutput() {^y}
+relations
+  delta_sw = bus.delta_sw
+  r = bus.r
+  vx = bus.vx
+  vy = bus.vy
+  beta = bus.beta
+  ax = bus.ax
+  ay = bus.ay
+  psi = bus.psi
+  x = bus.x
+  y = bus.y
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/BusMotion.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "delta_sw": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 60, "x2": 1050, "y2": 140}, "diagram": {"x1": 950, "y1": 60, "x2": 1050, "y2": 140}}}},
+    "r": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 140, "x2": 1050, "y2": 220}, "diagram": {"x1": 950, "y1": 140, "x2": 1050, "y2": 220}}}},
+    "vx": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 220, "x2": 1050, "y2": 300}, "diagram": {"x1": 950, "y1": 220, "x2": 1050, "y2": 300}}}},
+    "vy": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 300, "x2": 1050, "y2": 380}, "diagram": {"x1": 950, "y1": 300, "x2": 1050, "y2": 380}}}},
+    "beta": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 380, "x2": 1050, "y2": 460}, "diagram": {"x1": 950, "y1": 380, "x2": 1050, "y2": 460}}}},
+    "ax": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 460, "x2": 1050, "y2": 540}, "diagram": {"x1": 950, "y1": 460, "x2": 1050, "y2": 540}}}},
+    "ay": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 540, "x2": 1050, "y2": 620}, "diagram": {"x1": 950, "y1": 540, "x2": 1050, "y2": 620}}}},
+    "psi": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 620, "x2": 1050, "y2": 700}, "diagram": {"x1": 950, "y1": 620, "x2": 1050, "y2": 700}}}},
+    "x": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 700, "x2": 1050, "y2": 780}, "diagram": {"x1": 950, "y1": 700, "x2": 1050, "y2": 780}}}},
+    "y": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 780, "x2": 1050, "y2": 860}, "diagram": {"x1": 950, "y1": 780, "x2": 1050, "y2": 860}}}}
+  }
+}
+end

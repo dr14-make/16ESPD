@@ -25,20 +25,9 @@ test component PlanarOpenLoop
   gain_rl = BlockComponents.Math.Gain(k = brake_rl) {^gain_rl}
   gain_rr = BlockComponents.Math.Gain(k = brake_rr) {^gain_rr}
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(radius = radius, mu_scale_fl = mu_scale_fl, mu_scale_fr = mu_scale_fr, mu_scale_rl = mu_scale_rl, mu_scale_rr = mu_scale_rr, ackermann = ackermann, h_cg = h_cg, load_transfer = load_transfer) {^car}
-  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
 relations
   connect(steer_ramp.y, steering_robot.delta_sw_ref) {^w1}
   connect(steering_robot.steering, car.steering) {^w2}
-  connect(car.chassis, sensors.chassis) {^w4}
-  connect(car.steering, sensors.steering) {^w5}
-  connect(car.wheel_fl, sensors.wheel_fl) {^w6}
-  connect(car.wheel_fr, sensors.wheel_fr) {^w7}
-  connect(car.wheel_rl, sensors.wheel_rl) {^w8}
-  connect(car.wheel_rr, sensors.wheel_rr) {^w9}
-  connect(car.spin_fl, sensors.spin_fl) {^w10}
-  connect(car.spin_fr, sensors.spin_fr) {^w11}
-  connect(car.spin_rl, sensors.spin_rl) {^w12}
-  connect(car.spin_rr, sensors.spin_rr) {^w13}
   connect(brake_step.y, gain_fl.u, gain_fr.u, gain_rl.u, gain_rr.u) {^w14}
   connect(gain_fl.y, car.tau_fl) {^w15}
   connect(gain_fr.y, car.tau_fr) {^w16}
@@ -66,67 +55,66 @@ metadata {
       "coast": {
         "solver": "Tsit5", "stop": 5.0,
         "params": {"load_transfer": false},
-        "atol": {"sensors.vx": 1e-4, "sensors.r": 1e-8, "sensors.vy": 1e-8, "sensors.y": 1e-6},
-        "expect": {"final": {"sensors.vx": 22.222492, "sensors.r": 0.0, "sensors.vy": 0.0, "sensors.y": 0.0}, "signals": ["sensors.vx", "sensors.r", "sensors.vy", "sensors.y"]}
+        "atol": {"car.bus.vx": 1e-4, "car.bus.r": 1e-8, "car.bus.vy": 1e-8, "car.bus.y": 1e-6},
+        "expect": {"final": {"car.bus.vx": 22.222492, "car.bus.r": 0.0, "car.bus.vy": 0.0, "car.bus.y": 0.0}, "signals": ["car.bus.vx", "car.bus.r", "car.bus.vy", "car.bus.y"]}
       },
       "straight_brake": {
         "solver": "Tsit5", "stop": 3.0,
         "params": {"load_transfer": false, "T_cmd": 500.0, "brake_fl": 1.0, "brake_fr": 1.0, "brake_rl": 1.0, "brake_rr": 1.0},
-        "atol": {"sensors.vx": 0.02, "sensors.r": 1e-6, "sensors.kappa_fl": 0.002, "sensors.kappa_rl": 0.002},
-        "expect": {"final": {"sensors.vx": 11.895, "sensors.r": 0.0, "sensors.kappa_fl": -0.0305, "sensors.kappa_rl": -0.0291}, "signals": ["sensors.vx", "sensors.r", "sensors.kappa_fl", "sensors.kappa_rl"]}
+        "atol": {"car.bus.vx": 0.02, "car.bus.r": 1e-6, "car.bus.kappa_fl": 0.002, "car.bus.kappa_rl": 0.002},
+        "expect": {"final": {"car.bus.vx": 11.895, "car.bus.r": 0.0, "car.bus.kappa_fl": -0.0305, "car.bus.kappa_rl": -0.0291}, "signals": ["car.bus.vx", "car.bus.r", "car.bus.kappa_fl", "car.bus.kappa_rl"]}
       },
       "steady_1": {
         "solver": "Tsit5", "stop": 4.0,
         "params": {"load_transfer": false, "delta_sw_final": 0.08},
-        "atol": {"sensors.r": 3e-4, "sensors.vx": 0.02},
-        "expect": {"final": {"sensors.r": 0.02996, "sensors.vx": 22.211}, "signals": ["sensors.r", "sensors.vx"]}
+        "atol": {"car.bus.r": 3e-4, "car.bus.vx": 0.02},
+        "expect": {"final": {"car.bus.r": 0.02996, "car.bus.vx": 22.211}, "signals": ["car.bus.r", "car.bus.vx"]}
       },
       "steady_2": {
         "solver": "Tsit5", "stop": 4.0,
         "params": {"load_transfer": false, "delta_sw_final": 0.16},
-        "atol": {"sensors.r": 6e-4, "sensors.vx": 0.02},
-        "expect": {"final": {"sensors.r": 0.05985, "sensors.vx": 22.177}, "signals": ["sensors.r", "sensors.vx"]}
+        "atol": {"car.bus.r": 6e-4, "car.bus.vx": 0.02},
+        "expect": {"final": {"car.bus.r": 0.05985, "car.bus.vx": 22.177}, "signals": ["car.bus.r", "car.bus.vx"]}
       },
       "steady_3": {
         "solver": "Tsit5", "stop": 4.0,
         "params": {"load_transfer": false, "delta_sw_final": 0.32},
-        "atol": {"sensors.r": 1.2e-3, "sensors.vx": 0.02},
-        "expect": {"final": {"sensors.r": 0.11910, "sensors.vx": 22.040}, "signals": ["sensors.r", "sensors.vx"]}
+        "atol": {"car.bus.r": 1.2e-3, "car.bus.vx": 0.02},
+        "expect": {"final": {"car.bus.r": 0.11910, "car.bus.vx": 22.040}, "signals": ["car.bus.r", "car.bus.vx"]}
       },
       "steady_4": {
         "solver": "Tsit5", "stop": 4.0,
         "params": {"load_transfer": false, "delta_sw_final": 0.48},
-        "atol": {"sensors.r": 1.8e-3, "sensors.vx": 0.02},
-        "expect": {"final": {"sensors.r": 0.17716, "sensors.vx": 21.814}, "signals": ["sensors.r", "sensors.vx", "sensors.beta"]}
+        "atol": {"car.bus.r": 1.8e-3, "car.bus.vx": 0.02},
+        "expect": {"final": {"car.bus.r": 0.17716, "car.bus.vx": 21.814}, "signals": ["car.bus.r", "car.bus.vx", "car.bus.beta"]}
       },
       "steady_4_lt": {
         "solver": "Tsit5", "stop": 4.0,
         "params": {"delta_sw_final": 0.48, "h_cg": 0.55, "load_transfer": true},
-        "atol": {"sensors.ay": 0.01, "sensors.r": 1e-3, "car.fl.F_z": 5.0},
-        "expect": {"final": {"sensors.ay": 3.865, "sensors.r": 0.17692, "car.fl.F_z": 2953.0}, "signals": ["sensors.ay", "sensors.r", "car.fl.F_z", "car.fr.F_z", "car.rl.F_z", "car.rr.F_z"]}
+        "atol": {"car.bus.ay": 0.01, "car.bus.r": 1e-3, "car.fl.F_z": 5.0},
+        "expect": {"final": {"car.bus.ay": 3.865, "car.bus.r": 0.17692, "car.fl.F_z": 2953.0}, "signals": ["car.bus.ay", "car.bus.r", "car.fl.F_z", "car.fr.F_z", "car.rl.F_z", "car.rr.F_z"]}
       },
       "steer_ramp": {
         "solver": "Tsit5", "stop": 8.0,
         "params": {"load_transfer": false, "delta_sw_final": 1.7671458676442586, "t_ramp": 7.5, "t_steer": 0.5},
-        "expect": {"signals": ["sensors.r", "sensors.vx", "sensors.delta_sw"]}
+        "expect": {"signals": ["car.bus.r", "car.bus.vx", "car.bus.delta_sw"]}
       },
       "low_speed_ackermann": {
         "solver": "Tsit5", "stop": 4.0,
         "params": {"load_transfer": false, "v0": 3.0, "delta_sw_final": 3.2, "ackermann": 1.0},
-        "atol": {"sensors.alpha_fl": 3e-4, "sensors.alpha_fr": 3e-4, "sensors.vx": 0.005, "sensors.r": 5e-4},
-        "expect": {"final": {"sensors.alpha_fl": -0.00573, "sensors.alpha_fr": -0.00498, "sensors.vx": 2.950, "sensors.r": 0.21976}, "signals": ["sensors.alpha_fl", "sensors.alpha_fr", "sensors.vx", "sensors.r"]}
+        "atol": {"car.bus.alpha_fl": 3e-4, "car.bus.alpha_fr": 3e-4, "car.bus.vx": 0.005, "car.bus.r": 5e-4},
+        "expect": {"final": {"car.bus.alpha_fl": -0.00573, "car.bus.alpha_fr": -0.00498, "car.bus.vx": 2.950, "car.bus.r": 0.21976}, "signals": ["car.bus.alpha_fl", "car.bus.alpha_fr", "car.bus.vx", "car.bus.r"]}
       },
       "low_speed_parallel": {
         "solver": "Tsit5", "stop": 4.0,
         "params": {"load_transfer": false, "v0": 3.0, "delta_sw_final": 3.2, "ackermann": 0.0},
-        "atol": {"sensors.alpha_fl": 3e-4, "sensors.alpha_fr": 3e-4, "sensors.vx": 0.005, "sensors.r": 5e-4},
-        "expect": {"final": {"sensors.alpha_fl": 0.00493, "sensors.alpha_fr": -0.01672, "sensors.vx": 2.919, "sensors.r": 0.21535}, "signals": ["sensors.alpha_fl", "sensors.alpha_fr", "sensors.vx", "sensors.r"]}
+        "atol": {"car.bus.alpha_fl": 3e-4, "car.bus.alpha_fr": 3e-4, "car.bus.vx": 0.005, "car.bus.r": 5e-4},
+        "expect": {"final": {"car.bus.alpha_fl": 0.00493, "car.bus.alpha_fr": -0.01672, "car.bus.vx": 2.919, "car.bus.r": 0.21535}, "signals": ["car.bus.alpha_fl", "car.bus.alpha_fr", "car.bus.vx", "car.bus.r"]}
       }
     }
   },
   "_links": {
     "car": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 380, "x2": 640, "y2": 580}}}},
-    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 380, "x2": 900, "y2": 580}}}},
     "steer_ramp": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 210, "x2": 110, "y2": 290}}}},
     "steering_robot": {"Dyad": {"placement": {"diagram": {"x1": 180, "y1": 200, "x2": 280, "y2": 300}}}},
     "brake_step": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 440, "x2": 230, "y2": 520}}}},
@@ -136,16 +124,6 @@ metadata {
     "gain_rr": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 615, "x2": 380, "y2": 645}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 250.0}], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 540.0, "y": 340}, {"x": 800.0, "y": 340}], "E": 2}]}},
-    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 300, "y": 330.0}], "E": 2}, {"S": -1, "M": [{"x": 300, "y": 430.0}], "E": 3}, {"S": -1, "M": [{"x": 300, "y": 530.0}], "E": 4}, {"S": -1, "M": [{"x": 300, "y": 630.0}], "E": 5}], "junctions": [{"x": 300, "y": 480.0}]}},
     "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 330.0}, {"x": 415, "y": 420.0}], "E": 2}]}},
     "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 415, "y": 430.0}, {"x": 415, "y": 460.0}], "E": 2}]}},

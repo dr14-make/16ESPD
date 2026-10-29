@@ -1,0 +1,61 @@
+"""
+The planar car's measurement bus, as the car sends it: every signal the car measures about
+itself, on one port. One wire carries all of them, the way a vehicle network carries the
+sensors' messages to every control unit that listens.
+
+A `CarBus` connects to a `CarBusIn`, field by field. Two `CarBus` ports would both drive the
+same signals, and the compiler does not reject that wiring, so connect a `CarBus` only to
+`CarBusIn` ports.
+"""
+connector CarBus
+  "Forward speed of the chassis, in the chassis frame [m/s]"
+  output vx::Real
+  "Lateral speed of the chassis, in the chassis frame [m/s]"
+  output vy::Real
+  "Yaw rate [rad/s]"
+  output r::Real
+  "Forward acceleration, in the chassis frame [m/s^2]"
+  output ax::Real
+  "Lateral acceleration, in the chassis frame [m/s^2]"
+  output ay::Real
+  "World x position of the chassis frame [m]"
+  output x::Real
+  "World y position of the chassis frame [m]"
+  output y::Real
+  "Yaw angle [rad]"
+  output psi::Real
+  "Body sideslip angle, atan(vy / max(vx, 1)) [rad]"
+  output beta::Real
+  "Steering-wheel angle [rad]"
+  output delta_sw::Real
+  "Longitudinal slip of the front-left wheel [-]"
+  output kappa_fl::Real
+  "Longitudinal slip of the front-right wheel [-]"
+  output kappa_fr::Real
+  "Longitudinal slip of the rear-left wheel [-]"
+  output kappa_rl::Real
+  "Longitudinal slip of the rear-right wheel [-]"
+  output kappa_rr::Real
+  "Slip angle of the front-left wheel [rad]"
+  output alpha_fl::Real
+  "Slip angle of the front-right wheel [rad]"
+  output alpha_fr::Real
+  "Slip angle of the rear-left wheel [rad]"
+  output alpha_rl::Real
+  "Slip angle of the rear-right wheel [rad]"
+  output alpha_rr::Real
+  "Spin speed of the front-left wheel [rad/s]"
+  output omega_fl::Real
+  "Spin speed of the front-right wheel [rad/s]"
+  output omega_fr::Real
+  "Spin speed of the rear-left wheel [rad/s]"
+  output omega_rl::Real
+  "Spin speed of the rear-right wheel [rad/s]"
+  output omega_rr::Real
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/CarBus.svg"},
+    "path": {"stroke": "#0277bd"}
+  }
+}
+end

@@ -154,9 +154,12 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fr=mu_scale_right, mu_scale_rr=mu_scale_right, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
-  # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
-  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
+  # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
+  motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
+  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
+  # Subcomponent slips of type VehicleSystemsComponents.Vehicle.Planar.BusSlip
+  slips_overrides = __pop_subcomponent_overrides!(__overrides, "slips")
+  push!(__systems, @named slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip(; __overrides = slips_overrides))
   # Subcomponent ecu of type VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit
   ecu_overrides = __pop_subcomponent_overrides!(__overrides, "ecu")
   push!(__systems, @named ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(; esp_on=esp_on, abs_on=abs_on, Kp=Kp, Ki=Ki, T_build=T_build, R_build=R_build, radius=radius, select_low=select_low, k_dec=k_dec, k_inc_fast=k_inc_fast, k_inc_slow=k_inc_slow, __overrides = ecu_overrides))
@@ -188,26 +191,17 @@ Planar car with ESP and an optional sampled four-channel ABS path.
   __assertions = []
 
   ### Equations
+  push!(__eqs, connect(car.bus, motion.bus, slips.bus))
   push!(__eqs, connect(steer.y, steering_robot.delta_sw_ref))
   push!(__eqs, connect(steering_robot.steering, car.steering))
-  push!(__eqs, connect(car.chassis, sensors.chassis))
-  push!(__eqs, connect(car.steering, sensors.steering))
-  push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
-  push!(__eqs, connect(car.wheel_fr, sensors.wheel_fr))
-  push!(__eqs, connect(car.wheel_rl, sensors.wheel_rl))
-  push!(__eqs, connect(car.wheel_rr, sensors.wheel_rr))
-  push!(__eqs, connect(car.spin_fl, sensors.spin_fl))
-  push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
-  push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
-  push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
   push!(__eqs, connect(demand.y, ecu.demand))
-  push!(__eqs, connect(sensors.delta_sw, ecu.delta_sw))
-  push!(__eqs, connect(sensors.r, ecu.r))
-  push!(__eqs, connect(sensors.vx, ecu.vx))
-  push!(__eqs, connect(sensors.kappa_fl, ecu.kappa_fl))
-  push!(__eqs, connect(sensors.kappa_fr, ecu.kappa_fr))
-  push!(__eqs, connect(sensors.kappa_rl, ecu.kappa_rl))
-  push!(__eqs, connect(sensors.kappa_rr, ecu.kappa_rr))
+  push!(__eqs, connect(motion.delta_sw, ecu.delta_sw))
+  push!(__eqs, connect(motion.r, ecu.r))
+  push!(__eqs, connect(motion.vx, ecu.vx))
+  push!(__eqs, connect(slips.kappa_fl, ecu.kappa_fl))
+  push!(__eqs, connect(slips.kappa_fr, ecu.kappa_fr))
+  push!(__eqs, connect(slips.kappa_rl, ecu.kappa_rl))
+  push!(__eqs, connect(slips.kappa_rr, ecu.kappa_rr))
   push!(__eqs, connect(ecu.tau_fl, car.tau_fl))
   push!(__eqs, connect(ecu.tau_fr, car.tau_fr))
   push!(__eqs, connect(ecu.tau_rl, car.tau_rl))
