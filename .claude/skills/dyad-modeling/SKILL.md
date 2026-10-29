@@ -28,11 +28,15 @@ Each component reaches step 6 before the next one starts.
 1. **Read.** The plan doc, the nearest existing component of the same kind (copy its shape), and
    `stdlib_reference/<Lib>/...dyad` for every connector, base class and part you reuse, its
    equations included: a reused part's regularization, cutoff or sign is your model's behavior.
-   Take sign conventions from the connector. Check every path and location the brief names against the
+   Take sign conventions from the connector. Before changing an existing component, `grep -rn
+   <Name> dyad/ test/ slides/` for every user: benches, tests, and the guides, which hold copies
+   of the code students paste. Check every path and location the brief names against the
    repo; follow the repo where they disagree, and say so in the report.
    *Done when* every connector, base class and part you will use has been read.
 2. **Write the anchors** before simulating: steady state, a time constant, an energy or force
-   balance, a band from the plan's reality-anchor table.
+   balance, a band from the plan's reality-anchor table. Build each anchor formula from every
+   part's equations — a loss or inertia term left out of the hand formula fails the test, not the
+   model.
    *Done when* each check in step 6 has a number and a tolerance to meet.
 3. **Write the component with its `test component` and `analysis`.** Every parameter a scenario
    varies is declared on the analysis and forwarded to the model.
@@ -44,6 +48,21 @@ Each component reaches step 6 before the next one starts.
      `spline` and `support`.
    - **Derived defaults stay formulas:** `Q_nom = 40.0e3 * 3600.0 / 350.0`, not `411428.6`, so the
      derivation is checkable where its tag says `(derived)`.
+   - **Extend an existing component without breaking its users:** a new connector goes behind a
+     structural flag that defaults to the old behavior, so every bench, test and guide copy runs
+     unchanged (`agent_resources/docs` does not cover this):
+     ```
+     structural parameter field_weakening::Boolean = false
+     field = RealInput() if field_weakening {^field}
+     relations
+       if field_weakening
+         connect(field, emf.field) {^id8}
+       else
+         emf.field = 1.0
+       end
+     ```
+   - **A clamped state** (an integrator with anti-windup, a field held at or below 1): clamp its
+     derivative, `der(x) = min(K * e, (x_max - x) / T)`, rather than the state itself.
    - **Lay out the diagram:** every part and port gets a `diagram` placement in the `_links`
      metadata, so the component opens laid out in Studio rather than stacked at the origin.
 4. **Compile** all edits of the increment at once, with the CLI version HANDOVER names. Fix each
