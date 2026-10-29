@@ -47,7 +47,7 @@ metadata {
   "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Engine/MappedEngine.svg"}},
   "_links": {
     "pedal": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}, "diagram": {"x1": -25, "y1": 331, "x2": 25, "y2": 381}}}},
-    "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": -50, "y1": 650, "x2": 50, "y2": 750}, "diagram": {"iconName": "gas_port_a", "x1": -25, "y1": 385, "x2": 25, "y2": 435}}}},
+    "vacuum": {"Dyad": {"placement": {"icon": {"iconName": "gas_port_a", "x1": 150, "y1": 950, "x2": 250, "y2": 1050}, "diagram": {"iconName": "gas_port_a", "x1": -25, "y1": 385, "x2": 25, "y2": 435}}}},
     "spline": {"Dyad": {"placement": {"icon": {"iconName": "spline_b", "x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"iconName": "spline_b", "x1": 975, "y1": 245, "x2": 1025, "y2": 295}}}},
     "support": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": 975, "y1": 355, "x2": 1025, "y2": 405}}}},
     "mdot_fuel": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 975, "y1": 535, "x2": 1025, "y2": 585}}}},
