@@ -274,8 +274,8 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   tire force: no error, `retcode = Success`, and the sine-with-dwell yaw peak drops from 0.214
   to 0.078 rad/s. These analyses therefore set `optimize = OptimizationLevel.None()`:
   `PlanarOpenLoopTransient`, `SineWithDwellRunTransient`, `ESPSineWithDwellTransient`,
-  `ESPSteerRampTransient`, `SplitMuStopTransient`, `BrakeAndSteerTransient` and
-  `ABSStraightStopTransient`. A new analysis of a model with repeated identical algebraic loops
+  `ESPSteerRampTransient`, `SplitMuStopTransient`, `BrakeAndSteerTransient`,
+  `ABSStraightStopTransient`, `PlanarWLTCTransient` and `PlanarCruiseTransient`. A new analysis of a model with repeated identical algebraic loops
   needs the same line; compare a run at `None` against `Aggressive` to tell. Do not set it
   everywhere: `ThrottlePedalStepTransient` starts the throttle at the wrong position under
   `None` and is correct under the default. The generated tests cannot take the setting, so the
@@ -283,6 +283,31 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   ships. Upstream: JuliaComputing/DyadCompilerPasses.jl#114, fix in draft PR #153 (unreleased
   as of DyadCompilerPasses 0.3.11). When a Dyad release carries it, drop the setting and rerun
   the suite.
+- **The planar car stalls Rodas5P only from exact rest (MultibodyComponents.jl#185).**
+  `SlipBasedWheelJoint` adds `0.0001` outside `sqrt(v_slip_long^2 + v_slip_lat^2)`, so its
+  Jacobian is NaN when both slip speeds are exactly zero. `PlanarWLTC` started with body and
+  wheels at exact rest aborts at t = 0 (`dt forced below eps`, NaN rows on every wheel's `der(w)`),
+  with or without a creep target. Once the car has moved, the slip speeds do not return to exact
+  zero: braked to a stop they settle at round-off (1e-22 m/s longitudinal, 1e-20 m/s lateral)
+  and a 400 s park, every WLTC stop and a `dtmax = 0.01` run all finish. A free-rolling rear
+  wheel at constant speed does reach `v_slip_long == 0.0` exactly, and only the lateral round-off
+  keeps it off the NaN. The bench therefore starts the wheels `dv_wheel = 0.01` m/s ahead of the
+  body, as the Lecture 3 harnesses do, and carries no creep floor; the `planar_wltc` group's
+  `@test_broken` on an exact-rest start turns into an unexpected pass once the fix ships.
+- **`RoadLoad` cannot run backwards faster than 0.71 m/s.** Its stdlib `RollingResistance` uses
+  the `Exp` regularization, `2 / (1 + exp(-v / (0.01 v0))) - 1` with `v0 = 0.1`, whose derivative
+  is `Inf / Inf` once `exp(-v / 1e-3)` overflows at v < -0.71 m/s. A WLTC driver that brakes with
+  negative drive torque overshoots each stop into reverse (−1.5 km/h at k = 100, −2.6 km/h at
+  k = 50, which aborted at t = 444 s with NaN body accelerations). `PlanarWLTC` splits the
+  driver's output by sign instead, drive torque on the front flanges and the negative part to
+  the front friction brakes, which cannot reverse the car: lowest speed −4e-8 km/h.
+- **An analysis cannot set its model's structural parameter, nor forward an expression.**
+  `model = PlanarWLTC(cycle = false, v0 = v_set / 3.6)` in an analysis compiles, then fails at
+  run time with `System PlanarWLTC: variable cycle does not exist`: the generated spec pushes
+  `cycle` as a parameter override, and `v0 => v_set / 3.6` refers to an unbound `v_set`.
+  Put the structural choice and the derived default in a test component that `extends` the
+  bench (`PlanarCruise extends PlanarWLTC(cycle = false, v0 = v_set / 3.6)`), and forward only
+  plain analysis parameters.
 - **A clocked variable reads back as its last value.** `sol(t, idxs = controller.y)` on a
   variable of the discrete partition returns the value from the final tick for every `t`, with
   no error. Read the held, continuous-time side instead (`hold.y` after a `ZeroOrderHold`), in
