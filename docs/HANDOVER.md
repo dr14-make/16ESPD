@@ -274,8 +274,8 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   tire force: no error, `retcode = Success`, and the sine-with-dwell yaw peak drops from 0.214
   to 0.078 rad/s. These analyses therefore set `optimize = OptimizationLevel.None()`:
   `PlanarOpenLoopTransient`, `SineWithDwellRunTransient`, `ESPSineWithDwellTransient`,
-  `ESPSteerRampTransient`, `SplitMuStopTransient`, `BrakeAndSteerTransient` and
-  `ABSStraightStopTransient`. A new analysis of a model with repeated identical algebraic loops
+  `ESPSteerRampTransient`, `SplitMuStopTransient`, `BrakeAndSteerTransient`,
+  `ABSStraightStopTransient`, `PlanarWLTCTransient` and `PlanarCruiseTransient`. A new analysis of a model with repeated identical algebraic loops
   needs the same line; compare a run at `None` against `Aggressive` to tell. Do not set it
   everywhere: `ThrottlePedalStepTransient` starts the throttle at the wrong position under
   `None` and is correct under the default. The generated tests cannot take the setting, so the
