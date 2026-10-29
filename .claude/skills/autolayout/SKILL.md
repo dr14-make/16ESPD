@@ -20,7 +20,9 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    everything. Fix these in the model first, and report them instead of routing around them:
    - two wires looping between the same two blocks are one physical link, so make them one connector
      (as `Vehicle.GasPort` did for engine↔booster);
-   - a signal set by an equation draws no wire, so its loop looks open until it is wired through blocks.
+   - a signal set by an equation draws no wire, so its loop looks open until it is wired through blocks;
+   - one output fed to several inputs through separate two-ended `connect`s branches with no junction
+     dot, so a branch looks like a bend; one `connect` listing every end gets junctions (rule 4).
 
    Done when every block, port and `connect` exists and the user has no structural change pending.
 
@@ -29,9 +31,11 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    `K=.claude/skills/autolayout` and an absolute PNG path in your scratchpad:
    ```sh
    $K/render.sh <Lib.A.B.Name> <scratchpad>/before.png      # also writes before.svg
-   python3 $K/check.py <file.dyad> <Name> <scratchpad>/before.svg
+   julia $K/check.jl <file.dyad> <Name> <scratchpad>/before.svg
    ```
-   This renders the file as it is on disk, uncommitted edits included. `check.py` lists diagonals,
+   The `.jl` scripts run on Dyad's own Julia, which bundles their JSON and OrderedCollections; run
+   them without `--project`, so the bundled copies load.
+   This renders the file as it is on disk, uncommitted edits included. `check.jl` lists diagonals,
    crossings, overlapping wires, wires through blocks or labels, and anything outside the outline; its
    exit status is the problem count. Read the PNG too, for what a script can't judge: flow, lanes, empty
    canvas, a wire looping around its target, and labels drawn above a block. At the default size, PNG
@@ -39,15 +43,15 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    exact point a wire meets (a `Constant` output sits at x2 + 4, not x2) is the end of its SVG path.
 
 3. **Edit the `_links` entries** to fix every item. Write the new values as a JSON spec
-   (`{"tag": <new value>}`) and run `python3 $K/apply.py <file.dyad> <Name> <spec.json>`. It replaces
+   (`{"tag": <new value>}`) and run `julia $K/apply.jl <file.dyad> <Name> <spec.json>`. It replaces
    one-line entries and adds tags that have none yet. Syntax and its traps: [Metadata](#metadata).
 
 4. **Prove it metadata-only:** `$K/metadata-only.sh <base> <file.dyad>` is silent and exits 0 when only
    `metadata` and `{^tag}`s changed; anything else prints a diff.
 
-5. **Render and check again.** Repeat steps 3–5 until the diagram is **clean**: `check.py` reports
-   0 problems, or each remaining one is forced by a child's port sides and named in your report with
-   the child and port, and the PNG keeps every other rule.
+5. **Render and check again.** Repeat steps 3–5 until the diagram is **clean**: `check.jl` reports
+   0 problems, or each remaining one is forced (rule 7) and named in your report with the blocks and
+   ports that force it, and the PNG keeps every other rule.
 
 6. **Compile:** `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` prints "byte identical" for every
    generated file, and `git status --short generated/` is empty.
@@ -74,7 +78,7 @@ layout you could not render is **unseen**; say so.
    gets junctions. A junction draws a dot, so it needs three or more edges; a corner is an `M` point.
 5. **Wires clear of blocks and labels.** The usual defect is a ground or support wire dropping from a
    bottom-center port straight through the label below. Run sideways along the block's bottom edge
-   (`check.py` calls that a graze, which is allowed) until past the label's half-width, 0.055 × box
+   (`check.jl` calls that a graze, which is allowed) until past the label's half-width, 0.055 × box
    height × characters, then turn down. A wire arriving at a bottom-center input such as
    `Feedback.u2` comes in the same way. When the label is wider than the block, run past the block's
    corner, or leave on the side away from the label.
@@ -86,8 +90,9 @@ layout you could not render is **unseen**; say so.
 8. **Readability first, then shared coordinates.** Benches that build on each other keep shared blocks
    at the same coordinates so successive slide shots line up, unless that costs readability. When it
    does, move the blocks and name the sibling benches whose shots no longer line up.
-9. **Room for labels:** blocks 80–100 wide at 140–160 pitch, controller subsystems 180–200 square, small
-   gains 70×70 at 120 vertical pitch. Keep 40 units between neighboring labels, computed from their
+9. **Room for labels:** blocks 80–100 wide at 140–160 pitch, subsystems (controllers, plants, maps)
+   160–200 square, small gains 70×70 at 120 vertical pitch. A block whose inputs line up with the
+   component's own ports is tall enough that those ports' `diagram` boxes don't overlap. Keep 40 units between neighboring labels, computed from their
    widths. Labels scale with the block, so fill the outline: small blocks on an empty canvas give
    unreadable slides.
 
