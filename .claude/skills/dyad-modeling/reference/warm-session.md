@@ -55,6 +55,11 @@ The script writes its results to a file; read that file. Read the pane
 for the error itself: a backtrace runs to dozens of lines, and its first frames are the ones that
 name your code.
 
+Write summaries to the result file: counts, maxima, a few named values. A ModelingToolkit
+problem's kwargs or a whole solution prints the full symbolic system recursively (one print reached
+86 MB). A step that runs away: `herdr pane send-keys "$P" ctrl+c`, then send the next step again,
+since a line queued behind the interrupt is lost.
+
 ## After a compile
 
 `Revise.revise()` at the top of the next step picks up changed and added definitions, new
