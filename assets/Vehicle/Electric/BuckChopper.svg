@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 200 H100 M900 200 H1000 M500 900 V1000"/>
+    <path d="M500 0 V100" stroke-width="30"/>
+    <rect x="100" y="100" width="800" height="800" rx="40" fill="#eceff1"/>
+    <path d="M100 200 H410 M600 200 H700 M660 200 V440 M660 560 V800 H500 V900"/>
+    <path d="M410 200 L590 120" stroke="#0277bd"/>
+    <path d="M500 100 V160" stroke-width="25" stroke-dasharray="20 25" stroke-linecap="butt"/>
+    <path d="M600 440 H720 M600 560 H720 L660 440 Z" stroke-width="30" fill="#ffffff"/>
+    <path d="M700 200 A30 40 0 0 1 760 200 A30 40 0 0 1 820 200 A30 40 0 0 1 880 200 H900"/>
+  </g>
+  <text x="330" y="560" text-anchor="middle" font-family="sans-serif" font-size="85" fill="#263238">BUCK</text>
+</svg>

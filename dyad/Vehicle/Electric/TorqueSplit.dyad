@@ -42,7 +42,7 @@ relations
   tau_motor = max(tau_ref, 0.0) + fade * min(tau_ref, 0.0)
   tau_brake = -(1.0 - fade) * min(tau_ref, 0.0) * ratio / 2.0
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/TorqueSplit.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
   "_links": {
     "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},

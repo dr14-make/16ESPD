@@ -90,7 +90,7 @@ relations
   P_ac = v_ab * i_ab
   P_loss = switch_a.P_loss + switch_b.P_loss + switch_c.P_loss + switch_d.P_loss + diode_a.LossPower + diode_b.LossPower + diode_c.LossPower + diode_d.LossPower
 metadata {
-  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/HBridge.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
   "_links": {
     "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 785}, {"x": 560, "y": 700}], "E": 2}]}},
     "id5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 560, "y": 385}, {"x": 560, "y": 300}], "E": 2}]}},

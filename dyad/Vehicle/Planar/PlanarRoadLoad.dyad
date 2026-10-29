@@ -48,6 +48,7 @@ relations
   force.force_y = 0.0
   force.torque = 0.0
 metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarRoadLoad.svg"}},
   "_links": {
     "chassis": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
     "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
