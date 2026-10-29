@@ -20,7 +20,10 @@ readable on its own: `P_cu = R i^2` in the resistor, `P_fric = T_f w` (bearing f
 `P_iron = K_i w` (hysteresis), `P_wind = k_w w^3` (windage) and `P_const = C`, the losses
 present at any speed. They sum to `P_loss`, so `P_elec = P_mech + P_loss` in steady state.
 Below `w_reg` the speed-independent loss torques fade linearly to zero, so that the machine
-has no infinite drag at standstill; above it each loss is exactly the deck's term.
+has no infinite drag at standstill; above it each loss is exactly the deck's term. Copper loss
+already lives in the resistor, so a measured efficiency map layered on this machine counts it
+twice; the map is something the machine reproduces, not an extra loss. The inverter's losses
+belong to the inverter, which is why the coefficients follow the motor-only map.
 
 Defaults are a Nissan Leaf ZE1-class machine. `k` is derived so that at the 350 V pack
 voltage and base speed the shaft delivers the full 320 N.m: the armature then draws 332 A and

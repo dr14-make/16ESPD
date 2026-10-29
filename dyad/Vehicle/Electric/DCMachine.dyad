@@ -12,7 +12,10 @@ readable on its own: `P_cu = R i^2` in the resistor, `P_fric = T_f w` (bearing f
 `P_iron = K_i w` (hysteresis), `P_wind = k_w w^3` (windage) and `P_const = C`, the losses
 present at any speed. They sum to `P_loss`, so `P_elec = P_mech + P_loss` in steady state.
 Below `w_reg` the speed-independent loss torques fade linearly to zero, so that the machine
-has no infinite drag at standstill; above it each loss is exactly the deck's term.
+has no infinite drag at standstill; above it each loss is exactly the deck's term. Copper loss
+already lives in the resistor, so a measured efficiency map layered on this machine counts it
+twice; the map is something the machine reproduces, not an extra loss. The inverter's losses
+belong to the inverter, which is why the coefficients follow the motor-only map.
 
 Defaults are a Nissan Leaf ZE1-class machine. `k` is derived so that at the 350 V pack
 voltage and base speed the shaft delivers the full 320 N.m: the armature then draws 332 A and
@@ -110,11 +113,20 @@ relations
   P_const = -constant_loss.tau * w
   P_loss = P_cu + P_fric + P_iron + P_wind + P_const
 metadata {
+  "Dyad": {"labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
   "_links": {
-    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
-    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}}
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+    "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}, "diagram": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
+    "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}, "diagram": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}},
+    "resistor": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 150, "x2": 250, "y2": 250}}}},
+    "inductor": {"Dyad": {"placement": {"diagram": {"x1": 300, "y1": 150, "x2": 400, "y2": 250}}}},
+    "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
+    "rotor": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 450, "x2": 850, "y2": 550}}}},
+    "friction": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 700, "x2": 200, "y2": 800}}}},
+    "iron": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 700, "x2": 350, "y2": 800}}}},
+    "windage": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 700, "x2": 700, "y2": 800}}}},
+    "constant_loss": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 700, "x2": 850, "y2": 800}}}}
   }
 }
 end
