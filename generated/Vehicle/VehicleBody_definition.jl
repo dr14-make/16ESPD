@@ -10,22 +10,21 @@
 Longitudinal vehicle body: tractive force in at the flange, resisted by drag,
 rolling resistance and road grade.
 
-Aerodynamic drag uses the `v*|v|` form (`ForceDirection = false`) so it opposes motion
-in both travel directions rather than always braking forward. Rolling resistance and the
-grade force share the single `grade` input — `RollingResistance` reads it as `inclination`
-(tan of the road angle) to shed the cosine of normal load, and `GradeForce` reads it as the
-gradient of the along-slope gravity term.
+The body is a `RoadLoad` with the vehicle mass on its flange. The road load carries no mass of
+its own, so the same resistance law also serves the planar car, whose mass lives in its
+multibody body. The parameters, their provenance tags and the parts `drag`, `rolling`,
+`gradeforce`, `cr_const` and `ground` are the road load's; the body adds only `mass`.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `m`         | Vehicle mass                         | kg  |   1400.0 |
-| `CdA`         | Aerodynamic drag area (Cd * A)                         | m2  |   0.63 |
-| `rho`         | Air density                         | kg/m3  |   1.2 |
-| `v_nominal`         | Speed at which drag equals its nominal value                         | m/s  |   30.0 |
-| `f_r`         | Rolling resistance coefficient                         | --  |   0.012 |
-| `g`         | Gravitational acceleration                         | m/s2  |   9.80665 |
+| `m`         | Vehicle mass; the road load uses it for the normal load and the along-slope weight (assumed)                         | kg  |   1400.0 |
+| `CdA`         | Aerodynamic drag area (Cd * A) (assumed)                         | m2  |   0.63 |
+| `rho`         | Air density at sea level (textbook)                         | kg/m3  |   1.2 |
+| `v_nominal`         | Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)                         | m/s  |   30.0 |
+| `f_r`         | Rolling resistance coefficient (assumed)                         | --  |   0.012 |
+| `g`         | Gravitational acceleration, standard gravity (textbook)                         | m/s2  |   9.80665 |
 
 ## Connectors
 
@@ -72,22 +71,22 @@ gradient of the along-slope gravity term.
 
   ### Symbolic Parameters
   __local__m = m
-  append!(__params, @parameters (m::Real), [description = "Vehicle mass", bounds = (0, Inf)])
+  append!(__params, @parameters (m::Real), [description = "Vehicle mass; the road load uses it for the normal load and the along-slope weight (assumed)", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
   __local__CdA = CdA
-  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A)"])
+  append!(__params, @parameters (CdA::Real), [description = "Aerodynamic drag area (Cd * A) (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, CdA, __local__CdA)
   __local__rho = rho
-  append!(__params, @parameters (rho::Real), [description = "Air density", bounds = (0, Inf)])
+  append!(__params, @parameters (rho::Real), [description = "Air density at sea level (textbook)", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, rho, __local__rho)
   __local__v_nominal = v_nominal
-  append!(__params, @parameters (v_nominal::Real), [description = "Speed at which drag equals its nominal value"])
+  append!(__params, @parameters (v_nominal::Real), [description = "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_nominal, __local__v_nominal)
   __local__f_r = f_r
-  append!(__params, @parameters (f_r::Real), [description = "Rolling resistance coefficient"])
+  append!(__params, @parameters (f_r::Real), [description = "Rolling resistance coefficient (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, f_r, __local__f_r)
   __local__g = g
-  append!(__params, @parameters (g::Real), [description = "Gravitational acceleration"])
+  append!(__params, @parameters (g::Real), [description = "Gravitational acceleration, standard gravity (textbook)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, g, __local__g)
 
   ### Final Parameters (assignments)
@@ -104,9 +103,6 @@ gradient of the along-slope gravity term.
 
   ### Components
   push!(__systems, @named flange = __Dyad__Flange())
-  # Subcomponent mass of type TranslationalComponents.Components.Mass
-  mass_overrides = __pop_subcomponent_overrides!(__overrides, "mass")
-  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=m, __overrides = mass_overrides))
   # Subcomponent drag of type TranslationalComponents.Sources.QuadraticSpeedDependentForce
   drag_overrides = __pop_subcomponent_overrides!(__overrides, "drag")
   push!(__systems, @named drag = TranslationalComponents.Sources.QuadraticSpeedDependentForce(; ForceDirection=false, v_nominal=v_nominal, f_nominal=-0.5 * rho * CdA * v_nominal ^ 2, __overrides = drag_overrides))
@@ -118,10 +114,13 @@ gradient of the along-slope gravity term.
   push!(__systems, @named cr_const = BlockComponents.Sources.Constant(; k=f_r, __overrides = cr_const_overrides))
   # Subcomponent gradeforce of type VehicleSystemsComponents.Vehicle.GradeForce
   gradeforce_overrides = __pop_subcomponent_overrides!(__overrides, "gradeforce")
-  push!(__systems, @named gradeforce = VehicleSystemsComponents.Vehicle.GradeForce(; m=m, __overrides = gradeforce_overrides))
+  push!(__systems, @named gradeforce = VehicleSystemsComponents.Vehicle.GradeForce(; m=m, g=g, __overrides = gradeforce_overrides))
   # Subcomponent ground of type TranslationalComponents.Components.Fixed
   ground_overrides = __pop_subcomponent_overrides!(__overrides, "ground")
   push!(__systems, @named ground = TranslationalComponents.Components.Fixed(; __overrides = ground_overrides))
+  # Subcomponent mass of type TranslationalComponents.Components.Mass
+  mass_overrides = __pop_subcomponent_overrides!(__overrides, "mass")
+  push!(__systems, @named mass = TranslationalComponents.Components.Mass(; m=m, __overrides = mass_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -134,16 +133,16 @@ gradient of the along-slope gravity term.
   __assertions = []
 
   ### Equations
-  push!(__eqs, connect(flange, mass.flange_a))
-  push!(__eqs, connect(drag.flange, mass.flange_a))
-  push!(__eqs, connect(rolling.flange, mass.flange_a))
-  push!(__eqs, connect(gradeforce.flange, mass.flange_a))
+  push!(__eqs, connect(flange, drag.flange))
+  push!(__eqs, connect(flange, rolling.flange))
+  push!(__eqs, connect(flange, gradeforce.flange))
   push!(__eqs, connect(drag.support, ground.flange))
   push!(__eqs, connect(rolling.support, ground.flange))
   push!(__eqs, connect(gradeforce.support, ground.flange))
   push!(__eqs, connect(cr_const.y, rolling.cr))
   push!(__eqs, connect(grade, rolling.inclination))
   push!(__eqs, connect(grade, gradeforce.grade))
+  push!(__eqs, connect(flange, mass.flange_a))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
