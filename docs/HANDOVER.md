@@ -364,6 +364,20 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   misreads the currents that charge `C_oss`. The trapezoid rule over `sol.t` closes
   `P_dc = P_ac + P_loss` to 1e-7 and matches the hand estimate; the `switching` tests and the
   notebook use it. Voltages and smooth currents can still be sampled from the interpolant.
+- **Moving parts into a subcomponent changes the numbers by one ulp, and an ABS stop amplifies
+  it.** The first `RoadLoad` extraction held it as a `roadload` part of `VehicleBody`. The
+  variables were renamed (`body.roadload.drag.f`), and the generated code sums the force terms
+  in a different order. The right-hand side then differed by 5.6e-17. Smooth runs did not show
+  it (`TestCarPlant` and the roadster launch matched to 1e-12), but the chattering ABS stops took
+  different steps: 8282 against 8314. `braking_distance` reads `s` at the first solver step under
+  `v_stop` without interpolating, so `ABSBrakeTransient()` moved from 38.69795 m to 38.69746 m.
+  That is outside the vacuum group's `38.6980 atol = 1e-4` pin, although the interpolated
+  positions of the two runs differ by only 1e-9 m, against 4e-7 m between either run and a 1e-10
+  run. `VehicleBody` therefore `extends RoadLoad` and adds `mass`, which keeps every name, so the
+  models that use it run bit-identical (same `sol.t`, same states). Before refactoring a
+  component that pinned tests use, run the HEAD version beside the new one in one session: `git
+  show HEAD:generated/.../X_definition.jl`, rename `X` to `OldX`, `Core.eval` it into the
+  submodule. Then compare `sol.t` and the states with `==`.
 
 ## Conventions
 
