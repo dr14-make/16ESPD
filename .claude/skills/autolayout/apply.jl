@@ -5,8 +5,8 @@
 # The spec maps a tag to its new value, e.g.
 #   {"engine": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 35, "x2": 185, "y2": 115}}}},
 #    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 100, "y": 115}], "E": 2}]}}}
-# An existing entry must be written on one line; a tag with no entry yet is added at the top of
-# `_links`. Tags are looked up only inside <Component>, since test components reuse wire tags.
+# An existing entry must be written on one line; new tags are added at the top of `_links`,
+# in spec order. Tags are looked up only inside <Component>, since test components reuse wire tags.
 using JSON, OrderedCollections
 
 fail(msg) = (println(stderr, msg); exit(1))
@@ -21,6 +21,7 @@ src = read(path, String)
 body = match(Regex("^(?:\\w+ )*component $component\\b.*?^end\\b", "ms"), src)
 body === nothing && fail("component $component not found in $path")
 text = String(body.match)
+added = Pair{String,Any}[]
 
 for (tag, value) in JSON.parse(read(spec_path, String); dicttype=OrderedDict{String,Any})
     entry = Regex("^(\\s*\"\\Q$tag\\E\": )\\{.*\\}(,?)\$", "m")
@@ -32,10 +33,14 @@ for (tag, value) in JSON.parse(read(spec_path, String); dicttype=OrderedDict{Str
     if n > 1 || occursin(Regex("^\\s*\"\\Q$tag\\E\":", "m"), text)
         fail("$tag: entry is not a single line; edit it by hand")
     end
+    push!(added, tag => value)
+end
+
+if !isempty(added)
     links = r"^(\s*)\"_links\": \{\n"m
-    occursin(links, text) || fail("$tag: no multi-line \"_links\" block in $component to add to")
-    global text = replace(text, count=1,
-        links => m -> (l = match(links, m); "$m$(l[1])  \"$tag\": $(dumps(value)),\n"))
+    occursin(links, text) || fail("$(first(added[1])): no multi-line \"_links\" block in $component to add to")
+    text = replace(text, count=1, links => m -> (l = match(links, m);
+        m * join("$(l[1])  \"$tag\": $(dumps(value)),\n" for (tag, value) in added)))
 end
 
 write(path, string(SubString(src, 1, prevind(src, body.offset)), text,
