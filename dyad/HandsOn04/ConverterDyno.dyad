@@ -28,9 +28,7 @@ relations
   connect(voltage.y, supply.V) {^id1}
   connect(supply.p, converter.p_in) {^id2}
   connect(converter.p_out, machine.p) {^id3}
-  connect(machine.n, converter.n) {^id4}
-  connect(supply.n, converter.n) {^id5}
-  connect(converter.n, ground.g) {^id6}
+  connect(converter.n, machine.n, supply.n, ground.g) {^id4}
   connect(current.y, converter.i_ref) {^id7}
   connect(converter.field, machine.field) {^id8}
   connect(speed.y, dyno.w_ref) {^id9}
@@ -39,15 +37,25 @@ relations
   connect(dyno.support, mounts.spline) {^id12}
 metadata {
   "_links": {
-    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 50, "y1": 100, "x2": 150, "y2": 200}}}},
-    "supply": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 250, "x2": 300, "y2": 350, "rot": 90}}}},
-    "current": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 50, "x2": 500, "y2": 150}}}},
-    "converter": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 250, "x2": 550, "y2": 450}}}},
-    "machine": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 250, "x2": 900, "y2": 450}}}},
-    "ground": {"Dyad": {"placement": {"diagram": {"x1": 410, "y1": 560, "x2": 490, "y2": 640}}}},
-    "speed": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 300, "x2": 1300, "y2": 400}}}},
-    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 1000, "y1": 300, "x2": 1100, "y2": 400, "rot": 180}}}},
-    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 600, "x2": 850, "y2": 700}}}}
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 720}, {"x": 800, "y": 800}], "E": 2}]}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 500}], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 400}, {"x": 970, "y": 670}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 580, "y": 440}, {"x": 580, "y": 400}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 170}], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 600, "y": 460}, {"x": 600, "y": 500}], "E": 1}, {"S": 1, "M": [{"x": 320, "y": 500}], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 320, "y": 550}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 20, "y": 550}, {"x": 20, "y": 340}], "E": 2}]}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 430}], "E": 2}]}},
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 380, "x2": 160, "y2": 480}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 500, "x2": 300, "y2": 600}}}},
+    "current": {"Dyad": {"placement": {"diagram": {"x1": 220, "y1": 120, "x2": 320, "y2": 220}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 300, "x2": 540, "y2": 500}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 300, "x2": 840, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 640, "x2": 360, "y2": 720}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 660, "y1": 620, "x2": 760, "y2": 720}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 620, "x2": 940, "y2": 720}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 800, "x2": 700, "y2": 900}}}}
   }
 }
 end
