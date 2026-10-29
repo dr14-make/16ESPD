@@ -106,14 +106,16 @@ Each component reaches step 6 before the next one starts.
   is no event, so the solver strides across the edge and counts input that never flowed. Put the
   edge in the analysis' `tstops` and drive it with a `Step` (a `Pulse` still misreads the edge);
   HANDOVER has the numbers. Anchor the integrated state to catch it.
+- **A fast periodic source** (PWM, a chopper, thousands of edges a run) has no event per edge:
+  write each edge as a ramp in `time`, keep `dtmax` below the shortest ramp, and show a result
+  stays put when `dtmax` halves. Take averages and losses from energy states (`der(E) = P`); a
+  sum over `saveat` aliases with the switching frequency.
 - **`rm` prompts on this machine** and does nothing without a TTY; delete files you created with
   `\rm -f`.
 
-## Branches
+## Notebooks
 
-- **Switching or PWM models** (edges in microseconds, thousands of them per run): follow
-  [`reference/switching.md`](reference/switching.md) before writing the gate.
-- **A notebook or exported figures:** follow [`reference/notebooks.md`](reference/notebooks.md).
+A notebook or an exported figure: follow [`reference/notebooks.md`](reference/notebooks.md).
 
 ## Debugging
 
