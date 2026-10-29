@@ -1,0 +1,170 @@
+"""
+Planar car on WLTC in a straight line: road load through `PlanarRoadLoad` and a PI driver on
+the front axle.
+
+The driver tracks the trace in km/h. Its output is split by sign, as in Lecture 2's WLTC bench:
+the positive part is a drive torque on both front spin flanges, the negative part a command to
+both front brakes. A friction brake cannot reverse the car, so the car never rolls backwards at
+a stop; a negative drive torque would, and `RoadLoad`'s rolling-resistance regularization
+overflows (`exp(-v / 1e-3)`) once the car reverses faster than 0.71 m/s. With `cycle = false`
+the bench holds the constant `v_set` instead (`PlanarCruise`).
+
+**Standstill.** `SlipBasedWheelJoint` adds its regularization outside the square root of the slip
+speed, so its Jacobian is NaN whenever a wheel's longitudinal and lateral slip speeds are both
+exactly zero (JuliaComputing/MultibodyComponents.jl#185). A car initialized at exact rest is in
+that state at t = 0 and Rodas5P aborts on the first step. The bench therefore starts the wheels
+`dv_wheel` faster than the body. Once moving, the car does not return to exact zero: braked to a
+stop, its slip speeds settle at round-off (about 1e-22 m/s) rather than at zero, which carries it
+through every WLTC stop and a 400 s park.
+"""
+test component PlanarWLTC
+  "Vehicle mass, shared by the car and its road load (probe)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Driver gain, per front flange (assumed)"
+  parameter k::Real = 200.0
+  "Driver integral time (assumed)"
+  parameter Ti::Time = 2.0
+  "Driver torque limit, per front flange (assumed)"
+  parameter tau_max::Torque = 1000.0
+  "Constant target speed when cycle = false, km/h (assumed)"
+  parameter v_set::Real = 50.0
+  "Initial speed (assumed)"
+  parameter v0::Velocity = 0.0
+  "Initial wheel surface speed above v0, keeps the start off zero slip (assumed)"
+  parameter dv_wheel::Velocity = 0.01
+  "Follow the WLTC trace; false holds v_set"
+  structural parameter cycle::Boolean = true
+  trace = VehicleSystemsComponents.Vehicle.DriveCycle() if cycle {^trace}
+  cruise = BlockComponents.Sources.Constant(k = v_set) if !cycle {^cruise}
+  driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+  no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  to_drive = BlockComponents.Nonlinear.Limiter(y_max = tau_max, y_min = 0.0) {^to_drive}
+  brake_part = BlockComponents.Nonlinear.Limiter(y_max = 0.0, y_min = -tau_max) {^brake_part}
+  to_brake = BlockComponents.Math.Gain(k = -1.0) {^to_brake}
+  drive_fl = RotationalComponents.Sources.TorqueSource() {^drive_fl}
+  drive_fr = RotationalComponents.Sources.TorqueSource() {^drive_fr}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  straight = RotationalComponents.Components.Fixed() {^straight}
+  no_brake = BlockComponents.Sources.Constant(k = 0.0) {^no_brake}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+relations
+  if cycle
+    connect(trace.y, driver.u_s) {^w1}
+  else
+    connect(cruise.y, driver.u_s) {^w2}
+  end
+  connect(sensors.vx, kmh.u) {^w4}
+  connect(kmh.y, driver.u_m) {^w5}
+  connect(no_ff.y, driver.u_ff) {^w6}
+  connect(driver.y, to_drive.u, brake_part.u) {^w7}
+  connect(to_drive.y, drive_fl.tau, drive_fr.tau) {^w24}
+  connect(brake_part.y, to_brake.u) {^w25}
+  connect(to_brake.y, car.tau_fl, car.tau_fr) {^w26}
+  connect(drive_fl.spline, car.spin_fl) {^w8}
+  connect(drive_fr.spline, car.spin_fr) {^w9}
+  connect(drive_fl.support, drive_fr.support, mount.spline) {^w10}
+  connect(car.steering, straight.spline) {^w11}
+  connect(no_brake.y, car.tau_rl, car.tau_rr) {^w12}
+  connect(flat.y, roadload.grade) {^w13}
+  connect(car.chassis, roadload.chassis, sensors.chassis) {^w14}
+  connect(car.steering, sensors.steering) {^w15}
+  connect(car.wheel_fl, sensors.wheel_fl) {^w16}
+  connect(car.wheel_fr, sensors.wheel_fr) {^w17}
+  connect(car.wheel_rl, sensors.wheel_rl) {^w18}
+  connect(car.wheel_rr, sensors.wheel_rr) {^w19}
+  connect(car.spin_fl, sensors.spin_fl) {^w20}
+  connect(car.spin_fr, sensors.spin_fr) {^w21}
+  connect(car.spin_rl, sensors.spin_rl) {^w22}
+  connect(car.spin_rr, sensors.spin_rr) {^w23}
+  initial car.body.r = [0, 0]
+  initial car.body.v = [v0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = (v0 + dv_wheel) / radius
+  initial car.fr.inertia.w = (v0 + dv_wheel) / radius
+  initial car.rl.inertia.w = (v0 + dv_wheel) / radius
+  initial car.rr.inertia.w = (v0 + dv_wheel) / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+metadata {
+  "_links": {
+    "trace": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 0, "x2": 100, "y2": 100}}}},
+    "cruise": {"Dyad": {"placement": {"diagram": {"x1": 0, "y1": 150, "x2": 100, "y2": 250}}}},
+    "driver": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 50, "x2": 450, "y2": 150}}}},
+    "to_drive": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 0, "x2": 600, "y2": 80}}}},
+    "brake_part": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 200, "x2": 600, "y2": 280}}}},
+    "to_brake": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 300, "x2": 600, "y2": 380}}}},
+    "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
+    "kmh": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 450, "x2": 400, "y2": 550}}}},
+    "drive_fl": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 0, "x2": 750, "y2": 100}}}},
+    "drive_fr": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 150, "x2": 750, "y2": 250}}}},
+    "mount": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 280, "x2": 750, "y2": 380}}}},
+    "straight": {"Dyad": {"placement": {"diagram": {"x1": 900, "y1": -200, "x2": 1000, "y2": -100}}}},
+    "no_brake": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 600, "x2": 750, "y2": 700}}}},
+    "flat": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 600, "x2": 1300, "y2": 700}}}},
+    "car": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 0, "x2": 1050, "y2": 200}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 400, "x2": 1050, "y2": 600}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 400, "x2": 1300, "y2": 500}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 530, "y": 100}]}},
+    "w24": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 630, "y": 50}]}},
+    "w25": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w26": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 820, "y": 250}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 780, "y": 350}]}},
+    "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w12": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 800, "y": 650}]}},
+    "w13": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w14": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 1100, "y": 300}]}},
+    "w15": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+  }
+}
+end
+
+analysis PlanarWLTCTransient
+  extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  parameter k::Real = 200.0
+  parameter Ti::Time = 2.0
+  model = VehicleSystemsComponents.Vehicle.Planar.PlanarWLTC(k = k, Ti = Ti)
+relations
+end
+
+"""
+The WLTC bench holding a constant `v_set` instead of the trace, from a start at that speed: the
+constant-speed road-load check.
+"""
+test component PlanarCruise
+  extends VehicleSystemsComponents.Vehicle.Planar.PlanarWLTC(cycle = false, v0 = v_set / 3.6)
+end
+
+analysis PlanarCruiseTransient
+  extends TransientAnalysis(stop = 60.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+  parameter v_set::Real = 50.0
+  model = VehicleSystemsComponents.Vehicle.Planar.PlanarCruise(v_set = v_set)
+relations
+end

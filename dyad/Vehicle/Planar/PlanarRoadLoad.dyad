@@ -1,0 +1,68 @@
+"""
+Road load for a planar body, through the longitudinal `Vehicle.RoadLoad` law.
+
+`RoadLoad` acts on a translational flange. Here that flange is moved by a speed source at the
+chassis' forward speed `vx`, resolved in the chassis frame, so the law sees the speed it would
+see on the longitudinal car. A force sensor reads what the law takes, and a planar force applies
+it to the chassis along the chassis x axis, against the motion. The road load is therefore the
+same law, with the same parameters, on both cars.
+
+The force acts at the chassis frame, along its x axis; it adds no yaw moment and no lateral
+force. Sideslip speed does not enter it. `F` is the road load, positive when it opposes forward
+travel.
+"""
+component PlanarRoadLoad
+  "Chassis frame; the road load acts here along the chassis x axis"
+  chassis = Frame2D() {^chassis}
+  "Road gradient, tan(alpha)"
+  grade = RealInput() {^grade}
+  vel = MultibodyComponents.PlanarMechanics.AbsoluteVelocity() {^vel}
+  follower = TranslationalComponents.Sources.VelocitySource(ref_type = TranslationalComponents.Sources.ReferenceType.Exact()) {^follower}
+  ground = TranslationalComponents.Components.Fixed() {^ground}
+  sensor = TranslationalComponents.Sensors.ForceSensor() {^sensor}
+  roadload = VehicleSystemsComponents.Vehicle.RoadLoad(m = m, CdA = CdA, rho = rho, v_nominal = v_nominal, f_r = f_r, g = g) {^roadload}
+  force = MultibodyComponents.PlanarMechanics.WorldForceTorque(resolve_in_frame = MultibodyComponents.ResolveInFrame.FrameB(), render = false) {^force}
+  "Vehicle mass; the road load uses it for the normal load and the along-slope weight (assumed)"
+  parameter m::Dyad.Mass = 1500.0
+  "Aerodynamic drag area (Cd * A) (assumed)"
+  parameter CdA::Area = 0.63
+  "Air density at sea level (textbook)"
+  parameter rho::Density = 1.2
+  "Speed at which drag equals its nominal value; it scales the stdlib law and does not change the drag force (assumed)"
+  parameter v_nominal::Velocity = 30.0
+  "Rolling resistance coefficient (assumed)"
+  parameter f_r::Real = 0.012
+  "Gravitational acceleration, standard gravity (textbook)"
+  parameter g::Acceleration = 9.80665
+  "Road load, positive when it opposes forward travel"
+  variable F::Dyad.Force
+relations
+  connect(chassis, vel.frame_a, force.frame_b) {^w1}
+  connect(vel.v_x, follower.v_ref) {^w2}
+  connect(follower.support, ground.flange) {^w3}
+  connect(follower.flange, sensor.flange_a) {^w4}
+  connect(sensor.flange_b, roadload.flange) {^w5}
+  connect(grade, roadload.grade) {^w6}
+  F = sensor.f
+  force.force_x = -F
+  force.force_y = 0.0
+  force.torque = 0.0
+metadata {
+  "_links": {
+    "chassis": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+    "grade": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "vel": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 150, "x2": 650, "y2": 250}}}},
+    "follower": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 150, "x2": 350, "y2": 250}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 150, "x2": 250, "y2": 250, "rot": 90}}}},
+    "sensor": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 400, "x2": 450, "y2": 500, "rot": 90}}}},
+    "roadload": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 650, "x2": 450, "y2": 750, "rot": 90}}}},
+    "force": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 400, "x2": 750, "y2": 500}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 850, "y": 200}], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 850, "y": 450}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 400, "y": 300}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 200, "y": 700}], "E": 2}]}}
+  }
+}
+end
