@@ -281,8 +281,10 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   `None` and is correct under the default. The generated tests cannot take the setting, so the
   generated Lecture 3 tests for these models fail on 3.5 (3992 of 7749 checks) until the fix
   ships. Upstream: JuliaComputing/DyadCompilerPasses.jl#114, fix in draft PR #153 (unreleased
-  as of DyadCompilerPasses 0.3.11). When a Dyad release carries it, drop the setting and rerun
-  the suite.
+  as of DyadCompilerPasses 0.3.11). `test/runtests.jl` pins that count in `KNOWN_FAILURES`:
+  the `generated` group passes only at exactly 3992 failures and no errors, and any other count,
+  lower included, fails the run. When a Dyad release carries the fix, drop the setting, delete
+  the `generated` line from `KNOWN_FAILURES`, and rerun the suite.
 - **The planar car stalls Rodas5P only from exact rest (MultibodyComponents.jl#185).**
   `SlipBasedWheelJoint` adds `0.0001` outside `sqrt(v_slip_long^2 + v_slip_lat^2)`, so its
   Jacobian is NaN when both slip speeds are exactly zero. `PlanarWLTC` started with body and
