@@ -1,0 +1,48 @@
+"""
+Dyno bench for the library `DCMachine`: the terminals sit on a stiff supply of `V`, and the
+dyno holds the shaft at `rpm_start` for 1 s, ramps it to `rpm_end` over 10 s and holds it there
+for 1 s. The ramp traces the machine's torque-speed line at that voltage.
+
+With the Leaf defaults the run starts at the corner point, 320 N.m at 3283 rpm, and the
+torque falls by k^2 / R = 2.0 N.m per rpm: it crosses zero just below the no-load speed
+V / k = 3447 rpm and ends at 3600 rpm generating -304 N.m, with 312 A flowing back into the
+supply. During the ramp the shaft torque sits 0.46 N.m above the steady line: the inductance
+holds the current 0.64 A behind the falling back-EMF, and the rotor inertia takes 0.17 N.m.
+
+The analysis lands the solver on both corners of the ramp with `tstops`.
+"""
+test component TestDCMachine
+  "Supply voltage at the terminals"
+  parameter V::Voltage = 350.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 3283.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 3600.0
+  voltage = BlockComponents.Sources.Constant(k = V) {^voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  machine = VehicleSystemsComponents.Vehicle.Electric.DCMachine() {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 10.0) {^speed}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
+relations
+  initial dyno.phi = 0
+  initial machine.inductor.i = 0
+  connect(voltage.y, supply.V) {^id1}
+  connect(supply.p, machine.p) {^id2}
+  connect(machine.n, supply.n, ground.g) {^id3}
+  connect(speed.y, dyno.w_ref) {^id4}
+  connect(machine.spline, dyno.spline) {^id5}
+  connect(machine.support, dyno.support, mounts.spline) {^id6}
+end
+
+analysis DCMachineTransient
+  extends TransientAnalysis(stop = 12.0, alg = ODEAlg.Rodas5P(), saveat = 0.01, tstops = [1.0, 11.0])
+  "Supply voltage at the terminals"
+  parameter V::Voltage = 350.0
+  "Dyno speed before the ramp [rpm]"
+  parameter rpm_start::Real = 3283.0
+  "Dyno speed after the ramp [rpm]"
+  parameter rpm_end::Real = 3600.0
+  model = VehicleSystemsComponents.Vehicle.Electric.TestDCMachine(V = V, rpm_start = rpm_start, rpm_end = rpm_end)
+end

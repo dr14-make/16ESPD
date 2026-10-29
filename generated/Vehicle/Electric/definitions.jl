@@ -207,4 +207,7 @@ end
 
 include("BatteryTransient_definition.jl")
 include("Battery_definition.jl")
+include("DCMachineTransient_definition.jl")
+include("DCMachine_definition.jl")
 include("TestBattery_definition.jl")
+include("TestDCMachine_definition.jl")

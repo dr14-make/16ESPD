@@ -17,5 +17,7 @@ end
 
 @testset "`VehicleSystemsComponents.Vehicle.Electric`" begin
 include("Battery_test.jl")
+include("DCMachine_test.jl")
 include("TestBattery_test.jl")
+include("TestDCMachine_test.jl")
 end

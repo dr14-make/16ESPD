@@ -10,4 +10,6 @@ end
 
 
 include("Battery_experiment.jl")
+include("DCMachine_experiment.jl")
 include("TestBattery_experiment.jl")
+include("TestDCMachine_experiment.jl")

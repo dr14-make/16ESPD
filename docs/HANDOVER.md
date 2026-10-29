@@ -328,6 +328,14 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   start_time`, so a stop on its edge makes the first stage after it read the old value, and it
   stays wrong (9.4e-5). `automatic_discontinuity_detection = true` does not rescue `Pulse` on
   3.5: it throws `Condition of ifelse must be a Bool` in DyadCompilerPasses' if-lifting.
+- **`InverseSpeedDependentTorque` with `TorqueDirection = false` jumps at `w0` unless
+  `w_nominal = w0`.** Below `w0` it gives `tau_nominal * w / w0`, which reaches `tau_nominal`
+  at `w0`; above it gives `tau_nominal * w_nominal / w`, which is `tau_nominal * w_nominal /
+  w0` there. For the machine's constant loss (200 W) nominated at base speed, 343.8 rad/s,
+  with the default `w0 = 0.1`, that is a step from 0.58 N·m to 2000 N·m at 1 rpm, and every
+  run through standstill would cross it. `Vehicle.Electric.DCMachine` therefore sets
+  `w_nominal = w0 = w_reg` and `tau_nominal = -C / w_reg`, so the torque is `C / w` above
+  `w_reg` and fades linearly to zero below it, with no jump.
 - **Memory.** Running several agents alongside the Dyad language server exhausts this machine;
   `earlyoom` is configured to prefer killing `julia`. A run that dies with no error message was
   probably killed, not broken. Retry before debugging.
