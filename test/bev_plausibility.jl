@@ -83,12 +83,17 @@ const _bev_run = _BEV_PL.PlanarBEVWLTCTransient()
         held = (s.t .>= t0 + 1.0) .& (s.t .<= t1)
         @test maximum(abs, v_kmh[held]) < 1e-3
     end
-    # The driver never needs more than the machine has: 132 of 320 N·m at most.
-    @test maximum(abs, s[m.tau_cmd]) < 320.0
+    # The driver never needs more than the machine has: 117 of 320 N·m at most.
+    @test maximum(abs, s[m.driver.y]) < 320.0
+    # The drive divides the torque command by the field, so the machine gives what the split
+    # asks for at any speed, weakened field included (measured 0.19 N·m, the current loop's lag).
+    weak = s[m.drive.converter.field] .< 0.9
+    @test count(weak) > 100
+    @test maximum(abs, s[m.drive.machine.tau_em][weak] .- s[m.split.tau_motor][weak]) < 1.0
     # Battery current and voltage stay on the pack's sane branch, and SoC falls by the cycle's
     # 3.1 kWh of 40.
     @test minimum(s[m.drive.battery.v]) > 300.0
-    @test s[m.drive.SoC][end] ≈ 0.9 - 3.127 / 40 atol = 1e-3
+    @test s[m.drive.SoC][end] ≈ 0.9 - 3.126 / 40 atol = 1e-3
 end
 
 @testset "Lecture 4 step 06: battery DC consumption on WLTC" begin
@@ -97,11 +102,11 @@ end
     # Plan band: Leaf WLTP 171 Wh/km at the wall less 10–15 % charging loss, on a road load
     # about 15 % below the Leaf's.
     @test 120.0 <= Wh_per_km <= 155.0
-    # Measured 131.3 Wh/km.
-    @test Wh_per_km ≈ 131.28 atol = 0.05
-    # The same cycle in MJ/100 km: 47.3 against the engine car's 168.8, 3.6 times less.
+    # Measured 131.2 Wh/km.
+    @test Wh_per_km ≈ 131.24 atol = 0.05
+    # The same cycle in MJ/100 km: 47.2 against the engine car's 168.8, 3.6 times less.
     MJ_per_100km = E.dc / 1e6 / km * 100
-    @test MJ_per_100km ≈ 47.26 atol = 0.05
+    @test MJ_per_100km ≈ 47.25 atol = 0.05
     @test _ENGINE_MJ_PER_100KM ≈ 168.78 atol = 0.01
     @test 3.5 < _ENGINE_MJ_PER_100KM / MJ_per_100km < 3.7
 end
@@ -146,10 +151,10 @@ end
     ts = range(0, 1800, length = 3601)
     ml, m4, mb = symbolic_container(lib), symbolic_container(step4), symbolic_container(bill)
     v_lib = lib.sol(ts, idxs = ml.sensors.vx).u
-    # The meters add states, which moves the solver's steps by a hair (measured 1.7e-5 m/s).
+    # The meters add states, which moves the solver's steps by a hair (measured 3.6e-5 m/s).
     @test step4.sol(ts, idxs = m4.sensors.vx).u ≈ v_lib atol = 1e-4
     @test bill.sol(ts, idxs = mb.sensors.vx).u ≈ v_lib atol = 1e-9
     (; km, E) = _bev_bill(bill)
-    @test E.dc / 3600 / km ≈ 131.28 atol = 0.05
+    @test E.dc / 3600 / km ≈ 131.24 atol = 0.05
     @test abs(_bev_links(E) - E.cells) / E.cells < 1e-6
 end

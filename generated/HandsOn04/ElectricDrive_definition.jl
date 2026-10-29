@@ -10,7 +10,7 @@
 Hands-on 04 step 04: the drive. Battery, converter and machine from steps 1-3, the 12 V
 auxiliaries on the DC link, and the 8.193 reduction to the shaft that turns the differential.
 `tau_ref` is the machine torque asked for; the drive asks the converter for the current that
-gives it at full field. Same names as the library's `Vehicle.Electric.ElectricDrive`.
+gives it at the present field. Same names as the library's `Vehicle.Electric.ElectricDrive`.
 
 ## Parameters:
 
@@ -114,7 +114,7 @@ gives it at full field. Same names as the library's `Vehicle.Electric.ElectricDr
   __assertions = []
 
   ### Equations
-  push!(__eqs, converter.i_ref ~ tau_ref / machine.k)
+  push!(__eqs, converter.i_ref ~ tau_ref / (converter.field * machine.k))
   push!(__eqs, connect(battery.p, converter.p_in, aux.p))
   push!(__eqs, connect(battery.n, converter.n, aux.n, machine.n, ground.g))
   push!(__eqs, connect(converter.p_out, machine.p))

@@ -33,9 +33,6 @@ up to `E_cells`.
 
 | Name         | Description                         | Units  | 
 | ------------ | ----------------------------------- | ------ |
-| `tau_cmd`         | Machine torque the driver asks for                         | N.m  |
-| `fade`         | Machine's share of braking: 1 above v_fade, 0 at standstill                         | --  |
-| `tau_friction`         | Friction brake torque asked of each front wheel                         | N.m  |
 | `P_dc`         | Power at the battery terminals, positive discharging                         | W  |
 | `P_shaft`         | Power at the reduction output, positive driving the wheels                         | W  |
 | `E_cells`         |                          | J  |
@@ -128,9 +125,6 @@ up to `E_cells`.
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (tau_cmd(t)::Real), [description = "Machine torque the driver asks for"])
-  append!(__vars, @variables (fade(t)::Real), [description = "Machine's share of braking: 1 above v_fade, 0 at standstill"])
-  append!(__vars, @variables (tau_friction(t)::Real), [description = "Friction brake torque asked of each front wheel"])
   append!(__vars, @variables (P_dc(t)::Real), [description = "Power at the battery terminals, positive discharging"])
   append!(__vars, @variables (P_shaft(t)::Real), [description = "Power at the reduction output, positive driving the wheels"])
   append!(__vars, @variables (E_cells(t)::Real))
@@ -149,15 +143,6 @@ up to `E_cells`.
   append!(__vars, @variables (E_kin(t)::Real), [description = "Kinetic energy of body, wheels and rotor, and the armature's magnetic energy"])
 
   ### Variables (assignments)
-  __ovr_tau_cmd = pop!(__overrides, "tau_cmd", nothing); isnothing(__ovr_tau_cmd) || push!(__eqs, tau_cmd ~ __ovr_tau_cmd)
-  __ovr_tau_cmd__initial = pop!(__overrides, "tau_cmd.initial", nothing); isnothing(__ovr_tau_cmd__initial) || (__initial_conditions[tau_cmd] = __ovr_tau_cmd__initial)
-  __ovr_tau_cmd__guess = pop!(__overrides, "tau_cmd.guess", nothing)
-  __ovr_fade = pop!(__overrides, "fade", nothing); isnothing(__ovr_fade) || push!(__eqs, fade ~ __ovr_fade)
-  __ovr_fade__initial = pop!(__overrides, "fade.initial", nothing); isnothing(__ovr_fade__initial) || (__initial_conditions[fade] = __ovr_fade__initial)
-  __ovr_fade__guess = pop!(__overrides, "fade.guess", nothing)
-  __ovr_tau_friction = pop!(__overrides, "tau_friction", nothing); isnothing(__ovr_tau_friction) || push!(__eqs, tau_friction ~ __ovr_tau_friction)
-  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction.initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
-  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction.guess", nothing)
   __ovr_P_dc = pop!(__overrides, "P_dc", nothing); isnothing(__ovr_P_dc) || push!(__eqs, P_dc ~ __ovr_P_dc)
   __ovr_P_dc__initial = pop!(__overrides, "P_dc.initial", nothing); isnothing(__ovr_P_dc__initial) || (__initial_conditions[P_dc] = __ovr_P_dc__initial)
   __ovr_P_dc__guess = pop!(__overrides, "P_dc.guess", nothing)
@@ -247,14 +232,14 @@ up to `E_cells`.
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
+  # Subcomponent split of type VehicleSystemsComponents.Vehicle.Electric.TorqueSplit
+  split_overrides = __pop_subcomponent_overrides!(__overrides, "split")
+  push!(__systems, @named split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(; ratio=ratio, v_fade=v_fade, __overrides = split_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_tau_cmd__guess) || (__guesses[tau_cmd] = __ovr_tau_cmd__guess)
-  isnothing(__ovr_fade__guess) || (__guesses[fade] = __ovr_fade__guess)
-  isnothing(__ovr_tau_friction__guess) || (__guesses[tau_friction] = __ovr_tau_friction__guess)
   isnothing(__ovr_P_dc__guess) || (__guesses[P_dc] = __ovr_P_dc__guess)
   isnothing(__ovr_P_shaft__guess) || (__guesses[P_shaft] = __ovr_P_shaft__guess)
   isnothing(__ovr_E_cells__guess) || (__guesses[E_cells] = __ovr_E_cells__guess)
@@ -308,12 +293,6 @@ up to `E_cells`.
   __assertions = []
 
   ### Equations
-  push!(__eqs, tau_cmd ~ driver.y)
-  push!(__eqs, fade ~ min(1.0, max(0.0, kmh.y / v_fade)))
-  push!(__eqs, drive.tau_ref ~ max(tau_cmd, 0.0) + fade * min(tau_cmd, 0.0))
-  push!(__eqs, tau_friction ~ -(1.0 - fade) * min(tau_cmd, 0.0) * ratio / 2.0)
-  push!(__eqs, car.tau_fl ~ tau_friction)
-  push!(__eqs, car.tau_fr ~ tau_friction)
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, P_dc ~ drive.battery.v * drive.battery.i)
@@ -352,6 +331,10 @@ up to `E_cells`.
   push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
   push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
   push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
+  push!(__eqs, connect(driver.y, split.tau_ref))
+  push!(__eqs, connect(kmh.y, split.v))
+  push!(__eqs, connect(split.tau_motor, drive.tau_ref))
+  push!(__eqs, connect(split.tau_brake, car.tau_fl, car.tau_fr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

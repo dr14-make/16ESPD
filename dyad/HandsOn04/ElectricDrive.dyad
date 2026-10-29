@@ -2,7 +2,7 @@
 Hands-on 04 step 04: the drive. Battery, converter and machine from steps 1-3, the 12 V
 auxiliaries on the DC link, and the 8.193 reduction to the shaft that turns the differential.
 `tau_ref` is the machine torque asked for; the drive asks the converter for the current that
-gives it at full field. Same names as the library's `Vehicle.Electric.ElectricDrive`.
+gives it at the present field. Same names as the library's `Vehicle.Electric.ElectricDrive`.
 """
 component ElectricDrive
   "Machine torque asked for, positive motoring"
@@ -32,7 +32,7 @@ relations
   connect(reduction.spline_b, spline) {^w6}
   connect(machine.support, reduction.support, support) {^w7}
   connect(battery.SoC, SoC) {^w8}
-  converter.i_ref = tau_ref / machine.k
+  converter.i_ref = tau_ref / (converter.field * machine.k)
 metadata {
   "_links": {
     "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},

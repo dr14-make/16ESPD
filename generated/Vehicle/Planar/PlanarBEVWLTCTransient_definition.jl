@@ -174,13 +174,14 @@ export PlanarBEVWLTCTransient__System
   # The battery-electric planar car on WLTC: `Vehicle.Electric.ElectricDrive` turns the front axle
   # through the planar `DifferentialGear`, and the bench meters every link of the energy chain.
   # 
-  # The PI driver tracks the trace in km/h and asks for a machine torque `tau_cmd`. Positive, it all
-  # goes to the machine. Negative, the machine brakes the car and charges the battery, with its
-  # share faded linearly from all of it at `v_fade` to none at standstill; the planar car's front
-  # friction brakes take the rest, at the same wheel torque. The machine therefore never pushes the
-  # car backwards at a stop, which `RoadLoad` could not survive below -0.71 m/s, and at every stop
-  # the friction brakes hold the car, as on `PlanarWLTC`. WLTC never brakes harder than the machine
-  # can, so above `v_fade` all braking is regenerative. Start and standstill are those of
+  # The PI driver tracks the trace in km/h and asks for a machine torque, and
+  # `Vehicle.Electric.TorqueSplit` hands it on: positive, all of it to the machine; negative, the machine brakes the
+  # car and charges the battery, with its share faded linearly from all of it at `v_fade` to none at
+  # standstill, and the planar car's front friction brakes take the rest at the same wheel torque.
+  # The machine therefore never pushes the car backwards at a stop, which `RoadLoad` could not
+  # survive below -0.71 m/s, and at every stop the friction brakes hold the car, as on
+  # `PlanarWLTC`. WLTC never brakes harder than the machine can, so above `v_fade` all braking is
+  # regenerative. Start and standstill are those of
   # `PlanarWLTC` (wheels `dv_wheel` ahead of the body, MultibodyComponents.jl#185).
   # 
   # The energy states integrate each link's power from t = 0, in joules:

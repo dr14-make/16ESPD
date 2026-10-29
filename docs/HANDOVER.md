@@ -385,6 +385,13 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   link voltage, not the load current. `Vehicle.Electric.AuxLoad` therefore makes its current a
   state, `T di/dt = P/v - i` from `i = 0`, which starts on the high-voltage branch and stays; the 10 ms lag
   costs 1e-5 of the auxiliary energy over WLTC.
+- **A torque command through a current-imposing converter divides by the present field.**
+  `ElectricDrive` asks for `i_ref = tau_ref / (converter.field * machine.k)`. Divided by `k`
+  alone, the machine gives `field` times the torque asked for: 0.36 of it at WLTC's 131 km/h, so
+  the speed driver's loop gain falls by two thirds on the motorway. The division closes an
+  algebraic loop (`i_ref` → `L di/dt` → `v_out` → `d` → `field`) that Rodas5P solves without
+  help; the WLTC run goes from 6.4 s to 6.8 s warm, and the machine gives the asked-for torque to
+  0.19 N·m (the current loop's lag) wherever the field is weakened.
 - **`r."path"` takes a literal only.** On an analysis result, `r."E_dc"` works but `r."$x"`
   with `x = "E_dc"` throws a `MethodError`, and `getproperty(r, :E_dc)` a `FieldError`. A snippet
   that loops over signals collects the literals first: `links = ["road" => r."E_road", ...]`.

@@ -15,11 +15,13 @@ drives the differential.
                        -> aux
 
 `tau_ref` is the machine torque asked for, positive motoring, negative braking. The converter
-imposes a current, so the drive turns the torque into the current that gives it at full field,
-`i_ref = tau_ref / k`. Above base speed the converter weakens the field and the machine gives
-less than `tau_ref` per ampere; a driver closed around the car's speed asks for more. A negative
-`tau_ref` makes the machine a generator: the converter's and the battery's currents reverse and
-the pack charges.
+imposes a current, so the drive divides the torque by the torque per ampere at the present
+field, `i_ref = tau_ref / (field k)`: the machine gives `field k i`, so `tau_ref` is the torque
+delivered at any speed, up to the converter's current limit. Below base speed `field = 1`; above
+it the converter weakens the field and the same torque takes more current, as a field-oriented
+drive's q-axis current does. A driver closed around the car's speed therefore sees the same
+loop gain on the motorway as in town. A negative `tau_ref` makes the machine a generator: the
+converter's and the battery's currents reverse and the pack charges.
 
 `spline` turns `ratio` times slower than the machine and carries `ratio` times its torque; the
 reduction is ideal, so it costs nothing. `support` takes the reactions of the machine housing
@@ -135,7 +137,7 @@ Defaults are the Nissan Leaf ZE1. Source tags: (Nissan) ZE1 specification sheet,
   __assertions = []
 
   ### Equations
-  push!(__eqs, converter.i_ref ~ tau_ref / machine.k)
+  push!(__eqs, converter.i_ref ~ tau_ref / (converter.field * machine.k))
   push!(__eqs, connect(battery.p, converter.p_in, aux.p))
   push!(__eqs, connect(battery.n, converter.n, aux.n, machine.n, ground.g))
   push!(__eqs, connect(converter.p_out, machine.p))

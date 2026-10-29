@@ -1,9 +1,10 @@
 """
 Hands-on 04 step 04 bench: your drive turns the planar car's front wheels through the planar
-differential, and a PI driver follows WLTC. The driver asks for a machine torque. Driving, the
-machine gives it; braking, the machine takes it back into the battery, its share faded from all
-at `v_fade` to none at standstill, and the front friction brakes take the rest, so the car never
-rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
+differential, and a PI driver follows WLTC. The driver asks for a machine torque, and the
+course library's `TorqueSplit` hands it on. Driving, the machine gives it; braking, the machine
+takes it back into the battery, its share faded from all at `v_fade` to none at standstill, and
+the front friction brakes take the rest, so the car never rolls backwards and is held at every
+stop. The car drives the cycle's 23.27 km.
 """
 component BEVWLTC
   "Vehicle mass, shared by the car and its road load (probe)"
@@ -36,12 +37,7 @@ component BEVWLTC
   car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
   sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
-  "Machine torque the driver asks for"
-  variable tau_cmd::Torque
-  "Machine's share of braking: 1 above v_fade, 0 at standstill"
-  variable fade::Real
-  "Friction brake torque asked of each front wheel"
-  variable tau_friction::Torque
+  split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade) {^split}
 relations
   connect(trace.y, driver.u_s) {^w1}
   connect(sensors.vx, kmh.u) {^w2}
@@ -63,12 +59,10 @@ relations
   connect(car.spin_fr, sensors.spin_fr) {^w18}
   connect(car.spin_rl, sensors.spin_rl) {^w19}
   connect(car.spin_rr, sensors.spin_rr) {^w20}
-  tau_cmd = driver.y
-  fade = min(1.0, max(0.0, kmh.y / v_fade))
-  drive.tau_ref = max(tau_cmd, 0.0) + fade * min(tau_cmd, 0.0)
-  tau_friction = -(1.0 - fade) * min(tau_cmd, 0.0) * ratio / 2.0
-  car.tau_fl = tau_friction
-  car.tau_fr = tau_friction
+  connect(driver.y, split.tau_ref) {^w21}
+  connect(kmh.y, split.v) {^w22}
+  connect(split.tau_motor, drive.tau_ref) {^w23}
+  connect(split.tau_brake, car.tau_fl, car.tau_fr) {^w24}
   car.tau_rl = 0.0
   car.tau_rr = 0.0
   initial car.body.r = [0, 0]
@@ -102,6 +96,7 @@ metadata {
     "car": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 0, "x2": 1050, "y2": 200}}}},
     "sensors": {"Dyad": {"placement": {"diagram": {"x1": 850, "y1": 400, "x2": 1050, "y2": 600}}}},
     "roadload": {"Dyad": {"placement": {"diagram": {"x1": 1200, "y1": 400, "x2": 1300, "y2": 500}}}},
+    "split": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 250, "x2": 350, "y2": 350}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
@@ -121,7 +116,11 @@ metadata {
     "w17": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w18": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}}
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w24": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 700, "y": 300}]}}
   }
 }
 end

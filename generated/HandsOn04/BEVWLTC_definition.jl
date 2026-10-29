@@ -8,10 +8,11 @@
    BEVWLTC(; name, m, radius, k, Ti, tau_max, v_fade, P_aux, ratio, dv_wheel, __overrides)
 
 Hands-on 04 step 04 bench: your drive turns the planar car's front wheels through the planar
-differential, and a PI driver follows WLTC. The driver asks for a machine torque. Driving, the
-machine gives it; braking, the machine takes it back into the battery, its share faded from all
-at `v_fade` to none at standstill, and the front friction brakes take the rest, so the car never
-rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
+differential, and a PI driver follows WLTC. The driver asks for a machine torque, and the
+course library's `TorqueSplit` hands it on. Driving, the machine gives it; braking, the machine
+takes it back into the battery, its share faded from all at `v_fade` to none at standstill, and
+the front friction brakes take the rest, so the car never rolls backwards and is held at every
+stop. The car drives the cycle's 23.27 km.
 
 ## Parameters:
 
@@ -26,14 +27,6 @@ rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
 | `P_aux`         | Power drawn by the 12 V network (assumed)                         | W  |   300.0 |
 | `ratio`         | Single-speed reduction (Nissan)                         | --  |   8.193 |
 | `dv_wheel`         | Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)                         | m/s  |   0.01 |
-
-## Variables
-
-| Name         | Description                         | Units  | 
-| ------------ | ----------------------------------- | ------ |
-| `tau_cmd`         | Machine torque the driver asks for                         | N.m  |
-| `fade`         | Machine's share of braking: 1 above v_fade, 0 at standstill                         | --  |
-| `tau_friction`         | Friction brake torque asked of each front wheel                         | N.m  |
 """
 @component function BEVWLTC(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"k"=Float64(50.0), var"Ti"=Float64(2.0), var"tau_max"=Float64(320.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"dv_wheel"=0.01, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
@@ -110,20 +103,8 @@ rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
   ### Final Path Parameters
 
   ### Variables (declarations)
-  append!(__vars, @variables (tau_cmd(t)::Real), [description = "Machine torque the driver asks for"])
-  append!(__vars, @variables (fade(t)::Real), [description = "Machine's share of braking: 1 above v_fade, 0 at standstill"])
-  append!(__vars, @variables (tau_friction(t)::Real), [description = "Friction brake torque asked of each front wheel"])
 
   ### Variables (assignments)
-  __ovr_tau_cmd = pop!(__overrides, "tau_cmd", nothing); isnothing(__ovr_tau_cmd) || push!(__eqs, tau_cmd ~ __ovr_tau_cmd)
-  __ovr_tau_cmd__initial = pop!(__overrides, "tau_cmd.initial", nothing); isnothing(__ovr_tau_cmd__initial) || (__initial_conditions[tau_cmd] = __ovr_tau_cmd__initial)
-  __ovr_tau_cmd__guess = pop!(__overrides, "tau_cmd.guess", nothing)
-  __ovr_fade = pop!(__overrides, "fade", nothing); isnothing(__ovr_fade) || push!(__eqs, fade ~ __ovr_fade)
-  __ovr_fade__initial = pop!(__overrides, "fade.initial", nothing); isnothing(__ovr_fade__initial) || (__initial_conditions[fade] = __ovr_fade__initial)
-  __ovr_fade__guess = pop!(__overrides, "fade.guess", nothing)
-  __ovr_tau_friction = pop!(__overrides, "tau_friction", nothing); isnothing(__ovr_tau_friction) || push!(__eqs, tau_friction ~ __ovr_tau_friction)
-  __ovr_tau_friction__initial = pop!(__overrides, "tau_friction.initial", nothing); isnothing(__ovr_tau_friction__initial) || (__initial_conditions[tau_friction] = __ovr_tau_friction__initial)
-  __ovr_tau_friction__guess = pop!(__overrides, "tau_friction.guess", nothing)
 
   ### Constants
   __constants = Any[]
@@ -165,14 +146,14 @@ rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
+  # Subcomponent split of type VehicleSystemsComponents.Vehicle.Electric.TorqueSplit
+  split_overrides = __pop_subcomponent_overrides!(__overrides, "split")
+  push!(__systems, @named split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(; ratio=ratio, v_fade=v_fade, __overrides = split_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
 
   ### Guesses
-  isnothing(__ovr_tau_cmd__guess) || (__guesses[tau_cmd] = __ovr_tau_cmd__guess)
-  isnothing(__ovr_fade__guess) || (__guesses[fade] = __ovr_fade__guess)
-  isnothing(__ovr_tau_friction__guess) || (__guesses[tau_friction] = __ovr_tau_friction__guess)
 
   ### Initialization Equations
   push!(__initialization_eqs, car.body.r ~ [0, 0])
@@ -197,12 +178,6 @@ rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
   __assertions = []
 
   ### Equations
-  push!(__eqs, tau_cmd ~ driver.y)
-  push!(__eqs, fade ~ min(1.0, max(0.0, kmh.y / v_fade)))
-  push!(__eqs, drive.tau_ref ~ max(tau_cmd, 0.0) + fade * min(tau_cmd, 0.0))
-  push!(__eqs, tau_friction ~ -(1.0 - fade) * min(tau_cmd, 0.0) * ratio / 2.0)
-  push!(__eqs, car.tau_fl ~ tau_friction)
-  push!(__eqs, car.tau_fr ~ tau_friction)
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
   push!(__eqs, connect(trace.y, driver.u_s))
@@ -225,6 +200,10 @@ rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
   push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
   push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
   push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
+  push!(__eqs, connect(driver.y, split.tau_ref))
+  push!(__eqs, connect(kmh.y, split.v))
+  push!(__eqs, connect(split.tau_motor, drive.tau_ref))
+  push!(__eqs, connect(split.tau_brake, car.tau_fl, car.tau_fr))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

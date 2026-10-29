@@ -172,10 +172,11 @@ export BEVWLTCTransient__System
   var"v_fade"::Float64 = 10.0
   var"P_aux"::Float64 = 300.0
   # Hands-on 04 step 04 bench: your drive turns the planar car's front wheels through the planar
-  # differential, and a PI driver follows WLTC. The driver asks for a machine torque. Driving, the
-  # machine gives it; braking, the machine takes it back into the battery, its share faded from all
-  # at `v_fade` to none at standstill, and the front friction brakes take the rest, so the car never
-  # rolls backwards and is held at every stop. The car drives the cycle's 23.27 km.
+  # differential, and a PI driver follows WLTC. The driver asks for a machine torque, and the
+  # course library's `TorqueSplit` hands it on. Driving, the machine gives it; braking, the machine
+  # takes it back into the battery, its share faded from all at `v_fade` to none at standstill, and
+  # the front friction brakes take the rest, so the car never rolls backwards and is held at every
+  # stop. The car drives the cycle's 23.27 km.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn04.BEVWLTC(; name=:BEVWLTC)
   __system::System = BEVWLTCTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"k"=var"k", var"Ti"=var"Ti", var"v_fade"=var"v_fade", var"P_aux"=var"P_aux")
 end

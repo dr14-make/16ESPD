@@ -1028,11 +1028,13 @@ $$
 \omega_{machine} = 8.193\;\frac{\omega_{fl} + \omega_{fr}}{2} \qquad \tau_{fl} = \tau_{fr} = \frac{8.193\;\tau_{machine}}{2}
 $$
 
-The car is Lecture 3's planar car with the course road load (`PlanarRoadLoad`: 1500 kg, *C*<sub>d</sub>*A* = 0.63 m², *f*<sub>r</sub> = 0.012), and the cycle the WLTC class 3b trace of Lecture 2. Both are prepared in the course library, as is `AuxLoad`, the 12 V network as a constant **300 W** draw on the battery.
+The car is Lecture 3's planar car with the course road load (`PlanarRoadLoad`: 1500 kg, *C*<sub>d</sub>*A* = 0.63 m², *f*<sub>r</sub> = 0.012), and the cycle the WLTC class 3b trace of Lecture 2. Both are prepared in the course library, as are `AuxLoad`, the 12 V network as a constant **300 W** draw on the battery, and `TorqueSplit`, which shares the driver's torque between the machine and the friction brakes.
 
 ::: info Torque in, current out
 
-The driver thinks in torque, the converter in current. The drive turns one into the other: at full field the machine gives *K*Φ newton-metres per ampere, so it asks the converter for `i_ref = tau_ref / machine.k`. Above base speed (47 km/h in this car) the converter weakens the field and the machine gives less than that per ampere, at 131 km/h about a third. The driver does not need to know: it is closed around the car's speed, and asks for more torque until the car keeps up.
+The driver thinks in torque, the converter in current. The drive turns one into the other: the machine gives *field*·*K*Φ newton-metres per ampere, so it asks the converter for `i_ref = tau_ref / (converter.field * machine.k)`. Below base speed (about 48 km/h in this car) the field is 1; above it the converter weakens the field, at 131 km/h to about a third, and the same torque takes three times the current. A field-oriented drive does the same with its q-axis current.
+
+Divided by full field only, the drive would give a third of the torque asked for at 131 km/h, and the driver's loop gain would fall with it on the motorway. Divided by the present field, a torque command means the same torque at any speed.
 
 :::
 
@@ -1040,7 +1042,7 @@ The driver thinks in torque, the converter in current. The drive turns one into 
 
 When the driver's output goes negative, the car has to slow down. The machine can do it: asked for a negative torque, it turns generator, the converter's and the battery's currents reverse, and the pack charges. WLTC never brakes harder than 1.5 m/s², 85 N·m at the machine, well inside its 320 N·m, so above walking pace the machine does all the braking.
 
-Near standstill it must not: a machine asked for a negative torque at a stop drives the car backwards. So the machine's share fades linearly from all of it at **10 km/h** (`v_fade`) to none at standstill, and the planar car's own front friction brakes take the rest, at the same wheel torque. A friction brake only ever opposes motion, so the car stops and is held at every stop without rolling back. Step 05 replaces this simple split with real blending onto Lecture 3's hydraulic brakes, with the machine's and the battery's limits.
+Near standstill it must not: a machine asked for a negative torque at a stop drives the car backwards. So the machine's share fades linearly from all of it at **10 km/h** (`v_fade`) to none at standstill, and the planar car's own front friction brakes take the rest, at the same wheel torque. A friction brake only ever opposes motion, so the car stops and is held at every stop without rolling back. The course library's `TorqueSplit` block does this split. Step 05 extends it to real blending onto Lecture 3's hydraulic brakes, with the machine's and the battery's limits.
 
 :::
 
@@ -1073,6 +1075,8 @@ New component `BEVWLTC` in `MyCar`: paste the code below. It is the course libra
 
 **`AuxLoad`** (`aux`): draws the current that makes *v*·*i* = `P_aux` from the pins it sits across, following the voltage within 10 ms. It stands for the DC-DC converter and everything on the 12 V network: control units, pumps, fans, lights.
 
+**`TorqueSplit`** (`split`, in the bench): VehicleSystemsComponents › Vehicle › Electric. Takes the driver's torque `tau_ref` and the speed `v` in km/h. Gives `tau_motor`, all of a positive `tau_ref` and the share `fade = clamp(v / v_fade, 0, 1)` of a negative one, and `tau_brake`, the rest of a negative one as a torque for each front brake: `-(1 - fade) min(tau_ref, 0) ratio / 2`.
+
 ::::
 
 ::: warning Use these names
@@ -1091,10 +1095,10 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
    - `machine.spline → reduction.spline_a`, and `reduction.spline_b → spline`
    - `machine.support → reduction.support`, and `reduction.support → support`
    - `battery.SoC → SoC`
-3. Toggle to code and add one line at the end of `relations`, the torque-to-current conversion:
+3. Toggle to code and add one line at the end of `relations`, the torque-to-current conversion at the present field:
 
    ```txt
-   converter.i_ref = tau_ref / machine.k
+   converter.i_ref = tau_ref / (converter.field * machine.k)
    ```
 
    If the compile flags `VehicleSystemsComponents` or `MultibodyComponents` as `missing-direct-dependency`, add it in the REPL with `using Pkg; Pkg.add("MultibodyComponents")` (or the other name), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
@@ -1134,12 +1138,7 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
      sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
      roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m)
-     "Machine torque the driver asks for"
-     variable tau_cmd::Torque
-     "Machine's share of braking: 1 above v_fade, 0 at standstill"
-     variable fade::Real
-     "Friction brake torque asked of each front wheel"
-     variable tau_friction::Torque
+     split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade)
    relations
      connect(trace.y, driver.u_s)
      connect(sensors.vx, kmh.u)
@@ -1161,12 +1160,10 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      connect(car.spin_fr, sensors.spin_fr)
      connect(car.spin_rl, sensors.spin_rl)
      connect(car.spin_rr, sensors.spin_rr)
-     tau_cmd = driver.y
-     fade = min(1.0, max(0.0, kmh.y / v_fade))
-     drive.tau_ref = max(tau_cmd, 0.0) + fade * min(tau_cmd, 0.0)
-     tau_friction = -(1.0 - fade) * min(tau_cmd, 0.0) * ratio / 2.0
-     car.tau_fl = tau_friction
-     car.tau_fr = tau_friction
+     connect(driver.y, split.tau_ref)
+     connect(kmh.y, split.v)
+     connect(split.tau_motor, drive.tau_ref)
+     connect(split.tau_brake, car.tau_fl, car.tau_fr)
      car.tau_rl = 0.0
      car.tau_rr = 0.0
      initial car.body.r = [0, 0]
@@ -1200,7 +1197,7 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
 
    :::
 
-   Below the parts, the six lines after `connect` are the driver's output split. `tau_cmd` is what the driver asks for; `fade` is 1 above `v_fade` and falls to 0 at standstill; the drive gets all of a positive `tau_cmd` and `fade` of a negative one, and each front brake gets the rest of a negative one, turned into a wheel torque by `ratio / 2`. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
+   The last four `connect` lines are the driver's output split: the driver's torque and the car's speed go into `split`, `split.tau_motor` drives your `ElectricDrive`, and `split.tau_brake` goes to both front brakes. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
 5. Click ▷ **Run Analysis → BEVWLTCTransient** once, then plot the speed against the trace, the battery and the machine:
 
    ```julia
@@ -1215,9 +1212,9 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
 
 `kmh.y` lies on `trace.y` all the way: the worst gap is **1.63 km/h**, inside WLTP's ±2 km/h. `sensors.x` ends at **23 267 m**, the trace's 23 266 m, and at every stop the car stands still to a thousandth of a km/h, never backwards.
 
-`drive.battery.i` peaks at **138 A** (46 kW) in the Extra High phase and goes as low as **−89 A** (32 kW charging) under braking; between, the 300 W of auxiliaries draw 0.86 A. `drive.SoC` falls from **0.9** to **0.822**: 3.1 kWh of the 40. `drive.converter.field` is **1** below about 46 km/h and falls to **0.36** at the cycle's 131 km/h, where the machine turns 9200 rpm. The driver never asks for more than **132 N·m**.
+`drive.battery.i` peaks at **138 A** (46 kW) in the Extra High phase and goes as low as **−86 A** (31 kW charging) under braking; between, the 300 W of auxiliaries draw 0.86 A. `drive.SoC` falls from **0.9** to **0.822**: 3.1 kWh of the 40. `drive.converter.field` is **1** below about 48 km/h and falls to **0.36** at the cycle's 131 km/h, where the machine turns 9260 rpm. The driver never asks for more than **117 N·m**, and the machine gives it at every speed to within 0.2 N·m.
 
-The run takes about 6 s once compiled.
+The run takes about 7 s once compiled.
 
 Reference: `HandsOn04.ElectricDrive`, `HandsOn04.BEVWLTC`, `HandsOn04.BEVWLTCTransient`; the course library's copies are `Vehicle.Electric.ElectricDrive` and `Vehicle.Planar.PlanarBEVWLTC`.
 
@@ -1240,7 +1237,7 @@ component ElectricDrive
   "Machine housing and gear case"
   support = Spline()
   "Battery state of charge"
-  SoC = RealOutput() {^SoC}
+  SoC = RealOutput()
   battery = Battery()
   aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux)
   converter = Converter()
@@ -1260,7 +1257,7 @@ relations
   connect(reduction.spline_b, spline)
   connect(machine.support, reduction.support, support)
   connect(battery.SoC, SoC)
-  converter.i_ref = tau_ref / machine.k
+  converter.i_ref = tau_ref / (converter.field * machine.k)
 end
 ```
 
@@ -1274,7 +1271,7 @@ end
 
 ### 06 · The WLTC energy bill {#step-06}
 
-Put a meter on every link of the chain and read the bill: **131.3 Wh/km** at the battery terminals, 13.1 kWh/100 km, of which the road load takes 103 and the machine 18. Braking gives back a quarter of the traction energy, and the links add up to what left the cells to nine digits. In MJ/100 km the same cycle costs this car **47.3** and Lecture 2's engine car **168.8**.
+Put a meter on every link of the chain and read the bill: **131.2 Wh/km** at the battery terminals, 13.1 kWh/100 km, of which the road load takes 103 and the machine 18. Braking gives back a quarter of the traction energy, and the links add up to what left the cells to nine digits. In MJ/100 km the same cycle costs this car **47.2** and Lecture 2's engine car **168.8**.
 
 #### Given
 
@@ -1311,9 +1308,9 @@ Each meter is a state, not a sum over the plotted points afterwards: the solver 
 
 ::: details Details: the checkpoint numbers worked through
 
-- **Per kilometre:** every meter divided by the 23.267 km driven. 3.0545 kWh at the terminals is **131.3 Wh/km**, 13.13 kWh/100 km; 3.1273 kWh out of the cells is 134.4 Wh/km.
-- **MJ/100 km:** 1 kWh = 3.6 MJ, so 13.13 kWh/100 km is **47.3 MJ/100 km**. The engine car: 5.22 L × 0.745 kg/L × 43.4 MJ/kg = **168.8 MJ/100 km**, 3.6 times more. At the wall, with 13 % lost in charging, the electric car takes 54.3.
-- **Braking:** the shaft delivered 3.349 kWh of traction and took back 0.904 kWh, **27 %**; the battery received 0.803 kWh of it, **89 %** of what the shaft took back and 24 % of the traction.
+- **Per kilometre:** every meter divided by the 23.267 km driven. 3.0535 kWh at the terminals is **131.2 Wh/km**, 13.12 kWh/100 km; 3.1257 kWh out of the cells is 134.3 Wh/km.
+- **MJ/100 km:** 1 kWh = 3.6 MJ, so 13.12 kWh/100 km is **47.2 MJ/100 km**. The engine car: 5.22 L × 0.745 kg/L × 43.4 MJ/kg = **168.8 MJ/100 km**, 3.6 times more. At the wall, with 13 % lost in charging, the electric car takes 54.3.
+- **Braking:** the shaft delivered 3.341 kWh of traction and took back 0.897 kWh, **27 %**; the battery received 0.795 kWh of it, **89 %** of what the shaft took back and 24 % of the traction.
 - **The plan's band:** the Leaf's WLTP figure is 171 Wh/km at the wall; less 10–15 % for charging that is 145–154 Wh/km at the battery, and the course road load is about 15 % below the Leaf's: **120–155 Wh/km**.
 
 :::
@@ -1409,13 +1406,13 @@ Each meter is a state, not a sum over the plotted points afterwards: the solver 
 
 ::: tip Expected result
 
-**The bill, in Wh/km:** road load **103.2**, machine **17.6**, auxiliaries **6.4**, battery *R*<sub>0</sub> **3.1**, converter **2.1**, tire slip **1.8**, friction brakes **0.1**. They add up to **134.4 Wh/km** out of the cells, and `residual` is about **3 × 10⁻⁹**. The car ends at rest, so `ΔE_kin` is zero.
+**The bill, in Wh/km:** road load **103.2**, machine **17.6**, auxiliaries **6.4**, battery *R*<sub>0</sub> **3.1**, converter **2.1**, tire slip **1.8**, friction brakes **0.1**. They add up to **134.3 Wh/km** out of the cells, and `residual` is about **3 × 10⁻⁹**. The car ends at rest, so `ΔE_kin` is zero.
 
-**At the battery terminals:** `Wh_per_km` is **131.3**, 13.13 kWh/100 km, inside the plan's 120–155 Wh/km. The terminals gave out 165.8 Wh/km and took **34.5 Wh/km** back from braking: 24 % of the traction energy. The friction brakes burned only what the fade below 10 km/h left them.
+**At the battery terminals:** `Wh_per_km` is **131.2**, 13.12 kWh/100 km, inside the plan's 120–155 Wh/km. The terminals gave out 165.4 Wh/km and took **34.2 Wh/km** back from braking: 24 % of the traction energy. The friction brakes burned only what the fade below 10 km/h left them.
 
-**Against the engine car:** **47.3 MJ/100 km** against **168.8 MJ/100 km**, 3.6 times less, on the same cycle and road load with a car 100 kg heavier.
+**Against the engine car:** **47.2 MJ/100 km** against **168.8 MJ/100 km**, 3.6 times less, on the same cycle and road load with a car 100 kg heavier.
 
-**Change one thing:** `MyCar.BEVEnergyBillTransient(P_aux = 500.0)` puts the consumption at 135.6 Wh/km: 200 W more for half an hour on 23 km is 4.3 Wh/km. A heater at 3 kW would add 64 Wh/km, half again.
+**Change one thing:** `MyCar.BEVEnergyBillTransient(P_aux = 500.0)` puts the consumption at 135.5 Wh/km: 200 W more for half an hour on 23 km is 4.3 Wh/km. A heater at 3 kW would add 64 Wh/km, half again.
 
 Reference: `HandsOn04.BEVEnergyBill`, `HandsOn04.BEVEnergyBillTransient`; the course library's `Vehicle.Planar.PlanarBEVWLTC` carries the same meters, and `notebooks/lecture04/03-energy-bill.pluto.jl` draws the bill.
 
