@@ -37,28 +37,35 @@ one project.
 
 ## Send a step
 
-Number the steps. Write step `n` to a script in a directory of this task's own (create a fresh
-one; a shared scratch directory holds other tasks' `step3.jl`), then send one line whose sentinel
-carries `n`:
+Number every send, not every step: a step re-sent after an edit gets a new number, so the old
+sentinel still on screen cannot end the wait. Write send `n` to a script in a directory of this
+task's own (create a fresh one; a shared scratch directory holds other tasks' `step3.jl`), then
+send one line whose sentinel carries `n`:
 
 ```bash
-herdr pane run "$P" 'try include("/abs/path/step3.jl") catch e; Base.display_error(e, catch_backtrace()) end; println("__STEP", 3, "_DONE__")'
+herdr pane run "$P" 'try include("/abs/dir/step3.jl") catch err; write("/abs/dir/step3.err", first(sprint(showerror, err), 600)) end; println("__STEP", 3, "_DONE__")'
 herdr pane wait-output "$P" --regex '(?m)^__STEP3_DONE__\s*$' --timeout 100000
 ```
 
-The sentinel is computed, so the echoed command cannot match it, and it is unique per step, so an
-earlier step's sentinel still on screen cannot match it either. The `try` makes a failing step
-print its error and still reach its sentinel, so the wait ends at once instead of at the timeout. A step that runs longer than the
-timeout: wait again on the same sentinel.
+The sentinel is computed, so the echoed command cannot match it. The `try` makes a failing step
+reach its sentinel at once and leaves its error in `step3.err`; read that file, not the pane,
+where a backtrace scrolls the real line away and an earlier step's error stays on screen. A step
+that runs longer than the timeout: wait again on the same sentinel.
 
-The script writes its results to a file; read that file. Read the pane
-(`herdr pane read "$P" --source recent-unwrapped --lines 80 | grep -m5 -A3 -E 'ERROR|Error|error:'`)
-for the error itself: a backtrace runs to dozens of lines, and its first frames are the ones that
-name your code.
+The script writes its results to a file; read that file. Write summaries: counts, maxima, a few
+named values. A ModelingToolkit problem's kwargs or a whole solution prints the full symbolic
+system recursively (one print reached 86 MB). Output that only prints, such as a `@testset`
+report, reaches the file through a block that closes it, or the file stays empty:
 
-Write summaries to the result file: counts, maxima, a few named values. A ModelingToolkit
-problem's kwargs or a whole solution prints the full symbolic system recursively (one print reached
-86 MB). A step that runs away: `herdr pane send-keys "$P" ctrl+c`, then send the next step again,
+```julia
+open("/abs/dir/step4.out", "w") do io
+    redirect_stdio(stdout = io, stderr = io) do
+        include("/abs/dir/step4_body.jl")
+    end
+end
+```
+
+A step that runs away: `herdr pane send-keys "$P" ctrl+c`, then send it again under a new number,
 since a line queued behind the interrupt is lost.
 
 ## After a compile
@@ -69,6 +76,7 @@ send `exit()`, then the start lines again — Revise keeps the old name defined.
 
 ## Before tests, and at the end
 
-Send `exit()` before running a test group: the session holds every model it has compiled, and the
-machine runs one model-loading Julia at a time. When the task ends, `herdr pane close "$P"` — the
+An idle session may stay open through a compile or a render. Send `exit()` before running a test
+group: the session holds every model it has compiled, and the machine runs one heavy process at a
+time (SKILL.md, setup). When the task ends, `herdr pane close "$P"` — the
 pane you split, and no other.
