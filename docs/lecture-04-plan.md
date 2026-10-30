@@ -203,3 +203,18 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   terminals, 23.8 % of the shaft's traction energy, just above the 18–22 % anchor: the regen path
   (motor, converter, pack) returns 89 % of the shaft's braking energy, just above Boretti's
   measured 72–87 % on the MY2013 Leaf.
+- Step 5's `Vehicle.Electric.RegenBlend` caps the machine's braking at the smallest of 320 N·m
+  (Nissan), 80.5 kW over the machine speed (INL, the 2013 pack's 10 s charge capability) and a
+  linear fade below 10 km/h (assumed), and sends the rest through Lecture 3's equal per-wheel
+  demand to the four brakes. On the hard stop (`Vehicle.Planar.PlanarBEVHardStop`, Lecture 3's
+  ABS stop from 80 km/h) the charge-power limit binds down to 34.3 km/h, the torque limit to
+  10 km/h, the fade below; the machine takes 49 % of the braking and friction 51 %, not most of
+  it, and the stop is 36.2 m against 38.8 m on friction alone. On WLTC
+  (`Vehicle.Planar.PlanarBEVRegenWLTC`) neither limit binds above 2 km/h (WLTC asks at most 87 N·m
+  and 32 kW), friction takes 0.004 % of the braking, and 23.85 % of the traction comes back: the
+  blend cannot reach the 18–22 % anchor, whose gap is the regen path above.
+- The machine sits outside the ABS loop: the ABS modulates the friction brakes only, and nothing
+  withdraws regen when it acts. On the dry hard stop the machine's torque holds the front slip at
+  −0.04 to −0.06 from 62 km/h, past the ABS's 0.03 reapply threshold, so the front friction
+  brakes stay released and the front tires work at about 65 % of their grip until the machine's
+  320 N·m reaches it below 34 km/h. On a low-µ road the machine alone would lock the front wheels.

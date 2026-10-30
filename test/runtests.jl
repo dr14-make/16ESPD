@@ -19,6 +19,7 @@ const GROUPS = [
     "switching" => ["switching_plausibility.jl"],
     "planar_wltc" => ["planar_wltc_plausibility.jl"],
     "bev" => ["bev_plausibility.jl"],
+    "regen" => ["regen_plausibility.jl"],
     "generated" => ["../generated/tests.jl"],
 ]
 

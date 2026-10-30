@@ -276,7 +276,9 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   `PlanarOpenLoopTransient`, `SineWithDwellRunTransient`, `ESPSineWithDwellTransient`,
   `ESPSteerRampTransient`, `SplitMuStopTransient`, `BrakeAndSteerTransient`,
   `ABSStraightStopTransient`, `PlanarWLTCTransient`, `PlanarCruiseTransient`,
-  `PlanarBEVWLTCTransient`, `HandsOn04.BEVWLTCTransient` and `HandsOn04.BEVEnergyBillTransient`. A new analysis of a model with repeated identical algebraic loops
+  `PlanarBEVWLTCTransient`, `HandsOn04.BEVWLTCTransient`, `HandsOn04.BEVEnergyBillTransient`,
+  `PlanarBEVHardStopTransient`, `PlanarBEVRegenWLTCTransient`, `HandsOn04.BEVHardStopTransient`
+  and `HandsOn04.BEVRegenWLTCTransient`. A new analysis of a model with repeated identical algebraic loops
   needs the same line; compare a run at `None` against `Aggressive` to tell. Do not set it
   everywhere: `ThrottlePedalStepTransient` starts the throttle at the wrong position under
   `None` and is correct under the default. The generated tests cannot take the setting, so the
@@ -392,6 +394,21 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   algebraic loop (`i_ref` → `L di/dt` → `v_out` → `d` → `field`) that Rodas5P solves without
   help; the WLTC run goes from 6.4 s to 6.8 s warm, and the machine gives the asked-for torque to
   0.19 N·m (the current loop's lag) wherever the field is weakened.
+- **A step in the torque asked of the electric drive aborts Rodas5P above base speed.** The
+  converter imposes its current through the armature inductance, so a step in `i_ref` steps
+  `L di/dt`, and with the duty at its limit the algebraic `field` has to jump to hold the voltage:
+  on the first BEV hard stop (a `Step` of −1221 N·m at 80 km/h) it had to go from 0.615 to 0.775
+  at t = 0.5 s, and the run aborted there (`dt forced below eps`, the error estimate all on
+  `converter.field`) with or without a `tstops` entry on the step. Ask for torque continuously:
+  the hard stops ramp the pedal over 0.1 s (`Ramp`, with `tstops` on both corners); the WLTC
+  driver's PI output is continuous already.
+- **Regen outside the ABS loop keeps the ABS from reapplying.** `ABSModulatorDiscrete` reapplies
+  only once a released wheel's predicted slip is back above `-l_rec` (−0.03). On the BEV hard stop
+  the machine's regenerative torque alone holds the front slip at −0.04 to −0.06 from 62 km/h
+  (phase alternating hold/release), so the front friction brakes stay at zero and the front tires
+  work at about 65 % of their grip until the machine's 320 N·m reaches it below 34 km/h. The stop
+  is still shorter than on friction alone (36.2 m against 38.8 m), but a regen strategy that kept
+  more torque on the front would lock it; production systems withdraw regen when the ABS acts.
 - **`r."path"` takes a literal only.** On an analysis result, `r."E_dc"` works but `r."$x"`
   with `x = "E_dc"` throws a `MethodError`, and `getproperty(r, :E_dc)` a `FieldError`. A snippet
   that loops over signals collects the literals first: `links = ["road" => r."E_road", ...]`.

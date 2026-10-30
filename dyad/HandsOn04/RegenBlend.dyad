@@ -1,0 +1,59 @@
+"""
+Hands-on 04 step 05: series regenerative braking. The driver's brake demand goes to the machine
+first, up to the smallest of its torque limit, the battery's charge-power limit and a low-speed
+fade; the rest goes to the four friction brakes in equal parts. Same names as the library's
+`Vehicle.Electric.RegenBlend`.
+"""
+component RegenBlend
+  "Torque asked for at the machine shaft: positive drives, negative brakes"
+  tau_ref = RealInput() {^tau_ref}
+  "Vehicle speed [km/h]"
+  v = RealInput() {^v}
+  "Torque the machine is asked for"
+  tau_motor = RealOutput() {^tau_motor}
+  "Friction brake torque asked of each of the four wheel brakes"
+  tau_brake = RealOutput() {^tau_brake}
+  "Single-speed reduction, Leaf ZE1"
+  parameter ratio::Real = 8.193
+  "Wheel radius"
+  parameter radius::Length = 0.31
+  "Torque limit: the machine's peak torque, Leaf ZE1"
+  parameter tau_max::Torque = 320.0
+  "Charge-power limit: the 2013 Leaf pack's 10 s charge capability (INL)"
+  parameter P_charge::Power = 80.5e3
+  "Speed below which the braking ceiling fades to zero, km/h (assumed, 5-10 km/h)"
+  parameter v_fade::Real = 10.0
+  "Machine speed estimated from the car's speed"
+  variable w::AngularVelocity
+  "Fade factor: 1 above v_fade, 0 at standstill"
+  variable fade::Real
+  "Braking ceiling from the charge-power limit"
+  variable tau_power::Torque
+  "Braking ceiling from the low-speed fade"
+  variable tau_fade::Torque
+  "Braking ceiling: the smallest of the three limits"
+  variable tau_regen_max::Torque
+  "Braking demand at the machine shaft"
+  variable tau_demand::Torque
+  "Braking torque the machine is asked for"
+  variable tau_regen::Torque
+relations
+  w = max(v, 0.0) / 3.6 * ratio / radius
+  fade = min(max(v / v_fade, 0.0), 1.0)
+  tau_power = P_charge / max(w, 1.0)
+  tau_fade = fade * tau_max
+  tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+  tau_demand = max(-tau_ref, 0.0)
+  tau_regen = min(tau_demand, tau_regen_max)
+  tau_motor = max(tau_ref, 0.0) - tau_regen
+  tau_brake = (tau_demand - tau_regen) * ratio / 4.0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/RegenBlend.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "tau_motor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "tau_brake": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  }
+}
+end

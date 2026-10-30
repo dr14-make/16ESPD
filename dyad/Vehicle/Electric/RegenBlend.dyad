@@ -1,0 +1,95 @@
+"""
+Series regenerative braking: the driver's brake demand goes to the machine first, up to the
+smallest of three limits, and the remainder goes to the four friction brakes.
+
+    tau_demand    = max(-tau_ref, 0)
+    tau_regen_max = min(tau_max, P_charge / w, fade tau_max),   fade = clamp(v / v_fade, 0, 1)
+    tau_regen     = min(tau_demand, tau_regen_max)
+    tau_motor     = max(tau_ref, 0) - tau_regen
+    tau_brake     = (tau_demand - tau_regen) ratio / 4
+
+`tau_ref` is the torque asked for at the machine shaft, positive driving. **Driving** is the
+machine's alone. **Braking** is the machine's first: it regenerates as much of the demand as the
+smallest of its three limits allows.
+
+- **Torque limit** `tau_max`: the machine's peak torque.
+- **Charge-power limit** `P_charge`: the most the battery accepts, as a torque `P_charge / w` at
+  the machine speed `w`. The limit is applied to the electromagnetic power `tau w`, which
+  exceeds what reaches the battery by the losses of machine, converter and auxiliaries, so the
+  battery never takes more than `P_charge`.
+- **Low-speed fade**: below `v_fade` the ceiling falls linearly to zero at standstill, so the
+  machine hands the car to the friction brakes at walking pace and never drives it backwards.
+
+Together they draw the regenerative envelope: rising with speed to `tau_max` at `v_fade`, flat to
+the corner speed `P_charge / tau_max`, and falling as `1/w` above it.
+
+The rest of the demand, `tau_demand - tau_regen`, carried through the reduction (`ratio`), is
+the friction brakes' share. `tau_brake` asks it of each of the four wheel brakes in equal parts,
+as Lecture 3's brake demand does, so it feeds `ABSUnit.demand` or the four brakes directly.
+A friction brake only opposes motion, so the brakes cannot reverse the car.
+
+`v` is the car's speed in km/h, the driver loop's unit; at or below zero the machine takes no
+braking. The machine speed is estimated from it, `w = v ratio / radius`. Braking wheels turn
+slower than the car, so the estimate is high and the power the machine actually takes stays
+under the limit.
+
+The machine is not inside the ABS loop: the ABS modulates the friction share only, and the
+machine's share holds while a wheel is released.
+
+Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (INL) INL-5045 pulse tests of a 2013
+Leaf pack; (assumed) the course's choice.
+"""
+component RegenBlend
+  "Torque asked for at the machine shaft: positive drives, negative brakes"
+  tau_ref = RealInput() {^tau_ref}
+  "Vehicle speed [km/h]"
+  v = RealInput() {^v}
+  "Torque the machine is asked for"
+  tau_motor = RealOutput() {^tau_motor}
+  "Friction brake torque asked of each of the four wheel brakes"
+  tau_brake = RealOutput() {^tau_brake}
+  "Single-speed reduction, machine to differential (Nissan)"
+  parameter ratio::Real = 8.193
+  "Wheel radius, to estimate the machine speed from the car's (repository default)"
+  parameter radius::Length = 0.31
+  "Torque limit: the machine's peak torque (Nissan)"
+  parameter tau_max::Torque = 320.0
+  "Charge-power limit: the 2013 Leaf pack's 10 s charge capability at 20 % depth of discharge; the ZE1's larger pack takes more (INL)"
+  parameter P_charge::Power = 80.5e3
+  "Speed below which the machine's braking ceiling fades to zero, km/h; no primary source, the plan's band is 5-10 km/h (assumed)"
+  parameter v_fade::Real = 10.0
+  "Machine speed estimated from the car's speed"
+  variable w::AngularVelocity
+  "Fade factor: 1 above v_fade, 0 at standstill"
+  variable fade::Real
+  "Braking ceiling from the charge-power limit"
+  variable tau_power::Torque
+  "Braking ceiling from the low-speed fade"
+  variable tau_fade::Torque
+  "Braking ceiling: the smallest of the three limits"
+  variable tau_regen_max::Torque
+  "Braking demand at the machine shaft"
+  variable tau_demand::Torque
+  "Braking torque the machine is asked for"
+  variable tau_regen::Torque
+relations
+  w = max(v, 0.0) / 3.6 * ratio / radius
+  fade = min(max(v / v_fade, 0.0), 1.0)
+  # The 1 rad/s floor keeps the quotient finite at standstill, where the fade binds anyway.
+  tau_power = P_charge / max(w, 1.0)
+  tau_fade = fade * tau_max
+  tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+  tau_demand = max(-tau_ref, 0.0)
+  tau_regen = min(tau_demand, tau_regen_max)
+  tau_motor = max(tau_ref, 0.0) - tau_regen
+  tau_brake = (tau_demand - tau_regen) * ratio / 4.0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/RegenBlend.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "tau_motor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "tau_brake": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  }
+}
+end
