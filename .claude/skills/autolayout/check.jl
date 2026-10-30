@@ -1,21 +1,25 @@
 # Find layout defects in a rendered diagram: diagonal wire segments, crossings, overlapping wires,
-# wires through blocks or instance labels, anything outside the outline, and blocks whose label
-# draws sideways or mirrored, `_links` entries no declaration or `connect` points to, and boxes not
-# shaped like the library icon placed in them.
+# wires through blocks or instance labels, labels over other blocks, anything outside the outline,
+# blocks whose label draws sideways or mirrored, `_links` entries no declaration or `connect`
+# points to, boxes not shaped like the library icon placed in them, and wires from one port that
+# share a trunk and split with no junction dot.
 #
-# Usage: julia check.jl <file.dyad> <Component> <render.svg>
+# Usage: julia +dyad-3.5.0 check.jl <file.dyad> <Component> <render.svg>
 #
 # Wires come from the SVG (diagram coordinates, rounded to whole units); blocks from the `_links`
-# placements of the component and of every base it extends inside this library. A base outside the
-# library is named in a `note` line and its parts go unchecked. Placements written inline on a
+# placements of the component and of every base it extends inside this library, by a qualified
+# name or by a bare name defined in the same directory. A base outside the library is named in a
+# `note` line and its parts go unchecked. `#` comments in the metadata JSON are dropped before it
+# is parsed. Placements written inline on a
 # declaration or `connect` are not read, so they count as a problem until moved into `_links`.
 # Each default `$(instance)` label is estimated as a box from y2 + 0.07 h to y2 + 0.2 h, 0.11 h wide
 # per character. Custom `labels` are estimated the same way, so read the render for those.
 #
 # A wire running exactly along a block's edge, as one leaving or reaching a bottom-center port
 # sideways does, is a graze, not a hit. A wire is not checked against the block of a port it ends at,
-# but is checked against that block's label. Wires leaving the same port may overlap, and wires
-# sharing a trunk count one crossing per point. The component's own ports may straddle the 0..1000
+# but is checked against that block's label. Wires that leave one port and overlap are fine where
+# the render draws a junction dot on their shared trunk, and a `branch` where it does not, since
+# the split then reads as a bend. Wires sharing a trunk count one crossing per point. The component's own ports may straddle the 0..1000
 # outline. A wire looping around its target, and labels drawn above a block (Constant names, Gain
 # `k=`), show only in the PNG. Studio draws an icon at its own aspect ratio, centered in the box,
 # while ports sit on the box edges, so a box shaped unlike its icon detaches the ports in Studio
@@ -43,6 +47,8 @@ root = let d = dirname(abspath(dyad_path))
     d
 end
 
+library = match(r"^name\s*=\s*\"(\w+)\""m, read(joinpath(dirname(root), "Project.toml"), String))[1]
+
 function body_in(dir, name)
     isdir(dir) || return nothing
     for f in readdir(dir; join=true)
@@ -56,8 +62,39 @@ function find_base(qualified)
     parts = split(qualified, '.')
     body_in(joinpath(root, parts[2:end-1]...), parts[end])
 end
+"Body and directory of a base named in an `extends` inside `dir`: qualified, or bare in the same module."
+function locate(base, dir)
+    occursin('.', base) || return body_in(dir, base), dir
+    parts = split(base, '.')
+    parts[1] == library || return nothing, dir
+    find_base(base), joinpath(root, parts[2:end-1]...)
+end
 
-library = match(r"^name\s*=\s*\"(\w+)\""m, read(joinpath(dirname(root), "Project.toml"), String))[1]
+"Drop `#` comments, which JSON does not allow, from text outside JSON strings."
+function strip_comments(json)
+    out, instr, esc, skip = IOBuffer(), false, false, false
+    for c in json
+        if skip
+            c == '\n' || continue
+            skip = false
+        elseif instr
+            if esc
+                esc = false
+            elseif c == '\\'
+                esc = true
+            elseif c == '"'
+                instr = false
+            end
+        elseif c == '#'
+            skip = true
+            continue
+        elseif c == '"'
+            instr = true
+        end
+        write(out, c)
+    end
+    String(take!(out))
+end
 
 "Width/height of the library icon a type draws with, or `nothing` for an icon from elsewhere."
 function icon_aspect(type, dir)
@@ -92,11 +129,11 @@ function links_of(text, dir, seen=Set{String}())
         base = e[1]
         base in seen && continue
         push!(seen, base)
-        btext = find_base(base)
+        btext, bdir = locate(base, dir)
         if btext === nothing
             report("note", "base $base is outside this library; its parts are not checked")
         else
-            merge!(links, links_of(btext, joinpath(root, split(base, '.')[2:end-1]...), seen))
+            merge!(links, links_of(btext, bdir, seen))
         end
     end
     meta = match(r"^metadata (\{.*?^\})\s*$"ms, text)
@@ -110,7 +147,15 @@ function links_of(text, dir, seen=Set{String}())
         aspect === nothing || (aspects[d[2]] = aspect)
     end
     meta === nothing && return links
-    for (tag, link) in get(JSON.parse(meta[1]; dicttype=OrderedDict{String,Any}), "_links", Dict())
+    parsed = try
+        JSON.parse(strip_comments(meta[1]); dicttype=OrderedDict{String,Any})
+    catch err
+        name = something(match(r"component (\w+)", text), ["?"])[1]
+        report("metadata", name, "is not valid JSON, so its layout is unchecked:",
+               first(sprint(showerror, err), 200))
+        return links
+    end
+    for (tag, link) in get(parsed, "_links", Dict())
         if occursin("{^$tag}", declarations)
             links[tag] = link
         else
@@ -169,8 +214,17 @@ paths = [[(round(Int, parse(Float64, p[1])), round(Int, parse(Float64, p[2])))
          for d in eachmatch(r"<path d=\"(M [^\"]*)\" stroke-stroke", svg)]
 segs = [(i, a, b) for (i, p) in enumerate(paths) for (a, b) in zip(p, p[2:end]) if a != b]
 ends = [Set([p[1], p[end]]) for p in paths]
+# junction dots, which the renderer also draws where separate `connect`s from one port split
+dots = [(round(Int, parse(Float64, c[1])), round(Int, parse(Float64, c[2])))
+        for c in eachmatch(r"<circle cx=\"(-?[\d.]+)\" cy=\"(-?[\d.]+)\" r=\"5\"", svg)]
 "A wire is named by its end points, the port centers it joins; the SVG carries no `connect` tag."
 wire(i) = "wire $(paths[i][1])-$(paths[i][end])"
+
+"Whether two boxes share interior area."
+overlaps((a1, b1, a2, b2), (c1, d1, c2, d2)) = max(a1, c1) < min(a2, c2) && max(b1, d1) < min(b2, d2)
+for (lname, lbox) in labels, (bname, bbox) in blocks
+    lname != bname && overlaps(lbox, bbox) && report("label-over-block", lname, "label covers", bname)
+end
 
 for (name, (x1, y1, x2, y2)) in blocks
     lo, hi = name in ports ? (-50, 1050) : (0, 1000)  # own ports straddle the outline
@@ -186,6 +240,8 @@ end
 
 # Wires sharing a trunk cross another wire at one point; that is one crossing on screen.
 crossed = Set{Tuple{Int,Int}}()
+# wires leaving one port that overlap => whether a junction dot sits on their shared trunk
+trunks = Dict{Tuple{Int,Int},Bool}()
 for x in eachindex(segs), y in x+1:lastindex(segs)
     (i, a, b), (j, c, d) = segs[x], segs[y]
     i == j && continue
@@ -203,10 +259,19 @@ for x in eachindex(segs), y in x+1:lastindex(segs)
         k = vert1 ? 2 : 1
         lo1, hi1 = minmax(a[k], b[k])
         lo2, hi2 = minmax(c[k], d[k])
-        if max(lo1, lo2) < min(hi1, hi2) && isempty(ends[i] ∩ ends[j])
+        max(lo1, lo2) < min(hi1, hi2) || continue
+        if isempty(ends[i] ∩ ends[j])
             report("overlap", wire(i), "and", wire(j), a, b)
+        else
+            dotted = any(p -> p[3-k] == a[3-k] && max(lo1, lo2) <= p[k] <= min(hi1, hi2), dots)
+            trunks[(i, j)] = get(trunks, (i, j), false) || dotted
         end
     end
+end
+
+for ((i, j), dotted) in trunks
+    dotted || report("branch", wire(i), "and", wire(j), "share a trunk with no junction dot;",
+                     "list every end in one `connect`")
 end
 
 "A port's wire end sits a few units off its block's edge."
