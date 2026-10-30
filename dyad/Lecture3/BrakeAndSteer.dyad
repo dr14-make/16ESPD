@@ -55,7 +55,7 @@ relations
   initial car.rr.brake.tau_actual = 0.0
 metadata {
   "_links": {
-    "motion": {"Dyad": {"placement": {"diagram": {"x1": 720, "y1": 400, "x2": 820, "y2": 600}}}},
+    "motion": {"Dyad": {"placement": {"diagram": {"x1": 720, "y1": 400, "x2": 920, "y2": 600}}}},
     "slips": {"Dyad": {"placement": {"diagram": {"x1": 720, "y1": 660, "x2": 820, "y2": 760}}}},
     "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 690, "y": 710}], "E": 3}], "junctions": [{"x": 690, "y": 500}]}},
     "car": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 650, "y2": 600}}}},
