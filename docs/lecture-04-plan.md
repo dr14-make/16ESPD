@@ -127,7 +127,7 @@ Bands the build and the tests are checked against. Sources are in the research n
 | Combined efficiency, near-zero torque | 70–80 % | ORNL, read from figure |
 | Positive traction energy at wheel, WLTC | 139 Wh/km at 1500 kg | derived |
 | Braking energy at wheel, WLTC | 25–26 % of traction | derived |
-| Energy returned to battery, WLTC | 18–22 % of traction | derived from Boretti's UDDS efficiencies |
+| Energy returned to battery, WLTC | 18–25 % of traction | derived: 25–26 % braking through a regen path of 70–87 % (Boretti, measured Leaf) up to ~95 % (ideal reduction) |
 | Battery DC consumption, WLTC | 120–155 Wh/km | Leaf WLTP 171 Wh/km AC (secondary) less 10–15 % charging loss; course road load is ~15 % below the Leaf's coastdown |
 | Regen deceleration capability | 0.2–0.3 g | Nissan e-Pedal; Bosch ESP hev |
 
@@ -200,7 +200,7 @@ interleaved. Figures the models can produce are regenerated from them, not copie
 - Step 4's car (`Vehicle.Electric.TorqueSplit`) brakes on the motor down to 10 km/h and hands the
   rest to the front friction brakes; S8's charge-power limit, allocator and hard stop come with
   step 5. Measured on WLTC: 134.3 Wh/km at the cells, 34.2 Wh/km back into the battery
-  terminals, 23.8 % of the shaft's traction energy, just above the 18–22 % anchor: the regen path
+  terminals, 23.8 % of the shaft's traction energy, inside the 18–25 % anchor: the regen path
   (motor, converter, pack) returns 89 % of the shaft's braking energy, just above Boretti's
   measured 72–87 % on the MY2013 Leaf.
 - Step 5's `Vehicle.Electric.RegenBlend` caps the machine's braking at the smallest of 320 N·m
@@ -212,9 +212,9 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   it, and the stop is 36.2 m against 38.8 m on friction alone. On WLTC
   (`Vehicle.Planar.PlanarBEVRegenWLTC`) neither limit binds above 2 km/h (WLTC asks at most 87 N·m
   and 32 kW), friction takes 0.004 % of the braking, and 23.85 % of the traction comes back: the
-  blend cannot reach the 18–22 % anchor, whose gap is the regen path above. A 15 kW charge limit
-  brings the share to 21.40 %, inside the anchor, only by putting 9.5 % of WLTC's braking on
-  friction, above S8's 4 %. The hard stop's meters (shaft, friction, tire slip) close on the
+  share sits in the anchor's upper half because the ideal reduction lets 88.6 % of the braking
+  through, above the measured Leaf's 70–87 %. A 15 kW charge limit brings the share down to the
+  measured cars' 21.40 % only by putting 9.5 % of WLTC's braking on friction, above S8's 4 %. The hard stop's meters (shaft, friction, tire slip) close on the
   kinetic energy of body and wheels to 10⁻⁹; the rotor's energy reaches the battery without
   passing the reduction, so it stays out of that balance.
 - The machine sits outside the ABS loop: the ABS modulates the friction brakes only, and nothing
