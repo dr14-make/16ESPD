@@ -18,12 +18,11 @@ From a DC-equivalent machine on a test bench to a Leaf-class car on the WLTC and
 
 Every number in an expected result is a test expectation or a measured run of the reference model.
 
-<!-- Step 05 lands with its own issue under dr14-make/16ESPD#99. -->
-
 - [01 · The machine: T = KΦI, E = KΦω](#step-01)
 - [02 · The converter: V_out = d·V_in, and field weakening](#step-02)
 - [03 · The battery: V = E − I·R](#step-03)
 - [04 · The car: machine → 8.193 → differential → front wheels](#step-04)
+- [05 · Regen blended onto the Lecture 3 brakes](#step-05)
 - [06 · The WLTC energy bill](#step-06)
 
 ## 02 The DC machine
@@ -1258,6 +1257,446 @@ end
 
 ---
 
+### 05 · Regen blended onto the Lecture 3 brakes {#step-05}
+
+Give the brake demand to the machine first, up to the smallest of three limits, and the rest to Lecture 3's friction brakes. On Lecture 3's ABS stop from 80 km/h the three limits take turns and the machine takes back **49 %** of the braking; friction carries the other **51 %**, and the car still stops in **36.2 m**. On WLTC no limit binds above walking pace: the battery gets back **23.85 %** of the traction energy, and the friction brakes burn almost nothing.
+
+#### Given
+
+**Series blending.** The driver's brake demand goes to the machine first, as much as it can take; only the rest goes to the friction brakes. The machine can take the smallest of three limits, each a torque at the machine:
+
+| Limit | Torque ceiling | Value | Source |
+| --- | --- | --- | --- |
+| torque | `tau_max` | **320 N·m**, the machine's peak | Nissan ZE1 |
+| charge power | `P_charge / w` | **80.5 kW**: a 2013 Leaf pack's 10 s charge capability at 20 % depth of discharge; the ZE1's larger pack takes more | INL |
+| low-speed fade | `tau_max · clamp(v / v_fade, 0, 1)` | **`v_fade` = 10 km/h**; no primary source, the plan's band is 5–10 km/h | assumed |
+
+$$
+\tau_{regen} = \min\!\left(\tau_{demand},\ \tau_{max},\ \frac{P_{charge}}{\omega},\ \tau_{max}\,\mathrm{clamp}\!\left(\frac{v}{v_{fade}},0,1\right)\right)
+\qquad
+\tau_{brake} = \frac{(\tau_{demand} - \tau_{regen})\cdot 8.193}{4}
+$$
+
+`w` is the machine speed, estimated from the car's: `w = v / 3.6 · 8.193 / 0.31`. The rest of the demand, carried through the reduction, goes to the four wheel brakes in equal parts, as Lecture 3's brake demand does, so it can feed Lecture 3's `ABSUnit` unchanged.
+
+The hard stop is Lecture 3's straight ABS stop (`Lecture3.ABSStraightStop`): from 80 km/h the driver asks each wheel for **2500 N·m**, 10 000 N·m in all, 1221 N·m at the machine. That is twice what the tires carry, so the ABS holds every wheel near its peak slip.
+
+::: info Why the hard stop, and not WLTC
+
+WLTC never decelerates harder than 1.5 m/s², 87 N·m at the machine, and never asks the battery for more than 32 kW: the torque and charge-power limits never bind, and friction only takes what the fade leaves near standstill. So on WLTC series blending looks like step 04's `TorqueSplit`. The hard stop asks for far more than the machine can take, so there the limits show, one after the other as the car slows.
+
+:::
+
+::: info The regenerative envelope
+
+The three ceilings draw an envelope like the motoring one of step 02, mirrored: rising with speed to 320 N·m at 10 km/h, flat down to the corner speed where 320 N·m meets 80.5 kW, **34.3 km/h**, and falling as 1/*w* above it. The limit is on the machine's electromagnetic power, *τ*·*w*. The battery gets less: the machine's, the converter's and the battery's losses and the auxiliaries come off first, so it never takes more than 80.5 kW.
+
+The machine sits outside the ABS loop: the ABS modulates only the friction brakes, and the machine's torque stays on while the ABS releases a wheel. On the hard stop, from about 62 km/h the machine's torque keeps the front wheels' slip at −0.04 to −0.06, past the slip the ABS waits for before it reapplies, so the ABS holds the front friction brakes off and the front tires work at about two thirds of their grip; below the corner speed the machine's 320 N·m alone brakes the front axle at its grip limit. A production brake system withdraws regen when the ABS acts; on a slippery road this one would let the machine lock the front wheels.
+
+:::
+
+::: details Details: the checkpoint numbers worked through
+
+- **At 80 km/h:** *w* = 22.22 / 0.31 × 8.193 = 587 rad/s (5610 rpm), and 80 500 W / 587 rad/s = **137 N·m**: the charge-power limit binds. At the wheels that is 137 × 8.193 = 1123 N·m, 3.6 kN on the road, **0.25 g** of regenerative deceleration, in the plan's 0.2–0.3 g band.
+- **Corner speed:** 80 500 W / 320 N·m = 251.6 rad/s, so 251.6 × 0.31 / 8.193 × 3.6 = **34.3 km/h**. Below it the torque limit binds: 320 × 8.193 = 2622 N·m at the front wheels, about the 2534 N·m the front tires carry at µ = 1.
+- **Energy split:** the car starts with 380.7 kJ in body and wheels. The machine takes **176.9 kJ** back through the reduction, the friction brakes burn **181.8 kJ**, tire slip 22.0 kJ. The machine's share of the braking is 176.9 / (176.9 + 181.8) = **49.3 %**; **170.2 kJ** reaches the battery terminals. The three add up to the 380.7 kJ the car started with, to under 10⁻⁹ of it, because `E_kin` leaves out the machine's rotor: the rotor's energy reaches the battery inside the machine, without passing the reduction where `E_shaft_in` is measured.
+- **WLTC:** 34.25 Wh/km back into the terminals over 143.6 Wh/km of traction at the shaft is **23.85 %**. The plan's 18–22 % takes a quarter of the traction as braking at 70–87 % recovery, Boretti's measurement on the 2013 Leaf; this model's ideal reduction and machine return 88.6 %. A lower charge limit does reach the band, but only by braking on friction: at 15 kW the share is **21.40 %** and the friction brakes take **9.5 %** of WLTC's braking, above the plan's 4 %.
+
+:::
+
+#### Parts
+
+New component `RegenBlend` in `MyCar`:
+
+| Name | Library path | Set |
+| --- | --- | --- |
+| `ratio` | parameter `Real` | `8.193`: the reduction |
+| `radius` | parameter `Length` | `0.31`: the wheel radius |
+| `tau_max` | parameter `Torque` | `320.0`: the torque limit |
+| `P_charge` | parameter `Power` | `80.5e3`: the charge-power limit |
+| `v_fade` | parameter `Real` | `10.0`: the fade speed, km/h |
+| `tau_ref` | BlockComponents › Interfaces › RealInput | the driver's torque at the machine, positive drives |
+| `v` | BlockComponents › Interfaces › RealInput | the car's speed in km/h |
+| `tau_motor` | BlockComponents › Interfaces › RealOutput | the torque the machine is asked for |
+| `tau_brake` | BlockComponents › Interfaces › RealOutput | the torque asked of each of the four friction brakes |
+
+New components `BEVHardStop` and `BEVRegenWLTC` in `MyCar`: paste the code below.
+
+:::: info Given parts: the ABS and the slips
+
+**`ABSUnit`** (`abs`, in the hard stop): VehicleSystemsComponents › Vehicle › Planar. Lecture 3's four-channel ABS: it applies the per-wheel brake demand `demand` to all four wheels and releases each wheel whose slip passes its threshold, reading `vx` and the four slips. Its `dT_*` inputs are for ESP and stay at zero here.
+
+**`BusSlip`** (`slips`, in the hard stop): VehicleSystemsComponents › Vehicle › Planar. Reads the four wheel slips off the car's bus, as `BusMotion` reads its motion.
+
+::::
+
+::: warning Use these names
+
+The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake`, and the snippets plot `blend.tau_demand`, `blend.tau_regen_max` and `blend.tau_regen`. Keep the names, and either your block or the course library's `Vehicle.Electric.RegenBlend` fits.
+
+:::
+
+#### Do this
+
+1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `RegenBlend`. With nothing selected, click **Edit Parameters** → **Add parameter** for the five parameters in the table. Place the two inputs and two outputs and rename each to its **Name**: `tau_ref` and `v` on the left, `tau_motor` and `tau_brake` on the right.
+2. Toggle to code and add the variables before `relations`, and the equations after it:
+
+   ```txt
+     "Machine speed estimated from the car's speed"
+     variable w::AngularVelocity
+     "Fade factor: 1 above v_fade, 0 at standstill"
+     variable fade::Real
+     "Braking ceiling from the charge-power limit"
+     variable tau_power::Torque
+     "Braking ceiling from the low-speed fade"
+     variable tau_fade::Torque
+     "Braking ceiling: the smallest of the three limits"
+     variable tau_regen_max::Torque
+     "Braking demand at the machine shaft"
+     variable tau_demand::Torque
+     "Braking torque the machine is asked for"
+     variable tau_regen::Torque
+   relations
+     w = max(v, 0.0) / 3.6 * ratio / radius
+     fade = min(max(v / v_fade, 0.0), 1.0)
+     tau_power = P_charge / max(w, 1.0)
+     tau_fade = fade * tau_max
+     tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+     tau_demand = max(-tau_ref, 0.0)
+     tau_regen = min(tau_demand, tau_regen_max)
+     tau_motor = max(tau_ref, 0.0) - tau_regen
+     tau_brake = (tau_demand - tau_regen) * ratio / 4.0
+   ```
+
+   The first five equations are the three ceilings; `max(w, 1.0)` keeps the quotient finite at standstill, where the fade has the ceiling at zero anyway. The last four are the blending: driving passes straight through, braking goes to the machine up to the ceiling, and the rest, carried through the reduction, is split over four wheels.
+3. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVHardStop`. Toggle to code (⇄), select everything, paste the block below and save.
+
+   ::: code-group
+
+   ```txt [BEVHardStop]
+   component BEVHardStop
+     "Vehicle mass"
+     parameter m::Mass = 1500.0
+     "Wheel radius"
+     parameter radius::Length = 0.31
+     "Initial speed, 80 km/h"
+     parameter v0::Velocity = 22.22222222222222
+     "Driver's brake demand at each wheel, as in Lecture 3"
+     parameter T_cmd::Torque = 2500.0
+     "Time the driver brakes"
+     parameter brake_time::Time = 0.5
+     "Time the driver takes to press the pedal fully"
+     parameter t_apply::Time = 0.1
+     "Machine torque limit, Leaf ZE1"
+     parameter tau_max::Torque = 320.0
+     "Battery charge-power limit"
+     parameter P_charge::Power = 80.5e3
+     "Speed below which the braking ceiling fades to zero, km/h"
+     parameter v_fade::Real = 10.0
+     "Power drawn by the 12 V network"
+     parameter P_aux::Power = 300.0
+     "Single-speed reduction, Leaf ZE1"
+     parameter ratio::Real = 8.193
+     pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time)
+     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
+     drive = ElectricDrive(ratio = ratio, P_aux = P_aux)
+     differential = MultibodyComponents.PlanarMechanics.DifferentialGear()
+     mount = RotationalComponents.Components.Fixed()
+     straight = RotationalComponents.Components.Fixed()
+     zero = BlockComponents.Sources.Constant(k = 0.0)
+     abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 0.0)
+     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
+     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion()
+     slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip()
+     "Power at the battery terminals, positive discharging"
+     variable P_dc::Power
+     "Power at the reduction output, positive driving the wheels"
+     variable P_shaft::Power
+     variable E_dc_in::Energy
+     variable E_shaft_in::Energy
+     variable E_brake::Energy
+   relations
+     connect(car.bus, motion.bus, slips.bus)
+     connect(pedal.y, blend.tau_ref)
+     connect(motion.vx, kmh.u, abs.vx)
+     connect(kmh.y, blend.v)
+     connect(blend.tau_motor, drive.tau_ref)
+     connect(blend.tau_brake, abs.demand)
+     connect(drive.spline, differential.flange_b)
+     connect(differential.flange_left, car.spin_fl)
+     connect(differential.flange_right, car.spin_fr)
+     connect(drive.support, mount.spline)
+     connect(car.steering, straight.spline)
+     connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr)
+     connect(slips.kappa_fl, abs.kappa_fl)
+     connect(slips.kappa_fr, abs.kappa_fr)
+     connect(slips.kappa_rl, abs.kappa_rl)
+     connect(slips.kappa_rr, abs.kappa_rr)
+     connect(abs.tau_fl, car.tau_fl)
+     connect(abs.tau_fr, car.tau_fr)
+     connect(abs.tau_rl, car.tau_rl)
+     connect(abs.tau_rr, car.tau_rr)
+     P_dc = drive.battery.v * drive.battery.i
+     P_shaft = drive.machine.P_mech
+     der(E_dc_in) = max(-P_dc, 0.0)
+     der(E_shaft_in) = max(-P_shaft, 0.0)
+     der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+     initial car.body.r = [0, 0]
+     initial car.body.v = [v0, 0]
+     initial car.body.phi = 0.0
+     initial car.body.w = 0.0
+     initial car.fl.inertia.w = (v0 + 0.01) / radius
+     initial car.fr.inertia.w = (v0 + 0.01) / radius
+     initial car.rl.inertia.w = (v0 + 0.01) / radius
+     initial car.rr.inertia.w = (v0 + 0.01) / radius
+     initial car.fl.inertia.phi = 0.0
+     initial car.fr.inertia.phi = 0.0
+     initial car.rl.inertia.phi = 0.0
+     initial car.rr.inertia.phi = 0.0
+     initial car.fl.brake.tau_actual = 0.0
+     initial car.fr.brake.tau_actual = 0.0
+     initial car.rl.brake.tau_actual = 0.0
+     initial car.rr.brake.tau_actual = 0.0
+     initial drive.converter.i_out = 0.0
+     initial E_dc_in = 0.0
+     initial E_shaft_in = 0.0
+     initial E_brake = 0.0
+   end
+
+   analysis BEVHardStopTransient
+     extends TransientAnalysis(stop = 6.0, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 0.6], optimize = OptimizationLevel.None())
+     parameter T_cmd::Torque = 2500.0
+     parameter tau_max::Torque = 320.0
+     parameter P_charge::Power = 80.5e3
+     parameter v_fade::Real = 10.0
+     model = BEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
+   end
+   ```
+
+   :::
+
+   It is Lecture 3's ABS stop with your drive on the front axle: `pedal` asks for the 4 × 2500 N·m as a torque at the machine, `blend` gives the machine its share and `abs` the rest. The driver presses the pedal in 0.1 s instead of in a step: the converter imposes its current through the armature's inductance, so a torque step would make the converter's `field` jump at an instant the solver cannot take; `tstops` lands it on both corners of the ramp. The three meters integrate the battery's charging, the machine's braking at the reduction and the four friction brakes.
+4. Click ▷ **Run Analysis → BEVHardStopTransient** once, then plot the speed, the regenerative envelope against speed, and the brakes, and read the energy split:
+
+   ```julia
+   using Plots; plotly()
+   r = MyCar.BEVHardStopTransient();
+   plot(r; idxs = [r."kmh.y", r."car.fl.brake.tau_friction", r."car.rl.brake.tau_friction"], layout = (3, 1))
+   v = r.sol[r."kmh.y"]
+   plot(v, [r.sol[r."blend.tau_regen_max"] r.sol[r."blend.tau_regen"]]; xlabel = "km/h", ylabel = "N·m",
+       label = ["ceiling" "machine"], xflip = true)
+   kJ(x) = r.sol[x][end] / 1e3
+   kJ(r."E_shaft_in"), kJ(r."E_brake"), kJ(r."E_dc_in")
+   kJ(r."E_shaft_in") / (kJ(r."E_shaft_in") + kJ(r."E_brake"))   # the machine's share
+   ```
+
+::: tip Expected result
+
+`kmh.y` falls from 80 to 0 in **3.0 s** after the pedal, and the car stops in **36.2 m**. Against speed, `blend.tau_regen` follows the envelope: **137 N·m** at 80 km/h and 183 N·m at 60 km/h, where the 80.5 kW charge limit binds; **320 N·m** from 34.3 km/h down to 10 km/h, the torque limit; then falling linearly to zero with the fade. The battery charges at up to **75.9 kW**, −205 A.
+
+`car.fl.brake.tau_friction`, the front-left friction brake, falls to zero from about **62 km/h** and stays there: the machine's torque holds the front slip past the ABS's reapply threshold, so the ABS keeps the front brakes released. `car.rl.brake.tau_friction` carries the friction share all the way down, cycling under the ABS.
+
+**The split:** the machine takes **176.9 kJ** back, the friction brakes burn **181.8 kJ**: friction **51 %**, machine **49 %**. **170.2 kJ** reaches the battery, 47 Wh, about 350 m of WLTC driving.
+
+**Change one thing:** `MyCar.BEVHardStopTransient(P_charge = 0.0)` turns regeneration off. Friction burns everything and the stop is **38.8 m**, 2.6 m longer: on friction alone the front ABS works the front tires at about 62 % of their grip, while below the corner speed the machine holds them at 93 %.
+
+Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardStopTransient`; the course library's copies are `Vehicle.Electric.RegenBlend` and `Vehicle.Planar.PlanarBEVHardStop`.
+
+:::
+
+5. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVRegenWLTC`. Toggle to code (⇄), select everything, paste the block below and save. It is step 04's bench with `blend` in place of `split`, the friction share on all four brakes, and four meters.
+
+   ::: code-group
+
+   ```txt [BEVRegenWLTC]
+   component BEVRegenWLTC
+     "Vehicle mass, shared by the car and its road load (probe)"
+     parameter m::Mass = 1500.0
+     "Wheel radius (repository default)"
+     parameter radius::Length = 0.31
+     "Driver gain, machine torque per km/h of speed error (assumed)"
+     parameter k::Real = 50.0
+     "Driver integral time (assumed)"
+     parameter Ti::Time = 2.0
+     "Driver and machine torque limit, the machine's peak torque (Nissan)"
+     parameter tau_max::Torque = 320.0
+     "Battery charge-power limit (INL)"
+     parameter P_charge::Power = 80.5e3
+     "Speed below which the braking ceiling fades to zero, km/h (assumed)"
+     parameter v_fade::Real = 10.0
+     "Power drawn by the 12 V network (assumed)"
+     parameter P_aux::Power = 300.0
+     "Single-speed reduction (Nissan)"
+     parameter ratio::Real = 8.193
+     "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+     parameter dv_wheel::Velocity = 0.01
+     trace = VehicleSystemsComponents.Vehicle.DriveCycle()
+     driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max)
+     no_ff = BlockComponents.Sources.Constant(k = 0.0)
+     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
+     drive = ElectricDrive(ratio = ratio, P_aux = P_aux)
+     differential = MultibodyComponents.PlanarMechanics.DifferentialGear()
+     mount = RotationalComponents.Components.Fixed()
+     straight = RotationalComponents.Components.Fixed()
+     flat = BlockComponents.Sources.Constant(k = 0.0)
+     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
+     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion()
+     roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m)
+     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
+     "Power at the battery terminals, positive discharging"
+     variable P_dc::Power
+     "Power at the reduction output, positive driving the wheels"
+     variable P_shaft::Power
+     variable E_dc_in::Energy
+     variable E_shaft_out::Energy
+     variable E_shaft_in::Energy
+     variable E_brake::Energy
+   relations
+     connect(car.bus, motion.bus)
+     connect(trace.y, driver.u_s)
+     connect(motion.vx, kmh.u)
+     connect(kmh.y, driver.u_m, blend.v)
+     connect(no_ff.y, driver.u_ff)
+     connect(drive.spline, differential.flange_b)
+     connect(differential.flange_left, car.spin_fl)
+     connect(differential.flange_right, car.spin_fr)
+     connect(drive.support, mount.spline)
+     connect(car.steering, straight.spline)
+     connect(flat.y, roadload.grade)
+     connect(car.chassis, roadload.chassis)
+     connect(driver.y, blend.tau_ref)
+     connect(blend.tau_motor, drive.tau_ref)
+     connect(blend.tau_brake, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr)
+     P_dc = drive.battery.v * drive.battery.i
+     P_shaft = drive.machine.P_mech
+     der(E_dc_in) = max(-P_dc, 0.0)
+     der(E_shaft_out) = max(P_shaft, 0.0)
+     der(E_shaft_in) = max(-P_shaft, 0.0)
+     der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
+     initial car.body.r = [0, 0]
+     initial car.body.v = [0, 0]
+     initial car.body.phi = 0.0
+     initial car.body.w = 0.0
+     initial car.fl.inertia.w = dv_wheel / radius
+     initial car.fr.inertia.w = dv_wheel / radius
+     initial car.rl.inertia.w = dv_wheel / radius
+     initial car.rr.inertia.w = dv_wheel / radius
+     initial car.fl.inertia.phi = 0.0
+     initial car.fr.inertia.phi = 0.0
+     initial car.rl.inertia.phi = 0.0
+     initial car.rr.inertia.phi = 0.0
+     initial car.fl.brake.tau_actual = 0.0
+     initial car.fr.brake.tau_actual = 0.0
+     initial car.rl.brake.tau_actual = 0.0
+     initial car.rr.brake.tau_actual = 0.0
+     initial drive.converter.i_out = 0.0
+     initial E_dc_in = 0.0
+     initial E_shaft_out = 0.0
+     initial E_shaft_in = 0.0
+     initial E_brake = 0.0
+   end
+
+   analysis BEVRegenWLTCTransient
+     extends TransientAnalysis(stop = 1800.0, alg = ODEAlg.Rodas5P(), dtmax = 1.0, optimize = OptimizationLevel.None())
+     parameter k::Real = 50.0
+     parameter Ti::Time = 2.0
+     parameter P_charge::Power = 80.5e3
+     parameter v_fade::Real = 10.0
+     parameter P_aux::Power = 300.0
+     model = BEVRegenWLTC(k = k, Ti = Ti, P_charge = P_charge, v_fade = v_fade, P_aux = P_aux)
+   end
+   ```
+
+   :::
+
+   The ABS is not on this bench: on WLTC no wheel comes near its slip threshold, and its 200 Hz clock would make the solver stop every 5 ms for half an hour.
+6. Click ▷ **Run Analysis → BEVRegenWLTCTransient** once, then read the recovered share and where the braking went:
+
+   ```julia
+   r = MyCar.BEVRegenWLTCTransient();
+   km = r.sol[r."car.bus.x"][end] / 1000
+   Wh_per_km(x) = r.sol[x][end] / 3600 / km
+   Wh_per_km(r."E_dc_in"), Wh_per_km(r."E_shaft_out"), Wh_per_km(r."E_shaft_in"), Wh_per_km(r."E_brake")
+   r.sol[r."E_dc_in"][end] / r.sol[r."E_shaft_out"][end]          # recovered share of traction
+   plot(r; idxs = [r."blend.tau_demand", r."blend.tau_regen", r."blend.tau_brake"], layout = (3, 1))
+   ```
+
+::: tip Expected result
+
+**The recovered share:** the battery terminals take back **34.25 Wh/km** of the **143.6 Wh/km** of traction at the shaft: **23.85 %**. The shaft took back 38.7 Wh/km, and 88.6 % of it reached the battery. The friction brakes burned **0.001 Wh/km**, 0.004 % of the braking: only what the fade left them in the last 2 km/h before each stop, and the hold at standstill.
+
+`blend.tau_regen` lies on `blend.tau_demand` wherever the car moves faster than walking pace: WLTC never asks for more than 87 N·m at the machine, or 32 kW, so neither the torque nor the charge-power limit binds, and `blend.tau_brake` is zero except at the stops.
+
+**Against step 04:** `TorqueSplit` recovered 23.80 % and burned 0.12 Wh/km in the front brakes below 10 km/h. Series blending changes WLTC by a twentieth of a point: on a gentle cycle the hard stop, not the cycle, shows what blending does. The plan's band is 18–22 %, from Boretti's 70–87 % regen efficiency on the 2013 Leaf; this model's lossless reduction lets 88.6 % through, so it sits just above.
+
+**Change one thing:** `MyCar.BEVRegenWLTCTransient(P_charge = 15.0e3)` lowers the charge limit to 15 kW. The share falls to **21.40 %**, inside the band, but the friction brakes now burn **3.69 Wh/km**, 9.5 % of the braking: the gap to the band is the regen path's efficiency, and a charge limit that closes it throws braking energy away.
+
+Reference: `HandsOn04.BEVRegenWLTC`, `HandsOn04.BEVRegenWLTCTransient`; the course library's copy is `Vehicle.Planar.PlanarBEVRegenWLTC`, with the full energy bill of step 06.
+
+:::
+
+Commit: **Source Control** → message `Step 05: regen blending` → **Commit** → **Sync Changes**.
+
+:::: warning Fell behind?
+
+Paste `BEVHardStop` and `BEVRegenWLTC` from steps 3 and 5 of **Do this** above; they need step 04's `ElectricDrive`, whose **Fell behind?** block is above. Then right-click `MyCar` → **Add Component**, name it `RegenBlend`, toggle to code (⇄) and paste this over its contents.
+
+::: code-group
+
+```txt [RegenBlend]
+component RegenBlend
+  "Torque asked for at the machine shaft: positive drives, negative brakes"
+  tau_ref = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}}
+  "Vehicle speed [km/h]"
+  v = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}}
+  "Torque the machine is asked for"
+  tau_motor = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}}
+  "Friction brake torque asked of each of the four wheel brakes"
+  tau_brake = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  "Single-speed reduction, Leaf ZE1"
+  parameter ratio::Real = 8.193
+  "Wheel radius"
+  parameter radius::Length = 0.31
+  "Torque limit: the machine's peak torque, Leaf ZE1"
+  parameter tau_max::Torque = 320.0
+  "Charge-power limit: the 2013 Leaf pack's 10 s charge capability (INL)"
+  parameter P_charge::Power = 80.5e3
+  "Speed below which the braking ceiling fades to zero, km/h (assumed, 5-10 km/h)"
+  parameter v_fade::Real = 10.0
+  "Machine speed estimated from the car's speed"
+  variable w::AngularVelocity
+  "Fade factor: 1 above v_fade, 0 at standstill"
+  variable fade::Real
+  "Braking ceiling from the charge-power limit"
+  variable tau_power::Torque
+  "Braking ceiling from the low-speed fade"
+  variable tau_fade::Torque
+  "Braking ceiling: the smallest of the three limits"
+  variable tau_regen_max::Torque
+  "Braking demand at the machine shaft"
+  variable tau_demand::Torque
+  "Braking torque the machine is asked for"
+  variable tau_regen::Torque
+relations
+  w = max(v, 0.0) / 3.6 * ratio / radius
+  fade = min(max(v / v_fade, 0.0), 1.0)
+  tau_power = P_charge / max(w, 1.0)
+  tau_fade = fade * tau_max
+  tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+  tau_demand = max(-tau_ref, 0.0)
+  tau_regen = min(tau_demand, tau_regen_max)
+  tau_motor = max(tau_ref, 0.0) - tau_regen
+  tau_brake = (tau_demand - tau_regen) * ratio / 4.0
+end
+```
+
+:::
+
+::::
+
+---
+
 ## 08 The energy bill
 
 ### 06 · The WLTC energy bill {#step-06}
@@ -1419,4 +1858,4 @@ Paste `BEVEnergyBill` from step 1 of **Do this** above; it needs step 04's `Elec
 
 ---
 
-Reference models: `dyad/HandsOn04/` in the course repository; checkpoint tests in `test/machine_plausibility.jl`, `test/converter_plausibility.jl`, `test/battery_plausibility.jl` and `test/bev_plausibility.jl`. Design: `docs/lecture-04-plan.md`.
+Reference models: `dyad/HandsOn04/` in the course repository; checkpoint tests in `test/machine_plausibility.jl`, `test/converter_plausibility.jl`, `test/battery_plausibility.jl`, `test/bev_plausibility.jl` and `test/regen_plausibility.jl`. Design: `docs/lecture-04-plan.md`.

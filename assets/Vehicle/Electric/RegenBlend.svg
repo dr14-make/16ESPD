@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <g fill="none" stroke="#263238" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="50" y="100" width="900" height="800" rx="40" fill="#eceff1"/>
+    <path d="M200 560 V180 M200 560 H860" stroke-width="20"/>
+    <path d="M200 560 L300 300 H450 C560 300 680 380 840 430" stroke="#0277bd"/>
+    <path d="M50 300 H150" stroke-width="30"/>
+    <path d="M50 700 H170" stroke-width="30"/>
+    <path d="M500 700 H950" stroke="#c62828"/>
+    <path d="M840 300 H950" stroke="#0277bd"/>
+  </g>
+  <text x="680" y="240" text-anchor="middle" font-family="sans-serif" font-size="80" fill="#0277bd">REGEN</text>
+  <text x="680" y="830" text-anchor="middle" font-family="sans-serif" font-size="80" fill="#c62828">BRAKE</text>
+</svg>
