@@ -1,6 +1,7 @@
 # Find layout defects in a rendered diagram: diagonal wire segments, crossings, overlapping wires,
 # wires through blocks or instance labels, anything outside the outline, and blocks whose label
-# draws sideways or mirrored, and `_links` entries no declaration or `connect` points to.
+# draws sideways or mirrored, `_links` entries no declaration or `connect` points to, and boxes not
+# shaped like the library icon placed in them.
 #
 # Usage: julia check.jl <file.dyad> <Component> <render.svg>
 #
@@ -16,7 +17,10 @@
 # but is checked against that block's label. Wires leaving the same port may overlap, and wires
 # sharing a trunk count one crossing per point. The component's own ports may straddle the 0..1000
 # outline. A wire looping around its target, and labels drawn above a block (Constant names, Gain
-# `k=`), show only in the PNG. Exit status is the number of problems, so a non-zero exit is a
+# `k=`), show only in the PNG. Studio draws an icon at its own aspect ratio, centered in the box,
+# while ports sit on the box edges, so a box shaped unlike its icon detaches the ports in Studio
+# though the render (which stretches the icon) looks fine; only icons from this library are checked,
+# against their SVG's viewBox. Exit status is the number of problems, so a non-zero exit is a
 # finding, not a crash.
 using JSON, OrderedCollections
 
@@ -39,23 +43,47 @@ root = let d = dirname(abspath(dyad_path))
     d
 end
 
-function find_base(qualified)
-    parts = split(qualified, '.')
-    dir = joinpath(root, parts[2:end-1]...)
+function body_in(dir, name)
     isdir(dir) || return nothing
     for f in readdir(dir; join=true)
         endswith(f, ".dyad") || continue
-        b = body_of(read(f, String), parts[end])
+        b = body_of(read(f, String), name)
         b === nothing || return b.match
     end
     nothing
 end
+function find_base(qualified)
+    parts = split(qualified, '.')
+    body_in(joinpath(root, parts[2:end-1]...), parts[end])
+end
+
+library = match(r"^name\s*=\s*\"(\w+)\""m, read(joinpath(dirname(root), "Project.toml"), String))[1]
+
+"Width/height of the library icon a type draws with, or `nothing` for an icon from elsewhere."
+function icon_aspect(type, dir)
+    parts = split(type, '.')
+    length(parts) > 1 && parts[1] != library && return nothing
+    text = length(parts) > 1 ? find_base(type) : body_in(dir, type)
+    text === nothing && return nothing
+    icon = match(r"\"default\"\s*:\s*\"dyad://(\w+)/([^\"]+\.svg)\"", text)
+    if icon === nothing
+        base = match(r"^\s*extends\s+([\w.]+)"m, text)
+        return base === nothing ? nothing : icon_aspect(base[1], dir)
+    end
+    icon[1] == library || return nothing
+    svg = joinpath(dirname(root), "assets", icon[2])
+    isfile(svg) || return 1.0
+    view = match(r"viewBox=\"[-\d.]+[ ,]+[-\d.]+[ ,]+([\d.]+)[ ,]+([\d.]+)\"", read(svg, String))
+    view === nothing ? 1.0 : parse(Float64, view[1]) / parse(Float64, view[2])
+end
 
 # The component's own ports: a `connect` names them bare, and a part's ports as `part.port`.
 own = Set{String}()
+# tag => width/height of the library icon its declaration draws with
+aspects = Dict{String,Float64}()
 
 "`_links` of a component body, its library bases' entries first, so its own override them."
-function links_of(text, seen=Set{String}())
+function links_of(text, dir, seen=Set{String}())
     links = OrderedDict{String,Any}()
     for c in eachmatch(r"^\s*connect\(([^)]*)\)"m, text), arg in split(c[1], ',')
         occursin('.', arg) || push!(own, strip(arg))
@@ -68,7 +96,7 @@ function links_of(text, seen=Set{String}())
         if btext === nothing
             report("note", "base $base is outside this library; its parts are not checked")
         else
-            merge!(links, links_of(btext, seen))
+            merge!(links, links_of(btext, joinpath(root, split(base, '.')[2:end-1]...), seen))
         end
     end
     meta = match(r"^metadata (\{.*?^\})\s*$"ms, text)
@@ -76,6 +104,10 @@ function links_of(text, seen=Set{String}())
     if occursin(r"\{\s*\"Dyad\"\s*:\s*\{\s*\"(placement|edges)\""m, declarations)
         name = something(match(r"component (\w+)", text), ["?"])[1]
         report("inline", name, "places parts inline; move them into `_links` with `{^tag}`s")
+    end
+    for d in eachmatch(r"^\s*(?:\w+\s+)*\w+\s*=\s*([A-Za-z][\w.]*)\(.*\{\^(\w+)\}"m, declarations)
+        aspect = icon_aspect(d[1], dir)
+        aspect === nothing || (aspects[d[2]] = aspect)
     end
     meta === nothing && return links
     for (tag, link) in get(JSON.parse(meta[1]; dicttype=OrderedDict{String,Any}), "_links", Dict())
@@ -94,11 +126,19 @@ end
 
 body = body_of(read(dyad_path, String), component)
 body === nothing && (println(stderr, "component $component not found in $dyad_path"); exit(1))
-links = links_of(body.match)
+links = links_of(body.match, dirname(abspath(dyad_path)))
 
 blocks, labels, ports = Pair{String,NTuple{4,Real}}[], Pair{String,NTuple{4,Real}}[], Set{String}()
 for (name, link) in links
     placement = get(get(link, "Dyad", Dict()), "placement", Dict())
+    for (layer, b) in placement
+        b isa AbstractDict && haskey(aspects, name) || continue
+        w, h = abs(b["x2"] - b["x1"]), abs(b["y2"] - b["y1"])
+        rot = mod(get(b, "rot", 0), 180) == 90
+        isapprox(rot ? h / w : w / h, aspects[name]; rtol=0.01) ||
+            report("aspect", name, layer, "box $(w)x$(h) for a $(round(aspects[name]; digits=2)):1 icon;",
+                   "Studio keeps the icon's shape, so its ports leave it")
+    end
     box = get(placement, "diagram", nothing)
     box === nothing && continue
     x1, x2 = minmax(box["x1"], box["x2"])

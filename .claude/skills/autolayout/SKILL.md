@@ -43,9 +43,9 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    This renders the file as it is on disk, uncommitted edits included, from the checkout `render.sh`
    sits in; set `DYAD_ROOT` to render another worktree. `check.jl` lists diagonals, crossings,
    overlapping wires, wires through blocks or labels, anything outside the outline, labels turned
-   sideways or mirrored, placements written inline, `dead` entries no `{^tag}` points to, and
-   `unplaced` parts with no entry. It checks parts inherited through `extends`
-   with the diagram, and names a base outside the library in a `note`. Its exit status is the problem
+   sideways or mirrored, placements written inline, `dead` entries no `{^tag}` points to,
+   `unplaced` parts with no entry, and boxes not shaped like their library icon (`aspect`). It
+   checks parts inherited through `extends` with the diagram, and names a base outside the library in a `note`. Its exit status is the problem
    count. Read the PNG too, for what a script can't judge: flow, lanes, empty
    canvas, a wire looping around its target, and labels drawn above a block. At the default size, PNG
    pixel = diagram coordinate + 200. A child's port positions are in the child's own file, but the
@@ -148,6 +148,11 @@ The traps those files don't explain:
 - **Coordinates:** y grows down. A block's `placement.diagram` box is where its 0..1000 icon square is
   drawn. The instance label sits centered below the box at icon (500, 1100), about 20 % of the box
   height tall. A `Gain` also draws `k=…` above; a `Constant` draws its name above and `k = …` below.
+- **Box shape:** Studio draws an icon at its own aspect ratio, centered in the box, with the ports
+  on the box edges; the CLI render stretches the icon to fill the box. A box shaped unlike its
+  icon looks right in the render, while in Studio the icon shrinks to the middle and its ports
+  float off it. Give every box its icon's shape: square for this library's 1000×1000 icons.
+  `check.jl` reports `aspect` for a box that differs from its library icon's `viewBox`.
 - **Two boxes per port:** `placement.icon` is where parents see the port, a 100×100 box straddling the
   owner's edge (left x −50..50, right 950..1050, top y −50..50, bottom 950..1050). `placement.diagram` is
   where it sits in the owner's own diagram. Given only one of them, it serves as both; given neither,
