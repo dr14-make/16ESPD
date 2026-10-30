@@ -212,7 +212,11 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   it, and the stop is 36.2 m against 38.8 m on friction alone. On WLTC
   (`Vehicle.Planar.PlanarBEVRegenWLTC`) neither limit binds above 2 km/h (WLTC asks at most 87 N·m
   and 32 kW), friction takes 0.004 % of the braking, and 23.85 % of the traction comes back: the
-  blend cannot reach the 18–22 % anchor, whose gap is the regen path above.
+  blend cannot reach the 18–22 % anchor, whose gap is the regen path above. A 15 kW charge limit
+  brings the share to 21.40 %, inside the anchor, only by putting 9.5 % of WLTC's braking on
+  friction, above S8's 4 %. The hard stop's meters (shaft, friction, tire slip) close on the
+  kinetic energy of body and wheels to 10⁻⁹; the rotor's energy reaches the battery without
+  passing the reduction, so it stays out of that balance.
 - The machine sits outside the ABS loop: the ABS modulates the friction brakes only, and nothing
   withdraws regen when it acts. On the dry hard stop the machine's torque holds the front slip at
   −0.04 to −0.06 from 62 km/h, past the ABS's 0.03 reapply threshold, so the front friction

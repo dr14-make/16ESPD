@@ -187,6 +187,24 @@ end
     @test abs(links - e(m.E_cells)) / e(m.E_cells) < 1e-6
 end
 
+@testset "Lecture 4 step 05: a charge limit low enough for the band burns WLTC braking" begin
+    # At 15 kW the share falls to 21.40 %, inside the anchor, only because friction takes 9.5 % of
+    # WLTC's braking energy, above S8's 4 % cap: the gap to the band is the regen path's
+    # efficiency, which no charge limit S8 allows can close.
+    run = _RG_PL.PlanarBEVRegenWLTCTransient(P_charge = 15.0e3)
+    m = symbolic_container(run)
+    s = run.sol
+    e(x) = s[x][end]
+    @test string(s.retcode) == "Success"
+    @test maximum(abs, 3.6 .* s[m.car.bus.vx] .- s[m.trace.y]) < 2.0
+    share = e(m.E_dc_in) / e(m.E_shaft_out)
+    friction = e(m.E_brake) / (e(m.E_brake) + e(m.E_shaft_in))
+    @test 0.18 <= share <= 0.22
+    @test share ≈ 0.2140 atol = 5e-4
+    @test friction > 0.04
+    @test friction ≈ 0.0953 atol = 5e-4
+end
+
 @testset "Lecture 4 step 05: the hands-on reference is the library car" begin
     lib_stop, lib_wltc = _rg_stop_run, _rg_wltc_run
     h4_stop = _RG_H4.BEVHardStopTransient()
