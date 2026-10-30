@@ -1,0 +1,28 @@
+"""The four longitudinal wheel slips from the car's bus, as plain signals."""
+component BusSlip
+  "The car's measurement bus"
+  bus = VehicleSystemsComponents.Vehicle.Planar.CarBusIn() {^bus}
+  "Longitudinal slip of the front-left wheel [-]"
+  kappa_fl = RealOutput() {^kappa_fl}
+  "Longitudinal slip of the front-right wheel [-]"
+  kappa_fr = RealOutput() {^kappa_fr}
+  "Longitudinal slip of the rear-left wheel [-]"
+  kappa_rl = RealOutput() {^kappa_rl}
+  "Longitudinal slip of the rear-right wheel [-]"
+  kappa_rr = RealOutput() {^kappa_rr}
+relations
+  kappa_fl = bus.kappa_fl
+  kappa_fr = bus.kappa_fr
+  kappa_rl = bus.kappa_rl
+  kappa_rr = bus.kappa_rr
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/BusSlip.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "kappa_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "kappa_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "kappa_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "kappa_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}}
+  }
+}
+end

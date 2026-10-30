@@ -166,9 +166,6 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, mu_scale_fl=mu_scale_fl, mu_scale_fr=mu_scale_fr, mu_scale_rl=mu_scale_rl, mu_scale_rr=mu_scale_rr, ackermann=ackermann, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
-  # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
-  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -199,16 +196,6 @@ Open-loop planar-car harness with steering-wheel position and selectable wheel b
   ### Equations
   push!(__eqs, connect(steer_ramp.y, steering_robot.delta_sw_ref))
   push!(__eqs, connect(steering_robot.steering, car.steering))
-  push!(__eqs, connect(car.chassis, sensors.chassis))
-  push!(__eqs, connect(car.steering, sensors.steering))
-  push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
-  push!(__eqs, connect(car.wheel_fr, sensors.wheel_fr))
-  push!(__eqs, connect(car.wheel_rl, sensors.wheel_rl))
-  push!(__eqs, connect(car.wheel_rr, sensors.wheel_rr))
-  push!(__eqs, connect(car.spin_fl, sensors.spin_fl))
-  push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
-  push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
-  push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
   push!(__eqs, connect(brake_step.y, gain_fl.u, gain_fr.u, gain_rl.u, gain_rr.u))
   push!(__eqs, connect(gain_fl.y, car.tau_fl))
   push!(__eqs, connect(gain_fr.y, car.tau_fr))

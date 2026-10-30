@@ -140,9 +140,9 @@ stop. The car drives the cycle's 23.27 km.
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, __overrides = car_overrides))
-  # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
-  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
+  # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
+  motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
+  push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
   # Subcomponent roadload of type VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad
   roadload_overrides = __pop_subcomponent_overrides!(__overrides, "roadload")
   push!(__systems, @named roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(; m=m, __overrides = roadload_overrides))
@@ -180,9 +180,10 @@ stop. The car drives the cycle's 23.27 km.
   ### Equations
   push!(__eqs, car.tau_rl ~ 0.0)
   push!(__eqs, car.tau_rr ~ 0.0)
+  push!(__eqs, connect(car.bus, motion.bus))
   push!(__eqs, connect(trace.y, driver.u_s))
-  push!(__eqs, connect(sensors.vx, kmh.u))
-  push!(__eqs, connect(kmh.y, driver.u_m))
+  push!(__eqs, connect(motion.vx, kmh.u))
+  push!(__eqs, connect(kmh.y, driver.u_m, split.v))
   push!(__eqs, connect(no_ff.y, driver.u_ff))
   push!(__eqs, connect(drive.spline, differential.flange_b))
   push!(__eqs, connect(differential.flange_left, car.spin_fl))
@@ -190,18 +191,8 @@ stop. The car drives the cycle's 23.27 km.
   push!(__eqs, connect(drive.support, mount.spline))
   push!(__eqs, connect(car.steering, straight.spline))
   push!(__eqs, connect(flat.y, roadload.grade))
-  push!(__eqs, connect(car.chassis, roadload.chassis, sensors.chassis))
-  push!(__eqs, connect(car.steering, sensors.steering))
-  push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
-  push!(__eqs, connect(car.wheel_fr, sensors.wheel_fr))
-  push!(__eqs, connect(car.wheel_rl, sensors.wheel_rl))
-  push!(__eqs, connect(car.wheel_rr, sensors.wheel_rr))
-  push!(__eqs, connect(car.spin_fl, sensors.spin_fl))
-  push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
-  push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
-  push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
+  push!(__eqs, connect(car.chassis, roadload.chassis))
   push!(__eqs, connect(driver.y, split.tau_ref))
-  push!(__eqs, connect(kmh.y, split.v))
   push!(__eqs, connect(split.tau_motor, drive.tau_ref))
   push!(__eqs, connect(split.tau_brake, car.tau_fl, car.tau_fr))
 

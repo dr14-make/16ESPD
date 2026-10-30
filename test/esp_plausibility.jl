@@ -41,16 +41,16 @@ trapezoidal_integral(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
         sol, model = esp_sine_with_dwell_case(A_sw = deg2rad(amplitude))
         metric_times = collect(0.0:0.002:6.0)
         metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            metric_times, sol(metric_times; idxs = model.sensors.delta_sw),
-            sol(metric_times; idxs = model.sensors.r), sol(metric_times; idxs = model.sensors.y);
+            metric_times, sol(metric_times; idxs = model.car.bus.delta_sw),
+            sol(metric_times; idxs = model.car.bus.r), sol(metric_times; idxs = model.car.bus.y);
             A = deg2rad(21.63))
-        beta_max = maximum(abs, sol[model.sensors.beta])
-        min_kappa = minimum(vcat(sol[model.sensors.kappa_fl], sol[model.sensors.kappa_fr],
-                                  sol[model.sensors.kappa_rl], sol[model.sensors.kappa_rr]))
+        beta_max = maximum(abs, sol[model.car.bus.beta])
+        min_kappa = minimum(vcat(sol[model.car.bus.kappa_fl], sol[model.car.bus.kappa_fr],
+                                  sol[model.car.bus.kappa_rl], sol[model.car.bus.kappa_rr]))
         @test metrics.passes_stability
         amplitude >= 108.15 && @test metrics.passes_responsiveness
         @test rad2deg(beta_max) < 10.0
-        amplitude >= 97.0 && @test 12.0 <= sol[model.sensors.vx][end] <= 16.0
+        amplitude >= 97.0 && @test 12.0 <= sol[model.car.bus.vx][end] <= 16.0
         amplitude >= 97.0 && @test min_kappa < -0.9
         if amplitude == 180.0
             t_start = 1.0 + 0.5 / 0.7
@@ -62,7 +62,7 @@ trapezoidal_integral(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
             @info "Task 5 oversteer torque integrals" integrals
         end
         (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
-           beta_max_deg = rad2deg(beta_max), end_speed = sol[model.sensors.vx][end], min_kappa)
+           beta_max_deg = rad2deg(beta_max), end_speed = sol[model.car.bus.vx][end], min_kappa)
     end
 
     for amplitude in amplitudes
@@ -74,13 +74,13 @@ trapezoidal_integral(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
             dtmax = 0.001, saveat = 0.001)
         metric_times = collect(0.0:0.001:6.0)
         passive_metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            metric_times, passive_sol(metric_times; idxs = passive.sensors.delta_sw),
-            passive_sol(metric_times; idxs = passive.sensors.r),
-            passive_sol(metric_times; idxs = passive.sensors.y); A = deg2rad(21.63))
+            metric_times, passive_sol(metric_times; idxs = passive.car.bus.delta_sw),
+            passive_sol(metric_times; idxs = passive.car.bus.r),
+            passive_sol(metric_times; idxs = passive.car.bus.y); A = deg2rad(21.63))
         off_metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            metric_times, off_sol(metric_times; idxs = off.sensors.delta_sw),
-            off_sol(metric_times; idxs = off.sensors.r),
-            off_sol(metric_times; idxs = off.sensors.y); A = deg2rad(21.63))
+            metric_times, off_sol(metric_times; idxs = off.car.bus.delta_sw),
+            off_sol(metric_times; idxs = off.car.bus.r),
+            off_sol(metric_times; idxs = off.car.bus.y); A = deg2rad(21.63))
         @test off_metrics.yrr_1_00 ≈ passive_metrics.yrr_1_00 atol = 1e-6
         @test off_metrics.yrr_1_75 ≈ passive_metrics.yrr_1_75 atol = 1e-6
         @test off_metrics.y_bos_1_07 ≈ passive_metrics.y_bos_1_07 atol = 1e-6
@@ -91,8 +91,8 @@ trapezoidal_integral(t, x) = sum((x[1:end-1] .+ x[2:end]) .* diff(t)) / 2
     t_int = collect(range(0.0, 8.0; length = 1601))
     ramp_integrals = [trapezoidal_integral(t_int, ramp_on_sol(t_int; idxs = tau)) for tau in
                       (ramp_on.car.tau_fl, ramp_on.car.tau_fr, ramp_on.car.tau_rl, ramp_on.car.tau_rr)]
-    shortfall_on = minimum(ramp_on_sol[ramp_on.sensors.r] .- ramp_on_sol[ramp_on.esp.r_ref])
-    shortfall_off = minimum(ramp_off_sol[ramp_off.sensors.r] .- ramp_off_sol[ramp_off.esp.r_ref])
+    shortfall_on = minimum(ramp_on_sol[ramp_on.car.bus.r] .- ramp_on_sol[ramp_on.esp.r_ref])
+    shortfall_off = minimum(ramp_off_sol[ramp_off.car.bus.r] .- ramp_off_sol[ramp_off.esp.r_ref])
     @test ramp_integrals[3] > 10.0 * maximum(ramp_integrals[[1, 2, 4]])
     @test abs(shortfall_on) <= 0.7 * abs(shortfall_off)
     @info "Task 5 continuous ESP measurements" measurements ramp_integrals shortfall_on shortfall_off
@@ -131,9 +131,9 @@ end
     measurements = map(sort(collect(keys(expected)))) do amplitude
         sol, model = sine_with_dwell_case(A_sw = deg2rad(amplitude))
         metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            sol.t, sol[model.sensors.delta_sw], sol[model.sensors.r], sol[model.sensors.y];
+            sol.t, sol[model.car.bus.delta_sw], sol[model.car.bus.r], sol[model.car.bus.y];
             A = deg2rad(21.63))
-        beta_max = maximum(abs, sol[model.sensors.beta])
+        beta_max = maximum(abs, sol[model.car.bus.beta])
         target = expected[amplitude]
         @test metrics.yrr_1_00 ≈ target[1] atol = 0.05
         @test metrics.yrr_1_75 ≈ target[2] atol = 0.05
@@ -146,7 +146,7 @@ end
         end
         amplitude == 270.0 && @test rad2deg(beta_max) < 10.0
         (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
-           beta_max_deg = rad2deg(beta_max), end_speed = sol[model.sensors.vx][end])
+           beta_max_deg = rad2deg(beta_max), end_speed = sol[model.car.bus.vx][end])
     end
     @info "Task 4 passive sine-with-dwell measurements" measurements
 end
@@ -177,11 +177,11 @@ end
     right_sol, right = planar_open_loop_case(
         stop = 3.0, T_cmd = 500.0, brake_fr = 1.0, brake_rr = 1.0)
 
-    @test maximum(abs.(coast_sol[coast.sensors.r])) < 1e-6
-    @test maximum(abs.(brake_sol[brake.sensors.r])) < 1e-6
-    @test brake_sol(2.0, idxs = brake.sensors.ax) ≈ -4.185 rtol = 0.01
+    @test maximum(abs.(coast_sol[coast.car.bus.r])) < 1e-6
+    @test maximum(abs.(brake_sol[brake.car.bus.r])) < 1e-6
+    @test brake_sol(2.0, idxs = brake.car.bus.ax) ≈ -4.185 rtol = 0.01
     @test brake_lt_sol(2.0, idxs = brake_lt.car.loads.dN_fl) ≈ 640.0 atol = 10.0
-    @test right_sol[right.sensors.psi][end] < 0.0
+    @test right_sol[right.car.bus.psi][end] < 0.0
 end
 
 
@@ -191,9 +191,9 @@ end
     steady_delta = (0.005, 0.010, 0.020, 0.030)
     steady_runs = map(steady_delta) do delta
         sol, model = planar_open_loop_case(stop = 4.0, delta_sw_final = 16.0 * delta)
-        r = sol(4.0, idxs = model.sensors.r)
-        vx = sol(4.0, idxs = model.sensors.vx)
-        beta = sol(4.0, idxs = model.sensors.beta)
+        r = sol(4.0, idxs = model.car.bus.r)
+        vx = sol(4.0, idxs = model.car.bus.vx)
+        beta = sol(4.0, idxs = model.car.bus.beta)
         r_formula = vx * delta / (L + K_us * vx^2)
         (; delta, r, vx, beta, r_formula,
            relative_error = r / r_formula - 1.0,
@@ -210,10 +210,10 @@ end
     ramp_sol, ramp = planar_open_loop_case(
         stop = 8.0, delta_sw_final = deg2rad(13.5) * 7.5,
         t_ramp = 7.5, t_steer = 0.5)
-    lateral_acceleration = ramp_sol[ramp.sensors.vx] .* ramp_sol[ramp.sensors.r]
+    lateral_acceleration = ramp_sol[ramp.car.bus.vx] .* ramp_sol[ramp.car.bus.r]
     crossing = findfirst(>=(0.3 * 9.81), lateral_acceleration)
     @test !isnothing(crossing)
-    amplitude = ramp_sol[ramp.sensors.delta_sw][crossing]
+    amplitude = ramp_sol[ramp.car.bus.delta_sw][crossing]
     @test rad2deg(amplitude) ≈ 21.6 atol = 1.0
     @test maximum(abs.(lateral_acceleration)) <= 1.01 * 9.81
 
@@ -221,18 +221,18 @@ end
         stop = 4.0, v0 = 3.0, delta_sw_final = 3.2, ackermann = 1.0)
     parallel_sol, parallel = planar_open_loop_case(
         stop = 4.0, v0 = 3.0, delta_sw_final = 3.2, ackermann = 0.0)
-    ack_difference = abs(ack_sol(4.0, idxs = ack.sensors.alpha_fl) -
-                         ack_sol(4.0, idxs = ack.sensors.alpha_fr))
-    parallel_difference = abs(parallel_sol(4.0, idxs = parallel.sensors.alpha_fl) -
-                              parallel_sol(4.0, idxs = parallel.sensors.alpha_fr))
-    ack_speed = ack_sol(4.0, idxs = ack.sensors.vx)
-    parallel_speed = parallel_sol(4.0, idxs = parallel.sensors.vx)
+    ack_difference = abs(ack_sol(4.0, idxs = ack.car.bus.alpha_fl) -
+                         ack_sol(4.0, idxs = ack.car.bus.alpha_fr))
+    parallel_difference = abs(parallel_sol(4.0, idxs = parallel.car.bus.alpha_fl) -
+                              parallel_sol(4.0, idxs = parallel.car.bus.alpha_fr))
+    ack_speed = ack_sol(4.0, idxs = ack.car.bus.vx)
+    parallel_speed = parallel_sol(4.0, idxs = parallel.car.bus.vx)
 
     @test ack_difference < 0.002
     @test parallel_difference > 0.018
     @test ack_speed - parallel_speed >= 0.02
 
-    @info "Task 3 cornering measurements" steady_runs amplitude_deg = rad2deg(amplitude) max_lateral_g = maximum(abs.(lateral_acceleration)) / 9.81 ack_alpha_fl = ack_sol(4.0, idxs = ack.sensors.alpha_fl) ack_alpha_fr = ack_sol(4.0, idxs = ack.sensors.alpha_fr) ack_difference ack_speed parallel_alpha_fl = parallel_sol(4.0, idxs = parallel.sensors.alpha_fl) parallel_alpha_fr = parallel_sol(4.0, idxs = parallel.sensors.alpha_fr) parallel_difference parallel_speed
+    @info "Task 3 cornering measurements" steady_runs amplitude_deg = rad2deg(amplitude) max_lateral_g = maximum(abs.(lateral_acceleration)) / 9.81 ack_alpha_fl = ack_sol(4.0, idxs = ack.car.bus.alpha_fl) ack_alpha_fr = ack_sol(4.0, idxs = ack.car.bus.alpha_fr) ack_difference ack_speed parallel_alpha_fl = parallel_sol(4.0, idxs = parallel.car.bus.alpha_fl) parallel_alpha_fr = parallel_sol(4.0, idxs = parallel.car.bus.alpha_fr) parallel_difference parallel_speed
 end
 
 @testset "Quasi-static load-transfer plausibility" begin
@@ -277,20 +277,20 @@ end
     straight = symbolic_container(straight_result)
     straight_sol = straight_result.sol
     straight_t = collect(range(0.5, 6.0; length = 1101))
-    straight_v = straight_sol(straight_t; idxs = straight.sensors.vx)
+    straight_v = straight_sol(straight_t; idxs = straight.car.bus.vx)
     stop_index = findfirst(<(0.5), straight_v)
     @test !isnothing(stop_index)
     stop_time = straight_t[stop_index]
-    stop_distance = straight_sol(stop_time; idxs = straight.sensors.x) -
-                    straight_sol(0.5; idxs = straight.sensors.x)
+    stop_distance = straight_sol(stop_time; idxs = straight.car.bus.x) -
+                    straight_sol(0.5; idxs = straight.car.bus.x)
     moving = straight_v .> 3.0
     straight_min_kappa = minimum(vcat([
         straight_sol(straight_t[moving]; idxs = kappa) for kappa in
-        (straight.sensors.kappa_fl, straight.sensors.kappa_fr,
-         straight.sensors.kappa_rl, straight.sensors.kappa_rr)]...))
+        (straight.car.bus.kappa_fl, straight.car.bus.kappa_fr,
+         straight.car.bus.kappa_rl, straight.car.bus.kappa_rr)]...))
     @test_broken stop_distance <= 32.0
     @test straight_min_kappa >= -0.2
-    @test maximum(abs, straight_sol[straight.sensors.r]) < 1e-8
+    @test maximum(abs, straight_sol[straight.car.bus.r]) < 1e-8
 
     amplitudes = (32.0, 97.0, 141.0, 180.0, 270.0)
     abs_measurements = map(amplitudes) do amplitude
@@ -300,23 +300,23 @@ end
         sol = result.sol
         times = collect(0.0:0.002:6.0)
         metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            times, sol(times; idxs = model.sensors.delta_sw),
-            sol(times; idxs = model.sensors.r), sol(times; idxs = model.sensors.y);
+            times, sol(times; idxs = model.car.bus.delta_sw),
+            sol(times; idxs = model.car.bus.r), sol(times; idxs = model.car.bus.y);
             A = deg2rad(21.63))
-        moving_times = times[sol(times; idxs = model.sensors.vx) .> 3.0]
+        moving_times = times[sol(times; idxs = model.car.bus.vx) .> 3.0]
         min_kappa = minimum(vcat([
             sol(moving_times; idxs = kappa) for kappa in
-            (model.sensors.kappa_fl, model.sensors.kappa_fr,
-             model.sensors.kappa_rl, model.sensors.kappa_rr)]...))
+            (model.car.bus.kappa_fl, model.car.bus.kappa_fr,
+             model.car.bus.kappa_rl, model.car.bus.kappa_rr)]...))
         @test metrics.passes_stability
         amplitude >= 108.15 && @test metrics.y_bos_1_07 >= 1.83
         @test min_kappa >= -0.2
         task5_speed = Dict(32.0 => 21.4071, 97.0 => 14.5723, 141.0 => 13.6283,
                            180.0 => 13.3570, 270.0 => 13.3900)[amplitude]
-        amplitude >= 97.0 && @test sol[model.sensors.vx][end] >= task5_speed + 2.0
+        amplitude >= 97.0 && @test sol[model.car.bus.vx][end] >= task5_speed + 2.0
         (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
-           beta_max_deg = rad2deg(maximum(abs, sol[model.sensors.beta])),
-           end_speed = sol[model.sensors.vx][end], min_kappa)
+           beta_max_deg = rad2deg(maximum(abs, sol[model.car.bus.beta])),
+           end_speed = sol[model.car.bus.vx][end], min_kappa)
     end
 
     load_transfer_amplitudes = (97.0, 180.0, 270.0)
@@ -328,18 +328,18 @@ end
         sol = result.sol
         times = collect(0.0:0.002:6.0)
         metrics = VehicleSystemsComponents.Vehicle.Planar.fmvss126_metrics(
-            times, sol(times; idxs = model.sensors.delta_sw),
-            sol(times; idxs = model.sensors.r), sol(times; idxs = model.sensors.y);
+            times, sol(times; idxs = model.car.bus.delta_sw),
+            sol(times; idxs = model.car.bus.r), sol(times; idxs = model.car.bus.y);
             A = deg2rad(21.63))
         min_kappa = minimum(vcat([
             sol(times; idxs = kappa) for kappa in
-            (model.sensors.kappa_fl, model.sensors.kappa_fr,
-             model.sensors.kappa_rl, model.sensors.kappa_rr)]...))
+            (model.car.bus.kappa_fl, model.car.bus.kappa_fr,
+             model.car.bus.kappa_rl, model.car.bus.kappa_rr)]...))
         @test metrics.passes_stability
         @test metrics.passes_responsiveness
         @test min_kappa >= -0.2
         (; amplitude, metrics.yrr_1_00, metrics.yrr_1_75, metrics.y_bos_1_07,
-           end_speed = sol[model.sensors.vx][end], min_kappa)
+           end_speed = sol[model.car.bus.vx][end], min_kappa)
     end
 
     function split_measurement(; select_low, esp_on)
@@ -348,12 +348,12 @@ end
         model = symbolic_container(result)
         sol = result.sol
         times = collect(range(0.0, 6.0; length = 1201))
-        speeds = sol(times; idxs = model.sensors.vx)
+        speeds = sol(times; idxs = model.car.bus.vx)
         index = something(findfirst(<(3.0), speeds), length(times))
         t_metric = times[index]
-        (; heading_deg = rad2deg(sol(t_metric; idxs = model.sensors.psi)),
-           offset = sol(t_metric; idxs = model.sensors.y),
-           distance = sol(t_metric; idxs = model.sensors.x),
+        (; heading_deg = rad2deg(sol(t_metric; idxs = model.car.bus.psi)),
+           offset = sol(t_metric; idxs = model.car.bus.y),
+           distance = sol(t_metric; idxs = model.car.bus.x),
            end_speed = speeds[end])
     end
     abs_only = split_measurement(select_low = 0.0, esp_on = 0.0)
@@ -372,13 +372,13 @@ end
         model = symbolic_container(result)
         sol = result.sol
         times = collect(0.0:0.002:6.0)
-        x = sol(times; idxs = model.sensors.x).u
-        y = sol(times; idxs = model.sensors.y).u
-        speed = hypot.(sol(times; idxs = model.sensors.vx).u, sol(times; idxs = model.sensors.vy).u)
+        x = sol(times; idxs = model.car.bus.x).u
+        y = sol(times; idxs = model.car.bus.y).u
+        speed = hypot.(sol(times; idxs = model.car.bus.vx).u, sol(times; idxs = model.car.bus.vy).u)
         moving = (speed .> 3.0) .& (times .> 0.5)
-        x_obstacle = sol(0.5; idxs = model.sensors.x) + 25.0
-        front_kappa = min.(sol(times; idxs = model.sensors.kappa_fl).u,
-                           sol(times; idxs = model.sensors.kappa_fr).u)
+        x_obstacle = sol(0.5; idxs = model.car.bus.x) + 25.0
+        front_kappa = min.(sol(times; idxs = model.car.bus.kappa_fl).u,
+                           sol(times; idxs = model.car.bus.kappa_fr).u)
         (; y_obstacle = y[findfirst(>=(x_obstacle), x)],
            y_stop = y[something(findfirst(i -> times[i] > 0.5 && speed[i] < 0.05,
                                           eachindex(times)), length(times))],

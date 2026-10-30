@@ -1,0 +1,28 @@
+"""The four wheel spin speeds from the car's bus, as plain signals."""
+component BusWheelSpeed
+  "The car's measurement bus"
+  bus = VehicleSystemsComponents.Vehicle.Planar.CarBusIn() {^bus}
+  "Spin speed of the front-left wheel [rad/s]"
+  omega_fl = RealOutput() {^omega_fl}
+  "Spin speed of the front-right wheel [rad/s]"
+  omega_fr = RealOutput() {^omega_fr}
+  "Spin speed of the rear-left wheel [rad/s]"
+  omega_rl = RealOutput() {^omega_rl}
+  "Spin speed of the rear-right wheel [rad/s]"
+  omega_rr = RealOutput() {^omega_rr}
+relations
+  omega_fl = bus.omega_fl
+  omega_fr = bus.omega_fr
+  omega_rl = bus.omega_rl
+  omega_rr = bus.omega_rr
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/BusWheelSpeed.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "omega_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "omega_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "omega_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "omega_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}}
+  }
+}
+end

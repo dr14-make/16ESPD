@@ -1,4 +1,9 @@
-"""Four-wheel planar vehicle with physical steering, wheel, spin, and load paths."""
+"""
+Four-wheel planar vehicle with physical steering, wheel, spin, and load paths.
+
+The car measures itself: an ideal `PlanarCarSensors` cluster inside it reads the chassis, the
+steering column and each wheel, and the car sends every reading on its `bus` port.
+"""
 component PlanarCar
   steering = Spline() {^steering}
   chassis = Frame2D() {^chassis}
@@ -14,6 +19,8 @@ component PlanarCar
   tau_fr = RealInput() {^tau_fr}
   tau_rl = RealInput() {^tau_rl}
   tau_rr = RealInput() {^tau_rr}
+  "Everything the car measures about itself"
+  bus = VehicleSystemsComponents.Vehicle.Planar.CarBus() {^bus}
   "Vehicle mass (probe)"
   parameter m::Mass = 1500.0
   "Yaw inertia (probe)"
@@ -77,18 +84,19 @@ component PlanarCar
   fl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fl, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fl}
   fr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_fr, sAdhesion = sAdhesion_f, sSlide = 3 * sAdhesion_f, T_brake = T_brake, tau_max = tau_max) {^fr}
   rl = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rl, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rl}
+  sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius) {^sensors}
   rr = VehicleSystemsComponents.Vehicle.Planar.PlanarBrakedWheel(radius = radius, J = J, mu_A = mu_A, mu_S = mu_S, mu_scale = mu_scale_rr, sAdhesion = sAdhesion_r, sSlide = 3 * sAdhesion_r, T_brake = T_brake, tau_max = tau_max) {^rr}
 relations
-  connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis) {^w1}
+  connect(body.frame_a, tf.frame_a, tr.frame_a, loads.chassis, chassis, sensors.chassis) {^w1}
   connect(tf.frame_b, fl_arm.frame_a, fr_arm.frame_a) {^w2}
   connect(tr.frame_b, rl_arm.frame_a, rr_arm.frame_a) {^w3}
   connect(fl_arm.frame_b, steerL.frame_a) {^w4}
-  connect(steerL.frame_b, fl.frame_a, wheel_fl) {^w5}
+  connect(steerL.frame_b, fl.frame_a, wheel_fl, sensors.wheel_fl) {^w5}
   connect(fr_arm.frame_b, steerR.frame_a) {^w6}
-  connect(steerR.frame_b, fr.frame_a, wheel_fr) {^w7}
-  connect(rl_arm.frame_b, rl.frame_a, wheel_rl) {^w8}
-  connect(rr_arm.frame_b, rr.frame_a, wheel_rr) {^w9}
-  connect(steering, column.spline_a) {^w10}
+  connect(steerR.frame_b, fr.frame_a, wheel_fr, sensors.wheel_fr) {^w7}
+  connect(rl_arm.frame_b, rl.frame_a, wheel_rl, sensors.wheel_rl) {^w8}
+  connect(rr_arm.frame_b, rr.frame_a, wheel_rr, sensors.wheel_rr) {^w9}
+  connect(steering, column.spline_a, sensors.steering) {^w10}
   connect(column.spline_b, linkage.spline_in) {^w11}
   connect(linkage.spline_left, steerL.flange_a) {^w12}
   connect(linkage.spline_right, steerR.flange_a) {^w13}
@@ -97,31 +105,55 @@ relations
   connect(loads.fr, fr.load) {^w16}
   connect(loads.rl, rl.load) {^w17}
   connect(loads.rr, rr.load) {^w18}
-  connect(fl.spin, spin_fl) {^w19}
-  connect(fr.spin, spin_fr) {^w20}
-  connect(rl.spin, spin_rl) {^w21}
-  connect(rr.spin, spin_rr) {^w22}
+  connect(fl.spin, spin_fl, sensors.spin_fl) {^w19}
+  connect(fr.spin, spin_fr, sensors.spin_fr) {^w20}
+  connect(rl.spin, spin_rl, sensors.spin_rl) {^w21}
+  connect(rr.spin, spin_rr, sensors.spin_rr) {^w22}
   connect(tau_fl, fl.tau_cmd) {^w23}
   connect(tau_fr, fr.tau_cmd) {^w24}
   connect(tau_rl, rl.tau_cmd) {^w25}
   connect(tau_rr, rr.tau_cmd) {^w26}
+  bus.vx = sensors.vx
+  bus.vy = sensors.vy
+  bus.r = sensors.r
+  bus.ax = sensors.ax
+  bus.ay = sensors.ay
+  bus.x = sensors.x
+  bus.y = sensors.y
+  bus.psi = sensors.psi
+  bus.beta = sensors.beta
+  bus.delta_sw = sensors.delta_sw
+  bus.kappa_fl = sensors.kappa_fl
+  bus.kappa_fr = sensors.kappa_fr
+  bus.kappa_rl = sensors.kappa_rl
+  bus.kappa_rr = sensors.kappa_rr
+  bus.alpha_fl = sensors.alpha_fl
+  bus.alpha_fr = sensors.alpha_fr
+  bus.alpha_rl = sensors.alpha_rl
+  bus.alpha_rr = sensors.alpha_rr
+  bus.omega_fl = sensors.omega_fl
+  bus.omega_fr = sensors.omega_fr
+  bus.omega_rl = sensors.omega_rl
+  bus.omega_rr = sensors.omega_rr
 metadata {
-  "Dyad": {"icons": {"default": "dyad://MultibodyComponents/FullCar.svg"}},
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/PlanarCar.svg"}},
   "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1570, "y1": 970, "x2": 1630, "y2": 1030}}}},
+    "sensors": {"Dyad": {"placement": {"diagram": {"x1": 1500, "y1": 500, "x2": 1700, "y2": 700}}}},
     "steering": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50}, "diagram": {"x1": 250, "y1": -30, "x2": 350, "y2": 70}}}},
-    "chassis": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 50, "x2": 1050, "y2": 150}, "diagram": {"x1": -30, "y1": 760, "x2": 30, "y2": 820}}}},
-    "wheel_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": -30, "y1": 370, "x2": 30, "y2": 430}}}},
-    "wheel_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 1370, "y1": 370, "x2": 1430, "y2": 430}}}},
-    "wheel_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": -30, "y1": 970, "x2": 30, "y2": 1030}}}},
-    "wheel_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 1370, "y1": 970, "x2": 1430, "y2": 1030}}}},
-    "spin_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}, "diagram": {"x1": -30, "y1": 520, "x2": 30, "y2": 580}}}},
-    "spin_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 1370, "y1": 520, "x2": 1430, "y2": 580}}}},
-    "spin_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": -30, "y1": 1120, "x2": 30, "y2": 1180}}}},
-    "spin_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 850, "x2": 1050, "y2": 950}, "diagram": {"x1": 1370, "y1": 1120, "x2": 1430, "y2": 1180}}}},
-    "tau_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"x1": -30, "y1": 440, "x2": 30, "y2": 500}}}},
-    "tau_fr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 350, "x2": 50, "y2": 450}, "diagram": {"x1": 1370, "y1": 440, "x2": 1430, "y2": 500, "rot": 180}}}},
-    "tau_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 550, "x2": 50, "y2": 650}, "diagram": {"x1": -30, "y1": 1040, "x2": 30, "y2": 1100}}}},
-    "tau_rr": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"x1": 1370, "y1": 1040, "x2": 1430, "y2": 1100, "rot": 180}}}},
+    "chassis": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"x1": -30, "y1": 760, "x2": 30, "y2": 820}}}},
+    "wheel_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 300, "x2": 50, "y2": 400}, "diagram": {"x1": -30, "y1": 370, "x2": 30, "y2": 430}}}},
+    "wheel_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 300, "x2": 1050, "y2": 400}, "diagram": {"x1": 1370, "y1": 370, "x2": 1430, "y2": 430}}}},
+    "wheel_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 800, "x2": 50, "y2": 900}, "diagram": {"x1": -30, "y1": 970, "x2": 30, "y2": 1030}}}},
+    "wheel_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 800, "x2": 1050, "y2": 900}, "diagram": {"x1": 1370, "y1": 970, "x2": 1430, "y2": 1030}}}},
+    "spin_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 200, "x2": 50, "y2": 300}, "diagram": {"x1": -30, "y1": 520, "x2": 30, "y2": 580}}}},
+    "spin_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 200, "x2": 1050, "y2": 300}, "diagram": {"x1": 1370, "y1": 520, "x2": 1430, "y2": 580}}}},
+    "spin_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 700, "x2": 50, "y2": 800}, "diagram": {"x1": -30, "y1": 1120, "x2": 30, "y2": 1180}}}},
+    "spin_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 700, "x2": 1050, "y2": 800}, "diagram": {"x1": 1370, "y1": 1120, "x2": 1430, "y2": 1180}}}},
+    "tau_fl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 100, "x2": 50, "y2": 200}, "diagram": {"x1": -30, "y1": 440, "x2": 30, "y2": 500}}}},
+    "tau_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 100, "x2": 1050, "y2": 200, "rot": 180}, "diagram": {"x1": 1370, "y1": 440, "x2": 1430, "y2": 500, "rot": 180}}}},
+    "tau_rl": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 600, "x2": 50, "y2": 700}, "diagram": {"x1": -30, "y1": 1040, "x2": 30, "y2": 1100}}}},
+    "tau_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 600, "x2": 1050, "y2": 700, "rot": 180}, "diagram": {"x1": 1370, "y1": 1040, "x2": 1430, "y2": 1100, "rot": 180}}}},
     "world": {"Dyad": {"placement": {"diagram": {"x1": 1150, "y1": 810, "x2": 1250, "y2": 910}}}},
     "body": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 810, "x2": 500, "y2": 910}}}},
     "tf": {"Dyad": {"placement": {"diagram": {"x1": 650, "y1": 660, "x2": 750, "y2": 760, "rot": 270}}}},
@@ -140,16 +172,16 @@ metadata {
     "fr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 500, "x2": 1200, "y2": 600}}}},
     "rl": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 1100, "x2": 200, "y2": 1200}}}},
     "rr": {"Dyad": {"placement": {"diagram": {"x1": 1300, "y1": 1100, "x2": 1200, "y2": 1200}}}},
-    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [{"x": 700, "y": 790}], "E": 5}], "junctions": [{"x": 700, "y": 860}]}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}, {"S": -1, "M": [{"x": 700, "y": 790}], "E": 5}, {"S": -1, "M": [], "E": 6}], "junctions": [{"x": 700, "y": 860}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 700, "y": 530}]}},
     "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 700, "y": 1130}]}},
     "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 240, "y": 400}], "E": 3}], "junctions": [{"x": 240, "y": 530}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 240, "y": 400}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 240, "y": 530}]}},
     "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 1160, "y": 400}], "E": 3}], "junctions": [{"x": 1160, "y": 530}]}},
-    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 240, "y": 1000}], "E": 3}], "junctions": [{"x": 240, "y": 1130}]}},
-    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 1160, "y": 1000}], "E": 3}], "junctions": [{"x": 1160, "y": 1130}]}},
-    "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 150}], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 1160, "y": 400}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 1160, "y": 530}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 240, "y": 1000}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 240, "y": 1130}]}},
+    "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 1160, "y": 1000}], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 1160, "y": 1130}]}},
+    "w10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 300, "y": 150}], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
     "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 720, "y": 150}], "E": 2}]}},
     "w12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 350, "y": 300}], "E": 2}]}},
     "w13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1050, "y": 300}], "E": 2}]}},
@@ -158,10 +190,10 @@ metadata {
     "w16": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 825, "y": 630}, {"x": 1170, "y": 630}, {"x": 1170, "y": 570}], "E": 2}]}},
     "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 775, "y": 1220}, {"x": 230, "y": 1220}, {"x": 230, "y": 1170}], "E": 2}]}},
     "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 825, "y": 1220}, {"x": 1170, "y": 1220}, {"x": 1170, "y": 1170}], "E": 2}]}},
-    "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
-    "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w19": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w21": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
+    "w22": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}, {"S": 1, "M": [], "E": 3}]}},
     "w23": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 470}], "E": 2}]}},
     "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 1250, "y": 470}], "E": 2}]}},
     "w25": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 150, "y": 1070}], "E": 2}]}},

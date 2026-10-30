@@ -94,9 +94,6 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
   push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; radius=radius, h_cg=h_cg, load_transfer=load_transfer, __overrides = car_overrides))
-  # Subcomponent sensors of type VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors
-  sensors_overrides = __pop_subcomponent_overrides!(__overrides, "sensors")
-  push!(__systems, @named sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(; radius=radius, __overrides = sensors_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -127,16 +124,6 @@ Passive planar car in the FMVSS 126 sine-with-dwell maneuver.
   ### Equations
   push!(__eqs, connect(steer.y, steering_robot.delta_sw_ref))
   push!(__eqs, connect(steering_robot.steering, car.steering))
-  push!(__eqs, connect(car.chassis, sensors.chassis))
-  push!(__eqs, connect(car.steering, sensors.steering))
-  push!(__eqs, connect(car.wheel_fl, sensors.wheel_fl))
-  push!(__eqs, connect(car.wheel_fr, sensors.wheel_fr))
-  push!(__eqs, connect(car.wheel_rl, sensors.wheel_rl))
-  push!(__eqs, connect(car.wheel_rr, sensors.wheel_rr))
-  push!(__eqs, connect(car.spin_fl, sensors.spin_fl))
-  push!(__eqs, connect(car.spin_fr, sensors.spin_fr))
-  push!(__eqs, connect(car.spin_rl, sensors.spin_rl))
-  push!(__eqs, connect(car.spin_rr, sensors.spin_rr))
   push!(__eqs, connect(zero.y, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr))
 
   # Return completely constructed System

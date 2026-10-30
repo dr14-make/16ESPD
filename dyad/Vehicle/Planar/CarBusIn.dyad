@@ -1,0 +1,56 @@
+"""
+The receiving end of `CarBus`: the same signals, as inputs. A control unit or an unpack block
+(`BusMotion`, `BusSlip`, `BusSlipAngle`, `BusWheelSpeed`) listens on one of these.
+"""
+connector CarBusIn
+  "Forward speed of the chassis, in the chassis frame [m/s]"
+  input vx::Real
+  "Lateral speed of the chassis, in the chassis frame [m/s]"
+  input vy::Real
+  "Yaw rate [rad/s]"
+  input r::Real
+  "Forward acceleration, in the chassis frame [m/s^2]"
+  input ax::Real
+  "Lateral acceleration, in the chassis frame [m/s^2]"
+  input ay::Real
+  "World x position of the chassis frame [m]"
+  input x::Real
+  "World y position of the chassis frame [m]"
+  input y::Real
+  "Yaw angle [rad]"
+  input psi::Real
+  "Body sideslip angle, atan(vy / max(vx, 1)) [rad]"
+  input beta::Real
+  "Steering-wheel angle [rad]"
+  input delta_sw::Real
+  "Longitudinal slip of the front-left wheel [-]"
+  input kappa_fl::Real
+  "Longitudinal slip of the front-right wheel [-]"
+  input kappa_fr::Real
+  "Longitudinal slip of the rear-left wheel [-]"
+  input kappa_rl::Real
+  "Longitudinal slip of the rear-right wheel [-]"
+  input kappa_rr::Real
+  "Slip angle of the front-left wheel [rad]"
+  input alpha_fl::Real
+  "Slip angle of the front-right wheel [rad]"
+  input alpha_fr::Real
+  "Slip angle of the rear-left wheel [rad]"
+  input alpha_rl::Real
+  "Slip angle of the rear-right wheel [rad]"
+  input alpha_rr::Real
+  "Spin speed of the front-left wheel [rad/s]"
+  input omega_fl::Real
+  "Spin speed of the front-right wheel [rad/s]"
+  input omega_fr::Real
+  "Spin speed of the rear-left wheel [rad/s]"
+  input omega_rl::Real
+  "Spin speed of the rear-right wheel [rad/s]"
+  input omega_rr::Real
+metadata {
+  "Dyad": {
+    "icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/CarBusIn.svg"},
+    "path": {"stroke": "#0277bd"}
+  }
+}
+end

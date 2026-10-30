@@ -1136,13 +1136,14 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      straight = RotationalComponents.Components.Fixed()
      flat = BlockComponents.Sources.Constant(k = 0.0)
      car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
-     sensors = VehicleSystemsComponents.Vehicle.Planar.PlanarCarSensors(radius = radius)
+     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion()
      roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m)
      split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade)
    relations
+     connect(car.bus, motion.bus)
      connect(trace.y, driver.u_s)
-     connect(sensors.vx, kmh.u)
-     connect(kmh.y, driver.u_m)
+     connect(motion.vx, kmh.u)
+     connect(kmh.y, driver.u_m, split.v)
      connect(no_ff.y, driver.u_ff)
      connect(drive.spline, differential.flange_b)
      connect(differential.flange_left, car.spin_fl)
@@ -1150,18 +1151,8 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      connect(drive.support, mount.spline)
      connect(car.steering, straight.spline)
      connect(flat.y, roadload.grade)
-     connect(car.chassis, roadload.chassis, sensors.chassis)
-     connect(car.steering, sensors.steering)
-     connect(car.wheel_fl, sensors.wheel_fl)
-     connect(car.wheel_fr, sensors.wheel_fr)
-     connect(car.wheel_rl, sensors.wheel_rl)
-     connect(car.wheel_rr, sensors.wheel_rr)
-     connect(car.spin_fl, sensors.spin_fl)
-     connect(car.spin_fr, sensors.spin_fr)
-     connect(car.spin_rl, sensors.spin_rl)
-     connect(car.spin_rr, sensors.spin_rr)
+     connect(car.chassis, roadload.chassis)
      connect(driver.y, split.tau_ref)
-     connect(kmh.y, split.v)
      connect(split.tau_motor, drive.tau_ref)
      connect(split.tau_brake, car.tau_fl, car.tau_fr)
      car.tau_rl = 0.0
@@ -1197,7 +1188,7 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
 
    :::
 
-   The last four `connect` lines are the driver's output split: the driver's torque and the car's speed go into `split`, `split.tau_motor` drives your `ElectricDrive`, and `split.tau_brake` goes to both front brakes. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
+   The last three `connect` lines are the driver's output split: the driver's torque goes into `split`, which also gets the car's speed from `kmh.y`, `split.tau_motor` drives your `ElectricDrive`, and `split.tau_brake` goes to both front brakes. The `initial` lines are the library bench's: the car starts at rest with its wheels turning 0.01 m/s ahead of it, because the tire model cannot start from exact zero slip.
 5. Click ▷ **Run Analysis → BEVWLTCTransient** once, then plot the speed against the trace, the battery and the machine:
 
    ```julia
@@ -1205,12 +1196,12 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
    r = MyCar.BEVWLTCTransient();
    plot(r; idxs = [r."trace.y", r."kmh.y"])
    plot(r; idxs = [r."drive.battery.i", r."drive.SoC", r."drive.converter.field"], layout = (3, 1))
-   r.sol[r."sensors.x"][end], r.sol[r."drive.SoC"][end]
+   r.sol[r."car.bus.x"][end], r.sol[r."drive.SoC"][end]
    ```
 
 ::: tip Expected result
 
-`kmh.y` lies on `trace.y` all the way: the worst gap is **1.63 km/h**, inside WLTP's ±2 km/h. `sensors.x` ends at **23 267 m**, the trace's 23 266 m, and at every stop the car stands still to a thousandth of a km/h, never backwards.
+`kmh.y` lies on `trace.y` all the way: the worst gap is **1.63 km/h**, inside WLTP's ±2 km/h. `car.bus.x` ends at **23 267 m**, the trace's 23 266 m, and at every stop the car stands still to a thousandth of a km/h, never backwards.
 
 `drive.battery.i` peaks at **138 A** (46 kW) in the Extra High phase and goes as low as **−86 A** (31 kW charging) under braking; between, the 300 W of auxiliaries draw 0.86 A. `drive.SoC` falls from **0.9** to **0.822**: 3.1 kWh of the 40. `drive.converter.field` is **1** below about 48 km/h and falls to **0.36** at the cycle's 131 km/h, where the machine turns 9260 rpm. The driver never asks for more than **117 N·m**, and the machine gives it at every speed to within 0.2 N·m.
 
@@ -1275,7 +1266,7 @@ Put a meter on every link of the chain and read the bill: **131.2 Wh/km** at the
 
 #### Given
 
-An energy meter is a state that integrates a power: `der(E_road) = roadload.F * sensors.vx` starts at 0 and holds the joules the road load has taken so far. One meter per link:
+An energy meter is a state that integrates a power: `der(E_road) = roadload.F * car.bus.vx` starts at 0 and holds the joules the road load has taken so far. One meter per link:
 
 | Meter | Power | Link |
 | --- | --- | --- |
@@ -1286,7 +1277,7 @@ An energy meter is a state that integrates a power: `der(E_road) = roadload.F * 
 | `E_conv` | `converter.P_loss` | the converter |
 | `E_motor` | `machine.P_loss` | the machine |
 | `E_shaft_out`, `E_shaft_in` | positive and negative parts of `machine.P_mech` | traction into the reduction, and braking taken back through it |
-| `E_road` | `roadload.F * sensors.vx` | drag and rolling resistance |
+| `E_road` | `roadload.F * car.bus.vx` | drag and rolling resistance |
 | `E_brake` | brake torque × wheel speed, four wheels | the friction brakes |
 | `E_tire` | tire force × slip speed, four wheels | tire slip |
 
@@ -1356,7 +1347,7 @@ Each meter is a state, not a sum over the plotted points afterwards: the solver 
      der(E_motor) = drive.machine.P_loss
      der(E_shaft_out) = max(P_shaft, 0.0)
      der(E_shaft_in) = max(-P_shaft, 0.0)
-     der(E_road) = roadload.F * sensors.vx
+     der(E_road) = roadload.F * car.bus.vx
      der(E_brake) = car.fl.brake.tau_friction * car.fl.brake.w + car.fr.brake.tau_friction * car.fr.brake.w + car.rl.brake.tau_friction * car.rl.brake.w + car.rr.brake.tau_friction * car.rr.brake.w
      der(E_tire) = car.fl.joint.f_long * car.fl.joint.v_slip_long + car.fl.joint.f_lat * car.fl.joint.v_slip_lat + car.fr.joint.f_long * car.fr.joint.v_slip_long + car.fr.joint.f_lat * car.fr.joint.v_slip_lat + car.rl.joint.f_long * car.rl.joint.v_slip_long + car.rl.joint.f_lat * car.rl.joint.v_slip_lat + car.rr.joint.f_long * car.rr.joint.v_slip_long + car.rr.joint.f_lat * car.rr.joint.v_slip_lat
      E_kin = 0.5 * m * (car.body.v[1] ^ 2 + car.body.v[2] ^ 2) + 0.5 * car.Iz * car.body.w ^ 2 + 0.5 * car.J * (car.fl.inertia.w ^ 2 + car.fr.inertia.w ^ 2 + car.rl.inertia.w ^ 2 + car.rr.inertia.w ^ 2) + 0.5 * drive.machine.J * drive.machine.rotor.w ^ 2 + 0.5 * drive.machine.L * drive.machine.inductor.i ^ 2
@@ -1391,7 +1382,7 @@ Each meter is a state, not a sum over the plotted points afterwards: the solver 
 
    ```julia
    r = MyCar.BEVEnergyBillTransient();
-   km = r.sol[r."sensors.x"][end] / 1000
+   km = r.sol[r."car.bus.x"][end] / 1000
    kWh(x) = r.sol[x][end] / 3.6e6
    links = ["road load" => r."E_road", "machine" => r."E_motor", "auxiliaries" => r."E_aux",
        "battery R0" => r."E_R0", "converter" => r."E_conv", "tire slip" => r."E_tire",

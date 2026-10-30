@@ -1,0 +1,28 @@
+"""The four wheel slip angles from the car's bus, as plain signals."""
+component BusSlipAngle
+  "The car's measurement bus"
+  bus = VehicleSystemsComponents.Vehicle.Planar.CarBusIn() {^bus}
+  "Slip angle of the front-left wheel [rad]"
+  alpha_fl = RealOutput() {^alpha_fl}
+  "Slip angle of the front-right wheel [rad]"
+  alpha_fr = RealOutput() {^alpha_fr}
+  "Slip angle of the rear-left wheel [rad]"
+  alpha_rl = RealOutput() {^alpha_rl}
+  "Slip angle of the rear-right wheel [rad]"
+  alpha_rr = RealOutput() {^alpha_rr}
+relations
+  alpha_fl = bus.alpha_fl
+  alpha_fr = bus.alpha_fr
+  alpha_rl = bus.alpha_rl
+  alpha_rr = bus.alpha_rr
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Planar/BusSlipAngle.svg"}},
+  "_links": {
+    "bus": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+    "alpha_fl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+    "alpha_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}}}},
+    "alpha_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}}}},
+    "alpha_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}}}}
+  }
+}
+end
