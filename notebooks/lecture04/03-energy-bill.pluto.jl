@@ -191,8 +191,8 @@ let
 
     Braking returned **$(pct(E.shaft_in, E.shaft_out)) %** of the traction energy to the shaft,
     and **$(pct(E.dc_in, E.shaft_in)) %** of that reached the battery: the battery got back
-    **$(pct(E.dc_in, E.shaft_out)) %** of the traction energy, against the plan's 18–22 %,
-    derived from Boretti's UDDS efficiencies. The links sum to the cells' energy within
+    **$(pct(E.dc_in, E.shaft_out)) %** of the traction energy, against the plan's 18–25 %,
+    derived from Boretti's UDDS efficiencies and an ideal reduction. The links sum to the cells' energy within
     **$(round(abs(links - E.cells) / E.cells; sigdigits = 2))** of it. The plan's band for the
     DC consumption is 120–155 Wh/km.
     """
