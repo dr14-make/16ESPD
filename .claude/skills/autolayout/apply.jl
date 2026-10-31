@@ -1,6 +1,6 @@
 # Set `_links` entries of one component in a .dyad file from a JSON spec, keeping every other byte.
 #
-# Usage: julia apply.jl <file.dyad> <Component> <spec.json>
+# Usage: julia +dyad-3.5.0 apply.jl <file.dyad> <Component> <spec.json>
 #
 # The spec maps a tag to its new value, e.g.
 #   {"engine": {"Dyad": {"placement": {"diagram": {"x1": 105, "y1": 35, "x2": 185, "y2": 115}}}},

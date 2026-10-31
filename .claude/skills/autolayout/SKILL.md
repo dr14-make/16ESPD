@@ -36,31 +36,36 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    `K=.claude/skills/autolayout` and an absolute PNG path in your scratchpad:
    ```sh
    $K/render.sh <Lib.A.B.Name> <scratchpad>/before.png      # also writes before.svg
-   julia $K/check.jl <file.dyad> <Name> <scratchpad>/before.svg
+   julia +dyad-3.5.0 $K/check.jl <file.dyad> <Name> <scratchpad>/before.svg
    ```
-   The `.jl` scripts run on Dyad's own Julia, which bundles their JSON and OrderedCollections; run
-   them without `--project`, so the bundled copies load.
+   Run the `.jl` scripts with Dyad's own Julia channel (`julia +dyad-3.5.0`, the one HANDOVER names),
+   which bundles their JSON and OrderedCollections, and without `--project`, so the bundled copies
+   load.
    This renders the file as it is on disk, uncommitted edits included, from the checkout `render.sh`
    sits in; set `DYAD_ROOT` to render another worktree. `check.jl` lists diagonals, crossings,
-   overlapping wires, wires through blocks or labels, anything outside the outline, labels turned
+   overlapping wires, wires from one port that split with no junction dot (`branch`), wires through
+   blocks or labels, labels over another block, anything outside the outline, labels turned
    sideways or mirrored, placements written inline, `dead` entries no `{^tag}` points to,
    `unplaced` parts with no entry, and boxes not shaped like their library icon (`aspect`). It
-   checks parts inherited through `extends` with the diagram, and names a base outside the library in a `note`. Its exit status is the problem
-   count. Read the PNG too, for what a script can't judge: flow, lanes, empty
-   canvas, a wire looping around its target, and labels drawn above a block. At the default size, PNG
-   pixel = diagram coordinate + 200. A child's port positions are in the child's own file, but the
-   exact point a wire meets (a `Constant` output sits at x2 + 4, not x2) is the end of its SVG path.
-   Two faults are the renderer's, not the layout's: a signal port's triangle draws at a fifth of
-   its box, so the wire seems to stop short of it, and some library icons (`VelocitySource`) draw
-   blank because inlined icons share ids.
+   checks parts inherited through `extends` with the diagram, and names a base outside the library
+   in a `note`. Its exit status is the problem count. Read the PNG too, for what the script leaves
+   to the eye: flow, lanes, empty canvas, a wire looping around its target, labels drawn above a
+   block, labels closer than rule 9 allows, and custom `labels`. At the default size, PNG pixel =
+   diagram coordinate + 200. A child's port positions are in the child's own file, but a library
+   port draws about 5 % of the box outside it (a `Constant` output at x2 + 4 on an 80-wide box),
+   so the exact point a wire meets is the end of its SVG path. Faults that are the renderer's, not
+   the layout's: a signal port's triangle draws at a fifth of its box, so the wire seems to stop
+   short of it; some library icons (`VelocitySource`) draw blank because inlined icons share ids;
+   and a `MissingResource` error for an uncached library icon, which `render.sh` passes over as
+   long as the SVG came out.
 
    For the user to watch, start `npx -y @juliacomputing/dyad-cli@3.5.0 view diagram <Lib.A.B.Name>
    -d . --no-open` in the background and give them the URL it prints. It serves the same drawing,
    redraws on every save, and lists the renderer's own warnings below it.
 
 3. **Edit the `_links` entries** to fix every item. Write the new values as a JSON spec
-   (`{"tag": <new value>}`) and run `julia $K/apply.jl <file.dyad> <Name> <spec.json>`. It replaces
-   one-line entries and adds tags that have none yet. Syntax and its traps: [Metadata](#metadata).
+   (`{"tag": <new value>}`) and run `julia +dyad-3.5.0 $K/apply.jl <file.dyad> <Name> <spec.json>`.
+   It replaces one-line entries and adds tags that have none yet. Syntax and its traps: [Metadata](#metadata).
 
    For a diagram with no layout yet, `dyad layout` (dyad-cli 3.5.0) can draft one:
    `npx -y @juliacomputing/dyad-cli@3.5.0 layout -d . <Lib.A.B.Name> --dry-run --render draft.svg`.
@@ -68,7 +73,8 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    it often leaves connections unrouted and then writes nothing; it stops with `unreachable` on some
    components that use `extends`; and when it does write, it writes inline annotations. To use a
    draft, copy the file aside, run it without `--dry-run`, carry the placements it wrote into a spec,
-   copy the original back, and apply the spec.
+   copy the original back, and apply the spec. Skip it on a wide bench with buses or many lanes,
+   and lay that out by hand: there it leaves dozens of crossings and unrouted connections.
 
 4. **Prove it metadata-only:** `$K/metadata-only.sh <base> <file.dyad>` is silent and exits 0 when only
    `metadata` and `{^tag}`s changed; anything else prints a diff.
@@ -114,7 +120,10 @@ layout you could not render is **unseen**; say so.
    the same two blocks; when two port pairs run in the same rotational order on both blocks; or when a
    child's port faces away from its partner across another lane; or when parts tie two nets across
    a block whose ports alternate between them. Before naming one, try moving a block with a single
-   wire inside the loop it would cross.
+   wire inside the loop it would cross. When a port is enclosed by other wires, count the fewest
+   crossings any route to it needs: one is a named exception; two or more on one wire, or one on
+   each of several wires into the same block, means the port sits on the wrong side. Propose
+   moving it on the child's icon, a structural change for step 1, rather than routing around it.
 8. **Readability first, then shared coordinates.** Benches that build on each other keep shared blocks
    at the same coordinates so successive slide shots line up, unless that costs readability. When it
    does, move the blocks and name the sibling benches whose shots no longer line up. Lay siblings

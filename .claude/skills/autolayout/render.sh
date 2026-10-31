@@ -12,8 +12,18 @@ root=${DYAD_ROOT:-$(git -C "$(dirname "$(realpath "$0")")" rev-parse --show-topl
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
-npx -y "$cli" render -d "$root" "$comp" | sed -n '/<svg /,$p' > "$tmp/d.svg"
+# dyad-cli exits 1 on a `MissingResource` for a library icon it has not cached, yet still draws the
+# whole SVG; any other error fails the render.
+status=0
+npx -y "$cli" render -d "$root" "$comp" > "$tmp/out" 2> "$tmp/err" || status=$?
+cat "$tmp/err" >&2
+sed -n '/<svg /,$p' "$tmp/out" > "$tmp/d.svg"
 [[ -s $tmp/d.svg ]] || { echo "render.sh: dyad-cli produced no SVG for $comp" >&2; exit 1; }
+errors=$(grep '^Error:' "$tmp/err" || true)
+if ((status)) && { [[ -z $errors ]] || grep -qv 'MissingResource' <<<"$errors"; }; then
+  echo "render.sh: dyad-cli exited $status for $comp" >&2
+  exit "$status"
+fi
 cp "$tmp/d.svg" "${out%.png}.svg"
 
 # Padding keeps ports and wires drawn outside the 1000x1000 outline in frame.
