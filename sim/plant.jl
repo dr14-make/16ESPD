@@ -1,6 +1,6 @@
 # `PlanarBEVDrive` assembled in Julia from the library's compiled components, wiring for wiring as
-# dyad/Vehicle/Planar/PlanarBEVDrive.dyad declares it. Once that file compiles, `drive_model`
-# becomes `VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive`.
+# dyad/Vehicle/Planar/PlanarBEVDrive.dyad declares it. The sim runs this copy; moving it to the
+# compiled component is open in sim/HANDOFF.md.
 using VehicleSystemsComponents, ModelingToolkit
 using ModelingToolkit: t_nounits as t
 using BlockComponents, RotationalComponents, MultibodyComponents

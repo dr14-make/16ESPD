@@ -13,7 +13,7 @@ include(joinpath(@__DIR__, "DualSense.jl"))
 using .DualSense
 using GLMakie
 using OrdinaryDiffEqDefault: Rodas5P, init, step!
-using SymbolicIndexingInterface: setp, getu
+using SymbolicIndexingInterface: setp, getp, getu
 
 const SURFACES = [
     ("dry", (1.0, 1.0, 1.0, 1.0)),
@@ -23,7 +23,6 @@ const SURFACES = [
 ]
 const SURFACE_LEDS = (0b00100, 0b01010, 0b10101, 0b11011)
 
-const A, B, TW, I_S = 1.2, 1.5, 1.55, 16.0
 const PEAK_KAPPA, PEAK_ALPHA = 0.12, 0.12
 const FRAME = 1 / 60
 
@@ -32,6 +31,10 @@ println("compiling the car…")
 const SYS = simplify_model(model)
 const PROB = ODEProblem(SYS, [], (0.0, 1e7))
 new_integrator() = init(PROB, Rodas5P(); dtmax = 0.005, save_everystep = false)
+
+const A, B, TW, I_S, M_CAR, R_WHEEL, T_FULL, RATIO = Float64.(getp(SYS, [
+    SYS.car.a, SYS.car.b, SYS.car.tw, SYS.car.i_s,
+    SYS.car.m, SYS.car.radius, SYS.car.tau_max, SYS.blend.ratio])(PROB))
 
 const set_throttle! = setp(SYS, SYS.throttle_pedal.k)
 const set_brake! = setp(SYS, SYS.brake_pedal.k)
@@ -75,9 +78,8 @@ Controls() = Controls(0, 0, 0, true, true, 1, false, FULL_LOCK, 2)
 # request, so lift-off regen is a light brake-pedal value the machine takes first. D is derived from
 # Argonne's 2013 Leaf coast-down; e-Pedal's 0.2 g is Nissan's figure (research note in #155).
 const DRIVE_MODES = (("N (coast)", 0.0), ("D", 0.025), ("e-Pedal", 0.2))
-const M_CAR, R_WHEEL, T_FULL = 1500.0, 0.31, 2500.0
+# A full brake pedal asks T_FULL (`car.tau_max`) of every wheel.
 liftoff_brake(g_decel) = M_CAR * 9.81 * g_decel * R_WHEEL / (4 * T_FULL)
-const RATIO = 8.193
 
 # 1.5 turns lock to lock each way, about 34° at the road wheel through the 16:1 column.
 const FULL_LOCK = 9.6
@@ -90,34 +92,62 @@ adjust_lock!(c::Controls, dir) = (c.lock = clamp(c.lock * 1.15^dir, LOCK_RANGE..
 # Less lock as speed builds, so the stick stays drivable on a motorway.
 max_steer(c::Controls, speed) = c.lock / (1 + max(speed, 0.0) / 45)
 
-function apply!(integ, c::Controls, speed)
+# ESP, ABS and surface as last set on the integrator; `surface == 0` means none set yet.
+mutable struct Applied
+    esp::Bool
+    abs::Bool
+    surface::Int
+end
+
+Applied() = Applied(false, false, 0)
+
+function apply!(integ, c::Controls, speed, applied::Applied)
     max_sw = max_steer(c, speed)
     set_throttle!(integ, c.throttle)
     liftoff = c.throttle < 0.02 ? liftoff_brake(DRIVE_MODES[c.mode][2]) : 0.0
     set_brake!(integ, max(c.brake, liftoff))
     set_steer!(integ, c.steer * max_sw)
-    set_esp!(integ, c.esp ? 1.0 : 0.0)
-    set_abs!(integ, c.abs ? 1.0 : 0.0)
-    set_mu!(integ, collect(SURFACES[c.surface][2]))
+    fresh = applied.surface == 0
+    if fresh || applied.esp != c.esp
+        set_esp!(integ, c.esp ? 1.0 : 0.0)
+        applied.esp = c.esp
+    end
+    if fresh || applied.abs != c.abs
+        set_abs!(integ, c.abs ? 1.0 : 0.0)
+        applied.abs = c.abs
+    end
+    if applied.surface != c.surface
+        set_mu!(integ, SURFACES[c.surface][2])
+        applied.surface = c.surface
+    end
 end
 
-# Grip used, 0 rolling freely .. 1 at the tire's peak and beyond.
-grip(s, w) = clamp(max(abs(getfield(s, Symbol(:k, w))) / PEAK_KAPPA,
-                       abs(getfield(s, Symbol(:a, w))) / PEAK_ALPHA), 0.0, 1.5)
+# Grip used per wheel (FL, FR, RL, RR), 0 rolling freely .. 1 at the tire's peak and beyond.
+grips(s) = map((k, a) -> clamp(max(abs(k) / PEAK_KAPPA, abs(a) / PEAK_ALPHA), 0.0, 1.5),
+               (s.kfl, s.kfr, s.krl, s.krr), (s.afl, s.afr, s.arl, s.arr))
 
 abs_cycling(s, c) = c.abs && s.demand > 100 &&
-    any(getfield(s, Symbol(:t, w)) < 0.85 * s.demand for w in (:fl, :fr, :rl, :rr))
+    any(<(0.85 * s.demand), (s.tfl, s.tfr, s.trl, s.trr))
 esp_braking(s, c) = c.esp && s.esp > 50
 
-function haptics!(pad, s, c, clock)
-    spin = max(abs(s.kfl), abs(s.kfr)) / PEAK_KAPPA
-    slide = maximum(grip(s, w) for w in (:fl, :fr, :rl, :rr))
-    road = abs(s.vx) > 0.5 ? 0.03 + 0.05 * min(abs(s.vx) / 30, 1.0) : 0.0
-    abs_on = abs_cycling(s, c)
-    rumble!(pad; low = clamp(0.8 * (slide - 0.85), 0.0, 0.7) + (abs_on ? 0.25 : 0.0),
-            high = road + (abs_on ? 0.35 : 0.0))
-    trigger!(pad, :left, abs_on ? Vibration(2, 1.0, 25) : Feedback(2, 0.35))
-    trigger!(pad, :right, spin > 1.0 && c.throttle > 0.1 ? Vibration(3, 0.7, 40) : Feedback(1, 0.12))
+# Sets the pad's feedback for this frame without sending it. Paused, the motors and triggers rest
+# and only the lights show state.
+function feedback!(pad, s, c, clock)
+    if c.paused
+        rumble!(pad)
+        trigger!(pad, :left, TriggerOff())
+        trigger!(pad, :right, TriggerOff())
+    else
+        spin = max(abs(s.kfl), abs(s.kfr)) / PEAK_KAPPA
+        slide = maximum(grips(s))
+        road = abs(s.vx) > 0.5 ? 0.03 + 0.05 * min(abs(s.vx) / 30, 1.0) : 0.0
+        abs_on = abs_cycling(s, c)
+        rumble!(pad; low = clamp(0.8 * (slide - 0.85), 0.0, 0.7) + (abs_on ? 0.25 : 0.0),
+                high = road + (abs_on ? 0.35 : 0.0))
+        trigger!(pad, :left, abs_on ? Vibration(2, 1.0, 25) : Feedback(2, 0.35))
+        trigger!(pad, :right,
+                 spin > 1.0 && c.throttle > 0.1 ? Vibration(3, 0.7, 40) : Feedback(1, 0.12))
+    end
     if esp_braking(s, c)
         isodd(floor(Int, 8clock)) ? lightbar!(pad, 1.0, 0.45, 0.0) : lightbar!(pad, 0.0, 0.0, 0.0)
     elseif !c.esp
@@ -126,8 +156,10 @@ function haptics!(pad, s, c, clock)
         lightbar!(pad, 0.0, 0.3, 0.05)
     end
     player_leds!(pad, SURFACE_LEDS[c.surface])
-    send!(pad)
+    return pad
 end
+
+haptics!(pad, s, c, clock) = send!(feedback!(pad, s, c, clock))
 
 # Keyboard: analog pedals and wheel are ramped so a key press is not a step.
 ramp(x, target, rate, dt) = x + clamp(target - x, -rate * dt, rate * dt)
@@ -170,22 +202,26 @@ end
 bar(x) = (n = round(Int, 12clamp(x, 0, 1)); "█"^n * "░"^(12 - n))
 
 # A scripted drive through launch, slalom and a full stop compiles the solver's paths (ABS and ESP
-# included) before the window opens; once per Julia session.
+# included) before the window opens; once per Julia session. The pad's feedback is computed but
+# not sent, then one quiet report goes out, so the controller stays still while the window opens.
 const WARMED = Ref(false)
 function warm_up!(pad)
     println("warming up the solver…")
     controls = Controls()
     integ = new_integrator()
+    applied = Applied()
     for k in 1:600
         tm = k * FRAME
         controls.throttle, controls.brake, controls.steer =
             tm < 4 ? (1.0, 0.0, 0.0) : tm < 7 ? (0.3, 0.0, sin(3tm)) : (0.0, 1.0, 0.0)
-        apply!(integ, controls, 10.0)
+        apply!(integ, controls, 10.0, applied)
         step!(integ, FRAME, true)
         s = snapshot(integ)
         car_shapes(s)
-        pad === nothing || haptics!(pad, s, controls, tm)
+        map(grip_color, grips(s))
+        pad === nothing || feedback!(pad, s, controls, tm)
     end
+    pad === nothing || quiet!(pad)
     WARMED[] = true
 end
 
@@ -200,8 +236,13 @@ function main()
     end
 
     controls = Controls()
-    WARMED[] || warm_up!(pad)
+    if !WARMED[]
+        warm_up!(pad)
+    elseif pad !== nothing
+        quiet!(pad)
+    end
     integ = new_integrator()
+    applied = Applied()
 
     GLMakie.activate!(; title = "VehicleSystemsComponents — planar BEV", vsync = false)
     fig = Figure(size = (1500, 900), backgroundcolor = RGBf(0.93, 0.93, 0.9))
@@ -209,8 +250,8 @@ function main()
               xlabel = "x [m]", ylabel = "y [m]")
     course!(ax)
 
-    s0 = snapshot(integ)
-    body0, wheels0 = car_shapes(s0)
+    s = snapshot(integ)
+    body0, wheels0 = car_shapes(s)
     trail = Observable(Point2f[])
     skids = Observable(Point2f[])
     body = Observable(body0)
@@ -281,6 +322,11 @@ function main()
                 key == Keyboard.right_bracket && adjust_lock!(controls, 1)
             end
             empty!(pressed)
+            # A key released while another window has focus never reports its release.
+            if !events(fig).hasfocus[]
+                empty!(held)
+                kb = (throttle = 0.0, brake = 0.0, steer = 0.0)
+            end
             up = Keyboard.w in held || Keyboard.up in held
             down = Keyboard.s in held || Keyboard.down in held
             left = Keyboard.a in held || Keyboard.left in held
@@ -315,37 +361,38 @@ function main()
 
             if reset
                 integ = new_integrator()
+                applied = Applied()
+                s = snapshot(integ)
                 trail[] = Point2f[]
                 skids[] = Point2f[]
             end
 
-            s = snapshot(integ)
             work = @elapsed if !controls.paused
-                apply!(integ, controls, s.vx)
+                apply!(integ, controls, s.vx, applied)
                 step!(integ, dt, true)
                 if !(string(integ.sol.retcode) in ("Default", "Success"))
                     @warn "solver stopped ($(integ.sol.retcode)); resetting the car"
                     integ = new_integrator()
+                    applied = Applied()
                 end
                 sim_time_acc += dt
             end
             wall_acc += dt
             work_ms = 0.9work_ms + 0.1 * 1000work
             s = snapshot(integ)
+            g = grips(s)
 
             b, ws = car_shapes(s)
             body[] = b
             wheels[] = ws
-            wheel_colors[] = [grip_color(grip(s, w)) for w in (:fl, :fr, :rl, :rr)]
+            wheel_colors[] = collect(map(grip_color, g))
             step_count += 1
             if !controls.paused && step_count % 3 == 0
                 push!(trail[], Point2f(s.x, s.y))
                 length(trail[]) > 1500 && popfirst!(trail[])
                 notify(trail)
-                for (w, poly) in zip((:fl, :fr, :rl, :rr), ws)
-                    if grip(s, w) >= 1.0
-                        push!(skids[], sum(poly) / 4)
-                    end
+                for (gw, poly) in zip(g, ws)
+                    gw >= 1.0 && push!(skids[], sum(poly) / 4)
                 end
                 length(skids[]) > 6000 && deleteat!(skids[], 1:length(skids[])-6000)
                 notify(skids)

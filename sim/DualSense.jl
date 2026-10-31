@@ -12,18 +12,21 @@ Any other controller SDL recognizes still gives input, rumble and, where it has 
 light; trigger effects and player LEDs do nothing on it.
 
 The pad never reads or writes on its own: `poll!` reads the current input and `send!` writes the
-accumulated feedback once. The caller owns the clock.
+accumulated feedback once. The caller owns the clock. A DualSense keeps its last motor and trigger
+settings with no timeout: `quiet!` stops them, and `close` and Julia's exit do the same for every
+pad still open.
 """
 module DualSense
 
 using SimpleDirectMediaLayer.LibSDL2
 
-export Pad, PadState, open_pad, poll!, send!, rumble!, trigger!, lightbar!, player_leds!
+export Pad, PadState, open_pad, poll!, send!, quiet!, rumble!, trigger!, lightbar!, player_leds!
 export TriggerOff, Rigid, Section, Feedback, Vibration
 
 const EFFECT_LEN = 47
 
-# Longer than any frame, so motors stop by themselves if the caller stops sending.
+# Non-DualSense pads only: `SDL_GameControllerRumble` stops the motors by itself this long after
+# the last call, longer than any frame. The DualSense effect block has no such timeout.
 const RUMBLE_MS = 250
 
 """Trigger effect: no resistance."""
@@ -131,6 +134,9 @@ sdl_error() = unsafe_string(SDL_GetError())
 
 is_dualsense(index) = SDL_GameControllerTypeForIndex(index) == SDL_CONTROLLER_TYPE_PS5
 
+const OPEN_PADS = Set{Pad}()
+const EXIT_HOOK = Ref(false)
+
 """
     open_pad(index = nothing) -> Pad
 
@@ -154,21 +160,37 @@ function open_pad(index::Union{Nothing,Integer} = nothing)
     pad = Pad(gc, path, SDL_GameControllerGetType(gc) == SDL_CONTROLLER_TYPE_PS5, neutral,
               0, 0, TriggerOff(), TriggerOff(), (0, 0, 64), 0b00100, zeros(UInt8, EFFECT_LEN), 0)
     finalizer(close, pad)
+    push!(OPEN_PADS, pad)
+    if !EXIT_HOOK[]
+        # A hard Ctrl-C can skip the caller's `finally`; exit hooks still run.
+        atexit(() -> foreach(close, collect(OPEN_PADS)))
+        EXIT_HOOK[] = true
+    end
     return pad
 end
 
 function Base.close(pad::Pad)
     pad.gc == C_NULL && return
-    pad.motor_low = pad.motor_high = 0
-    pad.left = pad.right = TriggerOff()
+    delete!(OPEN_PADS, pad)
     pad.players = 0
     try
-        send!(pad)
+        quiet!(pad)
     catch
     end
     SDL_GameControllerClose(pad.gc)
     pad.gc = C_NULL
     return
+end
+
+"""
+    quiet!(pad)
+
+Stop the motors and release both triggers, keeping the lightbar and player LEDs, and send it now.
+"""
+function quiet!(pad::Pad)
+    pad.motor_low = pad.motor_high = 0
+    pad.left = pad.right = TriggerOff()
+    return send!(pad)
 end
 
 """

@@ -28,6 +28,7 @@ end
 frame = 1 / 60
 function run(stop)
     worst = 0.0
+    next_print = 2 * (floor(integ.t / 2) + 1)
     wall = @elapsed while integ.t < stop
         th, br, st = driver(integ.t)
         set_throttle!(integ, th)
@@ -35,7 +36,8 @@ function run(stop)
         set_steer!(integ, st)
         f = @elapsed step!(integ, frame, true)
         worst = max(worst, f)
-        if isapprox(integ.t % 2, 0; atol = frame / 2)
+        if integ.t >= next_print - frame / 2
+            next_print += 2
             println("t=$(round(integ.t, digits = 1))  v=$(round(3.6speed(integ), digits = 1)) km/h  ",
                     "r=$(round(yaw(integ), digits = 2))  tau=$(round.(Int, torques(integ)))")
         end

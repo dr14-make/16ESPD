@@ -12,7 +12,7 @@ resolves it).
 | File | Role |
 |---|---|
 | `plant.jl` | `drive_model()`: the car wired from compiled library components (`PlanarCar`, `ElectricDrive` on the front axle via `DifferentialGear`, `RegenBlend`, `BrakeControlUnit`, `PlanarRoadLoad`). Driver commands are `Constant` sources whose `k` the loop sets. |
-| `drive.jl` | The real-time loop and window: steps the integrator in wall-clock slices, reads the pad and keyboard, draws, sends haptics. |
+| `drive.jl` | The real-time loop and window: steps the integrator in wall-clock slices, reads the pad and keyboard, draws, sends haptics. Car geometry, mass, brake torque and gear ratio are read from the compiled model's parameters. |
 | `DualSense.jl` | DualSense driver over SDL2 on Linux, macOS and Windows: input, rumble, adaptive triggers, lightbar, player LEDs, USB and Bluetooth. Other controllers SDL knows give input, rumble and light. |
 | `probe.jl` | Walks a connected pad through every input and feedback channel; run it first on a new machine. |
 | `bench_realtime.jl` | Headless timing under a scripted drive; the real-time check. |
@@ -39,6 +39,9 @@ script does.
 `sim/`'s environment instantiated (`julia +dyad-3.5.0 --project=sim -e 'using Pkg; Pkg.instantiate()'`,
 about 5 minutes for GLMakie).
 
+Verified only with a USB DualSense on Linux. Bluetooth, macOS, Windows and non-DualSense
+controllers are implemented but untested.
+
 On Linux, SDL drives the DualSense's effects only through its `/dev/hidraw*` node; without
 read-write access there (desktop sessions usually grant it to the seat user) SDL falls back to
 evdev, input still works, and `probe.jl` reports the refused feedback sends.
@@ -62,6 +65,12 @@ If one of these moves, something changed the physics; find out what before conti
   algebraic variable jump at an instant the solver has no event for.
 - **Device I/O never runs inside the equations** (same reason as ADR-0004): the loop polls the pad
   and sends one feedback report per frame.
+- **The pad is quiet whenever the sim is not driving it.** A DualSense keeps its last motor and
+  trigger bytes with no timeout, so warm-up computes the haptics without sending them and ends with
+  one quiet report, pause sends no rumble or trigger effect (the lightbar and player LEDs still show
+  state), and `close`, plus an exit hook for a hard Ctrl-C, zeroes every open pad.
+- **ESP, ABS and road surface are set on the integrator only when they change**; throttle, brake
+  and steering every frame.
 - **SDL for transport, our own effect block**: SDL2 (`SimpleDirectMediaLayer`) reads input and
   frames output for USB and Bluetooth on all three OSes. No library encodes the adaptive triggers,
   so `DualSense.jl` fills the 47-byte DualSense effect block itself and hands it to

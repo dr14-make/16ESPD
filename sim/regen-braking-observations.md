@@ -104,13 +104,13 @@ exists.
 2. **Drag area.** Published `Cd` and frontal area for the Leaf ZE1, giving `CdA`; compare with the
    model's 0.63 m².
 3. **Rolling resistance.** A sourced range for passenger-car `f_r` on dry asphalt, and for the
-   Leaf's OEM tyres if published (EU tyre-label rolling-resistance class); compare with 0.012.
+   Leaf's OEM tires if published (EU tire-label rolling-resistance class); compare with 0.012.
 4. **Coast-down times.** From the published A, B, C, integrate the coast-down time 100 → 60 km/h and
    100 → 20 km/h with the test mass (EPA ETW), and compare with the model's time over the same speeds
    (`sim/check_coast_brake.jl`, extended to coast longer). This gives one number per case that
    either agrees or does not.
 5. **Mass and inertia.** The model uses 1500 kg plus four wheels at 1 kg·m². Compare with the Leaf's
-   curb mass, the EPA test weight, and a sourced wheel-and-tyre inertia; note how much each changes
+   curb mass, the EPA test weight, and a sourced wheel-and-tire inertia; note how much each changes
    the coast-down.
 
 ### Lift-off regeneration and braking
