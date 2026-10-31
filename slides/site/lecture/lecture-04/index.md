@@ -18,12 +18,60 @@ From a DC-equivalent machine on a test bench to a Leaf-class car on the WLTC and
 
 Every number in an expected result is a test expectation or a measured run of the reference model.
 
+- [00 · Set up: the course library](#step-00)
 - [01 · The machine: T = KΦI, E = KΦω](#step-01)
 - [02 · The converter: V_out = d·V_in, and field weakening](#step-02)
 - [03 · The battery: V = E − I·R](#step-03)
 - [04 · The car: machine → 8.193 → differential → front wheels](#step-04)
 - [05 · Regen blended onto the Lecture 3 brakes](#step-05)
 - [06 · The WLTC energy bill](#step-06)
+
+## 00 Set up
+
+### 00 · Set up: the course library {#step-00}
+
+Today's parts, `Vehicle › Electric` with `AuxLoad` and `TorqueSplit`, the planar WLTC car with its road load, and the reference answers in `HandsOn04`, are in the course library from Lecture 4 on. Your `MyCar` needs that version, and two packages your own code names: `ElectricalComponents` for the circuits and `MultibodyComponents` for the differential.
+
+::: details No MyCar of your own, or yours does not compile? Start from the course's.
+
+Today uses nothing you built before: every step adds new components, and the car, the cycle and Lecture 3's brakes come from the course library. The course's `MyCar` repository has a start for it at the tag `lecture-04-start`: hands-on 1's car on Dyad 3.5, with nothing of Lecture 3 or today. Fork it and work on your fork; do this before class if you can.
+
+1. On github.com, open [`dr14-make/MyCar`](https://github.com/dr14-make/MyCar) and click **Fork**. Untick **Copy the `main` branch only**, so the fork gets the tags too, then click **Create fork**. The fork is `https://github.com/<you>/MyCar`.
+2. In Studio, press <kbd>F1</kbd> → **Git: Clone**, paste your fork's URL, pick an empty folder, and click **Open** when asked.
+3. Press <kbd>F1</kbd> → **Git: Create Branch From…**, type `handson-04`, and pick the tag `lecture-04-start` from the list.
+4. In the **Actions** panel's title bar, click **Dyad: Open Julia REPL** and run the lines below. The first download takes a few minutes; wait until it stops printing.
+
+   ```julia
+   using Pkg
+   Pkg.instantiate()
+   ```
+
+5. Go on with step 2 of **Do this** below: your `handson-04` branch already exists, so skip step 1.
+
+Your commits go to your fork, one per step, and the pull request at the end goes from `handson-04` to your fork's `main`.
+
+:::
+
+#### Do this
+
+1. In the status bar, click the branch name → **Create new branch…** → `handson-04`, from `main`. If your Lecture 3 work is on another branch, `main` is still enough: today needs only a `MyCar` that compiles.
+2. Open the Julia REPL and move the course library to the Lecture 4 version for Dyad 3.5. If you did Lecture 3, you added the library then, and your `Manifest.toml` still holds the version from that day, without today's parts. Started from `main` or `lecture-04-start`? `MyCar` has no course library yet, and the same line adds it. The second line adds the two packages your code names directly; one you already have is left as it is.
+
+   ```julia
+   using Pkg
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-04-dyad-3.5")
+   Pkg.add(["ElectricalComponents", "MultibodyComponents"])
+   ```
+
+3. <kbd>F1</kbd> → **Dyad: Restart Language Server**. The language server read your `Project.toml` when Studio started; until it restarts, the next compile flags every library part with `missing-direct-dependency … not a direct dependency`.
+4. <kbd>F1</kbd> → **Dyad: Compile**.
+5. Open any diagram, click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Electric`.
+
+::: tip Expected result
+
+`using VehicleSystemsComponents`, `using ElectricalComponents` and `using MultibodyComponents` run in the REPL without an error. Under **+**, `Vehicle › Electric` lists `AuxLoad` and `TorqueSplit`; `Vehicle › Planar` lists `PlanarCar`, `PlanarRoadLoad`, `BusMotion` and `ABSUnit`; and `VehicleSystemsComponents` lists `HandsOn04`.
+
+:::
 
 ## 02 The DC machine
 
@@ -996,7 +1044,7 @@ New component `BatteryDischarge` in `MyCar`:
 
    `extends … TwoPin` gives the battery its two pins, `p` on the left and `n` on the right, and the terminal voltage `v = p.v - n.v`. A pin's current counts positive *into* the component, so the current that comes back into `n` is the one that left `p` through the load: `i = n.i`, and `p.i + n.i = 0` says the battery stores no charge on its terminals. The last two lines are the two equations above; `Q_nom` is in coulombs, so 114.3 A·h is written as 40 kWh × 3600 s/h over 350 V.
 
-   If the compile flags `ElectricalComponents` as `missing-direct-dependency`, add it in the REPL with `using Pkg; Pkg.add("ElectricalComponents")`, then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
+   If the compile flags `ElectricalComponents` as `missing-direct-dependency`, run the `Pkg.add` lines of [step 00](#step-00), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
 
 2. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BatteryDischarge`. With nothing selected, click **Edit Parameters** → **Add parameter**: `I_load`, type `Current`, value `100.0`. Place the four blocks from the table and rename each to its **Name**: select it → **Edit Parameters** → the pencil next to its name. Set `load_profile`'s `height` to `I_load` and its `start_time` to `60.0`.
 3. Wire:
@@ -1184,7 +1232,7 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
    converter.i_ref = tau_ref / (converter.field * machine.k)
    ```
 
-   If the compile flags `VehicleSystemsComponents` or `MultibodyComponents` as `missing-direct-dependency`, add it in the REPL with `using Pkg; Pkg.add("MultibodyComponents")` (or the other name), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
+   If the compile flags `VehicleSystemsComponents` or `MultibodyComponents` as `missing-direct-dependency`, run the `Pkg.add` lines of [step 00](#step-00), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
 4. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVWLTC`. Toggle to code (⇄), select everything, paste the block below and save.
 
    ::: code-group
