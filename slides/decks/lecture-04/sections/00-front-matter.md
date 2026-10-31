@@ -71,8 +71,9 @@ and the same brakes take what the machine cannot.
 </div>
 </div>
 
-<div class="handson">Today: the same car, the same road load, the same cycle, with Leaf ZE1 numbers for
-the motor, the gear and the battery. So the bill compares fairly with Lecture 2's engine.</div>
+<div class="handson">Today: the same body, road load and cycle, with Leaf ZE1 numbers for the motor,
+the gear and the battery, at 1500 kg, 100 kg more than Lecture 2's car. So the bill compares fairly
+with Lecture 2's engine.</div>
 
 <!--
 Recall the two cars. Lecture 2's engine car is the comparison at the end of today: its reference

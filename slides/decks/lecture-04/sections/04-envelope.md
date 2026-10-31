@@ -27,8 +27,8 @@ routeAlias: average-converter
 <div class="grid grid-cols-[1.1fr_1fr] gap-8">
 <div>
 
-Between the pack and the machine sits the inverter. Averaged over one switching period it is one
-number, the **duty** *d*:
+Between the pack and the machine sits the inverter; section 05 opens up its switches. Averaged
+over one switching period it is one number, the **duty** *d*:
 
 $$
 v_{out} = d\, v_{in} \qquad i_{in} = d\, i_{out} + \frac{P_{loss}}{v_{in}}
@@ -102,7 +102,8 @@ $$
 d\,V = K\Phi\,\omega + R\,I_{max}
 $$
 
-At **3283 rpm**, *d* = 1: the voltage has run out.
+At **3283 rpm**, *d* = 1: the voltage has run out. That is **base speed**, the envelope's
+corner.
 
 **Above it:** hold *V* and *I*<sub>max</sub>, turn Φ down as 1/ω: torque ∝ 1/ω, power
 **110.75 kW** in the air gap.
@@ -236,8 +237,8 @@ class: big-figure
 </div>
 <div class="text-[0.95rem]">
 
-The driver never asks for more than **117 N·m** on WLTC, a third of the peak; braking, at most
-**87 N·m**.
+On step 04's car the driver never asks for more than **117 N·m** on WLTC, a third of the peak;
+braking, at most **87 N·m**.
 
 At 131 km/h the machine turns **9260 rpm**, the field down to **0.36**.
 

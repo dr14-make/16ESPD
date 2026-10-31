@@ -44,7 +44,10 @@ $$
 Current crosses the electrolyte, the electrodes and every busbar: **R₀ · i** is lost as heat, and
 the terminal voltage sags the moment the load comes on.
 
-**E is constant here.** Nothing stops SoC at zero.
+The pack: *E* = **350 V**, *R*₀ = **0.1 Ω**.
+
+**E is constant here.** Nothing stops SoC at zero. The extra session's cell reads *E* from
+SoC.
 
 </div>
 </div>
@@ -93,7 +96,7 @@ $$
 <div>
 
 **State of charge** is counted, not measured: the battery management system integrates the
-current. **Coulomb counting:**
+current. **Coulomb counting**, whose drift the extra session corrects:
 
 $$
 \frac{d\,SoC}{dt} = -\frac{i}{Q_{nom}}
@@ -143,8 +146,8 @@ stores less. **High specific power normally costs specific energy.**
 
 **Also:** self-discharge, temperature and cooling, the number of deep cycles.
 
-<div class="handson">Step 03 at 100 A: of the 17.5 kWh that left the cells, <b>17.0 kWh</b>
-reached the load, <b>0.5 kWh</b> heated R₀: 97 %.</div>
+<div class="handson">In the model: charge efficiency 100 %, energy efficiency set by R₀ alone.
+Build 03 measures it at 100 A.</div>
 
 </div>
 </div>

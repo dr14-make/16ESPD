@@ -31,8 +31,8 @@ routeAlias: dc-regulation
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-The voltage of every source moves (deck): with time, temperature and load. The pack of step 03
-sags by *R*₀ · *i* under load. Electronics need a steady voltage.
+The voltage of every source moves (deck): with time, temperature and load; the pack sags under
+load (section 06). Electronics need a steady voltage.
 
 **Two ways to drop a voltage**
 
@@ -425,7 +425,7 @@ the bill counts **13 %** lost on the way in.
 </div>
 </div>
 
-<div class="handson">Section 08 shows the bill at the battery and at the wall: 47.2 against 54.3 MJ/100 km.</div>
+<div class="handson">Section 08 uses that efficiency to put the bill at the wall.</div>
 
 <!--
 The two converters the plan places in the energy chain without modeling them in detail (S4).
