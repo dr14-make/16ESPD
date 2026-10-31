@@ -12,6 +12,8 @@ asks each wheel for `T_cmd`; your `RegenBlend` gives the machine what its limits
 rest to Lecture 3's four-channel ABS, which modulates the friction brakes. The meters split the
 braking: `E_shaft_in`, what the machine took back through the reduction; `E_brake`, what the
 friction brakes burned; `E_dc_in`, what reached the battery terminals.
+The ABS withdrawal rule defaults OFF to preserve step 5 until ABS recalibration (#156).
+Enable it with `withdraw = 1`; `BEVLowGripStop` demonstrates it on low grip.
 
 ## Parameters:
 
@@ -28,7 +30,7 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
 | `v_fade`         | Speed below which the braking ceiling fades to zero, km/h                         | --  |   10.0 |
 | `P_aux`         | Power drawn by the 12 V network                         | W  |   300.0 |
 | `ratio`         | Single-speed reduction, Leaf ZE1                         | --  |   8.193 |
-| `withdraw`         |                          | --  |   1.0 |
+| `withdraw`         |                          | --  |   0.0 |
 | `road_mu`         |                          | --  |   1.0 |
 
 ## Variables
@@ -41,7 +43,7 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
 | `E_shaft_in`         |                          | J  |
 | `E_brake`         |                          | J  |
 """
-@component function BEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"withdraw"=Float64(1.0), var"road_mu"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function BEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"withdraw"=Float64(0.0), var"road_mu"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

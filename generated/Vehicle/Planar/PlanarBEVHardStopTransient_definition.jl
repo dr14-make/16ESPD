@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function PlanarBEVHardStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, var"withdraw"=1.0, var"road_mu"=1.0, __overrides = Dict{String, Any}())
+@component function PlanarBEVHardStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, var"withdraw"=0.0, var"road_mu"=1.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -180,7 +180,7 @@ export PlanarBEVHardStopTransient__System
   var"P_charge"::Float64 = 80500.0
   var"v_fade"::Float64 = 10.0
   # Withdraw regen while the front ABS acts; 0 reproduces step 5
-  var"withdraw"::Float64 = 1.0
+  var"withdraw"::Float64 = 0.0
   # Road grip multiplier, 0.3 for the low-grip comparison
   var"road_mu"::Float64 = 1.0
   # Lecture 3's hard stop (`Lecture3.ABSStraightStop`) on the battery-electric car: from 80 km/h the
@@ -196,7 +196,9 @@ export PlanarBEVHardStopTransient__System
   # front wheels within a few tenths of a second of the pedal and keeps acting down to its 1.5 m/s
   # cut-off, so regen backs off almost at once and returns only for the last metres, under the fade.
   # 
-  # `withdraw = 0` turns the rule off: the machine is then outside the ABS loop, as step 5 first
+  # The rule defaults OFF (`withdraw = 0`) to preserve step 5 until ABS recalibration (#156).
+  # Use `withdraw = 1` to enable it, or the `PlanarBEVLowGripStop` bench for the low-grip demonstration.
+  # With the default: the machine is then outside the ABS loop, as step 5 first
   # builds it. Its regen follows the envelope: the battery's charge power binds from 80 km/h down to
   # the corner speed, 34 km/h; the machine's torque from there to `v_fade`; the fade below. From about
   # 62 km/h its torque keeps the front slip at -0.04 to -0.06, past the ABS's recovery threshold, so

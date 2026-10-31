@@ -51,8 +51,8 @@ function _rg_stops(t, ref; min_len = 2.0)
     return windows
 end
 
-const _rg_stop_run = _RG_PL.PlanarBEVHardStopTransient(withdraw = 0.0)
-const _rg_abs_run = _RG_PL.PlanarBEVHardStopTransient()
+const _rg_stop_run = _RG_PL.PlanarBEVHardStopTransient()
+const _rg_abs_run = _RG_PL.PlanarBEVHardStopTransient(withdraw = 1.0)
 const _rg_wltc_run = _RG_PL.PlanarBEVRegenWLTCTransient()
 
 @testset "Lecture 4 step 05: the regenerative envelope on the hard stop" begin
@@ -101,8 +101,9 @@ end
     @test E_motor ≈ 176.9e3 rtol = 5e-3
     @test E_friction ≈ 181.8e3 rtol = 5e-3
     share = E_motor / (E_motor + E_friction)
-    @test share ≈ 0.493 atol = 0.005
+    @test share ≈ 0.4932 atol = 0.00005
     @test share < 0.5
+    println("Dry hard stop: ", (; distance = _rg_stop(run).d, motor_share = 100share, motor_kJ = E_motor/1000, friction_kJ = E_friction/1000))
     # The links close on the kinetic energy; measured 1e-9.
     @test abs(E0 - e(m.E_kin) - (E_motor - e(m.E_shaft_out)) - E_friction - e(m.E_tire)) / E0 < 1e-6
     # 170.2 kJ reach the battery: what the shaft gave back plus the rotor's own energy, less the
@@ -132,7 +133,7 @@ end
     # 36.2 m with regeneration against 38.8 m on friction alone: on friction alone the front ABS
     # works the front tires at about 62 % of their grip; below the corner speed the machine's
     # 320 N·m holds them at 93 %.
-    @test with.d ≈ 36.22 atol = 0.1
+    @test with.d ≈ 36.22 atol = 0.005
     @test without.d ≈ 38.82 atol = 0.1
     @test with.d < without.d
     s0 = friction_only.sol
@@ -208,7 +209,7 @@ end
 end
 
 @testset "Lecture 4 step 05: the hands-on reference is the library car" begin
-    lib_stop, lib_wltc = _rg_abs_run, _rg_wltc_run
+    lib_stop, lib_wltc = _rg_stop_run, _rg_wltc_run
     h4_stop = _RG_H4.BEVHardStopTransient()
     h4_wltc = _RG_H4.BEVRegenWLTCTransient()
     @test string(h4_stop.sol.retcode) == "Success"
@@ -259,9 +260,9 @@ end
 end
 
 @testset "ABS rule: low-grip front wheels no longer lock" begin
-    with = _RG_PL.PlanarBEVHardStopTransient(road_mu = 0.3, stop = 28.0)
+    with = _RG_PL.PlanarBEVLowGripStopTransient()
     # End the counterfactual after its stop, before the known exact-rest tire Jacobian singularity.
-    without = _RG_PL.PlanarBEVHardStopTransient(road_mu = 0.3, withdraw = 0.0, stop = 12.0)
+    without = _RG_PL.PlanarBEVLowGripStopTransient(withdraw = 0.0, stop = 12.0)
     for run in (with, without)
         @test string(run.sol.retcode) == "Success"
     end
@@ -274,7 +275,18 @@ end
         for k in (m.car.bus.kappa_fl, m.car.bus.kappa_fr)
             slip = s(tg[moving]; idxs = k).u
             @test controlled ? minimum(slip) > -0.2 : minimum(slip) < -1.0
+            println("Low-grip slip: ", (; controlled, wheel = string(k), minimum_slip = minimum(slip)))
         end
     end
-    @info "ABS regen comparison" dry_before = _rg_stop(_rg_stop_run).d dry_after = _rg_stop(_rg_abs_run).d low_with = _rg_stop(with).d low_without = _rg_stop(without).d
+    hands_on = _RG_H4.BEVLowGripStopTransient()
+    @test string(hands_on.sol.retcode) == "Success"
+    # Different meter states perturb the adaptive integration of the sampled ABS (0.025 %).
+    @test _rg_stop(hands_on).d ≈ _rg_stop(with).d atol = 0.1
+    sh, mh = hands_on.sol, symbolic_container(hands_on)
+    th = collect(0.5:0.005:sh.t[end])
+    moving_h = sh(th; idxs = mh.car.bus.vx).u .> 3.0
+    for k in (mh.car.bus.kappa_fl, mh.car.bus.kappa_fr)
+        @test minimum(sh(th[moving_h]; idxs = k).u) > -0.2
+    end
+    println("ABS regen comparison: ", (; dry_before = _rg_stop(_rg_stop_run).d, dry_after = _rg_stop(_rg_abs_run).d, low_with = _rg_stop(with).d, low_without = _rg_stop(without).d, hands_on = _rg_stop(hands_on).d))
 end

@@ -1476,7 +1476,7 @@ end
 
 ### 05 · Regen blended onto the Lecture 3 brakes {#step-05}
 
-Give the brake demand to the machine first, up to the smallest of three limits, and the rest to Lecture 3's friction brakes. A fourth rule withdraws regen while the ABS acts on either driven (front) wheel. On the dry ABS stop from 80 km/h this changes the stop from **36.22 m** to **38.84 m**, and the machine/friction share from **49.32/50.68 %** to **1.62/98.38 %**. On WLTC no limit binds above walking pace: the battery gets back **23.85 %** of the traction energy, and the friction brakes burn almost nothing.
+Give the brake demand to the machine first, up to the smallest of three limits, and the rest to Lecture 3's friction brakes. On the dry ABS stop from 80 km/h the machine takes **49.32 %** of the braking, friction the other **50.68 %**, and the car stops in **36.22 m**. The fourth, ABS-withdrawal rule remains opt-in: dry hard stops default to `withdraw = 0` until the gentle ABS calibration is addressed in #156. Demonstrate the rule on the low-grip bench below. On WLTC no limit binds above walking pace: the battery gets back **23.85 %** of the traction energy, and the friction brakes burn almost nothing.
 
 #### Given
 
@@ -1508,7 +1508,7 @@ WLTC never decelerates harder than 1.5 m/s², 87 N·m at the machine, and never 
 
 The three ceilings draw an envelope like the motoring one of step 02, mirrored: rising with speed to 320 N·m at 10 km/h, flat down to the corner speed where 320 N·m meets 80.5 kW, **34.3 km/h**, and falling as 1/*w* above it. The limit is on the machine's electromagnetic power, *τ*·*w*. The battery gets less: the machine's, the converter's and the battery's losses and the auxiliaries come off first, so it never takes more than 80.5 kW.
 
-With `abs_rule = true`, connect `ABSUnit(report_front = true).front_active` to `blend.abs_active`. Every 5 ms the ABS reports whether either front command is below its sampled demand, including release, hold and slow reapply (and initial build-up). Regen's ceiling is multiplied by `allow`: it decays toward zero with a **30 ms** time constant while active and returns toward one with **0.5 s** otherwise (both assumed). Every N·m withdrawn goes into the four hydraulic demands; the ABS still decides what reaches each brake. Continuous torque avoids a converter step above base speed. `withdraw = 0.0` reproduces step 5 without the rule.
+With `abs_rule = true`, connect `ABSUnit(report_front = true).front_active` to `blend.abs_active`. Every 5 ms the ABS reports whether either front command is below its sampled demand, including release, hold and slow reapply (and initial build-up). Regen's ceiling is multiplied by `allow`: it decays toward zero with a **30 ms** time constant while active and returns toward one with **0.5 s** otherwise (both assumed). Every N·m withdrawn goes into the four hydraulic demands; the ABS still decides what reaches each brake. Continuous torque avoids a converter step above base speed. Dry hard stops default to `withdraw = 0.0`, retaining step 5's envelope; use `withdraw = 1.0` to opt in. The gentle inherited ABS keeps regen withdrawn almost throughout the dry stop, so the rule stays off there pending calibration #156.
 
 The default `abs_rule = false` keeps existing callers, including WLTC, unchanged; it adds neither a port nor a state. Keep the rule in the shared blending block, opt-in, rather than maintaining a second allocator. WLTC has no ABS and needs no extra wiring. This is not traction control: if the machine takes all of a light brake demand, the friction ABS has nothing to release and cannot detect machine-only locking.
 
@@ -1518,7 +1518,7 @@ The default `abs_rule = false` keeps existing callers, including WLTC, unchanged
 
 - **At 80 km/h:** *w* = 22.22 / 0.31 × 8.193 = 587 rad/s (5610 rpm), and 80 500 W / 587 rad/s = **137 N·m**: the charge-power limit binds. At the wheels that is 137 × 8.193 = 1123 N·m, 3.6 kN on the road, **0.25 g** of regenerative deceleration, in the plan's 0.2–0.3 g band.
 - **Corner speed:** 80 500 W / 320 N·m = 251.6 rad/s, so 251.6 × 0.31 / 8.193 × 3.6 = **34.3 km/h**. Below it the torque limit binds: 320 × 8.193 = 2622 N·m at the front wheels, about the 2534 N·m the front tires carry at µ = 1.
-- **Without the ABS rule (step 5 baseline), energy split:** the car starts with 380.7 kJ in body and wheels. The machine takes **176.9 kJ** back through the reduction, the friction brakes burn **181.8 kJ**, tire slip 22.0 kJ. The machine's share of the braking is 176.9 / (176.9 + 181.8) = **49.3 %**; **170.2 kJ** reaches the battery terminals. The three add up to the 380.7 kJ the car started with, to under 10⁻⁹ of it, because `E_kin` leaves out the machine's rotor: the rotor's energy reaches the battery inside the machine, without passing the reduction where `E_shaft_in` is measured.
+- **Default dry stop (`withdraw = 0`), energy split:** the car starts with 380.7 kJ in body and wheels. The machine takes **176.9 kJ** back through the reduction, the friction brakes burn **181.8 kJ**, tire slip 22.0 kJ. The machine's share of the braking is 176.9 / (176.9 + 181.8) = **49.3 %**; **170.2 kJ** reaches the battery terminals. The three add up to the 380.7 kJ the car started with, to under 10⁻⁹ of it, because `E_kin` leaves out the machine's rotor: the rotor's energy reaches the battery inside the machine, without passing the reduction where `E_shaft_in` is measured.
 - **WLTC:** 34.25 Wh/km back into the terminals over 143.6 Wh/km of traction at the shaft is **23.85 %**. That is inside the plan's 18–25 %: a quarter of the traction comes back as braking, and the measured Leaf (Boretti, 2012 and 2013 models) recovers 70–87 % of it, while this model's ideal reduction and machine return 88.6 %. A lower charge limit does bring the share down to the measured car's, but only by braking on friction: at 15 kW the share is **21.40 %** and the friction brakes take **9.5 %** of WLTC's braking, above the plan's 4 %.
 
 :::
@@ -1630,7 +1630,7 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      parameter P_aux::Power = 300.0
      "Single-speed reduction, Leaf ZE1"
      parameter ratio::Real = 8.193
-     parameter withdraw::Real = 1.0
+     parameter withdraw::Real = 0.0
      parameter road_mu::Real = 1.0
      pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time) {^pedal}
      kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
@@ -1743,7 +1743,7 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      parameter tau_max::Torque = 320.0
      parameter P_charge::Power = 80.5e3
      parameter v_fade::Real = 10.0
-     parameter withdraw::Real = 1.0
+     parameter withdraw::Real = 0.0
      parameter road_mu::Real = 1.0
      model = BEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, withdraw = withdraw, road_mu = road_mu)
    end
@@ -1768,11 +1768,11 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
 
 ::: tip Expected result
 
-With the rule enabled, the dry stop reaches 0.5 m/s **3.275 s** after the pedal, in **38.84 m**. The machine takes **5.93 kJ**, friction **360.74 kJ**, tire slip **19.69 kJ**; **5.89 kJ** reaches the battery. The energy balance still closes. The sampled ABS stays active almost throughout this stop, so regen remains withdrawn; this calibration does not improve dry stopping distance.
+The default dry stop (`withdraw = 0`) stops in **36.22 m**. The machine takes **176.9 kJ**, friction **181.8 kJ**: **49.32 %** motor braking, about half the stop. The three ceilings are visible as the car slows. `P_charge = 0.0` gives the **38.82 m** friction-only reference.
 
-**Compare:** `MyCar.BEVHardStopTransient(withdraw = 0.0)` reproduces the earlier **36.22 m**, **176.89 kJ** motor / **181.79 kJ** friction (**49.32 %** motor), **170.24 kJ** into the battery. The three ceilings are visible on this counterfactual; with the rule they are upper bounds, not the actual torque. `P_charge = 0.0` gives the **38.82 m** friction-only reference.
+**Why leave withdrawal off on dry roads?** `MyCar.BEVHardStopTransient(withdraw = 1.0)` opts in, but the gentle inherited ABS stays active almost throughout the stop and keeps regen withdrawn. ABS calibration #156 must be addressed before making this the dry default; the rule is not a dry-distance improvement.
 
-**Low grip:** run `MyCar.BEVHardStopTransient(road_mu = 0.3, stop = 28.0)`. Front slip stays above **−0.050** while speed exceeds 3 m/s; stopping distance is **275.02 m**. With `withdraw = 0.0, stop = 12.0`, slip passes **−1** (lock) and reaches **−17.41**: the ideal negative torque then reverses the wheels. Its **112.35 m** distance is a model counterfactual, not a physically credible locked-wheel benchmark. The inherited ABS reapply calibration is slow on this road; this task does not retune it. Longer parking in that counterfactual eventually reaches the known tire Jacobian singularity.
+**Low-grip demonstration:** run `VehicleSystemsComponents.Vehicle.Planar.PlanarBEVLowGripStopTransient()` (default `withdraw = 1`, `stop = 28`), or `HandsOn04.BEVLowGripStopTransient()`. Compare with `VehicleSystemsComponents.Vehicle.Planar.PlanarBEVLowGripStopTransient(withdraw = 0.0, stop = 12.0)` (or the same arguments on the hands-on analysis). The low-grip bench run gives **275.02 m** enabled with minimum front slip **−0.04931** while speed exceeds 3 m/s, and **112.35 m** disabled. The disabled fronts lock and reverse (minimum front slip **−17.40874** above 3 m/s) under ideal negative torque: that distance is a model counterfactual, **not a physical locked-wheel benchmark**. The inherited ABS reapply calibration is slow on this road (#156). Longer parking in the disabled counterfactual eventually reaches the known tire Jacobian singularity.
 
 Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardStopTransient`; the course library's copies are `Vehicle.Electric.RegenBlend` and `Vehicle.Planar.PlanarBEVHardStop`.
 

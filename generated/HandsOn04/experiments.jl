@@ -11,6 +11,7 @@ end
 
 include("BEVEnergyBill_experiment.jl")
 include("BEVHardStop_experiment.jl")
+include("BEVLowGripStop_experiment.jl")
 include("BEVRegenWLTC_experiment.jl")
 include("BEVWLTC_experiment.jl")
 include("BatteryDischarge_experiment.jl")

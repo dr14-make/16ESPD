@@ -20,7 +20,9 @@ withdraws regen and hands its share to the friction brakes. On this stop the ABS
 front wheels within a few tenths of a second of the pedal and keeps acting down to its 1.5 m/s
 cut-off, so regen backs off almost at once and returns only for the last metres, under the fade.
 
-`withdraw = 0` turns the rule off: the machine is then outside the ABS loop, as step 5 first
+The rule defaults OFF (`withdraw = 0`) to preserve step 5 until ABS recalibration (#156).
+Use `withdraw = 1` to enable it, or the `PlanarBEVLowGripStop` bench for the low-grip demonstration.
+With the default: the machine is then outside the ABS loop, as step 5 first
 builds it. Its regen follows the envelope: the battery's charge power binds from 80 km/h down to
 the corner speed, 34 km/h; the machine's torque from there to `v_fade`; the fade below. From about
 62 km/h its torque keeps the front slip at -0.04 to -0.06, past the ABS's recovery threshold, so
@@ -57,7 +59,7 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
 | `v_fade`         | Speed below which the machine's braking ceiling fades to zero, km/h (assumed)                         | --  |   10.0 |
 | `P_aux`         | Power drawn by the 12 V network (assumed)                         | W  |   300.0 |
 | `ratio`         | Single-speed reduction (Nissan)                         | --  |   8.193 |
-| `withdraw`         | ABS rule: 1 withdraws regen while the ABS acts on a front wheel, 0 leaves the machine outside the ABS loop (step 5)                         | --  |   1.0 |
+| `withdraw`         | ABS rule: 1 withdraws regen while the ABS acts on a front wheel, 0 leaves the machine outside the ABS loop (step 5)                         | --  |   0.0 |
 | `road_mu`         | Road friction multiplier on all four tires, 1 a dry road; Lecture 3's low-grip value is 0.3                         | --  |   1.0 |
 
 ## Variables
@@ -73,7 +75,7 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
 | `E_tire`         |                          | J  |
 | `E_kin`         | Kinetic energy of body and wheels                         | J  |
 """
-@component function PlanarBEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"withdraw"=Float64(1.0), var"road_mu"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function PlanarBEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"withdraw"=Float64(0.0), var"road_mu"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

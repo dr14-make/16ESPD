@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function BEVHardStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, var"withdraw"=1.0, var"road_mu"=1.0, __overrides = Dict{String, Any}())
+@component function BEVHardStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, var"withdraw"=0.0, var"road_mu"=1.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -179,13 +179,15 @@ export BEVHardStopTransient__System
   var"tau_max"::Float64 = 320.0
   var"P_charge"::Float64 = 80500.0
   var"v_fade"::Float64 = 10.0
-  var"withdraw"::Float64 = 1.0
+  var"withdraw"::Float64 = 0.0
   var"road_mu"::Float64 = 1.0
   # Hands-on 04 step 05 hard stop: Lecture 3's ABS stop from 80 km/h on your electric car. The driver
   # asks each wheel for `T_cmd`; your `RegenBlend` gives the machine what its limits allow and the
   # rest to Lecture 3's four-channel ABS, which modulates the friction brakes. The meters split the
   # braking: `E_shaft_in`, what the machine took back through the reduction; `E_brake`, what the
   # friction brakes burned; `E_dc_in`, what reached the battery terminals.
+  # The ABS withdrawal rule defaults OFF to preserve step 5 until ABS recalibration (#156).
+  # Enable it with `withdraw = 1`; `BEVLowGripStop` demonstrates it on low grip.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn04.BEVHardStop(; name=:BEVHardStop)
   __system::System = BEVHardStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"T_cmd"=var"T_cmd", var"tau_max"=var"tau_max", var"P_charge"=var"P_charge", var"v_fade"=var"v_fade", var"withdraw"=var"withdraw", var"road_mu"=var"road_mu")
 end

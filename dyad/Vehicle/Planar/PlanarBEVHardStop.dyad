@@ -12,7 +12,9 @@ withdraws regen and hands its share to the friction brakes. On this stop the ABS
 front wheels within a few tenths of a second of the pedal and keeps acting down to its 1.5 m/s
 cut-off, so regen backs off almost at once and returns only for the last metres, under the fade.
 
-`withdraw = 0` turns the rule off: the machine is then outside the ABS loop, as step 5 first
+The rule defaults OFF (`withdraw = 0`) to preserve step 5 until ABS recalibration (#156).
+Use `withdraw = 1` to enable it, or the `PlanarBEVLowGripStop` bench for the low-grip demonstration.
+With the default: the machine is then outside the ABS loop, as step 5 first
 builds it. Its regen follows the envelope: the battery's charge power binds from 80 km/h down to
 the corner speed, 34 km/h; the machine's torque from there to `v_fade`; the fade below. From about
 62 km/h its torque keeps the front slip at -0.04 to -0.06, past the ABS's recovery threshold, so
@@ -58,7 +60,7 @@ test component PlanarBEVHardStop
   "Single-speed reduction (Nissan)"
   parameter ratio::Real = 8.193
   "ABS rule: 1 withdraws regen while the ABS acts on a front wheel, 0 leaves the machine outside the ABS loop (step 5)"
-  parameter withdraw::Real = 1.0
+  parameter withdraw::Real = 0.0
   "Road friction multiplier on all four tires, 1 a dry road; Lecture 3's low-grip value is 0.3"
   parameter road_mu::Real = 1.0
   pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time) {^pedal}
@@ -182,7 +184,7 @@ analysis PlanarBEVHardStopTransient
   parameter P_charge::Power = 80.5e3
   parameter v_fade::Real = 10.0
   "Withdraw regen while the front ABS acts; 0 reproduces step 5"
-  parameter withdraw::Real = 1.0
+  parameter withdraw::Real = 0.0
   "Road grip multiplier, 0.3 for the low-grip comparison"
   parameter road_mu::Real = 1.0
   model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, withdraw = withdraw, road_mu = road_mu)

@@ -10,8 +10,13 @@ layout: section
 The chain in the planar car, the motor as a brake, the three ceilings on regen, and series
 blending onto Lecture 3's brakes.
 
-Step-5 envelope figures use `withdraw = 0`. The guide's ABS rule withdraws regen during front
-ABS control: dry stop 38.84 m, 1.62 % motor share; WLTC unchanged.
+The dry stop defaults to `withdraw = 0`: **36.22 m**, **49.32 %** motor braking
+(**176.9/181.8 kJ** motor/friction), about half the stop. ABS withdrawal remains opt-in until
+the gentle ABS calibration #156; WLTC is unchanged. The guide demonstrates the rule on
+`Vehicle.Planar.PlanarBEVLowGripStopTransient()` / `HandsOn04.BEVLowGripStopTransient()`
+(default `withdraw = 1`, `stop = 28`); compare `withdraw = 0, stop = 12`. Low-grip bench results:
+275.02 m enabled, minimum front slip −0.04931 above 3 m/s; 112.35 m disabled with locked/reversing
+wheels, **not a physical benchmark**.
 
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 

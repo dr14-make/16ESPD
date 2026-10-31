@@ -215,14 +215,17 @@ Build step 05's car on Lecture 3's straight ABS stop from 80 km/h: the driver as
 braking than the tires carry, and `RegenBlend` gives the machine as much of it as the smallest of
 three ceilings allows: its 320 N·m, the pack's 80.5 kW charge limit over the machine speed, and a
 linear fade below 10 km/h. The rest goes to Lecture 3's friction brakes through the ABS. The same
-stop with `P_charge = 0` brakes on friction alone. These envelope figures explicitly use
-`withdraw = 0` (the step-5 baseline). The guide compares the default ABS-withdrawal rule:
-38.84 m instead of 36.22 m, 1.62 % instead of 49.32 % motor braking, with low-grip front locking
-prevented. WLTC is unchanged.
+stop with `P_charge = 0` brakes on friction alone. The dry default is `withdraw = 0`:
+36.22 m, 49.32 % motor braking (176.9 kJ motor, 181.8 kJ friction), about half the stop.
+ABS withdrawal remains opt-in pending the gentle ABS calibration #156. The guide demonstrates
+`Vehicle.Planar.PlanarBEVLowGripStopTransient()` / `HandsOn04.BEVLowGripStopTransient()`
+(default `withdraw = 1`, `stop = 28`), compared with `withdraw = 0, stop = 12`. Low-grip bench
+measurements: 275.02 m enabled, minimum front slip −0.04931 above 3 m/s; 112.35 m disabled with
+locked/reversing wheels, not a physical benchmark. WLTC is unchanged.
 """
 
 # ╔═╡ 43682d73-077d-446a-9d02-3f704293fd1e
-# Keep this envelope/deck figure at the step-5 baseline; the guide compares the ABS rule.
+# Keep the dry envelope/deck figure explicit; the guide demonstrates withdrawal on low grip.
 stop = (; on = PL.PlanarBEVHardStopTransient(withdraw = 0.0), off = PL.PlanarBEVHardStopTransient(P_charge = 0.0));
 
 # ╔═╡ 7e8d1c4b-a689-45c1-b6f1-9e840a99baaf
