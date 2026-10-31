@@ -3,9 +3,9 @@ Writes the Lecture 4 deck's notebook figures into `slides/decks/lecture-04/publi
 
     julia +dyad-3.5.0 --project=. scripts/export_lecture04_figures.jl
 
-Runs `notebooks/lecture04/02-switching.pluto.jl` and `03-energy-bill.pluto.jl` top to bottom
-with their controls at their defaults, and saves the plots the deck shows as SVG. Each notebook
-runs in a module of its own: it assigns the global `VehicleSystemsComponents`, which would
+Runs `notebooks/lecture04/01-efficiency-map.pluto.jl`, `02-switching.pluto.jl` and
+`03-energy-bill.pluto.jl` top to bottom with their controls at their defaults, and saves the
+plots the deck shows as SVG. Each notebook runs in a module of its own: it assigns the global `VehicleSystemsComponents`, which would
 collide with the package `setup()` loads into `Main`.
 
 The dyad-3.5 kernel ships Plots' plotly backend with Kaleido, not GR, so the figures go through
@@ -19,6 +19,12 @@ const NOTEBOOKS = joinpath(ROOT, "notebooks", "lecture04")
 const OUT = joinpath(ROOT, "slides", "decks", "lecture-04", "public", "figures")
 
 const FIGURES = Dict(
+    "01-efficiency-map.pluto.jl" => [
+        "04-envelope" => :envelope_plot,
+        "04-efficiency-map" => :map_plot,
+        "04-efficiency-map-wltc" => :wltc_plot,
+        "04-ornl-comparison" => :ornl_plot,
+    ],
     "02-switching.pluto.jl" => [
         "05-buck-currents" => :buck_currents_plot,
         "05-buck-losses" => :buck_losses_plot,

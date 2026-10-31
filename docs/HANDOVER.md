@@ -379,6 +379,15 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   sets `line.simplify = false`); and `vspan!` writes infinite bounds that the JSON writer rejects
   (`-Inf not allowed`), so shade with a finite `Shape`. The Lecture 3 export still asks for GR and
   needs the 3.4 kernel or the same change.
+- **A plotly heatmap from Plots comes out transposed on the dyad-3.5 kernel.** Plots'
+  `handle_surface` transposes a heatmap's matrix for a JSON writer that wrote matrices column by
+  column; the kernel's JSON 1.10 writes them row by row, so the two transposes cancel and plotly
+  draws `z[i, j]` at `(y[j], x[i])`. Nothing errors: a 331 × 202 efficiency map came out on its
+  side and cut off at the 202nd torque row, with the zero-torque row as a vertical stripe at
+  8200 rpm. `notebooks/lecture04/01-efficiency-map.pluto.jl` undoes it after each `heatmap!`
+  with `p[sp].series_list[end][:z] = Plots.Surface(permutedims(F))`. The same JSON rejects NaN
+  (`NaN not allowed to be written in JSON spec`), so a heatmap carries no NaN either: fill the
+  matrix and cover the region outside the data with white `Shape`s.
 - **A constant-power load on the battery has two solutions, and initialization can pick the
   wrong one.** `v i = P` behind the pack's `E - R0 i` is a quadratic: the link near 350 V with
   0.86 A, or the link collapsed to 0.086 V with 3500 A. Written algebraically in the BEV, the
