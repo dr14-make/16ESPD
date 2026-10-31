@@ -13,9 +13,10 @@ blending onto Lecture 3's brakes.
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--
-Budget: about 40 minutes, of which builds 04 and 05 take about 15 each: the drivetrain 3, build
-04 15 including its checkpoint, the motor as a brake 2, three ceilings 3, blending 2, the hard
-stop 3, the split 2, WLTC 2, build 05 15. Deck 7 slides 6 and 33, extended with the plan's S8.
+Section 07, the car and regen. We put the chain into the planar car, then look at the motor as a
+brake, at the three ceilings that limit how hard it can brake, and at how its braking is blended
+with Lecture 3's friction brakes. There are two builds: the car, build 04, and regen, build 05. The
+figures come from notebooks 03 and 04.
 -->
 
 ---
@@ -50,21 +51,32 @@ Divided by the present field, a torque command means the same torque at any spee
 </div>
 
 <!--
-Steps 01 to 03 go into a car. The battery feeds the converter, the converter the machine, the
-machine turns the Leaf's single 8.193 reduction, and the reduction turns the planar car's
-differential, which splits its torque equally between the two front wheels and lets them turn at
-different speeds. The 12 V network hangs on the battery.
+Builds 01 to 03 go into a car. The picture is a top view of the planar car, with its rear and front
+axles labeled. The battery, 40 kilowatt-hours at 350 volts, from build 03, feeds the converter, from
+build 02, and the 12 volt network, 300 watts. The converter drives the machine, from build 01. The
+machine turns the 8.193 reduction, and the reduction turns the differential between the two front
+wheels, which divides the torque by two. Then the controls: the driver, a PI controller on the WLTC
+trace, feeds a block labeled split or blend, which is build 04's `TorqueSplit` or build 05's
+`RegenBlend`. That block sends a machine torque to the drive, where it becomes a current command,
+and the friction share to the brakes.
 
-The driver is a PI controller on the WLTC trace, and its output is a machine torque. The drive
-turns torque into current: the machine gives field times K Phi newton meters per ampere, so it
-asks the converter for tau ref over that. Below base speed, about 48 km/h in this car, the field
-is 1. Above it the converter weakens the field: at 131 km/h to about a third, and the same torque
-takes three times the current. A field-oriented drive does the same with its q current. Divided by
-full field only, the drive would give a third of the torque asked for on the motorway, and the
-driver loop's gain would fall with it.
+The first formula is the reduction and the differential together. The machine speed, omega m, is
+8.193 times the average of the front-left and front-right wheel speeds, in radians per second. And
+each front wheel gets the same torque: 8.193 times the machine torque, tau m, divided by two. The
+differential splits its torque equally and lets the two wheels turn at different speeds in a curve.
 
-Prepared in the course library: the planar car with the course road load, the WLTC bench with the
-driver and the standstill workaround, `AuxLoad` and `TorqueSplit`.
+The second formula: torque in, current out. The driver asks for a torque; the converter takes a
+current command. The machine gives field times K Phi newton meters per ampere, so the drive asks the
+converter for i ref equals tau ref divided by field times K Phi. Below base speed, about 48
+kilometers per hour in this car, the field is 1. Above it the converter weakens the field, at 131
+kilometers per hour to about a third, and the same torque then takes three times the current. A
+field-oriented drive does the same with its q current. That is the last line of the slide: divided
+by the present field, a torque command means the same torque at any speed. Divided by the full field
+only, the drive would deliver a third of the torque asked for on the motorway, and the driver's loop
+would lose gain with it.
+
+Prepared for you in the course library: the planar car with the course road load, the WLTC bench
+with its driver, the auxiliary load and the torque split.
 -->
 
 ---
@@ -111,32 +123,50 @@ r.sol[r."car.bus.x"][end], r.sol[r."drive.SoC"][end]
 </div>
 
 <!--
-Fifteen minutes: a drive of seven parts, one code line, one pasted bench, one 1800 second run.
+Build 04: the car. On the left, the finished `ElectricDrive` in Studio. The battery and the
+auxiliary load sit across one positive and one negative rail. The converter takes the positive rail
+into the machine's p, and its field output goes into the machine's field input. The machine turns
+the reduction, and the reduction ends at the drive's spline port. The battery's SoC goes up to the
+SoC output port, the torque request, tau ref, comes in at the top left, and the support is at the
+bottom.
 
-1. `ElectricDrive`: two parameters, four ports, six parts from the guide's table, renamed. Set the
-   machine's field weakening to true. Wire the DC side: battery to converter and aux, all the
-   negative pins to ground. Converter out to the machine, the field across. Machine to the
-   reduction's spline a, the reduction's spline b to the drive's spline. The housings to support.
-   SoC out.
-2. The one line, the torque-to-current conversion at the present field.
-3. `BEVWLTC`: paste from the guide. It is the course library's planar WLTC bench with your drive
-   on the front axle through the differential, and `TorqueSplit` between the driver and the drive:
-   driving, the machine takes all of it; braking, the machine takes it above 10 km/h and fades to
-   none at standstill, with the front friction brakes taking the rest so the car stops and is
-   held without rolling back.
-4. Run Analysis, then the snippet. The run takes about 7 seconds once compiled.
+The steps, in the italic line. A new component `ElectricDrive`, with two parameters: ratio, 8.193,
+and P aux, 300 watts. It has four ports: the torque request, the output spline, the support, and the
+SoC output. Then six parts from the guide's table, renamed: your battery; aux, the library's
+`AuxLoad`, which draws whatever current makes 300 watts; your converter; your machine, with field
+weakening set to true; a ground; and the reduction, an `IdealGear`, lossless, with the machine on
+its fast side. Wire the DC side: the battery to the converter and the auxiliaries, all negative pins
+to ground. The converter's output to the machine, the field across. The machine to the reduction,
+the reduction to the drive's spline, the housings to the support, and SoC out. Then one line of
+code, the torque-to-current conversion of the last slide: the converter's i ref equals tau ref over
+`converter.field` times `machine.k`.
 
-Expected, from `HandsOn04.BEVWLTCTransient`: the car on the trace to within 1.63 km/h; 23 267
-meters against 23 266; never backwards. Battery current from 138 amperes, 46 kW in the Extra High
-phase, to minus 86, 31 kW charging under braking; the auxiliaries alone draw 0.86 ampere. SoC from
-0.9 to 0.822: 3.1 kWh of the 40. Field 1 below about 48 km/h, 0.36 at 131 km/h where the machine
-turns 9260 rpm. The driver never asks for more than 117 newton meters, and gets it to within 0.2.
+Then a new component `BEVWLTC`: paste it from the guide. It is the course library's planar WLTC
+bench, with your drive on the front axle through the differential and a `TorqueSplit` between the
+driver and the drive. Driving, the machine takes all of the driver's torque. Braking, the machine
+takes it above 10 kilometers per hour and fades linearly to none at standstill, and the front
+friction brakes take the rest, so that the car stops and is held at every stop without rolling back.
+A machine asked to brake at standstill would drive the car backwards. Run Analysis once; the run
+takes about 7 seconds once compiled.
 
-Stall: a car that rolls backwards at the first stop has the machine braking to standstill: the
-split is missing or its fade is wrong. A run that "succeeds" with the car frozen is the plan's S9
-trap: the bench keeps the car off exact zero, and benches use Rodas5P.
+The snippet plots the car's speed on the trace, then the battery current, the state of charge and
+the converter's field, and reads the distance driven and the final state of charge.
 
-Testsets: `test/bev_plausibility.jl`.
+The first green box: the speed, `kmh.y`, lies on the trace, `trace.y`, all the way. The worst gap is
+1.63 kilometers per hour, inside the plus or minus 2 that WLTP allows. The distance, `car.bus.x`,
+ends at 23 267 meters, against the trace's 23 266. And the car never rolls backwards at a stop.
+
+The second green box: the battery current goes up to 138 amperes, 46 kilowatts, in the Extra High
+phase, and down to minus 86 amperes, 31 kilowatts of charging, under braking. In between, the
+auxiliaries alone draw 0.86 amperes. The state of charge falls from 0.9 to 0.822: 3.1 of the 40
+kilowatt-hours. The field is 1 below about 48 kilometers per hour and 0.36 at 131, where the machine
+turns 9260 rpm. And the driver never asks for more than 117 newton meters, which the machine
+delivers at every speed to within 0.2.
+
+If the car rolls backwards at the first stop, the machine is braking down to standstill: the split
+is missing, or its fade is wrong. If a run reports success but the car never moves, that is the
+standstill trap of the tire model: the bench starts the wheels turning just ahead of the car and
+uses the Rodas5P solver for that reason, so keep both.
 -->
 
 ---
@@ -153,17 +183,22 @@ regen controller yet: <code>TorqueSplit</code> hands braking to the machine, fad
 10 km/h, and the rest to the front brakes</div>
 
 <!--
-The figure is notebook 03, the energy-bill notebook, section 1, "The car follows the cycle": the
-course library's `PlanarBEVWLTC`, the twin of your `BEVWLTC` with the meters of step 06.
+The checkpoint as a picture. The figure is notebook 03, section 1, the car follows the cycle: the
+course library's `PlanarBEVWLTC`, the twin of your `BEVWLTC`, with the meters of build 06 on it. The
+horizontal axis is time, 0 to 1800 seconds.
 
-Top: the trace in gray, the car on top of it; at this scale they cannot be told apart. Bottom: the
-battery power. Every negative dip is braking: the machine turns generator and the pack charges.
-The dips are small in town and large in the Extra High phase, where the car brakes from motorway
-speed.
+Top: the speed in kilometers per hour. The gray line is the WLTC trace, the blue line the car,
+through the four phases, Low, Medium, High and Extra High, up to 131 kilometers per hour. At this
+scale you cannot tell them apart.
 
-This is the moment to point out that the regen is already there in step 04, without any regen
-controller: the machine asked for a negative torque simply generates. What step 05 adds is the
-limits and the friction share.
+Bottom: the battery power in kilowatts, in orange, positive when the battery delivers. It peaks at
+about 46 kilowatts driving and dips to about 31 kilowatts of charging under braking. The dips are
+small in town and large in the Extra High phase, where the car brakes from motorway speed.
+
+The green box: every negative dip of the battery power is braking energy coming back, and there is
+no regen controller yet. The `TorqueSplit` hands the braking to the machine, which fades out below
+10 kilometers per hour, and the rest to the front brakes. A machine asked for a negative torque
+simply generates. What build 05 adds is the limits, and the share for the friction brakes.
 -->
 
 ---
@@ -197,21 +232,24 @@ Regen deceleration in real cars: **0.2–0.3 g** (Nissan e-Pedal, Bosch).
 </div>
 
 <!--
-Deck 7 slides 6 and 33. Slide 6: as the car brakes, the energy of motion is transferred to the
-motor, the motor acts as a generator, and the electricity is stored in the battery. Slide 33 shows
-the classic circuit: a switch moves the motor from the battery onto a load resistor, and the
-motor's back-EMF drives current through it: dynamic braking. The deck notes that the generated
-voltage depends on speed, so a DC-DC converter is needed to charge the battery. That converter is
-step 02's: asked for a negative current, it reverses the power flow.
+The motor as a brake. On the left, the deck: as the car brakes, the motor keeps turning, and its
+back-EMF drives a current the other way, so the machine generates. The deck's circuit burns that
+current in a resistor. A converter instead pushes it into the battery: build 02's converter, asked
+for a negative current, reverses the power flow.
 
-The limits. At low speed the back-EMF is small, and at standstill zero: a machine asked for a
-negative torque there pushes the car backwards. Step 02 showed the other side: braking at
-standstill, the supply pays the copper loss, 6.5 kW. The torque limit is the machine's 320 newton
-meters. The battery limits the charge power, and a full battery takes less. And only the driven
-wheels brake electrically: on a front-driven car, the rear axle's share is always friction.
+And build 01 already did it: past V over K Phi, the machine gave minus 304 newton meters and sent
+312 amperes back into the supply.
 
-The anchor: Nissan's e-Pedal decelerates the Leaf up to 0.2 g on lift-off; Bosch's ESP hev quotes
-up to 0.2 g of pure regenerative braking with a vacuum booster and 0.3 with an iBooster.
+On the right, what limits regen. Speed: at standstill there is no back-EMF to brake with, and a
+machine asked to brake there drives the car backwards. Build 02 showed the other side: braking at
+standstill, the supply has to pay the copper loss, 6.5 kilowatts. Torque: the machine's 320 newton
+meters. The battery: how much charge power the pack accepts, and a full pack accepts less. And grip:
+only the driven axle brakes electrically, so on our front-driven car the rear axle's share is always
+friction.
+
+The last line, regen deceleration in real cars: 0.2 to 0.3 g. Nissan's e-Pedal decelerates the Leaf
+at up to 0.2 g when the driver lifts off. Bosch quotes up to 0.2 g of pure regenerative braking for
+its ESP hev with a vacuum booster, and up to 0.3 g with its iBooster.
 -->
 
 ---
@@ -248,21 +286,32 @@ At 80 km/h: **137 N·m**, **0.25 g** of regenerative deceleration.
 </div>
 
 <!--
-The plan's S8, step 05's `RegenBlend`. The driver's brake demand goes to the machine first, up to
-the smallest of three ceilings, each a torque at the machine.
+Build 05's `RegenBlend` gives the driver's brake demand to the machine first, up to the smallest of
+three ceilings, each a torque at the machine. The table lists them.
 
-The torque limit: 320 newton meters, the machine's peak, Nissan. The charge power: 80.5 kW, INL's
-10 second charge capability of a 2013 Leaf pack at 20 percent depth of discharge; the ZE1's larger
-pack takes more. Divided by the machine speed it is a torque that falls as 1 over omega. The fade:
-below 10 km/h the machine's share falls linearly to zero, so it never drives the car backwards. No
-primary source gives a fade speed; the plan's band is 5 to 10, and 10 is assumed.
+The torque ceiling, tau max: 320 newton meters, the machine's peak, from Nissan. The charge-power
+ceiling, P charge over omega: 80.5 kilowatts divided by the machine speed in radians per second, a
+torque that falls as 1 over omega. The 80.5 kilowatts is Idaho National Laboratory's measured 10
+second charge capability of a 2013 Leaf pack at 20 percent depth of discharge; the ZE1's larger pack
+takes more. And the low-speed fade: tau max times v over v fade, clamped between 0 and 1, so below v
+fade the ceiling falls linearly to zero and the machine never drives the car backwards. v fade is 10
+kilometers per hour, and it is assumed: no primary source gives a fade speed, and the plan's band is
+5 to 10.
 
-The machine speed is estimated from the car's: v over 3.6, times 8.193, over the 0.31 meter wheel
-radius.
+The formula puts them together: the regen torque is the minimum of the demand and the three
+ceilings. The machine speed omega is estimated from the car's speed: v in kilometers per hour,
+divided by 3.6, times 8.193, divided by the 0.31 meter wheel radius.
 
-The checkpoints worked: at 80 km/h the machine turns 587 radians per second, and 80 500 over 587
-is 137 newton meters. At the wheels that is 1123, 3.6 kN on the road, 0.25 g: inside the 0.2 to
-0.3 g band. The corner: 80 500 over 320 is 251.6 radians per second, 34.3 km/h.
+On the right: the three ceilings draw a regenerative envelope, the motoring envelope of section 04
+mirrored. It rises to 320 newton meters at 10 kilometers per hour, stays flat down from the corner,
+where 320 newton meters meets 80.5 kilowatts, and falls as 1 over omega above the corner. The
+corner: 80 500 watts over 320 newton meters is 251.6 radians per second at the machine, which is
+34.3 kilometers per hour.
+
+And at 80 kilometers per hour, where the hard stop starts: the machine turns 587 radians per second,
+and 80 500 over 587 is 137 newton meters. At the wheels that is 137 times 8.193, 1123 newton meters,
+3.6 kilonewtons on the road, which for 1500 kilograms is 0.25 g of regenerative deceleration, inside
+the 0.2 to 0.3 g band of the last slide.
 -->
 
 ---
@@ -294,22 +343,23 @@ it burns braking energy the machine could have recovered.
 </div>
 
 <!--
-Two strategies from the literature: Gao and Ehsani, and Ehsani's textbook's regen chapter.
+How should the machine and the friction brakes share the work? The literature names two strategies,
+and the figure sketches both. Each panel plots braking torque against the driver's brake demand,
+with the machine's limit marked. These are sketches, not results.
 
-Series blending: the machine takes the whole demand while it can, and the friction brakes only
-the remainder. To do that the pedal must not push the hydraulics directly: the controller decides
-how much pressure to build. That needs brake-by-wire, or an electromechanical booster such as
-Bosch's iBooster, which Lecture 3 mentioned. Nissan's ZE1 spec sheet lists a cooperative regen
-brake with electric control.
+Left, series blending, also called cooperative: the machine takes all of the demand up to its limit,
+and friction only the remainder above it. To do that, the pedal must not push the hydraulics
+directly: a controller decides how much pressure to build. That needs brake-by-wire, or an
+electromechanical booster. The Leaf ZE1's specification lists a cooperative regenerative brake with
+electric control, and Bosch's iBooster makes the same possible.
 
-Parallel blending: the friction brakes work as always, and the machine adds a share on top. No
-decoupling, cheaper, and on a light brake demand it burns energy in the pads that the machine
-alone could have recovered. Benchmarks found series clearly ahead.
+Right, parallel blending: the machine and friction share every demand in a fixed or speed-dependent
+ratio, with no decoupling. It is simpler, but on a light brake demand it burns energy in the pads
+that the machine alone could have recovered. A benchmarking study found series blending clearly
+ahead.
 
-Our `RegenBlend` is series: the remainder goes to Lecture 3's equal per-wheel demand, through its
-ABS unit, unchanged.
-
-The sketches are diagrams, not results: the results are the next slides.
+Our `RegenBlend` is series. The remainder goes to Lecture 3's brakes, divided equally over the four
+wheels, through Lecture 3's ABS unit, unchanged. You build it next.
 -->
 
 ---
@@ -355,33 +405,41 @@ kJ(r."E_shaft_in"), kJ(r."E_brake"), kJ(r."E_dc_in")
 </div>
 
 <!--
-Fifteen minutes: one small block with five equations, two pasted benches, two runs and two
-variations.
+Build 05: regen, blended onto the Lecture 3 brakes. On the left, the finished `BEVHardStop` in
+Studio. The pedal and the speed in kilometers per hour go into the blend. The blend's machine torque
+goes to your drive, and its brake torque into Lecture 3's ABS unit. The drive turns the front wheels
+through the differential. The wheel slips and a zero go into the ABS, and its outputs drive the four
+brakes. A motion block reads the car's bus.
 
-1. `RegenBlend`: five parameters, two inputs, the driver's torque and the speed in km/h, two
-   outputs, the machine's torque and each of the four friction brakes' torque. In code: the
-   machine speed from the car's, the fade, the charge-power ceiling, the smallest of the three,
-   the demand as a positive braking torque, the regen as the smaller of demand and ceiling, and
-   the remainder through the reduction, divided over four wheels. Driving passes straight
-   through.
-2. `BEVHardStop`: Lecture 3's straight ABS stop, with your drive on the front axle and the blend
-   between the driver's brake command and the ABS unit. Paste.
-3. `BEVRegenWLTC`: step 04's bench with the blend in place of the split, the friction share on
-   all four brakes, and four meters. Paste.
+The steps. A new component `RegenBlend`, with five parameters: ratio, 8.193; radius, 0.31; tau max,
+320; P charge, 80.5 kilowatts; and v fade, 10. It has two inputs, the driver's torque and the speed
+in kilometers per hour, and two outputs, the machine's torque and the torque for each of the four
+friction brakes. In code go its variables and equations, the last slides in order: the machine speed
+from the car's speed, the fade, the charge-power ceiling, the smallest of the three ceilings, the
+demand as a positive braking torque, the regen torque as the smaller of the demand and the ceiling,
+and the remainder, carried through the reduction and divided over four wheels. Driving torque passes
+straight through to the machine. Then paste two benches from the guide. `BEVHardStop` is Lecture 3's
+straight ABS stop, with your drive on the front axle and the blend between the driver's brake
+command and the ABS. `BEVRegenWLTC` is build 04's bench with the blend in place of the split, the
+friction share on all four brakes, and four energy meters. Run each analysis once.
 
-Expected, from `HandsOn04.BEVHardStopTransient`: 80 to 0 km/h in 3.0 seconds after the pedal,
-36.2 meters. The regen torque follows the envelope: 137 at 80 km/h, 183 at 60, 320 from 34.3 to
-10, the fade below. The battery charges at up to 75.9 kW, minus 205 amperes. The front-left
-friction brake falls to zero from about 62 km/h and stays there down to 10 km/h, where the fade
-hands it back; the rear-left carries the friction share all the way, cycling under the ABS.
-Machine 176.9 kJ, friction 181.8, battery 170.2. With
-the charge limit at zero: 38.8 meters.
+The snippet runs the hard stop, plots the regen ceiling and the machine's regen torque against
+speed, with the speed axis flipped so that the stop reads from left to right, and reads three
+energies at the end in kilojoules: what the shaft took back, what the friction brakes burned, and
+what reached the battery.
 
-From `HandsOn04.BEVRegenWLTCTransient`: 34.25 Wh/km back of 143.6 of traction, 23.85 percent; the
-shaft took back 38.7 and 88.6 percent of that reached the battery; friction 0.001 Wh/km. At a 15
-kW charge limit: 21.40 percent, friction 3.69 Wh/km, 9.5 percent of the braking.
+The first green box, the hard stop. From 80 to 0 kilometers per hour in 3.0 seconds, in 36.2 meters.
+The regen torque, `blend.tau_regen`, is 137 newton meters at 80 kilometers per hour and 320 from
+34.3 down to 10. The machine takes 176.9 kilojoules and friction 181.8: 49 and 51 percent. 170.2
+kilojoules reach the battery. And with P charge set to 0, which turns regen off, the stop is 38.8
+meters. If you also plot the friction brakes, the front-left one falls to zero from about 62
+kilometers per hour and stays there down to 10, where the fade hands it back; the rear-left carries
+the friction share all the way, cycling under the ABS.
 
-Testsets: `test/regen_plausibility.jl`.
+The second green box, the WLTC. 34.25 watt-hours per kilometer come back, of 143.6 of traction at
+the shaft: 23.85 percent. The friction brakes burn 0.001 watt-hours per kilometer. With P charge at
+15 kilowatts: 21.40 percent, and the friction brakes burn 3.69 watt-hours per kilometer, 9.5 percent
+of the braking. The next three slides explain these numbers.
 -->
 
 ---
@@ -397,21 +455,31 @@ class: big-figure
 34.3 km/h, 320 N·m down to 10 km/h, the fade below · battery up to <b>75.9 kW</b>, −205 A</div>
 
 <!--
-The figure is notebook 04 section 4: the course library's `PlanarBEVHardStop`, Lecture 3's
-straight ABS stop from 80 km/h with step 05's blend, and the same stop with the charge limit at
-zero, friction alone.
+The hard stop, from notebook 04, section 4. It is Lecture 3's straight ABS stop from 80 kilometers
+per hour, with build 05's blend. The driver asks each wheel for 2500 newton meters, 10 000 in all,
+which is 1221 newton meters at the machine. That is about twice what the tires can carry, so the ABS
+holds every wheel near its peak slip, and the demand is far above every ceiling.
 
-The driver asks each wheel for 2500 newton meters, 1221 at the machine: twice what the tires can
-carry, so the ABS holds every wheel near its peak slip, and the demand is far above every ceiling.
-So the machine regenerates exactly the envelope, left: the charge-power curve at high speed, 137
-newton meters at 80 km/h and 183 at 60; the torque limit from the corner at 34.3 down to 10 km/h;
-then the fade. The battery charges at up to 75.9 kW, 205 amperes, less than the 80.5 limit,
-because the limit is on the machine's power and the losses come off before the terminals.
+Left panel: the horizontal axis is the car's speed in kilometers per hour, the vertical axis the
+braking torque at the machine in newton meters. Read it from right to left, because the car slows
+down. The gray lines are the three ceilings: dashed, the 320 newton meter torque limit; dotted, the
+charge-power curve, 80.5 kilowatts over omega; dash-dotted, the fade below 10 kilometers per hour.
+The thick blue line is the machine, regenerating. It lies exactly on the smallest ceiling all the
+way: on the charge-power curve from 80 down to the corner at 34.3 kilometers per hour, 137 newton
+meters at 80 and 183 at 60; flat on the torque limit from 34.3 down to 10; and on the fade below
+that. The ceilings take turns, as the title says.
 
-Right: the stop is shorter with regen, 36.2 meters against 38.8. On friction
-alone the front ABS works the front tires at about 62 percent of their grip; below the corner speed
-the machine's steady 320 newton meters holds them at 93 percent. The machine is a smoother
-modulator than the ABS's valves.
+Right panel: the car's speed against the distance from the moment the pedal goes down. Blue is regen
+plus friction: the car stops in 36.2 meters. Orange is the same stop with the charge limit set to
+zero, on friction alone: 38.8 meters. With regen the stop is 2.6 meters shorter. On friction alone
+the front ABS works the front tires at about 62 percent of their grip; below the corner speed the
+machine's steady 320 newton meters holds them at 93 percent.
+
+The green box is what your run of build 05 shows: `blend.tau_regen` lies on the smallest ceiling,
+the charge power above 34.3 kilometers per hour, 320 newton meters down to 10, and the fade below.
+The battery charges at up to 75.9 kilowatts, minus 205 amperes. That is less than 80.5, because the
+limit is on the machine's electromagnetic power, and the machine's, the converter's and the
+battery's losses come off before the terminals.
 -->
 
 ---
@@ -442,23 +510,32 @@ not most of it, because the hard stop asks for far more than the ceilings allow.
 </div>
 
 <!--
-Notebook 04 section 4, the energy split. The hard stop's meters, read at the end: the machine
-takes back 176.9 kJ through the reduction, the friction brakes burn 181.8, tire slip 22.0. They
-add up to the 380.7 kJ the car started with in body and wheels, to under 10 to the minus 9 of it.
-The machine's share: 49.3 percent.
+Where did the energy go on the hard stop? The figure is notebook 04, section 4: the energy over the
+stop in kilojoules, in three groups of bars. Blue is the stop with regen plus friction, orange the
+stop on friction alone. The first group is the machine, the energy it took back through the
+reduction; the second, the friction brakes; the third, tire slip.
 
-On friction alone, the orange bars, the friction brakes burn 366.8 kJ and the machine takes back
-almost nothing, 0.8 kJ.
+With regen: the machine takes back 176.9 kilojoules, the friction brakes burn 181.8, and tire slip
+takes 22.0. On friction alone: the machine almost nothing, 0.8, the friction brakes 366.8, and tire
+slip 19.8.
 
-170.2 kJ reaches the battery terminals: 47 watt-hours, about 350 meters of WLTC at 131 Wh/km.
+The car starts with 380.7 kilojoules of kinetic energy in its body and wheels; the title rounds it
+to 381. The machine, the brakes and the tires add up to that, to better than one part in a billion:
+the meters close. The machine's share of the braking is 176.9 over 176.9 plus 181.8, 49.3 percent,
+and friction's 51. Not most of it, because the hard stop asks for far more than the ceilings allow.
 
-The box is a known limit worth saying out loud. The machine sits outside the ABS loop: the ABS
-reads the slips and modulates the friction brakes, and nothing withdraws the regen when it acts.
-On the dry hard stop, from about 62 km/h the machine's torque keeps the front slip at minus 0.04
-to minus 0.06, past the 0.03 at which the ABS reapplies, so the ABS holds the front friction brakes
-released and the front tires work at about 65 percent of their grip until the machine's 320 newton
-meters reaches it below 34 km/h. On a low-µ road the machine alone would lock the front wheels.
-Production systems withdraw regen when the ABS acts.
+Of the machine's share, 170.2 kilojoules reach the battery terminals: 47 watt-hours. At the 134.3
+watt-hours per kilometer the car takes out of its cells on the WLTC, as section 08 shows, that is
+about 350 meters of driving.
+
+The quote box is a limit of our model, worth saying out loud. The machine sits outside the ABS loop.
+The ABS reads the wheel slips and modulates only the friction brakes, and nothing withdraws the
+regen torque when the ABS acts. On this dry stop, from about 62 kilometers per hour, the machine's
+torque alone holds the front slip at minus 0.04 to minus 0.06, past the 0.03 at which the ABS
+reapplies the brake. So the ABS keeps the front friction brakes released, and the front tires work
+at about two thirds of their grip until, below 34 kilometers per hour, the machine's 320 newton
+meters reaches it. A production brake system withdraws regen when the ABS acts. On a slippery road,
+this machine alone would lock the front wheels.
 -->
 
 ---
@@ -489,23 +566,26 @@ The regen path, not a ceiling, sets the share: section 08 sets it against the me
 </div>
 
 <!--
-Why the blending lesson needs the hard stop: on the WLTC it hardly shows. The cycle's hardest
-deceleration is 1.5 meters per second squared, 0.15 g: 87 newton meters and 32 kW at the machine,
-far inside the 320 and 80.5. So above walking pace the machine takes the whole demand, and
-friction only the fade's leftovers and the hold at standstill: 0.004 percent of the braking.
+On the WLTC the blending hardly shows, and this slide says why. On the left: the cycle never
+decelerates harder than 1.5 meters per second squared, 0.15 g. That asks at most 87 newton meters
+and 32 kilowatts of the machine, far inside its 320 newton meters and 80.5 kilowatts. So neither the
+torque nor the charge-power ceiling binds above walking pace, and the machine takes the whole
+demand. The friction brakes burn only what the fade leaves near standstill, and hold the car at the
+stops: 0.004 percent of the braking.
 
-The recovered share: 34.25 Wh per km back into the battery terminals, over 143.6 Wh per km of
-traction at the shaft, 23.85 percent. Inside the plan's 18 to 25, in its upper half. The band is
-derived: 25 to 26 percent of the traction is braking energy, and Boretti measured the 2012 and
-2013 Leaf's regen path, braking at the vehicle to the battery, at 70 to 87 percent. Ours lets
-88.6 percent through: the reduction and the differential are lossless.
+The battery gets back 23.85 percent of the traction energy: 34.25 watt-hours per kilometer into the
+battery terminals, over 143.6 watt-hours per kilometer of traction delivered at the machine's shaft.
+The shaft takes back 38.7 watt-hours per kilometer under braking, and 88.6 percent of that reaches
+the battery.
 
-The variation in the guide: lower the charge limit to 15 kW and the share drops to 21.40, the
-measured car's range, but only by burning braking energy on friction, 9.5 percent of it, above the
-plan's 4 percent. The gap to the measured car is the regen path's efficiency, not a limit.
+On the right, change one thing: lower the charge limit to 15 kilowatts, and the share drops to 21.40
+percent. But it gets there only by putting braking energy on friction, 9.5 percent of the braking,
+more than twice the 4 percent the plan allows for friction on the WLTC.
 
-Against step 04's `TorqueSplit`: 23.80 percent; series blending changes the WLTC by a twentieth of
-a point.
+So the last line: the regen path, not a ceiling, sets the share. What decides it is how much of the
+braking energy the machine, the converter and the battery pass back, and section 08 sets that
+against the measured Leaf. For comparison, build 04's simple torque split gave 23.80 percent on the
+same cycle: on the WLTC, series blending changes the result by a twentieth of a point.
 -->
 
 ---
@@ -524,6 +604,14 @@ a point.
 ### Next: add it all up. <Link to="energy-bill">→ 08, the energy bill</Link>
 
 <!--
-One minute. The car drives and brakes. What is left is to put a meter on every link and read where
-the energy went.
+Section 07 in five lines. The drive turns the driver's torque into a converter current at the
+present field, and the car follows the WLTC to within 1.63 kilometers per hour over 23 267 meters. A
+machine asked to brake generates, and regen is limited by the machine's torque, the battery's charge
+power, a low-speed fade, and grip. Series blending gives the machine the demand first and friction
+the rest. On the hard stop the ceilings take turns, the machine takes 49 percent and friction 51,
+and the stop is shorter, 36.2 meters against 38.8. On the WLTC no ceiling binds, and 23.85 percent
+of the traction comes back.
+
+The car drives and brakes. What is left is to put a meter on every link and read where the energy
+went.
 -->

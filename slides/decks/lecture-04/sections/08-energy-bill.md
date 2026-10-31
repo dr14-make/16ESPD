@@ -13,8 +13,10 @@ same cycle in MJ/100 km against Lecture 2's engine.
 `notebooks/lecture04/03-energy-bill.pluto.jl`
 
 <!--
-Budget: about 17 minutes, of which build 06 takes about 8: the meters 2, the bill 3, braking 2,
-against the engine 2, build 06 8. The headline result of the lecture.
+Section 08, the energy bill, the headline result of the lecture. We put a meter on every link of the
+chain, read the WLTC bill in kilowatt-hours per 100 kilometers, see what braking gave back, and
+compare the same cycle, in megajoules per 100 kilometers, with Lecture 2's engine car. The figures
+come from notebook 03, and the section ends with build 06.
 -->
 
 ---
@@ -55,18 +57,30 @@ error or a loss counted twice shows up as a residual.
 </div>
 
 <!--
-Step 06's idea: the battery alone gives the consumption; a meter on every link gives the bill,
-where each kilowatt-hour went.
+The battery alone would give us the consumption. A meter on every link gives us the bill: where each
+kilowatt-hour went.
 
-Each meter is a state that integrates a power, started at zero: the road-load meter integrates the
-road-load force times the car's speed. The solver integrates it with the same accuracy as the
+The table lists the meters, and each one integrates a power. `E_cells` integrates E times i, the
+energy out of the cells. `E_dc` integrates v times i at the terminals, the battery's output. `E_R0`
+integrates R0 i squared, the battery's resistance. `E_aux` integrates the auxiliary load's v times
+i, the 12 volt network. `E_conv` integrates the converter's loss power, and `E_motor` the machine's.
+`E_road` integrates the road-load force times the car's speed: drag and rolling resistance. And
+`E_brake` and `E_tire` integrate torque times wheel speed at the four friction brakes, and tire
+force times slip speed at the four tires.
+
+On the right: a meter is a state. For example, the derivative of `E_road` equals the road-load force
+times the car's speed, starting from zero. The solver integrates it with the same accuracy as the
 car's speed, so the bill does not depend on how the result is saved.
 
-The balance: what left the cells equals the road load, the friction brakes, tire slip, the
-machine's losses, the converter's, the battery's resistance, the auxiliaries, and the change of
-kinetic energy, zero when the car ends at rest. Because every term is measured separately from
-its own part's power, a sign error in a connector or a loss counted twice would show up as a
-residual. On the reference run it is 3 times 10 to the minus 9.
+Energy is conserved, so the links must add up, and that is the formula. What left the cells, E
+cells, equals the road load, plus the friction brakes, plus tire slip, plus the losses of the
+machine, the converter and the battery's resistance, plus the auxiliaries, plus the change of
+kinetic energy, Delta E kin, which is zero when the car ends at rest. The reduction and the
+differential are ideal and cost nothing.
+
+Each meter is measured on its own, from its own part's power, so their sum closing on the battery
+checks the model. A sign error in a connector, or a loss counted twice, would show up as a residual.
+On the reference run the residual is 3 times 10 to the minus 9.
 -->
 
 ---
@@ -97,18 +111,26 @@ where the fixed losses count.
 </div>
 
 <!--
-The figure is notebook 03 section 2, "Where the energy went": the course library's `PlanarBEVWLTC`,
-the twin of your `BEVEnergyBill`, each bar one link's loss over the cycle per kilometer.
+The WLTC bill. The figure is notebook 03, section 2, where the energy went: the course library's
+`PlanarBEVWLTC`, the twin of the `BEVEnergyBill` you build. Each bar is one link's loss over the
+whole cycle, divided by the distance, in watt-hours per kilometer, and the title gives the total:
+out of the cells, 134.3 watt-hours per kilometer.
 
-Read it left to right. The road load, drag and rolling resistance, 103.1 Wh per km: the price of
-moving the car at all. The machine, 17.6: the largest loss of the chain, because the WLTC drives
-at light load, where section 04's map is lowest. The auxiliaries, 6.4: 300 watts for half an
-hour. The battery's resistance 3.1, the converter 2.1, tire slip 1.8, the friction brakes 0.1:
-only what the fade leaves near standstill. Together 134.3 out of the cells.
+Read the bars from left to right. The road load, drag and rolling resistance: 103.1, the price of
+moving the car at all. The machine: 17.6, the largest loss of the chain, because the WLTC drives at
+light load, where section 04's map is lowest. The auxiliaries: 6.4, that is 300 watts for half an
+hour. The battery's resistance: 3.1. The converter: 2.1. Tire slip: 1.8. And the friction brakes:
+0.1, only what the fade leaves near standstill. Together, 134.3.
 
-At the battery terminals: 131.2 Wh per km, 13.12 kWh per 100 km. The plan's band, 120 to 155, is
-derived from the Leaf's WLTP figure of 171 Wh per km at the wall, less 10 to 15 percent for
-charging, and a course road load about 15 percent below the Leaf's coastdown.
+The table on the right is the consumption at the battery terminals, what the pack delivers: 131.2
+watt-hours per kilometer, which is 13.12 kilowatt-hours per 100 kilometers. It is less than what
+left the cells by exactly the 3.1 lost in the battery's own resistance. The plan's band is 120 to
+155 watt-hours per kilometer. It is derived from the Leaf's official WLTP figure of 171 watt-hours
+per kilometer, which is measured at the wall: less 10 to 15 percent for charging, and allowing for
+the course road load being about 15 percent below the Leaf's measured coastdown. We land inside it.
+
+So, the text under the table: the road takes three quarters, and of the chain the machine is the
+largest loss, at light load, where the fixed losses count.
 -->
 
 ---
@@ -143,16 +165,27 @@ our lossless reduction lets 89 % through.
 </div>
 
 <!--
-Step 06's braking numbers, from the guide's worked checkpoint. Over the cycle the shaft delivered
-3.341 kWh of traction and took back 0.897 kWh under braking: 27 percent. Of that, 0.795 reached
-the battery, 89 percent: the machine, the converter and the pack each take a few percent on the
-way back. So the battery got back 24 percent of the traction energy.
+What did braking give back? The table is build 06's worked checkpoint, over the whole WLTC. The
+machine's shaft delivered 3.341 kilowatt-hours of traction. Under braking it took back 0.897
+kilowatt-hours, 27 percent of the traction. Of that, 0.795 kilowatt-hours reached the battery, 89
+percent: the machine, the converter and the pack each take a few percent on the way back. So the
+battery got back 24 percent of the traction energy.
 
-At the terminals: the battery gave out 165.4 Wh per km and took 34.2 back; the net, 131.2, is the
-bill.
+At the battery terminals, per kilometer: the battery gave out 165.4 watt-hours and took 34.2 back
+from braking. The difference, 131.2, is the bill on the last slide.
 
-The thesis of the lecture in one table: the chain closes in both directions, and each link costs a
-few percent each way.
+On the right: a quarter of the energy the machine put into the wheels came back to the pack. Without
+regen every stop would have burned it in the brakes, as in Lecture 2's car.
+
+And here is the anchor that section 07 pointed to: 18 to 25 percent. It is derived. About a quarter
+of the traction energy comes back as braking, 25 to 26 percent, and Boretti's analysis of measured
+2012 and 2013 Leafs found the regen path, from braking power at the vehicle to the battery,
+recovering 70 to 87 percent of it. Our lossless reduction lets 89 percent through, so we land in the
+upper half of the band. The gap to the measured car is the efficiency of the regen path, not a
+ceiling.
+
+That is the thesis of the lecture in one table: the chain closes in both directions, and each link
+costs a few percent each way.
 -->
 
 ---
@@ -181,21 +214,27 @@ Lecture 2's engine car: 5.22 L/100 km × 0.745 kg/L × 43.4 MJ/kg = **168.8 MJ/1
 </div>
 
 <!--
-The figure is notebook 03 section 4, "Against the engine car".
+Against the engine car. The figure is notebook 03, section 4: the energy over the WLTC in megajoules
+per 100 kilometers, three bars. Green, Lecture 2's engine car, in fuel: 168.8. Light gray, the
+battery-electric car at the wall, including the 13 percent charging loss: 54.3. Blue, the
+battery-electric car at the battery: 47.2.
 
-The units: a kilowatt-hour is 3.6 megajoules, so the electric car's 13.12 kWh per 100 km is 47.2
-megajoules. Lecture 2's engine car burns 5.22 liters per 100 km on the same cycle: times the
-density 0.745 and the lower heating value 43.4 megajoules per kilogram, 168.8. The ratio is 3.6.
-At the wall, with 13 percent lost in charging: 54.3.
+The arithmetic on the right. One kilowatt-hour is 3.6 megajoules, so 13.12 kilowatt-hours per 100
+kilometers is 47.2 megajoules per 100 kilometers. Lecture 2's engine car burns 5.22 liters per 100
+kilometers on the same cycle; times 0.745 kilograms per liter, times the lower heating value of 43.4
+megajoules per kilogram, that is 168.8. The electric car needs 3.6 times less energy, on the same
+cycle and road load, with a car 100 kilograms heavier. And at the wall, 47.2 divided by 0.87 is
+54.3.
 
-Be fair about the comparison. The engine car weighs 1400 kg, this one 1500. Neither has a heater
-or air conditioning: a 3 kW heater would add 64 Wh per km, half again. And the megajoules of
-electricity were made somewhere: in a power station, at its own efficiency. The bill compares the
-cars, not the energy systems behind them.
+Be fair about the comparison. The engine car weighs 1400 kilograms, this one 1500. Neither carries a
+heater or air conditioning: a 3 kilowatt heater would add 64 watt-hours per kilometer, half again.
+And the megajoules of electricity were made somewhere, in a power station, at its own efficiency.
+The bill compares the cars, not the energy systems behind them.
 
-Most of the gap is the engine's efficiency, about 30 percent at its best and far less at part load
-in town, against a chain that loses a few percent per link and gets braking energy back. The
-notebook shows the gap phase by phase: widest in town, narrowest on the motorway.
+Most of the gap is the engine's efficiency, about 30 percent at its best, against a chain that loses
+a few percent per link and gets braking energy back. The notebook also shows the gap phase by phase:
+it is widest in town, where the engine runs far below its best efficiency and every stop turns
+kinetic energy into heat, and it narrows on the motorway, where drag dominates both bills.
 -->
 
 ---
@@ -243,25 +282,29 @@ MJ_per_100km = Wh_per_km * 3.6 / 10, 5.22 * 0.745 * 43.4
 </div>
 
 <!--
-Eight minutes: one paste, one run, read the numbers.
+Build 06: the WLTC energy bill. This is the shortest build: one paste and one run.
 
-1. `BEVEnergyBill`: paste from the guide. It extends your step 04 bench, so it is the same car,
-   with the meters of the last slide added as states, and the per-kilometer results as variables.
-2. The analysis `BEVEnergyBillTransient`, with `P_aux` passed through.
-3. Run, then the snippet. The guide's version also computes the residual and the braking share.
+The italic line: a new component `BEVEnergyBill`, pasted from the guide. It extends your build 04
+bench, so it is the same car, with the meters of two slides back added as states. Its analysis,
+`BEVEnergyBillTransient`, passes P aux through. Run it once, then read the bill.
 
-Expected, from `HandsOn04.BEVEnergyBillTransient`: road load 103.1 Wh per km, machine 17.6,
-auxiliaries 6.4, battery R0 3.1, converter 2.1, tire slip 1.8, friction brakes 0.1. Together 134.3
-out of the cells; the residual about 3 times 10 to the minus 9; the car ends at rest so delta E
-kin is zero. At the battery terminals 131.2 Wh per km, 13.12 kWh per 100 km, inside the plan's
-120 to 155. The terminals gave out 165.4 and took 34.2 back from braking. 47.2 against 168.8
-megajoules per 100 km.
+The snippet on the right. km is the distance driven, in kilometers. kWh converts a meter's final
+value from joules to kilowatt-hours. links lists the seven meters with their names, and the next
+line prints each one in watt-hours per kilometer. Wh per km is the meter at the battery terminals
+per kilometer: the consumption. And the last line puts this car and the engine car side by side, in
+megajoules per 100 kilometers. The guide's version of the snippet also computes the residual and the
+braking share.
 
-Change one thing: 500 watts of auxiliaries puts the consumption at 135.5 Wh per km: 200 watts more
-for half an hour over 23 km is 4.3 Wh per km. A 3 kW heater would add 64.
+The first green box, the bill in watt-hours per kilometer: road load 103.1, machine 17.6,
+auxiliaries 6.4, battery R0 3.1, converter 2.1, tire slip 1.8, friction brakes 0.1. Unrounded, they
+add up to 134.3 out of the cells, and the residual is a few times 10 to the minus 9. The car ends at
+rest, so the change of kinetic energy is zero.
 
-Reference: the course library's `PlanarBEVWLTC` carries the same meters; notebook 03 draws the
-bill.
+The second green box: Wh per km at the terminals is 131.2, 13.12 kilowatt-hours per 100 kilometers,
+inside the plan's 120 to 155. The terminals took 34.2 watt-hours per kilometer back from braking.
+47.2 megajoules per 100 kilometers, against 168.8 for the engine car. And change one thing: with P
+aux at 500 watts the consumption becomes 135.5. 200 watts more, for half an hour, over 23
+kilometers, is 4.3 watt-hours per kilometer.
 -->
 
 ---
@@ -278,7 +321,13 @@ bill.
 ### Next: the whole lecture on one page. <Link to="wrap-up">→ 09, wrap-up</Link>
 
 <!--
-One minute. That is the headline: the same car on the same cycle needs a bit over a quarter of the
-energy with an electric chain, because each link is efficient and the chain runs backwards when the
-car brakes.
+Section 08 in five lines. Every link has its own meter, and their sum closes on the cells to 3 times
+10 to the minus 9. On the WLTC the car takes 131.2 watt-hours per kilometer at the battery, 13.12
+kilowatt-hours per 100 kilometers, inside the plan's band of 120 to 155. The road takes 103.1, the
+machine 17.6, the auxiliaries 6.4, and the rest of the chain a few watt-hours per kilometer each.
+Braking gave back 24 percent of the traction energy. And 47.2 megajoules per 100 kilometers, against
+168.8 for Lecture 2's engine car: 3.6 times less.
+
+That is the headline: the same car on the same cycle needs a bit over a quarter of the energy with
+an electric chain, because each link is efficient and the chain runs backwards when the car brakes.
 -->
