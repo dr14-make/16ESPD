@@ -10,8 +10,8 @@ layout: section
 The chain link by link, what you measured, and what the model leaves out.
 
 <!--
-Budget: 4 minutes: the chain 1, the summary 1, what you measured 1, the limits 1. The sources
-slide is for the handout; skip it in the room.
+Section 09, the wrap-up: the chain link by link, what you measured on your own car, and what the
+model leaves out.
 -->
 
 ---
@@ -37,13 +37,25 @@ routeAlias: chain-table
 **Out of the cells: 134.3 Wh/km. At the terminals: 131.2. Braking back: 24 % of traction.**
 
 <!--
-The lecture on one table: each link of the chain, the model you built for it, its key number, what
-it lost over the WLTC, and the step that built it. The road's 104.9 is drag and rolling, 103.1,
-plus tire slip, 1.8.
+The whole lecture on one table, one row per link of the chain. The columns: the model you built for
+it, its key number, what it lost over the WLTC per kilometer, and the step that built it.
 
-Read the loss column: after the road, the machine is the only large one, and it is large because
-the cycle drives at light load. Everything else is a few Wh per km. That is why the electric car
-needs a bit over a quarter of the engine car's energy.
+The battery: v equals E minus R0 i, with a coulomb-counted state of charge; 40 kilowatt-hours, 350
+volts, 0.1 ohm; it lost 3.1 watt-hours per kilometer; step 03. The 12 volt network: a constant
+power, 300 watts; 6.4; given in the library. The converter: v out equals d times v in, with current
+and duty limits; 99.2 percent at the corner; 2.1; step 02. The machine: T equals K Phi i and E
+equals K Phi omega, with its losses as parts; 320 newton meters, 110 kilowatts, 3283 rpm; 17.6; step
+01. The reduction and the differential: ideal gears, ratio 8.193; no loss; step 04. The brakes:
+series blending onto Lecture 3's, with the ceilings 80.5 kilowatts, 320 newton meters and a fade at
+10 kilometers per hour; 0.1; step 05. And the road: Lecture 2's road load, 1500 kilograms, 0.63
+square meters, 0.012; 104.9, which is 103.1 of drag and rolling resistance plus 1.8 of tire slip;
+given.
+
+The line under the table: out of the cells, 134.3 watt-hours per kilometer; at the terminals, 131.2;
+and braking gave back 24 percent of the traction.
+
+Read the loss column. After the road, the machine is the only large loss, and it is large because
+the cycle drives at light load. Everything else costs a few watt-hours per kilometer.
 -->
 
 ---
@@ -67,12 +79,23 @@ needs a bit over a quarter of the engine car's energy.
 ### Next: what you measured on your own car. <Link to="what-you-measured">→</Link>
 
 <!--
-If you take one picture away, take the energy chain with the green arrows running back: every
-link reversible, each costing a few percent each way, and the bill that adds them up.
+The lecture in eight lines, one per section. 01: an electric car is a chain of reversible links, and
+on the WLTC the braking energy is a quarter of the traction. 02: a DC machine, T equals K Phi I and
+E equals K Phi omega; on a fixed supply a steep straight line, and a generator past V over K Phi.
+03: a PMSM under field-oriented control is that machine from the outside, with i q for torque and i
+d for the field. 04: the converter's voltage runs out at base speed, and above it field weakening
+holds the power constant; light-load efficiency decides the bill. 05: switches and pulse-width
+modulation make the converter, and averaged, v equals d times V. 06: v equals E minus R0 i, and the
+state of charge counted from the current. 07: regen is limited by torque, charge power and speed,
+and series blending gives the rest to friction. 08: 131.2 watt-hours per kilometer, 47.2 megajoules
+per 100 kilometers, against the engine car's 168.8.
 
-The notebooks are in the repository, `notebooks/lecture04/`. Open them in Pluto and move the
-controls: the auxiliary load and the fade speed in the energy bill, the duty and frequencies in
-the switching notebook.
+If you take one picture away, take the energy chain with the green arrows running back: every link
+reversible, each costing a few percent each way, and a bill that adds them up.
+
+The notebooks are in the repository, in `notebooks/lecture04`. Open them in Pluto and move the
+controls: the auxiliary load and the fade speed in the energy bill, the pack voltage in the
+efficiency map, the duty, the modulation index and the frequencies in the switching notebook.
 -->
 
 ---
@@ -104,13 +127,28 @@ stepped gearbox.
 </div>
 
 <!--
-One minute. Each row is a test expectation of the reference model, and each is a number your own
-parts should have produced. If one differs, the guide's Fell behind block for that step has the
-finished code.
+What you measured, build by build. Each number is a test expectation of the reference model, and
+each is a number your own parts should have produced.
 
-Lecture 5 reuses everything here: this machine, converter and battery, with Lecture 2's engine and
-a clutch on the CVT, a P2 hybrid with an energy manager, and the P0 to P4 positions compared on
-the WLTC.
+Build 01, the machine on a dyno: 320.0 newton meters at 3283 rpm for 332.2 amperes, 94.6 percent
+efficient, and minus 304 newton meters at 3600 rpm, generating. Build 02, the converter and the
+envelope: the duty reaches 1 at 3283 rpm, the field is down to 0.328 at 10 000 rpm, the air-gap
+power holds at 110.75 kilowatts, and the converter is 99.2 percent efficient. Build 03, the battery:
+a 10 volt sag at 100 amperes, the state of charge from 0.9 to 0.4625 in 30 minutes, and 17.0 of the
+17.5 kilowatt-hours delivered. Build 04, the car on the WLTC: within 1.63 kilometers per hour of the
+trace, 23 267 meters, the state of charge from 0.9 to 0.822. Build 05, regen: a 36.2 meter hard stop
+with the machine taking 49 percent of the braking, and 23.85 percent of the traction back on the
+WLTC. Build 06, the bill: 131.2 watt-hours per kilometer, and 47.2 megajoules per 100 kilometers
+against 168.8.
+
+If one of yours differs, the guide's Fell behind block for that step has the finished code to
+compare with.
+
+The small print: commit each step on `handson-04`. The next lecture is the hybrid, built from your
+Lecture 2 engine, this lecture's machine and battery, and a clutch. And the extra pack holds what we
+left out today: battery chemistry; the more detailed cell, charging, state-of-charge estimation and
+the battery management system; fuel cells and hydrogen; a d-q model of the PMSM; and a stepped
+gearbox.
 -->
 
 ---
@@ -139,18 +177,23 @@ routeAlias: known-limits
 </div>
 
 <!--
-The plan's known limits, one line each. Each is a choice, and each would change the bill by a
-little.
+What the model leaves out, from the plan's list of known limits. Each is a choice, and each changes
+the bill by a little.
 
-The reducer: a real single-speed reducer loses 2 to 3 percent each way. On the 144 Wh per km of
-traction and 39 Wh per km of braking at the shaft, that adds 4 to 5 Wh per km to the bill.
+Left column. The machine is DC-equivalent: it has no saliency or reluctance torque, and no d and q
+dynamics. Field weakening is free: a real PMSM pays copper loss for its i d current, and the model
+does not. There is no heat: the motor, the inverter and the battery are all at a warm operating
+temperature. And E is constant: the state of charge does not move the open-circuit voltage. A real
+pack's voltage falls as it empties, and then the converter's corner moves down, as the 300 volt run
+of build 02 showed.
 
-The constant E: a real pack's voltage falls with SoC, and collapses near empty, so the converter's
-corner moves down as the pack empties, as the 300 volt run of step 02 showed. The extra pack's
-Thevenin cell reads E from SoC.
-
-The ABS: on the dry hard stop the machine's torque holds the front wheels past the ABS's reapply
-threshold, so the front friction brakes stay off. On a low-µ road the machine alone would lock them.
+Right column. Ideal gears: a real single-speed reducer loses 2 to 3 percent each way. On the 144
+watt-hours per kilometer of traction and the 39 of braking at the shaft, that would add 4 to 5
+watt-hours per kilometer to the bill. The WLTC is gentle: its blending result is mostly the fade,
+which is why the hard stop carries the blending lesson. The machine is outside the ABS loop: nothing
+withdraws regen when the ABS acts, so on the dry hard stop the front friction brakes stayed off, and
+on a slippery road the machine alone would lock the front wheels. And Oak Ridge's map belongs to the
+80 kilowatt first-generation motor, so the comparison with it is of shape and level, not a fit.
 -->
 
 ---
@@ -199,11 +242,26 @@ routeAlias: sources
 </div>
 
 <!--
-Where each number came from. The speaker notes on each slide name the source of the facts on it.
+The sources behind the numbers in this lecture, for reference.
 
-Not verified from a primary source: the Leaf ZE1's WLTP consumption, which comes from ADAC and EV
-Database; the low-speed regen fade speed, assumed at 10 km/h; Boretti's efficiencies, read from
-the abstracts. ORNL's map points were read by eye from contour labels, plus or minus a percentage
-point. The pairing of a PMSM with an induction machine in dual-motor cars is from manufacturer
-descriptions, not a primary source in the research note.
+On the left, the course and the repository: the two source decks, on electric vehicles and electric
+machines and on batteries and fuel cells, after Larminie and Lowry; the lecture plan, with the model
+ladder, the settled decisions and the reality anchors; the research note with the Leaf numbers, the
+Oak Ridge maps, the cell data and the regen studies, each with its verification status; and the
+build guide with its checkpoint tests. Then the manufacturer and the laboratories: Nissan's ZE1
+specifications and its 2017 press release; Burress at Oak Ridge National Laboratory, the 2013
+benchmarking presentation with the Leaf's efficiency maps; Idaho National Laboratory's 2014 battery
+tests of a 2013 Leaf pack; the baseline testing of the 2013 Leaf by Argonne and Idaho; and Bosch's
+ESP hev.
+
+On the right, papers and books: Larminie and Lowry's textbook; Boretti's analyses of the Leaf's
+regenerative braking efficiency; Gao and Ehsani's paper, and Ehsani, Gao and Emadi's textbook, on
+blending; and the 2024 paper by Gao and colleagues on Leaf cell resistance. Below them the secondary
+sources, ADAC's car catalog and the EV Database, for the Leaf's WLTP consumption and its cell
+chemistry.
+
+Some numbers are not verified from a primary source, and it is fair to say which. The Leaf ZE1's
+WLTP consumption comes from ADAC and the EV Database. The low-speed regen fade speed is assumed at
+10 kilometers per hour. Boretti's efficiencies were read from the abstracts. And Oak Ridge's map
+points were read by eye from contour labels, to within about a percentage point.
 -->

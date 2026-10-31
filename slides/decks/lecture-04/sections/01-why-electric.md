@@ -10,9 +10,9 @@ layout: section
 The case for the electric car, the energy it needs, and the chain that delivers it both ways.
 
 <!--
-Budget: about 12 minutes for the section, no build. It condenses deck 7's slides 3 to 8: why EVs,
-the energy model, regen, the benefits and the battery-electric layout. The history slide is
-left out; the hybrid layouts are Lecture 5.
+Section 01, why electric. Before we build anything, three things: the case for the electric car, the
+energy the car needs to drive a cycle, and the chain of links that delivers that energy to the
+wheels and, when the car brakes, takes it back.
 -->
 
 ---
@@ -55,20 +55,25 @@ routeAlias: why-evs
 </div>
 
 <!--
-Deck 7, slides 3 and 7, condensed. The deck put transport at 19.7 percent of greenhouse-gas
-emissions, with passenger cars about 12 percentage points of it, and cited the EU's CO₂
-regulation for new cars, 443/2009. Those numbers are the deck's and dated; the slide keeps the
-argument, not the figures.
+On the left, the problem, and what the electric drive changes. The deck makes the case like this.
+Transport causes about a fifth of greenhouse-gas emissions, and its share has grown. And in the
+European Union the limits on the CO2 emissions of new cars have tightened since Regulation 443 of
+2009.
 
-The deck claimed 85 to 95 percent efficiency for the electric drive. Today we measure it instead:
-the machine and converter together reach 93.8 percent at the corner point in build 02, and the
-WLTC bill in section 08 shows what the whole chain delivers on a real cycle.
+What does the electric drive change? First, efficiency. The chain from the battery to the wheel
+loses a few percent per link, while an engine turns about 30 percent of its fuel into work at its
+very best operating point. Second, nothing burns on board, so there is no local exhaust. Third,
+braking energy comes back: when the car brakes, the motor turns generator and charges the battery.
+And fourth, the mechanics are simple: few moving parts, no gearbox, no oil change.
 
-The deck's benefit list also had "domestically generated electricity" and "reduces peak load on
-the grid": both depend on the grid and on when the car charges, so they stay in the notes.
+On the right, what it costs. The battery: its mass, its cost, and an energy per kilogram far below
+that of a fuel tank. Charging takes time, and the range drops in the cold. And the CO2 does not
+disappear, it moves to the power station: an electric car is only as clean as the grid that charges
+it.
 
-The history slide, deck 7 slide 4, is left out: electric cars came before petrol ones and lost
-to them on range around 1910–1920. The battery is still the reason, which is section 06.
+The box at the bottom right is today's question: where does an electric car's energy go on the WLTC,
+and how much of it comes back? Section 08 answers it in kilowatt-hours per 100 kilometers, link by
+link. Instead of taking an efficiency from a brochure, we measure it on the model we build.
 -->
 
 ---
@@ -112,22 +117,34 @@ energy worth <b>25–26 %</b> of it (derived, plan)</div>
 </div>
 
 <!--
-Deck 7 slide 5 lists five resistances: O v aerodynamic, O f rolling, O z acceleration, O s slope,
-and O aux, everything electrical that is not propulsion. The first four are a force at the
-wheel; the last is a power from the battery.
+How much energy does the car need? That is Lecture 2's road load, which the deck calls its energy
+model. Let us read the formula term by term. F is the force the wheels must push with, in newtons,
+and it has four parts. The first is aerodynamic drag, O v in the deck's notation: one half times the
+air density rho, in kilograms per cubic meter, times the drag coefficient C d times the frontal area
+A, in square meters, times the speed v squared, in meters per second. The second is rolling
+resistance, O f: the rolling coefficient f r, which has no unit, times the mass m in kilograms,
+times g, 9.81 meters per second squared. The third is the force that accelerates the car, O z: mass
+times acceleration a. The fourth is the slope, O s: m g times the sine of the road's angle alpha.
+These four are forces at the wheel. The deck adds a fifth term, O aux, the auxiliaries: everything
+electrical that is not propulsion. That one is not a force at the wheel but a power drawn from the
+battery.
 
-This is Lecture 2's notebook 01, unchanged. The course library extracted it into a mass-free
-`RoadLoad` part so the planar car can use it through an adapter: the same numbers, so the engine
-and the electric car meet the same road.
+This is exactly the road load of Lecture 2's notebook 01. What is new is that the course library has
+taken it out into a part of its own, `RoadLoad`, with no mass in it, so that the planar car can use
+the same law through an adapter. The engine car and the electric car meet the same road.
 
-The green box is the size of the prize. On the WLTC a 1500 kg course car needs 139 Wh per km of
-positive traction energy at the wheel, and the braking phases would give back energy worth 25 to
-26 percent of that, if every bit could be recovered. Both are derived in the research note from
-the cycle and the road load. Below 15 km/h sits under 4 percent of it, so a regen fade at walking
-pace costs little.
+The table gives the course car's numbers: 1500 kilograms; a C d A of 0.63 square meters; a rolling
+coefficient of 0.012; 300 watts for the auxiliaries, which is a car on a test cycle with the climate
+control off; and the WLTC class 3b cycle, 23.27 kilometers long.
 
-The 300 W auxiliaries are a car on a test cycle with the climate control off: lights, pumps,
-electronics.
+The green box is the size of the prize. Run this road load backwards over the WLTC with a 1500
+kilogram car and add up the positive power at the wheel: 139 watt-hours per kilometer of traction.
+Add up the negative power, the braking phases, and you get energy worth 25 to 26 percent of that.
+That is the upper limit of what regenerative braking could recover on this cycle, if every bit of
+the braking energy came back. Both numbers are derived in the course's research note, from the cycle
+file and this road load. The same calculation shows that less than 4 percent of the braking energy
+lies below 15 kilometers per hour, so a regen system that fades out at walking pace gives away very
+little.
 -->
 
 ---
@@ -147,21 +164,30 @@ Every link is reversible. Each step today builds one, from the motor outwards; s
 meter on each and reads the bill.
 
 <!--
-The picture is the lecture. Read it left to right for driving: the grid fills the battery through
-a charger, the battery feeds the converter, the converter the machine, the machine turns the
-reduction and the differential, and the wheels push against the road. Read the green arrows right
-to left for braking: the wheels drive the machine, which turns generator, the converter's current
-reverses and the battery charges.
+This picture is the lecture. Read it first from left to right, along the black arrows: that is
+driving, with the energy flowing to the road. The grid fills the battery through a charger, which
+costs 10 to 15 percent. The charger box is dashed: dashed means given in the course library, or
+outside the model. The battery, V equals E minus R0 i, is built in step 03. It feeds the converter,
+v out equals d times v in, built in step 02. The converter feeds the machine, T equals K Phi i and E
+equals K Phi omega, built in step 01. The machine turns the reduction and the differential, ratio
+8.193, ideal in the model, so they cost nothing; that is step 04. And the wheels push against the
+road: drag, rolling resistance and tire slip. The 12 volt network hangs off the battery at 300
+watts.
 
-The orange numbers are the losses per kilometer on the WLTC, measured in build step 06 on the
-finished car: the road takes 103.1 Wh/km in drag and rolling and 1.8 in tire slip, the machine
-17.6, the auxiliaries 6.4, the battery's resistance 3.1, the converter 2.1. Out of the cells,
-134.3. The reduction and the differential are ideal gears in this model; a real one would cost
-2 to 3 percent each way, which is in the known limits.
+Now read the green arrows from right to left: that is braking. The wheels drive the machine, the
+machine generates, the converter's current reverses, and the pack charges. Only below walking pace
+do the friction brakes take over.
 
-The step numbers are the build order: the machine first, because it is the heart of the chain and
-the one the theory explains; then the converter that feeds it, the battery behind it, the car
-around it, regen, and the bill.
+The orange numbers are the losses per kilometer on the WLTC, measured on the finished car in build
+step 06. The road takes 104.9 watt-hours per kilometer: 103.1 in drag and rolling resistance and 1.8
+in tire slip. The machine loses 17.6. The 12 volt network takes 6.4, the battery's resistance 3.1,
+the converter 2.1, and the friction brakes, below walking pace, 0.1. All together, 134.3 watt-hours
+per kilometer leave the cells, the number at the bottom of the picture.
+
+The green step numbers are the build order. We start with the machine, the heart of the chain and
+the link the theory explains, then the converter that feeds it, the battery behind it, the car
+around it, regen, and finally the bill. That is the sentence under the picture: every link is
+reversible, each step builds one, and step 06 puts a meter on each and reads the bill.
 -->
 
 ---
@@ -205,19 +231,29 @@ The battery is charged
 </div>
 
 <!--
-Deck 7 slide 8. The battery, the motor and a controller between them. The controller is today's
-converter: it sets the voltage the motor sees and the current it draws. Two quadrants means it can
-drive forwards and backwards; four quadrants means it can also brake in both directions, with the
-current reversed, and that is what regenerative braking needs.
+The deck's battery-electric car has three parts: a battery that stores the energy, a motor, and a
+controller between them that sets the motor's power. The battery is charged in two ways: from the
+grid, through the plug, and by regenerative braking.
 
-The table is the car you build, from the plan's reality anchors. 320 newton meters from standstill
-to 3283 rpm, where it meets 110 kW: 110 000 divided by 320 is 343.8 radians per second, 3283 rpm,
-so the two Nissan numbers agree. The top speed of 144 km/h through the 8.193 reduction and a
-0.31 meter wheel gives about 10 100 rpm. The pack: 40 kWh at 350 volts, 96 cell pairs in series.
-Its resistance comes from INL's pulse tests on a 2013 Leaf pack: 0.11 to 0.145 ohm at mid
-charge, about 50 percent more near empty; the model uses 0.1.
+The controller is what we call the converter today. It sets the voltage the motor sees and the
+current it draws. The deck sorts controllers by quadrants, the four quadrants of torque against
+speed. A two-quadrant controller drives forward and in reverse. A four-quadrant controller can also
+brake in both directions, with the current reversed so that the energy goes back into the battery.
+Regenerative braking needs four quadrants.
 
-Series and parallel hybrids, deck 7 slides 9 to 18, are Lecture 5, on the same car.
+The table on the right is the car you build today, with each number's source. Peak torque 320 newton
+meters and peak power 110 kilowatts, both from Nissan's specification. Base speed 3283 rpm, also
+Nissan's, and you can check that the numbers agree: 110 000 watts divided by 320 newton meters is
+343.8 radians per second, which is 3283 rpm. So the motor gives 320 newton meters up to 3283 rpm,
+where it meets its 110 kilowatts. The top motor speed, about 10 100 rpm, is derived: Nissan does not
+state it, but the car's top speed of 144 kilometers per hour, through the 8.193 reduction and a
+wheel radius of 0.31 meters, gives about 10 100 rpm. The reduction ratio, 8.193, is Nissan's. The
+pack is 40 kilowatt-hours at 350 volts nominal, made of 96 pairs of cells in series, 96s2p. The pack
+resistance, 0.10 to 0.14 ohm, comes from Idaho National Laboratory's pulse tests on a 2013 Leaf
+pack; it rises by about half near empty, and our model uses 0.1 ohm. And the mass is the course
+car's 1500 kilograms.
+
+The hybrid layouts, series and parallel, are next lecture, on the same car.
 -->
 
 ---
@@ -233,6 +269,11 @@ Series and parallel hybrids, deck 7 slides 9 to 18, are Lecture 5, on the same c
 ### Next: the first link, the machine. <Link to="dc-machine">→ 02, the DC machine</Link>
 
 <!--
-One minute. The chain is the thread of the day; the next section opens it at the machine, the
-link the deck spends most slides on.
+To sum up section 01. An electric car is a chain of reversible links: battery, converter, machine,
+gear, wheel. It needs the same road load as the engine car: on the WLTC, 139 watt-hours per
+kilometer of traction at the wheel, and braking energy worth about a quarter of that, which regen
+can bring back. To brake into the battery, the controller must work in four quadrants. And the car
+you build has the Leaf ZE1's motor, gear and pack on the course car's body.
+
+Next we open the chain at its first link, the machine, the link the deck spends the most slides on.
 -->

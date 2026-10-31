@@ -13,13 +13,17 @@ harmonics, the three-phase bridge; the DC-DC for 12 V and the charger.
 `notebooks/lecture04/02-switching.pluto.jl`
 
 <!--
-Budget: about 20 minutes, no build: a demo on the switching models. Deck 7 slides 27 to 33. The
-notebook regenerates slides 28, 30 and 31 from running models; slides 29 (boost) and 32
-(three-phase bridge) stay diagrams.
+Section 05, power electronics. There is no build here, but a demonstration on switching models from
+notebook 02. We cover DC regulation, the step-down and step-up choppers, the H-bridge, pulse-width
+modulation and its harmonics, and the three-phase bridge; then the two other converters in the car,
+the DC-DC for the 12 volt network and the charger.
 
-Same rule as Lecture 2's: never stack time scales. A switching edge lasts a microsecond, a WLTC
-1800 seconds. The car carries the average converter of section 04; the switched models run beside
-it, for a few milliseconds, to show what the average hides.
+One rule runs through this section, the same rule as in Lecture 2: never stack time scales. A
+switching edge lasts a microsecond; a WLTC lasts 1800 seconds. So the car carries the average
+converter of section 04, and the switching models run beside it, for a few milliseconds, to show
+what the average hides. The notebook regenerates three of the deck's figures from running models:
+the step-down chopper, the H-bridge and pulse-width modulation. The step-up chopper and the
+three-phase bridge stay diagrams.
 -->
 
 ---
@@ -58,17 +62,26 @@ switch.
 </div>
 
 <!--
-Deck 7 slide 27. Why regulate at all: the battery's voltage moves with its state of charge, its
-temperature and its current; the motor and the electronics want a voltage that suits them.
+Why regulate a voltage at all? The deck: the voltage of every source moves, with time, with
+temperature and with load. Our own pack sags the moment it is loaded, as section 06 shows.
+Electronics and motors need a voltage that suits them.
 
-A linear regulator would turn the difference into heat: dropping 350 volts to 100 at 100 amperes
-would burn 25 kW. A switch that is either fully on or fully off has, ideally, zero voltage across
-it or zero current through it, and dissipates nothing. Switch it fast enough and the inductance of
-the load smooths the pulses: the load sees the average, d times the input.
+There are two ways to drop a voltage. A dropping device, a resistance or a linear regulator, burns
+the difference as heat: to take 350 volts down to 100 at 100 amperes, it would turn 250 volts times
+100 amperes, 25 kilowatts, into heat. The other way is a switching device: a switch that is either
+fully on or fully off, many thousand times a second. Averaged over a period, the output is the duty
+times the input. That is the formula on the right: the mean output voltage equals d times V in,
+where d is the fraction of each period the switch is on.
 
-The notebook's switch: the standard library has none, so a power transistor is a resistance the
-gate moves between 10 milliohms and 1 megaohm, with a finite edge time, and a 1 nanofarad output
-capacitance so the solver can follow the switching node.
+An ideal switch loses nothing. When it is on there is no voltage across it, when it is off no
+current through it, so the power in it, the product of the two, is always zero. A real switch loses
+a little while it is on, the conduction loss, and a little at every edge, while it passes through
+the middle and carries current and voltage at once, the switching loss.
+
+The last line is about the notebook. The standard library has no switch, so the notebook's power
+transistor is a resistance that the gate moves between 10 milliohms and 1 megaohm. The move takes a
+finite time, which is where the switching loss comes from, and the switch has a 1 nanofarad output
+capacitance so that the solver can follow the switching node.
 -->
 
 ---
@@ -94,18 +107,26 @@ routeAlias: buck
 battery.
 
 <!--
-Deck 7 slide 28, regenerated. The circuit on the left, the three currents on the right, from
-notebook 02 section 1, "Three currents": the library's `Vehicle.Electric.BuckChopper`, three
-periods in steady state.
+The step-down chopper, also called a buck converter. On the left, the circuit: a 48 volt supply,
+then the switch S, then the inductor L and the 0.7 ohm load. The freewheeling diode D runs from
+ground up to the node between the switch and the inductor. When the switch is on, the supply drives
+current through the inductor into the load. When it is off, the inductor keeps the current flowing,
+because an inductor's current cannot stop suddenly, and the diode gives it a path up from ground.
+The average output is d times V in.
 
-While the switch is on, the supply drives current through the inductor into the load: the top
-trace, the supply current, flows only in the shaded intervals. When the switch opens, the inductor
-keeps the current going, and the freewheeling diode gives it a path from ground: the middle trace.
-The load sees their sum, bottom: continuous, with a ripple. The inductor current never stops; it
-rises while the switch is on and falls while it is off, around the average the duty sets.
+On the right, the notebook's run of the library's `BuckChopper`, three switching periods in steady
+state at 20 kilohertz, so each period is 50 microseconds, and the time axis is in microseconds.
+Three panels, all in amperes. Top: the source current, through the switch. It flows only while the
+switch is on, in the shaded intervals. Middle: the diode current. It flows only while the switch is
+off. Bottom: the load current, their sum. It is continuous, with a small ripple: it rises while the
+switch is on and falls while it is off, around the average the duty sets.
 
-The design point is assumed: 48 to 13 volts, about 250 watts, 20 kHz, a 0.7 ohm load. The diode is
-the library's exponential diode, 0.6 volts at 3.3 amperes and 0.8 at 20: the deck's "0.6 times I".
+The line under the figures gives the design point: 48 volts down to 13 at 20 kilohertz, about 250
+watts. That is the kind of converter that feeds a 12 volt bus from a 48 volt mild-hybrid battery.
+The design point is assumed, not taken from a product. The duty is 0.3, so the textbook output would
+be 14.4 volts; the simulated output sits lower, at about 13, because of the diode's drop during the
+off time and the resistive drops. The diode is the library's exponential diode, 0.6 volts at 3.3
+amperes and 0.8 volts at 20 amperes, the deck's 0.6 volt diode.
 -->
 
 ---
@@ -132,17 +153,27 @@ a 13 V output, for 70 % of every period. A faster switch shrinks the ripple and 
 costs switching loss.
 
 <!--
-The figures are notebook 02 section 1, the losses bar and the frequency sweep.
+Where does a chopper lose its energy? Both figures are from notebook 02, section 1.
 
-Left: at the design point, 256 watts out, 93.6 percent. The deck's list in the order of size: the
-diode, 10.62 watts, because 0.8 volts is large against a 13 volt output and the diode conducts for
-70 percent of the period; the winding resistance, 3.66; the switching loss, 2.08; the switch's
-conduction, 1.07. The switching loss already exceeds the conduction loss at 20 kHz. Low-voltage
-converters therefore replace the diode by a second switch, synchronous rectification.
+Left: a horizontal bar chart of the average losses in watts at the design point, 256 watts out and
+93.6 percent efficient. The deck lists four losses, and in the model each one is a part with its own
+power. From the largest: the diode, about 0.8 volts times the current, 10.62 watts; the inductor's
+winding resistance, R L i squared, 3.66 watts; the switching loss, 2.08 watts; and the switch's
+conduction loss, R on i squared, 1.07 watts.
 
-Right: the frequency sweep. The ripple falls as 1 over f s, dashed; the switching loss grows with
-f s, so the efficiency falls from 94.5 percent at 5 kHz to 90.3 at 100 kHz. The deck's "over 90
-percent" holds over the whole range. The trade is the size of the inductor against the losses.
+The diode is the largest, and the text under the figures says why: 0.8 volts is a lot against a 13
+volt output, and the diode conducts for 70 percent of every period, because the switch is on for
+only 30. That is why low-voltage converters replace the diode with a second switch, which is called
+synchronous rectification: at 10 milliohms and 19 amperes it drops 0.2 volts instead of 0.8. Notice
+also that the switching loss already exceeds the switch's conduction loss at 20 kilohertz.
+
+Right: the frequency sweep, 5 to 100 kilohertz on a logarithmic axis. The left panel is the current
+ripple, peak to peak, in amperes. It falls as 1 over the switching frequency, the gray dashed line:
+double the frequency and the ripple halves, or the inductor can be half the size. The right panel is
+the losses in watts. The switching loss, in orange, is a fixed energy per edge, so it grows with the
+frequency. The other three together, in gray, fall a little. The efficiency falls from 94.5 percent
+at 5 kilohertz to 90.3 percent at 100. That is the designer's trade-off: a faster switch shrinks the
+ripple and the inductor, and costs switching loss.
 -->
 
 ---
@@ -174,20 +205,22 @@ The Leaf has none: its inverter sits straight on the pack (ORNL).
 </div>
 
 <!--
-Deck 7 slide 29, a diagram: the notebook has no switched boost model (plan S4).
+The step-up chopper, or boost converter. This one is a diagram; the notebook has no switched boost
+model. It uses the same three parts, rearranged: the supply, then the inductor L; from the node
+after the inductor, the switch S down to ground; and from that node the diode D to the output
+capacitor C and the load.
 
-The boost uses the inductor the other way. While the switch is on, the supply drives a rising
-current through the inductor to ground, storing energy. When the switch opens, the inductor's
-current must go on, and it can only go through the diode into the capacitor: the inductor's
-voltage adds to the supply's, so the output sits above it. Averaged, V in over 1 minus d: a duty
-of one half doubles the voltage.
+When the switch is on, the supply drives a rising current through the inductor to ground, and the
+inductor stores energy. When the switch opens, the inductor's current has to go on, and the only
+path is through the diode into the capacitor. Now the inductor's voltage adds to the supply's, so
+the output sits above the supply. Averaged, the output voltage is V in divided by 1 minus d. A duty
+of one half doubles the voltage, and the closer d gets to 1, the higher the output.
 
-Swap the roles of the switch and the diode, and energy flows from the high side to the low side:
-the same hardware bucks the other way. Bidirectional DC-DC converters do exactly that.
+Run it backwards, with the energy flowing from the high side to the low side, and a boost is a buck.
+So one bidirectional converter can do both.
 
-Some cars put a boost between the pack and the inverter, to run the machine at a higher voltage
-than the pack. The 2012 Leaf that ORNL took apart has one inverter on the pack and no boost: our
-car's converter is that inverter.
+The last line: the Leaf has none. In the 2012 Leaf that Oak Ridge took apart, the inverter sits
+straight on the pack, with no boost converter, and so does our car's converter.
 -->
 
 ---
@@ -212,18 +245,27 @@ routeAlias: h-bridge
 Hold each pair on for half a cycle: a **square wave**. The load's inductance rounds its current.
 
 <!--
-Deck 7 slide 30, regenerated: notebook 02 section 2, the library's `Vehicle.Electric.HBridge`.
+The H-bridge turns DC into AC. On the left, four switches in the shape of an H, on a 350 volt DC
+link, the Leaf pack's voltage. A and B are the upper switches, C and D the lower ones, and each has
+a freewheeling diode across it. The load sits across the middle, between the midpoints a and b: 10
+ohms in series with 10 millihenry, an assumed stand-in for a motor winding. With A and D on, a is at
+the positive rail and b at the negative one, so the load sees plus 350 volts. With B and C on, it
+sees minus 350. The two switches of one leg must never be on together: that would short the pack.
+The diodes give the inductive current a path whenever its switch opens.
 
-Four switches in an H, the load across the middle. A and D on: the left side at the positive
-rail, the right at the negative, the load sees plus 350 volts. B and C on: minus 350. The DC link
-is the Leaf pack's 350 volts; the load, 10 ohms and 10 millihenry, is a motor winding's R-L,
-assumed.
+On the right, the notebook's run of the library's `HBridge` in square-wave operation at 50 hertz,
+over two cycles, with time in milliseconds. Top: the output voltage in volts, jumping between plus
+and minus 350 every half cycle. The blue-shaded halves are A and D on, the red-shaded halves B and C
+on. Bottom: the load current in amperes. In each half cycle it climbs toward 350 volts over 10 ohms,
+35 amperes, with the load's time constant, L over R, 1 millisecond, so it rises and falls in
+exponential curves.
 
-Never both switches of one leg at once: that is a short circuit across the pack. Each switch has a
-freewheeling diode across it, so the inductive current has a path when its switch opens.
-
-The square wave is the crudest AC: its fundamental is right, but it carries large odd harmonics.
-The notebook makes it as PWM with the reference pushed far beyond 1, so the pulses merge.
+That is the sentence under the figures: hold each pair on for half a cycle and you get a square
+wave, and the load's inductance rounds its current. It is the crudest AC. Its fundamental is the
+largest a bridge can make, but every odd harmonic comes with it: the third at a third of the
+fundamental, the fifth at a fifth. A motor sees them as torque ripple and extra loss, and
+pulse-width modulation, next, removes them. In the notebook this square wave is that same modulation
+with its reference pushed far beyond 1, so the pulses merge.
 -->
 
 ---
@@ -250,18 +292,29 @@ carrier is below it. Averaged over each carrier period, the output **is** the si
 **280 V**.
 
 <!--
-Deck 7 slide 31, regenerated: notebook 02 section 3.
+Pulse-width modulation makes a sine out of the same bridge. Both figures are from notebook 02,
+section 3, with a carrier of 1 kilohertz so that the pulses are visible, and a modulation index m of
+0.8.
 
-Left: the gate pattern. The wanted voltage u is m sine of 2 pi 50 t, with m = 0.8. While u is
-positive, D stays on and A pulses with the duty u; while negative, B stays on and C pulses. The
-pulse width follows the sine: wide near the peak, narrow near the zero crossing. The carrier here
-is 1 kHz, so the pulses are visible; a real inverter runs at 5 to 20 kHz.
+The idea is in the text under the figures. Compare the wanted voltage with a triangle at the
+switching frequency, the carrier. The switch is on while the carrier is below the wanted value, so
+in each carrier period it is on for a fraction equal to that value.
 
-Right: the output pulses between 0 and plus or minus 350 volts, and averaged over each carrier
-period it is u times 350: a fundamental of 280 volts, dashed. The load current, 26.7 amperes, is
-nearly a clean sine: the inductance averages the pulses.
+Left, the gate pattern over one 50 hertz cycle, 20 milliseconds. The top panel shows the size of the
+reference, the black curve, u equals m times the sine of 2 pi 50 t, against the gray triangular
+carrier. Below it are four panels, one per switch, each either on or off. While u is positive, D
+stays on and A pulses, with a duty equal to u. While u is negative, B stays on and C pulses. The
+pulses are wide near the peak of the sine and narrow near its zero crossings.
 
-That is what the average converter of section 04 says in one line: v out = d v in.
+Right, the result. Top: the output voltage in volts. It pulses between 0 and plus or minus 350,
+wider near the peaks. The orange dashed curve is its fundamental, the 50 hertz sine inside it: 280
+volts amplitude, which is m times 350, 0.8 times 350. Bottom: the load current in amperes, nearly a
+clean sine of 26.7 amperes amplitude with a small ripple, because the inductance averages the
+pulses.
+
+So, averaged over each carrier period, the output is the sine. That is what the average converter of
+section 04 says in one line: v out equals d times v in. A real inverter switches at 5 to 20
+kilohertz rather than 1.
 -->
 
 ---
@@ -287,20 +340,28 @@ PWM pushes the unwanted energy up to the carrier and its multiples, where the wi
 blocks it. **Ten times the carrier:** a tenth of the ripple, and **twice the losses**.
 
 <!--
-The deck: any periodic waveform is a fundamental plus harmonics, found by Fourier analysis, and
-higher harmonics increase the iron losses. Notebook 02 section 3, the spectrum and the carrier.
+What happens to the rest of the pulse train? The deck: any periodic waveform is a fundamental sine
+plus harmonics, which Fourier analysis finds, and higher harmonics increase the iron losses in the
+motor. Both figures are from notebook 02, section 3.
 
-Left: the voltage spectrum. The fundamental, 280 volts at 50 Hz. Nothing until the carrier: the
-switching harmonics sit in clusters around 1 kHz and its multiples, the largest 119 and 102 volts
-at the carrier plus and minus 50 Hz. In the current they shrink to 2.0 and 1.5 amperes against the
-26.7 ampere fundamental, because the inductance is a large impedance there: 63 ohms at 1 kHz
-against 3 at 50 Hz.
+Left, the spectrum over two cycles. The horizontal axis is frequency in kilohertz. The top panel, in
+blue, is the amplitude of each frequency in the output voltage, in volts; the bottom panel, in red,
+the same for the load current, in amperes. First the fundamental: 280 volts at 50 hertz. Then
+nothing until the carrier: the switching harmonics sit in clusters around 1 kilohertz and its
+multiples. The largest are 119 and 102 volts, at the carrier plus and minus 50 hertz. In the current
+they shrink to 2.0 and 1.5 amperes, against the 26.7 ampere fundamental. The inductance filters
+them: its impedance, 2 pi f L, is 63 ohms at 1 kilohertz, against 3 ohms at 50 hertz.
 
-Right: the same bridge at 1 and 10 kHz. Ten times the carrier puts the harmonics ten times higher,
-where the inductance is ten times the impedance: the largest switching harmonic falls from 1.97 to
-0.18 amperes. The price is ten times as many edges: the losses double, 13.0 to 25.9 watts. EV
-inverters settle at 5 to 20 kHz, above hearing and before the switching loss dominates. What is
-left still heats the motor's iron, as the deck warns.
+Right, the load current over one cycle at two carrier frequencies. Top: 1 kilohertz, with visible
+ripple; the largest switching harmonic is 1.97 amperes, and the bridge loses 13.0 watts. Bottom: 10
+kilohertz, a clean sine; the largest harmonic is 0.18 amperes, and the bridge loses 25.9 watts.
+
+That is the text under the figures. Pulse-width modulation pushes the unwanted energy up to the
+carrier and its multiples, where the winding's inductance blocks it. Ten times the carrier frequency
+puts the harmonics ten times higher, where the inductance is ten times the impedance, so the ripple
+falls about tenfold. The price is ten times as many edges, and the losses double. Electric-car
+inverters settle at 5 to 20 kilohertz, above hearing and before the switching loss dominates. What
+ripple is left still heats the motor's iron, as the deck warns.
 -->
 
 ---
@@ -332,19 +393,22 @@ This is the inverter in the car. Averaged over a switching period, it is section
 </div>
 
 <!--
-Deck 7 slide 32, a diagram: no switched three-phase model in the notebook.
+The three-phase bridge. This one is a diagram; the notebook has no switched three-phase model. Three
+legs, a, b and c, on the 350 volt pack. Each leg has an upper and a lower switch, a plus and a
+minus, each with its freewheeling diode, and each leg's midpoint feeds one winding. The three
+windings meet at a star point.
 
-Three legs, one per phase. Each leg is half of the H-bridge: its midpoint is connected to the
-positive or the negative rail, never both. The three windings meet at a star point, so the three
-phase voltages only need to be set relative to each other. Three sine references, 120 degrees
-apart, PWM'd as on the last slides: three sinusoidal currents in the windings.
+As the deck says, it is six switches with freewheeling diodes, and each leg is half an H-bridge: its
+midpoint is connected to the positive or to the negative rail, never both. Modulate the three legs
+with three sine references, 120 degrees apart, and the windings carry three-phase AC. Section 03's
+field-oriented control chooses the amplitude and the phase of those three sines, from the rotor
+angle, so that the current sits on the q axis, or turns against the magnets above base speed.
 
-Section 03's field-oriented control decides the amplitude and the phase of those three sines, from
-the rotor angle, so the current sits on the q axis, or turns against the magnets above base speed.
-
-The Leaf's inverter, as ORNL measured the 2012 car: 18 IGBT and 18 diode dies, three per switch,
-tested at 375 volts DC and 5 kHz, peak efficiency above 99 percent at high speed. Our average
-converter's 5 kHz and 1 microsecond edges land in that range.
+On the right: this is the inverter in the car. Averaged over a switching period, it is section 04's
+converter: v equals d times V pack, a current limit, and a field. Oak Ridge measured the 2012 Leaf's
+inverter: 18 IGBT and 18 diode dies, three per switch, tested at 375 volts DC and 5 kilohertz, with
+a peak efficiency above 99 percent at high speed. Our average converter's 5 kilohertz and 1
+microsecond edges put it in that range.
 -->
 
 ---
@@ -378,20 +442,28 @@ is an effective time, not a datasheet one.
 </div>
 
 <!--
-Five minutes, live, if the room has time; otherwise the figures on the last slides are the
-notebook's outputs at their defaults.
+The switching models, live, in `notebooks/lecture04/02-switching.pluto.jl`. The table lists the
+controls and what each one shows. The figures on the last slides are the notebook's outputs at its
+default settings.
 
-Open the notebook in Pluto. Move the duty: the buck's output voltage follows d times 48. Move the
-switching frequency from 5 to 100 kHz: the ripple shrinks, the switching loss bar grows. In
-section 3, the modulation index: the fundamental of the bridge's output follows m times 350
-volts; push m to 20 and the pulses merge into section 2's square wave. The carrier from 1 to 10
-kHz: the spectrum's clusters move up, the current turns into a clean sine, the loss doubles.
+Move the duty d: the buck's output voltage follows d times 48 volts, a little below it. Change the
+switching frequency from 5 to 100 kilohertz: the ripple shrinks as 1 over f s, and the
+switching-loss bar grows in proportion to f s. In section 3, move the modulation index m between 0.1
+and 1: the fundamental of the bridge's output follows m times 350 volts. Change the carrier from 1
+to 10 kilohertz: the spectrum's clusters move up, the current turns into a clean sine, and the
+losses rise.
 
-The notebook's own list of what the models leave out: the diode stops conducting the instant its
-voltage reverses, with no reverse recovery; the deck's gate pattern needs no dead time; the
-switches dissipate into a fixed temperature; the DC link is a stiff source rather than a
-capacitor. And the switching-loss shape: the resistance ramp gives the textbook V I t over 2 of an
-edge 0.22 t sw long, so t sw is an effective edge time.
+The quote box is the rule from the start of the section: never stack time scales. The car's
+converter is an average. These switching models settle in a millisecond, and a WLTC lasts half an
+hour.
+
+The last lines say what the switching models leave out. Diode reverse recovery: the library diode
+stops conducting the instant its voltage reverses, where a real one first conducts backwards for a
+moment, which adds to the turn-on loss. Dead time: the deck's gate pattern never turns on both
+switches of a leg together, so it needs none. Heat: the switches dissipate into a fixed temperature.
+The DC-link capacitor: the DC link here is a stiff source. And the switch's edge is an effective
+time: the resistance ramp gives the textbook switching energy of an edge 0.22 times t sw long, so t
+sw is not a datasheet number.
 -->
 
 ---
@@ -428,19 +500,25 @@ the bill counts **13 %** lost on the way in.
 <div class="handson">Section 08 uses that efficiency to put the bill at the wall.</div>
 
 <!--
-The two converters the plan places in the energy chain without modeling them in detail (S4).
+The two remaining converters in the energy chain, which we do not model in detail.
 
-The DC-DC: every car still has a 12 volt network for lights, wipers, pumps, the ECUs. An electric
-car has no alternator; an isolated DC-DC converter takes the pack's voltage down to 12 and charges
-a small 12 volt battery. In the model it is the constant 300 watt `AuxLoad` on the pack. Over the
-WLTC's half hour that is 6.4 Wh per kilometer: more than the converter's 2.1 and the battery's
-3.1 together. A heater at 3 kW would add 64.
+Left, the DC-DC converter. Lights, pumps and electronics still run on 12 volts. An electric car has
+no alternator, so an isolated DC-DC converter steps the pack's 350 volts down to 12 and takes its
+place. In the model it is one part, `AuxLoad`: a constant 300 watt draw on the pack, the whole 12
+volt network. Over the WLTC that is 6.4 watt-hours per kilometer: 300 watts for the cycle's half
+hour, spread over its 23.27 kilometers. That is more than the converter's 2.1 and the battery
+resistance's 3.1 together.
 
-The charger: AC from the grid, rectified, power-factor corrected and converted to the pack's
-voltage. Argonne measured the 2013 Leaf's on-board charger at 86 to 87 percent, and the overall
-AC to DC-out chain at 82 to 85. The energy bill assumes 13 percent charging loss to put the car at
-the wall. That is also why official consumption figures, measured at the wall, sit 10 to 15
-percent above a model's battery energy.
+Right, the charger. It takes AC from the grid, rectifies it and brings it to the pack's voltage. For
+AC charging it sits on board; for DC fast charging it sits in the charging station. In the model it
+is a single efficiency. Argonne National Laboratory measured the 2013 Leaf's on-board charger at 86
+to 87 percent, and the whole chain, from the AC plug to the DC energy out of the battery, at 82 to
+85 percent. The energy bill counts 13 percent lost on the way in.
+
+The green box points ahead: section 08 uses that efficiency to put the bill at the wall, 54.3
+megajoules per 100 kilometers against 47.2 at the battery. It is also why official consumption
+figures, which are measured at the wall, sit 10 to 15 percent above what a model integrates at its
+battery.
 -->
 
 ---
@@ -458,6 +536,14 @@ percent above a model's battery energy.
 ### Next: the source behind the converter. <Link to="batteries">→ 06, batteries, simply</Link>
 
 <!--
-One minute. The switching detail is now out of the way: in the car it is one average converter.
-Behind it sits the pack, the last link of the chain to build.
+Section 05 in five lines. A switch is ideally lossless, and averaged, v equals d times V in. The
+buck steps down and the boost steps up, both with a switch, a diode and an inductor. Real switches
+lose at every edge and while conducting, and in a buck the diode can be the largest loss. The
+H-bridge makes AC, and pulse-width modulation shapes it into a sine and pushes the harmonics up to
+the carrier, where the winding's inductance blocks them. Three legs make the three-phase inverter,
+which, averaged, is section 04's converter. And the 12 volt network is a 300 watt draw on the pack,
+the charger one efficiency.
+
+With the switching out of the way, the converter in the car is one average model. Behind it sits the
+pack, the last link of the chain to build.
 -->

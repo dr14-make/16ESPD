@@ -13,10 +13,11 @@ chemistries.
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--
-Budget: about 18 minutes, of which build 03 takes about 8: cells and V = E − IR 3, A·h and W·h 2,
-specific energy and power 3, the summary table 2, build 03 8. Deck 8 slides 3 to 6 and 14 to 16.
-The chemistry tour, slides 7 to 13, and the fuel cells are in the extra pack, with the Thevenin
-cell, CC-CV charging, SoC estimation and balancing.
+Section 06, batteries, simply. We keep the battery as simple as it can be and still be useful: V
+equals E minus I R, charge and energy, specific energy and specific power, and the deck's comparison
+of chemistries. Then you build it, build 03. The figure comes from notebook 04. The deck's tour of
+the individual chemistries, the fuel cells, and a more detailed cell model, with its charging,
+state-of-charge estimation and balancing, are in the extra session.
 -->
 
 ---
@@ -53,24 +54,38 @@ SoC.
 </div>
 
 <!--
-Deck 8 slides 3 and 4. The figure is notebook 04 section 3, the library's `BatteryTransient`, the
-bench of build 03: open circuit for a minute, then a constant load for 30 minutes. Blue is 100
-amperes, a car cruising; red 330 amperes, about the machine's 110 kW.
+Start with the text on the right. A cell turns chemical energy into DC electricity through two
+electrodes in an electrolyte; a battery is many cells in series and in parallel. The Leaf ZE1 has
+192 cells, wired as 96 in series of 2 in parallel: 96s2p.
 
-The pack: E, the open-circuit voltage, 350 volts, constant; R0 0.1 ohm, about 2 milliohms per
-56 ampere-hour cell, 96 in series over 2 in parallel. INL measured 0.11 to 0.145 ohm on a 2013
-Leaf pack at mid charge, and about 50 percent more near empty.
+The model is the formula: the terminal voltage v equals E minus R0 times i. E is the open-circuit
+voltage, the voltage the chemistry sets when no current flows, in volts. i is the discharge current
+in amperes, positive when the battery delivers. R0 is the internal resistance in ohms. Current has
+to cross the electrolyte, the electrodes and every busbar between the cells, and that costs a
+voltage R0 times i, which is lost as heat. So the terminal voltage sags the moment a load comes on.
 
-At 100 amperes the terminal voltage drops 10 volts the instant the load comes on, and stays
-there: nothing in the model changes E. At 330 amperes the sag is 33 volts. The power the load
-gets is v times i, the power lost is R0 i squared: at 330 amperes 104.6 kW reach the terminals
-and 10.9 kW heat the pack.
+Our pack has E equal to 350 volts and R0 equal to 0.1 ohm. Where does 0.1 come from? A ZE1-class
+cell of about 56 ampere-hours has about 2 milliohms, and 96 of them in series, 2 in parallel, give
+about 0.1 ohm. Idaho National Laboratory measured 0.11 to 0.145 ohm on a 2013 Leaf pack at mid
+charge, and about half again near empty.
 
-The bottom panel is the trap. SoC falls in a straight line, and at 330 amperes it passes zero
-after 19 minutes and goes on to minus 0.54: nothing in V = E minus I R knows the pack is empty. A
-real pack's voltage collapses near empty, to 296 volts at 3 percent in INL's test, and the battery
-management system cuts the current long before. The extra pack's cell reads E from SoC and fixes
-this.
+The figure is notebook 04, section 3: the library's twin of the bench you build in step 03. The pack
+stands open for one minute, then carries a constant load for half an hour. The horizontal axis is
+time in minutes. Top panel: the terminal voltage in volts, with the gray dashed line at E, 350
+volts. Bottom panel: the state of charge, 1 for full and 0 for empty. Blue is a 100 ampere load, a
+car cruising; orange is 330 amperes, about the machine's full 110 kilowatts.
+
+At 100 amperes the voltage drops at once from 350 to 340.0, 10 volts, and stays there, because
+nothing in the model changes E. At 330 amperes it drops 33 volts, to 317.0. The power at the
+terminals is then 317 times 330, 104.6 kilowatts, and the power lost in R0, R0 i squared, is 10.9
+kilowatts.
+
+The bottom panel is the trap, and the last line of the slide: E is constant here, and nothing stops
+the state of charge at zero. It falls on a straight line: at 100 amperes from 0.9 to 0.4625. At 330
+amperes it passes zero after about 19 minutes and ends at minus 0.54. Nothing in v equals E minus R0
+i knows that the pack is empty. A real pack's voltage collapses near empty, to 296 volts at 3
+percent in Idaho's test of a 2013 Leaf pack, and its battery management system cuts the current long
+before. The extra session's cell model reads E from the state of charge and fixes this.
 -->
 
 ---
@@ -108,19 +123,25 @@ $$
 </div>
 
 <!--
-Deck 8 slide 4. The ampere-hour is a unit of charge: 1 ampere for 1 hour is 3600 coulombs. The
-deck's warning: a 10 ampere-hour cell does not give 10 amperes for exactly an hour, because side
-reactions grow with the current. The model ignores that.
+Charge and energy. On the left, capacity, from the deck. Capacity is charge, measured in
+ampere-hours: a 10 ampere-hour cell gives 1 ampere for 10 hours, ideally. In practice it gives less
+at high current, because of side reactions. One ampere-hour is one ampere for 3600 seconds, 3600
+coulombs.
 
-Energy is charge times voltage: 40 kWh at 350 volts is 114.3 ampere-hours, 411 429 coulombs.
+Energy is that charge times the voltage it is delivered at. So the first formula: the nominal charge
+of our pack, Q nom, is 40 kilowatt-hours divided by 350 volts, 114.3 ampere-hours, which is 411 429
+coulombs. And 1 watt-hour, a watt for an hour, is 3600 joules.
 
-Nothing in a battery measures its state of charge directly. The BMS counts it: it measures the
-current and integrates it, the charge taken out over the charge the pack holds. That is the
-second equation, and the model's `SoC` is exactly that. Real systems correct the count's drift
-with the voltage at rest; the extra pack does that.
+On the right, the state of charge. Nothing in a battery measures it directly. The battery management
+system counts it: it measures the current and integrates it. That is coulomb counting, the second
+formula: the rate of change of SoC equals minus the current i over the nominal charge Q nom, in
+coulombs, per second. Discharging, i is positive and SoC falls; charging, it rises. Our model's SoC
+is exactly that integral. A real count drifts, and the extra session shows how a battery management
+system corrects it.
 
-The checkpoint arithmetic: 100 amperes for 0.5 hours is 50 ampere-hours, 50 over 114.29 is
-0.4375 of the pack: SoC from 0.9 to 0.4625.
+The number at the bottom is build 03's checkpoint, worked out: 100 amperes for half an hour is 50
+ampere-hours, and 50 over 114.3 is 0.4375 of the pack. Starting at 0.9, the state of charge ends at
+0.4625.
 -->
 
 ---
@@ -153,23 +174,28 @@ Build 03 measures it at 100 A.</div>
 </div>
 
 <!--
-Deck 8 slides 5 and 6. The three densities are what a car designer trades. Specific energy decides
-range per kilogram, specific power decides acceleration and regen per kilogram. They pull against
-each other: thin electrodes give power, thick ones give energy. A hybrid's small pack is built for
-power, a battery-electric car's for energy.
+Three numbers a battery designer trades, from the deck. Specific energy: watt-hours per kilogram of
+battery. Energy density: watt-hours per liter. And specific power: watts per kilogram. Specific
+energy decides how much range each kilogram of battery buys; specific power decides how fast it can
+give energy out and take it back in, for acceleration and for regenerative braking.
 
-The efficiency definitions: charge efficiency is ampere-hours out over in; energy efficiency is
-watt-hours out over in, and also includes the voltage drop across R0 both ways. In our model the
-charge efficiency is 100 percent, coulomb counting with no side reactions, and the energy
-efficiency is set by R0 alone.
+A cell built for energy stores a lot and gives it out slowly; a cell built for power gives it fast
+and stores less. High specific power normally costs specific energy.
 
-The green box is step 03's number: at 100 amperes, 350 volts times 50 ampere-hours is 17.5 kWh
-out of the cells, 340 volts times 100 amperes for half an hour is 17.0 at the terminals, and 0.5
-kWh, 1 kW for half an hour, heated the pack. Argonne measured the 2013 Leaf's battery round trip
-at 95 to 98 percent.
+On the right, the deck's two efficiencies. Charge efficiency is the charge you get back over the
+charge you put in, always below 100 percent. Energy efficiency is the energy you get back over the
+energy needed to recharge, and it includes the voltage drop across the internal resistance, both
+ways. The deck also lists self-discharge, temperature and cooling, and the number of deep cycles a
+battery survives. Those are real, and they are outside our model, which runs at a warm operating
+temperature.
 
-Self-discharge, temperature, cycle life: real, and outside the model. No thermal model in this
-lecture: every number is at a warm operating temperature.
+The green box is our model. Its charge efficiency is exactly 100 percent, because coulomb counting
+has no side reactions, and its energy efficiency is set by R0 alone. Build 03 measures it at 100
+amperes for half an hour: E, 350 volts, times 50 ampere-hours is 17.5 kilowatt-hours out of the
+cells; the terminals, at 340 volts, deliver 340 volts times 100 amperes for half an hour, 17.0
+kilowatt-hours; and the difference, 0.5 kilowatt-hours, is R0 i squared, 1 kilowatt for half an
+hour, heating the pack. That is 97 percent. For comparison, Argonne measured the 2013 Leaf's battery
+round trip at 95 to 98 percent.
 -->
 
 ---
@@ -209,16 +235,25 @@ The Leaf ZE1's pack is lithium-ion: NMC cells, 40 kWh.
 </div>
 
 <!--
-Deck 8 slides 14 to 16, the summary table, kept as the deck has it. The numbers are Larminie and
-Lowry's guideline values from the early 2000s and the cost column is relative; the slide says so.
-Lithium-ion has moved on since: its specific energy has risen well above the 150 in the table, as
-the deck's last line predicted. That progress is what made 40 kWh in a family car possible.
+The deck's comparison of chemistries, kept as the deck has it, after Larminie and Lowry. Six battery
+types in rows. The columns are specific energy in watt-hours per kilogram, energy density in
+watt-hours per liter, specific power in watts per kilogram, and cost in arbitrary units. As the
+caption says, every figure is a broad guideline only.
 
-The deck's chemistry tour, lead acid, nickel-cadmium, sodium, lithium, metal-air, is in the
-extra pack.
+Lead acid: 30 watt-hours per kilogram, 75 per liter, 250 watts per kilogram, cost 0.5.
+Nickel-cadmium: 50, 80, 150, cost 1.5. Nickel-metal hydride: 65, 150, 200, cost 2. The Zebra
+battery, a sodium battery: 100, 150, 150, cost 2. Lithium-ion: 150, 150, 300, cost 3. Zinc-air: 230,
+270, 105, cost unknown. Lithium-ion is the only one high in both specific energy and specific power;
+zinc-air stores more, but gives it out slowly.
 
-The Leaf's pack: 192 AESC pouch cells, nickel-manganese-cobalt cathode chemistry per EV Database,
-a secondary source; the 2012 car used a manganese-spinel chemistry.
+The deck's conclusions, on the right. Lead acid suits only short-range vehicles. Lithium has the
+energy density for medium range and charges quickly, which makes it ideal for hybrids. And none of
+them yet lets a pure electric car match an engine car for range and versatility, though specific
+energy was predicted to rise.
+
+The Leaf ZE1's pack is lithium-ion, 40 kilowatt-hours, with nickel-manganese-cobalt cells according
+to the EV Database, a secondary source. The first-generation Leaf of 2012 used a lithium manganese
+oxide chemistry.
 -->
 
 ---
@@ -260,29 +295,37 @@ from 60 s: a sag of <b>10 V</b> · <code>battery.SoC</code> <b>0.9</b> → <b>0.
 </div>
 
 <!--
-Eight minutes: one paste, a bench of four blocks, three runs.
+Build 03: the battery. On the left, the finished bench in Studio. A step block named load profile
+feeds the top of a current source named load. The load sits across the battery, p to p on the left
+and n to n on the right, and the battery's n goes to ground.
 
-1. `Battery`: paste from the guide. Pins p and n, an output SoC; inside, a constant voltage
-   source E behind a resistor R0, and the coulomb counter, `der(SoC) = -i / Q_nom`. The
-   parameters are named for the extra pack's Thevenin cell, which replaces this one without
-   rewiring: E, R0, Q_nom, SoC0.
-2. `BatteryDischarge`: a step of `I_load` at 60 seconds drives a current source across the
-   battery. The analysis runs 1860 seconds with a tstop at 60, so the counted charge is exact.
-3. Run, then the snippet: voltage, current and SoC in three panels.
+The steps, in the italic line. First, a new component `Battery`: paste the code from the guide. It
+has two pins, p and n, and one output, SoC. Inside are the two equations of the last slides: v
+equals E minus R0 i, and the coulomb counter, the derivative of SoC equals minus i over Q nom. Its
+parameters are named E, R0, Q nom and SoC0 on purpose: the extra session's more detailed cell keeps
+those names and replaces this one without rewiring. Second, a new component `BatteryDischarge`, with
+one parameter, I load, 100 amperes. The load profile is a `Step` block that switches I load on at 60
+seconds. The load is an ideal current source: it forces exactly that current out of the battery's
+positive terminal, whatever the voltage, as a motor drive does when it is asked for a fixed torque.
+Add the ground. Third, the analysis `BatteryDischargeTransient`, 1860 seconds long, with a tstop at
+60 so that the solver lands exactly on the load step; without it the solver strides across the
+switch-on, misses about half a second of current, and the final state of charge comes out slightly
+off. Then click Run Analysis once and plot.
 
-Expected, from `HandsOn04.BatteryDischargeTransient`: 350 volts for the first minute, 340 from
-60 seconds, the sag R0 i = 10 volts, exactly, as long as the current flows. SoC 0.9 until the
-load, then a straight line to 0.4625 at 1860 seconds: 50 ampere-hours out of 114.3. Of the 17.5
-kWh that left the cells, 17.0 reached the load and 0.5 heated R0.
+The snippet plots the terminal voltage, the current and the state of charge in three panels, and
+reads the final state of charge. The last line runs the full-power case, 330 amperes.
 
-Minus 20 amperes, charging: the terminals rise above E, to 352 volts: a charger has to push
-against E and R0 both. SoC climbs to 0.9875.
+The first green box is the default, 100 amperes. The battery voltage is 350 volts for the first
+minute, then 340 from 60 seconds on: a sag of exactly 10 volts, R0 times i, for as long as the
+current flows. The state of charge stays at 0.9 until the load comes on, then falls on a straight
+line to 0.4625 at 1860 seconds: 50 of the 114.3 ampere-hours. Of the 17.5 kilowatt-hours that left
+the cells, 17.0 reached the load and 0.5 heated R0.
 
-330 amperes: 317 volts, 104.6 kW at the terminals, 10.9 kW lost. SoC passes zero after 19
-minutes and ends at minus 0.544. Ask the room why nothing stops it: E is constant, and nothing in
-the model knows the pack is empty.
-
-Testsets: `test/battery_plausibility.jl`.
+The second green box, two variations. Minus 20 amperes is charging: the terminals rise above E, to
+352 volts, because a charger has to push against both E and R0, and the state of charge climbs to
+0.9875. And 330 amperes: 317 volts, 104.6 kilowatts at the terminals, 10.9 kilowatts lost in R0, and
+the state of charge ends at minus 0.544. Ask yourselves why nothing stops it. E is constant, and
+nothing in the model knows that the pack is empty.
 -->
 
 ---
@@ -299,6 +342,13 @@ Testsets: `test/battery_plausibility.jl`.
 ### Next: put the chain in the car, and brake with it. <Link to="car-and-regen">→ 07, the car and regen</Link>
 
 <!--
-One minute. The three links are built: machine, converter, battery. Next they go into the planar
-car, and the machine learns to brake.
+Section 06 in five lines. A pack is cells in series and in parallel, and its terminal voltage is v
+equals E minus R0 i; the sag is lost as heat. Capacity is charge, in ampere-hours, and energy is
+charge times voltage: 40 kilowatt-hours at 350 volts is 114.3 ampere-hours. The state of charge is
+counted from the current, by coulomb counting. Specific energy and specific power trade against each
+other, and lithium-ion made the battery-electric car practical. And on your bench: a 10 volt sag at
+100 amperes, and the state of charge from 0.9 to 0.4625 in half an hour.
+
+Three links are built: the machine, the converter and the battery. Next they go into the planar car,
+and the machine learns to brake.
 -->
