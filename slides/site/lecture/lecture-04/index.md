@@ -12,18 +12,66 @@ From a DC-equivalent machine on a test bench to a Leaf-class car on the WLTC and
 
 **How each step works.** Each step lists the parts to place with their library path, instance name and values, every wire and line of code, and the numbers the run must show before you go on. Use the names given here: later steps read signal paths such as `battery.SoC`. A parameter the tables give a type such as `Voltage`, `Current` or `Torque` is a `Real` in the **Add parameter** form, which offers only `Real`, `Integer`, `Boolean` and `String`: pick `Real` and put the unit (`V`, `A`, `W`, `m`, `N.m`) in **Unit**.
 
-**Fell behind?** Every step ends with a **Fell behind?** block: the finished code of that step, to paste. The course repository has the same components as the reference answers in `dyad/HandsOn04/`, under the same names; under **+** they show as `VehicleSystemsComponents › HandsOn04`. Build your own; open them only to compare.
+**Fell behind?** Every step ends with a **Fell behind?** block: the finished code of that step, to paste. Paste it whole: the `{^…}` tags and the `metadata` block at its end place every part and wire, so the diagram opens laid out. The benches you paste in **Do this** carry them for the same reason. The course repository has the same components as the reference answers in `dyad/HandsOn04/`, under the same names; under **+** they show as `VehicleSystemsComponents › HandsOn04`. Build your own; open them only to compare.
 
 **Plotting.** Every plot is drawn in the Julia REPL: click **Dyad: Open Julia REPL** in the **Actions** panel's title bar. Snippets do not load `MyCar`: the REPL reloads it when you run an analysis from Studio. So each time you add an analysis, click ▷ **Run Analysis** and pick it once before you paste a snippet that calls it.
 
 Every number in an expected result is a test expectation or a measured run of the reference model.
 
+- [00 · Set up: the course library](#step-00)
 - [01 · The machine: T = KΦI, E = KΦω](#step-01)
 - [02 · The converter: V_out = d·V_in, and field weakening](#step-02)
 - [03 · The battery: V = E − I·R](#step-03)
 - [04 · The car: machine → 8.193 → differential → front wheels](#step-04)
 - [05 · Regen blended onto the Lecture 3 brakes](#step-05)
 - [06 · The WLTC energy bill](#step-06)
+
+## 00 Set up
+
+### 00 · Set up: the course library {#step-00}
+
+Today's parts, `Vehicle › Electric` with `AuxLoad` and `TorqueSplit`, the planar WLTC car with its road load, and the reference answers in `HandsOn04`, are in the course library from Lecture 4 on. Your `MyCar` needs that version, and two packages your own code names: `ElectricalComponents` for the circuits and `MultibodyComponents` for the differential.
+
+::: details No MyCar of your own, or yours does not compile? Start from the course's.
+
+Today uses nothing you built before: every step adds new components, and the car, the cycle and Lecture 3's brakes come from the course library. The course's `MyCar` repository has a start for it at the tag `lecture-04-start`: hands-on 1's car on Dyad 3.5, with nothing of Lecture 3 or today. Fork it and work on your fork; do this before class if you can.
+
+1. On github.com, open [`dr14-make/MyCar`](https://github.com/dr14-make/MyCar) and click **Fork**. Untick **Copy the `main` branch only**, so the fork gets the tags too, then click **Create fork**. The fork is `https://github.com/<you>/MyCar`.
+2. In Studio, press <kbd>F1</kbd> → **Git: Clone**, paste your fork's URL, pick an empty folder, and click **Open** when asked.
+3. Press <kbd>F1</kbd> → **Git: Create Branch From…**, type `handson-04`, and pick the tag `lecture-04-start` from the list.
+4. In the **Actions** panel's title bar, click **Dyad: Open Julia REPL** and run the lines below. The first download takes a few minutes; wait until it stops printing.
+
+   ```julia
+   using Pkg
+   Pkg.instantiate()
+   ```
+
+5. Go on with step 2 of **Do this** below: your `handson-04` branch already exists, so skip step 1.
+
+Your commits go to your fork, one per step, and the pull request at the end goes from `handson-04` to your fork's `main`.
+
+:::
+
+#### Do this
+
+1. In the status bar, click the branch name → **Create new branch…** → `handson-04`, from `main`. If your Lecture 3 work is on another branch, `main` is still enough: today needs only a `MyCar` that compiles.
+2. Open the Julia REPL and move the course library to the Lecture 4 version for Dyad 3.5. If you did Lecture 3, you added the library then, and your `Manifest.toml` still holds the version from that day, without today's parts. Started from `main` or `lecture-04-start`? `MyCar` has no course library yet, and the same line adds it. The second line adds the two packages your code names directly; one you already have is left as it is.
+
+   ```julia
+   using Pkg
+   Pkg.add(url = "https://github.com/dr14-make/16ESPD", rev = "lecture-04-dyad-3.5")
+   Pkg.add(["ElectricalComponents", "MultibodyComponents"])
+   ```
+
+3. <kbd>F1</kbd> → **Dyad: Restart Language Server**. The language server read your `Project.toml` when Studio started; until it restarts, the next compile flags every library part with `missing-direct-dependency … not a direct dependency`.
+4. <kbd>F1</kbd> → **Dyad: Compile**.
+5. Open any diagram, click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Electric`.
+
+::: tip Expected result
+
+`using VehicleSystemsComponents`, `using ElectricalComponents` and `using MultibodyComponents` run in the REPL without an error. Under **+**, `Vehicle › Electric` lists `AuxLoad` and `TorqueSplit`; `Vehicle › Planar` lists `PlanarCar`, `PlanarRoadLoad`, `BusMotion` and `ABSUnit`; and `VehicleSystemsComponents` lists `HandsOn04`.
+
+:::
 
 ## 02 The DC machine
 
@@ -302,30 +350,52 @@ component DCMachineDyno
   parameter rpm_start::Real = 3283.0
   "Dyno speed after the ramp [rpm]"
   parameter rpm_end::Real = 3600.0
-  voltage = BlockComponents.Sources.Constant(k = V)
-  supply = ElectricalComponents.Analog.Sources.VoltageSource()
-  machine = DCMachine()
-  ground = ElectricalComponents.Analog.Basic.Ground()
-  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 10.0)
-  dyno = RotationalComponents.Sources.VelocitySource()
-  mounts = RotationalComponents.Components.Fixed()
+  voltage = BlockComponents.Sources.Constant(k = V) {^voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  machine = DCMachine() {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 10.0) {^speed}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
 relations
   initial dyno.phi = 0
   initial machine.inductor.i = 0
-  connect(voltage.y, supply.V)
-  connect(supply.p, machine.p)
-  connect(machine.n, supply.n)
-  connect(supply.n, ground.g)
-  connect(speed.y, dyno.w_ref)
-  connect(machine.spline, dyno.spline)
-  connect(machine.support, mounts.spline)
-  connect(dyno.support, mounts.spline)
+  connect(voltage.y, supply.V) {^id1}
+  connect(supply.p, machine.p) {^id2}
+  connect(machine.n, supply.n) {^id3}
+  connect(supply.n, ground.g) {^id4}
+  connect(speed.y, dyno.w_ref) {^id5}
+  connect(machine.spline, dyno.spline) {^id6}
+  connect(machine.support, mounts.spline) {^id7}
+  connect(dyno.support, mounts.spline) {^id8}
+metadata {
+  "_links": {
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 720}, {"x": 800, "y": 800}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 500}], "E": 2}]}},
+    "id6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 400}, {"x": 970, "y": 670}], "E": 2}]}},
+    "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 600, "y": 460}, {"x": 600, "y": 550}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 20, "y": 550}, {"x": 20, "y": 340}], "E": 2}]}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 430}], "E": 2}]}},
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 380, "x2": 160, "y2": 480}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 500, "x2": 300, "y2": 600}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 300, "x2": 840, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 640, "x2": 340, "y2": 720}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 660, "y1": 620, "x2": 760, "y2": 720}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 620, "x2": 940, "y2": 720}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 800, "x2": 700, "y2": 900}}}}
+  }
+}
 end
 
 analysis DCMachineDynoTransient
   extends TransientAnalysis(stop = 12.0, alg = ODEAlg.Rodas5P(), saveat = 0.01, tstops = [1.0, 11.0])
+  "Supply voltage at the terminals"
   parameter V::Voltage = 350.0
+  "Dyno speed before the ramp [rpm]"
   parameter rpm_start::Real = 3283.0
+  "Dyno speed after the ramp [rpm]"
   parameter rpm_end::Real = 3600.0
   model = DCMachineDyno(V = V, rpm_start = rpm_start, rpm_end = rpm_end)
 end
@@ -803,37 +873,62 @@ component ConverterDyno
   parameter rpm_start::Real = 0.0
   "Dyno speed after the ramp [rpm]"
   parameter rpm_end::Real = 10000.0
-  voltage = BlockComponents.Sources.Constant(k = V)
-  supply = ElectricalComponents.Analog.Sources.VoltageSource()
-  current = BlockComponents.Sources.Constant(k = I_ref)
-  converter = Converter()
-  machine = DCMachine(field_weakening = true)
-  ground = ElectricalComponents.Analog.Basic.Ground()
-  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 100.0)
-  dyno = RotationalComponents.Sources.VelocitySource()
-  mounts = RotationalComponents.Components.Fixed()
+  voltage = BlockComponents.Sources.Constant(k = V) {^voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  current = BlockComponents.Sources.Constant(k = I_ref) {^current}
+  converter = Converter() {^converter}
+  machine = DCMachine(field_weakening = true) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  speed = BlockComponents.Sources.Ramp(height = (rpm_end - rpm_start) * pi / 30.0, offset = rpm_start * pi / 30.0, start_time = 1.0, duration = 100.0) {^speed}
+  dyno = RotationalComponents.Sources.VelocitySource() {^dyno}
+  mounts = RotationalComponents.Components.Fixed() {^mounts}
 relations
   initial dyno.phi = 0
   initial converter.i_out = 0
-  connect(voltage.y, supply.V)
-  connect(supply.p, converter.p_in)
-  connect(converter.p_out, machine.p)
-  connect(machine.n, converter.n)
-  connect(supply.n, converter.n)
-  connect(converter.n, ground.g)
-  connect(current.y, converter.i_ref)
-  connect(converter.field, machine.field)
-  connect(speed.y, dyno.w_ref)
-  connect(machine.spline, dyno.spline)
-  connect(machine.support, mounts.spline)
-  connect(dyno.support, mounts.spline)
+  connect(voltage.y, supply.V) {^id1}
+  connect(supply.p, converter.p_in) {^id2}
+  connect(converter.p_out, machine.p) {^id3}
+  connect(converter.n, machine.n, supply.n, ground.g) {^id4}
+  connect(current.y, converter.i_ref) {^id7}
+  connect(converter.field, machine.field) {^id8}
+  connect(speed.y, dyno.w_ref) {^id9}
+  connect(machine.spline, dyno.spline) {^id10}
+  connect(machine.support, mounts.spline) {^id11}
+  connect(dyno.support, mounts.spline) {^id12}
+metadata {
+  "_links": {
+    "id12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 800, "y": 720}, {"x": 800, "y": 800}], "E": 2}]}},
+    "id11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 650, "y": 500}], "E": 2}]}},
+    "id10": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 970, "y": 400}, {"x": 970, "y": 670}], "E": 2}]}},
+    "id9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 580, "y": 440}, {"x": 580, "y": 400}], "E": 2}]}},
+    "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 170}], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 2, "M": [{"x": 600, "y": 460}, {"x": 600, "y": 500}], "E": 1}, {"S": 1, "M": [{"x": 320, "y": 500}], "E": -1}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": 4}], "junctions": [{"x": 320, "y": 550}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 20, "y": 550}, {"x": 20, "y": 340}], "E": 2}]}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 250, "y": 430}], "E": 2}]}},
+    "voltage": {"Dyad": {"placement": {"diagram": {"x1": 60, "y1": 380, "x2": 160, "y2": 480}}}},
+    "supply": {"Dyad": {"placement": {"diagram": {"x1": 200, "y1": 500, "x2": 300, "y2": 600}}}},
+    "current": {"Dyad": {"placement": {"diagram": {"x1": 220, "y1": 120, "x2": 320, "y2": 220}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 340, "y1": 300, "x2": 540, "y2": 500}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 300, "x2": 840, "y2": 500}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 280, "y1": 640, "x2": 360, "y2": 720}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 660, "y1": 620, "x2": 760, "y2": 720}}}},
+    "dyno": {"Dyad": {"placement": {"diagram": {"x1": 840, "y1": 620, "x2": 940, "y2": 720}}}},
+    "mounts": {"Dyad": {"placement": {"diagram": {"x1": 600, "y1": 800, "x2": 700, "y2": 900}}}}
+  }
+}
 end
 
 analysis ConverterDynoTransient
   extends TransientAnalysis(stop = 102.0, alg = ODEAlg.Rodas5P(), saveat = 0.05, tstops = [1.0, 101.0])
+  "Supply voltage at the converter's input"
   parameter V::Voltage = 350.0
+  "Current asked of the converter"
   parameter I_ref::Current = 500.0
+  "Dyno speed before the ramp [rpm]"
   parameter rpm_start::Real = 0.0
+  "Dyno speed after the ramp [rpm]"
   parameter rpm_end::Real = 10000.0
   model = ConverterDyno(V = V, I_ref = I_ref, rpm_start = rpm_start, rpm_end = rpm_end)
 end
@@ -949,7 +1044,7 @@ New component `BatteryDischarge` in `MyCar`:
 
    `extends … TwoPin` gives the battery its two pins, `p` on the left and `n` on the right, and the terminal voltage `v = p.v - n.v`. A pin's current counts positive *into* the component, so the current that comes back into `n` is the one that left `p` through the load: `i = n.i`, and `p.i + n.i = 0` says the battery stores no charge on its terminals. The last two lines are the two equations above; `Q_nom` is in coulombs, so 114.3 A·h is written as 40 kWh × 3600 s/h over 350 V.
 
-   If the compile flags `ElectricalComponents` as `missing-direct-dependency`, add it in the REPL with `using Pkg; Pkg.add("ElectricalComponents")`, then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
+   If the compile flags `ElectricalComponents` as `missing-direct-dependency`, run the `Pkg.add` lines of [step 00](#step-00), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
 
 2. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BatteryDischarge`. With nothing selected, click **Edit Parameters** → **Add parameter**: `I_load`, type `Current`, value `100.0`. Place the four blocks from the table and rename each to its **Name**: select it → **Edit Parameters** → the pencil next to its name. Set `load_profile`'s `height` to `I_load` and its `start_time` to `60.0`.
 3. Wire:
@@ -1011,19 +1106,32 @@ Paste `Battery` from step 1 of **Do this** above. Then right-click `MyCar` → *
 component BatteryDischarge
   "Current drawn from the battery once the load is on; negative charges it"
   parameter I_load::Current = 100.0
-  load_profile = BlockComponents.Sources.Step(height = I_load, offset = 0.0, start_time = 60.0)
-  load = ElectricalComponents.Analog.Sources.CurrentSource()
-  battery = Battery()
-  ground = ElectricalComponents.Analog.Basic.Ground()
+  load_profile = BlockComponents.Sources.Step(height = I_load, offset = 0.0, start_time = 60.0) {^load_profile}
+  load = ElectricalComponents.Analog.Sources.CurrentSource() {^load}
+  battery = Battery() {^battery}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
 relations
-  connect(load_profile.y, load.I)
-  connect(battery.p, load.p)
-  connect(load.n, battery.n)
-  connect(battery.n, ground.g)
+  connect(load_profile.y, load.I) {^id1}
+  connect(battery.p, load.p) {^id2}
+  connect(load.n, battery.n) {^id3}
+  connect(battery.n, ground.g) {^id4}
+metadata {
+  "_links": {
+    "load_profile": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 150, "x2": 360, "y2": 250}}}},
+    "load": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 300, "x2": 550, "y2": 400}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 600, "x2": 550, "y2": 700}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 760, "x2": 700, "y2": 840}}}},
+    "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
+    "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 650}, {"x": 380, "y": 350}], "E": 2}]}},
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 660, "y": 350}, {"x": 660, "y": 650}], "E": 2}]}},
+    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 660, "y": 650}], "E": 2}]}}
+  }
+}
 end
 
 analysis BatteryDischargeTransient
   extends TransientAnalysis(stop = 1860.0, tstops = [60.0])
+  "Current drawn from the battery once the load is on; negative charges it"
   parameter I_load::Current = 100.0
   model = BatteryDischarge(I_load = I_load)
 end
@@ -1124,7 +1232,7 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
    converter.i_ref = tau_ref / (converter.field * machine.k)
    ```
 
-   If the compile flags `VehicleSystemsComponents` or `MultibodyComponents` as `missing-direct-dependency`, add it in the REPL with `using Pkg; Pkg.add("MultibodyComponents")` (or the other name), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
+   If the compile flags `VehicleSystemsComponents` or `MultibodyComponents` as `missing-direct-dependency`, run the `Pkg.add` lines of [step 00](#step-00), then <kbd>F1</kbd> → **Dyad: Restart Language Server** and compile again.
 4. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVWLTC`. Toggle to code (⇄), select everything, paste the block below and save.
 
    ::: code-group
@@ -1149,35 +1257,35 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      parameter ratio::Real = 8.193
      "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
      parameter dv_wheel::Velocity = 0.01
-     trace = VehicleSystemsComponents.Vehicle.DriveCycle()
-     driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max)
-     no_ff = BlockComponents.Sources.Constant(k = 0.0)
-     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
-     drive = ElectricDrive(ratio = ratio, P_aux = P_aux)
-     differential = MultibodyComponents.PlanarMechanics.DifferentialGear()
-     mount = RotationalComponents.Components.Fixed()
-     straight = RotationalComponents.Components.Fixed()
-     flat = BlockComponents.Sources.Constant(k = 0.0)
-     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
-     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion()
-     roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m)
-     split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade)
+     trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+     driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+     no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+     drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+     differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+     mount = RotationalComponents.Components.Fixed() {^mount}
+     straight = RotationalComponents.Components.Fixed() {^straight}
+     flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+     roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+     split = VehicleSystemsComponents.Vehicle.Electric.TorqueSplit(ratio = ratio, v_fade = v_fade) {^split}
    relations
-     connect(car.bus, motion.bus)
-     connect(trace.y, driver.u_s)
-     connect(motion.vx, kmh.u)
-     connect(kmh.y, driver.u_m, split.v)
-     connect(no_ff.y, driver.u_ff)
-     connect(drive.spline, differential.flange_b)
-     connect(differential.flange_left, car.spin_fl)
-     connect(differential.flange_right, car.spin_fr)
-     connect(drive.support, mount.spline)
-     connect(car.steering, straight.spline)
-     connect(flat.y, roadload.grade)
-     connect(car.chassis, roadload.chassis)
-     connect(driver.y, split.tau_ref)
-     connect(split.tau_motor, drive.tau_ref)
-     connect(split.tau_brake, car.tau_fl, car.tau_fr)
+     connect(car.bus, motion.bus) {^wbus}
+     connect(trace.y, driver.u_s) {^w1}
+     connect(motion.vx, kmh.u) {^w2}
+     connect(kmh.y, driver.u_m, split.v) {^w3}
+     connect(no_ff.y, driver.u_ff) {^w4}
+     connect(drive.spline, differential.flange_b) {^w5}
+     connect(differential.flange_left, car.spin_fl) {^w6}
+     connect(differential.flange_right, car.spin_fr) {^w7}
+     connect(drive.support, mount.spline) {^w8}
+     connect(car.steering, straight.spline) {^w9}
+     connect(flat.y, roadload.grade) {^w10}
+     connect(car.chassis, roadload.chassis) {^w11}
+     connect(driver.y, split.tau_ref) {^w21}
+     connect(split.tau_motor, drive.tau_ref) {^w23}
+     connect(split.tau_brake, car.tau_fl, car.tau_fr) {^w24}
      car.tau_rl = 0.0
      car.tau_rr = 0.0
      initial car.body.r = [0, 0]
@@ -1197,6 +1305,38 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
      initial car.rl.brake.tau_actual = 0.0
      initial car.rr.brake.tau_actual = 0.0
      initial drive.converter.i_out = 0.0
+   metadata {
+     "_links": {
+       "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
+       "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
+       "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
+       "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
+       "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
+       "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
+       "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+       "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
+       "flat": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 880, "x2": 480, "y2": 920}}}},
+       "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
+       "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
+       "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
+       "split": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
+       "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662.0}, {"x": 990, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
+       "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
+       "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
+       "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
+       "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
+       "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
+       "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
+       "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
+       "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
+       "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}, {"x": 410, "y": 633}], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 500, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 3}], "junctions": [{"x": 500, "y": 633}]}}
+     }
+   }
    end
 
    analysis BEVWLTCTransient
@@ -1245,33 +1385,56 @@ Paste `BEVWLTC` from step 4 of **Do this** above. Then right-click `MyCar` → *
 ```txt [ElectricDrive]
 component ElectricDrive
   "Machine torque asked for, positive motoring"
-  tau_ref = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}}
+  tau_ref = RealInput() {^tau_ref}
   "Reduction output shaft, to the differential"
-  spline = Spline() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}}
+  spline = Spline() {^spline}
   "Machine housing and gear case"
-  support = Spline() {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}}
+  support = Spline() {^support}
   "Battery state of charge"
-  SoC = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}}
-  battery = Battery()
-  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux)
-  converter = Converter()
-  machine = DCMachine(field_weakening = true)
-  ground = ElectricalComponents.Analog.Basic.Ground()
-  reduction = RotationalComponents.Components.IdealGear(ratio = ratio)
+  SoC = RealOutput() {^SoC}
+  battery = Battery() {^battery}
+  aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux) {^aux}
+  converter = Converter() {^converter}
+  machine = DCMachine(field_weakening = true) {^machine}
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+  reduction = RotationalComponents.Components.IdealGear(ratio = ratio) {^reduction}
   "Single-speed reduction, Leaf ZE1"
   parameter ratio::Real = 8.193
   "Power drawn by the 12 V network"
   parameter P_aux::Power = 300.0
 relations
-  connect(battery.p, converter.p_in, aux.p)
-  connect(battery.n, converter.n, aux.n, machine.n, ground.g)
-  connect(converter.p_out, machine.p)
-  connect(converter.field, machine.field)
-  connect(machine.spline, reduction.spline_a)
-  connect(reduction.spline_b, spline)
-  connect(machine.support, reduction.support, support)
-  connect(battery.SoC, SoC)
+  connect(battery.p, converter.p_in, aux.p) {^w1}
+  connect(battery.n, converter.n, aux.n, machine.n, ground.g) {^w2}
+  connect(converter.p_out, machine.p) {^w3}
+  connect(converter.field, machine.field) {^w4}
+  connect(machine.spline, reduction.spline_a) {^w5}
+  connect(reduction.spline_b, spline) {^w6}
+  connect(machine.support, reduction.support, support) {^w7}
+  connect(battery.SoC, SoC) {^w8}
   converter.i_ref = tau_ref / (converter.field * machine.k)
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/ElectricDrive.svg"}},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+    "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
+    "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}},
+    "SoC": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}},
+    "battery": {"Dyad": {"placement": {"diagram": {"x1": 30, "y1": 390, "x2": 150, "y2": 510, "rot": 90}}}},
+    "aux": {"Dyad": {"placement": {"diagram": {"x1": 230, "y1": 390, "x2": 350, "y2": 510, "rot": 90}}}},
+    "converter": {"Dyad": {"placement": {"diagram": {"x1": 380, "y1": 360, "x2": 560, "y2": 540}}}},
+    "machine": {"Dyad": {"placement": {"diagram": {"x1": 640, "y1": 360, "x2": 820, "y2": 540}}}},
+    "ground": {"Dyad": {"placement": {"diagram": {"x1": 545, "y1": 720, "x2": 625, "y2": 800}}}},
+    "reduction": {"Dyad": {"placement": {"diagram": {"x1": 855, "y1": 405, "x2": 945, "y2": 495}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 260}], "E": -1}, {"S": -1, "M": [{"x": 365, "y": 260}, {"x": 365, "y": 396}], "E": 2}, {"S": 3, "M": [], "E": -1}], "junctions": [{"x": 290, "y": 260}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 90, "y": 680}], "E": -1}, {"S": 3, "M": [], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 5}, {"S": -3, "M": [], "E": -2}, {"S": 2, "M": [], "E": -3}, {"S": 4, "M": [{"x": 585, "y": 504}], "E": -3}], "junctions": [{"x": 290, "y": 680}, {"x": 585, "y": 680}, {"x": 585, "y": 540}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 610, "y": 486}, {"x": 610, "y": 450}], "E": 2}]}},
+    "w5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w7": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": 2, "M": [{"x": 838, "y": 495}], "E": -1}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 838, "y": 540}]}},
+    "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 185, "y": 450}], "E": 2}]}}
+  }
+}
 end
 ```
 
@@ -1423,18 +1586,18 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      parameter P_aux::Power = 300.0
      "Single-speed reduction, Leaf ZE1"
      parameter ratio::Real = 8.193
-     pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time)
-     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
-     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
-     drive = ElectricDrive(ratio = ratio, P_aux = P_aux)
-     differential = MultibodyComponents.PlanarMechanics.DifferentialGear()
-     mount = RotationalComponents.Components.Fixed()
-     straight = RotationalComponents.Components.Fixed()
-     zero = BlockComponents.Sources.Constant(k = 0.0)
-     abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 0.0)
-     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
-     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion()
-     slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip()
+     pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time) {^pedal}
+     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+     drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+     differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+     mount = RotationalComponents.Components.Fixed() {^mount}
+     straight = RotationalComponents.Components.Fixed() {^straight}
+     zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
+     abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 0.0) {^abs}
+     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+     slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
      "Power at the battery terminals, positive discharging"
      variable P_dc::Power
      "Power at the reduction output, positive driving the wheels"
@@ -1443,26 +1606,26 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      variable E_shaft_in::Energy
      variable E_brake::Energy
    relations
-     connect(car.bus, motion.bus, slips.bus)
-     connect(pedal.y, blend.tau_ref)
-     connect(motion.vx, kmh.u, abs.vx)
-     connect(kmh.y, blend.v)
-     connect(blend.tau_motor, drive.tau_ref)
-     connect(blend.tau_brake, abs.demand)
-     connect(drive.spline, differential.flange_b)
-     connect(differential.flange_left, car.spin_fl)
-     connect(differential.flange_right, car.spin_fr)
-     connect(drive.support, mount.spline)
-     connect(car.steering, straight.spline)
-     connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr)
-     connect(slips.kappa_fl, abs.kappa_fl)
-     connect(slips.kappa_fr, abs.kappa_fr)
-     connect(slips.kappa_rl, abs.kappa_rl)
-     connect(slips.kappa_rr, abs.kappa_rr)
-     connect(abs.tau_fl, car.tau_fl)
-     connect(abs.tau_fr, car.tau_fr)
-     connect(abs.tau_rl, car.tau_rl)
-     connect(abs.tau_rr, car.tau_rr)
+     connect(car.bus, motion.bus, slips.bus) {^wbus}
+     connect(pedal.y, blend.tau_ref) {^w1}
+     connect(motion.vx, kmh.u, abs.vx) {^w2}
+     connect(kmh.y, blend.v) {^w3}
+     connect(blend.tau_motor, drive.tau_ref) {^w4}
+     connect(blend.tau_brake, abs.demand) {^w5}
+     connect(drive.spline, differential.flange_b) {^w6}
+     connect(differential.flange_left, car.spin_fl) {^w7}
+     connect(differential.flange_right, car.spin_fr) {^w8}
+     connect(drive.support, mount.spline) {^w9}
+     connect(car.steering, straight.spline) {^w10}
+     connect(zero.y, abs.dT_fl, abs.dT_fr, abs.dT_rl, abs.dT_rr) {^w11}
+     connect(slips.kappa_fl, abs.kappa_fl) {^w12}
+     connect(slips.kappa_fr, abs.kappa_fr) {^w13}
+     connect(slips.kappa_rl, abs.kappa_rl) {^w14}
+     connect(slips.kappa_rr, abs.kappa_rr) {^w15}
+     connect(abs.tau_fl, car.tau_fl) {^w16}
+     connect(abs.tau_fr, car.tau_fr) {^w17}
+     connect(abs.tau_rl, car.tau_rl) {^w18}
+     connect(abs.tau_rr, car.tau_rr) {^w19}
      P_dc = drive.battery.v * drive.battery.i
      P_shaft = drive.machine.P_mech
      der(E_dc_in) = max(-P_dc, 0.0)
@@ -1488,6 +1651,42 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      initial E_dc_in = 0.0
      initial E_shaft_in = 0.0
      initial E_brake = 0.0
+   metadata {
+     "_links": {
+       "pedal": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
+       "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
+       "blend": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
+       "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
+       "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+       "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
+       "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
+       "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
+       "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
+       "zero": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 633, "x2": 140, "y2": 673}}}},
+       "abs": {"Dyad": {"placement": {"diagram": {"x1": 220, "y1": 593, "x2": 420, "y2": 793}}}},
+       "slips": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 740, "x2": 140, "y2": 840}}}},
+       "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [{"x": 760, "y": 950}, {"x": 30, "y": 950}, {"x": 30, "y": 790}], "E": 3}], "junctions": [{"x": 760, "y": 710}]}},
+       "w1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
+       "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662}, {"x": 990, "y": 980}, {"x": 20, "y": 980}], "E": -1}, {"S": -1, "M": [{"x": 20, "y": 225}], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 20, "y": 713}]}},
+       "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 2}]}},
+       "w4": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}, {"x": 410, "y": 560}, {"x": 200, "y": 560}, {"x": 200, "y": 613}], "E": 2}]}},
+       "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
+       "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
+       "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
+       "w9": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
+       "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w11": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 180, "y": 633}], "E": 2}, {"S": -1, "M": [], "E": 3}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 4}, {"S": -2, "M": [{"x": 180, "y": 693}], "E": 5}], "junctions": [{"x": 180, "y": 653}, {"x": 180, "y": 673}]}},
+       "w12": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 180, "y": 760}, {"x": 180, "y": 733}], "E": 2}]}},
+       "w13": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 780}, {"x": 190, "y": 753}], "E": 2}]}},
+       "w14": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 170, "y": 800}, {"x": 170, "y": 860}, {"x": 260, "y": 860}], "E": 2}]}},
+       "w15": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 160, "y": 820}, {"x": 160, "y": 880}, {"x": 300, "y": 880}], "E": 2}]}},
+       "w16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 673}, {"x": 440, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 2}]}},
+       "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 460, "y": 713}, {"x": 460, "y": 743}], "E": 2}]}},
+       "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 753}, {"x": 450, "y": 900}, {"x": 750, "y": 900}, {"x": 750, "y": 743}], "E": 2}]}}
+     }
+   }
    end
 
    analysis BEVHardStopTransient
@@ -1557,19 +1756,19 @@ Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardSt
      parameter ratio::Real = 8.193
      "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
      parameter dv_wheel::Velocity = 0.01
-     trace = VehicleSystemsComponents.Vehicle.DriveCycle()
-     driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max)
-     no_ff = BlockComponents.Sources.Constant(k = 0.0)
-     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour()
-     drive = ElectricDrive(ratio = ratio, P_aux = P_aux)
-     differential = MultibodyComponents.PlanarMechanics.DifferentialGear()
-     mount = RotationalComponents.Components.Fixed()
-     straight = RotationalComponents.Components.Fixed()
-     flat = BlockComponents.Sources.Constant(k = 0.0)
-     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius)
-     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion()
-     roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m)
-     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
+     trace = VehicleSystemsComponents.Vehicle.DriveCycle() {^trace}
+     driver = BlockComponents.Continuous.LimPID(with_D = false, k = k, Ti = Ti, y_max = tau_max, y_min = -tau_max) {^driver}
+     no_ff = BlockComponents.Sources.Constant(k = 0.0) {^no_ff}
+     kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+     drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+     differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+     mount = RotationalComponents.Components.Fixed() {^mount}
+     straight = RotationalComponents.Components.Fixed() {^straight}
+     flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+     motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+     roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
      "Power at the battery terminals, positive discharging"
      variable P_dc::Power
      "Power at the reduction output, positive driving the wheels"
@@ -1579,21 +1778,21 @@ Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardSt
      variable E_shaft_in::Energy
      variable E_brake::Energy
    relations
-     connect(car.bus, motion.bus)
-     connect(trace.y, driver.u_s)
-     connect(motion.vx, kmh.u)
-     connect(kmh.y, driver.u_m, blend.v)
-     connect(no_ff.y, driver.u_ff)
-     connect(drive.spline, differential.flange_b)
-     connect(differential.flange_left, car.spin_fl)
-     connect(differential.flange_right, car.spin_fr)
-     connect(drive.support, mount.spline)
-     connect(car.steering, straight.spline)
-     connect(flat.y, roadload.grade)
-     connect(car.chassis, roadload.chassis)
-     connect(driver.y, blend.tau_ref)
-     connect(blend.tau_motor, drive.tau_ref)
-     connect(blend.tau_brake, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr)
+     connect(car.bus, motion.bus) {^wbus}
+     connect(trace.y, driver.u_s) {^w1}
+     connect(motion.vx, kmh.u) {^w2}
+     connect(kmh.y, driver.u_m, blend.v) {^w3}
+     connect(no_ff.y, driver.u_ff) {^w4}
+     connect(drive.spline, differential.flange_b) {^w5}
+     connect(differential.flange_left, car.spin_fl) {^w6}
+     connect(differential.flange_right, car.spin_fr) {^w7}
+     connect(drive.support, mount.spline) {^w8}
+     connect(car.steering, straight.spline) {^w9}
+     connect(flat.y, roadload.grade) {^w10}
+     connect(car.chassis, roadload.chassis) {^w11}
+     connect(driver.y, blend.tau_ref) {^w21}
+     connect(blend.tau_motor, drive.tau_ref) {^w23}
+     connect(blend.tau_brake, car.tau_fl, car.tau_fr, car.tau_rl, car.tau_rr) {^w24}
      P_dc = drive.battery.v * drive.battery.i
      P_shaft = drive.machine.P_mech
      der(E_dc_in) = max(-P_dc, 0.0)
@@ -1621,6 +1820,38 @@ Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardSt
      initial E_shaft_out = 0.0
      initial E_shaft_in = 0.0
      initial E_brake = 0.0
+   metadata {
+     "_links": {
+       "wbus": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "trace": {"Dyad": {"placement": {"diagram": {"x1": 20, "y1": 57, "x2": 100, "y2": 137}}}},
+       "driver": {"Dyad": {"placement": {"diagram": {"x1": 140, "y1": 70, "x2": 240, "y2": 170}}}},
+       "no_ff": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 10, "x2": 140, "y2": 50}}}},
+       "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
+       "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
+       "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
+       "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+       "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
+       "flat": {"Dyad": {"placement": {"diagram": {"x1": 440, "y1": 880, "x2": 480, "y2": 920}}}},
+       "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
+       "motion": {"Dyad": {"placement": {"diagram": {"x1": 775, "y1": 610, "x2": 975, "y2": 810}}}},
+       "roadload": {"Dyad": {"placement": {"diagram": {"x1": 500, "y1": 865, "x2": 570, "y2": 935}}}},
+       "blend": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
+       "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 990, "y": 662.0}, {"x": 990, "y": 980}, {"x": 20, "y": 980}, {"x": 20, "y": 225}], "E": 2}]}},
+       "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 125, "y": 143}], "E": 2}, {"S": -1, "M": [{"x": 270, "y": 225}, {"x": 270, "y": 140}], "E": 3}], "junctions": [{"x": 125, "y": 225}]}},
+       "w4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 190, "y": 30}], "E": 2}]}},
+       "w5": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 550, "y": 100}, {"x": 550, "y": 344}], "E": 2}]}},
+       "w6": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 480, "y": 300}, {"x": 480, "y": 655}], "E": 2}]}},
+       "w7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 765, "y": 300}, {"x": 765, "y": 655}], "E": 2}]}},
+       "w8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 515, "y": 150}], "E": 2}]}},
+       "w9": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w10": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w11": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 680, "y": 820}, {"x": 680, "y": 900}], "E": 2}]}},
+       "w21": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 265, "y": 120}, {"x": 265, "y": 100}], "E": 2}]}},
+       "w23": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "w24": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 410, "y": 140}], "E": -1}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": 2}, {"S": -2, "M": [{"x": 500, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 3}, {"S": -1, "M": [], "E": -3}, {"S": -3, "M": [], "E": 4}, {"S": -3, "M": [{"x": 410, "y": 960}, {"x": 760, "y": 960}, {"x": 760, "y": 743}], "E": 5}], "junctions": [{"x": 410, "y": 633}, {"x": 500, "y": 633}, {"x": 410, "y": 743}]}}
+     }
+   }
    end
 
    analysis BEVRegenWLTCTransient
@@ -1673,13 +1904,13 @@ Paste `BEVHardStop` and `BEVRegenWLTC` from steps 3 and 5 of **Do this** above; 
 ```txt [RegenBlend]
 component RegenBlend
   "Torque asked for at the machine shaft: positive drives, negative brakes"
-  tau_ref = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}}
+  tau_ref = RealInput() {^tau_ref}
   "Vehicle speed [km/h]"
-  v = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}}
+  v = RealInput() {^v}
   "Torque the machine is asked for"
-  tau_motor = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}}
+  tau_motor = RealOutput() {^tau_motor}
   "Friction brake torque asked of each of the four wheel brakes"
-  tau_brake = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  tau_brake = RealOutput() {^tau_brake}
   "Single-speed reduction, Leaf ZE1"
   parameter ratio::Real = 8.193
   "Wheel radius"
@@ -1714,6 +1945,15 @@ relations
   tau_regen = min(tau_demand, tau_regen_max)
   tau_motor = max(tau_ref, 0.0) - tau_regen
   tau_brake = (tau_demand - tau_regen) * ratio / 4.0
+metadata {
+  "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/RegenBlend.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
+  "_links": {
+    "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
+    "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "tau_motor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
+    "tau_brake": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+  }
+}
 end
 ```
 

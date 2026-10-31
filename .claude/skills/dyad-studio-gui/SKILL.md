@@ -6,8 +6,9 @@ disable-model-invocation: true
 
 # Driving Dyad Studio from Claude in Chrome
 
-Verified in Dyad Studio web (Theia build at `localhost:3000`, dyad 3.4.0) with the window at
-`resize_window(1600, 1000)`. Every operation — components, parts, ports, wires, parameters, code,
+Verified in Dyad Studio web (Theia build at `localhost:3000`) with the window at
+`resize_window(1600, 1000)`: dyad 3.4.0, and the Dyad Studio plugin 3.4.0-rc2 with the dyad-3.5.0
+REPL. Where the two differ, operations.md names the build. Every operation — components, parts, ports, wires, parameters, code,
 save, analyses, REPL, plots — is in [`reference/operations.md`](reference/operations.md), each with
 its known Studio bugs beside it. Open the section for the operation in front of you.
 
@@ -38,9 +39,12 @@ Studio is cheaper by `ref` than by pixel:
 1. `tabs_context_mcp`, then one new tab at `http://localhost:3000/#<absolute workspace path>`. Work
    in this one Studio tab for the whole task: each Studio tab starts its own plugin host, Julia
    language server (~2.6 GB) and Julia REPL (~2.3 GB), which keep running after the tab closes.
+   Save every diagram before closing a Studio tab, or leave it open: a dirty diagram raises a
+   beforeunload prompt that hangs the extension.
 2. On the trust prompt, click "Yes, I trust the authors"; answer any other prompt by asking the
    user.
-3. Open the Dyad sidebar (4th activity icon, below Source Control) and collapse ACTIONS so
+3. Open the Dyad sidebar by clicking its activity icon (4th, below Source Control; Ctrl+B is
+   swallowed while the diagram has focus) and collapse ACTIONS so
    COMPONENTS has room. Keep the sidebar in one state for a whole placement sequence: it can
    re-open by itself and shift the canvas.
 4. Commands go through F1 (Chrome can swallow Ctrl+Shift+P): `Dyad: Compile`, `Dyad: Open Julia
