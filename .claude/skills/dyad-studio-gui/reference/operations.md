@@ -7,6 +7,23 @@ session and re-measure every landmark from it before clicking.
 Items marked **(unverified)** were not reproduced; treat them as hints. After every operation,
 **read the file**: `grep` the `.dyad` file for the instance, value, `connect` or placement.
 
+## Studio web at a release
+
+Dyad Studio releases (JuliaComputing/dyad-theia) ship desktop installers only, so build the web app
+from the dyad-theia repo at the release tag; v3.5.1 pins the Dyad Studio plugin at 3.5.1. Build in
+a fresh worktree at the tag, so the build holds the release and nothing else:
+
+```sh
+wt -C <dyad-theia> switch --create <local-branch> --base v3.5.1   # prints the worktree path
+cd <worktree> && export GITHUB_TOKEN=$(gh auth token)              # install and build download the plugin
+pnpm install && pnpm build:web
+cd apps/web && npx theia start <workspace> --hostname=127.0.0.1 --port=3000 --plugins=local-dir:plugins
+```
+
+Start the last line as a background task: it is the Theia task to stop when done (SKILL.md,
+Finish). The CLI and Julia stay where HANDOVER puts them: `npx -y @juliacomputing/dyad-cli@3.5.0`
+(the newest on npm) and `julia +dyad-3.5.0`.
+
 ## Diagram landmarks
 
 - **Toolbar**, top left of the canvas, left to right: Search, Zoom In, Zoom Out, **Reset view**,
