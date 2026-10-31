@@ -93,10 +93,10 @@ ORNL's 280 Nm map with EM57 ratings.
 | Curb mass | 1,490 / 1,510 / 1,520 kg (S / X / G, Japan). EU figures are higher: 1,545 kg MY20 base and 1,580 kg N-Connecta, probably including a 75 kg driver | 3,277 lb (1,486 kg) design curb weight, 3,302 lb (1,498 kg) delivered (2013 SV) | JP verified [N-JP-ZE1], also [N-GL-ZE1]. EU secondary [ADAC]. US verified [ANL-2013] |
 | EPA test weight (ETW) | 3,750 lb (1,701 kg) and 3,875 lb (1,758 kg) | 3,750 lb (1,701 kg) | verified [EPA-TCL] |
 | Cd | 0.28 | Not verified (0.29 is often quoted) | ZE1 verified [N-GL-ZE1] |
-| Frontal area | **Not found** from a primary source. For the course CdA of 0.63 m² with Cd 0.28, A = 2.25 m² | — | gap. The 2.25 m² is derived |
+| Frontal area | **Not found** from a primary source. For the course CdA of 0.63 m² with Cd 0.28, A = 2.25 m² | — | gap. The 2.25 m² is derived; checked against width × height in `bev-road-load-and-braking-validation.md` §2 |
 | Road-load coefficients (EPA target, SI) | A = 112 N, B = 3.62 N/(m/s), C = 0.424 N/(m/s)² (one test group). Other groups: A 116 N, C 0.437 | A = 150 N, B = 0.615 N/(m/s), C = 0.508 N/(m/s)² | derived from verified [EPA-TCL] lbf, lbf/mph, lbf/mph² values |
 | Road-load seen as course-car parameters | f_r ≈ A/(m·g) = 0.0067 at ETW. C/(½ρ) = 0.71 m² (ρ = 1.2) | f_r ≈ 0.009, C/(½ρ) = 0.85 m² | derived. Coastdown C also contains speed-squared drivetrain and tire losses, so it overstates the aero CdA |
-| Road load at 100 km/h | 539 N, versus 462 N for the course car (1450 kg, CdA 0.63, f_r 0.012) | 559 N | derived |
+| Road load at 100 km/h | 539 N, versus 462 N for the course car (1450 kg, CdA 0.63, f_r 0.012) | 559 N | derived. All three MY2018–22 40 kWh rows, other speeds and coast-down times: `bev-road-load-and-braking-validation.md` §1, §4 |
 | Tires | 205/55R16 91V (S, X) or 215/50R17 91V (G) | 205/55R16 (Bridgestone Ecopia EP422) | verified [N-JP-ZE1], [ANL-2013] |
 
 ### 1.3 Official consumption and range
@@ -333,7 +333,7 @@ and low-speed limits can force friction in.
 | 2013 Leaf, 60–0 mph hard stop | peak power into the battery only 0.7 kW (50% SoC) and 10.6 kW (100% SoC). ANL: "during a full brake request, the friction brakes are predominantly used" | verified [ANL-2013] p. 2, note 7 |
 | 2013 Leaf, coasting 60–10 mph in Drive | peak 14.0 kW into the battery, 78.6 Wh total over 55.6 s | verified [ANL-2013] |
 | 2013 Leaf pack, 10 s charge capability at 20% DOD | 80.5 kW. The battery is not what limits regen at mid SoC; motor torque, the brake system and the strategy are | verified [INL-5045] |
-| Leaf ZE1 e-Pedal (one-pedal) | lift-off deceleration up to 0.2 g | search summary of the Nissan release ([global.nissannews.com](https://global.nissannews.com/en/releases/e-pedal-easy-driving-using-only-the-accelerator-pedal)) |
+| Leaf ZE1 e-Pedal (one-pedal) | lift-off deceleration up to 0.2 g | verified, Nissan release of 6 Dec 2017 ([global.nissannews.com](https://global.nissannews.com/en/releases/e-pedal-easy-driving-using-only-the-accelerator-pedal)). D-mode lift-off regen, ABS–regen practice and stopping distances: `bev-road-load-and-braking-validation.md` §6–8 |
 | Leaf ZE1 brake system | "回生協調ブレーキ: 電動型制御ブレーキ" (cooperative regen brake, electrically controlled). This is series-type blending by brake-by-wire | verified [N-JP-ZE1] |
 | Bosch ESP hev | pure regenerative deceleration up to 0.2 g with a vacuum booster, **up to 0.3 g** with iBooster. "Recuperation efficiency of up to 100%, depending on the foundation brake design" | verified ([Bosch Mobility](https://bosch-mobility.com/en/solutions/driving-safety/esp-hev-module/)) |
 | Low-speed fade speed | **No primary number found.** Patents (e.g., US 8,066,339) describe ramping regen torque to zero and blending in friction at low speed, with the start speed raised when friction capability is reduced | search summary (patents). gap |
