@@ -10,7 +10,7 @@ test component BrakeAndSteer
   parameter t_ramp::Time = 0.2
   parameter select_low::Real = 0.0
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter h_cg::Length = 0.0
   structural parameter load_transfer::Boolean = false

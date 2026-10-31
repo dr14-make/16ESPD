@@ -401,10 +401,10 @@ kJ(x) = r.sol[x][end] / 1e3
 kJ(r."E_shaft_in"), kJ(r."E_brake"), kJ(r."E_dc_in")
 ```
 
-<div class="handson">✓ hard stop: 80 → 0 km/h in <b>3.0 s</b>, <b>36.2 m</b> · <code>blend.tau_regen</code>
-<b>137</b> at 80 km/h, <b>320</b> from 34.3 to 10 km/h · machine <b>176.9 kJ</b>, friction
-<b>181.8 kJ</b>: 49 / 51 % · <b>170.2 kJ</b> to the battery · <code>P_charge = 0.0</code>:
-<b>38.8 m</b></div>
+<div class="handson">✓ hard stop: 80 → 0 km/h in <b>2.7 s</b>, <b>33.0 m</b> · <code>blend.tau_regen</code>
+<b>137</b> at 80 km/h, <b>320</b> from 34.3 to 10 km/h · machine <b>160.1 kJ</b>, friction
+<b>193.2 kJ</b>: 45 / 55 % · <b>154.8 kJ</b> to the battery · <code>P_charge = 0.0</code>:
+<b>26.9 m</b></div>
 
 <div class="handson">✓ WLTC: <b>34.25 Wh/km</b> back of <b>143.6</b> traction: <b>23.85 %</b> · friction
 0.001 Wh/km · <code>P_charge = 15.0e3</code>: <b>21.40 %</b>, friction 3.69 Wh/km</div>
@@ -436,12 +436,11 @@ speed, with the speed axis flipped so that the stop reads from left to right, an
 energies at the end in kilojoules: what the shaft took back, what the friction brakes burned, and
 what reached the battery.
 
-The first green box, the hard stop. From 80 to 0 kilometers per hour in 3.0 seconds, in 36.2 meters.
+The first green box, the hard stop. From 80 to 0 kilometers per hour in 2.7 seconds, in 33.0 meters.
 The regen torque, `blend.tau_regen`, is 137 newton meters at 80 kilometers per hour and 320 from
-34.3 down to 10. The machine takes 176.9 kilojoules and friction 181.8: 49 and 51 percent. 170.2
-kilojoules reach the battery. And with P charge set to 0, which turns regen off, the stop is 38.8
-meters. If you also plot the friction brakes, the front-left one falls to zero from about 62
-kilometers per hour and stays there down to 10, where the fade hands it back; the rear-left carries
+34.3 down to 10. The machine takes 160.1 kilojoules and friction 193.2: 45 and 55 percent. 154.8
+kilojoules reach the battery. And with P charge set to 0, which turns regen off, the stop is 26.9
+meters. If you also plot the friction brakes, the front-left one falls to zero during the stop and stays there until near standstill, where the fade hands it back; the rear-left carries
 the friction share all the way, cycling under the ABS.
 
 The second green box, the WLTC. 34.25 watt-hours per kilometer come back, of 143.6 of traction at
@@ -457,7 +456,7 @@ class: big-figure
 
 ## The hard stop: the ceilings take turns
 
-![Left: the machine's braking torque against car speed on Lecture 3's hard stop from 80 km/h, lying on the smallest of three ceilings: the charge-power curve 80.5 kW / ω above the corner at 34.3 km/h, the 320 N·m torque limit from there to 10 km/h, and the linear fade below. Right: speed against distance from the pedal; with regen and friction the car stops in 36.2 m, on friction alone in 38.8 m.](/figures/07-regen-hard-stop.svg)
+![Left: the machine's braking torque against car speed on Lecture 3's hard stop from 80 km/h, lying on the smallest of three ceilings: the charge-power curve 80.5 kW / ω above the corner at 34.3 km/h, the 320 N·m torque limit from there to 10 km/h, and the linear fade below. Right: speed against distance from the pedal; with regen and friction the car stops in 33.0 m, on friction alone in 26.9 m.](/figures/07-regen-hard-stop.svg)
 
 <div class="handson">✓ your <code>blend.tau_regen</code> lies on the smallest ceiling: charge power above
 34.3 km/h, 320 N·m down to 10 km/h, the fade below · battery up to <b>75.9 kW</b>, −205 A</div>
@@ -478,10 +477,8 @@ meters at 80 and 183 at 60; flat on the torque limit from 34.3 down to 10; and o
 that. The ceilings take turns, as the title says.
 
 Right panel: the car's speed against the distance from the moment the pedal goes down. Blue is regen
-plus friction: the car stops in 36.2 meters. Orange is the same stop with the charge limit set to
-zero, on friction alone: 38.8 meters. With regen the stop is 2.6 meters shorter. On friction alone
-the front ABS works the front tires at about 62 percent of their grip; below the corner speed the
-machine's steady 320 newton meters holds them at 93 percent.
+plus friction: the car stops in 33.0 meters. Orange is the same stop with the charge limit set to
+zero, on friction alone: 26.9 meters. With regen the stop is 6.1 meters longer. The remaining deficit is regen-under-ABS coordination (#140), not the friction-only stop.
 
 The green box is what your run of build 05 shows: `blend.tau_regen` lies on the smallest ceiling,
 the charge power above 34.3 kilometers per hour, 320 newton meters down to 10, and the fade below.
@@ -499,15 +496,15 @@ routeAlias: hard-stop-split
 <div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
 <div>
 
-![Energy over the hard stop in kJ, regen plus friction against friction only: the machine takes 176.9 kJ back through the reduction, against 0.8 on friction alone; the friction brakes burn 181.8 kJ, against 366.8; tire slip 22.0 against 19.8. Of the car's 381 kJ, the machine takes 49.3 % of the braking.](/figures/07-hard-stop-split.svg)
+![Energy over the hard stop in kJ, regen plus friction against friction only: the machine takes 160.1 kJ back through the reduction, against 0.85 on friction alone; the friction brakes burn 193.2 kJ, against 352.7; tire slip 27.3 against 34.6. Of the car's 381 kJ, the machine takes 45.3 % of the braking.](/figures/07-hard-stop-split.svg)
 
 </div>
 <div class="text-[0.95rem]">
 
-The car starts with **380.7 kJ**. The machine takes **49 %** of the braking, friction **51 %**:
+The car starts with **380.7 kJ**. The machine takes **45 %** of the braking, friction **55 %**:
 not most of it, because the hard stop asks for far more than the ceilings allow.
 
-**170.2 kJ** reaches the battery: 47 Wh, about **350 m** of WLTC driving.
+**154.8 kJ** reaches the battery: 43 Wh, about **320 m** of WLTC driving.
 
 > **Outside the ABS loop.** The ABS modulates only the friction brakes. From about 62 km/h the
 > machine's torque holds the front slip past the ABS's reapply threshold, so the front friction
@@ -523,18 +520,18 @@ stop in kilojoules, in three groups of bars. Blue is the stop with regen plus fr
 stop on friction alone. The first group is the machine, the energy it took back through the
 reduction; the second, the friction brakes; the third, tire slip.
 
-With regen: the machine takes back 176.9 kilojoules, the friction brakes burn 181.8, and tire slip
-takes 22.0. On friction alone: the machine almost nothing, 0.8, the friction brakes 366.8, and tire
-slip 19.8.
+With regen: the machine takes back 160.1 kilojoules, the friction brakes burn 193.2, and tire slip
+takes 27.3. On friction alone: the machine almost nothing, 0.8, the friction brakes 352.7, and tire
+slip 34.6.
 
 The car starts with 380.7 kilojoules of kinetic energy in its body and wheels; the title rounds it
 to 381. The machine, the brakes and the tires add up to that, to better than one part in a billion:
-the meters close. The machine's share of the braking is 176.9 over 176.9 plus 181.8, 49.3 percent,
-and friction's 51. Not most of it, because the hard stop asks for far more than the ceilings allow.
+the meters close. The machine's share of the braking is 160.1 over 160.1 plus 193.2, 45.3 percent,
+and friction's 54.7 percent. Not most of it, because the hard stop asks for far more than the ceilings allow.
 
-Of the machine's share, 170.2 kilojoules reach the battery terminals: 47 watt-hours. At the 134.3
+Of the machine's share, 154.8 kilojoules reach the battery terminals: 43 watt-hours. At the 134.3
 watt-hours per kilometer the car takes out of its cells on the WLTC, as section 08 shows, that is
-about 350 meters of driving.
+about 320 meters of driving.
 
 The quote box is a limit of our model, worth saying out loud. The machine sits outside the ABS loop.
 The ABS reads the wheel slips and modulates only the friction brakes, and nothing withdraws the
@@ -605,8 +602,8 @@ same cycle: on the WLTC, series blending changes the result by a twentieth of a 
 - A machine asked to brake generates. Regen is limited by **torque, charge power, a low-speed
   fade** and grip.
 - **Series blending** gives the machine the demand first, friction the rest.
-- Hard stop: the ceilings take turns; machine **49 %**, friction **51 %**, and the stop is
-  **shorter**, 36.2 m against 38.8 m.
+- Hard stop: the ceilings take turns; machine **45 %**, friction **55 %**, and the stop is
+  **longer**, 33.0 m against 26.9 m.
 - WLTC: no ceiling binds; **23.85 %** of the traction comes back.
 
 ### Next: add it all up. <Link to="energy-bill">→ 08, the energy bill</Link>
@@ -616,10 +613,12 @@ Section 07 in five lines. The drive turns the driver's torque into a converter c
 present field, and the car follows the WLTC to within 1.63 kilometers per hour over 23 267 meters. A
 machine asked to brake generates, and regen is limited by the machine's torque, the battery's charge
 power, a low-speed fade, and grip. Series blending gives the machine the demand first and friction
-the rest. On the hard stop the ceilings take turns, the machine takes 49 percent and friction 51,
-and the stop is shorter, 36.2 meters against 38.8. On the WLTC no ceiling binds, and 23.85 percent
+the rest. On the hard stop the ceilings take turns, the machine takes 45 percent and friction 55,
+and the stop is longer, 33.0 meters against 26.9. On the WLTC no ceiling binds, and 23.85 percent
 of the traction comes back.
 
 The car drives and brakes. What is left is to put a meter on every link and read where the energy
 went.
 -->
+
+<!-- Issue #156: the 6.1 m regen penalty is the uncoordinated blend (#140), not a reason to detune ABS. -->

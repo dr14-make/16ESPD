@@ -202,10 +202,9 @@ After the break, 51 min:
   locked. Show it only if ahead; its live run is in the slide's note.
 - "The planar car" and "Braking and steering" close the section: the one-wheel bench has no
   lateral force, so the steering benefit needs the planar car. The slide shows only steering:
-  3.02 m to the side of the obstacle with ABS, 0.00 m locked. It leaves the stopping distance out
-  on purpose: on this car the locked wheels stop shorter (31.6 m against 38.2 m), because the
-  planar ABS channels hold slip and are not tuned for distance. If asked, the students' 1D ABS is
-  the one for distance. Figures: `public/figures/03-brake-steer-path.svg` and
+  2.64 m to the side of the obstacle with ABS, 0.00 m locked. The revised planar ABS also
+  stops shorter: 28.3 m along the turn versus 31.6 m locked; straight 26.5 m, 9.74 m/s²
+  after build-up (issue #156). Figures: `public/figures/03-brake-steer-path.svg` and
   `03-brake-steer-forces.svg`, from `scripts/export_lecture03_steer_figures.jl`.
 
 ## Break — 5 min

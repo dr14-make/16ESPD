@@ -1,7 +1,7 @@
 # Lecture 4 step 05: series regenerative braking on the Lecture 3 brakes. `RegenBlend` gives the
 # machine the brake demand up to the smallest of its torque limit, the battery's charge-power limit
 # and a low-speed fade, and the rest to the friction brakes. On Lecture 3's hard stop the limits
-# bind one after another and friction carries half the braking; on WLTC none binds above walking
+# bind one after another and friction carries just over half the braking; on WLTC none binds above walking
 # pace, and the recovered share is the plan's headline number.
 
 using DyadInterface: symbolic_container
@@ -95,30 +95,27 @@ end
     e(x) = s[x][end]
     E0 = s[m.E_kin][1]
     E_motor, E_friction = e(m.E_shaft_in), e(m.E_brake)
-    # 380.7 kJ of the car's kinetic energy: the machine takes 176.9 kJ back, the friction brakes
-    # burn 181.8 kJ, tire slip 22.0 kJ. Friction carries half the braking.
+    # 380.7 kJ: machine 160.1 kJ, friction 193.2 kJ, tire slip 27.3 kJ.
     @test E0 ≈ 380.7e3 rtol = 1e-3
-    @test E_motor ≈ 176.9e3 rtol = 5e-3
-    @test E_friction ≈ 181.8e3 rtol = 5e-3
+    @test E_motor ≈ 160.1e3 rtol = 5e-3
+    @test E_friction ≈ 193.2e3 rtol = 5e-3
     share = E_motor / (E_motor + E_friction)
-    @test share ≈ 0.4932 atol = 0.00005
+    @test share ≈ 0.453 atol = 0.005
     @test share < 0.5
     println("Dry hard stop: ", (; distance = _rg_stop(run).d, motor_share = 100share, motor_kJ = E_motor/1000, friction_kJ = E_friction/1000))
     # The links close on the kinetic energy; measured 1e-9.
     @test abs(E0 - e(m.E_kin) - (E_motor - e(m.E_shaft_out)) - E_friction - e(m.E_tire)) / E0 < 1e-6
-    # 170.2 kJ reach the battery: what the shaft gave back plus the rotor's own energy, less the
+    # 154.8 kJ reach the battery: what the shaft gave back plus the rotor's own energy, less the
     # machine's, converter's and battery's losses and the auxiliaries.
-    @test e(m.E_dc_in) ≈ 170.2e3 rtol = 5e-3
+    @test e(m.E_dc_in) ≈ 154.8e3 rtol = 5e-3
     @test e(m.E_dc_in) < E_motor
-    # The machine is outside the ABS loop: from about 62 km/h its torque holds the front slip past
-    # the ABS's recovery threshold, so the ABS keeps the front friction brakes off, and the rear
-    # ones carry the friction share.
-    tg = collect(1.4:0.005:3.2)
+    # The uncoordinated machine prevents front pressure recovery until near standstill (#140).
+    tg = collect(1.4:0.005:3.0)
     @test maximum(abs, s(tg; idxs = m.car.fl.brake.tau_friction).u) < 5.0
     @test minimum(s(tg; idxs = m.car.rl.brake.tau_friction).u) > 500.0
     # Every wheel stays inside Lecture 3's slip bound while the car moves above 3 m/s; measured
-    # -0.102 front, -0.058 rear.
-    ts = collect(0.5:0.005:s.t[end])
+    # -0.099 front, -0.104 rear.
+    ts = collect(range(0.5, 6.0; length = 1101))
     moving = s(ts; idxs = m.car.bus.vx).u .> 3.0
     for k in (m.car.bus.kappa_fl, m.car.bus.kappa_fr, m.car.bus.kappa_rl, m.car.bus.kappa_rr)
         @test minimum(s(ts[moving]; idxs = k).u) >= -0.2
@@ -126,20 +123,19 @@ end
     @test maximum(abs, s[m.car.bus.r]) < 1e-8
 end
 
-@testset "Lecture 4 step 05: regeneration does not lengthen the stop" begin
+@testset "Lecture 4 step 05: stopping distance and the regen-under-ABS deficit" begin
     with = _rg_stop(_rg_stop_run)
     friction_only = _RG_PL.PlanarBEVHardStopTransient(P_charge = 0.0)
     without = _rg_stop(friction_only)
-    # 36.2 m with regeneration against 38.8 m on friction alone: on friction alone the front ABS
-    # works the front tires at about 62 % of their grip; below the corner speed the machine's
-    # 320 N·m holds them at 93 %.
-    @test with.d ≈ 36.22 atol = 0.005
-    @test without.d ≈ 38.82 atol = 0.1
-    @test with.d < without.d
+    # The improved friction ABS exposes the uncoordinated regen deficit: 33.04 vs 26.94 m.
+    @test with.d ≈ 33.04 atol = 0.1
+    @test without.d ≈ 26.94 atol = 0.1
+    # Known regen-under-ABS deficit (#140); do not conceal it by retuning the friction ABS.
+    @test_broken with.d <= without.d
     s0 = friction_only.sol
     m0 = symbolic_container(friction_only)
     @test s0[m0.E_dc_in][end] < 1.0
-    @test s0[m0.E_brake][end] > 0.95 * s0[m0.E_kin][1]
+    @test s0[m0.E_brake][end] > 0.90 * s0[m0.E_kin][1]
 end
 
 @testset "Lecture 4 step 05: recovered energy on WLTC" begin

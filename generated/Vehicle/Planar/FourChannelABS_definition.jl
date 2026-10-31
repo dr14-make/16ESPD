@@ -14,16 +14,16 @@ Four independently modulated sampled ABS channels with optional rear select-low.
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
 | `dt`         |                          | s  |   0.005 |
-| `T_p`         |                          | s  |   0.03 |
-| `lambda_1_f`         |                          | --  |   0.08 |
-| `lambda_1_r`         |                          | --  |   0.06 |
+| `T_p`         | Prediction includes hydraulic lag and sampled release/reapply delay (derived)                         | s  |   0.08 |
+| `lambda_1_f`         | Predicted release just beyond the front tire's 0.12 peak slip (derived)                         | --  |   0.14 |
+| `lambda_1_r`         | Predicted release just beyond the rear tire's 0.09 peak slip (derived)                         | --  |   0.11 |
 | `lambda_lock`         |                          | --  |   0.20 |
-| `alpha_rel`         |                          | --  |   0.6 |
+| `alpha_rel`         | Retain 90 percent of incipient-limit pressure; calibrated with lag (assumed)                         | --  |   0.9 |
 | `beta_reapply`         |                          | --  |   0.85 |
-| `l_rec`         |                          | --  |   0.03 |
-| `T_hold_max`         |                          | s  |   0.06 |
+| `l_rec`         | Reapply near peak adhesion rather than demanding near-zero slip (derived)                         | --  |   0.12 |
+| `T_hold_max`         | Two ECU ticks before another recovery decision (assumed)                         | s  |   0.01 |
 | `k_dec`         |                          | --  |   40000.0 |
-| `k_inc_fast`         |                          | --  |   160000.0 |
+| `k_inc_fast`         | Initial build limited to 200 N.m per 5 ms tick for low-grip recovery (assumed)                         | --  |   40000.0 |
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `v_min`         |                          | m/s  |   1.5 |
 | `select_low`         |                          | --  |   1.0 |
@@ -51,7 +51,7 @@ Four independently modulated sampled ABS channels with optional rear select-low.
 | ------------ | ----------------------------------- | ------ |
 | `rear_low`         |                          | N.m  |
 """
-@component function FourChannelABS(; name = nothing, var"dt"=0.005, var"T_p"=0.03, var"lambda_1_f"=0.08, var"lambda_1_r"=0.06, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, var"select_low"=Float64(1.0), __overrides = Dict{String, Any}())
+@component function FourChannelABS(; name = nothing, var"dt"=0.005, var"T_p"=0.08, var"lambda_1_f"=0.14, var"lambda_1_r"=0.11, var"lambda_lock"=0.2, var"alpha_rel"=0.9, var"beta_reapply"=0.85, var"l_rec"=0.12, var"T_hold_max"=0.01, var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(40000.0), var"k_inc_slow"=Float64(16000.0), var"v_min"=1.5, var"select_low"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -102,34 +102,34 @@ Four independently modulated sampled ABS channels with optional rear select-low.
   append!(__params, @parameters (dt::Real), [bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, dt, __local__dt)
   __local__T_p = T_p
-  append!(__params, @parameters (T_p::Real), [bounds = (0.0, Inf)])
+  append!(__params, @parameters (T_p::Real), [description = "Prediction includes hydraulic lag and sampled release/reapply delay (derived)", bounds = (0.0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_p, __local__T_p)
   __local__lambda_1_f = lambda_1_f
-  append!(__params, @parameters (lambda_1_f::Real))
+  append!(__params, @parameters (lambda_1_f::Real), [description = "Predicted release just beyond the front tire's 0.12 peak slip (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_f, __local__lambda_1_f)
   __local__lambda_1_r = lambda_1_r
-  append!(__params, @parameters (lambda_1_r::Real))
+  append!(__params, @parameters (lambda_1_r::Real), [description = "Predicted release just beyond the rear tire's 0.09 peak slip (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_1_r, __local__lambda_1_r)
   __local__lambda_lock = lambda_lock
   append!(__params, @parameters (lambda_lock::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, lambda_lock, __local__lambda_lock)
   __local__alpha_rel = alpha_rel
-  append!(__params, @parameters (alpha_rel::Real))
+  append!(__params, @parameters (alpha_rel::Real), [description = "Retain 90 percent of incipient-limit pressure; calibrated with lag (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, alpha_rel, __local__alpha_rel)
   __local__beta_reapply = beta_reapply
   append!(__params, @parameters (beta_reapply::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, beta_reapply, __local__beta_reapply)
   __local__l_rec = l_rec
-  append!(__params, @parameters (l_rec::Real))
+  append!(__params, @parameters (l_rec::Real), [description = "Reapply near peak adhesion rather than demanding near-zero slip (derived)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, l_rec, __local__l_rec)
   __local__T_hold_max = T_hold_max
-  append!(__params, @parameters (T_hold_max::Real), [bounds = (eps(Float64), Inf)])
+  append!(__params, @parameters (T_hold_max::Real), [description = "Two ECU ticks before another recovery decision (assumed)", bounds = (eps(Float64), Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_hold_max, __local__T_hold_max)
   __local__k_dec = k_dec
   append!(__params, @parameters (k_dec::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, k_dec, __local__k_dec)
   __local__k_inc_fast = k_inc_fast
-  append!(__params, @parameters (k_inc_fast::Real))
+  append!(__params, @parameters (k_inc_fast::Real), [description = "Initial build limited to 200 N.m per 5 ms tick for low-grip recovery (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_fast, __local__k_inc_fast)
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))

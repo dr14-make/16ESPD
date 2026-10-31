@@ -428,6 +428,18 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   `withdraw = 0, stop = 12` locks and reverses the wheels, so its 112.35 m is not a physical
   benchmark. Long parking disabled reaches the known tire NaN. WLTC is unchanged; the blending rule is structural, default off.
   `regen` passes 98/98 and `abs` 84/84 on dyad-3.5.0. No ABS retuning is part of this follow-up.
+
+- **Planar ABS calibration (#156).** The old 0.08/0.06 release and 0.03 recovery window
+  held slip below the tires' 0.12/0.09 peaks. Peak-centered prediction (0.14/0.11),
+  80 ms look-ahead, 90% pressure retention, 10 ms hold and 40 kN.m/s initial build give
+  9.74 m/s² during established braking: 26.52 m from 80 km/h, 41.03 m from 100 km/h.
+  No tire or load-transfer defaults changed. At h=0 the load-transfer flag has no effect.
+- **Regen outside ABS still prevents front reapplication (#140).** The unchanged blend now
+  stops from 80 km/h in 33.04 m versus 26.94 m on friction alone. Machine share 45.3%,
+  shaft recovery 160.1 kJ, friction 193.2 kJ, tire slip 27.3 kJ, battery recovery 154.8 kJ.
+  `regen` explicitly retains a broken no-distance-penalty test for #140. Do not retune
+  the friction ABS to hide this. At 100 km/h the uncoordinated blend can reverse front
+  wheel rotation; coordination remains necessary. `RegenBlend` was not edited.
 - **`r."path"` takes a literal only.** On an analysis result, `r."E_dc"` works but `r."$x"`
   with `x = "E_dc"` throws a `MethodError`, and `getproperty(r, :E_dc)` a `FieldError`. A snippet
   that loops over signals collects the literals first: `links = ["road" => r."E_road", ...]`.
@@ -470,3 +482,67 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
 - Never edit anything under `generated/`.
 - Comments explain why — a constraint, an invariant, a gotcha. Not what the code says, and not
   the history of how it got there.
+
+### Issue #156 — planar ABS evidence and moved-number ledger
+
+Distances start at the pedal (0.5 s), stop at vx < 0.5 m/s unless noted. No reaction distance.
+Dry source anchors: [auto motor und sport Leaf ZE1, 39 m from 100 km/h](https://www.auto-motor-und-sport.de/)
+and Argonne's 2013 Leaf, 36.9 m from 60 mph; primary links and provenance are in
+`docs/research_notes/Electric and hybrid vehicles/bev-road-load-and-braking-validation.md`, item 8.
+Those imply 9.8–10.2 m/s² and 25–26 m from 80 km/h. Our 30 ms hydraulics and sampled
+pressure build leave 26.52 m from the pedal, versus established deceleration 9.74 m/s².
+These are assumed teaching-controller calibrations, not claimed Bosch production values.
+
+**Cause isolation (same car, one change at a time):** baseline 36.05 m (6.84 m/s² distance
+proxy); release at tire peaks alone 33.29 m; recovery 0.08 alone 33.19 m; prediction removed
+42.80 m; pressure retention 0.9 alone 37.08 m with near-lock overshoot. Thus no single scalar
+retune suffices: the early release/near-zero recovery window and deep pressure dumps interact
+with hydraulic lag. At 1 s the front brake gives 887 N·m against peak tire torque 1267 N·m;
+front force 2777 N of 4087.5 N normal load, rear 2530 N of 3270 N. Mean slip (0.8–2 s)
+0.0553 front / 0.0491 rear, below tire peaks 0.12 / 0.09. The first hold times out at
+0.6 s and dumps pressure again despite a rolling wheel. The final window centers the cycle
+near peak force without changing tire friction. All four wheel slips are checked in `esp`.
+
+`PlanarCar.load_transfer` is false by default, and h_cg is zero. `ABSStraightStop` enables
+transfer but also has zero height, so the flag alone changes nothing. At h=0.5 m, transfer
+alone makes 37.23 m, not a fix: at 1 s front/rear loads become 4916/2442 N per wheel versus
+4087.5/3270 N, moving grip forward while the early front release still wastes it. Independent
+ABS can use all four loads; disabling transfer is not the main missing 0.3 g. Defaults remain
+unchanged to preserve the lateral teaching progression.
+
+| Quantity | Before → after |
+|---|---|
+| Planar predicted release, front / rear | 0.08 / 0.06 → 0.14 / 0.11 (derived from tire peaks) |
+| Prediction / recovery / pressure retention | 30 ms / 0.03 / 0.6 → 80 ms / 0.12 / 0.9 (derived / assumed) |
+| Hold timeout / initial build | 60 ms / 160 kN·m/s → 10 ms / 40 kN·m/s (assumed) |
+| Straight ABS, 80 km/h | 36.05 → 26.52 m; metadata final x 47.182 → 37.643 m |
+| Straight ABS, 100 km/h | 58.57 → 41.03 m |
+| Mean front / rear slip, 0.8–2 s | 0.0553 / 0.0491 → 0.1031 / 0.0808 |
+| Uniform μ=0.3 | 146.19 → 85.73 m; min active slip > −0.13 |
+| Brake-and-steer path distance | 38.2 → 28.3 m (locked unchanged 31.6 m) |
+| Offset at obstacle / at rest | 3.02 / 10.9 → 2.64 / 4.00 m |
+| Peak yaw / final heading / min front slip | 27.9°/s / 49° / −0.105 → 20.8°/s / 28° / −0.127 |
+| Mean front lateral force after steer | 3.9 → 3.37 kN |
+| Split μ ABS-only, below 3 m/s: heading / y / x / time | 129° / 21.1 / 65.7 m / 4.5 s → 101.4° / 7.5 / 52.7 m / 3.09 s |
+| Split μ select-low: heading / y / x / time | 22.7° / 14.4 / 89.5 m / 6 s → 20.8° / 7.1 / 62.3 m / 4.59 s |
+| Split μ + P ESP: heading / y / x / time | 24.6° / 14.6 / 86.8 m / 6 s → 20.1° / 6.9 / 64.4 m / 4.70 s |
+| Split μ + PI ESP, at 6 s | 3.2° / 4.6 / 108 m → 3.0° / 3.2 / 86.2 m |
+| Split μ actual 0.5 m/s stopping x-distance from pedal | ABS 55.89 → 43.88 m; select-low 52.02 m after; PI 78.92 m after |
+| ESP+ABS end speed at 32/76/97/141/180/220/270° | 21.0/19.6/19.1/18.4/18.9/19.0/19.3 → 21.0/19.2/18.7/18.5/18.4/18.8/18.9 m/s |
+| ESP+ABS min slip at same amplitudes | −.04/−.06/−.06/−.07/−.08/−.08/−.09 → −.04/−.11/−.11/−.13/−.13/−.13/−.13 |
+| ESP+ABS responsiveness range, 97° up | 2.87–3.44 → 2.74–3.24 m; max |YRR| 0.042 → 0.043 |
+| BEV 80 km/h with / without regen | 36.22 / 38.82 → 33.04 / 26.94 m |
+| BEV 100 km/h with / without regen | 61.51 / 59.12 → 41.76 / 41.57 m |
+| BEV machine braking share, 80 / 100 km/h | 49.3 / 44.8 → 45.3 / 24.8 % |
+| BEV 80 km/h shaft / friction / tire / battery | 176.9 / 181.8 / 22.0 / 170.2 → 160.1 / 193.2 / 27.3 / 154.8 kJ |
+| BEV friction-only brake / tire energy | 366.8 / 19.8 → 352.7 / 34.6 kJ |
+| BEV stop time after pedal / recovered Wh / equivalent WLTC range | 3.0 s / 47 Wh / 350 m → 2.7 s / 43 Wh / 320 m |
+| Regen distance advantage at 80 km/h | 2.6 m shorter → 6.1 m longer (known #140) |
+
+`abs` 84 pass; `esp` 159 pass; `regen` 69 pass, one broken (#140 no-distance-penalty);
+`planar_wltc` 36 pass, one pre-existing broken initialization case. Groups run separately.
+Compiled with dyad-cli 3.5.0; no generated files edited manually. Layout metadata unchanged.
+ESP and steer exporters needed stale `.sensors` paths changed to `.car.bus`; mise tasks added.
+The Lecture 4 figure task completed. Legacy Lecture 3 notebook export is blocked by missing
+GR; build export by a Plotly/JSON serialization error. Their unrelated/partial SVG changes
+were restored, as were unrelated Lecture 4 id churn. Changed planar and BEV figures retained.

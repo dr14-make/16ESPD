@@ -222,8 +222,7 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   linear fade below 10 km/h (assumed), and sends the rest through Lecture 3's equal per-wheel
   demand to the four brakes. On the hard stop (`Vehicle.Planar.PlanarBEVHardStop`, Lecture 3's
   ABS stop from 80 km/h) the charge-power limit binds down to 34.3 km/h, the torque limit to
-  10 km/h, the fade below; the machine takes 49 % of the braking and friction 51 %, not most of
-  it, and the stop is 36.2 m against 38.8 m on friction alone. On WLTC
+  10 km/h, the fade below; the machine takes 45 % of the braking and friction 55 %, just over half, and the stop is 33.0 m against 26.9 m on friction alone. On WLTC
   (`Vehicle.Planar.PlanarBEVRegenWLTC`) neither limit binds above 2 km/h (WLTC asks at most 87 N·m
   and 32 kW), friction takes 0.004 % of the braking, and 23.85 % of the traction comes back: the
   share sits in the anchor's upper half because the ideal reduction lets 88.6 % of the braking

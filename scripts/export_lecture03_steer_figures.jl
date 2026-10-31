@@ -30,7 +30,7 @@ r2(x) = round(x; digits = 2)
 function brake_and_steer(abs_on)
     result = L3.BrakeAndSteerTransient(; abs_on)
     sol, model = result.sol, symbolic_container(result)
-    s = model.sensors
+    s = model.car.bus
     get(x) = sol(T, idxs = x).u
     x, y, vx, vy = get(s.x), get(s.y), get(s.vx), get(s.vy)
     v = hypot.(vx, vy)

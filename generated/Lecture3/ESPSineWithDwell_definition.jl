@@ -27,11 +27,11 @@ Planar car with ESP and an optional sampled four-channel ABS path.
 | `mu_scale_right`         |                          | --  |   1.0 |
 | `T_cmd`         |                          | N.m  |   0.0 |
 | `k_dec`         |                          | --  |   40000.0 |
-| `k_inc_fast`         |                          | --  |   160000.0 |
+| `k_inc_fast`         |                          | --  |   40000.0 |
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function ESPSineWithDwell(; name = nothing, var"load_transfer"=true, var"A_sw"=0.5585053606381855, var"v0"=22.22222222222222, var"esp_on"=Float64(1.0), var"abs_on"=Float64(0.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"radius"=0.31, var"select_low"=Float64(1.0), var"mu_scale_right"=Float64(1.0), var"T_cmd"=Float64(0.0), var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function ESPSineWithDwell(; name = nothing, var"load_transfer"=true, var"A_sw"=0.5585053606381855, var"v0"=22.22222222222222, var"esp_on"=Float64(1.0), var"abs_on"=Float64(0.0), var"Kp"=Float64(40000.0), var"Ki"=Float64(0.0), var"T_build"=0.1, var"R_build"=Float64(1000000000.0), var"radius"=0.31, var"select_low"=Float64(1.0), var"mu_scale_right"=Float64(1.0), var"T_cmd"=Float64(0.0), var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(40000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
