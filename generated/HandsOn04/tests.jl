@@ -18,6 +18,7 @@ end
 @testset "`VehicleSystemsComponents.HandsOn04`" begin
 include("BEVEnergyBill_test.jl")
 include("BEVHardStop_test.jl")
+include("BEVLowGripStop_test.jl")
 include("BEVRegenWLTC_test.jl")
 include("BEVWLTC_test.jl")
 include("BatteryDischarge_test.jl")

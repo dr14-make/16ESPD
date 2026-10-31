@@ -1,0 +1,46 @@
+"""
+The ABS rule of `RegenBlend` on its own: a steady brake demand of 400 N.m at the machine at
+20 km/h, where the envelope allows 320 N.m, and an ABS flag that is up from 0.5 s to 1.5 s.
+
+Before the flag the machine regenerates 320 N.m and each friction brake is asked for the other
+80 N.m through the reduction, 163.9 N.m. While the flag is up, `allow` falls as
+`exp(-(t - 0.5) / T_withdraw)`: regen backs off to nothing within 0.15 s and each brake is asked
+for the whole 400 N.m, 819.3 N.m. Once the flag drops, `allow` returns as
+`1 - exp(-(t - 1.5) / T_return)` and regen with it. At every instant the machine's share and the
+brakes' share add up to the demand. `withdraw = 0` keeps `allow` at 1 throughout.
+
+The analysis lands the solver on both edges of the flag with `tstops`.
+"""
+test component TestRegenBlend
+  "Torque asked for at the machine, negative brakes"
+  parameter tau_ref::Torque = -400.0
+  "Car speed, km/h; at 20 km/h the envelope is the 320 N.m torque limit"
+  parameter v::Real = 20.0
+  "ABS rule on (1) or off (0)"
+  parameter withdraw::Real = 1.0
+  pedal = BlockComponents.Sources.Constant(k = tau_ref) {^pedal}
+  speed = BlockComponents.Sources.Constant(k = v) {^speed}
+  abs_flag = BlockComponents.Sources.Pulse(amplitude = 1.0, duty_cycle = 1.0, period = 1.0, start_time = 0.5, offset = 0.0) {^abs_flag}
+  blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(abs_rule = true, withdraw = withdraw) {^blend}
+relations
+  connect(pedal.y, blend.tau_ref) {^w1}
+  connect(speed.y, blend.v) {^w2}
+  connect(abs_flag.y, blend.abs_active) {^w3}
+metadata {
+  "_links": {
+    "pedal": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 320, "x2": 240, "y2": 400}}}},
+    "speed": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 480, "x2": 240, "y2": 560}}}},
+    "abs_flag": {"Dyad": {"placement": {"diagram": {"x1": 160, "y1": 640, "x2": 240, "y2": 720}}}},
+    "blend": {"Dyad": {"placement": {"diagram": {"x1": 400, "y1": 300, "x2": 600, "y2": 500}}}},
+    "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+    "w2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 320, "y": 520}, {"x": 320, "y": 440}], "E": 2}]}},
+    "w3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 460, "y": 680}], "E": 2}]}}
+  }
+}
+end
+
+analysis TestRegenBlendTransient
+  extends TransientAnalysis(stop = 3.0, alg = ODEAlg.Rodas5P(), dtmax = 0.005, tstops = [0.5, 1.5])
+  parameter withdraw::Real = 1.0
+  model = VehicleSystemsComponents.Vehicle.Electric.TestRegenBlend(withdraw = withdraw)
+end

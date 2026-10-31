@@ -96,9 +96,9 @@ speed source driven by the sensed body-frame vx, a force sensor, and `WorldForce
 
 **S8 — Regen uses series blending on the Lecture 3 brakes.** The driver's brake demand goes to the
 motor up to the smallest of its torque limit, the battery charge-power limit and a low-speed fade;
-the remainder goes to the hydraulics through the existing allocator. WLTC never decelerates harder
+the remainder goes to the hydraulics through the existing allocator. A fourth, opt-in rule withdraws regen while the ABS acts on either driven wheel; the dry hard-stop bench defaults to `withdraw = 0` pending the gentle ABS calibration #156, and the low-grip bench demonstrates it enabled. WLTC does not use it. WLTC never decelerates harder
 than 1.5 m/s² (0.15 g), so on WLTC friction only covers the low-speed fade (under 4 % of braking
-energy). The blending is therefore shown on Lecture 3's hard stop, where friction carries most of
+energy). The blending is therefore shown on Lecture 3's hard stop, where the motor carries about half of
 the braking, and WLTC reports the recovered energy.
 
 **S9 — The standstill singularity is worked around on the bench.** `SlipBasedWheelJoint` puts its
@@ -231,8 +231,17 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   measured cars' 21.40 % only by putting 9.5 % of WLTC's braking on friction, above S8's 4 %. The hard stop's meters (shaft, friction, tire slip) close on the
   kinetic energy of body and wheels to 10⁻⁹; the rotor's energy reaches the battery without
   passing the reduction, so it stays out of that balance.
-- The machine sits outside the ABS loop: the ABS modulates the friction brakes only, and nothing
-  withdraws regen when it acts. On the dry hard stop the machine's torque holds the front slip at
-  −0.04 to −0.06 from 62 km/h, past the ABS's 0.03 reapply threshold, so the front friction
-  brakes stay released and the front tires work at about 65 % of their grip until the machine's
-  320 N·m reaches it below 34 km/h. On a low-µ road the machine alone would lock the front wheels.
+- Issue #140 adds the opt-in `RegenBlend(abs_rule = true)` rule. `ABSUnit(report_front = true)`
+  reports a front command below sampled demand; `allow` decays with 30 ms and recovers with
+  0.5 s time constants (assumed). The dry hard stop defaults to `withdraw = 0`: 36.22 m,
+  176.9 kJ motor / 181.8 kJ friction (49.32 % motor). With withdrawal enabled the gentle ABS
+  remains active almost throughout and suppresses regen; keep it opt-in pending ABS calibration
+  #156. WLTC equations and numbers are unchanged (23.85 %, 34.25 Wh/km recovered).
+- Demonstrate on `Vehicle.Planar.PlanarBEVLowGripStopTransient()` or
+  `HandsOn04.BEVLowGripStopTransient()` (default `withdraw = 1`, `stop = 28`). Verified runs
+  at road grip ×0.3 give a 275.02 m stop with minimum front slip −0.04931 above 3 m/s.
+  Compare `withdraw = 0, stop = 12`: the fronts lock and reverse under ideal machine torque,
+  so the 112.35 m is not a physical locked-wheel benchmark. Longer parking disabled
+  reaches the known tire singularity.
+  The inherited slow reapply calibration is tracked in #156. The rule is not traction control:
+  machine-only light braking may lock a wheel without a friction demand for the ABS to modulate.

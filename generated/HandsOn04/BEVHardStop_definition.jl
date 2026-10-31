@@ -5,13 +5,15 @@
 
 
 @doc Markdown.doc"""
-   BEVHardStop(; name, m, radius, v0, T_cmd, brake_time, t_apply, tau_max, P_charge, v_fade, P_aux, ratio, __overrides)
+   BEVHardStop(; name, m, radius, v0, T_cmd, brake_time, t_apply, tau_max, P_charge, v_fade, P_aux, ratio, withdraw, road_mu, __overrides)
 
 Hands-on 04 step 05 hard stop: Lecture 3's ABS stop from 80 km/h on your electric car. The driver
 asks each wheel for `T_cmd`; your `RegenBlend` gives the machine what its limits allow and the
 rest to Lecture 3's four-channel ABS, which modulates the friction brakes. The meters split the
 braking: `E_shaft_in`, what the machine took back through the reduction; `E_brake`, what the
 friction brakes burned; `E_dc_in`, what reached the battery terminals.
+The ABS withdrawal rule defaults OFF to preserve step 5 until ABS recalibration (#156).
+Enable it with `withdraw = 1`; `BEVLowGripStop` demonstrates it on low grip.
 
 ## Parameters:
 
@@ -28,6 +30,8 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
 | `v_fade`         | Speed below which the braking ceiling fades to zero, km/h                         | --  |   10.0 |
 | `P_aux`         | Power drawn by the 12 V network                         | W  |   300.0 |
 | `ratio`         | Single-speed reduction, Leaf ZE1                         | --  |   8.193 |
+| `withdraw`         |                          | --  |   0.0 |
+| `road_mu`         |                          | --  |   1.0 |
 
 ## Variables
 
@@ -39,7 +43,7 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
 | `E_shaft_in`         |                          | J  |
 | `E_brake`         |                          | J  |
 """
-@component function BEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, __overrides = Dict{String, Any}())
+@component function BEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"withdraw"=Float64(0.0), var"road_mu"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -69,6 +73,8 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
   haskey(__overrides, "v_fade") && (v_fade = pop!(__overrides, "v_fade"))
   haskey(__overrides, "P_aux") && (P_aux = pop!(__overrides, "P_aux"))
   haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
+  haskey(__overrides, "withdraw") && (withdraw = pop!(__overrides, "withdraw"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
 
   ### Structural Parameters (functions)
 
@@ -116,6 +122,12 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
   __local__ratio = ratio
   append!(__params, @parameters (ratio::Real), [description = "Single-speed reduction, Leaf ZE1"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, ratio, __local__ratio)
+  __local__withdraw = withdraw
+  append!(__params, @parameters (withdraw::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, withdraw, __local__withdraw)
+  __local__road_mu = road_mu
+  append!(__params, @parameters (road_mu::Real))
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
 
   ### Final Parameters (assignments)
 
@@ -157,7 +169,7 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
   push!(__systems, @named kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = kmh_overrides))
   # Subcomponent blend of type VehicleSystemsComponents.HandsOn04.RegenBlend
   blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
-  push!(__systems, @named blend = VehicleSystemsComponents.HandsOn04.RegenBlend(; ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
+  push!(__systems, @named blend = VehicleSystemsComponents.HandsOn04.RegenBlend(; ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, abs_rule=true, withdraw=withdraw, __overrides = blend_overrides))
   # Subcomponent drive of type VehicleSystemsComponents.HandsOn04.ElectricDrive
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
   push!(__systems, @named drive = VehicleSystemsComponents.HandsOn04.ElectricDrive(; ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
@@ -175,10 +187,10 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
   push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=Float64(0.0), __overrides = abs_overrides))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=Float64(0.0), report_front=true, __overrides = abs_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, __overrides = car_overrides))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, mu_scale_fl=road_mu, mu_scale_fr=road_mu, mu_scale_rl=road_mu, mu_scale_rr=road_mu, __overrides = car_overrides))
   # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
   push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
@@ -247,6 +259,7 @@ friction brakes burned; `E_dc_in`, what reached the battery terminals.
   push!(__eqs, connect(abs.tau_fr, car.tau_fr))
   push!(__eqs, connect(abs.tau_rl, car.tau_rl))
   push!(__eqs, connect(abs.tau_rr, car.tau_rr))
+  push!(__eqs, connect(abs.front_active, blend.abs_active))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -411,13 +411,23 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   `converter.field`) with or without a `tstops` entry on the step. Ask for torque continuously:
   the hard stops ramp the pedal over 0.1 s (`Ramp`, with `tstops` on both corners); the WLTC
   driver's PI output is continuous already.
-- **Regen outside the ABS loop keeps the ABS from reapplying.** `ABSModulatorDiscrete` reapplies
+- **Regen outside the ABS loop keeps the ABS from reapplying (the dry default, `withdraw = 0`).** `ABSModulatorDiscrete` reapplies
   only once a released wheel's predicted slip is back above `-l_rec` (−0.03). On the BEV hard stop
   the machine's regenerative torque alone holds the front slip at −0.04 to −0.06 from 62 km/h
   (phase alternating hold/release), so the front friction brakes stay at zero and the front tires
   work at about 65 % of their grip until the machine's 320 N·m reaches it below 34 km/h. The stop
   is still shorter than on friction alone (36.2 m against 38.8 m), but a regen strategy that kept
-  more torque on the front would lock it; production systems withdraw regen when the ABS acts.
+  more torque on the front would lock it. Issue #140 adds an opt-in `RegenBlend` ABS rule:
+  sampled `front_active` means either front command is below demand; regen's ceiling decays in
+  30 ms and returns in 0.5 s, with the remainder handed to hydraulics. The dry references default
+  to `withdraw = 0`: 36.22 m, 49.32 % motor, 176.9 kJ motor / 181.8 kJ friction. The inherited
+  gentle ABS keeps withdrawal active almost throughout the dry stop; leave the rule opt-in
+  pending ABS calibration #156. Demonstrate on `Vehicle.Planar.PlanarBEVLowGripStopTransient()`
+  or `HandsOn04.BEVLowGripStopTransient()` (default `withdraw = 1`, `stop = 28`). Verified grip ×0.3
+  measurements: minimum front slip −0.04931 while moving above 3 m/s, stop 275.02 m enabled;
+  `withdraw = 0, stop = 12` locks and reverses the wheels, so its 112.35 m is not a physical
+  benchmark. Long parking disabled reaches the known tire NaN. WLTC is unchanged; the blending rule is structural, default off.
+  `regen` passes 98/98 and `abs` 84/84 on dyad-3.5.0. No ABS retuning is part of this follow-up.
 - **`r."path"` takes a literal only.** On an analysis result, `r."E_dc"` works but `r."$x"`
   with `x = "E_dc"` throws a `MethodError`, and `getproperty(r, :E_dc)` a `FieldError`. A snippet
   that loops over signals collects the literals first: `links = ["road" => r."E_road", ...]`.

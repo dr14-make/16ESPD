@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   PlanarBEVHardStop(; name, m, radius, v0, T_cmd, brake_time, t_apply, tau_max, P_charge, v_fade, P_aux, ratio, __overrides)
+   PlanarBEVHardStop(; name, m, radius, v0, T_cmd, brake_time, t_apply, tau_max, P_charge, v_fade, P_aux, ratio, withdraw, road_mu, __overrides)
 
 Lecture 3's hard stop (`Lecture3.ABSStraightStop`) on the battery-electric car: from 80 km/h the
 driver asks each wheel for `T_cmd`, and `Vehicle.Electric.RegenBlend` hands the demand to the
@@ -13,13 +13,25 @@ machine first and the rest to Lecture 3's four-channel ABS (`ABSUnit`), which mo
 friction brakes. The drive turns the front axle through the planar `DifferentialGear`, as on the
 WLTC bench.
 
-The demand is far above what the tires carry, so the machine regenerates only what its limits
-allow, and friction carries the rest: the battery's charge power binds from 80 km/h down to the
-corner speed, 34 km/h; the machine's torque from there to `v_fade`; the fade below. The machine
-is outside the ABS loop. From about 62 km/h its torque keeps the front slip at -0.04 to -0.06,
-past the ABS's recovery threshold, so the ABS holds the front friction brakes off and the front
-tires work at about 65 % of their grip; below the corner speed the machine's 320 N.m alone brakes
-the front axle at its grip limit. The rear brakes, under ABS, carry the friction share.
+The demand is far above what the tires carry, so the machine could regenerate only what its
+limits allow, and friction would carry the rest. The blend carries the ABS rule (`abs_rule`): the
+ABS reports on `front_active` while it holds a front brake below its demand, and the blend then
+withdraws regen and hands its share to the friction brakes. On this stop the ABS acts on the
+front wheels within a few tenths of a second of the pedal and keeps acting down to its 1.5 m/s
+cut-off, so regen backs off almost at once and returns only for the last metres, under the fade.
+
+The rule defaults OFF (`withdraw = 0`) to preserve step 5 until ABS recalibration (#156).
+Use `withdraw = 1` to enable it, or the `PlanarBEVLowGripStop` bench for the low-grip demonstration.
+With the default: the machine is then outside the ABS loop, as step 5 first
+builds it. Its regen follows the envelope: the battery's charge power binds from 80 km/h down to
+the corner speed, 34 km/h; the machine's torque from there to `v_fade`; the fade below. From about
+62 km/h its torque keeps the front slip at -0.04 to -0.06, past the ABS's recovery threshold, so
+the ABS holds the front friction brakes off and the front tires work at about 65 % of their grip;
+below the corner speed the machine's 320 N.m alone brakes the front axle at its grip limit.
+
+`road_mu` scales the grip of all four tires, as Lecture 3's low-grip stops do (0.3 there). On such
+a road the machine's regen alone is more than the front tires carry: without the rule it locks
+the front wheels; with it the ABS keeps them turning. Give a low-grip run a longer `stop`.
 
 The driver presses the pedal in `t_apply` rather than in a step: the converter imposes its current
 through the armature inductance, so a step in torque would make the converter's `field`, an
@@ -47,6 +59,8 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
 | `v_fade`         | Speed below which the machine's braking ceiling fades to zero, km/h (assumed)                         | --  |   10.0 |
 | `P_aux`         | Power drawn by the 12 V network (assumed)                         | W  |   300.0 |
 | `ratio`         | Single-speed reduction (Nissan)                         | --  |   8.193 |
+| `withdraw`         | ABS rule: 1 withdraws regen while the ABS acts on a front wheel, 0 leaves the machine outside the ABS loop (step 5)                         | --  |   0.0 |
+| `road_mu`         | Road friction multiplier on all four tires, 1 a dry road; Lecture 3's low-grip value is 0.3                         | --  |   1.0 |
 
 ## Variables
 
@@ -61,7 +75,7 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
 | `E_tire`         |                          | J  |
 | `E_kin`         | Kinetic energy of body and wheels                         | J  |
 """
-@component function PlanarBEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, __overrides = Dict{String, Any}())
+@component function PlanarBEVHardStop(; name = nothing, var"m"=Float64(1500.0), var"radius"=0.31, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"t_apply"=0.1, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"P_aux"=Float64(300.0), var"ratio"=8.193, var"withdraw"=Float64(0.0), var"road_mu"=Float64(1.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -91,6 +105,8 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
   haskey(__overrides, "v_fade") && (v_fade = pop!(__overrides, "v_fade"))
   haskey(__overrides, "P_aux") && (P_aux = pop!(__overrides, "P_aux"))
   haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
+  haskey(__overrides, "withdraw") && (withdraw = pop!(__overrides, "withdraw"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
 
   ### Structural Parameters (functions)
 
@@ -138,6 +154,12 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
   __local__ratio = ratio
   append!(__params, @parameters (ratio::Real), [description = "Single-speed reduction (Nissan)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, ratio, __local__ratio)
+  __local__withdraw = withdraw
+  append!(__params, @parameters (withdraw::Real), [description = "ABS rule: 1 withdraws regen while the ABS acts on a front wheel, 0 leaves the machine outside the ABS loop (step 5)"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, withdraw, __local__withdraw)
+  __local__road_mu = road_mu
+  append!(__params, @parameters (road_mu::Real), [description = "Road friction multiplier on all four tires, 1 a dry road; Lecture 3's low-grip value is 0.3"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
 
   ### Final Parameters (assignments)
 
@@ -191,7 +213,7 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
   push!(__systems, @named kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour(; __overrides = kmh_overrides))
   # Subcomponent blend of type VehicleSystemsComponents.Vehicle.Electric.RegenBlend
   blend_overrides = __pop_subcomponent_overrides!(__overrides, "blend")
-  push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(; ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = blend_overrides))
+  push!(__systems, @named blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(; ratio=ratio, radius=radius, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, abs_rule=true, withdraw=withdraw, __overrides = blend_overrides))
   # Subcomponent drive of type VehicleSystemsComponents.Vehicle.Electric.ElectricDrive
   drive_overrides = __pop_subcomponent_overrides!(__overrides, "drive")
   push!(__systems, @named drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(; ratio=ratio, P_aux=P_aux, __overrides = drive_overrides))
@@ -209,10 +231,10 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
   push!(__systems, @named zero = BlockComponents.Sources.Constant(; k=Float64(0.0), __overrides = zero_overrides))
   # Subcomponent abs of type VehicleSystemsComponents.Vehicle.Planar.ABSUnit
   abs_overrides = __pop_subcomponent_overrides!(__overrides, "abs")
-  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=Float64(0.0), __overrides = abs_overrides))
+  push!(__systems, @named abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(; select_low=Float64(0.0), report_front=true, __overrides = abs_overrides))
   # Subcomponent car of type VehicleSystemsComponents.Vehicle.Planar.PlanarCar
   car_overrides = __pop_subcomponent_overrides!(__overrides, "car")
-  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, __overrides = car_overrides))
+  push!(__systems, @named car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(; m=m, radius=radius, mu_scale_fl=road_mu, mu_scale_fr=road_mu, mu_scale_rl=road_mu, mu_scale_rr=road_mu, __overrides = car_overrides))
   # Subcomponent motion of type VehicleSystemsComponents.Vehicle.Planar.BusMotion
   motion_overrides = __pop_subcomponent_overrides!(__overrides, "motion")
   push!(__systems, @named motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion(; __overrides = motion_overrides))
@@ -289,6 +311,7 @@ E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the
   push!(__eqs, connect(abs.tau_fr, car.tau_fr))
   push!(__eqs, connect(abs.tau_rl, car.tau_rl))
   push!(__eqs, connect(abs.tau_rr, car.tau_rr))
+  push!(__eqs, connect(abs.front_active, blend.abs_active))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
