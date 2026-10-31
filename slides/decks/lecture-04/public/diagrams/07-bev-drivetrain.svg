@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 440" width="1100" height="440">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .body { fill: #f4f6f8; stroke: #4a5a6b; stroke-width: 2; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-given { fill: #fff; stroke: #4a5a6b; stroke-width: 2; stroke-dasharray: 6 4; }
+    .wheel { fill: #2b3440; stroke: #16202c; stroke-width: 2; }
+    .brake { fill: #c0392b; }
+    .shaft { stroke: #16202c; stroke-width: 6; fill: none; }
+    .dc { stroke: #a75d00; stroke-width: 3; fill: none; }
+    .sigl { stroke: #1f5fa8; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+    .t { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .code { font-size: 12px; font-family: monospace; fill: #1f5fa8; }
+    .step { font-size: 13px; font-weight: 600; fill: #2e8b57; }
+  </style>
+  <defs>
+    <marker id="bd-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+  </defs>
+
+  <rect class="body" x="140" y="40" width="620" height="360" rx="60"/>
+  <text x="200" y="70" class="lbl">rear</text>
+  <text x="700" y="70" text-anchor="end" class="lbl">front</text>
+
+  <rect class="wheel" x="200" y="16" width="70" height="30" rx="6"/>
+  <rect class="wheel" x="200" y="394" width="70" height="30" rx="6"/>
+  <rect class="wheel" x="620" y="16" width="70" height="30" rx="6"/>
+  <rect class="wheel" x="620" y="394" width="70" height="30" rx="6"/>
+  <rect class="brake" x="226" y="48" width="18" height="8"/>
+  <rect class="brake" x="226" y="384" width="18" height="8"/>
+  <rect class="brake" x="646" y="48" width="18" height="8"/>
+  <rect class="brake" x="646" y="384" width="18" height="8"/>
+
+  <path class="shaft" d="M655 46 V185 M655 255 V394"/>
+  <circle class="box-accent" cx="655" cy="220" r="36"/>
+  <text x="655" y="216" text-anchor="middle" class="t">diff</text>
+  <text x="655" y="234" text-anchor="middle" class="lbl">÷ 2</text>
+
+  <rect class="box-accent" x="500" y="190" width="110" height="60" rx="4"/>
+  <text x="555" y="216" text-anchor="middle" class="t">reduction</text>
+  <text x="555" y="236" text-anchor="middle" class="lbl">8.193</text>
+  <path class="shaft" d="M610 220 H619"/>
+
+  <rect class="box-accent" x="380" y="190" width="100" height="60" rx="4"/>
+  <text x="430" y="216" text-anchor="middle" class="t">machine</text>
+  <text x="430" y="236" text-anchor="middle" class="step">step 01</text>
+  <path class="shaft" d="M480 220 H500"/>
+
+  <rect class="box-accent" x="380" y="100" width="100" height="56" rx="4"/>
+  <text x="430" y="124" text-anchor="middle" class="t">converter</text>
+  <text x="430" y="144" text-anchor="middle" class="step">step 02</text>
+  <path class="dc" d="M430 156 V190"/>
+
+  <rect class="box-accent" x="200" y="150" width="140" height="140" rx="4"/>
+  <text x="270" y="200" text-anchor="middle" class="t">battery</text>
+  <text x="270" y="220" text-anchor="middle" class="lbl">40 kWh, 350 V</text>
+  <text x="270" y="240" text-anchor="middle" class="step">step 03</text>
+  <path class="dc" d="M340 170 H360 V128 H380"/>
+
+  <rect class="box-given" x="200" y="310" width="140" height="44" rx="4"/>
+  <text x="270" y="338" text-anchor="middle" class="t">12 V, 300 W</text>
+  <path class="dc" d="M270 290 V310"/>
+
+  <text x="850" y="98" class="t">the driver</text>
+  <text x="850" y="118" class="lbl">PI on the WLTC trace</text>
+  <rect class="box-given" x="800" y="190" width="200" height="60" rx="4"/>
+  <text x="900" y="214" text-anchor="middle" class="t">split or blend</text>
+  <text x="900" y="236" text-anchor="middle" class="code">TorqueSplit · RegenBlend</text>
+  <path class="sigl" d="M900 128 V186" marker-end="url(#bd-blue)"/>
+  <path class="sigl" d="M800 205 H760 V90 H430 V98" marker-end="url(#bd-blue)"/>
+  <text x="600" y="84" text-anchor="middle" class="lbl">machine torque → i_ref = τ_ref / (field · KΦ)</text>
+  <path class="sigl" d="M800 235 H770 V330 H700" marker-end="url(#bd-blue)"/>
+  <text x="700" y="350" class="lbl">friction share to the brakes</text>
+  <text x="900" y="280" text-anchor="middle" class="step">steps 04, 05</text>
+</svg>

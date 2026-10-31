@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="1000" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .sw { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .wind { fill: #fdf0e0; stroke: #a75d00; stroke-width: 2; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .sig { font-size: 15px; font-weight: 600; }
+  </style>
+  <path class="wire" d="M60 40 H700 M60 360 H700"/>
+  <text x="40" y="46" text-anchor="end" class="sig">+</text><text x="40" y="366" text-anchor="end" class="sig">−</text>
+  <text x="20" y="206" class="t">pack</text><text x="20" y="226" class="lbl">350 V</text>
+  <path class="wire" d="M160 40 V60 M160 130 V230 M160 300 V360"/>
+  <rect class="sw" x="136" y="70" width="48" height="60" rx="4"/>
+  <text x="160" y="106" text-anchor="middle" class="t">a+</text>
+  <path class="wire" d="M160 60 H204 V84 M160 140 H204 V116"/>
+  <path d="M192 110 H216 L204 90 Z" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path class="wire" d="M192 90 H216 M204 84 V90 M204 110 V116"/>
+  <rect class="sw" x="136" y="240" width="48" height="60" rx="4"/>
+  <text x="160" y="276" text-anchor="middle" class="t">a−</text>
+  <path class="wire" d="M160 230 H204 V254 M160 310 H204 V286"/>
+  <path d="M192 280 H216 L204 260 Z" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path class="wire" d="M192 260 H216 M204 254 V260 M204 280 V286"/>
+  <circle cx="160" cy="200" r="5" fill="#16202c"/>
+  <text x="146" y="194" text-anchor="end" class="sig">a</text>
+  <path class="wire" d="M360 40 V60 M360 130 V230 M360 300 V360"/>
+  <rect class="sw" x="336" y="70" width="48" height="60" rx="4"/>
+  <text x="360" y="106" text-anchor="middle" class="t">b+</text>
+  <path class="wire" d="M360 60 H404 V84 M360 140 H404 V116"/>
+  <path d="M392 110 H416 L404 90 Z" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path class="wire" d="M392 90 H416 M404 84 V90 M404 110 V116"/>
+  <rect class="sw" x="336" y="240" width="48" height="60" rx="4"/>
+  <text x="360" y="276" text-anchor="middle" class="t">b−</text>
+  <path class="wire" d="M360 230 H404 V254 M360 310 H404 V286"/>
+  <path d="M392 280 H416 L404 260 Z" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path class="wire" d="M392 260 H416 M404 254 V260 M404 280 V286"/>
+  <circle cx="360" cy="200" r="5" fill="#16202c"/>
+  <text x="346" y="194" text-anchor="end" class="sig">b</text>
+  <path class="wire" d="M560 40 V60 M560 130 V230 M560 300 V360"/>
+  <rect class="sw" x="536" y="70" width="48" height="60" rx="4"/>
+  <text x="560" y="106" text-anchor="middle" class="t">c+</text>
+  <path class="wire" d="M560 60 H604 V84 M560 140 H604 V116"/>
+  <path d="M592 110 H616 L604 90 Z" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path class="wire" d="M592 90 H616 M604 84 V90 M604 110 V116"/>
+  <rect class="sw" x="536" y="240" width="48" height="60" rx="4"/>
+  <text x="560" y="276" text-anchor="middle" class="t">c−</text>
+  <path class="wire" d="M560 230 H604 V254 M560 310 H604 V286"/>
+  <path d="M592 280 H616 L604 260 Z" fill="#fff" stroke="#16202c" stroke-width="2"/>
+  <path class="wire" d="M592 260 H616 M604 254 V260 M604 280 V286"/>
+  <circle cx="560" cy="200" r="5" fill="#16202c"/>
+  <text x="546" y="194" text-anchor="end" class="sig">c</text>
+  <path class="wire" d="M160 200 H200 V155 H740"/>
+  <path class="wire" d="M360 200 H400 V185 H740"/>
+  <path class="wire" d="M560 200 H600 V215 H740"/>
+  <rect class="wind" x="740" y="146" width="90" height="18" rx="3"/>
+  <path class="wire" d="M830 155 H870 L900 200"/>
+  <rect class="wind" x="740" y="176" width="90" height="18" rx="3"/>
+  <path class="wire" d="M830 185 H870 L900 200"/>
+  <rect class="wind" x="740" y="206" width="90" height="18" rx="3"/>
+  <path class="wire" d="M830 215 H870 L900 200"/>
+  <circle cx="900" cy="200" r="5" fill="#16202c"/>
+  <text x="785" y="128" text-anchor="middle" class="t">windings</text>
+  <text x="785" y="270" text-anchor="middle" class="lbl">three phases, star point</text>
+  <text x="360" y="392" text-anchor="middle" class="lbl">each leg is half an H-bridge; three sine references 120° apart give three-phase AC</text>
+</svg>
