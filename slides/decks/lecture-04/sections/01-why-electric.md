@@ -24,10 +24,11 @@ routeAlias: why-evs
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-**The problem** (deck)
+**The problem** (EEA, EU)
 
-- Transport is about a fifth of greenhouse-gas emissions, and its share has grown.
-- EU fleet CO₂ limits for new cars have tightened since Regulation 443/2009.
+- Transport causes nearly a quarter of Europe's greenhouse-gas emissions, and has cut them less
+  since 1990 than other sectors.
+- EU fleet CO₂ limits for new cars: 130 g/km under Regulation 443/2009, 95 g/km from 2020.
 
 **What the electric drive changes**
 
@@ -55,10 +56,11 @@ routeAlias: why-evs
 </div>
 
 <!--
-On the left, the problem, and what the electric drive changes. The deck makes the case like this.
-Transport causes about a fifth of greenhouse-gas emissions, and its share has grown. And in the
-European Union the limits on the CO2 emissions of new cars have tightened since Regulation 443 of
-2009.
+On the left, the problem, and what the electric drive changes. Transport causes nearly a quarter
+of Europe's greenhouse-gas emissions, and since 1990 it has cut them less than the other sectors
+have: that is the European Environment Agency's transport indicator. And in the European Union,
+Regulation 443 of 2009 set the average CO2 emissions of new cars at 130 grams per kilometer, with a
+target of 95 grams per kilometer from 2020.
 
 What does the electric drive change? First, efficiency. The chain from the battery to the wheel
 loses a few percent per link, while an engine turns about 30 percent of its fuel into work at its

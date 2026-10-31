@@ -108,7 +108,8 @@ exact zero until a fixed release ships. FBDF reports success on a frozen car; be
 and check that the distance driven matches the cycle.
 
 **S10 — Numbers carry their provenance**, as in Lecture 2's S10: `(Nissan)`, `(ORNL)`, `(INL)`,
-`(EPA)`, `(deck)`, `(textbook)`, `(derived)`, `(assumed)`, matching the research note's labels.
+`(EPA)`, `(EEA)`, `(EU)`, `(Audi)`, `(deck)`, `(textbook)`, `(derived)`, `(assumed)`, matching the
+research note's labels.
 
 ## Reality anchors
 
