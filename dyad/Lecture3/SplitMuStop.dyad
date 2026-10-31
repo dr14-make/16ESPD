@@ -9,7 +9,7 @@ test component SplitMuStop
   parameter Ki::Real = 100000.0
   parameter radius::Length = 0.31
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter h_cg::Length = 0.0
   parameter R_build::Real = 1.0e9
@@ -100,7 +100,7 @@ analysis SplitMuStopTransient
   parameter Kp::Real = 40000.0
   parameter Ki::Real = 100000.0
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter h_cg::Length = 0.0
   parameter R_build::Real = 1.0e9

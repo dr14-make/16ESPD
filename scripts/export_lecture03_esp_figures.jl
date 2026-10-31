@@ -39,7 +39,7 @@ r1(x) = round(x; digits = 1)
 function sine_with_dwell(analysis; kwargs...)
     result = analysis(; stop = 6.0, kwargs...)
     sol, model = result.sol, symbolic_container(result)
-    s = model.sensors
+    s = model.car.bus
     has_esp = analysis === L3.ESPSineWithDwellTransient
     get(x) = sol(T, idxs = x).u
     m = fmvss126_metrics(T, get(s.delta_sw), get(s.r), get(s.y); A = A_REF)
@@ -218,7 +218,7 @@ const SPLIT = (
 )
 function split_mu(knobs)
     result = L3.SplitMuStopTransient(; stop = 6.0, knobs...)
-    sol, s = result.sol, symbolic_container(result).sensors
+    sol, s = result.sol, symbolic_container(result).car.bus
     get(x) = sol(T, idxs = x).u
     d = (; t = T, x = get(s.x), y = get(s.y), psi = get(s.psi), vx = get(s.vx))
     i = something(findfirst(<(3.0), d.vx), length(T))

@@ -12,15 +12,20 @@ component BrakeChannel@[input clk extends Discrete]
   tau_cmd = RealOutput@[clk]() {^tau_cmd}
   modulator = VehicleSystemsComponents.Vehicle.ABSModulatorDiscrete(dt = dt, T_p = T_p, lambda_1 = lambda_1, lambda_lock = lambda_lock, alpha_rel = alpha_rel, beta_reapply = beta_reapply, l_rec = l_rec, T_hold_max = T_hold_max, k_dec = k_dec, k_inc_fast = k_inc_fast, k_inc_slow = k_inc_slow, v_min = v_min) {^modulator}
   parameter dt::Time(min = eps(Float64)) = 0.005
-  parameter T_p::Time(min = 0.0) = 0.03
-  parameter lambda_1::Real = 0.08
+  "Prediction includes hydraulic lag and sampled release/reapply delay (derived)"
+  parameter T_p::Time(min = 0.0) = 0.08
+  parameter lambda_1::Real = 0.14
   parameter lambda_lock::Real = 0.20
-  parameter alpha_rel::Real = 0.6
+  "Retain 90 percent of incipient-limit pressure; calibrated with lag (assumed)"
+  parameter alpha_rel::Real = 0.9
   parameter beta_reapply::Real = 0.85
-  parameter l_rec::Real = 0.03
-  parameter T_hold_max::Time(min = eps(Float64)) = 0.06
+  "Reapply near peak adhesion rather than demanding near-zero slip (derived)"
+  parameter l_rec::Real = 0.12
+  "Two ECU ticks before another recovery decision (assumed)"
+  parameter T_hold_max::Time(min = eps(Float64)) = 0.01
   parameter k_dec::Real = 40000.0
-  parameter k_inc_fast::Real = 160000.0
+  "Initial build limited to 200 N.m per 5 ms tick for low-grip recovery (assumed)"
+  parameter k_inc_fast::Real = 40000.0
   parameter k_inc_slow::Real = 16000.0
   parameter v_min::Velocity = 1.5
 relations

@@ -1006,7 +1006,7 @@ class: big-figure
 
 ## ESP through ABS: the braked wheel keeps rolling
 
-![Two panels. Left: the lowest slip of the four wheels over 6 s at 180 degrees. With ESP braking directly, dashed red, it drops to minus 1, a locked wheel, again and again between 1.2 and 3.6 s. With ESP through ABS, solid blue, it never goes below minus 0.08. Right: speed at 6 s against steering-wheel amplitude, from an entry speed of 22.2 m/s. Braking directly, the car keeps 21.4 m/s at 32 degrees but only 13.4 to 14.6 from 97 degrees up. Through ABS it keeps 18.4 to 19.6 m/s from 76 degrees up.](/figures/05-esp-abs.svg)
+![Two panels. Left: the lowest slip of the four wheels over 6 s at 180 degrees. With ESP braking directly, dashed red, it drops to minus 1, a locked wheel, again and again between 1.2 and 3.6 s. With ESP through ABS, solid blue, it never goes below minus 0.13. Right: speed at 6 s against steering-wheel amplitude, from an entry speed of 22.2 m/s. Braking directly, the car keeps 21.4 m/s at 32 degrees but only 13.4 to 14.6 from 97 degrees up. Through ABS it keeps 18.4 to 19.2 m/s from 76 degrees up.](/figures/05-esp-abs.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
@@ -1014,8 +1014,8 @@ class: big-figure
 | steering wheel | 32° | 76° | 97° | 141° | 180° | 220° | 270° |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | end speed, braking directly [m/s] | 21.4 | 18.6 | 14.6 | 13.6 | 13.4 | 13.5 | 13.4 |
-| end speed, through ABS [m/s] | 21.0 | 19.6 | 19.1 | 18.4 | 18.9 | 19.0 | 19.3 |
-| lowest slip $\kappa$, through ABS | −0.04 | −0.06 | −0.06 | −0.07 | −0.08 | −0.08 | −0.09 |
+| end speed, through ABS [m/s] | 21.0 | 19.2 | 18.7 | 18.5 | 18.4 | 18.8 | 18.9 |
+| lowest slip $\kappa$, through ABS | −0.04 | −0.11 | −0.11 | −0.13 | −0.13 | −0.13 | −0.13 |
 
 </div>
 <div>
@@ -1023,7 +1023,7 @@ class: big-figure
 A locked tire has **no lateral force** left.
 
 Still **passes** everywhere:
-ratio within ±0.05, ≥ 2.87 m.
+ratio within ±0.05, ≥ 2.74 m.
 
 </div>
 </div>
@@ -1031,7 +1031,7 @@ ratio within ±0.05, ≥ 2.87 m.
 <!--
 Budget: 1.5 minutes. The same ESP, the same car, the same test; only the path of the brake
 request changes. It now goes through the car's four ABS channels, one per wheel, the section 03
-modulator on a 5 millisecond clock, releasing at a slip of 0.08 on the front wheels and 0.06 on
+modulator on a 5 millisecond clock, releasing at predicted slip 0.14 on the front wheels and 0.11 on
 the rear. The controller also gains an integral term, 100 000 newton meters per radian, so that
 the yaw moment it asks for is not lost when ABS takes torque away. A live run is
 `Lecture3.ESPSineWithDwellTransient(A_sw = deg2rad(180), abs_on = 1.0, Ki = 1e5)`.
@@ -1039,14 +1039,14 @@ the yaw moment it asks for is not lost when ABS takes torque away. A live run is
 Left panel, 180 degrees, the lowest slip of the four wheels at each instant. Braking directly, a
 wheel locks every time ESP brakes hard, and a locked tire slides almost straight backward: it
 gives up the lateral force it had, which is the friction-circle slide of section 01. Through ABS
-the slip never goes below minus 0.08, near the tire's peak, so the braked wheel keeps both its
+the slip never goes below minus 0.13, near the tire's peak, so the braked wheel keeps both its
 braking force and its cornering force.
 
-Right panel and the table, every amplitude. From 97 degrees up the car leaves the maneuver 4.5 to
-5.9 meters per second faster, about 19 meters per second instead of 13 to 15. At 32 degrees it is
+Right panel and the table, every amplitude. From 97 degrees up the car leaves the maneuver 4.1 to
+5.5 meters per second faster, about 19 meters per second instead of 13 to 15. At 32 degrees it is
 0.4 slower: the integral term brakes a little where the proportional ESP did not need to. The
-test is still passed at every amplitude: the yaw-rate ratio is at most 0.042 in magnitude at both
-instants, and the lateral displacement is 2.87 to 3.44 meters from 97 degrees up, more than the
+test is still passed at every amplitude: the yaw-rate ratio is at most 0.043 in magnitude at both
+instants, and the lateral displacement is 2.74 to 3.24 meters from 97 degrees up, more than the
 2.45 to 2.58 of the ESP braking directly, because a rolling front wheel still steers.
 
 This is why the wrap-up says ESP is impossible without four-channel ABS: the modulator that lets
@@ -1063,17 +1063,17 @@ class: big-figure
 
 ## Split-µ: braking with one side on snow
 
-![Two panels. Left, top view: full braking from 80 km/h with the left wheels on dry asphalt and the right wheels on snow, road factor 0.3, the car drawn every 0.5 s. ABS only, red, turns left toward the dry side, more and more broadside, and stops at x 66 m, y 21 m. ABS with rear select-low, orange, and select-low with a proportional ESP, dashed purple, drift left to about y 15 m at x 87 to 90 m. Select-low with a PI ESP, blue, runs almost straight, to y 5 m at x 108 m. Right: heading over 6 s. ABS only climbs to 129 degrees by 4.5 s; the select-low runs reach 23 and 25 degrees by 6 s; the PI ESP stays near 3 degrees.](/figures/05-split-mu.svg)
+![Split-friction braking from 80 km/h, steering held straight. At vx below 3 m/s: ABS only reaches heading 101.4 degrees, x 52.7 m, y 7.5 m; rear select-low 20.8 degrees, x 62.3 m, y 7.1 m; proportional ESP 20.1 degrees, x 64.4 m, y 6.9 m. PI ESP at 6 s holds 3.0 degrees, x 86.2 m, y 3.2 m.](/figures/05-split-mu.svg)
 
 <div class="grid grid-cols-[1fr_auto] gap-6 items-start text-sm">
 <div>
 
 | µ 1.0 left, 0.3 right | heading | to the side | distance | read at |
 |---|---:|---:|---:|---:|
-| ABS only | **129°** | 21.1 m | 65.7 m | 4.5 s, stopped |
-| + rear select-low | 22.7° | 14.4 m | 89.5 m | 6 s |
-| + ESP, P | 24.6° | 14.6 m | 86.8 m | 6 s |
-| + ESP, PI | **3.2°** | 4.6 m | 108 m | 6 s |
+| ABS only | **101.4°** | 7.5 m | 52.7 m | 3.09 s, below 3 m/s |
+| + rear select-low | 20.8° | 7.1 m | 62.3 m | 4.59 s, below 3 m/s |
+| + ESP, P | 20.1° | 6.9 m | 64.4 m | 4.70 s, below 3 m/s |
+| + ESP, PI | **3.0°** | 3.2 m | 86.2 m | 6 s |
 
 </div>
 <div>
@@ -1086,7 +1086,7 @@ Holding the heading **costs stopping distance**.
 </div>
 
 <!--
-Budget: in passing, the table only: ABS alone turns the car 129°, the PI ESP holds 3° and costs
+Budget: in passing, the table only: ABS alone turns the car 101.4°, the PI ESP holds 3° and costs
 distance. The full read below is 2 minutes, only if ahead.
 
 The classic case where ABS alone is not enough. Full braking from 80 kilometers per hour, 2500
@@ -1096,17 +1096,17 @@ a driver would.
 
 ABS only: every wheel keeps rolling, as section 03 promised, but the left wheels brake three
 times harder than the right ones. That difference is a yaw moment toward the dry side, and with
-no one steering against it the car turns 129 degrees, past broadside, before it stops after
-66 meters.
+no one steering against it the car turns 101.4 degrees, past broadside, before it stops after
+53 meters.
 
 Rear select-low: both rear wheels get the smaller of their two ABS torques, so the rear axle
-brakes evenly and adds no yaw moment. The heading falls to 23 degrees, and the car is still
+brakes evenly and adds no yaw moment. The heading falls to 21 degrees, and the car is still
 rolling at 6 seconds: the dry rear wheel gave up braking force.
 
-ESP, proportional: almost no change, 25 degrees. It reacts to the yaw rate, and the yaw rate here
+ESP, proportional: almost no change, 20 degrees. It reacts to the yaw rate, and the yaw rate here
 is small; the heading lost is the integral of the yaw-rate error, and a P controller does not see
 it. ESP with the integral term cuts brake torque on the dry side while the error persists, and
-holds the heading at 3 degrees, at the price of a stop still unfinished at 108 meters.
+holds the heading at 3 degrees, at the price of a stop still unfinished at 86 meters.
 
 Every ESP calibration makes this trade between heading and distance. Production systems also
 delay the pressure build-up on the high-µ front wheel, the yaw-moment build-up delay, to give the
