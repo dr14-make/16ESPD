@@ -129,7 +129,7 @@ Bands the build and the tests are checked against. Sources are in the research n
 | Positive traction energy at wheel, WLTC | 139 Wh/km at 1500 kg | derived |
 | Braking energy at wheel, WLTC | 25–26 % of traction | derived |
 | Energy returned to battery, WLTC | 18–25 % of traction | derived: 25–26 % braking through a regen path of 70–87 % (Boretti, measured Leaf) up to ~95 % (ideal reduction) |
-| Battery DC consumption, WLTC | 120–155 Wh/km | Leaf WLTP 171 Wh/km AC (secondary) less 10–15 % charging loss; course road load is ~15 % below the Leaf's coastdown |
+| Battery DC consumption, WLTC | 120–155 Wh/km | Leaf WLTP 171 Wh/km AC (secondary) less 10–15 % charging loss; course road load takes ~6 % less wheel energy on WLTC than EPA's Leaf coastdown (139.4 vs 148.8 Wh/km, see the road-load validation note) |
 | Regen deceleration capability | 0.2–0.3 g | Nissan e-Pedal; Bosch ESP hev |
 
 The ORNL map belongs to the 80 kW / 280 N·m first-generation motor, not the 110 kW ZE1 machine; the
@@ -189,6 +189,13 @@ interleaved. Figures the models can produce are regenerated from them, not copie
 
 ## Known limits
 
+- Road load is the course law shared with Lectures 1–3 (S7), not the Leaf's coastdown. Against
+  EPA's Test Car List coefficients for the Leaf ZE1 it is 1.3× at 20 km/h, equal near 50 km/h and
+  0.84× at 130 km/h; its rolling coefficient 0.012 is an EU class E tire, where the Leaf's OE tire is
+  class B (0.0066–0.0077). The car therefore coasts 100→20 km/h in 124 s against the Leaf's
+  ~144 s, and WLTC wheel energy is ~6 % below the Leaf's. Kept so every lecture drives the same car;
+  sources and the full comparison are in `docs/research_notes/Electric and hybrid vehicles/
+  bev-road-load-and-braking-validation.md`.
 - The machine is DC-equivalent; saliency, reluctance torque and dq dynamics are out (extra pack).
 - Field weakening is a flux input on the machine (`FieldEMF`), set by the average converter where
   its duty reaches the limit. It costs nothing: a PMSM's d-axis copper loss is not modeled. The
