@@ -97,8 +97,9 @@ routeAlias: what-you-measured
 <div class="text-sm opacity-70 mt-4">
 
 Commit each step on `handson-04`. Next lecture: the hybrid, built from your Lecture 2 engine,
-this lecture's machine and battery, and a clutch. The extra pack: the Thevenin cell, the BMS, fuel
-cells and a dq model of the PMSM.
+this lecture's machine and battery, and a clutch. The extra pack: battery chemistry, the Thevenin
+cell, charging, SoC estimation and the BMS, fuel cells and hydrogen, a dq model of the PMSM and a
+stepped gearbox.
 
 </div>
 

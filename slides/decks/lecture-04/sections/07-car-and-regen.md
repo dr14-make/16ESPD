@@ -148,8 +148,9 @@ class: big-figure
 
 ![Two panels over the 1800 s WLTC: the car's speed lies on the trace through the Low, Medium, High and Extra High phases up to 131 km/h; the battery power swings between about 46 kW driving and about 31 kW charging under braking.](/figures/08-wltc-tracking.svg)
 
-<div class="handson">✓ worst gap <b>1.63 km/h</b> · <b>23 267 m</b> · SoC <b>0.9 → 0.822</b> · every
-negative dip of the battery power is energy coming back</div>
+<div class="handson">✓ every negative dip of the battery power is braking energy coming back, with no
+regen controller yet: <code>TorqueSplit</code> hands braking to the machine, fading out below
+10 km/h, and the rest to the front brakes</div>
 
 <!--
 The figure is notebook 03, the energy-bill notebook, section 1, "The car follows the cycle": the
@@ -312,6 +313,78 @@ The sketches are diagrams, not results: the results are the next slides.
 -->
 
 ---
+routeAlias: build-regen
+---
+
+## Build 05: regen, blended onto the Lecture 3 brakes
+
+<div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
+<div>
+
+<img src="/img/lecture-04/step05-regen-blend.png" class="mx-auto" style="max-height: 21rem" alt="The finished BEVHardStop in Studio: pedal and kmh into blend; blend.tau_motor into drive, blend.tau_brake into the ABS; drive through the differential to the front wheels; slips and zero into the ABS, whose outputs drive the four brakes; motion reads the car's bus."/>
+
+*New `RegenBlend`: parameters `ratio`, `radius`, `tau_max` 320, `P_charge` 80.5e3, `v_fade` 10 ·
+two inputs, two outputs · its variables and equations in code · new `BEVHardStop` and
+`BEVRegenWLTC`: paste from the guide · ▷ once each, then plot*
+
+**Given:** Lecture 3's `ABSUnit`, `BusSlip`, your step 04 `ElectricDrive`
+
+[page: step 05](../lecture/lecture-04/#step-05) · reference `dyad/HandsOn04/BEVHardStop.dyad`
+
+</div>
+<div class="stack">
+
+```julia
+r = MyCar.BEVHardStopTransient();
+v = r.sol[r."kmh.y"]
+plot(v, [r.sol[r."blend.tau_regen_max"] r.sol[r."blend.tau_regen"]];
+     label = ["ceiling" "machine"], xflip = true)
+kJ(x) = r.sol[x][end] / 1e3
+kJ(r."E_shaft_in"), kJ(r."E_brake"), kJ(r."E_dc_in")
+```
+
+<div class="handson">✓ hard stop: 80 → 0 km/h in <b>3.0 s</b>, <b>36.2 m</b> · <code>blend.tau_regen</code>
+<b>137</b> at 80 km/h, <b>320</b> from 34.3 to 10 km/h · machine <b>176.9 kJ</b>, friction
+<b>181.8 kJ</b>: 49 / 51 % · <b>170.2 kJ</b> to the battery · <code>P_charge = 0.0</code>:
+<b>38.8 m</b></div>
+
+<div class="handson">✓ WLTC: <b>34.25 Wh/km</b> back of <b>143.6</b> traction: <b>23.85 %</b> · friction
+0.001 Wh/km · <code>P_charge = 15.0e3</code>: <b>21.40 %</b>, friction 3.69 Wh/km</div>
+
+</div>
+</div>
+
+<!--
+Fifteen minutes: one small block with five equations, two pasted benches, two runs and two
+variations.
+
+1. `RegenBlend`: five parameters, two inputs, the driver's torque and the speed in km/h, two
+   outputs, the machine's torque and each of the four friction brakes' torque. In code: the
+   machine speed from the car's, the fade, the charge-power ceiling, the smallest of the three,
+   the demand as a positive braking torque, the regen as the smaller of demand and ceiling, and
+   the remainder through the reduction, divided over four wheels. Driving passes straight
+   through.
+2. `BEVHardStop`: Lecture 3's straight ABS stop, with your drive on the front axle and the blend
+   between the driver's brake command and the ABS unit. Paste.
+3. `BEVRegenWLTC`: step 04's bench with the blend in place of the split, the friction share on
+   all four brakes, and four meters. Paste.
+
+Expected, from `HandsOn04.BEVHardStopTransient`: 80 to 0 km/h in 3.0 seconds after the pedal,
+36.2 meters. The regen torque follows the envelope: 137 at 80 km/h, 183 at 60, 320 from 34.3 to
+10, the fade below. The battery charges at up to 75.9 kW, minus 205 amperes. The front-left
+friction brake falls to zero from about 62 km/h and stays there down to 10 km/h, where the fade
+hands it back; the rear-left carries the friction share all the way, cycling under the ABS.
+Machine 176.9 kJ, friction 181.8, battery 170.2. With
+the charge limit at zero: 38.8 meters.
+
+From `HandsOn04.BEVRegenWLTCTransient`: 34.25 Wh/km back of 143.6 of traction, 23.85 percent; the
+shaft took back 38.7 and 88.6 percent of that reached the battery; friction 0.001 Wh/km. At a 15
+kW charge limit: 21.40 percent, friction 3.69 Wh/km, 9.5 percent of the braking.
+
+Testsets: `test/regen_plausibility.jl`.
+-->
+
+---
 routeAlias: hard-stop
 class: big-figure
 ---
@@ -320,8 +393,8 @@ class: big-figure
 
 ![Left: the machine's braking torque against car speed on Lecture 3's hard stop from 80 km/h, lying on the smallest of three ceilings: the charge-power curve 80.5 kW / ω above the corner at 34.3 km/h, the 320 N·m torque limit from there to 10 km/h, and the linear fade below. Right: speed against distance from the pedal; with regen and friction the car stops in 36.2 m, on friction alone in 38.8 m.](/figures/07-regen-hard-stop.svg)
 
-<div class="handson">✓ <b>137 N·m</b> at 80 km/h, 183 at 60: charge power · <b>320 N·m</b> from 34.3 to
-10 km/h · the fade below · battery up to <b>75.9 kW</b>, −205 A · <b>36.2 m</b>, against 38.8 m on friction alone</div>
+<div class="handson">✓ your <code>blend.tau_regen</code> lies on the smallest ceiling: charge power above
+34.3 km/h, 320 N·m down to 10 km/h, the fade below · battery up to <b>75.9 kW</b>, −205 A</div>
 
 <!--
 The figure is notebook 04 section 4: the course library's `PlanarBEVHardStop`, Lecture 3's
@@ -407,11 +480,10 @@ The battery gets back **23.85 %** of the traction energy: 34.25 Wh/km.
 </div>
 <div>
 
-**Against the anchor: 18–25 %.** A quarter of the traction comes back as braking; the measured
-Leaf's regen path recovers **70–87 %** of it (Boretti), ours **88.6 %**: an ideal reduction.
+**Change one thing:** a 15 kW charge limit brings the share down to **21.40 %**, but only by
+putting **9.5 %** of the braking on friction.
 
-**Change one thing:** a 15 kW charge limit brings the share down to **21.40 %**, inside the
-measured cars' range, but the friction brakes then burn **9.5 %** of the braking.
+The regen path, not a ceiling, sets the share: section 08 sets it against the measured Leaf.
 
 </div>
 </div>
@@ -434,78 +506,6 @@ plan's 4 percent. The gap to the measured car is the regen path's efficiency, no
 
 Against step 04's `TorqueSplit`: 23.80 percent; series blending changes the WLTC by a twentieth of
 a point.
--->
-
----
-routeAlias: build-regen
----
-
-## Build 05: regen, blended onto the Lecture 3 brakes
-
-<div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
-<div>
-
-<img src="/img/lecture-04/step05-regen-blend.png" class="mx-auto" style="max-height: 21rem" alt="The finished BEVHardStop in Studio: pedal and kmh into blend; blend.tau_motor into drive, blend.tau_brake into the ABS; drive through the differential to the front wheels; slips and zero into the ABS, whose outputs drive the four brakes; motion reads the car's bus."/>
-
-*New `RegenBlend`: parameters `ratio`, `radius`, `tau_max` 320, `P_charge` 80.5e3, `v_fade` 10 ·
-two inputs, two outputs · its variables and equations in code · new `BEVHardStop` and
-`BEVRegenWLTC`: paste from the guide · ▷ once each, then plot*
-
-**Given:** Lecture 3's `ABSUnit`, `BusSlip`, your step 04 `ElectricDrive`
-
-[page: step 05](../lecture/lecture-04/#step-05) · reference `dyad/HandsOn04/BEVHardStop.dyad`
-
-</div>
-<div class="stack">
-
-```julia
-r = MyCar.BEVHardStopTransient();
-v = r.sol[r."kmh.y"]
-plot(v, [r.sol[r."blend.tau_regen_max"] r.sol[r."blend.tau_regen"]];
-     label = ["ceiling" "machine"], xflip = true)
-kJ(x) = r.sol[x][end] / 1e3
-kJ(r."E_shaft_in"), kJ(r."E_brake"), kJ(r."E_dc_in")
-```
-
-<div class="handson">✓ hard stop: 80 → 0 km/h in <b>3.0 s</b>, <b>36.2 m</b> · <code>blend.tau_regen</code>
-<b>137</b> at 80 km/h, <b>320</b> from 34.3 to 10 km/h · machine <b>176.9 kJ</b>, friction
-<b>181.8 kJ</b>: 49 / 51 % · <b>170.2 kJ</b> to the battery · <code>P_charge = 0.0</code>:
-<b>38.8 m</b></div>
-
-<div class="handson">✓ WLTC: <b>34.25 Wh/km</b> back of <b>143.6</b> traction: <b>23.85 %</b> · friction
-0.001 Wh/km · <code>P_charge = 15.0e3</code>: <b>21.40 %</b>, friction 3.69 Wh/km</div>
-
-</div>
-</div>
-
-<!--
-Fifteen minutes: one small block with five equations, two pasted benches, two runs and two
-variations.
-
-1. `RegenBlend`: five parameters, two inputs, the driver's torque and the speed in km/h, two
-   outputs, the machine's torque and each of the four friction brakes' torque. In code: the
-   machine speed from the car's, the fade, the charge-power ceiling, the smallest of the three,
-   the demand as a positive braking torque, the regen as the smaller of demand and ceiling, and
-   the remainder through the reduction, divided over four wheels. Driving passes straight
-   through.
-2. `BEVHardStop`: Lecture 3's straight ABS stop, with your drive on the front axle and the blend
-   between the driver's brake command and the ABS unit. Paste.
-3. `BEVRegenWLTC`: step 04's bench with the blend in place of the split, the friction share on
-   all four brakes, and four meters. Paste.
-
-Expected, from `HandsOn04.BEVHardStopTransient`: 80 to 0 km/h in 3.0 seconds after the pedal,
-36.2 meters. The regen torque follows the envelope: 137 at 80 km/h, 183 at 60, 320 from 34.3 to
-10, the fade below. The battery charges at up to 75.9 kW, minus 205 amperes. The front-left
-friction brake falls to zero from about 62 km/h and stays there down to 10 km/h, where the fade
-hands it back; the rear-left carries the friction share all the way, cycling under the ABS.
-Machine 176.9 kJ, friction 181.8, battery 170.2. With
-the charge limit at zero: 38.8 meters.
-
-From `HandsOn04.BEVRegenWLTCTransient`: 34.25 Wh/km back of 143.6 of traction, 23.85 percent; the
-shaft took back 38.7 and 88.6 percent of that reached the battery; friction 0.001 Wh/km. At a 15
-kW charge limit: 21.40 percent, friction 3.69 Wh/km, 9.5 percent of the braking.
-
-Testsets: `test/regen_plausibility.jl`.
 -->
 
 ---
