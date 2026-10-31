@@ -3,6 +3,15 @@ Sampled four-channel ABS with continuous sensor and brake-command ports.
 
 Sampling and zero-order holds represent the ECU boundary. Setting `abs_on` below 0.5 bypasses the
 sampled modulator while retaining the nonnegative ESP brake increments.
+
+With `report_front = true` the unit also reports, on `front_active`, whether it is acting on a
+front wheel: 1 while it holds either front brake below what is asked of that brake (the driver's
+demand plus any positive ESP increment), else 0. That covers an ABS release, hold or slow reapply,
+and an ESP cut. On a first application the channel builds up at `k_inc_fast`, 800 N.m a sample at
+the defaults, so a demand that rises more slowly than that does not set it; a step demand sets it
+for the few samples the build-up takes. It is sampled and held like the brake commands, and it is
+0 with `abs_on` below 0.5. A regenerative blend reads it to withdraw regen from the front axle
+(`Vehicle.Electric.RegenBlend` with `abs_rule = true`).
 """
 component ABSUnit
   demand = RealInput(units = "N.m") {^demand}
@@ -19,7 +28,11 @@ component ABSUnit
   tau_fr = RealOutput(units = "N.m") {^tau_fr}
   tau_rl = RealOutput(units = "N.m") {^tau_rl}
   tau_rr = RealOutput(units = "N.m") {^tau_rr}
+  "1 while the unit holds a front brake below its demand, else 0; present only with report_front = true"
+  front_active = RealOutput() if report_front {^front_active}
   structural parameter dt::Time = 0.005
+  "Add the front_active output, which tells a regenerative blend when the ABS acts on a front wheel"
+  structural parameter report_front::Boolean = false
   parameter abs_on::Real = 1.0
   parameter select_low::Real = 1.0
   parameter T_p::Time = 0.03
@@ -50,6 +63,7 @@ component ABSUnit
   hold_fr = DiscreteComponents.ZeroOrderHold() {^hold_fr}
   hold_rl = DiscreteComponents.ZeroOrderHold() {^hold_rl}
   hold_rr = DiscreteComponents.ZeroOrderHold() {^hold_rr}
+  hold_front = DiscreteComponents.ZeroOrderHold() if report_front {^hold_front}
 relations
   connect(demand, demand_sampler.u) {^w1}
   connect(vx, speed_sampler.u) {^w2}
@@ -79,6 +93,12 @@ relations
   tau_fr = ifelse(abs_on > 0.5, hold_fr.y, demand + max(0.0, dT_fr))
   tau_rl = ifelse(abs_on > 0.5, hold_rl.y, demand + max(0.0, dT_rl))
   tau_rr = ifelse(abs_on > 0.5, hold_rr.y, demand + max(0.0, dT_rr))
+  if report_front
+    # A channel's command never exceeds what it is asked for, so `<` is exactly "held below";
+    # the comparison runs on the same samples the channels used.
+    hold_front.u = ifelse(abs.tau_fl < demand_sampler.y + max(dT_fl_sampler.y, 0.0) or abs.tau_fr < demand_sampler.y + max(dT_fr_sampler.y, 0.0), 1.0, 0.0)
+    front_active = ifelse(abs_on > 0.5, hold_front.y, 0.0)
+  end
 metadata {
   "Dyad": {"icons": {"default": "dyad://MultibodyComponents/CascadeServoController.svg"}},
   "_links": {
@@ -96,6 +116,7 @@ metadata {
     "tau_fr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 350, "x2": 1050, "y2": 450}, "diagram": {"x1": 985.0, "y1": 295.0, "x2": 1015.0, "y2": 325.0}}}},
     "tau_rl": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 550, "x2": 1050, "y2": 650}, "diagram": {"x1": 985.0, "y1": 375.0, "x2": 1015.0, "y2": 405.0}}}},
     "tau_rr": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 750, "x2": 1050, "y2": 850}, "diagram": {"x1": 985.0, "y1": 455.0, "x2": 1015.0, "y2": 485.0}}}},
+    "front_active": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 985.0, "y1": 535.0, "x2": 1015.0, "y2": 565.0}}}},
     "clock": {"Dyad": {"placement": {"diagram": {"x1": 320.0, "y1": 40.0, "x2": 380.0, "y2": 100.0}}}},
     "demand_sampler": {"Dyad": {"placement": {"diagram": {"x1": 140.0, "y1": 190.0, "x2": 180.0, "y2": 230.0}}}},
     "dT_fl_sampler": {"Dyad": {"placement": {"diagram": {"x1": 140.0, "y1": 270.0, "x2": 180.0, "y2": 310.0}}}},
@@ -112,6 +133,7 @@ metadata {
     "hold_fr": {"Dyad": {"placement": {"diagram": {"x1": 830.0, "y1": 290.0, "x2": 870.0, "y2": 330.0}}}},
     "hold_rl": {"Dyad": {"placement": {"diagram": {"x1": 830.0, "y1": 370.0, "x2": 870.0, "y2": 410.0}}}},
     "hold_rr": {"Dyad": {"placement": {"diagram": {"x1": 830.0, "y1": 450.0, "x2": 870.0, "y2": 490.0}}}},
+    "hold_front": {"Dyad": {"placement": {"diagram": {"x1": 830.0, "y1": 530.0, "x2": 870.0, "y2": 570.0}}}},
     "w1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},

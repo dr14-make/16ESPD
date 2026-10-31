@@ -1,28 +1,92 @@
 """
-Hands-on 04 step 05: series regenerative braking. The driver's brake demand goes to the machine
-first, up to the smallest of its torque limit, the battery's charge-power limit and a low-speed
-fade; the rest goes to the four friction brakes in equal parts. Same names as the library's
-`Vehicle.Electric.RegenBlend`.
+Series regenerative braking: the driver's brake demand goes to the machine first, up to the
+smallest of three limits, and the remainder goes to the four friction brakes. With
+`abs_rule = true` a fourth rule withdraws regen while the ABS acts on a wheel the machine drives.
+
+    tau_demand    = max(-tau_ref, 0)
+    tau_regen_max = allow min(tau_max, P_charge / w, fade tau_max),   fade = clamp(v / v_fade, 0, 1)
+    tau_regen     = min(tau_demand, tau_regen_max)
+    tau_motor     = max(tau_ref, 0) - tau_regen
+    tau_brake     = (tau_demand - tau_regen) ratio / 4
+
+`tau_ref` is the torque asked for at the machine shaft, positive driving. **Driving** is the
+machine's alone. **Braking** is the machine's first: it regenerates as much of the demand as the
+smallest of its three limits allows.
+
+- **Torque limit** `tau_max`: the machine's peak torque.
+- **Charge-power limit** `P_charge`: the most the battery accepts, as a torque `P_charge / w` at
+  the machine speed `w`. The limit is applied to the electromagnetic power `tau w`, which
+  exceeds what reaches the battery by the losses of machine, converter and auxiliaries, so the
+  battery never takes more than `P_charge`.
+- **Low-speed fade**: below `v_fade` the ceiling falls linearly to zero at standstill, so the
+  machine hands the car to the friction brakes at walking pace and never drives it backwards.
+
+Together they draw the regenerative envelope: rising with speed to `tau_max` at `v_fade`, flat to
+the corner speed `P_charge / tau_max`, and falling as `1/w` above it.
+
+The rest of the demand, `tau_demand - tau_regen`, carried through the reduction (`ratio`), is
+the friction brakes' share. `tau_brake` asks it of each of the four wheel brakes in equal parts,
+as Lecture 3's brake demand does, so it feeds `ABSUnit.demand` or the four brakes directly.
+A friction brake only opposes motion, so the brakes cannot reverse the car.
+
+`v` is the car's speed in km/h, the driver loop's unit; at or below zero the machine takes no
+braking. The machine speed is estimated from it, `w = v ratio / radius`. Braking wheels turn
+slower than the car, so the estimate is high and the power the machine actually takes stays
+under the limit.
+
+**The ABS rule.** The ABS modulates the friction brakes only. With `abs_rule = false`, the
+default, nothing else changes, `allow` is 1, and the machine's share holds while the ABS releases
+a wheel: on a hard stop its torque alone keeps the front slip past the ABS's reapply threshold,
+and on a slippery road it locks the front wheels. With `abs_rule = true` the block gains the input
+`abs_active`, 1 while the ABS acts on a driven wheel (`ABSUnit.front_active` on a front-driven
+car), and a fourth rule scales the ceiling by `allow`:
+
+    T_withdraw der(allow) = -allow          while abs_active = 1 (and withdraw = 1)
+    T_return   der(allow) = 1 - allow       otherwise,   allow(0) = 1
+
+Regen backs off within a few `T_withdraw`, as fast as the friction brakes build torque, and every
+newton-metre it gives up goes to `tau_brake`: the hydraulics, under the ABS, take the demand. Once
+the ABS stops acting, regen returns, more slowly, so that a wheel just out of ABS control is not
+pushed straight back in. The torque asked of the machine stays continuous, which the drive needs:
+its converter cannot follow a step in torque above base speed. `withdraw = 0` turns the rule off
+on a bench built with it, so one bench runs both.
+
+The rule acts only when the ABS does, and the ABS acts only on a friction brake it can release:
+with a light pedal the machine takes the whole demand, the ABS has nothing to modulate, and the
+machine alone can still lock a wheel on a slippery road.
+
+Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (INL) INL-5045 pulse tests of a 2013
+Leaf pack; (assumed) the course's choice.
 """
 component RegenBlend
   "Torque asked for at the machine shaft: positive drives, negative brakes"
   tau_ref = RealInput() {^tau_ref}
   "Vehicle speed [km/h]"
   v = RealInput() {^v}
+  "1 while the ABS acts on a wheel the machine drives, else 0; present only with abs_rule = true"
+  abs_active = RealInput() if abs_rule {^abs_active}
   "Torque the machine is asked for"
   tau_motor = RealOutput() {^tau_motor}
   "Friction brake torque asked of each of the four wheel brakes"
   tau_brake = RealOutput() {^tau_brake}
-  "Single-speed reduction, Leaf ZE1"
+  "Single-speed reduction, machine to differential (Nissan)"
   parameter ratio::Real = 8.193
-  "Wheel radius"
+  "Wheel radius, to estimate the machine speed from the car's (repository default)"
   parameter radius::Length = 0.31
-  "Torque limit: the machine's peak torque, Leaf ZE1"
+  "Torque limit: the machine's peak torque (Nissan)"
   parameter tau_max::Torque = 320.0
-  "Charge-power limit: the 2013 Leaf pack's 10 s charge capability (INL)"
+  "Charge-power limit: the 2013 Leaf pack's 10 s charge capability at 20 % depth of discharge; the ZE1's larger pack takes more (INL)"
   parameter P_charge::Power = 80.5e3
-  "Speed below which the braking ceiling fades to zero, km/h (assumed, 5-10 km/h)"
+  "Speed below which the machine's braking ceiling fades to zero, km/h; no primary source, the plan's band is 5-10 km/h (assumed)"
   parameter v_fade::Real = 10.0
+  "Add the ABS rule and its abs_active input: regen backs off while the ABS acts on a driven wheel"
+  structural parameter abs_rule::Boolean = false
+  "ABS rule on (1) or off (0), so one bench runs both; present only with abs_rule = true"
+  parameter withdraw::Real = 1.0 if abs_rule
+  "Time constant regen backs off with: the friction brakes' 30 ms build-up, PlanarCar's T_brake (assumed)"
+  parameter T_withdraw::Time = 0.03 if abs_rule
+  "Time constant regen returns with once the ABS stops acting (assumed)"
+  parameter T_return::Time = 0.5 if abs_rule
   "Machine speed estimated from the car's speed"
   variable w::AngularVelocity
   "Fade factor: 1 above v_fade, 0 at standstill"
@@ -31,18 +95,29 @@ component RegenBlend
   variable tau_power::Torque
   "Braking ceiling from the low-speed fade"
   variable tau_fade::Torque
-  "Braking ceiling: the smallest of the three limits"
+  "Braking ceiling: the smallest of the three limits, times allow under the ABS rule"
   variable tau_regen_max::Torque
   "Braking demand at the machine shaft"
   variable tau_demand::Torque
   "Braking torque the machine is asked for"
   variable tau_regen::Torque
+  "Share of the ceiling the ABS rule allows: 1, falling to 0 while the ABS acts; present only with abs_rule = true"
+  variable allow::Real if abs_rule
 relations
   w = max(v, 0.0) / 3.6 * ratio / radius
   fade = min(max(v / v_fade, 0.0), 1.0)
+  # The 1 rad/s floor keeps the quotient finite at standstill, where the fade binds anyway.
   tau_power = P_charge / max(w, 1.0)
   tau_fade = fade * tau_max
-  tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+  if abs_rule
+    initial allow = 1.0
+    # abs_active is held between ABS samples, so the switch between the two rates falls on a
+    # sample instant and allow itself stays continuous.
+    der(allow) = ifelse(withdraw * abs_active > 0.5, -allow / T_withdraw, (1.0 - allow) / T_return)
+    tau_regen_max = allow * min(tau_max, min(tau_power, tau_fade))
+  else
+    tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+  end
   tau_demand = max(-tau_ref, 0.0)
   tau_regen = min(tau_demand, tau_regen_max)
   tau_motor = max(tau_ref, 0.0) - tau_regen
@@ -52,6 +127,7 @@ metadata {
   "_links": {
     "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "abs_active": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 270}}}},
     "tau_motor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
     "tau_brake": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
   }

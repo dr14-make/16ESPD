@@ -28,16 +28,18 @@ component BEVHardStop
   parameter P_aux::Power = 300.0
   "Single-speed reduction, Leaf ZE1"
   parameter ratio::Real = 8.193
+  parameter withdraw::Real = 1.0
+  parameter road_mu::Real = 1.0
   pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time) {^pedal}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-  blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+  blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, abs_rule = true, withdraw = withdraw) {^blend}
   drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
   straight = RotationalComponents.Components.Fixed() {^straight}
   zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
-  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 0.0) {^abs}
-  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+  abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 0.0, report_front = true) {^abs}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius, mu_scale_fl = road_mu, mu_scale_fr = road_mu, mu_scale_rl = road_mu, mu_scale_rr = road_mu) {^car}
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
   "Power at the battery terminals, positive discharging"
@@ -68,6 +70,7 @@ relations
   connect(abs.tau_fr, car.tau_fr) {^w17}
   connect(abs.tau_rl, car.tau_rl) {^w18}
   connect(abs.tau_rr, car.tau_rr) {^w19}
+  connect(abs.front_active, blend.abs_active) {^w20}
   P_dc = drive.battery.v * drive.battery.i
   P_shaft = drive.machine.P_mech
   der(E_dc_in) = max(-P_dc, 0.0)
@@ -99,7 +102,7 @@ metadata {
     "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
     "blend": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
     "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
-    "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+    "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 250}}}},
     "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
     "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
     "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
@@ -126,6 +129,7 @@ metadata {
     "w16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
     "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 673}, {"x": 440, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 2}]}},
     "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 460, "y": 713}, {"x": 460, "y": 743}], "E": 2}]}},
+    "w20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 320, "y": 520}], "E": 2}]}},
     "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 753}, {"x": 450, "y": 900}, {"x": 750, "y": 900}, {"x": 750, "y": 743}], "E": 2}]}}
   }
 }
@@ -137,5 +141,7 @@ analysis BEVHardStopTransient
   parameter tau_max::Torque = 320.0
   parameter P_charge::Power = 80.5e3
   parameter v_fade::Real = 10.0
-  model = BEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
+  parameter withdraw::Real = 1.0
+  parameter road_mu::Real = 1.0
+  model = BEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, withdraw = withdraw, road_mu = road_mu)
 end

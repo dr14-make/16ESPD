@@ -1476,7 +1476,7 @@ end
 
 ### 05 · Regen blended onto the Lecture 3 brakes {#step-05}
 
-Give the brake demand to the machine first, up to the smallest of three limits, and the rest to Lecture 3's friction brakes. On Lecture 3's ABS stop from 80 km/h the three limits take turns and the machine takes back **49 %** of the braking; friction carries the other **51 %**, and the car still stops in **36.2 m**. On WLTC no limit binds above walking pace: the battery gets back **23.85 %** of the traction energy, and the friction brakes burn almost nothing.
+Give the brake demand to the machine first, up to the smallest of three limits, and the rest to Lecture 3's friction brakes. A fourth rule withdraws regen while the ABS acts on either driven (front) wheel. On the dry ABS stop from 80 km/h this changes the stop from **36.22 m** to **38.84 m**, and the machine/friction share from **49.32/50.68 %** to **1.62/98.38 %**. On WLTC no limit binds above walking pace: the battery gets back **23.85 %** of the traction energy, and the friction brakes burn almost nothing.
 
 #### Given
 
@@ -1508,7 +1508,9 @@ WLTC never decelerates harder than 1.5 m/s², 87 N·m at the machine, and never 
 
 The three ceilings draw an envelope like the motoring one of step 02, mirrored: rising with speed to 320 N·m at 10 km/h, flat down to the corner speed where 320 N·m meets 80.5 kW, **34.3 km/h**, and falling as 1/*w* above it. The limit is on the machine's electromagnetic power, *τ*·*w*. The battery gets less: the machine's, the converter's and the battery's losses and the auxiliaries come off first, so it never takes more than 80.5 kW.
 
-The machine sits outside the ABS loop: the ABS modulates only the friction brakes, and the machine's torque stays on while the ABS releases a wheel. On the hard stop, from about 62 km/h the machine's torque keeps the front wheels' slip at −0.04 to −0.06, past the slip the ABS waits for before it reapplies, so the ABS holds the front friction brakes off and the front tires work at about two thirds of their grip; below the corner speed the machine's 320 N·m alone brakes the front axle at its grip limit. A production brake system withdraws regen when the ABS acts; on a slippery road this one would let the machine lock the front wheels.
+With `abs_rule = true`, connect `ABSUnit(report_front = true).front_active` to `blend.abs_active`. Every 5 ms the ABS reports whether either front command is below its sampled demand, including release, hold and slow reapply (and initial build-up). Regen's ceiling is multiplied by `allow`: it decays toward zero with a **30 ms** time constant while active and returns toward one with **0.5 s** otherwise (both assumed). Every N·m withdrawn goes into the four hydraulic demands; the ABS still decides what reaches each brake. Continuous torque avoids a converter step above base speed. `withdraw = 0.0` reproduces step 5 without the rule.
+
+The default `abs_rule = false` keeps existing callers, including WLTC, unchanged; it adds neither a port nor a state. Keep the rule in the shared blending block, opt-in, rather than maintaining a second allocator. WLTC has no ABS and needs no extra wiring. This is not traction control: if the machine takes all of a light brake demand, the friction ABS has nothing to release and cannot detect machine-only locking.
 
 :::
 
@@ -1516,7 +1518,7 @@ The machine sits outside the ABS loop: the ABS modulates only the friction brake
 
 - **At 80 km/h:** *w* = 22.22 / 0.31 × 8.193 = 587 rad/s (5610 rpm), and 80 500 W / 587 rad/s = **137 N·m**: the charge-power limit binds. At the wheels that is 137 × 8.193 = 1123 N·m, 3.6 kN on the road, **0.25 g** of regenerative deceleration, in the plan's 0.2–0.3 g band.
 - **Corner speed:** 80 500 W / 320 N·m = 251.6 rad/s, so 251.6 × 0.31 / 8.193 × 3.6 = **34.3 km/h**. Below it the torque limit binds: 320 × 8.193 = 2622 N·m at the front wheels, about the 2534 N·m the front tires carry at µ = 1.
-- **Energy split:** the car starts with 380.7 kJ in body and wheels. The machine takes **176.9 kJ** back through the reduction, the friction brakes burn **181.8 kJ**, tire slip 22.0 kJ. The machine's share of the braking is 176.9 / (176.9 + 181.8) = **49.3 %**; **170.2 kJ** reaches the battery terminals. The three add up to the 380.7 kJ the car started with, to under 10⁻⁹ of it, because `E_kin` leaves out the machine's rotor: the rotor's energy reaches the battery inside the machine, without passing the reduction where `E_shaft_in` is measured.
+- **Without the ABS rule (step 5 baseline), energy split:** the car starts with 380.7 kJ in body and wheels. The machine takes **176.9 kJ** back through the reduction, the friction brakes burn **181.8 kJ**, tire slip 22.0 kJ. The machine's share of the braking is 176.9 / (176.9 + 181.8) = **49.3 %**; **170.2 kJ** reaches the battery terminals. The three add up to the 380.7 kJ the car started with, to under 10⁻⁹ of it, because `E_kin` leaves out the machine's rotor: the rotor's energy reaches the battery inside the machine, without passing the reduction where `E_shaft_in` is measured.
 - **WLTC:** 34.25 Wh/km back into the terminals over 143.6 Wh/km of traction at the shaft is **23.85 %**. That is inside the plan's 18–25 %: a quarter of the traction comes back as braking, and the measured Leaf (Boretti, 2012 and 2013 models) recovers 70–87 % of it, while this model's ideal reduction and machine return 88.6 %. A lower charge limit does bring the share down to the measured car's, but only by braking on friction: at 15 kW the share is **21.40 %** and the friction brakes take **9.5 %** of WLTC's braking, above the plan's 4 %.
 
 :::
@@ -1562,6 +1564,12 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
 
    ```txt
      "Machine speed estimated from the car's speed"
+     structural parameter abs_rule::Boolean = false
+     abs_active = RealInput() if abs_rule
+     parameter withdraw::Real = 1.0 if abs_rule
+     parameter T_withdraw::Time = 0.03 if abs_rule
+     parameter T_return::Time = 0.5 if abs_rule
+     variable allow::Real if abs_rule
      variable w::AngularVelocity
      "Fade factor: 1 above v_fade, 0 at standstill"
      variable fade::Real
@@ -1580,7 +1588,13 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      fade = min(max(v / v_fade, 0.0), 1.0)
      tau_power = P_charge / max(w, 1.0)
      tau_fade = fade * tau_max
-     tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+     if abs_rule
+       initial allow = 1.0
+       der(allow) = ifelse(withdraw * abs_active > 0.5, -allow / T_withdraw, (1.0 - allow) / T_return)
+       tau_regen_max = allow * min(tau_max, min(tau_power, tau_fade))
+     else
+       tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+     end
      tau_demand = max(-tau_ref, 0.0)
      tau_regen = min(tau_demand, tau_regen_max)
      tau_motor = max(tau_ref, 0.0) - tau_regen
@@ -1616,16 +1630,18 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      parameter P_aux::Power = 300.0
      "Single-speed reduction, Leaf ZE1"
      parameter ratio::Real = 8.193
+     parameter withdraw::Real = 1.0
+     parameter road_mu::Real = 1.0
      pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time) {^pedal}
      kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
-     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+     blend = RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, abs_rule = true, withdraw = withdraw) {^blend}
      drive = ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
      differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
      mount = RotationalComponents.Components.Fixed() {^mount}
      straight = RotationalComponents.Components.Fixed() {^straight}
      zero = BlockComponents.Sources.Constant(k = 0.0) {^zero}
-     abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 0.0) {^abs}
-     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius) {^car}
+     abs = VehicleSystemsComponents.Vehicle.Planar.ABSUnit(select_low = 0.0, report_front = true) {^abs}
+     car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius, mu_scale_fl = road_mu, mu_scale_fr = road_mu, mu_scale_rl = road_mu, mu_scale_rr = road_mu) {^car}
      motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
      slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
      "Power at the battery terminals, positive discharging"
@@ -1656,6 +1672,7 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      connect(abs.tau_fr, car.tau_fr) {^w17}
      connect(abs.tau_rl, car.tau_rl) {^w18}
      connect(abs.tau_rr, car.tau_rr) {^w19}
+     connect(abs.front_active, blend.abs_active) {^w20}
      P_dc = drive.battery.v * drive.battery.i
      P_shaft = drive.machine.P_mech
      der(E_dc_in) = max(-P_dc, 0.0)
@@ -1687,7 +1704,7 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
        "kmh": {"Dyad": {"placement": {"diagram": {"x1": 40, "y1": 190, "x2": 110, "y2": 260}}}},
        "blend": {"Dyad": {"placement": {"diagram": {"x1": 290, "y1": 70, "x2": 390, "y2": 170}}}},
        "drive": {"Dyad": {"placement": {"diagram": {"x1": 430, "y1": 50, "x2": 530, "y2": 150}}}},
-       "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 240}}}},
+       "mount": {"Dyad": {"placement": {"diagram": {"x1": 485, "y1": 190, "x2": 545, "y2": 250}}}},
        "differential": {"Dyad": {"placement": {"diagram": {"x1": 560, "y1": 260, "x2": 640, "y2": 340}}}},
        "straight": {"Dyad": {"placement": {"diagram": {"x1": 605, "y1": 500, "x2": 655, "y2": 550, "rot": 180}}}},
        "car": {"Dyad": {"placement": {"diagram": {"x1": 520, "y1": 600, "x2": 740, "y2": 820}}}},
@@ -1714,6 +1731,7 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
        "w16": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
        "w17": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 440, "y": 673}, {"x": 440, "y": 470}, {"x": 750, "y": 470}, {"x": 750, "y": 633}], "E": 2}]}},
        "w18": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 460, "y": 713}, {"x": 460, "y": 743}], "E": 2}]}},
+       "w20": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 320, "y": 520}], "E": 2}]}},
        "w19": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 450, "y": 753}, {"x": 450, "y": 900}, {"x": 750, "y": 900}, {"x": 750, "y": 743}], "E": 2}]}}
      }
    }
@@ -1725,7 +1743,9 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      parameter tau_max::Torque = 320.0
      parameter P_charge::Power = 80.5e3
      parameter v_fade::Real = 10.0
-     model = BEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade)
+     parameter withdraw::Real = 1.0
+     parameter road_mu::Real = 1.0
+     model = BEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, withdraw = withdraw, road_mu = road_mu)
    end
    ```
 
@@ -1748,13 +1768,11 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
 
 ::: tip Expected result
 
-`kmh.y` falls from 80 to 0 in **3.0 s** after the pedal, and the car stops in **36.2 m**. Against speed, `blend.tau_regen` follows the envelope: **137 N·m** at 80 km/h and 183 N·m at 60 km/h, where the 80.5 kW charge limit binds; **320 N·m** from 34.3 km/h down to 10 km/h, the torque limit; then falling linearly to zero with the fade. The battery charges at up to **75.9 kW**, −205 A.
+With the rule enabled, the dry stop reaches 0.5 m/s **3.275 s** after the pedal, in **38.84 m**. The machine takes **5.93 kJ**, friction **360.74 kJ**, tire slip **19.69 kJ**; **5.89 kJ** reaches the battery. The energy balance still closes. The sampled ABS stays active almost throughout this stop, so regen remains withdrawn; this calibration does not improve dry stopping distance.
 
-`car.fl.brake.tau_friction`, the front-left friction brake, falls to zero from about **62 km/h** and stays there down to 10 km/h: the machine's torque holds the front slip past the ABS's reapply threshold, so the ABS keeps the front brakes released. Below 10 km/h the fade hands the front axle back to its friction brakes. `car.rl.brake.tau_friction` carries the friction share all the way down, cycling under the ABS.
+**Compare:** `MyCar.BEVHardStopTransient(withdraw = 0.0)` reproduces the earlier **36.22 m**, **176.89 kJ** motor / **181.79 kJ** friction (**49.32 %** motor), **170.24 kJ** into the battery. The three ceilings are visible on this counterfactual; with the rule they are upper bounds, not the actual torque. `P_charge = 0.0` gives the **38.82 m** friction-only reference.
 
-**The split:** the machine takes **176.9 kJ** back, the friction brakes burn **181.8 kJ**: friction **51 %**, machine **49 %**. **170.2 kJ** reaches the battery, 47 Wh, about 350 m of WLTC driving.
-
-**Change one thing:** `MyCar.BEVHardStopTransient(P_charge = 0.0)` turns regeneration off. Friction burns everything and the stop is **38.8 m**, 2.6 m longer: on friction alone the front ABS works the front tires at about 62 % of their grip, while below the corner speed the machine holds them at 93 %.
+**Low grip:** run `MyCar.BEVHardStopTransient(road_mu = 0.3, stop = 28.0)`. Front slip stays above **−0.050** while speed exceeds 3 m/s; stopping distance is **275.02 m**. With `withdraw = 0.0, stop = 12.0`, slip passes **−1** (lock) and reaches **−17.41**: the ideal negative torque then reverses the wheels. Its **112.35 m** distance is a model counterfactual, not a physically credible locked-wheel benchmark. The inherited ABS reapply calibration is slow on this road; this task does not retune it. Longer parking in that counterfactual eventually reaches the known tire Jacobian singularity.
 
 Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardStopTransient`; the course library's copies are `Vehicle.Electric.RegenBlend` and `Vehicle.Planar.PlanarBEVHardStop`.
 
@@ -1937,20 +1955,30 @@ component RegenBlend
   tau_ref = RealInput() {^tau_ref}
   "Vehicle speed [km/h]"
   v = RealInput() {^v}
+  "1 while the ABS acts on a wheel the machine drives, else 0; present only with abs_rule = true"
+  abs_active = RealInput() if abs_rule {^abs_active}
   "Torque the machine is asked for"
   tau_motor = RealOutput() {^tau_motor}
   "Friction brake torque asked of each of the four wheel brakes"
   tau_brake = RealOutput() {^tau_brake}
-  "Single-speed reduction, Leaf ZE1"
+  "Single-speed reduction, machine to differential (Nissan)"
   parameter ratio::Real = 8.193
-  "Wheel radius"
+  "Wheel radius, to estimate the machine speed from the car's (repository default)"
   parameter radius::Length = 0.31
-  "Torque limit: the machine's peak torque, Leaf ZE1"
+  "Torque limit: the machine's peak torque (Nissan)"
   parameter tau_max::Torque = 320.0
-  "Charge-power limit: the 2013 Leaf pack's 10 s charge capability (INL)"
+  "Charge-power limit: the 2013 Leaf pack's 10 s charge capability at 20 % depth of discharge; the ZE1's larger pack takes more (INL)"
   parameter P_charge::Power = 80.5e3
-  "Speed below which the braking ceiling fades to zero, km/h (assumed, 5-10 km/h)"
+  "Speed below which the machine's braking ceiling fades to zero, km/h; no primary source, the plan's band is 5-10 km/h (assumed)"
   parameter v_fade::Real = 10.0
+  "Add the ABS rule and its abs_active input: regen backs off while the ABS acts on a driven wheel"
+  structural parameter abs_rule::Boolean = false
+  "ABS rule on (1) or off (0), so one bench runs both; present only with abs_rule = true"
+  parameter withdraw::Real = 1.0 if abs_rule
+  "Time constant regen backs off with: the friction brakes' 30 ms build-up, PlanarCar's T_brake (assumed)"
+  parameter T_withdraw::Time = 0.03 if abs_rule
+  "Time constant regen returns with once the ABS stops acting (assumed)"
+  parameter T_return::Time = 0.5 if abs_rule
   "Machine speed estimated from the car's speed"
   variable w::AngularVelocity
   "Fade factor: 1 above v_fade, 0 at standstill"
@@ -1959,18 +1987,29 @@ component RegenBlend
   variable tau_power::Torque
   "Braking ceiling from the low-speed fade"
   variable tau_fade::Torque
-  "Braking ceiling: the smallest of the three limits"
+  "Braking ceiling: the smallest of the three limits, times allow under the ABS rule"
   variable tau_regen_max::Torque
   "Braking demand at the machine shaft"
   variable tau_demand::Torque
   "Braking torque the machine is asked for"
   variable tau_regen::Torque
+  "Share of the ceiling the ABS rule allows: 1, falling to 0 while the ABS acts; present only with abs_rule = true"
+  variable allow::Real if abs_rule
 relations
   w = max(v, 0.0) / 3.6 * ratio / radius
   fade = min(max(v / v_fade, 0.0), 1.0)
+  # The 1 rad/s floor keeps the quotient finite at standstill, where the fade binds anyway.
   tau_power = P_charge / max(w, 1.0)
   tau_fade = fade * tau_max
-  tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+  if abs_rule
+    initial allow = 1.0
+    # abs_active is held between ABS samples, so the switch between the two rates falls on a
+    # sample instant and allow itself stays continuous.
+    der(allow) = ifelse(withdraw * abs_active > 0.5, -allow / T_withdraw, (1.0 - allow) / T_return)
+    tau_regen_max = allow * min(tau_max, min(tau_power, tau_fade))
+  else
+    tau_regen_max = min(tau_max, min(tau_power, tau_fade))
+  end
   tau_demand = max(-tau_ref, 0.0)
   tau_regen = min(tau_demand, tau_regen_max)
   tau_motor = max(tau_ref, 0.0) - tau_regen
@@ -1980,6 +2019,7 @@ metadata {
   "_links": {
     "tau_ref": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 250, "x2": 50, "y2": 350}}}},
     "v": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 650, "x2": 50, "y2": 750}}}},
+    "abs_active": {"Dyad": {"placement": {"icon": {"x1": 250, "y1": 950, "x2": 350, "y2": 1050, "rot": 270}}}},
     "tau_motor": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 250, "x2": 1050, "y2": 350}}}},
     "tau_brake": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
   }

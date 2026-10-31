@@ -411,13 +411,20 @@ dynamics dominate; a low-frequency curvature artifact adds no phase lag there.
   `converter.field`) with or without a `tstops` entry on the step. Ask for torque continuously:
   the hard stops ramp the pedal over 0.1 s (`Ramp`, with `tstops` on both corners); the WLTC
   driver's PI output is continuous already.
-- **Regen outside the ABS loop keeps the ABS from reapplying.** `ABSModulatorDiscrete` reapplies
+- **Regen outside the ABS loop keeps the ABS from reapplying (the `withdraw = 0` counterfactual).** `ABSModulatorDiscrete` reapplies
   only once a released wheel's predicted slip is back above `-l_rec` (−0.03). On the BEV hard stop
   the machine's regenerative torque alone holds the front slip at −0.04 to −0.06 from 62 km/h
   (phase alternating hold/release), so the front friction brakes stay at zero and the front tires
   work at about 65 % of their grip until the machine's 320 N·m reaches it below 34 km/h. The stop
   is still shorter than on friction alone (36.2 m against 38.8 m), but a regen strategy that kept
-  more torque on the front would lock it; production systems withdraw regen when the ABS acts.
+  more torque on the front would lock it. Issue #140 enables the opt-in `RegenBlend` ABS rule on
+  both hard-stop references: sampled `front_active` means either front command is below demand;
+  regen's ceiling decays in 30 ms and returns in 0.5 s, with the remainder handed to hydraulics.
+  The dry stop becomes 38.836 m, 1.62 % motor (5.93 kJ), 98.38 % friction (360.74 kJ). At grip
+  ×0.3 the front slip stays above −0.050 and the stop is 275.02 m; without withdrawal the wheels
+  lock and reverse, so its 112.35 m is not a physical benchmark. Use `stop = 28` enabled, 12 s
+  disabled (long parking reaches the known tire NaN). WLTC is unchanged: the rule is structural,
+  default off. `regen` passes 94/94 and `abs` 84/84 on dyad-3.5.0. No ABS retuning was done.
 - **`r."path"` takes a literal only.** On an analysis result, `r."E_dc"` works but `r."$x"`
   with `x = "E_dc"` throws a `MethodError`, and `getproperty(r, :E_dc)` a `FieldError`. A snippet
   that loops over signals collects the literals first: `links = ["road" => r."E_road", ...]`.

@@ -96,7 +96,7 @@ speed source driven by the sensed body-frame vx, a force sensor, and `WorldForce
 
 **S8 — Regen uses series blending on the Lecture 3 brakes.** The driver's brake demand goes to the
 motor up to the smallest of its torque limit, the battery charge-power limit and a low-speed fade;
-the remainder goes to the hydraulics through the existing allocator. WLTC never decelerates harder
+the remainder goes to the hydraulics through the existing allocator. A fourth, opt-in rule withdraws regen while the ABS acts on either driven wheel; the hard-stop bench enables it, WLTC does not. WLTC never decelerates harder
 than 1.5 m/s² (0.15 g), so on WLTC friction only covers the low-speed fade (under 4 % of braking
 energy). The blending is therefore shown on Lecture 3's hard stop, where friction carries most of
 the braking, and WLTC reports the recovered energy.
@@ -224,8 +224,15 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   measured cars' 21.40 % only by putting 9.5 % of WLTC's braking on friction, above S8's 4 %. The hard stop's meters (shaft, friction, tire slip) close on the
   kinetic energy of body and wheels to 10⁻⁹; the rotor's energy reaches the battery without
   passing the reduction, so it stays out of that balance.
-- The machine sits outside the ABS loop: the ABS modulates the friction brakes only, and nothing
-  withdraws regen when it acts. On the dry hard stop the machine's torque holds the front slip at
-  −0.04 to −0.06 from 62 km/h, past the ABS's 0.03 reapply threshold, so the front friction
-  brakes stay released and the front tires work at about 65 % of their grip until the machine's
-  320 N·m reaches it below 34 km/h. On a low-µ road the machine alone would lock the front wheels.
+- Issue #140 adds the opt-in `RegenBlend(abs_rule = true)` rule. `ABSUnit(report_front = true)`
+  reports a front command below sampled demand; `allow` decays with 30 ms and recovers with
+  0.5 s time constants (assumed). The hard stop enables it by default; `withdraw = 0` reproduces
+  the step-5 numbers above. Enabled: 38.836 m, 5.93 kJ motor / 360.74 kJ friction (1.62 % motor),
+  5.89 kJ into the battery. The ABS remains active almost throughout; this is not a dry-distance
+  improvement. WLTC equations and numbers are unchanged (23.85 %, 34.25 Wh/km recovered).
+- At road grip ×0.3, withdrawal bounds front slip at −0.049 above 3 m/s; the inherited slow
+  reapply calibration gives a 275.02 m stop. Without it the fronts lock (slip passes −1), then
+  reverse under the ideal machine torque (minimum −17.41); that run's 112.35 m is not a physical
+  locked-wheel benchmark. End it at 12 s: long parking reaches the known tire singularity.
+  The rule is not traction control: machine-only light braking may lock a wheel without a
+  friction brake demand for the ABS to modulate.

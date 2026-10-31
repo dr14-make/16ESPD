@@ -5,27 +5,86 @@
 
 
 @doc Markdown.doc"""
-   RegenBlend(; name, ratio, radius, tau_max, P_charge, v_fade, __overrides)
+   RegenBlend(; name, abs_rule, ratio, radius, tau_max, P_charge, v_fade, withdraw, T_withdraw, T_return, __overrides)
 
-Hands-on 04 step 05: series regenerative braking. The driver's brake demand goes to the machine
-first, up to the smallest of its torque limit, the battery's charge-power limit and a low-speed
-fade; the rest goes to the four friction brakes in equal parts. Same names as the library's
-`Vehicle.Electric.RegenBlend`.
+Series regenerative braking: the driver's brake demand goes to the machine first, up to the
+smallest of three limits, and the remainder goes to the four friction brakes. With
+`abs_rule = true` a fourth rule withdraws regen while the ABS acts on a wheel the machine drives.
+
+    tau_demand    = max(-tau_ref, 0)
+    tau_regen_max = allow min(tau_max, P_charge / w, fade tau_max),   fade = clamp(v / v_fade, 0, 1)
+    tau_regen     = min(tau_demand, tau_regen_max)
+    tau_motor     = max(tau_ref, 0) - tau_regen
+    tau_brake     = (tau_demand - tau_regen) ratio / 4
+
+`tau_ref` is the torque asked for at the machine shaft, positive driving. **Driving** is the
+machine's alone. **Braking** is the machine's first: it regenerates as much of the demand as the
+smallest of its three limits allows.
+
+- **Torque limit** `tau_max`: the machine's peak torque.
+- **Charge-power limit** `P_charge`: the most the battery accepts, as a torque `P_charge / w` at
+  the machine speed `w`. The limit is applied to the electromagnetic power `tau w`, which
+  exceeds what reaches the battery by the losses of machine, converter and auxiliaries, so the
+  battery never takes more than `P_charge`.
+- **Low-speed fade**: below `v_fade` the ceiling falls linearly to zero at standstill, so the
+  machine hands the car to the friction brakes at walking pace and never drives it backwards.
+
+Together they draw the regenerative envelope: rising with speed to `tau_max` at `v_fade`, flat to
+the corner speed `P_charge / tau_max`, and falling as `1/w` above it.
+
+The rest of the demand, `tau_demand - tau_regen`, carried through the reduction (`ratio`), is
+the friction brakes' share. `tau_brake` asks it of each of the four wheel brakes in equal parts,
+as Lecture 3's brake demand does, so it feeds `ABSUnit.demand` or the four brakes directly.
+A friction brake only opposes motion, so the brakes cannot reverse the car.
+
+`v` is the car's speed in km/h, the driver loop's unit; at or below zero the machine takes no
+braking. The machine speed is estimated from it, `w = v ratio / radius`. Braking wheels turn
+slower than the car, so the estimate is high and the power the machine actually takes stays
+under the limit.
+
+**The ABS rule.** The ABS modulates the friction brakes only. With `abs_rule = false`, the
+default, nothing else changes, `allow` is 1, and the machine's share holds while the ABS releases
+a wheel: on a hard stop its torque alone keeps the front slip past the ABS's reapply threshold,
+and on a slippery road it locks the front wheels. With `abs_rule = true` the block gains the input
+`abs_active`, 1 while the ABS acts on a driven wheel (`ABSUnit.front_active` on a front-driven
+car), and a fourth rule scales the ceiling by `allow`:
+
+    T_withdraw der(allow) = -allow          while abs_active = 1 (and withdraw = 1)
+    T_return   der(allow) = 1 - allow       otherwise,   allow(0) = 1
+
+Regen backs off within a few `T_withdraw`, as fast as the friction brakes build torque, and every
+newton-metre it gives up goes to `tau_brake`: the hydraulics, under the ABS, take the demand. Once
+the ABS stops acting, regen returns, more slowly, so that a wheel just out of ABS control is not
+pushed straight back in. The torque asked of the machine stays continuous, which the drive needs:
+its converter cannot follow a step in torque above base speed. `withdraw = 0` turns the rule off
+on a bench built with it, so one bench runs both.
+
+The rule acts only when the ABS does, and the ABS acts only on a friction brake it can release:
+with a light pedal the machine takes the whole demand, the ABS has nothing to modulate, and the
+machine alone can still lock a wheel on a slippery road.
+
+Source tags: (Nissan) ZE1 specification sheet, catalog 1709; (INL) INL-5045 pulse tests of a 2013
+Leaf pack; (assumed) the course's choice.
 
 ## Parameters:
 
 | Name         | Description                         | Units  |   Default value |
 | ------------ | ----------------------------------- | ------ | --------------- |
-| `ratio`         | Single-speed reduction, Leaf ZE1                         | --  |   8.193 |
-| `radius`         | Wheel radius                         | m  |   0.31 |
-| `tau_max`         | Torque limit: the machine's peak torque, Leaf ZE1                         | N.m  |   320.0 |
-| `P_charge`         | Charge-power limit: the 2013 Leaf pack's 10 s charge capability (INL)                         | W  |   80.5e3 |
-| `v_fade`         | Speed below which the braking ceiling fades to zero, km/h (assumed, 5-10 km/h)                         | --  |   10.0 |
+| `abs_rule`         | Add the ABS rule and its abs_active input: regen backs off while the ABS acts on a driven wheel                         | --  |   false |
+| `ratio`         | Single-speed reduction, machine to differential (Nissan)                         | --  |   8.193 |
+| `radius`         | Wheel radius, to estimate the machine speed from the car's (repository default)                         | m  |   0.31 |
+| `tau_max`         | Torque limit: the machine's peak torque (Nissan)                         | N.m  |   320.0 |
+| `P_charge`         | Charge-power limit: the 2013 Leaf pack's 10 s charge capability at 20 % depth of discharge; the ZE1's larger pack takes more (INL)                         | W  |   80.5e3 |
+| `v_fade`         | Speed below which the machine's braking ceiling fades to zero, km/h; no primary source, the plan's band is 5-10 km/h (assumed)                         | --  |   10.0 |
+| `withdraw`         | ABS rule on (1) or off (0), so one bench runs both; present only with abs_rule = true                         | --  |   1.0 |
+| `T_withdraw`         | Time constant regen backs off with: the friction brakes' 30 ms build-up, PlanarCar's T_brake (assumed)                         | s  |   0.03 |
+| `T_return`         | Time constant regen returns with once the ABS stops acting (assumed)                         | s  |   0.5 |
 
 ## Connectors
 
  * `tau_ref` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `v` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
+ * `abs_active` - This connector represents a real signal as an input to a component ([`RealInput`](@ref))
  * `tau_motor` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
  * `tau_brake` - This connector represents a real signal as an output from a component ([`RealOutput`](@ref))
 
@@ -37,11 +96,12 @@ fade; the rest goes to the four friction brakes in equal parts. Same names as th
 | `fade`         | Fade factor: 1 above v_fade, 0 at standstill                         | --  |
 | `tau_power`         | Braking ceiling from the charge-power limit                         | N.m  |
 | `tau_fade`         | Braking ceiling from the low-speed fade                         | N.m  |
-| `tau_regen_max`         | Braking ceiling: the smallest of the three limits                         | N.m  |
+| `tau_regen_max`         | Braking ceiling: the smallest of the three limits, times allow under the ABS rule                         | N.m  |
 | `tau_demand`         | Braking demand at the machine shaft                         | N.m  |
 | `tau_regen`         | Braking torque the machine is asked for                         | N.m  |
+| `allow`         | Share of the ceiling the ABS rule allows: 1, falling to 0 while the ABS acts; present only with abs_rule = true                         | --  |
 """
-@component function RegenBlend(; name = nothing, var"ratio"=8.193, var"radius"=0.31, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), __overrides = Dict{String, Any}())
+@component function RegenBlend(; name = nothing, var"abs_rule"=false, var"ratio"=8.193, var"radius"=0.31, var"tau_max"=Float64(320.0), var"P_charge"=Float64(80500.0), var"v_fade"=Float64(10.0), var"withdraw"=Float64(1.0), var"T_withdraw"=0.03, var"T_return"=0.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -60,11 +120,15 @@ fade; the rest goes to the four friction brakes in equal parts. Same names as th
   __bindings = Dict{Symbolics.SymbolicT, Symbolics.SymbolicT}()
 
   ### Keyword argument overrides
+  haskey(__overrides, "abs_rule") && (abs_rule = pop!(__overrides, "abs_rule"))
   haskey(__overrides, "ratio") && (ratio = pop!(__overrides, "ratio"))
   haskey(__overrides, "radius") && (radius = pop!(__overrides, "radius"))
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "P_charge") && (P_charge = pop!(__overrides, "P_charge"))
   haskey(__overrides, "v_fade") && (v_fade = pop!(__overrides, "v_fade"))
+  haskey(__overrides, "withdraw") && (withdraw = pop!(__overrides, "withdraw"))
+  haskey(__overrides, "T_withdraw") && (T_withdraw = pop!(__overrides, "T_withdraw"))
+  haskey(__overrides, "T_return") && (T_return = pop!(__overrides, "T_return"))
 
   ### Structural Parameters (functions)
 
@@ -80,26 +144,42 @@ fade; the rest goes to the four friction brakes in equal parts. Same names as th
 
   ### Symbolic Parameters
   __local__ratio = ratio
-  append!(__params, @parameters (ratio::Real), [description = "Single-speed reduction, Leaf ZE1"])
+  append!(__params, @parameters (ratio::Real), [description = "Single-speed reduction, machine to differential (Nissan)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, ratio, __local__ratio)
   __local__radius = radius
-  append!(__params, @parameters (radius::Real), [description = "Wheel radius"])
+  append!(__params, @parameters (radius::Real), [description = "Wheel radius, to estimate the machine speed from the car's (repository default)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, radius, __local__radius)
   __local__tau_max = tau_max
-  append!(__params, @parameters (tau_max::Real), [description = "Torque limit: the machine's peak torque, Leaf ZE1"])
+  append!(__params, @parameters (tau_max::Real), [description = "Torque limit: the machine's peak torque (Nissan)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, tau_max, __local__tau_max)
   __local__P_charge = P_charge
-  append!(__params, @parameters (P_charge::Real), [description = "Charge-power limit: the 2013 Leaf pack's 10 s charge capability (INL)"])
+  append!(__params, @parameters (P_charge::Real), [description = "Charge-power limit: the 2013 Leaf pack's 10 s charge capability at 20 % depth of discharge; the ZE1's larger pack takes more (INL)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, P_charge, __local__P_charge)
   __local__v_fade = v_fade
-  append!(__params, @parameters (v_fade::Real), [description = "Speed below which the braking ceiling fades to zero, km/h (assumed, 5-10 km/h)"])
+  append!(__params, @parameters (v_fade::Real), [description = "Speed below which the machine's braking ceiling fades to zero, km/h; no primary source, the plan's band is 5-10 km/h (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_fade, __local__v_fade)
+  if abs_rule
+    __local__withdraw = withdraw
+    append!(__params, @parameters (withdraw::Real), [description = "ABS rule on (1) or off (0), so one bench runs both; present only with abs_rule = true"])
+    __dyad_seed_parameter!(__initial_conditions, __bindings, withdraw, __local__withdraw)
+  end
+  if abs_rule
+    __local__T_withdraw = T_withdraw
+    append!(__params, @parameters (T_withdraw::Real), [description = "Time constant regen backs off with: the friction brakes' 30 ms build-up, PlanarCar's T_brake (assumed)"])
+    __dyad_seed_parameter!(__initial_conditions, __bindings, T_withdraw, __local__T_withdraw)
+  end
+  if abs_rule
+    __local__T_return = T_return
+    append!(__params, @parameters (T_return::Real), [description = "Time constant regen returns with once the ABS stops acting (assumed)"])
+    __dyad_seed_parameter!(__initial_conditions, __bindings, T_return, __local__T_return)
+  end
 
   ### Final Parameters (assignments)
 
   ### Final Path Parameters
   append!(__vars, @variables (tau_ref(t)::Real), [input = true])
   append!(__vars, @variables (v(t)::Real), [input = true])
+  append!(__vars, @variables (abs_active(t)::Real), [input = true])
   append!(__vars, @variables (tau_motor(t)::Real), [output = true])
   append!(__vars, @variables (tau_brake(t)::Real), [output = true])
 
@@ -108,9 +188,12 @@ fade; the rest goes to the four friction brakes in equal parts. Same names as th
   append!(__vars, @variables (fade(t)::Real), [description = "Fade factor: 1 above v_fade, 0 at standstill"])
   append!(__vars, @variables (tau_power(t)::Real), [description = "Braking ceiling from the charge-power limit"])
   append!(__vars, @variables (tau_fade(t)::Real), [description = "Braking ceiling from the low-speed fade"])
-  append!(__vars, @variables (tau_regen_max(t)::Real), [description = "Braking ceiling: the smallest of the three limits"])
+  append!(__vars, @variables (tau_regen_max(t)::Real), [description = "Braking ceiling: the smallest of the three limits, times allow under the ABS rule"])
   append!(__vars, @variables (tau_demand(t)::Real), [description = "Braking demand at the machine shaft"])
   append!(__vars, @variables (tau_regen(t)::Real), [description = "Braking torque the machine is asked for"])
+  if abs_rule
+    append!(__vars, @variables (allow(t)::Real), [description = "Share of the ceiling the ABS rule allows: 1, falling to 0 while the ABS acts; present only with abs_rule = true"])
+  end
 
   ### Variables (assignments)
   __ovr_w = pop!(__overrides, "w", nothing); isnothing(__ovr_w) || push!(__eqs, w ~ __ovr_w)
@@ -134,6 +217,11 @@ fade; the rest goes to the four friction brakes in equal parts. Same names as th
   __ovr_tau_regen = pop!(__overrides, "tau_regen", nothing); isnothing(__ovr_tau_regen) || push!(__eqs, tau_regen ~ __ovr_tau_regen)
   __ovr_tau_regen__initial = pop!(__overrides, "tau_regen.initial", nothing); isnothing(__ovr_tau_regen__initial) || (__initial_conditions[tau_regen] = __ovr_tau_regen__initial)
   __ovr_tau_regen__guess = pop!(__overrides, "tau_regen.guess", nothing)
+  if abs_rule
+    __ovr_allow = pop!(__overrides, "allow", nothing); isnothing(__ovr_allow) || push!(__eqs, allow ~ __ovr_allow)
+    __ovr_allow__initial = pop!(__overrides, "allow.initial", nothing); isnothing(__ovr_allow__initial) || (__initial_conditions[allow] = __ovr_allow__initial)
+    __ovr_allow__guess = pop!(__overrides, "allow.guess", nothing)
+  end
 
   ### Constants
   __constants = Any[]
@@ -151,6 +239,9 @@ fade; the rest goes to the four friction brakes in equal parts. Same names as th
   isnothing(__ovr_tau_regen_max__guess) || (__guesses[tau_regen_max] = __ovr_tau_regen_max__guess)
   isnothing(__ovr_tau_demand__guess) || (__guesses[tau_demand] = __ovr_tau_demand__guess)
   isnothing(__ovr_tau_regen__guess) || (__guesses[tau_regen] = __ovr_tau_regen__guess)
+  if abs_rule
+    isnothing(__ovr_allow__guess) || (__guesses[allow] = __ovr_allow__guess)
+  end
 
   ### Initialization Equations
 
@@ -162,11 +253,19 @@ fade; the rest goes to the four friction brakes in equal parts. Same names as th
   push!(__eqs, fade ~ min(max(v / v_fade, 0.0), 1.0))
   push!(__eqs, tau_power ~ P_charge / max(w, 1.0))
   push!(__eqs, tau_fade ~ fade * tau_max)
-  push!(__eqs, tau_regen_max ~ min(tau_max, min(tau_power, tau_fade)))
   push!(__eqs, tau_demand ~ max(-tau_ref, 0.0))
   push!(__eqs, tau_regen ~ min(tau_demand, tau_regen_max))
   push!(__eqs, tau_motor ~ max(tau_ref, 0.0) - tau_regen)
   push!(__eqs, tau_brake ~ (tau_demand - tau_regen) * ratio / 4.0)
+
+  ### Control Structures
+  if abs_rule
+    push!(__initialization_eqs, allow ~ 1.0)
+    push!(__eqs, ModelingToolkit.D_nounits(allow) ~ ifelse(withdraw * abs_active > 0.5, -allow / T_withdraw, (1.0 - allow) / T_return))
+    push!(__eqs, tau_regen_max ~ allow * min(tau_max, min(tau_power, tau_fade)))
+  else
+    push!(__eqs, tau_regen_max ~ min(tau_max, min(tau_power, tau_fade)))
+  end
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

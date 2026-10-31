@@ -10,6 +10,9 @@ layout: section
 The chain in the planar car, the motor as a brake, the three ceilings on regen, and series
 blending onto Lecture 3's brakes.
 
+Step-5 envelope figures use `withdraw = 0`. The guide's ABS rule withdraws regen during front
+ABS control: dry stop 38.84 m, 1.62 % motor share; WLTC unchanged.
+
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--

@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function PlanarBEVHardStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, __overrides = Dict{String, Any}())
+@component function PlanarBEVHardStopTransient__System(; name = nothing, var"alg"=ODEAlg.Rodas5P(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[0.5, 0.6], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"T_cmd"=2500.0, var"tau_max"=320.0, var"P_charge"=80500.0, var"v_fade"=10.0, var"withdraw"=1.0, var"road_mu"=1.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -44,6 +44,8 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   haskey(__overrides, "tau_max") && (tau_max = pop!(__overrides, "tau_max"))
   haskey(__overrides, "P_charge") && (P_charge = pop!(__overrides, "P_charge"))
   haskey(__overrides, "v_fade") && (v_fade = pop!(__overrides, "v_fade"))
+  haskey(__overrides, "withdraw") && (withdraw = pop!(__overrides, "withdraw"))
+  haskey(__overrides, "road_mu") && (road_mu = pop!(__overrides, "road_mu"))
 
   ### Structural Parameters (functions)
 
@@ -115,6 +117,12 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   __local__v_fade = v_fade
   append!(__params, @parameters (v_fade::Float64))
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_fade, __local__v_fade)
+  __local__withdraw = withdraw
+  append!(__params, @parameters (withdraw::Float64), [description = "Withdraw regen while the front ABS acts; 0 reproduces step 5"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, withdraw, __local__withdraw)
+  __local__road_mu = road_mu
+  append!(__params, @parameters (road_mu::Float64), [description = "Road grip multiplier, 0.3 for the low-grip comparison"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, road_mu, __local__road_mu)
 
   ### Final Parameters (assignments)
 
@@ -130,7 +138,7 @@ using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
   ### Components
   # Subcomponent model of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVHardStop
   model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
-  push!(__systems, @named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVHardStop(; T_cmd=T_cmd, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, __overrides = model_overrides))
+  push!(__systems, @named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVHardStop(; T_cmd=T_cmd, tau_max=tau_max, P_charge=P_charge, v_fade=v_fade, withdraw=withdraw, road_mu=road_mu, __overrides = model_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -171,19 +179,33 @@ export PlanarBEVHardStopTransient__System
   var"tau_max"::Float64 = 320.0
   var"P_charge"::Float64 = 80500.0
   var"v_fade"::Float64 = 10.0
+  # Withdraw regen while the front ABS acts; 0 reproduces step 5
+  var"withdraw"::Float64 = 1.0
+  # Road grip multiplier, 0.3 for the low-grip comparison
+  var"road_mu"::Float64 = 1.0
   # Lecture 3's hard stop (`Lecture3.ABSStraightStop`) on the battery-electric car: from 80 km/h the
   # driver asks each wheel for `T_cmd`, and `Vehicle.Electric.RegenBlend` hands the demand to the
   # machine first and the rest to Lecture 3's four-channel ABS (`ABSUnit`), which modulates the
   # friction brakes. The drive turns the front axle through the planar `DifferentialGear`, as on the
   # WLTC bench.
   # 
-  # The demand is far above what the tires carry, so the machine regenerates only what its limits
-  # allow, and friction carries the rest: the battery's charge power binds from 80 km/h down to the
-  # corner speed, 34 km/h; the machine's torque from there to `v_fade`; the fade below. The machine
-  # is outside the ABS loop. From about 62 km/h its torque keeps the front slip at -0.04 to -0.06,
-  # past the ABS's recovery threshold, so the ABS holds the front friction brakes off and the front
-  # tires work at about 65 % of their grip; below the corner speed the machine's 320 N.m alone brakes
-  # the front axle at its grip limit. The rear brakes, under ABS, carry the friction share.
+  # The demand is far above what the tires carry, so the machine could regenerate only what its
+  # limits allow, and friction would carry the rest. The blend carries the ABS rule (`abs_rule`): the
+  # ABS reports on `front_active` while it holds a front brake below its demand, and the blend then
+  # withdraws regen and hands its share to the friction brakes. On this stop the ABS acts on the
+  # front wheels within a few tenths of a second of the pedal and keeps acting down to its 1.5 m/s
+  # cut-off, so regen backs off almost at once and returns only for the last metres, under the fade.
+  # 
+  # `withdraw = 0` turns the rule off: the machine is then outside the ABS loop, as step 5 first
+  # builds it. Its regen follows the envelope: the battery's charge power binds from 80 km/h down to
+  # the corner speed, 34 km/h; the machine's torque from there to `v_fade`; the fade below. From about
+  # 62 km/h its torque keeps the front slip at -0.04 to -0.06, past the ABS's recovery threshold, so
+  # the ABS holds the front friction brakes off and the front tires work at about 65 % of their grip;
+  # below the corner speed the machine's 320 N.m alone brakes the front axle at its grip limit.
+  # 
+  # `road_mu` scales the grip of all four tires, as Lecture 3's low-grip stops do (0.3 there). On such
+  # a road the machine's regen alone is more than the front tires carry: without the rule it locks
+  # the front wheels; with it the ABS keeps them turning. Give a low-grip run a longer `stop`.
   # 
   # The driver presses the pedal in `t_apply` rather than in a step: the converter imposes its current
   # through the armature inductance, so a step in torque would make the converter's `field`, an
@@ -196,7 +218,7 @@ export PlanarBEVHardStopTransient__System
   # slip. `E_kin` is the kinetic energy of body and wheels, so `ΔE_kin = E_shaft_in - E_shaft_out +
   # E_brake + E_tire`; the rotor's own kinetic energy goes to the battery inside the machine.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVHardStop(; name=:PlanarBEVHardStop)
-  __system::System = PlanarBEVHardStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"T_cmd"=var"T_cmd", var"tau_max"=var"tau_max", var"P_charge"=var"P_charge", var"v_fade"=var"v_fade")
+  __system::System = PlanarBEVHardStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"T_cmd"=var"T_cmd", var"tau_max"=var"tau_max", var"P_charge"=var"P_charge", var"v_fade"=var"v_fade", var"withdraw"=var"withdraw", var"road_mu"=var"road_mu")
 end
 
 function __dyad_base_analysis_spec(spec::PlanarBEVHardStopTransient__Spec)
@@ -206,6 +228,8 @@ function __dyad_base_analysis_spec(spec::PlanarBEVHardStopTransient__Spec)
   push!(overrides, no_namespace_model.tau_max => spec.var"tau_max")
   push!(overrides, no_namespace_model.P_charge => spec.var"P_charge")
   push!(overrides, no_namespace_model.v_fade => spec.var"v_fade")
+  push!(overrides, no_namespace_model.withdraw => spec.var"withdraw")
+  push!(overrides, no_namespace_model.road_mu => spec.var"road_mu")
   merge!(overrides, spec.__overrides)
   TransientAnalysisSpec(;
     name=spec.name, overrides, __system=spec.__system, var"alg"=spec.var"alg", var"start"=spec.var"start", var"stop"=spec.var"stop", var"abstol"=spec.var"abstol", var"reltol"=spec.var"reltol", var"saveat"=spec.var"saveat", var"dtmax"=spec.var"dtmax", var"tstops"=spec.var"tstops", var"automatic_discontinuity_detection"=spec.var"automatic_discontinuity_detection", var"optimize"=spec.var"optimize", var"progress"=spec.var"progress", var"respecialize"=spec.var"respecialize", var"specialization"=spec.var"specialization", var"verbose"=spec.var"verbose", var"log_file"=spec.var"log_file", var"model"=spec.var"model"

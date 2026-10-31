@@ -32,5 +32,6 @@ include("TestBuckChopper_test.jl")
 include("TestConverter_test.jl")
 include("TestDCMachine_test.jl")
 include("TestHBridge_test.jl")
+include("TestRegenBlend_test.jl")
 include("TorqueSplit_test.jl")
 end
