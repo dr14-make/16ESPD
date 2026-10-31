@@ -22,8 +22,9 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
      (as `Vehicle.GasPort` did for engine↔booster);
    - a signal set by an equation draws no wire, so its loop looks open until it is wired through blocks;
    - one output fed to several inputs takes one `connect` listing every end, which gets explicit
-     junctions and one set of wires (rule 4). Separate two-ended `connect`s also branch: the CLI
-     render draws a junction dot at the split; whether Studio does is unverified;
+     junctions and one set of wires (rule 4). Separate two-ended `connect`s branch with no junction
+     dot, in Studio 3.5.1 and in the CLI render alike: a dot is drawn only where a `connect`'s
+     metadata has a `junctions` entry;
    - a port inherited through `extends` draws where the base puts it on the icon, whatever the
      derived file says. When that place is wrong (two ports on one point, a side facing away from
      its partners), declare the base's connectors, variables and equations directly instead of

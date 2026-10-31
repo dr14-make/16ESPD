@@ -9,7 +9,8 @@ disable-model-invocation: true
 Drive Dyad Studio web (Theia at `localhost:3000`) built at the release tag v3.5.1, with the window
 at `resize_window(1600, 1000)`. The observations here were made on dyad 3.4.0 and on the Dyad Studio
 plugin 3.4.0-rc2 with the dyad-3.5.0 REPL; where those two differ, operations.md names the build.
-A re-check on 3.5.1 is pending, so where 3.5.1 behaves otherwise, trust what you see and tell the
+On 3.5.1, setup, compile, the **+** tree, opening diagrams and junction drawing are checked; the
+rest of operations.md is not, so where 3.5.1 behaves otherwise, trust what you see and tell the
 user. Every operation — components, parts, ports, wires, parameters, code, save, analyses, REPL,
 plots — is in [`reference/operations.md`](reference/operations.md), each with its known Studio bugs
 beside it. Open the section for the operation in front of you.
