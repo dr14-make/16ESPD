@@ -166,9 +166,9 @@ New component `DCMachineDyno` in `MyCar`:
 
    ```txt [DCMachine]
    component DCMachine
-     "Positive electrical pin"
+     "Positive electrical pin."
      p = Pin() {^p}
-     "Negative electrical pin"
+     "Negative electrical pin."
      n = Pin() {^n}
      "Rotor shaft"
      spline = Spline() {^spline}
@@ -208,7 +208,7 @@ New component `DCMachineDyno` in `MyCar`:
      parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
      "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
      parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
-     "Terminal voltage, p.v - n.v"
+     "Voltage across the component (between pin p and pin n)."
      variable v::Voltage
      "Armature current, into p"
      variable i::Current
@@ -259,12 +259,27 @@ New component `DCMachineDyno` in `MyCar`:
      P_const = -constant_loss.tau * w
      P_loss = P_cu + P_fric + P_iron + P_wind + P_const
    metadata {
-     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}},
+     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
      "_links": {
-       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+       "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},
+       "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -2, "M": [], "E": -4}, {"S": -3, "M": [{"x": 490, "y": 750}], "E": 4}, {"S": -3, "M": [{"x": 290, "y": 630}, {"x": 290, "y": 750}], "E": 3}, {"S": -4, "M": [{"x": 690, "y": 750}], "E": 5}, {"S": -4, "M": [{"x": 890, "y": 630}, {"x": 890, "y": 750}], "E": 6}], "junctions": [{"x": 620, "y": 450}, {"x": 620, "y": 630}, {"x": 490, "y": 630}, {"x": 690, "y": 630}]}},
+       "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 470, "y": 500}, {"x": 470, "y": 560}, {"x": 60, "y": 560}, {"x": 60, "y": 800}], "E": 2}]}},
+       "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
+       "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
        "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
        "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}}
+       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+       "resistor": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+       "inductor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
+       "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
+       "rotor": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
+       "friction": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 700, "x2": 250, "y2": 800}}}},
+       "iron": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 450, "y2": 800}}}},
+       "windage": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 700, "x2": 650, "y2": 800}}}},
+       "constant_loss": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 700, "x2": 850, "y2": 800}}}}
      }
    }
    end
@@ -549,7 +564,10 @@ The supply, the dyno and the mounts are step 01's.
      tau = rotor.tau
      0 = housing.tau + rotor.tau
    metadata {
-     "Dyad": {"icons": {"default": "dyad://ElectricalComponents/RotationalEMF.svg"}},
+     "Dyad": {
+       "labels": [{"label": "$(instance)", "x": 500, "y": 1200, "rot": 0}],
+       "icons": {"default": "dyad://ElectricalComponents/RotationalEMF.svg"}
+     },
      "_links": {
        "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 450, "y1": -50, "x2": 550, "y2": 50}}}},
        "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
@@ -569,9 +587,9 @@ The supply, the dyno and the mounts are step 01's.
 
    ```txt [DCMachine]
    component DCMachine
-     "Positive electrical pin"
+     "Positive electrical pin."
      p = Pin() {^p}
-     "Negative electrical pin"
+     "Negative electrical pin."
      n = Pin() {^n}
      "Rotor shaft"
      spline = Spline() {^spline}
@@ -615,7 +633,7 @@ The supply, the dyno and the mounts are step 01's.
      parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
      "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
      parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
-     "Terminal voltage, p.v - n.v"
+     "Voltage across the component (between pin p and pin n)."
      variable v::Voltage
      "Armature current, into p"
      variable i::Current
@@ -671,13 +689,29 @@ The supply, the dyno and the mounts are step 01's.
      P_const = -constant_loss.tau * w
      P_loss = P_cu + P_fric + P_iron + P_wind + P_const
    metadata {
-     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}},
+     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1150, "rot": 0}]},
      "_links": {
-       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+       "id8": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 80, "y": 500}, {"x": 80, "y": 320}, {"x": 470, "y": 320}], "E": 2}]}},
+       "id7": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 120, "y": 450}], "E": -1}, {"S": 2, "M": [], "E": -1}, {"S": -1, "M": [{"x": 120, "y": 880}], "E": -2}, {"S": 3, "M": [{"x": 360, "y": 800}], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -3, "M": [], "E": 6}, {"S": -3, "M": [], "E": -4}, {"S": 4, "M": [{"x": 545, "y": 800}], "E": -4}, {"S": 5, "M": [{"x": 720, "y": 800}, {"x": 720, "y": 880}], "E": -4}], "junctions": [{"x": 120, "y": 800}, {"x": 360, "y": 880}, {"x": 500, "y": 880}, {"x": 545, "y": 880}]}},
+       "id6": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "id5": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [], "E": 2}, {"S": -1, "M": [], "E": -2}, {"S": -2, "M": [], "E": -3}, {"S": -2, "M": [], "E": -4}, {"S": -3, "M": [{"x": 490, "y": 750}], "E": 4}, {"S": -3, "M": [{"x": 290, "y": 630}, {"x": 290, "y": 750}], "E": 3}, {"S": -4, "M": [{"x": 690, "y": 750}], "E": 5}, {"S": -4, "M": [{"x": 890, "y": 630}, {"x": 890, "y": 750}], "E": 6}], "junctions": [{"x": 620, "y": 450}, {"x": 620, "y": 630}, {"x": 490, "y": 630}, {"x": 690, "y": 630}]}},
+       "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 470, "y": 500}, {"x": 470, "y": 560}, {"x": 60, "y": 560}, {"x": 60, "y": 800}], "E": 2}]}},
+       "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
+       "id2": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "id1": {"Dyad": {"edges": [{"S": 1, "M": [], "E": 2}]}},
+       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}},
        "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
        "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
        "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
-       "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
+       "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}},
+       "resistor": {"Dyad": {"placement": {"diagram": {"x1": 100, "y1": 150, "x2": 200, "y2": 250}}}},
+       "inductor": {"Dyad": {"placement": {"diagram": {"x1": 250, "y1": 150, "x2": 350, "y2": 250}}}},
+       "emf": {"Dyad": {"placement": {"diagram": {"x1": 450, "y1": 400, "x2": 550, "y2": 500}}}},
+       "rotor": {"Dyad": {"placement": {"diagram": {"x1": 700, "y1": 400, "x2": 800, "y2": 500}}}},
+       "friction": {"Dyad": {"placement": {"diagram": {"x1": 150, "y1": 700, "x2": 250, "y2": 800}}}},
+       "iron": {"Dyad": {"placement": {"diagram": {"x1": 350, "y1": 700, "x2": 450, "y2": 800}}}},
+       "windage": {"Dyad": {"placement": {"diagram": {"x1": 550, "y1": 700, "x2": 650, "y2": 800}}}},
+       "constant_loss": {"Dyad": {"placement": {"diagram": {"x1": 750, "y1": 700, "x2": 850, "y2": 800}}}}
      }
    }
    end
@@ -685,17 +719,13 @@ The supply, the dyno and the mounts are step 01's.
 
    :::
 
-   Four things changed. `emf` is now your `FieldEMF`. The structural parameter `field_weakening` decides whether the machine has a `field` input: the line `field = RealInput() if field_weakening` creates it only when `field_weakening` is true. The `if` block in `relations` wires that input to the EMF, or else holds the field at 1. And the metadata places `field` on the machine's left edge, between `p` and `n`. Left at its default, `false`, this is step 01's machine: run **DCMachineDynoTransient** again and it gives the same 320 N·m and −304 N·m.
+   Four things changed. `emf` is now your `FieldEMF`. The structural parameter `field_weakening` decides whether the machine has a `field` input: the line `field = RealInput() if field_weakening` creates it only when `field_weakening` is true. The `if` block in `relations` wires that input to the EMF, or else holds the field at 1. And the metadata places `field` on the machine's left edge, between `p` and `n`, and routes its wire to `emf`. Left at its default, `false`, this is step 01's machine: run **DCMachineDynoTransient** again and it gives the same 320 N·m and −304 N·m.
 
 3. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Converter`. Toggle to code, select everything, paste the block below and save.
 
    ::: code-group
 
    ```txt [Converter]
-   """
-   The average converter: one duty ratio between the DC link and the machine, with a current
-   limit and a voltage limit. Where the voltage runs out, it weakens the machine's field.
-   """
    component Converter
      "DC link, positive rail: the battery side"
      p_in = Pin() {^p_in}
@@ -760,12 +790,13 @@ The supply, the dyno and the mounts are step 01's.
      P_sw = f_s * t_sw * v_in * abs(i_out)
      P_loss = P_cond + P_sw
    metadata {
+     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Converter.svg"}, "labels": [{"label": "$(instance)", "x": 500, "y": 1100, "rot": 0}]},
      "_links": {
-       "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
-       "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-       "i_ref": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
-       "field": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
+       "p_in": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+       "p_out": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}, "diagram": {"iconName": "pos", "x1": 950, "y1": 150, "x2": 1050, "y2": 250}}}},
+       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "neg", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+       "i_ref": {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}, "diagram": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 90}}}},
+       "field": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}, "diagram": {"x1": 950, "y1": 650, "x2": 1050, "y2": 750}}}}
      }
    }
    end
@@ -1015,10 +1046,6 @@ New component `BatteryDischarge` in `MyCar`:
    ::: code-group
 
    ```txt [Battery]
-   """
-   The battery as an open-circuit voltage behind a resistance, its state of
-   charge counted from the current.
-   """
    component Battery
      extends ElectricalComponents.Analog.Interfaces.TwoPin
      "State of charge: 1 full, 0 empty"
@@ -1039,6 +1066,9 @@ New component `BatteryDischarge` in `MyCar`:
      i = n.i
      v = E - R0 * i
      der(SoC) = -i / Q_nom
+   metadata {
+     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/Battery.svg"}}
+   }
    end
    ```
 
