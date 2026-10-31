@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-given { fill: #fff; stroke: #4a5a6b; stroke-width: 2; stroke-dasharray: 6 4; }
+    .fwd { stroke: #16202c; stroke-width: 3; fill: none; }
+    .back { stroke: #2e8b57; stroke-width: 3; fill: none; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .loss { font-size: 14px; font-weight: 600; fill: #a75d00; }
+    .step { font-size: 13px; font-weight: 600; fill: #2e8b57; }
+    .code { font-size: 12px; font-family: monospace; fill: #1f5fa8; }
+    .sig { font-size: 15px; font-weight: 600; }
+    .sig-back { font-size: 15px; font-weight: 600; fill: #2e8b57; }
+  </style>
+  <defs>
+    <marker id="ec-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+    <marker id="ec-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2e8b57"/></marker>
+  </defs>
+
+  <text x="600" y="26" text-anchor="middle" class="sig">driving: energy flows to the road</text>
+
+  <rect class="box-given" x="10" y="90" width="120" height="96" rx="4"/>
+  <text x="70" y="122" text-anchor="middle" class="t">grid</text>
+  <text x="70" y="144" text-anchor="middle" class="lbl">charger</text>
+  <text x="70" y="166" text-anchor="middle" class="loss">10–15 %</text>
+
+  <rect class="box-accent" x="170" y="90" width="160" height="96" rx="4"/>
+  <text x="250" y="118" text-anchor="middle" class="t">battery</text>
+  <text x="250" y="140" text-anchor="middle" class="lbl">V = E − R₀ i</text>
+  <text x="250" y="164" text-anchor="middle" class="loss">R₀: 3.1 Wh/km</text>
+  <text x="250" y="82" text-anchor="middle" class="step">step 03</text>
+
+  <rect class="box-accent" x="370" y="90" width="160" height="96" rx="4"/>
+  <text x="450" y="118" text-anchor="middle" class="t">converter</text>
+  <text x="450" y="140" text-anchor="middle" class="lbl">v_out = d · v_in</text>
+  <text x="450" y="164" text-anchor="middle" class="loss">2.1 Wh/km</text>
+  <text x="450" y="82" text-anchor="middle" class="step">step 02</text>
+
+  <rect class="box-accent" x="570" y="90" width="160" height="96" rx="4"/>
+  <text x="650" y="118" text-anchor="middle" class="t">machine</text>
+  <text x="650" y="140" text-anchor="middle" class="lbl">T = KΦ i, E = KΦ ω</text>
+  <text x="650" y="164" text-anchor="middle" class="loss">17.6 Wh/km</text>
+  <text x="650" y="82" text-anchor="middle" class="step">step 01</text>
+
+  <rect class="box-accent" x="770" y="90" width="180" height="96" rx="4"/>
+  <text x="860" y="118" text-anchor="middle" class="t">reduction, diff</text>
+  <text x="860" y="140" text-anchor="middle" class="lbl">8.193, ideal</text>
+  <text x="860" y="164" text-anchor="middle" class="loss">0 in the model</text>
+  <text x="860" y="82" text-anchor="middle" class="step">step 04</text>
+
+  <rect class="box" x="990" y="90" width="200" height="96" rx="4"/>
+  <text x="1090" y="118" text-anchor="middle" class="t">wheels, road</text>
+  <text x="1090" y="140" text-anchor="middle" class="lbl">drag, rolling, slip</text>
+  <text x="1090" y="164" text-anchor="middle" class="loss">105.0 Wh/km</text>
+
+  <path class="fwd" d="M130 116 H166" marker-end="url(#ec-ink)"/>
+  <path class="fwd" d="M330 116 H366" marker-end="url(#ec-ink)"/>
+  <path class="fwd" d="M530 116 H566" marker-end="url(#ec-ink)"/>
+  <path class="fwd" d="M730 116 H766" marker-end="url(#ec-ink)"/>
+  <path class="fwd" d="M950 116 H986" marker-end="url(#ec-ink)"/>
+
+  <path class="back" d="M986 162 H954" marker-end="url(#ec-green)"/>
+  <path class="back" d="M766 162 H734" marker-end="url(#ec-green)"/>
+  <path class="back" d="M566 162 H534" marker-end="url(#ec-green)"/>
+  <path class="back" d="M366 162 H334" marker-end="url(#ec-green)"/>
+
+  <path class="fwd" d="M250 186 V250" marker-end="url(#ec-ink)"/>
+  <rect class="box-given" x="170" y="254" width="160" height="70" rx="4"/>
+  <text x="250" y="282" text-anchor="middle" class="t">12 V network</text>
+  <text x="250" y="306" text-anchor="middle" class="loss">300 W: 6.4 Wh/km</text>
+
+  <path class="back" d="M1090 230 V200"/>
+  <path class="back" d="M1090 230 H650 V200" marker-end="url(#ec-green)"/>
+  <text x="870" y="254" text-anchor="middle" class="sig-back">braking: the machine generates, the pack charges</text>
+  <text x="870" y="276" text-anchor="middle" class="lbl">friction brakes only below walking pace: 0.1 Wh/km</text>
+
+  <text x="640" y="346" text-anchor="middle" class="lbl">losses: WLTC, Leaf-class car, measured in build step 06 · out of the cells 134.3 Wh/km</text>
+  <text x="640" y="368" text-anchor="middle" class="lbl">dashed: given in the course library, or outside the model</text>
+</svg>

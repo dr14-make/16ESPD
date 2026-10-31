@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .sw { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .on { stroke: #1f5fa8; stroke-width: 3.5; fill: none; }
+    .off { stroke: #a75d00; stroke-width: 3.5; fill: none; stroke-dasharray: 8 5; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .sig { font-size: 15px; font-weight: 600; }
+    .blue { font-size: 14px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 14px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="bo-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <path class="wire" d="M70 60 V120 M50 120 H90 M60 132 H80 M50 144 H90 M60 156 H80 M70 156 V260"/>
+  <text x="34" y="144" text-anchor="end" class="t">V_in</text>
+  <path class="wire" d="M70 60 H130 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 H330"/>
+  <text x="178" y="36" text-anchor="middle" class="t">L</text>
+  <circle cx="330" cy="60" r="5" fill="#16202c"/>
+  <path class="wire" d="M330 60 V110"/>
+  <rect class="sw" x="300" y="110" width="60" height="80" rx="4"/>
+  <text x="330" y="156" text-anchor="middle" class="t">S</text>
+  <path class="wire" d="M330 190 V260"/>
+  <text x="372" y="226" class="lbl">switch, duty d</text>
+  <path class="wire" d="M330 60 H420"/>
+  <path d="M420 42 V78 L450 60 Z" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <path class="wire" d="M450 42 V78"/>
+  <text x="435" y="30" text-anchor="middle" class="t">D</text>
+  <path class="wire" d="M450 60 H640"/>
+  <circle cx="540" cy="60" r="5" fill="#16202c"/>
+  <path class="wire" d="M540 60 V150 M516 150 H564 M516 164 H564 M540 164 V260"/>
+  <text x="510" y="164" text-anchor="end" class="t">C</text>
+  <path class="wire" d="M640 60 V110 l-12 6 l24 12 l-24 12 l24 12 l-24 12 l12 6 V260"/>
+  <text x="665" y="146" class="t">load</text>
+  <path class="wire" d="M70 260 H640"/>
+
+  <path class="on" d="M110 50 H320 V200" marker-end="url(#bo-ink)"/>
+  <text x="190" y="104" text-anchor="middle" class="blue">switch on: L charges</text>
+  <text x="190" y="122" text-anchor="middle" class="blue">from the supply</text>
+  <path class="off" d="M370 92 H520" marker-end="url(#bo-ink)"/>
+  <text x="600" y="30" text-anchor="middle" class="orange">switch off: L adds its voltage</text>
+  <text x="380" y="310" text-anchor="middle" class="sig">average output: v_out = V_in / (1 − d), above V_in</text>
+</svg>

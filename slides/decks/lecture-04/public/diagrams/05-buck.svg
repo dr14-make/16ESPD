@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="760" height="330">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .wire { stroke: #16202c; stroke-width: 2.5; fill: none; }
+    .sw { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .on { stroke: #1f5fa8; stroke-width: 3.5; fill: none; }
+    .off { stroke: #a75d00; stroke-width: 3.5; fill: none; stroke-dasharray: 8 5; }
+    .t { font-size: 17px; font-weight: 600; }
+    .lbl { font-size: 14px; fill: #4a5a6b; }
+    .sig { font-size: 15px; font-weight: 600; }
+    .blue { font-size: 14px; font-weight: 600; fill: #1f5fa8; }
+    .orange { font-size: 14px; font-weight: 600; fill: #a75d00; }
+  </style>
+  <defs>
+    <marker id="bk-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <path class="wire" d="M70 60 V120 M50 120 H90 M60 132 H80 M50 144 H90 M60 156 H80 M70 156 V260"/>
+  <text x="34" y="144" text-anchor="end" class="t">V_in</text>
+  <text x="34" y="164" text-anchor="end" class="lbl">48 V</text>
+  <path class="wire" d="M70 60 H190"/>
+  <rect class="sw" x="190" y="40" width="90" height="40" rx="4"/>
+  <text x="235" y="66" text-anchor="middle" class="t">S</text>
+  <text x="235" y="30" text-anchor="middle" class="lbl">switch, duty d</text>
+  <path class="wire" d="M280 60 H350"/>
+  <circle cx="350" cy="60" r="5" fill="#16202c"/>
+  <path class="wire" d="M350 60 V140"/>
+  <path d="M332 170 H368 L350 140 Z" fill="#fff" stroke="#16202c" stroke-width="2.5"/>
+  <path class="wire" d="M332 140 H368"/>
+  <path class="wire" d="M350 170 V260"/>
+  <text x="380" y="164" class="t">D</text>
+  <text x="380" y="184" class="lbl">freewheeling diode</text>
+  <path class="wire" d="M350 60 H420 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 a12 12 0 0 1 24 0 H600"/>
+  <text x="468" y="36" text-anchor="middle" class="t">L</text>
+  <path class="wire" d="M600 60 V110 l-12 6 l24 12 l-24 12 l24 12 l-24 12 l12 6 V260"/>
+  <text x="625" y="146" class="t">load</text>
+  <text x="625" y="166" class="lbl">0.7 Ω</text>
+  <path class="wire" d="M70 260 H600"/>
+
+  <path class="on" d="M110 50 H180"/>
+  <path class="on" d="M290 50 H410" marker-end="url(#bk-ink)"/>
+  <text x="200" y="104" text-anchor="middle" class="blue">switch on: supply drives L</text>
+  <path class="off" d="M335 230 V180"/>
+  <path class="off" d="M335 130 V76 H410" marker-end="url(#bk-ink)"/>
+  <text x="200" y="230" text-anchor="middle" class="orange">switch off: L keeps the</text>
+  <text x="200" y="248" text-anchor="middle" class="orange">current flowing through D</text>
+  <text x="380" y="310" text-anchor="middle" class="sig">average output: v_out = d · V_in</text>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .north { fill: #f6d5d3; stroke: #c0392b; stroke-width: 2; }
+    .south { fill: #dbe7f6; stroke: #1f5fa8; stroke-width: 2; }
+    .field { stroke: #4a5a6b; stroke-width: 1.5; stroke-dasharray: 6 5; fill: none; }
+    .coil { fill: none; stroke: #a75d00; stroke-width: 2; stroke-dasharray: 4 4; }
+    .wire { fill: #fff; stroke: #16202c; stroke-width: 2.5; }
+    .force { stroke: #c0392b; stroke-width: 4; fill: none; }
+    .dim { stroke: #16202c; stroke-width: 1.5; fill: none; }
+    .t { font-size: 22px; font-weight: 700; }
+    .lbl { font-size: 16px; fill: #4a5a6b; }
+    .sig { font-size: 18px; font-weight: 600; }
+    .red { font-size: 18px; font-weight: 600; fill: #c0392b; }
+  </style>
+  <defs>
+    <marker id="cf-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#c0392b"/></marker>
+    <marker id="cf-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+    <marker id="cf-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#16202c"/></marker>
+  </defs>
+
+  <rect class="north" x="20" y="70" width="90" height="260" rx="6"/>
+  <text x="65" y="210" text-anchor="middle" class="t">N</text>
+  <rect class="south" x="530" y="70" width="90" height="260" rx="6"/>
+  <text x="575" y="210" text-anchor="middle" class="t">S</text>
+
+  <path class="field" d="M112 110 H526" marker-end="url(#cf-gray)"/>
+  <path class="field" d="M112 290 H526" marker-end="url(#cf-gray)"/>
+  <path class="field" d="M112 150 H190"/>
+  <path class="field" d="M450 150 H526" marker-end="url(#cf-gray)"/>
+  <path class="field" d="M112 250 H190"/>
+  <path class="field" d="M450 250 H526" marker-end="url(#cf-gray)"/>
+  <text x="320" y="100" text-anchor="middle" class="sig">field B</text>
+
+  <circle class="coil" cx="320" cy="200" r="110"/>
+  <circle cx="320" cy="200" r="5" fill="#16202c"/>
+  <path class="dim" d="M320 200 H430"/>
+  <text x="372" y="222" text-anchor="middle" class="sig">r</text>
+
+  <circle class="wire" cx="210" cy="200" r="18"/>
+  <path d="M199 189 L221 211 M221 189 L199 211" stroke="#16202c" stroke-width="2.5"/>
+  <circle class="wire" cx="430" cy="200" r="18"/>
+  <circle cx="430" cy="200" r="5" fill="#16202c"/>
+  <text x="210" y="248" text-anchor="middle" class="lbl">I into the page</text>
+  <text x="430" y="160" text-anchor="middle" class="lbl">I out of it</text>
+
+  <path class="force" d="M210 220 V300" marker-end="url(#cf-red)"/>
+  <text x="196" y="300" text-anchor="end" class="red">F = B I l</text>
+  <path class="force" d="M430 180 V100" marker-end="url(#cf-red)"/>
+  <text x="446" y="110" class="red">F = B I l</text>
+
+  <path class="dim" d="M290 330 A 110 110 0 0 0 380 320" marker-end="url(#cf-ink)"/>
+  <text x="320" y="370" text-anchor="middle" class="sig">T = 2 r · B I l = KΦ · I</text>
+  <text x="320" y="392" text-anchor="middle" class="lbl">l: conductor length into the page · n turns multiply it</text>
+</svg>

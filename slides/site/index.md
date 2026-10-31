@@ -33,6 +33,13 @@ features:
   - title: "Lecture 3 build guide: an ABS of your own"
     details: "Alongside the lecture<br>What you build on your own car while the lecture runs: a brake system from pedal to wheel that locks the wheel when pressed hard, a slip ABS that leads the brake's 30 ms lag, then an ABS on the wheel speed alone that dumps, holds and builds. Ends with braking distances on dry, wet and snowy roads, the a_ref trap, and traction control as a take-home bonus."
     link: /lecture/lecture-03/
+  - title: "The Battery-Electric Car: machine, converter, battery, regen"
+    details: "180 min, built along in Dyad Studio<br>Why electric, the DC machine and its losses, PMSM under field-oriented control, induction and SRM, the envelope and the efficiency map, choppers, H-bridge and PWM, batteries simply, regen blended onto the brakes, and the WLTC energy bill against Lecture 2's engine."
+    link: /lecture-04/index.html
+    target: _self
+  - title: "Lecture 4 build guide: a battery-electric car of your own"
+    details: "Alongside the lecture<br>A DC-equivalent machine on a dyno, an average converter whose voltage limit gives field weakening, a V = E − IR battery, the Leaf-class planar car on WLTC, regen blended onto the Lecture 3 brakes, and the energy bill in kWh/100 km."
+    link: /lecture/lecture-04/
 ---
 
 ## Lecture 1, in two sessions
@@ -96,6 +103,21 @@ As in Lecture 1, the students build along with the lecture: a brake system from 
 a slip ABS of their own, and an ABS on the wheel speed alone, each checked against the lecture's
 result slides. They
 follow the [build guide](./lecture/lecture-03/); each build slide links to its step.
+
+## Lecture 4: the battery-electric car
+
+1. [**Why electric**](./lecture-04/index.html#/why-electric){target="_self"} — the energy chain, both ways
+2. [**The DC machine**](./lecture-04/index.html#/dc-machine){target="_self"} — T = KΦI, E = KΦω, the losses
+3. [**Machines in real EVs**](./lecture-04/index.html#/machines){target="_self"} — PMSM under field-oriented control, induction, SRM
+4. [**The envelope**](./lecture-04/index.html#/envelope){target="_self"} — base speed, field weakening, the efficiency map
+5. [**Power electronics**](./lecture-04/index.html#/power-electronics){target="_self"} — choppers, H-bridge, PWM, the three-phase bridge
+6. [**Batteries, simply**](./lecture-04/index.html#/batteries){target="_self"} — V = E − IR, A·h and W·h
+7. [**The car and regen**](./lecture-04/index.html#/car-and-regen){target="_self"} — three ceilings, series blending, the hard stop
+8. [**The energy bill**](./lecture-04/index.html#/energy-bill){target="_self"} — WLTC link by link, MJ against the engine
+
+The students build the chain along with the lecture, one link per step: the machine, the
+converter, the battery, the car, regen and the bill. They follow the
+[build guide](./lecture/lecture-04/); each build slide links to its step.
 
 ## For the lecturer
 
