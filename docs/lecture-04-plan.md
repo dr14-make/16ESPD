@@ -192,6 +192,12 @@ interleaved. Figures the models can produce are regenerated from them, not copie
 - Field weakening is a flux input on the machine (`FieldEMF`), set by the average converter where
   its duty reaches the limit. It costs nothing: a PMSM's d-axis copper loss is not modeled. The
   converter imposes its current, so it holds its voltage limit only through that field.
+- The combined efficiency at low speed and high torque is 86.2 % (900 rpm at 180 N·m and
+  1000 rpm at 220 N·m), against ORNL's ≈ 80 % on the 2012 Leaf. The machine alone gives 88 % there,
+  inside ORNL's motor-only map; the gap is the average converter, whose loss scales only with the
+  current, so it stays at 97.5 % with 113 V out where ORNL's measured inverter falls into the 80s.
+  Accepted: the parameters stay fitted to the motor-only and inverter-only maps, and
+  `test/efficiency_map_plausibility.jl` pins the 86.2 %.
 - No thermal model of motor, inverter or battery; efficiencies are at warm operating temperature.
 - Battery E is constant: SoC does not move the open-circuit voltage until the extra pack's cell.
 - WLTC is gentle; the blending result on WLTC is mostly fade, so the hard stop carries that lesson.
