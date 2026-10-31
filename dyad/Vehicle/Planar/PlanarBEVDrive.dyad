@@ -1,0 +1,115 @@
+"""
+The battery-electric planar car, driven by a person: the throttle, brake pedal and steering wheel
+are parameters a real-time loop sets between solver steps, and the car answers through the same
+chain the WLTC and hard-stop benches use.
+
+The throttle asks the machine for up to `tau_max`; the brake pedal asks for up to `T_full` at
+each wheel, through `Vehicle.Electric.RegenBlend`, so the machine regenerates first and the
+friction brakes take the rest. The friction share passes through `BrakeControlUnit`, Lecture 3's
+ESP and four-channel ABS, both switchable at run time with `esp_on` and `abs_on`. The drive turns
+the front axle through the planar `DifferentialGear`; `PlanarRoadLoad` adds drag and rolling
+resistance.
+
+Each command reaches the car through a first-order lag of `T_driver`, the time a foot or hand
+takes to move. Besides being physical, it keeps a parameter change from stepping the converter's
+torque, which would make an algebraic variable jump at an instant the solver has no event for.
+"""
+component PlanarBEVDrive
+  "Throttle pedal, 0 released to 1 floored"
+  parameter throttle::Real = 0.0
+  "Brake pedal, 0 released to 1 floored"
+  parameter brake::Real = 0.0
+  "Steering-wheel angle, positive turning left"
+  parameter steer::Angle = 0.0
+  "ESP: 1 active, 0 off"
+  parameter esp_on::Real = 1.0
+  "ABS: 1 active, 0 off"
+  parameter abs_on::Real = 1.0
+  "Time the driver takes to move a pedal or the wheel (assumed)"
+  parameter T_driver::Time = 0.05
+  "Vehicle mass (probe)"
+  parameter m::Mass = 1500.0
+  "Wheel radius (repository default)"
+  parameter radius::Length = 0.31
+  "Brake demand at each wheel with the pedal floored (Lecture 3)"
+  parameter T_full::Torque = 2500.0
+  "Machine torque limit (Nissan)"
+  parameter tau_max::Torque = 320.0
+  "Battery charge-power limit (INL)"
+  parameter P_charge::Power = 80.5e3
+  "Speed below which the machine's braking ceiling fades to zero, km/h (assumed)"
+  parameter v_fade::Real = 10.0
+  "Power drawn by the 12 V network (assumed)"
+  parameter P_aux::Power = 300.0
+  "Single-speed reduction (Nissan)"
+  parameter ratio::Real = 8.193
+  "Initial wheel surface speed above the body's, keeps the start off zero slip (assumed)"
+  parameter dv_wheel::Velocity = 0.01
+  throttle_pedal = BlockComponents.Sources.Constant(k = throttle) {^throttle_pedal}
+  brake_pedal = BlockComponents.Sources.Constant(k = brake) {^brake_pedal}
+  steering_wheel = BlockComponents.Sources.Constant(k = steer) {^steering_wheel}
+  "Machine-shaft torque the pedals ask for: throttle drives, brake brakes"
+  pedals = BlockComponents.Math.Add(k1 = tau_max, k2 = -4.0 * T_full / ratio) {^pedals}
+  foot = BlockComponents.Continuous.FirstOrder(T = T_driver) {^foot}
+  hands = BlockComponents.Continuous.FirstOrder(T = T_driver) {^hands}
+  robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
+  kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
+  blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
+  drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
+  differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
+  mount = RotationalComponents.Components.Fixed() {^mount}
+  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(m = m, radius = radius, tau_max = T_full) {^car}
+  roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
+  flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
+  motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
+  slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
+relations
+  connect(car.bus, motion.bus, slips.bus) {^wbus}
+  connect(throttle_pedal.y, pedals.u1) {^w1}
+  connect(brake_pedal.y, pedals.u2) {^w2}
+  connect(pedals.y, foot.u) {^w3}
+  connect(foot.y, blend.tau_ref) {^w4}
+  connect(steering_wheel.y, hands.u) {^w5}
+  connect(hands.y, robot.delta_sw_ref) {^w6}
+  connect(robot.steering, car.steering) {^w7}
+  connect(motion.vx, kmh.u, ecu.vx) {^w8}
+  connect(kmh.y, blend.v) {^w9}
+  connect(blend.tau_motor, drive.tau_ref) {^w10}
+  connect(blend.tau_brake, ecu.demand) {^w11}
+  connect(drive.spline, differential.flange_b) {^w12}
+  connect(differential.flange_left, car.spin_fl) {^w13}
+  connect(differential.flange_right, car.spin_fr) {^w14}
+  connect(drive.support, mount.spline) {^w15}
+  connect(motion.delta_sw, ecu.delta_sw) {^w16}
+  connect(motion.r, ecu.r) {^w17}
+  connect(slips.kappa_fl, ecu.kappa_fl) {^w18}
+  connect(slips.kappa_fr, ecu.kappa_fr) {^w19}
+  connect(slips.kappa_rl, ecu.kappa_rl) {^w20}
+  connect(slips.kappa_rr, ecu.kappa_rr) {^w21}
+  connect(ecu.tau_fl, car.tau_fl) {^w22}
+  connect(ecu.tau_fr, car.tau_fr) {^w23}
+  connect(ecu.tau_rl, car.tau_rl) {^w24}
+  connect(ecu.tau_rr, car.tau_rr) {^w25}
+  connect(flat.y, roadload.grade) {^w26}
+  connect(car.chassis, roadload.chassis) {^w27}
+  initial car.body.r = [0, 0]
+  initial car.body.v = [0, 0]
+  initial car.body.phi = 0.0
+  initial car.body.w = 0.0
+  initial car.fl.inertia.w = dv_wheel / radius
+  initial car.fr.inertia.w = dv_wheel / radius
+  initial car.rl.inertia.w = dv_wheel / radius
+  initial car.rr.inertia.w = dv_wheel / radius
+  initial car.fl.inertia.phi = 0.0
+  initial car.fr.inertia.phi = 0.0
+  initial car.rl.inertia.phi = 0.0
+  initial car.rr.inertia.phi = 0.0
+  initial car.fl.brake.tau_actual = 0.0
+  initial car.fr.brake.tau_actual = 0.0
+  initial car.rl.brake.tau_actual = 0.0
+  initial car.rr.brake.tau_actual = 0.0
+  initial drive.converter.i_out = 0.0
+  initial foot.x = 0.0
+  initial hands.x = 0.0
+end

@@ -19,8 +19,9 @@ resolves it).
 | `check_coast_brake.jl` | Coast-down and full-brake run printing road load, motor torque, per-wheel friction and slip. |
 | `regen-braking-observations.md` | What the sim showed about coasting and braking, with the validation asks; researched in PR #155. |
 
-`dyad/Vehicle/Planar/PlanarBEVDrive.dyad` (untracked) is the same car as a Dyad component. It is
-not compiled and not committed: see "Compiler" below.
+`dyad/Vehicle/Planar/PlanarBEVDrive.dyad` is the same car as a Dyad component, compiled and
+checked against `plant.jl` (34 unknowns, 105.6 km/h after 9 s at full throttle in both). The sim
+still runs `plant.jl`; switching `drive.jl` to the component is open.
 
 ## Run
 
@@ -73,12 +74,13 @@ If one of these moves, something changed the physics; find out what before conti
 
 ## Compiler
 
-`~/julia/dyad-lang/apps/cli/dyad` reports 3.2.0: it is a gitignored build artifact last built on
-2026-06-25, and the checkout has no `node_modules`, so pulling the 3.5.0 source never rebuilt it.
-It fails on this repo (`Unknown element x0 in definition InitialCondition`). Until it is rebuilt,
-`PlanarBEVDrive.dyad` cannot be compiled, which is why `plant.jl` wires the same car in Julia.
-Once it compiles, commit the `.dyad` with its regenerated `generated/` files and switch `plant.jl`
-to the compiled component.
+Compile with the published CLI, not `~/julia/dyad-lang/apps/cli/dyad`:
+
+    npx -y @juliacomputing/dyad-cli@3.5.0 compile .
+
+That local binary is a gitignored build artifact from 2026-06-25 and still reports 3.2.0; it fails
+on this repo (`Unknown element x0 in definition InitialCondition`). After every compile, run
+`git diff generated/` and revert changes to files you did not edit.
 
 ## Local only
 
@@ -87,7 +89,9 @@ pre-release tooling that is not public, so it stays out of this public repositor
 
 ## Open
 
-- Commit or drop `PlanarBEVDrive.dyad` once the compiler works.
+- Switch `drive.jl` and `bench_realtime.jl` from `plant.jl` to the compiled `PlanarBEVDrive`, then
+  delete `plant.jl`. Its top-level parameters (`throttle`, `brake`, `steer`, `esp_on`, `abs_on`) are
+  settable with `setp` and reach the sources they bind.
 - Give `PlanarBEVDrive` real `RealInput` connectors for throttle, brake and steering instead of
   parameters (ADR-0001: the driver is a signal source).
 - `HapticFeedback` as a Dyad component: the mapping from slip, ABS activity and ESP braking to rumble,
