@@ -1169,7 +1169,7 @@ Divided by full field only, the drive would give a third of the torque asked for
 
 ::: info Braking: the machine first, the friction brakes at walking pace
 
-When the driver's output goes negative, the car has to slow down. The machine can do it: asked for a negative torque, it turns generator, the converter's and the battery's currents reverse, and the pack charges. WLTC never brakes harder than 1.5 m/s², 85 N·m at the machine, well inside its 320 N·m, so above walking pace the machine does all the braking.
+When the driver's output goes negative, the car has to slow down. The machine can do it: asked for a negative torque, it turns generator, the converter's and the battery's currents reverse, and the pack charges. WLTC never brakes harder than 1.5 m/s², about 85 N·m at the machine for the body alone (the run peaks at 87 N·m), well inside its 320 N·m, so above walking pace the machine does all the braking.
 
 Near standstill it must not: a machine asked for a negative torque at a stop drives the car backwards. So the machine's share fades linearly from all of it at **10 km/h** (`v_fade`) to none at standstill, and the planar car's own front friction brakes take the rest, at the same wheel torque. A friction brake only ever opposes motion, so the car stops and is held at every stop without rolling back. The course library's `TorqueSplit` block does this split. Step 05 extends it to real blending onto Lecture 3's hydraulic brakes, with the machine's and the battery's limits.
 

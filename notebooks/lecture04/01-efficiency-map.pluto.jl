@@ -200,8 +200,10 @@ is set by the car, 144 km/h through the 8.193 reduction on a 0.31 m wheel.
 envelope = let
     rpm = collect(1.0:1.0:RPM_MAX)
     full = ramp_line(last(CURRENTS), rpm; V = V_dc)
-    # Base speed: where the converter starts to weaken the field.
-    (; rpm, full, n_base = rpm[findfirst(<(0.999), full.field)])
+    # Base speed: where the converter starts to weaken the field. Above it the field falls as
+    # 1/ω, so field·rpm at the first weakened point is the corner itself, not a point past it.
+    i = findfirst(<(0.999), full.field)
+    (; rpm, full, n_base = full.field[i] * rpm[i])
 end;
 
 # ╔═╡ 0e27565e-4372-4915-ba42-bf2bc1efdc83
