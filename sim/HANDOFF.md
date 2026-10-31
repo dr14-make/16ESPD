@@ -28,7 +28,12 @@ still runs `plant.jl`; switching `drive.jl` to the component is open.
 From the worktree root, Dyad 3.5.0 Julia:
 
     julia +dyad-3.5.0 --project=. sim/probe.jl          # pad check, ~30 s, hold the controller
-    julia +dyad-3.5.0 --project=. sim/drive.jl          # ~2 min compile and warm-up, then the window
+    julia +dyad-3.5.0 --project=. sim/drive.jl          # ~3 min compile and warm-up, then the window
+
+For a lecture, keep one warm session instead: start `julia +dyad-3.5.0 --project=.`, run
+`include("sim/drive.jl"); main()` before class (about 3 minutes), and after closing the window
+`main()` opens it again in seconds. Including the file does not start the sim; running it as a
+script does.
 
 `drive.jl` stacks `sim/` behind the library environment on `LOAD_PATH`. The first run needs
 `sim/`'s environment instantiated (`julia +dyad-3.5.0 --project=sim -e 'using Pkg; Pkg.instantiate()'`,

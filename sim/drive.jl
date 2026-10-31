@@ -1,5 +1,8 @@
 # Drive the battery-electric planar car in real time, from a DualSense or the keyboard.
 #   julia +dyad-3.5.0 --project=. sim/drive.jl
+# Warm session: in a REPL started the same way, `include("sim/drive.jl"); main()`. Closing the
+# window returns to the REPL; `main()` again opens it in seconds, the model and solver already
+# compiled.
 #
 # The library environment comes first; sim/ is stacked behind it so GLMakie never becomes a
 # library dependency.
@@ -166,18 +169,12 @@ end
 
 bar(x) = (n = round(Int, 12clamp(x, 0, 1)); "█"^n * "░"^(12 - n))
 
-function main()
-    pad = try
-        p = open_pad()
-        println("DualSense on ", p.path)
-        p
-    catch e
-        println("no DualSense (", sprint(showerror, e), "); keyboard only")
-        nothing
-    end
-
-    controls = Controls()
+# A scripted drive through launch, slalom and a full stop compiles the solver's paths (ABS and ESP
+# included) before the window opens; once per Julia session.
+const WARMED = Ref(false)
+function warm_up!(pad)
     println("warming up the solver…")
+    controls = Controls()
     integ = new_integrator()
     for k in 1:600
         tm = k * FRAME
@@ -189,7 +186,21 @@ function main()
         car_shapes(s)
         pad === nothing || haptics!(pad, s, controls, tm)
     end
+    WARMED[] = true
+end
+
+function main()
+    pad = try
+        p = open_pad()
+        println("DualSense on ", p.path)
+        p
+    catch e
+        println("no DualSense (", sprint(showerror, e), "); keyboard only")
+        nothing
+    end
+
     controls = Controls()
+    WARMED[] || warm_up!(pad)
     integ = new_integrator()
 
     GLMakie.activate!(; title = "VehicleSystemsComponents — planar BEV", vsync = false)
@@ -372,4 +383,4 @@ function main()
     end
 end
 
-main()
+abspath(PROGRAM_FILE) == (@__FILE__) && main()
