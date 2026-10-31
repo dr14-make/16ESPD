@@ -93,8 +93,7 @@ falls from 0.9 to 0.4625.
   ### Equations
   push!(__eqs, connect(load_profile.y, load.I))
   push!(__eqs, connect(battery.p, load.p))
-  push!(__eqs, connect(load.n, battery.n))
-  push!(__eqs, connect(battery.n, ground.g))
+  push!(__eqs, connect(battery.n, load.n, ground.g))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)

@@ -1115,8 +1115,7 @@ component BatteryDischarge
 relations
   connect(load_profile.y, load.I) {^id1}
   connect(battery.p, load.p) {^id2}
-  connect(load.n, battery.n) {^id3}
-  connect(battery.n, ground.g) {^id4}
+  connect(battery.n, load.n, ground.g) {^id3}
 metadata {
   "_links": {
     "load_profile": {"Dyad": {"placement": {"diagram": {"x1": 260, "y1": 150, "x2": 360, "y2": 250}}}},
@@ -1125,8 +1124,7 @@ metadata {
     "ground": {"Dyad": {"placement": {"diagram": {"x1": 620, "y1": 760, "x2": 700, "y2": 840}}}},
     "id1": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 500, "y": 200}], "E": 2}]}},
     "id2": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 380, "y": 650}, {"x": 380, "y": 350}], "E": 2}]}},
-    "id3": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 660, "y": 350}, {"x": 660, "y": 650}], "E": 2}]}},
-    "id4": {"Dyad": {"edges": [{"S": 1, "M": [{"x": 660, "y": 650}], "E": 2}]}}
+    "id3": {"Dyad": {"edges": [{"S": 1, "M": [], "E": -1}, {"S": -1, "M": [{"x": 660, "y": 350}], "E": 2}, {"S": -1, "M": [], "E": 3}], "junctions": [{"x": 660, "y": 650}]}}
   }
 }
 end

@@ -48,7 +48,7 @@ The conventions for a re-capture:
 
 | File | Model | What must be visible |
 | ---- | ----- | -------------------- |
-| `step03-battery-discharge.png` | `HandsOn04.BatteryDischarge` | `load_profile` into the top of `load`; `load` across `battery`, `p` to `p` on the left and `n` to `n` on the right; `battery.n` to `ground`; the battery's unconnected `SoC` output on top. Portrait, 413 × 633. |
+| `step03-battery-discharge.png` | `HandsOn04.BatteryDischarge` | `load_profile` into the top of `load`; `load` across `battery`, `p` to `p` on the left and `n` to `n` on the right; `battery.n` to `ground`, branching from the `n` wire at a junction dot; the battery's unconnected `SoC` output on top. Portrait, 413 × 633. |
 
 ## Step 04 — the car
 
