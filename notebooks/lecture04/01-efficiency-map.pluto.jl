@@ -325,7 +325,8 @@ let
     1000 rpm. ORNL's machine also gave only 280 N·m, so 180 N·m was 64 % of its peak against 56 %
     of this one's, and copper loss grows with the square of that share. The parameters stay as
     they are, fitted to the motor-only and inverter-only maps: the miss shows what an average
-    converter with current-proportional losses leaves out at low output voltage.
+    converter with current-proportional losses leaves out at low output voltage. The lecture
+    plan lists the gap under Known limits.
     """)
 end
 

@@ -91,7 +91,7 @@ routeAlias: pmsm
 | rotor | permanent magnets | permanent magnets |
 | back-EMF | trapezoidal | sinusoidal |
 | currents | blocks, two phases at a time | three sines |
-| rotor position | Hall sensors, every 60° | resolver or encoder, continuous |
+| rotor position | Hall sensors, a step every 60° electrical | resolver or encoder, continuous |
 | torque | ripples at each switch | smooth |
 | where | fans, pumps, e-bikes | traction motors |
 
@@ -114,9 +114,10 @@ A BLDC and a permanent-magnet synchronous machine, PMSM for short, are built the
 magnets on the rotor, windings in the stator. The difference is how they are driven. Read the table
 row by row. The rotor: permanent magnets in both. The back-EMF: trapezoidal in the BLDC, sinusoidal
 in the PMSM. The currents: blocks, two phases at a time, in the BLDC; three sines in the PMSM. The
-rotor position: the BLDC reads it from Hall sensors, which change every 60 degrees; the PMSM needs
-it continuously, from a resolver or an encoder. So the BLDC's torque ripples at each switching
-instant, and the PMSM's is smooth. That is why BLDCs drive fans, pumps and e-bikes, and PMSMs are
+rotor position: the BLDC reads it from three Hall sensors, one of which changes state every 60
+electrical degrees, so six steps make one electrical turn, as Microchip's application note AN885
+puts it; the PMSM needs it continuously, from a resolver or an encoder. So the BLDC's torque
+ripples at each switching instant, and the PMSM's is smooth. That is why BLDCs drive fans, pumps and e-bikes, and PMSMs are
 traction motors.
 
 On the right, the Leaf. Its motor is a permanent-magnet synchronous machine. Oak Ridge National
@@ -383,9 +384,9 @@ routeAlias: pmsm-vs-induction
 </div>
 <div>
 
-**Why some all-wheel-drive cars pair one of each:** the axle that drives all the time carries the
-efficient PMSM; the axle that helps only for acceleration and grip carries an induction machine,
-which can coast along unpowered without drag.
+**Why some all-wheel-drive cars pair one of each** (Audi, Q4 e-tron quattro): the PMSM on the rear
+axle drives alone in moderate driving, for efficiency; the induction machine on the front axle
+switches in when the driver asks for more power, and has minimal drag losses when inactive.
 
 **Machines for hybrids** (deck): a short, wide machine on the crankshaft (Honda Insight), and
 the same "inside-out" layout in wheel-hub motors: Lecture 5.
@@ -406,9 +407,11 @@ a back-EMF; the induction machine has no field and no drag. And at high speed th
 weakening, to hold its back-EMF below the pack voltage, while the induction machine's field is
 simply made smaller.
 
-On the right, why some all-wheel-drive cars pair one of each. The axle that drives all the time gets
-the efficient PMSM. The axle that only helps, for acceleration and for grip, gets an induction
-machine, which can coast along unpowered without drag.
+On the right, why some all-wheel-drive cars pair one of each. Audi's press kit for the Q4 e-tron
+describes it. A permanent-magnet synchronous machine drives the rear axle, and in moderate driving
+it drives the car alone, for efficiency. The quattro models add an induction machine on the front
+axle, which switches in when the driver asks for more power than the rear can give; while it is
+inactive, its drag losses are minimal, because it has no magnets.
 
 And the deck's machines for hybrids: a short, wide machine sitting directly on the crankshaft, as in
 the Honda Insight, and the same inside-out layout in wheel-hub motors. The hybrids are next lecture.

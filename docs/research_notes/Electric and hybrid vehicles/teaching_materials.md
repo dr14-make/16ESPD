@@ -442,7 +442,46 @@ the coupled and decoupled positions is about 7–15 points at 15 kW.
 
 ---
 
-## 6. Gaps
+## 6. Context claims in the Lecture 4 deck
+
+Sources for the deck's statements that carry no model number: why electric (section 01) and the
+machine types (section 03). The slides quote these sources' wording and numbers.
+
+- **[EEA-TRANSPORT]** European Environment Agency, *Greenhouse gas emissions from transport in
+  Europe* (indicator, published 6 Nov 2025).
+  [page](https://www.eea.europa.eu/en/analysis/indicators/greenhouse-gas-emissions-from-transport).
+  verified. "The transport sector is responsible for nearly a quarter of Europe's greenhouse gas
+  emissions", and transport has not shown the same decreases since 1990 as other sectors. Road
+  transport emitted 73 % of the EU's transport emissions in 2023, international bunkers included.
+  The deck's earlier "about a fifth" is not what the EEA says, so the slide now says "nearly a
+  quarter".
+- **[EU-443]** Regulation (EC) No 443/2009 setting emission performance standards for new passenger
+  cars, of 23 April 2009, as adopted.
+  [text](https://www.legislation.gov.uk/eur/2009/443/adopted/data.htm?view=plain) (the UK
+  National Archives' copy of the Official Journal text; EUR-Lex,
+  [CELEX 32009R0443](https://eur-lex.europa.eu/eli/reg/2009/443/oj), refused a scripted download).
+  verified. Article 1 sets the average CO₂ emissions of new passenger cars at 130 g CO₂/km and,
+  from 2020, a target of 95 g CO₂/km for the new-car fleet. Recital 3: road transport is the
+  second largest greenhouse-gas emitting sector in the Union. Repealed by Regulation (EU) 2019/631
+  from 2020.
+- **[MCHP-AN885]** P. Yedamale, *Brushless DC (BLDC) Motor Fundamentals*, Microchip application
+  note AN885, 2003. [PDF](https://ww1.microchip.com/downloads/en/AppNotes/00885a.pdf). verified,
+  p. 8: "Every 60 electrical degrees of rotation, one of the Hall sensors changes the state", so
+  six steps complete an electrical cycle. The angle is electrical: mechanical degrees are that
+  divided by the number of pole pairs.
+- **[AUDI-Q4]** Audi MediaCenter, *Electric motors and electric all-wheel drive*, Audi Q4 e-tron
+  press kit, 14 Apr 2021.
+  [page](https://www.audi.com/en/electric-suvs-in-the-premium-compact-segment-the-audi-q4-e-tron-and-the-q4-sportback-e-tron-until-2026-13887/electric-motors-and-electric-all-wheel-drive-13900).
+  verified. A permanently excited synchronous motor drives the rear axle in all models and, in
+  moderate driving, drives the car on its own for efficiency and traction; the quattro models add
+  an asynchronous (induction) motor on the front axle, activated when the driver asks for more
+  power than the rear can give, whose principal advantages include minimal drag losses when it is
+  inactive. Volkswagen's ID.4 GTX uses the same pair (rear PSM, front ASM); its newsroom pages
+  returned 404 when checked, so that example is not used.
+
+---
+
+## 7. Gaps
 
 - **Leaf WLTP consumption from Nissan itself** was not found. 17.1 kWh/100 km and 270 km are from ADAC
   and EV Database. The EEA CO₂-monitoring database (the type-approval primary source) returned 403.

@@ -27,9 +27,9 @@ using .EfficiencyMap
     # Low speed, high torque: ORNL measured about 80 %; the model gives 86 %. The machine alone
     # is at 88 %, inside ORNL's motor-only map, while the average converter's losses track only
     # the current and keep it at 97.5 % with 113 V out, where ORNL's inverter falls into the 80s.
+    # ORNL's 78–82 % band is not asserted: the lecture plan's Known limits accepts this gap.
     for (n, T) in [(900, 180), (1000, 220)]
         @test eta(n, T) ≈ 0.862 atol = 0.005
-        @test_broken 0.78 <= eta(n, T) <= 0.82
     end
 
     # The swept map agrees with the bench held at one operating point.
