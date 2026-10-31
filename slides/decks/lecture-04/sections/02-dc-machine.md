@@ -295,12 +295,7 @@ routeAlias: build-machine
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-Screenshot to capture: `images/lecture-04/step01-dyno.png`, the finished `DCMachineDyno`
-diagram: `voltage` → `supply`, `machine`, `ground`, `speed` → `dyno`, `mounts`
-
-</div>
+<img src="/img/lecture-04/step01-dyno.png" class="mx-auto" style="max-height: 21rem" alt="The finished DCMachineDyno in Studio: voltage into supply on the left with ground below it; machine at the top right, p and n on its left edge, its shaft wired to dyno; speed into dyno below; both supports to mounts."/>
 
 *New `DCMachine`: paste the code from the guide · new `DCMachineDyno`: parameters `V` 350,
 `rpm_start` 3283, `rpm_end` 3600 · `voltage` Constant → `supply` VoltageSource → `machine` →

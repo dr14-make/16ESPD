@@ -108,6 +108,8 @@ New component `DCMachineDyno` in `MyCar`:
 
 #### Do this
 
+[![The finished DCMachineDyno in Studio: voltage into supply on the left with ground below it; machine at the top right, p and n on its left edge, its shaft wired to dyno; speed into dyno below; the machine's and the dyno's supports to mounts.](/lecture/lecture-04/img/step01-dyno.png)](/lecture/lecture-04/img/step01-dyno.png)
+
 1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `DCMachine`. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save.
 
    ::: code-group
@@ -433,6 +435,8 @@ The supply, the dyno and the mounts are step 01's.
 :::
 
 #### Do this
+
+[![The finished ConverterDyno in Studio: current into the top of converter; supply's p into converter.p_in, converter.p_out into machine.p; converter.n, machine.n, supply.n and ground on one node; converter's field output into machine.field; speed into dyno and both supports to mounts, as in step 01.](/lecture/lecture-04/img/step02-converter-dyno.png)](/lecture/lecture-04/img/step02-converter-dyno.png)
 
 1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `FieldEMF`. Toggle to code (⇄), select everything, paste the block below and save.
 
@@ -907,6 +911,8 @@ New component `BatteryDischarge` in `MyCar`:
 
 #### Do this
 
+[![The finished BatteryDischarge in Studio: load_profile into the top of load; load's p wired to battery's p on the left, load's n to battery's n on the right, and battery.n to ground.](/lecture/lecture-04/img/step03-battery-discharge.png)](/lecture/lecture-04/img/step03-battery-discharge.png)
+
 1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Battery`. Toggle to code (⇄), select everything with <kbd>Ctrl</kbd>+<kbd>A</kbd>, paste the block below and save.
 
    ::: code-group
@@ -1101,6 +1107,8 @@ The bench and step 06 read `drive.battery`, `drive.converter`, `drive.machine`, 
 :::
 
 #### Do this
+
+[![The finished ElectricDrive in Studio: battery and aux side by side across one positive and one negative rail; converter fed from the positive rail, its p_out into machine.p and its field into machine.field; machine.n and ground on the negative rail; machine into reduction and reduction into the spline port; battery.SoC up to the SoC port, tau_ref at the top left, support at the bottom.](/lecture/lecture-04/img/step04-electric-drive.png)](/lecture/lecture-04/img/step04-electric-drive.png)
 
 1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `ElectricDrive`. With nothing selected, click **Edit Parameters** → **Add parameter**: `ratio`, type `Real`, value `8.193`, and `P_aux`, type `Power`, value `300.0`. Place the parts from the table and rename each to its **Name**. Set `machine`'s `field_weakening` to `true`, `aux`'s `P_aux` to `P_aux` and `reduction`'s `ratio` to `ratio`.
 2. Wire:
@@ -1353,6 +1361,8 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
 :::
 
 #### Do this
+
+[![The finished BEVHardStop in Studio: pedal and kmh into blend; blend.tau_motor into drive, blend.tau_brake into the ABS; drive through the differential to the car's front wheels; slips and zero into the ABS, whose four outputs drive the car's brakes; motion reads the car's bus.](/lecture/lecture-04/img/step05-regen-blend.png)](/lecture/lecture-04/img/step05-regen-blend.png)
 
 1. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `RegenBlend`. With nothing selected, click **Edit Parameters** → **Add parameter** for the five parameters in the table. Place the two inputs and two outputs and rename each to its **Name**: `tau_ref` and `v` on the left, `tau_motor` and `tau_brake` on the right.
 2. Toggle to code and add the variables before `relations`, and the equations after it:

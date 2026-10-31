@@ -273,13 +273,7 @@ routeAlias: build-converter
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-Screenshot to capture: `images/lecture-04/step02-converter-dyno.png`, the finished
-`ConverterDyno`: `supply` → `converter` → `machine`, `current` → `converter.i_ref`,
-`converter.field` → `machine.field`, `speed` → `dyno`
-
-</div>
+<img src="/img/lecture-04/step02-converter-dyno.png" class="mx-auto" style="max-height: 21rem" alt="The finished ConverterDyno in Studio: current into the top of converter; supply into converter.p_in, converter.p_out into machine.p; converter.n, machine.n, supply.n and ground on one node; converter.field into machine.field; speed into dyno, both supports to mounts."/>
 
 *New `FieldEMF` and `Converter`: paste from the guide · give `DCMachine` its field input ·
 new `ConverterDyno`: `V` 350, `I_ref` 500, `rpm_start` 0, `rpm_end` 10 000 · `ConverterDynoTransient`,

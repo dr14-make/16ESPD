@@ -1,0 +1,56 @@
+# Lecture 4 build — Studio screenshots
+
+The Studio screenshots of the Lecture 4 live build, one table per step of the build guide
+(`slides/site/lecture/lecture-04/`). Each is a diagram of a `dyad/HandsOn04/` reference model,
+which holds the component exactly as the guide builds it, under the guide's names and with the
+course library's icons. Save the files to `slides/images/lecture-04/` under the names given;
+`scripts/images.mjs` copies them into the theory deck (`/img/lecture-04/`, on the build slides)
+and the guide page (`/lecture/lecture-04/img/`, at the top of each step's **Do this**). Step 06
+has no picture: `BEVEnergyBill` is a paste that `extends` step 04's bench and draws the same
+diagram.
+
+The conventions for a re-capture:
+
+- The diagram view, fitted with **Reset view**, with the Dyad sidebar and the bottom panel closed,
+  and no tooltip or cursor over the canvas.
+- Same window size for every shot: `resize_window(1600, 1000)`, which gives a landscape canvas. Reset
+  view fits the dashed outline to the canvas's shorter side, so on a portrait canvas the ports on
+  the left and right edges fall outside it.
+- Capture the canvas pane only, at full resolution (`zoom` over the pane with `save_to_disk`, which
+  writes a PNG), then crop to the drawing with a margin of about 24 px: no toolbar, tabs, activity
+  bar or status bar. The 2026-10 shots are 1392 px across the pane before cropping.
+- A model whose ports sit on the outline's top and bottom edges (`ElectricDrive`) does not fit at
+  Reset view, and one Zoom Out halves it. Take two captures one canvas scroll apart and stitch
+  them, matching the overlap.
+- The plots in the deck are SVG figures rendered from the reference models
+  (`mise run figures:lecture-04`), not Studio screenshots.
+
+## Step 01 — the machine on a dyno
+
+| File | Model | What must be visible |
+| ---- | ----- | -------------------- |
+| `step01-dyno.png` | `HandsOn04.DCMachineDyno` | `voltage` (k = V) into the top of `supply`, `ground` under `supply`; `machine` at the top right with its machine icon, `p` and `n` on its left edge wired to `supply`; `speed` into `dyno`, `machine.spline` to `dyno`, both supports down to `mounts`. |
+
+## Step 02 — the converter
+
+| File | Model | What must be visible |
+| ---- | ----- | -------------------- |
+| `step02-converter-dyno.png` | `HandsOn04.ConverterDyno` | Step 01's layout with `converter` between `supply` and `machine`: `current` (k = I_ref) into the top of `converter`, `supply` into `p_in`, `p_out` into `machine.p`, the Φ output into `machine.field`, `converter.n`, `machine.n`, `supply.n` and `ground` on one node. |
+
+## Step 03 — the battery
+
+| File | Model | What must be visible |
+| ---- | ----- | -------------------- |
+| `step03-battery-discharge.png` | `HandsOn04.BatteryDischarge` | `load_profile` into the top of `load`; `load` across `battery`, `p` to `p` on the left and `n` to `n` on the right; `battery.n` to `ground`; the battery's unconnected `SoC` output on top. Portrait, 413 × 633. |
+
+## Step 04 — the car
+
+| File | Model | What must be visible |
+| ---- | ----- | -------------------- |
+| `step04-electric-drive.png` | `HandsOn04.ElectricDrive` | `battery` and `aux` across one positive and one negative rail, `converter` fed from the positive rail, `p_out` and Φ into `machine`, `machine.n` and `ground` on the negative rail; `machine` into `reduction` into the `spline` port; `battery.SoC` up to the `SoC` port, `tau_ref` top left, `support` at the bottom. Stitched from two captures, 970 × 996. |
+
+## Step 05 — regen blending
+
+| File | Model | What must be visible |
+| ---- | ----- | -------------------- |
+| `step05-regen-blend.png` | `HandsOn04.BEVHardStop` | `pedal` and `kmh` into `blend`; `blend.tau_motor` into `drive`, `blend.tau_brake` into the ABS; `drive` through `differential` to the car's front spins; `zero` and `slips` into the ABS, its four outputs into the car's brakes; `motion` reading the bus. `RegenBlend`'s own diagram holds only its four ports, so the bench shows it in place. |
