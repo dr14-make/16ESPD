@@ -8,7 +8,8 @@
 # library dependency.
 push!(LOAD_PATH, @__DIR__)
 
-include(joinpath(@__DIR__, "plant.jl"))
+using VehicleSystemsComponents, ModelingToolkit
+using DyadInterface: simplify_model
 include(joinpath(@__DIR__, "DualSense.jl"))
 using .DualSense
 using GLMakie
@@ -27,7 +28,7 @@ const PEAK_KAPPA, PEAK_ALPHA = 0.12, 0.12
 const FRAME = 1 / 60
 
 println("compiling the car…")
-@named model = drive_model()
+@named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive()
 const SYS = simplify_model(model)
 const PROB = ODEProblem(SYS, [], (0.0, 1e7))
 new_integrator() = init(PROB, Rodas5P(); dtmax = 0.005, save_everystep = false)
@@ -36,11 +37,11 @@ const A, B, TW, I_S, M_CAR, R_WHEEL, T_FULL, RATIO = Float64.(getp(SYS, [
     SYS.car.a, SYS.car.b, SYS.car.tw, SYS.car.i_s,
     SYS.car.m, SYS.car.radius, SYS.car.tau_max, SYS.blend.ratio])(PROB))
 
-const set_throttle! = setp(SYS, SYS.throttle_pedal.k)
-const set_brake! = setp(SYS, SYS.brake_pedal.k)
-const set_steer! = setp(SYS, SYS.steering_wheel.k)
-const set_esp! = setp(SYS, SYS.ecu.esp_on)
-const set_abs! = setp(SYS, SYS.ecu.abs_on)
+const set_throttle! = setp(SYS, SYS.throttle)
+const set_brake! = setp(SYS, SYS.brake)
+const set_steer! = setp(SYS, SYS.steer)
+const set_esp! = setp(SYS, SYS.esp_on)
+const set_abs! = setp(SYS, SYS.abs_on)
 const set_mu! = setp(SYS, [SYS.car.mu_scale_fl, SYS.car.mu_scale_fr, SYS.car.mu_scale_rl, SYS.car.mu_scale_rr])
 
 const SIGNALS = (

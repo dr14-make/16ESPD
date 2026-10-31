@@ -1,20 +1,21 @@
 # Can the plant keep up with the wall clock? Steps the solver in display-frame slices under a
 # scripted drive (launch, slalom, hard stop) and reports the time spent per simulated second.
 #   julia +dyad-3.5.0 --project=. sim/bench_realtime.jl
-include(joinpath(@__DIR__, "plant.jl"))
+using VehicleSystemsComponents, ModelingToolkit
+using DyadInterface: simplify_model
 using OrdinaryDiffEqDefault: Rodas5P, init, step!
 using SymbolicIndexingInterface: setp, getu
 
-@named model = drive_model()
+@named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive()
 t_build = @elapsed sys = simplify_model(model)
 println("compiled in $(round(t_build, digits = 1)) s; ",
         length(unknowns(sys)), " unknowns")
 
 prob = ODEProblem(sys, [], (0.0, 1e6))
 integ = init(prob, Rodas5P(); dtmax = 0.005, save_everystep = false)
-set_throttle! = setp(integ, sys.throttle_pedal.k)
-set_brake! = setp(integ, sys.brake_pedal.k)
-set_steer! = setp(integ, sys.steering_wheel.k)
+set_throttle! = setp(integ, sys.throttle)
+set_brake! = setp(integ, sys.brake)
+set_steer! = setp(integ, sys.steer)
 speed = getu(integ, sys.motion.vx)
 yaw = getu(integ, sys.motion.r)
 torques = getu(integ, [sys.car.tau_fl, sys.car.tau_fr, sys.car.tau_rl, sys.car.tau_rr])

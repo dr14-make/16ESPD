@@ -11,17 +11,20 @@ resolves it).
 
 | File | Role |
 |---|---|
-| `plant.jl` | `drive_model()`: the car wired from compiled library components (`PlanarCar`, `ElectricDrive` on the front axle via `DifferentialGear`, `RegenBlend`, `BrakeControlUnit`, `PlanarRoadLoad`). Driver commands are `Constant` sources whose `k` the loop sets. |
-| `drive.jl` | The real-time loop and window: steps the integrator in wall-clock slices, reads the pad and keyboard, draws, sends haptics. Car geometry, mass, brake torque and gear ratio are read from the compiled model's parameters. |
+| `drive.jl` | The real-time loop and window: builds `PlanarBEVDrive`, steps the integrator in wall-clock slices, reads the pad and keyboard, draws, sends haptics. Car geometry, mass, brake torque and gear ratio are read from the compiled model's parameters. |
 | `DualSense.jl` | DualSense driver over SDL2 on Linux, macOS and Windows: input, rumble, adaptive triggers, lightbar, player LEDs, USB and Bluetooth. Other controllers SDL knows give input, rumble and light. |
 | `probe.jl` | Walks a connected pad through every input and feedback channel; run it first on a new machine. |
 | `bench_realtime.jl` | Headless timing under a scripted drive; the real-time check. |
 | `check_coast_brake.jl` | Coast-down and full-brake run printing road load, motor torque, per-wheel friction and slip. |
 | `regen-braking-observations.md` | What the sim showed about coasting and braking, with the validation asks; researched in PR #155. |
 
-`dyad/Vehicle/Planar/PlanarBEVDrive.dyad` is the same car as a Dyad component, compiled and
-checked against `plant.jl` (34 unknowns, 105.6 km/h after 9 s at full throttle in both). The sim
-still runs `plant.jl`; switching `drive.jl` to the component is open.
+The car is the library component `Vehicle.Planar.PlanarBEVDrive`
+(`dyad/Vehicle/Planar/PlanarBEVDrive.dyad`): `PlanarCar`, `ElectricDrive` on the front axle via
+`DifferentialGear`, `RegenBlend`, `BrakeControlUnit` and `PlanarRoadLoad`. `drive.jl`,
+`bench_realtime.jl` and `check_coast_brake.jl` all build it from `generated/`, so editing the
+`.dyad` file and recompiling (see Compiler) changes the car the sim drives. The driver sets its
+top-level parameters `throttle`, `brake`, `steer`, `esp_on` and `abs_on`; road friction is
+`car.mu_scale_fl/fr/rl/rr`.
 
 ## Run
 
@@ -109,9 +112,6 @@ pre-release tooling that is not public, so it stays out of this public repositor
 
 ## Open
 
-- Switch `drive.jl` and `bench_realtime.jl` from `plant.jl` to the compiled `PlanarBEVDrive`, then
-  delete `plant.jl`. Its top-level parameters (`throttle`, `brake`, `steer`, `esp_on`, `abs_on`) are
-  settable with `setp` and reach the sources they bind.
 - Give `PlanarBEVDrive` real `RealInput` connectors for throttle, brake and steering instead of
   parameters (ADR-0001: the driver is a signal source).
 - `HapticFeedback` as a Dyad component: the mapping from slip, ABS activity and ESP braking to rumble,

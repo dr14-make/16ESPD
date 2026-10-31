@@ -1,13 +1,14 @@
 # Coast-down from ~105 km/h, then a full brake application, printing road load, motor torque and
 # per-wheel friction torque and slip.
 #   julia +dyad-3.5.0 --project=. sim/check_coast_brake.jl
-include(joinpath(@__DIR__, "plant.jl"))
+using VehicleSystemsComponents, ModelingToolkit
+using DyadInterface: simplify_model
 using OrdinaryDiffEqDefault: Rodas5P, init, step!
 using SymbolicIndexingInterface: setp, getu
-@named model = drive_model()
+@named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive()
 sys = simplify_model(model)
 integ = init(ODEProblem(sys, [], (0.0, 1e6)), Rodas5P(); dtmax = 0.005, save_everystep = false)
-th = setp(integ, sys.throttle_pedal.k); br = setp(integ, sys.brake_pedal.k)
+th = setp(integ, sys.throttle); br = setp(integ, sys.brake)
 rd = getu(integ, [sys.motion.vx, sys.roadload.F, sys.drive.machine.tau, sys.blend.tau_motor, sys.blend.tau_brake,
                   sys.car.tau_fl, sys.car.tau_rl, sys.slips.kappa_fl, sys.slips.kappa_rl])
 report() = (s = rd(integ); println(rpad("t=$(round(integ.t, digits=2))", 8), " v=", round(3.6s[1], digits=1), " km/h  F_road=", round(s[2]),

@@ -5,11 +5,11 @@ observations to verify, not fixes. Reproduce with:
 
     julia +dyad-3.5.0 --project=. sim/check_coast_brake.jl
 
-`sim/plant.jl`'s `drive_model` is the model: `PlanarCar`, `ElectricDrive` on the front axle through
-`DifferentialGear`, `Vehicle.Electric.RegenBlend`, `BrakeControlUnit` (continuous ESP and a 5 ms
-four-channel `ABSUnit`) and `PlanarRoadLoad`. It wires exactly what
-`dyad/Vehicle/Planar/PlanarBEVDrive.dyad` declares; that file is not compiled yet. Its brake chain is
-the one `PlanarBEVHardStop` uses, so the braking finding applies to that bench and its tests as well.
+`Vehicle.Planar.PlanarBEVDrive` (`dyad/Vehicle/Planar/PlanarBEVDrive.dyad`) is the model:
+`PlanarCar`, `ElectricDrive` on the front axle through `DifferentialGear`,
+`Vehicle.Electric.RegenBlend`, `BrakeControlUnit` (continuous ESP and a 5 ms four-channel
+`ABSUnit`) and `PlanarRoadLoad`. Its brake chain is the one `PlanarBEVHardStop` uses, so the braking
+finding applies to that bench and its tests as well.
 
 ## 1. Coasting: the road load is present and correct; there is no lift-off deceleration
 
