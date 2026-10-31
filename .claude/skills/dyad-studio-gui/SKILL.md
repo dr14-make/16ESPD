@@ -6,11 +6,13 @@ disable-model-invocation: true
 
 # Driving Dyad Studio from Claude in Chrome
 
-Verified in Dyad Studio web (Theia build at `localhost:3000`) with the window at
-`resize_window(1600, 1000)`: dyad 3.4.0, and the Dyad Studio plugin 3.4.0-rc2 with the dyad-3.5.0
-REPL. Where the two differ, operations.md names the build. Every operation — components, parts, ports, wires, parameters, code,
-save, analyses, REPL, plots — is in [`reference/operations.md`](reference/operations.md), each with
-its known Studio bugs beside it. Open the section for the operation in front of you.
+Drive Dyad Studio web (Theia at `localhost:3000`) built at the release tag v3.5.1, with the window
+at `resize_window(1600, 1000)`. The observations here were made on dyad 3.4.0 and on the Dyad Studio
+plugin 3.4.0-rc2 with the dyad-3.5.0 REPL; where those two differ, operations.md names the build.
+A re-check on 3.5.1 is pending, so where 3.5.1 behaves otherwise, trust what you see and tell the
+user. Every operation — components, parts, ports, wires, parameters, code, save, analyses, REPL,
+plots — is in [`reference/operations.md`](reference/operations.md), each with its known Studio bugs
+beside it. Open the section for the operation in front of you.
 
 ## Read the file
 
@@ -36,18 +38,22 @@ Studio is cheaper by `ref` than by pixel:
 
 ## Setup
 
-1. `tabs_context_mcp`, then one new tab at `http://localhost:3000/#<absolute workspace path>`. Work
+1. Unless the user already serves Studio, build and start it as
+   [Studio web at a release](reference/operations.md#studio-web-at-a-release) says. Theia and its
+   Julia language server are the **one heavy process** while they run: start no compile, test
+   group or warm session beside them.
+2. `tabs_context_mcp`, then one new tab at `http://localhost:3000/#<absolute workspace path>`. Work
    in this one Studio tab for the whole task: each Studio tab starts its own plugin host, Julia
    language server (~2.6 GB) and Julia REPL (~2.3 GB), which keep running after the tab closes.
    Save every diagram before closing a Studio tab, or leave it open: a dirty diagram raises a
    beforeunload prompt that hangs the extension.
-2. On the trust prompt, click "Yes, I trust the authors"; answer any other prompt by asking the
+3. On the trust prompt, click "Yes, I trust the authors"; answer any other prompt by asking the
    user.
-3. Open the Dyad sidebar by clicking its activity icon (4th, below Source Control; Ctrl+B is
+4. Open the Dyad sidebar by clicking its activity icon (4th, below Source Control; Ctrl+B is
    swallowed while the diagram has focus) and collapse ACTIONS so
    COMPONENTS has room. Keep the sidebar in one state for a whole placement sequence: it can
    re-open by itself and shift the canvas.
-4. Commands go through F1 (Chrome can swallow Ctrl+Shift+P): `Dyad: Compile`, `Dyad: Open Julia
+5. Commands go through F1 (Chrome can swallow Ctrl+Shift+P): `Dyad: Compile`, `Dyad: Open Julia
    REPL`. Ctrl+J toggles the bottom panel while focus is outside the terminal.
 
 *Done when* the workspace's library shows in COMPONENTS.
@@ -59,3 +65,9 @@ Studio is cheaper by `ref` than by pixel:
 - **Zoom** to read port tooltips, popup rows and panel fields, and to find overlapping ports. Take a
   full screenshot only after a layout change: a new tab, the sidebar toggled, Reset view.
 - **Refs** for the tree, ▷, ⇄, tab closing and toasts.
+
+## Finish
+
+Stop the Theia task you started, then list what it left behind:
+`ps -eo pid,cmd | grep '[l]anguage-julia'`. Studio orphans its Julia language servers whenever
+Theia stops or restarts, and they keep their memory and CPU. Report every PID listed to the user.

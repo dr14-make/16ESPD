@@ -21,8 +21,9 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
    - two wires looping between the same two blocks are one physical link, so make them one connector
      (as `Vehicle.GasPort` did for engine↔booster);
    - a signal set by an equation draws no wire, so its loop looks open until it is wired through blocks;
-   - one output fed to several inputs through separate two-ended `connect`s branches with no junction
-     dot, so a branch looks like a bend; one `connect` listing every end gets junctions (rule 4);
+   - one output fed to several inputs takes one `connect` listing every end, which gets explicit
+     junctions and one set of wires (rule 4). Separate two-ended `connect`s also branch: the CLI
+     render draws a junction dot at the split; whether Studio does is unverified;
    - a port inherited through `extends` draws where the base puts it on the icon, whatever the
      derived file says. When that place is wrong (two ports on one point, a side facing away from
      its partners), declare the base's connectors, variables and equations directly instead of
@@ -89,8 +90,8 @@ Studio is read-only here: look in it, edit the file. A single Ctrl+S in Studio r
 
 7. **Screenshots, only when a slide needs one:** follow `.claude/skills/dyad-studio-gui/SKILL.md`. Close
    and reopen the diagram after disk edits rather than trusting the live reload. Hide the sidebar
-   (Ctrl+B) and panel (Ctrl+J), Reset view, park the mouse off the canvas, then `zoom` with
-   `save_to_disk` on the diagram. Match the framing of the image it replaces and read the PNG back.
+   (its activity icon, per that skill's setup) and panel (Ctrl+J), Reset view, park the mouse off
+   the canvas, then `zoom` with `save_to_disk` on the diagram. Match the framing of the image it replaces and read the PNG back.
 
 Report each component as **clean** or with its named exceptions, plus the `metadata-only.sh` result. A
 layout you could not render is **unseen**; say so.
