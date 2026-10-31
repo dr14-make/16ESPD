@@ -151,9 +151,8 @@ a torque C over omega, which is large at very low speed; below about 95 rpm the 
 so a machine at standstill has no infinite drag.
 
 At 3283 rpm the duty reaches 1: the converter gives the machine all of the pack's 350 volts, and the
-voltage has run out. That is base speed, the envelope's corner, as the slide says. The figure's
-label reads 3286 rpm, because the notebook marks the first point where the field has dropped a tenth
-of a percent below full.
+voltage has run out. That is base speed, the envelope's corner, as the slide says, and the dashed
+line in the figure.
 
 Above base speed the only way to keep the current flowing is to lower the back-EMF, and the only
 part of K Phi omega left to lower is Phi: field weakening. Hold 350 volts and 332.2 amperes, and K
@@ -296,8 +295,8 @@ class: big-figure
 </div>
 <div class="text-[0.95rem]">
 
-On step 04's car the driver never asks for more than **117 N·m** on WLTC, a third of the peak;
-braking, at most **87 N·m**.
+On WLTC the driver never asks for more than **117 N·m** (step 04's car), a third of the peak;
+braking, at most **87 N·m** (step 05's car, the one on the map).
 
 At 131 km/h the machine turns **9260 rpm**, the field down to **0.36**.
 
@@ -315,7 +314,8 @@ map from two slides back, with the same axes and colors.
 
 Look where the dots are. They spread over speed, but they hug the bottom of the map. The WLTC is a
 gentle cycle: on build 04's car the driver never asks the machine for more than 117 newton meters,
-about a third of the 320 it can give, and when braking, at most 87 newton meters. Most of the cycle
+about a third of the 320 it can give, and on build 05's car, the one these dots come from, braking
+asks for at most 87 newton meters. Most of the cycle
 is cruising and gentle acceleration at a few tens of newton meters, well below the peak region,
 where the fixed losses take their share.
 
