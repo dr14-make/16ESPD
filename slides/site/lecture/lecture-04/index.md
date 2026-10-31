@@ -67,6 +67,8 @@ Your commits go to your fork, one per step, and the pull request at the end goes
 4. <kbd>F1</kbd> → **Dyad: Compile**.
 5. Open any diagram, click **+** and open `VehicleSystemsComponents` → `Vehicle` → `Electric`.
 
+[![The + library panel open at VehicleSystemsComponents › Vehicle › Electric, listing AuxLoad, Battery, BuckChopper, Converter, DCMachine, ElectricDrive, FieldEMF, HBridge, PWM, RegenBlend and Switch above the test benches; HandsOn04 and the other folders one level up.](/lecture/lecture-04/img/step00-electric-library.png)](/lecture/lecture-04/img/step00-electric-library.png)
+
 ::: tip Expected result
 
 `using VehicleSystemsComponents`, `using ElectricalComponents` and `using MultibodyComponents` run in the REPL without an error. Under **+**, `Vehicle › Electric` lists `AuxLoad` and `TorqueSplit`; `Vehicle › Planar` lists `PlanarCar`, `PlanarRoadLoad`, `BusMotion` and `ABSUnit`; and `VehicleSystemsComponents` lists `HandsOn04`.

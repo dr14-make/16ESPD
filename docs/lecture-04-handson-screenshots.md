@@ -1,12 +1,13 @@
 # Lecture 4 build — Studio screenshots
 
 The Studio screenshots of the Lecture 4 live build, one table per step of the build guide
-(`slides/site/lecture/lecture-04/`). Each is a diagram of a `dyad/HandsOn04/` reference model,
-which holds the component exactly as the guide builds it, under the guide's names and with the
-course library's icons. Save the files to `slides/images/lecture-04/` under the names given;
-`scripts/images.mjs` copies them into the theory deck (`/img/lecture-04/`, on the build slides)
-and the guide page (`/lecture/lecture-04/img/`, at the top of each step's **Do this**). Step 06
-has no picture: `BEVEnergyBill` is a paste that `extends` step 04's bench and draws the same
+(`slides/site/lecture/lecture-04/`). Step 00's is the **+** library panel in a student's
+`MyCar`, under the last item of its **Do this**. From step 01 on, each is a diagram of a
+`dyad/HandsOn04/` reference model, which holds the component exactly as the guide builds it, under
+the guide's names and with the course library's icons. Save the files to
+`slides/images/lecture-04/` under the names given; `scripts/images.mjs` copies them into the theory
+deck (`/img/lecture-04/`, on the build slides) and the guide page (`/lecture/lecture-04/img/`, at
+the top of each step's **Do this**). Step 06 has no picture: `BEVEnergyBill` is a paste that `extends` step 04's bench and draws the same
 diagram.
 
 The conventions for a re-capture:
@@ -24,6 +25,12 @@ The conventions for a re-capture:
   them, matching the overlap.
 - The plots in the deck are SVG figures rendered from the reference models
   (`mise run figures:lecture-04`), not Studio screenshots.
+
+## Step 00 — the course library
+
+| File | Model | What must be visible |
+| ---- | ----- | -------------------- |
+| `step00-electric-library.png` | any diagram (`Body`), rehearsal `MyCar` on `handson-04` from `lecture-04-start` with the library at `lecture-04-dyad-3.5` | The **+** library panel open at `VehicleSystemsComponents › Vehicle › Electric`, listing `AuxLoad`, `Battery`, `Converter`, `DCMachine`, `FieldEMF`, `RegenBlend`; `HandsOn04` visible one level up. The full Studio window, as Lecture 3's `step00-wheel-library.png`, taken in Studio web with the Dyad Studio plugin 3.5.1. |
 
 ## Step 01 — the machine on a dyno
 
