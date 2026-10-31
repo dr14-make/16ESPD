@@ -48,6 +48,7 @@ same cycle in MJ/100 km for Lecture 2's engine.
 | M4 | M3 + battery | V = E − I·R, SoC by coulomb counting | step 3 |
 | C1 | planar BEV | M4 → single reduction → planar `DifferentialGear` → front wheels; `RoadLoad` | step 4 |
 | C2 | C1 + regen blending | motor first, L3 hydraulics for the remainder | step 5 |
+| C3 | C2 + pedal map | lift-off regen without a brake request: `Vehicle.Electric.PedalMap` maps accelerator, brake, speed and mode (N coasts, D ≈ 0.025 g (derived), e-Pedal up to 0.2 g (Nissan)) to the torque request `RegenBlend` takes, unchanged; `Vehicle.Planar.PlanarBEVLiftOff` from 100 km/h (#158) | step 5, going further |
 
 ## Settled decisions
 
@@ -100,6 +101,9 @@ the remainder goes to the hydraulics through the existing allocator. WLTC never 
 than 1.5 m/s² (0.15 g), so on WLTC friction only covers the low-speed fade (under 4 % of braking
 energy). The blending is therefore shown on Lecture 3's hard stop, where friction carries most of
 the braking, and WLTC reports the recovered energy.
+Lift-off regen goes through a pedal map in front of the blend, not into `RegenBlend`, whose
+contract stays the brake demand (#158): the WLTC and hard-stop benches drive the blend from a
+controller and are unchanged.
 
 **S9 — The standstill singularity is worked around on the bench.** `SlipBasedWheelJoint` puts its
 regularization outside the square root, so the Jacobian turns NaN when a parked car's slip velocity

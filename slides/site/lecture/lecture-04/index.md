@@ -1923,6 +1923,24 @@ Reference: `HandsOn04.BEVRegenWLTC`, `HandsOn04.BEVRegenWLTCTransient`; the cour
 
 :::
 
+::: info Going further: regen when the driver lifts off
+
+Your car regenerates only when something asks it to brake. A production EV also slows when the driver lifts off the accelerator: a **pedal map** in software turns the accelerator, the brake pedal, the speed and a drive mode into the signed torque request your `RegenBlend` already takes, and the blend handles it unchanged. The course library's `Vehicle.Electric.PedalMap` has three modes: `mode = 0`, N, coasts on road load; `mode = 1`, D, adds about **0.025 g** of regen (derived from Argonne's 2013 Leaf coast-down); `mode = 2`, e-Pedal, decelerates at up to **0.2 g** (Nissan), one-pedal driving. Its lift-off bench starts at about 100 km/h, releases the accelerator and never touches the brake:
+
+```julia
+using VehicleSystemsComponents: Vehicle
+r = Vehicle.Planar.PlanarBEVLiftOffTransient(mode = 2);
+plot(r; idxs = [r."car.bus.vx" * 3.6])
+```
+
+Change one thing: run `mode = 0` and `mode = 1` and compare how fast each loses speed. Your `BEVHardStop` and `BEVRegenWLTC` drive the blend from a brake command and a speed controller, so the pedal map leaves them unchanged. Reference: `HandsOn04.PedalMap`, `HandsOn04.BEVLiftOff`; the course library's copies are `Vehicle.Electric.PedalMap` and `Vehicle.Planar.PlanarBEVLiftOff`.
+
+<!-- TODO(#158): add the measured per-mode decelerations from PlanarBEVLiftOffTransient
+(mode = 0, 1, 2) as checkpoint numbers once the bench lands, and check that the snippet's
+signal expression runs. -->
+
+:::
+
 Commit: **Source Control** → message `Step 05: regen blending` → **Commit** → **Sync Changes**.
 
 :::: warning Fell behind?

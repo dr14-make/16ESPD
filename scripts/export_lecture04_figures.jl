@@ -46,6 +46,7 @@ const FIGURES = Dict(
         "06-battery-discharge" => :battery_plot,
         "07-regen-hard-stop" => :regen_stop_plot,
         "07-hard-stop-split" => :split_plot,
+        "07-liftoff-modes" => :liftoff_plot,
     ],
 )
 

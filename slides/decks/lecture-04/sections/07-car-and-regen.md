@@ -7,16 +7,17 @@ layout: section
 
 # The car and regen
 
-The chain in the planar car, the motor as a brake, the three ceilings on regen, and series
-blending onto Lecture 3's brakes.
+The chain in the planar car, the motor as a brake, the three ceilings on regen, series
+blending onto Lecture 3's brakes, and regen on lift-off.
 
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--
 Section 07, the car and regen. We put the chain into the planar car, then look at the motor as a
 brake, at the three ceilings that limit how hard it can brake, and at how its braking is blended
-with Lecture 3's friction brakes. There are two builds: the car, build 04, and regen, build 05. The
-figures come from notebooks 03 and 04.
+with Lecture 3's friction brakes. At the end, we look at why an electric car slows down when the
+driver only lifts off the accelerator. There are two builds: the car, build 04, and regen, build 05.
+The figures come from notebooks 03 and 04.
 -->
 
 ---
@@ -586,6 +587,141 @@ So the last line: the regen path, not a ceiling, sets the share. What decides it
 braking energy the machine, the converter and the battery pass back, and section 08 sets that
 against the measured Leaf. For comparison, build 04's simple torque split gave 23.80 percent on the
 same cycle: on the WLTC, series blending changes the result by a twentieth of a point.
+
+One thing neither bench shows: what the car does when the driver simply lifts off the accelerator.
+-->
+
+---
+routeAlias: lift-off
+---
+
+## Lifting off: regen without the brake pedal
+
+<div class="diagram-wide">
+
+<img src="/diagrams/07-liftoff-chain.svg" style="max-height: 16rem" alt="The lift-off chain, left to right: the accelerator (0 to 1), the brake pedal (0 to 1), the speed in km/h and the mode (N, D or e-Pedal) go into the pedal map, PedalMap, software. It sends one signed torque, tau_ref, into the series blend, RegenBlend, build 05, unchanged, with its three ceilings. On the WLTC and hard-stop benches a controller feeds the same input instead. The blend sends tau_motor to the machine, which regenerates on lift-off, and tau_brake to the friction brakes, only above the ceilings."/>
+
+</div>
+
+<div class="grid grid-cols-[1.25fr_1fr] gap-6 mt-2">
+<div class="tight">
+
+| Mode | On lift-off | Target | Source |
+|---|---|---|---|
+| N | coasts on road load | no regen | — |
+| D | light regen | ≈ 0.025 g on top of road load | (derived), ANL's 2013 Leaf |
+| e-Pedal | one-pedal driving | up to 0.2 g | (Nissan) |
+
+<div class="text-[0.9rem]">
+
+A combustion car in neutral rolls on: road load alone, 100 → 60 km/h in **47.7 s**. An EV slows
+because **software asks the machine to**.
+
+</div>
+</div>
+<div class="text-[0.9rem]">
+
+- The **pedal map**, not the brake system, decides: accelerator, brake, speed and mode in, one
+  torque request out. `RegenBlend` blends it as before.
+- **One-pedal driving:** in e-Pedal, lifting off is the brake; the pedal is for harder stops.
+- **Friction stays off:** the ceilings allow 0.25 g at 80 km/h, more below; series blending gives
+  the machine all of it.
+- The WLTC and hard-stop benches drive `RegenBlend` from a controller: **unchanged**.
+
+</div>
+</div>
+
+<!--
+Lifting off: regen without the brake pedal. So far the machine has regenerated only when something
+asked for braking: the driver's PI controller on the WLTC, or the brake command of the hard stop. A
+production electric car also slows itself when the driver simply lifts off the accelerator, with no
+foot on the brake. This slide is about where that comes from.
+
+First, what the driver feels. In a combustion car in neutral, lifting off does almost nothing: the
+car rolls on, slowed only by its road load, rolling resistance and air drag. On our course road
+load, coasting from 100 to 60 kilometers per hour takes 47.7 seconds. In gear, the engine drags a
+little, which drivers call engine braking. In an electric car the machine is always geared to the
+wheels, so what happens on lift-off is not physics but a choice, made in software. That is the last
+line under the table: an electric car slows because software asks the machine to.
+
+The diagram shows the chain from left to right. Four inputs go into the pedal map: the accelerator
+position, from 0 to 1; the brake pedal position, also from 0 to 1; the car's speed in kilometers
+per hour; and the drive mode, N, D or e-Pedal. The pedal map is software in the car's controller;
+in the course library it is the block `Vehicle.Electric.PedalMap`. It turns the four inputs into one
+signed torque request at the machine, tau ref, positive to drive and negative to brake. That
+request goes into the series blend, build 05's `RegenBlend`, unchanged, with its three ceilings.
+The blend sends the machine torque, tau motor, to the machine, drawn in green, which regenerates;
+and only the part of a braking request above the ceilings, tau brake, to the friction brakes, drawn
+in red. The dashed box under the arrow: on the WLTC and hard-stop benches a controller feeds that
+same input instead of the pedal map.
+
+The table lists the three modes: what the car does on lift-off, the target deceleration, and where
+the target comes from. One g is 9.81 meters per second squared. N: the car coasts on its road load
+with no regen, like the combustion car in neutral. D: a light regen of about 0.025 g, a quarter of
+a meter per second squared, on top of the road load. That target is derived: Argonne National
+Laboratory measured a 2013 Leaf coasting in D from 60 to 10 miles per hour in 55.6 seconds, against
+154.4 seconds for the same speeds on its own coast-down without regen, and the difference is a
+regen of about 0.25 meters per second squared. No figure for the current Leaf's D mode was found,
+so the number stays derived. e-Pedal: up to 0.2 g, 1.96 meters per second squared, from Nissan.
+
+On the right, four points. First: the pedal map, not the brake system, decides how hard the car
+regenerates on lift-off. The accelerator, the brake pedal, the speed and the mode go in, one torque
+request comes out, and `RegenBlend` blends it exactly as it blends the controller's request.
+
+Second, one-pedal driving. In e-Pedal, lifting off decelerates the car at up to 0.2 g, enough for
+most traffic, so the driver slows down by easing the accelerator and needs the brake pedal only for
+harder stops. Nissan's e-Pedal adds the friction brakes near standstill and on low grip.
+
+Third, friction stays off. Lift-off decelerations are light. The regen envelope of the three
+ceilings allows 0.25 g at 80 kilometers per hour and more below, up to the machine's 320 newton
+meters from 34.3 down to 10 kilometers per hour, and series blending gives the machine every demand
+under its ceilings, so tau brake stays zero. At 100 kilometers per hour the charge-power ceiling is
+itself about 0.2 g, so e-Pedal sits at its edge there. Whatever the pedal map still asks for below
+10 kilometers per hour, the fade hands to the friction brakes.
+
+Fourth, the course car's WLTC and hard-stop benches have no accelerator pedal: they drive
+`RegenBlend` from a speed controller or a fixed brake command. They do not pass through the pedal
+map, and every number of build 05 stands unchanged.
+-->
+
+---
+routeAlias: lift-off-modes
+class: big-figure
+---
+
+## Lift-off from 100 km/h: N, D and e-Pedal
+
+![Two panels against time, from about 100 km/h with the accelerator released and no brake pedal, one curve per mode. Top: speed in km/h; e-Pedal slows fastest, D a little faster than N, which coasts on road load alone. Bottom: deceleration in g; N falls with speed as the air drag fades, D sits about 0.025 g above it, e-Pedal near its 0.2 g limit, marked dashed.](/figures/07-liftoff-modes.svg)
+
+<!-- TODO(#158): replace the targets in this box with the measured per-mode decelerations from
+PlanarBEVLiftOffTransient(mode = 0, 1, 2), e.g. "N x.xxx g · D x.xxx g · e-Pedal x.xx g at
+80 km/h", the time from 100 to 20 km/h per mode, and the friction energy (expected 0 kJ). Then
+check the notes below, and the lift-off slide's "about 0.2 g at 100 km/h" edge, against the
+figure. -->
+
+<div class="handson">✓ going further in step 05: <code>PlanarBEVLiftOffTransient(mode = 0, 1, 2)</code> ·
+targets: N road load only · D about <b>0.025 g</b> of regen on top · e-Pedal up to <b>0.2 g</b> ·
+friction brakes <b>off</b></div>
+
+<!--
+The lift-off bench, from notebook 04, section 5. It is the course library's
+`PlanarBEVLiftOffTransient`: the course car at about 100 kilometers per hour, the accelerator
+released, no foot on the brake pedal, run once in each mode. The parameter mode is 0 for N, 1 for D
+and 2 for e-Pedal. The horizontal axis of both panels is time in seconds.
+
+Top panel: the car's speed in kilometers per hour, one curve per mode. N, coasting, falls the
+slowest: only the road load slows it. D falls a little faster, because the machine adds its light
+regen. e-Pedal falls the fastest.
+
+Bottom panel: the deceleration in g, how fast the speed falls, positive when the car slows. The
+dashed gray line is e-Pedal's limit, 0.2 g. N's deceleration is the road load alone, and it shrinks
+as the car slows, because the air drag grows with the square of the speed. D sits about 0.025 g
+above N. e-Pedal sits near its 0.2 g limit.
+
+The green box names the bench and the targets: N on road load only, D about 0.025 g of regen on top
+of it, e-Pedal up to 0.2 g, and the friction brakes off in every mode. None of the three asks for
+more than the regen ceilings allow, so the series blend gives all of it to the machine, and the
+energy of the slow-down goes back into the battery instead of into the pads.
 -->
 
 ---
@@ -600,17 +736,21 @@ same cycle: on the WLTC, series blending changes the result by a twentieth of a 
 - Hard stop: the ceilings take turns; machine **49 %**, friction **51 %**, and the stop is
   **shorter**, 36.2 m against 38.8 m.
 - WLTC: no ceiling binds; **23.85 %** of the traction comes back.
+- Lift-off regen comes from the **pedal map**: N coasts, D about **0.025 g**, e-Pedal up to
+  **0.2 g**, friction off.
 
 ### Next: add it all up. <Link to="energy-bill">→ 08, the energy bill</Link>
 
 <!--
-Section 07 in five lines. The drive turns the driver's torque into a converter current at the
+Section 07 in six lines. The drive turns the driver's torque into a converter current at the
 present field, and the car follows the WLTC to within 1.63 kilometers per hour over 23 267 meters. A
 machine asked to brake generates, and regen is limited by the machine's torque, the battery's charge
 power, a low-speed fade, and grip. Series blending gives the machine the demand first and friction
 the rest. On the hard stop the ceilings take turns, the machine takes 49 percent and friction 51,
 and the stop is shorter, 36.2 meters against 38.8. On the WLTC no ceiling binds, and 23.85 percent
-of the traction comes back.
+of the traction comes back. And when the driver lifts off, it is the pedal map that asks the machine
+to regenerate: N coasts, D adds about 0.025 g, e-Pedal up to 0.2 g, and the friction brakes stay
+off.
 
 The car drives and brakes. What is left is to put a meter on every link and read where the energy
 went.

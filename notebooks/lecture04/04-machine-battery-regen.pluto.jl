@@ -29,6 +29,7 @@ library's copies of the students' parts:
 | 2. Where the machine's losses go | 02 The DC machine | 01–02 | `Vehicle.Electric.ConverterTransient` |
 | 3. The battery under load | 06 Batteries, simply | 03 | `Vehicle.Electric.BatteryTransient` |
 | 4. Regen on a hard stop | 07 The car and regen | 05 | `Vehicle.Planar.PlanarBEVHardStopTransient` |
+| 5. Lifting off: N, D and e-Pedal | 07 The car and regen | 05, going further | `Vehicle.Planar.PlanarBEVLiftOffTransient` |
 
 The envelope and the efficiency map are notebook 01's; the switching models notebook 02's; the
 WLTC energy bill notebook 03's.
@@ -284,6 +285,63 @@ split_plot = let
     p
 end
 
+# ╔═╡ c37f107a-5be5-461a-8976-913b0fe60185
+md"""
+## 5. Lifting off: N, D and e-Pedal
+
+The course car regenerates on lift-off only through a pedal map: `Vehicle.Electric.PedalMap` turns
+the accelerator, the brake pedal, the speed and a drive mode into the signed torque request that
+`RegenBlend` takes, unchanged. The lift-off bench starts the car at about 100 km/h, releases the
+accelerator and never touches the brake pedal, once per mode: `mode = 0`, N, coasts on road load;
+`mode = 1`, D, adds about 0.025 g of regen (derived from Argonne's 2013 Leaf coast-down);
+`mode = 2`, e-Pedal, decelerates at up to 0.2 g (Nissan).
+"""
+
+# ╔═╡ f1a9cfbf-b7a0-4044-b9e1-0b6686a36d3a
+liftoff = (; N = PL.PlanarBEVLiftOffTransient(mode = 0), D = PL.PlanarBEVLiftOffTransient(mode = 1),
+    ePedal = PL.PlanarBEVLiftOffTransient(mode = 2));
+
+# ╔═╡ 2b197a32-1150-4a2c-9fef-ece59856f2b9
+"Speed in km/h and deceleration in g against time over a lift-off run, the deceleration by central differences of the car's speed."
+function liftoff_trace(run)
+    s, m = run.sol, symbolic_container(run)
+    ts = collect(range(s.t[1], s.t[end]; length = 2001))
+    v = s(ts; idxs = m.car.bus.vx).u
+    dt = ts[2] - ts[1]
+    a = similar(v)
+    a[2:end-1] = (v[3:end] .- v[1:end-2]) ./ (2dt)
+    a[1], a[end] = (v[2] - v[1]) / dt, (v[end] - v[end-1]) / dt
+    return (; t = ts, kmh = 3.6 .* v, g = -a ./ 9.81)
+end
+
+# ╔═╡ 52e602d4-3e37-4780-90a6-9dc9a4502c84
+liftoff_plot = let
+    p = plot(; layout = (2, 1), size = (960, 560), link = :x)
+    for (run, name, c) in ((liftoff.N, "N, coasting", 1), (liftoff.D, "D, light regen", 2),
+        (liftoff.ePedal, "e-Pedal, one-pedal", 3))
+        tr = liftoff_trace(run)
+        plot!(p[1], tr.t, tr.kmh; color = c, lw = 2.5, label = name)
+        plot!(p[2], tr.t, tr.g; color = c, lw = 2.5, label = "")
+    end
+    hline!(p[2], [0.2]; color = :gray, ls = :dash, lw = 1.5, label = "")
+    annotate!(p[2], [(0.0, 0.205, text("  e-Pedal limit, 0.2 g (Nissan)", 10, :left, :bottom, :gray))])
+    plot!(p[1]; ylabel = "car speed [km/h]", legend = :topright, ylims = (0, 110),
+        title = "Lift-off from 100 km/h, no brake pedal: the pedal map sets the deceleration")
+    plot!(p[2]; ylabel = "deceleration [g]", xlabel = "time [s]", ylims = (0, 0.25))
+    p
+end
+
+# ╔═╡ 88cd3478-20d1-49ed-830c-201ed2d4d697
+let
+    at(run, kmh) = (tr = liftoff_trace(run); i = findfirst(<(kmh), tr.kmh); round(tr.g[i]; digits = 3))
+    r(x) = round(x; digits = 3)
+    md"""
+    Passing 80 km/h: N **$(at(liftoff.N, 80.0)) g**, D **$(at(liftoff.D, 80.0)) g**, e-Pedal
+    **$(at(liftoff.ePedal, 80.0)) g**. D's regen on top of N's road load there:
+    **$(r(at(liftoff.D, 80.0) - at(liftoff.N, 80.0))) g**, against the 0.025 g target.
+    """
+end
+
 # ╔═╡ Cell order:
 # ╟─f6acb09c-5c44-4121-9b81-595d773a3be3
 # ╠═d733a7d0-135f-4ace-8f02-8159688077fe
@@ -305,3 +363,8 @@ end
 # ╠═7e8d1c4b-a689-45c1-b6f1-9e840a99baaf
 # ╟─71f6cc67-7827-4bfd-b7d5-24c597140f58
 # ╟─ad1a1d09-661d-44b0-8b60-3bd41905f501
+# ╟─c37f107a-5be5-461a-8976-913b0fe60185
+# ╠═f1a9cfbf-b7a0-4044-b9e1-0b6686a36d3a
+# ╠═2b197a32-1150-4a2c-9fef-ece59856f2b9
+# ╟─52e602d4-3e37-4780-90a6-9dc9a4502c84
+# ╟─88cd3478-20d1-49ed-830c-201ed2d4d697

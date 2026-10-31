@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 250" width="1100" height="250">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .box { fill: #fff; stroke: #16202c; stroke-width: 2; }
+    .box-accent { fill: #eaf1fa; stroke: #1f5fa8; stroke-width: 2; }
+    .box-given { fill: #fff; stroke: #4a5a6b; stroke-width: 2; stroke-dasharray: 6 4; }
+    .regen { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 2; }
+    .friction { fill: #f6d5d3; stroke: #c0392b; stroke-width: 2; }
+    .sig { stroke: #1f5fa8; stroke-width: 2; fill: none; }
+    .sigl { stroke: #4a5a6b; stroke-width: 2; fill: none; stroke-dasharray: 6 4; }
+    .t { font-size: 16px; font-weight: 600; }
+    .lbl { font-size: 13px; fill: #4a5a6b; }
+    .code { font-size: 12px; font-family: monospace; fill: #1f5fa8; }
+    .g { font-size: 13px; font-weight: 600; fill: #2e8b57; }
+    .r { font-size: 13px; font-weight: 600; fill: #c0392b; }
+  </style>
+  <defs>
+    <marker id="lc-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1f5fa8"/></marker>
+    <marker id="lc-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5a6b"/></marker>
+  </defs>
+
+  <text x="20" y="44" class="t">accelerator</text>
+  <text x="20" y="62" class="lbl">0–1</text>
+  <text x="20" y="94" class="t">brake pedal</text>
+  <text x="20" y="112" class="lbl">0–1</text>
+  <text x="20" y="144" class="t">speed</text>
+  <text x="20" y="162" class="lbl">km/h</text>
+  <text x="20" y="194" class="t">mode</text>
+  <text x="20" y="212" class="lbl">N · D · e-Pedal</text>
+  <path class="sig" d="M130 50 H240" marker-end="url(#lc-blue)"/>
+  <path class="sig" d="M130 100 H240" marker-end="url(#lc-blue)"/>
+  <path class="sig" d="M130 150 H240" marker-end="url(#lc-blue)"/>
+  <path class="sig" d="M150 200 H240" marker-end="url(#lc-blue)"/>
+
+  <rect class="box-accent" x="244" y="30" width="170" height="190" rx="4"/>
+  <text x="329" y="112" text-anchor="middle" class="t">pedal map</text>
+  <text x="329" y="132" text-anchor="middle" class="code">PedalMap</text>
+  <text x="329" y="160" text-anchor="middle" class="lbl">software</text>
+
+  <path class="sig" d="M414 125 H560" marker-end="url(#lc-blue)"/>
+  <text x="487" y="115" text-anchor="middle" class="code">tau_ref</text>
+  <text x="487" y="145" text-anchor="middle" class="lbl">one signed torque</text>
+
+  <rect class="box-given" x="440" y="196" width="170" height="44" rx="4"/>
+  <text x="525" y="216" text-anchor="middle" class="lbl">WLTC, hard stop:</text>
+  <text x="525" y="232" text-anchor="middle" class="lbl">a controller instead</text>
+  <path class="sigl" d="M525 196 V176 H600 V150" marker-end="url(#lc-gray)"/>
+
+  <rect class="box-accent" x="564" y="70" width="190" height="110" rx="4"/>
+  <text x="659" y="108" text-anchor="middle" class="t">series blend</text>
+  <text x="659" y="128" text-anchor="middle" class="code">RegenBlend</text>
+  <text x="659" y="152" text-anchor="middle" class="lbl">three ceilings</text>
+  <text x="659" y="168" text-anchor="middle" class="lbl">build 05, unchanged</text>
+
+  <path class="sig" d="M754 95 H860" marker-end="url(#lc-blue)"/>
+  <text x="807" y="85" text-anchor="middle" class="code">tau_motor</text>
+  <rect class="regen" x="864" y="62" width="216" height="66" rx="4"/>
+  <text x="972" y="90" text-anchor="middle" class="t">machine</text>
+  <text x="972" y="112" text-anchor="middle" class="g">regenerates on lift-off</text>
+
+  <path class="sigl" d="M754 160 H860" marker-end="url(#lc-gray)"/>
+  <text x="807" y="150" text-anchor="middle" class="code">tau_brake</text>
+  <rect class="friction" x="864" y="142" width="216" height="66" rx="4"/>
+  <text x="972" y="170" text-anchor="middle" class="t">friction brakes</text>
+  <text x="972" y="192" text-anchor="middle" class="r">only above the ceilings</text>
+</svg>
