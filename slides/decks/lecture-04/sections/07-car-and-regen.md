@@ -507,8 +507,9 @@ variations.
 Expected, from `HandsOn04.BEVHardStopTransient`: 80 to 0 km/h in 3.0 seconds after the pedal,
 36.2 meters. The regen torque follows the envelope: 137 at 80 km/h, 183 at 60, 320 from 34.3 to
 10, the fade below. The battery charges at up to 75.9 kW, minus 205 amperes. The front-left
-friction brake falls to zero from about 62 km/h and stays there; the rear-left carries the friction
-share all the way, cycling under the ABS. Machine 176.9 kJ, friction 181.8, battery 170.2. With
+friction brake falls to zero from about 62 km/h and stays there down to 10 km/h, where the fade
+hands it back; the rear-left carries the friction share all the way, cycling under the ABS.
+Machine 176.9 kJ, friction 181.8, battery 170.2. With
 the charge limit at zero: 38.8 meters.
 
 From `HandsOn04.BEVRegenWLTCTransient`: 34.25 Wh/km back of 143.6 of traction, 23.85 percent; the

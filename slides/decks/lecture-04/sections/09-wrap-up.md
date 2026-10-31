@@ -30,7 +30,7 @@ routeAlias: chain-table
 | machine | *T* = *K*Φ *i*, *E* = *K*Φ ω, losses as parts | 320 N·m, 110 kW, 3283 rpm | 17.6 Wh/km | 01 |
 | reduction, differential | ideal gears | 8.193 | 0 | 04 |
 | brakes | series blending onto Lecture 3's | 80.5 kW, 320 N·m, 10 km/h | 0.1 Wh/km | 05 |
-| road | Lecture 2's road load | 1500 kg, 0.63 m², 0.012 | 105.0 Wh/km | given |
+| road | Lecture 2's road load | 1500 kg, 0.63 m², 0.012 | 104.9 Wh/km | given |
 
 </div>
 
@@ -38,7 +38,7 @@ routeAlias: chain-table
 
 <!--
 The lecture on one table: each link of the chain, the model you built for it, its key number, what
-it lost over the WLTC, and the step that built it. The road's 105.0 is drag and rolling, 103.2,
+it lost over the WLTC, and the step that built it. The road's 104.9 is drag and rolling, 103.1,
 plus tire slip, 1.8.
 
 Read the loss column: after the road, the machine is the only large one, and it is large because

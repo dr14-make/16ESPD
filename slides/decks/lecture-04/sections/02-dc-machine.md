@@ -340,9 +340,9 @@ Fifteen minutes: paste one component, place seven blocks, two code lines, an ana
 The guide page, step 01, has every line.
 
 1. New component `DCMachine`: right-click MyCar, Add Component, toggle to code, select all, paste
-   the guide's block, save. It is the circuit of two slides back: `extends TwoPin` gives the
-   electrical pins, the armature is resistor, inductor, emf, the rotor inertia and four loss
-   parts sit on the emf's rotor. `k` is written as the formula it comes from, so changing R or a
+   the guide's block, save. It is the circuit of two slides back: `p` and `n` are the
+   electrical pins, both on the left edge; the armature is resistor, inductor, emf; the rotor
+   inertia and four loss parts sit on the emf's rotor. `k` is written as the formula it comes from, so changing R or a
    loss keeps the machine at 320 newton meters at 3283 rpm on 350 volts.
    Keep the names: step 02 adds a field input to this machine, and step 04 reads `machine.k`.
 

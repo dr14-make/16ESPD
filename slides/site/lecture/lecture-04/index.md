@@ -10,7 +10,7 @@ From a DC-equivalent machine on a test bench to a Leaf-class car on the WLTC and
 
 **What you build.** The energy chain of an electric car, one link per step, in your `MyCar` on the branch `handson-04`: the machine, the converter that feeds it, the battery behind them, then the car, regenerative braking and the energy bill. Each step follows the theory section that introduces it. The motor, gear and battery numbers are the Nissan Leaf ZE1's; the body, the road load and the cycle are the course car's, so the result can be set beside Lecture 2's engine.
 
-**How each step works.** Each step lists the parts to place with their library path, instance name and values, every wire and line of code, and the numbers the run must show before you go on. Use the names given here: later steps read signal paths such as `battery.SoC`.
+**How each step works.** Each step lists the parts to place with their library path, instance name and values, every wire and line of code, and the numbers the run must show before you go on. Use the names given here: later steps read signal paths such as `battery.SoC`. A parameter the tables give a type such as `Voltage`, `Current` or `Torque` is a `Real` in the **Add parameter** form, which offers only `Real`, `Integer`, `Boolean` and `String`: pick `Real` and put the unit (`V`, `A`, `W`, `m`, `N.m`) in **Unit**.
 
 **Fell behind?** Every step ends with a **Fell behind?** block: the finished code of that step, to paste. The course repository has the same components as the reference answers in `dyad/HandsOn04/`, under the same names; under **+** they show as `VehicleSystemsComponents › HandsOn04`. Build your own; open them only to compare.
 
@@ -114,7 +114,10 @@ New component `DCMachineDyno` in `MyCar`:
 
    ```txt [DCMachine]
    component DCMachine
-     extends ElectricalComponents.Analog.Interfaces.TwoPin
+     "Positive electrical pin"
+     p = Pin() {^p}
+     "Negative electrical pin"
+     n = Pin() {^n}
      "Rotor shaft"
      spline = Spline() {^spline}
      "Housing"
@@ -153,6 +156,8 @@ New component `DCMachineDyno` in `MyCar`:
      parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
      "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
      parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+     "Terminal voltage, p.v - n.v"
+     variable v::Voltage
      "Armature current, into p"
      variable i::Current
      "Back-EMF, E = k w"
@@ -180,6 +185,7 @@ New component `DCMachineDyno` in `MyCar`:
      "Sum of the losses"
      variable P_loss::Power
    relations
+     v = p.v - n.v
      connect(p, resistor.p) {^id1}
      connect(resistor.n, inductor.p) {^id2}
      connect(inductor.n, emf.p) {^id3}
@@ -201,11 +207,12 @@ New component `DCMachineDyno` in `MyCar`:
      P_const = -constant_loss.tau * w
      P_loss = P_cu + P_fric + P_iron + P_wind + P_const
    metadata {
+     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}},
      "_links": {
-       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-       "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}}
+       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+       "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}}
      }
    }
    end
@@ -213,9 +220,9 @@ New component `DCMachineDyno` in `MyCar`:
 
    :::
 
-   `extends … TwoPin` gives the machine its electrical pins and its terminal voltage `v`. The armature is the chain `p → resistor → inductor → emf → n`. The `emf` turns current into torque on its `rotor` and speed into voltage, both through `k`. The rotor inertia and the four loss parts all sit on the `emf`'s rotor and push back against the `support`, the housing. `k` is written as the formula it comes from, so if you change `R` or a loss, the machine still meets 320 N·m at 3283 rpm on 350 V.
+   `p` and `n` are the electrical pins, both on the machine's left edge, and `v = p.v - n.v` is its terminal voltage. The armature is the chain `p → resistor → inductor → emf → n`. The `emf` turns current into torque on its `rotor` and speed into voltage, both through `k`. The rotor inertia and the four loss parts all sit on the `emf`'s rotor and push back against the `support`, the housing. `k` is written as the formula it comes from, so if you change `R` or a loss, the machine still meets 320 N·m at 3283 rpm on 350 V.
 
-2. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `DCMachineDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** three times for `V`, `rpm_start` and `rpm_end`. Place the seven blocks from the table, rename each to its **Name** and set the values in its **Set** column.
+2. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `DCMachineDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** three times for `V`, `rpm_start` and `rpm_end`. Place the seven blocks from the table, rename each to its **Name** and set the values in its **Set** column. Searching **+** for `DCMachine` lists the course library's `HandsOn04` and `Vehicle › Electric` machines first: drag the one under `MyCar`. Each block lands with a default name (`constant1`, `voltagesource`, `dcmachine`, …), so rename all seven.
 3. Wire:
    - `voltage.y → supply.V`
    - `supply.p → machine.p`
@@ -223,6 +230,8 @@ New component `DCMachineDyno` in `MyCar`:
    - `speed.y → dyno.w_ref`
    - `machine.spline → dyno.spline`
    - `machine.support → mounts.spline`, and `dyno.support → mounts.spline`
+
+   Click an empty spot of the canvas between two wires: right after a wire is drawn, the next drag can be taken as a click and draw nothing. Count the `connect` lines in code view: eight.
 4. <Badge type="tip" text="New analysis" /> Toggle to code. Add these two lines in the `relations` section, so that the dyno's angle and the armature current start at zero:
 
    ```txt
@@ -484,7 +493,10 @@ The supply, the dyno and the mounts are step 01's.
 
    ```txt [DCMachine]
    component DCMachine
-     extends ElectricalComponents.Analog.Interfaces.TwoPin
+     "Positive electrical pin"
+     p = Pin() {^p}
+     "Negative electrical pin"
+     n = Pin() {^n}
      "Rotor shaft"
      spline = Spline() {^spline}
      "Housing"
@@ -527,6 +539,8 @@ The supply, the dyno and the mounts are step 01's.
      parameter tau_loss_base::Torque = T_f + K_i + k_w * w_base ^ 2 + C / w_base
      "Torque and back-EMF constant KΦ, from k w_base + R (T_max + tau_loss_base) / k = V_nom"
      parameter k::ElectricalTorqueConstant = (V_nom + sqrt(V_nom ^ 2 - 4.0 * w_base * R * (T_max + tau_loss_base))) / (2.0 * w_base)
+     "Terminal voltage, p.v - n.v"
+     variable v::Voltage
      "Armature current, into p"
      variable i::Current
      "Back-EMF, E = k w"
@@ -554,6 +568,7 @@ The supply, the dyno and the mounts are step 01's.
      "Sum of the losses"
      variable P_loss::Power
    relations
+     v = p.v - n.v
      connect(p, resistor.p) {^id1}
      connect(resistor.n, inductor.p) {^id2}
      connect(inductor.n, emf.p) {^id3}
@@ -580,12 +595,13 @@ The supply, the dyno and the mounts are step 01's.
      P_const = -constant_loss.tau * w
      P_loss = P_cu + P_fric + P_iron + P_wind + P_const
    metadata {
+     "Dyad": {"icons": {"default": "dyad://VehicleSystemsComponents/Vehicle/Electric/DCMachine.svg"}},
      "_links": {
-       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
-       "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
-       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": 150, "y1": -50, "x2": 250, "y2": 50}}}},
-       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": 750, "y1": -50, "x2": 850, "y2": 50}}}},
-       "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
+       "spline": {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}}}},
+       "support": {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}}}},
+       "p": {"Dyad": {"placement": {"icon": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}, "diagram": {"iconName": "pos", "x1": -50, "y1": 150, "x2": 50, "y2": 250}}}},
+       "n": {"Dyad": {"placement": {"icon": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}, "diagram": {"iconName": "neg", "x1": -50, "y1": 750, "x2": 50, "y2": 850}}}},
+       "field": {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}}}}
      }
    }
    end
@@ -593,7 +609,7 @@ The supply, the dyno and the mounts are step 01's.
 
    :::
 
-   Four things changed. `emf` is now your `FieldEMF`. The structural parameter `field_weakening` decides whether the machine has a `field` input: the line `field = RealInput() if field_weakening` creates it only when `field_weakening` is true. The `if` block in `relations` wires that input to the EMF, or else holds the field at 1. And the metadata places `field` on the machine's left side. Left at its default, `false`, this is step 01's machine: run **DCMachineDynoTransient** again and it gives the same 320 N·m and −304 N·m.
+   Four things changed. `emf` is now your `FieldEMF`. The structural parameter `field_weakening` decides whether the machine has a `field` input: the line `field = RealInput() if field_weakening` creates it only when `field_weakening` is true. The `if` block in `relations` wires that input to the EMF, or else holds the field at 1. And the metadata places `field` on the machine's left edge, between `p` and `n`. Left at its default, `false`, this is step 01's machine: run **DCMachineDynoTransient** again and it gives the same 320 N·m and −304 N·m.
 
 3. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `Converter`. Toggle to code, select everything, paste the block below and save.
 
@@ -683,7 +699,7 @@ The supply, the dyno and the mounts are step 01's.
 
    The three pins share one negative rail, `n`, as in the deck's chopper: the pack sits between `p_in` and `n`, the machine between `p_out` and `n`. A pin's current counts positive *into* the component, so `i_in = p_in.i` is drawn from the pack and `i_out = -p_out.i` is pushed into the machine, and the three currents sum to zero. The next two lines are the converter's equations; `P_loss / v_in` is the extra input current that pays for the losses. Then the current limit and the current loop, the either-or between field and duty, and the two losses.
 
-4. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `ConverterDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** four times for `V`, `I_ref`, `rpm_start` and `rpm_end`. Place the nine blocks from the table, rename each to its **Name** and set the values in its **Set** column. Once `machine`'s `field_weakening` is `true`, its `field` input appears on its left side.
+4. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `ConverterDyno`. With nothing selected, click **Edit Parameters** → **Add parameter** four times for `V`, `I_ref`, `rpm_start` and `rpm_end`. Place the nine blocks from the table, rename each to its **Name** and set the values in its **Set** column. Studio draws `machine`'s `field` input on its left edge, between `p` and `n`, whatever `field_weakening` says; it only exists once `field_weakening` is ticked `true`.
 5. Wire:
    - `voltage.y → supply.V`
    - `supply.p → converter.p_in`
@@ -1053,10 +1069,10 @@ New component `ElectricDrive` in `MyCar`:
 | --- | --- | --- |
 | `ratio` | parameter `Real` | `8.193`: the reduction |
 | `P_aux` | parameter `Power` | `300.0`: the 12 V network |
-| `tau_ref` | BlockComponents › Interfaces › RealInput | the machine torque asked for |
-| `spline` | RotationalComponents › Interfaces › Spline | the reduction's output, to the differential |
-| `support` | RotationalComponents › Interfaces › Spline | the machine housing and gear case |
-| `SoC` | BlockComponents › Interfaces › RealOutput | the battery's state of charge |
+| `tau_ref` | Dyad › RealInput | the machine torque asked for |
+| `spline` | Dyad › Spline | the reduction's output, to the differential |
+| `support` | Dyad › Spline | the machine housing and gear case |
+| `SoC` | Dyad › RealOutput | the battery's state of charge |
 | `battery` | your `Battery` | defaults |
 | `aux` | VehicleSystemsComponents › Vehicle › Electric › AuxLoad | `P_aux = P_aux` |
 | `converter` | your `Converter` | defaults |
@@ -1221,13 +1237,13 @@ Paste `BEVWLTC` from step 4 of **Do this** above. Then right-click `MyCar` → *
 ```txt [ElectricDrive]
 component ElectricDrive
   "Machine torque asked for, positive motoring"
-  tau_ref = RealInput()
+  tau_ref = RealInput() {"Dyad": {"placement": {"icon": {"x1": -50, "y1": 450, "x2": 50, "y2": 550}, "diagram": {"x1": -50, "y1": 150, "x2": 50, "y2": 250}}}}
   "Reduction output shaft, to the differential"
-  spline = Spline()
+  spline = Spline() {"Dyad": {"placement": {"icon": {"x1": 950, "y1": 450, "x2": 1050, "y2": 550}, "diagram": {"x1": 950, "y1": 400, "x2": 1050, "y2": 500}}}}
   "Machine housing and gear case"
-  support = Spline()
+  support = Spline() {"Dyad": {"placement": {"icon": {"iconName": "support", "x1": 450, "y1": 950, "x2": 550, "y2": 1050}, "diagram": {"iconName": "support", "x1": 788, "y1": 950, "x2": 888, "y2": 1050}}}}
   "Battery state of charge"
-  SoC = RealOutput()
+  SoC = RealOutput() {"Dyad": {"placement": {"icon": {"x1": 450, "y1": -50, "x2": 550, "y2": 50, "rot": 270}, "diagram": {"x1": 135, "y1": -50, "x2": 235, "y2": 50, "rot": 270}}}}
   battery = Battery()
   aux = VehicleSystemsComponents.Vehicle.Electric.AuxLoad(P_aux = P_aux)
   converter = Converter()
@@ -1315,10 +1331,10 @@ New component `RegenBlend` in `MyCar`:
 | `tau_max` | parameter `Torque` | `320.0`: the torque limit |
 | `P_charge` | parameter `Power` | `80.5e3`: the charge-power limit |
 | `v_fade` | parameter `Real` | `10.0`: the fade speed, km/h |
-| `tau_ref` | BlockComponents › Interfaces › RealInput | the driver's torque at the machine, positive drives |
-| `v` | BlockComponents › Interfaces › RealInput | the car's speed in km/h |
-| `tau_motor` | BlockComponents › Interfaces › RealOutput | the torque the machine is asked for |
-| `tau_brake` | BlockComponents › Interfaces › RealOutput | the torque asked of each of the four friction brakes |
+| `tau_ref` | Dyad › RealInput | the driver's torque at the machine, positive drives |
+| `v` | Dyad › RealInput | the car's speed in km/h |
+| `tau_motor` | Dyad › RealOutput | the torque the machine is asked for |
+| `tau_brake` | Dyad › RealOutput | the torque asked of each of the four friction brakes |
 
 New components `BEVHardStop` and `BEVRegenWLTC` in `MyCar`: paste the code below.
 
@@ -1495,7 +1511,7 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
 
 `kmh.y` falls from 80 to 0 in **3.0 s** after the pedal, and the car stops in **36.2 m**. Against speed, `blend.tau_regen` follows the envelope: **137 N·m** at 80 km/h and 183 N·m at 60 km/h, where the 80.5 kW charge limit binds; **320 N·m** from 34.3 km/h down to 10 km/h, the torque limit; then falling linearly to zero with the fade. The battery charges at up to **75.9 kW**, −205 A.
 
-`car.fl.brake.tau_friction`, the front-left friction brake, falls to zero from about **62 km/h** and stays there: the machine's torque holds the front slip past the ABS's reapply threshold, so the ABS keeps the front brakes released. `car.rl.brake.tau_friction` carries the friction share all the way down, cycling under the ABS.
+`car.fl.brake.tau_friction`, the front-left friction brake, falls to zero from about **62 km/h** and stays there down to 10 km/h: the machine's torque holds the front slip past the ABS's reapply threshold, so the ABS keeps the front brakes released. Below 10 km/h the fade hands the front axle back to its friction brakes. `car.rl.brake.tau_friction` carries the friction share all the way down, cycling under the ABS.
 
 **The split:** the machine takes **176.9 kJ** back, the friction brakes burn **181.8 kJ**: friction **51 %**, machine **49 %**. **170.2 kJ** reaches the battery, 47 Wh, about 350 m of WLTC driving.
 
@@ -1616,8 +1632,8 @@ Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardSt
    ```julia
    r = MyCar.BEVRegenWLTCTransient();
    km = r.sol[r."car.bus.x"][end] / 1000
-   Wh_per_km(x) = r.sol[x][end] / 3600 / km
-   Wh_per_km(r."E_dc_in"), Wh_per_km(r."E_shaft_out"), Wh_per_km(r."E_shaft_in"), Wh_per_km(r."E_brake")
+   Wh_km(x) = r.sol[x][end] / 3600 / km
+   Wh_km(r."E_dc_in"), Wh_km(r."E_shaft_out"), Wh_km(r."E_shaft_in"), Wh_km(r."E_brake")
    r.sol[r."E_dc_in"][end] / r.sol[r."E_shaft_out"][end]          # recovered share of traction
    plot(r; idxs = [r."blend.tau_demand", r."blend.tau_regen", r."blend.tau_brake"], layout = (3, 1))
    ```
@@ -1836,7 +1852,7 @@ Each meter is a state, not a sum over the plotted points afterwards: the solver 
 
 ::: tip Expected result
 
-**The bill, in Wh/km:** road load **103.2**, machine **17.6**, auxiliaries **6.4**, battery *R*<sub>0</sub> **3.1**, converter **2.1**, tire slip **1.8**, friction brakes **0.1**. They add up to **134.3 Wh/km** out of the cells, and `residual` is about **3 × 10⁻⁹**. The car ends at rest, so `ΔE_kin` is zero.
+**The bill, in Wh/km:** road load **103.1**, machine **17.6**, auxiliaries **6.4**, battery *R*<sub>0</sub> **3.1**, converter **2.1**, tire slip **1.8**, friction brakes **0.1**. Unrounded, they add up to **134.3 Wh/km** out of the cells, and `residual` is a few **10⁻⁹**. The car ends at rest, so `ΔE_kin` is zero.
 
 **At the battery terminals:** `Wh_per_km` is **131.2**, 13.12 kWh/100 km, inside the plan's 120–155 Wh/km. The terminals gave out 165.4 Wh/km and took **34.2 Wh/km** back from braking: 24 % of the traction energy. The friction brakes burned only what the fade below 10 km/h left them.
 
