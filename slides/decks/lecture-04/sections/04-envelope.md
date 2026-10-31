@@ -13,9 +13,12 @@ drives on it.
 `notebooks/lecture04/01-efficiency-map.pluto.jl`
 
 <!--
-Budget: about 30 minutes, of which build 02 takes about 15: the converter 3, base speed and field
-weakening 4, the efficiency map 3, against ORNL 2, WLTC on the map 3, build 02 15. New material:
-deck 7 has no envelope slide; the plan adds it because every EV spec sheet has one.
+Section 04, the envelope. Every electric car's spec sheet shows the same shape: constant torque up
+to a base speed, then constant power, with the torque falling as the speed rises. In this section we
+see where that shape comes from: the converter's current limit, its voltage limit, and field
+weakening. Then we compute the efficiency map of our machine, compare it with a measured Leaf, and
+see where the WLTC drives on it. The figures come from notebook 01, the efficiency-map notebook, and
+you build the converter at the end.
 -->
 
 ---
@@ -63,22 +66,34 @@ At 350 V out and 332.2 A: **99.2 %** efficient.
 </div>
 
 <!--
-The switching inverter of section 05, averaged. Over one switching period of 200 microseconds the
-switches give the machine the fraction d of the pack voltage, and draw the fraction d of the
-machine current from the pack. Without losses it is a DC transformer: power in equals power out.
+Between the pack and the machine sits the inverter. Section 05 opens it up; here we average it. Over
+one switching period, 200 microseconds at 5 kilohertz, the switches give the machine the fraction d
+of the pack voltage. d is the duty, a number between 0 and 1. That is the first formula: v out
+equals d times v in. The input current, the second formula, is d times the output current, plus the
+loss power divided by the input voltage: the extra current that pays for the losses. Without its
+losses the converter is a DC transformer: power in equals power out.
 
-The current limit, 332.2 amperes, is the current at which step 01's machine gives 320 newton
-meters at base speed. The duty limit, 1, says the converter cannot give more than the pack's
-voltage. The current follows its command through a first-order lag of a millisecond: the
-inverter's current loop.
+Then the two limits. The output current is at most I max, in either direction, and the duty is at
+most d max, which is 1.
 
-The losses are the deck's: two devices carry the current at any instant, 0.6 volts each, the
-conduction loss; and each edge costs a little energy, the switching loss, proportional to the
-switching frequency. ORNL ran the Leaf's inverter at 5 kHz; 1 microsecond edges put the efficiency
-in ORNL's measured 96 to 99 percent. At the corner point, 350 volts and 332.2 amperes: 0.98 kW
-lost of 117.25 kW in, 99.2 percent.
+And the deck's switch losses, the last formula. A conduction loss, V on times the current, where V
+on is the voltage across the devices that carry it. Plus a switching loss, f s times t sw times v in
+times the current, where f s is the switching frequency and t sw the time each edge takes: every
+edge costs a little energy, so this loss grows with the switching frequency.
 
-In the car this is `Vehicle.Electric.Converter`; the switching models of section 05 justify it.
+The table says where each number comes from. I max, 332.2 amperes, is the current at which build
+01's machine gives 320 newton meters at base speed. d max is 1: the converter cannot give the
+machine more than the pack's voltage. T i, 1 millisecond, is the time constant of the inverter's
+current loop: the output current follows its command with a lag that short. V on is 1.2 volts: at
+any instant two devices carry the current, 0.6 volts each, the deck's number. And f s and t sw are 5
+kilohertz and 1 microsecond. Oak Ridge ran the Leaf's inverter at 5 kilohertz, and 1 microsecond
+edges put the converter's efficiency in the 96 to 99 percent Oak Ridge measured.
+
+The number at the bottom: at 350 volts out and 332.2 amperes, the loss is 332.2 amperes times 1.2
+volts plus 5000 times 1 microsecond times 350 volts, that is 332.2 times 2.95 volts, 0.98 kilowatts.
+Out of 117.25 kilowatts in, that is 99.2 percent.
+
+In the car this is `Vehicle.Electric.Converter`, and you build it in step 02.
 -->
 
 ---
@@ -117,26 +132,41 @@ corner.
 </div>
 
 <!--
-The figure is notebook 01, the efficiency-map notebook, its envelope plot: build 02's converter
-driving build 01's machine at the current limit, from standstill to 10 000 rpm. It lands with the
-efficiency-map notebook.
+Where does the voltage run out? The figure is notebook 01's envelope: build 02's converter driving
+build 01's machine at the current limit, from standstill to the machine's top speed. Two panels
+share the horizontal axis, the machine speed in rpm. The top panel is the shaft torque in newton
+meters, the bottom one the shaft power in kilowatts. The black dashed vertical line is base speed,
+the dotted one at the right the maximum speed, 10 100 rpm. The blue-tinted region left of base speed
+is labeled constant torque, full field, duty rising. The orange-tinted region right of it is labeled
+field weakening, constant power, duty at 1, field falling as 1 over omega. The thin gray dashed
+curve in the top panel is a pure 1 over omega curve, for comparison.
 
-Below base speed: the converter is asked for more than 332.2 amperes and gives its limit. To push
-that current the machine needs K Phi omega plus R I max volts, and the converter lowers its duty
-to give exactly that: at standstill 16.6 volts, a duty of 0.047; at 1900 rpm 0.60. The torque is
-flat: 322.1 newton meters in the air gap, 320 at the shaft.
+Below base speed the converter is asked for more than its 332.2 amperes and gives its limit. To push
+that current, the machine needs its back-EMF plus the drop across R, and that is the formula on the
+right: d times V equals K Phi omega plus R times I max. The converter sets its duty to give exactly
+that. At standstill there is no back-EMF, so it takes only 0.05 times 332.2, 16.6 volts, a duty of
+0.047. As the speed rises, the duty rises with the back-EMF. The torque is flat: 322.1 newton meters
+in the air gap, 320 at the shaft. The small dip just above standstill is the constant 200 watt loss,
+a torque C over omega, which is large at very low speed; below about 95 rpm the model fades it out,
+so a machine at standstill has no infinite drag.
 
-At 3283 rpm the duty reaches 1. That is the base speed, the corner of the envelope.
+At 3283 rpm the duty reaches 1: the converter gives the machine all of the pack's 350 volts, and the
+voltage has run out. That is base speed, the envelope's corner, as the slide says. The figure's
+label reads 3286 rpm, because the notebook marks the first point where the field has dropped a tenth
+of a percent below full.
 
-Above it, the only way to keep the current flowing is to lower the back-EMF, and the only part of
-it left is Phi: field weakening. Hold 350 volts and 332.2 amperes, and K Phi omega must stay at
-333.4 volts, so Phi falls as 1 over omega, the torque with it, and the power E times I stays at
-110.75 kW: the constant-power hyperbola. At 5000 rpm the field is 0.66 and the shaft gives 209
-newton meters; at 10 000, 0.328 and 103.8. The shaft power slips from 110.0 to 108.7 kW as
-friction, iron and windage grow with speed.
+Above base speed the only way to keep the current flowing is to lower the back-EMF, and the only
+part of K Phi omega left to lower is Phi: field weakening. Hold 350 volts and 332.2 amperes, and K
+Phi omega must stay at 350 minus 16.6, 333.4 volts. So Phi falls as 1 over omega, the torque, K Phi
+times I, falls as 1 over omega with it, and the power in the air gap, E times I, 333.4 volts times
+332.2 amperes, stays at 110.75 kilowatts. That is the constant-power hyperbola. The table gives two
+points on it: at 5000 rpm the field is 0.66 and the shaft gives 209 newton meters; at 10 000 rpm the
+field is 0.328 and the shaft gives 103.8. In the bottom panel the shaft power is 110.0 kilowatts at
+base speed and slips to 108.7 at 10 000 rpm, because friction, iron loss and windage grow with speed
+while the air-gap power stays put.
 
-The Leaf's spec sheet says exactly this: 320 newton meters from 0 to 3283 rpm, 110 kW from 3283 to
-9795 rpm.
+Nissan's spec sheet says exactly this: 320 newton meters from 0 to 3283 rpm, and 110 kilowatts from
+3283 to 9795 rpm.
 -->
 
 ---
@@ -167,17 +197,28 @@ Nothing is looked up: the copper loss is in the resistor, the rest in the shaft 
 </div>
 
 <!--
-The figure is notebook 01, the efficiency map: build 02's machine and converter held at each
-point of a grid of torque and speed inside the envelope, with the efficiency computed from the
-model's own powers. It lands with the efficiency-map notebook.
+The efficiency map. Notebook 01 runs build 02's machine and converter on the dyno once for each
+output current, from minus 332 to plus 332 amperes, 63 ramps in all. Every saved point is a steady
+operating point, and at each one the efficiency is computed from the model's own powers: shaft power
+over the power drawn from the DC link while motoring, and the other way round while generating. That
+is the first sentence on the right: eta equals P shaft over P in, read from the machine's own parts.
 
-Three regions, each explained by section 02's losses. At low speed and high torque the current is
-high and the output small: the copper loss, proportional to torque squared, wins. At very light
-load the output is small and the friction, iron, windage and constant losses are not: the
-efficiency collapses. In between, at mid speed and mid torque, the peak.
+Read the figure. The horizontal axis is the machine speed in rpm, the vertical axis the shaft torque
+in newton meters. Above zero the machine is motoring, below zero it is generating, and the two
+halves are nearly mirror images. The color is the combined efficiency of machine and converter in
+percent, from dark purple at 70 to yellow at the top, on the color bar at the right. The thin black
+lines are contours, each labeled with its efficiency, from 70 up to 95 percent. The heavy black
+curves are the envelope from the last slide, at the top and at the bottom; outside it the map is
+white.
 
-The map is a result, not an input. That is the plan's decision S3: since the copper loss lives in
-the armature resistance, a measured map on top would count it twice.
+Three regions, each explained by section 02's losses. Mid speed and mid torque: the peak, just under
+96 percent. Low speed and high torque, the lower left of the upper half: the current is high and the
+output power small, and the copper loss, proportional to the torque squared, wins. Near zero torque,
+the band along the zero line: the output is small but the friction, iron, windage and constant
+losses are not, so the efficiency collapses.
+
+The last line on the right is the point of the map: nothing is looked up. The copper loss is in the
+resistor, the rest in the shaft parts. The map is a result of the model, not an input to it.
 -->
 
 ---
@@ -208,18 +249,36 @@ comparison is of **shape and level, not a fit**.
 </div>
 
 <!--
-The figure is notebook 01: the model's map beside the anchor points read from Oak Ridge National
-Laboratory's benchmark of the 2012 Leaf's motor and inverter, 375 volts DC link, 5 kHz, coolant
-at 65 degrees. It lands with the efficiency-map notebook.
+How does this compare with a real Leaf? Oak Ridge National Laboratory benchmarked the 2012 Leaf's
+motor and inverter on a dyno and published their combined efficiency map, measured at a 375 volt DC
+link, 5 kilohertz switching, and coolant at 65 degrees Celsius.
 
-The anchors, from the plan: combined motor and inverter 94 to 96 percent at mid speed and torque;
-about 80 at low speed and high torque; 70 to 80 near zero torque. ORNL's points were read by eye
-from contour labels, plus or minus one percentage point.
+The figure has two panels with the same axes, machine speed in rpm and shaft torque in newton
+meters, and the same colors and contour levels as the last slide, motoring only. Left: our model,
+machine plus average converter, at 350 volts. Right: Oak Ridge's map, redrawn from values digitized
+from their published figure and smoothed a little to wash out the contour labels. The heavy black
+line on the right is the edge of what Oak Ridge tested. The gray dashed curve in both panels is the
+80 kilowatt line, the first-generation motor's power.
 
-The caveat is on the slide and matters: ORNL measured the first-generation motor, 80 kW and 280
-newton meters, not the 110 kW ZE1 machine the model is sized for. So we compare the shape, where
-the peak sits and how it falls off, and the level, not the contours point by point. The model's R
-was chosen so the levels land in ORNL's range.
+The table gives the three bands the plan reads from Oak Ridge's map: 94 to 96 percent at mid speed
+and mid torque; about 80 percent at low speed and high torque; 70 to 80 percent near zero torque.
+Those points were read by eye from the contour labels, to within about a percentage point.
+
+The shapes agree. The efficiency climbs steeply out of the low-speed, high-torque corner; a plateau
+above 90 percent covers most of the map from about 2000 rpm; and it collapses toward the zero-torque
+axis. In the middle of the map the two agree to about a point. The differences are worth a look. Oak
+Ridge's 96 percent island sits at 6000 to 9000 rpm, just under the 80 kilowatt line, where the model
+gives 94; the model's own peak, 95.8 percent, sits at 3000 to 4500 rpm, because its iron loss and
+windage grow with speed with nothing to offset them. At low speed and high torque the model is 4 to
+6 points better than Oak Ridge: our converter's losses track only the current, while a real inverter
+does worse at low output voltage. At 1900 rpm and light load the model is 8 points worse: its
+constant 200 watts, friction and iron loss weigh heavily against 2 kilowatts of output. And our
+machine is larger, 320 newton meters and 110 kilowatts against 280 and 80, so its envelope is wider.
+
+The caveat on the slide matters. Oak Ridge measured the first-generation motor, 80 kilowatts and 280
+newton meters, not the 110 kilowatt ZE1 machine our model is sized for. So we compare shape and
+level, where the peak sits and how it falls off, and not the contours point by point. It is not a
+fit: R was chosen so that the levels land in Oak Ridge's range, and that is all.
 -->
 
 ---
@@ -249,20 +308,23 @@ At 131 km/h the machine turns **9260 rpm**, the field down to **0.36**.
 </div>
 
 <!--
-The figure is notebook 01: the efficiency map with the operating points of step 04's car over the
-WLTC on top. It lands with the efficiency-map notebook.
+Where does the car actually drive on this map? Notebook 01 runs the finished car of build 05 over
+the WLTC class 3b and reads the machine's speed and torque once a second. Each dot is one second of
+the cycle: white dots while driving, orange-red dots while regenerating. Behind them is the 350 volt
+map from two slides back, with the same axes and colors.
 
-Read where the dots are. The WLTC is a gentle cycle: the driver in step 04 never asks for more
-than 117 newton meters, about a third of the 320 the machine can give; under braking at most 87
-newton meters (step 05). Most of the cycle is cruising and gentle acceleration at a few tens of
-newton meters, well below the peak island.
+Look where the dots are. They spread over speed, but they hug the bottom of the map. The WLTC is a
+gentle cycle: on build 04's car the driver never asks the machine for more than 117 newton meters,
+about a third of the 320 it can give, and when braking, at most 87 newton meters. Most of the cycle
+is cruising and gentle acceleration at a few tens of newton meters, well below the peak region,
+where the fixed losses take their share.
 
-So the number that decides the energy bill is not the peak efficiency in the brochure; it is the
-efficiency at light load, where the fixed losses, friction, iron, windage, constant, weigh most.
-That is also the PMSM's advantage over the induction machine from section 03.
+The speed: below about 48 kilometers per hour the field is full. At the cycle's top speed, 131
+kilometers per hour, the machine turns 9260 rpm, with the field down to 0.36.
 
-Speed: below about 48 km/h the field is full; at the cycle's top speed of 131 km/h the machine
-turns 9260 rpm with the field at 0.36.
+So the number that decides the energy bill is not the peak efficiency in the brochure. It is the
+efficiency at light load, where friction, iron loss, windage and the constant loss weigh most. That
+is the quote box, and it is also the PMSM's advantage over the induction machine from section 03.
 -->
 
 ---
@@ -307,40 +369,53 @@ corner at <b>2791 rpm</b></div>
 </div>
 
 <!--
-Fifteen minutes: three code pastes, a bench of eight blocks, one long run, a few variations. The
-guide page, step 02, has every line; the snippet on the slide is shortened.
+Build 02: the converter, and field weakening. On the left, the finished bench in Studio. A constant
+block named current feeds the converter's current command at the top. The supply feeds the
+converter's input, p in, and the converter's output, p out, feeds the machine's p. The converter's
+n, the machine's n, the supply's n and the ground all share one node, one negative rail. The
+converter's field output goes into the machine's new field input. The speed ramp drives the dyno,
+and both housings go to the mounts, as in step 01.
 
-1. `FieldEMF`: the stdlib EMF with a field input, so E = field times K Phi omega and T = field
-   times K Phi i. Paste from the guide.
-2. `DCMachine` gets a `field_weakening` switch and a `field` input wired to the new EMF. With the
-   switch off it is step 01's machine, unchanged.
-3. `Converter`: paste. The current loop, `T_i der(i_out) = i_cmd - i_out`, with the command
-   clipped to plus or minus I max; the duty is whatever the machine needs to carry that current;
-   and the either-or relation: either the field is full or the duty is at its limit. It is
-   written with the corner of min rounded by 1e-4, so the solver meets no kink at base speed.
-4. `ConverterDyno`: the step 01 dyno with the converter in between and a constant current command
-   of 500 amperes, more than the limit, so the converter gives its 332.2. The dyno ramps from 0 to
-   10 000 rpm over 100 seconds.
+The steps, in the italic line. First, paste `FieldEMF` from the guide: the standard library's
+rotational EMF with one more input, field, so that E equals field times K Phi omega and the torque
+equals field times K Phi i. With field equal to 1 it is the element you had. Second, give your
+`DCMachine` its field input: the new code has a switch, `field_weakening`, which creates the input
+only when it is true. Left false, it is build 01's machine, unchanged. Third, paste `Converter`. Its
+key lines are the current loop, T i times the derivative of the output current equals the command
+minus the output current, with the command clipped to plus or minus I max; the duty, which is
+whatever the machine needs to carry that current; and an either-or relation: either the field is
+full, or the duty is at its limit. That relation is written with the corner of a minimum rounded off
+by 10 to the minus 4, so that the solver meets no kink at base speed. Fourth, a new `ConverterDyno`:
+the step 01 dyno with the converter in between. Its parameters are V, 350 volts; I ref, 500 amperes,
+more than the converter gives, so that it delivers its limit and every point is a point of the
+envelope; rpm start, 0; and rpm end, 10 000. The dyno holds standstill for a second, then sweeps to
+10 000 rpm in 100 seconds, so the analysis, `ConverterDynoTransient`, runs 102 seconds. Run it once,
+then plot.
 
-Expected, from `HandsOn04.ConverterDynoTransient`: 332.2 amperes from the first milliseconds. At
-standstill d is 0.047: 16.6 volts push 332.2 amperes through 0.05 ohm. Up to base speed the field
-stays 1, the duty rises in a straight line, 0.60 at 1900 rpm; the air-gap torque holds 322.1, the
-shaft gives 319.1 at 1900 rpm, the losses and the 0.52 newton meters the dyno spends accelerating
-the rotor taken off. Near 95 rpm the shaft torque dips to 300: the constant 200 watt loss is a
-torque C over omega, 20 newton meters there.
+The snippet plots the shaft torque against speed, then the duty and the field against speed, from
+point 21 on: points are saved every 0.05 seconds, so the first 20 are the first second at
+standstill. The last line reads the converter's input power and its loss at the end of the run.
 
-The duty reaches 1 at 3283 rpm and the field starts to fall: 0.66 at 5000 rpm, 209 newton meters;
-0.328 at 10 000, 103.8. The air-gap power is 110.75 kW all the way; the shaft's slips from 110.0
-to 108.7. At the end P in 117.25 kW, P out 116.27, P loss 0.98, 99.2 percent. Held at 3283 rpm,
-rpm start equal to rpm end: 320.0 newton meters, 110.0 kW.
+The first green box is the envelope. The converter's output current is 332.2 amperes throughout. The
+duty is 0.047 at standstill, 0.60 at 1900 rpm, and reaches 1 at 3283 rpm. The field is 1 below that,
+0.66 at 5000 rpm, and 0.328 at 10 000. The shaft gives 209 newton meters at 5000 rpm and 103.8 at 10
+000. And the air-gap power, the electromagnetic torque times the speed, stays at 110.75 kilowatts
+above base speed.
 
-Variations in the guide: 300 volts moves the corner to 2791 rpm and the power to 94.1 kW in the
-air gap, as a sagging pack will in step 03. 150 amperes: 145.5 newton meters up to 3373 rpm.
-Minus 500 amperes, braking: above 3610 rpm the converter weakens the field here too; at 10 000
-rpm P in is minus 115.3 kW, power flowing back into the supply; at standstill the supply pays the
-copper loss, plus 6.5 kW.
+The second green box. At the end of the run the input power is 117.25 kilowatts, the output 116.27,
+the loss 0.98: 99.2 percent. If you hold the dyno at 3283 rpm, with rpm start equal to rpm end, the
+shaft gives 320.0 newton meters, 110.0 kilowatts. And on 300 volts the voltage runs out sooner: the
+corner moves down to 2791 rpm, and the air-gap power above it drops to 94.1 kilowatts. A sagging
+pack does exactly that, as step 03 shows.
 
-Testsets: `test/converter_plausibility.jl`.
+The guide has two more variations. At 150 amperes, the torque is 145.5 newton meters in the air gap
+up to 3373 rpm, a slightly later corner, because less current needs less voltage across R. At minus
+500 amperes, braking, the converter weakens the field above 3610 rpm too, and at 10 000 rpm the
+input power is minus 115.3 kilowatts: power flowing back into the supply. At standstill there is no
+back-EMF to brake with, so the supply pays the copper loss, 6.5 kilowatts.
+
+One detail you may notice: near 95 rpm the shaft torque dips to 300 newton meters. That is build
+01's constant 200 watt loss, a torque C over omega, 20 newton meters at that speed.
 -->
 
 ---
@@ -358,6 +433,14 @@ Testsets: `test/converter_plausibility.jl`.
 ### Next: what is inside the converter. <Link to="power-electronics">→ 05, power electronics</Link>
 
 <!--
-One minute. The converter in the car is an average. The next section opens it up: switches,
-diodes, pulse-width modulation, on a microsecond time scale, beside the car rather than in it.
+Section 04 in four lines. The inverter, averaged, is v out equals d times v in, with a current limit
+and a duty limit, and 99.2 percent efficient at the corner. Base speed is where the duty reaches 1,
+at 3283 rpm: below it, constant torque; above it, field weakening, with the torque falling as 1 over
+omega and the power constant. The efficiency map is computed from the machine's own parts: its peak
+at mid load, lower at low speed and high torque, collapsing near zero torque, and it matches Oak
+Ridge's measured Leaf in shape and level. And the WLTC drives at light load, so light-load
+efficiency decides the bill.
+
+The converter in the car is an average. The next section opens it up: switches, diodes and
+pulse-width modulation, on a microsecond time scale, beside the car rather than in it.
 -->

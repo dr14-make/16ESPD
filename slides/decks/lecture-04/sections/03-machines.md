@@ -11,9 +11,11 @@ Brushless machines, why field-oriented control makes a permanent-magnet machine 
 01's, the induction machine and the switched-reluctance machine.
 
 <!--
-Budget: about 15 minutes, no build. Deck 7 slides 34 to 39, extended with the PMSM under
-field-oriented control. Concepts and the animation only: no Clarke or Park algebra (plan S3). A dq
-model of the PMSM is in the extra pack.
+Section 03, machines in real electric cars. There is no build in this section. We look at brushless
+machines, at why field-oriented control makes a permanent-magnet machine behave like build 01's, and
+at the two machines without magnets, the induction machine and the switched-reluctance machine. We
+stay with concepts and one animation: the transforms that field-oriented control computes, and a
+model of the machine in its rotating frame, are in the extra pack.
 -->
 
 ---
@@ -53,19 +55,26 @@ by electronics: an inverter, switching the stator currents in step with the roto
 </div>
 
 <!--
-Deck 7 slides 34 and 35. The brushed machine's commutator is a mechanical switch: it reverses each
-coil's current as the coil passes the poles, so the torque keeps its direction. The price is
-friction, wear and a hot rotor.
+Why do electric cars use brushless machines? Start on the left, with the brushed machine of the last
+section. Its commutator is a mechanical switch: carbon brushes slide on it and reverse each coil's
+current as the coil passes the poles, so that the torque keeps its direction. The deck lists the
+price: friction between the brushes and the commutator, brushes that wear out, and heat made in the
+rotor, where it is hard to remove.
 
-Swap the parts: magnets on the rotor, windings on the stator, where a cooling jacket can reach
-them. Now something must switch the stator currents as the rotor turns, and that is the inverter
-of section 05, told the rotor's position by Hall sensors.
+So turn the machine inside out. Put the magnets on the rotor and the windings in the stator, where
+the heat is easier to take away. Now nothing turns the current around mechanically any more, so
+electronics must do it: an inverter, switching the stator currents in step with the rotor's
+position. The inverter is section 05.
 
-The deck's point: the back-EMF of the approaching magnet grows with speed and opposes the current,
-so the torque falls as the speed rises, exactly as on step 01's line. And because the back-EMF is
-there whenever the rotor turns, the machine is a generator without any change.
+On the right, the deck's brushless DC machine, BLDC for short. Hall sensors tell the inverter where
+the rotor is. The phases are switched in blocks, so the back-EMF and the currents have a trapezoidal
+shape. As in build 01, the back-EMF grows with speed and opposes the current, so the torque falls as
+the speed rises. And because the back-EMF is there whenever the rotor turns, the machine is a
+generator as it stands, with no change.
 
-The name is historical. It is an AC machine: each stator phase carries an alternating current.
+The box at the bottom: the name is historical. A brushless DC machine is an AC machine, each stator
+phase carries an alternating current, with its own inverter. Seen from the battery, the pair behaves
+like a DC machine.
 -->
 
 ---
@@ -101,17 +110,25 @@ relative to the magnets, at every instant. That is **field-oriented control**, n
 </div>
 
 <!--
-A BLDC and a PMSM are built the same way; the difference is the shape of the back-EMF and how the
-inverter drives it. The BLDC is switched in blocks from three Hall sensors, cheap and good enough
-for a fan, with a torque ripple at every switching instant. The traction machine is driven with
-three sinusoidal currents and needs the rotor angle continuously, from a resolver.
+A BLDC and a permanent-magnet synchronous machine, PMSM for short, are built the same way: permanent
+magnets on the rotor, windings in the stator. The difference is how they are driven. Read the table
+row by row. The rotor: permanent magnets in both. The back-EMF: trapezoidal in the BLDC, sinusoidal
+in the PMSM. The currents: blocks, two phases at a time, in the BLDC; three sines in the PMSM. The
+rotor position: the BLDC reads it from Hall sensors, which change every 60 degrees; the PMSM needs
+it continuously, from a resolver or an encoder. So the BLDC's torque ripples at each switching
+instant, and the PMSM's is smooth. That is why BLDCs drive fans, pumps and e-bikes, and PMSMs are
+traction motors.
 
-The Leaf's motor, as ORNL measured the 2012 car: an 8-pole interior permanent-magnet machine, 48
-stator slots, about 56 kilograms. Interior PM means the magnets sit in pockets inside the rotor
-iron, which adds a reluctance torque; our model leaves that out (known limits).
+On the right, the Leaf. Its motor is a permanent-magnet synchronous machine. Oak Ridge National
+Laboratory took apart the first-generation motor of the 2012 car: 8 poles, magnets buried inside the
+rotor iron, which is called interior permanent magnet, 48 stator slots, and about 56 kilograms.
+Buried magnets add a second kind of torque, reluctance torque, which our model leaves out.
 
-Synchronous means the rotor turns exactly with the rotating field of the stator. The induction
-machine, two slides on, is the one that slips.
+Synchronous means that the rotor turns with the stator's rotating field and never slips behind it.
+The induction machine, two slides on, is the one that slips.
+
+To make smooth torque from three sinusoidal currents, the inverter must place those currents right
+relative to the magnets, at every instant. That is field-oriented control, the next slide.
 -->
 
 ---
@@ -147,27 +164,37 @@ less is left for torque.
 </div>
 
 <!--
-The animation is a component of this deck, not a simulation: a two-pole rotor, red north, blue
-south, turning inside a three-phase stator, a, b, c. Press play or pause; the second button turns
-field weakening on.
+Field-oriented control. On the left is an animation built into this deck; it is a drawing, not a
+simulation. It shows a machine with one pole pair: the rotor in the middle, its north half red and
+its south half blue, turning inside a three-phase stator. The three dashed lines labeled a, b and c
+are the axes of the three stator windings, 120 degrees apart. Two black dashed lines turn with the
+rotor: d points along the magnets, through the north pole, and q points a quarter turn ahead of it.
+The thick red arrow, labeled i, is the stator current: the combined effect of the three phase
+currents, drawn as one vector.
 
-Watch the red arrow, the stator current. The inverter keeps it at a fixed angle to the magnets: a
-quarter turn ahead, on the axis called q. The force on the rotor is largest there, as in the
-picture of the conductor in the field: current at right angles to the field.
+Watch the red arrow as the rotor turns. The inverter measures the rotor angle and keeps the current
+a quarter turn ahead of the magnets, on the q axis. There every ampere makes torque, as in the
+picture of the conductor in the field: the force is largest when the current is at right angles to
+the field.
 
-On the right: the three phase currents the stator actually carries. They alternate, at the
-rotor's electrical frequency, and the cursor follows the rotor. Below them: the same current seen
-from the rotor. It does not change at all: one number along the magnets, d, one across them, q.
-That is the whole trick of field-oriented control: in the rotor's frame the AC machine has DC
-quantities, and the controller regulates them with two ordinary PI loops, like Lecture 1's.
+On the right, the top plot is labeled the stator carries: three alternating currents. These are the
+three phase currents, a in blue, b in orange and c in green, over one electrical revolution. They
+alternate at the rotor's electrical frequency, and the red cursor moves with the rotor. Below them,
+labeled the rotor sees: two steady numbers, is the same current seen from the rotor: one bar for i
+d, along the magnets, and one for i q, across them. They do not change at all as the rotor turns.
+That is the whole trick of field-oriented control: in the rotor's frame an AC machine has DC
+quantities, and the controller can regulate them as such. As the slide says, i q is the torque
+current, and the torque is proportional to it. i d, along the magnets, is zero until the voltage
+runs out.
 
-Now turn field weakening on. The current vector swings back, toward the south pole: a negative d
-current, which opposes the magnets' flux. The magnitude stays at the inverter's limit, so the q
-part, and the torque, shrinks. That is what the Leaf's inverter does above base speed, and what
-our converter does with its field input.
+[click the field weakening button]
 
-No transforms on this slide: Clarke and Park, which compute the d and q currents from the three
-phase currents, are in the extra pack with the dq model of the machine.
+Now the current vector swings back, toward the south pole: part of it points against the magnets.
+The i d bar goes negative, and that negative d current opposes the magnets' flux and weakens their
+field. The length of the vector stays the same, at the inverter's current limit, so what is left for
+the q part, and for the torque, shrinks: in the animation i d is minus 0.6 of the limit, and i q
+drops to 0.8. That is the last paragraph of the slide, and it is what the Leaf's inverter does above
+base speed, and what our converter does with its field input.
 -->
 
 ---
@@ -205,22 +232,25 @@ during field weakening, and the d and q dynamics. A dq model is in the extra pac
 </div>
 
 <!--
-The table is the justification of the whole build. Left, the machine you pasted. Right, the
-machine in the Leaf, driven by its inverter. Row by row: the armature current is the q current;
-torque is proportional to it, through a constant set by the magnets and the winding, which plays
-K Phi; the back-EMF is proportional to speed through the same constant; the commutator's job is
-done by the inverter with the rotor angle; turning the field down is done with a negative d
-current.
+This table is why we can build the car with build 01's machine. On the left, the DC machine you
+pasted. On the right, a PMSM driven by its inverter under field-oriented control.
 
-So from the outside, from the battery's terminals and from the shaft, a PMSM under FOC is a DC
-machine. That is the plan's decision S3: the car carries the DC-equivalent machine, physical, with
-its losses as parts, and the efficiency map is computed from it.
+Row by row. The armature current corresponds to the torque current, i q. The DC machine's torque is
+K Phi times i; the PMSM's torque is proportional to the magnet flux times i q, through a constant
+set by the magnets and the winding, which plays the role of K Phi. The DC machine's back-EMF is K
+Phi omega; the PMSM's back-EMF amplitude is proportional to the magnet flux times omega, through the
+same constant. The commutator's job is done by the inverter together with the rotor-angle sensor.
+Field weakening, turning Phi down, is done by a negative i d against the magnets. And the copper
+loss, R i squared, becomes the copper loss in the three phases.
 
-Be honest about what is lost. An interior-magnet machine also makes a reluctance torque from the
-d current, which the model has not. Field weakening in a real PMSM costs copper loss, because the
-d current flows in the windings; in our model the field input is free. And the d and q currents
-have their own millisecond dynamics. None of these changes a WLTC energy bill by much; all three
-are in the extra pack.
+So, bottom left: seen from the battery and from the shaft, the two machines obey the same two
+equations. The car therefore carries the DC-equivalent machine, and its torque, its current and its
+losses are the PMSM's.
+
+Bottom right, what this leaves out. A machine with buried magnets also makes reluctance torque,
+which our model does not have. Field weakening in a real PMSM costs copper loss, because the d
+current flows in the windings; in our model the field input is free. And the d and q currents have
+their own dynamics. A model of the machine in d and q is in the extra pack.
 -->
 
 ---
@@ -257,22 +287,26 @@ loss at every operating point.
 </div>
 
 <!--
-Deck 7 slides 37 and 38. The induction machine is the oldest and most robust: a stator like the
-PMSM's, and a rotor that is just a cage of conducting bars. The rotating field induces currents in
-the bars, and those currents in that field give the force: the rotor chases the field.
+The induction machine, from the deck. On the left, how it is built: three stator windings, as in the
+PMSM, make a rotating field. The rotor is a cage: bars of copper or aluminum, short-circuited at
+both ends.
 
-It can never catch it: at the field's speed the bars would see no change in flux, no current, no
-torque. The difference is the slip, a few percent, growing with the load. That is why the deck says
-the frequency does not precisely control the speed: the drive measures the speed and closes the
-loop.
+How it pulls: the field sweeps across the bars and induces currents in them, and the force of the
+field on those currents drags the rotor along after the field.
 
-Under field-oriented control it also looks like a DC machine. The difference that matters for an
-EV: the rotor field has to be made by the stator, with a magnetizing current that always flows
-and always heats the windings, and the rotor bars carry current too, with their own copper loss.
-A PMSM gets its field free from the magnets. That is the efficiency gap, largest at light load.
+Slip: if the rotor turned exactly at the field's speed, the bars would see no change of flux,
+nothing would be induced, and there would be no torque. So the rotor always runs a little slower
+than the field, and that difference, the slip, grows with the torque.
 
-The other side: no magnets. No rare-earth cost or supply risk, no demagnetization when hot, and an
-unpowered induction machine has no field and no drag.
+On the right, control. The supply frequency sets the speed of the field. Because of the slip, it
+does not set the speed of the rotor exactly, so the speed is measured and fed back.
+
+With field-oriented control an induction machine also behaves like a DC machine from the outside.
+But its field is not free. It has no magnets, so the inverter must magnetize the rotor itself, with
+a d current, and that current flows at every operating point and costs copper loss there.
+
+And the last line, the other side of the coin: no magnets. No rare-earth materials, and when the
+inverter is off there is no field at all.
 -->
 
 ---
@@ -310,17 +344,22 @@ Used in industry and appliances; in cars it has stayed rare.
 </div>
 
 <!--
-Deck 7 slide 36. Reluctance is the magnetic analogue of resistance: flux prefers iron to air. A
-piece of iron in a field turns to line up with it, the way a compass needle does, but without
-being a magnet.
+The switched-reluctance machine. The left column explains the name. Reluctance is the magnetic
+counterpart of resistance: a magnetic field is reluctant to cross an air gap and prefers iron. So a
+rotor of soft iron that is out of line with a field is pulled into line, to shorten the gap, as a
+compass needle turns into line, but without being a magnet itself.
 
-The SRM uses only that. Its rotor has teeth of laminated iron; the stator energizes the pole pairs
-in sequence, each pulling the nearest rotor tooth into line. The current through each coil only
-needs to flow one way, so the power electronics are simple.
+The SRM uses only that. Its rotor is just laminated iron: no magnets, no windings, no cage. The
+stator poles are switched on one after another, each pulling the rotor into line with it, and the
+rotor follows them around.
 
-The deck's drawbacks are the reason it has stayed rare in cars: the torque comes in pulses, which
-makes noise and vibration, and the control needs the rotor angle precisely. The deck's "higher
-speed is possible" holds because there is no magnet back-EMF to fight at high speed.
+The deck's case for it, top right. It is very simple, potentially cheap, and robust. It can run at
+high speed, because there is no back-EMF from magnets to limit it. And the current in each coil need
+not alternate: it only has to flow one way.
+
+The case against it: the switching has to be timed precisely to the rotor's position, and the torque
+comes in pulses, so the machine is noisy and vibrates. That is why it is used in industry and in
+appliances, but has stayed rare in cars.
 -->
 
 ---
@@ -355,23 +394,24 @@ the same "inside-out" layout in wheel-hub motors: Lecture 5.
 </div>
 
 <!--
-The comparison the plan asks for. The PMSM's field is free; the induction machine has to make
-its own, and its rotor cage carries current: both cost copper loss, most noticeable at light
-load, where most of the WLTC is driven (section 04 shows where).
+So, PMSM or induction? The table on the left compares them row by row.
 
-The PMSM's weakness is its magnets: rare-earth neodymium, often with dysprosium for heat
-resistance, costly and concentrated in few suppliers. And they never turn off. A PMSM dragged along
-unpowered still has its rotor field sweeping past the stator iron: iron loss, a drag torque, and
-at high speed a back-EMF that the inverter must hold below the pack voltage by field weakening.
+The field: the PMSM's comes free, from its magnets; the induction machine makes it with a d current,
+which costs copper loss. Rotor losses: small in the PMSM; in the induction machine, currents flow in
+the cage. So the efficiency at light load is higher for the PMSM and lower for the induction
+machine, and light load is where most of the WLTC is driven, as section 04 shows. Magnets: the PMSM
+needs rare earths, with their cost and their supply risk; the induction machine needs none.
+Unpowered and coasting: the PMSM's magnets still spin past the stator, so it still has iron loss and
+a back-EMF; the induction machine has no field and no drag. And at high speed the PMSM needs field
+weakening, to hold its back-EMF below the pack voltage, while the induction machine's field is
+simply made smaller.
 
-An induction machine with its inverter off has no field and spins freely. Hence the pairing in
-dual-motor cars: the efficient PMSM on the axle that drives all the time, the induction machine
-on the axle that helps only when needed; Tesla's dual-motor Model 3 and Model Y are built this
-way, with the induction machine at the front.
+On the right, why some all-wheel-drive cars pair one of each. The axle that drives all the time gets
+the efficient PMSM. The axle that only helps, for acceleration and for grip, gets an induction
+machine, which can coast along unpowered without drag.
 
-Deck 7 slide 39 on machines for hybrids: Honda's Insight had a thin machine directly on the
-crankshaft, a BLDC type; the same short and wide layout is used in wheel-hub motors. The P0 to P4
-positions are Lecture 5.
+And the deck's machines for hybrids: a short, wide machine sitting directly on the crankshaft, as in
+the Honda Insight, and the same inside-out layout in wheel-hub motors. The hybrids are next lecture.
 -->
 
 ---
@@ -389,6 +429,13 @@ positions are Lecture 5.
 ### Next: what the converter does to that machine. <Link to="envelope">→ 04, the envelope</Link>
 
 <!--
-One minute. The bridge to step 02: the inverter that does field-oriented control is, averaged
-over a switching period, a converter with a duty and a field. That converter is the next build.
+Section 03 in four lines. Brushless machines move the windings into the stator and the commutator
+into an inverter. A PMSM under field-oriented control keeps its stator current a quarter turn ahead
+of the magnets, so in the rotor's frame there are two steady currents: i q for torque, and i d for
+the field. From the outside, that is build 01's machine: torque proportional to i q, back-EMF
+proportional to omega, and field weakening by a negative i d. Induction machines need no magnets but
+pay for their field; switched-reluctance machines need neither, but their torque pulses.
+
+The inverter that does field-oriented control is, averaged over a switching period, a converter with
+a duty and a field. That converter is the next build.
 -->
