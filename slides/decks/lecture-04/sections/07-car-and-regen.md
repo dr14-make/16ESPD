@@ -76,13 +76,7 @@ routeAlias: build-car
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-Screenshot to capture: `images/lecture-04/step04-electric-drive.png`, the finished
-`ElectricDrive`: `battery`, `aux`, `converter`, `machine`, `reduction`, `ground`, ports
-`tau_ref`, `spline`, `support`, `SoC`
-
-</div>
+<img src="/img/lecture-04/step04-electric-drive.png" class="mx-auto" style="max-height: 16rem" alt="The finished ElectricDrive in Studio: battery and aux across one positive and one negative rail; converter from the positive rail into machine.p, its field into machine.field; machine into reduction into the spline port; battery.SoC up to the SoC port, tau_ref at the top left, support at the bottom."/>
 
 *New `ElectricDrive`: parameters `ratio` 8.193, `P_aux` 300 · `battery`, `aux` AuxLoad,
 `converter`, `machine` (`field_weakening = true`), `reduction` IdealGear, `ground` · one line:
@@ -451,12 +445,7 @@ routeAlias: build-regen
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-Screenshot to capture: `images/lecture-04/step05-regen-blend.png`, `RegenBlend` with its ports
-`tau_ref`, `v` in and `tau_motor`, `tau_brake` out, and the `BEVHardStop` bench around it
-
-</div>
+<img src="/img/lecture-04/step05-regen-blend.png" class="mx-auto" style="max-height: 21rem" alt="The finished BEVHardStop in Studio: pedal and kmh into blend; blend.tau_motor into drive, blend.tau_brake into the ABS; drive through the differential to the front wheels; slips and zero into the ABS, whose outputs drive the four brakes; motion reads the car's bus."/>
 
 *New `RegenBlend`: parameters `ratio`, `radius`, `tau_max` 320, `P_charge` 80.5e3, `v_fade` 10 ·
 two inputs, two outputs · its variables and equations in code · new `BEVHardStop` and
@@ -507,8 +496,9 @@ variations.
 Expected, from `HandsOn04.BEVHardStopTransient`: 80 to 0 km/h in 3.0 seconds after the pedal,
 36.2 meters. The regen torque follows the envelope: 137 at 80 km/h, 183 at 60, 320 from 34.3 to
 10, the fade below. The battery charges at up to 75.9 kW, minus 205 amperes. The front-left
-friction brake falls to zero from about 62 km/h and stays there; the rear-left carries the friction
-share all the way, cycling under the ABS. Machine 176.9 kJ, friction 181.8, battery 170.2. With
+friction brake falls to zero from about 62 km/h and stays there down to 10 km/h, where the fade
+hands it back; the rear-left carries the friction share all the way, cycling under the ABS.
+Machine 176.9 kJ, friction 181.8, battery 170.2. With
 the charge limit at zero: 38.8 meters.
 
 From `HandsOn04.BEVRegenWLTCTransient`: 34.25 Wh/km back of 143.6 of traction, 23.85 percent; the

@@ -79,7 +79,7 @@ class: big-figure
 <div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
 <div>
 
-![Losses over the WLTC per kilometer, out of the cells 134.3 Wh/km: road load 103.2, machine 17.6, auxiliaries 6.4, battery R0 3.1, converter 2.1, tire slip 1.8, friction brakes 0.1.](/figures/08-energy-bill.svg)
+![Losses over the WLTC per kilometer, out of the cells 134.3 Wh/km: road load 103.1, machine 17.6, auxiliaries 6.4, battery R0 3.1, converter 2.1, tire slip 1.8, friction brakes 0.1.](/figures/08-energy-bill.svg)
 
 </div>
 <div class="text-[0.95rem]">
@@ -100,7 +100,7 @@ where the fixed losses count.
 The figure is notebook 03 section 2, "Where the energy went": the course library's `PlanarBEVWLTC`,
 the twin of your `BEVEnergyBill`, each bar one link's loss over the cycle per kilometer.
 
-Read it left to right. The road load, drag and rolling resistance, 103.2 Wh per km: the price of
+Read it left to right. The road load, drag and rolling resistance, 103.1 Wh per km: the price of
 moving the car at all. The machine, 17.6: the largest loss of the chain, because the WLTC drives
 at light load, where section 04's map is lowest. The auxiliaries, 6.4: 300 watts for half an
 hour. The battery's resistance 3.1, the converter 2.1, tire slip 1.8, the friction brakes 0.1:
@@ -214,9 +214,9 @@ routeAlias: build-bill
 
 [page: step 06](../lecture/lecture-04/#step-06) · reference `dyad/HandsOn04/BEVEnergyBill.dyad`
 
-<div class="handson">✓ in Wh/km: road <b>103.2</b>, machine <b>17.6</b>, aux <b>6.4</b>, R₀ <b>3.1</b>,
+<div class="handson">✓ in Wh/km: road <b>103.1</b>, machine <b>17.6</b>, aux <b>6.4</b>, R₀ <b>3.1</b>,
 converter <b>2.1</b>, tire <b>1.8</b>, brakes <b>0.1</b> · <b>134.3</b> out of the cells ·
-<code>residual</code> about <b>3 × 10⁻⁹</b></div>
+<code>residual</code> a few <b>10⁻⁹</b></div>
 
 <div class="handson">✓ <code>Wh_per_km</code> <b>131.2</b>, 13.12 kWh/100 km · <b>34.2 Wh/km</b>
 back from braking · <b>47.2</b> against <b>168.8 MJ/100 km</b> · <code>P_aux = 500.0</code>:
@@ -250,7 +250,7 @@ Eight minutes: one paste, one run, read the numbers.
 2. The analysis `BEVEnergyBillTransient`, with `P_aux` passed through.
 3. Run, then the snippet. The guide's version also computes the residual and the braking share.
 
-Expected, from `HandsOn04.BEVEnergyBillTransient`: road load 103.2 Wh per km, machine 17.6,
+Expected, from `HandsOn04.BEVEnergyBillTransient`: road load 103.1 Wh per km, machine 17.6,
 auxiliaries 6.4, battery R0 3.1, converter 2.1, tire slip 1.8, friction brakes 0.1. Together 134.3
 out of the cells; the residual about 3 times 10 to the minus 9; the car ends at rest so delta E
 kin is zero. At the battery terminals 131.2 Wh per km, 13.12 kWh per 100 km, inside the plan's
@@ -270,7 +270,7 @@ bill.
 
 - Every link has its own meter; their sum closes on the cells to **3 × 10⁻⁹**.
 - WLTC at the battery: **131.2 Wh/km**, **13.12 kWh/100 km**, inside the plan's 120–155.
-- The road takes **103.2**, the machine **17.6**, the auxiliaries 6.4; the rest of the chain a few
+- The road takes **103.1**, the machine **17.6**, the auxiliaries 6.4; the rest of the chain a few
   Wh/km each.
 - Braking gave back **24 %** of the traction energy.
 - **47.2 MJ/100 km**, against **168.8** for Lecture 2's engine car: 3.6 times less.

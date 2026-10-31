@@ -295,12 +295,7 @@ routeAlias: build-machine
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-Screenshot to capture: `images/lecture-04/step01-dyno.png`, the finished `DCMachineDyno`
-diagram: `voltage` → `supply`, `machine`, `ground`, `speed` → `dyno`, `mounts`
-
-</div>
+<img src="/img/lecture-04/step01-dyno.png" class="mx-auto" style="max-height: 21rem" alt="The finished DCMachineDyno in Studio: voltage into supply on the left with ground below it; machine at the top right, p and n on its left edge, its shaft wired to dyno; speed into dyno below; both supports to mounts."/>
 
 *New `DCMachine`: paste the code from the guide · new `DCMachineDyno`: parameters `V` 350,
 `rpm_start` 3283, `rpm_end` 3600 · `voltage` Constant → `supply` VoltageSource → `machine` →
@@ -340,9 +335,9 @@ Fifteen minutes: paste one component, place seven blocks, two code lines, an ana
 The guide page, step 01, has every line.
 
 1. New component `DCMachine`: right-click MyCar, Add Component, toggle to code, select all, paste
-   the guide's block, save. It is the circuit of two slides back: `extends TwoPin` gives the
-   electrical pins, the armature is resistor, inductor, emf, the rotor inertia and four loss
-   parts sit on the emf's rotor. `k` is written as the formula it comes from, so changing R or a
+   the guide's block, save. It is the circuit of two slides back: `p` and `n` are the
+   electrical pins, both on the left edge; the armature is resistor, inductor, emf; the rotor
+   inertia and four loss parts sit on the emf's rotor. `k` is written as the formula it comes from, so changing R or a
    loss keeps the machine at 320 newton meters at 3283 rpm on 350 volts.
    Keep the names: step 02 adds a field input to this machine, and step 04 reads `machine.k`.
 

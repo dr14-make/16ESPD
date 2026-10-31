@@ -139,7 +139,7 @@ class: big-figure
 
 <div class="diagram-wide">
 
-![Block chain from left to right: grid and charger (dashed), battery (V = E − R0 i, step 03, 3.1 Wh/km), converter (v_out = d v_in, step 02, 2.1 Wh/km), machine (T = KΦi, E = KΦω, step 01, 17.6 Wh/km), reduction and differential (8.193, ideal, step 04), wheels and road (105.0 Wh/km). Black arrows to the right for driving, green arrows back to the battery for braking; the 12 V network hangs off the battery at 300 W, 6.4 Wh/km.](/diagrams/01-energy-chain.svg)
+![Block chain from left to right: grid and charger (dashed), battery (V = E − R0 i, step 03, 3.1 Wh/km), converter (v_out = d v_in, step 02, 2.1 Wh/km), machine (T = KΦi, E = KΦω, step 01, 17.6 Wh/km), reduction and differential (8.193, ideal, step 04), wheels and road (104.9 Wh/km). Black arrows to the right for driving, green arrows back to the battery for braking; the 12 V network hangs off the battery at 300 W, 6.4 Wh/km.](/diagrams/01-energy-chain.svg)
 
 </div>
 
@@ -154,7 +154,7 @@ to left for braking: the wheels drive the machine, which turns generator, the co
 reverses and the battery charges.
 
 The orange numbers are the losses per kilometer on the WLTC, measured in build step 06 on the
-finished car: the road takes 103.2 Wh/km in drag and rolling and 1.8 in tire slip, the machine
+finished car: the road takes 103.1 Wh/km in drag and rolling and 1.8 in tire slip, the machine
 17.6, the auxiliaries 6.4, the battery's resistance 3.1, the converter 2.1. Out of the cells,
 134.3. The reduction and the differential are ideal gears in this model; a real one would cost
 2 to 3 percent each way, which is in the known limits.

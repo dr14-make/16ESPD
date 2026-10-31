@@ -227,12 +227,7 @@ routeAlias: build-battery
 <div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
 <div>
 
-<div class="placeholder">
-
-Screenshot to capture: `images/lecture-04/step03-battery-discharge.png`, the finished
-`BatteryDischarge`: `load_profile` → `load` CurrentSource, `battery`, `ground`
-
-</div>
+<img src="/img/lecture-04/step03-battery-discharge.png" class="mx-auto" style="max-height: 21rem" alt="The finished BatteryDischarge in Studio: load_profile into the top of load; load across battery, p to p on the left and n to n on the right; battery.n to ground."/>
 
 *New `Battery`: paste from the guide · new `BatteryDischarge`: parameter `I_load` 100 ·
 `load_profile` Step at 60 s → `load` CurrentSource across `battery` · `ground` ·
