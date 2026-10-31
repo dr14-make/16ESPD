@@ -13,7 +13,7 @@ resolves it).
 |---|---|
 | `plant.jl` | `drive_model()`: the car wired from compiled library components (`PlanarCar`, `ElectricDrive` on the front axle via `DifferentialGear`, `RegenBlend`, `BrakeControlUnit`, `PlanarRoadLoad`). Driver commands are `Constant` sources whose `k` the loop sets. |
 | `drive.jl` | The real-time loop and window: steps the integrator in wall-clock slices, reads the pad and keyboard, draws, sends haptics. |
-| `DualSense.jl` | Dependency-free DualSense driver over `/dev/hidraw*`: input, rumble, adaptive triggers, lightbar, player LEDs, USB and Bluetooth. |
+| `DualSense.jl` | DualSense driver over SDL2 on Linux, macOS and Windows: input, rumble, adaptive triggers, lightbar, player LEDs, USB and Bluetooth. Other controllers SDL knows give input, rumble and light. |
 | `probe.jl` | Walks a connected pad through every input and feedback channel; run it first on a new machine. |
 | `bench_realtime.jl` | Headless timing under a scripted drive; the real-time check. |
 | `check_coast_brake.jl` | Coast-down and full-brake run printing road load, motor torque, per-wheel friction and slip. |
@@ -39,6 +39,10 @@ script does.
 `sim/`'s environment instantiated (`julia +dyad-3.5.0 --project=sim -e 'using Pkg; Pkg.instantiate()'`,
 about 5 minutes for GLMakie).
 
+On Linux, SDL drives the DualSense's effects only through its `/dev/hidraw*` node; without
+read-write access there (desktop sessions usually grant it to the seat user) SDL falls back to
+evdev, input still works, and `probe.jl` reports the refused feedback sends.
+
 Controls: R2/L2 or W/S throttle and brake, left stick or A/D steer, △/E ESP, □/Q ABS, ○/R road
 surface (dry, wet, snow, split-µ), ×/M drive mode (N, D, e-Pedal), D-pad or `[` `]` steering lock,
 Options/Backspace reset, PS/P pause.
@@ -58,9 +62,11 @@ If one of these moves, something changed the physics; find out what before conti
   algebraic variable jump at an instant the solver has no event for.
 - **Device I/O never runs inside the equations** (same reason as ADR-0004): the loop polls the pad
   and sends one feedback report per frame.
-- **Raw HID for everything** rather than evdev plus hidraw: one file carries input, rumble,
-  triggers and lights. The trigger effect bytes (modes 0x01, 0x02, 0x21, 0x26) are community
-  reverse-engineering, verified by feel on this pad.
+- **SDL for transport, our own effect block**: SDL2 (`SimpleDirectMediaLayer`) reads input and
+  frames output for USB and Bluetooth on all three OSes. No library encodes the adaptive triggers,
+  so `DualSense.jl` fills the 47-byte DualSense effect block itself and hands it to
+  `SDL_GameControllerSendEffect`. The trigger effect bytes (modes 0x01, 0x02, 0x21, 0x26) are
+  community reverse-engineering, verified by feel on this pad.
 - **Lift-off regen as a light brake request** when the throttle is released: `RegenBlend` only
   regenerates on a brake request, so this needs no model change. D is 0.025 g of regen beyond road
   load (Argonne's 2013 Leaf coast-down), e-Pedal 0.2 g (Nissan); sources in #155's research note.

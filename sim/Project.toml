@@ -1,2 +1,6 @@
 [deps]
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+SimpleDirectMediaLayer = "98e33af6-2ee5-5afd-9e75-cbc738b767c4"
+
+[compat]
+SimpleDirectMediaLayer = "0.5"

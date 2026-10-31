@@ -1,30 +1,30 @@
 """
-A Sony DualSense controller reached through its Linux `hidraw` node.
+A game controller, preferably a Sony DualSense, reached through SDL2 on Linux, macOS and Windows.
 
-Input, rumble, adaptive triggers and the lightbar all travel as raw HID reports, so one device
-file carries everything and no native library is needed. Report layouts follow the kernel's
+SDL owns the transport: it reads input, and frames output reports for USB or Bluetooth with the
+CRC Bluetooth needs. The DualSense's feedback goes out as the 47-byte effect block SDL passes
+through `SDL_GameControllerSendEffect` (SDL's `DS5EffectsState_t`), which this module fills
+itself because no library encodes the adaptive-trigger effects. Block layout follows the Linux
 `hid-playstation` driver; the trigger effect encodings are reverse-engineered and not published
 by Sony.
 
-The pad never reads or writes on its own: `poll!` drains whatever input has arrived and
-`send!` writes the accumulated feedback as one report. The caller owns the clock.
+Any other controller SDL recognizes still gives input, rumble and, where it has one, a colored
+light; trigger effects and player LEDs do nothing on it.
+
+The pad never reads or writes on its own: `poll!` reads the current input and `send!` writes the
+accumulated feedback once. The caller owns the clock.
 """
 module DualSense
+
+using SimpleDirectMediaLayer.LibSDL2
 
 export Pad, PadState, open_pad, poll!, send!, rumble!, trigger!, lightbar!, player_leds!
 export TriggerOff, Rigid, Section, Feedback, Vibration
 
-const VENDOR = 0x054c
-const PRODUCTS = (0x0ce6, 0x0df2)  # DualSense, DualSense Edge
+const EFFECT_LEN = 47
 
-const O_RDWR = Cint(0o2)
-const O_NONBLOCK = Cint(0o4000)
-const EAGAIN = 11
-
-const USB_INPUT_ID = 0x01
-const BT_INPUT_ID = 0x31
-const USB_OUTPUT_LEN = 48
-const BT_OUTPUT_LEN = 78
+# Longer than any frame, so motors stop by themselves if the caller stops sending.
+const RUMBLE_MS = 250
 
 """Trigger effect: no resistance."""
 struct TriggerOff end
@@ -57,7 +57,10 @@ end
 
 const TriggerEffect = Union{TriggerOff,Rigid,Section,Feedback,Vibration}
 
-"""Controller input, sticks in -1..1 with up and right positive, triggers in 0..1."""
+"""
+Controller input, sticks in -1..1 with up and right positive, triggers in 0..1. `dpad` is a hat
+code: 0 up, 1 up-right, 2 right, … 7 up-left, 8 released.
+"""
 struct PadState
     lx::Float64
     ly::Float64
@@ -67,7 +70,6 @@ struct PadState
     r2::Float64
     dpad::UInt8
     buttons::UInt32
-    seq::UInt8
 end
 
 const BUTTONS = (
@@ -77,13 +79,25 @@ const BUTTONS = (
     ps = 0x0001_0000, touchpad = 0x0002_0000, mute = 0x0004_0000,
 )
 
+const SDL_BUTTONS = (
+    square = SDL_CONTROLLER_BUTTON_X, cross = SDL_CONTROLLER_BUTTON_A,
+    circle = SDL_CONTROLLER_BUTTON_B, triangle = SDL_CONTROLLER_BUTTON_Y,
+    l1 = SDL_CONTROLLER_BUTTON_LEFTSHOULDER, r1 = SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
+    create = SDL_CONTROLLER_BUTTON_BACK, options = SDL_CONTROLLER_BUTTON_START,
+    l3 = SDL_CONTROLLER_BUTTON_LEFTSTICK, r3 = SDL_CONTROLLER_BUTTON_RIGHTSTICK,
+    ps = SDL_CONTROLLER_BUTTON_GUIDE, touchpad = SDL_CONTROLLER_BUTTON_TOUCHPAD,
+    mute = SDL_CONTROLLER_BUTTON_MISC1,
+)
+
+# Travel at which L2/R2 count as pressed buttons.
+const TRIGGER_PRESSED = 0.1
+
 Base.getindex(s::PadState, b::Symbol) = (s.buttons & BUTTONS[b]) != 0
 
 mutable struct Pad
-    fd::Cint
+    gc::Ptr{SDL_GameController}
     path::String
-    bluetooth::Bool
-    inbuf::Vector{UInt8}
+    dualsense::Bool
     state::PadState
     motor_low::UInt8
     motor_high::UInt8
@@ -91,48 +105,60 @@ mutable struct Pad
     right::TriggerEffect
     rgb::NTuple{3,UInt8}
     players::UInt8
-    bt_seq::UInt8
+    effect::Vector{UInt8}
+    "SDL's return code from the last feedback call, 0 when accepted."
+    status::Cint
 end
 
-"""
-    open_pad(path = nothing) -> Pad
+# SDL is initialized once per Julia session and never shut down, so a warm session can close
+# and reopen pads.
+function init_sdl()
+    SDL_WasInit(SDL_INIT_GAMECONTROLLER) != 0 && return
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5, "1")
+    # Enhanced reports; without them SDL refuses effects over Bluetooth.
+    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_RUMBLE, "1")
+    # The focused window belongs to the caller, not to SDL.
+    SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1")
+    SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) == 0 ||
+        error("SDL controller init failed: ", sdl_error())
+    # State is read by polling; queued events would only pile up unread.
+    SDL_JoystickEventState(SDL_IGNORE)
+    SDL_GameControllerEventState(SDL_IGNORE)
+    return
+end
 
-Open the first DualSense found under `/sys/class/hidraw`, or the node at `path`.
+sdl_error() = unsafe_string(SDL_GetError())
+
+is_dualsense(index) = SDL_GameControllerTypeForIndex(index) == SDL_CONTROLLER_TYPE_PS5
+
 """
-function open_pad(path::Union{Nothing,AbstractString} = nothing)
-    node, bus = path === nothing ? find_node() : (path, bus_of(basename(path)))
-    fd = ccall(:open, Cint, (Cstring, Cint), node, O_RDWR | O_NONBLOCK)
-    fd < 0 && error("cannot open $node: ", Libc.strerror(Libc.errno()),
-                    " (raw HID nodes are root-only without a udev rule)")
-    neutral = PadState(0, 0, 0, 0, 0, 0, 0x08, 0, 0)
-    pad = Pad(fd, node, bus == 0x0005, zeros(UInt8, 128), neutral,
-              0, 0, TriggerOff(), TriggerOff(), (0, 0, 64), 0b00100, 0)
+    open_pad(index = nothing) -> Pad
+
+Open the controller at SDL joystick `index`, or else the first DualSense, or else the first
+controller SDL knows.
+"""
+function open_pad(index::Union{Nothing,Integer} = nothing)
+    init_sdl()
+    SDL_GameControllerUpdate()  # picks up controllers connected since the last call
+    if index === nothing
+        candidates = filter(i -> SDL_IsGameController(i) == SDL_TRUE, 0:SDL_NumJoysticks()-1)
+        isempty(candidates) && error("no game controller found")
+        index = candidates[something(findfirst(is_dualsense, candidates), 1)]
+    end
+    gc = SDL_GameControllerOpen(index)
+    gc == C_NULL && error("cannot open controller $index: ", sdl_error())
+    name = unsafe_string(SDL_GameControllerName(gc))
+    p = SDL_GameControllerPath(gc)
+    path = p == C_NULL ? name : "$name ($(unsafe_string(p)))"
+    neutral = PadState(0, 0, 0, 0, 0, 0, 0x08, 0)
+    pad = Pad(gc, path, SDL_GameControllerGetType(gc) == SDL_CONTROLLER_TYPE_PS5, neutral,
+              0, 0, TriggerOff(), TriggerOff(), (0, 0, 64), 0b00100, zeros(UInt8, EFFECT_LEN), 0)
     finalizer(close, pad)
     return pad
 end
 
-function find_node()
-    for dev in readdir("/sys/class/hidraw")
-        bus, vid, pid = hid_id(dev)
-        vid == VENDOR && pid in PRODUCTS && return ("/dev/" * dev, bus)
-    end
-    error("no DualSense found under /sys/class/hidraw")
-end
-
-bus_of(dev) = hid_id(dev)[1]
-
-function hid_id(dev)
-    for line in eachline("/sys/class/hidraw/$dev/device/uevent")
-        startswith(line, "HID_ID=") || continue
-        bus, vid, pid = split(line[8:end], ':')
-        return parse(UInt16, bus; base = 16), parse(UInt16, vid; base = 16),
-               parse(UInt16, pid; base = 16)
-    end
-    return (0x0000, 0x0000, 0x0000)
-end
-
 function Base.close(pad::Pad)
-    pad.fd < 0 && return
+    pad.gc == C_NULL && return
     pad.motor_low = pad.motor_high = 0
     pad.left = pad.right = TriggerOff()
     pad.players = 0
@@ -140,45 +166,45 @@ function Base.close(pad::Pad)
         send!(pad)
     catch
     end
-    ccall(:close, Cint, (Cint,), pad.fd)
-    pad.fd = -1
+    SDL_GameControllerClose(pad.gc)
+    pad.gc = C_NULL
     return
 end
 
 """
     poll!(pad) -> PadState
 
-Drain every input report that has arrived and return the newest. Never blocks; returns the
-previous state when nothing new is waiting.
+Read the controller's current input. Never blocks.
 """
 function poll!(pad::Pad)
-    while true
-        n = ccall(:read, Cssize_t, (Cint, Ptr{UInt8}, Csize_t), pad.fd, pad.inbuf, length(pad.inbuf))
-        if n < 0
-            Libc.errno() == EAGAIN && break
-            error("read from $(pad.path) failed: ", Libc.strerror(Libc.errno()))
-        end
-        n == 0 && break
-        parsed = parse_input(pad.inbuf, n)
-        parsed === nothing || (pad.state = parsed)
+    SDL_GameControllerUpdate()
+    gc = pad.gc
+    raw(a) = SDL_GameControllerGetAxis(gc, a) / 32767
+    stick(a) = clamp(raw(a), -1.0, 1.0)
+    # SDL's stick Y axes are positive downward.
+    lx, ly = stick(SDL_CONTROLLER_AXIS_LEFTX), -stick(SDL_CONTROLLER_AXIS_LEFTY)
+    rx, ry = stick(SDL_CONTROLLER_AXIS_RIGHTX), -stick(SDL_CONTROLLER_AXIS_RIGHTY)
+    l2 = clamp(raw(SDL_CONTROLLER_AXIS_TRIGGERLEFT), 0.0, 1.0)
+    r2 = clamp(raw(SDL_CONTROLLER_AXIS_TRIGGERRIGHT), 0.0, 1.0)
+    down(b) = SDL_GameControllerGetButton(gc, b) != 0
+    buttons = UInt32(0)
+    for (name, b) in pairs(SDL_BUTTONS)
+        down(b) && (buttons |= BUTTONS[name])
     end
+    l2 > TRIGGER_PRESSED && (buttons |= BUTTONS.l2)
+    r2 > TRIGGER_PRESSED && (buttons |= BUTTONS.r2)
+    dpad = hat(down(SDL_CONTROLLER_BUTTON_DPAD_UP), down(SDL_CONTROLLER_BUTTON_DPAD_RIGHT),
+               down(SDL_CONTROLLER_BUTTON_DPAD_DOWN), down(SDL_CONTROLLER_BUTTON_DPAD_LEFT))
+    pad.state = PadState(lx, ly, rx, ry, l2, r2, dpad, buttons)
     return pad.state
 end
 
-function parse_input(r, n)
-    # Bluetooth reports carry one extra header byte before the same payload.
-    if r[1] == USB_INPUT_ID && n >= 11
-        o = 1
-    elseif r[1] == BT_INPUT_ID && n >= 12
-        o = 2
-    else
-        return nothing
-    end
-    axis(b) = clamp((Int(b) - 128) / 127.5, -1.0, 1.0)
-    b0, b1, b2 = r[o+8], r[o+9], r[o+10]
-    return PadState(axis(r[o+1]), -axis(r[o+2]), axis(r[o+3]), -axis(r[o+4]),
-                    r[o+5] / 255, r[o+6] / 255, b0 & 0x0f,
-                    UInt32(b0 & 0xf0) | UInt32(b1) << 8 | UInt32(b2 & 0x07) << 16, r[o+7])
+function hat(up, right, down, left)
+    y = up - down
+    x = right - left
+    x == 0 && y == 0 && return 0x08
+    # Clockwise from up, eight steps.
+    return UInt8(mod(round(Int, atan(x, y) / (π / 4)), 8))
 end
 
 """
@@ -196,7 +222,8 @@ end
 """
     trigger!(pad, side, effect)
 
-Set the adaptive-trigger effect on `:left` (L2) or `:right` (R2). Takes effect at the next `send!`.
+Set the adaptive-trigger effect on `:left` (L2) or `:right` (R2). Takes effect at the next
+`send!`; ignored on controllers other than a DualSense.
 """
 function trigger!(pad::Pad, side::Symbol, effect::TriggerEffect)
     side === :left ? (pad.left = effect) :
@@ -214,7 +241,7 @@ function lightbar!(pad::Pad, r, g, b)
     return pad
 end
 
-"""Set the five player LEDs from the low five bits of `mask`."""
+"""Set the five player LEDs from the low five bits of `mask`. DualSense only."""
 function player_leds!(pad::Pad, mask::Integer)
     pad.players = UInt8(mask & 0x1f)
     return pad
@@ -225,33 +252,21 @@ to_byte(x) = round(UInt8, 255 * clamp(Float64(x), 0.0, 1.0))
 """
     send!(pad)
 
-Write the current rumble, trigger, lightbar and player-LED settings as one output report.
+Write the current rumble, trigger, lightbar and player-LED settings. SDL's return code is kept in
+`pad.status`; a refusal warns once instead of throwing, so a frame loop keeps running.
 """
 function send!(pad::Pad)
-    report = pad.bluetooth ? bt_report(pad) : usb_report(pad)
-    n = ccall(:write, Cssize_t, (Cint, Ptr{UInt8}, Csize_t), pad.fd, report, length(report))
-    n == length(report) || error("write to $(pad.path) failed: ", Libc.strerror(Libc.errno()))
+    pad.gc == C_NULL && return pad
+    if pad.dualsense
+        fill_common!(pad.effect, pad)
+        pad.status = SDL_GameControllerSendEffect(pad.gc, pad.effect, EFFECT_LEN)
+    else
+        pad.status = SDL_GameControllerRumble(pad.gc, UInt16(pad.motor_low) * 0x101,
+                                              UInt16(pad.motor_high) * 0x101, RUMBLE_MS)
+        SDL_GameControllerHasLED(pad.gc) == SDL_TRUE && SDL_GameControllerSetLED(pad.gc, pad.rgb...)
+    end
+    pad.status == 0 || @warn "controller refused feedback: $(sdl_error())" maxlog = 1
     return pad
-end
-
-function usb_report(pad::Pad)
-    report = zeros(UInt8, USB_OUTPUT_LEN)
-    report[1] = 0x02
-    fill_common!(view(report, 2:USB_OUTPUT_LEN), pad)
-    return report
-end
-
-function bt_report(pad::Pad)
-    report = zeros(UInt8, BT_OUTPUT_LEN)
-    report[1] = 0x31
-    report[2] = pad.bt_seq << 4
-    report[3] = 0x10
-    pad.bt_seq = (pad.bt_seq + 0x01) & 0x0f
-    fill_common!(view(report, 4:50), pad)
-    # The controller drops Bluetooth reports whose CRC, seeded with the HID output header, is wrong.
-    crc = crc32(UInt8[0xa2; report[1:end-4]])
-    report[end-3:end] .= reinterpret(UInt8, [htol(crc)])
-    return report
 end
 
 # Offsets (1-based) into the 47-byte block the kernel calls dualsense_output_report_common.
@@ -323,26 +338,6 @@ function zone_bits(position, level)
         strengths |= lvl << (3i)
     end
     return zones, strengths
-end
-
-const CRC_TABLE = let
-    t = Vector{UInt32}(undef, 256)
-    for n in 0:255
-        c = UInt32(n)
-        for _ in 1:8
-            c = isodd(c) ? 0xedb88320 ⊻ (c >> 1) : c >> 1
-        end
-        t[n+1] = c
-    end
-    t
-end
-
-function crc32(data)
-    c = 0xffffffff
-    for b in data
-        c = CRC_TABLE[((c ⊻ b) & 0xff)+1] ⊻ (c >> 8)
-    end
-    return ~c
 end
 
 end

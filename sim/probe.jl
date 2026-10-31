@@ -1,7 +1,10 @@
 # Walk a connected DualSense through every input and feedback channel, a few seconds each.
-#   julia sim/probe.jl [step...]     steps: input lightbar rumble triggers
+#   julia +dyad-3.5.0 --project=. sim/probe.jl [step...]     steps: input lightbar rumble triggers
+push!(LOAD_PATH, @__DIR__)
 include(joinpath(@__DIR__, "DualSense.jl"))
 using .DualSense
+
+const SENDS = Dict{Cint,Int}()
 
 function hold(pad, seconds; show_input = false)
     t_end = time() + seconds
@@ -9,6 +12,7 @@ function hold(pad, seconds; show_input = false)
     while time() < t_end
         s = poll!(pad)
         send!(pad)
+        SENDS[pad.status] = get(SENDS, pad.status, 0) + 1
         if show_input && time() >= next_print
             pressed = [k for k in keys(DualSense.BUTTONS) if s[k]]
             println("L ($(round(s.lx, digits = 2)), $(round(s.ly, digits = 2)))  ",
@@ -24,12 +28,14 @@ end
 function step(name, f)
     println("\n== ", name)
     flush(stdout)
+    empty!(SENDS)
     f()
+    println("  feedback sends by SDL return code (0 accepted): ", SENDS)
 end
 
 steps = isempty(ARGS) ? ["input", "lightbar", "rumble", "triggers"] : ARGS
 pad = open_pad()
-println("opened ", pad.path, pad.bluetooth ? " (Bluetooth)" : " (USB)")
+println("opened ", pad.path, pad.dualsense ? "" : " (not a DualSense: no trigger effects)")
 try
     "input" in steps && step("input: move both sticks, squeeze L2/R2, press buttons (6 s)",
                              () -> hold(pad, 6; show_input = true))
