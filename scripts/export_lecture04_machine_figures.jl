@@ -1,16 +1,21 @@
 """
-Writes the Lecture 4 deck's BLDC/PMSM waveform figure into
+Writes the Lecture 4 deck's machine-theory figures into
 `slides/decks/lecture-04/public/figures/`.
 
-    julia +dyad-3.5.0 --project=. scripts/export_lecture04_waveform_figures.jl
+    julia +dyad-3.5.0 --project=. scripts/export_lecture04_machine_figures.jl
 
-Over one electrical revolution it draws, for a trapezoidal (BLDC) and a sinusoidal (PMSM) machine,
-the three back-EMFs, the currents the drive puts in, and the torque Σ e·i / ω. The waveforms are
-the textbook ideal shapes, in per unit of their peak. The one computed curve is the BLDC's torque
-with winding inductance: a six-step inverter at a fixed average voltage, simulated here with no
-Dyad model. `scripts/export_lecture04_figures.jl` runs this file after the notebooks.
+`03-bldc-pmsm-waveforms`: over one electrical revolution, for a trapezoidal (BLDC) and a
+sinusoidal (PMSM) machine, the three back-EMFs, the currents the drive puts in, and the torque
+Σ e·i / ω. The waveforms are the textbook ideal shapes, in per unit of their peak. The one computed
+curve is the BLDC's torque with winding inductance: a six-step inverter at a fixed average voltage.
+
+`03-field-weakening`: the current and voltage limits of a PMSM in the i_d–i_q plane at several
+speeds, and the torque and power along the limits, for an illustrative per-unit machine.
+
+Both are computed here, with no Dyad model; `scripts/export_lecture04_figures.jl` runs this file
+after the notebooks.
 """
-module Lecture04WaveformFigures
+module Lecture04MachineFigures
 
 using Plots
 import PlotlyBase, PlotlyKaleido
@@ -146,7 +151,77 @@ function waveform_plot()
     return p
 end
 
-const FIGURES = ["03-bldc-pmsm-waveforms" => waveform_plot]
+# Illustrative per-unit PMSM with L_d = L_q, so no reluctance torque, as in the course model.
+# ψ/L just above I_max: the power stays near level over the speed range, with a finite top speed
+# ψ / (ψ − L·I_max) times base speed. Base
+# speed is 1: the voltage limit is set so the voltage circle there passes through (0, I_max).
+const ψ_PM, L_S, I_MAX = 1.0, 0.9, 1.0
+const V_MAX = hypot(ψ_PM, L_S * I_MAX)
+const FW_SPEEDS = [1.0 => "#1f5fa8", 1.5 => "#a75d00", 2.5 => "#2e8b57", 4.0 => "#7b3fa0"]
+const CURRENT_RED = "#c0392b"
+
+"""
+The current that gives the most torque at speed `ω` within both limits, resistance neglected:
+i_q = I_max below base speed, else the upper crossing of the current and voltage circles.
+"""
+function operating_point(ω)
+    r2 = (V_MAX / ω)^2
+    i_d = min(0.0, (r2 - ψ_PM^2 - (L_S * I_MAX)^2) / (2ψ_PM * L_S))
+    return i_d, sqrt(max(I_MAX^2 - i_d^2, 0.0))
+end
+
+function field_weakening_plot()
+    p = plot(; layout = grid(1, 2; widths = [0.6, 0.4]), size = (1280, 480), legend = false)
+    a = 0:0.5:360
+    plot!(p[1], I_MAX .* cosd.(a), I_MAX .* sind.(a); color = :black, lw = 2.5)
+    annotate!(p[1], 0.5, 1.0, text("current limit", 13, :left, :black))
+    c = -ψ_PM / L_S
+    for (ω, col) in FW_SPEEDS
+        r = V_MAX / (ω * L_S)
+        plot!(p[1], c .+ r .* cosd.(a), r .* sind.(a); color = col, lw = 2.5)
+        label = ω == 1 ? "voltage limit, base speed" : "$(isinteger(ω) ? Int(ω) : ω)× base"
+        annotate!(p[1], c + r * cosd(125) - 0.04, r * sind(125) + 0.04,
+            text(label, 13, :right, col))
+        i_d, i_q = operating_point(ω)
+        scatter!(p[1], [i_d], [i_q]; color = col, ms = 9, markerstrokewidth = 0)
+    end
+    arc = range(0, operating_point(6.0)[1]; length = 200)
+    plot!(p[1], arc, sqrt.(I_MAX^2 .- arc .^ 2); color = CURRENT_RED, lw = 5)
+    i_d, i_q = operating_point(2.5)
+    plot!(p[1], [0, i_d], [0, i_q]; color = CURRENT_RED, lw = 3, arrow = true)
+    annotate!(p[1], i_d / 2 + 0.06, i_q / 2 - 0.06, text("i", 16, :left, CURRENT_RED))
+    scatter!(p[1], [c], [0]; color = :black, ms = 6, marker = :x)
+    annotate!(p[1], c + 0.05, -0.13, text("−ψ<sub>PM</sub> / L<sub>d</sub>", 13, :right, :black))
+    plot!(p[1]; xlims = (-2.95, 1.25), ylims = (-0.25, 1.75), aspect_ratio = :equal,
+        xlabel = "i<sub>d</sub> / I<sub>max</sub>   (negative: against the magnets)",
+        ylabel = "i<sub>q</sub> / I<sub>max</sub>",
+        xticks = -2.5:0.5:1, yticks = 0:0.5:1.5,
+        title = "Current and voltage limits, illustrative per-unit PMSM")
+
+    ω = range(0.02, 5; length = 500)
+    T = [operating_point(w)[2] for w in ω]
+    plot!(p[2], ω, 1 ./ ω; color = :gray, ls = :dot, lw = 1.5)
+    plot!(p[2], ω, T; color = :black, lw = 3)
+    plot!(p[2], ω, ω .* T; color = :black, lw = 3, ls = :dash)
+    vline!(p[2], [1]; color = :gray, ls = :dash, lw = 1.5)
+    for (w, col) in FW_SPEEDS
+        t = operating_point(w)[2]
+        scatter!(p[2], [w, w], [t, w * t]; color = col, ms = 8, markerstrokewidth = 0)
+    end
+    annotate!(p[2], 4.9, 0.48, text("torque ∝ i<sub>q</sub>", 13, :right, :black))
+    annotate!(p[2], 3.0, 1.46, text("power ∝ ω·i<sub>q</sub>", 13, :center, :black))
+    annotate!(p[2], 4.9, 0.12, text("1/ω", 12, :right, :gray))
+    annotate!(p[2], 1.08, 0.08, text("base speed", 12, :left, :gray))
+    plot!(p[2]; xlims = (0, 5), ylims = (0, 1.55), xticks = 0:1:5, yticks = 0:0.5:1.5,
+        xlabel = "speed ω / base speed", ylabel = "per unit of the base-speed value",
+        title = "Torque and power at the limits")
+    return p
+end
+
+const FIGURES = [
+    "03-bldc-pmsm-waveforms" => waveform_plot,
+    "03-field-weakening" => field_weakening_plot,
+]
 
 function export_all()
     mkpath(OUT)
@@ -160,4 +235,4 @@ end
 
 end
 
-Lecture04WaveformFigures.export_all()
+Lecture04MachineFigures.export_all()
