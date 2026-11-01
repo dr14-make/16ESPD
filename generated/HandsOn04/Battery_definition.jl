@@ -111,6 +111,21 @@ as the library's `Vehicle.Electric.Battery`, so either one drops into the car.
   ### Components
   push!(__systems, @named p = __Dyad__Pin())
   push!(__systems, @named n = __Dyad__Pin())
+  # Subcomponent ocv of type BlockComponents.Sources.Constant
+  ocv_overrides = __pop_subcomponent_overrides!(__overrides, "ocv")
+  push!(__systems, @named ocv = BlockComponents.Sources.Constant(; k=E, __overrides = ocv_overrides))
+  # Subcomponent cell of type ElectricalComponents.Analog.Sources.VoltageSource
+  cell_overrides = __pop_subcomponent_overrides!(__overrides, "cell")
+  push!(__systems, @named cell = ElectricalComponents.Analog.Sources.VoltageSource(; __overrides = cell_overrides))
+  # Subcomponent resistor of type ElectricalComponents.Analog.Basic.Resistor
+  resistor_overrides = __pop_subcomponent_overrides!(__overrides, "resistor")
+  push!(__systems, @named resistor = ElectricalComponents.Analog.Basic.Resistor(; R=R0, __overrides = resistor_overrides))
+  # Subcomponent meter of type ElectricalComponents.Analog.Sensors.CurrentSensor
+  meter_overrides = __pop_subcomponent_overrides!(__overrides, "meter")
+  push!(__systems, @named meter = ElectricalComponents.Analog.Sensors.CurrentSensor(; __overrides = meter_overrides))
+  # Subcomponent counter of type BlockComponents.Continuous.Integrator
+  counter_overrides = __pop_subcomponent_overrides!(__overrides, "counter")
+  push!(__systems, @named counter = BlockComponents.Continuous.Integrator(; k=-1 / Q_nom, x0=SoC0, __overrides = counter_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -120,17 +135,20 @@ as the library's `Vehicle.Electric.Battery`, so either one drops into the car.
   isnothing(__ovr_i__guess) || (__guesses[i] = __ovr_i__guess)
 
   ### Initialization Equations
-  push!(__initialization_eqs, SoC ~ SoC0)
 
   ### Assertions
   __assertions = []
 
   ### Equations
   push!(__eqs, v ~ p.v - n.v)
-  push!(__eqs, p.i + n.i ~ 0)
-  push!(__eqs, i ~ n.i)
-  push!(__eqs, v ~ E - R0 * i)
-  push!(__eqs, ModelingToolkit.D_nounits(SoC) ~ -i / Q_nom)
+  push!(__eqs, i ~ meter.i)
+  push!(__eqs, connect(ocv.y, cell.V))
+  push!(__eqs, connect(n, cell.n))
+  push!(__eqs, connect(cell.p, resistor.p))
+  push!(__eqs, connect(resistor.n, meter.p))
+  push!(__eqs, connect(meter.n, p))
+  push!(__eqs, connect(meter.i, counter.u))
+  push!(__eqs, connect(counter.y, SoC))
 
   # Return completely constructed System
   return System(__eqs, ModelingToolkit.t_nounits, __vars, __params; systems=__systems, initial_conditions=__initial_conditions, guesses=__guesses, name, initialization_eqs=__initialization_eqs, bindings=__bindings, assertions=__assertions)
