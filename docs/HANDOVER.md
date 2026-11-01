@@ -712,3 +712,31 @@ Final groups, run one at a time with Julia +dyad-3.5.0: `abs` 84 pass; `esp` 159
 `regen` 97 pass / 1 broken → 102 pass / 0 broken; `planar_wltc` 36 pass / 1 pre-existing
 broken. Compile: `npx -y @juliacomputing/dyad-cli@3.5.0 compile .` (existing mixed-clock
 warning only); generated output is compiler-produced. No figure exports or WLTC changes.
+
+### #162 course audit — every slide, guide, doc and figure against the recalibrated models
+
+Rebased on `origin/main` 08a2c2e (PR #160, the drive simulator); no conflicts, compile clean.
+Every number and figure from a model #161 and #162 changed (decks and speaker notes, guides,
+notebooks, docs, `sim/`) was re-run and compared; everything not listed below matched.
+
+- **One-wheel ABS is unchanged.** `ABSBrakeTransient` (μ 1.0/0.8/0.5/0.3/0.1, `a_ref` 8 and 2.4,
+  default and Tsit5) and `IdealModulatorBrakeTransient` are byte-identical to `origin/main`; its
+  defaults did not move. Only `ABSLockedWheelRecoveryTransient`, which starts with zero lock
+  memory, moves (rim speed at 0.5 s 24.14 → 23.70 m/s); it still spins up within 0.1 s and is
+  quoted nowhere. Lecture 3 section 3's one-wheel slides and figures stand; the GR-only legacy
+  exports were not needed.
+- **Figures.** The steer, ESP and Lecture 4 regen exports reproduce the committed
+  `03-brake-steer-*`, `05-esp-abs`, `05-split-mu` and `07-*` SVGs up to element ids. The four
+  sine-with-dwell SVGs (GR, 23bd4bb) come from models without ABS in the loop; the export prints
+  the same numbers, so they stay. `step05-regen-blend.png` predates the ABS rule's
+  `front_active` → `abs_active` wire and needs a new Studio capture.
+- **Text fixed:** the run sheet's split-µ heading (129° → 101°) and through-ABS slip
+  (−0.09 → −0.13); the ESP plausibility research's split-µ and planar ABS rows (now in band:
+  26.5 m, ε 0.95); the BEV validation note's items 7 and 8 (100 km/h: 41.48 m with regen,
+  41.57 m friction only; regen withdrawn under ABS on the hard stops); the drive simulator's
+  braking observations, re-run (below 34 km/h `PlanarBEVDrive`, which has no ABS rule, turns
+  the front wheels backward under regen alone); stale "not re-exported" notes; the Lecture 4
+  guide's `RegenBlend` snippet, whose first docstring sat on the wrong line.
+- **Open:** `PlanarBEVLowGripStopTransient()` and `HandsOn04.BEVLowGripStopTransient()` still
+  default to `stop = 28` and fail `Unstable` at 15.835 s with withdrawal on, after stopping at
+  8.165 s; the guide tells students to pass `stop = 12`.
