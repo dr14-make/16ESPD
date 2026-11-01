@@ -8,8 +8,8 @@ observations to verify, not fixes. Reproduce with:
 `Vehicle.Planar.PlanarBEVDrive` (`dyad/Vehicle/Planar/PlanarBEVDrive.dyad`) is the model:
 `PlanarCar`, `ElectricDrive` on the front axle through `DifferentialGear`,
 `Vehicle.Electric.RegenBlend`, `BrakeControlUnit` (continuous ESP and a 5 ms four-channel
-`ABSUnit`) and `PlanarRoadLoad`. Its brake chain is the one `PlanarBEVHardStop` uses, so the braking
-finding applies to that bench and its tests as well.
+`ABSUnit`) and `PlanarRoadLoad`. Its brake chain is the one `PlanarBEVHardStop` uses, without the
+ABS rule that bench switches on, so the braking finding applies to the bench only with `withdraw = 0`.
 
 ## 1. Coasting: the road load is present and correct; there is no lift-off deceleration
 
@@ -38,51 +38,51 @@ From full throttle to 105.6 km/h, then throttle released at t = 9 s:
 To verify: whether `CdA = 0.63` m² and `f_r = 0.012` are the intended values, and whether lift-off
 regeneration belongs in the drivable model (pedal map) or in `RegenBlend`.
 
-## 2. Braking: the front friction brakes are held at zero while the motor alone brakes the front axle
+## 2. Braking: the ABS works the front brakes until regen reaches its torque limit, then the motor alone turns the front wheels backward
 
 Full brake pedal (`brake_pedal.k = 1`) from 94.5 km/h, ABS and ESP on, dry road:
 
 | t [s] | v [km/h] | motor torque [N·m] | friction demand per wheel [N·m] | τ friction FL | τ friction RL | κ FL | κ RL |
 |---|---|---|---|---|---|---|---|
-| 19.25 | 88.9 | −124 | 2231 | 223 | 679 | −0.051 | −0.037 |
-| 19.75 | 78.0 | −135 | 2212 | 8 | 873 | −0.034 | −0.050 |
-| 20.5 | 61.4 | −172 | 2134 | 0 | 838 | −0.043 | −0.047 |
-| 21.25 | 42.5 | −250 | 1972 | 0 | 804 | −0.067 | −0.042 |
-| 22.0 | 19.3 | −313 | 1845 | 0 | 894 | −0.100 | −0.048 |
+| 19.25 | 87.2 | −110 | 2226 | 683 | 933 | −0.119 | −0.090 |
+| 19.75 | 69.2 | −153 | 2175 | 614 | 941 | −0.121 | −0.092 |
+| 20.25 | 51.2 | −206 | 2061 | 417 | 1032 | −0.093 | −0.077 |
+| 20.75 | 33.9 | −267 | 1845 | 39 | 1048 | −0.593 | −0.073 |
+| 21.0 | 26.0 | −274 | 1845 | 4 | 925 | −1.657 | −0.083 |
+| 21.5 | 10.2 | −249 | 1845 | 0 | 1015 | −6.24 | −0.070 |
 
-(FR and RR mirror FL and RL. Below `v_fade` = 10 km/h the regen ceiling fades to zero and the front
-friction brakes come back, which is the "front only near standstill" seen while driving.)
+(FR and RR mirror FL and RL. Below the ABS's 1.5 m/s cut-off the demand passes straight through and
+all four brakes lock for the last metre.)
 
 What the numbers show:
 
-- **The front wheels are braked only by the motor.** Up to 313 N·m at the shaft, ×8.193 through the
-  reduction, is about 1280 N·m per front wheel, against a friction demand of 1845–2231 N·m per wheel.
-- **The ABS releases the front friction brakes because the regen alone holds the front slip past its
-  threshold** (κ FL −0.04 to −0.10). The machine is outside the ABS loop (as `RegenBlend`'s docstring
-  says), so the ABS can only remove friction torque from the front, never regen torque.
-- **Likely root cause: `RegenBlend` splits the friction remainder equally over four wheels**:
+- **Above the 34.3 km/h corner the ABS modulates all four friction brakes.** Regen is limited by
+  charge power to 110–206 N·m at the shaft, the front friction brakes carry 400–700 N·m per wheel,
+  and the front slip stays near the tire's 0.12 peak.
+- **Below the corner the motor alone locks the front axle and drives it backward.** The blend asks
+  the machine for its 320 N·m torque limit; it delivers 250–275 N·m, about 1100 N·m per front wheel
+  through the 8.193 reduction. The ABS releases the front friction brakes to zero, but it cannot
+  release the machine: the front slip passes −0.59 at 33.9 km/h and reaches −6.2 at 10 km/h, a
+  wheel turning backward.
+- **`PlanarBEVDrive` does not use the ABS rule.** `RegenBlend(abs_rule = true)` withdraws regen
+  while `ABSUnit.front_active` reports a front brake held below its demand; `PlanarBEVHardStop` and
+  `PlanarBEVLowGripStop` use it (`withdraw = 1`) and keep the front slip above −0.2 while the car
+  is faster than 3 m/s. The drivable car has the blend without the rule.
+- **`RegenBlend` still splits the friction remainder equally over four wheels**:
 
       tau_brake = (tau_demand - tau_regen) * ratio / 4
 
-  Regen acts on the front axle only, but the remainder is asked equally of all four brakes. The front
-  axle is therefore asked for regen plus its full friction share, more than its grip, and the ABS
-  drops the front friction to zero. The rear axle gets only its quarter shares.
-- `PlanarBEVHardStop`'s docstring already describes this behavior ("the ABS holds the front friction
-  brakes off and the front tires work at about 65 % of their grip"), so it is documented, but it is
-  not what a production brake system does. There, regen and friction apply in parallel, distributed
-  per axle, and regen is reduced or cut when the ABS acts on the regen axle.
+  Regen acts on the front axle only, but the remainder is asked equally of all four brakes.
 
 To verify or fix:
 
-- Is the stopping distance with regen (`P_charge` default) longer than with friction only
-  (`P_charge = 0`, which the regen plausibility test already runs)? If yes, the blend costs braking
-  performance, which confirms the finding.
+- Use `RegenBlend(abs_rule = true)` in `PlanarBEVDrive` and connect `ABSUnit.front_active` (the
+  `BrakeControlUnit` would have to pass it out) to `blend.abs_active`, as the hard-stop benches do.
+  On the 80 km/h hard stop the rule costs 0.16 m against friction alone (27.10 m against 26.94 m);
+  without it the stop takes 27.24 m with the front wheels turning backward.
 - Per-axle distribution: compute each axle's friction share from a target front/rear brake balance
   minus that axle's regen, rather than an equal quarter of the remainder.
-- Regen–ABS coordination: limit or cut regen while the ABS is modulating a wheel of the regen axle,
-  so friction under ABS control takes over (the usual production strategy).
-- Any change here moves `PlanarBEVHardStop`, `PlanarBEVRegenWLTC` and `test/regen_plausibility.jl`,
-  and the Lecture 4 deck figures built from them.
+- Any change here moves `PlanarBEVDrive`, its wasm build and `sim/drive.jl`'s HUD expectations.
 
 ## Validate against researched data
 
