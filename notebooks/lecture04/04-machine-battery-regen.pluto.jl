@@ -216,12 +216,22 @@ braking than the tires carry, and `RegenBlend` gives the machine as much of it a
 three ceilings allows: its 320 N·m, the pack's 80.5 kW charge limit over the machine speed, and a
 linear fade below 10 km/h. The rest goes to Lecture 3's friction brakes through the ABS. The same
 stop with `P_charge = 0` brakes on friction alone: 26.94 m. The dry default enables withdrawal
-(`withdraw = 1`): 59.41 m, machine/friction 3.50/350.71 kJ (0.99 % motor), battery 2.98 kJ.
-Withdrawal suppresses regen but exposes zero-pressure ABS memory; the no-penalty test stays broken.
-With `withdraw = 0`: 33.04 m and 45.3 % motor. Low grip with withdrawal (`stop = 20`):
-190.45 m, minimum front slip −0.04931 above 3 m/s; off (`stop = 12`): 95.10 m and reversed
-wheels (minimum slip −17.36), not a physical benchmark. The inherited 28 s enabled run fails
-during prolonged parking at 24.565 s; use 20 s to measure the stop. WLTC is unchanged.
+(`withdraw = 1`): 27.102036224 m in 2.340 s after the pedal, machine/friction
+2.951/348.908 kJ (0.839 % gross motor share), battery positive recovery 2.957 kJ.
+The shared `ABSModulatorDiscrete` now uses its existing `k_inc_fast`/`k_inc_slow` build ramps
+when `tau_lock < tau_memory_min` (1 N·m, assumed); otherwise memory-scaled reapply,
+release memory and decrement are unchanged, with the threshold tagged (assumed). The stop is 0.16414 m
+(0.61 %) longer than friction alone, inside the `<= 1.01 * friction_distance` regression.
+The meaningful motor-share goal is NOT met: blanket front-active withdrawal suppresses regen
+almost throughout. With `withdraw = 0`: 27.238292677 m, 2.425 s, 28.7 % gross motor share,
+but minimum front slip −5.893705 above 3 m/s means reversed wheels, not a physical regen
+benchmark. Keep the rule ON: shorter and keeps slip above −0.2 while vx > 3 m/s (front/rear slip −0.126072/−0.090554).
+Low grip with withdrawal (`stop = 12`): 87.594615426 m, 7.665 s after pedal, minimum
+front/rear slip −0.187106/−0.104377 above 3 m/s. Off: 95.098241553 m and reversed wheels
+(minimum front slip −17.35918), not a physical benchmark. Use 12 s for both low-grip benches:
+20 s fails during parking at 15.835 s, after stopping at 8.165 s absolute. HandsOn
+low-grip is 87.604052512 m (Success, `stop = 12`). WLTC is unchanged (23.85 %,
+34.25 Wh/km recovered, 131.15 Wh/km consumption). Figures have not been re-exported.
 """
 
 # ╔═╡ 43682d73-077d-446a-9d02-3f704293fd1e
@@ -265,10 +275,11 @@ regen_stop_plot = let
     a, b = stop_trace(stop.on), stop_trace(stop.off)
     plot!(p[2], b.x, b.kmh; color = 2, lw = 2.5, label = "")
     plot!(p[2], a.x, a.kmh; color = 1, lw = 2.5, label = "")
-    annotate!(p[2], [(61.0, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
-        (61.0, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
+    xmax = 1.15 * max(a.d, b.d)
+    annotate!(p[2], [(0.98xmax, 4.0, text("regen + friction: $(round(a.d; digits = 1)) m", 10, :right, palette(:default)[1])),
+        (0.98xmax, 12.0, text("friction only: $(round(b.d; digits = 1)) m", 10, :right, palette(:default)[2]))])
     plot!(p[2]; xlabel = "distance from the pedal [m]", ylabel = "car speed [km/h]",
-        legend = false, ylims = (0, 85), xlims = (0, 65), title = "Hard stop from 80 km/h")
+        legend = false, ylims = (0, 85), xlims = (0, xmax), title = "Hard stop from 80 km/h")
     p
 end
 

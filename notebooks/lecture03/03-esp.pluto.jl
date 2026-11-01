@@ -542,7 +542,7 @@ md"""
 ## 5. ESP through ABS
 
 The ESP request now goes through the car's four ABS channels (5 ms clock, release at
-κ = −0.08 front and −0.06 rear) and the controller gains an integral term (`Ki = 1e5`). The
+predicted κ = −0.14 front and −0.11 rear) and the controller gains an integral term (`Ki = 1e5`). The
 braked wheel stays near its slip peak instead of locking, so it keeps both braking and
 cornering force, and the car keeps its speed.
 """

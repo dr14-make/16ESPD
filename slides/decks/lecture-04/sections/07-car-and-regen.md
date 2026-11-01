@@ -10,14 +10,18 @@ layout: section
 The chain in the planar car, the motor as a brake, the three ceilings on regen, and series
 blending onto Lecture 3's brakes.
 
-The dry stop defaults to `withdraw = 1`: **59.41 m**, against **26.94 m** friction-only.
-Machine/friction energy is **3.50/350.71 kJ** (**0.99 %** motor). Withdrawal suppresses regen,
-but exposes zero-pressure ABS memory; the no-distance-penalty test remains broken.
-With `withdraw = 0`: **33.04 m**, **45.3 %** motor. WLTC is unchanged.
-Low grip (`PlanarBEVLowGripStopTransient(stop = 20)` or `HandsOn04.BEVLowGripStopTransient(stop = 20)`):
-**190.45 m**, minimum front slip **−0.04931** above 3 m/s. Rule off (`stop = 12`):
-**95.10 m**, minimum slip **−17.36**, reversed wheels, **not a physical benchmark**.
-The inherited 28 s run fails during prolonged parking at 24.565 s.
+With the ABS memory fix, the dry default keeps `withdraw = 1`: **27.10 m** in **2.340 s**,
+against **26.94 m** friction-only: 0.61 % longer, within the 1 % regression tolerance.
+Machine/friction energy is **2.951/348.908 kJ** (**0.839 %** gross motor share).
+The meaningful motor-share goal is **NOT met**: blanket front-active withdrawal suppresses regen.
+Rule OFF: **27.24 m**, **28.7 %** gross motor share, but front slip **−5.893705** means
+reversed wheels, **not a physical regen benchmark**. ON is shorter and keeps slip above −0.2 while vx > 3 m/s.
+Low grip (`PlanarBEVLowGripStopTransient(stop = 12)`): **87.594615426 m**, **7.665 s**,
+minimum front/rear slip **−0.187106/−0.104377** above 3 m/s. Rule OFF: **95.10 m**,
+front slip **−17.36**, reversed wheels. Use `stop = 12` for both low-grip benches;
+20 s now fails during parking at 15.835 s (stopped at 8.165 s absolute).
+Exact `HandsOn04.BEVLowGripStopTransient` remeasurement and test-group results are pending.
+WLTC is unchanged. Figures have not been re-exported.
 
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
@@ -402,7 +406,7 @@ kJ(x) = r.sol[x][end] / 1e3
 kJ(r."E_shaft_in"), kJ(r."E_brake"), kJ(r."E_dc_in")
 ```
 
-<div class="handson">✓ hard stop: to 0.5 m/s in <b>5.10 s</b>, <b>59.41 m</b> · ABS withdrawal binds · machine <b>3.50 kJ</b>, friction <b>350.71 kJ</b>: 0.99 / 99.01 % · <b>2.98 kJ</b> to battery · <code>P_charge = 0.0</code>: <b>26.94 m</b></div>
+<div class="handson">✓ hard stop: to 0.5 m/s in <b>2.340 s</b>, <b>27.10 m</b> · ABS withdrawal binds · machine <b>2.951 kJ</b>, friction <b>348.908 kJ</b>: 0.839 / 99.161 % gross split · <b>2.957 kJ</b> positive battery recovery · <code>P_charge = 0.0</code>: <b>26.94 m</b> · meaningful motor-share goal NOT met</div>
 
 <div class="handson">✓ WLTC: <b>34.25 Wh/km</b> back of <b>143.6</b> traction: <b>23.85 %</b> · friction
 0.001 Wh/km · <code>P_charge = 15.0e3</code>: <b>21.40 %</b>, friction 3.69 Wh/km</div>
@@ -435,10 +439,11 @@ energies at the end in kilojoules: what the shaft took back, what the friction b
 what reached the battery.
 
 The first green box is the coordinated default. From the pedal to speed below 0.5 m/s:
-5.10 seconds and 59.41 meters. Machine 3.50 kilojoules, friction 350.71: 0.99 and 99.01 percent;
-2.98 kilojoules reach the battery. With charge power zero: 26.94 meters. Front friction remains
-zero while regen withdraws: a zero-pressure release memory makes the rebuild rates zero.
-This rule does not yet remove the penalty; keep the broken regression visible.
+2.340 seconds and 27.102036224 meters. Machine 2.951 kilojoules, friction 348.908:
+0.839 and 99.161 percent gross split; 2.957 kilojoules positive battery recovery.
+With charge power zero: 26.937898732 meters, 2.335 seconds. The 0.16413749 meter / 0.61 percent
+excess is inside `distance <= 1.01 * friction_distance`. The ABS memory fix restores pressure
+rebuild, but blanket front-active withdrawal still prevents a meaningful motor share.
 
 The second green box, the WLTC. 34.25 watt-hours per kilometer come back, of 143.6 of traction at
 the shaft: 23.85 percent. The friction brakes burn 0.001 watt-hours per kilometer. With P charge at
@@ -453,21 +458,26 @@ class: big-figure
 
 ## The hard stop: ABS withdrawal binds
 
-![Left: hardware ceilings against speed and actual machine torque, suppressed by ABS withdrawal. Right: speed against distance from pedal; withdrawal on 59.41 m, friction only 26.94 m.](/figures/07-regen-hard-stop.svg)
+![Historical pre-memory-fix figure, not re-exported: hardware ceilings and ABS withdrawal; distance curves are superseded by the current 27.10 m ON / 26.94 m friction-only measurements.](/figures/07-regen-hard-stop.svg)
+
+Figure pending re-export; current ON stop is **27.10 m**, within 1 % of friction-only.
 
 <div class="handson">✓ hardware envelope: charge power above 34.3 km/h, torque down to 10, fade below · actual torque: withdrawal scales the envelope toward zero</div>
 
 <!--
-The hard stop uses the new peak-centered ABS and enables withdrawal. Hardware ceilings still
-meet at 34.3 kilometers per hour; without withdrawal, charge power binds above it, torque down
-to 10, then fade. The coordinated default does not follow that envelope: allow is 0.059 at
-0.60 seconds and 0.000075 at 0.80 seconds, so ABS withdrawal binds almost throughout.
+The hard stop uses peak-centered ABS and enables withdrawal. Hardware ceilings still meet
+at 34.3 kilometers per hour; charge power binds above it, torque down to 10, then fade.
+Blanket front-active withdrawal suppresses regen almost throughout the coordinated stop.
 
-The distance panel must use the coordinated default: 59.41 meters against 26.94 on friction
-alone, a 32.47 meter penalty. With the rule off it is 33.04 meters. The early front release
-captures zero pressure; rebuild rates proportional to the remembered lock pressure remain zero.
-Withdrawing regen therefore leaves the rear brakes carrying most of the stop until the
-low-speed ABS cut-off. This is not a reason to detune the friction-only ABS.
+The shared `ABSModulatorDiscrete` now uses existing `k_inc_fast`/`k_inc_slow` ramps when
+`tau_lock < tau_memory_min` (1 N·m, assumed), otherwise unchanged memory-scaled reapply.
+Release memory and decrement are untouched; the 1 N·m threshold is tagged (assumed). At 0.515 seconds
+p = tau_lock = 0; at 0.525 p = 200, rate 40000; at 0.55 p = 600, rate 16000;
+at 0.6 p = 1400; later valid lock memory is about 1.25 kN m.
+ON is 27.102036224 meters against 26.937898732 friction-only. OFF is 27.238292677 meters,
+but front slip minus 5.893705 indicates reversed wheels, not a physical regen benchmark.
+ON front/rear slip minima above 3 m/s are minus 0.126072 / minus 0.090554.
+Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s. Do not detune friction-only ABS. The figure is not re-exported.
 -->
 
 ---
@@ -479,34 +489,37 @@ routeAlias: hard-stop-split
 <div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
 <div>
 
-![Energy over the hard stop: machine 3.50 kJ, friction 350.71 kJ, tire slip 31.46 kJ; friction only 0.85, 352.73, 34.56 kJ. Machine share with withdrawal is 0.99 %.](/figures/07-hard-stop-split.svg)
+![Historical pre-memory-fix energy figure, not re-exported. Current ON: shaft recovery 2.951 kJ, friction 348.908 kJ, tire 35.277 kJ; 0.839 percent gross machine share.](/figures/07-hard-stop-split.svg)
+
+Figure pending re-export; use the current measured values at right.
 
 </div>
 <div class="text-[0.95rem]">
 
-Initial energy: **380.7 kJ**. Machine **0.99 %**, friction **99.01 %** of braking.
+Initial energy: **380.7 kJ**. Gross braking split: machine **0.839 %**, friction **99.161 %**.
 
-**2.98 kJ** reaches the battery: **0.83 Wh**, about **6 m** of WLTC driving.
+Battery positive recovery **2.957 kJ**: **0.82 Wh**, about **6 m** of WLTC driving.
 
-> **Withdrawal is not sufficient.** Regen backs off, but zero-pressure ABS memory prevents
-> front friction recovery. The distance regression remains broken.
+> **Memory recovery repaired; motor-share goal NOT met.** The distance is within 1 %
+> of friction-only, but blanket front-active withdrawal suppresses regen almost throughout.
 
 </div>
 </div>
 
 <!--
-The coordinated default recovers 3.50 kilojoules through the shaft, burns 350.71 in friction
-and 31.46 in tire slip. Friction only gives 0.85, 352.73 and 34.56 kilojoules respectively.
-The braking share is 3.50 divided by 3.50 plus 350.71: 0.99 percent machine, 99.01 friction.
-Energy conservation must subtract the 5.01 kilojoules of shaft output from shaft recovery;
-the body-and-wheel balance closes with net shaft work, not gross recovery alone.
-Battery recovery is 2.98 kilojoules, 0.83 watt-hours, about 6 meters at 134.3 watt-hours per
-kilometer. The uncoordinated comparison gave 154.8 kilojoules but lengthened the stop too.
+The coordinated default recovers 2.951 kilojoules through the shaft, burns 348.908 in friction
+and 35.277 in tire slip. Friction-only is unchanged: 352.732 in brakes and 34.555 in tires.
+Gross machine share is 0.839 percent. Subtract 6.479 kilojoules shaft output for net shaft work;
+gross recovery alone is not the body-and-wheel energy balance. Battery positive recovery
+is 2.957 kilojoules, 0.82 watt-hours. OFF gives shaft-in/out 91.402/61.800, brake 226.903,
+tire 124.152 and battery positive recovery 92.809 kilojoules, but reversed wheels invalidate
+it as a physical regen benchmark. The meaningful-share goal remains unmet.
 
-The withdrawal rule is on by default, but it has not fixed the pressure-memory trap. On low
-grip it avoids reversed front wheels: 190.45 meters with minimum slip minus 0.04931 above
-3 meters per second, versus a nonphysical reversed-wheel 95.10 meters without withdrawal.
-Use stop 20 seconds enabled to avoid the inherited exact-rest failure during longer parking.
+Low-grip ON is now 87.594615426 meters, 7.665 seconds after pedal; minimum front/rear slip
+above 3 m/s is minus 0.187106 / minus 0.104377. OFF stays 95.098241553 meters with
+minimum front slip minus 17.35918, reversed wheels. Use stop 12 seconds for both benches:
+20 seconds fails during parking at 15.835 seconds, after stopping at 8.165 absolute.
+HandsOn low is 87.604052512 m (Success, stop 12); library 87.594615426 m. No figure export.
 -->
 
 ---
@@ -568,8 +581,8 @@ same cycle: on the WLTC, series blending changes the result by a twentieth of a 
 - A machine asked to brake generates. Regen is limited by **torque, charge power, a low-speed
   fade** and grip.
 - **Series blending** gives the machine the demand first, friction the rest.
-- Hard stop: ABS withdrawal binds; machine **0.99 %**, friction **99.01 %**;
-  **59.41 m** against **26.94 m** friction-only. Zero-pressure ABS recovery remains unresolved.
+- Hard stop: ABS memory recovery repaired; **27.10 m** against **26.94 m** friction-only,
+  within 1 % tolerance. Withdrawal still binds: gross machine **0.839 %**; meaningful-share goal NOT met.
 - WLTC: no ceiling binds; **23.85 %** of the traction comes back.
 
 ### Next: add it all up. <Link to="energy-bill">→ 08, the energy bill</Link>
@@ -579,12 +592,13 @@ Section 07 in five lines. The drive turns the driver's torque into a converter c
 present field, and the car follows the WLTC to within 1.63 kilometers per hour over 23 267 meters. A
 machine asked to brake generates, and regen is limited by the machine's torque, the battery's charge
 power, a low-speed fade, and grip. Series blending gives the machine the demand first and friction
-the rest. On the hard stop withdrawal suppresses regen: machine 0.99 percent, friction 99.01,
-and the stop is longer, 59.41 meters against 26.94. On the WLTC no ceiling binds, and 23.85 percent
+the rest. The memory fix restores the stop to 27.10 meters against 26.94, within 1 percent.
+Withdrawal still suppresses regen: gross machine share 0.839 percent; meaningful-share goal
+NOT met. Keep ON because OFF reverses wheels and is longer. On WLTC no ceiling binds, and 23.85 percent
 of the traction comes back.
 
 The car drives and brakes. What is left is to put a meter on every link and read where the energy
 went.
 -->
 
-<!-- Issue #156 follow-up: withdrawal is enabled; its 32.47 m penalty remains a broken regression. -->
+<!-- ABS memory follow-up: withdrawal remains ON; distance is within the 1% regression tolerance, motor meaningful-share goal remains unmet. -->

@@ -187,7 +187,8 @@ export BEVHardStopTransient__System
   # braking: `E_shaft_in`, what the machine took back through the reduction; `E_brake`, what the
   # friction brakes burned; `E_dc_in`, what reached the battery terminals.
   # The ABS withdrawal rule defaults ON with the peak-centered ABS calibration.
-  # Use `withdraw = 0` for the uncoordinated comparison; `BEVLowGripStop` demonstrates low grip.
+  # Use `withdraw = 0` only as a diagnostic: the front wheels can reverse, invalidating its energy
+  # split. `BEVLowGripStop` demonstrates low grip.
   var"model"::Union{Nothing, System} = VehicleSystemsComponents.HandsOn04.BEVHardStop(; name=:BEVHardStop)
   __system::System = BEVHardStopTransient__System(; name, var"alg"=var"alg", var"start"=var"start", var"stop"=var"stop", var"abstol"=var"abstol", var"reltol"=var"reltol", var"saveat"=var"saveat", var"dtmax"=var"dtmax", var"tstops"=var"tstops", var"automatic_discontinuity_detection"=var"automatic_discontinuity_detection", var"optimize"=var"optimize", var"progress"=var"progress", var"respecialize"=var"respecialize", var"specialization"=var"specialization", var"verbose"=var"verbose", var"log_file"=var"log_file", var"T_cmd"=var"T_cmd", var"tau_max"=var"tau_max", var"P_charge"=var"P_charge", var"v_fade"=var"v_fade", var"withdraw"=var"withdraw", var"road_mu"=var"road_mu")
 end

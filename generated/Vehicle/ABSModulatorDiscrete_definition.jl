@@ -5,7 +5,7 @@
 
 
 @doc Markdown.doc"""
-   ABSModulatorDiscrete(; name, dt, T_p, lambda_1, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, v_min, __overrides)
+   ABSModulatorDiscrete(; name, dt, T_p, lambda_1, lambda_lock, alpha_rel, beta_reapply, l_rec, T_hold_max, k_dec, k_inc_fast, k_inc_slow, tau_memory_min, v_min, __overrides)
 
 Clocked ABS pressure-memory state machine.
 
@@ -26,6 +26,7 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
 | `k_dec`         |                          | --  |   80000.0 |
 | `k_inc_fast`         |                          | --  |   80000.0 |
 | `k_inc_slow`         |                          | --  |   8000.0 |
+| `tau_memory_min`         | Minimum useful friction lock torque; below this resume defined rebuild ramps (assumed)                         | N.m  |   1.0 |
 | `v_min`         |                          | m/s  |   1.5 |
 
 ## Connectors
@@ -56,7 +57,7 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
 | `fast_rate`         |                          | --  |
 | `slow_rate`         |                          | --  |
 """
-@component function ABSModulatorDiscrete(; name = nothing, var"dt"=0.005, var"T_p"=0.03, var"lambda_1"=0.04, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(80000.0), var"k_inc_fast"=Float64(80000.0), var"k_inc_slow"=Float64(8000.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
+@component function ABSModulatorDiscrete(; name = nothing, var"dt"=0.005, var"T_p"=0.03, var"lambda_1"=0.04, var"lambda_lock"=0.2, var"alpha_rel"=0.6, var"beta_reapply"=0.85, var"l_rec"=0.03, var"T_hold_max"=0.06, var"k_dec"=Float64(80000.0), var"k_inc_fast"=Float64(80000.0), var"k_inc_slow"=Float64(8000.0), var"tau_memory_min"=Float64(1.0), var"v_min"=1.5, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -86,6 +87,7 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
   haskey(__overrides, "k_dec") && (k_dec = pop!(__overrides, "k_dec"))
   haskey(__overrides, "k_inc_fast") && (k_inc_fast = pop!(__overrides, "k_inc_fast"))
   haskey(__overrides, "k_inc_slow") && (k_inc_slow = pop!(__overrides, "k_inc_slow"))
+  haskey(__overrides, "tau_memory_min") && (tau_memory_min = pop!(__overrides, "tau_memory_min"))
   haskey(__overrides, "v_min") && (v_min = pop!(__overrides, "v_min"))
 
   ### Structural Parameters (functions)
@@ -134,6 +136,9 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
   __local__k_inc_slow = k_inc_slow
   append!(__params, @parameters (k_inc_slow::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, k_inc_slow, __local__k_inc_slow)
+  __local__tau_memory_min = tau_memory_min
+  append!(__params, @parameters (tau_memory_min::Real), [description = "Minimum useful friction lock torque; below this resume defined rebuild ramps (assumed)", bounds = (eps(Float64), Inf)])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, tau_memory_min, __local__tau_memory_min)
   __local__v_min = v_min
   append!(__params, @parameters (v_min::Real))
   __dyad_seed_parameter!(__initial_conditions, __bindings, v_min, __local__v_min)
@@ -250,8 +255,8 @@ Phase is -1 decrease, 0 hold, 1 increase, and 2 off. All memory changes only on 
   push!(__eqs, hold_count ~ ifelse((phase > -0.5) & (phase < 0.5), hold_count(ShiftIndex() -1) + 1.0, 0.0))
   push!(__eqs, fast_reapply ~ ifelse(phase < 0.5, 0.0, ifelse((phase(ShiftIndex() -1) < 0.5) & (phase > 0.5), 1.0, ifelse((fast_reapply(ShiftIndex() -1) > 0.5) & (p(ShiftIndex() -1) < beta_reapply * tau_lock(ShiftIndex() -1)), 1.0, 0.0))))
   push!(__eqs, dec_rate ~ ifelse(released(ShiftIndex() -1) > 0.5, 15.0 * tau_lock(ShiftIndex() -1), k_dec))
-  push!(__eqs, fast_rate ~ ifelse(released(ShiftIndex() -1) > 0.5, 15.0 * tau_lock(ShiftIndex() -1), k_inc_fast))
-  push!(__eqs, slow_rate ~ ifelse(released(ShiftIndex() -1) > 0.5, 1.5 * tau_lock(ShiftIndex() -1), k_inc_slow))
+  push!(__eqs, fast_rate ~ ifelse((released(ShiftIndex() -1) > 0.5) & (tau_lock(ShiftIndex() -1) >= tau_memory_min), 15.0 * tau_lock(ShiftIndex() -1), k_inc_fast))
+  push!(__eqs, slow_rate ~ ifelse((released(ShiftIndex() -1) > 0.5) & (tau_lock(ShiftIndex() -1) >= tau_memory_min), 1.5 * tau_lock(ShiftIndex() -1), k_inc_slow))
   push!(__eqs, rate ~ ifelse(phase < -0.5, -dec_rate, ifelse(phase < 0.5, 0.0, ifelse((released(ShiftIndex() -1) < 0.5) | (fast_reapply > 0.5), fast_rate, slow_rate))))
   push!(__eqs, p ~ ifelse(phase > 1.5, max(demand, 0.0), min(max(p(ShiftIndex() -1) + rate * dt, 0.0), max(demand, 0.0))))
   push!(__eqs, tau_cmd ~ p)

@@ -1729,6 +1729,11 @@ hydraulic and switching delay; 90% pressure retention and a two-tick hold avoid 
 grip (assumed). Straight it stops from 80 km/h in 26.5 m, versus 36.1 m before issue #156,
 and from 100 km/h in 41.0 m. Established deceleration is 9.74 m/s²; pressure build-up adds
 distance beyond the ideal 25.2 m. Locked is 31.6 m. Section 05 uses the same car for ESP.
+If external axle torque triggers release before friction pressure exists, a recorded lock torque
+below 1 N·m uses the defined build ramps instead of a near-zero memory-scaled
+rate (`tau_memory_min`, assumed). The measured lock pressure and release law are retained; zero memory no longer
+makes the increase phase ineffective.
+
 -->
 
 ---

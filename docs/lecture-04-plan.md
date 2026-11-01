@@ -97,13 +97,14 @@ speed source driven by the sensed body-frame vx, a force sensor, and `WorldForce
 **S8 — Regen uses series blending on the Lecture 3 brakes.** The driver's brake demand goes to the
 motor up to the smallest of its torque limit, the battery charge-power limit and a low-speed fade;
 the remainder goes to the hydraulics through the existing allocator. A fourth rule withdraws
-regen while the ABS acts on either driven wheel. After #156 rebases #140, the hard-stop bench
-keeps this rule ON by default (`withdraw = 1`) per user request, despite its distance penalty;
-rule OFF is a diagnostic comparison, not the recommended default. WLTC does not use the rule.
-WLTC never decelerates harder than 1.5 m/s² (0.15 g), so on WLTC friction only covers the
-low-speed fade (under 4 % of braking energy). Show coordination's unresolved failure on the
-hard stop rather than promising a half-machine split: the current default machine share is
-only 0.98865324%. WLTC reports recovered energy independently.
+regen while the ABS acts on either driven wheel. With the shared ABS memory fix, the hard-stop
+bench keeps this rule ON (`withdraw = 1`): 27.102036224 m, 0.61 % above friction-only,
+inside the 1 % distance regression tolerance. ON is shorter and keeps slip above −0.2 while vx > 3 m/s; OFF reverses
+front wheels and is not a physical regen benchmark. WLTC does not use the rule.
+WLTC never decelerates harder than 1.5 m/s² (0.15 g), so friction only covers the low-speed
+fade (under 4 % of braking energy). The meaningful motor-share goal is NOT met: blanket
+front-active withdrawal suppresses regen almost throughout; gross machine share is only
+0.839 %. WLTC reports recovered energy independently.
 
 **S9 — The standstill singularity is worked around on the bench.** `SlipBasedWheelJoint` puts its
 regularization outside the square root, so the Jacobian turns NaN when a parked car's slip velocity
@@ -221,6 +222,11 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   terminals, 23.8 % of the shaft's traction energy, inside the 18–25 % anchor: the regen path
   (motor, converter, pack) returns 89 % of the shaft's braking energy, just above Boretti's
   measured 72–87 % on the MY2013 Leaf.
+### Historical #156 rebase evidence (superseded by the memory-fix evidence below)
+
+The following measurements, failure diagnosis, run durations and test counts record the rebase
+state **before** the ABS memory fix; they are history, not current expectations.
+
 - Step 5's `Vehicle.Electric.RegenBlend` caps the machine's braking at the smallest of 320 N·m
   (Nissan), 80.5 kW over the machine speed (INL, the 2013 pack's 10 s charge capability) and a
   linear fade below 10 km/h (assumed), and sends the rest through Lecture 3's equal per-wheel
@@ -279,3 +285,60 @@ Lecture 4 `07-regen-hard-stop.svg` and `07-hard-stop-split.svg` data changed, an
 source uses the coordinated default. Lecture 3 carry-forward changed figures:
 `03-brake-steer-path`, `03-brake-steer-forces`, `05-esp-abs`, `05-split-mu`; all SWD plots
 also depend on calibration.
+
+
+### Current ABS memory-fix evidence (required-runtime measurements)
+
+`ABSModulatorDiscrete` now uses the existing `k_inc_fast`/`k_inc_slow` ramps whenever
+`tau_lock < tau_memory_min` (1 N·m, assumed). Otherwise memory-scaled reapply is
+unchanged. Release memory and decrement are untouched; the threshold is tagged (assumed).
+
+| Dry rule ON (`withdraw = 1`, retained default) | Before → after |
+|---|---|
+| Distance to vx < 0.5 m/s | 59.409163717 → 27.102036224 m |
+| Time after pedal | 5.100 → 2.340 s |
+| Shaft in / out | 3501.911496 / 5010.979664 → 2951.278652 / 6479.217812 J |
+| Friction / tire loss | 350708.377370 / 31457.672893 → 348907.684116 / 35277.237330 J |
+| Battery positive recovery | 2979.353015 → 2956.884659 J |
+| Gross motor share | 0.98865324 → 0.839 % |
+
+ON front/rear minimum slip above 3 m/s is −0.126072/−0.090554. Friction-only BEV is
+unchanged: 26.937898732 m, 2.335 s, brake 352732.323 J / tire 34555.337 J. ON is
+0.16413749 m / 0.61 % longer. The broken penalty assertion is replaced by
+`distance <= 1.01 * friction_distance` (1 % tolerance). This does **not** meet the meaningful
+motor-share goal: blanket front-active withdrawal suppresses regen almost throughout the stop.
+Net energy accounting subtracts shaft output from shaft recovery, rather than using gross share.
+
+Dry OFF is now 27.238292677 m, 2.425 s; shaft_in 91401.848027 J, shaft_out 61800.443694 J,
+brake 226903.189571 J, tire 124152.388374 J, battery positive recovery 92809.448651 J,
+gross motor share 28.7 %. Front minimum slip −5.893705 above 3 m/s indicates reversed
+wheels, **NOT a physical regen benchmark**. Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s.
+
+ON trace: at 0.515 s `p = tau_lock = 0`; at 0.525 s `p = 200`, rate 40000;
+at 0.55 s `p = 600`, rate 16000; at 0.6 s `p = 1400`; later valid lock memory ≈1.25 kN·m.
+
+Low-grip ON: 190.445049116 → 87.594615426 m, time after pedal 16.4 → 7.665 s;
+front/rear minimum slip above 3 m/s −0.187106/−0.104377. Use `stop = 12` for both
+`Vehicle.Planar.PlanarBEVLowGripStopTransient` and `HandsOn04.BEVLowGripStopTransient`
+and the test: `stop = 20` now fails at 15.835 s in parking, after stopping at 8.165 s absolute.
+OFF is unchanged: 95.098241553 m, minimum front slip −17.35918, reversed wheels/nonphysical.
+HandsOn low-grip: 87.604052512 m (Success, `stop = 12`); library 87.594615426 m.
+
+ABS-alone dry is unchanged: 26.517044326 m at 80 km/h and 41.028141818 m at 100 km/h.
+WLTC is untouched: 23.85 %, 34.25 Wh/km recovered, 131.15 Wh/km consumption.
+No figure export: Lecture 4 `07-regen-hard-stop.svg` and `07-hard-stop-split.svg` remain
+historical images pending re-export; notebook source and teaching text carry current evidence.
+
+
+Limit trace (rule ON): demand binds at 0.505 s (61.03 N·m), charge power by 0.515 s
+(137.20 N·m). Withdrawal then dominates: 42.87 N·m at 0.55 s, 8.19 at 0.6 s,
+0.01138 at 0.8 s, while front friction reaches 1226.13 N·m. Actual regen stays near zero
+through 2.7 s; below the ABS cutoff it returns under fade (14.73 N·m at 2.8 s / 2.795 km/h).
+Peak electromagnetic / battery-terminal recovery: 78.957 / 75.829 kW. These are not changes
+to the 80.5 kW charge ceiling, 320 N·m torque ceiling, 34.27 km/h corner or 10 km/h fade.
+ABS-alone low grip, split-µ, brake-and-steer and all seven SWD cases reproduce baseline
+metrics; Lecture 3 figure data have no new changes from this follow-up.
+
+Final validation: `abs` 84 pass; `esp` 159 pass; `regen` 102 pass (formerly 97 pass /
+1 broken); `planar_wltc` 36 pass / 1 pre-existing broken. Groups ran separately with
+Julia +dyad-3.5.0, compiler 3.5.0; no figure exports.
