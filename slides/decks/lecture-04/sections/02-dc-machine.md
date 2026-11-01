@@ -222,7 +222,19 @@ class: big-figure
 
 ## Losses and efficiency
 
-<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div class="tight">
+
+| Loss | Power | Grows with | Cause | At 3283 rpm |
+|---|---|---|---|---|
+| **copper** | *R i*² | current², so torque² | current heating the armature resistance | 5.52 kW at 332 A |
+| **friction** | *T*<sub>f</sub> ω | ω: a constant torque | bearings and seals rubbing | 172 W |
+| **iron** | *K*<sub>i</sub> ω | ω: a constant torque | hysteresis and eddy currents in the iron | 344 W |
+| **windage** | *k*<sub>w</sub> ω³ | ω³ | air drag on the spinning rotor | 10 W |
+| **constant** | *C* | nothing: the same at every speed | an assumed allowance for what scales with neither | 200 W |
+
+</div>
+
+<div class="grid grid-cols-[1.5fr_1fr] gap-6 items-center mt-2">
 <div>
 
 ![Machine losses against speed on a log scale, at the converter's current limit of 332.2 A from standstill to 10 000 rpm: copper constant at 5.52 kW; iron and friction rising in proportion to speed, to about 1 kW and 0.5 kW; the constant loss flat at 200 W; windage rising as the cube of speed to about 300 W. Base speed 3283 rpm dashed.](/figures/02-losses.svg)
@@ -230,10 +242,8 @@ class: big-figure
 </div>
 <div class="text-[0.95rem]">
 
-The deck's loss formula, each term a part:
-
 $$
-P_{loss} = \underbrace{R\, i^2}_{\text{copper} \,\propto\, T^2} + \underbrace{T_f\,\omega}_{\text{friction}} + \underbrace{K_i\,\omega}_{\text{iron}} + \underbrace{k_w\,\omega^3}_{\text{windage}} + C
+P_{loss} = R\, i^2 + T_f\,\omega + K_i\,\omega + k_w\,\omega^3 + C
 $$
 
 $$
@@ -246,32 +256,48 @@ At 320 N·m and 3283 rpm: copper **5.52 kW**, shaft losses **0.73 kW**, **94.6 %
 </div>
 
 <!--
-Where does the machine lose energy? On the right is the deck's loss formula, and in our model each
-term is a part with its own power. Copper loss, R i squared: the resistance in ohms times the
-current squared, in watts. The current is proportional to the torque, so this loss goes with the
-torque squared. Friction in the bearings, T f omega: a constant torque times the speed. Iron loss, K
-i omega: hysteresis and eddy currents in the iron, which the deck also takes proportional to the
-speed. Windage, k w omega cubed: the air drag on the spinning rotor, growing with the cube of the
-speed. And a constant, C, lost at any speed.
+Where does the machine lose energy? The table at the top names the five losses of our model, one
+per row, and in the model each one is its own part on the circuit or the shaft, with its own power
+to read. The columns give the loss, its power, what it grows with, where it comes from, and its
+value at base speed, 3283 rpm, with the full current of 332 amperes.
 
-The efficiency, the second formula, is the mechanical power out, T omega, over the power in, which
-is T omega plus all the losses.
+Copper first. The armature resistance R, 0.05 ohms, heats up with the square of the current i: R
+times i squared, in watts. The current is proportional to the torque, so this loss goes with the
+square of the torque too. At 332 amperes it is 5.52 kilowatts, by far the largest entry.
+
+The next two rows are constant torques that brake the shaft. A constant torque T at a speed omega,
+in radians per second, costs the power T times omega, so both grow in proportion to the speed.
+Friction is T f, half a newton meter, from the bearings and the shaft seals: 172 watts at base
+speed. Iron loss is K i, one newton meter: every turn the rotor's field sweeps through the iron,
+which flips its magnetization, that is hysteresis, and drives currents around inside it, those are
+eddy currents. That gives 344 watts at base speed.
+
+Windage is the air the rotor drags around with it. Its torque grows with the square of the speed,
+so its power, k w times omega cubed, grows with the cube. The coefficient k w is chosen so that the
+loss is 300 watts at the motor's top speed of 10 100 rpm, and at base speed it is only 10 watts.
+
+The last row, the constant C, is 200 watts at every speed. The model does not attribute it to one
+physical mechanism. It is an allowance the course assumes, so that the motor-only efficiency lands
+near ORNL's measured map of the 2012 Leaf. The inverter's own losses are not in it: they belong to
+the converter. In the model it is a torque C over omega, which keeps the power at C, and it fades
+to zero below 95 rpm, so that the machine has no infinite drag at standstill.
+
+Beside the figure, the first formula adds the five rows into P loss. The second is the efficiency,
+eta: the mechanical power out, T omega, over the power in, which is T omega plus all the losses.
 
 The figure is notebook 04, section 2. The machine runs along its whole envelope at the converter's
 current limit, 332.2 amperes, from standstill to 10 000 rpm, on build 02's converter bench, and each
 loss is read from its own part. The horizontal axis is the machine speed in rpm. The vertical axis
 is the loss in watts, on a logarithmic scale: each grid line is ten times the one below it. The gray
-dashed vertical line is base speed, 3283 rpm. The legend names the five curves. Copper, at the top,
-is flat at 5.52 kilowatts at every speed, because the current is the same everywhere. Iron and
-friction rise in proportion to speed, to about 1 kilowatt and half a kilowatt at the right edge. The
-constant loss is flat at 200 watts. Windage starts tiny and rises with the cube of the speed, to
-about 300 watts at 10 000 rpm.
+dashed vertical line is base speed. Copper sits at the top, flat at 5.52 kilowatts at every speed,
+because the current is the same everywhere. Iron and friction rise in proportion to the speed, to
+about 1 kilowatt and half a kilowatt at the right edge. The constant loss is flat at 200 watts.
+Windage starts tiny and climbs with the cube of the speed, to about 300 watts at 10 000 rpm.
 
-So at full current the copper loss dominates at every speed. At base speed the others are iron 344
-watts, friction 172, the constant 200 and windage 10: together 0.73 kilowatts of shaft losses,
-against 5.52 of copper. At the Leaf's corner point, 320 newton meters at 3283 rpm, the shaft gives
-110.0 kilowatts and the electrical input is 116.3 kilowatts: 94.6 percent, the number at the bottom
-of the slide.
+So at full current the copper loss dominates at every speed. The four shaft losses together are
+0.73 kilowatts at base speed, against 5.52 kilowatts of copper. At the Leaf's corner point, 320
+newton meters at 3283 rpm, the shaft gives 110.0 kilowatts and the electrical input is 116.3
+kilowatts: 94.6 percent, the line under the two formulas.
 
 At part load the picture changes. The current falls with the torque, and the copper loss with its
 square: halve the torque and the copper loss drops to a quarter, while the speed terms stay where
@@ -288,55 +314,71 @@ routeAlias: dc-control
 
 ## Two ways to control a DC motor
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-2 gap-8 text-[0.95rem]">
 <div>
 
-### By the voltage
-
-$$
-T = \frac{K\Phi}{R}\,\bigl(V - K\Phi\,\omega\bigr)
-$$
-
-Lower *V*: the line moves down in speed, same slope. At low speed a low voltage is all it takes
-to drive the rated current.
-
-**Step 02:** a converter sets *V* = *d* · *V*<sub>pack</sub>, and caps the current.
+**By the voltage**, $T = \frac{K\Phi}{R}\bigl(V - K\Phi\,\omega\bigr)$: lower *V* moves the line down
+in speed, same slope. **Step 02:** a converter sets *V* = *d* · *V*<sub>pack</sub>, and caps the
+current.
 
 </div>
 <div>
 
-### By the flux
-
-Lower Φ: less torque per ampere, and less back-EMF per rpm, so the machine **runs faster on the
-same voltage**.
-
-Deck: replace the permanent magnets by field coils, and turn their current down.
-
-**Step 02:** when the voltage runs out, the converter turns the field down. That is **field
-weakening**, and it gives the envelope of section 04.
+**By the flux**: lower Φ, less torque per ampere and less back-EMF per rpm, so the machine **runs
+faster on the same voltage**. **Step 02:** when the voltage runs out, the converter turns the
+field down: **field weakening**.
 
 </div>
+</div>
+
+<div class="mt-2">
+
+![Steady-state shaft torque against machine speed for the step 01 machine. Left, at full field: straight lines for 100, 200 and 350 V with the same slope, reaching zero torque near 985, 1969 and 3447 rpm; a dot on each marks 332.2 A, about 320 N·m. Right, at 350 V: the field fraction f at 1, 0.7 and 0.5; at the same 332.2 A the dots move to higher speed and lower torque, and the lines reach zero at higher speed with a flatter slope.](/figures/02-control-family.svg)
+
 </div>
 
 <!--
-The deck gives two ways to control a DC motor, one per column.
+The deck gives two ways to control a DC motor, one per column, and the two plots below show what
+each one does to the machine's line.
 
 On the left, by the voltage. The formula is the fixed-supply line from two slides back, written as a
 torque: T equals K Phi over R, times V minus K Phi omega. Lower the voltage V and the whole line
-moves down in speed, with the same slope, as the 200 volt line did. At low speed the back-EMF is
-small, so a low voltage is all it takes to drive the rated current. That is what step 02's converter
-does: it gives the machine a voltage d times the pack voltage, where the duty d is a number between
-0 and 1, and below base speed it sets d just high enough to hold the current at its limit.
+moves down in speed, with the same slope. At low speed the back-EMF is small, so a low voltage is all
+it takes to drive the rated current. That is what step 02's converter does: it gives the machine a
+voltage d times the pack voltage, where the duty d is a number between 0 and 1, and below base speed
+it sets d just high enough to hold the current at its limit.
 
 On the right, by the flux. Lower Phi and two things happen: the machine makes less torque per
 ampere, and less back-EMF per rpm. The second is the useful one: with less back-EMF per rpm, the
 same voltage drives the machine faster. In the deck's version, the permanent magnets are replaced by
 field coils, and their current is turned down.
 
-In step 02 this is the second knob. Once the converter gives the machine all of the pack's voltage,
-at base speed, the only way to go faster at full current is to turn the field down. That is field
-weakening, and it gives the constant-power part of the envelope in section 04, the part of every
-electric car's spec sheet where the torque falls as the speed rises.
+Now the plots. They are notebook 04, section 1, computed from step 01's machine in steady state,
+with every parameter read from the dyno run: the current is V minus f K Phi omega over R, and the
+shaft torque is f K Phi times that current, less the loss torques. Here f is the field, the flux as
+a fraction of full flux. In both plots the horizontal axis is the machine speed in rpm and the
+vertical axis the shaft torque in newton meters, and the thin black line is zero torque.
+
+The left plot is the voltage knob, at full field. The three lines are 100, 200 and 350 volts. They
+are parallel, all falling 1.97 newton meters per rpm, and they reach zero torque near 985, 1969 and
+3447 rpm: the no-load speed is V over K Phi, so it moves in proportion to the voltage. The dot on
+each line is where the machine draws 332.2 amperes, the current at the Leaf's corner point. It sits
+near 320 newton meters on every line, at about 820, 1810 and 3283 rpm. So with the voltage alone
+the converter can give full torque at any speed up to base speed, at the same current. What it
+cannot do is go past 350 volts: the pack has no more to give.
+
+The right plot is the field knob, at 350 volts. The three lines are the field at 1, 0.7 and 0.5. As
+the field falls, the no-load speed rises, to about 4924 and 6894 rpm, and the line gets flatter,
+because its slope is f K Phi squared over R. The dots are again 332.2 amperes, the same current on
+every line. They move to the right, to 4690 and 6566 rpm, but the torque at that current falls from
+320 to 224 and 159 newton meters, in proportion to the field. That is the price: each ampere makes
+less torque. The speed rises as the torque falls, so the power at the dots stays near 110 kilowatts.
+
+That is how step 02 uses both knobs. Below base speed the converter lowers the voltage, the left
+plot. Once it gives the machine all of the pack's voltage, at base speed, the only way to go faster
+at full current is to turn the field down, the right plot. That is field weakening, and it gives
+the constant-power part of the envelope in section 04, the part of every electric car's spec sheet
+where the torque falls as the speed rises.
 
 A permanent-magnet machine cannot turn its magnets down. Its inverter weakens the field with a
 current that opposes the magnets, and section 03 shows how. In our model the machine simply gets a

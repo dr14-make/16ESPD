@@ -110,6 +110,70 @@ let
     """
 end
 
+# ╔═╡ dcbb7dba-6a48-4fbe-bd9b-5834f3c82bfc
+md"""
+### Moving the line: voltage and field
+
+The same machine in steady state, `di/dt = 0` and `dω/dt = 0`, with the flux scaled by the field
+fraction *f*: *i* = (*V* − *f K*Φ ω)/*R*, and the shaft torque is *f K*Φ *i* less the loss torques
+*T*<sub>f</sub> + *K*<sub>i</sub> + *k*<sub>w</sub>ω² + *C*/ω. Every parameter is read from the
+350 V dyno run above, so this is the model's own steady-state line, not a second model. Lowering
+*V* moves the line in speed and keeps its slope (*f K*Φ)²/*R*. Lowering *f* raises the no-load
+speed *V*/(*f K*Φ) and flattens the slope, but each ampere now makes only *f K*Φ of torque.
+"""
+
+# ╔═╡ d5b55265-e6b5-46e4-8134-3cc84a5b7a82
+steady = let
+    s, m = dyno.r350.sol, symbolic_container(dyno.r350)
+    ps = (; (n => s.ps[getproperty(m.machine, n)] for n in (:R, :k, :T_f, :K_i, :k_w, :C))...)
+    tau_loss(w) = ps.T_f + ps.K_i + ps.k_w * w^2 + ps.C / w
+    torque(V, f, w) = f * ps.k * (V - f * ps.k * w) / ps.R - tau_loss(w)
+    a = dyno_line(dyno.r350)
+    i = a.i[1]
+    "Speed in rad/s and shaft torque where the line for `V`, `f` draws the current `i`."
+    function at_current(V, f)
+        w = (V - ps.R * i) / (f * ps.k)
+        return (; w, tau = f * ps.k * i - tau_loss(w))
+    end
+    (; ps, torque, at_current, i_corner = i, check = torque(350.0, 1.0, a.rpm[1] * pi / 30) - a.tau[1])
+end;
+
+# ╔═╡ 9e32505e-671a-43ec-93e6-7f694ef2e43b
+control_family_plot = let
+    (; ps, torque, at_current, i_corner) = steady
+    p = plot(; layout = (1, 2), size = (1100, 420), legend = false)
+    rpm = range(100.0, 8000.0; length = 750)
+    for (c, V) in enumerate((100.0, 200.0, 350.0))
+        keep = rpm .<= rpm_of(V / ps.k) + 150
+        plot!(p[1], rpm[keep], [torque(V, 1.0, r * pi / 30) for r in rpm[keep]]; color = c, lw = 2.5)
+        q = at_current(V, 1.0)
+        scatter!(p[1], [rpm_of(q.w)], [q.tau]; color = c, ms = 5)
+        annotate!(p[1], [(rpm_of(V / ps.k) + 60, 70.0, text("$(round(Int, V)) V", 10, :left, palette(:default)[c]))])
+    end
+    hline!(p[1], [0.0]; color = :black, lw = 0.5)
+    plot!(p[1]; xlabel = "machine speed [rpm]", ylabel = "shaft torque [N·m]", xlims = (0, 4000),
+        ylims = (-150, 800), title = "Voltage V, full field: the line moves; dots $(round(i_corner; digits = 1)) A")
+    for (c, f) in enumerate((1.0, 0.7, 0.5))
+        keep = rpm .<= rpm_of(350.0 / (f * ps.k)) + 250
+        plot!(p[2], rpm[keep], [torque(350.0, f, r * pi / 30) for r in rpm[keep]]; color = c, lw = 2.5)
+        q = at_current(350.0, f)
+        scatter!(p[2], [rpm_of(q.w)], [q.tau]; color = c, ms = 5)
+        annotate!(p[2], [(rpm_of(q.w) + 120, q.tau, text("$(round(Int, q.tau)) N·m", 10, :left, palette(:default)[c])),
+            (rpm_of(350.0 / (f * ps.k)) + 120, 70.0, text("f = $(f == 1 ? "1" : f)", 10, :left, palette(:default)[c]))])
+    end
+    hline!(p[2], [0.0]; color = :black, lw = 0.5)
+    plot!(p[2]; xlabel = "machine speed [rpm]", ylabel = "shaft torque [N·m]", xlims = (0, 8000),
+        ylims = (-150, 800), title = "Field f at 350 V: faster, less torque per ampere; " *
+        "dots $(round(i_corner; digits = 1)) A")
+    p
+end
+
+# ╔═╡ edd4e960-6800-4827-9ffc-fb0e2f9f6277
+md"""
+The steady-state line meets the dyno: at 3283 rpm on 350 V it differs from the simulated
+torque by $(round(steady.check; sigdigits = 2)) N·m.
+"""
+
 # ╔═╡ 8c15e1f1-211b-4b8b-b43d-4c38d38bdfb3
 md"""
 ## 2. Where the machine's losses go
@@ -388,6 +452,10 @@ end
 # ╠═3682b634-a0dd-4436-97fa-61a8499843a0
 # ╟─bfdfb407-06cd-44bf-acbd-d56762c8e2dd
 # ╟─17c1868c-da16-4f2f-ad4a-a2003a870851
+# ╟─dcbb7dba-6a48-4fbe-bd9b-5834f3c82bfc
+# ╠═d5b55265-e6b5-46e4-8134-3cc84a5b7a82
+# ╟─9e32505e-671a-43ec-93e6-7f694ef2e43b
+# ╟─edd4e960-6800-4827-9ffc-fb0e2f9f6277
 # ╟─8c15e1f1-211b-4b8b-b43d-4c38d38bdfb3
 # ╠═10962649-cde5-4bea-ab84-08874291b7a3
 # ╟─3ef3be46-a5e3-4e27-a1d2-6b0a714ba563
