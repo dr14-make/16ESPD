@@ -1,0 +1,35 @@
+"Scripted driver playing a time table with left-held commands and constant extrapolation."
+component ScriptedDriver
+  extends Driver
+  "CSV time table containing time, throttle, brake and steer columns"
+  structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/coast_down.csv"
+  "Throttle command table"
+  structural parameter throttle_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["throttle"])
+  "Throttle zero-order-hold interpolation"
+  throttle_table = BlockComponents.Tables.Interpolation(dataset = throttle_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant())
+  "Brake command table"
+  structural parameter brake_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["brake"])
+  "Brake zero-order-hold interpolation"
+  brake_table = BlockComponents.Tables.Interpolation(dataset = brake_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant())
+  "Steer command table"
+  structural parameter steer_data::DyadData.DyadTimeseries = DyadData.DyadTimeseries(table, independent_var = "time", dependent_vars = ["steer"])
+  "Steer zero-order-hold interpolation"
+  steer_table = BlockComponents.Tables.Interpolation(dataset = steer_data, interpolation_type = BlockComponents.Tables.InterpolationType.ConstantInterpolation(), extrapolation_type = BlockComponents.Tables.ExtrapolationType.Constant())
+relations
+  throttle_table.u = time
+  connect(throttle_table.y, throttle_signal)
+  brake_table.u = time
+  connect(brake_table.y, brake_signal)
+  steer_table.u = time
+  connect(steer_table.y, steer_signal)
+end
+
+"Full throttle until 9 seconds, then coast."
+component CoastDownDriver
+  extends ScriptedDriver(table = "dyad://VehicleSystemsComponents/drivers/coast_down.csv")
+end
+
+"Coast-down followed by full braking from 19 seconds."
+component HardStopDriver
+  extends ScriptedDriver(table = "dyad://VehicleSystemsComponents/drivers/hard_stop.csv")
+end

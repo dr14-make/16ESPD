@@ -7,27 +7,15 @@ function DriverCommands(; name)
         (throttle(t) = 0.0), [description = "Throttle pedal"]
         (brake(t) = 0.0), [description = "Brake pedal"]
         (steer(t) = 0.0), [description = "Steering-wheel angle"]
-        (esp_on(t) = 1.0), [description = "ESP enable"]
-        (abs_on(t) = 1.0), [description = "ABS enable"]
-        (mu_fl(t) = 1.0), [description = "Front-left road friction"]
-        (mu_fr(t) = 1.0), [description = "Front-right road friction"]
-        (mu_rl(t) = 1.0), [description = "Rear-left road friction"]
-        (mu_rr(t) = 1.0), [description = "Rear-right road friction"]
     end
     ys = @variables begin
         (throttle_signal(t)), [output = true]
         (brake_signal(t)), [output = true]
         (steer_signal(t)), [output = true]
-        (esp_signal(t)), [output = true]
-        (abs_signal(t)), [output = true]
-        (mu_fl_signal(t)), [output = true]
-        (mu_fr_signal(t)), [output = true]
-        (mu_rl_signal(t)), [output = true]
-        (mu_rr_signal(t)), [output = true]
     end
     # Register one discrete clock without polling or device I/O inside the equations.
     affect = ModelingToolkit.ImperativeAffect((m, o, ctx, integ) -> m;
-        modified = (; throttle, brake, steer, esp_on, abs_on, mu_fl, mu_fr, mu_rl, mu_rr))
+        modified = (; throttle, brake, steer))
     clock = ModelingToolkit.SymbolicDiscreteCallback(t < 0, affect)
     return System([y ~ p for (y, p) in zip(ys, ps)], t, ys, ps;
         name, discrete_events = [clock])
@@ -58,7 +46,7 @@ using OrdinaryDiffEqDefault: Rodas5P, init, step!
 "Supertype for wall-clock drive analysis specifications."
 abstract type AbstractRealtimeDriveSpec <: AbstractAnalysisSpec end
 
-"Wall-clock drive specification for a model exposing a DriverCommands source."
+"Drive specification for a driver-and-car assembly."
 @kwdef struct RealtimeDriveSpec{M} <: AbstractRealtimeDriveSpec
     name::Symbol = :RealtimeDrive
     model::M
@@ -68,7 +56,10 @@ abstract type AbstractRealtimeDriveSpec <: AbstractAnalysisSpec end
     duration::Float64 = 0.0
     frame::Float64 = 1 / 60
     dtmax::Float64 = 0.005
-    headless::Bool = false
+    window::Bool = false
+    esp_on::Float64 = 1.0
+    abs_on::Float64 = 1.0
+    mu::Float64 = 1.0
 end
 
 DyadInterface.is_runnable(T::Type{<:AbstractRealtimeDriveSpec}) =
@@ -77,34 +68,21 @@ DyadInterface.is_runnable(T::Type{<:AbstractRealtimeDriveSpec}) =
 "Interactive driver loop supplied by optional window and controller extensions."
 function drive_window end
 
-"Scripted launch for 1.5 seconds, followed by full braking."
-scripted_commands(t) = t < 1.5 ? (; throttle = 1.0, brake = 0.0, steer = 0.0) :
-    (; throttle = 0.0, brake = 1.0, steer = 0.0)
-
-function headless_drive!(integ, sys, spec)
-    spec.duration > 0 || throw(ArgumentError("headless RealtimeDrive requires duration > 0"))
-    t0 = last = time()
-    frames = 0
-    while integ.t < spec.duration
-        frame_start = time()
-        dt = min(clamp(frame_start - last, 1e-3, 0.05), spec.duration - integ.t)
-        integ.t < 1.5 && (dt = min(dt, 1.5 - integ.t))
-        last = frame_start
-        set_driver_commands!(integ, sys; scripted_commands(integ.t)...)
-        step!(integ, dt, true)
-        string(integ.sol.retcode) in ("Default", "Success") ||
-            error("solver stopped: $(integ.sol.retcode)")
-        frames += 1
-        sleep(max(0.0, spec.frame - (time() - frame_start)))
-    end
-    return (; frames, wall = time() - t0)
+"Advance without pacing or device input; preserve the assembly's driver signals."
+function unpaced_drive!(integ, sys, spec)
+    spec.duration > 0 || throw(ArgumentError("RealtimeDrive without a window requires duration > 0"))
+    started = time()
+    step!(integ, spec.duration - integ.t, true)
+    string(integ.sol.retcode) in ("Default", "Success") ||
+        error("solver stopped: $(integ.sol.retcode)")
+    return (; frames = ceil(Int, integ.t / spec.frame), wall = time() - started)
 end
 
 function DyadInterface.run_analysis(spec::RealtimeDriveSpec)
     spec.frame > 0 && spec.dtmax > 0 && spec.duration >= 0 ||
         throw(ArgumentError("RealtimeDrive requires frame > 0, dtmax > 0, and duration >= 0"))
-    if !spec.headless && isempty(methods(drive_window))
-        error("RealtimeDrive needs the drive window: load GLMakie, or set headless = true.")
+    if spec.window && isempty(methods(drive_window))
+        error("RealtimeDrive needs the drive window: load GLMakie, or set window = false.")
     end
     horizon = spec.duration > 0 ? spec.duration + 1.0 : 3600.0
     tspec = TransientAnalysisSpec(; name = spec.name, model = spec.model,
@@ -121,11 +99,11 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec)
     integ = init(setup.prob, Rodas5P(); dtmax = spec.dtmax, saveat = spec.frame,
         save_everystep = false)
     stats = try
-        if spec.headless
-            headless_drive!(integ, sys, spec)
+        if !spec.window
+            unpaced_drive!(integ, sys, spec)
         else
             applicable(drive_window, integ, sys, spec) || error(
-                "RealtimeDrive needs the drive window: load GLMakie, or set headless = true.")
+                "RealtimeDrive needs the drive window: load GLMakie, or set window = false.")
             drive_window(integ, sys, spec)
         end
     catch e

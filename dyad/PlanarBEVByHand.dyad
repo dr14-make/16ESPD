@@ -1,0 +1,19 @@
+"Planar BEV assembly with a held by-hand driver."
+component PlanarBEVByHand
+  "Vehicle mass"
+  parameter m::Mass = 1500.0
+  "ESP enable for the run"
+  parameter esp_on::Real = 1.0
+  "ABS enable for the run"
+  parameter abs_on::Real = 1.0
+  "Uniform road-grip multiplier"
+  parameter mu::Real = 1.0
+  "Driver supplying the three causal commands"
+  driver = VehicleSystemsComponents.DriverCommands()
+  "Car including actuator response"
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+relations
+  connect(driver.throttle_signal, vehicle.throttle)
+  connect(driver.brake_signal, vehicle.brake)
+  connect(driver.steer_signal, vehicle.steer)
+end

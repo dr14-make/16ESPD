@@ -73,3 +73,16 @@ _Avoid_: index, home page
 The printable reading version of a deck, taken away after the lecture: its slides, without
 speaker notes.
 _Avoid_: hands-on guide, PDF export
+**Driver**:
+The slot that supplies throttle, brake and steering-wheel angle to a car as causal signals.
+The car owns actuator response; ESP, ABS and road grip are fixed run settings, not commands.
+_Avoid_: controller, command parameters
+
+**Scripted driver**:
+A Driver implementation that plays commands from a time table without human input.
+_Avoid_: headless driver, test loop
+
+**Human driver**:
+A Driver implementation that reads a person's pedals, steering or keyboard on its own clock
+and holds each command between ticks; without a window it reads neutral.
+_Avoid_: interactive analysis, gamepad controller

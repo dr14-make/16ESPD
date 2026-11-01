@@ -9,14 +9,20 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
 @kwdef struct RealtimeDrive__Spec <: AbstractRealtimeDriveSpec
   name::Symbol = :RealtimeDrive
   __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
-  # Wall-clock drive length; zero runs until the window closes
-  var"duration"::Float64 = 0
-  # Frame length
+  # Simulation duration; zero runs until the window closes
+  var"duration"::Float64 = 22
+  # Saved sample and window frame interval
   var"frame"::Float64 = 0.016666667
   # Solver step cap
   var"dtmax"::Float64 = 0.005
-  # Scripted driver without a window or controller
-  var"headless"::Bool = false
+  # Show a window and pace the simulation to wall clock
+  var"window"::Bool = false
+  # ESP enable for the run
+  var"esp_on"::Float64 = 1.0
+  # ABS enable for the run
+  var"abs_on"::Float64 = 1.0
+  # Uniform road-grip multiplier
+  var"mu"::Float64 = 1.0
   var"model"::Union{Nothing, System} = Dyad.EmptyComponent(; name=:EmptyComponent)
   __system::System
 end

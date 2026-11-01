@@ -6,7 +6,7 @@
 
 using DyadInterface
 using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
-@component function PlanarBEVRealtimeDrive__System(; name = nothing, var"duration"=3, var"frame"=0.016666667, var"dtmax"=0.005, var"headless"=true, var"m"=1500, __overrides = Dict{String, Any}())
+@component function PlanarBEVRealtimeDrive__System(; name = nothing, var"duration"=22, var"frame"=0.016666667, var"dtmax"=0.005, var"window"=false, var"esp_on"=1.0, var"abs_on"=1.0, var"mu"=1.0, var"m"=1500, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -28,7 +28,10 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   haskey(__overrides, "duration") && (duration = pop!(__overrides, "duration"))
   haskey(__overrides, "frame") && (frame = pop!(__overrides, "frame"))
   haskey(__overrides, "dtmax") && (dtmax = pop!(__overrides, "dtmax"))
-  haskey(__overrides, "headless") && (headless = pop!(__overrides, "headless"))
+  haskey(__overrides, "window") && (window = pop!(__overrides, "window"))
+  haskey(__overrides, "esp_on") && (esp_on = pop!(__overrides, "esp_on"))
+  haskey(__overrides, "abs_on") && (abs_on = pop!(__overrides, "abs_on"))
+  haskey(__overrides, "mu") && (mu = pop!(__overrides, "mu"))
   haskey(__overrides, "m") && (m = pop!(__overrides, "m"))
 
   ### Structural Parameters (functions)
@@ -45,17 +48,26 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
 
   ### Symbolic Parameters
   __local__duration = duration
-  append!(__params, @parameters (duration::Float64), [description = "Wall-clock drive length; zero runs until the window closes"])
+  append!(__params, @parameters (duration::Float64), [description = "Simulation duration; zero runs until the window closes"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, duration, __local__duration)
   __local__frame = frame
-  append!(__params, @parameters (frame::Float64), [description = "Frame length"])
+  append!(__params, @parameters (frame::Float64), [description = "Saved sample and window frame interval"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, frame, __local__frame)
   __local__dtmax = dtmax
   append!(__params, @parameters (dtmax::Float64), [description = "Solver step cap"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, dtmax, __local__dtmax)
-  __local__headless = headless
-  append!(__params, @parameters (headless::Bool), [description = "Scripted driver without a window or controller"])
-  __dyad_seed_parameter!(__initial_conditions, __bindings, headless, __local__headless)
+  __local__window = window
+  append!(__params, @parameters (window::Bool), [description = "Show a window and pace the simulation to wall clock"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, window, __local__window)
+  __local__esp_on = esp_on
+  append!(__params, @parameters (esp_on::Float64), [description = "ESP enable for the run"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, esp_on, __local__esp_on)
+  __local__abs_on = abs_on
+  append!(__params, @parameters (abs_on::Float64), [description = "ABS enable for the run"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, abs_on, __local__abs_on)
+  __local__mu = mu
+  append!(__params, @parameters (mu::Float64), [description = "Uniform road-grip multiplier"])
+  __dyad_seed_parameter!(__initial_conditions, __bindings, mu, __local__mu)
   __local__m = m
   append!(__params, @parameters (m::Float64), [description = "Vehicle mass", bounds = (0, Inf)])
   __dyad_seed_parameter!(__initial_conditions, __bindings, m, __local__m)
@@ -72,9 +84,9 @@ using VehicleSystemsComponents: AbstractRealtimeDriveSpec, RealtimeDriveSpec
   __constants = Any[]
 
   ### Components
-  # Subcomponent model of type VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive
+  # Subcomponent model of type VehicleSystemsComponents.PlanarBEVScripted
   model_overrides = __pop_subcomponent_overrides!(__overrides, "model")
-  push!(__systems, @named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(; m=m, __overrides = model_overrides))
+  push!(__systems, @named model = VehicleSystemsComponents.PlanarBEVScripted(; m=m, esp_on=esp_on, abs_on=abs_on, mu=mu, __overrides = model_overrides))
 
   ### Check there are no unmatched overrides
   isempty(__overrides) || throw(ArgumentError("overrides: [$(join(keys(__overrides), ", "))] don't match names found in model. These names may exist in the model but could have been conditionally excluded. Override keys are dotted paths as written in Dyad source (e.g. inner.rate)."))
@@ -96,41 +108,37 @@ export PlanarBEVRealtimeDrive__System
 @kwdef struct PlanarBEVRealtimeDrive__Spec <: AbstractRealtimeDriveSpec
   name::Symbol = :PlanarBEVRealtimeDrive
   __overrides::Dict{SymbolicT, SymbolicT} = Dict{SymbolicT, SymbolicT}()
-  # Wall-clock drive length; zero runs until the window closes
-  var"duration"::Float64 = 3
-  # Frame length
+  # Simulation duration; zero runs until the window closes
+  var"duration"::Float64 = 22
+  # Saved sample and window frame interval
   var"frame"::Float64 = 0.016666667
   # Solver step cap
   var"dtmax"::Float64 = 0.005
-  # Scripted driver without a window or controller
-  var"headless"::Bool = true
+  # Show a window and pace the simulation to wall clock
+  var"window"::Bool = false
+  # ESP enable for the run
+  var"esp_on"::Float64 = 1.0
+  # ABS enable for the run
+  var"abs_on"::Float64 = 1.0
+  # Uniform road-grip multiplier
+  var"mu"::Float64 = 1.0
   # Vehicle mass
   var"m"::Float64 = 1500
-  # The battery-electric planar car, driven by a person: the throttle, brake pedal and steering wheel
-  # are causal signals from a held driver source updated between solver steps, and the car answers through the same
-  # chain the WLTC and hard-stop benches use.
-  # 
-  # The throttle asks the machine for up to `tau_max`; the brake pedal asks for up to `T_full` at
-  # each wheel, through `Vehicle.Electric.RegenBlend`, so the machine regenerates first and the
-  # friction brakes take the rest. The friction share passes through `BrakeControlUnit`, Lecture 3's
-  # ESP and four-channel ABS, both switchable at run time with `esp_on` and `abs_on`. The drive turns
-  # the front axle through the planar `DifferentialGear`; `PlanarRoadLoad` adds drag and rolling
-  # resistance.
-  # 
-  # Each command reaches the car through a first-order lag of `T_driver`, the time a foot or hand
-  # takes to move. Besides being physical, it keeps a parameter change from stepping the converter's
-  # torque, which would make an algebraic variable jump at an instant the solver has no event for.
-  var"model"::Union{Nothing, System} = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(; name=:PlanarBEVDrive)
-  __system::System = PlanarBEVRealtimeDrive__System(; name, var"duration"=var"duration", var"frame"=var"frame", var"dtmax"=var"dtmax", var"headless"=var"headless", var"m"=var"m")
+  # Planar BEV assembly with a scripted driver.
+  var"model"::Union{Nothing, System} = VehicleSystemsComponents.PlanarBEVScripted(; name=:PlanarBEVScripted)
+  __system::System = PlanarBEVRealtimeDrive__System(; name, var"duration"=var"duration", var"frame"=var"frame", var"dtmax"=var"dtmax", var"window"=var"window", var"esp_on"=var"esp_on", var"abs_on"=var"abs_on", var"mu"=var"mu", var"m"=var"m")
 end
 
 function __dyad_base_analysis_spec(spec::PlanarBEVRealtimeDrive__Spec)
   overrides = Dict{SymbolicT, SymbolicT}()
   no_namespace_model = toggle_namespacing(spec.model, false)
   push!(overrides, no_namespace_model.m => spec.var"m")
+  push!(overrides, no_namespace_model.esp_on => spec.var"esp_on")
+  push!(overrides, no_namespace_model.abs_on => spec.var"abs_on")
+  push!(overrides, no_namespace_model.mu => spec.var"mu")
   merge!(overrides, spec.__overrides)
   RealtimeDriveSpec(;
-    name=spec.name, overrides, __system=spec.__system, var"duration"=spec.var"duration", var"frame"=spec.var"frame", var"dtmax"=spec.var"dtmax", var"headless"=spec.var"headless", var"model"=spec.var"model"
+    name=spec.name, overrides, __system=spec.__system, var"duration"=spec.var"duration", var"frame"=spec.var"frame", var"dtmax"=spec.var"dtmax", var"window"=spec.var"window", var"esp_on"=spec.var"esp_on", var"abs_on"=spec.var"abs_on", var"mu"=spec.var"mu", var"model"=spec.var"model"
   )
 end
 

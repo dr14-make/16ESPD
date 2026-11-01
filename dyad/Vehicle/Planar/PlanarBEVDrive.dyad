@@ -1,24 +1,19 @@
-"""
-The battery-electric planar car, driven by a person: the throttle, brake pedal and steering wheel
-are causal signals from a held driver source updated between solver steps, and the car answers through the same
-chain the WLTC and hard-stop benches use.
-
-The throttle asks the machine for up to `tau_max`; the brake pedal asks for up to `T_full` at
-each wheel, through `Vehicle.Electric.RegenBlend`, so the machine regenerates first and the
-friction brakes take the rest. The friction share passes through `BrakeControlUnit`, Lecture 3's
-ESP and four-channel ABS, both switchable at run time with `esp_on` and `abs_on`. The drive turns
-the front axle through the planar `DifferentialGear`; `PlanarRoadLoad` adds drag and rolling
-resistance.
-
-Each command reaches the car through a first-order lag of `T_driver`, the time a foot or hand
-takes to move. Besides being physical, it keeps a parameter change from stepping the converter's
-torque, which would make an algebraic variable jump at an instant the solver has no event for.
-"""
+"Planar battery-electric car with causal driver inputs and first-order actuator response."
 component PlanarBEVDrive
-  "Held driver command source"
-  driver = VehicleSystemsComponents.DriverCommands()
-  "Time the driver takes to move a pedal or the wheel (assumed)"
-  parameter T_driver::Time = 0.05
+  "Throttle pedal fraction, from zero to one"
+  throttle = RealInput()
+  "Brake pedal fraction, from zero to one"
+  brake = RealInput()
+  "Steering-wheel angle in radians"
+  steer = RealInput()
+  "ESP enable, fixed for the run"
+  parameter esp_on::Real = 1.0
+  "ABS enable, fixed for the run"
+  parameter abs_on::Real = 1.0
+  "Road-grip multiplier applied to every wheel"
+  parameter mu::Real = 1.0
+  "Actuator response time constant (assumed)"
+  parameter T_actuator::Time = 0.05
   "Vehicle mass (probe)"
   parameter m::Mass = 1500.0
   "Wheel radius (repository default)"
@@ -39,34 +34,30 @@ component PlanarBEVDrive
   parameter dv_wheel::Velocity = 0.01
   "Machine-shaft torque the pedals ask for: throttle drives, brake brakes"
   pedals = BlockComponents.Math.Add(k1 = tau_max, k2 = -4.0 * T_full / ratio) {^pedals}
-  foot = BlockComponents.Continuous.FirstOrder(T = T_driver) {^foot}
-  hands = BlockComponents.Continuous.FirstOrder(T = T_driver) {^hands}
+  "Machine torque actuator response; prevents algebraic converter torque jumps"
+  torque_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^torque_response}
+  "Steering actuator response"
+  steering_response = BlockComponents.Continuous.FirstOrder(T = T_actuator) {^steering_response}
   robot = VehicleSystemsComponents.Vehicle.Planar.SteeringRobot() {^robot}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
   blend = VehicleSystemsComponents.Vehicle.Electric.RegenBlend(ratio = ratio, radius = radius, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade) {^blend}
   drive = VehicleSystemsComponents.Vehicle.Electric.ElectricDrive(ratio = ratio, P_aux = P_aux) {^drive}
   differential = MultibodyComponents.PlanarMechanics.DifferentialGear() {^differential}
   mount = RotationalComponents.Components.Fixed() {^mount}
-  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(use_signals = true, radius = radius, T_max = T_full) {^ecu}
-  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(use_signals = true, m = m, radius = radius, tau_max = T_full) {^car}
+  ecu = VehicleSystemsComponents.Vehicle.Planar.BrakeControlUnit(esp_on = esp_on, abs_on = abs_on, radius = radius, T_max = T_full) {^ecu}
+  car = VehicleSystemsComponents.Vehicle.Planar.PlanarCar(mu_scale_fl = mu, mu_scale_fr = mu, mu_scale_rl = mu, mu_scale_rr = mu, m = m, radius = radius, tau_max = T_full) {^car}
   roadload = VehicleSystemsComponents.Vehicle.Planar.PlanarRoadLoad(m = m) {^roadload}
   flat = BlockComponents.Sources.Constant(k = 0.0) {^flat}
   motion = VehicleSystemsComponents.Vehicle.Planar.BusMotion() {^motion}
   slips = VehicleSystemsComponents.Vehicle.Planar.BusSlip() {^slips}
 relations
-  connect(driver.esp_signal, ecu.esp_enable)
-  connect(driver.abs_signal, ecu.abs_enable)
-  connect(driver.mu_fl_signal, car.mu_fl)
-  connect(driver.mu_fr_signal, car.mu_fr)
-  connect(driver.mu_rl_signal, car.mu_rl)
-  connect(driver.mu_rr_signal, car.mu_rr)
   connect(car.bus, motion.bus, slips.bus) {^wbus}
-  connect(driver.throttle_signal, pedals.u1) {^w1}
-  connect(driver.brake_signal, pedals.u2) {^w2}
-  connect(pedals.y, foot.u) {^w3}
-  connect(foot.y, blend.tau_ref) {^w4}
-  connect(driver.steer_signal, hands.u) {^w5}
-  connect(hands.y, robot.delta_sw_ref) {^w6}
+  connect(throttle, pedals.u1) {^w1}
+  connect(brake, pedals.u2) {^w2}
+  connect(pedals.y, torque_response.u) {^w3}
+  connect(torque_response.y, blend.tau_ref) {^w4}
+  connect(steer, steering_response.u) {^w5}
+  connect(steering_response.y, robot.delta_sw_ref) {^w6}
   connect(robot.steering, car.steering) {^w7}
   connect(motion.vx, kmh.u, ecu.vx) {^w8}
   connect(kmh.y, blend.v) {^w9}
@@ -105,6 +96,6 @@ relations
   initial car.rl.brake.tau_actual = 0.0
   initial car.rr.brake.tau_actual = 0.0
   initial drive.converter.i_out = 0.0
-  initial foot.x = 0.0
-  initial hands.x = 0.0
+  initial torque_response.x = 0.0
+  initial steering_response.x = 0.0
 end

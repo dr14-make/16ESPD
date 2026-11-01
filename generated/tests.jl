@@ -18,9 +18,13 @@ end
 include("test_internals.jl")
 
 @testset "`VehicleSystemsComponents`" begin
+include("CoastDownDriver_test.jl")
 include("DriverCommands_test.jl")
+include("HardStopDriver_test.jl")
 include("Hello_test.jl")
-include("SignalGain_test.jl")
+include("PlanarBEVByHand_test.jl")
+include("PlanarBEVScripted_test.jl")
+include("ScriptedDriver_test.jl")
 end
 include("HandsOn/tests.jl")
 include("HandsOn02/tests.jl")

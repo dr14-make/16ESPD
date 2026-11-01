@@ -1,0 +1,21 @@
+"Planar BEV assembly with a scripted driver."
+component PlanarBEVScripted
+  "Vehicle mass"
+  parameter m::Mass = 1500.0
+  "ESP enable for the run"
+  parameter esp_on::Real = 1.0
+  "ABS enable for the run"
+  parameter abs_on::Real = 1.0
+  "Uniform road-grip multiplier"
+  parameter mu::Real = 1.0
+  "Scripted scenario time table; defaults to the coast-down preset"
+  structural parameter table::String = "dyad://VehicleSystemsComponents/drivers/coast_down.csv"
+  "Driver supplying the three causal commands"
+  driver = VehicleSystemsComponents.ScriptedDriver(table = table)
+  "Car including actuator response"
+  vehicle = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive(m = m, esp_on = esp_on, abs_on = abs_on, mu = mu)
+relations
+  connect(driver.throttle_signal, vehicle.throttle)
+  connect(driver.brake_signal, vehicle.brake)
+  connect(driver.steer_signal, vehicle.steer)
+end
