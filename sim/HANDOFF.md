@@ -1,18 +1,57 @@
 # Handoff: the drivable planar BEV
 
-State of `feat/dualsense-driver` for a fresh session. Read this, then `sim/regen-braking-observations.md`.
+Realtime drive is a library analysis with optional UI extensions. Read this, then
+`sim/regen-braking-observations.md`.
+
+## Extension integration contract
+
+- `VehicleSystemsComponents.drive_window(integ, sys, spec)` is implemented by
+  `ext/VehicleSystemsComponentsGLMakieExt.jl`; core declares the empty extension seam.
+- GLMakie alone gives keyboard driving. Loading both GLMakie and SimpleDirectMediaLayer enables
+  `VehicleSystemsComponentsPadExt`, selected at call time through `Base.get_extension`; device
+  discovery occurs only on an explicit drive call. Failed discovery falls back to keyboard.
+- The window uses the caller's integrator and system, returns `(; frames, wall, integrator)`
+  (wall seconds excluding warm-up/window construction), and writes exclusively through core
+  `set_driver_commands!(integ, sys; throttle, brake, steer, esp_on, abs_on,
+  mu_fl, mu_fr, mu_rl, mu_rr)`. That helper owns discrete-history saving. Toggle/friction values
+  are omitted with `nothing` unless changed; analog commands are supplied every driving frame.
+- Model parameter values and signal getters are local to each window. Commands now target
+  `sys.driver`; no model equations are changed by the UI migration. In signal mode, runtime
+  friction replaces the parameter-mode `mu_scale` values; existing benches retain parameter mode.
+- Reset initializes a new integrator from the initial problem with empty command histories.
+  The window returns that current integrator to the analysis, so the returned solution is the
+  drive since the last reset. UI toggles/mode/lock survive reset. `reinit!` alone does not erase
+  discrete histories in the installed solver.
+- Warm-up uses a separate integrator with copied parameters once per integrator type/session.
+  It computes feedback without sending it and ends with a quiet report. Pause releases motors/triggers while lights
+  show state. Pad ownership is protected by `finally`, including warm-up/window-creation errors;
+  the transport retains its close/finalizer/exit-hook quieting.
+- `sim/drive.jl` only loads optional packages from the stacked sim environment and runs an
+  analysis. `main(spec)` calls `DyadInterface.run_analysis(spec)`; the zero-argument convenience
+  calls `VehicleSystemsComponents.PlanarBEVRealtimeDrive(headless = false, duration = 0)`.
+  Studio and Orchestrator list `PlanarBEVRealtimeDrive`, whose default is a three-second headless run.
+- `sim/DualSense.jl` is a compatibility include of `ext/DualSense.jl`, so `probe.jl` needs no
+  GLMakie and retains the transport API. Do not open a window/pad during import or tests.
+- Automated validation is headless. `test/realtime_extensions.jl` separately loads the optional
+  packages and checks reset isolation, geometry, warm-up, and in-memory haptic encoding without
+  displaying a window or opening a pad. Window rendering, keyboard input, controller input,
+  adaptive triggers, rumble, lights, and interactive reset still require human verification.
+- Plot and table artifacts work in process. A serialization probe with the installed sampled
+  ABS stack raises a `SynchJulia.DNode` / `Core.CodeInfo` TypeError; round-tripping is not verified.
 
 ## What this branch is
 
 A battery-electric planar car from the library, driven in real time from a PS5 DualSense or the
-keyboard, rendered top-down with GLMakie. The library is unchanged; everything lives under `sim/`,
-in its own environment so GLMakie never becomes a library dependency (ADR-0002's student never
-resolves it).
+keyboard, rendered top-down with GLMakie. The UI and pad are package extensions under `ext/`;
+optional packages remain in the `sim/` environment and library weak dependencies, not required
+dependencies (ADR-0002's student never needs to resolve them).
 
 | File | Role |
 |---|---|
-| `drive.jl` | The real-time loop and window: builds `PlanarBEVDrive`, steps the integrator in wall-clock slices, reads the pad and keyboard, draws, sends haptics. Car geometry, mass, brake torque and gear ratio are read from the compiled model's parameters. |
-| `DualSense.jl` | DualSense driver over SDL2 on Linux, macOS and Windows: input, rumble, adaptive triggers, lightbar, player LEDs, USB and Bluetooth. Other controllers SDL knows give input, rumble and light. |
+| `drive.jl` | Thin launcher for the realtime analysis, loading optional packages from the sim environment. |
+| `../ext/VehicleSystemsComponentsGLMakieExt.jl` | Keyboard, window, wall-clock stepping, local model geometry/getters, reset and quiet warm-up. |
+| `../ext/VehicleSystemsComponentsPadExt.jl` | Optional pad discovery, input, haptics and lifetime. |
+| `DualSense.jl` | Probe compatibility shim for `../ext/DualSense.jl`, the SDL2 transport and DualSense effect encoding. |
 | `probe.jl` | Walks a connected pad through every input and feedback channel; run it first on a new machine. |
 | `bench_realtime.jl` | Headless timing under a scripted drive; the real-time check. |
 | `check_coast_brake.jl` | Coast-down and full-brake run printing road load, motor torque, per-wheel friction and slip. |
@@ -20,11 +59,10 @@ resolves it).
 
 The car is the library component `Vehicle.Planar.PlanarBEVDrive`
 (`dyad/Vehicle/Planar/PlanarBEVDrive.dyad`): `PlanarCar`, `ElectricDrive` on the front axle via
-`DifferentialGear`, `RegenBlend`, `BrakeControlUnit` and `PlanarRoadLoad`. `drive.jl`,
-`bench_realtime.jl` and `check_coast_brake.jl` all build it from `generated/`, so editing the
-`.dyad` file and recompiling (see Compiler) changes the car the sim drives. The driver sets its
-top-level parameters `throttle`, `brake`, `steer`, `esp_on` and `abs_on`; road friction is
-`car.mu_scale_fl/fr/rl/rr`.
+`DifferentialGear`, `RegenBlend`, `BrakeControlUnit` and `PlanarRoadLoad`. The realtime analysis
+owns model/integrator construction; the extension only consumes them. The driver-command helper
+sets `sys.driver` commands and road friction. `bench_realtime.jl` and `check_coast_brake.jl`
+retain their scenarios and model construction, using the same command helper.
 
 ## Run
 
@@ -42,8 +80,9 @@ script does.
 `sim/`'s environment instantiated (`julia +dyad-3.5.0 --project=sim -e 'using Pkg; Pkg.instantiate()'`,
 about 5 minutes for GLMakie).
 
-Verified only with a USB DualSense on Linux. Bluetooth, macOS, Windows and non-DualSense
-controllers are implemented but untested.
+The former standalone driver was verified with a USB DualSense on Linux. The extension layout
+still needs human verification, including keyboard and haptics. Bluetooth, macOS, Windows and
+non-DualSense controllers remain untested.
 
 On Linux, SDL drives the DualSense's effects only through its `/dev/hidraw*` node; without
 read-write access there (desktop sessions usually grant it to the seat user) SDL falls back to
@@ -63,9 +102,11 @@ If one of these moves, something changed the physics; find out what before conti
 
 ## Decisions and why
 
-- **Driver commands as parameters**, changed between solver steps with `setp`. Each passes through
-  a 50 ms first-order lag (`foot`, `hands`) so a step in torque never makes the converter's
-  algebraic variable jump at an instant the solver has no event for.
+- **Driver commands as causal signals**, emitted by `DriverCommands` from discrete parameters.
+  The loop updates them between steps and explicitly saves their parameter time series, so
+  observables retain the command history instead of recomputing with final values. Throttle,
+  brake, and steering retain the 50 ms first-order lags (`foot`, `hands`) so a torque command
+  does not jump the converter's algebraic variable at an instant without a solver event.
 - **Device I/O never runs inside the equations** (same reason as ADR-0004): the loop polls the pad
   and sends one feedback report per frame.
 - **The pad is quiet whenever the sim is not driving it.** A DualSense keeps its last motor and
@@ -112,7 +153,5 @@ pre-release tooling that is not public, so it stays out of this public repositor
 
 ## Open
 
-- Give `PlanarBEVDrive` real `RealInput` connectors for throttle, brake and steering instead of
-  parameters (ADR-0001: the driver is a signal source).
 - `HapticFeedback` as a Dyad component: the mapping from slip, ABS activity and ESP braking to rumble,
-  trigger and lightbar now lives in `drive.jl`; as a component it could be graded by signal match.
+  trigger and lightbar now lives in the pad extension; as a component it could be graded by signal match.

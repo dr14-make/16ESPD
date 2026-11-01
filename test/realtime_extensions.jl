@@ -1,0 +1,78 @@
+# Optional import-only checks: run explicitly with sim/ instantiated. Never opens a window or pad.
+using Test
+push!(LOAD_PATH, joinpath(@__DIR__, "..", "sim"))
+using VehicleSystemsComponents
+using ModelingToolkit
+using ModelingToolkit: remake
+import DyadInterface
+using OrdinaryDiffEqDefault: init, step!, Rodas5P
+using GLMakie
+@test Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsGLMakieExt) !== nothing
+@test Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt) === nothing
+using SimpleDirectMediaLayer
+
+@testset "Optional drive extensions without devices" begin
+    win = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsGLMakieExt)
+    @test win !== nothing
+    padext = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
+    @test padext !== nothing
+    @named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive()
+    setup = DyadInterface.setup_analysis(DyadInterface.TransientAnalysisSpec(;
+        model, stop = 4.0, optimize = DyadInterface.OptimizationLevel.None(), progress = false))
+    sys = DyadInterface.symbolic_container(setup.prob.f)
+    spec = VehicleSystemsComponents.RealtimeDriveSpec(; model, duration = 3.0, headless = true)
+    integ = init(setup.prob, Rodas5P(); dtmax = 0.005, saveat = spec.frame, save_everystep = false)
+    initial = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
+    ctx = win.context(integ, sys)
+    controls, applied = win.Controls(), win.Applied()
+    controls.throttle = 1.0
+    win.apply!(integ, sys, ctx, controls, 0.0, applied)
+    step!(integ, 0.2, true)
+    fresh = win.fresh_integrator(initial, spec)
+    @test fresh.t == 0.0
+    @test fresh.ps[sys.driver.throttle] == 0.0
+    @test integ.ps[sys.driver.throttle] == 1.0
+    controls.throttle, controls.brake = 0.0, 0.2
+    win.apply!(fresh, sys, ctx, controls, 0.0, win.Applied())
+    step!(fresh, 0.1, true)
+    @test fresh.sol(0.05; idxs = sys.driver.throttle_signal) == 0.0
+    @test integ.sol(0.05; idxs = sys.driver.throttle_signal) == 1.0
+    @test issorted(fresh.sol.t)
+    @test all(h -> issorted(h.t), fresh.sol.discretes)
+    @test length(win.car_shapes(ctx, ctx.snapshot(fresh))[2]) == 4
+    ds = padext.DualSense
+    pad = ds.Pad(C_NULL, "in-memory test", true,
+        ds.PadState(0, 0, 0, 0, 0, 0, 0x08, 0), 0, 0, ds.TriggerOff(), ds.TriggerOff(),
+        (0, 0, 0), 0, zeros(UInt8, 47), 0)
+    session = padext.PadSession(pad, UInt32(0), 0x08)
+    controls.paused = true
+    padext.feedback!(session, ctx.snapshot(integ), controls, 0.0)
+    ds.fill_common!(pad.effect, pad)
+    @test pad.motor_low == pad.motor_high == 0
+    @test pad.effect[11] == pad.effect[22] == 0x05
+    @test ds.encode(ds.Feedback(2, 0.0)) == ds.encode(ds.TriggerOff())
+    @test ds.encode(ds.Vibration(2, 1.0, 25))[10] == 25
+    win.warm_up!(fresh, sys, ctx, nothing)
+    @test fresh.t == 0.1
+    include(joinpath(@__DIR__, "..", "sim", "drive.jl"))
+    @test isdefined(@__MODULE__, :main)
+    # A runner can replace its integrator after reset; finalization must return that session.
+    @eval VehicleSystemsComponents function headless_drive!(i, s, spec)
+        win = Base.get_extension(@__MODULE__, :VehicleSystemsComponentsGLMakieExt)
+        initial = remake(i.sol.prob; p = deepcopy(i.p), u0 = copy(i.u))
+        set_driver_commands!(i, s; throttle = 1.0)
+        step!(i, 0.2, true)
+        fresh = win.fresh_integrator(initial, spec)
+        set_driver_commands!(fresh, s; brake = 0.2, esp_on = 0.0, abs_on = 0.0,
+            mu_fl = 0.7, mu_fr = 0.6, mu_rl = 0.5, mu_rr = 0.4)
+        step!(fresh, 0.1, true)
+        return (; frames = 1, wall = 0.1, integrator = fresh)
+    end
+    result = VehicleSystemsComponents.PlanarBEVRealtimeDrive()
+    rs = DyadInterface.symbolic_container(result)
+    @test result.sol.t[end] ≈ 0.1
+    @test result.sol(0.05; idxs = rs.driver.throttle_signal) == 0.0
+    @test result.sol(0.05; idxs = rs.driver.brake_signal) == 0.2
+    @test result.sol(0.05; idxs = rs.driver.esp_signal) == 0.0
+    @test result.sol(0.05; idxs = rs.driver.mu_rr_signal) == 0.4
+end

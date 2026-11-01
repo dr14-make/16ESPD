@@ -133,6 +133,9 @@ function DyadInterface.run_analysis(spec::RealtimeDriveSpec)
         @info "drive interrupted at t = $(integ.t) s; returning what was driven"
         nothing
     end
+    if stats !== nothing && hasproperty(stats, :integrator)
+        integ = stats.integrator
+    end
     ModelingToolkit.SciMLBase.savevalues!(integ, true)
     stats === nothing || @info "drive finished" simulation_time = integ.t stats.frames stats.wall
     done = TransientAnalysisSpec(; name = spec.name, model = spec.model,
