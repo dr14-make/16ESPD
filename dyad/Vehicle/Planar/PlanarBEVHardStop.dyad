@@ -13,7 +13,9 @@ front wheels within a few tenths of a second of the pedal and keeps acting down 
 cut-off, so regen backs off almost at once and returns only for the last metres, under the fade.
 
 The rule defaults ON (`withdraw = 1`) with the peak-centered ABS calibration (#156).
-Use `withdraw = 0` for the uncoordinated comparison, or `PlanarBEVLowGripStop` for low grip.
+The shared modulator rebuilds even when regen triggered release before friction pressure existed.
+Use `withdraw = 0` only as a diagnostic: reversed front wheels invalidate its energy split.
+Use `PlanarBEVLowGripStop` for low grip.
 Without withdrawal the envelope is set by charge power down to 34.3 km/h, machine torque down
 to `v_fade`, then the fade. Withdrawal scales that envelope while the ABS acts on a front brake;
 those hardware ceilings alone no longer describe the actual regenerative torque.

@@ -112,7 +112,7 @@ routeAlias: what-you-measured
 | 02 | the converter, the envelope | duty 1 at 3283 rpm · field 0.328 at 10 000 rpm · 110.75 kW · 99.2 % |
 | 03 | the battery | 10 V sag at 100 A · SoC 0.9 → 0.4625 in 30 min · 17.0 of 17.5 kWh delivered |
 | 04 | the car on WLTC | within 1.63 km/h · 23 267 m · SoC 0.9 → 0.822 |
-| 05 | regen | hard stop 59.41 m, machine 0.99 % · WLTC 23.85 % back |
+| 05 | regen | hard stop 27.10 m (within 1 % of friction); gross machine 0.839 %, meaningful-share goal NOT met · WLTC 23.85 % back |
 | 06 | the bill | 131.2 Wh/km · 47.2 MJ/100 km against 168.8 |
 
 </div>
@@ -136,8 +136,14 @@ envelope: the duty reaches 1 at 3283 rpm, the field is down to 0.328 at 10 000 r
 power holds at 110.75 kilowatts, and the converter is 99.2 percent efficient. Build 03, the battery:
 a 10 volt sag at 100 amperes, the state of charge from 0.9 to 0.4625 in 30 minutes, and 17.0 of the
 17.5 kilowatt-hours delivered. Build 04, the car on the WLTC: within 1.63 kilometers per hour of the
-trace, 23 267 meters, the state of charge from 0.9 to 0.822. Build 05, regen: a 59.41 meter hard stop
-with the machine taking 0.99 percent of the braking under ABS withdrawal, and 23.85 percent of the traction back on the
+trace, 23 267 meters, the state of charge from 0.9 to 0.822. Build 05, regen: after the ABS
+memory fix, 27.102036224 meters in 2.340 seconds after pedal, against 26.937898732 meters
+friction-only: 0.61 percent longer, within the 1 percent regression tolerance. Keep withdrawal
+ON: OFF is longer and reverses wheels, not a physical regen benchmark. Gross machine share
+is only 0.839 percent: blanket front-active withdrawal suppresses regen almost throughout,
+so the meaningful-share goal is NOT met. Low-grip ON is 87.594615426 meters in 7.665 seconds;
+use stop 12 for both benches (HandsOn 87.604052512 m, Success).
+Figures are not re-exported. WLTC remains 23.85 percent of traction back on the
 WLTC. Build 06, the bill: 131.2 watt-hours per kilometer, and 47.2 megajoules per 100 kilometers
 against 168.8.
 
@@ -170,7 +176,7 @@ routeAlias: known-limits
 
 - **Ideal gears:** a real reducer's 2–3 % each way would add **4–5 Wh/km**.
 - **WLTC is gentle:** its blending result is mostly fade; the hard stop carries that lesson.
-- **The machine is outside the ABS loop:** nothing withdraws regen when the ABS acts.
+- **ABS coordination is blanket withdrawal:** front-active reporting suppresses regen almost throughout the stop; it is not traction control for machine-only braking.
 - **ORNL's map** belongs to the 80 kW first-generation motor: shape and level, not a fit.
 
 </div>
@@ -190,9 +196,11 @@ of build 02 showed.
 Right column. Ideal gears: a real single-speed reducer loses 2 to 3 percent each way. On the 144
 watt-hours per kilometer of traction and the 39 of braking at the shaft, that would add 4 to 5
 watt-hours per kilometer to the bill. The WLTC is gentle: its blending result is mostly the fade,
-which is why the hard stop carries the blending lesson. The machine is outside the ABS loop: nothing
-withdraws regen when the ABS acts, so on the dry hard stop the front friction brakes stayed off, and
-on a slippery road the machine alone would lock the front wheels. And Oak Ridge's map belongs to the
+which is why the hard stop carries the blending lesson. ABS coordination now withdraws regen
+while either front command is below demand, including initial build, hold and reapply. This blanket
+rule suppresses regen almost throughout the dry stop; the memory fix repairs hydraulic recovery,
+not the motor-share shortfall. It is not traction control: machine-only light braking may lock a
+wheel with no friction demand for the ABS to modulate. And Oak Ridge's map belongs to the
 80 kilowatt first-generation motor, so the comparison with it is of shape and level, not a fit.
 -->
 

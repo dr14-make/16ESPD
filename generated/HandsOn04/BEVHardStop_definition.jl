@@ -13,7 +13,8 @@ rest to Lecture 3's four-channel ABS, which modulates the friction brakes. The m
 braking: `E_shaft_in`, what the machine took back through the reduction; `E_brake`, what the
 friction brakes burned; `E_dc_in`, what reached the battery terminals.
 The ABS withdrawal rule defaults ON with the peak-centered ABS calibration.
-Use `withdraw = 0` for the uncoordinated comparison; `BEVLowGripStop` demonstrates low grip.
+Use `withdraw = 0` only as a diagnostic: the front wheels can reverse, invalidating its energy
+split. `BEVLowGripStop` demonstrates low grip.
 
 ## Parameters:
 

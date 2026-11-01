@@ -1476,7 +1476,7 @@ end
 
 ### 05 · Regen blended onto the Lecture 3 brakes {#step-05}
 
-Give the brake demand to the machine first, up to its envelope, and the rest to Lecture 3's friction brakes. The dry hard stop now enables ABS withdrawal: **59.41 m**, against **26.94 m** on friction alone. The rule suppresses regen but exposes a zero-pressure ABS memory trap; it does not yet remove the distance penalty. Machine braking is **0.99 %**, friction **99.01 %**. On WLTC the battery still gets back **23.85 %** of traction energy.
+Give the brake demand to the machine first, up to its envelope, and the rest to Lecture 3's friction brakes. With the ABS memory fix, the dry default keeps withdrawal ON: **27.10 m**, against **26.94 m** on friction alone (0.61 % longer, within the 1 % regression tolerance). Gross machine share is only **0.839 %**: the meaningful-share goal is NOT met because blanket front-active withdrawal suppresses regen almost throughout. Rule OFF is longer and reverses the front wheels, not a physical regen benchmark. On WLTC the battery still gets back **23.85 %** of traction energy.
 
 #### Given
 
@@ -1518,7 +1518,7 @@ The default `abs_rule = false` keeps existing callers, including WLTC, unchanged
 
 - **At 80 km/h:** *w* = 22.22 / 0.31 × 8.193 = 587 rad/s (5610 rpm), and 80 500 W / 587 rad/s = **137 N·m**: the charge-power limit binds. At the wheels that is 137 × 8.193 = 1123 N·m, 3.6 kN on the road, **0.25 g** of regenerative deceleration, in the plan's 0.2–0.3 g band.
 - **Corner speed:** 80 500 W / 320 N·m = 251.6 rad/s, so 251.6 × 0.31 / 8.193 × 3.6 = **34.3 km/h**. Below it the torque limit binds: 320 × 8.193 = 2622 N·m at the front wheels, about the 2534 N·m the front tires carry at µ = 1.
-- **Energy split (withdrawal on):** initial body-and-wheel kinetic energy is 380.7 kJ. Shaft recovery is **3.50 kJ**, friction **350.71 kJ**, tire slip **31.46 kJ**, battery recovery **2.98 kJ**; machine share 3.50 / (3.50 + 350.71) = **0.99 %**. The balance uses net shaft recovery: subtract **5.01 kJ** shaft output. Without withdrawal the machine/friction/tire/battery values are 160.1/193.2/27.3/154.8 kJ (45.3 % motor), but the stop is 33.04 m, still longer than friction alone.
+- **Energy split (withdrawal on):** initial body-and-wheel kinetic energy is 380.7 kJ. Shaft recovery is **2.951 kJ**, friction **348.908 kJ**, tire slip **35.277 kJ**, battery positive recovery **2.957 kJ**; gross machine share 2.951 / (2.951 + 348.908) = **0.839 %**. The balance uses net shaft recovery: subtract **6.479 kJ** shaft output. Without withdrawal the shaft-in/shaft-out/friction/tire/battery values are 91.402/61.800/226.903/124.152/92.809 kJ (28.7 % gross motor share), but reversed front wheels make it a nonphysical regen comparison.
 
 :::
 
@@ -1767,15 +1767,15 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
 
 ::: tip Expected result
 
-`kmh.y` reaches 0.5 m/s in **5.10 s** after the pedal, at **59.41 m**. The unscaled hardware envelope is charge-power-limited above 34.3 km/h, torque-limited down to 10 km/h, then fade-limited. With withdrawal enabled, `allow` is already 0.059 at 0.60 s and 0.000075 at 0.80 s: ABS withdrawal, not the hardware envelope, binds almost throughout braking. Use `withdraw = 0.0` to see the envelope alone (137 N·m at 80 km/h, 183 at 60, 320 from 34.3 to 10).
+The stop reaches 0.5 m/s in **2.340 s** after the pedal, at **27.102036224 m** (formerly 5.100 s / 59.409163717 m). The unscaled hardware envelope is charge-power-limited above 34.3 km/h, torque-limited down to 10 km/h, then fade-limited. Blanket front-active withdrawal still suppresses regen almost throughout: the meaningful motor-share goal is **NOT met**.
 
-`car.fl.brake.tau_friction` remains zero while regen withdraws. An early release can capture zero pressure as `tau_lock`; subsequent rebuild rates proportional to that memory are zero. The rear friction brakes then carry the stop until the low-speed ABS cut-off. This is a controller limitation, not evidence that the tires need less grip.
+The shared `ABSModulatorDiscrete` repairs near-zero lock-memory recovery using the existing `k_inc_fast`/`k_inc_slow` ramps whenever `tau_lock < tau_memory_min` (1 N·m, assumed). Otherwise memory-scaled reapply is unchanged; release memory and decrement are untouched, with the threshold tagged (assumed). Measured ON trace: at 0.515 s `p = tau_lock = 0`; at 0.525 s `p = 200`, rate 40000; at 0.55 s `p = 600`, rate 16000; at 0.6 s `p = 1400`; later valid lock memory is about 1.25 kN·m.
 
-**The split:** shaft recovery **3.50 kJ**, friction **350.71 kJ**, tire slip **31.46 kJ**; machine **0.99 %**, friction **99.01 %**. **2.98 kJ** reaches the battery (0.83 Wh, about 6 m of WLTC driving). Account for 5.01 kJ of shaft output in the energy balance.
+**The split:** shaft recovery **2.951 kJ**, friction **348.908 kJ**, tire slip **35.277 kJ**; gross machine share **0.839 %**, friction **99.161 %**. Battery positive recovery is **2.957 kJ** (0.82 Wh, about 6 m of WLTC driving). Subtract **6.479 kJ** shaft output for the net energy balance.
 
-**Change one thing:** `MyCar.BEVHardStopTransient(P_charge = 0.0)` stops in **26.94 m**, **32.47 m shorter**. `withdraw = 0.0` instead gives **33.04 m**. The no-distance-penalty regression remains broken: withdrawing regen does not repair the ABS's zero-pressure recovery trap. Do not detune the friction-only calibration to conceal it.
+**Change one thing:** `MyCar.BEVHardStopTransient(P_charge = 0.0)` is unchanged: **26.937898732 m**, **2.335 s**, friction **352.732 kJ**, tire **34.555 kJ**. ON is **0.16413749 m / 0.61 %** longer, within the replacement regression `distance <= 1.01 * friction_distance` (1 % tolerance). `withdraw = 0.0` gives **27.238292677 m**, **2.425 s**, 28.7 % gross motor share, but minimum front slip **−5.893705** above 3 m/s means reversed wheels, **not a physical regen benchmark**. Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s, with front/rear minimum slip **−0.126072/−0.090554** above 3 m/s. Friction calibration is unchanged; ABS-alone dry stops remain 26.517044326 m at 80 km/h and 41.028141818 m at 100 km/h.
 
-**Low grip:** `Vehicle.Planar.PlanarBEVLowGripStopTransient(stop = 20.0)` (or `HandsOn04.BEVLowGripStopTransient(stop = 20.0)`) enables withdrawal: **190.45 m**, minimum front slip **−0.04931** above 3 m/s. `withdraw = 0.0, stop = 12.0` gives **95.10 m**, minimum slip **−17.36** with reversed wheels, **not a physical locked-wheel benchmark**. The inherited 28 s run fails during prolonged parking (24.565 s); 20 s covers the stop without that exact-rest tire singularity.
+**Low grip:** `Vehicle.Planar.PlanarBEVLowGripStopTransient(stop = 12.0)` enables withdrawal: **87.594615426 m**, **7.665 s** after the pedal (formerly 190.445049116 m / 16.4 s), minimum front/rear slip **−0.187106/−0.104377** above 3 m/s. Use `stop = 12.0` for both it and `HandsOn04.BEVLowGripStopTransient`; HandsOn measures **87.604052512 m** (Success). OFF is unchanged at **95.098241553 m**, minimum front slip **−17.35918**, reversed wheels, **not a physical benchmark**. A 20 s ON run now fails during parking at 15.835 s, after stopping at 8.165 s absolute. Tests: `abs` 84 pass, `esp` 159 pass, `regen` 102 pass; `planar_wltc` 36 pass / 1 pre-existing broken. Figures have not been re-exported.
 
 Reference: `HandsOn04.RegenBlend`, `HandsOn04.BEVHardStop`, `HandsOn04.BEVHardStopTransient`; the course library's copies are `Vehicle.Electric.RegenBlend` and `Vehicle.Planar.PlanarBEVHardStop`.
 
