@@ -224,6 +224,31 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   current, so it stays at 97.5 % with 113 V out where ORNL's measured inverter falls into the 80s.
   Accepted: the parameters stay fitted to the motor-only and inverter-only maps, and
   `test/efficiency_map_plausibility.jl` pins the 86.2 %.
+  One current-proportional loss, `(V_on + f_s t_sw v_in)|i_out|`, cannot match ORNL at both ends.
+  `V_on = 1.2 V` is therefore `(derived)`: calibrated so the inverter reaches ORNL's measured
+  > 99 % at high speed (99.2 % at 350 V out). A comparable traction module's datasheet gives
+  twice that drop: Infineon FS820R08A6P2B (HybridPACK Drive, 750 V / 820 A six-pack, Final Data
+  Sheet V3.1, 2019-10-10; not Leaf hardware) lists, typical at 450 A and T_vj = 150 °C,
+  V_CE(sat) = 1.15 V (§2.2, V_GE = 15 V) and diode V_F = 1.30 V (§3.2, V_GE = 0 V): 2.45 V for
+  the IGBT + diode pair that carries the current, not per die (25 °C: 1.10 + 1.45 = 2.55 V).
+  ORNL's Leaf inverter has three IGBT and three diode dies in parallel per switch (18 + 18), so
+  they share current, not voltage. Run on the course bench, 2.45 V would move:
+
+  | Operating point | Converter η, 1.2 → 2.45 V | Combined η, 1.2 → 2.45 V | ORNL |
+  |---|---:|---:|---|
+  | 1000 rpm, 220 N·m (113 V out) | 97.46 → 96.42 % | 86.214 → 85.295 % | inverter in the 80s, combined ≈ 80 % |
+  | 900 rpm, 180 N·m | | 86.306 → 85.279 % | combined ≈ 80 % |
+  | 7300 rpm, 85 N·m | | 94.279 → 93.946 % | combined 94–96 % |
+  | 350 V out, 332.2 A | 99.16 → 98.81 % | 93.8 → 93.5 % (corner) | inverter > 99 % at high speed |
+
+  The low-speed gap shrinks from 6.2 to 5.3 percentage points while high speed and the mid-map
+  anchor fall out of ORNL's bands, and the WLTC converter loss rises from 2.1 to 3.0 Wh/km. So the
+  drop stays at 1.2 V. The datasheet's switching energies (E_on + E_off = 17.5 + 29.0 mJ at 400 V,
+  450 A, 150 °C, i.e. 0.26 µs of V·I per device cycle) do not map onto the lumped `t_sw` without
+  phase-current and switching-count bookkeeping, so `t_sw = 1 µs` stays `(assumed)`. A
+  conduction-plus-switching loss model that can drop into the 80s at low speed and stay above
+  99 % at high speed is tracked in #176. Sources: research note §6.7, [IFX-FS820] and
+  [ORNL-APE006-2013].
 - No thermal model of motor, inverter or battery; efficiencies are at warm operating temperature.
 - Battery E is constant: SoC does not move the open-circuit voltage until the extra pack's cell.
 - WLTC is gentle; the blending result on WLTC is mostly fade, so the hard stop carries that lesson.
