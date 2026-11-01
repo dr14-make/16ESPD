@@ -1,0 +1,3 @@
+Manifest.toml
+# Built modules, traces and notes on pre-release, non-public tooling; kept local.
+wasm/
