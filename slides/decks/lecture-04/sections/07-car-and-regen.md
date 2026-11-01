@@ -10,13 +10,18 @@ layout: section
 The chain in the planar car, the motor as a brake, the three ceilings on regen, and series
 blending onto Lecture 3's brakes.
 
-The dry stop defaults to `withdraw = 0`: **36.22 m**, **49.32 %** motor braking
-(**176.9/181.8 kJ** motor/friction), about half the stop. ABS withdrawal remains opt-in until
-the gentle ABS calibration #156; WLTC is unchanged. The guide demonstrates the rule on
-`Vehicle.Planar.PlanarBEVLowGripStopTransient()` / `HandsOn04.BEVLowGripStopTransient()`
-(default `withdraw = 1`, `stop = 28`); compare `withdraw = 0, stop = 12`. Low-grip bench results:
-275.02 m enabled, minimum front slip −0.04931 above 3 m/s; 112.35 m disabled with locked/reversing
-wheels, **not a physical benchmark**.
+With the ABS memory fix, the dry default keeps `withdraw = 1`: **27.10 m** in **2.340 s**,
+against **26.94 m** friction-only: 0.61 % longer, within the 1 % regression tolerance.
+Machine/friction energy is **2.951/348.908 kJ** (**0.839 %** gross motor share).
+The meaningful motor-share goal is **NOT met**: blanket front-active withdrawal suppresses regen.
+Rule OFF: **27.24 m**, **28.7 %** gross motor share, but front slip **−5.893705** means
+reversed wheels, **not a physical regen benchmark**. ON is shorter and keeps slip above −0.2 while vx > 3 m/s.
+Low grip (`PlanarBEVLowGripStopTransient(stop = 12)`): **87.594615426 m**, **7.665 s**,
+minimum front/rear slip **−0.187106/−0.104377** above 3 m/s. Rule OFF: **95.10 m**,
+front slip **−17.36**, reversed wheels. Use `stop = 12` for both low-grip benches;
+20 s now fails during parking at 15.835 s (stopped at 8.165 s absolute).
+Exact `HandsOn04.BEVLowGripStopTransient` remeasurement and test-group results are pending.
+WLTC is unchanged.
 
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
@@ -401,10 +406,7 @@ kJ(x) = r.sol[x][end] / 1e3
 kJ(r."E_shaft_in"), kJ(r."E_brake"), kJ(r."E_dc_in")
 ```
 
-<div class="handson">✓ hard stop: 80 → 0 km/h in <b>3.0 s</b>, <b>36.2 m</b> · <code>blend.tau_regen</code>
-<b>137</b> at 80 km/h, <b>320</b> from 34.3 to 10 km/h · machine <b>176.9 kJ</b>, friction
-<b>181.8 kJ</b>: 49 / 51 % · <b>170.2 kJ</b> to the battery · <code>P_charge = 0.0</code>:
-<b>38.8 m</b></div>
+<div class="handson">✓ hard stop: to 0.5 m/s in <b>2.340 s</b>, <b>27.10 m</b> · ABS withdrawal binds · machine <b>2.951 kJ</b>, friction <b>348.908 kJ</b>: 0.839 / 99.161 % gross split · <b>2.957 kJ</b> positive battery recovery · <code>P_charge = 0.0</code>: <b>26.94 m</b> · meaningful motor-share goal NOT met</div>
 
 <div class="handson">✓ WLTC: <b>34.25 Wh/km</b> back of <b>143.6</b> traction: <b>23.85 %</b> · friction
 0.001 Wh/km · <code>P_charge = 15.0e3</code>: <b>21.40 %</b>, friction 3.69 Wh/km</div>
@@ -436,13 +438,12 @@ speed, with the speed axis flipped so that the stop reads from left to right, an
 energies at the end in kilojoules: what the shaft took back, what the friction brakes burned, and
 what reached the battery.
 
-The first green box, the hard stop. From 80 to 0 kilometers per hour in 3.0 seconds, in 36.2 meters.
-The regen torque, `blend.tau_regen`, is 137 newton meters at 80 kilometers per hour and 320 from
-34.3 down to 10. The machine takes 176.9 kilojoules and friction 181.8: 49 and 51 percent. 170.2
-kilojoules reach the battery. And with P charge set to 0, which turns regen off, the stop is 38.8
-meters. If you also plot the friction brakes, the front-left one falls to zero from about 62
-kilometers per hour and stays there down to 10, where the fade hands it back; the rear-left carries
-the friction share all the way, cycling under the ABS.
+The first green box is the coordinated default. From the pedal to speed below 0.5 m/s:
+2.340 seconds and 27.102036224 meters. Machine 2.951 kilojoules, friction 348.908:
+0.839 and 99.161 percent gross split; 2.957 kilojoules positive battery recovery.
+With charge power zero: 26.937898732 meters, 2.335 seconds. The 0.16413749 meter / 0.61 percent
+excess is inside `distance <= 1.01 * friction_distance`. The ABS memory fix restores pressure
+rebuild, but blanket front-active withdrawal still prevents a meaningful motor share.
 
 The second green box, the WLTC. 34.25 watt-hours per kilometer come back, of 143.6 of traction at
 the shaft: 23.85 percent. The friction brakes burn 0.001 watt-hours per kilometer. With P charge at
@@ -455,39 +456,28 @@ routeAlias: hard-stop
 class: big-figure
 ---
 
-## The hard stop: the ceilings take turns
+## The hard stop: ABS withdrawal binds
 
-![Left: the machine's braking torque against car speed on Lecture 3's hard stop from 80 km/h, lying on the smallest of three ceilings: the charge-power curve 80.5 kW / ω above the corner at 34.3 km/h, the 320 N·m torque limit from there to 10 km/h, and the linear fade below. Right: speed against distance from the pedal; with regen and friction the car stops in 36.2 m, on friction alone in 38.8 m.](/figures/07-regen-hard-stop.svg)
+![Left: hardware ceilings (charge power, 320 N·m torque limit, fade below 10 km/h) and the machine torque, which ABS withdrawal holds near zero. Right: speed over distance from the pedal, regen + friction 27.1 m against friction only 26.9 m.](/figures/07-regen-hard-stop.svg)
 
-<div class="handson">✓ your <code>blend.tau_regen</code> lies on the smallest ceiling: charge power above
-34.3 km/h, 320 N·m down to 10 km/h, the fade below · battery up to <b>75.9 kW</b>, −205 A</div>
+The coordinated stop takes **27.10 m**, within 1 % of friction-only (**26.94 m**).
+
+<div class="handson">✓ hardware envelope: charge power above 34.3 km/h, torque down to 10, fade below · actual torque: withdrawal scales the envelope toward zero</div>
 
 <!--
-The hard stop, from notebook 04, section 4. It is Lecture 3's straight ABS stop from 80 kilometers
-per hour, with build 05's blend. The driver asks each wheel for 2500 newton meters, 10 000 in all,
-which is 1221 newton meters at the machine. That is about twice what the tires can carry, so the ABS
-holds every wheel near its peak slip, and the demand is far above every ceiling.
+The hard stop uses peak-centered ABS and enables withdrawal. Hardware ceilings still meet
+at 34.3 kilometers per hour; charge power binds above it, torque down to 10, then fade.
+Blanket front-active withdrawal suppresses regen almost throughout the coordinated stop.
 
-Left panel: the horizontal axis is the car's speed in kilometers per hour, the vertical axis the
-braking torque at the machine in newton meters. Read it from right to left, because the car slows
-down. The gray lines are the three ceilings: dashed, the 320 newton meter torque limit; dotted, the
-charge-power curve, 80.5 kilowatts over omega; dash-dotted, the fade below 10 kilometers per hour.
-The thick blue line is the machine, regenerating. It lies exactly on the smallest ceiling all the
-way: on the charge-power curve from 80 down to the corner at 34.3 kilometers per hour, 137 newton
-meters at 80 and 183 at 60; flat on the torque limit from 34.3 down to 10; and on the fade below
-that. The ceilings take turns, as the title says.
-
-Right panel: the car's speed against the distance from the moment the pedal goes down. Blue is regen
-plus friction: the car stops in 36.2 meters. Orange is the same stop with the charge limit set to
-zero, on friction alone: 38.8 meters. With regen the stop is 2.6 meters shorter. On friction alone
-the front ABS works the front tires at about 62 percent of their grip; below the corner speed the
-machine's steady 320 newton meters holds them at 93 percent.
-
-The green box is what your run of build 05 shows: `blend.tau_regen` lies on the smallest ceiling,
-the charge power above 34.3 kilometers per hour, 320 newton meters down to 10, and the fade below.
-The battery charges at up to 75.9 kilowatts, minus 205 amperes. That is less than 80.5, because the
-limit is on the machine's electromagnetic power, and the machine's, the converter's and the
-battery's losses come off before the terminals.
+The shared `ABSModulatorDiscrete` now uses existing `k_inc_fast`/`k_inc_slow` ramps when
+`tau_lock < tau_memory_min` (1 N·m, assumed), otherwise unchanged memory-scaled reapply.
+Release memory and decrement are untouched; the 1 N·m threshold is tagged (assumed). At 0.515 seconds
+p = tau_lock = 0; at 0.525 p = 200, rate 40000; at 0.55 p = 600, rate 16000;
+at 0.6 p = 1400; later valid lock memory is about 1.25 kN m.
+ON is 27.102036224 meters against 26.937898732 friction-only. OFF is 27.238292677 meters,
+but front slip minus 5.893705 indicates reversed wheels, not a physical regen benchmark.
+ON front/rear slip minima above 3 m/s are minus 0.126072 / minus 0.090554.
+Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s. Do not detune friction-only ABS.
 -->
 
 ---
@@ -499,51 +489,35 @@ routeAlias: hard-stop-split
 <div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
 <div>
 
-![Energy over the hard stop in kJ, regen plus friction against friction only: the machine takes 176.9 kJ back through the reduction, against 0.8 on friction alone; the friction brakes burn 181.8 kJ, against 366.8; tire slip 22.0 against 19.8. Of the car's 381 kJ, the machine takes 49.3 % of the braking.](/figures/07-hard-stop-split.svg)
+![Energy over the hard stop, regen + friction against friction only: machine 3.0 against 0.9 kJ, friction brakes 348.9 against 352.7 kJ, tire slip 35.3 against 34.6 kJ; the machine takes 0.8 % of the braking.](/figures/07-hard-stop-split.svg)
 
 </div>
 <div class="text-[0.95rem]">
 
-The car starts with **380.7 kJ**. The machine takes **49 %** of the braking, friction **51 %**:
-not most of it, because the hard stop asks for far more than the ceilings allow.
+Initial energy: **380.7 kJ**. Gross braking split: machine **0.839 %**, friction **99.161 %**.
 
-**170.2 kJ** reaches the battery: 47 Wh, about **350 m** of WLTC driving.
+Battery positive recovery **2.957 kJ**: **0.82 Wh**, about **6 m** of WLTC driving.
 
-> **Outside the ABS loop.** The ABS modulates only the friction brakes. From about 62 km/h the
-> machine's torque holds the front slip past the ABS's reapply threshold, so the front friction
-> brakes stay off. A production system withdraws regen when the ABS acts; on a slippery road this
-> machine would lock the front wheels.
+> **Memory recovery repaired; motor-share goal NOT met.** The distance is within 1 %
+> of friction-only, but blanket front-active withdrawal suppresses regen almost throughout.
 
 </div>
 </div>
 
 <!--
-Where did the energy go on the hard stop? The figure is notebook 04, section 4: the energy over the
-stop in kilojoules, in three groups of bars. Blue is the stop with regen plus friction, orange the
-stop on friction alone. The first group is the machine, the energy it took back through the
-reduction; the second, the friction brakes; the third, tire slip.
+The coordinated default recovers 2.951 kilojoules through the shaft, burns 348.908 in friction
+and 35.277 in tire slip. Friction-only is unchanged: 352.732 in brakes and 34.555 in tires.
+Gross machine share is 0.839 percent. Subtract 6.479 kilojoules shaft output for net shaft work;
+gross recovery alone is not the body-and-wheel energy balance. Battery positive recovery
+is 2.957 kilojoules, 0.82 watt-hours. OFF gives shaft-in/out 91.402/61.800, brake 226.903,
+tire 124.152 and battery positive recovery 92.809 kilojoules, but reversed wheels invalidate
+it as a physical regen benchmark. The meaningful-share goal remains unmet.
 
-With regen: the machine takes back 176.9 kilojoules, the friction brakes burn 181.8, and tire slip
-takes 22.0. On friction alone: the machine almost nothing, 0.8, the friction brakes 366.8, and tire
-slip 19.8.
-
-The car starts with 380.7 kilojoules of kinetic energy in its body and wheels; the title rounds it
-to 381. The machine, the brakes and the tires add up to that, to better than one part in a billion:
-the meters close. The machine's share of the braking is 176.9 over 176.9 plus 181.8, 49.3 percent,
-and friction's 51. Not most of it, because the hard stop asks for far more than the ceilings allow.
-
-Of the machine's share, 170.2 kilojoules reach the battery terminals: 47 watt-hours. At the 134.3
-watt-hours per kilometer the car takes out of its cells on the WLTC, as section 08 shows, that is
-about 350 meters of driving.
-
-The quote box is a limit of our model, worth saying out loud. The machine sits outside the ABS loop.
-The ABS reads the wheel slips and modulates only the friction brakes, and nothing withdraws the
-regen torque when the ABS acts. On this dry stop, from about 62 kilometers per hour, the machine's
-torque alone holds the front slip at minus 0.04 to minus 0.06, past the 0.03 at which the ABS
-reapplies the brake. So the ABS keeps the front friction brakes released, and the front tires work
-at about two thirds of their grip until, below 34 kilometers per hour, the machine's 320 newton
-meters reaches it. A production brake system withdraws regen when the ABS acts. On a slippery road,
-this machine alone would lock the front wheels.
+Low-grip ON is now 87.594615426 meters, 7.665 seconds after pedal; minimum front/rear slip
+above 3 m/s is minus 0.187106 / minus 0.104377. OFF stays 95.098241553 meters with
+minimum front slip minus 17.35918, reversed wheels. Use stop 12 seconds for both benches:
+20 seconds fails during parking at 15.835 seconds, after stopping at 8.165 absolute.
+HandsOn low is 87.604052512 m (Success, stop 12); library 87.594615426 m. No figure export.
 -->
 
 ---
@@ -605,8 +579,8 @@ same cycle: on the WLTC, series blending changes the result by a twentieth of a 
 - A machine asked to brake generates. Regen is limited by **torque, charge power, a low-speed
   fade** and grip.
 - **Series blending** gives the machine the demand first, friction the rest.
-- Hard stop: the ceilings take turns; machine **49 %**, friction **51 %**, and the stop is
-  **shorter**, 36.2 m against 38.8 m.
+- Hard stop: ABS memory recovery repaired; **27.10 m** against **26.94 m** friction-only,
+  within 1 % tolerance. Withdrawal still binds: gross machine **0.839 %**; meaningful-share goal NOT met.
 - WLTC: no ceiling binds; **23.85 %** of the traction comes back.
 
 ### Next: add it all up. <Link to="energy-bill">→ 08, the energy bill</Link>
@@ -616,10 +590,13 @@ Section 07 in five lines. The drive turns the driver's torque into a converter c
 present field, and the car follows the WLTC to within 1.63 kilometers per hour over 23 267 meters. A
 machine asked to brake generates, and regen is limited by the machine's torque, the battery's charge
 power, a low-speed fade, and grip. Series blending gives the machine the demand first and friction
-the rest. On the hard stop the ceilings take turns, the machine takes 49 percent and friction 51,
-and the stop is shorter, 36.2 meters against 38.8. On the WLTC no ceiling binds, and 23.85 percent
+the rest. The memory fix restores the stop to 27.10 meters against 26.94, within 1 percent.
+Withdrawal still suppresses regen: gross machine share 0.839 percent; meaningful-share goal
+NOT met. Keep ON because OFF reverses wheels and is longer. On WLTC no ceiling binds, and 23.85 percent
 of the traction comes back.
 
 The car drives and brakes. What is left is to put a meter on every link and read where the energy
 went.
 -->
+
+<!-- ABS memory follow-up: withdrawal remains ON; distance is within the 1% regression tolerance, motor meaningful-share goal remains unmet. -->

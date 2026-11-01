@@ -96,10 +96,15 @@ speed source driven by the sensed body-frame vx, a force sensor, and `WorldForce
 
 **S8 — Regen uses series blending on the Lecture 3 brakes.** The driver's brake demand goes to the
 motor up to the smallest of its torque limit, the battery charge-power limit and a low-speed fade;
-the remainder goes to the hydraulics through the existing allocator. A fourth, opt-in rule withdraws regen while the ABS acts on either driven wheel; the dry hard-stop bench defaults to `withdraw = 0` pending the gentle ABS calibration #156, and the low-grip bench demonstrates it enabled. WLTC does not use it. WLTC never decelerates harder
-than 1.5 m/s² (0.15 g), so on WLTC friction only covers the low-speed fade (under 4 % of braking
-energy). The blending is therefore shown on Lecture 3's hard stop, where the motor carries about half of
-the braking, and WLTC reports the recovered energy.
+the remainder goes to the hydraulics through the existing allocator. A fourth rule withdraws
+regen while the ABS acts on either driven wheel. With the shared ABS memory fix, the hard-stop
+bench keeps this rule ON (`withdraw = 1`): 27.102036224 m, 0.61 % above friction-only,
+inside the 1 % distance regression tolerance. ON is shorter and keeps slip above −0.2 while vx > 3 m/s; OFF reverses
+front wheels and is not a physical regen benchmark. WLTC does not use the rule.
+WLTC never decelerates harder than 1.5 m/s² (0.15 g), so friction only covers the low-speed
+fade (under 4 % of braking energy). The meaningful motor-share goal is NOT met: blanket
+front-active withdrawal suppresses regen almost throughout; gross machine share is only
+0.839 %. WLTC reports recovered energy independently.
 
 **S9 — The standstill singularity is worked around on the bench.** `SlipBasedWheelJoint` puts its
 regularization outside the square root, so the Jacobian turns NaN when a parked car's slip velocity
@@ -217,13 +222,21 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   terminals, 23.8 % of the shaft's traction energy, inside the 18–25 % anchor: the regen path
   (motor, converter, pack) returns 89 % of the shaft's braking energy, just above Boretti's
   measured 72–87 % on the MY2013 Leaf.
+### Historical #156 rebase evidence (superseded by the memory-fix evidence below)
+
+The following measurements, failure diagnosis, run durations and test counts record the rebase
+state **before** the ABS memory fix; they are history, not current expectations.
+
 - Step 5's `Vehicle.Electric.RegenBlend` caps the machine's braking at the smallest of 320 N·m
   (Nissan), 80.5 kW over the machine speed (INL, the 2013 pack's 10 s charge capability) and a
   linear fade below 10 km/h (assumed), and sends the rest through Lecture 3's equal per-wheel
   demand to the four brakes. On the hard stop (`Vehicle.Planar.PlanarBEVHardStop`, Lecture 3's
-  ABS stop from 80 km/h) the charge-power limit binds down to 34.3 km/h, the torque limit to
-  10 km/h, the fade below; the machine takes 49 % of the braking and friction 51 %, not most of
-  it, and the stop is 36.2 m against 38.8 m on friction alone. On WLTC
+  ABS stop from 80 km/h), the rule-OFF diagnostic takes 33.037836314 m / 2.705 s after the
+  pedal, with 45.3137% machine share, 160119.109 J shaft recovery, 193237.591 J friction,
+  27300.500 J tire loss and 154840.805 J battery recovery. This is not the rule-ON default
+  result below. Friction-only takes 26.937898732 m / 2.335 s, with shaft_in 853.747 J,
+  shaft_out 7484.425 J, friction 352732.323 J, tire 34555.337 J and battery recovery zero.
+  On WLTC
   (`Vehicle.Planar.PlanarBEVRegenWLTC`) neither limit binds above 2 km/h (WLTC asks at most 87 N·m
   and 32 kW), friction takes 0.004 % of the braking, and 23.85 % of the traction comes back: the
   share sits in the anchor's upper half because the ideal reduction lets 88.6 % of the braking
@@ -231,17 +244,101 @@ interleaved. Figures the models can produce are regenerated from them, not copie
   measured cars' 21.40 % only by putting 9.5 % of WLTC's braking on friction, above S8's 4 %. The hard stop's meters (shaft, friction, tire slip) close on the
   kinetic energy of body and wheels to 10⁻⁹; the rotor's energy reaches the battery without
   passing the reduction, so it stays out of that balance.
-- Issue #140 adds the opt-in `RegenBlend(abs_rule = true)` rule. `ABSUnit(report_front = true)`
-  reports a front command below sampled demand; `allow` decays with 30 ms and recovers with
-  0.5 s time constants (assumed). The dry hard stop defaults to `withdraw = 0`: 36.22 m,
-  176.9 kJ motor / 181.8 kJ friction (49.32 % motor). With withdrawal enabled the gentle ABS
-  remains active almost throughout and suppresses regen; keep it opt-in pending ABS calibration
-  #156. WLTC equations and numbers are unchanged (23.85 %, 34.25 Wh/km recovered).
-- Demonstrate on `Vehicle.Planar.PlanarBEVLowGripStopTransient()` or
-  `HandsOn04.BEVLowGripStopTransient()` (default `withdraw = 1`, `stop = 28`). Verified runs
-  at road grip ×0.3 give a 275.02 m stop with minimum front slip −0.04931 above 3 m/s.
-  Compare `withdraw = 0, stop = 12`: the fronts lock and reverse under ideal machine torque,
-  so the 112.35 m is not a physical locked-wheel benchmark. Longer parking disabled
-  reaches the known tire singularity.
-  The inherited slow reapply calibration is tracked in #156. The rule is not traction control:
-  machine-only light braking may lock a wheel without a friction demand for the ABS to modulate.
+- Issue #140 adds `RegenBlend(abs_rule = true)`. `ABSUnit(report_front = true)` reports a
+  front command below sampled demand; `allow` decays with 30 ms and recovers with 0.5 s
+  time constants (assumed). After the #156 rebase, the dry default remains `withdraw = 1`
+  per user request: 59.409163717 m / 5.100 s from pedal to vx < 0.5 m/s, shaft_in
+  3501.911496 J, shaft_out 5010.979664 J, friction 350708.377370 J, tire 31457.672893 J,
+  battery recovery 2979.353015 J, machine share 0.98865324%. Minimum slip above 3 m/s is
+  −0.0243273 front / −0.0935963 rear. Keep the broken no-distance-penalty assertion:
+  the penalty against friction-only is now 32.47 m. Do not hide this by retuning friction ABS.
+  Measured trace: front friction torque is exactly zero at t = 0.55, 0.6, 0.65, 0.8,
+  1, 1.5, 2, 2.5 and 3 s; `allow` is 0.3114, 0.05882, 0.011109 and 7.485e-5 at the first
+  four times. At 0.515 s predicted slip −0.151742 triggers release with `p = tau_lock = 0`.
+  At 0.525 s phase returns to increase, yet both `15*tau_lock` and `1.5*tau_lock` rates
+  remain zero. At 1 s predicted slip +0.001823 still leaves pressure and rebuild rate zero. WLTC is untouched: 23.85%, 34.25 Wh/km
+  recovered and 131.15 Wh/km consumption.
+- Low-grip benches: `Vehicle.Planar.PlanarBEVLowGripStopTransient()` and
+  `HandsOn04.BEVLowGripStopTransient()` retain `withdraw = 1`, `stop = 28`. At road grip
+  ×0.3, rule ON reaches vx < 0.5 m/s 16.4 s after the pedal at 190.445049116 m; minimum
+  slip above 3 m/s is −0.0493111 front / −0.105156 rear. The default 28 s run fails
+  `Unstable` at 24.565 s in prolonged parking, consistent with the known tire singularity;
+  rerun with `stop = 20` succeeds (HandsOn: 190.472 m). `withdraw = 0, stop = 12` succeeds numerically at
+  95.098241553 m but minimum front slip −17.35917766 means reversed wheels, NOT a physical
+  benchmark. The rule is not traction control: machine-only light braking may lock a wheel
+  without a friction demand for ABS to modulate.
+
+### #156 rebase follow-up ledger and delivery
+
+| Comparison | Before → after |
+|---|---|
+| Calibrated dry rule OFF → rule ON default | 33.037836314 → 59.409163717 m |
+| Dry withdrawal enabled, old → rebased calibration | 38.836 → 59.409163717 m; old motor 5930 J / friction 360743 J / share 1.617% |
+| Low grip rule ON, old → rebased | 275.02 → 190.445049116 m |
+| Low grip rule OFF, old → rebased (reversed wheels; nonphysical) | 112.35 → 95.098241553 m |
+| Old dry rule OFF before recalibration, regen / friction-only | 36.22 / 38.82 m (historical) |
+
+Rebase: `41ef17a` → `7bac0b4` on `878ce03` (`origin/main`), compiler 3.5.0; generated
+Julia comes from the compiler. Conflict and historical #156 ledgers are in `docs/HANDOVER.md`.
+Tests: `regen` 97 pass / 1 broken; `abs` 84 pass; `esp` 159 pass; `planar_wltc` 36 pass / 1 pre-existing broken initialization case. No figure export in this follow-up:
+Lecture 4 `07-regen-hard-stop.svg` and `07-hard-stop-split.svg` data changed, and notebook
+source uses the coordinated default. Lecture 3 carry-forward changed figures:
+`03-brake-steer-path`, `03-brake-steer-forces`, `05-esp-abs`, `05-split-mu`; all SWD plots
+also depend on calibration.
+
+
+### Current ABS memory-fix evidence (required-runtime measurements)
+
+`ABSModulatorDiscrete` now uses the existing `k_inc_fast`/`k_inc_slow` ramps whenever
+`tau_lock < tau_memory_min` (1 N·m, assumed). Otherwise memory-scaled reapply is
+unchanged. Release memory and decrement are untouched; the threshold is tagged (assumed).
+
+| Dry rule ON (`withdraw = 1`, retained default) | Before → after |
+|---|---|
+| Distance to vx < 0.5 m/s | 59.409163717 → 27.102036224 m |
+| Time after pedal | 5.100 → 2.340 s |
+| Shaft in / out | 3501.911496 / 5010.979664 → 2951.278652 / 6479.217812 J |
+| Friction / tire loss | 350708.377370 / 31457.672893 → 348907.684116 / 35277.237330 J |
+| Battery positive recovery | 2979.353015 → 2956.884659 J |
+| Gross motor share | 0.98865324 → 0.839 % |
+
+ON front/rear minimum slip above 3 m/s is −0.126072/−0.090554. Friction-only BEV is
+unchanged: 26.937898732 m, 2.335 s, brake 352732.323 J / tire 34555.337 J. ON is
+0.16413749 m / 0.61 % longer. The broken penalty assertion is replaced by
+`distance <= 1.01 * friction_distance` (1 % tolerance). This does **not** meet the meaningful
+motor-share goal: blanket front-active withdrawal suppresses regen almost throughout the stop.
+Net energy accounting subtracts shaft output from shaft recovery, rather than using gross share.
+
+Dry OFF is now 27.238292677 m, 2.425 s; shaft_in 91401.848027 J, shaft_out 61800.443694 J,
+brake 226903.189571 J, tire 124152.388374 J, battery positive recovery 92809.448651 J,
+gross motor share 28.7 %. Front minimum slip −5.893705 above 3 m/s indicates reversed
+wheels, **NOT a physical regen benchmark**. Keep ON: shorter and keeps slip above −0.2 while vx > 3 m/s.
+
+ON trace: at 0.515 s `p = tau_lock = 0`; at 0.525 s `p = 200`, rate 40000;
+at 0.55 s `p = 600`, rate 16000; at 0.6 s `p = 1400`; later valid lock memory ≈1.25 kN·m.
+
+Low-grip ON: 190.445049116 → 87.594615426 m, time after pedal 16.4 → 7.665 s;
+front/rear minimum slip above 3 m/s −0.187106/−0.104377. Use `stop = 12` for both
+`Vehicle.Planar.PlanarBEVLowGripStopTransient` and `HandsOn04.BEVLowGripStopTransient`
+and the test: `stop = 20` now fails at 15.835 s in parking, after stopping at 8.165 s absolute.
+OFF is unchanged: 95.098241553 m, minimum front slip −17.35918, reversed wheels/nonphysical.
+HandsOn low-grip: 87.604052512 m (Success, `stop = 12`); library 87.594615426 m.
+
+ABS-alone dry is unchanged: 26.517044326 m at 80 km/h and 41.028141818 m at 100 km/h.
+WLTC is untouched: 23.85 %, 34.25 Wh/km recovered, 131.15 Wh/km consumption.
+Lecture 4 `07-regen-hard-stop.svg` and `07-hard-stop-split.svg` are re-exported from this
+calibration with `mise run figures:lecture-04`.
+
+
+Limit trace (rule ON): demand binds at 0.505 s (61.03 N·m), charge power by 0.515 s
+(137.20 N·m). Withdrawal then dominates: 42.87 N·m at 0.55 s, 8.19 at 0.6 s,
+0.01138 at 0.8 s, while front friction reaches 1226.13 N·m. Actual regen stays near zero
+through 2.7 s; below the ABS cutoff it returns under fade (14.73 N·m at 2.8 s / 2.795 km/h).
+Peak electromagnetic / battery-terminal recovery: 78.957 / 75.829 kW. These are not changes
+to the 80.5 kW charge ceiling, 320 N·m torque ceiling, 34.27 km/h corner or 10 km/h fade.
+ABS-alone low grip, split-µ, brake-and-steer and all seven SWD cases reproduce baseline
+metrics; Lecture 3 figure data have no new changes from this follow-up.
+
+Final validation: `abs` 84 pass; `esp` 159 pass; `regen` 102 pass (formerly 97 pass /
+1 broken); `planar_wltc` 36 pass / 1 pre-existing broken. Groups ran separately with
+Julia +dyad-3.5.0, compiler 3.5.0; no figure exports.

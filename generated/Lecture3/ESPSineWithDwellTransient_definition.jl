@@ -6,7 +6,7 @@
 
 using DyadInterface
 using DyadInterface: AbstractTransientAnalysisSpec, TransientAnalysisSpec
-@component function ESPSineWithDwellTransient__System(; name = nothing, var"alg"=ODEAlg.Tsit5(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"A_sw"=0.5585053606381855, var"v0"=22.22222222222222, var"esp_on"=1.0, var"abs_on"=0.0, var"Kp"=40000.0, var"Ki"=0.0, var"T_build"=0.1, var"R_build"=1000000000.0, var"select_low"=1.0, var"mu_scale_right"=1.0, var"T_cmd"=0.0, var"k_dec"=40000.0, var"k_inc_fast"=160000.0, var"k_inc_slow"=16000.0, var"h_cg"=0.0, __overrides = Dict{String, Any}())
+@component function ESPSineWithDwellTransient__System(; name = nothing, var"alg"=ODEAlg.Tsit5(), var"start"=0, var"stop"=6.0, var"abstol"=0.000001, var"reltol"=0.000001, var"saveat"=0, var"dtmax"=0.005, var"tstops"=[], var"automatic_discontinuity_detection"=false, var"optimize"=OptimizationLevel.None(), var"progress"=true, var"respecialize"=false, var"specialization"=SpecializationLevel.Despecialize(), var"verbose"=DEVerbosity.Standard(), var"log_file"="", var"A_sw"=0.5585053606381855, var"v0"=22.22222222222222, var"esp_on"=1.0, var"abs_on"=0.0, var"Kp"=40000.0, var"Ki"=0.0, var"T_build"=0.1, var"R_build"=1000000000.0, var"select_low"=1.0, var"mu_scale_right"=1.0, var"T_cmd"=0.0, var"k_dec"=40000.0, var"k_inc_fast"=40000.0, var"k_inc_slow"=16000.0, var"h_cg"=0.0, __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:
@@ -223,7 +223,7 @@ export ESPSineWithDwellTransient__System
   var"mu_scale_right"::Float64 = 1.0
   var"T_cmd"::Float64 = 0.0
   var"k_dec"::Float64 = 40000.0
-  var"k_inc_fast"::Float64 = 160000.0
+  var"k_inc_fast"::Float64 = 40000.0
   var"k_inc_slow"::Float64 = 16000.0
   var"h_cg"::Float64 = 0.0
   # Planar car with ESP and an optional sampled four-channel ABS path.

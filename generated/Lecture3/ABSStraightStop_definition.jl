@@ -20,11 +20,11 @@ Four-channel ABS stop from 80 km/h on a uniform dry road.
 | `radius`         |                          | m  |   0.31 |
 | `select_low`         |                          | --  |   0.0 |
 | `k_dec`         |                          | --  |   40000.0 |
-| `k_inc_fast`         |                          | --  |   160000.0 |
+| `k_inc_fast`         |                          | --  |   40000.0 |
 | `k_inc_slow`         |                          | --  |   16000.0 |
 | `h_cg`         |                          | m  |   0.0 |
 """
-@component function ABSStraightStop(; name = nothing, var"load_transfer"=true, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"radius"=0.31, var"select_low"=Float64(0.0), var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(160000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
+@component function ABSStraightStop(; name = nothing, var"load_transfer"=true, var"v0"=22.22222222222222, var"T_cmd"=Float64(2500.0), var"brake_time"=0.5, var"radius"=0.31, var"select_low"=Float64(0.0), var"k_dec"=Float64(40000.0), var"k_inc_fast"=Float64(40000.0), var"k_inc_slow"=Float64(16000.0), var"h_cg"=Float64(0.0), __overrides = Dict{String, Any}())
   isnothing(name) && throw(ArgumentError("""
     The `name` keyword must be provided. Please consider using the `@named` macro,
     like so:

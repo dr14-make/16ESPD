@@ -4,8 +4,9 @@ asks each wheel for `T_cmd`; your `RegenBlend` gives the machine what its limits
 rest to Lecture 3's four-channel ABS, which modulates the friction brakes. The meters split the
 braking: `E_shaft_in`, what the machine took back through the reduction; `E_brake`, what the
 friction brakes burned; `E_dc_in`, what reached the battery terminals.
-The ABS withdrawal rule defaults OFF to preserve step 5 until ABS recalibration (#156).
-Enable it with `withdraw = 1`; `BEVLowGripStop` demonstrates it on low grip.
+The ABS withdrawal rule defaults ON with the peak-centered ABS calibration.
+Use `withdraw = 0` only as a diagnostic: the front wheels can reverse, invalidating its energy
+split. `BEVLowGripStop` demonstrates low grip.
 """
 component BEVHardStop
   "Vehicle mass"
@@ -30,7 +31,7 @@ component BEVHardStop
   parameter P_aux::Power = 300.0
   "Single-speed reduction, Leaf ZE1"
   parameter ratio::Real = 8.193
-  parameter withdraw::Real = 0.0
+  parameter withdraw::Real = 1.0
   parameter road_mu::Real = 1.0
   pedal = BlockComponents.Sources.Ramp(offset = 0.0, height = -4.0 * T_cmd / ratio, duration = t_apply, start_time = brake_time) {^pedal}
   kmh = VehicleSystemsComponents.Vehicle.ToKmPerHour() {^kmh}
@@ -143,7 +144,7 @@ analysis BEVHardStopTransient
   parameter tau_max::Torque = 320.0
   parameter P_charge::Power = 80.5e3
   parameter v_fade::Real = 10.0
-  parameter withdraw::Real = 0.0
+  parameter withdraw::Real = 1.0
   parameter road_mu::Real = 1.0
   model = BEVHardStop(T_cmd = T_cmd, tau_max = tau_max, P_charge = P_charge, v_fade = v_fade, withdraw = withdraw, road_mu = road_mu)
 end

@@ -1189,3 +1189,24 @@ A demo on the course library's planar car: nothing to build. The lecturer runs t
 ---
 
 Reference models: `dyad/HandsOn03/` in the course repository; checkpoint tests in `test/abs_handson_plausibility.jl`. Build plan: `docs/lecture-03-handson-plan.md`.
+
+## Planar ABS demo calibration (issue #156)
+
+The four-wheel demo is separate from the 90 km/h one-wheel builds above. Its dry stop
+from 80 km/h is **26.52 m** (previously 36.05 m), with established deceleration **9.74 m/s²**;
+from 100 km/h it is **41.03 m**. Predicted release 0.14 front / 0.11 rear surrounds the
+tires' 0.12 / 0.09 peaks (derived); 80 ms prediction, 90% pressure retention and 10 ms hold
+are calibrated assumptions, not a claimed Bosch production calibration. A 40 kN·m/s initial
+build preserves low-grip recovery. Uniform μ=0.3 stops in **85.73 m**, without wheel lock.
+Brake-and-steer: **28.3 m** along the path, **2.64 m** sideways at the obstacle, versus
+31.6 m and effectively zero sideways locked.
+
+The shared pressure-memory modulator now falls back to its defined fast/slow build ramps
+when the recorded friction lock torque is below 1 N·m (`tau_memory_min`, assumed). External axle torque can provoke release before friction pressure exists; zero
+memory must not prevent later reapplication. The measured lock pressure and release law
+are unchanged; this is not a change to tire grip or the dry calibration.
+
+
+Dry-asphalt anchors: auto motor und sport's Leaf ZE1, 39 m from 100 km/h; Argonne's
+2013 Leaf, 36.9 m from 60 mph. Sources are linked in
+`docs/research_notes/Electric and hybrid vehicles/bev-road-load-and-braking-validation.md`, item 8.

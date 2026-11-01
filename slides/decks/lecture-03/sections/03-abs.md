@@ -1723,11 +1723,17 @@ Combined slip is the point. A tire has one friction budget, mu times its load. B
 some of it; what is left can push sideways. A locked tire slides, and its whole budget goes into
 a force opposite to the sliding, along the car's path, whichever way the wheel points.
 
-Each ABS channel is this section's modulator on its own wheel, releasing at a slip of 0.08 at
-the front and 0.06 at the rear. If asked about distance: straight, the four channels stop it
-from 80 kilometers per hour in 36.1 meters (`Lecture3.ABSStraightStopTransient`), and a locked
-stop is shorter, 31.6 meters, because the planar ABS channels hold slip and are not tuned for
-distance. Your 1D ABS is the one for distance. Section 05 uses the same car for ESP.
+Each ABS channel uses the sampled pressure-memory modulator, with predicted release at 0.14
+front / 0.11 rear, around tire peaks 0.12 / 0.09 (derived). The 80 ms prediction includes
+hydraulic and switching delay; 90% pressure retention and a two-tick hold avoid dumping usable
+grip (assumed). Straight it stops from 80 km/h in 26.5 m, versus 36.1 m before issue #156,
+and from 100 km/h in 41.0 m. Established deceleration is 9.74 m/s²; pressure build-up adds
+distance beyond the ideal 25.2 m. Locked is 31.6 m. Section 05 uses the same car for ESP.
+If external axle torque triggers release before friction pressure exists, a recorded lock torque
+below 1 N·m uses the defined build ramps instead of a near-zero memory-scaled
+rate (`tau_memory_min`, assumed). The measured lock pressure and release law are retained; zero memory no longer
+makes the increase phase ineffective.
+
 -->
 
 ---
@@ -1739,7 +1745,7 @@ class: big-figure
 
 <div class="diagram-path">
 
-![Top view of two runs of the planar car from 80 km/h, the car drawn every 0.5 s. Both brake fully at 0.5 s, x 11 m, and steer the wheel 90 degrees to the left at 0.8 s. An obstacle stands in the lane at x 36 m. With ABS, solid blue, the car curves left, passes the obstacle 3.0 m to its side and stops at x 46 m, y 10.9 m, turned 49 degrees. With the wheels locked, dashed red, it slides straight on through the obstacle and stops at x 43 m, y 0.](/figures/03-brake-steer-path.svg)
+![Top view of two runs of the planar car from 80 km/h, the car drawn every 0.5 s. Both brake fully at 0.5 s, x 11 m, and steer the wheel 90 degrees to the left at 0.8 s. An obstacle stands in the lane at x 36 m. With ABS, solid blue, the car curves left, passes the obstacle 2.64 m to its side and stops near x 39 m, y 4.0 m, turned 28 degrees. With the wheels locked, dashed red, it slides straight on through the obstacle and stops at x 43 m, y 0.](/figures/03-brake-steer-path.svg)
 
 </div>
 
@@ -1748,9 +1754,9 @@ class: big-figure
 
 | full braking from 80 km/h, wheel 90° left | ABS off, locked | ABS on |
 |---|---:|---:|
-| sideways at the obstacle, 25 m after braking | 0.00 m | **3.02 m** |
-| peak yaw rate | 0.2 °/s | **27.9 °/s** |
-| front slip | −1.0 | ≥ −0.105 |
+| sideways at the obstacle, 25 m after braking | 0.00 m | **2.64 m** |
+| peak yaw rate | 0.2 °/s | **20.8 °/s** |
+| front slip | −1.0 | ≥ −0.127 |
 
 </div>
 <div>
@@ -1772,39 +1778,16 @@ once with ABS, once with the wheels free to lock. The small picture is the bench
 
 Read the dashed red line first. The wheels lock within a tenth of a second, slip minus 1.0, and
 the car goes straight on, its steering wheel turned. Sideways at the obstacle: zero; peak yaw
-rate: 0.2 degrees per second. Then the blue line: ABS holds the front slip between minus 0.03
-and minus 0.105, the tires keep rolling, and the car turns: 3 meters to the side when it passes
-the obstacle, 28 degrees per second of yaw at the peak.
+rate: 0.2 degrees per second. Then the blue line: ABS holds the front slip above minus 0.127, the tires keep rolling, and the car turns: 2.64 meters to the side when it passes
+the obstacle, 20.8 degrees per second of yaw at the peak.
 
 Why: a locked tire spends its whole friction budget on sliding, along the path. The front axle's
-lateral force is 0.65 kilonewtons locked, against 3.9 kilonewtons on average with ABS, 6.5 at the
+lateral force is 0.65 kilonewtons locked, against 3.37 kilonewtons on average with ABS, 5.0 at the
 peak. That is the second figure, `03-brake-steer-forces.svg`, if a question needs it.
 
-Why the slide has no stopping distance: on this planar car the locked wheels stop shorter, 31.6
-meters against 38.2 with ABS. Part of it is the turn: the same ABS stops in 36.1 meters straight,
-because a tire that pushes sideways has less left for braking. The rest is the planar ABS
-channels, which hold slip but are not tuned for distance; `docs/abs-braking-distance-findings.md`
-has the diagnosis of the same effect on the 1D model. The ABS you built is the one for distance:
-it beat the locked wheel on every road. If asked, say so in one line: the locked car stops
-sooner, but in the obstacle, at 37 kilometers per hour.
-
-How the angle was chosen: the smallest steering-wheel angle, in steps of 30 degrees, that takes
-the ABS car about 3 meters sideways before the obstacle, enough to clear a 1.8-meter-wide car
-past it. 30, 60, 90, 120 degrees give 1.07, 2.11, 3.02, 3.57 meters, the largest sideslip
-1.0 to 3.9 degrees: no spin at any of them.
-
-Live run, if there is time (the planar car compiled and warmed up before class, see the run
-sheet):
-
-1. In the Studio Julia REPL:
-   `using VehicleSystemsComponents, Plots; using DyadInterface: symbolic_container`.
-2. Run `r = VehicleSystemsComponents.Lecture3.BrakeAndSteerTransient(abs_on = 0.0)`, about 30
-   seconds once warm.
-3. Plot the path: `s = symbolic_container(r).sensors; plot(r.sol[s.x], r.sol[s.y];
-   aspect_ratio = :equal, label = "ABS off")`. The line stays on zero.
-4. Run `r = VehicleSystemsComponents.Lecture3.BrakeAndSteerTransient(abs_on = 1.0)`.
-5. Add it to the plot: `s = symbolic_container(r).sensors; plot!(r.sol[s.x], r.sol[s.y];
-   label = "ABS on")`. The car curves left, 3 meters sideways at x 36.
+The revised ABS also shortens this stop: 28.3 m along the curved path versus 31.6 m locked.
+The straight ABS stop is 26.5 m; cornering spends some of the same tire-force budget.
+At the obstacle the ABS car is still moving at 26.9 km/h, so steering remains important.
 -->
 
 ---

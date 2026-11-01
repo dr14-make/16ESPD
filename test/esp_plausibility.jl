@@ -288,7 +288,12 @@ end
         straight_sol(straight_t[moving]; idxs = kappa) for kappa in
         (straight.car.bus.kappa_fl, straight.car.bus.kappa_fr,
          straight.car.bus.kappa_rl, straight.car.bus.kappa_rr)]...))
-    @test_broken stop_distance <= 32.0
+    # Dry-asphalt target: AMS Leaf 39 m from 100 km/h; Argonne 36.9 m from 60 mph.
+    # The 30 ms hydraulic build makes the mean-from-pedal distance slightly above v²/(2g).
+    @test 25.0 <= stop_distance <= 27.0
+    @test stop_distance <= 32.0
+    @test straight_sol(1.0; idxs = straight.car.bus.vx) -
+          straight_sol(2.0; idxs = straight.car.bus.vx) ≈ 9.8 atol = 0.2
     @test straight_min_kappa >= -0.2
     @test maximum(abs, straight_sol[straight.car.bus.r]) < 1e-8
 
