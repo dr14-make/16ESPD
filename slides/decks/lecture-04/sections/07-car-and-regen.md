@@ -517,7 +517,7 @@ Low-grip ON is now 87.594615426 meters, 7.665 seconds after pedal; minimum front
 above 3 m/s is minus 0.187106 / minus 0.104377. OFF stays 95.098241553 meters with
 minimum front slip minus 17.35918, reversed wheels. Use stop 12 seconds for both benches:
 20 seconds fails during parking at 15.835 seconds, after stopping at 8.165 absolute.
-HandsOn low is 87.604052512 m (Success, stop 12); library 87.594615426 m. No figure export.
+HandsOn low is 87.604052512 m (Success, stop 12); library 87.594615426 m.
 -->
 
 ---

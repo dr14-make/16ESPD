@@ -1562,13 +1562,13 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
 2. Toggle to code and add the variables before `relations`, and the equations after it:
 
    ```txt
-     "Machine speed estimated from the car's speed"
      structural parameter abs_rule::Boolean = false
      abs_active = RealInput() if abs_rule
      parameter withdraw::Real = 1.0 if abs_rule
      parameter T_withdraw::Time = 0.03 if abs_rule
      parameter T_return::Time = 0.5 if abs_rule
      variable allow::Real if abs_rule
+     "Machine speed estimated from the car's speed"
      variable w::AngularVelocity
      "Fade factor: 1 above v_fade, 0 at standstill"
      variable fade::Real
@@ -1600,7 +1600,7 @@ The benches read `blend.tau_ref`, `blend.v`, `blend.tau_motor`, `blend.tau_brake
      tau_brake = (tau_demand - tau_regen) * ratio / 4.0
    ```
 
-   The first five equations are the three ceilings; `max(w, 1.0)` keeps the quotient finite at standstill, where the fade has the ceiling at zero anyway. The last four are the blending: driving passes straight through, braking goes to the machine up to the ceiling, and the rest, carried through the reduction, is split over four wheels.
+   The first four equations and the `if` block are the three ceilings, scaled by `allow` when `abs_rule` is on; `max(w, 1.0)` keeps the quotient finite at standstill, where the fade has the ceiling at zero anyway. The last four are the blending: driving passes straight through, braking goes to the machine up to the ceiling, and the rest, carried through the reduction, is split over four wheels.
 3. <Badge type="tip" text="New component" /> Right-click `MyCar` → **Add Component**, name it `BEVHardStop`. Toggle to code (⇄), select everything, paste the block below and save.
 
    ::: code-group
