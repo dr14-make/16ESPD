@@ -107,12 +107,12 @@ and the Leaf's curb mass, 100 kilograms more than Lecture 2's car.
 
 | # | Section | What it covers | You build |
 |---|---|---|---|
-| <Link to="why-electric">01</Link> | Why electric | the case, the energy model, the chain both ways, the Leaf-class car | |
+| <Link to="why-electric">01</Link> | Why electric | the case, the market and the rules, the energy model, the chain both ways, the Leaf-class car | |
 | <Link to="dc-machine">02</Link> | The DC machine | F = BIL to T = KΦI and E = KΦω, losses, efficiency, control | 01 the machine, on a dyno |
 | <Link to="machines">03</Link> | Machines in real EVs | brushless, PMSM under field-oriented control, induction, SRM | |
 | <Link to="envelope">04</Link> | The envelope | base speed, field weakening, the efficiency map, WLTC on it | 02 the converter |
 | <Link to="power-electronics">05</Link> | Power electronics | choppers, H-bridge, PWM and harmonics, three-phase bridge, DC-DC, charger | demo only |
-| <Link to="batteries">06</Link> | Batteries, simply | V = E − IR, A·h and W·h, specific energy and power | 03 the battery |
+| <Link to="batteries">06</Link> | Batteries, simply | V = E − IR, A·h and W·h, specific energy and power, today's cells and prices | 03 the battery |
 | <Link to="car-and-regen">07</Link> | The car and regen | the drivetrain, the motor as a brake, three ceilings, blending | 04 the car · 05 regen |
 | <Link to="energy-bill">08</Link> | The energy bill | WLTC link by link, braking recovered, MJ against the engine | 06 the bill |
 | <Link to="wrap-up">09</Link> | Wrap-up | the chain, what you measured, what the model leaves out | |
@@ -121,7 +121,8 @@ and the Leaf's curb mass, 100 kilograms more than Lecture 2's car.
 Here is the plan for today: nine sections. The first column links to each section, the second names
 it, the third says what it covers, and the last says what you build at the end of it.
 
-Section 01 makes the case for the electric car, recalls the energy model, and draws the chain in
+Section 01 makes the case for the electric car, shows where the market and the regulations stand
+today, recalls the energy model, and draws the chain in
 both directions, with the Leaf-class car we build. Section 02 is the DC machine: from the force on a
 wire to T equals K Phi I and E equals K Phi omega, with its losses, its efficiency and its control.
 You build the machine, build 01, and test it on a dyno. Section 03 looks at the machines in real
@@ -132,7 +133,8 @@ map, and where the WLTC drives on it. You build the converter, build 02. Section
 electronics: choppers, the H-bridge, pulse-width modulation and its harmonics, the three-phase
 bridge, the 12 volt DC-DC converter and the charger. There is no build there, only a demonstration
 on switching models. Section 06 is the battery, kept simple: V equals E minus I R, ampere-hours and
-watt-hours, specific energy and power. You build the battery, build 03. Section 07 puts everything
+watt-hours, specific energy and power, today's cells against the textbook's, and what a kilowatt-hour
+costs. You build the battery, build 03. Section 07 puts everything
 into the car and makes the motor brake: the drivetrain, the motor as a brake, three ceilings on
 regeneration, and how it is blended with the friction brakes. You build the car, build 04, and
 regen, build 05. Section 08 is the energy bill: the WLTC link by link, the braking energy recovered,

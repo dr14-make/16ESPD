@@ -231,9 +231,10 @@ heater or air conditioning: a 3 kilowatt heater would add 64 watt-hours per kilo
 And the megajoules of electricity were made somewhere, in a power station, at its own efficiency.
 The bill compares the cars, not the energy systems behind them.
 
-Most of the gap is the engine's efficiency, about 30 percent at its best, against a chain that loses
-a few percent per link and gets braking energy back. The notebook also shows the gap phase by phase:
-it is widest in town, where the engine runs far below its best efficiency and every stop turns
+Most of the gap is the engine's efficiency: Lecture 2's engine, on its EPA map, turns at most 36
+percent of its fuel into work, and on the WLTC it rarely runs near that best point, against a chain
+that loses a few percent per link and gets braking energy back. The notebook also shows the gap
+phase by phase: it is widest in town, where the engine runs far below its best efficiency and every stop turns
 kinetic energy into heat, and it narrows on the motorway, where drag dominates both bills.
 -->
 

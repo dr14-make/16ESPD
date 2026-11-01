@@ -444,8 +444,11 @@ the coupled and decoupled positions is about 7–15 points at 15 kW.
 
 ## 6. Context claims in the Lecture 4 deck
 
-Sources for the deck's statements that carry no model number: why electric (section 01) and the
-machine types (section 03). The slides quote these sources' wording and numbers.
+Sources for the deck's statements that carry no model number: why electric, the market and the
+rules (section 01), the machine types (section 03), charging (section 05), today's batteries and
+their price (section 06). The slides quote these sources' wording and numbers. The series plotted
+on the slides (EV shares, EU new-car CO₂ and targets, BNEF pack prices) are copied into
+`data/ev_context/`; change them there and here together.
 
 - **[EEA-TRANSPORT]** European Environment Agency, *Greenhouse gas emissions from transport in
   Europe* (indicator, published 6 Nov 2025).
@@ -454,7 +457,9 @@ machine types (section 03). The slides quote these sources' wording and numbers.
   emissions", and transport has not shown the same decreases since 1990 as other sectors. Road
   transport emitted 73 % of the EU's transport emissions in 2023, international bunkers included.
   The deck's earlier "about a fifth" is not what the EEA says, so the slide now says "nearly a
-  quarter".
+  quarter". Re-checked 1 Nov 2026: the page still shows "Published 06 Nov 2025", latest full data
+  year 2023 (preliminary 2024 estimate +0.7 %), wording unchanged; no 2026 edition yet. A November
+  2026 edition may appear, so re-check before the lecture.
 - **[EU-443]** Regulation (EC) No 443/2009 setting emission performance standards for new passenger
   cars, of 23 April 2009, as adopted.
   [text](https://www.legislation.gov.uk/eur/2009/443/adopted/data.htm?view=plain) (the UK
@@ -462,8 +467,9 @@ machine types (section 03). The slides quote these sources' wording and numbers.
   [CELEX 32009R0443](https://eur-lex.europa.eu/eli/reg/2009/443/oj), refused a scripted download).
   verified. Article 1 sets the average CO₂ emissions of new passenger cars at 130 g CO₂/km and,
   from 2020, a target of 95 g CO₂/km for the new-car fleet. Recital 3: road transport is the
-  second largest greenhouse-gas emitting sector in the Union. Repealed by Regulation (EU) 2019/631
-  from 2020.
+  second largest greenhouse-gas emitting sector in the Union. **Superseded**: Regulation (EU)
+  2019/631 ([EU-2019/631], §6.4) repealed it with effect from 1 January 2020. Kept for history
+  (the 130 g and 95 g NEDC steps); cite 2019/631 as amended for anything current.
 - **[MCHP-AN885]** P. Yedamale, *Brushless DC (BLDC) Motor Fundamentals*, Microchip application
   note AN885, 2003. [PDF](https://ww1.microchip.com/downloads/en/AppNotes/00885a.pdf). verified,
   p. 8: "Every 60 electrical degrees of rotation, one of the Hall sensors changes the state", so
@@ -479,12 +485,503 @@ machine types (section 03). The slides quote these sources' wording and numbers.
   inactive. Volkswagen's ID.4 GTX uses the same pair (rear PSM, front ASM); its newsroom pages
   returned 404 when checked, so that example is not used.
 
+### 6.1 Market
+
+- **[IEA-GEVO-2026]** International Energy Agency, *Global EV Outlook 2026: Growing sales amid an
+  energy crisis* (May 2026; the PDF read is marked "Revised version, May 2026").
+  [report](https://www.iea.org/reports/global-ev-outlook-2026);
+  [PDF](https://www.cleanenergyministerial.org/content/uploads/2026/05/globalevoutlook2026.pdf)
+  (the copy hosted by the Clean Energy Ministerial, whose Electric Vehicles Initiative co-produces
+  the report; the iea.org download sits behind a bot check). verified. Page numbers below are PDF
+  pages.
+  - p. 16, Chapter 1: the electric car market grew "by 20% from 2024 to exceed 20 million sales",
+    and "The sales share of electric cars in the overall car market increased to 25%." Footnote 2
+    on the same page: "the term electric vehicle is used to refer to both battery electric and
+    plug-in hybrid electric vehicles (PHEVs)", so every IEA share here is BEV + PHEV.
+  - p. 18: "More than 13 million electric cars were sold in China in 2025 … This lifted the
+    electric car sales share to almost 55%."
+  - p. 21: Europe "reaching a total of 4.2 million, or 28% of all new cars sold. In the European
+    Union, electric car sales totalled almost 3 million and the EV sales share reached just under
+    27%."
+  - p. 17 (and the web chapter): US electric car sales "at around 1.5 million", "the sales share
+    of electric cars remained relatively stable at just below 10%".
+  - Figure 1.1 (p. 16), "Electric car sales globally and sales share for selected regions,
+    2020-2025", plots the series, but its values are not in the PDF text.
+- **[IEA-GEVO-2025]** IEA, *Global EV Outlook 2025*, chapter "Trends in electric car markets"
+  (May 2025). [page](https://www.iea.org/reports/global-ev-outlook-2025/trends-in-electric-car-markets-2).
+  verified (web chapter). 2024: "Electric car sales topped 17 million worldwide in 2024", "More
+  than 20% of new cars sold worldwide were electric"; China "Almost half"; Europe "About one in
+  five"; United States "more than 10%".
+- **[IEA-GEVO-2024]** IEA, *Global EV Outlook 2024*, "Trends in electric cars" (April 2024).
+  [page](https://www.iea.org/reports/global-ev-outlook-2024/trends-in-electric-cars). verified
+  (web chapter). 2023: "around 18% of all cars sold"; China "more than one in three"; Europe
+  "over one in five"; United States "one in ten".
+- **[OWID-IEA-EVSHARE]** Our World in Data, *Share of new cars sold that are electric*, grapher
+  CSV, data last updated 2026-06-15, citation "International Energy Agency. Global EV Outlook
+  2026". [chart](https://ourworldindata.org/grapher/electric-car-sales-share);
+  [CSV](https://ourworldindata.org/grapher/electric-car-sales-share.csv?v=1&csvType=full&useColumnShortNames=false).
+  secondary (an aggregator republishing the IEA Global EV Data Explorer; the explorer itself and
+  its API could not be downloaded from a script). Subtitle: "Electric cars include fully
+  battery-electric and plug-in hybrids." Yearly series, percent of new car sales:
+
+  | Year | China | Europe (IEA region) | EU-27 | United States | World |
+  |---|---|---|---|---|---|
+  | 2013 | 0.096 | 0.43 | 0.47 | 0.71 | 0.29 |
+  | 2014 | 0.41 | 0.68 | 0.56 | 0.77 | 0.44 |
+  | 2015 | 1.1 | 1.0 | 0.82 | 0.70 | 0.68 |
+  | 2016 | 1.5 | 1.4 | 1.1 | 0.99 | 0.95 |
+  | 2017 | 2.4 | 1.8 | 1.5 | 1.3 | 1.4 |
+  | 2018 | 4.7 | 2.3 | 1.9 | 2.3 | 2.4 |
+  | 2019 | 5.0 | 3.4 | 2.9 | 2.1 | 2.7 |
+  | 2020 | 5.7 | 10 | 10 | 2.3 | 4.4 |
+  | 2021 | 16 | 17 | 18 | 4.7 | 9.3 |
+  | 2022 | 29 | 21 | 21 | 7.7 | 15 |
+  | 2023 | 38 | 22 | 22 | 9.7 | 18 |
+  | 2024 | 48 | 21 | 21 | 10 | 21 |
+  | 2025 | 53 | 28 | 27 | 10 | 25 |
+
+  Cross-check against the IEA's own text: 2023, 2024 and 2025 agree with [IEA-GEVO-2024],
+  [IEA-GEVO-2025] and [IEA-GEVO-2026] for the world, Europe, the EU and the US. **China 2025
+  disagrees**: the series gives 53 %, the GEVO 2026 text says "almost 55%" and "Close to 55%".
+  Quote the report's wording on a slide and treat the 53 as the data file's value.
+- **[ACEA-FY2025]** ACEA, *New car registrations: +1.8% in 2025; battery-electric 17.4% market
+  share*, press release, 27 Jan 2026.
+  [page](https://www.acea.auto/pc-registrations/new-car-registrations-1-8-in-2025-battery-electric-17-4-market-share/).
+  verified. "Battery-electric cars accounted for 17.4% of the EU market share in 2025", "an
+  increase from the low baseline of 13.6% one year earlier"; "plug-in-hybrid electric cars now
+  represent 9.4% of EU car registrations, up from 7.2% last year." Scope: EU-27.
+- **[EEA-CARS-2025-PROV]** European Environment Agency, *Average CO2 emissions from new cars and
+  vans significantly decreased in 2025*, news item, 25 Jun 2026.
+  [page](https://www.eea.europa.eu/en/newsroom/news/average-co2-emissions-from-new-cars-and-vans-significantly-decreased-in-2025).
+  verified. New cars registered in the "European Union, Norway and Iceland" in 2025 averaged
+  96.7 g CO2/km, down from 106.7 g CO2/km in 2024; "These data are based on the Worldwide
+  Harmonized Light Vehicle Test Procedure (WLTP)"; the figures "remain provisional until vehicle
+  manufacturers have been given the possibility to review them". BEVs were 18.9 % of new cars
+  (14.4 % in 2024), PHEVs 9.7 % (7.1 %). Scope note: these BEV shares are EU + Norway + Iceland,
+  which is why they sit above ACEA's EU-27 17.4 % and 13.6 %.
+- **[EEA-CARS-IND]** EEA, *CO2 emissions performance of new passenger cars in Europe*, indicator,
+  published 3 Aug 2026.
+  [page](https://www.eea.europa.eu/en/analysis/indicators/co2-performance-of-new-passenger).
+  verified. The text and Figure 1 still stop at 2024 (the 2025 provisional value above is not
+  yet in the indicator): "In 2024, the average CO₂ emissions of newly registered passenger cars in
+  the EU remained stable compared to 2023, at 106.7 gCO₂/km", BEV share "fell from 15.5% in 2023
+  to 14.5% in 2024" (the 25 Jun 2026 news item gives 14.4 % for 2024). Test basis, from the
+  indicator's methodology: "Until 2020, the assessment … was based on … (NEDC) … From 2021
+  onwards, performance and target compliance is assessed on the basis of … (WLTP)". Targets:
+  "For the years 2020-2024, the target is 95gCO2/km (NEDC), equivalent to around 115.1 gCO2/km
+  (WLTP). From 2025 onwards … 93.6 gCO2/km until 2029, 49.5 gCO2/km from 2030 to 2034 and
+  0 gCO2/km from 2035." The values of Figure 1, *Average CO₂ emissions from new passenger cars
+  and future targets*, were read from the chart's data source on the EEA site
+  ([JSON](https://www.eea.europa.eu/++api++/en/analysis/indicators/co2-performance-of-new-passenger/average-co2-emissions-from)).
+  Scope: EU-27, Iceland (from 2018) and Norway (from 2019). g CO2/km:
+
+  | Year | NEDC | WLTP | | Year | NEDC | WLTP |
+  |---|---|---|---|---|---|---|
+  | 2000 | 172.1 | | | 2013 | 126.7 | |
+  | 2001 | 169.7 | | | 2014 | 123.4 | |
+  | 2002 | 167.2 | | | 2015 | 119.5 | |
+  | 2003 | 165.5 | | | 2016 | 118.1 | |
+  | 2004 | 163.4 | | | 2017 | 118.5 | |
+  | 2005 | 162.4 | | | 2018 | 120.8 | |
+  | 2006 | 161.3 | | | 2019 | 122.3 | 148.2 |
+  | 2007 | 158.7 | | | 2020 | 107.5 | 130.3 |
+  | 2008 | 153.5 | | | 2021 | | 114.1 |
+  | 2009 | 145.7 | | | 2022 | | 108.1 |
+  | 2010 | 140.3 | | | 2023 | | 106.4 |
+  | 2011 | 135.7 | | | 2024 | | 106.7 |
+  | 2012 | 132.2 | | | 2025 | | 96.7 (provisional, [EEA-CARS-2025-PROV]) |
+
+  2019 and 2020 have both bases. The NEDC → WLTP step (122.3 → 148.2 in 2019) is a change of test
+  cycle, not of the fleet; a slide that joins the two lines must say so.
+
+### 6.2 Batteries
+
+- **[BNEF-2025]** BloombergNEF, *Lithium-Ion Battery Pack Prices Fall to $108 Per Kilowatt-Hour,
+  Despite Rising Metal Prices: BloombergNEF*, press release, New York, 9 Dec 2025 (2025
+  Lithium-Ion Battery Price Survey).
+  [page](https://about.bnef.com/insights/commodities/lithium-ion-battery-pack-prices-fall-to-108-per-kilowatt-hour-despite-rising-metal-prices/).
+  verified. "lithium-ion battery pack prices have dropped 8% since 2024 to a record low of $108
+  per kilowatt-hour". "Battery electric vehicles (BEVs) packs were the cheapest in the transport
+  segment at $99/kWh – the second year that they were below the $100/kWh threshold." "Average LFP
+  battery pack prices across all segments came in at $81/kWh while nickel manganese cobalt (NMC)
+  packs were at $128/kWh." Stationary storage $70/kWh (−45 %). China $84/kWh; North America and
+  Europe 44 % and 56 % higher. No LFP/NMC cell prices are given. The release's chart
+  ([image](https://assets.bbhub.io/professional/sites/44/lithium_11.png)), *Volume-weighted
+  average lithium-ion battery pack and cell price split, 2013-2025*, gives the whole series in
+  **real 2025 $/kWh**, one basis: "Historical prices have been updated to reflect real 2025
+  dollars. Weighted average survey value for 2025 includes 320 data points from passenger cars,
+  buses, commercial vehicles, two- and three-wheelers and stationary storage." Read from the bar
+  labels (exact printed values):
+
+  | Year | Pack | of which cell | of which pack (rest) |
+  |---|---|---|---|
+  | 2013 | 827 | 568 | 259 |
+  | 2014 | 734 | 498 | 236 |
+  | 2015 | 475 | 318 | 157 |
+  | 2016 | 365 | 266 | 99 |
+  | 2017 | 273 | 192 | 81 |
+  | 2018 | 224 | 161 | 63 |
+  | 2019 | 194 | 136 | 58 |
+  | 2020 | 169 | 126 | 43 |
+  | 2021 | 159 | 122 | 37 |
+  | 2022 | 170 | 136 | 34 |
+  | 2023 | 148 | 114 | 34 |
+  | 2024 | 118 | 78 | 40 |
+  | 2025 | 108 | 74 | 34 |
+
+  The 2024 value here (118, real 2025 $) is not the $115/kWh BNEF announced in Dec 2024 (real
+  2024 $): each survey restates the whole history in its own year's dollars. Use this one series
+  rather than mixing per-year press releases. It is an all-segment average (EVs, buses,
+  two-wheelers and storage), not EV-only. The public chart starts in 2013; no 2010 value is
+  published in this release.
+- **[IEA-GEVO-2026] battery chapter** (as above).
+  - p. 96, Chapter 5: "In 2025, LFP batteries accounted for over 55% of EV batteries deployed
+    globally, up from nearly 50% in 2024." EU: "more than 10% of EV battery demand in 2025";
+    US share "almost halved in 2025". Figure 5.5 note: chemistry share "is based on the battery
+    capacity of new electric vehicles registered"; two/three-wheelers excluded.
+  - p. 101: "The latest sodium-ion cells can reach up to 175 Wh/kg, compared with up to 205 Wh/kg
+    for the latest generation of LFP batteries and 265 Wh/kg for lithium nickel cobalt manganese
+    oxide (NMC) batteries." The sentence opens with cells, so these read as cell-level best
+    values, but the IEA does not say "cell" for LFP and NMC explicitly; "up to" means best in
+    class, not fleet average.
+  - p. 92: "In 2025, EV battery deployment reached 1.2 TWh".
+  - p. 173: "Over the past decade, average EV battery pack energy density (Wh/kg) has increased by
+    around 60%, while prices have fallen by roughly 75%."
+
+- **[N-US-DG-2018]** Nissan North America, *2018 LEAF Dismantling Guide*, §2-1.1 "High-Voltage
+  Battery Pack Specifications", PDF p. 11 (DG-11).
+  [PDF](https://owners.nissanusa.com/content/techpub/ManualsAndGuides/LEAF/2018/2018-leaf-dismantling-guide.pdf).
+  verified. "High-voltage battery weight US: 668.1 lbs (303 kg), Canada: 672.5 lbs (305 kg)";
+  dimensions 1547 × 1188 × 264 mm; voltage "(240V - 420V usable range)". The MY2018 US LEAF is the
+  ZE1 and was sold only with the 40 kWh pack; the 2019 guide repeats the same table. derived: 40 kWh
+  nominal / 303 kg ≈ **132 Wh/kg at pack level** (about 0.13 kWh/kg; with the ~39.5 kWh that
+  third parties compute from cell data, 130 Wh/kg). The same table gives "48" modules, which
+  contradicts the 24 modules × 8 cells that secondary teardown reports give for the 40 kWh pack
+  (InsideEVs, 1 Aug 2018); the module count is not used.
+- **[IEA-GEVO-2025] batteries** IEA, *Global EV Outlook 2025*, "Electric vehicle batteries".
+  [page](https://www.iea.org/reports/global-ev-outlook-2025/electric-vehicle-batteries). verified
+  (web chapter). Pack level, relative only: "The energy density of LFP battery packs is about
+  one-fifth lower by mass (Wh/kg)" and "about one-third lower by volume (Wh/L) than that of NMC
+  packs." No absolute pack Wh/kg is given.
+- **[IEA-BSET-2024]** IEA, *Batteries and Secure Energy Transitions*, 25 Apr 2024.
+  [PDF](https://www.iea.org/files/cb39c1bf-d2b3-446d-8c35-aae6b1f3a4a0/BatteriesandSecureEnergyTransitions.pdf).
+  verified. PDF p. 21: "lithium-ion batteries today have a demonstrated range of specific energies
+  around 90-300 Wh/kg at the cell level". PDF p. 26: LFP "has a significantly lower energy density,
+  conventionally 20-30% lower than high nickel chemistries at battery cell level". Again relative,
+  not a typical absolute value per chemistry.
+- **[MCK-2024]** McKinsey & Company, *The battery chemistries powering the future of electric
+  vehicles* (2024).
+  [page](https://www.mckinsey.com/industries/automotive-and-assembly/our-insights/the-battery-chemistries-powering-the-future-of-electric-vehicles).
+  search summary (consultancy, not read in full): the NMC-LFP gap is "about 30 percent" at cell
+  level, dropping "to 5 to 20 percent at pack level"; the average pack energy density of top-selling
+  LFP vehicles rose from about 80 Wh/kg in 2014 to approximately 140 Wh/kg in 2023.
+- **Typical pack-level Wh/kg, summary.** No primary source found that states a typical absolute
+  pack value for current NMC and LFP packs. What the primaries support: best cells today up to
+  ~265 Wh/kg (NMC) and ~205 Wh/kg (LFP) ([IEA-GEVO-2026] p. 101); LFP packs about 20 % lower in
+  Wh/kg than NMC packs ([IEA-GEVO-2025]); a 2018 NMC-class Leaf pack at ~132 Wh/kg
+  ([N-US-DG-2018], derived). CATL's 2022 Qilin claims (up to 255 Wh/kg NMC, 160 Wh/kg LFP) reached
+  only through trade press (CnEVPost, 23 Jun 2022), which does not say whether they are cell- or
+  pack-level; not used.
+
+### 6.3 Charging and grid
+
+- **[IEA-GEVO-2026] charging** (as above), p. 110, Chapter 6: "nearly 1.8 million public charging
+  points were added to the global stock, representing an increase of more than 33% … The total
+  stock of public charging points worldwide reached more than 7 million at the end of 2025";
+  "around 11 electric LDVs worldwide per public charging point"; "4.5 kilowatts (kW) of public
+  charging capacity per electric LDV". verified.
+- **[EEA-ELEC-GHG]** EEA, *Greenhouse gas emission intensity of electricity generation in Europe*,
+  indicator, published 10 Jul 2026.
+  [page](https://www.eea.europa.eu/en/analysis/indicators/greenhouse-gas-emission-intensity-of-1).
+  verified. Latest year 2024: Figure 1 (EU level) gives **183.44 g CO2e/kWh** of gross
+  electricity generation (2023: 205.65; 2010: 333.90; 1990: 500.56), read from the chart's data
+  source ([JSON](https://www.eea.europa.eu/++api++/en/analysis/indicators/greenhouse-gas-emission-intensity-of-1/greenhouse-gas-emission-intensity-1)).
+  Text: "Generating one kilowatt hour has emitted 11% less emissions in 2024 on average than in
+  2023, and 41% less than a decade ago"; "In 2024, the EU's electricity sector was 63% less GHG
+  intensive than it was in 1990". This is generation, not consumption (imports are not
+  counted). The country chart's data source also holds a column labeled 2025 (EU 178), but the
+  chart's series are named 2024, 2010, 2000 and 1990 and the text says nothing about 2025, so that
+  column is not used.
+- **[EU-AFIR]** Regulation (EU) 2023/1804 on the deployment of alternative fuels infrastructure,
+  and repealing Directive 2014/94/EU, 13 Sep 2023, OJ L 234, 22.9.2023.
+  [ELI](http://data.europa.eu/eli/reg/2023/1804/oj). verified (OJ XHTML read from the
+  Publications Office Cellar, `publications.europa.eu/resource/celex/32023R1804`; EUR-Lex
+  answered scripted requests, ELI URLs included, with a WAF challenge).
+  - Art. 3(1), fleet-based: "at the end of each year, starting from 2024 … for each light-duty
+    battery electric vehicle registered in their territory, a total power output of at least
+    1,3 kW is provided through publicly accessible recharging stations"; 0.80 kW per light-duty
+    PHEV. Art. 3(2): a Member State may ask to lower it once BEVs are at least 15 % of its
+    light-duty fleet.
+  - Art. 3(4)(a), TEN-T core network: pools "in each direction of travel with a maximum distance
+    of 60 km between them"; by 31 Dec 2025 each pool ≥ 400 kW with at least one point ≥ 150 kW;
+    by 31 Dec 2027 ≥ 600 kW with at least two points ≥ 150 kW.
+  - Art. 3(4)(b), comprehensive network, same 60 km: 300 kW pools with one 150 kW point on ≥ 50 %
+    of the length by 31 Dec 2027 and on all of it by 31 Dec 2030; 600 kW with two 150 kW points
+    by 31 Dec 2035.
+  - Art. 26: applies from 13 April 2024.
+
+### 6.4 EU regulations
+
+EUR-Lex refused every scripted download (WAF challenge, HTTP 202), ELI URLs included. The texts
+below were read as Official Journal XHTML/PDF from the Publications Office Cellar
+(`http://publications.europa.eu/resource/celex/<CELEX>`), the same OJ text EUR-Lex serves; entries
+cite the ELI URL. Amendments were read from the amending acts, not from a consolidated version.
+
+- **[EU-2019/631]** Regulation (EU) 2019/631 setting CO₂ emission performance standards for new
+  passenger cars and for new light commercial vehicles, and repealing Regulations (EC) No 443/2009
+  and (EU) No 510/2011, 17 Apr 2019, OJ L 111, 25.4.2019, p. 13.
+  [ELI](http://data.europa.eu/eli/reg/2019/631/oj). verified.
+  - Art. 1(2): "From 1 January 2020, this Regulation sets an EU fleet-wide target of 95 g CO₂/km
+    for the average emissions of new passenger cars … as measured until 31 December 2020 in
+    accordance with Regulation (EC) No 692/2008 [NEDC] … and from 1 January 2021 measured in
+    accordance with Regulation (EU) 2017/1151 [WLTP]."
+  - Art. 1(4)(a): from 1 Jan 2025, "a 15 % reduction of the target in 2021". Art. 1(5)(a) as
+    adopted: 37.5 % from 2030 (raised to 55 % by [EU-2023/851]).
+  - Annex I, Part A, point 6.0: the "EU fleet-wide target 2021" is a WLTP value built per
+    manufacturer from its WLTP-measured 2020 cars scaled by 95 g/km over its NEDC CO₂. So the 2025
+    and 2030 steps are percentages of a WLTP-based 2021 reference, not of 95 g NEDC. derived:
+    93.6/0.85 ≈ 49.5/0.45 ≈ 110 g/km WLTP; no act prints this number. (The EEA quotes "around
+    115.1 gCO2/km (WLTP)" as the WLTP equivalent of 95 NEDC for 2020-2024, [EEA-CARS-IND]; that is
+    a different construct from the 2021 reference.)
+  - Art. 8(2): excess emissions premium "(Excess emissions × EUR 95) × number of newly registered
+    vehicles".
+- **[EU-2023/851]** Regulation (EU) 2023/851 amending Regulation (EU) 2019/631 as regards
+  strengthening the CO₂ emission performance standards for new passenger cars and new light
+  commercial vehicles in line with the Union's increased climate ambition, 19 Apr 2023, OJ L 110,
+  25.4.2023, p. 5. [ELI](http://data.europa.eu/eli/reg/2023/851/oj). verified.
+  - Art. 1(1)(a)(i): in Art. 1(5)(a), "the figure '37,5 %' is replaced by '55 %'" (cars, 2030);
+    vans 31 % → 50 %.
+  - New Art. 1(5a): "From 1 January 2035 … for the average emissions of the new passenger car
+    fleet, an EU fleet-wide target equal to a 100 % reduction of the target in 2021".
+  - New Art. 1(6): zero- and low-emission benchmark 25 % (cars) and 17 % (vans) for 2025-2029;
+    the incentive ends 1 Jan 2030.
+  - Review clause, Art. 15(1) as replaced: "The Commission shall, in 2026, review the
+    effectiveness and impact of this Regulation … assess progress … towards achieving the
+    reduction targets set out in Article 1(5a) … including as regards plug-in hybrid technologies
+    … Based on that assessment, the Commission shall assess the need to review the targets set out
+    in Article 1(5a)." Also: Art. 7(2) report on a real-world CO₂ adjustment mechanism by 31 Dec
+    2026; Art. 14a biennial progress reports from 31 Dec 2025.
+- **[EU-ID-2023/1623]** Commission Implementing Decision (EU) 2023/1623 of 3 Aug 2023, OJ L 200,
+  10.8.2023, p. 5. [ELI](http://data.europa.eu/eli/dec_impl/2023/1623/oj). verified. Annex II,
+  Part A, point 1 (cars, WLTP): "EU fleet-wide target 2025: 93,6 g CO₂/km"; "EU fleet-wide target
+  2030: 49,5 g CO₂/km". Vans: 153.9 and 90.6 g/km.
+- **[EU-2025/1214]** Regulation (EU) 2025/1214 amending Regulation (EU) 2019/631 to include an
+  additional flexibility as regards the calculation of manufacturers' compliance with CO₂ emission
+  performance standards for new passenger cars and new light commercial vehicles for the calendar
+  years 2025 to 2027, 17 Jun 2025, OJ L 2025/1214, 19.6.2025.
+  [ELI](http://data.europa.eu/eli/reg/2025/1214/oj). verified (number and date confirmed).
+  New Art. 4(1a): "for the three-year period comprising the calendar years 2025 to 2027, a
+  manufacturer, including when it is a member of a pool, shall ensure that its average specific
+  emissions of CO₂ over that period do not exceed its specific emissions target over that period".
+  The excess premium is assessed over 2025-2027 (Art. 8(1)). Recital 2: "while maintaining the
+  targets for reducing CO₂ emissions".
+- **[EU-COM-2025-995]** European Commission, Proposal for a Regulation amending Regulation (EU)
+  2019/631 as regards CO₂ emission performance standards for new light duty vehicles and vehicle
+  labelling and repealing Directive 1999/94/EC, COM(2025) 995 final, procedure 2025/0420(COD),
+  16 Dec 2025 (part of the automotive package). PDF via Cellar, CELEX 52025PC0995. verified.
+  - Art. 1(1)(b), replacing Art. 1(5a): "From 1 January 2035 … an EU fleet-wide target equal to a
+    90% reduction of the target in 2021" (cars and vans).
+  - Recitals 9-10: the 90 % holds "provided that the remaining emissions are compensated by the use
+    of low-carbon steel credits or sustainable renewable fuel credits", capped at "up to 10% of the
+    EU fleet-wide target of 2021".
+  - Also: vans 2030 50 % → 40 %; three-year averaging for 2030-2032; super-credits for small
+    EU-made EVs to 2034; proposed Art. 15(1) review "In 2035 and every five years thereafter".
+- **[EP-OEIL-2025/0420]** European Parliament Legislative Observatory, procedure file
+  2025/0420(COD), read 1 Nov 2026.
+  [page](https://oeil.europarl.europa.eu/oeil/en/procedure-file?reference=2025/0420(COD)). verified.
+  Stage "Awaiting committee decision"; committee referral 9 Feb 2026; plenary first reading
+  forecast 14 Dec 2026. The EP Legislative Train page (as of 20 Sep 2026,
+  [page](https://www.europarl.europa.eu/legislative-train/package-automotive-package/file-co2-emission-standards-for-new-light-duty-vehicles-and-labelling))
+  gives rapporteur Massimiliano Salini (EPP), draft report 17 Apr 2026, plenary "expected on 23
+  November 2026", Council general approach "Expected 11 Dec 2026".
+- **[CONS-10065/26]** Council of the EU, *Proposal … amending Regulation (EU) 2019/631 – Progress
+  report*, 10065/1/26 REV 1, 15 Jun 2026.
+  [PDF](https://data.consilium.europa.eu/doc/document/ST-10065-2026-REV-1/en/pdf). verified.
+  "Positions that have been expressed diverge widely"; "a number of delegations … wish to stick to
+  the current 100% targets"; "broad support to the three-year averaging for compliance to the 2030
+  target".
+- **Status of the 2035 revision on 1 Nov 2026**: not adopted. The law in force is still −100 % from
+  2035 ([EU-2023/851]). Open question: a secondary report (evlife.world, late Oct 2026) says two EP
+  committees backed a compromise of 95 % with up to 7.5 points of steel credits; no primary page
+  confirms it. Latest primary documents: OEIL (read 1 Nov 2026) and the Council progress report
+  (15 Jun 2026).
+- **[EU-EURO7]** Regulation (EU) 2024/1257 on type-approval of motor vehicles and engines … with
+  respect to their emissions and battery durability (Euro 7), 24 Apr 2024, OJ L 2024/1257,
+  8.5.2024. [ELI](http://data.europa.eu/eli/reg/2024/1257/oj). verified.
+  - Dates, Art. 21 and Art. 10(4)-(5): applies "from 29 November 2026 for new types of vehicles of
+    categories M₁ and N₁ … and from 29 November 2027 for new vehicles of categories M₁ and N₁".
+    Small-volume manufacturers: 1 Jul 2030. Heavy duty: 29 May 2028 / 29 May 2029.
+  - Brake PM₁₀ until 31 Dec 2029, Annex I Table 4 (M₁ and N₁ except N₁ Class III), mg/km per
+    vehicle: PEV (battery-electric) 3; OVC-HEV (plug-in hybrid) 7; NOVC-HEV (hybrid) 7; FCV 7;
+    ICEV 7. N₁ Class III: PEV 5, others 11. From 1 Jan 2030 (Table 5): left blank pending the
+    Art. 18(5) review. From 1 Jan 2035 (Table 8): "3 mg/km per vehicle" for M₁ and N₁, all
+    powertrains.
+  - Tyre abrasion: Annex I Table 9 has no numeric limits; they come from UN WP.29, or a Commission
+    delegated act if WP.29 had not adopted them by 1 Jul 2026 for C1 tyres (Art. 15(3)). Dates
+    (Art. 11(4)-(6), Art. 21): C1 new types 1 Jul 2028, all C1 tyres 1 Jul 2030 (sell-off to 30
+    Jun 2032); C2 1 Apr 2030 / 1 Apr 2032; C3 1 Apr 2032 / 1 Apr 2034.
+  - Battery durability, Annex II Table 1 (M₁, OVC-HEV and PEV alike), energy-based minimum
+    performance requirement: "80 %" from start of life to 5 years or 100 000 km, whichever comes
+    first; "72 %" beyond that up to 8 years or 160 000 km. N₁ (Table 2): 75 % and 67 %.
+- **[EU-IR-2025/1706]** Commission Implementing Regulation (EU) 2025/1706 of 25 Jul 2025 (exhaust
+  and evaporative emission type-approval of M₁ and N₁ under 2024/1257), OJ L 2025/1706, 5.9.2025,
+  [ELI](http://data.europa.eu/eli/reg_impl/2025/1706/oj); companion Implementing Regulation (EU)
+  2025/1707 of 25 Jul 2025 (OBFCM/OBM, driver warning, environmental vehicle passport). verified
+  (titles and dates).
+- **[EU-IR-2026/1762]** Commission Implementing Regulation (EU) 2026/1762 of 13 Jul 2026 (brake
+  particle emissions of M₁ and N₁ under 2024/1257), OJ L 2026/1762, 22.7.2026.
+  [ELI](http://data.europa.eu/eli/reg_impl/2026/1762/oj). verified (title, dates). Also Commission
+  Delegated Regulation (EU) 2026/1214 of 9 Jun 2026 (OJ 3.9.2026), which moves the Euro 7 brake
+  test reference from GTR No 24 to UN Regulation No 179; limit values unchanged. Note the number
+  clash: delegated 2026/1214 is not the CO₂ Regulation 2025/1214.
+- **[EU-BATT]** Regulation (EU) 2023/1542 concerning batteries and waste batteries, 12 Jul 2023,
+  OJ L 191, 28.7.2023, p. 1. [ELI](http://data.europa.eu/eli/reg/2023/1542/oj). verified.
+  - Carbon footprint, Art. 7(1): EV-battery declaration in kg CO₂e per kWh of total energy over
+    the service life, from "18 February 2025 or 12 months after the date of entry into force
+    either of the delegated act or of the implementing act … whichever is the latest" (acts due
+    "by 18 February 2024"). Performance classes, Art. 7(2): "18 August 2026 or 18 months after"
+    the class act. Maximum threshold, Art. 7(3): "18 February 2028 or 18 months after" its act.
+  - Recycled content in active materials (EV, industrial > 2 kWh, SLI), Art. 8(2)-(3): from 18 Aug
+    2031 "16 % cobalt; 85 % lead; 6 % lithium; 6 % nickel"; from 18 Aug 2036 "26 % cobalt; 85 %
+    lead; 12 % lithium; 15 % nickel".
+  - Battery passport, Art. 77(1): "From 18 February 2027 each LMT battery, each industrial battery
+    with a capacity greater than 2 kWh and each electric vehicle battery placed on the market or
+    put into service shall have an electronic record ('battery passport')".
+  - Annex XII Part B, recycling efficiency, lithium-based: ≥ 65 % by average weight by 31 Dec 2025,
+    70 % by 31 Dec 2030 (lead-acid 75 %, 80 %). Part C, material recovery: by 31 Dec 2027 Co, Cu,
+    Pb, Ni 90 %, Li 50 %; by 31 Dec 2031 Co, Cu, Pb, Ni 95 %, Li 80 %.
+- **[EU-HYS-13877]** European Commission, Have Your Say initiative 13877, *Carbon footprint
+  methodology for electric vehicle batteries*, Ares(2023)4174225, record read 1 Nov 2026.
+  [page](https://ec.europa.eu/info/law/better-regulation/have-your-say/initiatives/13877-Carbon-footprint-methodology-for-electric-vehicle-batteries_en).
+  verified (Better Regulation API record). Draft delegated act published for feedback 30 Apr
+  2024; adoption stage "UPCOMING", planned Q3 2025, no adoption date. So the methodology act is
+  not adopted and, by Art. 7(1)'s "whichever is the latest", the EV carbon-footprint declaration
+  is not yet applicable; the class and threshold dates slide with it.
+- **[EU-2025/1561]** Regulation (EU) 2025/1561 amending Regulation (EU) 2023/1542 as regards
+  obligations of economic operators concerning battery due diligence policies, 18 Jul 2025, OJ L
+  2025/1561, 30.7.2025. [ELI](http://data.europa.eu/eli/reg/2025/1561/oj). verified. Art. 48(1):
+  "the date '18 August 2025' is replaced by '18 August 2027'"; Commission guidance moves to 26 Jul
+  2026.
+- **[EP-LT-OMNIBUS-VIII]** EP Legislative Train, *Omnibus VIII: industrial emissions, reporting,
+  batteries*, COM(2025) 981, 2025/0397(COD), as of 20 Sep 2026.
+  [page](https://www.europarl.europa.eu/legislative-train/theme-a-new-plan-for-europe-s-sustainable-prosperity-and-competitiveness/file-omnibus-viii-industrial-emissions-reporting-batteries).
+  verified. Status "Tabled"; ENVI vote planned early Nov 2026. Its changes to 2023/1542 do not
+  touch the carbon-footprint, passport or due-diligence dates.
+
+### 6.5 US regulations
+
+Federal Register pages were read through the FR API and full-text XML (the website blocks scripted
+requests); page numbers come from the XML. Public Laws were read on govinfo.
+
+- **[EPA-MP-2024]** US EPA, *Multi-Pollutant Emissions Standards for Model Years 2027 and Later
+  Light-Duty and Medium-Duty Vehicles*, final rule, 89 FR 27842, 18 Apr 2024 (effective 17 Jun
+  2024), FR doc. 2024-06214, RIN 2060-AV49.
+  [FR](https://www.federalregister.gov/documents/2024/04/18/2024-06214/multi-pollutant-emissions-standards-for-model-years-2027-and-later-light-duty-and-medium-duty-vehicles).
+  verified. Abstract: standards "will phase-in over model years 2027 through 2032", plus "battery
+  durability and warranty requirements for light- duty and medium-duty electric and plug-in hybrid
+  electric vehicles". p. 27907: "an industry-wide average target for the light-duty fleet of 85
+  g/mile of CO2 in MY 2032", "49 percent lower than that of the MY 2026 standards". Its GHG part
+  was repealed by [EPA-EF-RESC-2026]; the Tier 4 criteria-pollutant part stands, subject to
+  [EPA-T4-2026].
+- **[EPA-EF-PROP-2025]** US EPA, *Reconsideration of 2009 Endangerment Finding and Greenhouse Gas
+  Vehicle Standards*, proposed rule, 90 FR 36288, 1 Aug 2025, FR doc. 2025-14572.
+  [FR](https://www.federalregister.gov/documents/2025/08/01/2025-14572/reconsideration-of-2009-endangerment-finding-and-greenhouse-gas-vehicle-standards).
+  verified (FR record).
+- **[EPA-EF-RESC-2026]** US EPA, *Rescission of the Greenhouse Gas Endangerment Finding and Motor
+  Vehicle Greenhouse Gas Emission Standards Under the Clean Air Act*, final rule, 91 FR 7686,
+  18 Feb 2026 (effective 20 Apr 2026), FR doc. 2026-03157, RIN 2060-AW71.
+  [FR](https://www.federalregister.gov/documents/2026/02/18/2026-03157/rescission-of-the-greenhouse-gas-endangerment-finding-and-motor-vehicle-greenhouse-gas-emission).
+  verified. Abstract: "rescinding the Administrator's 2009 findings of contribution and
+  endangerment and repealing all greenhouse gas (GHG) emission standards for light-duty,
+  medium-duty, and heavy-duty vehicles and engines". Litigation: petitions in the D.C. Circuit
+  (due by 20 Apr 2026, p. 7688); 40 states, counties and cities led by New York filed (NY AG
+  release, 19 Mar 2026, [page](https://ag.ny.gov/press-release/2026/attorney-general-james-leads-challenge-trump-administrations-climate-rollback),
+  verified); docket numbers 26-1061 (states) and 26-1037 (groups) and pending motions to delay
+  briefing are from a Jones Day alert of 22 Jun 2026 (secondary). No ruling found as of 1 Nov
+  2026.
+- **[EPA-T4-2026]** US EPA, *Revision of Tier 4 Criteria Pollutant Standards, Part 1: Amendments
+  to Phase-In Schedule for Light-Duty and Medium-Duty Vehicles*, proposed rule, 91 FR 28463,
+  18 May 2026, FR doc. 2026-09905.
+  [FR](https://www.federalregister.gov/documents/2026/05/18/2026-09905/revision-of-tier-4-criteria-pollutant-standards-part-1-amendments-to-phase-in-schedule-for).
+  verified. Would "extend the Tier 3 standards for certain vehicles to model years (MYs) 2027 and
+  2028 such that the Tier 4 standards for these vehicles would phase in starting with MY 2029". No
+  final rule found on 1 Nov 2026.
+- **[NHTSA-CAFE-2024]** NHTSA, *Corporate Average Fuel Economy Standards for Passenger Cars and
+  Light Trucks for Model Years 2027 and Beyond and Fuel Efficiency Standards for Heavy-Duty Pickup
+  Trucks and Vans for Model Years 2030 and Beyond*, final rule, 89 FR 52540, 24 Jun 2024, FR doc.
+  2024-12864.
+  [FR](https://www.federalregister.gov/documents/2024/06/24/2024-12864/corporate-average-fuel-economy-standards-for-passenger-cars-and-light-trucks-for-model-years-2027).
+  verified. "2 percent per year for passenger cars in model years (MYs) 2027-31, 0 percent per year
+  for light trucks in model years 2027-28, and 2 percent per year for light trucks in model years
+  2029-31"; p. 52548: "roughly 50.4 mpg in MY 2031". Replaced by [NHTSA-SAFE3-2026].
+- **[NHTSA-RESET-2025]** NHTSA, *Resetting the Corporate Average Fuel Economy Program*,
+  interpretive rule, 90 FR 24518, 11 Jun 2025, FR doc. 2025-10586.
+  [FR](https://www.federalregister.gov/documents/2025/06/11/2025-10586/resetting-the-corporate-average-fuel-economy-program).
+  verified.
+- **[PL-119-21]** Public Law 119-21 (H.R. 1, the 2025 reconciliation act), 4 Jul 2025.
+  [govinfo](https://www.govinfo.gov/content/pkg/PLAW-119publ21/html/PLAW-119publ21.htm). verified.
+  Sec. 40006, "Corporate Average Fuel Economy Civil Penalties" (139 Stat. 136): amends 49 U.S.C.
+  32912(b) "by striking ``$5'' and inserting ``$0.00''" and (c)(1)(B) from $10 to $0.00. Sec.
+  70502, "Termination of Clean Vehicle Credit" (139 Stat. 250): 30D(h) "by striking ``placed in
+  service after December 31, 2032'' and inserting ``acquired after September 30, 2025''". Same
+  law: 25E (used) and 45W (commercial) end after 30 Sep 2025; 30C (charging property) after 30 Jun
+  2026.
+- **[NHTSA-SAFE3-2025]** NHTSA, *The Safer Affordable Fuel-Efficient (SAFE) Vehicles Rule III for
+  Model Years 2022 to 2031 Passenger Cars and Light Trucks*, proposed rule, 90 FR 56438, 5 Dec
+  2025, FR doc. 2025-22014.
+  [FR](https://www.federalregister.gov/documents/2025/12/05/2025-22014/the-safer-affordable-fuel-efficient-safe-vehicles-rule-iii-for-model-years-2022-to-2031-passenger).
+  verified. "0.5 percent per year through MY 2026, followed by 0.25 percent per year through MY
+  2031", "roughly 34.5 miles per gallon (mpg) in MY 2031".
+- **[NHTSA-SAFE3-2026]** NHTSA, same title, final rule, 91 FR 61988, 30 Sep 2026 (effective 30 Nov
+  2026), FR doc. 2026-19964.
+  [FR](https://www.federalregister.gov/documents/2026/09/30/2026-19964/the-safer-affordable-fuel-efficient-safe-vehicles-rule-iii-for-model-years-2022-to-2031-passenger).
+  verified. p. 61997: passenger cars "0.90 percent per year through MY 2029 followed by one percent
+  per year through MY 2031", light trucks "0.51 percent per year through MY 2029 followed by one
+  percent per year through MY 2031"; credit trading eliminated "beginning with credits earned in
+  MY 2028". p. 61999: "roughly 34.9 mpg in MY 2031 for passenger cars and light trucks".
+- **[CRA-CA-2025]** Public Laws 119-15, 119-16 and 119-17 (H.J. Res. 87, 88, 89), 12 Jun 2025,
+  139 Stat. 65-67. [PL 119-16](https://www.govinfo.gov/content/pkg/PLAW-119publ16/html/PLAW-119publ16.htm)
+  (ACC II), verified: "Congress disapproves the rule … ``California State Motor Vehicle and Engine
+  Pollution Control Standards; Advanced Clean Cars II; Waiver of Preemption; Notice of Decision''
+  (90 Fed. Reg. 642 (January 6, 2025)), and such rule shall have no force or effect." PL 119-15:
+  Advanced Clean Trucks waiver; PL 119-17: Omnibus Low NOx waiver. California and 10 states sued
+  the same day (CA AG release, 12 Jun 2025,
+  [page](https://oag.ca.gov/news/press-releases/california-will-not-waver-defending-itself-federal-overreach-attorney-general),
+  verified); *California v. United States*, N.D. Cal. No. 4:25-cv-04966-HSG (search summary). No
+  merits ruling found.
+
+### 6.6 Vehicles
+
+- **[N-GL-LEAF-EU-2018]** Nissan Global newsroom, *Nissan LEAF tops electric car sales in Europe*,
+  18 Jul 2018. [page](https://global.nissannews.com/ja-JP/releases/nissan-leaf-tops-electric-car-sales-in-europe).
+  verified. "The car's larger, 40 kilowatt-hour battery delivers a combined driving cycle range of
+  270 kilometers" under WLTP. This is the first primary source for the 270 km in §0; the WLTP
+  consumption (17.1 kWh/100 km) still rests on ADAC/EV Database.
+- **[N-GL-LEAF3]** Nissan Global newsroom, *All-new 3rd generation Nissan LEAF*, 17 Jun 2025
+  (spec table 250617-01-e).
+  [page](https://global.nissannews.com/en/releases/all-new-3rd-generation-nissan-leaf_tab).
+  verified. 52 kWh battery (52.9 kWh usable): "130 kW (~174hp) and 345 Nm"; 75 kWh (75.1 kWh
+  usable): "160 kW (~214hp) and 355 Nm"; US "estimated to deliver a maximum range of up to 303
+  miles", "subject to homologation". US retail from autumn 2025; built at Tochigi and Sunderland.
+- **[LEAF-ZE1-END]** Sunderland ended ZE1 production in the week of 29 Feb 2024, after more than
+  270,000 cars. [electrive, 1 Mar 2024](https://electrive.com/2024/03/01/nissan-leaf-production-draws-to-a-close-in-sunderland);
+  [Electrek, 29 Feb 2024](https://electrek.co/2024/02/29/nissan-ends-leaf-production-uk-new-evs/).
+  secondary; no Nissan release found. The ZE1 is superseded by the third generation at both
+  plants; Japan/US ZE1 end dates not verified.
+- **[TOYOTA-DF-2018]** Toyota Motor Corporation, TNGA powertrain 2018, engine page (2.0 L Dynamic
+  Force). [page](https://global.toyota/en/mobility/tnga/powertrain2018/engine/). verified. Maximum
+  thermal efficiency "40% (Conventional Engine)" and "41% (HV Engine)", "As of February 2018". The
+  deck's "about 30 % at its best" understates a modern production petrol engine's peak; "about
+  40 % at its best, far less on average in real driving" matches the source.
+
 ---
 
 ## 7. Gaps
 
-- **Leaf WLTP consumption from Nissan itself** was not found. 17.1 kWh/100 km and 270 km are from ADAC
-  and EV Database. The EEA CO₂-monitoring database (the type-approval primary source) returned 403.
+- **Leaf WLTP consumption from Nissan itself** was not found. 17.1 kWh/100 km is from ADAC and EV
+  Database; the 270 km WLTP range is now confirmed by Nissan's 2018 newsroom ([N-GL-LEAF-EU-2018],
+  §6.6). The EEA CO₂-monitoring database (the type-approval primary source) returned 403 and was not
+  retried.
 - **Leaf frontal area** was not found. Cd 0.28 is verified. CdA ≈ 0.63 m² in the course car implies
   A = 2.25 m², but that is not a source value.
 - **ZE1 inverter rating and EM57 maximum rpm** were not found from primary sources. ZE0 Cd (0.29) is
@@ -502,3 +999,37 @@ machine types (section 03). The slides quote these sources' wording and numbers.
 - **Supplier primary documents** (Continental, Bosch, Delphi, FEV) giving P0–P4 savings were not
   located. The P-position numbers rest on the ICCT 2022 review of Schaeffler, Chalmers and Braunschweig
   simulations. Only one experimental P0 number (Shang 2024) was found, from a search summary.
+- **IEA EV-share series is from an aggregator.** The IEA Global EV Data Explorer and its API could
+  not be downloaded from a script (bot check), so the yearly series is Our World in Data's copy of
+  the IEA data ([OWID-IEA-EVSHARE]). It agrees with the GEVO text for 2023-2025 except China 2025
+  (53 % in the data, "almost 55%" in the report). Download the explorer CSV by hand to close this.
+- **BNEF before 2013 and LFP/NMC cell prices.** The Dec 2025 release charts 2013-2025 only and
+  gives LFP/NMC pack, not cell, prices. Earlier values (2010) and the chemistry split by cell are in
+  the paywalled report.
+- **Cell specific energy.** The IEA's 205 Wh/kg (LFP) and 265 Wh/kg (NMC) are "up to" best values
+  and the report does not say "cell" for them explicitly; no national-lab fleet-average cell value
+  was sourced.
+- **Typical (not best-in-class) pack and cell Wh/kg for NMC and LFP.** No IEA, national-lab or
+  manufacturer primary gives an absolute typical value; the IEA gives only best-cell values and
+  LFP-vs-NMC ratios. ANL BatPaC outputs were not found in a citable table. The Leaf pack's 303 kg is
+  verified, but its module count in the same Nissan table (48) disagrees with teardown reports (24).
+- **EEA CO₂ indicator not yet updated for 2025.** The indicator (3 Aug 2026) stops at 2024; 2025
+  (96.7 g/km WLTP) is provisional, from the 25 Jun 2026 news item. Final 2025 data are due later.
+- **EEA electricity intensity 2025.** The indicator gives 2024 (183.44 g CO2e/kWh); a column labeled
+  2025 in its country chart data (EU 178) is unexplained and not used.
+- **2035 car CO₂ revision.** Not adopted as of 1 Nov 2026. A reported late-October 2026 EP committee
+  compromise (95 % with up to 7.5 points of steel credits) is secondary only (evlife.world); recheck
+  OEIL after the plenary (forecast 23 Nov or 14 Dec 2026) and the Council (general approach
+  expected 11 Dec 2026).
+- **2021 WLTP reference target.** No act prints it; ≈ 110 g/km is derived from 93.6/0.85.
+- **Euro 7 tyre abrasion limit values.** Not in the Regulation; the UNECE WP.29 documents for the new
+  C1 abrasion UN Regulation (reportedly adopted June 2026) returned 403. Euro 7 brake limits for
+  2030-2034 are blank pending the Art. 18(5) review. The December 2025 automotive omnibus was not
+  checked for changes to Euro 7 dates.
+- **Battery Regulation delegated acts.** Only the EV carbon-footprint methodology act (initiative
+  13877) was confirmed as not adopted; the performance-class and threshold acts were not checked
+  individually.
+- **US litigation.** No ruling found on the endangerment-finding rescission (D.C. Cir.; status as of
+  22 Jun 2026 from a law-firm alert) or on *California v. United States* (CRA waiver
+  disapprovals). SAFE III petitions for review were not searched.
+- **ZE1 end of production** rests on trade press (electrive, Electrek); no Nissan release found.

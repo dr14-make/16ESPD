@@ -7,15 +7,16 @@ layout: section
 
 # Batteries, simply
 
-V = E − IR, charge and energy, specific energy and power, and the deck's comparison of
-chemistries.
+V = E − IR, charge and energy, specific energy and power, the deck's comparison of
+chemistries against today's, and what a kilowatt-hour costs.
 
 `notebooks/lecture04/04-machine-battery-regen.pluto.jl`
 
 <!--
 Section 06, batteries, simply. We keep the battery as simple as it can be and still be useful: V
-equals E minus I R, charge and energy, specific energy and specific power, and the deck's comparison
-of chemistries. Then you build it, build 03. The figure comes from notebook 04. The deck's tour of
+equals E minus I R, charge and energy, specific energy and specific power, the deck's comparison
+of chemistries set against today's cells, and what a kilowatt-hour of battery costs. Then you build
+it, build 03. The discharge figure comes from notebook 04; the price figure from published data. The deck's tour of
 the individual chemistries, the fuel cells, and a more detailed cell model, with its charging,
 state-of-charge estimation and balancing, are in the extra session.
 -->
@@ -202,12 +203,12 @@ round trip at 95 to 98 percent.
 routeAlias: battery-table
 ---
 
-## The deck's comparison of chemistries
+## The textbook's chemistries, and today's
 
-<div class="grid grid-cols-[1.3fr_1fr] gap-8 items-start">
+<div class="grid grid-cols-[1.15fr_1fr] gap-8 items-start text-[0.9rem]">
 <div class="tight">
 
-| Battery | Wh/kg | Wh/L | W/kg | Cost |
+| Battery, early 2000s | Wh/kg | Wh/L | W/kg | Cost |
 |---|---:|---:|---:|---:|
 | Lead acid | 30 | 75 | 250 | 0.5 |
 | NiCad | 50 | 80 | 150 | 1.5 |
@@ -216,44 +217,117 @@ routeAlias: battery-table
 | Li ion | 150 | 150 | 300 | 3 |
 | Zinc–air | 230 | 270 | 105 | ? |
 
-<div class="caption">Deck 8, after Larminie and Lowry. Cost in arbitrary units; every figure a
-broad guideline only.</div>
+<div class="caption">Deck 8, after Larminie and Lowry (textbook): dated. Cost in arbitrary units.</div>
+
+| Li-ion today | Wh/kg | Source |
+|---|---:|---|
+| NMC cell, best, 2025 | 265 | IEA |
+| LFP cell, best, 2025 | 205 | IEA |
+| Leaf ZE1 pack: 40 kWh, 303 kg | 132 | Nissan, derived |
 
 </div>
 <div>
 
-**The deck's conclusions**
+**What the textbook predicted** (deck)
 
-- Lead acid suits only short-range vehicles.
-- Lithium has the energy density for medium range and charges quickly: ideal for hybrids.
-- None yet lets a pure EV match an engine for range and versatility; specific energy was
-  predicted to rise.
+- Lead acid only for short range: still true; it survives as the 12 V battery.
+- Lithium ideal for hybrids: it went much further. Every EV is Li-ion; **LFP** cells, cheaper,
+  over 55 % of EV batteries in 2025 (IEA).
+- "No battery lets a pure EV compete": a quarter of new cars were electric in 2025 (IEA).
+- "350 Wh/kg by 2020": not reached; the best cells are at 265, and a pack weighs more than
+  its cells.
 
-The Leaf ZE1's pack is lithium-ion: NMC cells, 40 kWh.
+The Leaf ZE1: **NMC** cells, 40 kWh.
 
 </div>
 </div>
 
 <!--
-The deck's comparison of chemistries, kept as the deck has it, after Larminie and Lowry. Six battery
-types in rows. The columns are specific energy in watt-hours per kilogram, energy density in
-watt-hours per liter, specific power in watts per kilogram, and cost in arbitrary units. As the
-caption says, every figure is a broad guideline only.
+The comparison of chemistries from the course's battery deck, after Larminie and Lowry, and next to
+it what the batteries of today are. The table on the top left is kept as the deck has it, and the
+caption says what it is: the textbook's broad guideline from the early 2000s, dated.
 
-Lead acid: 30 watt-hours per kilogram, 75 per liter, 250 watts per kilogram, cost 0.5.
-Nickel-cadmium: 50, 80, 150, cost 1.5. Nickel-metal hydride: 65, 150, 200, cost 2. The Zebra
-battery, a sodium battery: 100, 150, 150, cost 2. Lithium-ion: 150, 150, 300, cost 3. Zinc-air: 230,
-270, 105, cost unknown. Lithium-ion is the only one high in both specific energy and specific power;
-zinc-air stores more, but gives it out slowly.
+Read it quickly. The columns are specific energy in watt-hours per kilogram, energy density in
+watt-hours per liter, specific power in watts per kilogram, and cost in arbitrary units. Lead acid:
+30 watt-hours per kilogram, 75 per liter, 250 watts per kilogram, cost 0.5. Nickel-cadmium: 50, 80,
+150, cost 1.5. Nickel-metal hydride: 65, 150, 200, cost 2. The Zebra battery, a sodium battery: 100,
+150, 150, cost 2. Lithium-ion: 150, 150, 300, cost 3. Zinc-air: 230, 270, 105, cost unknown. Already
+then, lithium-ion was the only one high in both specific energy and specific power.
 
-The deck's conclusions, on the right. Lead acid suits only short-range vehicles. Lithium has the
-energy density for medium range and charges quickly, which makes it ideal for hybrids. And none of
-them yet lets a pure electric car match an engine car for range and versatility, though specific
-energy was predicted to rise.
+The small table below is lithium-ion today. The International Energy Agency's Global EV Outlook
+2026 gives the best cells of 2025: up to 265 watt-hours per kilogram for nickel-manganese-cobalt,
+NMC, and up to 205 for lithium iron phosphate, LFP. Those are best-in-class cells, not averages; the
+IEA's battery report of 2024 gives a demonstrated range of about 90 to 300 watt-hours per kilogram
+at cell level. A pack weighs more than its cells: the housing, the cooling, the wiring and the
+electronics. The Leaf ZE1 is the example. Nissan's dismantling guide for the 2018 Leaf gives its
+40 kilowatt-hour battery as 303 kilograms, so the pack stores about 132 watt-hours per kilogram;
+that division is mine. The IEA also says that an LFP pack stores about a fifth less per kilogram
+than an NMC pack, and that the average EV pack's watt-hours per kilogram rose by about 60 percent
+over the last decade.
 
-The Leaf ZE1's pack is lithium-ion, 40 kilowatt-hours, with nickel-manganese-cobalt cells according
-to the EV Database, a secondary source. The first-generation Leaf of 2012 used a lithium manganese
-oxide chemistry.
+On the right, the deck's conclusions, now as what the textbook predicted, with what happened. Lead
+acid suits only short-range vehicles: still true, and today lead acid survives as the 12 volt battery of
+many cars. Lithium was called ideal for hybrids: it went much further, and every
+electric car now runs on lithium-ion. More than half of them on LFP, which stores less per kilogram
+but costs less: the IEA counts LFP at over 55 percent of the EV batteries deployed in 2025.
+
+The deck said that no battery yet let a pure electric car compete with an engine car for range and
+versatility. In 2025 a quarter of the new cars sold worldwide were electric, by the IEA's count. And
+the deck predicted 350 watt-hours per kilogram as early as 2020. That did not happen: the best
+production cells reached 265, and a pack is lower again. What did happen was the price, on the next
+slide.
+
+The last line: the Leaf ZE1's pack is lithium-ion, 40 kilowatt-hours, with nickel-manganese-cobalt
+cells according to the EV Database, a secondary source. The first-generation Leaf of 2012 used a
+lithium manganese oxide chemistry.
+-->
+
+---
+routeAlias: battery-price
+class: big-figure
+---
+
+## What a kilowatt-hour costs
+
+<div class="grid grid-cols-[1.6fr_1fr] gap-6 items-center">
+<div>
+
+![Volume-weighted average lithium-ion pack price, all segments, in real 2025 dollars per kWh: 827 in 2013, 475 in 2015, 273 in 2017, 194 in 2019, 159 in 2021, 170 in 2022, 148 in 2023, 118 in 2024 and 108 in 2025.](/figures/06-battery-price.svg)
+
+<div class="caption">BloombergNEF battery price survey, December 2025, real 2025 $.</div>
+
+</div>
+<div class="text-[0.95rem]">
+
+**2025** (BNEF): **$108/kWh** average pack, −8 % on 2024; **$99/kWh** for BEV packs.
+
+**LFP** packs $81/kWh, **NMC** $128/kWh.
+
+**In 12 years, 87 % cheaper** (derived): the Leaf's 40 kWh pack at 2025 prices, about
+**$4300** (derived).
+
+</div>
+</div>
+
+<!--
+The prediction the textbook did not make was the one that came true: the price. The figure is drawn
+from BloombergNEF's annual survey of lithium-ion battery prices, as its December 2025 press release
+charts it, with the values in a table in the repository. The bars are the volume-weighted average
+price of a battery pack, in dollars per kilowatt-hour, every year in the same real 2025 dollars,
+because BloombergNEF restates the whole history each year. That is why its 2024 bar reads 118, not
+the 115 dollars announced in December 2024 in that year's dollars.
+
+827 dollars per kilowatt-hour in 2013, 475 in 2015, 273 in 2017, 194 in 2019, 159 in 2021, one bump
+up to 170 in 2022, then 148, 118 and 108 dollars in 2025.
+
+On the right, the 2025 survey in BloombergNEF's words: 108 dollars per kilowatt-hour on average, 8
+percent less than in 2024. That average covers buses, two-wheelers and stationary storage too;
+battery-electric car packs alone were the cheapest of the transport segments, at 99 dollars. LFP
+packs averaged 81 dollars and NMC packs 128, which is why LFP took over half the market.
+
+The last box is my arithmetic. From 827 to 108 is 87 percent cheaper in twelve years. And the Leaf's
+40 kilowatt-hour pack, at the 2025 car-pack price of 99 dollars, would cost about 4000 dollars, at
+the all-segment 108 about 4300; in 2013 money it would have been over 30 000.
 -->
 
 ---
@@ -336,7 +410,7 @@ nothing in the model knows that the pack is empty.
 - Capacity is charge, A·h; energy is charge times voltage: **40 kWh at 350 V is 114.3 A·h**.
 - SoC is counted from the current: coulomb counting.
 - Specific energy and specific power trade against each other; lithium-ion made the
-  battery-electric car practical.
+  battery-electric car practical: best cells 265 Wh/kg (IEA), packs **$108/kWh** in 2025 (BNEF).
 - On your bench: **10 V** of sag at 100 A, SoC **0.9 → 0.4625** in half an hour.
 
 ### Next: put the chain in the car, and brake with it. <Link to="car-and-regen">→ 07, the car and regen</Link>
@@ -346,7 +420,9 @@ Section 06 in five lines. A pack is cells in series and in parallel, and its ter
 equals E minus R0 i; the sag is lost as heat. Capacity is charge, in ampere-hours, and energy is
 charge times voltage: 40 kilowatt-hours at 350 volts is 114.3 ampere-hours. The state of charge is
 counted from the current, by coulomb counting. Specific energy and specific power trade against each
-other, and lithium-ion made the battery-electric car practical. And on your bench: a 10 volt sag at
+other, and lithium-ion made the battery-electric car practical: the best cells of 2025 store 265
+watt-hours per kilogram, by the IEA's count, and a pack cost 108 dollars per kilowatt-hour in
+BloombergNEF's 2025 survey. And on your bench: a 10 volt sag at
 100 amperes, and the state of charge from 0.9 to 0.4625 in half an hour.
 
 Three links are built: the machine, the converter and the battery. Next they go into the planar car,

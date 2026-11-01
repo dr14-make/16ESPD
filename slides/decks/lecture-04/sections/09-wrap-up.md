@@ -242,9 +242,18 @@ routeAlias: sources
   Electric, and Fuel Cell Vehicles*, CRC
 - W. Gao et al., *eTransportation* 20 (2024) 100313: Leaf cell resistance
 
+**Market and regulation**
+
+- IEA, *Global EV Outlook 2026*; BloombergNEF, battery price survey, Dec 2025; EEA, new-car CO₂
+  and electricity indicators, 2026; ACEA, Jan 2026; Toyota, TNGA engine, 2018
+- EU Regulations 2019/631, 2023/851, 2025/1214 (car CO₂), 2024/1257 (Euro 7), 2023/1542
+  (batteries), 2023/1804 (AFIR); proposal COM(2025) 995
+- US: 89 FR 27842 (EPA 2024), 91 FR 7686 (EPA 2026), 91 FR 61988 (NHTSA 2026); Public Law 119-21
+
 **Secondary**
 
 - ADAC Autokatalog and EV Database: Leaf WLTP consumption, cell chemistry
+- Our World in Data: the IEA's EV-share series
 
 </div>
 </div>
@@ -264,11 +273,17 @@ ESP hev.
 
 On the right, papers and books: Larminie and Lowry's textbook; Boretti's analyses of the Leaf's
 regenerative braking efficiency; Gao and Ehsani's paper, and Ehsani, Gao and Emadi's textbook, on
-blending; and the 2024 paper by Gao and colleagues on Leaf cell resistance. Below them the secondary
-sources, ADAC's car catalog and the EV Database, for the Leaf's WLTP consumption and its cell
-chemistry.
+blending; and the 2024 paper by Gao and colleagues on Leaf cell resistance. Below them, the market and
+regulation sources behind section 01 and the battery prices of section 06: the IEA's Global EV
+Outlook 2026, BloombergNEF's 2025 battery price survey, the European Environment Agency's
+indicators, ACEA, Toyota's engine page; the EU regulations on car CO2, Euro 7, batteries and charging
+infrastructure, and the Commission's 2035 proposal; and the US Federal Register notices and the 2025
+law behind the American rules. Last, the secondary sources: ADAC's car catalog and the EV Database,
+for the Leaf's WLTP consumption and its cell chemistry, and Our World in Data's copy of the IEA's
+yearly EV shares.
 
-Some numbers are not verified from a primary source, and it is fair to say which. The Leaf ZE1's
+Some numbers are not verified from a primary source, and it is fair to say which. The yearly EV
+shares in the market figure are Our World in Data's copy of the IEA's data. The Leaf ZE1's
 WLTP consumption comes from ADAC and the EV Database. The low-speed regen fade speed is assumed at
 10 kilometers per hour. Boretti's efficiencies were read from the abstracts. And Oak Ridge's map
 points were read by eye from contour labels, to within about a percentage point.

@@ -4,7 +4,8 @@ Writes the Lecture 4 deck's notebook figures into `slides/decks/lecture-04/publi
     julia +dyad-3.5.0 --project=. scripts/export_lecture04_figures.jl
 
 Runs each notebook in `FIGURES` from `notebooks/lecture04/` top to bottom with its controls at
-their defaults, and saves the plots the deck shows as SVG. Each notebook
+their defaults, and saves the plots the deck shows as SVG; then the real-world context figures
+of `export_lecture04_context_figures.jl`, which need no notebook. Each notebook
 runs in a module of its own: it assigns the global `VehicleSystemsComponents`, which would
 collide with the package `setup()` loads into `Main`.
 
@@ -76,3 +77,5 @@ for (notebook, figures) in sort!(collect(FIGURES))
     end
     Base.invokelatest(PlotlyKaleido.kill_kaleido)
 end
+
+include(joinpath(@__DIR__, "export_lecture04_context_figures.jl"))

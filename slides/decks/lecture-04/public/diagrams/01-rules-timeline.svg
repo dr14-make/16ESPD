@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560">
+  <style>
+    text { font-family: sans-serif; fill: #16202c; }
+    .axis { stroke: #16202c; stroke-width: 2; fill: none; }
+    .tick { stroke: #16202c; stroke-width: 1.5; }
+    .grid { stroke: #d5dbe1; stroke-width: 1; stroke-dasharray: 3 5; }
+    .today { stroke: #c0392b; stroke-width: 2; stroke-dasharray: 6 4; }
+    .lane { fill: #f3f5f7; }
+    .band { fill: #cfe3d6; stroke: #2e8b57; stroke-width: 2; }
+    .ev { fill: #2e8b57; stroke: #fff; stroke-width: 1.5; }
+    .us { fill: #4a5a6b; stroke: #fff; stroke-width: 1.5; }
+    .gone { fill: #fff; stroke: #c0392b; stroke-width: 2.5; }
+    .yr { font-size: 15px; fill: #4a5a6b; }
+    .h { font-size: 17px; font-weight: 600; }
+    .act { font-size: 13px; fill: #4a5a6b; }
+    .t { font-size: 15px; }
+    .s { font-size: 14px; fill: #4a5a6b; }
+    .r { font-size: 15px; fill: #c0392b; }
+  </style>
+
+  <!-- x(year) = 220 + (year − 2024) · 75 -->
+  <rect class="lane" x="0" y="58" width="1200" height="88"/>
+  <rect class="lane" x="0" y="242" width="1200" height="88"/>
+  <rect class="lane" x="0" y="426" width="1200" height="88"/>
+
+  <g class="grid">
+    <path d="M220 50 V520"/><path d="M295 50 V520"/><path d="M370 50 V520"/><path d="M445 50 V520"/>
+    <path d="M520 50 V520"/><path d="M595 50 V520"/><path d="M670 50 V520"/><path d="M745 50 V520"/>
+    <path d="M820 50 V520"/><path d="M895 50 V520"/><path d="M970 50 V520"/><path d="M1045 50 V520"/>
+    <path d="M1120 50 V520"/>
+  </g>
+  <path class="axis" d="M210 40 H1190"/>
+  <g class="yr" text-anchor="middle">
+    <text x="220" y="28">2024</text><text x="295" y="28">2025</text><text x="370" y="28">2026</text>
+    <text x="445" y="28">2027</text><text x="520" y="28">2028</text><text x="595" y="28">2029</text>
+    <text x="670" y="28">2030</text><text x="745" y="28">2031</text><text x="820" y="28">2032</text>
+    <text x="895" y="28">2033</text><text x="970" y="28">2034</text><text x="1045" y="28">2035</text>
+    <text x="1120" y="28">2036</text>
+  </g>
+  <path class="today" d="M432 34 V528"/>
+  <text x="438" y="552" class="r">today, 1 Nov 2026</text>
+
+  <!-- EU car CO2 -->
+  <text x="12" y="92" class="h">EU car CO₂</text>
+  <text x="12" y="112" class="act">Reg. 2019/631,</text>
+  <text x="12" y="128" class="act">as amended</text>
+  <rect class="band" x="295" y="70" width="225" height="26" rx="4"/>
+  <text x="302" y="89" class="t">93.6 g/km, averaged 2025–27</text>
+  <path class="ev" d="M670 72 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="686" y="89" class="t">49.5 g/km (−55 %)</text>
+  <path class="ev" d="M1045 72 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="1040" y="89" class="t" text-anchor="end">0 g/km in law (−100 %)</text>
+  <text x="1188" y="128" class="s" text-anchor="end">−90 % with credits proposed Dec 2025, not adopted</text>
+  <text x="300" y="128" class="s">review of the 2035 target due in 2026</text>
+
+  <!-- Euro 7 -->
+  <text x="12" y="184" class="h">Euro 7</text>
+  <text x="12" y="204" class="act">Reg. 2024/1257</text>
+  <path class="ev" d="M438 164 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="430" y="181" class="t" text-anchor="end">new types, 29 Nov 2026</text>
+  <path class="ev" d="M513 164 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="529" y="181" class="t">all new cars, 29 Nov 2027</text>
+  <path class="ev" d="M558 196 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="574" y="213" class="t">tyre abrasion, new C1 types, Jul 2028</text>
+  <text x="300" y="234" class="s">brake PM₁₀: 3 mg/km for a BEV, 7 for the rest (3 for all from 2035) · battery ≥ 80 % at 5 y / 100 000 km, ≥ 72 % at 8 y / 160 000 km</text>
+
+  <!-- Battery Regulation -->
+  <text x="12" y="276" class="h">Batteries</text>
+  <text x="12" y="296" class="act">Reg. 2023/1542</text>
+  <path class="ev" d="M454 256 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="470" y="273" class="t">battery passport, 18 Feb 2027</text>
+  <path class="ev" d="M792 256 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="808" y="273" class="t">recycled content: Co 16, Li 6, Ni 6 %</text>
+  <path class="ev" d="M1167 290 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="1152" y="306" class="t" text-anchor="end">Aug 2036: Co 26, Li 12, Ni 15 %</text>
+  <text x="300" y="322" class="s">CO₂ footprint declaration: waits for the Commission's method act, not yet adopted</text>
+
+  <!-- AFIR -->
+  <text x="12" y="368" class="h">Charging</text>
+  <text x="12" y="388" class="act">AFIR, Reg. 2023/1804</text>
+  <path class="ev" d="M370 348 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="386" y="365" class="t">core TEN-T: a 400 kW pool every 60 km, end 2025</text>
+  <path class="ev" d="M520 380 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="536" y="397" class="t">600 kW, end 2027</text>
+  <path class="ev" d="M745 380 l10 11 l-10 11 l-10 -11 z"/>
+  <text x="761" y="397" class="t">all TEN-T roads, 300 kW, end 2030</text>
+  <text x="300" y="416" class="s">and every year: 1.3 kW of public charging power per registered BEV</text>
+
+  <!-- US -->
+  <text x="12" y="460" class="h">United States</text>
+  <text x="12" y="480" class="act">EPA, NHTSA, Congress</text>
+  <circle class="gone" cx="380" cy="451" r="8"/>
+  <text x="395" y="456" class="t">EPA CO₂ standards for MY2027+ repealed, Feb 2026; in court</text>
+  <circle class="us" cx="426" cy="485" r="8"/>
+  <text x="441" y="490" class="t">CAFE reset: 34.9 mpg in MY2031, Sep 2026</text>
+  <text x="300" y="512" class="s">federal EV tax credit ended 30 Sep 2025 · CAFE penalty $0 since Jul 2025</text>
+</svg>
