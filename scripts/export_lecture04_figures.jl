@@ -48,6 +48,7 @@ const FIGURES = Dict(
     ],
     "04-machine-battery-regen.pluto.jl" => [
         "02-torque-speed" => :torque_speed_plot,
+        "02-control-family" => :control_family_plot,
         "02-losses" => :losses_plot,
         "06-battery-discharge" => :battery_plot,
         "06-battery-ragone" => :ragone_plot,

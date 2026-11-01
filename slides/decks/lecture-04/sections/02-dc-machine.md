@@ -314,55 +314,71 @@ routeAlias: dc-control
 
 ## Two ways to control a DC motor
 
-<div class="grid grid-cols-2 gap-8">
+<div class="grid grid-cols-2 gap-8 text-[0.95rem]">
 <div>
 
-### By the voltage
-
-$$
-T = \frac{K\Phi}{R}\,\bigl(V - K\Phi\,\omega\bigr)
-$$
-
-Lower *V*: the line moves down in speed, same slope. At low speed a low voltage is all it takes
-to drive the rated current.
-
-**Step 02:** a converter sets *V* = *d* · *V*<sub>pack</sub>, and caps the current.
+**By the voltage**, $T = \frac{K\Phi}{R}\bigl(V - K\Phi\,\omega\bigr)$: lower *V* moves the line down
+in speed, same slope. **Step 02:** a converter sets *V* = *d* · *V*<sub>pack</sub>, and caps the
+current.
 
 </div>
 <div>
 
-### By the flux
-
-Lower Φ: less torque per ampere, and less back-EMF per rpm, so the machine **runs faster on the
-same voltage**.
-
-Deck: replace the permanent magnets by field coils, and turn their current down.
-
-**Step 02:** when the voltage runs out, the converter turns the field down. That is **field
-weakening**, and it gives the envelope of section 04.
+**By the flux**: lower Φ, less torque per ampere and less back-EMF per rpm, so the machine **runs
+faster on the same voltage**. **Step 02:** when the voltage runs out, the converter turns the
+field down: **field weakening**.
 
 </div>
+</div>
+
+<div class="mt-2">
+
+![Steady-state shaft torque against machine speed for the step 01 machine. Left, at full field: straight lines for 100, 200 and 350 V with the same slope, reaching zero torque near 985, 1969 and 3447 rpm; a dot on each marks 332.2 A, about 320 N·m. Right, at 350 V: the field fraction f at 1, 0.7 and 0.5; at the same 332.2 A the dots move to higher speed and lower torque, and the lines reach zero at higher speed with a flatter slope.](/figures/02-control-family.svg)
+
 </div>
 
 <!--
-The deck gives two ways to control a DC motor, one per column.
+The deck gives two ways to control a DC motor, one per column, and the two plots below show what
+each one does to the machine's line.
 
 On the left, by the voltage. The formula is the fixed-supply line from two slides back, written as a
 torque: T equals K Phi over R, times V minus K Phi omega. Lower the voltage V and the whole line
-moves down in speed, with the same slope, as the 200 volt line did. At low speed the back-EMF is
-small, so a low voltage is all it takes to drive the rated current. That is what step 02's converter
-does: it gives the machine a voltage d times the pack voltage, where the duty d is a number between
-0 and 1, and below base speed it sets d just high enough to hold the current at its limit.
+moves down in speed, with the same slope. At low speed the back-EMF is small, so a low voltage is all
+it takes to drive the rated current. That is what step 02's converter does: it gives the machine a
+voltage d times the pack voltage, where the duty d is a number between 0 and 1, and below base speed
+it sets d just high enough to hold the current at its limit.
 
 On the right, by the flux. Lower Phi and two things happen: the machine makes less torque per
 ampere, and less back-EMF per rpm. The second is the useful one: with less back-EMF per rpm, the
 same voltage drives the machine faster. In the deck's version, the permanent magnets are replaced by
 field coils, and their current is turned down.
 
-In step 02 this is the second knob. Once the converter gives the machine all of the pack's voltage,
-at base speed, the only way to go faster at full current is to turn the field down. That is field
-weakening, and it gives the constant-power part of the envelope in section 04, the part of every
-electric car's spec sheet where the torque falls as the speed rises.
+Now the plots. They are notebook 04, section 1, computed from step 01's machine in steady state,
+with every parameter read from the dyno run: the current is V minus f K Phi omega over R, and the
+shaft torque is f K Phi times that current, less the loss torques. Here f is the field, the flux as
+a fraction of full flux. In both plots the horizontal axis is the machine speed in rpm and the
+vertical axis the shaft torque in newton meters, and the thin black line is zero torque.
+
+The left plot is the voltage knob, at full field. The three lines are 100, 200 and 350 volts. They
+are parallel, all falling 1.97 newton meters per rpm, and they reach zero torque near 985, 1969 and
+3447 rpm: the no-load speed is V over K Phi, so it moves in proportion to the voltage. The dot on
+each line is where the machine draws 332.2 amperes, the current at the Leaf's corner point. It sits
+near 320 newton meters on every line, at about 820, 1810 and 3283 rpm. So with the voltage alone
+the converter can give full torque at any speed up to base speed, at the same current. What it
+cannot do is go past 350 volts: the pack has no more to give.
+
+The right plot is the field knob, at 350 volts. The three lines are the field at 1, 0.7 and 0.5. As
+the field falls, the no-load speed rises, to about 4924 and 6894 rpm, and the line gets flatter,
+because its slope is f K Phi squared over R. The dots are again 332.2 amperes, the same current on
+every line. They move to the right, to 4690 and 6566 rpm, but the torque at that current falls from
+320 to 224 and 159 newton meters, in proportion to the field. That is the price: each ampere makes
+less torque. The speed rises as the torque falls, so the power at the dots stays near 110 kilowatts.
+
+That is how step 02 uses both knobs. Below base speed the converter lowers the voltage, the left
+plot. Once it gives the machine all of the pack's voltage, at base speed, the only way to go faster
+at full current is to turn the field down, the right plot. That is field weakening, and it gives
+the constant-power part of the envelope in section 04, the part of every electric car's spec sheet
+where the torque falls as the speed rises.
 
 A permanent-magnet machine cannot turn its magnets down. Its inverter weakens the field with a
 current that opposes the magnets, and section 03 shows how. In our model the machine simply gets a
