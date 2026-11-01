@@ -1,0 +1,50 @@
+"""
+Resistively loaded 48 V boost at constant duty, with external 20 uF output
+capacitance. Starts from zero stored energy; 6 ms covers settling and
+whole-period steady-state checks. A 1 us maximum step resolves the PWM.
+"""
+test component TestBoostChopper
+  "Supply voltage"
+  parameter V_in::Voltage = 48.0
+  "Duty cycle"
+  parameter d::Real = 0.5
+  "Load resistance"
+  parameter R_load::Resistance = 10.0
+  "Switching frequency"
+  parameter f_s::Frequency = 20.0e3
+  "Inductance"
+  parameter L::Inductance = 100.0e-6
+  supply_voltage = BlockComponents.Sources.Constant(k = V_in) {^supply_voltage}
+  supply = ElectricalComponents.Analog.Sources.VoltageSource() {^supply}
+  duty = BlockComponents.Sources.Constant(k = d) {^duty}
+  chopper = VehicleSystemsComponents.Vehicle.Electric.BoostChopper(f_s = f_s, L = L) {^chopper}
+  load = ElectricalComponents.Analog.Basic.Resistor(R = R_load) {^load}
+  "Output capacitance, external DC-link storage (assumed)"
+  parameter C_out::Capacitance = 20.0e-6
+  capacitor = ElectricalComponents.Analog.Basic.Capacitor(C = C_out)
+  ground = ElectricalComponents.Analog.Basic.Ground() {^ground}
+relations
+  initial chopper.inductor.i = 0
+  initial chopper.v_sw = 0
+  initial capacitor.v = 0
+  connect(supply_voltage.y, supply.V) {^id1}
+  connect(duty.y, chopper.d) {^id2}
+  connect(supply.p, chopper.p_in) {^id3}
+  connect(chopper.p_out, load.p, capacitor.p) {^id4}
+  connect(supply.n, chopper.n, load.n, capacitor.n, ground.g) {^id5}
+end
+
+analysis BoostChopperTransient
+  extends TransientAnalysis(stop = 6.0e-3, alg = ODEAlg.Rodas5P(), abstol = 1.0e-7, reltol = 1.0e-7, dtmax = 1.0e-6)
+  "Supply voltage"
+  parameter V_in::Voltage = 48.0
+  "Duty cycle"
+  parameter d::Real = 0.5
+  "Load resistance"
+  parameter R_load::Resistance = 10.0
+  "Switching frequency"
+  parameter f_s::Frequency = 20.0e3
+  "Inductance"
+  parameter L::Inductance = 100.0e-6
+  model = VehicleSystemsComponents.Vehicle.Electric.TestBoostChopper(V_in = V_in, d = d, R_load = R_load, f_s = f_s, L = L)
+end

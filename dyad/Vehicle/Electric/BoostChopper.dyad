@@ -1,0 +1,82 @@
+"""
+Switched step-up (boost) chopper: supply -> inductor -> winding -> switch node;
+the Switch shunts that node to n and the diode conducts from it to p_out. Uses
+the same PWM, Switch (including 1 nF output capacitance) and MSL exponential
+diode as BuckChopper, with no reverse recovery or magnetic saturation.
+
+Requires external output capacitance across p_out and n: it belongs to the
+load/DC link, not this reusable four-port part. In continuous conduction,
+mean V_out = V_in / (1 - d), less diode, switch and winding drops; the
+peak-to-peak inductor ripple is Delta I = V_in d / (L f_s), less those drops
+and finite-edge effects. These contracts do not apply in discontinuous conduction.
+P_loss = P_switch + P_diode + P_winding. Over whole steady-state periods,
+P_in = P_out + P_loss; instantaneously their difference changes stored
+inductor and switch-capacitance energy (external C is outside P_out).
+
+Defaults use the course's 48 V class, 20 kHz and 100 uH: at d = 0.5 the
+bench delivers about 94 V to 10 Ohm (about 0.9 kW). Its external 20 uF
+capacitor and 100 uH inductor allow settling in a few ms while retaining
+visible ripple. All device values are teaching assumptions, not a rated design.
+"""
+component BoostChopper
+  "Input, positive rail"
+  p_in = Pin() {^p_in}
+  "Output, positive rail"
+  p_out = Pin() {^p_out}
+  "Negative rail, common to input and output"
+  n = Pin() {^n}
+  "Duty cycle command, 0 to 1"
+  d = RealInput() {^d}
+  pwm = VehicleSystemsComponents.Vehicle.Electric.PWM(f_s = f_s, t_sw = t_sw) {^pwm}
+  transistor = VehicleSystemsComponents.Vehicle.Electric.Switch(R_on = R_on, R_off = R_off) {^transistor}
+  diode = ElectricalComponents.Analog.Semiconductors.Diode() {^diode}
+  inductor = ElectricalComponents.Analog.Basic.Inductor(L = L) {^inductor}
+  winding = ElectricalComponents.Analog.Basic.Resistor(R = R_L) {^winding}
+  "Switching frequency (assumed)"
+  parameter f_s::Frequency = 20.0e3
+  "Duration of each gate edge; switching loss per edge 0.109 V I t_sw (assumed)"
+  parameter t_sw::Time = 0.5e-6
+  "Switch on-resistance, R_DSon (assumed)"
+  parameter R_on::Resistance = 10.0e-3
+  "Switch off-resistance (assumed)"
+  parameter R_off::Resistance = 1.0e6
+  "Inductance: ideal ripple 12 A at 48 V, d = 0.5 and 20 kHz (assumed)"
+  parameter L::Inductance = 100.0e-6
+  "Inductor winding resistance (assumed)"
+  parameter R_L::Resistance = 10.0e-3
+  "Inductor current, toward the output"
+  variable i_L::Current
+  "Switch-node voltage against the negative rail"
+  variable v_sw::Voltage
+  "Output voltage"
+  variable v_out::Voltage
+  "Power drawn at the input"
+  variable P_in::Power
+  "Power delivered at the output"
+  variable P_out::Power
+  "Switch loss, conduction and switching"
+  variable P_switch::Power
+  "Diode loss"
+  variable P_diode::Power
+  "Inductor winding loss"
+  variable P_winding::Power
+  "Sum of the losses"
+  variable P_loss::Power
+relations
+  connect(d, pwm.u) {^id1}
+  connect(pwm.y, transistor.g) {^id2}
+  connect(p_in, inductor.p) {^id3}
+  connect(winding.n, transistor.p, diode.p) {^id4}
+  connect(inductor.n, winding.p) {^id5}
+  connect(diode.n, p_out) {^id6}
+  connect(transistor.n, n) {^id7}
+  i_L = inductor.i
+  v_sw = transistor.p.v - n.v
+  v_out = p_out.v - n.v
+  P_in = (p_in.v - n.v) * p_in.i
+  P_out = -v_out * p_out.i
+  P_switch = transistor.P_loss
+  P_diode = diode.LossPower
+  P_winding = winding.v * winding.i
+  P_loss = P_switch + P_diode + P_winding
+end
