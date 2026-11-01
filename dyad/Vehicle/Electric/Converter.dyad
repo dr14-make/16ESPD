@@ -35,9 +35,13 @@ regenerates. Both losses track the current, so the efficiency rises with the out
 speed. A real PM machine also pays d-axis copper loss for its weakened field; that cost is in
 neither this converter nor `FieldEMF`.
 
-Defaults are a Leaf ZE1-class inverter. Source tags: (deck) deck 7 slide 28; (ORNL) 2013
-benchmarking of the 2012 Leaf; (derived) computed from other numbers, method given; (assumed) the
-course's choice.
+One current-proportional loss cannot match ORNL's map at both ends: a comparable traction module's
+datasheet drop (Infineon FS820R08A6P2B, 2.45 V for an IGBT + diode pair) barely closes the
+low-speed gap and pushes high speed below ORNL's > 99 %. The comparison is in
+docs/lecture-04-plan.md, Known limits.
+
+Defaults are a Leaf ZE1-class inverter. Source tags: (ORNL) 2013 benchmarking of the 2012 Leaf;
+(derived) computed from other numbers, method given; (assumed) the course's choice.
 """
 component Converter
   "DC link, positive rail: the battery side"
@@ -56,7 +60,7 @@ component Converter
   parameter d_max::Real = 1.0
   "Current-loop time constant (assumed)"
   parameter T_i::Time = 1.0e-3
-  "Conduction drop of the two devices that carry the current, 0.6 V each (deck)"
+  "Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md"
   parameter V_on::Voltage = 1.2
   "Switching frequency; ORNL tested the Leaf inverter at 5 kHz (ORNL)"
   parameter f_s::Frequency = 5.0e3

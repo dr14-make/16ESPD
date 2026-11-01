@@ -756,3 +756,18 @@ sine-with-dwell and split-µ ECU benches); `planar_wltc` 36 pass / 1 pre-existin
 Diagram placements and orthogonal routes are present; ECU check reports zero problems with its
 conditional output unseen at the default. Drive still has nine crossing warnings, not all proved
 forced; layout review is incomplete. No wasm rebuild or figure export in this follow-up.
+
+### Converter drop — V_on stays 1.2 V (#176)
+
+- **Decision:** the average converter keeps `V_on = 1.2 V`, now tagged `(derived)`: calibrated so
+  the inverter reaches ORNL's measured > 99 % at high speed. `t_sw = 1 µs` stays `(assumed)`.
+- **Why:** a comparable traction module's datasheet (Infineon FS820R08A6P2B V3.1, IGBT 1.15 V +
+  diode 1.30 V, typical at 450 A and 150 °C) gives a 2.45 V pair. On the bench that moved the
+  combined efficiency at 1000 rpm / 220 N·m only from 86.2 to 85.3 % against ORNL's ≈ 80 %, and
+  pushed the high-speed inverter from 99.2 to 98.8 %, below ORNL. A loss proportional to current
+  alone cannot match both ends of the measured map.
+- **Evidence:** `docs/lecture-04-plan.md` Known limits (the before → after table) and the research
+  note's §6.7, `[IFX-FS820]` and the converter comparison. The datasheet PDF is not in the repo;
+  the research note links Infineon's copy.
+- **Open:** a conduction-plus-switching loss model that drops into the 80s at low speed and stays
+  above 99 % at high speed is #176. No slide, guide, test or figure number changed.

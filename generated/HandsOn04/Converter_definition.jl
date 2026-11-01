@@ -28,9 +28,9 @@ Same names as the library's `Vehicle.Electric.Converter`, so either one drops in
 | `I_max`         | Output current limit, the 332.2 A at which the machine gives 320 N.m                         | A  |   332.2 |
 | `d_max`         | Largest duty: the voltage limit as a fraction of the input                         | --  |   1.0 |
 | `T_i`         | Current-loop time constant                         | s  |   1.0e-3 |
-| `V_on`         | Conduction drop of the two devices that carry the current, 0.6 V each                         | V  |   1.2 |
+| `V_on`         | Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md                         | V  |   1.2 |
 | `f_s`         | Switching frequency                         | Hz  |   5.0e3 |
-| `t_sw`         | Duration of each switching edge                         | s  |   1.0e-6 |
+| `t_sw`         | Duration of each switching edge (assumed)                         | s  |   1.0e-6 |
 | `eps`         | Rounding of the corner of min(1 - field, d_max - \|d\|)                         | --  |   1.0e-4 |
 
 ## Connectors
@@ -107,13 +107,13 @@ Same names as the library's `Vehicle.Electric.Converter`, so either one drops in
   append!(__params, @parameters (T_i::Real), [description = "Current-loop time constant"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, T_i, __local__T_i)
   __local__V_on = V_on
-  append!(__params, @parameters (V_on::Real), [description = "Conduction drop of the two devices that carry the current, 0.6 V each"])
+  append!(__params, @parameters (V_on::Real), [description = "Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, V_on, __local__V_on)
   __local__f_s = f_s
   append!(__params, @parameters (f_s::Real), [description = "Switching frequency"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, f_s, __local__f_s)
   __local__t_sw = t_sw
-  append!(__params, @parameters (t_sw::Real), [description = "Duration of each switching edge"])
+  append!(__params, @parameters (t_sw::Real), [description = "Duration of each switching edge (assumed)"])
   __dyad_seed_parameter!(__initial_conditions, __bindings, t_sw, __local__t_sw)
   __local__eps = eps
   append!(__params, @parameters (eps::Real), [description = "Rounding of the corner of min(1 - field, d_max - |d|)"])

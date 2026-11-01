@@ -57,7 +57,7 @@ $$
 | *I*<sub>max</sub> | 332.2 A | 320 N·m at base speed |
 | *d*<sub>max</sub> | 1 | no more than the pack's voltage |
 | *T*<sub>i</sub> | 1 ms | current loop |
-| *V*<sub>on</sub> | 1.2 V | two devices, 0.6 V each (deck) |
+| *V*<sub>on</sub> | 1.2 V | two devices, calibrated to ORNL (derived) |
 | *f*<sub>s</sub>, *t*<sub>sw</sub> | 5 kHz, 1 µs | ORNL ran the Leaf inverter at 5 kHz |
 
 At 350 V out and 332.2 A: **99.2 %** efficient.
@@ -84,10 +84,13 @@ edge costs a little energy, so this loss grows with the switching frequency.
 The table says where each number comes from. I max, 332.2 amperes, is the current at which build
 01's machine gives 320 newton meters at base speed. d max is 1: the converter cannot give the
 machine more than the pack's voltage. T i, 1 millisecond, is the time constant of the inverter's
-current loop: the output current follows its command with a lag that short. V on is 1.2 volts: at
-any instant two devices carry the current, 0.6 volts each, the deck's number. And f s and t sw are 5
-kilohertz and 1 microsecond. Oak Ridge ran the Leaf's inverter at 5 kilohertz, and 1 microsecond
-edges put the converter's efficiency in the 96 to 99 percent Oak Ridge measured.
+current loop: the output current follows its command with a lag that short. V on is 1.2 volts for
+the two devices that carry the current at any instant, calibrated so the inverter reaches the above
+99 percent Oak Ridge measured at high speed. A comparable traction IGBT module's datasheet gives
+about twice that for the pair; the lecture plan's known limits have that comparison and why one
+current-proportional loss cannot match Oak Ridge at both ends. And f s and t sw are 5 kilohertz and
+1 microsecond. Oak Ridge ran the Leaf's inverter at 5 kilohertz; the 1 microsecond edge is our
+assumption.
 
 The number at the bottom: at 350 volts out and 332.2 amperes, the loss is 332.2 amperes times 1.2
 volts plus 5000 times 1 microsecond times 350 volts, that is 332.2 times 2.95 volts, 0.98 kilowatts.

@@ -578,7 +578,7 @@ $$
 | *I*<sub>max</sub> | 332.2 A | the current at which step 01's machine gives 320 N·m at base speed |
 | *d*<sub>max</sub> | 1 | the inverter cannot give the machine more than the pack's voltage |
 | *T*<sub>i</sub> | 1 ms | how fast the inverter's current loop follows its command |
-| *V*<sub>on</sub> | 1.2 V | two devices carry the current at any instant, 0.6 V each (deck: power electronics) |
+| *V*<sub>on</sub> | 1.2 V | two devices carry the current at any instant; calibrated so the inverter reaches ORNL's > 99 % at high speed (derived; the datasheet comparison is in the lecture plan's Known limits) |
 | *f*<sub>s</sub>, *t*<sub>sw</sub> | 5 kHz, 1 µs | ORNL ran the Leaf inverter at 5 kHz; 1 µs edges land the efficiency in ORNL's 96–99 % |
 
 ::: info Why the torque falls as 1/ω
@@ -868,11 +868,11 @@ The supply, the dyno and the mounts are step 01's.
      parameter d_max::Real = 1.0
      "Current-loop time constant"
      parameter T_i::Time = 1.0e-3
-     "Conduction drop of the two devices that carry the current, 0.6 V each"
+     "Conduction drop of the two devices that carry the current, calibrated so the inverter matches ORNL's measured > 99 % at high speed (derived); the FS820R08A6P2B pair drop is 2.45 V, see docs/lecture-04-plan.md"
      parameter V_on::Voltage = 1.2
      "Switching frequency"
      parameter f_s::Frequency = 5.0e3
-     "Duration of each switching edge"
+     "Duration of each switching edge (assumed)"
      parameter t_sw::Time = 1.0e-6
      "Rounding of the corner of min(1 - field, d_max - |d|)"
      parameter eps::Real = 1.0e-4

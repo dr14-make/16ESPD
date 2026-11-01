@@ -988,8 +988,12 @@ times current (derived). The deck's switch table is built from these rows.
   - Switching, inductive load, I_C = 450 A, V_CE = 400 V, V_GE = −8/+15 V, R_Gon = 2.4 Ω, R_Goff = 5.1 Ω, L_S = 20 nH:
     E_on = 13.5 / 17.5 / 18.0 mJ and E_off = 23.5 / 29.0 / 30.0 mJ at T_vj = 25 / 150 / 175 °C.
     t_r = 0.07 / 0.08 µs, t_f = 0.04 / 0.05 µs, t_d(on) = 0.28 / 0.29 µs, t_d(off) = 0.94 / 1.05 µs (25 / 150 °C).
+  - Diode V_F, V_GE = 0 V (Table 3.2): at 450 A: 1.45 V typ / 1.65 V max (25 °C), 1.30 V typ (150 °C), 1.25 V typ (175 °C).
   - T_vj op = −40…150 °C continuous; 175 °C "for 10 s within a period of 30 s, occurrence maximum 3000 times over lifetime".
   - Derived: conduction drop × current at 450 A, 150 °C ≈ 1.15 V × 450 A ≈ 0.52 kW per switch (plus diode/switching losses).
+  - Derived: IGBT + diode pair drop at 450 A, typical, 1.15 + 1.30 = **2.45 V** at 150 °C (1.10 + 1.45 = 2.55 V at 25 °C).
+    Read from the local PDF with `pdftotext -layout`, sections 2.2 and 3.2. A switch-level module value: parallel
+    dies share current, not voltage. Comparable automotive traction hardware, not the Leaf's.
 
 #### Automotive SiC MOSFET traction module (800 V class)
 
@@ -1028,11 +1032,33 @@ times current (derived). The deck's switch table is built from these rows.
 #### ORNL teardown of the 2012 Nissan Leaf inverter/motor
 
 - **[ORNL-APE006-2013]** T. Burress, ORNL, *Benchmarking State-of-the-Art Technologies*, DOE VTP Annual Merit Review, project APE006 (14 May 2013). [page](https://www.energy.gov/sites/prod/files/2014/03/f13/ape006_burress_2013_o.pdf). verified.
-  - Slide 8: "3 IGBTs and 3 diodes per switch (18 IGBTS and 18 diodes total)"; "Separate module for each phase"; die 0.361 mm thick, "Estimated ~1000V breakdown and 300A IGBT rating" (ORNL estimate, Z. Liang); IGBT die 15 × 15 mm, diode 14 × 14 mm.
-  - Slide 10: "Published LEAF ratings verified (280 Nm and 80 kW) – Actually operated above 80 kW"; test conditions "DC-link voltage of 375 V", "fsw = 5 kHz", coolant (water–ethylene glycol) 65 °C; "Peak motor efficiency above 97% between 5,000 rpm and 9,000 rpm"; "Inverter efficiency above 99% for high speeds".
-  - Slide 11: "Combined LEAF inverter/motor efficiency reached above 96%"; "Capable of operating at 80 kW continuously at 7,000 rpm with stator temperatures leveling out at about 135 C".
-  - Slide 5: "LEAF and Sonata have continuous capability near their published rated power"; slide 6: "LEAF sized for EV/continuous duty"; inverter assembly 5.7 kW/L, 4.9 kW/kg (peak).
+  - Slide 9: "3 IGBTs and 3 diodes per switch (18 IGBTS and 18 diodes total)"; "Separate module for each phase"; die 0.361 mm thick, "Estimated ~1000V breakdown and 300A IGBT rating" (ORNL estimate, Z. Liang); IGBT die 15 × 15 mm, diode 14 × 14 mm.
+  - Slide 11: "Published LEAF ratings verified (280 Nm and 80 kW) – Actually operated above 80 kW"; test conditions "DC-link voltage of 375 V", "fsw = 5 kHz", coolant (water–ethylene glycol) 65 °C; "Peak motor efficiency above 97% between 5,000 rpm and 9,000 rpm"; "Inverter efficiency above 99% for high speeds".
+  - Slide 12: "Combined LEAF inverter/motor efficiency reached above 96%"; "Capable of operating at 80 kW continuously at 7,000 rpm with stator temperatures leveling out at about 135 C".
+  - Slide 6: "LEAF and Sonata have continuous capability near their published rated power"; slide 7: "LEAF sized for EV/continuous duty"; inverter assembly 5.7 kW/L, 4.9 kW/kg (peak).
   - Low-speed/high-torque inverter efficiency appears only as a contour plot; no number is stated in the text.
+  - Slide numbers are the printed ones, which match the PDF page numbers (re-read 1 Nov 2026).
+
+#### The course converter's conduction drop against [IFX-FS820] and [ORNL-APE006-2013]
+
+The course's average converter loses `(V_on + f_s t_sw v_in)|i_out|`, with `V_on = 1.2 V`, `f_s = 5 kHz`
+[ORNL-APE006-2013], `t_sw = 1 µs` (assumed). `V_on` is (derived): calibrated so the inverter reaches ORNL's
+"above 99 % for high speeds" (99.16 % at 350 V out, 332.2 A). The datasheet pair drop, 2.45 V, was tried on the
+course bench (derived, not a source claim; combined = motor + converter):
+
+| Operating point | Converter η, 1.2 → 2.45 V | Combined η, 1.2 → 2.45 V | ORNL |
+|---|---:|---:|---|
+| 1000 rpm, 220 N·m (113 V out) | 97.46 → 96.42 % | 86.214 → 85.295 % | inverter in the 80s, combined ≈ 80 % (read from contours) |
+| 900 rpm, 180 N·m | | 86.306 → 85.279 % | combined ≈ 80 % (read from contours) |
+| 7300 rpm, 85 N·m | | 94.279 → 93.946 % | combined 94–96 % |
+| 350 V out, 332.2 A | 99.16 → 98.81 % | 93.8 → 93.5 % (corner) | inverter > 99 % at high speed |
+
+A current-proportional loss cannot fit both ends of ORNL's map: the datasheet drop closes the low-speed gap by
+under one point (6.2 → 5.3) and drops high speed below 99 %. The course keeps 1.2 V; the comparison lives in
+`docs/lecture-04-plan.md` (Known limits). E_on + E_off = 46.5 mJ at 400 V × 450 A, 150 °C is 0.26 µs of V·I per
+device cycle, but mapping it onto the lumped `t_sw` needs phase-current and switching-count bookkeeping, so
+`t_sw` stays assumed. Caveats: ORNL tested at 375 V DC, 5 kHz, 65 °C coolant (not junction temperature) on the
+80 kW / 280 N·m first-generation motor, not the model's 110 kW / 320 N·m ZE1 machine.
 - **[ORNL-APE006-2012]** T. Burress, ORNL, *Benchmarking EV and HEV Technologies* AMR poster APE006 (2012). [page](https://www.energy.gov/sites/default/files/2014/03/f10/ape006_burress_2012_p.pdf). verified. LEAF PEM: "3 IGBTs and 3 diodes per switch", "18 IGBTs and 18 diodes total", "3 separate IGBT modules".
 
 #### Production cars that moved to SiC
