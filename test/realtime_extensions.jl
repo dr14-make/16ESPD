@@ -16,24 +16,24 @@ using SimpleDirectMediaLayer
     @test win !== nothing
     padext = Base.get_extension(VehicleSystemsComponents, :VehicleSystemsComponentsPadExt)
     @test padext !== nothing
-    @named model = VehicleSystemsComponents.Vehicle.Planar.PlanarBEVDrive()
+    @named model = VehicleSystemsComponents.PlanarBEVByHand()
     setup = DyadInterface.setup_analysis(DyadInterface.TransientAnalysisSpec(;
         model, stop = 4.0, optimize = DyadInterface.OptimizationLevel.None(), progress = false))
     sys = DyadInterface.symbolic_container(setup.prob.f)
-    spec = VehicleSystemsComponents.RealtimeDriveSpec(; model, duration = 3.0, headless = true)
+    spec = VehicleSystemsComponents.RealtimeDriveSpec(; model, duration = 3.0, window = false)
     integ = init(setup.prob, Rodas5P(); dtmax = 0.005, saveat = spec.frame, save_everystep = false)
     initial = remake(integ.sol.prob; p = deepcopy(integ.p), u0 = copy(integ.u))
     ctx = win.context(integ, sys)
-    controls, applied = win.Controls(), win.Applied()
+    controls = win.Controls()
     controls.throttle = 1.0
-    win.apply!(integ, sys, ctx, controls, 0.0, applied)
+    win.apply!(integ, sys, ctx, controls, 0.0)
     step!(integ, 0.2, true)
     fresh = win.fresh_integrator(initial, spec)
     @test fresh.t == 0.0
     @test fresh.ps[sys.driver.throttle] == 0.0
     @test integ.ps[sys.driver.throttle] == 1.0
     controls.throttle, controls.brake = 0.0, 0.2
-    win.apply!(fresh, sys, ctx, controls, 0.0, win.Applied())
+    win.apply!(fresh, sys, ctx, controls, 0.0)
     step!(fresh, 0.1, true)
     @test fresh.sol(0.05; idxs = sys.driver.throttle_signal) == 0.0
     @test integ.sol(0.05; idxs = sys.driver.throttle_signal) == 1.0
@@ -57,22 +57,19 @@ using SimpleDirectMediaLayer
     include(joinpath(@__DIR__, "..", "sim", "drive.jl"))
     @test isdefined(@__MODULE__, :main)
     # A runner can replace its integrator after reset; finalization must return that session.
-    @eval VehicleSystemsComponents function headless_drive!(i, s, spec)
+    @eval VehicleSystemsComponents function unpaced_drive!(i, s, spec)
         win = Base.get_extension(@__MODULE__, :VehicleSystemsComponentsGLMakieExt)
         initial = remake(i.sol.prob; p = deepcopy(i.p), u0 = copy(i.u))
         set_driver_commands!(i, s; throttle = 1.0)
         step!(i, 0.2, true)
         fresh = win.fresh_integrator(initial, spec)
-        set_driver_commands!(fresh, s; brake = 0.2, esp_on = 0.0, abs_on = 0.0,
-            mu_fl = 0.7, mu_fr = 0.6, mu_rl = 0.5, mu_rr = 0.4)
+        set_driver_commands!(fresh, s; brake = 0.2)
         step!(fresh, 0.1, true)
         return (; frames = 1, wall = 0.1, integrator = fresh)
     end
-    result = VehicleSystemsComponents.PlanarBEVRealtimeDrive()
+    result = VehicleSystemsComponents.PlanarBEVByHandDrive(window = false, duration = 3)
     rs = DyadInterface.symbolic_container(result)
     @test result.sol.t[end] ≈ 0.1
     @test result.sol(0.05; idxs = rs.driver.throttle_signal) == 0.0
     @test result.sol(0.05; idxs = rs.driver.brake_signal) == 0.2
-    @test result.sol(0.05; idxs = rs.driver.esp_signal) == 0.0
-    @test result.sol(0.05; idxs = rs.driver.mu_rr_signal) == 0.4
 end

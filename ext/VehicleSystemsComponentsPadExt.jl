@@ -39,9 +39,6 @@ function poll_controls!(session::PadSession, c, kb)
     edge = ps.buttons & ~session.previous_buttons
     session.previous_buttons = ps.buttons
     hit(b) = (edge & DualSense.BUTTONS[b]) != 0
-    hit(:triangle) && (c.esp = !c.esp)
-    hit(:square) && (c.abs = !c.abs)
-    hit(:circle) && (c.surface = mod1(c.surface + 1, length(win.SURFACES)))
     hit(:cross) && (c.mode = mod1(c.mode + 1, length(win.DRIVE_MODES)))
     hit(:ps) && (c.paused = !c.paused)
     if ps.dpad != session.previous_dpad
@@ -54,7 +51,6 @@ function poll_controls!(session::PadSession, c, kb)
             kb.steer == 0 ? -stick : kb.steer, hit(:options))
 end
 
-const SURFACE_LEDS = (0b00100, 0b01010, 0b10101, 0b11011)
 function feedback!(session::PadSession, s, c, clock)
     pad = session.pad
     win = window_extension()
@@ -80,7 +76,7 @@ function feedback!(session::PadSession, s, c, clock)
     else
         lightbar!(pad, 0.0, 0.3, 0.05)
     end
-    player_leds!(pad, SURFACE_LEDS[c.surface])
+    player_leds!(pad, 0b00100)
     return pad
 end
 haptics!(session::PadSession, s, c, clock) = send!(feedback!(session, s, c, clock))
