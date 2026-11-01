@@ -158,21 +158,20 @@ routeAlias: build-car-bench
 
 ## Build 04b: the drive in the car
 
-<div class="grid grid-cols-[1fr_1.15fr] gap-8 items-start">
+<div class="grid grid-cols-[1.15fr_1fr] gap-6 items-start">
 <div>
 
-<img src="/img/lecture-04/step04-bevwltc.png" class="mx-auto" style="max-height: 21rem" alt="The finished BEVWLTC in Studio: trace, no_ff and kmh into driver at the top left; split right of driver and drive right of split along the top; split's motor output into drive, its brake output down to the front brake inputs on both sides of car; drive.spline down to differential, whose outputs go to the car's front wheels; drive.support down to mount; motion on the car's bus, flat and roadload below."/>
+<img src="/img/lecture-04/step04-bevwltc.png" class="mx-auto" style="max-height: 29rem" alt="The finished BEVWLTC in Studio: trace, no_ff and kmh into driver at the top left; split right of driver and drive right of split along the top; split's motor output into drive, its brake output down to the front brake inputs on both sides of car; drive.spline down to differential, whose outputs go to the car's front wheels; drive.support down to mount; motion on the car's bus, flat and roadload below."/>
 
-*New `BEVWLTC`: paste the car bench · place `drive` (your `ElectricDrive`) and `split`
-(TorqueSplit) · seven wires · one line: `initial drive.converter.i_out = 0.0` · ▷ once, then
-plot*
-
-**Given:** the planar car and road load, `DifferentialGear`, `TorqueSplit`, the WLTC bench
-
+**Given:** the planar car and road load, `DifferentialGear`, `TorqueSplit`, the WLTC bench ·
 [page: step 04](../lecture/lecture-04/#step-04) · reference `dyad/HandsOn04/BEVWLTC.dyad`
 
 </div>
 <div class="stack">
+
+*New `BEVWLTC`: paste the car bench · place `drive` (your `ElectricDrive`) and `split`
+(TorqueSplit) · seven wires · one line: `initial drive.converter.i_out = 0.0` · ▷ once, then
+plot*
 
 ```txt
 # BEVWLTC: the seven wires that put the drive in the car
