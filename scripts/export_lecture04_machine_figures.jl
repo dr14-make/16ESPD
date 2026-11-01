@@ -9,10 +9,13 @@ sinusoidal (PMSM) machine, the three back-EMFs, the currents the drive puts in, 
 Σ e·i / ω. The waveforms are the textbook ideal shapes, in per unit of their peak. The one computed
 curve is the BLDC's torque with winding inductance: a six-step inverter at a fixed average voltage.
 
+`04-what-envelope`: a schematic torque–speed envelope at the course machine's corner, with the
+reachable region, a few operating points and the power.
+
 `03-field-weakening`: the current and voltage limits of a PMSM in the i_d–i_q plane at several
 speeds, and the torque and power along the limits, for an illustrative per-unit machine.
 
-Both are computed here, with no Dyad model; `scripts/export_lecture04_figures.jl` runs this file
+All are computed here, with no Dyad model; `scripts/export_lecture04_figures.jl` runs this file
 after the notebooks.
 """
 module Lecture04MachineFigures
@@ -218,9 +221,53 @@ function field_weakening_plot()
     return p
 end
 
+# The corner and the top speed of the course machine's envelope, as notebook 01 computes them for
+# `04-envelope` and the base-speed slide states them; the schematic leaves out the shaft losses.
+const T_RATED, N_BASE, N_MAX = 320.0, 3283.0, 10100.0
+
+function envelope_schematic_plot()
+    n = collect(range(0, N_MAX; length = 400))
+    T = [x <= N_BASE ? T_RATED : T_RATED * N_BASE / x for x in n]
+    P = T .* n .* (π / 30) ./ 1e3
+    p = plot(; layout = grid(2, 1; heights = [0.72, 0.28]), size = (1280, 600), legend = false,
+        link = :x, xlims = (0, 10600), xticks = 0:2000:10000)
+    for sp in (1, 2)
+        vline!(p[sp], [N_BASE]; color = :gray, ls = :dash, lw = 1.5)
+        vline!(p[sp], [N_MAX]; color = :gray, ls = :dot, lw = 1.5)
+    end
+    plot!(p[1], Shape([n; N_MAX; 0], [T; 0; 0]); color = "#1f5fa8", fillalpha = 0.12,
+        linealpha = 0)
+    plot!(p[1], n, T; color = :black, lw = 3.5, ylims = (0, 400), yticks = 0:100:400,
+        ylabel = "torque [N·m]")
+    scatter!(p[1], [N_BASE], [T_RATED]; color = :black, ms = 9)
+    annotate!(p[1], N_BASE + 120, T_RATED + 22,
+        text("base speed: $(round(Int, N_BASE)) rpm, $(round(Int, T_RATED)) N·m", 13, :left, :black))
+    annotate!(p[1], N_BASE / 2, 375, text("constant torque", 15, :center, "#1f5fa8"))
+    annotate!(p[1], N_BASE / 2, 350, text("current limit", 13, :center, "#1f5fa8"))
+    annotate!(p[1], (N_BASE + N_MAX) / 2 + 300, 375,
+        text("constant power, torque ∝ 1/ω", 15, :center, "#a75d00"))
+    annotate!(p[1], (N_BASE + N_MAX) / 2 + 300, 350,
+        text("voltage limit: field weakening", 13, :center, "#a75d00"))
+    annotate!(p[1], N_MAX - 80, 300, text("max speed", 12, :right, :gray))
+    annotate!(p[1], 900, 205, text("reachable", 15, :left, "#1f5fa8"))
+    # A few operating points inside the envelope and one outside it, placed by hand.
+    pts = [(600, 260), (1200, 140), (1800, 60), (2600, 210), (3500, 40), (4300, 110),
+        (5200, 70), (6200, 30), (7000, 120), (8200, 55)]
+    scatter!(p[1], first.(pts), last.(pts); color = "#2e8b57", ms = 8, markerstrokewidth = 0)
+    annotate!(p[1], 4400, 160, text("operating points", 13, :left, "#2e8b57"))
+    scatter!(p[1], [7200], [250]; color = "#c0392b", marker = :x, ms = 10)
+    annotate!(p[1], 7350, 250, text("out of reach", 13, :left, "#c0392b"))
+    plot!(p[2], n, P; color = :black, lw = 3, ylims = (0, 140), yticks = 0:50:100,
+        ylabel = "power [kW]", xlabel = "machine speed [rpm]")
+    annotate!(p[2], N_BASE + 120, 125,
+        text("$(round(Int, T_RATED * N_BASE * π / 30 / 1e3)) kW from base speed on", 13, :left, :black))
+    return p
+end
+
 const FIGURES = [
     "03-bldc-pmsm-waveforms" => waveform_plot,
     "03-field-weakening" => field_weakening_plot,
+    "04-what-envelope" => envelope_schematic_plot,
 ]
 
 function export_all()
