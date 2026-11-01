@@ -153,8 +153,7 @@ rotor (interior PM), 48 slots (ORNL, first-generation motor).
 
 **Synchronous:** the rotor turns with the stator's rotating field, never slipping behind it.
 
-To make smooth torque from three sinusoidal currents, the inverter must place them right
-relative to the magnets, at every instant. That is **field-oriented control**, next.
+What *trapezoidal* and *sinusoidal* mean, and why the currents follow: next slide.
 
 </div>
 </div>
@@ -176,10 +175,88 @@ rotor iron, which is called interior permanent magnet, 48 stator slots, and abou
 Buried magnets add a second kind of torque, reluctance torque, which our model leaves out.
 
 Synchronous means that the rotor turns with the stator's rotating field and never slips behind it.
-The induction machine, three slides on, is the one that slips.
+The induction machine, further on, is the one that slips.
 
-To make smooth torque from three sinusoidal currents, the inverter must place those currents right
-relative to the magnets, at every instant. That is field-oriented control, the next slide.
+The two words in the back-EMF row, trapezoidal and sinusoidal, carry the whole difference, and the
+next slide shows what they mean.
+-->
+
+---
+routeAlias: trap-vs-sine
+---
+
+## Trapezoidal or sinusoidal: the back-EMF sets the current
+
+![Two columns over one electrical revolution, 0 to 360 degrees. Left, the BLDC: the three back-EMFs A, B and C are trapezoids, flat at plus or minus 1 for 120 degrees and sloping in between, 120 degrees apart; the currents are blocks of plus or minus 1, each 120 degrees long under a flat top, so two phases conduct at a time, in six 60-degree steps labeled A+ B−, A+ C−, B+ C−, B+ A−, C+ A−, C+ B−; the torque of ideal blocks is flat at 1, and with winding inductance it dips to about 0.55 at each of the six steps and recovers within about 20 degrees. Right, the PMSM: the back-EMFs are three sines 120 degrees apart, the currents three sines in phase with them, and the torque is flat at 1.](/figures/03-bldc-pmsm-waveforms.svg)
+
+<div class="grid grid-cols-3 gap-6 text-sm">
+<div>
+
+**The shape is built in.** Trapezoidal and sinusoidal name how a phase's back-EMF varies with rotor
+angle. The layout of magnets and windings sets it: wide magnets and concentrated coils give flat
+tops, distributed windings a sine.
+
+</div>
+<div>
+
+**The current must match it.** Each phase gives torque e·i/ω. For a steady total, a flat-topped EMF
+needs a constant current while it is flat: 120° blocks, two phases at a time. A sine EMF needs a
+sine current in phase with it.
+
+</div>
+<div>
+
+**What follows.** Blocks switch at six angles per electrical turn, which three Hall sensors mark.
+Sines need the angle at every instant. A block cannot jump through the winding's inductance, so the
+BLDC's torque dips at each step; the sines' is smooth.
+
+</div>
+</div>
+
+<!--
+This slide answers what trapezoidal and sinusoidal actually mean. Both columns cover one electrical
+revolution of the rotor, from 0 to 360 electrical degrees, and every value is in per unit of its
+peak. The left column is the BLDC, the right column the PMSM. The phases have the colors of the
+animation on the next slide: A blue, B orange, C green.
+
+Start at the top row. If you turn either machine at a constant speed with nothing connected and
+measure the voltage of each phase, you get its back-EMF. In the BLDC each phase gives a trapezoid:
+it rises, stays flat for 120 electrical degrees, falls, stays flat at the negative value for
+another 120 degrees, and rises again. In the PMSM each phase gives a sine. The three phases are the
+same curve shifted by 120 degrees. That shape is not chosen by the controller. It is built into the
+machine, by how the magnets and the windings are laid out. Wide magnets with concentrated coils give
+the flat tops; windings distributed over many slots, and magnets shaped to match, give a sine.
+
+The middle row is the current the drive puts in, and the reason it has to look like this is in one
+formula. The power a phase converts is its back-EMF times its current, so its torque is e times i
+over omega, and the machine's torque is the sum over the three phases. For the BLDC, look at any
+60-degree step: exactly two phases sit on a flat top, one at plus 1 and one at minus 1. Drive a
+constant current into the first and out of the second, and the sum, e times i plus e times i, is
+constant. So the BLDC's currents are blocks 120 degrees long, lined up with the flat tops, and only
+two phases conduct at any time. The labels along the top give the pair: A plus B minus, then A plus
+C minus, and so on, six steps per electrical turn. For the PMSM, put a sine current in each phase,
+in phase with its back-EMF. Each phase's torque is then a sine squared, which pulses, but three sine
+squares 120 degrees apart add up to exactly one and a half, a constant.
+
+The bottom row is that torque, scaled so its mean is 1. On the right it is flat. On the left the
+dashed line is the ideal block currents, also flat. The solid line is what a real winding does. A
+winding has inductance, so its current cannot jump: at every step the outgoing phase's current needs
+time to fall to zero and the incoming one needs time to build up, and the torque dips. That is a
+dip every 60 electrical degrees, and it is the torque ripple in the table. The solid line is
+computed, not drawn by hand: a six-step drive with the winding's resistance and inductance, the
+inverter's pulse-width modulation averaged out, at a speed where the back-EMF uses up most of the
+battery voltage. How deep the dip is depends on the speed and the inductance; the commutation
+torque ripple was analyzed by Carlson, Lajoie-Mazenc and Fagundes in 1992. The trapezoids with
+exactly flat tops and the perfect sines are the textbook idealization; a real machine's back-EMF is
+rounded at the corners and carries some harmonics, and Krishnan's book on permanent-magnet drives
+treats both machines this way.
+
+The consequences are on the right of the slide. The block currents change only at six angles per
+electrical turn, at the dotted lines. Three Hall sensors, each changing state every 180 degrees and
+offset by 120, mark exactly those six instants, as Microchip's application note AN885 shows. That is
+cheap and enough for a BLDC. Sine currents need the rotor angle at every instant, so a PMSM carries
+a resolver or an encoder. To make smooth torque from three sine currents, the inverter must place
+them right relative to the magnets at every instant. That is field-oriented control, the next slide.
 -->
 
 ---
